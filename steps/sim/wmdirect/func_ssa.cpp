@@ -44,21 +44,21 @@ double siGetA0(State * s, uint cidx, uint ridx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double siGetCompReacFC(State * s, uint cidx, uint ridx)
+double siGetCompReacC(State * s, uint cidx, uint ridx)
 {
     return 0.0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double siGetCompReacFH(State * s, uint cidx, uint ridx)
+double siGetCompReacH(State * s, uint cidx, uint ridx)
 {
     return 0.0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double siGetCompReacFA(State * s, uint cidx, uint ridx)
+double siGetCompReacA(State * s, uint cidx, uint ridx)
 {
     return 0.0;
 }

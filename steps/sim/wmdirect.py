@@ -23,7 +23,8 @@ class WMDirect(FuncSSA, FuncCore):
 
 
     def __del__(self):
-        Controller.__del__(self)
+        FuncSSA.__del__(self)
+        FuncCore.__del__(self)
         
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

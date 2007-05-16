@@ -20,6 +20,15 @@
 class State;
 
 ////////////////////////////////////////////////////////////////////////////////
+// SOLVER INFORMATION
+////////////////////////////////////////////////////////////////////////////////
+
+extern char *   siGetSolverName(void);
+extern char *   siGetSolverDesc(void);
+extern char *   siGetSolverAuthors(void);
+extern char *   siGetSolverEmail(void);
+
+////////////////////////////////////////////////////////////////////////////////
 // CREATION & DESTRUCTION
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -82,8 +91,8 @@ extern void     siSetCompConc(State * s, uint cidx, uint sidx, double c);
 extern bool     siGetCompClamped(State * s, uint cidx, uint sidx);
 extern void     siSetCompClamped(State * s, uint cidx, uint sidx, bool buf);
 
-extern double   siGetCompReacKf(State * s, uint cidx, uint ridx);
-extern void     siSetCompReacKf(State * s, uint cidx, uint ridx, double kf);
+extern double   siGetCompReacK(State * s, uint cidx, uint ridx);
+extern void     siSetCompReacK(State * s, uint cidx, uint ridx, double kf);
 
 extern bool     siGetCompReacActive(State * s, uint cidx, uint ridx);
 extern void     siSetCompReacActive(State * s, uint cidx, uint ridx, bool act);

@@ -47,8 +47,8 @@ class wmdirect(object):
         self.sim.setCompCount('comp', 'X', 500)
         self.sim.setCompCount('comp', 'Y', 0)
         self.sim.setCompVol('comp', 1.6667e-21)
-        self.sim.setCompReacKf('comp', 'Rf', 1)
-        self.sim.setCompReacKf('comp', 'Rb', 1)
+        self.sim.setCompReacK('comp', 'Rf', 1)
+        self.sim.setCompReacK('comp', 'Rb', 1)
         
         t = self.sim.time
         self.inter()

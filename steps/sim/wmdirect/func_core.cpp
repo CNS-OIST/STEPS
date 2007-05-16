@@ -28,6 +28,34 @@ NAMESPACE_ALIAS(steps::math, smath);
 
 ////////////////////////////////////////////////////////////////////////////////
 
+char * siGetSolverName(void)
+{
+    return "wmdirect";
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+char * siGetSolverDesc(void)
+{
+    return "SSA Direct Method in well-mixed conditions";
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+char * siGetSolverAuthors(void)
+{
+    return "Stefan Wils";
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+char * siGetSolverEmail(void)
+{
+    return "wils@oist.jp";
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 State * siNewState(void)
 {
     return new State();
@@ -504,7 +532,7 @@ void siSetCompClamped(State * s, uint cidx, uint sidx, bool buf)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double siGetCompReacKf(State * s, uint cidx, uint ridx)
+double siGetCompReacK(State * s, uint cidx, uint ridx)
 {
     assert(s != 0);
     assert(s->def()->isValidComp(cidx) == true);
@@ -517,7 +545,7 @@ double siGetCompReacKf(State * s, uint cidx, uint ridx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void siSetCompReacKf(State * s, uint cidx, uint ridx, double kf)
+void siSetCompReacK(State * s, uint cidx, uint ridx, double kf)
 {
     assert(s != 0);
     assert(s->def()->isValidComp(cidx) == true);

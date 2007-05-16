@@ -38,9 +38,9 @@ extern double   siGetA0(State * s, uint cidx, uint ridx);
 //      COMPARTMENT
 ////////////////////////////////////////////////////////////////////////////////
 
-extern double   siGetCompReacFC(State * s, uint cidx, uint ridx);
-extern double   siGetCompReacFH(State * s, uint cidx, uint ridx);
-extern double   siGetCompReacFA(State * s, uint cidx, uint ridx);
+extern double   siGetCompReacC(State * s, uint cidx, uint ridx);
+extern double   siGetCompReacH(State * s, uint cidx, uint ridx);
+extern double   siGetCompReacA(State * s, uint cidx, uint ridx);
 
 extern uint     siGetCompReacExtent(State * s, uint cidx, uint ridx);
 extern uint     siResetCompReacExtent(State * s, uint cidx, uint ridx);
