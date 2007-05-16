@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# Echo commands after command-line processing.
+set -x
+
+if test x"$LIBTOOLIZE" = x; then
+	# Libtoolize. On Darwin, libtoolize is called glibtoolize.
+	if glibtoolize --version > /dev/null 2> /dev/null; then
+		LIBTOOLIZE="glibtoolize"
+	elif libtoolize --version > /dev/null 2> /dev/null; then
+		LIBTOOLIZE="libtoolize"
+	fi
+fi
+#"$LIBTOOLIZE" --ltdl --copy --force
+"$LIBTOOLIZE" --copy --force
+
+# Gather macros required for autoconf.
+aclocal -I config
+
+#
+autoheader
+
+# 
+automake --foreign --add-missing --copy
+
+#
+autoconf
+
+# END

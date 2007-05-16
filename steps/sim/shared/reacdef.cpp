@@ -1,0 +1,97 @@
+////////////////////////////////////////////////////////////////////////////////
+// STEPS - STochastic Engine for Pathway Simulation
+// Copyright (C) 2005-2007 Stefan Wils. All rights reserved.
+////////////////////////////////////////////////////////////////////////////////
+
+// STL headers.
+#include <algorithm>
+#include <string>
+#include <vector>
+
+// STEPS headers.
+#include <steps/common.h>
+#include <steps/math/accumulate.hpp>
+#include <steps/sim/shared/reacdef.hpp>
+#include <steps/sim/shared/statedef.hpp>
+
+NAMESPACE_ALIAS(steps::math, smath);
+
+////////////////////////////////////////////////////////////////////////////////
+
+ReacDef::ReacDef(StateDef * sdef, uint gidx, std::string const & name)
+: pStateDef(sdef)
+, pGIDX(gidx)
+, pName(name)
+, pOrder(0)
+, pKf(0.0)
+, pLHS(sdef->countSpecs())
+, pRHS(sdef->countSpecs())
+{
+    std::fill(pLHS.begin(), pLHS.end(), 0);
+    std::fill(pRHS.begin(), pRHS.end(), 0);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void ReacDef::finalSetup(void)
+{
+    computeOrder();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint ReacDef::lhs(uint gidx) const
+{
+    return pLHS[gidx];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint ReacDef::incLHS(uint gidx)
+{
+    pLHS[gidx] += 1;
+    computeOrder();
+    return pLHS[gidx];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void ReacDef::setLHS(uint gidx, uint n)
+{
+    pLHS[gidx] = n;
+    computeOrder();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint ReacDef::rhs(uint gidx) const
+{
+    return pRHS[gidx];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint ReacDef::incRHS(uint gidx)
+{
+    pRHS[gidx] += 1;
+    return pRHS[gidx];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void ReacDef::setRHS(uint gidx, uint n)
+{
+    pRHS[gidx] = n;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void ReacDef::computeOrder(void)
+{
+    // Compute the order of the reaction.
+    pOrder = smath::accumulate(pLHS.begin(), pLHS.end(), 0);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// END

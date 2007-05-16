@@ -1,0 +1,88 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# STEPS - STochastic Engine for Pathway Simulation
+# Copyright (C) 2005-2007 Stefan Wils. 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+steps=/Users/stefan/Work/steps CD=. {
+ doc=doc {
+ }
+ setup.py
+ steps=steps {
+  __init__.py
+  common.h
+  error.py
+  tools.py
+  examples=examples {
+   __init__.py
+   lotka_volterra.py
+   rev_isomer.py
+  }
+  geom=geom {
+   __init__.py
+   compartment.py
+   geom.py
+  }
+  math=math {
+   aabbox3.cpp
+   aabbox3.hpp
+   color.hpp
+   constants.hpp
+   geometry.cpp
+   geometry.hpp
+   iota.hpp
+   linalg.cpp
+   linalg.hpp
+   matrix4.cpp
+   matrix4.hpp
+   normal3.cpp
+   normal3.hpp
+   point3.cpp
+   point3.hpp
+   tools.cpp
+   tools.hpp
+   vector3.cpp
+   vector3.hpp
+  }
+  model=model {
+   __init__.py
+   model.py
+   reaction.py
+   species.py
+   volsys.py
+  }
+  rng=rng {
+   __init__.py
+   mt19937.hpp
+   rng.hpp
+   rng_core.i
+   rng_core=rng_core {
+    mt19937.cpp
+    rng.cpp
+   }
+  }
+  sim=sim {
+   __init__.py
+   controller.py
+   wmdirect.py
+   wmdirect_core.i
+   wmdirect_core=wmdirect_core {
+    comp.cpp
+    species.cpp
+    state.cpp
+    wmdirect.cpp
+    wmdirect.hpp
+   }
+  }
+  tests=tests {
+   __init__.py
+   test_misc.py
+   test_model.py
+   tools.py
+  }
+ }
+ vimproject
+}
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# END
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
