@@ -1,29 +1,30 @@
-## ./extras/Makefile.am
-##
-## Process this file with automake to produce Makefile.in
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# STEPS - STochastic Engine for Pathway Simulation
+# Copyright (C) 2005-2007 Stefan Wils. All rights reserved.
+#
+# $Id$
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-## $Id$
-
-## Set $MAKE if necessary.
+# Set $MAKE if necessary.
 @SET_MAKE@
 
-## VPATH support.
+# VPATH support.
 srcdir = @srcdir@
 VPATH = @srcdir@
 
-## Things that should be added to the distribution.
+# Things that should be added to the distribution.
 EXTRA_DIST = \
     metrics.pl \
     untab.sh
 
-## Installation directives.
+# Installation directives.
 extrasdir = $(pkgdatadir)/extras
 nobase_extras_DATA = \
     metrics.pl \
     untab.sh
 
-## Files that should be cleaned when building a distribution.
+# Files that should be cleaned when building a distribution.
 distclean-local:
 	-rm -rf .DS_Store *~ *.bak
 
-## END
+# END

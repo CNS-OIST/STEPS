@@ -1,9 +1,8 @@
-## ./steps/rng/Makefile.am
-##
-## Process this file with automake to produce Makefile.in
-
-## $Id$
-
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# STEPS - STochastic Engine for Pathway Simulation
+# Copyright (C) 2005-2007 Stefan Wils. All rights reserved.
+#
+# $Id$
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 @SET_MAKE@
@@ -35,6 +34,7 @@ libsteps_rng_la_SOURCES = \
     rng.cpp
 
 header_steps_rng_HEADERS = \
+    doxygen.hpp \
     mt19937.hpp \
     rng.hpp
 
@@ -62,4 +62,4 @@ python_steps_rng_PYTHON = \
     __init__.py \
     rng_core.py
     
-## END
+# END

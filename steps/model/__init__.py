@@ -1,12 +1,20 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # STEPS - STochastic Engine for Pathway Simulation
-# Copyright (C) 2005-2007 Stefan Wils.
+# Copyright (C) 2005-2007 Stefan Wils. All rights reserved.
+#
+# $Id$
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-from model import Model
-from reaction import Reaction
-from species import Species
-from volsys import Volsys
+
+"""
+"""
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+
+pass
+
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 

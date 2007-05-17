@@ -1,9 +1,8 @@
-# ./steps/sim/swiginf/Makefile.am
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# STEPS - STochastic Engine for Pathway Simulation
+# Copyright (C) 2005-2007 Stefan Wils. All rights reserved.
 #
-# Process this file with automake to produce Makefile.in
-
 # $Id$
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 @SET_MAKE@
@@ -19,6 +18,7 @@ header_steps_sim_swiginfdir = $(pkgincludedir)/steps/sim/swiginf
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 header_steps_sim_swiginf_HEADERS = \
+    doxygen.hpp \
     func_core.hpp \
 	func_core.i \
     func_ssa.hpp \

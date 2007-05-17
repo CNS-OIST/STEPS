@@ -1,25 +1,26 @@
-## ./steps/examples/Makefile.am
-##
-## Process this file with automake to produce Makefile.in
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# STEPS - STochastic Engine for Pathway Simulation
+# Copyright (C) 2005-2007 Stefan Wils. All rights reserved.
+#
+# $Id$
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-## $Id$
-
-## Set $MAKE if necessary.
+# Set $MAKE if necessary.
 @SET_MAKE@
 
-## VPATH support.
+# VPATH support.
 srcdir = @srcdir@
 VPATH = @srcdir@
 
-## Python package.
+# Python package.
 steps_examplesdir = $(pythondir)/steps/examples
 steps_examples_PYTHON = \
     __init__.py \
     lotka_volterra.py \
     rev_isomer.py
     
-## Files that should be cleaned when building a distribution.
+# Files that should be cleaned when building a distribution.
 distclean-local:
 	-rm -rf .DS_Store *~ *.bak
     
-## END
+# END

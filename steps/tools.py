@@ -1,9 +1,20 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # STEPS - STochastic Engine for Pathway Simulation
-# Copyright (C) 2005-2007 Stefan Wils.
+# Copyright (C) 2005-2007 Stefan Wils. All rights reserved.
+#
+# $Id$
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-from steps import IDError
+
+"""A collection of functions that are useful in widely different parts 
+of STEPS.
+"""
+
+
+import steps.error as serr
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
 def isValidID(id):
@@ -31,13 +42,14 @@ def isValidID(id):
     if match(r'[a-zA-Z_][a-zA-Z0-9_]*$', id) == None: return False
     return True
 
+
 def checkID(id):
     """Test whether id is a valid identifier for some named STEPS component.
 
     This function calls steps.model.isValidID() for the test. But whereas
-    isValidID() returns True or False, checkID() raises a ValueError
-    exception if the id is not valid. This makes it useful for use as an
-    assertion.
+    isValidID() returns True or False, checkID() raises a 
+    steps.error.ArgumentError exception if the id is not valid. This makes 
+    it useful for use as an assertion.
 
     Parameters:
         id
@@ -47,12 +59,14 @@ def checkID(id):
         The id itself.
 
     Raises:
-        steps.IDError
+        steps.error.ArgumentError
             If the id is not valid.
     """
     if not isValidID(id):
-        raise IDError, '\'%s\' is not a valid id.' % id
+        raise serr.ArgumentError, '\'%s\' is not a valid id.' % id
     return id
 
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 # END

@@ -1,11 +1,12 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # STEPS - STochastic Engine for Pathway Simulation
-# Copyright (C) 2005-2007 Stefan Wils.
+# Copyright (C) 2005-2007 Stefan Wils. All rights reserved.
+#
+# $Id$
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-"""This module defines all exceptions that can be raised during execution
-of STEPS.
+"""This module defines all exceptions that can be raised within STEPS code.
 
 We try to keep the number of distinct exception classes as limited as 
 possible, by keeping the scope of each exception class fairly general. 
@@ -14,11 +15,17 @@ exception.
 """
 
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+
 class Error(Exception):
     """Base exception class of the steps package.
     """
     def __init__(self, args):
         self.args = args
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
 class RuntimeError(Exception):
@@ -32,6 +39,19 @@ class RuntimeError(Exception):
         self.args = args
 
 
+class ArgumentError(RuntimeError):
+    """The user specified an argument to some STEPS function that somehow
+    doesn't make sense. 
+    
+    This is one of the most commonly raised exceptions.
+    """
+    def __init__(self, args):
+        self.args = args
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+
 class ProgramError(Exception):
     """Exceptions in this category typically imply that there
     is a bug. This bug could result from not having checked for
@@ -43,36 +63,13 @@ class ProgramError(Exception):
         self.args = args
 
 
-
-
-class IDError(Exception):
-    def __init__(self, args):
-        self.args = args
-class ModelError(Exception):
-    def __init__(self, args):
-        self.args = args
-class GeomError(Exception):
-    def __init__(self, args):
-        self.args = args
-
-
-
-
-
-
-class ArgumentError(RuntimeError):
-    """The user specified an argument to some STEPS function that really
-    doesn't make sense.
-    """
-    def __init__(self, args):
-        self.args = args
-
-
 class SolverCoreError(ProgramError):
     """An error occured while loading or working with a solver core module.
     """
     def __init__(self, args):
         self.args = args
 
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # END

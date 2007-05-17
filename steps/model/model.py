@@ -1,24 +1,38 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # STEPS - STochastic Engine for Pathway Simulation
 # Copyright (C) 2005-2007 Stefan Wils. All rights reserved.
+#
+# $Id$
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-import steps.model
+
+"""This module contains fundamental components for defining a STEPS model.
+"""
+
+
+import steps.error as serr
+import steps.tools as stools
+
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 
 class Model(object):
 
-    """The top-level container and management class for all model components.
+
+    """Top-level container and management class for all model components.
     """
 
+
     def __init__(self):
-        self.__species = { }
+        self.__specs = { }
         self.__volsys = { }
+
     
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
+
     
-    def _checkSpeciesID(self, id):
+    def _checkSpecID(self, id):
         """Check if a given id is valid and not yet used by another species.
         
         Parameters:
@@ -29,14 +43,13 @@ class Model(object):
             The id itself.
 
         Raises:
-            steps.error.IDError
-                If the ID is not valid.
-            steps.error.ModelError
-                If the ID is not unique.
+            steps.error.ArgumentError
+                If the ID is not valid, or not unique.
         """
-        steps.checkID(id)
-        if id in self.__species:
-            raise steps.ModelError, '\'%s\' is already in use.' % id
+        stools.checkID(id)
+        if id in self.__specs:
+            raise serr.ArgumentError, '\'%s\' is already in use.' % id
+
     
     def _checkVolsysID(self, id):
         """Check if a given id is valid and not yet used by another volsys.
@@ -54,26 +67,34 @@ class Model(object):
             steps.error.ModelError
                 If the ID is not unique.
         """
-        steps.checkID(id)
+        stools.checkID(id)
         if id in self.__volsys:
             raise steps.ModelError, '\'%s\' is already in use.' % id
 
+
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
 
-    def _handleSpeciesIDChange(self, oldid, newid):
-        if oldid == newid: return
-        self._checkSpeciesID(newid)
-        s = self.__species.pop(oldid)
-        self.__species[newid] = s
 
-    def _handleSpeciesAdd(self, species):
+    def _handleSpecIDChange(self, oldid, newid):
+        """
+        """
+        if oldid == newid: return
+        self._checkSpecID(newid)
+        s = self.__specs.pop(oldid)
+        self.__specs[newid] = s
+
+
+    def _handleSpecAdd(self, species):
+        """
+        """
         assert species._model == None, \
             '\'%s\' already assigned to a model.' % species.id
-        self._checkSpeciesID(species.id)
+        self._checkSpecID(species.id)
         species._model = self
-        self.__species[species.id] = species
+        self.__specs[species.id] = species
 
-    def delSpecies(self, species):
+
+    def delSpec(self, species):
         """Remove a species from the entire model.
 
         Note: this will also remove all model components that refer to the
@@ -82,7 +103,7 @@ class Model(object):
         Arguments:
             species
                 Can be a string referring to the id, or a 
-                steps.model.Species object.
+                steps.model.Spec object.
 
         Returns:
             None
@@ -91,13 +112,14 @@ class Model(object):
             steps.error.ModelError
                 If the id or species object cannot be resolved.
         """
-        species = self.getSpecies(species)
+        species = self.getSpec(species)
         for i, v in self.__volsys.iteritems(): 
-            v._handleSpeciesDelete(species)
-        self.__species.pop(species.id)
+            v._handleSpecDelete(species)
+        self.__specs.pop(species.id)
         species._handleSelfDelete()
 
-    def getSpecies(self, species):
+
+    def getSpec(self, species):
         """Resolve a species in the context of this model.
         
         This method can be used to retrieve a species object by its id, or to
@@ -105,13 +127,13 @@ class Model(object):
         
         Arguments:
             species
-                Can be a string or a steps.model.Species object. If it is a 
+                Can be a string or a steps.model.Spec object. If it is a 
                 string, the method will attempt to find the matching species 
-                object. If it is a steps.model.Species object, the method will
+                object. If it is a steps.model.Spec object, the method will
                 see if the object is part of this model.
 
         Returns:
-            A steps.model.Species object.
+            A steps.model.Spec object.
 
         Raises:
             steps.error.ModelError
@@ -120,30 +142,41 @@ class Model(object):
         """
         if isinstance(species, str):
             try:
-                species = self.__species[species]
+                species = self.__specs[species]
             except KeyError:
                 raise steps.ModelError, 'No species with id \'%s\'' % species
         if species._model != self:
-            raise steps.ModelError, 'Species is no part of this model.'
+            raise steps.ModelError, 'Spec is no part of this model.'
         return species
 
-    def getAllSpecies(self):
-        return self.__species.values()
+
+    def getAllSpec(self):
+        """
+        """
+        return self.__specs.values()
+
 
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
     
+    
     def _handleVolsysIDChange(self, oldid, newid):
+        """
+        """
         if oldid == newid: return
         self._checkVolsysID(newid)
         v = self.__volsys.pop(oldid)
         self.__volsys[newid] = v
 
+
     def _handleVolsysAdd(self, volsys):
+        """
+        """
         assert volsys._model == None, \
             '\'%s\' already assigned to a model.' % volsys.id
         self._checkVolsysID(volsys.id)
         volsys._model = self
         self.__volsys[volsys.id] = volsys
+
 
     def delVolsys(self, volsys):
         """Remove a volume system from the entire model.
@@ -163,6 +196,7 @@ class Model(object):
         volsys = self.getVolsys(volsys)
         self.__volsys.pop(volsys.id)
         volsys._handleSelfDelete()
+
         
     def getVolsys(self, volsys):
         """Resolve a volume system in the context of this model.
@@ -193,19 +227,101 @@ class Model(object):
         if volsys._model != self:
             raise steps.ModelError, 'Volsys is no part of this model.'
         return volsys
+
         
     def getAllVolsys(self):
+        """
+        """
         return self.__volsys.values()
+        
         
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
 
+
     def copy(self):
+        """
+        """
         m = steps.model.Model()
-        for id, species in self.__species:
+        for id, species in self.__specs:
             species.copy(m)
         for id, volsys in self.__volsys:
             volsys.copy(m)
         return m
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+
+class Spec(object):
+
+
+    """
+    """
+
+    
+    def __init__(self, id, model):
+        """
+        """
+        self._model = None
+        self.__id = stools.checkID(id)
+        try:
+            model._handleSpecAdd(self)
+        except:
+            self._model = None
+            raise
+        assert self._model != None, 'Species not assigned to model.'
+
+
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
+
+
+    def _handleSelfDelete(self):
+        """
+        """
+        self._model = None
+
+
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
+
+
+    def getID(self):
+        """
+        """
+        return self.__id
+
+    def setID(self, id):
+        """
+        """
+        assert self._model != None, 'Species not assigned to model.'
+        if id == self.__id: return
+        # The following might raise an exception, e.g. if the id is not
+        # valid or not unique.
+        self._model._handleSpecIDChange(self.__id, id)
+        self.__id = id
+
+    id = property(getID, setID)
+
+
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
+
+
+    def getModel(self):
+        """
+        """
+        return self._model
+
+    model = property(getModel)
+
+
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
+
+
+    def copy(self, model):
+        """
+        """
+        assert model != None
+        s = steps.model.Spec(self.id, model)
+
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 

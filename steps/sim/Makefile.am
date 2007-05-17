@@ -1,8 +1,9 @@
-# ./steps/sim/Makefile.am
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# STEPS - STochastic Engine for Pathway Simulation
+# Copyright (C) 2005-2007 Stefan Wils. All rights reserved.
 #
-# Process this file with automake to produce Makefile.in
-
 # $Id$
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 @SET_MAKE@
 

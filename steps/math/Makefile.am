@@ -1,22 +1,24 @@
-## ./steps/math/Makefile.am
-##
-## Process this file with automake to produce Makefile.in
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# STEPS - STochastic Engine for Pathway Simulation
+# Copyright (C) 2005-2007 Stefan Wils. All rights reserved.
+#
+# $Id$
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-## $Id$
-
-## Set $MAKE if necessary.
+# Set $MAKE if necessary.
 @SET_MAKE@
 
-## VPATH support.
+# VPATH support.
 srcdir = @srcdir@
 VPATH = @srcdir@
 
-## Headers that should be included in the distribution and installed.
+# Headers that should be included in the distribution and installed.
 pkginclude_HEADERS = \
     aabbox3.hpp \
     accumulate.hpp \
     color.hpp \
     constants.hpp \
+    doxygen.hpp \
     geometry.hpp \
     iota.hpp \
     linalg.hpp \
@@ -26,12 +28,12 @@ pkginclude_HEADERS = \
     tools.hpp \
     vector3.hpp
 
-## Compiler flags.
+# Compiler flags.
 AM_CXXFLAGS = \
 	-I$(top_srcdir)
 
-## Files that should be cleaned when building a distribution.
+# Files that should be cleaned when building a distribution.
 distclean-local:
 	-rm -rf .DS_Store *~ *.bak
     
-## END
+# END

@@ -1,15 +1,28 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# STEPS - STochastic Engine for Pathway Simulation
+# Copyright (C) 2005-2007 Stefan Wils. All rights reserved.
+#
+# $Id$
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+
+"""
+"""
+
+
+from steps.geom import Geom
+from steps.geom import Comp
 from steps.model import Model
 from steps.model import Reaction
 from steps.model import Species
 from steps.model import Volsys
 
-from steps.geom import Geom
-from steps.geom import Comp
-
 import steps.rng
-
 import steps.sim.wmdirect
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 
 def model():
     mdl = Model()
@@ -31,13 +44,18 @@ def geom():
     return gm
     
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+
 class wmdirect(object):
+
 
     def __init__(self):
         self.rng = steps.rng.create('mt19937', 512)
         self.model = model()
         self.geom = geom()
         self.sim = steps.sim.wmdirect.WMDirect(self.model, self.geom, self.rng)
+
     
     def iterate(self, seed, dt, maxt):
         self.rng.initialize(seed)
@@ -68,6 +86,12 @@ class wmdirect(object):
             ys.append(self.sim.getCompCount('comp', 'Y'))
             
         return (times, xs, ys)
+
     
     def inter(self):
         pass
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# END
