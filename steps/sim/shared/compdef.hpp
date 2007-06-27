@@ -79,6 +79,14 @@ public:
     
     ////////////////////////////////////////////////////////////////////////
     
+    double vol(void) const
+    { return pVolume; }
+    
+    void setVol(double const & vol)
+    { pVolume = vol; }
+    
+    ////////////////////////////////////////////////////////////////////////
+    
     /// Gets called when the definition of all components in the entire state
     /// has finished.
     void finalSetup(void);

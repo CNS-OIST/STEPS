@@ -16,7 +16,9 @@ VPATH = @srcdir@
 python_steps_geomdir = $(pythondir)/steps/geom
 python_steps_geom_PYTHON = \
     __init__.py \
-    core.py 
+    core.py \
+    distmesh3.py \
+    tetmesh.py
     
 # Files that should be cleaned when building a distribution.
 distclean-local:

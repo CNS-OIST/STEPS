@@ -21,6 +21,7 @@ SUBDIRS	= \
     rng \
     sim \
     tests \
+    thirdparty \
     .
 
 # Python package.

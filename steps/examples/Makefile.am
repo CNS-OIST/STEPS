@@ -17,7 +17,8 @@ steps_examplesdir = $(pythondir)/steps/examples
 steps_examples_PYTHON = \
     __init__.py \
     lotka_volterra.py \
-    rev_isomer.py
+    rev_isomer.py \
+    virinf.py
     
 # Files that should be cleaned when building a distribution.
 distclean-local:

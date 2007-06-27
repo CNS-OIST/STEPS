@@ -25,9 +25,26 @@ class Model(object):
 
 
     def __init__(self):
+        """Initialize the Model object.
+        """
         self.__specs = { }
         self.__volsys = { }
 
+
+    def deepcopy(self, visit):
+        """Create a deep copy of the Model object, for use with standard
+        module 'copy'.
+        
+        Deep copy means that not just the references, but all components
+        belonging to the Model object themselves are copied recursively.
+        """
+        m = steps.model.Model()
+        for id, spec in self.__specs.iteritems():
+            spec._deepcopy(m)
+        for id, volsys in self.__volsys.iteritems():
+            volsys._deepcopy(m)
+        return m
+        
     
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
 
@@ -62,14 +79,12 @@ class Model(object):
             The id itself.
 
         Raises:
-            steps.error.IDError
-                If the ID is not valid.
-            steps.error.ModelError
-                If the ID is not unique.
+            steps.error.ArgumentError
+                If the ID is not valid, or not unique.
         """
         stools.checkID(id)
         if id in self.__volsys:
-            raise steps.ModelError, '\'%s\' is already in use.' % id
+            raise serr.ArgumentError, '\'%s\' is already in use.' % id
 
 
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
@@ -109,7 +124,7 @@ class Model(object):
             None
 
         Raises:
-            steps.error.ModelError
+            steps.error.ArgumentError
                 If the id or species object cannot be resolved.
         """
         species = self.getSpec(species)
@@ -136,7 +151,7 @@ class Model(object):
             A steps.model.Spec object.
 
         Raises:
-            steps.error.ModelError
+            steps.error.ArgumentError
                 If the id cannot be resolved, or if the species object does
                 not belong to this model.
         """
@@ -144,13 +159,14 @@ class Model(object):
             try:
                 species = self.__specs[species]
             except KeyError:
-                raise steps.ModelError, 'No species with id \'%s\'' % species
+                raise serr.ArgumentError, \
+                    'No species with id \'%s\'' % species
         if species._model != self:
-            raise steps.ModelError, 'Spec is no part of this model.'
+            raise serr.ArgumentError, 'Spec is no part of this model.'
         return species
 
 
-    def getAllSpec(self):
+    def getAllSpecs(self):
         """
         """
         return self.__specs.values()
@@ -215,7 +231,7 @@ class Model(object):
             A steps.model.Volsys object.
 
         Raises:
-            steps.error.ModelError
+            steps.error.ArgumentError
                 If the id cannot be resolved, or if the volsys object does
                 not belong to this model.
         """
@@ -223,9 +239,9 @@ class Model(object):
             try:
                 volsys = self.__volsys[volsys]
             except KeyError:
-                raise steps.ModelError, 'No volsys with id \'%s\'' % volsys
+                raise serr.ArgumentError, 'No volsys with id \'%s\'' % volsys
         if volsys._model != self:
-            raise steps.ModelError, 'Volsys is no part of this model.'
+            raise serr.ArgumentError, 'Volsys is no part of this model.'
         return volsys
 
         
@@ -233,20 +249,6 @@ class Model(object):
         """
         """
         return self.__volsys.values()
-        
-        
-    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
-
-
-    def copy(self):
-        """
-        """
-        m = steps.model.Model()
-        for id, species in self.__specs:
-            species.copy(m)
-        for id, volsys in self.__volsys:
-            volsys.copy(m)
-        return m
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -272,6 +274,13 @@ class Spec(object):
         assert self._model != None, 'Species not assigned to model.'
 
 
+    def _deepcopy(self, model):
+        """
+        """
+        assert model != None
+        s = steps.model.Spec(self.id, model)
+        
+        
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
 
 
@@ -311,16 +320,6 @@ class Spec(object):
         return self._model
 
     model = property(getModel)
-
-
-    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
-
-
-    def copy(self, model):
-        """
-        """
-        assert model != None
-        s = steps.model.Spec(self.id, model)
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

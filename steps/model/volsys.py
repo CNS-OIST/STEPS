@@ -10,7 +10,8 @@
 """
 
 
-import steps.model
+import steps.error as serr
+import steps.tools as stools
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -25,8 +26,8 @@ class Volsys(object):
 
     def __init__(self, id, model):
         self._model = None
-        self.__id = steps.checkID(id)
-        self.__reactions = { }
+        self.__id = stools.checkID(id)
+        self.__reacs = { }
         try:
             model._handleVolsysAdd(self)
         except:
@@ -35,30 +36,39 @@ class Volsys(object):
         assert self._model != None, 'Volsys not assigned to model.'
 
 
+    def _deepcopy(self, model):
+        """
+        """
+        assert model != None
+        v = steps.model.Volsys(self.id, model)
+        for id, reac in self.__reacs.iteritems():
+            reac._deepcopy(v)
+            
+            
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
 
 
     def _handleSelfDelete(self):
         """
         """
-        for i, r in self.__reactions: self.delReaction(r)
+        for i, r in self.__reacs: self.delReac(r)
         self._model = None
 
 
-    def _handleSpeciesDelete(self, species):
+    def _handleSpecDelete(self, spec):
         """
         """
         reacts = [ ]
-        for i, r in self.__reactions.iteritems(): 
-            if (species in r.lhs) or (species in r.rhs):
+        for i, r in self.__reacs.iteritems(): 
+            if (spec in r.lhs) or (spec in r.rhs):
                 reacts.append(r)
-        for r in reacts: self.delReaction(r)
+        for r in reacts: self.delReac(r)
 
 
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
 
 
-    def _checkReactionID(self, id):
+    def _checkReacID(self, id):
         """Check if a given id is valid and not yet used by another reaction.
 
         Parameters:
@@ -69,14 +79,12 @@ class Volsys(object):
             The id itself.
 
         Raises:
-            steps.error.IDError
-                If the ID is not valid.
-            steps.error.ModelError
-                If the ID is not unique.
+            steps.error.ArgumentError
+                If the ID is not valid or unique.
         """
-        steps.checkID(id)
-        if id in self.__reactions:
-            raise steps.ModelError, '\'%s\' is already in use.' % id
+        stools.checkID(id)
+        if id in self.__reacs:
+            raise serr.ArgumentError, '\'%s\' is already in use.' % id
 
 
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
@@ -114,46 +122,46 @@ class Volsys(object):
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
 
 
-    def _handleReactionIDChange(self, oldid, newid):
+    def _handleReacIDChange(self, oldid, newid):
         """
         """
         if oldid == newid: return
-        self._checkReactionID(newid)
-        r = self.__reactions.pop(oldid)
-        self.__reactions[newid] = v
+        self._checkReacID(newid)
+        r = self.__reacs.pop(oldid)
+        self.__reacs[newid] = v
 
 
-    def _handleReactionAdd(self, reaction):
+    def _handleReacAdd(self, reaction):
         """
         """
         assert reaction._volsys == None, \
             '\'%s\' already assigned to a volsys.' % reaction.id
-        self._checkReactionID(reaction.id)
+        self._checkReacID(reaction.id)
         reaction._volsys = self
-        self.__reactions[reaction.id] = reaction
+        self.__reacs[reaction.id] = reaction
 
 
-    def delReaction(self, reaction):
+    def delReac(self, reaction):
         """Remove a reaction from the volume system.
 
         Arguments:
             reaction
                 Can be a string referring to the reaction's id, or a 
-                steps.model.Reaction object.
+                steps.model.Reac object.
 
         Returns:
             None
 
         Raises:
-            steps.error.ModelError
+            steps.error.ArgumentError
                 If the id or reaction object cannot be resolved.
         """
-        reaction = self.getReaction(reaction)
-        self.__reactions.pop(reaction.id)
+        reaction = self.getReac(reaction)
+        self.__reacs.pop(reaction.id)
         reaction._handleSelfDelete()
 
 
-    def getReaction(self, reaction):
+    def getReac(self, reaction):
         """Resolve a reaction rule in the context of this volsys.
 
         This method can be used to retrieve a reaction object by its
@@ -162,66 +170,54 @@ class Volsys(object):
 
         Arguments:
             reaction
-                Can be a string or a steps.model.Reaction object. If it is a
+                Can be a string or a steps.model.Reac object. If it is a
                 string, the method will attempt to find the matching reaction
-                object. If it is a steps.model.Reaction object, the method 
+                object. If it is a steps.model.Reac object, the method 
                 will see if the object is part of this volsys.
 
         Returns:
-            A steps.model.Reaction object.
+            A steps.model.Reac object.
 
         Raises:
-            steps.error.ModelError
+            steps.error.ArgumentError
                 If the id cannot be resolved, or if the reaction object does
                 not belong to this model.
         """
         if isinstance(reaction, str):
             try:
-                reaction = self.__reactions[reaction]
+                reaction = self.__reacs[reaction]
             except KeyError:
-                raise steps.ModelError, \
+                raise serr.ArgumentError, \
                     'No reaction with id \'%s\'' % reaction
         if reaction._volsys != self:
-            raise steps.ModelError, "Reaction is no part of this volsys."  
+            raise steps.ModelError, "Reac is no part of this volsys."  
         return reaction
     
 
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
 
 
-    def getAllReactions(self):
+    def getAllReacs(self):
         """Return a list of all reactions defined in this volume system.
         """
-        return self.__reactions.values()
+        return self.__reacs.values()
 
 
-    def getAllSpecies(self):
+    def getAllSpecs(self):
         """Create a list of all species involved in this volume system. The
         list contains no duplicates but is not ordered in any way.
         """
         s = set()
-        for id, r in self.__reactions.iteritems():
-            r = self.getReaction(r)
-            s = s.union(r.getAllSpecies())
+        for id, r in self.__reacs.iteritems():
+            r = self.getReac(r)
+            s = s.union(r.getAllSpecs())
         return list(s)
-    
-    
-    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
-
-    
-    def copy(self, model):
-        """
-        """
-        assert model != None
-        v = steps.model.Volsys(self.id, model)
-        for id, reaction in self.__reactions.iteritems():
-            reaction.copy(v)
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-class Reaction(object):
+class Reac(object):
 
 
     """
@@ -232,9 +228,9 @@ class Reaction(object):
         """Initialize the object.
         """
         self._volsys = None
-        self.__id = steps.checkID(id)
+        self.__id = stools.checkID(id)
         try:
-            volsys._handleReactionAdd(self)
+            volsys._handleReacAdd(self)
         except:
             self._volsys = None
             raise
@@ -244,14 +240,22 @@ class Reaction(object):
         if 'lhs' in params: self.lhs = params['lhs']
         self.__rhs = [ ]
         if 'rhs' in params: self.rhs = params['rhs']
-        self._unidir = False
-        if 'unidir' in params: self.unidir = params['unidir']
-        self._kf = 0.0
-        if 'kf' in params: self.kf = params['kf']
-        self._kb = 0.0
-        if 'kb' in params: self.kb = params['kb']
+        self._kcst = 0.0
+        if 'kcst' in params: self.kcst = params['kcst']
 
-
+    
+    def _deepcopy(self, volsys):
+        """
+        """
+        assert volsys != None
+        r = steps.model.Reac(self.id, volsys)
+        left = map(self.model.Spec.getID, self.__lhs)
+        r.lhs = left
+        right = map(self.model.Spec.getID, self.__rhs)
+        r.rhs = right
+        r.kcst = self.kcst
+    
+    
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
 
 
@@ -278,7 +282,7 @@ class Reaction(object):
         if id == self.__id: return
         # The following might raise an exception, e.g. if the id is not
         # valid or not unique.
-        self._volsys._handleReactionIDChange(self.__id, id)
+        self._volsys._handleReacIDChange(self.__id, id)
         self.__id = id
 
     id = property(getID, setID)
@@ -318,9 +322,8 @@ class Reaction(object):
         assert self._volsys != None
         # Turn into a list.
         if not isinstance(lhs, list): lhs = [lhs]
-        try: lhs = map(self.model.getSpecies, lhs)
-        except: pass
-        else: self.__lhs = lhs
+        lhs = map(self.model.getSpec, lhs)
+        self.__lhs = lhs
 
     lhs = property(getLHS, setLHS)
 
@@ -337,9 +340,8 @@ class Reaction(object):
         assert self._volsys != None
         # Turn into list.
         if not isinstance(rhs, list): rhs = [rhs]
-        try: rhs = map(self.model.getSpecies, rhs)
-        except: pass
-        else: self.__rhs = rhs
+        rhs = map(self.model.getSpec, rhs)
+        self.__rhs = rhs
 
     rhs = property(getRHS, setRHS)
 
@@ -355,48 +357,32 @@ class Reaction(object):
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
 
 
-    def getK(self):
+    def getKcst(self):
         """
         """
-        return self._k
+        return self._kcst
 
-    def setK(self, k):
+    def setKcst(self, kcst):
         """
         """
-        k = float(k)
-        if k < 0.0: raise ValueError, 'Rate constant must be >= 0.0'
-        self._k = k
+        kcst = float(kcst)
+        if kcst < 0.0: 
+            raise serr.ArgumentError, 'Rate constant must be >= 0.0'
+        self._kcst = kcst
 
-    k = property(getK, setK)
+    kcst = property(getKcst, setKcst)
 
 
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
 
 
-    def getAllSpecies(self):
+    def getAllSpecs(self):
         """Create a list of all species involved in this reaction, on both
         the left- and righthand side. The list contains no duplicate members
         but is not ordered in any way.
         """
         s = set(self.__lhs)
         return list(s.union(self.__rhs))
-
-
-    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
-
-
-    def copy(self, volsys):
-        """
-        """
-        assert volsys != None
-        r = steps.model.Reaction(self.id, volsys)
-        left = map(self.model.Species.getID, self.__lhs)
-        r.lhs = left
-        right = map(self.model.Species.getID, self.__rhs)
-        r.rhs = right
-        r.unidir = self.unidir
-        r.kf = self.kf
-        r.kb = self.kb
         
         
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

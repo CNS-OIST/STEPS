@@ -13,8 +13,8 @@
 from steps.geom import Geom
 from steps.geom import Comp
 from steps.model import Model
-from steps.model import Reaction
-from steps.model import Species
+from steps.model import Reac
+from steps.model import Spec
 from steps.model import Volsys
 
 import steps.rng
@@ -26,13 +26,13 @@ import steps.sim.wmdirect
 
 def model():
     mdl = Model()
-    x = Species('X', mdl)
-    y = Species('Y', mdl)
+    x = Spec('X', mdl)
+    y = Spec('Y', mdl)
     vsys = Volsys('main', mdl)
-    rf = Reaction('Rf', vsys, lhs=[x], rhs=[y])
-    rb = Reaction('Rb', vsys, lhs=[y], rhs=[x])
-    rf.kf = 1
-    rb.kf = 1
+    rf = Reac('Rf', vsys, lhs=[x], rhs=[y])
+    rb = Reac('Rb', vsys, lhs=[y], rhs=[x])
+    rf.kcst = 1
+    rb.kcst = 1
     return mdl
 
 
@@ -40,7 +40,7 @@ def geom():
     gm = Geom()
     c = Comp('comp', gm)
     c.volsys = set(['main'])
-    c.volume = 1.6667e-21
+    c.vol = 1.6667e-21
     return gm
     
 
@@ -64,9 +64,6 @@ class wmdirect(object):
         
         self.sim.setCompCount('comp', 'X', 500)
         self.sim.setCompCount('comp', 'Y', 0)
-        self.sim.setCompVol('comp', 1.6667e-21)
-        self.sim.setCompReacK('comp', 'Rf', 1)
-        self.sim.setCompReacK('comp', 'Rb', 1)
         
         t = self.sim.time
         self.inter()

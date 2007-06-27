@@ -84,8 +84,10 @@ public:
     double **                   fReacKcsts;
     /// Scaled forward reaction constants.
     double **                   fReacCcsts;
+    double **                   fReacHs;
     double **                   fReacProps;
     uint **                     fReacFlags;
+    uint **                     fReacExtents;
     double *                    fCompVols;
     
     steps::rng::RNG *           fRNG;

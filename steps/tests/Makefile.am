@@ -12,12 +12,18 @@
 srcdir = @srcdir@
 VPATH = @srcdir@
 
+# Process subdirectories.
+SUBDIRS	= \
+    model \
+    sim \
+    .
+
 # Python modules in local packages.
 steps_testsdir = $(pythondir)/steps/tests
 steps_tests_PYTHON = \
     __init__.py \
+    test.py \
     test_misc.py \
-    test_model.py \
     tools.py
 
 # Files that should be cleaned when building a distribution.

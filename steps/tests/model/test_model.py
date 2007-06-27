@@ -5,15 +5,19 @@
 # $Id$
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+
 # Sets system path and provides common testing tools.
 # Call before other (STEPS-specific) import statements.
 import tools
 tools.add_steps_path()
 
+
 import unittest
 import steps.model
 
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 
 class ModelTestCase(unittest.TestCase):
 

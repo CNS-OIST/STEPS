@@ -156,7 +156,7 @@ void siEndReacDef(State * s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint siNewReac(State * s, char * name)
+uint siNewReac(State * s, char * name, double kcst)
 {
     assert(s != 0);
     assert(s->def()->mode() == StateDef::SETUP_REAC_MODE);
@@ -164,6 +164,7 @@ uint siNewReac(State * s, char * name)
     
     ReacDef * reac = s->def()->createReacDef(name);
     assert(reac != 0);
+    reac->setKcst(kcst);
     return reac->gidx();
 }
 
@@ -217,7 +218,7 @@ void siEndCompDef(State * s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint siNewComp(State * s, char * name)
+uint siNewComp(State * s, char * name, double vol)
 {
     assert(s != 0);
     assert(s->def()->mode() == StateDef::SETUP_COMP_MODE);
@@ -225,6 +226,7 @@ uint siNewComp(State * s, char * name)
     
     CompDef * comp = s->def()->createCompDef(name);
     assert(comp != 0);
+    comp->setVol(vol);
     return comp->gidx();
 }
 
@@ -340,6 +342,8 @@ void siRun(State * s, double endtime)
             assert(nval >= 0);
             s->fPoolCount[comp][pool] = static_cast<uint>(nval);
         }
+        // Update extent.
+        s->fReacExtents[comp][reac] += 1;
         
         // Update propensities for the selected reaction.
         CompUpd * cupd = cdef->updateReac(reac);
@@ -410,15 +414,16 @@ uint siGetCompCount(State * s, uint cidx, uint sidx)
 
 void siSetCompCount(State * s, uint cidx, uint sidx, uint n)
 {
+
     assert(s != 0);
     assert(s->def()->isValidComp(cidx));
     assert(s->def()->isValidSpec(sidx));
-    
+
     CompDef * cdef = s->def()->comp(cidx);
     uint l_sidx = cdef->specG2L(sidx);
     if (l_sidx == 0xFFFF) return;
     s->fPoolCount[cidx][l_sidx] = n;
-    
+
     // Recompute propensities.
     CompUpd * cupd = cdef->updateSpec(l_sidx);
     for (std::vector<uint>::const_iterator i = cupd->beginLReacs();

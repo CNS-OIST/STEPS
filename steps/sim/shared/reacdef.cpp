@@ -25,7 +25,7 @@ ReacDef::ReacDef(StateDef * sdef, uint gidx, std::string const & name)
 , pGIDX(gidx)
 , pName(name)
 , pOrder(0)
-, pKf(0.0)
+, pKcst(0.0)
 , pLHS(sdef->countSpecs())
 , pRHS(sdef->countSpecs())
 {

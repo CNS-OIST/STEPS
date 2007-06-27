@@ -301,7 +301,7 @@ class FuncCore(object):
                 When the solver core module does something wrong.
         """
         self._siBeginVarDef(self._state)
-        for s in model.getAllSpecies():
+        for s in model.getAllSpecs():
             sid = s.id
             sidx = self._siNewSpec(self._state, sid)
             if self._lut_specnames.has_key(sidx):
@@ -324,10 +324,10 @@ class FuncCore(object):
         """
         self._siBeginReacDef(self._state)
         for vsys in model.getAllVolsys():
-            for reac in vsys.getAllReactions():
+            for reac in vsys.getAllReacs():
                 # First, declare the reaction channel itself.
                 rid = reac.id
-                ridx = self._siNewReac(self._state, rid)
+                ridx = self._siNewReac(self._state, rid, reac.kcst)
                 if self._lut_reacnames.has_key(ridx):
                     raise serr.SolverCoreError, \
                         'When adding reaction \'%s\', solver ' + \
@@ -369,7 +369,7 @@ class FuncCore(object):
         for c in geom.getAllComps():
             # First, declare the compartment itself.
             cid = c.id
-            cidx = self._siNewComp(self._state, cid)
+            cidx = self._siNewComp(self._state, cid, c.vol)
             if self._lut_compnames.has_key(cidx):
                 raise serr.SolverCoreError, \
                     'When adding compartment \'%s\', solver ' + \
@@ -383,10 +383,10 @@ class FuncCore(object):
             for vsys in c.volsys:
                 # Find the Volsys object with the given name.
                 vsys = model.getVolsys(vsys)
-                for spec in vsys.getAllSpecies():
+                for spec in vsys.getAllSpecs():
                     self._siAddCompSpec(self._state, \
                         cidx, self._spec(spec.id))
-                for reac in vsys.getAllReactions():
+                for reac in vsys.getAllReacs():
                     self._siAddCompReac(self._state, \
                         cidx, self._reac(reac.id))
         self._siEndCompDef(self._state)
@@ -644,7 +644,7 @@ class FuncCore(object):
         """
         comp = self._comp(comp)
         spec = self._spec(spec)
-        c = self._siGetCompConc(self._state, conc, spec)
+        c = self._siGetCompConc(self._state, comp, spec)
         assert c >= 0.0, \
             'Concentration of \'%s\' in \'%s\' is negative (%f).' \
             % ( self._specName(spec), self._compName(comp), c )

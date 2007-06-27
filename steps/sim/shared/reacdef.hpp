@@ -46,6 +46,12 @@ public:
     uint order(void) const
     { return pOrder; }
 
+    double kcst(void) const
+    { return pKcst; }
+    
+    void setKcst(double const & k)
+    { pKcst = k; }
+
     ////////////////////////////////////////////////////////////////////////
     
     std::vector<uint>::const_iterator beginLHS(void) const
@@ -84,9 +90,11 @@ private:
     
     std::string                 pName;
     
+    /// The order of the reaction.
     uint                        pOrder;
     
-    double                      pKf;
+    /// Default macroscopic reaction constant.
+    double                      pKcst;
     
     std::vector<uint>           pLHS;
 

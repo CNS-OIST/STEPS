@@ -7,6 +7,7 @@
 
 // STL headers.
 #include <algorithm>
+#include <iostream>
 #include <iterator>
 #include <string>
 #include <vector>
@@ -108,7 +109,7 @@ void CompDef::finalSetup(void)
     }
     assert(cur == pL2GReac.size());
     
-    // For each reaction, build 
+    // For each reaction, build.
     pSpecUpd = new CompUpd[nspecies];
     pReacSpecDeps = new uint[nspecies * nreactions];
     pReacSpecUpds = new int[nspecies * nreactions];

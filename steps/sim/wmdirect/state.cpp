@@ -34,8 +34,10 @@ State::State(void)
 , fPoolFlags(0)
 , fReacKcsts(0)
 , fReacCcsts(0)
+, fReacHs(0)
 , fReacProps(0)
 , fReacFlags(0)
+, fReacExtents(0)
 , fCompVols(0)
 , pStateDef(0)
 {
@@ -53,15 +55,19 @@ State::~State(void)
         delete[] fPoolFlags[i];
         delete[] fReacKcsts[i];
         delete[] fReacCcsts[i];
+        delete[] fReacHs[i];
         delete[] fReacProps[i];
         delete[] fReacFlags[i];
+        delete[] fReacExtents[i];
     }
     delete[] fPoolCount;
     delete[] fPoolFlags;
     delete[] fReacKcsts;
     delete[] fReacCcsts;
+    delete[] fReacHs;
     delete[] fReacProps;
     delete[] fReacFlags;
+    delete[] fReacExtents;
     delete[] fCompVols;
        
     // Finally, delete the state definition.
@@ -78,8 +84,10 @@ void State::setup(void)
     fPoolFlags = new uint*[ncomps];
     fReacKcsts = new double*[ncomps];
     fReacCcsts = new double*[ncomps];
+    fReacHs    = new double*[ncomps];
     fReacProps = new double*[ncomps];
     fReacFlags = new uint*[ncomps];
+    fReacExtents = new uint*[ncomps];
     for (uint i = 0; i < ncomps; ++i)
     {
         CompDef * cdef = pStateDef->comp(i);
@@ -93,8 +101,10 @@ void State::setup(void)
         uint nreacs = cdef->countReacs();
         fReacKcsts[i] = new double[nreacs];
         fReacCcsts[i] = new double[nreacs];
+        fReacHs[i]    = new double[nreacs];
         fReacProps[i] = new double[nreacs];
         fReacFlags[i] = new uint[nreacs];
+        fReacExtents[i] = new uint[nreacs];
     }
     
     // Setup the compartment volumes.
@@ -117,6 +127,9 @@ void State::reset(void)
     {
         CompDef * cdef = pStateDef->comp(i);
         
+        // Set the volume.
+        fCompVols[i] = cdef->vol();
+        
         // Set pools to 0 molecules.
         uint nspecs = cdef->countSpecs();
         for (uint j = 0; j < nspecs; ++j) fPoolCount[i][j] = 0;
@@ -125,11 +138,21 @@ void State::reset(void)
         
         // Set propensities to 0.0.
         uint nreacs = cdef->countReacs();
-        for (uint j = 0; j < nreacs; ++j) fReacKcsts[i][j] = 0.0;
-        for (uint j = 0; j < nreacs; ++j) fReacCcsts[i][j] = 0.0;
-        for (uint j = 0; j < nreacs; ++j) fReacProps[i][j] = 0.0;
+        for (uint j = 0; j < nreacs; ++j) 
+        {
+            ReacDef * rdef = cdef->reac(j);
+            fReacKcsts[i][j] = rdef->kcst();
+            computeCcst(i, j);
+        }
+        for (uint j = 0; j < nreacs; ++j) 
+        {
+            fReacHs[i][j] = 0.0;
+            fReacProps[i][j] = 0.0;
+        }
         // Reset flags.
         for (uint j = 0; j < nreacs; ++j) fReacFlags[i][j] = ReacFlagDefault;
+        // Reset reaction extents.
+        for (uint j = 0; j < nreacs; ++j) fReacExtents[i][j] = 0;
     }
 }
 
@@ -137,21 +160,15 @@ void State::reset(void)
 
 void State::computeCcst(uint cidx, uint l_ridx)
 {
-//std::cout << "COMPUTE CCST\n";
     // Scaling base.
     double vscale = 1.0e3 * fCompVols[cidx] * smath::AVOGADRO;
-//std::cout << "vscale = " << vscale << std::endl;
     // Fetch order of reaction.
     uint g_ridx = def()->comp(cidx)->reacL2G(l_ridx);
     int o1 = static_cast<int>(def()->reac(g_ridx)->order()) - 1;
-//std::cout << "o1 = " << o1 << std::endl;
     if (o1 < 0) o1 = 0;
     vscale = pow(vscale, static_cast<double>(-o1));
-//std::cout << "vscale' = " << vscale << std::endl;
     // Set the order-dependent scaled reaction constant.
-//std::cout << "Kf = " << fReacKcsts[cidx][l_ridx] << std::endl;
     fReacCcsts[cidx][l_ridx] = fReacKcsts[cidx][l_ridx] * vscale;
-//std::cout << "Cf = " << fReacCcsts[cidx][l_ridx] << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -210,12 +227,9 @@ void State::computeReacProp(uint cidx, uint l_ridx)
         }
     }
 
-//std::cout << "h_mu = " << h_mu << std::endl;
-//std::cout << "c_mu = " << fReacCcsts[cidx][l_ridx] << std::endl;
-
     // Multiply with scaled reaction constant.
+    fReacHs[cidx][l_ridx] = h_mu;
     fReacProps[cidx][l_ridx] = h_mu * fReacCcsts[cidx][l_ridx];
-//std::cout << "a_mu = " << fReacProps[cidx][l_ridx] << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

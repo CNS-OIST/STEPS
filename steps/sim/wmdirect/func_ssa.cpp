@@ -39,44 +39,75 @@ uint siGetNSteps(State * s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double siGetA0(State * s, uint cidx, uint ridx)
+double siGetA0(State * s)
 {
-    return 0.0;
+    assert(s != 0);
+    return s->computeZeroProp();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double siGetCompReacC(State * s, uint cidx, uint ridx)
 {
-    return 0.0;
+    assert(s != 0);
+    assert(s->def()->isValidComp(cidx) == true);
+    assert(s->def()->isValidReac(ridx) == true);
+    
+    uint l_ridx = s->def()->comp(cidx)->reacG2L(ridx);
+    if (l_ridx == 0xFFFF) return 0.0;
+    return s->fReacCcsts[cidx][l_ridx];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double siGetCompReacH(State * s, uint cidx, uint ridx)
 {
-    return 0.0;
+    assert(s != 0);
+    assert(s->def()->isValidComp(cidx) == true);
+    assert(s->def()->isValidReac(ridx) == true);
+    
+    uint l_ridx = s->def()->comp(cidx)->reacG2L(ridx);
+    if (l_ridx == 0xFFFF) return 0.0;
+    return s->fReacHs[cidx][l_ridx];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double siGetCompReacA(State * s, uint cidx, uint ridx)
 {
-    return 0.0;
+    assert(s != 0);
+    assert(s->def()->isValidComp(cidx) == true);
+    assert(s->def()->isValidReac(ridx) == true);
+    
+    uint l_ridx = s->def()->comp(cidx)->reacG2L(ridx);
+    if (l_ridx == 0xFFFF) return 0.0;
+    return s->fReacProps[cidx][l_ridx];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint siGetCompReacExtent(State * s, uint cidx, uint ridx)
 {
-    return 0;
+    assert(s != 0);
+    assert(s->def()->isValidComp(cidx) == true);
+    assert(s->def()->isValidReac(ridx) == true);
+    
+    uint l_ridx = s->def()->comp(cidx)->reacG2L(ridx);
+    if (l_ridx == 0xFFFF) return 0.0;
+    return s->fReacExtents[cidx][l_ridx];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint siResetCompReacExtent(State * s, uint cidx, uint ridx)
+void siResetCompReacExtent(State * s, uint cidx, uint ridx)
 {
-    return 0;
+    assert(s != 0);
+    assert(s->def()->isValidComp(cidx) == true);
+    assert(s->def()->isValidReac(ridx) == true);
+    
+    uint l_ridx = s->def()->comp(cidx)->reacG2L(ridx);
+    if (l_ridx == 0xFFFF) return 0.0;
+    s->fReacExtents[cidx][l_ridx] = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

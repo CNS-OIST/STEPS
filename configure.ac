@@ -103,11 +103,6 @@ dnl AC_SUBST(LIBLTDL)
 dnl Run configure in the libltdl subdirectory.
 dnl AC_CONFIG_SUBDIRS(libltdl)
 
-dnl I hate autotools. I hate autotools. I hate autotools.
-dnl I hate autotools. I hate autotools. I hate autotools.
-dnl I hate autotools. I hate autotools. I hate autotools.
-dnl I hate autotools. I hate autotools. I hate autotools.
-
 dnl Perform a build-time sanity check.
 AM_SANITY_CHECK
 
@@ -269,11 +264,15 @@ steps/geom/Makefile
 steps/math/Makefile
 steps/model/Makefile
 steps/rng/Makefile
-steps/sim/Makefile
 steps/sim/shared/Makefile
 steps/sim/swiginf/Makefile
 steps/sim/wmdirect/Makefile
+steps/sim/Makefile
+steps/tests/model/Makefile
+steps/tests/sim/Makefile
 steps/tests/Makefile
+steps/thirdparty/qhull/Makefile
+steps/thirdparty/Makefile
 steps/Makefile
 thirdparty/Makefile
 Makefile

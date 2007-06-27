@@ -46,13 +46,13 @@ extern uint     siNewSpec(State * s, char * name);
 
 extern void     siBeginReacDef(State * s);
 extern void     siEndReacDef(State * s);
-extern uint     siNewReac(State * s, char * name);
+extern uint     siNewReac(State * s, char * name, double kcst);
 extern void     siAddReacLHS(State * s, uint ridx, uint sidx);
 extern void     siAddReacRHS(State * s, uint ridx, uint sidx);
 
 extern void     siBeginCompDef(State * s);
 extern void     siEndCompDef(State * s);
-extern uint     siNewComp(State * s, char * name);
+extern uint     siNewComp(State * s, char * name, double vol);
 extern void     siAddCompSpec(State * s, uint cidx, uint sidx);
 extern void     siAddCompReac(State * s, uint cidx, uint ridx);
 

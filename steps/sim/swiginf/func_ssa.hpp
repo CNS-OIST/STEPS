@@ -33,7 +33,7 @@ extern double   siStep(State * s);
 
 extern uint     siGetNSteps(State * s);
 
-extern double   siGetA0(State * s, uint cidx, uint ridx);
+extern double   siGetA0(State * s);
 
 ////////////////////////////////////////////////////////////////////////////////
 // SOLVER STATE ACCESS: 
@@ -45,7 +45,7 @@ extern double   siGetCompReacH(State * s, uint cidx, uint ridx);
 extern double   siGetCompReacA(State * s, uint cidx, uint ridx);
 
 extern uint     siGetCompReacExtent(State * s, uint cidx, uint ridx);
-extern uint     siResetCompReacExtent(State * s, uint cidx, uint ridx);
+extern void     siResetCompReacExtent(State * s, uint cidx, uint ridx);
 
 ////////////////////////////////////////////////////////////////////////////////
 
