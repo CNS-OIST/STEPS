@@ -461,20 +461,26 @@ class Patch(object):
 
     """Base class for patch objects.
     
-    It provides basic functionality and data that is shared by all derived
-    classes:
+    A patch is a piece of 2D surface surrounding (part of) a 3D compartment.
+    This base class provides basic functionality and descriptive data that 
+    is shared by all types of patches ('type' meaning different types of 
+    geometric descriptions):
+    
         * Getting and setting a valid patch ID string, and handling
           the interaction with the container object.
+          
         * Getting (and at least in this base class also setting) the total
           area of the patch.
-        * The surface systems implemented in the patches.
-        * References to inside/outside objects.
+          
+        * The surface systems associated with the patches.
+        
+        * References to inside/outside compartments.
     
     This base class can be used directly with well-mixed solvers.
     """
     
     
-    def __init__(self, id, container, **params):
+    def __init__(self, id, container, icomp, ocomp = None):
         """
         """
         self._container = None
@@ -487,15 +493,17 @@ class Patch(object):
         assert self._container != None, \
             'Patch not assigned to geometry container.'
 
+        # Needs to be re-written... what if it fails???
+        self._icomp = None
+        self.icomp = icomp
+        self._ocomp = None
+        self.ocomp = ocomp
+
         # Parse optional arguments.
         self._surfsys = set()
         if 'surfsys' in params: self.addSurfsys(params['surfsys'])
         self._area = 0.0
         if 'area' in params: self.area = params['area']
-        self._icomp = None
-        if 'icomp' in params: self.icomp = params['icomp']
-        self._ocomp = None
-        if 'ocomp' in params: self.ocomp = params['ocomp']
 
 
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
@@ -630,11 +638,17 @@ class Patch(object):
         """
         return self._icomp
     
-    def setIComp(self, icomp):
+    
+    def _setIComp(self, icomp):
         """Set the inside compartment.
         
         Raises:
             steps.error.ArgumentError
+        
+        Notes:
+            Should only be called during setup of the patch. Changing the
+            internal compartment of a patch should not be changed at a later
+            point in time.
         """
         # Do some tests on the specified compartment.
         if icomp.container != self.container:
@@ -651,7 +665,8 @@ class Patch(object):
         self._icomp = icomp
         self._icomp._addOPatch(self)
     
-    icomp = property(getIComp, setIComp)
+    
+    icomp = property(getIComp)
     
     
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
@@ -664,11 +679,17 @@ class Patch(object):
         """
         return self._ocomp
     
-    def setOComp(self, ocomp):
+    
+    def _setOComp(self, ocomp):
         """Set the outside compartment.
         
         Raises:
             steps.error.ArgumentError
+        
+        Notes:
+            Should only be called during setup of the patch. Changing the
+            outer compartment of a patch should not be changed at a later
+            point in time.
         """
         # Do some tests on the specified compartment.
         if ocomp.container != self.container:
@@ -685,7 +706,8 @@ class Patch(object):
         self._ocomp = ocomp
         self._ocomp._addIPatch(self)
     
-    ocomp = property(getOComp, setOComp)
+    
+    ocomp = property(getOComp)
     
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
