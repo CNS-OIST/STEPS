@@ -14,6 +14,7 @@ VPATH = @srcdir@
 
 # Process subdirectories.
 SUBDIRS	= \
+    distmesh \
     examples \
     geom \
     math \

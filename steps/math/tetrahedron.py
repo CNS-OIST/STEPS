@@ -103,36 +103,8 @@ def toBarycentric(tcp, p):
     return ( x[0], x[1], x[2], 1.0 - x.sum() )
 
 
-def insideExcl(tcp, p):
-    """Test whether a 3D point is inside a tetrahedron (not including the
-    tetrahedron's edges, in other words, strictly inside).
-    
-    This method (currently) operates on a single point, unlike other 
-    methods in this module.
-    
-    PARAMETERS:
-        tcp
-            Tetrahedron corner points (a 4*3 array).
-        p
-            The point to test.
-    
-    RETURNS:
-        A boolean value.
-    
-    RAISES:
-        ---
-    """
-    bc = toBarycentric(tcp, p)
-    if bc[0] <= 0.0: return False
-    if bc[1] <= 0.0: return False
-    if bc[2] <= 0.0: return False
-    if bc[3] <= 0.0: return False
-    return True
-
-
-def insideIncl(tcp, p):
-    """Test whether a 3D point is inside a tetrahedron (including the
-    tetrahedron's edges).
+def inside(tcp, p):
+    """Test whether a 3D point is inside a tetrahedron.
     
     This method (currently) operates on a single point, unlike other 
     methods in this module.

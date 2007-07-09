@@ -259,6 +259,7 @@ dnl ----------------------------------------------------------------------------
 AC_OUTPUT([
 doc/Makefile
 extras/Makefile
+steps/distmesh/Makefile
 steps/examples/Makefile
 steps/geom/Makefile
 steps/math/Makefile

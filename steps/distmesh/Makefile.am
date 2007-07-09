@@ -13,11 +13,10 @@ srcdir = @srcdir@
 VPATH = @srcdir@
 
 # Python modules in local packages.
-python_steps_geomdir = $(pythondir)/steps/geom
-python_steps_geom_PYTHON = \
+python_steps_distmeshdir = $(pythondir)/steps/distmesh
+python_steps_distmesh_PYTHON = \
     __init__.py \
-    core.py \
-    tetmesh.py
+    distmesh3.py
     
 # Files that should be cleaned when building a distribution.
 distclean-local:
