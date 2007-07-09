@@ -27,7 +27,6 @@ pkginclude_HEADERS = \
     constants.hpp \
     doxygen.hpp \
     iota.hpp \
-    linalg.hpp \
     tools.hpp 
 
 # Compiler flags.
