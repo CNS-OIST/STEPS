@@ -42,14 +42,14 @@ class Container(object):
         """Check if a given id is valid and not yet used by another 
         compartment.
         
-        Parameters:
+        PARAMETERS:
             id
                 THe id that should be checked (must be a string).
         
-        Returns:
+        RETURNS:
             The id itself.
         
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 If the ID is not valid, or not unique.
         """
@@ -61,14 +61,14 @@ class Container(object):
     def _checkPatchID(self, id):
         """Check if a given id is valid and not yet used by another patch.
         
-        Parameters:
+        PARAMETERS:
             id
                 THe id that should be checked (must be a string).
         
-        Returns:
+        RETURNS:
             The id itself.
         
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 If the ID is not valid, or not unique.
         """
@@ -120,10 +120,10 @@ class Container(object):
                 compartment object. If it is a steps.geom.Comp object,
                 the method will see if the object is part of this model.
             
-        Returns:
+        RETURNS:
             A steps.geom.Comp object.
         
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 If the id cannot be resolved, or if the compartment object
                 does not belong to this model.
@@ -189,10 +189,10 @@ class Container(object):
                 patch object. If it is a steps.geom.Patch object,
                 the method will see if the object is part of this model.
             
-        Returns:
+        RETURNS:
             A steps.geom.Patch object.
         
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 If the id cannot be resolved, or if the patch object does
                 not belong to this model.
@@ -239,7 +239,7 @@ class Comp(object):
     def __init__(self, id, container, **params):
         """Initialize a compartment object.
         
-        Parameters:
+        PARAMETERS:
             id
                 The ID of the compartment.
             container
@@ -316,15 +316,15 @@ class Comp(object):
     def addVolsys(self, volsys):
         """Add a volume system to the compartment.
         
-        Parameters:
+        PARAMETERS:
             volsys
                 A string or steps.model.Volsys object, or some sequence
                 of such objects.
             
-        Returns:
+        RETURNS:
             ---
         
-        Raises:
+        RAISES:
             ---
         """
         # Turn the input thingy into a set.
@@ -340,15 +340,15 @@ class Comp(object):
     def delVolsys(self, volsys):
         """Remove a volume system from the compartment.
         
-        Parameters:
+        PARAMETERS:
             volsys
                 A string or steps.model.Volsys object, or some sequence of
                 such objects.
             
-        Returns:
+        RETURNS:
             ---
         
-        Raises:
+        RAISES:
             ---
         """
         # Turn the input thingy into a set.
@@ -552,15 +552,15 @@ class Patch(object):
     def addSurfsys(self, surfsys):
         """Add surface system(s) to the patch.
         
-        Parameters:
+        PARAMETERS:
             surfsys
                 A string or steps.model.Surfsys object, or some sequence
                 of such objects.
             
-        Returns:
+        RETURNS:
             ---
         
-        Raises:
+        RAISES:
             ---
         """
         # Turn the input thingy into a set.
@@ -576,15 +576,15 @@ class Patch(object):
     def delSurfsys(self, surfsys):
         """Remove surface system(s) from the patch.
         
-        Parameters:
+        PARAMETERS:
             surfsys
                 A string or steps.model.Surfsys object, or some sequence of
                 such objects.
             
-        Returns:
+        RETURNS:
             ---
         
-        Raises:
+        RAISES:
             ---
         """
         # Turn the input thingy into a set.
@@ -642,10 +642,10 @@ class Patch(object):
     def _setIComp(self, icomp):
         """Set the inside compartment.
         
-        Raises:
+        RAISES:
             steps.error.ArgumentError
         
-        Notes:
+        NOTES:
             Should only be called during setup of the patch. Changing the
             internal compartment of a patch should not be changed at a later
             point in time.
@@ -683,10 +683,10 @@ class Patch(object):
     def _setOComp(self, ocomp):
         """Set the outside compartment.
         
-        Raises:
+        RAISES:
             steps.error.ArgumentError
         
-        Notes:
+        NOTES:
             Should only be called during setup of the patch. Changing the
             outer compartment of a patch should not be changed at a later
             point in time.

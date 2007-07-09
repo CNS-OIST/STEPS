@@ -28,11 +28,11 @@ def isValidID(id):
     Examples of valid id's:
         a, _a, _a_, a000, adasf0, FSDaa9
 
-    Parameters:
+    PARAMETERS:
         id
             The string that will be tested.
 
-    Returns:
+    RETURNS:
         True
             If the id is valid.
         False
@@ -51,14 +51,14 @@ def checkID(id):
     steps.error.ArgumentError exception if the id is not valid. This makes 
     it useful for use as an assertion.
 
-    Parameters:
+    PARAMETERS:
         id
             The string that will be tested.
 
-    Returns:
+    RETURNS:
         The id itself.
 
-    Raises:
+    RAISES:
         steps.error.ArgumentError
             If the id is not valid.
     """

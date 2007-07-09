@@ -52,14 +52,14 @@ class Model(object):
     def _checkSpecID(self, id):
         """Check if a given id is valid and not yet used by another species.
         
-        Parameters:
+        PARAMETERS:
             id
                 The id that should be a checked (must be a string).
 
-        Returns:
+        RETURNS:
             The id itself.
 
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 If the ID is not valid, or not unique.
         """
@@ -71,14 +71,14 @@ class Model(object):
     def _checkVolsysID(self, id):
         """Check if a given id is valid and not yet used by another volsys.
 
-        Parameters:
+        PARAMETERS:
             id
                 The id that should be checked (must be a string).
 
-        Returns:
+        RETURNS:
             The id itself.
 
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 If the ID is not valid, or not unique.
         """
@@ -120,10 +120,10 @@ class Model(object):
                 Can be a string referring to the id, or a 
                 steps.model.Spec object.
 
-        Returns:
+        RETURNS:
             None
 
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 If the id or species object cannot be resolved.
         """
@@ -147,10 +147,10 @@ class Model(object):
                 object. If it is a steps.model.Spec object, the method will
                 see if the object is part of this model.
 
-        Returns:
+        RETURNS:
             A steps.model.Spec object.
 
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 If the id cannot be resolved, or if the species object does
                 not belong to this model.
@@ -202,10 +202,10 @@ class Model(object):
                 Can be a string referring to the id, or a 
                 steps.model.Volsys object.
 
-        Returns:
+        RETURNS:
             None
 
-        Raises:
+        RAISES:
             steps.error.ModelError
                 If the id or volsys object cannot be resolved.
         """
@@ -227,10 +227,10 @@ class Model(object):
                 object. If it is a steps.model.Volsys object, the method will 
                 see if the object is part of this model.
 
-        Returns:
+        RETURNS:
             A steps.model.Volsys object.
 
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 If the id cannot be resolved, or if the volsys object does
                 not belong to this model.

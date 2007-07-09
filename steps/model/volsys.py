@@ -71,14 +71,14 @@ class Volsys(object):
     def _checkReacID(self, id):
         """Check if a given id is valid and not yet used by another reaction.
 
-        Parameters:
+        PARAMETERS:
             id
                 The id that should be checked (must be a string).
 
-        Returns:
+        RETURNS:
             The id itself.
 
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 If the ID is not valid or unique.
         """
@@ -149,10 +149,10 @@ class Volsys(object):
                 Can be a string referring to the reaction's id, or a 
                 steps.model.Reac object.
 
-        Returns:
+        RETURNS:
             None
 
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 If the id or reaction object cannot be resolved.
         """
@@ -175,10 +175,10 @@ class Volsys(object):
                 object. If it is a steps.model.Reac object, the method 
                 will see if the object is part of this volsys.
 
-        Returns:
+        RETURNS:
             A steps.model.Reac object.
 
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 If the id cannot be resolved, or if the reaction object does
                 not belong to this model.

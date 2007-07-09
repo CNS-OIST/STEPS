@@ -35,10 +35,10 @@ class FuncCore(object):
     def _rsf(self, funcname):
         """Resolve a function, specified by funcname, in the solver module.
         
-        Returns:
+        RETURNS:
             A pointer to the function.
         
-        Raises:
+        RAISES:
             steps.error.SolverInterfaceError    
                 If the function name cannot be resolved.
         """
@@ -68,7 +68,7 @@ class FuncCore(object):
                 the core functionality, because even deterministic 
                 solvers might need random numbers for some tasks.
             
-        Raises:
+        RAISES:
             steps.error.SolverInterfaceError
                 If something went wrong with communicating with the solver 
                 core interface.
@@ -176,10 +176,10 @@ class FuncCore(object):
             spec
                 A reference to the species: the global index or its name.
         
-        Returns:
+        RETURNS:
             The global index of the species.
             
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 The species cannot be resolved.
         """
@@ -193,7 +193,7 @@ class FuncCore(object):
     def _specName(self, spec_gidx):
         """Return the name of some species, given its global index.
         
-        Raises:
+        RAISES:
             steps.error.ProgramError
                 When the global index does not exist.
         """
@@ -219,10 +219,10 @@ class FuncCore(object):
             spec
                 A reference to the reaction: the global index or its name.
         
-        Returns:
+        RETURNS:
             The global index of the reaction.
             
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 The reaction cannot be resolved.
         """
@@ -236,7 +236,7 @@ class FuncCore(object):
     def _reacName(self, reac_gidx):
         """Return the name of some reaction channel, given its global index.
         
-        Raises:
+        RAISES:
             steps.error.ProgramError
                 When the global index does not exist.
         """
@@ -262,10 +262,10 @@ class FuncCore(object):
             spec
                 A reference to the compartment: the global index or its name.
         
-        Returns:
+        RETURNS:
             The global index of the compartment.
         
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 The compartment cannot be resolved.
         """
@@ -279,7 +279,7 @@ class FuncCore(object):
     def _compName(self, comp_gidx):
         """Return the name of some compartment, given its global index.
         
-        Raises:
+        RAISES:
             steps.error.ProgramError
                 When the global index does not exist.
         """
@@ -296,7 +296,7 @@ class FuncCore(object):
     def _setupVars(self, model):
         """Add all field variables defined in the model to solver state.
         
-        Raises:
+        RAISES:
             steps.error.SolverCoreError
                 When the solver core module does something wrong.
         """
@@ -318,7 +318,7 @@ class FuncCore(object):
     def _setupReacs(self, model):
         """Add all reactions defined in the model to solver state.
         
-        Raises:
+        RAISES:
             steps.error.SolverCoreError
                 When the solver core module does something stoopid.
         """
@@ -361,7 +361,7 @@ class FuncCore(object):
                 systems made in the geom object must be resolvable in
                 the steps.model.Model object.
         
-        Raises:
+        RAISES:
             steps.error.SolverCoreError
                 When the solver core module does something wrong.
         """
@@ -450,7 +450,7 @@ class FuncCore(object):
         When this time has been reached, the simulation is interrupted
         and control returns to the caller.
         
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 When the specified endtime is smaller than the current time.
         """
@@ -508,7 +508,7 @@ class FuncCore(object):
             vol
                 The volume (in m^3).
         
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 When a negative volume was specified.
         """
@@ -561,7 +561,7 @@ class FuncCore(object):
                 but gets rounded when a floating point number was
                 specified.
         
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 When a negative number was specified.
         """
@@ -613,7 +613,7 @@ class FuncCore(object):
             mass
                 The mass, specified in moles.
         
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 When a negative mass was specified.
         """
@@ -667,7 +667,7 @@ class FuncCore(object):
             mass
                 The concentration, in molar units.
         
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 When a negative concentration was specified.
         """
@@ -760,7 +760,7 @@ class FuncCore(object):
             k
                 The macroscopic reaction constant.
                 
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 When a negative constant was specified.
         """
@@ -860,7 +860,7 @@ class FuncSSA(FuncCore):
         a simulation step by step can substantially increase the relative 
         amount of overhead caused by coming back to the Python script.
         
-        Returns:
+        RETURNS:
             The current time of the simulation.
         """
         return self._siStep(self._state)

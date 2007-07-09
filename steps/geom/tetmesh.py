@@ -41,6 +41,7 @@ be performed in the following order:
 
 
 import numpy
+import scipy.io.mio as mio
 
 import steps.error as serr
 
@@ -91,7 +92,7 @@ class TetMesh(core.Container):
         - Triangle annotation: this is basically the Patch object that a 
           triangle belongs to.
     
-    Notes: 
+    NOTES: 
         - Keep in mind that these auxiliary tables take up extra memory!
         - Adding/deleting/moving node points after initiation is 
           currently not implemented.
@@ -99,7 +100,7 @@ class TetMesh(core.Container):
           not implemented.
         - Deleting triangles is currently not implemented.
     
-    See Also:
+    SEE ALSO:
     
         The docstring of module steps.geom.tetmesh, for a larger scale 
         overview of the role this class plays in representing tetrahedral
@@ -110,7 +111,7 @@ class TetMesh(core.Container):
     def __init__(self, pnts, tets, tris = None, **params):
         """Initialize a TetMesh object.
         
-        Parameters:
+        PARAMETERS:
             pnts
                 An X*3 array of floats, storing the coordinates of node points.
             tets
@@ -121,10 +122,10 @@ class TetMesh(core.Container):
                 nodes for triangles (i.e. special boundaries between or 
                 around tetrahedrons.
         
-        Returns:
+        RETURNS:
             ---
         
-        Raises:
+        RAISES:
             ---
         """
         # Call the initializer for the parent class.
@@ -169,7 +170,7 @@ class TetMesh(core.Container):
     def __set_tet_tet_neighbours(self):
         """Find neighbouring tetrahedrons.
         
-        Notes:
+        NOTES:
             - Internal function.
             - Might benefit from reimplementation in C++.
         """
@@ -236,7 +237,7 @@ class TetMesh(core.Container):
     def __set_tet_tri_neighbours(self, tri_idcs):
         """Resolve neighbouring tetrahedrons for a set of triangles.
         
-        Parameters:
+        PARAMETERS:
             tri_idcs
                 Indices of triangles whose neighbours should be resolved.
         """
@@ -352,7 +353,7 @@ class TetMesh(core.Container):
         """Get the minimal coordinate of the rectangular bounding box
         around the entire mesh.
         
-        Returns:
+        RETURNS:
             A tuple (x,y,z).
         """
         return ( self.__minx, self.__miny, self.__minz )
@@ -362,7 +363,7 @@ class TetMesh(core.Container):
         """Get the maximal coordinate of the rectangular bounding box
         around the entire mesh.
         
-        Returns:
+        RETURNS:
             A tuple (x,y,z).
         """
         return ( self.__maxx, self.__maxy, self.__maxz )
@@ -388,7 +389,7 @@ class TetMesh(core.Container):
     def __find_unique_tris(self, tris, incl_mesh = True):
         """Find all triangles in an array of triangle indices that are unique.
         
-        Parameters:
+        PARAMETERS:
             tris
                 An N * 3 array of integer (index) values.
             incl_mesh
@@ -396,11 +397,11 @@ class TetMesh(core.Container):
                 been added to the mesh should be included (== True) or 
                 not (== False). This will most often be true of course.
         
-        Returns:
+        RETURNS:
             An array of indices pointing to the unique triangles in the
             input.
         
-        Notes:
+        NOTES:
             Internal function.
         """
         # The dictionary that will collect triangles.
@@ -506,7 +507,7 @@ class TetMesh(core.Container):
     def findCompByPoint(self, p, inclusive = True):
         """Return the compartment(s) to which one or more 3D point(s) belong.
         
-        Parameters:
+        PARAMETERS:
             p
                 The 3-dimensional point(s) that should be tested. This 
                 parameter can take a lot of forms. The simplest is a 
@@ -523,12 +524,12 @@ class TetMesh(core.Container):
                 the last compartment that tested positively. When False, 
                 the method returns None for such edge points.
                 
-        Returns:
+        RETURNS:
             A list of references to compartments (or None values for points 
             not inside any compartment). This is always a list, even if the
             parameter was a single tuple.
         
-        Raises:
+        RAISES:
             ---
         """
         pass
@@ -537,19 +538,19 @@ class TetMesh(core.Container):
     def findCompByTet(self, t):
         """Return the compartment(s) to which one or more tetrahedrons belong.
         
-        Parameters:
+        PARAMETERS:
             t
                 The tetrahedron(s) that should be tested. This parameter can
                 take multiple forms. The simplest form is a single integer
                 index value, indicating a single tetrahedron to be tested.
                 A sequence of such indices can also be given.
         
-        Returns:
+        RETURNS:
             A list of references to compartments (or None for voxel indices
             that are not inside any compartments). This is always a list,
             even if the parameter was a single integer index value.
         
-        Raises:
+        RAISES:
             ---
         """
         pass
@@ -558,7 +559,7 @@ class TetMesh(core.Container):
     def findTetByPoint(self, p, inclusive = True):
         """Return the voxel(s) to which one or more 3D point(s) belong.
         
-        Parameters:
+        PARAMETERS:
             p
                 The 3-dimensional point(s) that should be tested. This 
                 parameter can take a lot of forms. The simplest is a 
@@ -575,11 +576,11 @@ class TetMesh(core.Container):
                 the last voxel that tested positively. When False, the 
                 method returns -1 for such points.
 
-        Returns:
+        RETURNS:
             An array of tetrahedral voxel indices (or -1 for points not 
             inside any tetrahedron).
         
-        Raises:
+        RAISES:
             ---
         """
         pass
@@ -622,7 +623,7 @@ class Comp(core.Comp):
         triangle belong to the inner (and outer) compartments specified
         in parameters icomp (and ocomp).
         
-        Parameters:
+        PARAMETERS:
             id
                 The identifier of the patch.
             container
@@ -636,10 +637,10 @@ class Comp(core.Comp):
                 parameter can be None, if the patch lies on the outermost
                 boundary of the mesh.
         
-        Returns:
+        RETURNS:
             ---
         
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 When specified triangles do not exist; when specified
                 triangles have already been assigned to another patch;
@@ -749,7 +750,7 @@ class Comp(core.Comp):
         """Get the minimal coordinate of the rectangular bounding box
         around the compartment.
         
-        Returns:
+        RETURNS:
             A tuple (x, y, z).
         """
         return ( self.__minx, self.__miny, self.__minz )
@@ -759,7 +760,7 @@ class Comp(core.Comp):
         """Get the maximal coordinate of the rectangular bounding box
         around the compartment.
         
-        Returns:
+        RETURNS:
             A tuple (x, y, z).
         """
         return ( self.__maxx, self.__maxy, self.__maxz )
@@ -772,14 +773,14 @@ class Comp(core.Comp):
         """Test whether a tetrahedron(s) (specified by index) is inside
         this compartment.
         
-        Parameters:
+        PARAMETERS:
             t
                 A tetrahedral index or sequence of tetrahedral indices.
                 
-        Returns:
+        RETURNS:
             A boolean value, or a list of boolean values.
         
-        Raises:
+        RAISES:
             ---
         """
         pass
@@ -792,7 +793,7 @@ class Comp(core.Comp):
         the edge between two or more neighbouring tetrahedrons, the method 
         returns -1 for that point.
         
-        Parameters:
+        PARAMETERS:
             p
                 The 3-dimensional point(s) that should be tested. This 
                 parameter can take a lot of forms. The simplest is a 
@@ -801,11 +802,11 @@ class Comp(core.Comp):
                 N*3 Numpy array object. Internally, the input parameter
                 gets temporarily converted into a Numpy array anyway.
 
-        Returns:
+        RETURNS:
             An array of tetrahedral voxel indices (or -1 for points not 
             inside any tetrahedron).
         
-        Raises:
+        RAISES:
             ---
         """
         pass
@@ -865,7 +866,7 @@ class Patch(core.Patch):
         triangle belong to the inner (and outer) compartments specified
         in parameters icomp (and ocomp).
         
-        Parameters:
+        PARAMETERS:
             id
                 The identifier of the patch.
             container
@@ -879,10 +880,10 @@ class Patch(core.Patch):
                 parameter can be None, if the patch lies on the outermost
                 boundary of the mesh.
         
-        Returns:
+        RETURNS:
             ---
         
-        Raises:
+        RAISES:
             steps.error.ArgumentError
                 When specified triangles do not exist; when specified
                 triangles have already been assigned to another patch;
@@ -981,12 +982,18 @@ class Patch(core.Patch):
 
 def fromCDF(cdf):
     """Construct a mesh from NetCDF.
+    
+    TODO:
+        Implement!
     """
     pass
     
 
 def toCDF(tetmesh):
     """Save the mesh in NetCDF.
+    
+    TODO:
+        Implement!
     """
     pass
 
@@ -994,25 +1001,41 @@ def toCDF(tetmesh):
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-def toMatlab(tetmesh, file, prefix=''):
-    """Save the mesh plus auxiliary information in a Matlab file.
+def toMatlab(filename, tetmesh, prefix=''):
+    """Save the mesh in a Matlab file.
     
-    Parameters:
+    Currently, only the following information is saved:
+        1/ the node point coordinates
+        2/ the boundary triangles
+        3/ the tetrahedrons themselves
+    
+    PARAMETERS:
+        filename
+            Path and name of the destination Matlab file.
         tetmesh
             A steps.geom.tetmesh.TetMesh object.
-        file
-            Path and name of the destination Matlab file.
         prefix
             Optional parameter to specify whether the variable names 
             should get a prefix (to avoid name clashes in Matlab).
     
-    Returns:
+    RETURNS:
         ---
     
-    Raises:
+    RAISES:
         ---
     """
-    pass
+    # If prefix has been defined, check whether we should add 
+    # an extra underscore.
+    prefix2 = prefix
+    if len(prefix2) > 0:
+        if prefix2[-1] != "_": 
+            prefix2 = prefix2 + "_"
+    # Create a dictionary of the stuff we're going to save.
+    contents[prefix2 + "nodes"] = tetmesh.pnts
+    contents[prefix2 + "tris"] = tetmesh.tris
+    contents[prefix2 + "tets"] = tetmesh.tets
+    # Save to a Matlab file.
+    mio.savemat(filename, contents)
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
