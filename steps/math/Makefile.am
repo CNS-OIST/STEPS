@@ -14,19 +14,12 @@ VPATH = @srcdir@
 
 # Headers that should be included in the distribution and installed.
 pkginclude_HEADERS = \
-    aabbox3.hpp \
     accumulate.hpp \
-    color.hpp \
     constants.hpp \
     doxygen.hpp \
-    geometry.hpp \
     iota.hpp \
     linalg.hpp \
-    matrix4.hpp \
-    normal3.hpp \
-    point3.hpp \
-    tools.hpp \
-    vector3.hpp
+    tools.hpp 
 
 # Compiler flags.
 AM_CXXFLAGS = \

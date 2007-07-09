@@ -28,10 +28,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <Numeric/arrayobject.h>
-#include <qhull/qhull.h>
-#include <qhull/qset.h>		/* for FOREACHneighbor_() */
-#include <qhull/poly.h>		/* for qh_vertexneighbors() */
+#include <numpy/arrayobject.h>
+#include <steps/thirdparty/qhull/qhull.h>
+#include <steps/thirdparty/qhull/qset.h>		/* for FOREACHneighbor_() */
+#include <steps/thirdparty/qhull/poly.h>		/* for qh_vertexneighbors() */
 
 
 //#define QHULL_31_COMP=1

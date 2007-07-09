@@ -61,7 +61,6 @@ int steps::math::linsolve(uint n, uint rhs_num, double a[])
         {
             a[j + k * n] = a[j + k * n] / apivot;
         }
-        //std::cout << a[j + j * n] << std::endl;
 
         // a[i,j] becomes 0.
         for (uint i = 0; i < n; ++i)
@@ -74,7 +73,6 @@ int steps::math::linsolve(uint n, uint rhs_num, double a[])
                 {
                     a[i + k * n] = a[i + k * n] - factor * a[j + k * n];
                 }
-                //std::cout << a[i+j*n] << std::endl;
             }
         }
     }
