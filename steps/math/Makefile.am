@@ -12,6 +12,15 @@
 srcdir = @srcdir@
 VPATH = @srcdir@
 
+# Python modules in local packages.
+python_steps_mathdir = $(pythondir)/steps/math
+python_steps_math_PYTHON = \
+    __init__.py \
+    tetrahedron.py \
+    tetrahedron_test.py \
+    triangle.py \
+    triangle_test.py
+
 # Headers that should be included in the distribution and installed.
 pkginclude_HEADERS = \
     accumulate.hpp \

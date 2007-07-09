@@ -44,10 +44,9 @@ import numpy
 import scipy.io.mio as mio
 
 import steps.error as serr
-
+import steps.math.tetrahedron as stet
+import steps.math.triangle as stri
 import core
-import tetrahedron as stet
-import triangle as stri
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
