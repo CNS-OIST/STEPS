@@ -28,6 +28,7 @@ class Volsys(object):
         self._model = None
         self.__id = stools.checkID(id)
         self.__reacs = { }
+        self.__diffs = { }
         try:
             model._handleVolsysAdd(self)
         except:
@@ -40,9 +41,11 @@ class Volsys(object):
         """
         """
         assert model != None
-        v = steps.model.Volsys(self.id, model)
+        v = steps.volsys.Volsys(self.id, model)
         for id, reac in self.__reacs.iteritems():
             reac._deepcopy(v)
+        for id, diff in self.__diffs.iteritems():
+            diff._deepcopy(v)
             
             
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
@@ -58,11 +61,18 @@ class Volsys(object):
     def _handleSpecDelete(self, spec):
         """
         """
+        # Delete reaction rules using species.
         reacts = [ ]
         for i, r in self.__reacs.iteritems(): 
             if (spec in r.lhs) or (spec in r.rhs):
                 reacts.append(r)
         for r in reacts: self.delReac(r)
+        # Delete diffusion rules for species.
+        diffs = [ ]
+        for i, d in self.__diffs.iteritems():
+            if spec in d.getAllSpecs():
+                diffs.append(d)
+        for d in diffs: self.delDiff(d)
 
 
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
@@ -84,6 +94,26 @@ class Volsys(object):
         """
         stools.checkID(id)
         if id in self.__reacs:
+            raise serr.ArgumentError, '\'%s\' is already in use.' % id
+
+
+    def _checkDiffID(self, id):
+        """Check if a given id is valid and not yet used by another diffusion
+        rule.
+        
+        PARAMETERS:
+            id
+                The id that should be checked (must be a string).
+            
+        RETURNS:
+            The id itself.
+        
+        RAISES:
+            steps.error.ArgumentError
+                If the ID is not valid or unique.
+        """
+        stools.checkID(id)
+        if id in self.__diffs:
             raise serr.ArgumentError, '\'%s\' is already in use.' % id
 
 
@@ -117,7 +147,21 @@ class Volsys(object):
         return self._model
 
     model = property(getModel)
-    
+   
+
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
+
+
+    def getAllSpecs(self):
+        """Create a list of all species involved in this volume system. The
+        list contains no duplicates but is not ordered in any way.
+        """
+        s = set()
+        for id, r in self.__reacs.iteritems():
+            r = self.getReac(r)
+            s = s.union(r.getAllSpecs())
+        return list(s)
+            
     
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
 
@@ -147,7 +191,7 @@ class Volsys(object):
         Arguments:
             reaction
                 Can be a string referring to the reaction's id, or a 
-                steps.model.Reac object.
+                steps.volsys.Reac object.
 
         RETURNS:
             None
@@ -170,13 +214,13 @@ class Volsys(object):
 
         Arguments:
             reaction
-                Can be a string or a steps.model.Reac object. If it is a
+                Can be a string or a steps.volsys.Reac object. If it is a
                 string, the method will attempt to find the matching reaction
-                object. If it is a steps.model.Reac object, the method 
+                object. If it is a steps.volsys.Reac object, the method 
                 will see if the object is part of this volsys.
 
         RETURNS:
-            A steps.model.Reac object.
+            A steps.volsys.Reac object.
 
         RAISES:
             steps.error.ArgumentError
@@ -194,25 +238,92 @@ class Volsys(object):
         return reaction
     
 
-    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
-
-
     def getAllReacs(self):
         """Return a list of all reactions defined in this volume system.
         """
         return self.__reacs.values()
 
 
-    def getAllSpecs(self):
-        """Create a list of all species involved in this volume system. The
-        list contains no duplicates but is not ordered in any way.
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
+    
+    
+    def _handleDiffIDChange(self, oldid, newid):
         """
-        s = set()
-        for id, r in self.__reacs.iteritems():
-            r = self.getReac(r)
-            s = s.union(r.getAllSpecs())
-        return list(s)
+        """
+        if oldid == newid: return
+        self._checkDiffID(newid)
+        r = self.__diffs.pop(oldid)
+        self.__diffs[newid] = v
 
+
+    def _handleDiffAdd(self, diff):
+        """
+        """
+        assert diff._volsys == None, \
+            '\'%s\' already assigned to a volsys.' % diff.id
+        self._checkDiffID(diff.id)
+        diff._volsys = self
+        self.__diffs[diff.id] = diff
+
+
+    def delDiff(self, diff):
+        """Remove a diffusion rule from the volume system.
+
+        Arguments:
+            diff
+                Can be a string referring to the diffusion rule's id, or 
+                a steps.volsys.Diff object.
+
+        RETURNS:
+            None
+
+        RAISES:
+            steps.error.ArgumentError
+                If the id or diffusion rule object cannot be resolved.
+        """
+        diff = self.getDiff(diff)
+        self.__diffs.pop(diff.id)
+        diff._handleSelfDelete()
+
+
+    def getDiff(self, diff):
+        """Resolve a diffusion rule in the context of this volsys.
+
+        This method can be used to retrieve a diffusion object by its
+        id string, or to check whether a given diffusion object belongs
+        to this volsys.
+
+        Arguments:
+            diff
+                Can be a string or a steps.volsys.Diff object. If it is a
+                string, the method will attempt to find the matching 
+                diffusion object. If it is a steps.volsys.Diff object, 
+                the method will see if the object is part of this volsys.
+
+        RETURNS:
+            A steps.volsys.Diff object.
+
+        RAISES:
+            steps.error.ArgumentError
+                If the id cannot be resolved, or if the diffusion rule 
+                object does not belong to this model.
+        """
+        if isinstance(diff, str):
+            try:
+                diff = self.__diffs[diff]
+            except KeyError:
+                raise serr.ArgumentError, \
+                    'No diffusion rule with id \'%s\'' % diff
+        if diff._volsys != self:
+            raise steps.ModelError, "Diff is no part of this volsys."  
+        return diff
+    
+
+    def getAllDiffs(self):
+        """Return a list of all diffusion rule object defined in this volsys.
+        """
+        return self.__diffs.values()
+    
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -220,7 +331,11 @@ class Volsys(object):
 class Reac(object):
 
 
-    """
+    """A reaction rule describing synthesis/degradation of chemical species.
+    
+    Currently, STEPS only supports the simplest form of reaction equations,
+    in which reaction constants are really scalar constants: this means they 
+    do not change .
     """
 
     
@@ -248,7 +363,7 @@ class Reac(object):
         """
         """
         assert volsys != None
-        r = steps.model.Reac(self.id, volsys)
+        r = steps.volsys.Reac(self.id, volsys)
         left = map(self.model.Spec.getID, self.__lhs)
         r.lhs = left
         right = map(self.model.Spec.getID, self.__rhs)
@@ -384,7 +499,166 @@ class Reac(object):
         s = set(self.__lhs)
         return list(s.union(self.__rhs))
         
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+
+class Diff(object):
+
+
+    """A diffusion rule describing the diffusive motion of ligand species
+    in a volume system.
+    
+    Currently, STEPS only supports the simplest form of diffusion, which
+    is described by a single scalar constant. This means it doesn't depend
+    on direction (i.e. is isotropic), doesn't change with time (unless 
+    explicitly changed during simulation) or is not anomalous, and has no 
+    dependencies on other simulation variables.
+    
+    In principle, it's possible to declare multiple diffusion rules for 
+    one species in a volsys. This can be useful to simulate changing 
+    diffusion properties, e.g. by activating only one diffusion rule for a 
+    species at a time, and deactivating all others. (Admittedly, this is
+    a dumb example -- or even a dumb feature -- right now because you might 
+    as well just change the diffusion constant during simulation :-)
+    """
+
+
+    def __init__(self, id, volsys, lig, **params):
+        """Initialize the object.
+        """
+        self._volsys = None
+        self.__id = stools.checkID(id)
+        try:
+            volsys._handleDiffAdd(self)
+        except:
+            self._volsys = None
+            raise
+        assert self._volsys != None, 'Diffusion rule not assigned to volsys.'
+
+        self.__lig = None
+        self.lig = lig
         
+        self._dcst = 0.0
+        if 'dcst' in params: self.dcst = params['dcst']
+    
+    
+    def _deepcopy(self, volsys):
+        """
+        """
+        assert volsys != None
+        d = steps.volsys.Diff(self.id, volsys, self.__lig.getID())
+        d.dcst = self.dcst
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
+
+
+    def _handleSelfDelete(self):
+        """
+        """
+        self.__lig = None
+        self._volsys = None
+
+        
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
+
+
+    def getID(self):
+        """Return ID of this diffusion rule.
+        """
+        return self.__id
+
+    def setID(self, id):
+        """
+        """
+        assert self._volsys != None, 'Diffusion rule not assigned to volsys.'
+        if id == self.__id: return
+        # The following might raise an exception, e.g. if the id is not
+        # valid or not unique.
+        self._volsys._handleDiffIDChange(self.__id, id)
+        self.__id = id
+
+    id = property(getID, setID)
+
+
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
+
+
+    def getVolsys(self):
+        """
+        """
+        return self._volsys
+
+    volsys = property(getVolsys)
+
+
+    def getModel(self):
+        """
+        """
+        return self._volsys.model
+
+    model = property(getModel)
+
+
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
+    
+    
+    def getLig(self):
+        return self.__lig
+    
+    def setLig(self, lig):
+        """Set the species to which this diffusion rule applies.
+        
+        This ligand can be changed after it has been specified in the
+        initializer method.
+        
+        PARAMETERS:
+            lig
+                Can be a species object or a string id.
+        """
+        assert self._volsys != None
+        lig = self.model.getSpec(lig)
+        self.__lig = lig
+    
+    lig = property(getLig)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
+    
+    
+    def getDcst(self):
+        return self._dcst
+    
+    def setDcst(self, dcst):
+        """Set the diffusion constant for the diffusion rule.
+        
+        PARAMETERS:
+            dcst
+                The diffusion constant, must be positive.
+        
+        TODO:
+            Come up with a final solution for units of physical quantities.
+        """
+        dcst = float(dcst)
+        if dcst < 0.0: 
+            raise serr.ArgumentError, 'Diffusion constant must be >= 0.0'
+        self._dcst = dcst
+
+    dcst = property(getDcst, setDcst)
+
+
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
+
+
+    def getAllSpecs(self):
+        """Create a list of all species involved in this diffusion rule.
+        
+        Currently, this can obviously return only one species.
+        """
+        return [ self.__ligand ]
+
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
