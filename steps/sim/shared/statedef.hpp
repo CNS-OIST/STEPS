@@ -19,6 +19,7 @@
 
 // Forward declarations.
 class CompDef;
+class DiffDef;
 class ReacDef;
 class SpecDef;
 
@@ -27,7 +28,7 @@ class SpecDef;
 /// This class was designed for fast lookup during simulation
 /// rather than accomodating change; the latter is the task of the Python
 /// objects in package steps.model.
-
+///
 class StateDef
 {
 
@@ -39,6 +40,7 @@ public:
         SETUP_MODE,
         SETUP_VAR_MODE,
         SETUP_REAC_MODE,
+        SETUP_DIFF_MODE,
         SETUP_COMP_MODE,
         READY_MODE
     };
@@ -70,9 +72,14 @@ public:
     
     ////////////////////////////////////////////////////////////////////////
     
-    /// Gets called when the definition of all components in the entire state
-    /// has finished.
-    void finalSetup(void);
+    /// Gets called when all components in the entire state description
+    /// have been fully defined. This allows creation of local state
+    /// descriptions for compartments and patches, and resolution of
+    /// interdependencies between various compartments and patches.
+    ///
+    /// Can be called only once!
+    ///
+    void setupFinal(void);
     
     ////////////////////////////////////////////////////////////////////////
 
@@ -80,14 +87,17 @@ public:
     SpecDef * createSpecDef(std::string const & name);
     
     /// Returns the number of species in the overall simulation state.
+    ///
     uint countSpecs(void) const
     { return pSpecs.size(); }
     
     /// Check whether the specified global index refers to a valid species.
+    ///
     bool isValidSpec(uint gidx) const
     { return (gidx < countSpecs()); }
     
     /// Fetches a species by its gidx.
+    ///
     SpecDef * spec(uint gidx) const
     { return (isValidSpec(gidx) ? pSpecs[gidx] : 0 ); }
     
@@ -125,6 +135,33 @@ public:
     { return pReacs.end(); }
     
     ////////////////////////////////////////////////////////////////////////
+    
+    ///
+    DiffDef * createDiffDef(std::string const & name);
+    
+    /// Returns the number of diffusion rules in the overall 
+    /// simulation state.
+    uint countDiffs(void) const
+    { return pDiffs.size(); }
+    
+    /// Check whether the specified global index refers to a valid 
+    /// diffusion rule.
+    bool isValidDiff(uint gidx) const
+    { return (gidx < countDiffs()); }
+    
+    /// Fetches a diffusion rule by its gidx.
+    DiffDef * diff(uint gidx) const
+    { return (isValidDiff(gidx) ? pDiffs[gidx] : 0); }
+    
+    ///
+    std::vector<DiffDef*>::const_iterator beginDiff(void) const
+    { return pDiffs.begin(); }
+    
+    ///
+    std::vector<DiffDef*>::const_iterator endDiff(void) const
+    { return pDiffs.end(); }
+    
+    ////////////////////////////////////////////////////////////////////////
 
     /// 
     CompDef * createCompDef(std::string const & name);
@@ -159,7 +196,10 @@ private:
     
     /// A list of reactions.
     std::vector<ReacDef*>       pReacs;
-           
+    
+    /// A list of diffusion rules.
+    std::vector<DiffDef*>       pDiffs;
+    
     /// A list of compartments.
     std::vector<CompDef*>       pComps;
     

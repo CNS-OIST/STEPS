@@ -17,6 +17,7 @@
 #include <steps/math/constants.hpp>
 #include <steps/rng/rng.hpp>
 #include <steps/sim/shared/compdef.hpp>
+#include <steps/sim/shared/diffdef.hpp>
 #include <steps/sim/shared/reacdef.hpp>
 #include <steps/sim/shared/specdef.hpp>
 #include <steps/sim/shared/statedef.hpp>
@@ -91,7 +92,7 @@ void siEndStateDef(State * s)
     assert(s->def()->mode() == StateDef::SETUP_MODE);
     
     // Create the actual state, based on its definition.
-    s->def()->finalSetup();
+    s->def()->setupFinal();
     s->setup();
     
     // Finishing the setup mode automatically goes into the READY mode;
@@ -198,6 +199,41 @@ void siAddReacRHS(State * s, uint ridx, uint sidx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void siBeginDiffDef(State * s)
+{
+    assert(s != 0);
+    assert(s->def()->mode() == StateDef::SETUP_MODE);
+    
+    s->def()->setMode(StateDef::SETUP_DIFF_MODE);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void siEndDiffDef(State * s)
+{
+    assert(s != 0);
+    assert(s->def()->mode() == StateDef::SETUP_DIFF_MODE);
+    
+    s->def()->setMode(StateDef::SETUP_MODE);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint siNewDiff(State * s, char * name, uint sidx, double dcst)
+{
+    assert(s != 0);
+    assert(s->def()->mode() == StateDef::SETUP_DIFF_MODE);
+    assert(name != 0);
+    
+    DiffDef * diff = s->def()->createDiffDef(name);
+    assert(diff != 0);
+    diff->setDcst(dcst);
+    diff->setLig(sidx);
+    return diff->gidx();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void siBeginCompDef(State * s)
 {
     assert(s != 0);
@@ -254,6 +290,19 @@ void siAddCompReac(State * s, uint cidx, uint ridx)
     CompDef * comp = s->def()->comp(cidx);
     assert(comp != 0);
     comp->addReac(ridx);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void siAddCompDiff(State * s, uint cidx, uint didx)
+{
+    assert(s != 0);
+    assert(s->def()->mode() == StateDef::SETUP_COMP_MODE);
+    assert(s->def()->isValidDiff(didx));
+    
+    CompDef * comp = s->def()->comp(cidx);
+    assert(comp != 0);
+    comp->addDiff(didx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

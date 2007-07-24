@@ -35,7 +35,7 @@ ReacDef::ReacDef(StateDef * sdef, uint gidx, std::string const & name)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ReacDef::finalSetup(void)
+void ReacDef::setupFinal(void)
 {
     computeOrder();
 }

@@ -40,7 +40,10 @@ public:
 
     /// Gets called when the definition of all components in the entire state
     /// has finished.
-    void finalSetup(void);
+    ///
+    /// Currently, this method doesn't do anything.
+    ///
+    void setupFinal(void);
 
 private:
 

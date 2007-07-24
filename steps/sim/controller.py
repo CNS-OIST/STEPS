@@ -100,11 +100,15 @@ class FuncCore(object):
         self._siNewReac = self._rsf('siNewReac')
         self._siAddReacLHS = self._rsf('siAddReacLHS')
         self._siAddReacRHS = self._rsf('siAddReacRHS')
+        self._siBeginDiffDef = self._rsf('siBeginDiffDef')
+        self._siEndDiffDef = self._rsf('siEndDiffDef')
+        self._siNewDiff = self._rsf('siNewDiff')
         self._siBeginCompDef = self._rsf('siBeginCompDef')
         self._siEndCompDef = self._rsf('siEndCompDef')
         self._siNewComp = self._rsf('siNewComp')
         self._siAddCompSpec = self._rsf('siAddCompSpec')
         self._siAddCompReac = self._rsf('siAddCompReac')
+        self._siAddCompDiff = self._rsf('siAddCompDiff')
         self._siReset = self._rsf('siReset')
         self._siRun = self._rsf('siRun')
         self._siGetTime = self._rsf('siGetTime')
@@ -137,10 +141,15 @@ class FuncCore(object):
         self._lut_specnames = { }
         self._setupVars(model)
         
-        # Initialize: declare all reactions. 
+        # Initialize: declare all reaction channels. 
         self._lut_reacs = { }
         self._lut_reacnames = { }
         self._setupReacs(model)
+        
+        # Initialize: declare all diffusion rules.
+        self._lut_diffs = { }
+        self._lut_diffnames = { }
+        self._setupDiffs(model)
         
         # Initialize: declare all compartments.
         self._lut_comps = { }
@@ -247,6 +256,49 @@ class FuncCore(object):
         return reacname
         
 
+    def _diff(self, diff):
+        """Resolve a user-specified reference to a diffusion rule into its 
+        global index.
+        
+        This global index can be used for communicating with the solver 
+        core. The method should not typically be called by users.
+        
+        However, because it's almost always called to work on a 
+        user-specified value, it will still raise an ArgumentError 
+        rather than a ProgramError when the reaction cannot be found.
+        
+        Arguments:
+            spec
+                A reference to the diffusion: the global index or its name.
+        
+        RETURNS:
+            The global index of the diffusion rule.
+            
+        RAISES:
+            steps.error.ArgumentError
+                The diffusion rule cannot be resolved.
+        """
+        if isinstance(diff, basestring):
+            diff = self._lut_diff[diff]
+        if diff == None:
+            raise serr.ArgumentError, 'Cannot find diffusion rule.'
+        return diff
+
+
+    def _diffName(self, diff_gidx):
+        """Return the name of some diffusion rule, given its global index.
+        
+        RAISES:
+            steps.error.ProgramError
+                When the global index does not exist.
+        """
+        diffname = self._lut_diffnames[diff_gidx]
+        if diffname == None:
+            raise serr.ProgramError, \
+                'Cannot find diffusion rule with gidx %d.' % diff_gidx
+        return diffname
+    
+
     def _comp(self, comp):
         """Resolve a user-specified reference to a compartment into its 
         global index.
@@ -348,6 +400,31 @@ class FuncCore(object):
         self._siEndReacDef(self._state)
     
     
+    def _setupDiffs(self, model):
+        """Add all diffusion rules defined in the model to solver state.
+        
+        RAISES:
+            steps.error.SolverCoreError
+                When the solver core module does something stupid.
+        """
+        self._siBeginDiffDef(self._state)
+        for vsys in model.getAllVolsys():
+            for diff in vsys.getAllDiffs():
+                did = diff.id
+                lidx = self._spec(diff.lig.id)
+                didx = self._siNewDiff(self._state, did, lidx, diff.dcst)
+                if self._lut_diffnames.has_key(didx):
+                    raise serr.SolverCoreError, \
+                        'When adding diffusion rule \'%s\', solver ' + \
+                        'module \'%s\' returned global index %d, which ' + \
+                        'is already used by diffusion rule \'%s\'.' \
+                        % ( did, self.solvername, \
+                        didx, self._lut_diffnames[didx] )
+                self._lut_diffs[did] = didx
+                self._lut_diffnames[didx] = did
+        self._siEndDiffDef(self._state)
+    
+    
     def _setupComps(self, model, geom):
         """Add all compartments defined in the geometry to the solver 
         state. All volsys references in the compartments are resolved,
@@ -383,12 +460,18 @@ class FuncCore(object):
             for vsys in c.volsys:
                 # Find the Volsys object with the given name.
                 vsys = model.getVolsys(vsys)
+                # Add species.
                 for spec in vsys.getAllSpecs():
                     self._siAddCompSpec(self._state, \
                         cidx, self._spec(spec.id))
+                # Add reaction channels.
                 for reac in vsys.getAllReacs():
                     self._siAddCompReac(self._state, \
                         cidx, self._reac(reac.id))
+                # Add diffusion rules.
+                for diff in vsys.getAllDiffs():
+                    self._siAddCompDiff(self._state, \
+                        cidx, self._diff(diff.id))
         self._siEndCompDef(self._state)
     
     

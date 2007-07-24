@@ -12,6 +12,7 @@
 // STEPS headers.
 #include <steps/common.h>
 #include <steps/sim/shared/compdef.hpp>
+#include <steps/sim/shared/diffdef.hpp>
 #include <steps/sim/shared/reacdef.hpp>
 #include <steps/sim/shared/specdef.hpp>
 #include <steps/sim/shared/statedef.hpp>
@@ -52,24 +53,57 @@ StateDef::~StateDef(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void StateDef::finalSetup(void)
+void StateDef::setupFinal(void)
 {
+    // This can only be done once! Check the flag.
     assert(pFinalSetupFinished == false);
+    
+    // Loop over all simulation variables, kinetics processes and rules
+    // that have been declared, and allow them to do some final (internal) 
+    // setting up...
     for (std::vector<SpecDef*>::iterator i = pSpecs.begin(); 
          i != pSpecs.end(); ++i)
     {
-        (*i)->finalSetup();
+        (*i)->setupFinal();
     }
     for (std::vector<ReacDef*>::iterator i = pReacs.begin(); 
          i != pReacs.end(); ++i)
     {
-        (*i)->finalSetup();
+        (*i)->setupFinal();
     }
+    for (std::vector<DiffDef*>::iterator i = pDiffs.begin();
+         i != pDiffs.end(); ++i)
+    {
+        (*i)->setupFinal();
+    }
+    
+    // Make local indices for species, reactions, diffusion rules, ... in 
+    // compartments and then in patches.
     for (std::vector<CompDef*>::iterator i = pComps.begin(); 
          i != pComps.end(); ++i)
     {
-        (*i)->finalSetup();
+        (*i)->setupLocalIndices();
     }
+    //for (std::vector<PatchDef*>::iterator i = pPatches.begin();
+    //     i != pPatches.end(); ++i)
+    //{
+    //    (*i)->setupLocalIndices();
+    //}
+    
+    // Resolve update dependencies for various kinetic processes and rules,
+    // again first in compartments and then in patches.
+    for (std::vector<CompDef*>::iterator i = pComps.begin();
+         i != pComps.end(); ++i)
+    {
+        (*i)->setupDependencies();
+    }
+    //for (std::vector<PatchDef*>::iterator i = pPatches.begin();
+    //     i != pPatches.end(); ++i)
+    //{
+    //    (*i)->setupDependencies();
+    //}
+    
+    // Set the 'finished' flag.
     pFinalSetupFinished = true;
 }
 
@@ -93,6 +127,17 @@ ReacDef * StateDef::createReacDef(string const & name)
     pReacs.push_back(reac);
     assert((reac->gidx() + 1) == countReacs());
     return reac;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+DiffDef * StateDef::createDiffDef(string const & name)
+{
+    DiffDef * diff = new DiffDef(this, countDiffs(), name);
+    assert(diff != 0);
+    pDiffs.push_back(diff);
+    assert((diff->gidx() + 1) == countDiffs());
+    return diff;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

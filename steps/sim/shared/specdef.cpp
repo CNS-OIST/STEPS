@@ -31,7 +31,7 @@ SpecDef::~SpecDef(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void SpecDef::finalSetup(void)
+void SpecDef::setupFinal(void)
 {
 }
 

@@ -39,7 +39,10 @@ public:
     
     /// Gets called when the definition of all components in the entire state
     /// has finished.
-    void finalSetup(void);
+    ///
+    /// Currently, this method only pre-computes the order of the reaction.
+    ///
+    void setupFinal(void);
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -82,18 +85,24 @@ public:
 
 private:
 
+    /// Auxiliary method to compute the order of a reaction.
+    ///
     void computeOrder(void);
     
     StateDef *                  pStateDef;
+    
+    ///
     
     uint                        pGIDX;
     
     std::string                 pName;
     
     /// The order of the reaction.
+    ///
     uint                        pOrder;
     
-    /// Default macroscopic reaction constant.
+    /// Default (MACROscopic) reaction constant.
+    ///
     double                      pKcst;
     
     std::vector<uint>           pLHS;
