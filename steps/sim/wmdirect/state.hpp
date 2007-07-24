@@ -63,6 +63,7 @@ public:
     ///
     /// This method does not automatically recompute the reaction 
     /// propensity of the corresponding reaction.
+    ///
     void computeCcst(uint cidx, uint l_ridx);
     
     /// If the reaction is not active, this method just sets a propensity
