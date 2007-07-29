@@ -22,7 +22,9 @@ header_steps_sim_swiginf_HEADERS = \
     func_core.hpp \
 	func_core.i \
     func_ssa.hpp \
-    func_ssa.i
+    func_ssa.i \
+    func_tetmesh.hpp \
+    func_tetmesh.i
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
