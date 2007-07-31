@@ -45,6 +45,23 @@ void siConnectTetTriInside(State * s, uint side, uint tetidx, uint triidx);
 void siConnectTetTriOutside(State * s, uint side, uint tetidx, uint triidx);
 
 ////////////////////////////////////////////////////////////////////////////////
+// SOLVER STATE ACCESS: 
+//      TETRAHEDRAL VOLUME ELEMENTS
+////////////////////////////////////////////////////////////////////////////////
+
+extern double   siGetTetVol(State * s, uint tidx);
+//extern void     siSetCompVol(State * s, uint cidx, double vol);
+
+extern uint     siGetTetCount(State * s, uint tidx, uint sidx);
+extern void     siSetTetCount(State * s, uint tidx, uint sidx, uint n);
+
+extern double   siGetTetMass(State * s, uint tidx, uint sidx);
+extern void     siSetTetMass(State * s, uint tidx, uint sidx, double m);
+
+extern double   siGetTetConc(State * s, uint tidx, uint sidx);
+extern void     siSetTetConc(State * s, uint tidx, uint sidx, double c);
+
+////////////////////////////////////////////////////////////////////////////////
 
 #endif
 // STEPS_SIM_SWIGINF_FUNC_TETMESH_HPP

@@ -100,6 +100,9 @@ public:
     inline uint poolCount(uint lidx) const
     { return pPoolCount[lidx]; }
     
+    inline void setPoolCount(uint lidx, uint num)
+    { pPoolCount[lidx] = num; }
+    
     inline void incPoolCount(uint lidx, int count) const
     { pPoolCount[lidx] += count; } 
     

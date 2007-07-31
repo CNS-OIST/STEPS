@@ -12,6 +12,7 @@
 #include <steps/common.h>
 #include <steps/sim/swiginf/func_ssa.hpp>
 #include <steps/sim/tetexact/state.hpp>
+#include <steps/sim/tetexact/tet.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -78,6 +79,63 @@ void siConnectTetTriInside(State * s, uint side, uint tetidx, uint triidx)
 ////////////////////////////////////////////////////////////////////////////////
 
 void siConnectTetTriOutside(State * s, uint side, uint tetidx, uint triidx)
+{
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double siGetTetVol(State * s, uint tidx)
+{
+	return 0.0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint siGetTetCount(State * s, uint tidx, uint sidx)
+{
+	Tet * tet = s->tet(tidx);
+	// TODO: error stuff
+	if (tet == 0) return 0;
+	uint l_sidx = tet->compdef()->specG2L(sidx);
+    if (l_sidx == 0xFFFF) return 0;
+    return tet->poolCount(l_sidx);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void siSetTetCount(State * s, uint tidx, uint sidx, uint n)
+{
+	Tet * tet = s->tet(tidx);
+	// TODO: error stuff
+	if (tet == 0) return;
+	uint l_sidx = tet->compdef()->specG2L(sidx);
+    if (l_sidx == 0xFFFF) return;
+    tet->setPoolCount(l_sidx, num);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double siGetTetMass(State * s, uint tidx, uint sidx)
+{
+	return 0.0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void siSetTetMass(State * s, uint tidx, uint sidx, double m)
+{
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double siGetTetConc(State * s, uint tidx, uint sidx)
+{
+	return 0.0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void siSetTetConc(State * s, uint tidx, uint sidx, double c)
 {
 }
 

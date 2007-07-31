@@ -1122,6 +1122,13 @@ class FuncTetmesh(FuncCore):
         self._siConnectTetTet = self._rsf('siConnectTetTet')
         self._siConnectTetTriInside = self._rsf('siConnectTetTriInside')
         self._siConnectTetTriOutside = self._rsf('siConnectTetTriOutside')
+        self._siGetTetVol = self._rsf('siGetTetVol')
+        self._siGetTetCount = self._rsf('siGetTetCount')
+        self._siSetTetCount = self._rsf('siSetTetCount')
+        self._siGetTetMass = self._rsf('siGetTetMass')
+        self._siSetTetMass = self._rsf('siSetTetMass')
+        self._siGetTetConc = self._rsf('siGetTetConc')
+        self._siSetTetConc = self._rsf('siSetTetConc')
     
         # Set up the mesh.
         self._setupMesh(geom)
@@ -1215,6 +1222,80 @@ class FuncTetmesh(FuncCore):
         
         # We're finished -- let the solver module hook it all up.
         self._siEndTetmeshDef(self._state)
+    
+
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getTetVol(self, tet):
+        pass
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getTetCount(self, tet, spec):
+        """Count the number of molecules of some species in a tetrahedral
+        volume element (voxel).
+        
+        PARAMETERS:
+            tet
+                The tetrahedron specified by its index.
+            spec
+                The species, identified by name or global index.
+        """
+        spec = self._spec(spec)
+        c = self._siGetTetCount(self._state, tet, spec)
+        assert c >= 0, \
+            'Count of \'%s\' in tetrahedron %d is negative (%d).' \
+            % ( self._specName(spec), tet, c )
+        return c
+    
+    
+    def setTetCount(self, tet, spec, num):
+        """Set the number of molecules of some species in a tetrahedral
+        volume element (voxel).
+        
+        PARAMETERS:
+            tet
+                The tetrahedron specified by its index.
+            spec
+                The species, identified by name or global index.
+            num
+                The number of species. Should be a positive integer,
+                but gets rounded when a floating point number was
+                specified.
+        
+        RAISES:
+            steps.error.ArgumentError
+                When a negative number was specified.
+        """
+        if num < 0:
+            raise serr.ArgumentError, \
+                'Specified amount is negative (%d).' % num
+        self._siSetTetCount(self._state, tet, self._spec(spec), num)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getTetMass(self, tet):
+        pass
+    
+    
+    def setTetMass(self, tet, mass):
+        pass
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getTetConc(self, tet):
+        pass
+    
+    
+    def setTetConc(self, tet, conc):
+        pass
     
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
