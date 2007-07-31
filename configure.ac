@@ -267,6 +267,7 @@ steps/model/Makefile
 steps/rng/Makefile
 steps/sim/shared/Makefile
 steps/sim/swiginf/Makefile
+steps/sim/tetexact/Makefile
 steps/sim/wmdirect/Makefile
 steps/sim/Makefile
 steps/tests/model/Makefile

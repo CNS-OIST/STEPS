@@ -47,12 +47,16 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
+    void setupState(void);
+    
     /// Should this be a method, or be implemented in wmdirect.cpp? I chose
     /// the first, for unclear reasons ;-)
-    void setup(void);
+    ///
+    void setupTetmesh(void);
 
     /// Should this be a method, or be implemented in wmdirect.cpp? I chose
     /// the first, for unclear reasons ;-)
+    ///
     void reset(void);
 
     ////////////////////////////////////////////////////////////////////////

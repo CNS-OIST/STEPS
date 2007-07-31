@@ -7,74 +7,77 @@
 
 // STL headers.
 #include <cassert>
-#include <cmath>
-#include <iostream>
-#include <string>
-#include <vector>
 
 // STEPS headers.
 #include <steps/common.h>
-#include <steps/math/constants.hpp>
-#include <steps/rng/rng.hpp>
-#include <steps/sim/shared/compdef.hpp>
-#include <steps/sim/shared/reacdef.hpp>
-#include <steps/sim/shared/specdef.hpp>
-#include <steps/sim/shared/statedef.hpp>
 #include <steps/sim/swiginf/func_ssa.hpp>
 #include <steps/sim/tetexact/state.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double siStep(State * s)
+void siBeginTetmeshDef(State * s)
 {
-	return s->time();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint siGetNSteps(State * s)
+void siEndTetmeshDef(State *s)
 {
-	return 0;
+	s->setupTetmesh();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double siGetA0(State * s)
+void siBeginTetDef(State * s, uint numtets)
 {
-	return 0.0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double siGetCompReacC(State * s, uint cidx, uint ridx)
+void siEndTetDef(State * s)
 {
-	return 0.0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double siGetCompReacH(State * s, uint cidx, uint ridx)
+uint siNewTet(State * s, uint cidx, double vol, 
+	double a1, double a2, double a3, double a4,
+	double d1, double d2, double d3, double d4)
 {
-	return 0.0;
+	CompDef * cdef = s->def()->comp(cidx);
+	return s->addTet(cdef, vol, a1, a2, a3, a4, d1, d2, d3, d4);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double siGetCompReacA(State * s, uint cidx, uint ridx)
+void siBeginConnectDef(State * s)
 {
-	return 0.0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint siGetCompReacExtent(State * s, uint cidx, uint ridx)
+void siEndConnectDef(State * s)
 {
-	return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void siResetCompReacExtent(State * s, uint cidx, uint ridx)
+void siConnectTetTet(State * s, uint side, uint tidx1, uint tidx2)
+{
+	Tet * t1 = s->tet(tidx1);
+	Tet * t2 = s->tet(tidx2);
+	t1->setNextTet(side, t2);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void siConnectTetTriInside(State * s, uint side, uint tetidx, uint triidx)
+{
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void siConnectTetTriOutside(State * s, uint side, uint tetidx, uint triidx)
 {
 }
 

@@ -37,6 +37,10 @@ be performed in the following order:
     
     3/ Annotate the triangles; this means creating Patch objects and 
        specifying which triangles belong to a given patch.
+
+TODO: make iterators for running over tetrahedrons and triangles, that
+give access to immediate properties such as volumes, neighbours, quality
+etcetera.
 """
 
 
@@ -458,7 +462,7 @@ class TetMesh(core.Container):
         # Find the neighbouring tetrahedrons, depending on the current
         # triangle order.
         self._tri_tet_neighbours = \
-            numpy.r_ [ self._tri_tet_neighbours, \
+            numpy.r_[ self._tri_tet_neighbours, \
                        numpy.ones((ntris, 2), dtype=int) * -1 ]
         xrstop = self._tris.shape[0]
         xrstart = ntris_idx_stop - ntris
@@ -785,7 +789,7 @@ class Comp(core.Comp):
         pass
     
     
-    def findTetByPoint(self, p, inclusive == True):
+    def findTetByPoint(self, p, inclusive = True):
         """Return the voxel(s) to which one or more 3D point(s) belong.
         
         When a point is not inside any tetrahedron, or when it lies right on 

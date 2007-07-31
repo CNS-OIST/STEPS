@@ -76,7 +76,7 @@ State::~State(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void State::setup(void)
+void State::setupState(void)
 {
     // First create pools & reactions.
     uint ncomps = pStateDef->countComps();

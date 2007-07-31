@@ -56,6 +56,7 @@ python_steps_sim_PYTHON = \
 SUBDIRS = \
     shared \
     swiginf \
+    tetexact \
 	wmdirect \
 	.
 

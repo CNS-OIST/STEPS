@@ -23,10 +23,9 @@
 #include <steps/common.h>
 #include <steps/math/constants.hpp>
 #include <steps/rng/rng.hpp>
-#include <steps/sim/kproc.hpp>
-#include <steps/sim/schedule.hpp>
-#include <steps/sim/simenv.hpp>
-#include <steps/tools/cplusplus.hpp>
+#include <steps/sim/tetexact/kproc.hpp>
+#include <steps/sim/tetexact/sched.hpp>
+#include <steps/sim/tetexact/state.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -40,27 +39,22 @@ USING(std, map);
 USING(std, set);
 USING(std, vector);
 
-// STEPS library.
-NAMESPACE_ALIAS(steps::math, smath);
-NAMESPACE_ALIAS(steps::rng, srng);
-USING(srng, RNG);
-USING(srng, RNGPtr);
-NAMESPACE_ALIAS(steps::sim, ssim);
-USING(ssim, KProc);
-USING(ssim, KProcPtr);
-USING(ssim, KProcPtrVector);
-USING(ssim, KProcPtrVectorIt);
-USING(ssim, KProcPtrVectorCtIt);
-USING(ssim, Schedule);
-USING(ssim, ScheduleIDX);
-USING(ssim, ScheduleIDXVector);
-USING(ssim, ScheduleIDXVectorIt);
-USING(ssim, SimEnv);
-NAMESPACE_ALIAS(steps::tools, stools);
+////////////////////////////////////////////////////////////////////////////////
+
+/// Unary function that calls the array delete[] operator on pointers. Easy
+/// to use with STL/Boost (see steps::tools::DeletePointer).
+///
+struct DeleteArray
+{
+    template <typename Type> void operator() (Type * pointer) const
+    {
+        delete[] pointer;
+    }
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Schedule::Schedule(void)
+Sched::Sched(void)
 : pKProcs()
 , pA0(0.0)
 , pLevelSizes()
@@ -70,27 +64,27 @@ Schedule::Schedule(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Schedule::~Schedule(void)
+Sched::~Sched(void)
 {
-    std::for_each(pLevels.begin(), pLevels.end(), stools::DeleteArray());
+    std::for_each(pLevels.begin(), pLevels.end(), DeleteArray());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Schedule::addKProc(KProc * kproc)
+void Sched::addKProc(KProc * kproc)
 {
     // Check preconditions.
     assert(kproc != 0);
     
     // Add the new entry.
-    ScheduleIDX nidx = pKProcs.size();
+    SchedIDX nidx = pKProcs.size();
     pKProcs.push_back(kproc);
-    kproc->setScheduleIDX(nidx);
+    kproc->setSchedIDX(nidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Schedule::build(void)
+void Sched::build(void)
 {
     // Setup level.
     uint clevel = 0;
@@ -99,7 +93,7 @@ void Schedule::build(void)
     // Work up.
     while (clsize > 1)
     {
-        // Make sure the new size is a multiple of SCHEDULEWIDTH.
+        // Make sure the new size is a multiple of SchedWIDTH.
         uint extra = clsize % SCHEDULEWIDTH;
         if (extra != 0) clsize += SCHEDULEWIDTH - extra;
         
@@ -124,7 +118,7 @@ void Schedule::build(void)
 // THIS VERSION IS NUMERICALLY MORE ROBUST!
 //
 
-KProc * Schedule::getNext(SimEnv & simenv) const
+KProc * Sched::getNext(State * state) const
 {
     // Start at top level.
     uint clevel = pLevels.size();
@@ -135,7 +129,7 @@ KProc * Schedule::getNext(SimEnv & simenv) const
     double rannum[16];
     for (uint i = 0; i < clevel; ++i)
     {
-        rannum[i] = simenv.fRNG->getUnfIE();
+        rannum[i] = state->rng()->getUnfIE();
     }
     
     // Run until top level.
@@ -181,7 +175,7 @@ KProc * Schedule::getNext(SimEnv & simenv) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Schedule::reset(void)
+void Sched::reset(void)
 {
     // Reset the basic level: compute rates.
     double * oldlevel = pLevels[0];
@@ -189,7 +183,7 @@ void Schedule::reset(void)
     vector<KProc*>::iterator kp_end = pKProcs.end();
     for (vector<KProc*>::iterator kp = pKProcs.begin(); kp != kp_end; ++kp)
     {
-        oldlevel[cur_node++] = (*kp)->computeRate();
+        oldlevel[cur_node++] = (*kp)->rate();
     }
     
     // Work up.
@@ -227,7 +221,7 @@ void Schedule::reset(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Schedule::recomp(void)
+void Sched::recomp(void)
 {
     // Setup.
     double * oldlevel = pLevels[0];
@@ -268,7 +262,7 @@ void Schedule::recomp(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Schedule::update(ScheduleIDXVector const & entries)
+void Sched::update(SchedIDXVec const & entries)
 {
     // Prefetch zero level.
     double * level0 = pLevels[0];
@@ -277,15 +271,15 @@ void Schedule::update(ScheduleIDXVector const & entries)
 
     // Recompute rates.
     uint indices[16];
-    ScheduleIDXVectorCtIt sidx_end = entries.end();
+    SchedIDXVecCI sidx_end = entries.end();
     uint prev_e = 0xFFFFFFFF;
     uint cur_e = 0;
-    for (ScheduleIDXVectorCtIt sidx = entries.begin(); sidx != sidx_end; ++sidx)
+    for (SchedIDXVecCI sidx = entries.begin(); sidx != sidx_end; ++sidx)
     {
         // Fetch index.
         uint idx = *sidx;
         // Recompute rate, get difference, and store.
-        double newrate = pKProcs[idx]->computeRate();
+        double newrate = pKProcs[idx]->rate();
         level0[idx] = newrate;
         
         // Store and collapse if possible.

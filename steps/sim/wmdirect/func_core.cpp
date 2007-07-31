@@ -93,7 +93,7 @@ void siEndStateDef(State * s)
     
     // Create the actual state, based on its definition.
     s->def()->setupFinal();
-    s->setup();
+    s->setupState();
     
     // Finishing the setup mode automatically goes into the READY mode;
     // for now at least!

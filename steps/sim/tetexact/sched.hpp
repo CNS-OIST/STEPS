@@ -1,12 +1,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
 // Copyright (C) 2005-2007 Stefan Wils. All rights reserved.
-// 
+//
 // $Id$
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef STEPS_SIM_TETEXACT_KPROC_HPP
-#define STEPS_SIM_TETEXACT_KPROC_HPP 1
+#ifndef STEPS_SIM_TETEXACT_SCHED_HPP
+#define STEPS_SIM_TETEXACT_SCHED_HPP 1
 
 // Autotools definitions.
 #ifdef HAVE_CONFIG_H
@@ -14,85 +14,90 @@
 #endif
 
 // Standard library & STL headers.
-#include <cassert>
-#include <set>
+#include <map>
+#include <string>
 #include <vector>
 
 // STEPS headers.
 #include <steps/common.h>
-#include <steps/sim/tetexact/sched.hpp>
+#include <steps/math/constants.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 
 // Forward declarations.
+
+// See: steps/sim/tetexact/kproc.hpp
+class KProc;
+// See: steps/sim/tetexact/state.hpp
 class State;
 
 // Auxiliary declarations.
-class KProc;
 
-typedef KProc * 						KProcP;
-typedef std::vector<KProcP>				KProcPVec;
-typedef KProcPVec::iterator				KProcPVecI;
-typedef KProcPVec::const_iterator		KProcPVecCI;
+typedef uint                            SchedIDX;
+
+typedef std::vector<SchedIDX>           SchedIDXVec;
+typedef SchedIDXVec::iterator           SchedIDXVecI;
+typedef SchedIDXVec::const_iterator     SchedIDXVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class KProc
+class Sched
 {
 
 public:
 
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
-	////////////////////////////////////////////////////////////////////////
-
-    KProc(void);
-
-    virtual ~KProc(void);
-    
-    virtual void setupDeps(void) = 0;
-    
-    virtual void reset(void) = 0;
-    
-    ////////////////////////////////////////////////////////////////////////
-    // SCHEDULE INDEX
     ////////////////////////////////////////////////////////////////////////
 
-    uint schedIDX(void) const
-    { return pSchedIDX; }
+    Sched(void);
+    
+    ~Sched(void);
+    
+    void addKProc(KProc * kproc);
+    
+    void build();
+    
+    ////////////////////////////////////////////////////////////////////////
+    // SCHEDULE OPERATIONS
+    ////////////////////////////////////////////////////////////////////////
+    
+    inline double getA0(void) const
+    { return pA0; }
+    
+    KProc * getNext(State * s) const;
+    
+    void reset(void);
+    
+    void recomp(void);
+    
+    void update(SchedIDXVec const & entries);
 
-    void setSchedIDX(SchedIDX idx)
-    { pSchedIDX = idx; }
-
-    ////////////////////////////////////////////////////////////////////////
-    // KINETIC RATE
-    ////////////////////////////////////////////////////////////////////////
-    
-    virtual double rate(void) const = 0;
-    
-    ////////////////////////////////////////////////////////////////////////
-    // RULE APPLICATION
-    ////////////////////////////////////////////////////////////////////////
-    
-    /// Apply a single discrete instance of the kinetic process, returning
-    /// a vector of kproc schedule indices that need to be updated as a
-    /// result.
-    ///
-    virtual SchedIDXVec const & apply(State * s) = 0;
-
-    ////////////////////////////////////////////////////////////////////////
-    
 private:
 
-	////////////////////////////////////////////////////////////////////////
-	
-    SchedIDX          			pSchedIDX;
+    ////////////////////////////////////////////////////////////////////////
+    // LIST OF KPROCS
+    ////////////////////////////////////////////////////////////////////////
+    
+    std::vector<KProc *>                        pKProcs;
+    
+    ////////////////////////////////////////////////////////////////////////
+    // N-ARY TREE
+    ////////////////////////////////////////////////////////////////////////
+    
+    double                                      pA0;
+    
+    std::vector<uint>                           pLevelSizes;
+    
+    std::vector<double*>                        pLevels;
+    
+    ////////////////////////////////////////////////////////////////////////
 
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
 #endif
-// STEPS_SIM_TETEXACT_KPROC_HPP
+// STEPS_SIM_TETEXACT_SCHED_HPP
 
 // END

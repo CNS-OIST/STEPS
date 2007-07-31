@@ -13,67 +13,135 @@
 #include <steps/config.h>
 #endif
 
+// STL headers.
+#include <cassert>
+#include <vector>
+
 // STEPS headers.
 #include <steps/common.h>
 
+// Forward declarations.
+class CompDef;
+class Diff;
+class KProc;
+class Sched;
+
 ////////////////////////////////////////////////////////////////////////////////
-
-#define REAC_LUMP_FACTOR 4
-
-/// Whether the lumping idea positively impacts simulation efficiency
-/// should be verified empirically later. To allow this to be changed 
-/// easily, we provided accessors for the data fields.
-///
+ 
 class Tet
 {
 
 public:
 
     ////////////////////////////////////////////////////////////////////////
-
-    /// Default constructor.
-    Tet(void);
-    
-    /// Auxiliary pseudo-constructor (objects of type Tet will normally
-    /// be build in series).
-    void construct
+	// OBJECT CONSTRUCTION & DESTRUCTION
+	////////////////////////////////////////////////////////////////////////
+	
+    /// Constructor.
+	///
+    Tet
     (
-        CompDef * cdef, 
-        Tet * n0, Tet * n1, Tet * n2, Tet * n3,
-        Tri * t0, Tri * t1, Tri * t2, Tri * t3
+    	CompDef * cdef, double vol, 
+    	double a0, double a1, double a2, double a3, 
+    	double d0, double d1, double d2, double d3
     );
     
     /// Destructor.
+    ///
     ~Tet(void);
 
+    /// Create the kinetic processes -- to be called when all tetrahedrons 
+    /// and triangles have been fully declared and connected.
+    ///
+    void setupKProcs(Sched * s);
+    
+    void reset(void);
+    
+    ////////////////////////////////////////////////////////////////////////
+    // GENERAL INFORMATION
+    ////////////////////////////////////////////////////////////////////////
+    
+    inline CompDef * compdef(void) const
+    { return pCompDef; }
+    
+    ////////////////////////////////////////////////////////////////////////
+    // SHAPE & CONNECTIVITY INFORMATION.
+    ////////////////////////////////////////////////////////////////////////
+    
+    /// Get pointer to the next neighbouring tetrahedron.
+    ///
+    inline Tet * nextTet(uint i) const
+    { return pNextTet[i]; }
+    
+    /// Set pointer to the next neighbouring tetrahedron.
+    ///
+    void setNextTet(uint i, Tet * t);
+    
+    /// Get the volume.
+    ///
+    inline double vol(void) const
+    { return pVol; }
+    
+    /// Get the area of an boundary triangle.
+    ///
+    inline double area(uint i) const
+    { return pAreas[i]; }
+    
+    /// Get the distance to the centroid of the next neighbouring 
+    /// tetrahedron. 
+    ///
+    inline double dist(uint i) const
+    { return pDist[i]; }
+    
     ////////////////////////////////////////////////////////////////////////
     // ACCESS TO SPECIES STUFF
+    ////////////////////////////////////////////////////////////////////////
     
-    uint poolCount(uint lidx) const
-    { return fPoolCount[lidx]; }
+    inline uint poolCount(uint lidx) const
+    { return pPoolCount[lidx]; }
     
-    uint poolFlags(uint lidx) const
-    { return fPoolFlags[lidx]; }
+    inline void incPoolCount(uint lidx, int count) const
+    { pPoolCount[lidx] += count; } 
     
+	inline uint poolFlags(uint lidx) const
+    { return pPoolFlags[lidx]; }
+
     ////////////////////////////////////////////////////////////////////////
     // ACCESS TO REACTION CHANNEL STUFF
     
-    double reacKcst(uint lidx) const
-    { return fReacStuff[lidx * REAC_LUMP_FACTOR]; }
+    //double reacKcst(uint lidx) const
+    //{ return fReacStuff[lidx * REAC_LUMP_FACTOR]; }
     
-    double reacCcst(uint lidx) const
-    { return fReacStuff[(lidx * REAC_LUMP_FACTOR) + 1]; }
+    //double reacCcst(uint lidx) const
+    //{ return fReacStuff[(lidx * REAC_LUMP_FACTOR) + 1]; }
     
-    double reacHcst(uint lidx) const
-    { return fReacStuff[(lidx * REAC_LUMP_FACTOR) + 2]; }
+    //double reacHcst(uint lidx) const
+    //{ return fReacStuff[(lidx * REAC_LUMP_FACTOR) + 2]; }
     
-    double reacProp(uint lidx) const
-    { return fReacStuff[(lidx * REAC_LUMP_FACTOR) + 3]; }
+    //double reacProp(uint lidx) const
+    //{ return fReacStuff[(lidx * REAC_LUMP_FACTOR) + 3]; }
     
     ////////////////////////////////////////////////////////////////////////
 
+	uint TMPDIFFIDX(void) const;
+	
 private:
 
+	////////////////////////////////////////////////////////////////////////
+	// GENERAL INFO
+	CompDef * 					pCompDef;
+	
+	////////////////////////////////////////////////////////////////////////
+	// CONNECTIVITY DATA
+	
+	Tet *						pNextTet[4];
+	
+	double 						pVol;
+	
+	double						pAreas[4];
+	
+	double 						pDist[4];
+	
     ////////////////////////////////////////////////////////////////////////
     // SPECIES DATA
 
@@ -88,12 +156,12 @@ private:
     ////////////////////////////////////////////////////////////////////////
     // REACTION CHANNELS
     
-    KProc **					pReacs;
+    //KProc **					pReacs;
     
     ////////////////////////////////////////////////////////////////////////
     // DIFFUSION RULES
     
-    KProc **
+    std::vector<Diff*>			pDiffs;
     
 };
 
