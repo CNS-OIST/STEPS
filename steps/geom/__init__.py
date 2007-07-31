@@ -10,8 +10,6 @@
 """
 
 
-from core import Geom
-from core import Comp
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

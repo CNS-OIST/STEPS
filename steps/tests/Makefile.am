@@ -22,7 +22,6 @@ SUBDIRS	= \
 steps_testsdir = $(pythondir)/steps/tests
 steps_tests_PYTHON = \
     __init__.py \
-    test.py \
     test_misc.py \
     tools.py
 

@@ -132,7 +132,7 @@ class TetMesh(core.Container):
             ---
         """
         # Call the initializer for the parent class.
-        super(self).__init__()
+        core.Container.__init__(self)
         
         # SET UP: CORNER POINTS
         assert pnts.shape[1] == 3
@@ -155,8 +155,8 @@ class TetMesh(core.Container):
         self._tets = tets.copy()
         # Check range; check duplicates
         self._tet_vols = stet.vol(self._pnts, self._tets)
-        self._tet_tri_neighbours = numpy.ones((ntets, 4), type = int) * -1
-        self._tet_tet_neighbours = numpy.empty((ntets, 4))
+        self._tet_tri_neighbours = numpy.ones((ntets, 4), dtype = int) * -1
+        self._tet_tet_neighbours = numpy.empty((ntets, 4), dtype = int)
         self.__set_tet_tet_neighbours()
         self._tet_comps = [ None ] * ntets
         
@@ -178,29 +178,29 @@ class TetMesh(core.Container):
             - Might benefit from reimplementation in C++.
         """
         #
-        ntets = self._tets.range[0]
+        ntets = self._tets.shape[0]
         tmp1 = numpy.asarray(xrange(0, ntets))
         tmp2 = numpy.ones(ntets, dtype=int)
         
         # Create array for triangle formed by edges (0,1,2).
         t012 = self._tets[:,(0,1,2)]
         t012.sort()
-        t012 = numpy.c_[ t012, tmp, tmp2 * 0 ]
+        t012 = numpy.c_[ t012, tmp1, tmp2 * 0 ]
         
         # Create array for triangle formed by edges (0,1,3).
         t013 = self._tets[:,(0,1,3)]
         t013.sort()
-        t013 = numpy.c_[ t013, tmp, tmp2 ]
+        t013 = numpy.c_[ t013, tmp1, tmp2 ]
         
         # Create array for triangle formed by edges (0,2,3).
         t023 = self._tets[:,(0,2,3)]
         t023.sort()
-        t023 = numpy.c_[ t023, tmp, tmp2 * 2 ]
+        t023 = numpy.c_[ t023, tmp1, tmp2 * 2 ]
         
         # Create array for triangle formed by edges (1,2,3).
         t123 = self._tets[:,(1,2,3)]
         t123.sort()
-        t123 = numpy.c_[ t123, tmp, tmp2 * 3 ]
+        t123 = numpy.c_[ t123, tmp1, tmp2 * 3 ]
         
         # Concatenate arrays and sort by first three columns only.
         # The fourth column is the tetrahedron it belongs to, the 
@@ -222,7 +222,7 @@ class TetMesh(core.Container):
                 self._tet_tet_neighbours[tn[ix1,3], tn[ix1,4]] = -1
                 break
             # Shared or unique boundary?
-            if tn[ix1, 0:3] == tn[ix2, 0:3]:
+            if (tn[ix1, 0:3] == tn[ix2, 0:3]).all():
                 # We're dealing with a shared triangle.
                 tet1 = tn[ix1, 3]
                 tet2 = tn[ix2, 3]
@@ -656,30 +656,32 @@ class Comp(core.Comp):
         # Store all tetrahedron indices as a set.
         tetset = set(tets)
         # Check index range.
-        if (min(tetset) < 0) or (max(tetset) >= self.container.ntets):
+        if (min(tetset) < 0) or (max(tetset) >= container.ntets):
             raise serr.ArgumentError, 'Invalid tetrahedron index specified.'
         # Make a list.
         self._tet_indices = list(tetset)
         
         # Check if specified tetrahedrons belong to another comp already.
         for ii in self._tet_indices:
-            if container._tet_annotation[ii] != None:
+            if container._tet_comps[ii] != None:
                 raise serr.ArgumentError, \
                     'Cannot add tetrahedron to compartment.'
 
         # Call parent object initializer.
-        super(self).__init__(id, container)
+        core.Comp.__init__(self, id, container)
         
         # Compute volume.
         self._vol = self.container._tet_vols[self._tet_indices].sum()
         
         # Perform annotation of tetrahedrons.
-        self.container._tet_annotation[self.tet_indices] = self
+        for i in self._tet_indices:
+            self.container._tet_comps[i] = self
         
         # Compute bounds.
-        _tets = self.container.tets[self._tets_indices,:]
+        _tets = self.container.tets[self._tet_indices,:]
         pts = set(_tets[:,0]) | set(_tets[:,1]) \
             | set(_tets[:,2]) | set(_tets[:,3])
+        pts = list(pts)
         xs = self.container.pnts[pts,0]
         self.__minx = xs.min()
         self.__maxx = xs.max()

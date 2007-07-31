@@ -29,7 +29,7 @@ void siEndTetmeshDef(State *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void siBeginTetDef(State * s, uint numtets)
+void siBeginTetDef(State * s)
 {
 }
 
@@ -110,7 +110,7 @@ void siSetTetCount(State * s, uint tidx, uint sidx, uint n)
 	if (tet == 0) return;
 	uint l_sidx = tet->compdef()->specG2L(sidx);
     if (l_sidx == 0xFFFF) return;
-    tet->setPoolCount(l_sidx, num);
+    tet->setPoolCount(l_sidx, n);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -14,6 +14,7 @@ from model import Model
 from model import Spec
 from volsys import Volsys
 from volsys import Reac
+from volsys import Diff
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

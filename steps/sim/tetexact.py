@@ -10,7 +10,7 @@ import steps.sim.tetexact_core as tetexact_core
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-class TetExact(FuncSSA, FuncCore, FuncTetmesh):
+class TetExact(FuncTetmesh, FuncSSA, FuncCore):
 
     """Controller class for Gillespie's Direct Method of SSA over a
     tetrahedral mesh.
@@ -20,7 +20,7 @@ class TetExact(FuncSSA, FuncCore, FuncTetmesh):
 
 
     def __init__(self, model, geom, rng):
-        FuncCore.__init__(self, wmdirect_core, model, geom, rng)
+        FuncCore.__init__(self, tetexact_core, model, geom, rng)
         FuncSSA.__init__(self)
         FuncTetmesh.__init__(self, geom)
 

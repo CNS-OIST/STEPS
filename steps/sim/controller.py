@@ -1176,13 +1176,13 @@ class FuncTetmesh(FuncCore):
         ctr = stet.barycenter(geom._pnts, geom._tets)
         for i in xrange(0, geom.ntets):
             d0 = 0.0
-            i0 = geom._tet_tet_neighbours[0]
+            i0 = geom._tet_tet_neighbours[i,0]
             d1 = 0.0
-            i1 = geom._tet_tet_neighbours[1]
+            i1 = geom._tet_tet_neighbours[i,1]
             d2 = 0.0
-            i2 = geom._tet_tet_neighbours[2]
+            i2 = geom._tet_tet_neighbours[i,2]
             d3 = 0.0
-            i3 = geom._tet_tet_neighbours[3]
+            i3 = geom._tet_tet_neighbours[i,3]
             if i0 >= 0:
                 tmp = ctr[i,:] - ctr[i0,:]
                 d0 = math.sqrt((tmp * tmp).sum(axis = 0))
@@ -1206,10 +1206,10 @@ class FuncTetmesh(FuncCore):
         # that comprise the mesh. 
         self._siBeginConnectDef(self._state)
         for i in xrange(0, geom.ntets):
-            i0 = geom._tet_tet_neighbours[0]
-            i1 = geom._tet_tet_neighbours[1]
-            i2 = geom._tet_tet_neighbours[2]
-            i3 = geom._tet_tet_neighbours[3]
+            i0 = geom._tet_tet_neighbours[i,0]
+            i1 = geom._tet_tet_neighbours[i,1]
+            i2 = geom._tet_tet_neighbours[i,2]
+            i3 = geom._tet_tet_neighbours[i,3]
             if i0 >= 0:
                 self._siConnectTetTet(self._state, 0, i, i0)
             if i1 >= 0:

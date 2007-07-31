@@ -15,6 +15,7 @@ import numpy
 import scipy.io.mio as mio
 import scipy.sparse as sparse
 import steps.thirdparty.qhull as qhull
+import sys
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

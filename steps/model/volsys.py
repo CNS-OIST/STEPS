@@ -621,7 +621,7 @@ class Diff(object):
         lig = self.model.getSpec(lig)
         self.__lig = lig
     
-    lig = property(getLig)
+    lig = property(getLig, setLig)
     
     
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
