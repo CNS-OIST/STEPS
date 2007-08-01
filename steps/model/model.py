@@ -38,7 +38,7 @@ class Model(object):
         Deep copy means that not just the references, but all components
         belonging to the Model object themselves are copied recursively.
         """
-        m = steps.model.Model()
+        m = Model()
         for id, spec in self.__specs.iteritems():
             spec._deepcopy(m)
         for id, volsys in self.__volsys.iteritems():
@@ -128,7 +128,8 @@ class Model(object):
                 If the id or species object cannot be resolved.
         """
         species = self.getSpec(species)
-        for i, v in self.__volsys.iteritems(): 
+        for i in self.__volsys:
+            v = self.__volsys[i] 
             v._handleSpecDelete(species)
         self.__specs.pop(species.id)
         species._handleSelfDelete()
@@ -278,7 +279,7 @@ class Spec(object):
         """
         """
         assert model != None
-        s = steps.model.Spec(self.id, model)
+        s = Spec(self.id, model)
         
         
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
