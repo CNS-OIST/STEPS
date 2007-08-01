@@ -44,6 +44,7 @@ etcetera.
 """
 
 
+import math
 import numpy
 import scipy.io.mio as mio
 
@@ -52,6 +53,337 @@ import steps.math.tetrahedron as stet
 import steps.math.triangle as stri
 import core
 
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+
+class _tet_iterator(object):
+    
+    """Auxiliary class for iterating over tetrahedrons in a mesh.
+    """ 
+    
+    def __init__(self, tetmesh, tetlist):
+        self._mesh = tetmesh
+        self._tets = tetlist
+        self._ntets = len(self._tets)
+        # The iterator index (not tetrahedron index!)
+        self._iidx = 0
+    
+    def __iter__(self):
+        return self
+
+    def next(self):
+        if self._iidx == self._ntets:
+            raise StopIteration
+        t = Tet(self._mesh, self._tets[self._iidx])
+        self._iidx = self._iidx + 1
+        return t
+    
+    def reset(self):
+        self._iidx = 0
+
+
+class Tet(object):
+    
+    
+    def __init__(self, tetmesh, tetidx):
+        self._mesh = tetmesh
+        self._tidx = tetidx
+        self._nodes = self._mesh._tets[self._tidx,:]
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getIdx(self):
+        return self._tidx
+    
+    idx = property(getIdx)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getQualityAR(self):
+        """Compute the quality of the tetrahedron. 
+        
+        This method uses the aspect ratio (AR) metric for tetrahedron
+        quality, given by dividing the length of the longest edge with
+        the smallest altitude. The smaller this value, the more regular 
+        the tetrahedron.
+         
+        TODO: implement getQualityAR
+        """
+        return 0.0
+    
+    qar = property(getQualityAR)
+    
+    
+    def getQualityRER(self):
+        """Compute the quality of the tetrahedron. 
+        
+        This method uses the radius-edge ratio (RER) metric for tetrahedron
+        quality, given by dividing the radius of the tetrahedron's 
+        circumsphere with the length of the shortest edge. 
+        
+        The smaller this value, the more regular the tetrahedron. The 
+        lowest possible value of this metric is given by computing the 
+        RER for a fully regular tetrahedron:
+        
+            Q = sqrt(6)/4 ~ 0.612
+         
+        This is a slightly weaker metric than getQualityAR, because 
+        certain slivers (degenerate tetrahedrons) can still have a fairly 
+        small value. 
+        """
+        return stet.circumradius(self._pnts, self._nodes) / \
+            stet.shortestEdge(self._pnts, self._nodes)
+    
+    qrer = property(getQualityRER)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getBarycenter(self):
+        return stet.barycenter(self._mesh._pnts, self._nodes)
+    
+    barycenter = property(getBarycenter)
+    
+    
+    def getTriBarycenter(self, i):
+        tri = { 0: [0,1,2], 1: [0,1,3], 2:[0,2,3], 3:[1,2,3] } 
+        return stri.barycenter(self._mesh._pnts, self._nodes[:,tri[i]])
+    
+    def getTri0Barycenter(self):
+        return stri.barycenter(self._mesh._pnts, self._nodes[:,[0,1,2]])
+    
+    def getTri1Barycenter(self):
+        return stri.barycenter(self._mesh._pnts, self._nodes[:,[0,1,3]])
+    
+    def getTri2Barycenter(self):
+        return stri.barycenter(self._mesh._pnts, self._nodes[:,[0,2,3]])
+    
+    def getTri3Barycenter(self):
+        return stri.barycenter(self._mesh._pnts, self._nodes[:,[1,2,3]])
+    
+    tri0barycenter = property(getTri0Barycenter)
+    tri1barycenter = property(getTri1Barycenter)
+    tri2barycenter = property(getTri2Barycenter)
+    tri3barycenter = property(getTri3Barycenter)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getVol(self):
+        return stet.vol(self._mesh._pnts, self._nodes)
+    
+    vol = property(getVol)
+    
+    
+    def getArea(self, i):
+        tri = { 0: [0,1,2], 1: [0,1,3], 2:[0,2,3], 3:[1,2,3] } 
+        return stri.area(self._mesh._pnts, self._nodes[:,tri[i]])
+    
+    def getArea0(self):
+        return stri.area(self._mesh._pnts, self._nodes[:,[0,1,2]])
+
+    def getArea1(self):
+        return stri.area(self._mesh._pnts, self._nodes[:,[0,1,3]])
+    
+    def getArea2(self):
+        return stri.area(self._mesh._pnts, self._nodes[:,[0,2,3]])
+    
+    def getArea3(self):
+        return stri.area(self._mesh._pnts, self._nodes[:,[1,2,3]])
+    
+    area0 = property(getArea0)
+    area1 = property(getArea1)
+    area2 = property(getArea2)
+    area3 = property(getArea3)
+    
+    
+    def getTriDist(self, i):
+        tmp = self.getTriBarycenter(i) - self.barycenter
+        return math.sqrt((tmp * tmp).sum(axis = 0))
+    
+    def getTri0Dist(self):
+        tmp = self.tri0barycenter - self.barycenter
+        return math.sqrt((tmp * tmp).sum(axis = 0))
+    
+    def getTri1Dist(self):
+        tmp = self.tri1barycenter - self.barycenter
+        return math.sqrt((tmp * tmp).sum(axis = 0))
+    
+    def getTri2Dist(self):
+        tmp = self.tri2barycenter - self.barycenter
+        return math.sqrt((tmp * tmp).sum(axis = 0))
+    
+    def getTri3Dist(self):
+        tmp = self.tri3barycenter - self.barycenter
+        return math.sqrt((tmp * tmp).sum(axis = 0))
+    
+    tri0dist = property(getTri0Dist)
+    tri1dist = property(getTri1Dist)
+    tri2dist = property(getTri2Dist)
+    tri3dist = property(getTri3Dist)
+    
+    
+    def getTetDist(self, i):
+        ntet = self.getNextTet(i)
+        if ntet == None: return 0.0
+        tmp = self.barycenter - ntet.barycenter
+        return math.sqrt((tmp * tmp).sum(axis = 0))
+    
+    def getTet0Dist(self):
+        ntet = self.ntet0
+        if ntet == None: return 0.0
+        tmp = self.barycenter - ntet.barycenter
+        return math.sqrt((tmp * tmp).sum(axis = 0))
+    
+    def getTet1Dist(self):
+        ntet = self.ntet1
+        if ntet == None: return 0.0
+        tmp = self.barycenter - ntet.barycenter
+        return math.sqrt((tmp * tmp).sum(axis = 0))
+    
+    def getTet2Dist(self):
+        ntet = self.ntet2
+        if ntet == None: return 0.0
+        tmp = self.barycenter - ntet.barycenter
+        return math.sqrt((tmp * tmp).sum(axis = 0))
+    
+    def getTet3Dist(self):
+        ntet = self.ntet3
+        if ntet == None: return 0.0
+        tmp = self.barycenter - ntet.barycenter
+        return math.sqrt((tmp * tmp).sum(axis = 0))
+    
+    tet0dist = property(getTet0Dist)
+    tet1dist = property(getTet1Dist)
+    tet2dist = property(getTet2Dist)
+    tet3dist = property(getTet3Dist)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getComp(self):
+        return self._mesh._tet_comps(self._tidx)
+
+    comp = property(getComp)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getNextTetIdx(self, i):
+        return self._mesh._tet_tet_neighbours[self._tidx,i]
+    
+    def getNextTet0Idx(self):
+        return self._mesh._tet_tet_neighbours[self._tidx,0]
+    
+    def getNextTet1Idx(self):
+        return self._mesh._tet_tet_neighbours[self._tidx,1]
+    
+    def getNextTet2Idx(self):
+        return self._mesh._tet_tet_neighbours[self._tidx,2]
+    
+    def getNextTet3Idx(self):
+        return self._mesh._tet_tet_neighbours[self._tidx,3]
+    
+    ntet0idx = property(getNextTet0Idx)
+    ntet1idx = property(getNextTet1Idx)
+    ntet2idx = property(getNextTet2Idx)
+    ntet3idx = property(getNextTet3Idx)
+    
+    
+    def getNextTet(self, i):
+        nidx = self.getNextTetIdx(i)
+        if nidx == -1: return None
+        return Tet(self._mesh, nidx)
+    
+    def getNextTet0(self):
+        nidx = self.ntet0idx
+        if nidx == -1: return None
+        return Tet(self._mesh, nidx)
+    
+    def getNextTet1(self):
+        nidx = self.ntet1idx
+        if nidx == -1: return None
+        return Tet(self._mesh, nidx)
+    
+    def getNextTet2(self):
+        nidx = self.ntet2idx
+        if nidx == -1: return None
+        return Tet(self._mesh, nidx)
+    
+    def getNextTet3(self):
+        nidx = self.ntet3idx
+        if nidx == -1: return None
+        return Tet(self._mesh, nidx)
+    
+    ntet0 = property(getNextTet0)
+    ntet1 = property(getNextTet1)
+    ntet2 = property(getNextTet2)
+    ntet3 = property(getNextTet3)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getNextTriIdx(self, i):
+        return self._mesh._tet_tri_neighbours[self._tidx,i]
+    
+    def getNextTri0Idx(self):
+        return self._mesh._tet_tri_neighbours[self._tidx,0]
+    
+    def getNextTri1Idx(self):
+        return self._mesh._tet_tri_neighbours[self._tidx,1]
+    
+    def getNextTri2Idx(self):
+        return self._mesh._tet_tri_neighbours[self._tidx,2]
+    
+    def getNextTri3Idx(self):
+        return self._mesh._tet_tri_neighbours[self._tidx,3]
+    
+    ntri0idx = property(getNextTri0Idx)
+    ntri1idx = property(getNextTri1Idx)
+    ntri2idx = property(getNextTri2Idx)
+    ntri3idx = property(getNextTri3Idx)
+    
+    
+    def getNextTri(self, i):
+        nidx = self.getNextTriIdx(i)
+        if nidx == -1: return None
+        return Tet(self._mesh, nidx)
+    
+    def getNextTri0(self):
+        nidx = self.ntri0idx
+        if nidx == -1: return None
+        return Tet(self._mesh, nidx)
+    
+    def getNextTri1(self):
+        nidx = self.ntri1idx
+        if nidx == -1: return None
+        return Tet(self._mesh, nidx)
+    
+    def getNextTri2(self):
+        nidx = self.ntri2idx
+        if nidx == -1: return None
+        return Tet(self._mesh, nidx)
+    
+    def getNextTri3(self):
+        nidx = self.ntri3idx
+        if nidx == -1: return None 
+        return Tet(self._mesh, nidx)
+    
+    ntri0 = property(getNextTri0)
+    ntri1 = property(getNextTri1)
+    ntri2 = property(getNextTri2)
+    ntri3 = property(getNextTri3)
+        
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -465,7 +797,7 @@ class TetMesh(core.Container):
             numpy.r_[ self._tri_tet_neighbours, \
                        numpy.ones((ntris, 2), dtype=int) * -1 ]
         xrstop = self._tris.shape[0]
-        xrstart = ntris_idx_stop - ntris
+        xrstart = xrstop - ntris
         self.__find_tet_tri_neighbours(xrange(xrstart,xrstop))
         
         # OTHER STUFF.
@@ -498,8 +830,14 @@ class TetMesh(core.Container):
     ntets = property(countTets)
     
     
+    #def getTets(self):
+    #    return self._tets
+    #
+    #tets = property(getTets)
+    
+    
     def getTets(self):
-        return self._tets
+        return _tet_iterator(self, xrange(0,self.ntets))
     
     tets = property(getTets)
     

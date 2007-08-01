@@ -63,6 +63,16 @@ def barycenter(p, t):
     """
     return (p[t[:,0],:] + p[t[:,1],:] + p[t[:,2],:]) / 3.0
     
+    
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+
+def normal(p, t):
+    """
+    TODO: implement triangle.normal 
+    """
+    pass
+
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
