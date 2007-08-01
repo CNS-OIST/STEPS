@@ -41,7 +41,7 @@ class Volsys(object):
         """
         """
         assert model != None
-        v = steps.volsys.Volsys(self.id, model)
+        v = Volsys(self.id, model)
         for id, reac in self.__reacs.iteritems():
             reac._deepcopy(v)
         for id, diff in self.__diffs.iteritems():
@@ -54,7 +54,8 @@ class Volsys(object):
     def _handleSelfDelete(self):
         """
         """
-        for i, r in self.__reacs: self.delReac(r)
+        for i in self.__reacs: 
+            self.delReac(self.__reacs[i])
         self._model = None
 
 
@@ -63,13 +64,15 @@ class Volsys(object):
         """
         # Delete reaction rules using species.
         reacts = [ ]
-        for i, r in self.__reacs.iteritems(): 
+        for i in self.__reacs: 
+            r = self.__reacs[i]
             if (spec in r.lhs) or (spec in r.rhs):
                 reacts.append(r)
         for r in reacts: self.delReac(r)
         # Delete diffusion rules for species.
         diffs = [ ]
-        for i, d in self.__diffs.iteritems():
+        for i in self.__diffs:
+            d = self.__difs[i]
             if spec in d.getAllSpecs():
                 diffs.append(d)
         for d in diffs: self.delDiff(d)
@@ -172,7 +175,7 @@ class Volsys(object):
         if oldid == newid: return
         self._checkReacID(newid)
         r = self.__reacs.pop(oldid)
-        self.__reacs[newid] = v
+        self.__reacs[newid] = r
 
 
     def _handleReacAdd(self, reaction):
@@ -234,7 +237,7 @@ class Volsys(object):
                 raise serr.ArgumentError, \
                     'No reaction with id \'%s\'' % reaction
         if reaction._volsys != self:
-            raise steps.ModelError, "Reac is no part of this volsys."  
+            raise serr.ArgumentError, "Reac is no part of this volsys."  
         return reaction
     
 
@@ -253,7 +256,7 @@ class Volsys(object):
         if oldid == newid: return
         self._checkDiffID(newid)
         r = self.__diffs.pop(oldid)
-        self.__diffs[newid] = v
+        self.__diffs[newid] = r
 
 
     def _handleDiffAdd(self, diff):
@@ -315,7 +318,7 @@ class Volsys(object):
                 raise serr.ArgumentError, \
                     'No diffusion rule with id \'%s\'' % diff
         if diff._volsys != self:
-            raise steps.ModelError, "Diff is no part of this volsys."  
+            raise serr.ArgumentError, "Diff is no part of this volsys."  
         return diff
     
 
@@ -363,7 +366,7 @@ class Reac(object):
         """
         """
         assert volsys != None
-        r = steps.volsys.Reac(self.id, volsys)
+        r = Reac(self.id, volsys)
         left = map(self.model.Spec.getID, self.__lhs)
         r.lhs = left
         right = map(self.model.Spec.getID, self.__rhs)
@@ -464,7 +467,7 @@ class Reac(object):
     def getOrder(self):
         """
         """
-        return len(lhs)
+        return len(self.__lhs)
     
     order = property(getOrder)
 
@@ -547,7 +550,7 @@ class Diff(object):
         """
         """
         assert volsys != None
-        d = steps.volsys.Diff(self.id, volsys, self.__lig.getID())
+        d = Diff(self.id, volsys, self.__lig.getID())
         d.dcst = self.dcst
     
     
