@@ -59,7 +59,7 @@ def barycenter(p, t):
             An N_tri * 3 array of integer indices into p.
     
     RETURNS:
-        A 1-dimensional array of size N_tri * 3 with barycenters.
+        A 2-dimensional array of size N_tri * 3 with barycenters.
     """
     return (p[t[:,0],:] + p[t[:,1],:] + p[t[:,2],:]) / 3.0
     
@@ -68,10 +68,35 @@ def barycenter(p, t):
 
 
 def normal(p, t):
+    """Compute the normal vector(s) for one or more triangles.
+    
+    These normal vectors of course have length 1.0. 
+    
+    PARAMETERS:
+        p
+            An N_pnt * 3 array of points.
+        t
+            An N_tri * 3 array of integer indices into p.
+    
+    RETURNS:
+        A 2-dimensional array of size N_tri * 3 with the normal vectors.
     """
-    TODO: implement triangle.normal 
-    """
-    pass
+    #ntri = t.shape[0]
+    #nrms = numpy.empty((ntri,3))
+    #nrms[:,0] = ((p[t[:,1],1] - p[t[:,0],1]) * (p[t[:,2],2] - p[t[:,0],2])) \
+    #          - ((p[t[:,1],2] - p[t[:,0],2]) * (p[t[:,2],1] - p[t[:,0],1]))
+    #nrms[:,1] = ((p[t[:,1],2] - p[t[:,0],2]) * (p[t[:,2],0] - p[t[:,0],0])) \
+    #          - ((p[t[:,1],0] - p[t[:,0],0]) * (p[t[:,2],2] - p[t[:,0],2]))
+    #nrms[:,2] = ((p[t[:,1],0] - p[t[:,0],0]) * (p[t[:,2],1] - p[t[:,0],1])) \
+    #          - ((p[t[:,1],1] - p[t[:,0],1]) * (p[t[:,2],0] - p[t[:,0],0]))
+    #norm = numpy.sqrt((nrms * nrms).sum(axis = 1))
+    #norm = numpy.c_ [ norm, norm, norm ]
+    #return nrms / norm
+    tmp1 = p[t[:,1],:] - p[t[:,0],:]
+    tmp2 = p[t[:,2],:] - p[t[:,0],:]
+    tmp = numpy.cross(tmp1,tmp2)
+    norm = numpy.sqrt((tmp * tmp).sum(axis = 1))
+    return tmp / numpy.c_ [ norm, norm, norm ]
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
