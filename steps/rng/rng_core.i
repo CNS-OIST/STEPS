@@ -10,6 +10,11 @@
 %import "steps/common.h"
 
 %{
+// Autotools definitions.
+#ifdef HAVE_CONFIG_H
+#include <steps/config.h>
+#endif
+
 #include <steps/rng/rng.hpp>
 %}
 

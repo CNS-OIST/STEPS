@@ -8,6 +8,11 @@
 #ifndef STEPS_SIM_SHARED_REACDEF_HPP
 #define STEPS_SIM_SHARED_REACDEF_HPP 1
 
+// Autotools definitions.
+#ifdef HAVE_CONFIG_H
+#include <steps/config.h>
+#endif
+
 // STL headers.
 #include <string>
 #include <vector>

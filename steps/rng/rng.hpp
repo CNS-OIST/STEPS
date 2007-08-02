@@ -8,6 +8,11 @@
 #ifndef STEPS_RNG_RNG_HPP
 #define STEPS_RNG_RNG_HPP 1
 
+// Autotools definitions.
+#ifdef HAVE_CONFIG_H
+#include <steps/config.h>
+#endif
+
 // STEPS headers.
 #include <steps/common.h>
 #include <steps/math/tools.hpp>

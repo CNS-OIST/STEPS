@@ -5,6 +5,11 @@
 // $Id$
 ////////////////////////////////////////////////////////////////////////////////
 
+// Autotools definitions.
+#ifdef HAVE_CONFIG_H
+#include <steps/config.h>
+#endif
+
 // STL headers.
 #include <cassert>
 
