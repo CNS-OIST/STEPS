@@ -43,6 +43,9 @@ def vol(p, t):
     RETURNS:
         A 1-dimensional array of size N_tet with volumes.
     """
+    # If we get a 1-dimensional array, make it 2D.
+    if len(t.shape) == 1: t = t.reshape(-1,4)
+    
     workhorse = numpy.empty((4, 4))
     numtets = t.shape[0]
     vols = numpy.empty((numtets))
@@ -71,6 +74,9 @@ def barycenter(p, t):
     RETURNS:
         A 1-dimensional array of size N_tet * 3 with barycenters.
     """
+    # If we get a 1-dimensional array, make it 2D.
+    if len(t.shape) == 1: t = t.reshape(-1,4)
+    
     return (p[t[:,0],:] + p[t[:,1],:] + p[t[:,2],:] + p[t[:,3],:]) / 4.0
 
 

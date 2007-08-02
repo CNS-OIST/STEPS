@@ -1150,16 +1150,7 @@ class FuncTetmesh(FuncCore):
         here!!! (i.e. using internal variables from module 
         steps.geom.tetmesh). The cause for this is that module
         tetmesh is seriously underdeveloped.  
-        
-        We should make iterators for tetrahedrons and triangles in 
-        module steps.geom.tetmesh, that can be used to retrieve properties
-        such as quality measures, volumes, areas, connectivity, etcetera.
         """
-        
-        import steps.math.tetrahedron as stet
-        import steps.math.triangle as stri
-        import numpy as np
-        import math
         
         # Declare to the solver module that we're going to start
         # describing the tetrahedral mesh.
@@ -1167,57 +1158,28 @@ class FuncTetmesh(FuncCore):
         
         # First declare the tetrahedrons themselves.
         self._siBeginTetDef(self._state)
-        # TODO: important, add them correctly, rather than just assignign
-        # all tets to the first compartment.
-        a0 = stri.area(geom._pnts, geom._tets[:,[0,1,2]])
-        a1 = stri.area(geom._pnts, geom._tets[:,[0,1,3]])
-        a2 = stri.area(geom._pnts, geom._tets[:,[0,2,3]])
-        a3 = stri.area(geom._pnts, geom._tets[:,[1,2,3]])
-        ctr = stet.barycenter(geom._pnts, geom._tets)
-        for i in xrange(0, geom.ntets):
-            d0 = 0.0
-            i0 = geom._tet_tet_neighbours[i,0]
-            d1 = 0.0
-            i1 = geom._tet_tet_neighbours[i,1]
-            d2 = 0.0
-            i2 = geom._tet_tet_neighbours[i,2]
-            d3 = 0.0
-            i3 = geom._tet_tet_neighbours[i,3]
-            if i0 >= 0:
-                tmp = ctr[i,:] - ctr[i0,:]
-                d0 = math.sqrt((tmp * tmp).sum(axis = 0))
-            if i1 >= 0:
-                tmp = ctr[i,:] - ctr[i1,:]
-                d1 = math.sqrt((tmp * tmp).sum(axis = 0))
-            if i2 >= 0:
-                tmp = ctr[i,:] - ctr[i2,:]
-                d2 = math.sqrt((tmp * tmp).sum(axis = 0))
-            if i3 >= 0:
-                tmp = ctr[i,:] - ctr[i3,:]
-                d3 = math.sqrt((tmp * tmp).sum(axis = 0))
-            # THIS IS COMPLETELY RETARDED CODE, JUST TO GET THINGS UP
-            # AND RUNNING QUICKLY!!!!!!! REQUIRES COMPLETE EXPANSION
-            # TO DEAL WITH MORE SOPHISTICATED ISSUES.
-            self._siNewTet(self._state, 0, geom._tet_vols[i], \
-                a0[i], a1[i], a2[i], a3[i], d0, d1, d2, d3)
+        for t in geom.tets:
+            self._siNewTet(self._state, self._comp(t.comp.id), \
+                t.vol, t.area0, t.area1, t.area2, t.area3, \
+                t.tet0dist, t.tet1dist, t.tet2dist, t.tet3dist)
         self._siEndTetDef(self._state)
         
         # Then declare the connections between the various elements  
         # that comprise the mesh. 
         self._siBeginConnectDef(self._state)
-        for i in xrange(0, geom.ntets):
-            i0 = geom._tet_tet_neighbours[i,0]
-            i1 = geom._tet_tet_neighbours[i,1]
-            i2 = geom._tet_tet_neighbours[i,2]
-            i3 = geom._tet_tet_neighbours[i,3]
+        for t in geom.tets:
+            i0 = t.ntet0idx
+            i1 = t.ntet1idx
+            i2 = t.ntet2idx
+            i3 = t.ntet3idx
             if i0 >= 0:
-                self._siConnectTetTet(self._state, 0, i, i0)
+                self._siConnectTetTet(self._state, 0, t.idx, t.ntet0idx)
             if i1 >= 0:
-                self._siConnectTetTet(self._state, 1, i, i1)
+                self._siConnectTetTet(self._state, 1, t.idx, t.ntet1idx)
             if i2 >= 0:
-                self._siConnectTetTet(self._state, 2, i, i2)
+                self._siConnectTetTet(self._state, 2, t.idx, t.ntet2idx)
             if i3 >= 0:
-                self._siConnectTetTet(self._state, 3, i, i3)
+                self._siConnectTetTet(self._state, 3, t.idx, t.ntet3idx)
         self._siEndConnectDef(self._state)
         
         # We're finished -- let the solver module hook it all up.

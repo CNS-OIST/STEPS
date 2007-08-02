@@ -177,26 +177,31 @@ class Tet(object):
     
     
     def getVol(self):
-        return stet.vol(self._mesh._pnts, self._nodes)
+        return numpy.asscalar(stet.vol(self._mesh._pnts, self._nodes))
     
     vol = property(getVol)
     
     
     def getArea(self, i):
-        tri = { 0: [0,1,2], 1: [0,1,3], 2:[0,2,3], 3:[1,2,3] } 
-        return stri.area(self._mesh._pnts, self._nodes[:,tri[i]])
+        tri = { 0: [0,1,2], 1: [0,1,3], 2:[0,2,3], 3:[1,2,3] }
+        n = numpy.asscalar(stri.area(self._mesh._pnts, self._nodes[:,tri[i]]))
+        return n
     
     def getArea0(self):
-        return stri.area(self._mesh._pnts, self._nodes[:,[0,1,2]])
+        n = numpy.asscalar(stri.area(self._mesh._pnts, self._nodes[:,[0,1,2]]))
+        return n
 
     def getArea1(self):
-        return stri.area(self._mesh._pnts, self._nodes[:,[0,1,3]])
+        n = numpy.asscalar(stri.area(self._mesh._pnts, self._nodes[:,[0,1,3]]))
+        return n
     
     def getArea2(self):
-        return stri.area(self._mesh._pnts, self._nodes[:,[0,2,3]])
+        n = numpy.asscalar(stri.area(self._mesh._pnts, self._nodes[:,[0,2,3]]))
+        return n
     
     def getArea3(self):
-        return stri.area(self._mesh._pnts, self._nodes[:,[1,2,3]])
+        n = numpy.asscalar(stri.area(self._mesh._pnts, self._nodes[:,[1,2,3]]))
+        return n
     
     area0 = property(getArea0)
     area1 = property(getArea1)
@@ -206,23 +211,23 @@ class Tet(object):
     
     def getTriDist(self, i):
         tmp = self.getTriBarycenter(i) - self.barycenter
-        return math.sqrt((tmp * tmp).sum(axis = 0))
+        return math.sqrt((tmp * tmp).sum(axis = 1))
     
     def getTri0Dist(self):
         tmp = self.tri0barycenter - self.barycenter
-        return math.sqrt((tmp * tmp).sum(axis = 0))
+        return math.sqrt((tmp * tmp).sum(axis = 1))
     
     def getTri1Dist(self):
         tmp = self.tri1barycenter - self.barycenter
-        return math.sqrt((tmp * tmp).sum(axis = 0))
+        return math.sqrt((tmp * tmp).sum(axis = 1))
     
     def getTri2Dist(self):
         tmp = self.tri2barycenter - self.barycenter
-        return math.sqrt((tmp * tmp).sum(axis = 0))
+        return math.sqrt((tmp * tmp).sum(axis = 1))
     
     def getTri3Dist(self):
         tmp = self.tri3barycenter - self.barycenter
-        return math.sqrt((tmp * tmp).sum(axis = 0))
+        return math.sqrt((tmp * tmp).sum(axis = 1))
     
     tri0dist = property(getTri0Dist)
     tri1dist = property(getTri1Dist)
@@ -234,31 +239,31 @@ class Tet(object):
         ntet = self.getNextTet(i)
         if ntet == None: return 0.0
         tmp = self.barycenter - ntet.barycenter
-        return math.sqrt((tmp * tmp).sum(axis = 0))
+        return math.sqrt((tmp * tmp).sum(axis = 1))
     
     def getTet0Dist(self):
         ntet = self.ntet0
         if ntet == None: return 0.0
         tmp = self.barycenter - ntet.barycenter
-        return math.sqrt((tmp * tmp).sum(axis = 0))
+        return math.sqrt((tmp * tmp).sum(axis = 1))
     
     def getTet1Dist(self):
         ntet = self.ntet1
         if ntet == None: return 0.0
         tmp = self.barycenter - ntet.barycenter
-        return math.sqrt((tmp * tmp).sum(axis = 0))
+        return math.sqrt((tmp * tmp).sum(axis = 1))
     
     def getTet2Dist(self):
         ntet = self.ntet2
         if ntet == None: return 0.0
         tmp = self.barycenter - ntet.barycenter
-        return math.sqrt((tmp * tmp).sum(axis = 0))
+        return math.sqrt((tmp * tmp).sum(axis = 1))
     
     def getTet3Dist(self):
         ntet = self.ntet3
         if ntet == None: return 0.0
         tmp = self.barycenter - ntet.barycenter
-        return math.sqrt((tmp * tmp).sum(axis = 0))
+        return math.sqrt((tmp * tmp).sum(axis = 1))
     
     tet0dist = property(getTet0Dist)
     tet1dist = property(getTet1Dist)
@@ -270,7 +275,7 @@ class Tet(object):
     
     
     def getComp(self):
-        return self._mesh._tet_comps(self._tidx)
+        return self._mesh._tet_comps[self._tidx]
 
     comp = property(getComp)
     
@@ -469,7 +474,7 @@ class TetMesh(core.Container):
         # SET UP: CORNER POINTS
         assert pnts.shape[1] == 3
         assert pnts.dtype == float
-        npnts = pnts.shape[0]
+        #npnts = pnts.shape[0]
         self._pnts = pnts.copy()
 
         # Find minimal and maximal boundary values.
@@ -1016,7 +1021,7 @@ class Comp(core.Comp):
             self.container._tet_comps[i] = self
         
         # Compute bounds.
-        _tets = self.container.tets[self._tet_indices,:]
+        _tets = self.container._tets[self._tet_indices,:]
         pts = set(_tets[:,0]) | set(_tets[:,1]) \
             | set(_tets[:,2]) | set(_tets[:,3])
         pts = list(pts)

@@ -41,6 +41,9 @@ def area(p, t):
     RETURNS:
         A 1-dimensional array of size N_tri with areas.
     """
+    # If we get a 1-dimensional array, make it 2D.
+    if len(t.shape) == 1: t = t.reshape(-1,3)
+    
     p0 = p[t[:,0],:]
     c = numpy.cross(p[t[:,1],:] - p0, p[t[:,2],:] - p0)
     return 0.5 * numpy.sqrt((c * c).sum(axis = 1))
