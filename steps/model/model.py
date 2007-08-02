@@ -7,6 +7,11 @@
 
 
 """This module contains fundamental components for defining a STEPS model.
+
+Currently, del() should not be called directly on the objects in this
+module, because the garbage collector will not be able to collect them 
+(due to references from the parent object). The only exception is the 
+root object (in other words, objects of class Model).
 """
 
 
@@ -20,7 +25,12 @@ import steps.tools as stools
 class Model(object):
 
 
-    """Top-level container and management class for all model components.
+    """Top-level container for the objects in a kinetic model.
+    
+    A model.Model object is parent to the following objects:
+        * model.Spec
+        * volsys.Volsys
+        * surfsys.Surfsys  
     """
 
 
@@ -76,7 +86,8 @@ class Model(object):
 
 
     def _handleSpecIDChange(self, oldid, newid):
-        """
+        """Handle a change in species ID.
+        Internal method: called by method model.Spec.setID()
         """
         if oldid == newid: return
         self._checkSpecID(newid)
@@ -85,7 +96,8 @@ class Model(object):
 
 
     def _handleSpecAdd(self, species):
-        """
+        """Attempt to add a Spec object to this model.
+        Internal method.
         """
         assert species._model == None, \
             '\'%s\' already assigned to a model.' % species.id
@@ -153,7 +165,7 @@ class Model(object):
 
 
     def getAllSpecs(self):
-        """
+        """Return a list of all species.
         """
         return self.__specs.values()
 
@@ -162,7 +174,8 @@ class Model(object):
     
     
     def _handleVolsysIDChange(self, oldid, newid):
-        """
+        """Handle a change in volume system ID.
+        Internal method.
         """
         if oldid == newid: return
         self._checkVolsysID(newid)
@@ -171,7 +184,8 @@ class Model(object):
 
 
     def _handleVolsysAdd(self, volsys):
-        """
+        """Handle the attempt to add a new volume system to the model.
+        Internal method.
         """
         assert volsys._model == None, \
             '\'%s\' already assigned to a model.' % volsys.id
@@ -232,7 +246,7 @@ class Model(object):
 
         
     def getAllVolsys(self):
-        """
+        """Return a list of all volume systems.
         """
         return self.__volsys.values()
 
@@ -243,12 +257,12 @@ class Model(object):
 class Spec(object):
 
 
-    """
+    """A reactant that can be used in volume and surface systems. 
     """
 
     
     def __init__(self, id, model):
-        """
+        """Initializer.
         """
         self._model = None
         self.__id = stools.checkID(id)
@@ -264,7 +278,8 @@ class Spec(object):
 
 
     def _handleSelfDelete(self):
-        """
+        """Handle a delete of this species.
+        Internal method.
         """
         self._model = None
 
@@ -273,12 +288,12 @@ class Spec(object):
 
 
     def getID(self):
-        """
+        """Return the species ID.
         """
         return self.__id
 
     def setID(self, id):
-        """
+        """Set or change the species ID.
         """
         assert self._model != None, 'Species not assigned to model.'
         if id == self.__id: return
@@ -294,7 +309,7 @@ class Spec(object):
 
 
     def getModel(self):
-        """
+        """Return a reference to the parent model.
         """
         return self._model
 
