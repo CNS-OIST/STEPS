@@ -104,6 +104,12 @@ extern void     siSetCompReacK(State * s, uint cidx, uint ridx, double kf);
 extern bool     siGetCompReacActive(State * s, uint cidx, uint ridx);
 extern void     siSetCompReacActive(State * s, uint cidx, uint ridx, bool act);
 
+extern double 	siGetCompDiffD(State * s, uint cidx, uint didx);
+extern void 	siSetCompDiffD(State * s, uint cidx, uint didx);
+
+extern bool		siGetCompDiffActive(State * s, uint cidx, uint didx);
+extern void 	siGetCompDiffActive(State * s, uint cidx, uint didx, bool act);
+
 ////////////////////////////////////////////////////////////////////////////////
 
 #endif

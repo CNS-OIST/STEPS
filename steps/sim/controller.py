@@ -126,6 +126,10 @@ class FuncCore(object):
         self._siSetCompReacK = self._rsf('siSetCompReacK')
         self._siGetCompReacActive = self._rsf('siGetCompReacActive')
         self._siSetCompReacActive = self._rsf('siSetCompReacActive')
+        self._siGetCompDiffD = self._rsf('siGetCompDiffD')
+        self._siSetCompDiffD = self._rsf('siSetCompDiffD')
+        self._siGetCompDiffActive = self._rsf('siGetCompDiffActive')
+        self._siSetCompDiffActive = self._rsf('siSetCompDiffActive')
 
         # Now, attempt to create a state.
         self._state = self._siNewState()
@@ -900,6 +904,40 @@ class FuncCore(object):
         """
         self._siSetCompReacActive(self._state, \
             self._comp(comp), self._reac(reac), act)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+
+
+    def getCompDiffD(self, comp, diff):
+        """
+        TODO: implement FuncCore.getCompDiffD
+        """
+        return 0.0
+    
+    
+    def setCompDiffD(self, comp, diff, d):
+        """
+        TODO: implement FuncCore.setCompDiffD
+        """
+        pass
+
+
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getCompDiffActive(self, comp, diff):
+        """
+        TODO: implement FuncCore.getCompDiffActive
+        """
+        return True
+    
+    
+    def setCompDiffActive(self, comp, diff, act):
+        """
+        TODO: implement FuncCore.setCompDiffActive
+        """
+        pass
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -1123,6 +1161,7 @@ class FuncTetmesh(FuncCore):
         self._siConnectTetTriInside = self._rsf('siConnectTetTriInside')
         self._siConnectTetTriOutside = self._rsf('siConnectTetTriOutside')
         self._siGetTetVol = self._rsf('siGetTetVol')
+        self._siSetTetVol = self._rsf('siSetTetVol')
         self._siGetTetCount = self._rsf('siGetTetCount')
         self._siSetTetCount = self._rsf('siSetTetCount')
         self._siGetTetMass = self._rsf('siGetTetMass')
@@ -1190,6 +1229,10 @@ class FuncTetmesh(FuncCore):
     
     
     def getTetVol(self, tet):
+        pass
+    
+    
+    def setTetVol(self, tet, vol):
         pass
     
     
