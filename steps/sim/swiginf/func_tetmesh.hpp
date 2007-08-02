@@ -57,7 +57,7 @@ extern double   siGetTetConc(State * s, uint tidx, uint sidx);
 extern void     siSetTetConc(State * s, uint tidx, uint sidx, double c);
 
 extern bool     siGetTetClamped(State * s, uint tidx, uint sidx);
-extern void     siSetCompClamped(State * s, uint tidx, uint sidx, bool buf);
+extern void     siSetTetClamped(State * s, uint tidx, uint sidx, bool buf);
 
 extern double   siGetTetReacK(State * s, uint tidx, uint ridx);
 extern void     siSetTetReacK(State * s, uint tidx, uint ridx, double kf);
