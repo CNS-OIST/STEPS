@@ -29,21 +29,6 @@ class Model(object):
         """
         self.__specs = { }
         self.__volsys = { }
-
-
-    def deepcopy(self, visit):
-        """Create a deep copy of the Model object, for use with standard
-        module 'copy'.
-        
-        Deep copy means that not just the references, but all components
-        belonging to the Model object themselves are copied recursively.
-        """
-        m = Model()
-        for id, spec in self.__specs.iteritems():
-            spec._deepcopy(m)
-        for id, volsys in self.__volsys.iteritems():
-            volsys._deepcopy(m)
-        return m
         
     
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
@@ -273,13 +258,6 @@ class Spec(object):
             self._model = None
             raise
         assert self._model != None, 'Species not assigned to model.'
-
-
-    def _deepcopy(self, model):
-        """
-        """
-        assert model != None
-        s = Spec(self.id, model)
         
         
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 

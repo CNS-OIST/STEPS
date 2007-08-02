@@ -35,17 +35,6 @@ class Volsys(object):
             self._model = None
             raise
         assert self._model != None, 'Volsys not assigned to model.'
-
-
-    def _deepcopy(self, model):
-        """
-        """
-        assert model != None
-        v = Volsys(self.id, model)
-        for id, reac in self.__reacs.iteritems():
-            reac._deepcopy(v)
-        for id, diff in self.__diffs.iteritems():
-            diff._deepcopy(v)
             
             
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
@@ -360,18 +349,6 @@ class Reac(object):
         if 'rhs' in params: self.rhs = params['rhs']
         self._kcst = 0.0
         if 'kcst' in params: self.kcst = params['kcst']
-
-    
-    def _deepcopy(self, volsys):
-        """
-        """
-        assert volsys != None
-        r = Reac(self.id, volsys)
-        left = map(self.model.Spec.getID, self.__lhs)
-        r.lhs = left
-        right = map(self.model.Spec.getID, self.__rhs)
-        r.rhs = right
-        r.kcst = self.kcst
     
     
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
@@ -544,14 +521,6 @@ class Diff(object):
         
         self._dcst = 0.0
         if 'dcst' in params: self.dcst = params['dcst']
-    
-    
-    def _deepcopy(self, volsys):
-        """
-        """
-        assert volsys != None
-        d = Diff(self.id, volsys, self.__lig.getID())
-        d.dcst = self.dcst
     
     
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
