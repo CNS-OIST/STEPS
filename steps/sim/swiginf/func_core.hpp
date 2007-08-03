@@ -113,7 +113,7 @@ extern double 	siGetCompDiffD(State * s, uint cidx, uint didx);
 extern void 	siSetCompDiffD(State * s, uint cidx, uint didx);
 
 extern bool		siGetCompDiffActive(State * s, uint cidx, uint didx);
-extern void 	siGetCompDiffActive(State * s, uint cidx, uint didx, bool act);
+extern void 	siSetCompDiffActive(State * s, uint cidx, uint didx, bool act);
 
 ////////////////////////////////////////////////////////////////////////////////
 

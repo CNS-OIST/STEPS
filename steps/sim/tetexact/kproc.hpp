@@ -26,6 +26,7 @@
 
 // Forward declarations.
 class State;
+class Tet;
 
 // Auxiliary declarations.
 class KProc;
@@ -51,6 +52,12 @@ public:
     virtual ~KProc(void);
     
     virtual void setupDeps(void) = 0;
+    
+    /// Does the occurence/rate of this kproc depend on the #molecules of 
+    /// some species (specified by its global index sidx) in a given
+    /// tetrahedron?
+    ///
+    virtual bool depSpecTet(uint gidx, Tet * tet) = 0;
     
     virtual void reset(void) = 0;
     

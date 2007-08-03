@@ -365,7 +365,7 @@ bool siGetCompDiffActive(State * s, uint cidx, uint didx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void siGetCompDiffActive(State * s, uint cidx, uint didx, bool act)
+void siSetCompDiffActive(State * s, uint cidx, uint didx, bool act)
 {
 }
 

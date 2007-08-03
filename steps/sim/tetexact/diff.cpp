@@ -11,8 +11,10 @@
 #endif
 
 // STL headers.
+#include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <iterator>
 
 // STEPS headers.
 #include <steps/common.h>
@@ -84,14 +86,51 @@ Diff::~Diff(void)
 
 void Diff::setupDeps(void)
 {
+	// Fetch ligand index.
+	uint gidx = def()->lig();
+	
+	// Search for local dependencies.
+	SchedIDXVec local;
+	// First check for other diffusion processes.
+	std::vector<Diff*>::const_iterator diffend = pTet->diffEnd();
+	for (std::vector<Diff*>::const_iterator d = pTet->diffBegin(); 
+		d != diffend; ++d)
+	{
+		if ((*d)->depSpecTet(gidx, pTet) == true)
+			local.push_back((*d)->schedIDX());
+	}
+	
+	// Search for dependencies in neighbouring tetrahedrons.
 	for (uint i = 0; i < 4; ++i)
 	{
+		// Fetch next tetrahedron, if it exists.
 		Tet * next = pTet->nextTet(i);
 		if (next == 0) continue;
-		// Add yourself to the list of stuff.
-		pUpdVec[i].push_back(schedIDX());
-		pUpdVec[i].push_back(next->TMPDIFFIDX());
+		// Later, also check if there is a triangle that might block
+		// diffusion.
+		
+		// Copy local dependencies.
+		std::copy(local.begin(), local.end(), 
+			std::inserter(pUpdVec[i], pUpdVec[i].end()));
+		
+		// First check for diffusion processes.
+		diffend = next->diffEnd();
+		for (std::vector<Diff*>::const_iterator d = next->diffBegin(); 
+			d != diffend; ++d)
+		{
+			if ((*d)->depSpecTet(gidx, next) == true)
+				pUpdVec[i].push_back((*d)->schedIDX());
+		}
 	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool Diff::depSpecTet(uint gidx, Tet * tet)
+{
+	if (pTet != tet) return false;
+	if (gidx != def()->lig()) return false;
+	return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -126,7 +165,7 @@ SchedIDXVec const & Diff::apply(State * s)
 	// Pre-fetch some general info.
 	CompDef * cdef = pTet->compdef();
     // Fetch the ligand as global index.
-    uint gidx = pDiffDef->lig();
+    uint gidx = def()->lig();
     // As local index.
     uint lidx = cdef->specG2L(gidx);
     

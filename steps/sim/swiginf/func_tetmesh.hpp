@@ -50,7 +50,7 @@ void siConnectTetTriOutside(State * s, uint side, uint tetidx, uint triidx);
 ////////////////////////////////////////////////////////////////////////////////
 
 extern double   siGetTetVol(State * s, uint tidx);
-extern void     siSetCompVol(State * s, uint cidx, double vol);
+extern void     siSetTetVol(State * s, uint tidx, double vol);
 
 extern uint     siGetTetCount(State * s, uint tidx, uint sidx);
 extern void     siSetTetCount(State * s, uint tidx, uint sidx, uint n);

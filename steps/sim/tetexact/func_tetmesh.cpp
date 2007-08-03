@@ -96,7 +96,7 @@ double siGetTetVol(State * s, uint tidx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void siSetCompVol(State * s, uint cidx, double vol)
+void siSetTetVol(State * s, uint tidx, double vol)
 {
 }
 

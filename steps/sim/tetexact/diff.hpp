@@ -44,6 +44,8 @@ public:
 	///
 	virtual void setupDeps(void);
 	
+	virtual bool depSpecTet(uint gidx, Tet * tet);
+	
 	virtual void reset(void);
 	
 	////////////////////////////////////////////////////////////////////////

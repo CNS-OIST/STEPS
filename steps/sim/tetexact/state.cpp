@@ -56,13 +56,13 @@ void State::setupState(void)
 
 void State::setupTetmesh(void)
 {
-	//std::for_each(pTets.begin(), pTets.end(), 
-	//	std::bind2nd(std::mem_fun(Tet::setupKProcs), pSched));
+	// First we create all kinetic processes.
 	for (std::vector<Tet*>::const_iterator i = pTets.begin(); 
 		i != pTets.end(); ++i)
 	{
 		(*i)->setupKProcs(pSched);
 	}
+	// Next, we resolve all dependencies.
 }
 
 ////////////////////////////////////////////////////////////////////////////////

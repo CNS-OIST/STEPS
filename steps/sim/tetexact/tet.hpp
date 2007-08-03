@@ -55,6 +55,8 @@ public:
     ///
     void setupKProcs(Sched * s);
     
+    void setupDeps(void);
+    
     void reset(void);
     
     ////////////////////////////////////////////////////////////////////////
@@ -126,7 +128,11 @@ public:
     
     ////////////////////////////////////////////////////////////////////////
 
-	uint TMPDIFFIDX(void) const;
+	inline std::vector<Diff*>::const_iterator diffBegin(void) const
+	{ return pDiffs.begin(); }
+	
+	inline std::vector<Diff*>::const_iterator diffEnd(void) const
+	{ return pDiffs.end(); }
 	
 private:
 
