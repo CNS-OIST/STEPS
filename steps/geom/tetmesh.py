@@ -274,6 +274,13 @@ class Tet(object):
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
     
     
+    def isInside(self, p):
+        return stet.inside(self._mesh._pnts[self._nodes], numpy.array(p))
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
     def getComp(self):
         return self._mesh._tet_comps[self._tidx]
 
@@ -847,6 +854,17 @@ class TetMesh(core.Container):
     tets = property(getTets)
     
     
+    def findTets(self, p):
+        r = [ ]
+        for i in self.tets:
+            if i.isInside(p): r.append(i.idx)
+        return r
+    
+    def findTet(self, p):
+        for i in self.tets:
+            if i.isInside(p): return i.idx
+    
+    
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
 
 
@@ -1379,6 +1397,7 @@ def toMatlab(filename, tetmesh, prefix=''):
         if prefix2[-1] != "_": 
             prefix2 = prefix2 + "_"
     # Create a dictionary of the stuff we're going to save.
+    contents = { }
     contents[prefix2 + "nodes"] = tetmesh.pnts
     contents[prefix2 + "tris"] = tetmesh.tris
     contents[prefix2 + "tets"] = tetmesh.tets
