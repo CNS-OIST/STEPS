@@ -40,19 +40,19 @@ AM_CPPFLAGS = -I$(top_srcdir)
 noinst_LTLIBRARIES = libsimshared.la
 
 libsimshared_la_SOURCES = \
-	compdef.cpp \
+    compdef.cpp \
     diffdef.cpp \
     reacdef.cpp \
-	specdef.cpp \
-	statedef.cpp
+    specdef.cpp \
+    statedef.cpp
 
 header_steps_sim_shared_HEADERS = \
-	compdef.hpp \
+    compdef.hpp \
     diffdef.hpp \
     doxygen.hpp \
     reacdef.hpp \
-	specdef.hpp \
-	statedef.hpp
+    specdef.hpp \
+    statedef.hpp
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
