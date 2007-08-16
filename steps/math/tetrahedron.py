@@ -40,6 +40,7 @@ SEE ALSO:
 """
 
 
+import math
 import numpy
 import numpy.linalg as linalg
 
@@ -162,6 +163,47 @@ def inside(tcp, p):
     if bc[2] < 0.0: return False
     if bc[3] < 0.0: return False
     return True
+
+
+def ranpnt(tcp, r, num = 1):
+    """Generate a number of random points in a tetrahedron.
+    
+    The default number of random points generated is 1.
+    
+    PARAMETERS:
+        tcp
+            Tetrahedron corner points (a 4*3 array).
+        r
+            A random number generator (from the steps.rng
+            interface).
+        num
+            The number of random points to generate (default = 1).
+    
+    RETURNS:
+        A num*3 Numpy array of tetrahedron-bounded random points.
+    
+    RAISES:
+        ---
+    """
+    ret = numpy.empty((num, 3))
+    if num == 0: 
+        return ret
+    tri = numpy.empty((3,3))
+    p12 = numpy.empty(3)
+    p13 = numpy.empty(3)
+    for i in xrange(0, num):
+        alpha = math.pow(r.getUnfIE(), 1.0/3.0)  
+        alpha1 = 1.0 - alpha
+        tri[0,:] = alpha * tcp[0,:] + alpha1 * tcp[1,:]
+        tri[1,:] = alpha * tcp[0,:] + alpha1 * tcp[2,:]
+        tri[2,:] = alpha * tcp[0,:] + alpha1 * tcp[3,:]
+        alpha = math.sqrt(r.getUnfIE())
+        alpha1 = 1.0 - alpha
+        p12 = alpha * tri[0,:] + alpha1 * tri[1,:]
+        p13 = alpha * tri[0,:] + alpha1 * tri[2,:]
+        alpha = r.getUnfIE()
+        ret[i,:] = alpha * p12 + (1.0 - alpha) * p13
+    return ret
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
