@@ -18,7 +18,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA
 #
-# $Id$
+# $Id:Makefile.am 64 2007-08-20 06:25:41Z stefan $
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 @SET_MAKE@
@@ -29,23 +29,25 @@ VPATH = @srcdir@
 distclean-local:
 	-rm -rf .DS_Store *~ *.bak
 
-pyexec_steps_simdir = $(pythondir)/steps/sim
-python_steps_simdir = $(pythondir)/steps/sim
-header_steps_simdir = $(pkgincludedir)/steps/sim
+header_steps_wmdirect_solver_coredir = \
+    $(pkgincludedir)/steps/wmdirect/solver_core
 
-header_steps_sim_HEADERS = \
-    doxygen.hpp
+AM_CPPFLAGS = -I$(top_srcdir)
 
-AM_CPPFLAGS = $(SWIG_PYTHON_CPPFLAGS) $(PYTHON_CPPFLAGS) -I$(top_srcdir)
+lib_LTLIBRARIES = libsteps_wmdirect.la
 
-python_steps_sim_PYTHON = \
-	__init__.py \
-	controller.py
+libsteps_wmdirect_la_SOURCES = \
+	func_core.cpp \
+    func_ssa.cpp \
+    state.cpp
 
-SUBDIRS = \
-    shared \
-    swiginf \
-	.
+libsteps_wmdirect_la_LIBADD = \
+    ../../sim/shared/libsimshared.la \
+	../../rng/libsteps_rng.la
+
+header_steps_wmdirect_solver_core_HEADERS = \
+	doxygen.hpp \
+	state.hpp
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 

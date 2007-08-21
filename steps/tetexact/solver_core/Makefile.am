@@ -21,31 +21,33 @@
 # $Id$
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-from steps.sim.controller import FuncCore, FuncSSA, FuncTetmesh
-import steps.sim.tetexact_core as tetexact_core
+@SET_MAKE@
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+srcdir = @srcdir@
+VPATH = @srcdir@
 
-class TetExact(FuncTetmesh, FuncSSA, FuncCore):
+distclean-local:
+	-rm -rf .DS_Store *~ *.bak
 
-    """Controller class for Gillespie's Direct Method of SSA over a
-    tetrahedral mesh.
-    """
+header_steps_tetexact_solver_coredir = \
+    $(pkgincludedir)/steps/tetexact/solver_core
 
-    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+AM_CPPFLAGS = -I$(top_srcdir)
 
+lib_LTLIBRARIES = libsteps_tetexact.la
 
-    def __init__(self, model, geom, rng):
-        FuncCore.__init__(self, tetexact_core, model, geom, rng)
-        FuncSSA.__init__(self)
-        FuncTetmesh.__init__(self, geom)
+libsteps_tetexact_la_SOURCES = \
+    func_core.cpp \
+    func_ssa.cpp \
+    state.cpp
 
+libsteps_tetexact_la_LIBADD = \
+    ../../sim/shared/libsimshared.la \
+    ../../rng/libsteps_rng.la
 
-    def __del__(self):
-        FuncSSA.__del__(self)
-        FuncCore.__del__(self)
-        FuncTetmesh.__del__(self)
-        
+header_steps_tetexact_solver_core_HEADERS = \
+    doxygen.hpp \
+    state.hpp
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 

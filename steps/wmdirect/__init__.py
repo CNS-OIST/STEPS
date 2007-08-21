@@ -21,31 +21,16 @@
 # $Id$
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-@SET_MAKE@
 
-srcdir = @srcdir@
-VPATH = @srcdir@
+"""
+"""
 
-distclean-local:
-	-rm -rf .DS_Store *~ *.bak
 
-pyexec_steps_simdir = $(pythondir)/steps/sim
-python_steps_simdir = $(pythondir)/steps/sim
-header_steps_simdir = $(pkgincludedir)/steps/sim
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-header_steps_sim_HEADERS = \
-    doxygen.hpp
 
-AM_CPPFLAGS = $(SWIG_PYTHON_CPPFLAGS) $(PYTHON_CPPFLAGS) -I$(top_srcdir)
+pass
 
-python_steps_sim_PYTHON = \
-	__init__.py \
-	controller.py
-
-SUBDIRS = \
-    shared \
-    swiginf \
-	.
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 

@@ -21,29 +21,43 @@
 # $Id$
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-from steps.sim.controller import FuncCore, FuncSSA
-import steps.sim.wmdirect_core as wmdirect_core
+@SET_MAKE@
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+srcdir = @srcdir@
+VPATH = @srcdir@
 
-class WMDirect(FuncSSA, FuncCore):
+distclean-local:
+	-rm -rf .DS_Store *~ *.bak
 
-    """Controller class for Gillespie's Direct Method of SSA in well-mixed
-    conditions.
-    """
+pyexec_steps_wmdirectdir = $(pythondir)/steps/wmdirect
+python_steps_wmdirectdir = $(pythondir)/steps/wmdirect
+header_steps_wmdirectdir = $(pkgincludedir)/steps/wmdirect
 
-    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+AM_CPPFLAGS = $(SWIG_PYTHON_CPPFLAGS) $(PYTHON_CPPFLAGS) -I$(top_srcdir)
 
+SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@ -I$(top_srcdir) 
+%_wrap.cpp: %.i
+	$(SWIG) $(SWIG_PYTHON_OPT) -o $@ $<
+SWIG_SOURCES = solver_core.i
 
-    def __init__(self, model, geom, rng):
-        FuncCore.__init__(self, wmdirect_core, model, geom, rng)
-        FuncSSA.__init__(self)
+pyexec_steps_wmdirect_LTLIBRARIES = \
+    _solver_core.la
 
+_solver_core_la_LDFLAGS = -module -avoid-version $(PYTHON_LDFLAGS)
+_solver_core_la_SOURCES = \
+    $(SWIG_SOURCES) \
+    solver_core_wrap.cpp
+_solver_core_la_LIBADD = \
+    ./solver_core/libsteps_wmdirect.la
 
-    def __del__(self):
-        FuncSSA.__del__(self)
-        FuncCore.__del__(self)
-        
+python_steps_wmdirect_PYTHON = \
+    __init__.py \
+    solver.py \
+    solver_core.py
+
+SUBDIRS = \
+    solver_core \
+    .
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 

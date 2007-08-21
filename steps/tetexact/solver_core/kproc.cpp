@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
 // Copyright (C) 2005-2007 Stefan Wils. All rights reserved.
-//
+// 
 // This file is part of STEPS.
 //
 // This library is free software; you can redistribute it and/or
@@ -18,21 +18,34 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA
 //
-// $Id$
+// $Id:kproc.cpp 64 2007-08-20 06:25:41Z stefan $
 ////////////////////////////////////////////////////////////////////////////////
 
-%module wmdirect_core
+// Autotools definitions.
+#ifdef HAVE_CONFIG_H
+#include <steps/config.h>
+#endif
 
-%import "steps/common.h"
+// Standard library & STL headers.
+#include <vector>
 
-%{
-#include <steps/rng/rng.hpp>
-#include <steps/sim/swiginf/func_core.hpp>
-#include <steps/sim/swiginf/func_ssa.hpp>
-%}
+// STEPS headers.
+#include <steps/common.h>
+#include <steps/tetexact/solver_core/kproc.hpp>
+#include <steps/tetexact/solver_core/sched.hpp>
 
-%include swiginf/func_core.i
-%include swiginf/func_ssa.i
+////////////////////////////////////////////////////////////////////////////////
+
+KProc::KProc(void)
+: pSchedIDX(0)
+{
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+KProc::~KProc(void)
+{
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

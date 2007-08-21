@@ -29,23 +29,35 @@ VPATH = @srcdir@
 distclean-local:
 	-rm -rf .DS_Store *~ *.bak
 
-pyexec_steps_simdir = $(pythondir)/steps/sim
-python_steps_simdir = $(pythondir)/steps/sim
-header_steps_simdir = $(pkgincludedir)/steps/sim
-
-header_steps_sim_HEADERS = \
-    doxygen.hpp
+pyexec_steps_tetexactdir = $(pythondir)/steps/tetexact
+python_steps_tetexactdir = $(pythondir)/steps/tetexact
+header_steps_tetexactdir = $(pkgincludedir)/steps/tetexact
 
 AM_CPPFLAGS = $(SWIG_PYTHON_CPPFLAGS) $(PYTHON_CPPFLAGS) -I$(top_srcdir)
 
-python_steps_sim_PYTHON = \
-	__init__.py \
-	controller.py
+SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@ -I$(top_srcdir) 
+%_wrap.cpp: %.i
+	$(SWIG) $(SWIG_PYTHON_OPT) -o $@ $<
+SWIG_SOURCES = solver_core.i
+
+pyexec_steps_tetexact_LTLIBRARIES = \
+    _solver_core.la
+
+_solver_core_la_LDFLAGS = -module -avoid-version $(PYTHON_LDFLAGS)
+_solver_core_la_SOURCES = \
+    $(SWIG_SOURCES) \
+    solver_core_wrap.cpp
+_solver_core_la_LIBADD = \
+    ./solver_core/libsteps_tetexact.la
+
+python_steps_tetexact_PYTHON = \
+    __init__.py \
+    solver.py \
+    solver_core.py
 
 SUBDIRS = \
-    shared \
-    swiginf \
-	.
+    solver_core \
+    .
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 

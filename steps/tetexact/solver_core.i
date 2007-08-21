@@ -18,10 +18,10 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA
 //
-// $Id$
+// $Id:tetexact_core.i 64 2007-08-20 06:25:41Z stefan $
 ////////////////////////////////////////////////////////////////////////////////
 
-%module tetexact_core
+%module solver_core
 
 %import "steps/common.h"
 
@@ -32,9 +32,9 @@
 #include <steps/sim/swiginf/func_tetmesh.hpp>
 %}
 
-%include swiginf/func_core.i
-%include swiginf/func_ssa.i
-%include swiginf/func_tetmesh.i
+%include steps/sim/swiginf/func_core.i
+%include steps/sim/swiginf/func_ssa.i
+%include steps/sim/swiginf/func_tetmesh.i
 
 ////////////////////////////////////////////////////////////////////////////////
 

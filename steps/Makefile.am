@@ -38,7 +38,9 @@ SUBDIRS	= \
     rng \
     sim \
     tests \
+    tetexact \
     thirdparty \
+    wmdirect \
     .
 
 # Python package.

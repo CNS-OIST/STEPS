@@ -18,34 +18,34 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA
 #
-# $Id$
+# $Id:tetexact.py 64 2007-08-20 06:25:41Z stefan $
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-@SET_MAKE@
+from steps.sim.controller import FuncCore, FuncSSA, FuncTetmesh
+import steps.tetexact.solver_core as tetexact_core
 
-srcdir = @srcdir@
-VPATH = @srcdir@
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-distclean-local:
-	-rm -rf .DS_Store *~ *.bak
+class TetExact(FuncTetmesh, FuncSSA, FuncCore):
 
-pyexec_steps_simdir = $(pythondir)/steps/sim
-python_steps_simdir = $(pythondir)/steps/sim
-header_steps_simdir = $(pkgincludedir)/steps/sim
+    """Controller class for Gillespie's Direct Method of SSA over a
+    tetrahedral mesh.
+    """
 
-header_steps_sim_HEADERS = \
-    doxygen.hpp
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
 
-AM_CPPFLAGS = $(SWIG_PYTHON_CPPFLAGS) $(PYTHON_CPPFLAGS) -I$(top_srcdir)
 
-python_steps_sim_PYTHON = \
-	__init__.py \
-	controller.py
+    def __init__(self, model, geom, rng):
+        FuncCore.__init__(self, tetexact_core, model, geom, rng)
+        FuncSSA.__init__(self)
+        FuncTetmesh.__init__(self, geom)
 
-SUBDIRS = \
-    shared \
-    swiginf \
-	.
+
+    def __del__(self):
+        FuncSSA.__del__(self)
+        FuncCore.__del__(self)
+        FuncTetmesh.__del__(self)
+        
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
