@@ -299,7 +299,7 @@ class FuncCore(object):
                 The diffusion rule cannot be resolved.
         """
         if isinstance(diff, basestring):
-            diff = self._lut_diff[diff]
+            diff = self._lut_diffs[diff]
         if diff == None:
             raise serr.ArgumentError, 'Cannot find diffusion rule.'
         return diff
@@ -475,7 +475,7 @@ class FuncCore(object):
                     % ( cid, self.solvername, cidx, self._lut_compnames[cidx] )
             self._lut_comps[cid] = cidx
             self._lut_compnames[cidx] = cid
-                    
+            
             # Loop over all volume systems, and resolve them.
             for vsys in c.volsys:
                 # Find the Volsys object with the given name.
