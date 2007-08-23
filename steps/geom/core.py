@@ -334,8 +334,7 @@ class Comp(object):
         
         PARAMETERS:
             volsys
-                A string or steps.model.Volsys object, or some sequence
-                of such objects.
+                A string
             
         RETURNS:
             ---
@@ -343,14 +342,7 @@ class Comp(object):
         RAISES:
             ---
         """
-        # Turn the input thingy into a set.
-        volsys = set(volsys)
-        # Now check its contents and add it.
-        for vs in volsys:
-            try:
-                vs = vs.id
-            except: pass
-            self.volsys.add(vs)
+        self._volsys.add(volsys)
     
     
     def delVolsys(self, volsys):
@@ -358,8 +350,7 @@ class Comp(object):
         
         PARAMETERS:
             volsys
-                A string or steps.model.Volsys object, or some sequence of
-                such objects.
+                A string.
             
         RETURNS:
             ---
@@ -367,14 +358,7 @@ class Comp(object):
         RAISES:
             ---
         """
-        # Turn the input thingy into a set.
-        volsys = set(volsys)
-        # Now check its contents, and remove it.
-        for vs in volsys:
-            try:
-                vs = vs.id
-            except: pass
-            self.volsys.discard(vs)
+        self._volsys.discard(volsys)
 
 
     def getVolsys(self):
@@ -570,8 +554,7 @@ class Patch(object):
         
         PARAMETERS:
             surfsys
-                A string or steps.model.Surfsys object, or some sequence
-                of such objects.
+                A string.
             
         RETURNS:
             ---
@@ -579,14 +562,7 @@ class Patch(object):
         RAISES:
             ---
         """
-        # Turn the input thingy into a set.
-        surfsys = set(surfsys)
-        # Now check its contents and add it.
-        for ss in surfsys:
-            try:
-                ss = ss.id
-            except: pass
-            self._surfsys.add(ss)
+        self._surfsys.add(surfsys)
     
     
     def delSurfsys(self, surfsys):
@@ -594,8 +570,7 @@ class Patch(object):
         
         PARAMETERS:
             surfsys
-                A string or steps.model.Surfsys object, or some sequence of
-                such objects.
+                A string.
             
         RETURNS:
             ---
@@ -603,14 +578,7 @@ class Patch(object):
         RAISES:
             ---
         """
-        # Turn the input thingy into a set.
-        surfsys = set(surfsys)
-        # Now check its contents, and remove it.
-        for ss in surfsys:
-            try:
-                ss = ss.id
-            except: pass
-            self._surfsys.discard(ss)
+        self._surfsys.discard(surfsys)
     
             
     def getSurfsys(self):
