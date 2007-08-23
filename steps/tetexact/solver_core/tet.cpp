@@ -29,6 +29,7 @@
 // Standard library & STL headers.
 #include <cassert>
 #include <algorithm>
+#include <iostream>
 
 // STEPS headers.
 #include <steps/common.h>
@@ -42,112 +43,112 @@
 
 Tet::Tet
 (
-	CompDef * cdef, double vol, 
-	double a0, double a1, double a2, double a3, 
-	double d0, double d1, double d2, double d3
+    CompDef * cdef, double vol, 
+    double a0, double a1, double a2, double a3, 
+    double d0, double d1, double d2, double d3
 )
 {
-	// Copy all this crap.
-	pCompDef = cdef;
-	pNextTet[0] = 0;
-	pNextTet[1] = 0;
-	pNextTet[2] = 0;
-	pNextTet[3] = 0;
-	// Tetrahedral volumes.
-	assert(vol >= 0.0);
-	pVol = vol;
-	// Areas of boundary triangles.
-	assert(a0 >= 0.0);
-	pAreas[0] = a0;
-	assert(a1 >= 0.0);
-	pAreas[1] = a1;
-	assert(a2 >= 0.0);
-	pAreas[2] = a2;
-	assert(a3 >= 0.0);
-	pAreas[3] = a3;
-	// Distances to neighbouring tetrahedrons.
-	assert(d0 >= 0.0);
-	pDist[0] = d0;
-	assert(d1 >= 0.0);
-	pDist[1] = d1;
-	assert(d2 >= 0.0);
-	pDist[2] = d2;
-	assert(d3 >= 0.0);
-	pDist[3] = d3;
-	
-	// Based on compartment definition, build other structures.
-	uint nspecs = compdef()->countSpecs();
-	pPoolCount = new uint[nspecs];
-	pPoolFlags = new uint[nspecs];
-	std::fill_n(pPoolCount, nspecs, 0);
-	std::fill_n(pPoolFlags, nspecs, 0);
-	
-	uint ndiffs = compdef()->countDiffs();
-	for (uint i = 0; i < ndiffs; ++i)
-		pDiffs.push_back(0);
+    // Copy all this crap.
+    pCompDef = cdef;
+    pNextTet[0] = 0;
+    pNextTet[1] = 0;
+    pNextTet[2] = 0;
+    pNextTet[3] = 0;
+    // Tetrahedral volumes.
+    assert(vol >= 0.0);
+    pVol = vol;
+    // Areas of boundary triangles.
+    assert(a0 >= 0.0);
+    pAreas[0] = a0;
+    assert(a1 >= 0.0);
+    pAreas[1] = a1;
+    assert(a2 >= 0.0);
+    pAreas[2] = a2;
+    assert(a3 >= 0.0);
+    pAreas[3] = a3;
+    // Distances to neighbouring tetrahedrons.
+    assert(d0 >= 0.0);
+    pDist[0] = d0;
+    assert(d1 >= 0.0);
+    pDist[1] = d1;
+    assert(d2 >= 0.0);
+    pDist[2] = d2;
+    assert(d3 >= 0.0);
+    pDist[3] = d3;
+    
+    // Based on compartment definition, build other structures.
+    uint nspecs = compdef()->countSpecs();
+    pPoolCount = new uint[nspecs];
+    pPoolFlags = new uint[nspecs];
+    std::fill_n(pPoolCount, nspecs, 0);
+    std::fill_n(pPoolFlags, nspecs, 0);
+    
+    uint ndiffs = compdef()->countDiffs();
+    for (uint i = 0; i < ndiffs; ++i)
+        pDiffs.push_back(0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 Tet::~Tet(void)
 {
-	// Delete species pool information.
-	delete[] pPoolCount;
-	delete[] pPoolFlags;
-	
-	// Delete diffusion rules.
-	uint ndiffs = compdef()->countDiffs();
-	for (uint i = 0; i < ndiffs; ++i)
-		delete pDiffs[i];
+    // Delete species pool information.
+    delete[] pPoolCount;
+    delete[] pPoolFlags;
+    
+    // Delete diffusion rules.
+    uint ndiffs = compdef()->countDiffs();
+    for (uint i = 0; i < ndiffs; ++i)
+        delete pDiffs[i];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void Tet::setupKProcs(Sched * sched)
 {
-	// Create diffusion kproc's.
-	uint ndiffs = compdef()->countDiffs();
-	for (uint i = 0; i < ndiffs; ++i)
-	{
-		DiffDef * ddef = compdef()->diff(i);
-		Diff * d = pDiffs[i] = new Diff(ddef, this);
-		sched->addKProc(d);
-	}
+    // Create diffusion kproc's.
+    uint ndiffs = compdef()->countDiffs();
+    for (uint i = 0; i < ndiffs; ++i)
+    {
+        DiffDef * ddef = compdef()->diff(i);
+        Diff * d = pDiffs[i] = new Diff(ddef, this);
+        sched->addKProc(d);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void Tet::setupDeps(void)
 {
-	uint ndiffs = compdef()->countDiffs();
-	for (uint i = 0; i < ndiffs; ++i)
-	{
-		pDiffs[i]->setupDeps();
-	}
+    uint ndiffs = compdef()->countDiffs();
+    for (uint i = 0; i < ndiffs; ++i)
+    {
+        pDiffs[i]->setupDeps();
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void Tet::reset(void)
 {
-	uint nspecs = compdef()->countSpecs();
-	std::fill_n(pPoolCount, nspecs, 0);
-	std::fill_n(pPoolFlags, nspecs, 0);
-	
-	uint ndiffs = compdef()->countDiffs();
-	for (uint i = 0; i < ndiffs; ++i)
-	{
-		pDiffs[i]->reset();
-	}
+    uint nspecs = compdef()->countSpecs();
+    std::fill_n(pPoolCount, nspecs, 0);
+    std::fill_n(pPoolFlags, nspecs, 0);
+    
+    uint ndiffs = compdef()->countDiffs();
+    for (uint i = 0; i < ndiffs; ++i)
+    {
+        pDiffs[i]->reset();
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void Tet::setNextTet(uint i, Tet * t)
 {
-	pNextTet[i] = t;
+    pNextTet[i] = t;
 }
-	
+    
 ////////////////////////////////////////////////////////////////////////////////
 
 // END

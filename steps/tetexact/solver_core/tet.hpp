@@ -50,16 +50,16 @@ class Tet
 public:
 
     ////////////////////////////////////////////////////////////////////////
-	// OBJECT CONSTRUCTION & DESTRUCTION
-	////////////////////////////////////////////////////////////////////////
-	
+    // OBJECT CONSTRUCTION & DESTRUCTION
+    ////////////////////////////////////////////////////////////////////////
+    
     /// Constructor.
-	///
+    ///
     Tet
     (
-    	CompDef * cdef, double vol, 
-    	double a0, double a1, double a2, double a3, 
-    	double d0, double d1, double d2, double d3
+        CompDef * cdef, double vol, 
+        double a0, double a1, double a2, double a3, 
+        double d0, double d1, double d2, double d3
     );
     
     /// Destructor.
@@ -124,7 +124,7 @@ public:
     inline void incPoolCount(uint lidx, int count) const
     { pPoolCount[lidx] += count; } 
     
-	inline uint poolFlags(uint lidx) const
+    inline uint poolFlags(uint lidx) const
     { return pPoolFlags[lidx]; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -144,29 +144,29 @@ public:
     
     ////////////////////////////////////////////////////////////////////////
 
-	inline std::vector<Diff*>::const_iterator diffBegin(void) const
-	{ return pDiffs.begin(); }
-	
-	inline std::vector<Diff*>::const_iterator diffEnd(void) const
-	{ return pDiffs.end(); }
-	
+    inline std::vector<Diff*>::const_iterator diffBegin(void) const
+    { return pDiffs.begin(); }
+    
+    inline std::vector<Diff*>::const_iterator diffEnd(void) const
+    { return pDiffs.end(); }
+    
 private:
 
-	////////////////////////////////////////////////////////////////////////
-	// GENERAL INFO
-	CompDef * 					pCompDef;
-	
-	////////////////////////////////////////////////////////////////////////
-	// CONNECTIVITY DATA
-	
-	Tet *						pNextTet[4];
-	
-	double 						pVol;
-	
-	double						pAreas[4];
-	
-	double 						pDist[4];
-	
+    ////////////////////////////////////////////////////////////////////////
+    // GENERAL INFO
+    CompDef *                   pCompDef;
+    
+    ////////////////////////////////////////////////////////////////////////
+    // CONNECTIVITY DATA
+    
+    Tet *                       pNextTet[4];
+    
+    double                      pVol;
+    
+    double                      pAreas[4];
+    
+    double                      pDist[4];
+    
     ////////////////////////////////////////////////////////////////////////
     // SPECIES DATA
 
@@ -181,12 +181,12 @@ private:
     ////////////////////////////////////////////////////////////////////////
     // REACTION CHANNELS
     
-    //KProc **					pReacs;
+    //KProc **                    pReacs;
     
     ////////////////////////////////////////////////////////////////////////
     // DIFFUSION RULES
     
-    std::vector<Diff*>			pDiffs;
+    std::vector<Diff*>          pDiffs;
     
 };
 

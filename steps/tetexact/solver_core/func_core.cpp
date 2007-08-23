@@ -82,14 +82,14 @@ char * siGetSolverEmail(void)
 
 State * siNewState(void)
 {
-	return new State();
+    return new State();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siDelState(State * s)
 {
-	delete s;
+    delete s;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -102,8 +102,8 @@ void siBeginStateDef(State * s)
 
 void siEndStateDef(State * s)
 {
-	s->def()->setupFinal();
-	s->setupState();
+    s->def()->setupFinal();
+    s->setupState();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -122,7 +122,7 @@ void siEndVarDef(State * s)
 
 uint siNewSpec(State * s, char * name)
 {
-	SpecDef * spec = s->def()->createSpecDef(name);
+    SpecDef * spec = s->def()->createSpecDef(name);
     assert(spec != 0);
     return spec->gidx();
 }
@@ -143,7 +143,7 @@ void siEndReacDef(State * s)
 
 uint siNewReac(State * s, char * name, double kcst)
 {
-	ReacDef * reac = s->def()->createReacDef(name);
+    ReacDef * reac = s->def()->createReacDef(name);
     assert(reac != 0);
     reac->setKcst(kcst);
     return reac->gidx();
@@ -153,7 +153,7 @@ uint siNewReac(State * s, char * name, double kcst)
 
 void siAddReacLHS(State * s, uint ridx, uint sidx)
 {
-	ReacDef * reac = s->def()->reac(ridx);
+    ReacDef * reac = s->def()->reac(ridx);
     assert(reac != 0);
     reac->incLHS(sidx);
 }
@@ -162,7 +162,7 @@ void siAddReacLHS(State * s, uint ridx, uint sidx)
 
 void siAddReacRHS(State * s, uint ridx, uint sidx)
 {
-	ReacDef * reac = s->def()->reac(ridx);
+    ReacDef * reac = s->def()->reac(ridx);
     assert(reac != 0);
     reac->incRHS(sidx);
 }
@@ -206,7 +206,7 @@ void siEndCompDef(State * s)
 
 uint siNewComp(State * s, char * name, double vol)
 {
-	CompDef * comp = s->def()->createCompDef(name);
+    CompDef * comp = s->def()->createCompDef(name);
     assert(comp != 0);
     comp->setVol(vol);
     return comp->gidx();
@@ -216,7 +216,7 @@ uint siNewComp(State * s, char * name, double vol)
 
 void siAddCompSpec(State * s, uint cidx, uint sidx)
 {
-	CompDef * comp = s->def()->comp(cidx);
+    CompDef * comp = s->def()->comp(cidx);
     assert(comp != 0);
     comp->addSpec(sidx);
 }
@@ -225,7 +225,7 @@ void siAddCompSpec(State * s, uint cidx, uint sidx)
 
 void siAddCompReac(State * s, uint cidx, uint ridx)
 {
-	CompDef * comp = s->def()->comp(cidx);
+    CompDef * comp = s->def()->comp(cidx);
     assert(comp != 0);
     comp->addReac(ridx);
 }
@@ -233,7 +233,7 @@ void siAddCompReac(State * s, uint cidx, uint ridx)
 ////////////////////////////////////////////////////////////////////////////////
 
 void siAddCompDiff(State * s, uint cidx, uint didx)
-{    
+{
     CompDef * comp = s->def()->comp(cidx);
     assert(comp != 0);
     comp->addDiff(didx);
@@ -243,14 +243,14 @@ void siAddCompDiff(State * s, uint cidx, uint didx)
 
 void siSetRNG(State * s, steps::rng::RNG * rng)
 {
-	s->setRNG(rng);
+    s->setRNG(rng);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siReset(State * s)
 {
-	s->reset();
+    s->reset();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -263,29 +263,29 @@ void siRun(State * s, double endtime)
 
 double siGetTime(State * s)
 {
-	return s->time();
+    return s->time();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double siGetCompVol(State * s, uint cidx)
 {
-	// TODO: implement
-	return 0.0;
+    // TODO: implement
+    return 0.0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetCompVol(State * s, uint cidx, double vol)
 {
-	// Not implemented!
+    // Not implemented!
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint siGetCompCount(State * s, uint cidx, uint sidx)
 {
-	return 0;
+    return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -298,7 +298,7 @@ void siSetCompCount(State * s, uint cidx, uint sidx, uint n)
 
 double siGetCompMass(State * s, uint cidx, uint sidx)
 {
-	return 0.0;
+    return 0.0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -311,7 +311,7 @@ void siSetCompMass(State * s, uint cidx, uint sidx, double m)
 
 double siGetCompConc(State * s, uint cidx, uint sidx)
 {
-	return 0.0;
+    return 0.0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -324,7 +324,7 @@ void siSetCompConc(State * s, uint cidx, uint sidx, double c)
 
 bool siGetCompClamped(State * s, uint cidx, uint sidx)
 {
-	return false;
+    return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -337,7 +337,7 @@ void siSetCompClamped(State * s, uint cidx, uint sidx, bool buf)
 
 double siGetCompReacK(State * s, uint cidx, uint ridx)
 {
-	return 0.0;
+    return 0.0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -350,7 +350,7 @@ void siSetCompReacK(State * s, uint cidx, uint ridx, double kf)
 
 bool siGetCompReacActive(State * s, uint cidx, uint ridx)
 {
-	return true;
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -363,7 +363,7 @@ void siSetCompReacActive(State * s, uint cidx, uint ridx, bool act)
 
 double siGetCompDiffD(State * s, uint cidx, uint didx)
 {
-	return 0.0;
+    return 0.0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -376,7 +376,7 @@ void siSetCompDiffD(State * s, uint cidx, uint didx)
 
 bool siGetCompDiffActive(State * s, uint cidx, uint didx)
 {
-	return true;
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

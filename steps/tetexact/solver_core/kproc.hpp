@@ -47,10 +47,10 @@ class Tet;
 // Auxiliary declarations.
 class KProc;
 
-typedef KProc * 						KProcP;
-typedef std::vector<KProcP>				KProcPVec;
-typedef KProcPVec::iterator				KProcPVecI;
-typedef KProcPVec::const_iterator		KProcPVecCI;
+typedef KProc *                         KProcP;
+typedef std::vector<KProcP>             KProcPVec;
+typedef KProcPVec::iterator             KProcPVecI;
+typedef KProcPVec::const_iterator       KProcPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -61,7 +61,7 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
-	////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
 
     KProc(void);
 
@@ -107,9 +107,9 @@ public:
     
 private:
 
-	////////////////////////////////////////////////////////////////////////
-	
-    SchedIDX          			pSchedIDX;
+    ////////////////////////////////////////////////////////////////////////
+    
+    SchedIDX                    pSchedIDX;
 
 };
 

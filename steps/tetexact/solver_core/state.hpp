@@ -46,72 +46,120 @@
 
 class State
 {
-	
-public:
-	
-	////////////////////////////////////////////////////////////////////////
-	
-	/// Default constructor.
-	///
-	State(void);
-	
-	/// Destructor.
-	///
-	~State(void);
-	
-	/// Return the state definition.
-	///
-	inline StateDef * def(void) const
-	{ return pStateDef; }
-	
-	////////////////////////////////////////////////////////////////////////
-	
-	void setupState(void);
-	
-	void setupTetmesh(void);
-	
-	void reset(void);
-	
-	////////////////////////////////////////////////////////////////////////
-	
-	inline void setRNG(steps::rng::RNG * rng)
-	{ pRNG = rng; }
-	
-	inline steps::rng::RNG * rng(void) const
-	{ return pRNG; }
-	
-	////////////////////////////////////////////////////////////////////////
-	
-	inline double time(void) const
-	{ return pTime; }
-	
-	inline Sched * sched(void) const
-	{ return pSched; }
-	
-	////////////////////////////////////////////////////////////////////////
-	
-	uint addTet
-	(
-		CompDef * cdef, double vol, 
-		double a1, double a2, double a3, double a4,
-		double d1, double d2, double d3, double d4
-	);
-	
-	inline Tet * tet(uint tidx) const
-	{ return pTets[tidx]; }
-	
-private:
-	
-	StateDef *                  pStateDef;
-	
-	steps::rng::RNG *           pRNG;
     
-	double						pTime;
+public:
+    
+    ////////////////////////////////////////////////////////////////////////
+    
+    /// Default constructor.
+    ///
+    State(void);
+    
+    /// Destructor.
+    ///
+    ~State(void);
+    
+    /// Return the state definition.
+    ///
+    inline StateDef * def(void) const
+    { return pStateDef; }
 
-	Sched * 					pSched;
-	
-	std::vector<Tet *>			pTets;
-	
+    inline Sched * sched(void) const
+    { return pSched; }
+    
+    ////////////////////////////////////////////////////////////////////////
+    
+    void setupState(void);
+    
+    void setupTetmesh(void);
+    
+    void reset(void);
+    
+    ////////////////////////////////////////////////////////////////////////
+    
+    void step(void);
+    
+    void run(double maxt);
+    
+    ////////////////////////////////////////////////////////////////////////
+    
+    inline void setRNG(steps::rng::RNG * rng)
+    { pRNG = rng; }
+    
+    inline steps::rng::RNG * rng(void) const
+    { return pRNG; }
+    
+    ////////////////////////////////////////////////////////////////////////
+    
+    inline double time(void) const
+    { return pTime; }
+    
+    inline uint nsteps(void) const
+    { return pNSteps; }
+    
+    ////////////////////////////////////////////////////////////////////////
+    
+    uint addTet
+    (
+        CompDef * cdef, double vol, 
+        double a1, double a2, double a3, double a4,
+        double d1, double d2, double d3, double d4
+    );
+    
+    inline Tet * tet(uint tidx) const
+    { return pTets[tidx]; }
+    
+    ////////////////////////////////////////////////////////////////////////
+    
+private:
+    
+    void executeStep(KProc * kp, double dt);
+    
+    ////////////////////////////////////////////////////////////////////////
+    
+    StateDef *                  pStateDef;
+    
+    steps::rng::RNG *           pRNG;
+    
+    ////////////////////////////////////////////////////////////////////////
+    // TIME
+    ////////////////////////////////////////////////////////////////////////
+    
+    inline void incTime(double dt)
+    { pTime += dt; }
+    
+    inline void setTime(double t)
+    { pTime = t; }
+    
+    inline void resetTime(void)
+    { pTime = 0.0; }
+    
+    double                      pTime;
+    
+    ////////////////////////////////////////////////////////////////////////
+    // DISCRETE STEP COUNTER
+    ////////////////////////////////////////////////////////////////////////
+    
+    inline void incNSteps(uint i = 1)
+    { pNSteps += i; }
+    
+    inline void resetNSteps(void)
+    { pNSteps = 0; }
+    
+    uint                        pNSteps;
+    
+    ////////////////////////////////////////////////////////////////////////
+    
+    Sched *                     pSched;
+    
+    ////////////////////////////////////////////////////////////////////////
+    // THE MESH ELEMENTS
+    ////////////////////////////////////////////////////////////////////////
+    
+    std::vector<Tet *>          pTets;
+    
+    ////////////////////////////////////////////////////////////////////////
+    
 };
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -46,57 +46,57 @@ class Diff
 {
 
 public:
-	
-	////////////////////////////////////////////////////////////////////////
-	
-	/// Constructor.
-	///
-	Diff(DiffDef * ddef, Tet * tet);
-	
-	/// Destructor.
-	///
-	virtual ~Diff(void);
-	
-	///
-	virtual void setupDeps(void);
-	
-	virtual bool depSpecTet(uint gidx, Tet * tet);
-	
-	virtual void reset(void);
-	
-	////////////////////////////////////////////////////////////////////////
-	
-	///
-	virtual double rate(void) const;
-	
-	///
-	virtual SchedIDXVec const & apply(State * s);
-
-	////////////////////////////////////////////////////////////////////////
-	
-	inline DiffDef * def(void) const
-	{ return pDiffDef; }
-	
-	////////////////////////////////////////////////////////////////////////
-	
-private:
-
-	////////////////////////////////////////////////////////////////////////
-	
-	DiffDef * 					pDiffDef;
-	
-	Tet * 						pTet;
-	
-	/// 
-	SchedIDXVec              	pUpdVec[4];
     
     ////////////////////////////////////////////////////////////////////////
     
-	/// Properly scaled diffusivity constant.    
+    /// Constructor.
     ///
-	double                      pScaledDcst;
+    Diff(DiffDef * ddef, Tet * tet);
     
-    double                      pCDFSelector[3];	
+    /// Destructor.
+    ///
+    virtual ~Diff(void);
+    
+    ///
+    virtual void setupDeps(void);
+    
+    virtual bool depSpecTet(uint gidx, Tet * tet);
+    
+    virtual void reset(void);
+    
+    ////////////////////////////////////////////////////////////////////////
+    
+    ///
+    virtual double rate(void) const;
+    
+    ///
+    virtual SchedIDXVec const & apply(State * s);
+
+    ////////////////////////////////////////////////////////////////////////
+    
+    inline DiffDef * def(void) const
+    { return pDiffDef; }
+    
+    ////////////////////////////////////////////////////////////////////////
+    
+private:
+
+    ////////////////////////////////////////////////////////////////////////
+    
+    DiffDef *                   pDiffDef;
+    
+    Tet *                       pTet;
+    
+    /// 
+    SchedIDXVec                 pUpdVec[4];
+    
+    ////////////////////////////////////////////////////////////////////////
+    
+    /// Properly scaled diffusivity constant.    
+    ///
+    double                      pScaledDcst;
+    
+    double                      pCDFSelector[3];    
 };
 
 ////////////////////////////////////////////////////////////////////////////////

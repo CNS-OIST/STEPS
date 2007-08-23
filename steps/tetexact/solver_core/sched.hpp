@@ -95,17 +95,17 @@ private:
     // LIST OF KPROCS
     ////////////////////////////////////////////////////////////////////////
     
-    std::vector<KProc *>                        pKProcs;
+    std::vector<KProc *>        pKProcs;
     
     ////////////////////////////////////////////////////////////////////////
     // N-ARY TREE
     ////////////////////////////////////////////////////////////////////////
     
-    double                                      pA0;
+    double                      pA0;
     
-    std::vector<uint>                           pLevelSizes;
+    std::vector<uint>           pLevelSizes;
     
-    std::vector<double*>                        pLevels;
+    std::vector<double*>        pLevels;
     
     ////////////////////////////////////////////////////////////////////////
 

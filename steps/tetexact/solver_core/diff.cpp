@@ -55,10 +55,10 @@ Diff::Diff(DiffDef * ddef, Tet * tet)
     // Fetch neighbouring voxels.
     Tet * next[4] = 
     { 
-    	pTet->nextTet(0), 
-    	pTet->nextTet(1), 
-    	pTet->nextTet(2), 
-    	pTet->nextTet(3) 
+        pTet->nextTet(0), 
+        pTet->nextTet(1), 
+        pTet->nextTet(2), 
+        pTet->nextTet(3) 
     };
     
     // Precalculate part of the scaled diffusion constant.
@@ -67,9 +67,9 @@ Diff::Diff(DiffDef * ddef, Tet * tet)
     for (uint i = 0; i < 4; ++i)
     {
         // Compute the scaled diffusion constant.
-    	double dist = pTet->dist(i);
-    	if (dist > 0.0)
-    		d[i] = (pTet->area(i) * dcst) / (pTet->vol() * dist);
+        double dist = pTet->dist(i);
+        if (dist > 0.0)
+            d[i] = (pTet->area(i) * dcst) / (pTet->vol() * dist);
     }
     
     // Compute scaled "diffusion constant".
@@ -102,51 +102,51 @@ Diff::~Diff(void)
 
 void Diff::setupDeps(void)
 {
-	// Fetch ligand index.
-	uint gidx = def()->lig();
-	
-	// Search for local dependencies.
-	SchedIDXVec local;
-	// First check for other diffusion processes.
-	std::vector<Diff*>::const_iterator diffend = pTet->diffEnd();
-	for (std::vector<Diff*>::const_iterator d = pTet->diffBegin(); 
-		d != diffend; ++d)
-	{
-		if ((*d)->depSpecTet(gidx, pTet) == true)
-			local.push_back((*d)->schedIDX());
-	}
-	
-	// Search for dependencies in neighbouring tetrahedrons.
-	for (uint i = 0; i < 4; ++i)
-	{
-		// Fetch next tetrahedron, if it exists.
-		Tet * next = pTet->nextTet(i);
-		if (next == 0) continue;
-		// Later, also check if there is a triangle that might block
-		// diffusion.
-		
-		// Copy local dependencies.
-		std::copy(local.begin(), local.end(), 
-			std::inserter(pUpdVec[i], pUpdVec[i].end()));
-		
-		// First check for diffusion processes.
-		diffend = next->diffEnd();
-		for (std::vector<Diff*>::const_iterator d = next->diffBegin(); 
-			d != diffend; ++d)
-		{
-			if ((*d)->depSpecTet(gidx, next) == true)
-				pUpdVec[i].push_back((*d)->schedIDX());
-		}
-	}
+    // Fetch ligand index.
+    uint gidx = def()->lig();
+    
+    // Search for local dependencies.
+    SchedIDXVec local;
+    // First check for other diffusion processes.
+    std::vector<Diff*>::const_iterator diffend = pTet->diffEnd();
+    for (std::vector<Diff*>::const_iterator d = pTet->diffBegin(); 
+        d != diffend; ++d)
+    {
+        if ((*d)->depSpecTet(gidx, pTet) == true)
+            local.push_back((*d)->schedIDX());
+    }
+    
+    // Search for dependencies in neighbouring tetrahedrons.
+    for (uint i = 0; i < 4; ++i)
+    {
+        // Fetch next tetrahedron, if it exists.
+        Tet * next = pTet->nextTet(i);
+        if (next == 0) continue;
+        // Later, also check if there is a triangle that might block
+        // diffusion.
+        
+        // Copy local dependencies.
+        std::copy(local.begin(), local.end(), 
+            std::inserter(pUpdVec[i], pUpdVec[i].end()));
+        
+        // First check for diffusion processes.
+        diffend = next->diffEnd();
+        for (std::vector<Diff*>::const_iterator d = next->diffBegin(); 
+            d != diffend; ++d)
+        {
+            if ((*d)->depSpecTet(gidx, next) == true)
+                pUpdVec[i].push_back((*d)->schedIDX());
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool Diff::depSpecTet(uint gidx, Tet * tet)
 {
-	if (pTet != tet) return false;
-	if (gidx != def()->lig()) return false;
-	return true;
+    if (pTet != tet) return false;
+    if (gidx != def()->lig()) return false;
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -159,8 +159,8 @@ void Diff::reset(void)
 
 double Diff::rate(void) const
 {
-	// Pre-fetch some general info.
-	CompDef * cdef = pTet->compdef();
+    // Pre-fetch some general info.
+    CompDef * cdef = pTet->compdef();
     // Fetch the ligand as global index.
     uint gidx = pDiffDef->lig();
     // As local index.
@@ -178,8 +178,8 @@ double Diff::rate(void) const
 
 SchedIDXVec const & Diff::apply(State * s)
 {
-	// Pre-fetch some general info.
-	CompDef * cdef = pTet->compdef();
+    // Pre-fetch some general info.
+    CompDef * cdef = pTet->compdef();
     // Fetch the ligand as global index.
     uint gidx = def()->lig();
     // As local index.
@@ -193,28 +193,28 @@ SchedIDXVec const & Diff::apply(State * s)
     if (sel < pCDFSelector[0])
     {
         // Direction 1.
-    	Tet * next = pTet->nextTet(0);
+        Tet * next = pTet->nextTet(0);
         next->incPoolCount(lidx, 1);
         return pUpdVec[0];
     }
     else if (sel < pCDFSelector[1])
     {
         // Direction 2.
-    	Tet * next = pTet->nextTet(1);
+        Tet * next = pTet->nextTet(1);
         next->incPoolCount(lidx, 1);
         return pUpdVec[1];
     }
     else if (sel < pCDFSelector[2])
     {
         // Direction 3.
-    	Tet * next = pTet->nextTet(2);
+        Tet * next = pTet->nextTet(2);
         next->incPoolCount(lidx, 1);
         return pUpdVec[2];
     }
     else 
     {
         // Direction 4.
-    	Tet * next = pTet->nextTet(3);
+        Tet * next = pTet->nextTet(3);
         next->incPoolCount(lidx, 1);
         return pUpdVec[3];
     }
