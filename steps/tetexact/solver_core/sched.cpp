@@ -136,6 +136,11 @@ void Sched::build(void)
 
 KProc * Sched::getNext(State * state) const
 {
+    assert(pA0 >= 0.0);
+    // Quick check to see whether nothing is there.
+    // DEBUG 04-Sep-2007
+    if (pA0 == 0.0) return 0;
+    
     // Start at top level.
     uint clevel = pLevels.size();
     // And start at the first node of that level.

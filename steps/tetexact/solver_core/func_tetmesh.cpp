@@ -135,9 +135,15 @@ void siSetTetCount(State * s, uint tidx, uint sidx, uint n)
     Tet * tet = s->tet(tidx);
     // TODO: error stuff
     if (tet == 0) return;
+    
+    // Apply the change.
     uint l_sidx = tet->compdef()->specG2L(sidx);
     if (l_sidx == 0xFFFF) return;
     tet->setPoolCount(l_sidx, n);
+    
+    // Make updates to the schedule.
+    // DEBUG: 04-Sep-2007
+    
 }
 
 ////////////////////////////////////////////////////////////////////////////////
