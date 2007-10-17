@@ -27,11 +27,14 @@
 #endif
 
 // STL headers.
+#include <cassert>
 #include <string>
 #include <vector>
 
 // STEPS headers.
 #include <steps/common.h>
+#include <steps/sim/shared/diffdef.hpp>
+#include <steps/sim/shared/reacdef.hpp>
 #include <steps/sim/shared/specdef.hpp>
 #include <steps/sim/shared/statedef.hpp>
 
@@ -54,6 +57,42 @@ SpecDef::~SpecDef(void)
 
 void SpecDef::setupFinal(void)
 {
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool SpecDef::dependsOnReac(uint gidx) const
+{
+    assert(gidx < statedef()->countReacs());
+    ReacDef * r = statedef()->reac(gidx);
+    return r->affectsSpec(this->gidx());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool SpecDef::affectsReac(uint gidx) const
+{
+    assert(gidx < statedef()->countReacs());
+    ReacDef * r = statedef()->reac(gidx);
+    return r->dependsOnSpec(this->gidx());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool SpecDef::dependsOnDiff(uint gidx) const
+{
+    assert(gidx < statedef()->countDiffs());
+    DiffDef * d = statedef()->diff(gidx);
+    return d->affectsSpec(this->gidx());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool SpecDef::affectsDiff(uint gidx) const
+{
+    assert(gidx < statedef()->countDiffs());
+    DiffDef * d = statedef()->diff(gidx);
+    return d->dependsOnSpec(this->gidx());
 }
 
 ////////////////////////////////////////////////////////////////////////////////

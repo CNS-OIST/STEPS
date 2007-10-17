@@ -28,6 +28,7 @@
 
 // Standard library & STL headers.
 #include <cassert>
+#include <cmath>
 #include <algorithm>
 #include <iostream>
 
@@ -148,7 +149,7 @@ void Tet::setNextTet(uint i, Tet * t)
 {
     pNextTet[i] = t;
 }
-    
+
 ////////////////////////////////////////////////////////////////////////////////
 
 // END

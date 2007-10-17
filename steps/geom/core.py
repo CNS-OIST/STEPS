@@ -480,7 +480,7 @@ class Patch(object):
     """
     
     
-    def __init__(self, id, container, icomp, ocomp = None):
+    def __init__(self, id, container, icomp, ocomp = None, **params):
         """
         """
         self._container = None
@@ -495,9 +495,9 @@ class Patch(object):
 
         # Needs to be re-written... what if it fails???
         self._icomp = None
-        self.icomp = icomp
+        self._setIComp(icomp)
         self._ocomp = None
-        self.ocomp = ocomp
+        self._setOComp(ocomp)
 
         # Parse optional arguments.
         self._surfsys = set()
@@ -675,6 +675,9 @@ class Patch(object):
             outer compartment of a patch should not be changed at a later
             point in time.
         """
+        # DEBUG 08-Oct-2007
+        if ocomp == None:
+            return
         # Do some tests on the specified compartment.
         if ocomp.container != self.container:
             raise serr.ArgumentError, \

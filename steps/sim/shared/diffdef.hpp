@@ -89,6 +89,31 @@ public:
     ///
     void setLig(uint gidx);
 
+    ////////////////////////////////////////////////////////////////////////
+    
+    /// Check whether occurence of a diffusion rule <EM>depends</EM> on 
+    /// local changes to the concentration of some species, specified by 
+    /// its global index (gidx).
+    ///
+    /// Currently, this only has to check whether the specified gidx equals
+    /// the ligand for which the diffusion rule is defined. As we might 
+    /// have concentration-dependent diffusion coefficients in the future 
+    /// (or other fancy extensions to the basic diffusion rule idea), this 
+    /// function will have to check for more things.
+    ///
+    bool dependsOnSpec(uint gidx) const;
+    
+    /// Check whether the occurence of the diffusion rule <EM>affects</EM>
+    /// affects the concentration of some species, specified by its global 
+    /// index (gidx).
+    ///
+    /// Currently, this only has to check whether the specified gidx equals
+    /// the ligand for which the diffusion rule is defined.
+    ///
+    bool affectsSpec(uint gidx) const;
+    
+    ////////////////////////////////////////////////////////////////////////
+    
 private:
     
     StateDef *                  pStateDef;

@@ -28,6 +28,7 @@
 
 // STL headers.
 #include <algorithm>
+#include <cassert>
 #include <string>
 #include <vector>
 
@@ -105,6 +106,24 @@ uint ReacDef::incRHS(uint gidx)
 void ReacDef::setRHS(uint gidx, uint n)
 {
     pRHS[gidx] = n;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool ReacDef::dependsOnSpec(uint gidx) const
+{
+    assert(gidx < statedef()->countSpecs());
+    if (lhs(gidx) == 0) return false;
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool ReacDef::affectsSpec(uint gidx) const
+{
+    assert(gidx < statedef()->countSpecs());
+    if ((rhs(gidx) - lhs(gidx)) == 0) return false;
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

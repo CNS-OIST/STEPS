@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <iostream>
 #include <iterator>
 
 // STEPS headers.
@@ -169,7 +170,6 @@ double Diff::rate(void) const
     // Compute the rate.
     double rate = (pScaledDcst) * static_cast<double>(pTet->poolCount(lidx));
     assert(std::isnan(rate) == false);
-    
     // Return.
     return rate;
 }
@@ -186,6 +186,7 @@ SchedIDXVec const & Diff::apply(State * s)
     uint lidx = cdef->specG2L(gidx);
     
     // Apply local change.
+    assert(pTet->poolCount(lidx) > 0);
     pTet->incPoolCount(lidx, -1);
     
     // Apply change in next voxel: select a direction.

@@ -32,6 +32,8 @@
 // STEPS headers.
 #include <steps/common.h>
 #include <steps/sim/swiginf/func_ssa.hpp>
+#include <steps/tetexact/solver_core/diff.hpp>
+#include <steps/tetexact/solver_core/sched.hpp>
 #include <steps/tetexact/solver_core/state.hpp>
 #include <steps/tetexact/solver_core/tet.hpp>
 
@@ -143,7 +145,22 @@ void siSetTetCount(State * s, uint tidx, uint sidx, uint n)
     
     // Make updates to the schedule.
     // DEBUG: 04-Sep-2007
+    CompUpd * cupd = tet->compdef()->updateSpec(l_sidx);
+    SchedIDXVec updvec;
     
+    // Loop over diffusions.
+    std::vector<uint>::const_iterator diff_end = cupd->endLDiffs();
+    for (std::vector<uint>::const_iterator diff = cupd->beginLDiffs();
+        diff != diff_end; ++diff)
+    {
+        updvec.push_back(tet->diff(*diff)->schedIDX());
+    }
+    
+    // Loop over reactions (not yet).
+    //
+    
+    // Send the list of kprocs that need to be updated to the schedule.
+    s->sched()->update(updvec);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

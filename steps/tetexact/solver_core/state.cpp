@@ -110,9 +110,9 @@ void State::step(void)
 {
     KProc * kp = sched()->getNext(this);
     if (kp == 0) return;
-    double rate = kp->rate();
-    if (rate == 0.0) return;
-    double dt = rng()->getExp(1.0 / rate);
+    double a0 = sched()->getA0();
+    if (a0 == 0.0) return;
+    double dt = rng()->getExp(a0);
     executeStep(kp, dt);
 }
 
@@ -125,9 +125,9 @@ void State::run(double maxt)
     {
         KProc * kp = sched()->getNext(this);
         if (kp == 0) break;
-        double rate = kp->rate();
-        if (rate == 0.0) break;
-        double dt = rng()->getExp(1.0 / rate);
+        double a0 = sched()->getA0();
+        if (a0 == 0.0) break;
+        double dt = rng()->getExp(a0);
         if ((time() + dt) > maxt) break;
         executeStep(kp, dt);
     }

@@ -75,4 +75,22 @@ void DiffDef::setLig(uint gidx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+bool DiffDef::dependsOnSpec(uint gidx) const
+{
+    assert(gidx < statedef()->countSpecs());
+    if (gidx != pLig) return false;
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool DiffDef::affectsSpec(uint gidx) const
+{
+    assert(gidx < statedef()->countSpecs());
+    if (gidx != pLig) return false;
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 // END

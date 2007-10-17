@@ -105,7 +105,9 @@ class Tet(object):
     def __init__(self, tetmesh, tetidx):
         self._mesh = tetmesh
         self._tidx = tetidx
-        self._nodes = self._mesh._tets[self._tidx,:]
+        self._nodes = numpy.empty((1, 4),dtype=int)
+        self._nodes[0,:] = self._mesh._tets[self._tidx,:]
+        self._nodes2 = self._mesh._tets[self._tidx,:]
     
     
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
@@ -152,8 +154,8 @@ class Tet(object):
         certain slivers (degenerate tetrahedrons) can still have a fairly 
         small value. 
         """
-        return stet.circumradius(self._pnts, self._nodes) / \
-            stet.shortestEdge(self._pnts, self._nodes)
+        return stet.circumradius(self._mesh._pnts, self._nodes) / \
+            stet.shortestEdge(self._mesh._pnts, self._nodes)
     
     qrer = property(getQualityRER)
     
@@ -291,8 +293,11 @@ class Tet(object):
     
     
     def isInside(self, p):
-        return stet.inside(self._mesh._pnts[self._nodes], numpy.array(p))
+        return stet.inside(self._mesh._pnts[self._nodes2], numpy.array(p))
     
+    
+    def getRanPnt(self, rng, n = 1):
+        return stet.ranpnt(self._mesh._pnts[self._nodes2], rng, n)
     
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
     
@@ -611,6 +616,8 @@ class TetMesh(core.Container):
         tri_dict = { }
         for ii in xrange(0, ntris):
             tri_dict[(tris[ii,0], tris[ii,1], tris[ii,2])] = tri_idcs[ii]
+        # tri_dict now can be used to find the original ('real') index of
+        # a triangle defined by its corner points.
         
         #
         ntets = self._tets.shape[0]
@@ -618,10 +625,16 @@ class TetMesh(core.Container):
         # Find all (0,1,2)
         unr012 = [ x for x in xrange(0, ntets) \
             if self._tet_tri_neighbours[x,0] == -1 ]
-        tri012 = self._tets[unr012, (0,1,2)]
+        # DEBUG 09-Oct-2007:
+        # tri012 = self._tets[unr012,(0,1,2)
+        # doesn't work in Numpy, so we have to turn it into two statements.
+        # The same changes made in the cases for (0,1,3), (0, 2, 3) and
+        # (1, 2, 3).
+        tri012 = self._tets[unr012,:]
+        tri012 = tri012[:,(0,1,2)]
         tri012.sort()
         n012 = len(unr012)
-        for ii in n012:
+        for ii in xrange(0, n012):
             teidx = unr012[ii]
             tridx = tri_dict.get((tri012[teidx, 0], \
                                   tri012[teidx, 1], \
@@ -639,14 +652,15 @@ class TetMesh(core.Container):
         # Find all (0,1,3)
         unr013 = [ x for x in xrange(0, ntets) \
             if self._tet_tri_neighbours[x,1] == -1 ]
-        tri013 = self._tets[unr013, (0,1,3)]
+        tri013 = self._tets[unr013,:]
+        tri013 = tri013[:,(0,1,3)]
         tri013.sort()
         n013 = len(unr013)
-        for ii in n013:
+        for ii in xrange(0, n013):
             teidx = unr013[ii]
             tridx = tri_dict.get((tri013[teidx, 0], \
                                   tri013[teidx, 1], \
-                                  tri013[teidx, 3]), -1)
+                                  tri013[teidx, 2]), -1)
             if tridx == -1:
                 continue
             if self._tri_tet_neighbours[tridx,0] == -1:
@@ -660,14 +674,15 @@ class TetMesh(core.Container):
         # Find all (0,2,3)
         unr023 = [ x for x in xrange(0, ntets) \
             if self._tet_tri_neighbours[x,2] == -1 ]
-        tri023 = self._tets[unr023, (0,2,3)]
+        tri023 = self._tets[unr023,:]
+        tri023 = tri023[:,(0,2,3)]
         tri023.sort()
         n023 = len(unr023)
-        for ii in n023:
+        for ii in xrange(0, n023):
             teidx = unr023[ii]
             tridx = tri_dict.get((tri023[teidx, 0], \
-                                  tri023[teidx, 2], \
-                                  tri023[teidx, 3]), -1)
+                                  tri023[teidx, 1], \
+                                  tri023[teidx, 2]), -1)
             if tridx == -1:
                 continue
             if self._tri_tet_neighbours[tridx,0] == -1:
@@ -681,14 +696,15 @@ class TetMesh(core.Container):
         # Find all (1,2,3)
         unr123 = [ x for x in xrange(0, ntets) \
             if self._tet_tri_neighbours[x,3] == -1 ]
-        tri123 = self._tets[unr123, (1,2,3)]
+        tri123 = self._tets[unr123,:]
+        tri123 = tri123[:,(1,2,3)]
         tri123.sort()
         n123 = len(unr123)
-        for ii in n123:
+        for ii in xrange(0, n123):
             teidx = unr123[ii]
-            tridx = tri_dict.get((tri123[teidx, 1], \
-                                  tri123[teidx, 2], \
-                                  tri123[teidx, 3]), -1)
+            tridx = tri_dict.get((tri123[teidx, 0], \
+                                  tri123[teidx, 1], \
+                                  tri123[teidx, 2]), -1)
             if tridx == -1:
                 continue
             if self._tri_tet_neighbours[tridx,0] == -1:
@@ -771,9 +787,9 @@ class TetMesh(core.Container):
         etris = { }
         
         # Do we also want to check vis-a-vis existing triangles in the mesh?
-        if incl_mesh == True:
+        notris = self._tris.shape[0]
+        if (incl_mesh == True) and (notris > 0):
             # Create a sorted array of old triangles.
-            notris = self._tris.shape[0]
             otris = self._tris.copy()
             otris.sort()
             otris = otris[numpy.lexsort((otris[:,2],otris[:,1],otris[:,0])),:]
@@ -787,12 +803,14 @@ class TetMesh(core.Container):
         ntris = tris.copy()
         ntris.sort()
         ntris = ntris[numpy.lexsort((ntris[:,2],ntris[:,1],ntris[:,0])),:]
-        for ii in nntris:
+        for ii in xrange(0, nntris):
             etris.setdefault((ntris[ii,0], ntris[ii,1], ntris[ii,2]), ii)
         
         # Build a set of unique triangles.
+        # SOMETHING WRONG HERE
         utris = [ x for x in etris.itervalues() if x >= 0 ]
-        return utris.sort()
+        utris.sort()
+        return utris
         
     
     def addTris(self, tris):
@@ -826,11 +844,11 @@ class TetMesh(core.Container):
                        numpy.ones((ntris, 2), dtype=int) * -1 ]
         xrstop = self._tris.shape[0]
         xrstart = xrstop - ntris
-        self.__find_tet_tri_neighbours(xrange(xrstart,xrstop))
+        self.__set_tet_tri_neighbours(xrange(xrstart,xrstop))
         
         # OTHER STUFF.
         # Set their annotation to the default value: None.
-        self._tri_patches.append([None] * ntris)
+        self._tri_patches += [None] * ntris
         
     
     def countTris(self):
@@ -984,48 +1002,27 @@ class Comp(core.Comp):
 
 
     """Provides annotation for a group of tetrahedrons in a TetMesh.
-    
-    This class stores the following extra information:
-    
-        - Rectangular axis-aligned bounding box.
-        
-        - For each inside patch, a set of tetrahedrons that border the 
-          triangles in that patch.
-        - The same for each outside patch.  
     """
     
     
     def __init__(self, id, container, tets):
         """Initialize a tetrahedral mesh compartment.
-        Currently, if some of the specified triangles have already been 
-        assigned to another patch, the initializer will raise an error.
-        It also assumes that the tetrahedral neighbour(s) of each patch 
-        triangle belong to the inner (and outer) compartments specified
-        in parameters icomp (and ocomp).
         
         PARAMETERS:
             id
-                The identifier of the patch.
+                The identifier of the compartment.
             container
                 A TetMesh object.
-            tris
-                A sequence of indices to triangles in the tetmesh.
-            icomp
-                A pointer to a valid steps.geom.tetmesh.Comp object.
-            ocomp
-                A pointer to a valid steps.geom.tetmesh.Comp object; this
-                parameter can be None, if the patch lies on the outermost
-                boundary of the mesh.
+            tets
+                A sequence of indices to tetrahedrons in the tetmesh.
         
         RETURNS:
             ---
         
         RAISES:
             steps.error.ArgumentError
-                When specified triangles do not exist; when specified
-                triangles have already been assigned to another patch;
-                when the neighbouring tetrahedrons do not match the
-                specified compartments; when the identifier is not valid.
+                When specified tetrahedrons do not exist; 
+                when the identifier is not valid.
         
         See also:
             steps.geom.core.Comp.__init__()
@@ -1094,7 +1091,7 @@ class Comp(core.Comp):
         REWRITE INTERNAL COMMENTS
         """
         # Call the parent method.
-        super(self)._addIPatch(patch)
+        super(Comp, self)._addIPatch(patch)
         # Nothing else needs to be done (in the current implementation).
         
     
@@ -1102,7 +1099,7 @@ class Comp(core.Comp):
         """Internal function.
         """
         # Call original method.
-        super(self)._delIPatch(patch)
+        super(Comp, self)._delIPatch(patch)
         # Nothing else needs to be done (in the current implementation).
     
     
@@ -1113,7 +1110,7 @@ class Comp(core.Comp):
         """Internal function.
         """
         # Call original method.
-        super(self)._addOPatch(patch)
+        super(Comp, self)._addOPatch(patch)
         # Nothing else needs to be done (in the current implementation).
     
     
@@ -1121,7 +1118,7 @@ class Comp(core.Comp):
         """Internal function.
         """
         # Call original method.
-        super(self)._delOPatch(patch)
+        super(Comp, self)._delOPatch(patch)
         # Nothing else needs to be done (in the current implementation).
     
     
@@ -1196,6 +1193,10 @@ class Comp(core.Comp):
     
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
     
+    def getTets(self):
+        return _tet_iterator(self.container, self._tet_indices)
+    
+    tets = property(getTets)
     
     def allPatches(self):
         """Return a list of all patches surrounding this compartment.
@@ -1278,14 +1279,14 @@ class Patch(core.Patch):
         # Store all triangle indices as a set.
         triset = set(tris)
         # Check index range.
-        if (min(triset) < 0) or (max(triset) >= self.container.ntris):
+        if (min(triset) < 0) or (max(triset) >= container.ntris):
             raise serr.ArgumentError, 'Invalid triangle index specified.'
         # Make a list.
-        self._tris_indices = list(triset)
+        self._tri_indices = list(triset)
         
         # Check if specified triangles belong to another patch already.
-        for ii in self._tris_indices:
-            if container._tri_annotation[ii] != None:
+        for ii in self._tri_indices:
+            if container._tri_patches[ii] != None:
                 raise serr.ArgumentError, 'Cannot add triangle to patch.'
         
         # Check if the triangle neighbours belong to the correct compartments.
@@ -1293,9 +1294,17 @@ class Patch(core.Patch):
         # flipped later on... we already build a flip list at this point that
         # we will use later in this initializer.)
         fliplist = [ ]
-        for ii in self._tris_indices:
+        for ii in self._tri_indices:
             icmp = container._tri_tet_neighbours[ii,0]
+            if icmp != -1:
+                icmp = container._tet_comps[icmp]
+            else:
+                icmp = None
             ocmp = container._tri_tet_neighbours[ii,1]
+            if ocmp != -1:
+                ocmp = container._tet_comps[ocmp]
+            else:
+                ocmp = None
             if (icmp, ocmp) == (icomp, ocomp): continue
             if (icmp, ocmp) == (ocomp, icomp): 
                 fliplist.append(ii)
@@ -1306,13 +1315,14 @@ class Patch(core.Patch):
         # start changing data structures.
         #
         # First, we call parent object initializer.
-        super(self).__init__(id, container, icomp, ocomp)
+        core.Patch.__init__(self, id, container, icomp, ocomp)
         
         # Next, we compute area.
         self._area = self.container._tri_areas[self._tri_indices].sum()
         
         # Annotate the triangles as belonging to this patch.
-        self.container._tri_annotation[self._tri_indices] = self
+        for i in self._tri_indices:
+            self.container._tri_patches[i] = self
         
         # Switch internal and external tetrahedrons for triangles where this
         # is necessary.
@@ -1331,7 +1341,7 @@ class Patch(core.Patch):
         tris = self.container.tris[self._tri_indices,:]
         tri_barycenters = stri.barycenter(self.container.pnts, tris)
         tets = self.container._tri_tet_neighbours[self._tri_indices,0]
-        tets = self.container.tets[tets,:]
+        tets = self.container._tets[tets,:]
         tet_barycenters = stet.barycenter(self.container.pnts, tets)
         vecs1 = tet_barycenters - tri_barycenters
         vecs2 = self.container._tri_norms[self._tri_indices,:]
@@ -1340,8 +1350,8 @@ class Patch(core.Patch):
         tmp = self.container._tris[fliplist2,0]
         self.container._tris[fliplist2,0] = self.container._tris[fliplist2,1]
         self.container._tris[fliplist2,1] = tmp
-        self.container._tri_normals[fliplist2,:] = \
-            - self.container._tri_normals[fliplist2,:]
+        self.container._tri_norms[fliplist2,:] = \
+            - self.container._tri_norms[fliplist2,:]
     
     
     def setArea(self, area):

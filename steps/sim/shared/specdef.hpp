@@ -42,12 +42,18 @@ class StateDef;
 
 class SpecDef
 {
-    
+
 public:
 
+    ////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+    
     /// Constructor.
+    ///
     SpecDef(StateDef * sdef, uint gidx, std::string const & name);
+    
     /// Destructor.
+    ///
     ~SpecDef(void);
 
     StateDef * statedef(void) const 
@@ -59,23 +65,48 @@ public:
     std::string const & name(void) const
     { return pName; }
 
-    /// Gets called when the definition of all components in the entire state
-    /// has finished.
+    /// Gets called when all components in the entire state have been 
+    /// defined.
     ///
-    /// Currently, this method doesn't do anything.
+    /// Performs the following tasks:
+    /// <OL>
+    /// <LI>
+    /// Nothing :-)
+    /// </LI>
+    /// </OL>
     ///
     void setupFinal(void);
+    
+    ////////////////////////////////////////////////////////////////////////
+    
+    bool dependsOnReac(uint gidx) const;
+    
+    bool affectsReac(uint gidx) const;
+    
+    bool dependsOnDiff(uint gidx) const;
+    
+    bool affectsDiff(uint gidx) const;
 
+    ////////////////////////////////////////////////////////////////////////
+    
 private:
 
+    ////////////////////////////////////////////////////////////////////////
+    // BASIC DESCRIPTION DATA
+    ////////////////////////////////////////////////////////////////////////
+    
     ///
     StateDef *                  pStateDef;
 
     /// The global (not compartment/patch-specific) index of the species.
+    ///
     uint                        pGIDX;
     
     /// The name of the species.
+    ///
     std::string                 pName;
+
+    ////////////////////////////////////////////////////////////////////////
 
 };
 

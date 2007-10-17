@@ -104,6 +104,34 @@ public:
     
     void setRHS(uint gidx, uint n);
 
+    ////////////////////////////////////////////////////////////////////////
+    
+    /// Check whether occurence of a reaction rule <EM>depends</EM> on 
+    /// changes to the concentration of some species, specified by its
+    /// global index (gidx).
+    ///
+    /// Currently, this only has to check whether the species gidx is
+    /// present in the LHS vector. As we might have concentration-
+    /// dependent reaction coefficients in the future (or other fancy
+    /// extensions to the basic reaction rule idea), this function will
+    /// have to check for more things.
+    ///
+    bool dependsOnSpec(uint gidx) const;
+    
+    /// Check whether the occurence of the reaction rule <EM>affects</EM>
+    /// the concentration of some species, specified by its global index
+    /// (gidx).
+    ///
+    /// Currently, this only has to check whether the stoichiometry vectors,
+    /// to see whether rhs[gidx] - lhs[gidx] is zero or not. (If it's zero,
+    /// it's not affected either because it's not used, or because the
+    /// <EM>net effect</EM> of the reaction cancels out changes. If it's
+    /// not zero, this means the species <EM>is</EM> in fact affected.)
+    ///
+    bool affectsSpec(uint gidx) const;
+    
+    ////////////////////////////////////////////////////////////////////////
+    
 private:
 
     /// Auxiliary method to compute the order of a reaction.
