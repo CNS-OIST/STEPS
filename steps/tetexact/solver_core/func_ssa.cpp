@@ -42,6 +42,7 @@
 #include <steps/sim/shared/specdef.hpp>
 #include <steps/sim/shared/statedef.hpp>
 #include <steps/sim/swiginf/func_ssa.hpp>
+#include <steps/tetexact/solver_core/kproc.hpp>
 #include <steps/tetexact/solver_core/state.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////

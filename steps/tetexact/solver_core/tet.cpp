@@ -30,6 +30,7 @@
 #include <cassert>
 #include <cmath>
 #include <algorithm>
+#include <functional>
 #include <iostream>
 
 // STEPS headers.
@@ -37,6 +38,7 @@
 #include <steps/sim/shared/compdef.hpp>
 #include <steps/sim/shared/diffdef.hpp>
 #include <steps/tetexact/solver_core/diff.hpp>
+#include <steps/tetexact/solver_core/reac.hpp>
 #include <steps/tetexact/solver_core/sched.hpp>
 #include <steps/tetexact/solver_core/tet.hpp>
 
@@ -83,10 +85,7 @@ Tet::Tet
     pPoolFlags = new uint[nspecs];
     std::fill_n(pPoolCount, nspecs, 0);
     std::fill_n(pPoolFlags, nspecs, 0);
-    
-    uint ndiffs = compdef()->countDiffs();
-    for (uint i = 0; i < ndiffs; ++i)
-        pDiffs.push_back(0);
+    pKProcs.resize(cdef->countDiffs() + cdef->countReacs());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -98,49 +97,8 @@ Tet::~Tet(void)
     delete[] pPoolFlags;
     
     // Delete diffusion rules.
-    uint ndiffs = compdef()->countDiffs();
-    for (uint i = 0; i < ndiffs; ++i)
-        delete pDiffs[i];
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void Tet::setupKProcs(Sched * sched)
-{
-    // Create diffusion kproc's.
-    uint ndiffs = compdef()->countDiffs();
-    for (uint i = 0; i < ndiffs; ++i)
-    {
-        DiffDef * ddef = compdef()->diff(i);
-        Diff * d = pDiffs[i] = new Diff(ddef, this);
-        sched->addKProc(d);
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void Tet::setupDeps(void)
-{
-    uint ndiffs = compdef()->countDiffs();
-    for (uint i = 0; i < ndiffs; ++i)
-    {
-        pDiffs[i]->setupDeps();
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void Tet::reset(void)
-{
-    uint nspecs = compdef()->countSpecs();
-    std::fill_n(pPoolCount, nspecs, 0);
-    std::fill_n(pPoolFlags, nspecs, 0);
-    
-    uint ndiffs = compdef()->countDiffs();
-    for (uint i = 0; i < ndiffs; ++i)
-    {
-        pDiffs[i]->reset();
-    }
+    KProcPVecCI e = pKProcs.end();
+    for (KProcPVecCI i = pKProcs.begin(); i != e; ++i) delete *i;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -150,6 +108,66 @@ void Tet::setNextTet(uint i, Tet * t)
     pNextTet[i] = t;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+void Tet::setupKProcs(Sched * sched)
+{
+    uint j = 0;
+    // Create diffusion kproc's.
+    uint ndiffs = compdef()->countDiffs();
+    for (uint i = 0; i < ndiffs; ++i)
+    {
+        DiffDef * ddef = compdef()->diff(i);
+        Diff * d = new Diff(ddef, this);
+        pKProcs[j++] = d;
+        sched->addKProc(d);
+    }
+    
+    // Create reaction kproc's.
+    uint nreacs = compdef()->countReacs();
+    for (uint i = 0; i < nreacs; ++i)
+    {
+        ReacDef * rdef = compdef()->reac(i);
+        Reac * r = new Reac(rdef, this);
+        pKProcs[j++] = r;
+        sched->addKProc(r);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Tet::setupDeps(void)
+{
+    std::for_each(pKProcs.begin(), pKProcs.end(), 
+        std::mem_fun(&KProc::setupDeps));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Tet::reset(void)
+{
+    uint nspecs = compdef()->countSpecs();
+    std::fill_n(pPoolCount, nspecs, 0);
+    std::fill_n(pPoolFlags, nspecs, 0);
+    std::for_each(pKProcs.begin(), pKProcs.end(), std::mem_fun(&KProc::reset));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+Diff * Tet::diff(uint lidx) const
+{
+    assert(lidx < compdef()->countDiffs());
+    return dynamic_cast<Diff*>(pKProcs[lidx]);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+Reac * Tet::reac(uint lidx) const
+{
+    assert(lidx < compdef()->countReacs());
+    return dynamic_cast<Reac*>(pKProcs[compdef()->countDiffs() + lidx]);
+}
+    
 ////////////////////////////////////////////////////////////////////////////////
 
 // END

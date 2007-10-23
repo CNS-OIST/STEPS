@@ -35,11 +35,12 @@
 
 // STEPS headers.
 #include <steps/common.h>
+#include <steps/tetexact/solver_core/kproc.hpp>
 
 // Forward declarations.
 class CompDef;
 class Diff;
-class KProc;
+class Reac;
 class Sched;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -53,25 +54,31 @@ public:
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
     
-    /// Constructor.
-    ///
     Tet
     (
         CompDef * cdef, double vol, 
         double a0, double a1, double a2, double a3, 
         double d0, double d1, double d2, double d3
     );
-    
-    /// Destructor.
-    ///
     ~Tet(void);
 
+    /// Set pointer to the next neighbouring tetrahedron.
+    ///
+    void setNextTet(uint i, Tet * t);
+    /// Set pointer to the next neighbouring triangle.
+    ///
+    ///void setNextTri(uint i, Tri * t)
+    
     /// Create the kinetic processes -- to be called when all tetrahedrons 
     /// and triangles have been fully declared and connected.
     ///
     void setupKProcs(Sched * s);
     
-    /// For everything .
+    /// Once all the kinetic processes have been created in all tetraedrons
+    /// and triangles, their interdepencies are pre-computed so that they
+    /// are immediately available during actual simulation. This is the
+    /// final step of the initialization. (Except of course calling 
+    /// reset()).
     ///
     void setupDeps(void);
     
@@ -95,10 +102,6 @@ public:
     inline Tet * nextTet(uint i) const
     { return pNextTet[i]; }
     
-    /// Set pointer to the next neighbouring tetrahedron.
-    ///
-    void setNextTet(uint i, Tet * t);
-    
     /// Get the volume.
     ///
     inline double vol(void) const
@@ -116,90 +119,54 @@ public:
     { return pDist[i]; }
     
     ////////////////////////////////////////////////////////////////////////
-    // ACCESS TO SPECIES STUFF
-    ////////////////////////////////////////////////////////////////////////
     
-    inline uint poolCount(uint lidx) const
-    { return pPoolCount[lidx]; }
+    inline uint * pools(void) const
+    { return pPoolCount; }
     
-    inline void setPoolCount(uint lidx, uint num)
-    { pPoolCount[lidx] = num; }
-    
-    inline void incPoolCount(uint lidx, int count) const
-    { pPoolCount[lidx] += count; }
-    
-    inline uint poolFlags(uint lidx) const
-    { return pPoolFlags[lidx]; }
+    ///inline uint poolCount(uint lidx) const
+    ///{ return pPoolCount[lidx]; }
+    ///inline void setPoolCount(uint lidx, uint num)
+    ///{ pPoolCount[lidx] = num; }
+    ///inline void incPoolCount(uint lidx, int count) const
+    ///{ pPoolCount[lidx] += count; }
+    ///inline uint poolFlags(uint lidx) const
+    ///{ return pPoolFlags[lidx]; }
 
     ////////////////////////////////////////////////////////////////////////
-    // ACCESS TO REACTION CHANNEL STUFF
+
+    inline KProcPVecCI kprocBegin(void) const
+    { return pKProcs.begin(); }
+    inline KProcPVecCI kprocEnd(void) const
+    { return pKProcs.end(); }
+    inline uint countKProcs(void) const
+    { return pKProcs.size(); }
     
-    //double reacKcst(uint lidx) const
-    //{ return fReacStuff[lidx * REAC_LUMP_FACTOR]; }
-    
-    //double reacCcst(uint lidx) const
-    //{ return fReacStuff[(lidx * REAC_LUMP_FACTOR) + 1]; }
-    
-    //double reacHcst(uint lidx) const
-    //{ return fReacStuff[(lidx * REAC_LUMP_FACTOR) + 2]; }
-    
-    //double reacProp(uint lidx) const
-    //{ return fReacStuff[(lidx * REAC_LUMP_FACTOR) + 3]; }
+    Diff * diff(uint lidx) const;
+    Reac * reac(uint lidx) const;
     
     ////////////////////////////////////////////////////////////////////////
-
-    inline std::vector<Diff*>::const_iterator diffBegin(void) const
-    { return pDiffs.begin(); }
-    
-    inline std::vector<Diff*>::const_iterator diffEnd(void) const
-    { return pDiffs.end(); }
-    
-    inline Diff * diff(uint lidx) const
-    { return pDiffs[lidx]; }
     
 private:
 
     ////////////////////////////////////////////////////////////////////////
-    // GENERAL INFO
-    ////////////////////////////////////////////////////////////////////////
     
+    /// Type of tetrahedron.
     CompDef *                   pCompDef;
     
-    ////////////////////////////////////////////////////////////////////////
-    // CONNECTIVITY DATA
-    ////////////////////////////////////////////////////////////////////////
-    
+    /// Pointers to neighbouring tetrahedra.
     Tet *                       pNextTet[4];
     
     double                      pVol;
-    
     double                      pAreas[4];
-    
     double                      pDist[4];
     
-    ////////////////////////////////////////////////////////////////////////
-    // SPECIES DATA
-    ////////////////////////////////////////////////////////////////////////
-    
     /// Numbers of molecules -- stored as machine word integers.
-    ///
     uint *                      pPoolCount;
-    
     /// Flags on these pools -- stored as machine word flags.
-    ///
     uint *                      pPoolFlags;
     
-    ////////////////////////////////////////////////////////////////////////
-    // REACTION CHANNELS
-    ////////////////////////////////////////////////////////////////////////
-    
-    //KProc **                    pReacs;
-    
-    ////////////////////////////////////////////////////////////////////////
-    // DIFFUSION RULES
-    ////////////////////////////////////////////////////////////////////////
-    
-    std::vector<Diff*>          pDiffs;
+    /// The kinetic processes.
+    KProcPVec                   pKProcs;
     
     ////////////////////////////////////////////////////////////////////////
     

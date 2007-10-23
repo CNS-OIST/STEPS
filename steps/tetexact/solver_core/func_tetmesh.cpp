@@ -33,6 +33,7 @@
 #include <steps/common.h>
 #include <steps/sim/swiginf/func_ssa.hpp>
 #include <steps/tetexact/solver_core/diff.hpp>
+#include <steps/tetexact/solver_core/reac.hpp>
 #include <steps/tetexact/solver_core/sched.hpp>
 #include <steps/tetexact/solver_core/state.hpp>
 #include <steps/tetexact/solver_core/tet.hpp>
@@ -127,7 +128,7 @@ uint siGetTetCount(State * s, uint tidx, uint sidx)
     if (tet == 0) return 0;
     uint l_sidx = tet->compdef()->specG2L(sidx);
     if (l_sidx == 0xFFFF) return 0;
-    return tet->poolCount(l_sidx);
+    return tet->pools()[l_sidx];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -141,7 +142,7 @@ void siSetTetCount(State * s, uint tidx, uint sidx, uint n)
     // Apply the change.
     uint l_sidx = tet->compdef()->specG2L(sidx);
     if (l_sidx == 0xFFFF) return;
-    tet->setPoolCount(l_sidx, n);
+    tet->pools()[l_sidx] = n;
     
     // Make updates to the schedule.
     // DEBUG: 04-Sep-2007
@@ -156,8 +157,13 @@ void siSetTetCount(State * s, uint tidx, uint sidx, uint n)
         updvec.push_back(tet->diff(*diff)->schedIDX());
     }
     
-    // Loop over reactions (not yet).
-    //
+    // Loop over reactions.
+    std::vector<uint>::const_iterator reac_end = cupd->endLReacs();
+    for (std::vector<uint>::const_iterator reac = cupd->beginLReacs();
+        reac != reac_end; ++reac)
+    {
+        updvec.push_back(tet->reac(*reac)->schedIDX());
+    }
     
     // Send the list of kprocs that need to be updated to the schedule.
     s->sched()->update(updvec);

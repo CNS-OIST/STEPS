@@ -108,13 +108,11 @@ void Diff::setupDeps(void)
     
     // Search for local dependencies.
     SchedIDXVec local;
-    // First check for other diffusion processes.
-    std::vector<Diff*>::const_iterator diffend = pTet->diffEnd();
-    for (std::vector<Diff*>::const_iterator d = pTet->diffBegin(); 
-        d != diffend; ++d)
+    KProcPVecCI kprocend = pTet->kprocEnd();
+    for (KProcPVecCI k = pTet->kprocBegin(); k != kprocend; ++k)
     {
-        if ((*d)->depSpecTet(gidx, pTet) == true)
-            local.push_back((*d)->schedIDX());
+        if ((*k)->depSpecTet(gidx, pTet) == true)
+            local.push_back((*k)->schedIDX());
     }
     
     // Search for dependencies in neighbouring tetrahedrons.
@@ -129,14 +127,12 @@ void Diff::setupDeps(void)
         // Copy local dependencies.
         std::copy(local.begin(), local.end(), 
             std::inserter(pUpdVec[i], pUpdVec[i].end()));
-        
-        // First check for diffusion processes.
-        diffend = next->diffEnd();
-        for (std::vector<Diff*>::const_iterator d = next->diffBegin(); 
-            d != diffend; ++d)
+        // Find the ones in the next tet.
+        kprocend = next->kprocEnd();
+        for (KProcPVecCI k = next->kprocBegin(); k != kprocend; ++k)
         {
-            if ((*d)->depSpecTet(gidx, next) == true)
-                pUpdVec[i].push_back((*d)->schedIDX());
+            if ((*k)->depSpecTet(gidx, next) == true)
+                pUpdVec[i].push_back((*k)->schedIDX());
         }
     }
 }
@@ -168,7 +164,7 @@ double Diff::rate(void) const
     uint lidx = cdef->specG2L(gidx);
     
     // Compute the rate.
-    double rate = (pScaledDcst) * static_cast<double>(pTet->poolCount(lidx));
+    double rate = (pScaledDcst) * static_cast<double>(pTet->pools()[lidx]);
     assert(std::isnan(rate) == false);
     // Return.
     return rate;
@@ -186,37 +182,38 @@ SchedIDXVec const & Diff::apply(State * s)
     uint lidx = cdef->specG2L(gidx);
     
     // Apply local change.
-    assert(pTet->poolCount(lidx) > 0);
-    pTet->incPoolCount(lidx, -1);
+    uint * local = pTet->pools() + lidx;
+    assert(*local > 0);
+    *local -= 1;
     
     // Apply change in next voxel: select a direction.
     double sel = s->rng()->getUnfEE();
     if (sel < pCDFSelector[0])
     {
         // Direction 1.
-        Tet * next = pTet->nextTet(0);
-        next->incPoolCount(lidx, 1);
+        uint * next = pTet->nextTet(0)->pools() + lidx;
+        *next += 1;
         return pUpdVec[0];
     }
     else if (sel < pCDFSelector[1])
     {
         // Direction 2.
-        Tet * next = pTet->nextTet(1);
-        next->incPoolCount(lidx, 1);
+        uint * next = pTet->nextTet(1)->pools() + lidx;
+        *next += 1;
         return pUpdVec[1];
     }
     else if (sel < pCDFSelector[2])
     {
         // Direction 3.
-        Tet * next = pTet->nextTet(2);
-        next->incPoolCount(lidx, 1);
+        uint * next = pTet->nextTet(2)->pools() + lidx;
+        *next += 1;
         return pUpdVec[2];
     }
     else 
     {
         // Direction 4.
-        Tet * next = pTet->nextTet(3);
-        next->incPoolCount(lidx, 1);
+        uint * next = pTet->nextTet(3)->pools() + lidx;
+        *next += 1;
         return pUpdVec[3];
     }
     

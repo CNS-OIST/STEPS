@@ -85,10 +85,10 @@ void State::setupTetmesh(void)
     for (std::vector<Tet*>::const_iterator i = pTets.begin(); 
             i != pTets.end(); ++i)
     {
-        for (std::vector<Diff*>::const_iterator j = (*i)->diffBegin();
-            j != (*i)->diffEnd(); ++j)
+        KProcPVecCI kprocend = (*i)->kprocEnd();
+        for (KProcPVecCI k = (*i)->kprocBegin(); k != kprocend; ++k)
         {
-            (*j)->setupDeps();
+            (*k)->setupDeps();
         }
     }
     sched()->build();

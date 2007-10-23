@@ -48,55 +48,37 @@ class Diff
 public:
     
     ////////////////////////////////////////////////////////////////////////
-    
-    /// Constructor.
-    ///
+
     Diff(DiffDef * ddef, Tet * tet);
-    
-    /// Destructor.
-    ///
     virtual ~Diff(void);
-    
-    ///
-    virtual void setupDeps(void);
-    
-    virtual bool depSpecTet(uint gidx, Tet * tet);
-    
-    virtual void reset(void);
-    
-    ////////////////////////////////////////////////////////////////////////
-    
-    ///
-    virtual double rate(void) const;
-    
-    ///
-    virtual SchedIDXVec const & apply(State * s);
 
     ////////////////////////////////////////////////////////////////////////
     
     inline DiffDef * def(void) const
     { return pDiffDef; }
+        
+    ////////////////////////////////////////////////////////////////////////
+    // VIRTUAL INTERFACE METHODS
+    ////////////////////////////////////////////////////////////////////////
     
+    virtual void setupDeps(void);
+    virtual bool depSpecTet(uint gidx, Tet * tet);
+    virtual void reset(void);
+    virtual double rate(void) const;
+    virtual SchedIDXVec const & apply(State * s);
+
     ////////////////////////////////////////////////////////////////////////
     
 private:
 
-    ////////////////////////////////////////////////////////////////////////
-    
     DiffDef *                   pDiffDef;
-    
     Tet *                       pTet;
-    
-    /// 
     SchedIDXVec                 pUpdVec[4];
-    
-    ////////////////////////////////////////////////////////////////////////
-    
-    /// Properly scaled diffusivity constant.    
-    ///
+    /// Properly scaled diffusivity constant.
     double                      pScaledDcst;
-    
-    double                      pCDFSelector[3];    
+    /// Used in selecting which directory the molecule should go.
+    double                      pCDFSelector[3];
+
 };
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -42,6 +42,7 @@ libsteps_tetexact_la_SOURCES = \
     func_ssa.cpp \
     func_tetmesh.cpp \
     kproc.cpp \
+    reac.cpp \
     sched.cpp \
     state.cpp \
     tet.cpp
@@ -54,6 +55,7 @@ header_steps_tetexact_solver_core_HEADERS = \
     diff.hpp \
     doxygen.hpp \
     kproc.hpp \
+    reac.hpp \
     sched.hpp \
     state.hpp \
     tet.hpp

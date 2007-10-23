@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
 // Copyright (C) 2005-2007 Stefan Wils. All rights reserved.
-// 
+//
 // This file is part of STEPS.
 //
 // This library is free software; you can redistribute it and/or
@@ -18,11 +18,11 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA
 //
-// $Id:kproc.hpp 64 2007-08-20 06:25:41Z stefan $
+// $Id$
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef STEPS_TETEXACT_SOLVER_CORE_KPROC_HPP
-#define STEPS_TETEXACT_SOLVER_CORE_KPROC_HPP 1
+#ifndef STEPS_TETEXACT_SOLVER_CORE_REAC_HPP
+#define STEPS_TETEXACT_SOLVER_CORE_REAC_HPP 1
 
 // Autotools definitions.
 #ifdef HAVE_CONFIG_H
@@ -30,77 +30,50 @@
 #endif
 
 // Standard library & STL headers.
-#include <cassert>
-#include <set>
+#include <map>
+#include <string>
 #include <vector>
 
 // STEPS headers.
 #include <steps/common.h>
+#include <steps/math/constants.hpp>
+#include <steps/tetexact/solver_core/kproc.hpp>
 #include <steps/tetexact/solver_core/sched.hpp>
 
 // Forward declarations.
+class ReacDef;
 class State;
 class Tet;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class KProc;
-
-typedef KProc *                         KProcP;
-typedef std::vector<KProcP>             KProcPVec;
-typedef KProcPVec::iterator             KProcPVecI;
-typedef KProcPVec::const_iterator       KProcPVecCI;
-
-////////////////////////////////////////////////////////////////////////////////
-
-class KProc
+class Reac
+: public KProc
 {
 
 public:
-
+    
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
-
-    KProc(void);
-    virtual ~KProc(void);
     
+    Reac(ReacDef * rdef, Tet * tet);
+    virtual ~Reac(void);
+
     ////////////////////////////////////////////////////////////////////////
-
-    uint schedIDX(void) const
-    { return pSchedIDX; }
-
-    void setSchedIDX(SchedIDX idx)
-    { pSchedIDX = idx; }
     
+    inline ReacDef * def(void) const
+    { return pReacDef; }
+
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
     
-    /// This function is called when all kproc objects have been created,
-    /// allowing the kproc to pre-compute its SchedIDXVec.
-    ///
-    virtual void setupDeps(void) = 0;
-        
-    /// Returns true if the occurence of this kproc depends on the number 
-    /// of molecules of some species (specified by its global index sidx) 
-    /// in a given tetrahedron. False otherwise.
-    ///
-    virtual bool depSpecTet(uint gidx, Tet * tet) = 0;
-    
-    /// Reset this Kproc.
-    ///
-    virtual void reset(void) = 0;
-    
-    /// Compute the rate for this kproc (its propensity value).
-    ///
-    virtual double rate(void) const = 0;
-    
-    /// Apply a single discrete instance of the kinetic process, returning
-    /// a vector of kproc schedule indices that need to be updated as a
-    /// result.
-    ///
-    virtual SchedIDXVec const & apply(State * s) = 0;
+    virtual void setupDeps(void);
+    virtual bool depSpecTet(uint gidx, Tet * tet);
+    virtual void reset(void);
+    virtual double rate(void) const;
+    virtual SchedIDXVec const & apply(State * s);
     
     ////////////////////////////////////////////////////////////////////////
     
@@ -108,13 +81,19 @@ private:
 
     ////////////////////////////////////////////////////////////////////////
     
-    SchedIDX                    pSchedIDX;
-
+    ReacDef *                   pReacDef;
+    Tet *                       pTet;
+    SchedIDXVec                 pUpdVec;
+    /// Properly scaled reaction constant.
+    double                      pCcst;
+    
+    ////////////////////////////////////////////////////////////////////////
+    
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
 #endif
-// STEPS_TETEXACT_SOLVER_CORE_KPROC_HPP
+// STEPS_TETEXACT_SOLVER_CORE_REAC_HPP
 
 // END
