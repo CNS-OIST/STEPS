@@ -2120,7 +2120,7 @@ class TetrahedronTestCase(unittest.TestCase):
         # Compute inside points, 1 per tetrahedron.
         ip1 = numpy.empty((100,3))
         for i in xrange(0, 100):
-            ip1[i,:] = stet.ranpnt(tetra[i*4:(i*4)+4,:], r)
+            ip1[i,:] = stet.ranpnt(r, tetra[i*4:(i*4)+4,:])
         for i in xrange(0, 100):
             self.assertTrue(stet.inside(tetra[i*4:(i*4)+4,:], ip1[i,:]))
     
@@ -2739,7 +2739,9 @@ class TetrahedronTestCase(unittest.TestCase):
         # Precision is sometimes very high, but sometimes also very low.
         # Therefore, we only assert equality to within 4 digits.
         ctrs2 = ctrs / res[:,0:3]
+        #print ctrs - res[:,0:3]
         rads2 = rads / res[:,3]
+        #print rads - res[:,3]
         for ii in xrange(0, 100):
             self.assertAlmostEqual(ctrs2[ii,0], 1.0, 4)
             self.assertAlmostEqual(ctrs2[ii,1], 1.0, 4)

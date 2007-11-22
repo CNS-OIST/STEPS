@@ -28,16 +28,23 @@
 srcdir = @srcdir@
 VPATH = @srcdir@
 
-# Python modules in local packages.
+# Files that should be cleaned when building a distribution.
+distclean-local:
+	rm -rf .DS_Store *~ *.bak
+
+pyexec_steps_mathdir = $(pythondir)/steps/math
 python_steps_mathdir = $(pythondir)/steps/math
+header_steps_mathdir = $(pkgincludedir)/steps/thirdparty/qhull
+
+AM_CPPFLAGS = $(PYTHON_CPPFLAGS) -I$(top_srcdir) \
+-I/Library/Frameworks/Python.framework/Versions/2.4/lib/python2.4/site-packages/numpy/core/include
+
 python_steps_math_PYTHON = \
     __init__.py \
-    tetrahedron.py \
     tetrahedron_test.py \
     triangle.py \
     triangle_test.py
 
-# Headers that should be included in the distribution and installed.
 pkginclude_HEADERS = \
     accumulate.hpp \
     constants.hpp \
@@ -45,12 +52,13 @@ pkginclude_HEADERS = \
     iota.hpp \
     tools.hpp 
 
+pyexec_steps_math_LTLIBRARIES = tetrahedron.la
+tetrahedron_la_LDFLAGS = -module -avoid-version $(PYTHON_LDFLAGS)
+tetrahedron_la_SOURCES = tetrahedron.cpp
+tetrahedron_la_LIBADD = ../rng/libsteps_rng.la
+    
 # Compiler flags.
 AM_CXXFLAGS = \
 	-I$(top_srcdir)
-
-# Files that should be cleaned when building a distribution.
-distclean-local:
-	-rm -rf .DS_Store *~ *.bak
     
 # END
