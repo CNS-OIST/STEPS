@@ -1004,37 +1004,42 @@ static PyObject * tet_ranpnt(PyObject * self, PyObject * args)
     //     alpha = r.getUnfIE()
     //     ret[i,:] = alpha * p12 + (1.0 - alpha) * p13
     // return ret
-    
+
     // Generate points.
     while (outptr < outptr_max)
     {
-        double alpha = pow(rng->getUnfIE(), 1.0/3.0);
+        double alpha = pow(rng->getUnfEE(), 1.0/3.0);
         double alpha1 = 1.0 - alpha;
-        double p0x = *(tcpptr++) * alpha;
-        double p0y = *(tcpptr++) * alpha;
-        double p0z = *(tcpptr++) * alpha;
-        alpha = sqrt(rng->getUnfIE());
-        double tri0 = alpha * (p0x + (*(tcpptr++) * alpha1));
-        double tri1 = alpha * (p0y + (*(tcpptr++) * alpha1));
-        double tri2 = alpha * (p0z + (*(tcpptr++) * alpha1));
-        double tri3 = p0x + (*(tcpptr++) * alpha1);
-        double tri4 = p0y + (*(tcpptr++) * alpha1);
-        double tri5 = p0z + (*(tcpptr++) * alpha1);
-        double tri6 = p0x + (*(tcpptr++) * alpha1);
-        double tri7 = p0y + (*(tcpptr++) * alpha1);
-        double tri8 = p0z + (*(tcpptr++) * alpha1);
+        double p0x = alpha1 * tcpptr[ 0];
+        double p0y = alpha1 * tcpptr[ 1];
+        double p0z = alpha1 * tcpptr[ 2];
+        double p01x = p0x + (alpha * tcpptr[ 3]);
+        double p01y = p0y + (alpha * tcpptr[ 4]);
+        double p01z = p0z + (alpha * tcpptr[ 5]);
+        double p02x = p0x + (alpha * tcpptr[ 6]);
+        double p02y = p0y + (alpha * tcpptr[ 7]);
+        double p02z = p0z + (alpha * tcpptr[ 8]);
+        double p03x = p0x + (alpha * tcpptr[ 9]);
+        double p03y = p0y + (alpha * tcpptr[10]);
+        double p03z = p0z + (alpha * tcpptr[11]);
+        
+        alpha = sqrt(rng->getUnfEE()); 
         alpha1 = 1.0 - alpha;
-        alpha = rng->getUnfIE();
-        double p12x = alpha * (tri0 + (alpha1 * tri3));
-        double p12y = alpha * (tri1 + (alpha1 * tri4));
-        double p12z = alpha * (tri2 + (alpha1 * tri5));
-        double p13x = tri0 + (alpha1 * tri6);
-        double p13y = tri1 + (alpha1 * tri7);
-        double p13z = tri2 + (alpha1 * tri8);
+        p01x *= alpha1;
+        p01y *= alpha1;
+        p01z *= alpha1;
+        double p12x = p01x + (alpha * p02x); 
+        double p12y = p01y + (alpha * p02y);
+        double p12z = p01z + (alpha * p02z);
+        double p13x = p01x + (alpha * p03x); 
+        double p13y = p01y + (alpha * p03y);
+        double p13z = p01z + (alpha * p03z);
+        
+        alpha = rng->getUnfEE();
         alpha1 = 1.0 - alpha;
-        *(outptr++) = p12x + alpha1 * p13x;
-        *(outptr++) = p12y + alpha1 * p13y;
-        *(outptr++) = p12z + alpha1 * p13z;
+        *(outptr++) = (alpha * p12x) + (alpha1 * p13x);
+        *(outptr++) = (alpha * p12y) + (alpha1 * p13y);
+        *(outptr++) = (alpha * p12z) + (alpha1 * p13z);
     }
     
     // Return normally.
