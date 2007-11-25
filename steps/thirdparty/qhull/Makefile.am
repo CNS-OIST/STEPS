@@ -36,8 +36,7 @@ pyexec_steps_thirdparty_qhulldir = $(pythondir)/steps/thirdparty/qhull
 python_steps_thirdparty_qhulldir = $(pythondir)/steps/thirdparty/qhull
 header_steps_thirdparty_qhulldir = $(pkgincludedir)/steps/thirdparty/qhull
 
-AM_CPPFLAGS = $(PYTHON_CPPFLAGS) -I$(top_srcdir) \
--I/Library/Frameworks/Python.framework/Versions/2.4/lib/python2.4/site-packages/numpy/core/include
+AM_CPPFLAGS = $(PYTHON_CPPFLAGS) $(NUMPY_CPPFLAGS) -I$(top_srcdir)
 
 pyexec_steps_thirdparty_qhull_LTLIBRARIES = _qhull.la
 _qhull_la_LDFLAGS = -module -avoid-version $(PYTHON_LDFLAGS)

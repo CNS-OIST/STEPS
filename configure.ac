@@ -8,7 +8,7 @@ dnl	    Standard boilerplate code.
 dnl ----------------------------------------------------------------------------
 
 dnl Initialize the autotools system.
-AC_INIT([steps], [0.9.0], [wils@oist.jp])
+AC_INIT([steps], [1.0.0], [wils@oist.jp])
 
 AC_PREREQ(2.57)
 
@@ -191,6 +191,13 @@ dnl     C/C++. This is necessary because some other checks work by trying to
 dnl     link or run a program; by checking for libraries first you ensure that
 dnl     the resulting programs can be linked.
 dnl ----------------------------------------------------------------------------
+
+dnl ----------------------------------------------------------------------------
+dnl NumPy stuff.
+dnl ----------------------------------------------------------------------------
+
+AC_PYTHON_MODULE([numpy])
+AX_NUMPY_INCLUDE
 
 dnl ----------------------------------------------------------------------------
 dnl     HEADERS

@@ -36,8 +36,7 @@ pyexec_steps_mathdir = $(pythondir)/steps/math
 python_steps_mathdir = $(pythondir)/steps/math
 header_steps_mathdir = $(pkgincludedir)/steps/thirdparty/qhull
 
-AM_CPPFLAGS = $(PYTHON_CPPFLAGS) -I$(top_srcdir) \
--I/Library/Frameworks/Python.framework/Versions/2.4/lib/python2.4/site-packages/numpy/core/include
+AM_CPPFLAGS = $(PYTHON_CPPFLAGS) $(NUMPY_CPPFLAGS) -I$(top_srcdir)
 
 python_steps_math_PYTHON = \
     __init__.py \
