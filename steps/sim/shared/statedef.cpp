@@ -27,6 +27,7 @@
 #endif
 
 // STL headers.
+#include <cassert>
 #include <string>
 #include <vector>
 
