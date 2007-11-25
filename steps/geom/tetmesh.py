@@ -119,6 +119,30 @@ class Tet(object):
     idx = property(getIdx)
     
     
+    def getNode0(self):
+        return self._nodes2[0]
+    
+    node0 = property(getNode0)
+    
+    
+    def getNode1(self):
+        return self._nodes2[1]
+    
+    node1 = property(getNode1)
+    
+    
+    def getNode2(self):
+        return self._nodes2[2]
+    
+    node2 = property(getNode2)
+    
+    
+    def getNode3(self):
+        return self._nodes2[3]
+    
+    node3 = property(getNode3)
+    
+    
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
     
     
@@ -297,7 +321,7 @@ class Tet(object):
     
     
     def getRanPnt(self, rng, n = 1):
-        return stet.ranpnt(self._mesh._pnts[self._nodes2], rng, n)
+        return stet.ranpnt(rng, self._mesh._pnts[self._nodes2], n)
     
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
     
@@ -417,6 +441,115 @@ class Tet(object):
     ntri2 = property(getNextTri2)
     ntri3 = property(getNextTri3)
         
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+
+class _tri_iterator(object):
+    
+    """Auxiliary class for iterating over triangles in a mesh.
+    """ 
+    
+    def __init__(self, tetmesh, trilist):
+        self._mesh = tetmesh
+        self._tris = trilist
+        self._ntris = len(self._tris)
+        # The iterator index (not triangle index!)
+        self._iidx = 0
+    
+    def __iter__(self):
+        return self
+    
+    def next(self):
+        if self._iidx == self._ntris:
+            raise StopIteration
+        t = Tri(self._mesh, self._tris[self._iidx])
+        self._iidx = self._iidx + 1
+        return t
+    
+    def reset(self):
+        self._iidx = 0
+
+
+class Tri(object):
+    
+    def __init__(self, tetmesh, triidx):
+        self._mesh = tetmesh
+        self._tidx = triidx
+        self._nodes = numpy.empty((1, 3),dtype=int)
+        self._nodes[0,:] = self._mesh._tris[self._tidx,:]
+        self._nodes2 = self._mesh._tris[self._tidx,:]
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getIdx(self):
+        return self._tidx
+    
+    idx = property(getIdx)
+    
+    
+    def getNode0(self):
+        return self._nodes2[0]
+    
+    node0 = property(getNode0)
+    
+    
+    def getNode1(self):
+        return self._nodes2[1]
+    
+    node1 = property(getNode1)
+    
+    
+    def getNode2(self):
+        return self._nodes2[2]
+    
+    node2 = property(getNode2)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getPatch(self):
+        return self._mesh._tri_patches[self._tidx]
+    
+    patch = property(getPatch)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getInnerTetIdx(self):
+        return self._mesh._tri_tet_neighbours[self._tidx,0]
+    
+    def getOuterTetIdx(self):
+        return self._mesh._tri_tet_neighbours[self._tidx,1]
+    
+    itetidx = property(getInnerTetIdx)
+    otetidx = property(getOuterTetIdx)
+    
+    
+    def getInnerTet(self):
+        iidx = self.itetidx
+        if iidx == -1: return None
+        return Tet(self._mesh, iidx)
+    
+    def getOuterTet(self):
+        oidx = self.otetidx
+        if oidx == -1: return None
+        return Tet(self._mesh, oidx)
+    
+    itet = property(getInnerTet)
+    otet = property(getOuterTet)
+    
+    
+    def getBarycenter(self):
+        return stri.barycenter(self._mesh._pnts, self._nodes)
+    
+    barycenter = property(getBarycenter)
+
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -860,7 +993,7 @@ class TetMesh(core.Container):
     
     
     def getTris(self):
-        return self._tris
+        return _tri_iterator(self, xrange(0,self.ntris))
     
     tris = property(getTris)
     
@@ -1338,7 +1471,7 @@ class Patch(core.Patch):
         # Then, check if the dot product of this vector with the triangle
         # normal is positive. If not, the triangle vertices need to be
         # flipped and the normal has to be negated.
-        tris = self.container.tris[self._tri_indices,:]
+        tris = self.container._tris[self._tri_indices,:]
         tri_barycenters = stri.barycenter(self.container.pnts, tris)
         tets = self.container._tri_tet_neighbours[self._tri_indices,0]
         tets = self.container._tets[tets,:]
