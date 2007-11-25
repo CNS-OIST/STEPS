@@ -931,6 +931,9 @@ RETURNS:\n\
 RAISES:\n\
     ---\n");
 
+// SOURCE:
+// http://vcg.isti.cnr.it/activities/geometryegraphics/pointintetraedro.html
+
 static PyObject * tet_ranpnt(PyObject * self, PyObject * args)
 {   
     PyObject * in_rng = 0;
@@ -984,62 +987,71 @@ static PyObject * tet_ranpnt(PyObject * self, PyObject * args)
     // Prepare output array.
     CREATE_OUTPUT_NDARRAY_DOUBLE(2, npnts)
     outptr_max = outptr + (npnts * 3);
-    
-    // ret = numpy.empty((num, 3))
-    // if num == 0: 
-    //     return ret
-    // tri = numpy.empty((3,3))
-    // p12 = numpy.empty(3)
-    // p13 = numpy.empty(3)
-    // for i in xrange(0, num):
-    //     alpha = math.pow(r.getUnfIE(), 1.0/3.0)  
-    //     alpha1 = 1.0 - alpha
-    //     tri[0,:] = alpha * tcp[0,:] + alpha1 * tcp[1,:]
-    //     tri[1,:] = alpha * tcp[0,:] + alpha1 * tcp[2,:]
-    //     tri[2,:] = alpha * tcp[0,:] + alpha1 * tcp[3,:]
-    //     alpha = math.sqrt(r.getUnfIE())
-    //     alpha1 = 1.0 - alpha
-    //     p12 = alpha * tri[0,:] + alpha1 * tri[1,:]
-    //     p13 = alpha * tri[0,:] + alpha1 * tri[2,:]
-    //     alpha = r.getUnfIE()
-    //     ret[i,:] = alpha * p12 + (1.0 - alpha) * p13
-    // return ret
 
     // Generate points.
     while (outptr < outptr_max)
     {
-        double alpha = pow(rng->getUnfEE(), 1.0/3.0);
-        double alpha1 = 1.0 - alpha;
-        double p0x = alpha1 * tcpptr[ 0];
-        double p0y = alpha1 * tcpptr[ 1];
-        double p0z = alpha1 * tcpptr[ 2];
-        double p01x = p0x + (alpha * tcpptr[ 3]);
-        double p01y = p0y + (alpha * tcpptr[ 4]);
-        double p01z = p0z + (alpha * tcpptr[ 5]);
-        double p02x = p0x + (alpha * tcpptr[ 6]);
-        double p02y = p0y + (alpha * tcpptr[ 7]);
-        double p02z = p0z + (alpha * tcpptr[ 8]);
-        double p03x = p0x + (alpha * tcpptr[ 9]);
-        double p03y = p0y + (alpha * tcpptr[10]);
-        double p03z = p0z + (alpha * tcpptr[11]);
+        // double alpha = pow(rng->getUnfEE(), 1.0/3.0);
+        // double alpha1 = 1.0 - alpha;
+        // double p0x = alpha1 * tcpptr[ 0];
+        // double p0y = alpha1 * tcpptr[ 1];
+        // double p0z = alpha1 * tcpptr[ 2];
+        // double p01x = p0x + (alpha * tcpptr[ 3]);
+        // double p01y = p0y + (alpha * tcpptr[ 4]);
+        // double p01z = p0z + (alpha * tcpptr[ 5]);
+        // double p02x = p0x + (alpha * tcpptr[ 6]);
+        // double p02y = p0y + (alpha * tcpptr[ 7]);
+        // double p02z = p0z + (alpha * tcpptr[ 8]);
+        // double p03x = p0x + (alpha * tcpptr[ 9]);
+        // double p03y = p0y + (alpha * tcpptr[10]);
+        // double p03z = p0z + (alpha * tcpptr[11]);
+        // alpha = sqrt(rng->getUnfEE()); 
+        // alpha1 = 1.0 - alpha;
+        // p01x *= alpha1;
+        // p01y *= alpha1;
+        // p01z *= alpha1;
+        // double p12x = p01x + (alpha * p02x); 
+        // double p12y = p01y + (alpha * p02y);
+        // double p12z = p01z + (alpha * p02z);
+        // double p13x = p01x + (alpha * p03x); 
+        // double p13y = p01y + (alpha * p03y);
+        // double p13z = p01z + (alpha * p03z);
+        // alpha = rng->getUnfEE();
+        // alpha1 = 1.0 - alpha;
+        // *(outptr++) = (alpha * p12x) + (alpha1 * p13x);
+        // *(outptr++) = (alpha * p12y) + (alpha1 * p13y);
+        // *(outptr++) = (alpha * p12z) + (alpha1 * p13z);
         
-        alpha = sqrt(rng->getUnfEE()); 
-        alpha1 = 1.0 - alpha;
-        p01x *= alpha1;
-        p01y *= alpha1;
-        p01z *= alpha1;
-        double p12x = p01x + (alpha * p02x); 
-        double p12y = p01y + (alpha * p02y);
-        double p12z = p01z + (alpha * p02z);
-        double p13x = p01x + (alpha * p03x); 
-        double p13y = p01y + (alpha * p03y);
-        double p13z = p01z + (alpha * p03z);
-        
-        alpha = rng->getUnfEE();
-        alpha1 = 1.0 - alpha;
-        *(outptr++) = (alpha * p12x) + (alpha1 * p13x);
-        *(outptr++) = (alpha * p12y) + (alpha1 * p13y);
-        *(outptr++) = (alpha * p12z) + (alpha1 * p13z);
+        double s = rng->getUnfEE();
+        double t = rng->getUnfEE();
+        double u = rng->getUnfEE();
+        if (s+t>1.0) 
+        {
+            // cut'n fold the cube into a prism
+            s = 1.0 - s;
+            t = 1.0 - t;
+        }
+        if (t+u>1.0) 
+        { 
+            // cut'n fold the prism into a tetrahedron
+            double tmp = u;
+            u = 1.0 - s - t;
+            t = 1.0 - tmp;
+        } 
+        else if (s+t+u>1.0)
+        {
+            double tmp = u;
+            u = s + t + u - 1.0;
+            s = 1 - t - tmp;
+        }
+        // a,s,t,u are the barycentric coordinates of the random point.
+        double a = 1 - s - t - u;
+        *(outptr++) = (a * tcpptr[ 0]) + (s * tcpptr[ 3]) + 
+                      (t * tcpptr[ 6]) + (u * tcpptr[ 9]);
+        *(outptr++) = (a * tcpptr[ 1]) + (s * tcpptr[ 4]) + 
+                      (t * tcpptr[ 7]) + (u * tcpptr[10]);
+        *(outptr++) = (a * tcpptr[ 2]) + (s * tcpptr[ 5]) + 
+                      (t * tcpptr[ 8]) + (u * tcpptr[11]);
     }
     
     // Return normally.
