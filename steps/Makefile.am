@@ -32,10 +32,10 @@ VPATH = @srcdir@
 SUBDIRS	= \
     distmesh \
     examples \
+    rng \
     geom \
     math \
     model \
-    rng \
     sim \
     tests \
     tetexact \
