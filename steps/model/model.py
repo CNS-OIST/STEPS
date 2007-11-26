@@ -55,6 +55,7 @@ class Model(object):
         """
         self.__specs = { }
         self.__volsys = { }
+        self.__surfsys = { }
         
     
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
@@ -95,6 +96,25 @@ class Model(object):
         """
         stools.checkID(id)
         if id in self.__volsys:
+            raise serr.ArgumentError, '\'%s\' is already in use.' % id
+
+
+    def _checkSurfsysID(self, id):
+        """Check if a given id is valid and not yet used by another surfsys.
+
+        PARAMETERS:
+            id
+                The id that should be checked (must be a string).
+
+        RETURNS:
+            The id itself.
+
+        RAISES:
+            steps.error.ArgumentError
+                If the ID is not valid, or not unique.
+        """
+        stools.checkID(id)
+        if id in self.__surfsys:
             raise serr.ArgumentError, '\'%s\' is already in use.' % id
 
 
@@ -143,6 +163,9 @@ class Model(object):
         species = self.getSpec(species)
         for i in self.__volsys:
             v = self.__volsys[i] 
+            v._handleSpecDelete(species)
+        for i in self.__surfsys:
+            s = self.__surfsys[i]
             v._handleSpecDelete(species)
         self.__specs.pop(species.id)
         species._handleSelfDelete()
@@ -265,6 +288,87 @@ class Model(object):
         """Return a list of all volume systems.
         """
         return self.__volsys.values()
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
+    
+    
+    def _handleSurfsysIDChange(self, oldid, newid):
+        """Handle a change in surface system ID.
+        Internal method.
+        """
+        if oldid == newid: return
+        self._checkSurfsysID(newid)
+        s = self.__surfsys.pop(oldid)
+        self.__surfsys[newid] = s
+
+
+    def _handleSurfsysAdd(self, surfsys):
+        """Handle the attempt to add a new surface system to the model.
+        Internal method.
+        """
+        assert surfsys._model == None, \
+            '\'%s\' already assigned to a model.' % surfsys.id
+        self._checkSurfsysID(surfsys.id)
+        surfsys._model = self
+        self.__surfsys[surfsys.id] = surfsys
+
+
+    def delSurfsys(self, surfsys):
+        """Remove a surface system from the entire model.
+
+        Arguments:
+            surfsys
+                Can be a string referring to the id, or a 
+                steps.model.Surfsys object.
+
+        RETURNS:
+            None
+
+        RAISES:
+            steps.error.ModelError
+                If the id or volsys object cannot be resolved.
+        """
+        surfsys = self.getSurfsys(surfsys)
+        self.__surfsys.pop(surfsys.id)
+        surfsys._handleSelfDelete()
+
+        
+    def getSurfsys(self, surfsys):
+        """Resolve a surface system in the context of this model.
+        
+        This method can be used to retrieve a surfsys object by its id, or to
+        check whether a given surfsys object belongs to this model.
+        
+        Arguments:
+            surfsys
+                Can be a string or a steps.model.Surfsys object. If it is a 
+                string, the method will attempt to find the matching surfsys 
+                object. If it is a steps.model.Surfsys object, the method will 
+                see if the object is part of this model.
+
+        RETURNS:
+            A steps.model.Surfsys object.
+
+        RAISES:
+            steps.error.ArgumentError
+                If the id cannot be resolved, or if the surfsys object does
+                not belong to this model.
+        """
+        if isinstance(surfsys, str):
+            try:
+                surfsys = self.__surfsys[surfsys]
+            except KeyError:
+                raise serr.ArgumentError, 'No surfsys with id \'%s\'' % surfsys
+        if surfsys._model != self:
+            raise serr.ArgumentError, 'Surfsys is no part of this model.'
+        return surfsys
+
+        
+    def getAllSurfsys(self):
+        """Return a list of all surface systems.
+        """
+        return self.__surfsys.values()
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
