@@ -30,7 +30,6 @@
 #include <algorithm>
 #include <cassert>
 #include <string>
-#include <vector>
 
 // STEPS headers.
 #include <steps/common.h>
@@ -39,20 +38,77 @@
 #include <steps/sim/shared/statedef.hpp>
 
 NAMESPACE_ALIAS(steps::math, smath);
+USING_NAMESPACE(steps::sim);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ReacDef::ReacDef(StateDef * sdef, uint gidx, std::string const & name)
+ReacDef::ReacDef(StateDef * sdef, gidxT idx, std::string const & name)
 : pStateDef(sdef)
-, pGIDX(gidx)
+, pGIDX(idx)
 , pName(name)
 , pOrder(0)
 , pKcst(0.0)
-, pLHS(sdef->countSpecs())
-, pRHS(sdef->countSpecs())
+, pSpec_DEP(0)
+, pSpec_LHS(0)
+, pSpec_RHS(0)
+, pSpec_UPD(0)
 {
-    std::fill(pLHS.begin(), pLHS.end(), 0);
-    std::fill(pRHS.begin(), pRHS.end(), 0);
+    uint nspecs = statedef()->countSpecs();
+    if (nspecs == 0) return; // Would be weird, but okay.
+    pSpec_DEP = new depT[nspecs];
+    std::fill_n(pSpec_DEP, nspecs, DEP_NONE);
+    pSpec_LHS = new uint[nspecs];
+    std::fill_n(pSpec_LHS, nspecs, 0);
+    pSpec_RHS = new uint[nspecs];
+    std::fill_n(pSpec_RHS, nspecs, 0);
+    pSpec_UPD = new int[nspecs];
+    std::fill_n(pSpec_UPD, nspecs, 0);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+ReacDef::~ReacDef(void)
+{
+    delete[] pSpec_DEP;
+    delete[] pSpec_LHS;
+    delete[] pSpec_RHS;
+    delete[] pSpec_UPD;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint ReacDef::incLHS(gidxT idx)
+{
+    assert(idx < statedef()->countSpecs());
+    pSpec_LHS[idx] += 1;
+    computeOrder();
+    return pSpec_LHS[idx];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void ReacDef::setLHS(gidxT idx, uint n)
+{
+    assert(idx < statedef()->countSpecs());
+    pSpec_LHS[idx] = n;
+    computeOrder();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint ReacDef::incRHS(gidxT idx)
+{
+    assert(idx < statedef()->countSpecs());
+    pSpec_RHS[idx] += 1;
+    return pSpec_RHS[idx];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void ReacDef::setRHS(gidxT idx, uint n)
+{
+    assert(idx < statedef()->countSpecs());
+    pSpec_RHS[idx] = n;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -60,78 +116,56 @@ ReacDef::ReacDef(StateDef * sdef, uint gidx, std::string const & name)
 void ReacDef::setupFinal(void)
 {
     computeOrder();
+    uint nspecs = statedef()->countSpecs();
+    for (uint i = 0; i < nspecs; ++i)
+    {
+        int lhs = static_cast<int>(pSpec_LHS[i]); 
+        pSpec_UPD[i] = static_cast<int>(pSpec_RHS[i]) - lhs;
+        if (lhs != 0) pSpec_DEP[i] = DEP_STOICH;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint ReacDef::lhs(uint gidx) const
+uint ReacDef::lhs(gidxT idx) const
 {
-    return pLHS[gidx];
+    assert(idx < statedef()->countSpecs());
+    return pSpec_LHS[idx];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint ReacDef::incLHS(uint gidx)
+uint ReacDef::rhs(gidxT idx) const
 {
-    pLHS[gidx] += 1;
-    computeOrder();
-    return pLHS[gidx];
+    assert(idx < statedef()->countSpecs());
+    return pSpec_RHS[idx];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-void ReacDef::setLHS(uint gidx, uint n)
-{
-    pLHS[gidx] = n;
-    computeOrder();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-uint ReacDef::rhs(uint gidx) const
-{
-    return pRHS[gidx];
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-uint ReacDef::incRHS(uint gidx)
-{
-    pRHS[gidx] += 1;
-    return pRHS[gidx];
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void ReacDef::setRHS(uint gidx, uint n)
-{
-    pRHS[gidx] = n;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
+/*
 bool ReacDef::dependsOnSpec(uint gidx) const
 {
     assert(gidx < statedef()->countSpecs());
     if (lhs(gidx) == 0) return false;
     return true;
 }
-
+*/
 ////////////////////////////////////////////////////////////////////////////////
-
+/*
 bool ReacDef::affectsSpec(uint gidx) const
 {
     assert(gidx < statedef()->countSpecs());
     if ((rhs(gidx) - lhs(gidx)) == 0) return false;
     return true;
 }
-
+*/
 ////////////////////////////////////////////////////////////////////////////////
 
 void ReacDef::computeOrder(void)
 {
     // Compute the order of the reaction.
-    pOrder = smath::accumulate(pLHS.begin(), pLHS.end(), 0);
+    uint nspecs = statedef()->countSpecs();
+    pOrder = smath::accumulate(pSpec_LHS, pSpec_LHS + nspecs, 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -37,12 +37,16 @@
 #include <steps/sim/shared/reacdef.hpp>
 #include <steps/sim/shared/specdef.hpp>
 #include <steps/sim/shared/statedef.hpp>
+#include <steps/sim/shared/types.hpp>
+
+USING(std, string);
+USING_NAMESPACE(steps::sim);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-SpecDef::SpecDef(StateDef * sdef, uint gidx, std::string const & name)
+SpecDef::SpecDef(StateDef * sdef, gidxT idx, std::string const & name)
 : pStateDef(sdef)
-, pGIDX(gidx)
+, pGIDX(idx)
 , pName(name)
 {
 }
@@ -60,41 +64,41 @@ void SpecDef::setupFinal(void)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-bool SpecDef::dependsOnReac(uint gidx) const
+/*
+bool SpecDef::dependsOnReac(gidxT idx) const
 {
-    assert(gidx < statedef()->countReacs());
-    ReacDef * r = statedef()->reac(gidx);
-    return r->affectsSpec(this->gidx());
+    assert(idx < statedef()->countReacs());
+    ReacDef * r = statedef()->reac(idx);
+    return r->affectsSpec(this->idx());
 }
-
+*/
 ////////////////////////////////////////////////////////////////////////////////
-
-bool SpecDef::affectsReac(uint gidx) const
+/*
+bool SpecDef::affectsReac(gidxT idx) const
 {
-    assert(gidx < statedef()->countReacs());
-    ReacDef * r = statedef()->reac(gidx);
-    return r->dependsOnSpec(this->gidx());
+    assert(idx < statedef()->countReacs());
+    ReacDef * r = statedef()->reac(idx);
+    return r->dependsOnSpec(this->idx());
 }
-
+*/
 ////////////////////////////////////////////////////////////////////////////////
-
-bool SpecDef::dependsOnDiff(uint gidx) const
+/*
+bool SpecDef::dependsOnDiff(gidxT idx) const
 {
-    assert(gidx < statedef()->countDiffs());
-    DiffDef * d = statedef()->diff(gidx);
-    return d->affectsSpec(this->gidx());
+    assert(idx < statedef()->countDiffs());
+    DiffDef * d = statedef()->diff(idx);
+    return d->affectsSpec(this->idx());
 }
-
+*/
 ////////////////////////////////////////////////////////////////////////////////
-
-bool SpecDef::affectsDiff(uint gidx) const
+/*
+bool SpecDef::affectsDiff(gidxT idx) const
 {
-    assert(gidx < statedef()->countDiffs());
-    DiffDef * d = statedef()->diff(gidx);
-    return d->dependsOnSpec(this->gidx());
+    assert(idx < statedef()->countDiffs());
+    DiffDef * d = statedef()->diff(idx);
+    return d->dependsOnSpec(this->idx());
 }
-
+*/
 ////////////////////////////////////////////////////////////////////////////////
 
 // END

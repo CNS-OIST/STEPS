@@ -27,6 +27,7 @@
 #endif
 
 // STL headers.
+#include <algorithm>
 #include <cassert>
 #include <string>
 
@@ -34,19 +35,41 @@
 #include <steps/common.h>
 #include <steps/sim/shared/diffdef.hpp>
 #include <steps/sim/shared/statedef.hpp>
+#include <steps/sim/shared/types.hpp>
 
 USING(std, string);
+USING_NAMESPACE(steps::sim);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-DiffDef::DiffDef(StateDef * sdef, uint gidx, string const & name)
+DiffDef::DiffDef(StateDef * sdef, gidxT idx, string const & name)
 : pStateDef(sdef)
 , pFinalSetupFinished(false)
-, pGIDX(gidx)
+, pGIDX(idx)
 , pName(name)
 , pDcst(0.0)
-, pLig(0xFFFF)
+, pSpec_DEP(0)
+, pSpec_LIG(GIDX_UNDEFINED)
 {
+    uint nspecs = statedef()->countSpecs();
+    if (nspecs == 0) return; // Would be weird, but okay.
+    pSpec_DEP = new depT[nspecs];
+    std::fill_n(pSpec_DEP, nspecs, DEP_NONE);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+DiffDef::~DiffDef(void)
+{
+    delete[] pSpec_DEP;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void DiffDef::setLig(gidxT idx)
+{
+    assert(pFinalSetupFinished == false);
+    pSpec_LIG = idx;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -66,31 +89,23 @@ void DiffDef::setDcst(double const & d)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-void DiffDef::setLig(uint gidx)
-{
-    assert(pFinalSetupFinished == false);
-    pLig = gidx;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
+/*
 bool DiffDef::dependsOnSpec(uint gidx) const
 {
     assert(gidx < statedef()->countSpecs());
     if (gidx != pLig) return false;
     return true;
 }
-
+*/
 ////////////////////////////////////////////////////////////////////////////////
-
+/*
 bool DiffDef::affectsSpec(uint gidx) const
 {
     assert(gidx < statedef()->countSpecs());
     if (gidx != pLig) return false;
     return true;
 }
-
+*/
 ////////////////////////////////////////////////////////////////////////////////
 
 // END

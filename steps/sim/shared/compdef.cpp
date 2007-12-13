@@ -29,10 +29,7 @@
 // STL headers.
 #include <algorithm>
 #include <cassert>
-#include <iostream>
-#include <iterator>
 #include <string>
-#include <vector>
 
 // STEPS headers.
 #include <steps/common.h>
@@ -44,155 +41,126 @@
 
 USING(std, string);
 USING(std, vector);
+USING_NAMESPACE(steps::sim);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-CompUpd::CompUpd(void)
-: pLReacs()
-, pLDiffs()
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-CompUpd::CompUpd(CompUpd const & c)
-: pLReacs(c.pLReacs)
-, pLDiffs(c.pLDiffs)
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-CompUpd::~CompUpd(void)
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void CompUpd::compact(void)
-{
-    // Compact local reactions.
-    std::set<uint> reacset;
-    std::copy(pLReacs.begin(), pLReacs.end(), 
-        std::inserter(reacset, reacset.begin()));
-    pLReacs.clear();
-    std::copy(reacset.begin(), reacset.end(), 
-        std::inserter(pLReacs, pLReacs.begin()));
-    
-    // Compact local diffusion rules.
-    std::set<uint> diffset;
-    std::copy(pLDiffs.begin(), pLDiffs.end(),
-        std::inserter(diffset, diffset.begin()));
-    pLDiffs.clear();
-    std::copy(diffset.begin(), diffset.end(),
-        std::inserter(pLDiffs, pLDiffs.begin()));
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void CompUpd::merge(CompUpd const & upd)
-{
-    // Merge local reactions -- eliminating duplicates.
-    std::set<uint> reacset;
-    std::copy(pLReacs.begin(), pLReacs.end(), 
-        std::inserter(reacset, reacset.begin()));
-    std::copy(upd.pLReacs.begin(), upd.pLReacs.end(), 
-        std::inserter(reacset, reacset.begin()));
-    pLReacs.clear();
-    std::copy(reacset.begin(), reacset.end(), 
-        std::inserter(pLReacs, pLReacs.begin()));
-    
-    // Merge local diffusion rules -- eliminating duplicates.
-    std::set<uint> diffset;
-    std::copy(pLDiffs.begin(), pLDiffs.end(),
-        std::inserter(diffset, diffset.begin()));
-    std::copy(upd.pLDiffs.begin(), upd.pLDiffs.end(),
-        std::inserter(diffset, diffset.begin()));
-    pLDiffs.clear();
-    std::copy(diffset.begin(), diffset.end(),
-        std::inserter(pLDiffs, pLDiffs.begin()));
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-CompDef::CompDef(StateDef * sdef, uint gidx, string const & name)
+CompDef::CompDef(StateDef * sdef, gidxT idx, string const & name)
 : pStateDef(sdef)
-, pGIDX(gidx)
+, pGIDX(idx)
 , pName(name)
-, pG2LSpec(sdef->countSpecs())
-, pL2GSpec(0)
-, pSpecUpd(0)
-, pG2LReac(sdef->countReacs())
-, pL2GReac(0)
-, pReacSpecDeps(0)
-, pReacSpecUpds(0)
-, pReacUpd(0)
-, pG2LDiff(sdef->countDiffs())
-, pL2GDiff(0)
-, pDiffUpd(0)
+, pSpec_N(0)
+, pSpec_G2L(0)
+, pSpec_L2G(0)
+, pReac_N(0)
+, pReac_G2L(0)
+, pReac_L2G(0)
+, pReac_DEP_Spec(0)
+, pReac_LHS_Spec(0)
+, pReac_UPD_Spec(0)
+, pDiff_N(0)
+, pDiff_G2L(0)
+, pDiff_L2G(0)
+, pDiff_DEP_Spec(0)
 {
-    std::fill(pG2LSpec.begin(), pG2LSpec.end(), 0xFFFF);
-    std::fill(pG2LReac.begin(), pG2LReac.end(), 0xFFFF);
-    std::fill(pG2LDiff.begin(), pG2LDiff.end(), 0xFFFF);
+    uint nspecs = statedef()->countSpecs();
+    pSpec_G2L = new lidxT[nspecs];
+    std::fill_n(pSpec_G2L, nspecs, LIDX_UNDEFINED);
+    uint nreacs = statedef()->countReacs();
+    pReac_G2L = new lidxT[nreacs];
+    std::fill_n(pReac_G2L, nreacs, LIDX_UNDEFINED);
+    uint ndiffs = statedef()->countDiffs();
+    pDiff_G2L = new lidxT[ndiffs];
+    std::fill_n(pDiff_G2L, ndiffs, LIDX_UNDEFINED);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 CompDef::~CompDef(void)
 {
-    delete[] pSpecUpd;
-    delete[] pReacSpecDeps;
-    delete[] pReacSpecUpds;
-    delete[] pReacUpd;
-    delete[] pDiffUpd;
+    delete[] pSpec_G2L;
+    delete[] pSpec_L2G;
+    delete[] pReac_G2L;
+    delete[] pReac_L2G;
+    delete[] pReac_DEP_Spec;
+    delete[] pReac_LHS_Spec;
+    delete[] pReac_UPD_Spec;
+    delete[] pDiff_G2L;
+    delete[] pDiff_L2G;
+    delete[] pDiff_DEP_Spec;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void CompDef::addSpec(gidxT idx)
+{
+    assert(statedef()->spec(idx) != 0);
+    if (pSpec_G2L[idx] != LIDX_UNDEFINED) return;
+    pSpec_G2L[idx] = pSpec_N++;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void CompDef::addReac(gidxT idx)
+{
+    assert(statedef()->reac(idx) != 0);
+    if (pReac_G2L[idx] != LIDX_UNDEFINED) return;
+    pReac_G2L[idx] = pReac_N++;
+    
+    // Also add all the referenced species in the reaction.
+    // TODO
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void CompDef::addDiff(gidxT idx)
+{
+    assert(statedef()->diff(idx) != 0);
+    if (pDiff_G2L[idx] != LIDX_UNDEFINED) return;
+    pDiff_G2L[idx] = pDiff_N++;
+    
+    // Also add the ligand to the compartment.
+    // TODO
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void CompDef::setupLocalIndices(void)
 {
-    // Make local indices for species that have to be present in voxels
-    // belonging to this compartment. These species have been marked earlier
-    // with '0' in array pG2LSpec (e.g. by methods such as addReac() or 
-    // addDiff()), as opposed in 0xFFFF.
-    uint nspecs = std::count(pG2LSpec.begin(), pG2LSpec.end(), 0);
-    pL2GSpec.resize(nspecs);
-    uint cur = 0;
-    for (uint i = 0; i < pG2LSpec.size(); ++i)
+    if (pSpec_N != 0)
     {
-        if (pG2LSpec[i] == 0xFFFF) continue;
-        assert(pG2LSpec[i] == 0);
-        pG2LSpec[i] = cur;
-        pL2GSpec[cur++] = i;
+        pSpec_L2G = new gidxT[pSpec_N];
+        uint ngspecs = statedef()->countSpecs();
+        for (uint i = 0; i < ngspecs; ++i)
+        {
+            lidxT lidx = specG2L(i);
+            if (lidx == LIDX_UNDEFINED) continue;
+            pSpec_L2G[lidx] = i;
+        }
     }
-    assert(cur == pL2GSpec.size());
     
-    // Make local indices for reactions occuring in this compartment. Again,
-    // these reactions have been marked with '0' earlier (i.e. in method
-    // addReac()).
-    uint nreacs = std::count(pG2LReac.begin(), pG2LReac.end(), 0);
-    pL2GReac.resize(nreacs);
-    cur = 0;
-    for (uint i = 0; i < pG2LReac.size(); ++i)
+    if (pReac_N != 0)
     {
-        if (pG2LReac[i] == 0xFFFF) continue;
-        assert(pG2LReac[i] == 0);
-        pG2LReac[i] = cur;
-        pL2GReac[cur++] = i;
+        pReac_L2G = new gidxT[pReac_N];
+        uint ngreacs = statedef()->countReacs();
+        for (uint i = 0; i < ngreacs; ++i)
+        {
+            lidxT lidx = reacG2L(i);
+            if (lidx == LIDX_UNDEFINED) continue;
+            pReac_L2G[lidx] = i;
+        }
     }
-    assert(cur == pL2GReac.size());
     
-    // Make local indices for diffusion rules occuring in this compartment.
-    // Same system as with species and reactions.
-    uint ndiffs = std::count(pG2LDiff.begin(), pG2LDiff.end(), 0);
-    pL2GDiff.resize(ndiffs);
-    cur = 0;
-    for (uint i = 0; i < pG2LDiff.size(); ++i)
+    if (pDiff_N != 0)
     {
-        if (pG2LDiff[i] == 0xFFFF) continue;
-        assert(pG2LDiff[i] == 0);
-        pG2LDiff[i] = cur;
-        pL2GDiff[cur++] = i;
+        pDiff_L2G = new gidxT[pDiff_N];
+        uint ngdiffs = statedef()->countDiffs();
+        for (uint i = 0; i < ngdiffs; ++i)
+        {
+            lidxT lidx = diffG2L(i);
+            if (lidx == LIDX_UNDEFINED) continue;
+            pDiff_L2G[lidx] = i;
+        }
     }
 }
 
@@ -200,6 +168,7 @@ void CompDef::setupLocalIndices(void)
 
 void CompDef::setupDependencies(void)
 {
+    /*
     // Prefetch a couple of useful variables.
     uint nspecs = countSpecs();
     uint nreacs = countReacs();
@@ -275,70 +244,28 @@ void CompDef::setupDependencies(void)
         pSpecUpd[l_ridx].compact();
     for (uint l_didx = 0; l_didx < ndiffs; ++l_didx)
         pSpecUpd[l_didx].compact();
+    */
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void CompDef::addSpec(uint gidx)
+SpecDef * CompDef::spec(lidxT idx) const
 {
-    assert(gidx < pG2LSpec.size());
-    pG2LSpec[gidx] = 0;
+    return statedef()->spec(specL2G(idx));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-SpecDef * CompDef::spec(uint lidx) const
+ReacDef * CompDef::reac(lidxT idx) const
 {
-    return statedef()->spec(specL2G(lidx));
+    return statedef()->reac(reacL2G(idx));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void CompDef::addReac(uint gidx)
+DiffDef * CompDef::diff(lidxT idx) const
 {
-    assert(gidx < pG2LReac.size());
-    pG2LReac[gidx] = 0;
-    
-    // Also add all the referenced species in the reaction.
-    ReacDef * reac = statedef()->reac(gidx);
-    assert(reac != 0);
-    for (std::vector<uint>::const_iterator i = reac->beginLHS(); 
-         i != reac->endLHS(); ++i)
-    {
-        if (*i > 0) addSpec(*i);
-    }
-    for (std::vector<uint>::const_iterator i = reac->beginRHS();
-         i != reac->endRHS(); ++i)
-    {
-        if (*i > 0) addSpec(*i);
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-ReacDef * CompDef::reac(uint lidx) const
-{
-    return statedef()->reac(reacL2G(lidx));
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void CompDef::addDiff(uint gidx)
-{
-    assert(gidx < pG2LDiff.size());
-    pG2LDiff[gidx] = 0;
-    
-    // Also add the ligand to the compartment.
-    DiffDef * diff = statedef()->diff(gidx);
-    assert(diff != 0);
-    addSpec(diff->lig());
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-DiffDef * CompDef::diff(uint lidx) const
-{
-    return statedef()->diff(diffL2G(lidx));
+    return statedef()->diff(diffL2G(idx));
 }
 
 ////////////////////////////////////////////////////////////////////////////////

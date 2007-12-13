@@ -35,14 +35,20 @@
 
 // STEPS headers.
 #include <steps/common.h>
+#include <steps/sim/shared/types.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
+
+START_NAMESPACE(steps)
+START_NAMESPACE(sim)
 
 // Forward declarations.
 class CompDef;
 class DiffDef;
+class PatchDef;
 class ReacDef;
 class SpecDef;
+class SReacDef;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -114,13 +120,13 @@ public:
     
     /// Check whether the specified global index refers to a valid species.
     ///
-    bool isValidSpec(uint gidx) const
-    { return (gidx < countSpecs()); }
+    bool isValidSpec(gidxT idx) const
+    { return (idx < countSpecs()); }
     
-    /// Fetches a species by its gidx.
+    /// Fetches a species by its idx.
     ///
-    SpecDef * spec(uint gidx) const
-    { return (isValidSpec(gidx) ? pSpecs[gidx] : 0 ); }
+    SpecDef * spec(gidxT idx) const
+    { return (isValidSpec(idx) ? pSpecs[idx] : 0 ); }
     
     ///
     std::vector<SpecDef*>::const_iterator beginSpec(void) const
@@ -129,6 +135,31 @@ public:
     ///
     std::vector<SpecDef*>::const_iterator endSpec(void) const
     { return pSpecs.end(); }
+
+    ////////////////////////////////////////////////////////////////////////
+
+    /// 
+    CompDef * createCompDef(std::string const & name);
+    
+    /// Returns the number of compartments in the simulation state.
+    uint countComps(void) const
+    { return pComps.size(); }
+    
+    /// Check whether the specified global index refers to a valid compartment.
+    bool isValidComp(gidxT idx) const
+    { return (idx < countComps()); }
+    
+    /// Fetches a compartment by its idx.
+    CompDef * comp(gidxT idx) const
+    { return (isValidComp(idx) ? pComps[idx] : 0); }
+
+    ///
+    std::vector<CompDef*>::const_iterator beginComp(void) const
+    { return pComps.begin(); }
+    
+    ///
+    std::vector<CompDef*>::const_iterator endComp(void) const
+    { return pComps.end(); }
     
     ////////////////////////////////////////////////////////////////////////
 
@@ -140,12 +171,12 @@ public:
     { return pReacs.size(); }
     
     /// Check whether the specified global index refers to a valid reaction.
-    bool isValidReac(uint gidx) const
-    { return (gidx < countReacs()); }
+    bool isValidReac(gidxT idx) const
+    { return (idx < countReacs()); }
     
-    /// Fetches a reaction by its gidx.
-    ReacDef * reac(uint gidx) const
-    { return (isValidReac(gidx) ? pReacs[gidx] : 0 ); }
+    /// Fetches a reaction by its idx.
+    ReacDef * reac(gidxT idx) const
+    { return (isValidReac(idx) ? pReacs[idx] : 0 ); }
     
     ///
     std::vector<ReacDef*>::const_iterator beginReac(void) const
@@ -167,12 +198,12 @@ public:
     
     /// Check whether the specified global index refers to a valid 
     /// diffusion rule.
-    bool isValidDiff(uint gidx) const
-    { return (gidx < countDiffs()); }
+    bool isValidDiff(gidxT idx) const
+    { return (idx < countDiffs()); }
     
-    /// Fetches a diffusion rule by its gidx.
-    DiffDef * diff(uint gidx) const
-    { return (isValidDiff(gidx) ? pDiffs[gidx] : 0); }
+    /// Fetches a diffusion rule by its idx.
+    DiffDef * diff(gidxT idx) const
+    { return (isValidDiff(idx) ? pDiffs[idx] : 0); }
     
     ///
     std::vector<DiffDef*>::const_iterator beginDiff(void) const
@@ -183,50 +214,70 @@ public:
     { return pDiffs.end(); }
     
     ////////////////////////////////////////////////////////////////////////
-
-    /// 
-    CompDef * createCompDef(std::string const & name);
     
-    /// Returns the number of compartments in the simulation state.
-    uint countComps(void) const
-    { return pComps.size(); }
+    PatchDef * createPatchDef(std::string const & name, 
+        CompDef * inner, CompDef * outer);
     
-    /// Check whether the specified global index refers to a valid compartment.
-    bool isValidComp(uint gidx) const
-    { return (gidx < countComps()); }
+    uint countPatches(void) const
+    { return pPatches.size(); }
     
-    /// Fetches a compartment by its gidx.
-    CompDef * comp(uint gidx) const
-    { return (isValidComp(gidx) ? pComps[gidx] : 0); }
-
-    ///
-    std::vector<CompDef*>::const_iterator beginComp(void) const
-    { return pComps.begin(); }
+    bool isValidPatch(gidxT idx) const
+    { return (idx < countPatches()); }
     
-    ///
-    std::vector<CompDef*>::const_iterator endComp(void) const
-    { return pComps.end(); }
+    PatchDef * patch(gidxT idx) const
+    { return (isValidPatch(idx) ? pPatches[idx] : 0); }
+    
+    std::vector<PatchDef*>::const_iterator beginPatch(void) const
+    { return pPatches.begin(); }
+    
+    std::vector<PatchDef*>::const_iterator endPatch(void) const
+    { return pPatches.end(); }
+    
+    ////////////////////////////////////////////////////////////////////////
+    
+    SReacDef * createSReacDef(std::string const & name, bool inside = true);
+    
+    uint countSReacs(void) const
+    { return pSReacs.size(); }
+    
+    bool isValidSReac(gidxT idx) const
+    { return (idx < countSReacs()); }
+    
+    SReacDef * sreac(gidxT idx) const
+    { return (isValidSReac(idx) ? pSReacs[idx] : 0); }
+    
+    std::vector<SReacDef*>::const_iterator beginSReac(void) const
+    { return pSReacs.begin(); }
+    
+    std::vector<SReacDef*>::const_iterator endSReac(void) const
+    { return pSReacs.end(); }
+    
+    ////////////////////////////////////////////////////////////////////////
     
 private:
+    
+    ////////////////////////////////////////////////////////////////////////
     
     Mode                        pMode;
     bool                        pFinalSetupFinished;
     
-    /// A list of species.
+    ////////////////////////////////////////////////////////////////////////
+    
     std::vector<SpecDef*>       pSpecs;
-    
-    /// A list of reactions.
-    std::vector<ReacDef*>       pReacs;
-    
-    /// A list of diffusion rules.
-    std::vector<DiffDef*>       pDiffs;
-    
-    /// A list of compartments.
     std::vector<CompDef*>       pComps;
+    std::vector<ReacDef*>       pReacs;
+    std::vector<DiffDef*>       pDiffs;
+    std::vector<PatchDef*>      pPatches;
+    std::vector<SReacDef*>      pSReacs;
+    
+    ////////////////////////////////////////////////////////////////////////
     
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+
+END_NAMESPACE(sim)
+END_NAMESPACE(steps)
 
 #endif
 // STEPS_SIM_SHARED_STATEDEF_HPP

@@ -21,8 +21,8 @@
 // $Id$
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef STEPS_SIM_SHARED_REACDEF_HPP
-#define STEPS_SIM_SHARED_REACDEF_HPP 1
+#ifndef STEPS_SIM_SHARED_SREACDEF_HPP
+#define STEPS_SIM_SHARED_SREACDEF_HPP 1
 
 // Autotools definitions.
 #ifdef HAVE_CONFIG_H
@@ -31,7 +31,6 @@
 
 // STL headers.
 #include <string>
-#include <vector>
 
 // STEPS headers.
 #include <steps/common.h>
@@ -43,35 +42,49 @@ START_NAMESPACE(steps)
 START_NAMESPACE(sim)
 
 // Forward declarations.
-class ReacDef;
+class SReacDef;
 class StateDef;
 
 // Auxiliary declarations.
-typedef ReacDef *                       ReacDefP;
-typedef std::vector<ReacDefP>           ReacDefPVec;
-typedef ReacDefPVec::iterator           ReacDefPVecI;
-typedef ReacDefPVec::const_iterator     ReacDefPVecCI;
+typedef SReacDef *                      SReacDefP;
+typedef std::vector<SReacDefP>          SReacDefPVec;
+typedef SReacDefPVec::iterator          SReacDefPVecI;
+typedef SReacDefPVec::const_iterator    SReacDefPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class ReacDef
+class SReacDef
 {
 
 public:
 
-    ReacDef(StateDef * sdef, gidxT idx, std::string const & name);
+    enum orientT
+    {
+        INSIDE = 0,
+        OUTSIDE = 1
+    };
+    
+    SReacDef(StateDef * sdef, gidxT idx, std::string const & name, orientT o);
 
-    ~ReacDef(void);
+    ~SReacDef(void);
     
     ////////////////////////////////////////////////////////////////////////
-    // REACDEF SETUP
+    // SREACDEF SETUP
     ////////////////////////////////////////////////////////////////////////
     
-    uint incLHS(gidxT idx);
-    void setLHS(gidxT idx, uint n);
+    uint incLHS_I(gidxT idx);
+    uint incLHS_S(gidxT idx);
+    uint incLHS_O(gidxT idx);
+    void setLHS_I(gidxT idx, uint n);
+    void setLHS_S(gidxT idx, uint n);
+    void setLHS_O(gidxT idx, uint n);
     
-    uint incRHS(gidxT idx);
-    void setRHS(gidxT idx, uint n);
+    uint incRHS_I(gidxT idx);
+    uint incRHS_S(gidxT idx);
+    uint incRHS_O(gidxT idx);
+    void setRHS_I(gidxT idx, uint n);
+    void setRHS_S(gidxT idx, uint n);
+    void setRHS_O(gidxT idx, uint n);
     
     /// Gets called when the definition of all components in the entire
     /// state has finished.
@@ -95,6 +108,17 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
+    /// Returns true if the left hand side of the reaction stoichiometry
+    /// involves reactants on the surface and on the inside volume.
+    ///
+    bool inside(void) const
+    { return (pOrient == INSIDE); }
+    /// Returns true if the left hand side of the reaction stoichiometry
+    /// involves reactants on the surface and on the outside volume.
+    ///
+    bool outside(void) const
+    { return (pOrient == OUTSIDE); }
+    
     uint order(void) const
     { return pOrder; }
 
@@ -108,8 +132,13 @@ public:
     // DATA ACCESS: STOICHIOMETRY
     ////////////////////////////////////////////////////////////////////////
     
-    uint lhs(gidxT idx) const;    
-    uint rhs(gidxT idx) const;
+    uint lhs_I(gidxT idx) const;
+    uint lhs_S(gidxT idx) const;
+    uint lhs_O(gidxT idx) const;
+    
+    uint rhs_I(gidxT idx) const;
+    uint rhs_S(gidxT idx) const;
+    uint rhs_O(gidxT idx) const;
 
     ////////////////////////////////////////////////////////////////////////
     
@@ -152,6 +181,9 @@ private:
     /// The name of the reaction rule.
     std::string                 pName;
     
+    /// Does the left-hand side of the stoichiometry involve molecules
+    /// on the inside or on the outside?
+    orientT                     pOrient;
     /// Auxiliary method to compute the order of a reaction.
     void computeOrder(void);
     /// The order of the reaction.
@@ -163,10 +195,18 @@ private:
     // DATA: STOICHIOMETRY
     ////////////////////////////////////////////////////////////////////////
     
-    depT *                      pSpec_DEP;
-    uint *                      pSpec_LHS;
-    uint *                      pSpec_RHS;
-    int *                       pSpec_UPD;
+    depT *                      pSpec_I_DEP;
+    depT *                      pSpec_S_DEP;
+    depT *                      pSpec_O_DEP;
+    uint *                      pSpec_I_LHS;
+    uint *                      pSpec_S_LHS;
+    uint *                      pSpec_O_LHS;
+    uint *                      pSpec_I_RHS;
+    uint *                      pSpec_S_RHS;
+    uint *                      pSpec_O_RHS;
+    int *                       pSpec_I_UPD;
+    int *                       pSpec_S_UPD;
+    int *                       pSpec_O_UPD;
 
     ////////////////////////////////////////////////////////////////////////
     
@@ -178,6 +218,6 @@ END_NAMESPACE(sim)
 END_NAMESPACE(steps)
 
 #endif
-// STEPS_SIM_SHARED_REACDEF_HPP
+// STEPS_SIM_SHARED_SREACDEF_HPP
 
 // END

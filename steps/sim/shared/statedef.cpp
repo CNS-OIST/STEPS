@@ -35,11 +35,16 @@
 #include <steps/common.h>
 #include <steps/sim/shared/compdef.hpp>
 #include <steps/sim/shared/diffdef.hpp>
+#include <steps/sim/shared/patchdef.hpp>
 #include <steps/sim/shared/reacdef.hpp>
 #include <steps/sim/shared/specdef.hpp>
+#include <steps/sim/shared/sreacdef.hpp>
 #include <steps/sim/shared/statedef.hpp>
+#include <steps/sim/shared/types.hpp>
 
 USING(std, string);
+USING(std, vector);
+USING_NAMESPACE(steps::sim);
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -47,8 +52,11 @@ StateDef::StateDef(void)
 : pMode(StateDef::NAIVE_MODE)
 , pFinalSetupFinished(false)
 , pSpecs()
-, pReacs()
 , pComps()
+, pReacs()
+, pDiffs()
+, pPatches()
+, pSReacs()
 {
 }
 
@@ -56,74 +64,55 @@ StateDef::StateDef(void)
 
 StateDef::~StateDef(void)
 {
-    for (std::vector<SpecDef*>::iterator i = pSpecs.begin(); 
-         i != pSpecs.end(); ++i)
-    {
+    for (SpecDefPVecI i = pSpecs.begin(); i != pSpecs.end(); ++i) 
         delete *i;
-    }
-    for (std::vector<ReacDef*>::iterator i = pReacs.begin(); 
-         i != pReacs.end(); ++i)
-    {
+    for (CompDefPVecI i = pComps.begin(); i != pComps.end(); ++i) 
         delete *i;
-    }
-    for (std::vector<CompDef*>::iterator i = pComps.begin(); 
-         i != pComps.end(); ++i)
-    {
+    for (ReacDefPVecI i = pReacs.begin(); i != pReacs.end(); ++i) 
         delete *i;
-    }
+    for (DiffDefPVecI i = pDiffs.begin(); i != pDiffs.end(); ++i) 
+        delete *i;
+    for (PatchDefPVecI i = pPatches.begin(); i != pPatches.end(); ++i) 
+        delete *i;
+    for (SReacDefPVecI i = pSReacs.begin(); i != pSReacs.end(); ++i) 
+        delete *i;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void StateDef::setupFinal(void)
 {
+    // This is an important routine to understand all the *Def code in 
+    // directory steps/sim/shared.
+    
     // This can only be done once! Check the flag.
     assert(pFinalSetupFinished == false);
     
     // Loop over all simulation variables, kinetics processes and rules
     // that have been declared, and allow them to do some final (internal) 
     // setting up...
-    for (std::vector<SpecDef*>::iterator i = pSpecs.begin(); 
-         i != pSpecs.end(); ++i)
-    {
+    for (SpecDefPVecI i = pSpecs.begin(); i != pSpecs.end(); ++i)
         (*i)->setupFinal();
-    }
-    for (std::vector<ReacDef*>::iterator i = pReacs.begin(); 
-         i != pReacs.end(); ++i)
-    {
+    for (ReacDefPVecI i = pReacs.begin(); i != pReacs.end(); ++i)
         (*i)->setupFinal();
-    }
-    for (std::vector<DiffDef*>::iterator i = pDiffs.begin();
-         i != pDiffs.end(); ++i)
-    {
+    for (DiffDefPVecI i = pDiffs.begin(); i != pDiffs.end(); ++i)
         (*i)->setupFinal();
-    }
+    for (SReacDefPVecI i = pSReacs.begin(); i != pSReacs.end(); ++i)
+        (*i)->setupFinal();
     
     // Make local indices for species, reactions, diffusion rules, ... in 
     // compartments and then in patches.
-    for (std::vector<CompDef*>::iterator i = pComps.begin(); 
-         i != pComps.end(); ++i)
-    {
+    for (CompDefPVecI i = pComps.begin(); i != pComps.end(); ++i)
         (*i)->setupLocalIndices();
-    }
-    //for (std::vector<PatchDef*>::iterator i = pPatches.begin();
-    //     i != pPatches.end(); ++i)
-    //{
-    //    (*i)->setupLocalIndices();
-    //}
+    for (PatchDefPVecI i = pPatches.begin(); i != pPatches.end(); ++i)
+        (*i)->setupLocalIndices();
     
     // Resolve update dependencies for various kinetic processes and rules,
     // again first in compartments and then in patches.
-    for (std::vector<CompDef*>::iterator i = pComps.begin();
-         i != pComps.end(); ++i)
-    {
+    for (CompDefPVecI i = pComps.begin(); i != pComps.end(); ++i)
         (*i)->setupDependencies();
-    }
-    //for (std::vector<PatchDef*>::iterator i = pPatches.begin();
-    //     i != pPatches.end(); ++i)
-    //{
-    //    (*i)->setupDependencies();
-    //}
+    for (PatchDefPVecI i = pPatches.begin(); i != pPatches.end(); ++i)
+        (*i)->setupDependencies();
     
     // Set the 'finished' flag.
     pFinalSetupFinished = true;
@@ -138,6 +127,17 @@ SpecDef * StateDef::createSpecDef(string const & name)
     pSpecs.push_back(spec);
     assert((spec->gidx() + 1) == countSpecs());
     return spec;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+CompDef * StateDef::createCompDef(string const & name)
+{
+    CompDef * comp = new CompDef(this, countComps(), name);
+    assert(comp != 0);
+    pComps.push_back(comp);
+    assert((comp->gidx() + 1) == countComps());
+    return comp;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -164,13 +164,31 @@ DiffDef * StateDef::createDiffDef(string const & name)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-CompDef * StateDef::createCompDef(string const & name)
+PatchDef * StateDef::createPatchDef
+(
+    string const & name, 
+    CompDef * inner, 
+    CompDef * outer
+)
 {
-    CompDef * comp = new CompDef(this, countComps(), name);
-    assert(comp != 0);
-    pComps.push_back(comp);
-    assert((comp->gidx() + 1) == countComps());
-    return comp;
+    PatchDef * patch = new PatchDef(this, countPatches(), name, inner, outer);
+    assert(patch != 0);
+    pPatches.push_back(patch);
+    assert((patch->gidx() + 1) == countPatches());
+    return patch;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+SReacDef * StateDef::createSReacDef(string const & name, bool inside)
+{
+    SReacDef::orientT o = 
+        (inside == true ? SReacDef::INSIDE : SReacDef::OUTSIDE);
+    SReacDef * sreac = new SReacDef(this, countSReacs(), name, o);
+    assert(sreac != 0);
+    pSReacs.push_back(sreac);
+    assert((sreac->gidx() + 1) == countSReacs());
+    return sreac;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -35,36 +35,38 @@
 
 // STEPS headers.
 #include <steps/common.h>
+#include <steps/sim/shared/types.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 
+START_NAMESPACE(steps)
+START_NAMESPACE(sim)
+
+// Forward declarations.
+class SpecDef;
 class StateDef;
+
+// Auxiliary declarations.
+typedef SpecDef *                       SpecDefP;
+typedef std::vector<SpecDefP>           SpecDefPVec;
+typedef SpecDefPVec::iterator           SpecDefPVecI;
+typedef SpecDefPVec::const_iterator     SpecDefPVecCI;
+
+////////////////////////////////////////////////////////////////////////////////
 
 class SpecDef
 {
 
 public:
 
-    ////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////
+    SpecDef(StateDef * sdef, gidxT idx, std::string const & name);
     
-    /// Constructor.
-    ///
-    SpecDef(StateDef * sdef, uint gidx, std::string const & name);
-    
-    /// Destructor.
-    ///
     ~SpecDef(void);
 
-    StateDef * statedef(void) const 
-    { return pStateDef; }
-
-    uint gidx(void) const
-    { return pGIDX; }
-
-    std::string const & name(void) const
-    { return pName; }
-
+    ////////////////////////////////////////////////////////////////////////
+    // SPECDEF SETUP
+    ////////////////////////////////////////////////////////////////////////
+    
     /// Gets called when all components in the entire state have been 
     /// defined.
     ///
@@ -79,6 +81,18 @@ public:
     
     ////////////////////////////////////////////////////////////////////////
     
+    StateDef * statedef(void) const 
+    { return pStateDef; }
+
+    gidxT gidx(void) const
+    { return pGIDX; }
+
+    std::string const & name(void) const
+    { return pName; }
+    
+    ////////////////////////////////////////////////////////////////////////
+    
+    /*
     bool dependsOnReac(uint gidx) const;
     
     bool affectsReac(uint gidx) const;
@@ -86,24 +100,21 @@ public:
     bool dependsOnDiff(uint gidx) const;
     
     bool affectsDiff(uint gidx) const;
+    */
 
     ////////////////////////////////////////////////////////////////////////
     
 private:
 
     ////////////////////////////////////////////////////////////////////////
-    // BASIC DESCRIPTION DATA
+    // DATA: GENERAL
     ////////////////////////////////////////////////////////////////////////
-    
-    ///
+
     StateDef *                  pStateDef;
 
     /// The global (not compartment/patch-specific) index of the species.
-    ///
-    uint                        pGIDX;
-    
+    gidxT                       pGIDX;
     /// The name of the species.
-    ///
     std::string                 pName;
 
     ////////////////////////////////////////////////////////////////////////
@@ -111,6 +122,9 @@ private:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+
+END_NAMESPACE(sim)
+END_NAMESPACE(steps)
 
 #endif
 // STEPS_SIM_SHARED_SPECDEF_HPP

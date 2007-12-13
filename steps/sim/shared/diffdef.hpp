@@ -35,30 +35,47 @@
 
 // STEPS headers.
 #include <steps/common.h>
+#include <steps/sim/shared/types.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 
+START_NAMESPACE(steps)
+START_NAMESPACE(sim)
+
+// Forward declarations.
+class DiffDef;
 class StateDef;
+
+// Auxiliary declarations.
+typedef DiffDef *                       DiffDefP;
+typedef std::vector<DiffDefP>           DiffDefPVec;
+typedef DiffDefPVec::iterator           DiffDefPVecI;
+typedef DiffDefPVec::const_iterator     DiffDefPVecCI;
+
+////////////////////////////////////////////////////////////////////////////////
 
 class DiffDef
 {
 
 public:
 
+    ////////////////////////////////////////////////////////////////////////
+    
     /// Constructor. 
     ///
-    DiffDef(StateDef * sdef, uint gidx, std::string const & name);
-
-    StateDef * statedef(void) const
-    { return pStateDef; }
+    DiffDef(StateDef * sdef, gidxT idx, std::string const & name);
     
-    uint gidx(void) const
-    { return pGIDX; }
+    /// Destructor
+    ///
+    ~DiffDef(void);
     
-    std::string const & name(void) const
-    { return pName; }
-
     ////////////////////////////////////////////////////////////////////////
+    // DIFFDEF SETUP
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Set the ligand of a diffusion rule by its global index.
+    ///
+    void setLig(gidxT idx);
     
     /// Gets called when the definition of all components in the entire state
     /// has finished.
@@ -66,6 +83,19 @@ public:
     /// Currently, this method doesn't really have to do anything.
     ///
     void setupFinal(void);
+    
+    ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: GENERAL
+    ////////////////////////////////////////////////////////////////////////
+    
+    StateDef * statedef(void) const
+    { return pStateDef; }
+    
+    gidxT gidx(void) const
+    { return pGIDX; }
+    
+    std::string const & name(void) const
+    { return pName; }
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -79,18 +109,17 @@ public:
     void setDcst(double const & d);
 
     ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: LIGAND
+    ////////////////////////////////////////////////////////////////////////
     
     /// Return the global index of the ligand species.
     ///
-    uint lig(void) const
-    { return pLig; }
-
-    /// Set the ligand of a diffusion rule by its global index.
-    ///
-    void setLig(uint gidx);
+    gidxT lig(void) const
+    { return pSpec_LIG; }
 
     ////////////////////////////////////////////////////////////////////////
     
+    /*
     /// Check whether occurence of a diffusion rule <EM>depends</EM> on 
     /// local changes to the concentration of some species, specified by 
     /// its global index (gidx).
@@ -111,10 +140,15 @@ public:
     /// the ligand for which the diffusion rule is defined.
     ///
     bool affectsSpec(uint gidx) const;
+    */
     
     ////////////////////////////////////////////////////////////////////////
     
 private:
+    
+    ////////////////////////////////////////////////////////////////////////
+    // DATA: GENERAL
+    ////////////////////////////////////////////////////////////////////////
     
     StateDef *                  pStateDef;
     
@@ -122,7 +156,7 @@ private:
     ///
     bool                        pFinalSetupFinished;
     
-    uint                        pGIDX;
+    gidxT                       pGIDX;
     
     std::string                 pName;
 
@@ -130,11 +164,21 @@ private:
     ///
     double                      pDcst;
     
-    uint                        pLig;
+    ////////////////////////////////////////////////////////////////////////
+    // DATA: LIGAND
+    ////////////////////////////////////////////////////////////////////////
+    
+    depT *                      pSpec_DEP;
+    gidxT                       pSpec_LIG;
 
+    ////////////////////////////////////////////////////////////////////////
+    
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+
+END_NAMESPACE(sim)
+END_NAMESPACE(steps)
 
 #endif
 // STEPS_SIM_SHARED_DIFFDEF_HPP

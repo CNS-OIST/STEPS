@@ -42,17 +42,22 @@ noinst_LTLIBRARIES = libsimshared.la
 libsimshared_la_SOURCES = \
     compdef.cpp \
     diffdef.cpp \
+    patchdef.cpp \
     reacdef.cpp \
     specdef.cpp \
+    sreacdef.cpp \
     statedef.cpp
 
 header_steps_sim_shared_HEADERS = \
     compdef.hpp \
     diffdef.hpp \
     doxygen.hpp \
+    patchdef.hpp \
     reacdef.hpp \
     specdef.hpp \
-    statedef.hpp
+    sreacdef.hpp \
+    statedef.hpp \
+    types.hpp
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 

@@ -21,8 +21,8 @@
 // $Id$
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef STEPS_SIM_SHARED_COMPDEF_HPP
-#define STEPS_SIM_SHARED_COMPDEF_HPP 1
+#ifndef STEPS_SIM_SHARED_PATCHDEF_HPP
+#define STEPS_SIM_SHARED_PATCHDEF_HPP 1
 
 // Autotools definitions.
 #ifdef HAVE_CONFIG_H
@@ -31,11 +31,9 @@
 
 // STL headers.
 #include <string>
-#include <vector>
 
 // STEPS headers.
 #include <steps/common.h>
-#include <steps/sim/shared/types.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -44,73 +42,67 @@ START_NAMESPACE(sim)
 
 // Forward declarations.
 class CompDef;
-class DiffDef;
-class ReacDef;
+class PatchDef;
 class SpecDef;
+class SReacDef;
 class StateDef;
 
 // Auxiliary declarations.
-typedef CompDef *                       CompDefP;
-typedef std::vector<CompDefP>           CompDefPVec;
-typedef CompDefPVec::iterator           CompDefPVecI;
-typedef CompDefPVec::const_iterator     CompDefPVecCI;
+typedef PatchDef *                      PatchDefP;
+typedef std::vector<PatchDefP>          PatchDefPVec;
+typedef PatchDefPVec::iterator          PatchDefPVecI;
+typedef PatchDefPVec::const_iterator    PatchDefPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class CompDef
+class PatchDef
 {
 
 public:
 
     /// Constructor.
     ///
-    CompDef(StateDef * sdef, gidxT idx, std::string const & name);
+    PatchDef
+    (
+        StateDef * sdef, gidxT idx, 
+        std::string const & name, 
+        CompDef * inner, CompDef * outer
+    );
     
     /// Destructor.
     ///
-    ~CompDef(void);
+    ~PatchDef(void);
     
     ////////////////////////////////////////////////////////////////////////
-    // COMPDEF: SETUP
+    // PATCHDEF SETUP
     ////////////////////////////////////////////////////////////////////////
     
-    /// Declare that a species, specified by its global index, can occur
-    /// in this compartment.
+    /// Declare that a chemical species, specified by its global index, 
+    /// can be embedded on this patch. This is not required for species
+    /// embedded on the in- or outside compartment.
     ///
     void addSpec(gidxT idx);
     
-    /// Declare that a certain reaction rule, specified by its global
+    /// Declare that a certain sreaction rule, specified by its global
     /// index, can occur in this compartment.
     ///
-    /// Currently, this method automatically adds all species involved
-    /// in the reaction rule to the list of species that can occur in
-    /// this compartment (the alternative would be to report an error).
-    ///
-    void addReac(gidxT idx);
+    void addSReac(gidxT idx);
     
-    /// Declare that a diffusion rule, specified by its global index, 
-    /// can occur in this compartment.
-    ///
-    /// Currently, this method adds the ligand to the list of species
-    /// that can occur in this compartment (the alternative would be
-    /// to report an error saying that the ligand was not explicitly
-    /// added to the compartment).
-    ///
-    void addDiff(gidxT idx);
-    
-    /// Build a set of local indices for species, reaction and 
-    /// diffusion rules (called during setup, by StateDef::setupFinal()).
+    /// Build a set of local indices for species and sreaction rules 
+    /// (called during setup, by StateDef::setupFinal()).
     ///
     void setupLocalIndices(void);
     
-    /// Create CompDef objects for all species, reaction and diffusion
-    /// rules (called during setup, by StateDef::setupFinal(); requires
-    /// that CompDef::setupLocalIndices() has been called prior to this).
+    /// Create update objects for all species and sreaction rules.
+    ///
+    /// NOTE: Called during setup, by StateDef::setupFinal(). Requires 
+    /// that CompDef::setupLocalIndices() and PatchDef::setupLocalIndices
+    /// has been called for all compartments and patches prior to this.
     ///
     void setupDependencies(void);
     
     ////////////////////////////////////////////////////////////////////////
-    // DATA ACCESS: GENERAL
+    // DATA ACCESS: GENERAL 
     ////////////////////////////////////////////////////////////////////////
     
     StateDef * statedef(void) const
@@ -124,11 +116,19 @@ public:
     
     ////////////////////////////////////////////////////////////////////////
     
-    double vol(void) const
-    { return pVolume; }
+    double area(void) const
+    { return pArea; }
     
-    void setVol(double const & vol)
-    { pVolume = vol; }
+    void setArea(double const & area)
+    { pArea = area; }
+    
+    ////////////////////////////////////////////////////////////////////////
+
+    CompDef * icompdef(void) const
+    { return pInner; }
+    
+    CompDef * ocompdef(void) const
+    { return pOuter; }
     
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SPECIES
@@ -143,46 +143,72 @@ public:
     gidxT specL2G(lidxT idx) const
     { return pSpec_L2G[idx]; }
     
+    /// Auxiliary function: resolves a species gidx for the outer
+    /// compartment.
+    ///
+    /// \return The local index or steps::sim::shared::LIDX_UNDEFINED.
+    ///
+    lidxT specG2L_O(gidxT idx) const
+    {
+        if (ocompdef() == 0) return LIDX_UNDEFINED;
+        return ocompdef()->specG2L(idx);
+    }
+    
+    /// Auxiliary function: resolves a species lidx for the outer
+    /// compartment.
+    ///
+    /// \return The global index or steps::sim::shared::GIDX_UNDEFINED.
+    ///
+    gidxT specL2G_O(lidxT idx) const
+    {
+        if (ocompdef() == 0) return GIDX_UNDEFINED;
+        return ocompdef()->specL2G(idx);
+    }
+    
+    /// Auxiliary function: resolves a species gidx for the inner
+    /// compartment.
+    ///
+    /// \return The local index or steps::sim::shared::LIDX_UNDEFINED.
+    ///
+    lidxT specG2L_I(gidxT idx) const
+    {
+        if (icompdef() == 0) return LIDX_UNDEFINED;
+        return icompdef()->specG2L(idx);
+    }
+    
+    /// Auxiliary function: resolves a species lidx for the inner
+    /// compartment.
+    ///
+    /// \return The local index or steps::sim::shared::GIDX_UNDEFINED.
+    ///
+    gidxT specL2G_I(lidxT idx) const
+    {
+        if (icompdef() == 0) return GIDX_UNDEFINED;
+        return icompdef()->specL2G(idx);
+    }
+    
     /// Return a species definition (a pointer to an object of type 
     /// SpecDef) by its local index.
     ///
     SpecDef * spec(lidxT idx) const;
     
     ////////////////////////////////////////////////////////////////////////
-    // DATA ACCESS: REACTION RULES
+    // DATA ACCESS: SURFACE REACTION RULES
     ////////////////////////////////////////////////////////////////////////
     
-    uint countReacs(void) const
-    { return pReac_N; }
+    uint countSReacs(void) const
+    { return pSReac_N; }
     
-    lidxT reacG2L(gidxT idx) const
-    { return pReac_G2L[idx]; }
+    lidxT sreacG2L(gidxT idx) const
+    { return pSReac_G2L[idx]; }
     
-    gidxT reacL2G(lidxT idx) const
-    { return pReac_L2G[idx]; }
+    gidxT sreacL2G(lidxT idx) const
+    { return pSReac_L2G[idx]; }
     
-    /// Return a reaction definition (a pointer to an object of type 
-    /// ReacDef) by its local index.
+    /// Return a surface reaction definition (a pointer to an object of 
+    /// type SReacDef) by its local index.
     ///
-    ReacDef * reac(lidxT idx) const;
-    
-    ////////////////////////////////////////////////////////////////////////
-    // DATA ACCESS: DIFFUSION RULES
-    ////////////////////////////////////////////////////////////////////////
-    
-    uint countDiffs(void) const
-    { return pDiff_N; }
-    
-    lidxT diffG2L(gidxT idx) const
-    { return pDiff_G2L[idx]; }
-    
-    gidxT diffL2G(lidxT idx) const
-    { return pDiff_L2G[idx]; }
-    
-    /// Return a diffusion definition (a pointer to an object of type 
-    /// DiffDef) by its local index.
-    ///
-    DiffDef * diff(lidxT idx) const;
+    SReacDef * sreac(lidxT idx) const;
     
     ////////////////////////////////////////////////////////////////////////
     
@@ -201,13 +227,18 @@ private:
     std::string                 pName;
         
     /// The volume of the compartment.
-    double                      pVolume;
+    double                      pArea;
+    
+    /// Pointer to inner compartment CompDef.
+    CompDef *                   pInner;
+    /// Pointer to outer compartment CompDef.
+    CompDef *                   pOuter;
     
     ////////////////////////////////////////////////////////////////////////
     // DATA: SPECIES
     ////////////////////////////////////////////////////////////////////////
     
-    /// Number of species embedded in compartment.
+    /// Number of species embedded in patch.
     uint                        pSpec_N;
     /// Table to resolve species index (global -> local).
     lidxT *                     pSpec_G2L;
@@ -215,32 +246,25 @@ private:
     gidxT *                     pSpec_L2G;
     
     ////////////////////////////////////////////////////////////////////////
-    // DATA: REACTION RULES
+    // DATA: SURFACE REACTIONS
     ////////////////////////////////////////////////////////////////////////
     
-    /// Number of reaction rules occuring in compartment.
-    uint                        pReac_N;
+    /// Number of surface reactions occuring in patch.
+    uint                        pSReac_N;
     /// Table to resolve reaction rule indices (global -> local).
-    lidxT *                     pReac_G2L;
+    lidxT *                     pSReac_G2L;
     /// Table to resolve reaction rule indices (local -> global).
-    gidxT *                     pReac_L2G;
-    
-    depT *                      pReac_DEP_Spec;
-    uint *                      pReac_LHS_Spec;
-    int *                       pReac_UPD_Spec;
-    
-    ////////////////////////////////////////////////////////////////////////
-    // DATA: DIFFUSION RULES
-    ////////////////////////////////////////////////////////////////////////
-    
-    /// Number of diffusion rules occuring in compartment.
-    uint                        pDiff_N;
-    /// Table to resolve diffusion rule indices (global -> local).
-    lidxT *                     pDiff_G2L;
-    /// Table to resolve diffusion rule indices (local -> global).
-    gidxT *                     pDiff_L2G;
-    
-    depT *                      pDiff_DEP_Spec;
+    gidxT *                     pSReac_L2G;
+
+    depT *                      pSReac_DEP_I_Spec;
+    depT *                      pSReac_DEP_S_Spec;
+    depT *                      pSReac_DEP_O_Spec;
+    uint *                      pSReac_LHS_I_Spec;
+    uint *                      pSReac_LHS_S_Spec;
+    uint *                      pSReac_LHS_O_Spec;
+    int *                       pSReac_UPD_I_Spec;
+    int *                       pSReac_UPD_S_Spec;
+    int *                       pSReac_UPD_O_Spec;
     
     ////////////////////////////////////////////////////////////////////////
     
@@ -252,6 +276,6 @@ END_NAMESPACE(sim)
 END_NAMESPACE(steps)
 
 #endif
-// STEPS_SIM_SHARED_COMPDEF_HPP
+// STEPS_SIM_SHARED_PATCHDEF_HPP
 
 // END
