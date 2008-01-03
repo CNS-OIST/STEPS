@@ -75,6 +75,16 @@ extern void     siBeginDiffDef(State * s);
 extern void     siEndDiffDef(State * s);
 extern uint     siNewDiff(State * s, char * name, uint sidx, double dcst);
 
+extern void     siBeginSReacDef(State * s);
+extern void     siEndSReacDef(State * s);
+extern uint     siNewSReac(State * s, char * name, double kcst, bool inside);
+extern void     siAddSReacLHS_I(State * s, uint ridx, uint sidx);
+extern void     siAddSReacLHS_S(State * s, uint ridx, uint sidx);
+extern void     siAddSReacLHS_O(State * s, uint ridx, uint sidx);
+extern void     siAddSReacRHS_I(State * s, uint ridx, uint sidx);
+extern void     siAddSReacRHS_S(State * s, uint ridx, uint sidx);
+extern void     siAddSReacRHS_O(State * s, uint ridx, uint sidx);
+
 extern void     siBeginCompDef(State * s);
 extern void     siEndCompDef(State * s);
 extern uint     siNewComp(State * s, char * name, double vol);
@@ -82,8 +92,14 @@ extern void     siAddCompSpec(State * s, uint cidx, uint sidx);
 extern void     siAddCompReac(State * s, uint cidx, uint ridx);
 extern void     siAddCompDiff(State * s, uint cidx, uint didx);
 
-extern void     siSetRNG(State * s, steps::rng::RNG * rng);
+extern void     siBeginPatchDef(State * s);
+extern void     siEndPatchDef(State * s);
+extern uint     siNewPatch(State * s, char * name, double area, 
+                           uint cidx_in, uint cidx_out);
+extern void     siAddPatchSpec(State * s, uint pidx, uint sidx);
+extern void     siAddPatchSReac(State * s, uint pidx, uint ridx);
 
+extern void     siSetRNG(State * s, steps::rng::RNG * rng);
 
 ////////////////////////////////////////////////////////////////////////////////
 // SIMULATION CONTROLS
@@ -130,6 +146,29 @@ extern void 	siSetCompDiffD(State * s, uint cidx, uint didx);
 
 extern bool		siGetCompDiffActive(State * s, uint cidx, uint didx);
 extern void 	siSetCompDiffActive(State * s, uint cidx, uint didx, bool act);
+
+////////////////////////////////////////////////////////////////////////////////
+// SOLVER STATE ACCESS: 
+//      PATCH
+////////////////////////////////////////////////////////////////////////////////
+
+extern double   siGetPatchArea(State * s, uint pidx);
+extern void     siSetPatchArea(State * s, uint pidx, double area);
+
+extern uint     siGetPatchCount(State * s, uint pidx, uint sidx);
+extern void     siSetPatchCount(State * s, uint pidx, uint sidx, uint n);
+
+extern double   siGetPatchMass(State * s, uint pidx, uint sidx);
+extern void     siSetPatchMass(State * s, uint pidx, uint sidx, double m);
+
+extern bool     siGetPatchClamped(State * s, uint pidx, uint sidx);
+extern void     siSetPatchClamped(State * s, uint pidx, uint sidx, bool buf);
+
+extern double   siGetPatchSReacK(State * s, uint pidx, uint ridx);
+extern void     siSetPatchSReacK(State * s, uint pidx, uint ridx, double kf);
+
+extern bool     siGetPatchSReacActive(State * s, uint pidx, uint ridx);
+extern void     siSetPatchSReacActive(State * s, uint pidx, uint ridx, bool a);
 
 ////////////////////////////////////////////////////////////////////////////////
 

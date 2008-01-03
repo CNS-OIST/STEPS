@@ -54,6 +54,10 @@ uint siNewTet(State * s, uint cidx, double vol,
 	double a1, double a2, double a3, double a4,
 	double d1, double d2, double d3, double d4);
 
+void siBeginTriDef(State * s);
+void siEndTriDef(State * s);
+uint siNewTri(State * s, uint pidx, double area);
+
 void siBeginConnectDef(State * s);
 void siEndConnectDef(State * s);
 void siConnectTetTet(State * s, uint side, uint tidx1, uint tidx2);
@@ -91,6 +95,26 @@ extern void 	siSetTetDiffD(State * s, uint tidx, uint didx);
 
 extern bool		siGetTetDiffActive(State * s, uint tidx, uint didx);
 extern void 	siGetTetDiffActive(State * s, uint tidx, uint didx, bool act);
+
+////////////////////////////////////////////////////////////////////////////////
+// SOLVER STATE ACCESS: 
+//      TRIANGULAR SURFACE ELEMENTS
+////////////////////////////////////////////////////////////////////////////////
+
+extern double   siGetTriArea(State * s, uint tidx);
+extern void     siSetTriArea(State * s, uint tidx, double area);
+
+extern uint     siGetTriCount(State * s, uint tidx, uint sidx);
+extern void     siSetTriCount(State * s, uint tidx, uint sidx, uint n);
+
+extern bool     siGetTriClamped(State * s, uint tidx, uint sidx);
+extern void     siSetTriClamped(State * s, uint tidx, uint sidx, bool buf);
+
+extern double   siGetTriSReacK(State * s, uint tidx, uint ridx);
+extern void     siSetTriSReacK(State * s, uint tidx, uint ridx, double kf);
+
+extern bool     siGetTriSReacActive(State * s, uint tidx, uint ridx);
+extern void     siSetTriSReacActive(State * s, uint tidx, uint ridx, bool act);
 
 ////////////////////////////////////////////////////////////////////////////////
 

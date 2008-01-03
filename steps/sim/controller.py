@@ -119,12 +119,26 @@ class FuncCore(object):
         self._siBeginDiffDef = self._rsf('siBeginDiffDef')
         self._siEndDiffDef = self._rsf('siEndDiffDef')
         self._siNewDiff = self._rsf('siNewDiff')
+        self._siBeginSReacDef = self._rsf('siNewDiff')
+        self._siEndSReacDef = self._rsf('siEndSReacDef')
+        self._siNewSReac = self._rsf('siNewSReac')
+        self._siAddSReacLHS_I = self._rsf('siAddSReacLHS_I')
+        self._siAddSReacLHS_S = self._rsf('siAddSReacLHS_S')
+        self._siAddSReacLHS_O = self._rsf('siAddSReacLHS_O')
+        self._siAddSReacRHS_I = self._rsf('siAddSReacRHS_I')
+        self._siAddSReacRHS_S = self._rsf('siAddSReacRHS_S')
+        self._siAddSReacRHS_O = self._rsf('siAddSReacRHS_O')
         self._siBeginCompDef = self._rsf('siBeginCompDef')
         self._siEndCompDef = self._rsf('siEndCompDef')
         self._siNewComp = self._rsf('siNewComp')
         self._siAddCompSpec = self._rsf('siAddCompSpec')
         self._siAddCompReac = self._rsf('siAddCompReac')
         self._siAddCompDiff = self._rsf('siAddCompDiff')
+        self._siBeginPatchDef = self._rsf('siBeginPatchDef')
+        self._siEndPatchDef = self._rsf('siEndPatchDef')
+        self._siNewPatch = self._rsf('siNewPatch')
+        self._siAddPatchSpec = self._rsf('siAddPatchSpec')
+        self._siAddPatchSReac = self._rsf('siAddPatchSReac')
         self._siReset = self._rsf('siReset')
         self._siRun = self._rsf('siRun')
         self._siGetTime = self._rsf('siGetTime')
@@ -146,6 +160,18 @@ class FuncCore(object):
         self._siSetCompDiffD = self._rsf('siSetCompDiffD')
         self._siGetCompDiffActive = self._rsf('siGetCompDiffActive')
         self._siSetCompDiffActive = self._rsf('siSetCompDiffActive')
+        self._siGetPatchArea = self._rsf('siGetPatchArea')
+        self._siSetPatchArea = self._rsf('siSetPatchArea')
+        self._siGetPatchCount = self._rsf('siGetPatchCount')
+        self._siSetPatchCount = self._rsf('siSetPatchCount')
+        self._siGetPatchMass = self._rsf('siGetPatchMass')
+        self._siSetPatchMass = self._rsf('siSetPatchMass')
+        self._siGetPatchClamped = self._rsf('siGetPatchClamped')
+        self._siSetPatchClamped = self._rsf('siSetPatchClamped')
+        self._siGetPatchSReacK = self._rsf('siGetPatchSReacK')
+        self._siSetPatchSReacK = self._rsf('siSetPatchSReacK')
+        self._siGetPatchSReacActive = self._rsf('siGetPatchSReacActive')
+        self._siSetPatchSReacActive = self._rsf('siSetPatchSReacActive')
 
         # Now, attempt to create a state.
         self._state = self._siNewState()
@@ -171,10 +197,20 @@ class FuncCore(object):
         self._lut_diffnames = { }
         self._setupDiffs(model)
         
+        # Initialize: declare all surface reaction rules.
+        self._lut_sreacs = { }
+        self._lut_sreacnames = { }
+        self._setupSReacs(model)
+        
         # Initialize: declare all compartments.
         self._lut_comps = { }
         self._lut_compnames = { }
         self._setupComps(model, geom)
+        
+        # Initialize: declare all patches.
+        self._lut_patches = { }
+        self._lut_patchnames = { }
+        self._setupPatches(model, geom)
         
         # Finish the state definition, create actual state(?)
         # Get ready for simulation.
@@ -318,6 +354,50 @@ class FuncCore(object):
                 'Cannot find diffusion rule with gidx %d.' % diff_gidx
         return diffname
     
+    
+    def _sreac(self, sreac):
+        """Resolve a user-specified reference to a surface reaction rule into  
+        its global index.
+        
+        This global index can be used for communicating with the solver 
+        core. The method should not typically be called by users.
+        
+        However, because it's almost always called to work on a 
+        user-specified value, it will still raise an ArgumentError 
+        rather than a ProgramError when the reaction cannot be found.
+        
+        Arguments:
+            spec
+                A reference to the sreaction: the global index or its name.
+        
+        RETURNS:
+            The global index of the surface reaction rule.
+            
+        RAISES:
+            steps.error.ArgumentError
+                The surface reaction rule cannot be resolved.
+        """
+        if isinstance(sreac, basestring):
+            sreac = self._lut_sreacs[sreac]
+        if sreac == None:
+            raise serr.ArgumentError, 'Cannot find surface reaction rule.'
+        return sreac
+
+
+    def _sreacName(self, sreac_gidx):
+        """Return the name of some surface reaction rule, given its 
+        global index.
+        
+        RAISES:
+            steps.error.ProgramError
+                When the global index does not exist.
+        """
+        sreacname = self._lut_sreacnames[sreac_gidx]
+        if sreacname == None:
+            raise serr.ProgramError, \
+                'Cannot find surface reaction rule with gidx %d.' % sreac_gidx
+        return sreacname
+    
 
     def _comp(self, comp):
         """Resolve a user-specified reference to a compartment into its 
@@ -445,6 +525,54 @@ class FuncCore(object):
         self._siEndDiffDef(self._state)
     
     
+    def _setupSReacs(self, model):
+        """Add all surface reactions defined in the model to solver state.
+        
+        RAISES:
+            steps.error.SolverCoreError
+                When the solver core module does something dunb.
+        """
+        self._siBeginSReacDef(self._state)
+        for ssys in model.getAllSurfsys():
+            for sreac in ssys.getAllSReacs():
+                # First, declare the reaction channel itself.
+                rid = sreac.id
+                ridx = self._siNewSReac(self._state, rid, sreac.kcst, \
+                    sreac.inner)
+                if self._lut_sreacnames.has_key(ridx):
+                    raise serr.SolverCoreError, \
+                        'When adding sreaction \'%s\', solver ' + \
+                        'module \'%s\' returned global index %d, which ' + \
+                        'is already used by sreaction \'%s\'.' \
+                        % ( rid, self.solvername, \
+                        ridx, self._lut_sreacnames[ridx] )
+                self._lut_sreacs[rid] = ridx
+                self._lut_sreacnames[ridx] = rid
+                
+                # Then copy the stochiometry.
+                if sreac.inner == True:
+                    vlhs_f = self._siAddSReacLHS_I
+                else:
+                    vlhs_f = self._siAddSReacLHS_O
+                for vlhs in sreac.vlhs:
+                    vlhs_f(self._state, ridx, self._spec(vlhs.id))
+                for slhs in sreac.slhs:
+                    self._siAddSReacLHS_S(self._state, \
+                        ridx, self._spec(slhs.id))
+                
+                for irhs in sreac.irhs:
+                    self._siAddSReacRHS_I(self._state, \
+                        ridx, self._spec(irhs.id))
+                for srhs in sreac.srhs:
+                    self._siAddSReacRHS_S(self._state, \
+                        ridx, self._spec(srhs.id))
+                for orhs in sreac.orhs:
+                    self._siAddSReacRHS_O(self._state, \
+                        ridx, self._spec(orhs.id))
+            
+        self._siEndSReacDef(self._state)
+    
+    
     def _setupComps(self, model, geom):
         """Add all compartments defined in the geometry to the solver 
         state. All volsys references in the compartments are resolved,
@@ -495,6 +623,52 @@ class FuncCore(object):
         self._siEndCompDef(self._state)
     
     
+    def _setupPatches(self, model, geom):
+        """Add all patches defined in the geometry to the solver 
+        state. All surfsys references in the compartments are resolved,
+        by looking them up in the model.
+        
+        Arguments:
+            model
+                A valid steps.model.Model object.
+            geom
+                A valid steps.geom.Geom object; any reference to volume
+                systems made in the geom object must be resolvable in
+                the steps.model.Model object.
+        
+        RAISES:
+            steps.error.SolverCoreError
+                When the solver core module does something wrong.
+        """
+        self._siBeginPatchDef(self._state)
+        for p in geom.getAllPatches():
+            # First, declare the compartment itself.
+            pid = p.id
+            pidx = self._siNewPatch(self._state, pid, p.vol)
+            if self._lut_patchnames.has_key(pidx):
+                raise serr.SolverCoreError, \
+                    'When adding patch \'%s\', solver ' + \
+                    '\'%s\' returned global index %d, which is already ' + \
+                    'used by patch \'%s\'.' \
+                    % ( pid, self.solvername, pidx, self._lut_patchnames[pidx] )
+            self._lut_patches[pid] = pidx
+            self._lut_patchnames[pidx] = pid
+            
+            # Loop over all surface systems, and resolve them.
+            for ssys in p.surfsys:
+                # Find the Surfsys object with the given name.
+                ssys = model.getSurfsys(ssys)
+                # Add species.
+                for spec in ssys.getAllSpecs():
+                    self._siAddPatchSpec(self._state, \
+                        pidx, self._spec(spec.id))
+                # Add surface reaction channels.
+                for sreac in ssys.getAllSReacs():
+                    self._siAddPatchSReac(self._state, \
+                        cidx, self._sreac(sreac.id))
+        self._siEndPatchDef(self._state)
+        
+        
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
 
     
@@ -817,7 +991,7 @@ class FuncCore(object):
             clamp
                 A boolean value (True if clamped; False otherwise).
         """
-        self._siGetCompClamped(self._state, \
+        self._siSetCompClamped(self._state, \
             self._comp(comp), self._spec(spec), clamp)
 
 
@@ -927,16 +1101,24 @@ class FuncCore(object):
 
     def getCompDiffD(self, comp, diff):
         """
-        TODO: implement FuncCore.getCompDiffD
         """
-        return 0.0
+        comp = self._comp(comp)
+        diff = self._diff(diff)
+        d = self._siGetCompDiffD(self._state, comp, diff)
+        assert d >= 0.0, \
+            'Macroscopic constant of \'%s\' in \'%s\' is negative (%d).' \
+            % ( self._diffName(diff), self._compName(comp), d )
+        return d
     
     
     def setCompDiffD(self, comp, diff, d):
         """
-        TODO: implement FuncCore.setCompDiffD
         """
-        pass
+        if d < 0.0:
+            raise serr.ArgumentError, \
+                'Macroscopic diffusion constant is negative (%f)' % d
+        self._siSetCompDiffD(self._state, \
+            self._comp(comp), self._diff(diff), d)
 
 
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
@@ -944,16 +1126,147 @@ class FuncCore(object):
     
     def getCompDiffActive(self, comp, diff):
         """
-        TODO: implement FuncCore.getCompDiffActive
         """
-        return True
+        return self._siGetCompDiffActive(self._state, \
+            self._comp(comp), self._diff(diff))
     
     
     def setCompDiffActive(self, comp, diff, act):
         """
-        TODO: implement FuncCore.setCompDiffActive
         """
-        pass
+        self._siSetCompDiffActive(self._state, \
+            self._comp(comp), self._diff(diff), act)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+
+
+    def getPatchArea(self, patch):
+        """
+        """
+        patch = self._patch(patch)
+        area = self._siGetPatchArea(self._state, patch)
+        assert area >= 0.0, 'Area of \'%s\' is negative (%f).' \
+            % ( self._patchName(patch), area)
+        return area
+    
+    
+    def setPatchArea(self, patch, area):
+        """
+        """
+        if area < 0.0:
+            raise serr.ArgumentError, \
+                'Cannot set negative area (%f).' % area
+        self._siSetPatchArea(self._state, self._patch(patch), area)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getPatchCount(self, patch, spec):
+        """
+        """
+        patch = self._patch(patch)
+        spec = self._spec(spec)
+        c = self._siGetPatchCount(self._state, patch, spec)
+        assert c >= 0, \
+            'Count of \'%s\' in \'%s\' is negative (%d).' \
+            % ( self._specName(spec), self._patchName(patch), c )
+        return c
+    
+    
+    def setPatchCount(self, patch, spec, num):
+        """
+        """
+        if num < 0:
+            raise serr.ArgumentError, \
+                'Specified amount is negative (%d).' % num
+        self._siSetPatchCount(self._state, \
+            self._patch(patch), self._spec(spec), num)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getPatchMass(self, patch, spec):
+        """
+        """
+        patch = self._patch(patch)
+        spec = self._spec(spec)
+        m = self._siGetPatchMass(self._state, patch, spec)
+        assert m >= 0.0, \
+            'Mass of \'%s\' in \'%s\' is negative (%f).' \
+            % ( self._specName(spec), self._patchName(patch), m )
+        return m
+    
+    
+    def setPatchMass(self, patch, spec, mass):
+        """
+        """
+        if mass < 0.0:
+            raise serr.ArgumentError, \
+                'Specified mass is negative (%f).' % mass
+        self._siSetPatchMass(self._state, \
+            self._patch(patch), self._spec(spec), mass)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getPatchClamped(self, patch, spec):
+        """
+        """
+        return self._siGetPatchClamped(self._state, \
+            self._patch(patch), self._spec(spec))
+
+        
+    def setPatchClamped(self, patch, spec, buf):
+        """
+        """
+        self._siSetPatchClamped(self._state, \
+            self._patch(patch), self._spec(spec), buf)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getPatchSReacK(self, patch, sreac):
+        """
+        """
+        patch = self._patch(patch)
+        sreac = self._sreac(sreac)
+        k = self._siGetPatchSReacK(self._state, patch, sreac)
+        assert k >= 0.0, \
+            'Macroscopic constant of \'%s\' in \'%s\' is negative (%d).' \
+            % ( self._sreacName(sreac), self._patchName(patch), k )
+        return k
+    
+    
+    def setPatchSReacK(self, patch, sreac, k):
+        """
+        """
+        if k < 0.0:
+            raise serr.ArgumentError, \
+                'Macroscopic reaction constant is negative (%f)' % k
+        self._siSetPatchSReacK(self._state, \
+            self._patch(patch), self._sreac(sreac), k)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getPatchSReacActive(self, patch, sreac):
+        """
+        """
+        return self._siGetPatchSReacActive(self._state, \
+            self._patch(patch), self._sreac(sreac))
+    
+    
+    def setPatchSReacActive(self, patch, sreac, act):
+        """
+        """
+        self._siSetPatchReacActive(self._state, \
+            self._patch(patch), self._sreac(sreac), act)
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -985,6 +1298,11 @@ class FuncSSA(FuncCore):
         self._siGetCompReacA = self._rsf('siGetCompReacA')
         self._siGetCompReacExtent = self._rsf('siGetCompReacExtent')
         self._siResetCompReacExtent = self._rsf('siResetCompReacExtent')
+        self._siGetPatchSReacC = self._rsf('siGetPatchSReacC')
+        self._siGetPatchSReacH = self._rsf('siGetPatchSReacH')
+        self._siGetPatchCReacA = self._rsf('siGetPatchCReacA')
+        self._siGetPatchSReacExtent = self._rsf('siGetPatchSReacExtent')
+        self._siResetPatchSReacExtent = self._rsf('siResetPatchSReacExtent')
 
 
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
@@ -1155,6 +1473,63 @@ class FuncSSA(FuncCore):
             self._comp(comp), self._reac(reac))
     
     
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getPatchSReacC(self, patch, sreac):
+        """
+        """
+        patch = self._patch(patch)
+        sreac = self._sreac(sreac)
+        c = self._siGetPatchSReacC(self._state, patch, sreac)
+        assert c >= 0.0, \
+            'c_mu is negative (%f).' % c
+        return c
+    
+    
+    def getPatchSReacH(self, patch, sreac):
+        """
+        """
+        patch = self._patch(patch)
+        sreac = self._sreac(sreac)
+        h = self._siGetPatchSReacH(self._state, patch, sreac)
+        assert h >= 0.0, \
+            'h_mu is negative (%f).' % h
+        return h
+    
+    
+    def getPatchCReacA(self, patch, sreac):
+        """
+        """
+        patch = self._patch(patch)
+        sreac = self._sreac(sreac)
+        a = self._siGetPatchSReacA(self._state, patch, sreac)
+        assert a >= 0.0, \
+            'a_mu is negative (%f).' % a
+        return a
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getPatchSReacExtent(self, patch, sreac):
+        """
+        """
+        patch = self._patch(patch)
+        sreac = self._sreac(sreac)
+        n = self._siGetPatchSReacExtent(self._state, patch, sreac)
+        assert n >= 0, \
+            'Extent is negative (%d).' % n
+        return n
+    
+    
+    def resetPatchSReacExtent(self, patch, sreac):
+        """
+        """
+        self._siResetPatchSReacExtent(self._state, \
+            self._patch(patch), self._sreac(sreac))
+    
+    
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 class FuncTetmesh(FuncCore):
@@ -1171,6 +1546,9 @@ class FuncTetmesh(FuncCore):
         self._siBeginTetDef = self._rsf('siBeginTetDef')
         self._siEndTetDef = self._rsf('siEndTetDef')
         self._siNewTet = self._rsf('siNewTet')
+        self._siBeginTriDef = self._rsf('siBeginTriDef')
+        self._siEndTriDef = self._rsf('siEndTriDef')
+        self._siNewTri = self._rsf('siNewTri')
         self._siBeginConnectDef = self._rsf('siBeginConnectDef')
         self._siEndConnectDef = self._rsf('siEndConnectDef')
         self._siConnectTetTet = self._rsf('siConnectTetTet')
@@ -1184,6 +1562,26 @@ class FuncTetmesh(FuncCore):
         self._siSetTetMass = self._rsf('siSetTetMass')
         self._siGetTetConc = self._rsf('siGetTetConc')
         self._siSetTetConc = self._rsf('siSetTetConc')
+        self._siGetTetClamped = self._rsf('siGetTetClamped')
+        self._siSetTetClamped = self._rsf('siSetTetClamped')
+        self._siGetTetReacK = self._rsf('siGetTetReacK')
+        self._siSetTetReacK = self._rsf('siSetTetReacK')
+        self._siGetTetReacActive = self._rsf('siGetTetReacActive')
+        self._siSetTetReacActive = self._rsf('siSetTetReacActive')
+        self._siGetTetDiffD = self._rsf('siGetTetDiffD')
+        self._siSetTetDiffD = self._rsf('siSetTetDiffD')
+        self._siGetTetDiffActive = self._rsf('siGetTetDiffActive')
+        self._siSetTetDiffActive = self._rsf('siSetTetDiffActive')
+        self._siGetTriArea = self._rsf('siGetTriArea')
+        self._siSetTriArea = self._rsf('siSetTriArea')
+        self._siGetTriCount = self._rsf('siGetTriCount')
+        self._siSetTriCount = self._rsf('siSetTriCount')
+        self._siGetTriClamped = self._rsf('siGetTriClamped')
+        self._siSetTriClamped = self._rsf('siSetTriClamped')
+        self._siGetTriSReacK = self._rsf('siGetTriSReacK')
+        self._siSetTriSReacK = self._rsf('siSetTriSReacK')
+        self._siGetTriSReacActive = self._rsf('siGetTriSReacActive')
+        self._siSetTriSReacActive = self._rsf('siSetTriSReacActive')
     
         # Set up the mesh.
         self._setupMesh(geom)
@@ -1219,6 +1617,12 @@ class FuncTetmesh(FuncCore):
                 t.tet0dist, t.tet1dist, t.tet2dist, t.tet3dist)
         self._siEndTetDef(self._state)
         
+        # Then declare the triangles.
+        self._siBeginTriDef(self._state)
+        for t in geom.tris:
+            self._siNewTri(self._state, self._patch(t.patch.id), t.area)
+        self._siEndTriDef(self._state)
+        
         # Then declare the connections between the various elements  
         # that comprise the mesh. 
         self._siBeginConnectDef(self._state)
@@ -1235,6 +1639,13 @@ class FuncTetmesh(FuncCore):
                 self._siConnectTetTet(self._state, 2, t.idx, t.ntet2idx)
             if i3 >= 0:
                 self._siConnectTetTet(self._state, 3, t.idx, t.ntet3idx)
+        for t in geom.tris:
+            ii = t.itetidx
+            io = t.otetidx
+            if ii >= 0:
+                self._siConnectTetTriInside(self._state, t.idx, ii)
+            if io >= 0:
+                self._siConnectTetTriOutside(self._state, t.idx, io)
         self._siEndConnectDef(self._state)
         
         # We're finished -- let the solver module hook it all up.
@@ -1245,11 +1656,20 @@ class FuncTetmesh(FuncCore):
     
     
     def getTetVol(self, tet):
-        pass
+        """
+        """
+        vol = self._siGetTetVol(self._state, tet)
+        assert vol >= 0.0, 'Volume of tetrahedron #%d is negative' % tet
+        return vol
     
     
     def setTetVol(self, tet, vol):
-        pass
+        """
+        """
+        if vol < 0.0:
+            raise serr.ArgumentError, \
+                'Specified volume (%d) is negative' % vol
+        self._siSetTetVol(self._state, tet, vol)
     
     
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
@@ -1268,7 +1688,7 @@ class FuncTetmesh(FuncCore):
         spec = self._spec(spec)
         c = self._siGetTetCount(self._state, tet, spec)
         assert c >= 0, \
-            'Count of \'%s\' in tetrahedron %d is negative (%d).' \
+            'Count of \'%s\' in tetrahedron #%d is negative (%d).' \
             % ( self._specName(spec), tet, c )
         return c
     
@@ -1301,23 +1721,240 @@ class FuncTetmesh(FuncCore):
     
     
     def getTetMass(self, tet):
-        pass
+        """
+        """
+        spec = self._spec(spec)
+        m = self._siGetTetMass(self._state, tet, spec)
+        assert m >= 0, \
+            'Mass of \'%s\' in tetrahedron #%d is negative (%d).' \
+            % ( self._specName(spec), tet, m )
+        return m
     
     
     def setTetMass(self, tet, mass):
-        pass
+        """
+        """
+        if mass < 0.0:
+            raise serr.ArgumentError, \
+                'Specified mass is negative (%d).' % mass
+        self._siSetTetMass(self._state, tet, self._spec(spec), mass)
     
     
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
     
     
     def getTetConc(self, tet):
-        pass
+        """
+        """
+        spec = self._spec(spec)
+        c = self._siGetTetConc(self._state, tet, spec)
+        assert c >= 0, \
+            'Concentration of \'%s\' in tetrahedron #%d is negative (%d).' \
+            % ( self._specName(spec), tet, c )
+        return c
     
     
     def setTetConc(self, tet, conc):
-        pass
+        """
+        """
+        if conc < 0.0:
+            raise serr.ArgumentError, \
+                'Specified concentration is negative (%d).' % conc
+        self._siSetTetConc(self._state, tet, self._spec(spec), conc)
     
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+
+
+    def getTetClamped(self, tet, spec):
+        """
+        """
+        spec = self._spec(spec)
+        c = self._siGetTetClamped(self._state, tet, spec)
+        assert c >= 0, \
+            'Concentration of \'%s\' in tetrahedron #%d is negative (%d).' \
+            % ( self._specName(spec), tet, c )
+        return c
+    
+    
+    def setTetClamped(self, tet, spec, buf):
+        """
+        """
+        self._siSetTetClamped(self._state, tet, self._spec(spec), buf)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getTetReacK(self, tet, reac):
+        """
+        """
+        reac = self._reac(reac)
+        k = self._siGetTetReacK(self._state, tet, reac)
+        assert k >= 0.0, \
+            'Macroscopic constant of \'%s\' in tetrahedron #%d is negative (%d).' \
+            % ( self._reacName(reac), tet, k )
+        return k
+    
+    
+    def setTetReacK(self, tet, reac, k):
+        """
+        """
+        if k < 0.0:
+            raise serr.ArgumentError, \
+                'Macroscopic reaction constant is negative (%f)' % k
+        self._siSetTetReacK(self._state, tet, self._reac(reac), k)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getTetReacActive(self, tet, reac):
+        """
+        """
+        return self._siGetTetReacActive(self._state, tet, self._reac(reac))
+    
+    
+    def setTetReacActive(self, tet, reac, act):
+        """
+        """
+        self._siSetTetReacActive(self._state, tet, self._reac(reac), act)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getTetDiffD(self, tet, diff):
+        """
+        """
+        diff = self._diff(diff)
+        d = self._siGetTetDiffD(self._state, tet, diff)
+        assert d >= 0.0, \
+            'Macroscopic constant of \'%s\' in tetrahedron #%d is negative (%d).' \
+            % ( self._diffName(diff), tet, d )
+        return d
+    
+    
+    def setTetDiffD(self, tet, diff, d):
+        """
+        """
+        if d < 0.0:
+            raise serr.ArgumentError, \
+                'Macroscopic diffusion constant is negative (%f)' % d
+        self._siSetTetDiffD(self._state, tet, self._diff(diff), d)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getTetDiffActive(self, tet, diff):
+        """
+        """
+        return self._siGetTetDiffActive(self._state, tet, self._diff(diff))
+    
+    
+    def setTetDiffActive(self, tet, diff, act):
+        """
+        """
+        self._siSetTetDiffActive(self._state, tet, self._diff(diff), act)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getTriArea(self, tri):
+        """
+        """
+        area = self._siGetTriArea(self._state, tri)
+        assert area >= 0.0, 'Area of triangle #%d is negative (%f).' \
+            % ( tri, area)
+        return area
+    
+    
+    def setTriArea(self, tri, area):
+        """
+        """
+        if area < 0.0:
+            raise serr.ArgumentError, \
+                'Cannot set negative area (%f).' % area
+        self._siSetTriArea(self._state, tri, area)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getTriCount(self, tri, spec):
+        """
+        """
+        spec = self._spec(spec)
+        c = self._siGetTriCount(self._state, tri, spec)
+        assert c >= 0, \
+            'Count of \'%s\' in triangle #%d is negative (%d).' \
+            % ( self._specName(spec), tri, c )
+        return c
+    
+    
+    def setTriCount(self, tri, spec, num):
+        """
+        """
+        if num < 0:
+            raise serr.ArgumentError, \
+                'Specified amount is negative (%d).' % num
+        self._siSetTriCount(self._state, tri, self._spec(spec), num)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getTriClamped(self, tri, spec):
+        """
+        """
+        return self._siGetTriClamped(self._state, tri, self._spec(spec))
+    
+    
+    def setTriClamped(self, tri, spec, buf):
+        """
+        """
+        self._siSetTriClamped(self._state, tri, self._spec(spec), buf)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getTriSReacK(self, tri, sreac):
+        """
+        """
+        sreac = self._sreac(sreac)
+        k = self._siGetTriSReacK(self._state, tri, sreac)
+        assert k >= 0.0, \
+            'Macroscopic constant of \'%s\' in triangle #%d is negative (%d).' \
+            % ( self._sreacName(sreac), tri, k )
+        return k
+    
+    
+    def setTriSReacK(self, tri, sreac, k):
+        """
+        """
+        if k < 0.0:
+            raise serr.ArgumentError, \
+                'Macroscopic reaction constant is negative (%f)' % k
+        self._siSetTriSReacK(self._state, tri, self._sreac(sreac), k)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
+    def getTriSReacActive(self, tri, sreac):
+        """
+        """
+        return self._siGetTriSReacActive(self._state, tri, self._sreac(sreac))
+    
+    
+    def setTriSReacActive(self, tri, sreac, act):
+        """
+        """
+        self._siSetTriReacActive(self._state, tri, self._sreac(sreac), act)
+
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     

@@ -69,6 +69,18 @@ extern uint     siGetCompReacExtent(State * s, uint cidx, uint ridx);
 extern void     siResetCompReacExtent(State * s, uint cidx, uint ridx);
 
 ////////////////////////////////////////////////////////////////////////////////
+// SOLVER STATE ACCESS: 
+//      PATCH
+////////////////////////////////////////////////////////////////////////////////
+
+extern double   siGetPatchSReacC(State * s, uint pidx, uint ridx);
+extern double   siGetPatchSReacH(State * s, uint pidx, uint ridx);
+extern double   siGetPatchCReacA(State * s, uint pidx, uint ridx);
+
+extern uint     siGetPatchSReacExtent(State * s, uint pidx, uint ridx);
+extern void     siResetPatchSReacExtent(State * s, uint pidx, uint ridx);
+
+////////////////////////////////////////////////////////////////////////////////
 
 #endif
 // STEPS_SIM_SWIGINF_FUNC_SSA_HPP
