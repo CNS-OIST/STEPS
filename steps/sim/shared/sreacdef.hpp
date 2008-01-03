@@ -136,35 +136,30 @@ public:
     uint lhs_S(gidxT idx) const;
     uint lhs_O(gidxT idx) const;
     
+    depT dependsOnSpec_I(gidxT idx) const;
+    depT dependsOnSpec_S(gidxT idx) const;
+    depT dependsOnSpec_O(gidxT idx) const;
+    
     uint rhs_I(gidxT idx) const;
     uint rhs_S(gidxT idx) const;
     uint rhs_O(gidxT idx) const;
-
-    ////////////////////////////////////////////////////////////////////////
     
-    /// Check whether occurence of a reaction rule <EM>depends</EM> on 
-    /// changes to the concentration of some species, specified by its
-    /// global index (gidx).
-    ///
-    /// Currently, this only has to check whether the species gidx is
-    /// present in the LHS vector. As we might have concentration-
-    /// dependent reaction coefficients in the future (or other fancy
-    /// extensions to the basic reaction rule idea), this function will
-    /// have to check for more things.
-    ///
-    //bool dependsOnSpec(gidxT idx) const;
+    int upd_I(gidxT idx) const;
+    int upd_S(gidxT idx) const;
+    int upd_O(gidxT idx) const;
     
-    /// Check whether the occurence of the reaction rule <EM>affects</EM>
-    /// the concentration of some species, specified by its global index
-    /// (gidx).
-    ///
-    /// Currently, this only has to check whether the stoichiometry vectors,
-    /// to see whether rhs[gidx] - lhs[gidx] is zero or not. (If it's zero,
-    /// it's not affected either because it's not used, or because the
-    /// <EM>net effect</EM> of the reaction cancels out changes. If it's
-    /// not zero, this means the species <EM>is</EM> in fact affected.)
-    ///
-    //bool affectsSpec(gidxT idx) const;
+    inline gidxTVecCI beginUpdColl_I(void) const
+    { return pSpec_I_UPD_Coll.begin(); }
+    inline gidxTVecCI endUpdColl_I(void) const
+    { return pSpec_I_UPD_Coll.end(); }
+    inline gidxTVecCI beginUpdColl_S(void) const
+    { return pSpec_S_UPD_Coll.begin(); }
+    inline gidxTVecCI endUpdColl_S(void) const
+    { return pSpec_S_UPD_Coll.end(); }
+    inline gidxTVecCI beginUpdColl_O(void) const
+    { return pSpec_O_UPD_Coll.begin(); }
+    inline gidxTVecCI endUpdColl_O(void) const
+    { return pSpec_O_UPD_Coll.end(); }
     
     ////////////////////////////////////////////////////////////////////////
     
@@ -207,6 +202,9 @@ private:
     int *                       pSpec_I_UPD;
     int *                       pSpec_S_UPD;
     int *                       pSpec_O_UPD;
+    gidxTVec                    pSpec_I_UPD_Coll;
+    gidxTVec                    pSpec_S_UPD_Coll;
+    gidxTVec                    pSpec_O_UPD_Coll;
 
     ////////////////////////////////////////////////////////////////////////
     

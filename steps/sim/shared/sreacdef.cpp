@@ -61,6 +61,9 @@ SReacDef::SReacDef(StateDef * sdef, gidxT idx, string const & name, orientT o)
 , pSpec_I_UPD(0)
 , pSpec_S_UPD(0)
 , pSpec_O_UPD(0)
+, pSpec_I_UPD_Coll()
+, pSpec_S_UPD_Coll()
+, pSpec_O_UPD_Coll()
 {
     uint nspecs = statedef()->countSpecs();
     if (nspecs == 0) return; // Would be weird, but okay.
@@ -232,34 +235,30 @@ void SReacDef::setupFinal(void)
 {
     computeOrder();
     uint nspecs = statedef()->countSpecs();
+    // Deal with surface.
     for (uint i = 0; i < nspecs; ++i)
     {
         int lhs = static_cast<int>(pSpec_S_LHS[i]); 
-        pSpec_S_UPD[i] = static_cast<int>(pSpec_S_RHS[i]) - lhs;
-        if (lhs != 0) pSpec_S_DEP[i] = DEP_STOICH;
+        int aux = pSpec_S_UPD[i] = static_cast<int>(pSpec_S_RHS[i]) - lhs;
+        if (lhs != 0) pSpec_S_DEP[i] |= DEP_STOICH;
+        if (aux != 0) pSpec_S_UPD_Coll.push_back(i);
     }
-    if (inside())
+    // Deal with inside.
+    for (uint i = 0; i < nspecs; ++i)
     {
-        for (uint i = 0; i < nspecs; ++i)
-        {
-            int lhs = static_cast<int>(pSpec_I_LHS[i]); 
-            pSpec_I_UPD[i] = static_cast<int>(pSpec_I_RHS[i]) - lhs;
-            if (lhs != 0) pSpec_I_DEP[i] = DEP_STOICH;
-        }
+        int lhs = (inside() ? static_cast<int>(pSpec_I_LHS[i]) : 0); 
+        int aux = pSpec_I_UPD[i] = static_cast<int>(pSpec_I_RHS[i]) - lhs;
+        if (lhs != 0) pSpec_I_DEP[i] |= DEP_STOICH;
+        if (aux != 0) pSpec_I_UPD_Coll.push_back(i);
     }
-    else if (outside())
+    // Deal with outside.
+    for (uint i = 0; i < nspecs; ++i)
     {
-        for (uint i = 0; i < nspecs; ++i)
-        {
-            int lhs = static_cast<int>(pSpec_O_LHS[i]); 
-            pSpec_O_UPD[i] = static_cast<int>(pSpec_O_RHS[i]) - lhs;
-            if (lhs != 0) pSpec_O_DEP[i] = DEP_STOICH;
-        }        
-    }
-    else
-    {
-        assert(0); // should never happen
-    }
+        int lhs = (outside() ? static_cast<int>(pSpec_O_LHS[i]) : 0); 
+        int aux = pSpec_O_UPD[i] = static_cast<int>(pSpec_O_RHS[i]) - lhs;
+        if (lhs != 0) pSpec_O_DEP[i] |= DEP_STOICH;
+        if (aux != 0) pSpec_O_UPD_Coll.upsh_back(i);
+    }        
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -290,6 +289,30 @@ uint SReacDef::lhs_O(gidxT idx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
+depT SReacDef::dependsOnSpec_I(gidxT idx) const
+{
+    assert(idx < statedef()->countSpecs());
+    return pSpec_I_DEP[idx]; 
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+depT SReacDef::dependsOnSpec_S(gidxT idx) const
+{
+    assert(idx < statedef()->countSpecs());
+    return pSpec_S_DEP[idx];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+depT SReacDef::dependsOnSpec_O(gidxT idx) const
+{
+    assert(idx < statedef()->countSpecs());
+    return pSpec_O_DEP[idx];
+}
+    
+////////////////////////////////////////////////////////////////////////////////
+
 uint SReacDef::rhs_I(gidxT idx) const
 {
     assert(idx < statedef()->countSpecs());
@@ -310,6 +333,30 @@ uint SReacDef::rhs_O(gidxT idx) const
 {
     assert(idx < statedef()->countSpecs());
     return pSpec_O_RHS[idx];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int SReacDef::upd_I(gidxT idx) const
+{
+    assert(idx < statedef()->countSpecs());
+    return pSpec_I_UPD[idx];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int SReacDef::upd_S(gidxT idx) const
+{
+    assert(idx < statedef()->countSpecs());
+    return pSpec_S_UPD[idx];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int SReacDef::upd_O(gidxT idx) const
+{
+    assert(idx < statedef()->countSpecs());
+    return pSpec_O_UPD[idx];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
