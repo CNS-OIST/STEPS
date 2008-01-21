@@ -225,12 +225,15 @@ bool SReac::depSpecTri(uint gidx, Tri * triangle)
 
 void SReac::reset(void)
 {
+    setActive(true);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double SReac::rate(void) const
 {
+    if (inactive()) return 0.0;
+    
     // First we compute the combinatorial part.
     //   1/ for the surface part of the stoichiometry
     //   2/ for the inner or outer volume part of the stoichiometry,

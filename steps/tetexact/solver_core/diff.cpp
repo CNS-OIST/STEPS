@@ -205,12 +205,15 @@ bool Diff::depSpecTri(uint gidx, Tri * tri)
 
 void Diff::reset(void)
 {
+    setActive(true);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double Diff::rate(void) const
 {
+    if (inactive()) return 0.0;
+    
     // Pre-fetch some general info.
     ssim::CompDef * cdef = pTet->compdef();
     // Fetch the ligand as global index.

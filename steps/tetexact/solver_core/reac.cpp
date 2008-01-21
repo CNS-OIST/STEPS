@@ -136,12 +136,15 @@ bool Reac::depSpecTri(uint gidx, Tri * tri)
 
 void Reac::reset(void)
 {
+    setActive(true);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double Reac::rate(void) const
 {
+    if (inactive()) return 0.0;
+    
     // Prefetch some variables.
     ssim::CompDef * cdef = pTet->compdef();
     uint nspecs = cdef->countSpecs();
@@ -194,7 +197,7 @@ double Reac::rate(void) const
 ////////////////////////////////////////////////////////////////////////////////
 
 SchedIDXVec const & Reac::apply(State * s)
-{
+{    
     uint * local = pTet->pools();
     ssim::CompDef * cdef = pTet->compdef();
     uint l_ridx = cdef->reacG2L(def()->gidx());

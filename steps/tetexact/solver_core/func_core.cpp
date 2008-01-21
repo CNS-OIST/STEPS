@@ -45,7 +45,14 @@
 #include <steps/sim/shared/statedef.hpp>
 #include <steps/sim/shared/types.hpp>
 #include <steps/sim/swiginf/func_core.hpp>
+#include <steps/tetexact/solver_core/comp.hpp>
+#include <steps/tetexact/solver_core/diff.hpp>
+#include <steps/tetexact/solver_core/patch.hpp>
+#include <steps/tetexact/solver_core/reac.hpp>
+#include <steps/tetexact/solver_core/sreac.hpp>
 #include <steps/tetexact/solver_core/state.hpp>
+#include <steps/tetexact/solver_core/tet.hpp>
+#include <steps/tetexact/solver_core/tri.hpp>
 
 NAMESPACE_ALIAS(steps::sim, ssim);
 NAMESPACE_ALIAS(steps::math, smath);
@@ -583,6 +590,19 @@ void siSetCompReacK(State * s, uint cidx, uint ridx, double kf)
 
 bool siGetCompReacActive(State * s, uint cidx, uint ridx)
 {
+    assert(s != 0);
+    assert(cidx < s->countComps());
+    Comp * comp = s->comp(cidx);
+    assert(comp != 0);
+    
+    uint lridx = comp->def()->reacG2L(ridx);
+    if (lridx == ssim::LIDX_UNDEFINED) return false;
+    
+    TetPVecCI t_end = comp->endTet();
+    for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
+    {
+        if ((*t)->reac(lridx)->inactive() == true) return false;
+    }
     return true;
 }
 
@@ -590,6 +610,22 @@ bool siGetCompReacActive(State * s, uint cidx, uint ridx)
 
 void siSetCompReacActive(State * s, uint cidx, uint ridx, bool act)
 {
+    assert(s != 0);
+    assert(cidx < s->countComps());
+    Comp * comp = s->comp(cidx);
+    assert(comp != 0);
+    
+    uint lridx = comp->def()->reacG2L(ridx);
+    if (lridx == ssim::LIDX_UNDEFINED) return;
+    
+    TetPVecCI t_end = comp->endTet();
+    for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
+    {
+        (*t)->reac(lridx)->setActive(act);
+    }
+    
+    // It's cheaper to just recompute everything.
+    s->sched()->reset();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -609,6 +645,19 @@ void siSetCompDiffD(State * s, uint cidx, uint didx)
 
 bool siGetCompDiffActive(State * s, uint cidx, uint didx)
 {
+    assert(s != 0);
+    assert(cidx < s->countComps());
+    Comp * comp = s->comp(cidx);
+    assert(comp != 0);
+    
+    uint ldidx = comp->def()->diffG2L(didx);
+    if (ldidx == ssim::LIDX_UNDEFINED) return false;
+    
+    TetPVecCI t_end = comp->endTet();
+    for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
+    {
+        if ((*t)->diff(ldidx)->inactive() == true) return false;
+    }
     return true;
 }
 
@@ -616,6 +665,22 @@ bool siGetCompDiffActive(State * s, uint cidx, uint didx)
 
 void siSetCompDiffActive(State * s, uint cidx, uint didx, bool act)
 {
+    assert(s != 0);
+    assert(cidx < s->countComps());
+    Comp * comp = s->comp(cidx);
+    assert(comp != 0);
+    
+    uint ldidx = comp->def()->diffG2L(didx);
+    if (ldidx == ssim::LIDX_UNDEFINED) return;
+    
+    TetPVecCI t_end = comp->endTet();
+    for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
+    {
+        (*t)->diff(ldidx)->setActive(act);
+    }
+    
+    // It's cheaper to just recompute everything.
+    s->sched()->reset();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -691,13 +756,42 @@ void siSetPatchSReacK(State * s, uint pidx, uint ridx, double kf)
 
 bool siGetPatchSReacActive(State * s, uint pidx, uint ridx)
 {
+    assert(s != 0);
+    assert(pidx < s->countPatches());
+    Patch * patch = s->patch(pidx);
+    assert(patch != 0);
     
+    uint lridx = patch->def()->sreacG2L(ridx);
+    if (lridx == ssim::LIDX_UNDEFINED) return false;
+    
+    TriPVecCI t_end = patch->endTri();
+    for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
+    {
+        if ((*t)->sreac(lridx)->inactive() == true) return false;
+    }
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetPatchSReacActive(State * s, uint pidx, uint ridx, bool a)
 {
+    assert(s != 0);
+    assert(pidx < s->countPatches());
+    Patch * patch = s->patch(pidx);
+    assert(patch != 0);
+    
+    uint lridx = patch->def()->sreacG2L(ridx);
+    if (lridx == ssim::LIDX_UNDEFINED) return;
+    
+    TriPVecCI t_end = patch->endTri();
+    for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
+    {
+        (*t)->sreac(lridx)->setActive(a);
+    }
+    
+    // It's cheaper to just recompute everything.
+    s->sched()->reset();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
