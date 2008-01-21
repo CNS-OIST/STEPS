@@ -106,6 +106,11 @@ public:
     inline uint countTris(void) const
     { return pTris.size(); }
     
+    /// If necessary, might be speeded up by pre=computing a rough 
+    /// partitioning in Patch::computeArea().
+    ///
+    Tri * pickTriByArea(double rand01) const;
+    
     inline TriPVecCI bgnTri(void) const
     { return pTris.begin(); }
     inline TriPVecCI endTri(void) const

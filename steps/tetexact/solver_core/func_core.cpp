@@ -605,6 +605,7 @@ void siSetCompClamped(State * s, uint cidx, uint sidx, bool buf)
 
 double siGetCompReacK(State * s, uint cidx, uint ridx)
 {
+    // Currently not implemented.
     return 0.0;
 }
 
@@ -612,6 +613,7 @@ double siGetCompReacK(State * s, uint cidx, uint ridx)
 
 void siSetCompReacK(State * s, uint cidx, uint ridx, double kf)
 {
+    // Currently not implemented.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -660,6 +662,7 @@ void siSetCompReacActive(State * s, uint cidx, uint ridx, bool act)
 
 double siGetCompDiffD(State * s, uint cidx, uint didx)
 {
+    // Currently not implemented.
     return 0.0;
 }
 
@@ -667,6 +670,7 @@ double siGetCompDiffD(State * s, uint cidx, uint didx)
 
 void siSetCompDiffD(State * s, uint cidx, uint didx)
 {
+    // Currently not implemented.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -735,29 +739,89 @@ void siSetPatchArea(State * s, uint pidx, double area)
 
 uint siGetPatchCount(State * s, uint pidx, uint sidx)
 {
-    // Currently not implemented.
+    assert(s != 0);
+    assert(pidx < s->countPatches());
+    Patch * patch = s->patch(pidx);
+    assert(patch != 0);
+    uint slidx = patch->def()->specG2L(sidx);
+    if (slidx == ssim::LIDX_UNDEFINED) return 0;
+    
+    uint count = 0;
+    TriPVecCI t_end = patch->endTri();
+    for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
+    {
+        count += (*t)->pools()[slidx];
+    }
+    
+    return count;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetPatchCount(State * s, uint pidx, uint sidx, uint n)
 {
-    // Currently not implemented.
+    assert(s != 0);
+    assert(pidx < s->countPatches());
+    Patch * patch = s->patch(pidx);
+    assert(patch != 0);
+    uint slidx = patch->def()->specG2L(sidx);
+    if (slidx == ssim::LIDX_UNDEFINED) return;
+    
+    double totalarea = patch->area();
+    TriPVecCI t_end = patch->endTri();
+    
+    if (n >= patch->countTris())
+    {
+        for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
+        {
+            Tri * tri = *t;
+            double fract = static_cast<double>(n) * (tri->area() / totalarea);
+            uint n3 = static_cast<uint>(std::floor(fract));
+            tri->pools()[slidx] = n3;
+            n -= n3;
+        }
+    }
+    
+    while (n != 0)
+    {
+        Tri * tri = patch->pickTriByArea(s->rng()->getUnfIE());
+        assert(tri != 0);
+        tri->pools()[slidx] += 1;
+        n--;
+    }
+    
+    for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
+    {
+        s->sched()->updateSpec(*t, slidx);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double siGetPatchMass(State * s, uint pidx, uint sidx)
 {
-    // Currently not implemented.
-    return 0.0;
+    double count = static_cast<double>(siGetPatchCount(s, pidx, sidx));
+    return count / smath::AVOGADRO; 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetPatchMass(State * s, uint pidx, uint sidx, double m)
 {
-    // Currently not implemented.
+    assert(s != 0);
+    assert(m >= 0.0);
+    
+    double m2 = m * smath::AVOGADRO;
+    double m_int = std::floor(m2);
+    double m_frc = m2 - m_int;
+    uint c = static_cast<uint>(m_int);
+    if (m_frc > 0.0)
+    {
+        double rand01 = s->rng()->getUnfIE();
+        if (rand01 < m_frc) c++;
+    }
+    
+    siSetPatchCount(s, pidx, sidx, c);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

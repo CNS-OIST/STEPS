@@ -74,4 +74,24 @@ void Patch::computeArea(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+Tri * Patch::pickTriByArea(double rand01) const
+{
+    if (countTris() == 0) return 0;
+    if (countTris() == 1) return pTris[0];
+    
+    double accum = 0.0;
+    double selector = rand01 * area();
+    TriPVecCI t_end = endTri();
+    for (TriPVecCI t = bgnTri(); t != t_end; ++t)
+    {
+        accum += (*t)->area();
+        if (selector < accum) return *t;
+    }
+    
+    assert(0);
+    return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 // END
