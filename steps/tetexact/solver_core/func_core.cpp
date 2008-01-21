@@ -459,10 +459,10 @@ void siSetCompCount(State * s, uint cidx, uint sidx, uint n)
     if (slidx == ssim::LIDX_UNDEFINED) return;
     
     double totalvol = comp->vol();
+    TetPVecCI t_end = comp->endTet();
     
     if (n >= comp->countTets())
     {
-        TetPVecCI t_end = comp->endTet();
         for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
         {
             Tet * tet = *t;
@@ -480,32 +480,77 @@ void siSetCompCount(State * s, uint cidx, uint sidx, uint n)
         tet->pools()[slidx] += 1;
         n--;
     }
+    
+    for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
+    {
+        s->sched()->updateSpec(*t, slidx);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double siGetCompMass(State * s, uint cidx, uint sidx)
 {
-    return 0.0;
+    double count = static_cast<double>(siGetCompCount(s, cidx, sidx));
+    return count / smath::AVOGADRO; 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetCompMass(State * s, uint cidx, uint sidx, double m)
 {
+    assert(s != 0);
+    assert(m >= 0.0);
+    
+    double m2 = m * smath::AVOGADRO;
+    double m_int = std::floor(m2);
+    double m_frc = m2 - m_int;
+    uint c = static_cast<uint>(m_int);
+    if (m_frc > 0.0)
+    {
+        double rand01 = s->rng()->getUnfIE();
+        if (rand01 < m_frc) c++;
+    }
+    
+    siSetCompCount(s, cidx, sidx, c);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double siGetCompConc(State * s, uint cidx, uint sidx)
 {
-    return 0.0;
+    assert(s != 0);
+    assert(cidx < s->countComps());
+    Comp * comp = s->comp(cidx);
+    assert(comp != 0);
+    
+    double count = static_cast<double>(siGetCompCount(s, cidx, sidx));
+    double vol = comp->vol();
+    return count / (1.0e3 * vol * smath::AVOGADRO); 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetCompConc(State * s, uint cidx, uint sidx, double c)
 {
+    assert(s != 0);
+    assert(c >= 0.0);
+
+    assert(cidx < s->countComps());
+    Comp * comp = s->comp(cidx);
+    assert(comp != 0);    
+    
+    double c2 = c * (1.0e3 * comp->vol() * smath::AVOGADRO);
+    double c_int = std::floor(c2);
+    double c_frc = c2 - c_int;
+    uint count = static_cast<uint>(c_int);
+    if (c_frc > 0.0)
+    {
+        double rand01 = s->rng()->getUnfIE();
+        if (rand01 < c_frc) count++;
+    }
+    
+    siSetCompCount(s, cidx, sidx, count);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
