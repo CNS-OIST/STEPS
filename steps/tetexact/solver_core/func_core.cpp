@@ -430,7 +430,9 @@ double siGetCompVol(State * s, uint cidx)
 
 void siSetCompVol(State * s, uint cidx, double vol)
 {
-    // Not implemented!
+    // Not implemented! Probably will never be implemented, although it
+    // might be a cheap way of simulating dynamic morphology (as happens 
+    // in structural plasticity).
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -713,28 +715,34 @@ void siSetCompDiffActive(State * s, uint cidx, uint didx, bool act)
 
 double siGetPatchArea(State * s, uint pidx)
 {
-    
+    assert(s != 0);
+    assert(pidx < s->countPatches());
+    Patch * patch = s->patch(pidx);
+    assert(patch != 0);
+    return patch->area();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetPatchArea(State * s, uint pidx, double area)
 {
-    
+    // Not implemented! Probably will never be implemented, although it
+    // might be a cheap way of simulating dynamic morphology (as happens 
+    // in structural plasticity).
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint siGetPatchCount(State * s, uint pidx, uint sidx)
 {
-    
+    // Currently not implemented.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetPatchCount(State * s, uint pidx, uint sidx, uint n)
 {
-    
+    // Currently not implemented.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -795,14 +803,15 @@ void siSetPatchClamped(State * s, uint pidx, uint sidx, bool buf)
 
 double siGetPatchSReacK(State * s, uint pidx, uint ridx)
 {
-    
+    // Currently not implemented.
+    return 0.0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetPatchSReacK(State * s, uint pidx, uint ridx, double kf)
 {
-    
+    // Currently not implemented.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
