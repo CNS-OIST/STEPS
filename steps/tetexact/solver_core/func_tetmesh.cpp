@@ -38,6 +38,7 @@
 #include <steps/tetexact/solver_core/diff.hpp>
 #include <steps/tetexact/solver_core/reac.hpp>
 #include <steps/tetexact/solver_core/sched.hpp>
+#include <steps/tetexact/solver_core/sreac.hpp>
 #include <steps/tetexact/solver_core/state.hpp>
 #include <steps/tetexact/solver_core/tet.hpp>
 #include <steps/tetexact/solver_core/tri.hpp>
@@ -184,18 +185,21 @@ double siGetTetVol(State * s, uint tidx)
 
 void siSetTetVol(State * s, uint tidx, double vol)
 {
-    // Will probably never be implemented.
+    // Will probably never be implemented. On the other hand, might be
+    // a (very) cheap way of implementing dynamic morphology (as in 
+    // structural plasticity).
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint siGetTetCount(State * s, uint tidx, uint sidx)
 {
+    assert(s != 0);
     Tet * tet = s->tet(tidx);
-    // TODO: error stuff
-    if (tet == 0) return 0;
+    assert(tet != 0);
+    
     uint l_sidx = tet->compdef()->specG2L(sidx);
-    if (l_sidx == 0xFFFF) return 0;
+    if (l_sidx == ssim::LIDX_UNDEFINED) return 0;
     return tet->pools()[l_sidx];
 }
 
@@ -203,13 +207,13 @@ uint siGetTetCount(State * s, uint tidx, uint sidx)
 
 void siSetTetCount(State * s, uint tidx, uint sidx, uint n)
 {
+    assert(s != 0);
     Tet * tet = s->tet(tidx);
-    // TODO: error stuff
-    if (tet == 0) return;
+    assert(tet != 0);
     
     // Apply the change.
     uint l_sidx = tet->compdef()->specG2L(sidx);
-    if (l_sidx == 0xFFFF) return;
+    if (l_sidx == ssim::LIDX_UNDEFINED) return;
     tet->pools()[l_sidx] = n;
     
     // Send the list of kprocs that need to be updated to the schedule.
@@ -291,8 +295,7 @@ bool siGetTetClamped(State * s, uint tidx, uint sidx)
     uint lsidx = tet->compdef()->specG2L(sidx);
     if (lsidx == ssim::LIDX_UNDEFINED) return false;
     
-    if (tet->clamped(lsidx) == false) return false;
-    return true;
+    return tet->clamped(lsidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -407,69 +410,124 @@ void siGetTetDiffActive(State * s, uint tidx, uint didx, bool act)
 
 double siGetTriArea(State * s, uint tidx)
 {
+    assert(s != 0);
+    Tri * tri = s->tri(tidx);
+    assert(tri != 0);
+    return tri->area();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetTriArea(State * s, uint tidx, double area)
 {
-    
+    // Will probably never be implemented. On the other hand, might be
+    // a (very) cheap way of implementing dynamic morphology (as in 
+    // structural plasticity).
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint siGetTriCount(State * s, uint tidx, uint sidx)
 {
+    assert(s != 0);
+    Tri * tri = s->tri(tidx);
+    assert(tri != 0);
     
+    uint l_sidx = tri->patchdef()->specG2L(sidx);
+    if (l_sidx == ssim::LIDX_UNDEFINED) return 0;
+    return tri->pools()[l_sidx];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetTriCount(State * s, uint tidx, uint sidx, uint n)
 {
+    assert(s != 0);
+    Tri * tri = s->tri(tidx);
+    assert(tri != 0);
     
+    // Apply the change.
+    uint lsidx = tri->patchdef()->specG2L(sidx);
+    if (lsidx == ssim::LIDX_UNDEFINED) return;
+    tri->pools()[lsidx] = n;
+    
+    // Send the list of kprocs that need to be updated to the schedule.
+    s->sched()->updateSpec(tri, lsidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool siGetTriClamped(State * s, uint tidx, uint sidx)
 {
+    assert(s != 0);
+    Tri * tri = s->tri(tidx);
+    assert(tri != 0);
     
+    uint lsidx = tri->patchdef()->specG2L(sidx);
+    if (lsidx == ssim::LIDX_UNDEFINED) return false;
+    
+    return tri->clamped(lsidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetTriClamped(State * s, uint tidx, uint sidx, bool buf)
 {
+    assert(s != 0);
+    Tri * tri = s->tri(tidx);
+    assert(tri != 0);
     
+    uint lsidx = tri->patchdef()->specG2L(sidx);
+    if (lsidx == ssim::LIDX_UNDEFINED) return;
+    
+    tri->setClamped(lsidx, buf);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double siGetTriSReacK(State * s, uint tidx, uint ridx)
 {
-    
+    // Currently not implemented.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetTriSReacK(State * s, uint tidx, uint ridx, double kf)
 {
-    
+    // Currently not implemented.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool siGetTriSReacActive(State * s, uint tidx, uint ridx)
 {
+    assert(s != 0);
+    Tri * tri = s->tri(tidx);
+    assert(tri != 0);
     
+    uint lridx = tri->patchdef()->sreacG2L(ridx);
+    if (lridx == ssim::LIDX_UNDEFINED) return false;
+    
+    if (tri->sreac(lridx)->inactive() == true) return false;
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetTriSReacActive(State * s, uint tidx, uint ridx, bool act)
 {
+    assert(s != 0);
+    Tri * tri = s->tri(tidx);
+    assert(tri != 0);
     
+    uint lridx = tri->patchdef()->sreacG2L(ridx);
+    if (lridx == ssim::LIDX_UNDEFINED) return;
+    
+    tri->sreac(lridx)->setActive(act);
+    
+    SchedIDXVec updvec;
+    updvec.push_back(tri->sreac(lridx)->schedIDX());
+    s->sched()->update(updvec);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
