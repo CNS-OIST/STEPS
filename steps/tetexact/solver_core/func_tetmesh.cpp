@@ -31,6 +31,7 @@
 
 // STEPS headers.
 #include <steps/common.h>
+#include <steps/math/constants.hpp>
 #include <steps/sim/shared/compdef.hpp>
 #include <steps/sim/shared/patchdef.hpp>
 #include <steps/sim/swiginf/func_tetmesh.hpp>
@@ -41,6 +42,7 @@
 #include <steps/tetexact/solver_core/tet.hpp>
 #include <steps/tetexact/solver_core/tri.hpp>
 
+NAMESPACE_ALIAS(steps::math, smath);
 NAMESPACE_ALIAS(steps::sim, ssim);
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -182,6 +184,7 @@ double siGetTetVol(State * s, uint tidx)
 
 void siSetTetVol(State * s, uint tidx, double vol)
 {
+    // Will probably never be implemented.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -217,93 +220,193 @@ void siSetTetCount(State * s, uint tidx, uint sidx, uint n)
 
 double siGetTetMass(State * s, uint tidx, uint sidx)
 {
-    return 0.0;
+    double count = static_cast<double>(siGetTetCount(s, tidx, sidx));
+    return count / smath::AVOGADRO;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetTetMass(State * s, uint tidx, uint sidx, double m)
 {
+    assert(s != 0);
+    assert(m >= 0.0);
+    
+    double m2 = m * smath::AVOGADRO;
+    double m_int = std::floor(m2);
+    double m_frc = m2 - m_int;
+    uint c = static_cast<uint>(m_int);
+    if (m_frc > 0.0)
+    {
+        double rand01 = s->rng()->getUnfIE();
+        if (rand01 < m_frc) c++;
+    }
+    
+    siSetTetCount(s, tidx, sidx, c);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double siGetTetConc(State * s, uint tidx, uint sidx)
 {
-    return 0.0;
+    assert(s != 0);
+    Tet * tet = s->tet(tidx);
+    assert(tet != 0);
+    
+    double count = static_cast<double>(siGetTetCount(s, tidx, sidx));
+    double vol = tet->vol();
+    return count / (1.0e3 * vol * smath::AVOGADRO); 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetTetConc(State * s, uint tidx, uint sidx, double c)
 {
+    assert(s != 0);
+    assert(c >= 0.0);
+
+    Tet * tet = s->tet(tidx);
+    assert(tet != 0);    
+    
+    double c2 = c * (1.0e3 * tet->vol() * smath::AVOGADRO);
+    double c_int = std::floor(c2);
+    double c_frc = c2 - c_int;
+    uint count = static_cast<uint>(c_int);
+    if (c_frc > 0.0)
+    {
+        double rand01 = s->rng()->getUnfIE();
+        if (rand01 < c_frc) count++;
+    }
+    
+    siSetTetCount(s, tidx, sidx, count);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool siGetTetClamped(State * s, uint tidx, uint sidx)
 {
+    assert(s != 0);
+    Tet * tet = s->tet(tidx);
+    assert(tet != 0);
+    
+    uint lsidx = tet->compdef()->specG2L(sidx);
+    if (lsidx == ssim::LIDX_UNDEFINED) return false;
+    
+    if (tet->clamped(lsidx) == false) return false;
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetTetClamped(State * s, uint tidx, uint sidx, bool buf)
 {
+    assert(s != 0);
+    Tet * tet = s->tet(tidx);
+    assert(tet != 0);
+    
+    uint lsidx = tet->compdef()->specG2L(sidx);
+    if (lsidx == ssim::LIDX_UNDEFINED) return;
+    
+    tet->setClamped(lsidx, buf);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double siGetTetReacK(State * s, uint tidx, uint ridx)
 {
+    // Currently not implemented.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetTetReacK(State * s, uint tidx, uint ridx, double kf)
 {
+    // Currently not implemented.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool siGetTetReacActive(State * s, uint tidx, uint ridx)
 {
+    assert(s != 0);
+    Tet * tet = s->tet(tidx);
+    assert(tet != 0);
+    
+    uint lridx = tet->compdef()->reacG2L(ridx);
+    if (lridx == ssim::LIDX_UNDEFINED) return false;
+    
+    if (tet->reac(lridx)->inactive() == true) return false;
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetTetReacActive(State * s, uint tidx, uint ridx, bool act)
 {
+    assert(s != 0);
+    Tet * tet = s->tet(tidx);
+    assert(tet != 0);
+    
+    uint lridx = tet->compdef()->reacG2L(ridx);
+    if (lridx == ssim::LIDX_UNDEFINED) return;
+    
+    tet->reac(lridx)->setActive(act);
+    
+    SchedIDXVec updvec;
+    updvec.push_back(tet->reac(lridx)->schedIDX());
+    s->sched()->update(updvec);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double siGetTetDiffD(State * s, uint tidx, uint didx)
 {
+    // Currently not implemented.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetTetDiffD(State * s, uint tidx, uint didx)
 {
+    // Currently not implemented.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool siGetTetDiffActive(State * s, uint tidx, uint didx)
 {
+    assert(s != 0);
+    Tet * tet = s->tet(tidx);
+    assert(tet != 0);
+    
+    uint ldidx = tet->compdef()->diffG2L(didx);
+    if (ldidx == ssim::LIDX_UNDEFINED) return false;
+    
+    if (tet->diff(ldidx)->inactive() == true) return false;
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siGetTetDiffActive(State * s, uint tidx, uint didx, bool act)
 {
+    assert(s != 0);
+    Tet * tet = s->tet(tidx);
+    assert(tet != 0);
+    
+    uint ldidx = tet->compdef()->diffG2L(didx);
+    if (ldidx == ssim::LIDX_UNDEFINED) return;
+    
+    tet->diff(ldidx)->setActive(act);
+    
+    SchedIDXVec updvec;
+    updvec.push_back(tet->diff(ldidx)->schedIDX());
+    s->sched()->update(updvec);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double siGetTriArea(State * s, uint tidx)
 {
-    
 }
 
 ////////////////////////////////////////////////////////////////////////////////
