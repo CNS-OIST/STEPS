@@ -564,13 +564,39 @@ void siSetCompConc(State * s, uint cidx, uint sidx, double c)
 
 bool siGetCompClamped(State * s, uint cidx, uint sidx)
 {
-    return false;
+    assert(s != 0);
+    assert(cidx < s->countComps());
+    Comp * comp = s->comp(cidx);
+    assert(comp != 0);
+    
+    uint lsidx = comp->def()->specG2L(sidx);
+    if (lsidx == ssim::LIDX_UNDEFINED) return false;
+    
+    TetPVecCI t_end = comp->endTet();
+    for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
+    {
+        if ((*t)->clamped(lsidx) == false) return false;
+    }
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetCompClamped(State * s, uint cidx, uint sidx, bool buf)
 {
+    assert(s != 0);
+    assert(cidx < s->countComps());
+    Comp * comp = s->comp(cidx);
+    assert(comp != 0);
+    
+    uint lsidx = comp->def()->specG2L(sidx);
+    if (lsidx == ssim::LIDX_UNDEFINED) return;
+    
+    TetPVecCI t_end = comp->endTet();
+    for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
+    {
+        (*t)->setClamped(lsidx, buf);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -715,27 +741,54 @@ void siSetPatchCount(State * s, uint pidx, uint sidx, uint n)
 
 double siGetPatchMass(State * s, uint pidx, uint sidx)
 {
-    
+    // Currently not implemented.
+    return 0.0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetPatchMass(State * s, uint pidx, uint sidx, double m)
 {
+    // Currently not implemented.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool siGetPatchClamped(State * s, uint pidx, uint sidx)
 {
+    assert(s != 0);
+    assert(pidx < s->countPatches());
+    Patch * patch = s->patch(pidx);
+    assert(patch != 0);
     
+    uint lsidx = patch->def()->specG2L(sidx);
+    if (lsidx == ssim::LIDX_UNDEFINED) return false;
+    
+    TriPVecCI t_end = patch->endTri();
+    for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
+    {
+        if ((*t)->clamped(lsidx) == false) return false;
+    }
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siSetPatchClamped(State * s, uint pidx, uint sidx, bool buf)
 {
+    assert(s != 0);
+    assert(pidx < s->countPatches());
+    Patch * patch = s->patch(pidx);
+    assert(patch != 0);
     
+    uint lsidx = patch->def()->specG2L(sidx);
+    if (lsidx == ssim::LIDX_UNDEFINED) return;
+    
+    TriPVecCI t_end = patch->endTri();
+    for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
+    {
+        (*t)->setClamped(lsidx, buf);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -170,6 +170,14 @@ void Tet::reset(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void Tet::setClamped(uint lidx, bool clamp)
+{
+    if (clamp == true) pPoolFlags[lidx] |= CLAMPED;
+    else pPoolFlags[lidx] &= ~CLAMPED;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 Diff * Tet::diff(uint lidx) const
 {
     assert(lidx < compdef()->countDiffs());

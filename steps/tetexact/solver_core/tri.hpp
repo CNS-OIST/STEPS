@@ -120,6 +120,12 @@ public:
     inline uint * pools(void) const
     { return pPoolCount; }
     
+    static const uint CLAMPED = 1;
+        
+    inline bool clamped(uint lidx) const
+    { return pPoolFlags[lidx] & CLAMPED; }
+    void setClamped(uint lidx, bool clamp);
+    
     ///inline uint poolCount(uint lidx) const
     ///{ return pPoolCount[lidx]; }
     ///inline void setPoolCount(uint lidx, uint num)

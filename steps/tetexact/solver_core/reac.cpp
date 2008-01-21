@@ -205,9 +205,11 @@ SchedIDXVec const & Reac::apply(State * s)
     uint nspecs = cdef->countSpecs();
     for (uint i = 0; i < nspecs; ++i)
     {
+        if (pTet->clamped(i) == true) continue;
         int j = upd_vec[i];
         if (j == 0) continue;
-        local[i] += j;
+        int nc = static_cast<int>(local[i]) + j;
+        local[i] = static_cast<uint>(nc);
     }
     return pUpdVec;
 }

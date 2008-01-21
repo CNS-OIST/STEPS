@@ -127,6 +127,14 @@ void Tri::reset(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void Tri::setClamped(uint lidx, bool clamp)
+{
+    if (clamp == true) pPoolFlags[lidx] |= CLAMPED;
+    else pPoolFlags[lidx] &= ~CLAMPED;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 SReac * Tri::sreac(uint lidx) const
 {
     assert(lidx < patchdef()->countSReacs());

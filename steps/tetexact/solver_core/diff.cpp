@@ -240,38 +240,57 @@ SchedIDXVec const & Diff::apply(State * s)
     uint lidx = cdef->specG2L(gidx);
     
     // Apply local change.
-    uint * local = pTet->pools() + lidx;
-    assert(*local > 0);
-    *local -= 1;
+    if (pTet->clamped(lidx) == false)
+    {
+        uint * local = pTet->pools() + lidx;
+        assert(*local > 0);
+        *local -= 1;
+    }
     
     // Apply change in next voxel: select a direction.
     double sel = s->rng()->getUnfEE();
     if (sel < pCDFSelector[0])
     {
         // Direction 1.
-        uint * next = pTet->nextTet(0)->pools() + lidx;
-        *next += 1;
+        Tet * nexttet = pTet->nextTet(0);
+        if (nexttet->clamped(lidx) == false)
+        {
+            uint * next = nexttet->pools() + lidx;
+            *next += 1;
+        }
         return pUpdVec[0];
     }
     else if (sel < pCDFSelector[1])
     {
         // Direction 2.
-        uint * next = pTet->nextTet(1)->pools() + lidx;
-        *next += 1;
+        Tet * nexttet = pTet->nextTet(1);
+        if (nexttet->clamped(lidx) == false)
+        {
+            uint * next = nexttet->pools() + lidx;
+            *next += 1;
+        }
         return pUpdVec[1];
     }
     else if (sel < pCDFSelector[2])
     {
         // Direction 3.
-        uint * next = pTet->nextTet(2)->pools() + lidx;
-        *next += 1;
+        Tet * nexttet = pTet->nextTet(2);
+        if (nexttet->clamped(lidx) == false)
+        {
+            uint * next = nexttet->pools() + lidx;
+            *next += 1;
+        }
         return pUpdVec[2];
     }
     else 
     {
         // Direction 4.
-        uint * next = pTet->nextTet(3)->pools() + lidx;
-        *next += 1;
+        Tet * nexttet = pTet->nextTet(3);
+        if (nexttet->clamped(lidx) == false)
+        {
+            uint * next = nexttet->pools() + lidx;
+            *next += 1;
+        }
         return pUpdVec[3];
     }
     

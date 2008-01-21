@@ -137,14 +137,11 @@ public:
     inline uint * pools(void) const
     { return pPoolCount; }
     
-    ///inline uint poolCount(uint lidx) const
-    ///{ return pPoolCount[lidx]; }
-    ///inline void setPoolCount(uint lidx, uint num)
-    ///{ pPoolCount[lidx] = num; }
-    ///inline void incPoolCount(uint lidx, int count) const
-    ///{ pPoolCount[lidx] += count; }
-    ///inline uint poolFlags(uint lidx) const
-    ///{ return pPoolFlags[lidx]; }
+    static const uint CLAMPED = 1;
+    
+    inline bool clamped(uint lidx) const
+    { return pPoolFlags[lidx] & CLAMPED; }
+    void setClamped(uint lidx, bool clamp);
 
     ////////////////////////////////////////////////////////////////////////
 

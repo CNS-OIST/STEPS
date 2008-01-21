@@ -383,6 +383,7 @@ SchedIDXVec const & SReac::apply(State * s)
     uint nspecs_s = pdef->countSpecs();
     for (uint s = 0; s < nspecs_s; ++s)
     {
+        if (tri()->clamped(s) == true) continue;
         int upd = upd_s_vec[s];
         if (upd == 0) continue;
         int nc = static_cast<int>(cnt_s_vec[s]) + upd;
@@ -399,6 +400,7 @@ SchedIDXVec const & SReac::apply(State * s)
         uint nspecs_i = pdef->countSpecs_I();
         for (uint s = 0; s < nspecs_i; ++s)
         {
+            if (itet->clamped(s) == true) continue;
             int upd = upd_i_vec[s];
             if (upd == 0) continue;
             int nc = static_cast<int>(cnt_i_vec[s]) + upd;
@@ -416,6 +418,7 @@ SchedIDXVec const & SReac::apply(State * s)
         uint nspecs_o = pdef->countSpecs_O();
         for (uint s = 0; s < nspecs_o; ++s)
         {
+            if (otet->clamped(s) == true) continue;
             int upd = upd_o_vec[s];
             if (upd == 0) continue;
             int nc = static_cast<int>(cnt_o_vec[s]) + upd;
