@@ -38,9 +38,13 @@
 #include <steps/common.h>
 #include <steps/rng/rng.hpp>
 #include <steps/sim/shared/compdef.hpp>
+#include <steps/sim/shared/patchdef.hpp>
 #include <steps/sim/shared/statedef.hpp>
+#include <steps/tetexact/solver_core/comp.hpp>
+#include <steps/tetexact/solver_core/patch.hpp>
 #include <steps/tetexact/solver_core/sched.hpp>
 #include <steps/tetexact/solver_core/tet.hpp>
+#include <steps/tetexact/solver_core/tri.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -61,7 +65,7 @@ public:
     
     /// Return the state definition.
     ///
-    inline StateDef * def(void) const
+    inline steps::sim::StateDef * def(void) const
     { return pStateDef; }
 
     inline Sched * sched(void) const
@@ -99,9 +103,21 @@ public:
     
     ////////////////////////////////////////////////////////////////////////
     
+    uint addComp(steps::sim::CompDef * cdef);
+    
+    inline uint countComps(void) const
+    { return pComps.size(); }
+    
+    Comp * comp(uint idx) const;
+    
+    inline CompPVecCI bgnComp(void) const
+    { return pComps.begin(); }
+    inline CompPVecCI endComp(void) const
+    { return pComps.end(); }
+    
     uint addTet
     (
-        CompDef * cdef, double vol, 
+        Comp * comp, double vol, 
         double a1, double a2, double a3, double a4,
         double d1, double d2, double d3, double d4
     );
@@ -111,13 +127,32 @@ public:
     
     ////////////////////////////////////////////////////////////////////////
     
+    uint addPatch(steps::sim::PatchDef * pdef);
+    
+    inline uint countPatches(void) const
+    { return pPatches.size(); }
+    
+    Patch * patch(uint idx) const;
+    
+    inline PatchPVecCI bgnPatch(void) const
+    { return pPatches.begin(); }
+    inline PatchPVecCI endPatch(void) const
+    { return pPatches.end(); }
+    
+    uint addTri(Patch * patch, double area);
+    
+    inline Tri * tri(uint tidx) const
+    { return pTris[tidx]; }
+    
+    ////////////////////////////////////////////////////////////////////////
+    
 private:
     
     void executeStep(KProc * kp, double dt);
     
     ////////////////////////////////////////////////////////////////////////
     
-    StateDef *                  pStateDef;
+    steps::sim::StateDef *      pStateDef;
     
     steps::rng::RNG *           pRNG;
     
@@ -156,7 +191,11 @@ private:
     // THE MESH ELEMENTS
     ////////////////////////////////////////////////////////////////////////
     
-    std::vector<Tet *>          pTets;
+    CompPVec                    pComps;
+    TetPVec                     pTets;
+    
+    PatchPVec                   pPatches;
+    TriPVec                     pTris;
     
     ////////////////////////////////////////////////////////////////////////
     

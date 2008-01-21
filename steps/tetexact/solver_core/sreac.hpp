@@ -21,34 +21,28 @@
 // $Id$
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef STEPS_TETEXACT_SOLVER_CORE_REAC_HPP
-#define STEPS_TETEXACT_SOLVER_CORE_REAC_HPP 1
+#ifndef STEPS_TETEXACT_SOLVER_CORE_SREAC_HPP
+#define STEPS_TETEXACT_SOLVER_CORE_SREAC_HPP 1
 
 // Autotools definitions.
 #ifdef HAVE_CONFIG_H
 #include <steps/config.h>
 #endif
 
-// Standard library & STL headers.
-#include <map>
-#include <string>
-#include <vector>
-
 // STEPS headers.
 #include <steps/common.h>
 #include <steps/math/constants.hpp>
-#include <steps/sim/shared/reacdef.hpp>
+#include <steps/sim/shared/sreacdef.hpp>
 #include <steps/tetexact/solver_core/kproc.hpp>
 #include <steps/tetexact/solver_core/sched.hpp>
 
 // Forward declarations.
 class State;
-class Tet;
 class Tri;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class Reac
+class SReac
 : public KProc
 {
 
@@ -58,13 +52,16 @@ public:
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
     
-    Reac(steps::sim::ReacDef * rdef, Tet * tet);
-    virtual ~Reac(void);
+    SReac(steps::sim::SReacDef * srdef, Tri * tri);
+    virtual ~SReac(void);
 
     ////////////////////////////////////////////////////////////////////////
     
-    inline steps::sim::ReacDef * def(void) const
-    { return pReacDef; }
+    inline steps::sim::SReacDef * def(void) const
+    { return pSReacDef; }
+    
+    inline Tri * tri(void) const
+    { return pTri; }
 
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
@@ -72,7 +69,7 @@ public:
     
     virtual void setupDeps(void);
     virtual bool depSpecTet(uint gidx, Tet * tet);
-    virtual bool depSpecTri(uint gidx, Tri * tri);
+    virtual bool depSpecTri(uint gidx, Tri * triangle);
     virtual void reset(void);
     virtual double rate(void) const;
     virtual SchedIDXVec const & apply(State * s);
@@ -83,19 +80,20 @@ private:
 
     ////////////////////////////////////////////////////////////////////////
     
-    steps::sim::ReacDef *       pReacDef;
-    Tet *                       pTet;
+    steps::sim::SReacDef *      pSReacDef;
+    Tri *                       pTri;
     SchedIDXVec                 pUpdVec;
+    
     /// Properly scaled reaction constant.
     double                      pCcst;
-    
-    ////////////////////////////////////////////////////////////////////////
     
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#endif
-// STEPS_TETEXACT_SOLVER_CORE_REAC_HPP
+#endif 
+// STEPS_TETEXACT_SOLVER_CORE_SREAC_HPP
+
+////////////////////////////////////////////////////////////////////////////////
 
 // END

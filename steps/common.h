@@ -57,6 +57,7 @@ STEPS_EXTERN "C" {
 #define END_NAMESPACE(X) }
 #define NAMESPACE_ALIAS(X,Y) namespace Y = X
 #define USING(X,Y) using X::Y
+#define USING_NAMESPACE(X) using namespace X
 #endif 
 /* __cplusplus */
 

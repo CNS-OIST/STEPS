@@ -442,6 +442,49 @@ class FuncCore(object):
         return compname
     
     
+    def _patch(self, patch):
+        """Resolve a user-specified reference to a patch into its 
+        global index.
+        
+        This global index can be used for communicating with the solver 
+        core. The method should not typically be called by users.
+        
+        However, because it's almost always called to work on a 
+        user-specified value, it will still raise an ArgumentError 
+        rather than a ProgramError when the patch cannot be found.
+        
+        Arguments:
+            spec
+                A reference to the patch: the global index or its name.
+        
+        RETURNS:
+            The global index of the patch.
+        
+        RAISES:
+            steps.error.ArgumentError
+                The patch cannot be resolved.
+        """
+        if isinstance(patch, basestring):
+            patch = self._lut_patches[patch]
+        if patch == None:
+            raise serr.ArgumentError, 'Cannot find patch.'
+        return patch
+        
+    
+    def _patchName(self, patch_gidx):
+        """Return the name of some patch, given its global index.
+        
+        RAISES:
+            steps.error.ProgramError
+                When the global index does not exist.
+        """
+        patchname = self._lut_patchnames[patch_gidx]
+        if patchname == None:
+            raise serr.ProgramError, \
+                'Cannot find patch with gidx %d.' % patch_gidx
+        return patchname
+    
+    
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
     
     
@@ -642,9 +685,15 @@ class FuncCore(object):
         """
         self._siBeginPatchDef(self._state)
         for p in geom.getAllPatches():
-            # First, declare the compartment itself.
+            # First, declare the patch itself.
+            c_i_idx = 0xFFFF;
+            if p.icomp is not None:
+                c_i_idx = _comp(p.icomp.id)
+            c_o_idx = 0xFFFF;
+            if p.ocomp is not None:
+                c_o_idx = _comp(p.ocomp.id)
             pid = p.id
-            pidx = self._siNewPatch(self._state, pid, p.vol)
+            pidx = self._siNewPatch(self._state, pid, p.area, c_i_idx, c_o_idx)
             if self._lut_patchnames.has_key(pidx):
                 raise serr.SolverCoreError, \
                     'When adding patch \'%s\', solver ' + \
@@ -1552,8 +1601,9 @@ class FuncTetmesh(FuncCore):
         self._siBeginConnectDef = self._rsf('siBeginConnectDef')
         self._siEndConnectDef = self._rsf('siEndConnectDef')
         self._siConnectTetTet = self._rsf('siConnectTetTet')
-        self._siConnectTetTriInside = self._rsf('siConnectTetTriInside')
-        self._siConnectTetTriOutside = self._rsf('siConnectTetTriOutside')
+        self._siConnectTetTri = self._rsf('siConnectTetTri')
+        self._siConnectTetTriInner = self._rsf('siConnectTriTetInner')
+        self._siConnectTetTriOuter = self._rsf('siConnectTriTetOuter')
         self._siGetTetVol = self._rsf('siGetTetVol')
         self._siSetTetVol = self._rsf('siSetTetVol')
         self._siGetTetCount = self._rsf('siGetTetCount')
@@ -1632,20 +1682,33 @@ class FuncTetmesh(FuncCore):
             i2 = t.ntet2idx
             i3 = t.ntet3idx
             if i0 >= 0:
-                self._siConnectTetTet(self._state, 0, t.idx, t.ntet0idx)
+                self._siConnectTetTet(self._state, 0, t.idx, i0)
             if i1 >= 0:
-                self._siConnectTetTet(self._state, 1, t.idx, t.ntet1idx)
+                self._siConnectTetTet(self._state, 1, t.idx, i1)
             if i2 >= 0:
-                self._siConnectTetTet(self._state, 2, t.idx, t.ntet2idx)
+                self._siConnectTetTet(self._state, 2, t.idx, i2)
             if i3 >= 0:
-                self._siConnectTetTet(self._state, 3, t.idx, t.ntet3idx)
+                self._siConnectTetTet(self._state, 3, t.idx, i3)
+            i0 = t.ntri0idx
+            i1 = t.ntri1idx
+            i2 = t.ntri2idx
+            i3 = t.ntri3idx
+            if i0 >= 0:
+                self._siConnectTetTri(self._state, 0, t.idx, i0)
+            if i1 >= 0:
+                self._siConnectTetTri(self._state, 1, t.idx, i1)
+            if i2 >= 0:
+                self._siConnectTetTri(self._state, 2, t.idx, i2)
+            if i3 >= 0:
+                self._siConnectTetTri(self._state, 3, t.idx, i3)
+                
         for t in geom.tris:
             ii = t.itetidx
             io = t.otetidx
             if ii >= 0:
-                self._siConnectTetTriInside(self._state, t.idx, ii)
+                self._siConnectTriTetInner(self._state, t.idx, ii)
             if io >= 0:
-                self._siConnectTetTriOutside(self._state, t.idx, io)
+                self._siConnectTriTetOuter(self._state, t.idx, io)
         self._siEndConnectDef(self._state)
         
         # We're finished -- let the solver module hook it all up.

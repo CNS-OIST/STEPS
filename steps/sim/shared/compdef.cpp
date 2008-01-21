@@ -62,6 +62,7 @@ CompDef::CompDef(StateDef * sdef, gidxT idx, string const & name)
 , pDiff_G2L(0)
 , pDiff_L2G(0)
 , pDiff_DEP_Spec(0)
+, pDiff_LIG(0)
 {
     uint nspecs = statedef()->countSpecs();
     pSpec_G2L = new lidxT[nspecs];
@@ -88,6 +89,7 @@ CompDef::~CompDef(void)
     delete[] pDiff_G2L;
     delete[] pDiff_L2G;
     delete[] pDiff_DEP_Spec;
+    delete[] pDiff_LIG;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -139,6 +141,8 @@ void CompDef::setupLocalIndices(void)
         }
     }
     
+    uint ngspecs = statedef()->countSpecs();
+    
     if (pReac_N != 0)
     {
         pReac_L2G = new gidxT[pReac_N];
@@ -148,6 +152,28 @@ void CompDef::setupLocalIndices(void)
             lidxT lidx = reacG2L(i);
             if (lidx == LIDX_UNDEFINED) continue;
             pReac_L2G[lidx] = i;
+        }
+        
+        uint arrsize = countSpecs() * countReacs();
+        pReac_DEP_Spec = new depT[arrsize];
+        pReac_LHS_Spec = new uint[arrsize];
+        pReac_UPD_Spec = new int[arrsize];
+        for (uint ri = 0; ri < countReacs(); ++ri)
+        {
+            ReacDef * reacdef = reac(ri);
+            for (uint si = 0; si < ngspecs; ++si)
+            {
+                if (reacdef->req(si) == false) continue;
+                
+                // TODO: turn into error check?
+                lidxT sil = specG2L(si);
+                assert(sil != LIDX_UNDEFINED);
+                
+                uint aridx = _IDX_Reac_Spec(ri, sil);
+                pReac_DEP_Spec[aridx] = reacdef->dep(si);
+                pReac_LHS_Spec[aridx] = reacdef->lhs(si);
+                pReac_UPD_Spec[aridx] = reacdef->upd(si);
+            }
         }
     }
     
@@ -160,6 +186,26 @@ void CompDef::setupLocalIndices(void)
             lidxT lidx = diffG2L(i);
             if (lidx == LIDX_UNDEFINED) continue;
             pDiff_L2G[lidx] = i;
+        }
+        
+        uint arrsize = countSpecs() * countDiffs();
+        pDiff_DEP_Spec = new depT[arrsize];
+        pDiff_LIG = new lidxT[countDiffs()];
+        for (uint di = 0; di < countDiffs(); ++di)
+        {
+            DiffDef * diffdef = diff(di);
+            pDiff_LIG[di] = specG2L(diffdef->lig());
+            for (uint si = 0; si < ngspecs; ++si)
+            {
+                if (diffdef->req(si) == false) continue;
+                
+                // TODO: turn into error check?
+                lidxT sil = specG2L(si);
+                assert(sil != LIDX_UNDEFINED);
+                
+                uint aridx = _IDX_Diff_Spec(di, sil);
+                pDiff_DEP_Spec[aridx] = diffdef->dep(di);
+            }
         }
     }
 }
@@ -256,9 +302,58 @@ SpecDef * CompDef::spec(lidxT idx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
+depT CompDef::reac_dep(lidxT reac, lidxT spec) const
+{
+    return pReac_DEP_Spec[spec + (reac * countSpecs())];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint * CompDef::reac_lhs_bgn(lidxT reac) const
+{
+    return pReac_LHS_Spec + (reac * countSpecs());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint * CompDef::reac_lhs_end(lidxT reac) const
+{
+    return pReac_LHS_Spec + ((reac + 1) * countSpecs());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int * CompDef::reac_upd_bgn(lidxT reac) const
+{
+    return pReac_UPD_Spec + (reac * countSpecs());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int * CompDef::reac_upd_end(lidxT reac) const
+{
+    return pReac_UPD_Spec + ((reac + 1) * countSpecs());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 ReacDef * CompDef::reac(lidxT idx) const
 {
     return statedef()->reac(reacL2G(idx));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+depT CompDef::diff_dep(lidxT diff, lidxT spec) const
+{
+    return pDiff_DEP_Spec[spec + (diff * countSpecs())];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+lidxT CompDef::diff_lig(lidxT diff) const
+{
+    return pDiff_LIG[diff];
 }
 
 ////////////////////////////////////////////////////////////////////////////////

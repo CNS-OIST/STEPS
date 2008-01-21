@@ -18,11 +18,11 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA
 //
-// $Id:tet.hpp 64 2007-08-20 06:25:41Z stefan $
+// $Id$
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef STEPS_TETEXACT_SOLVER_CORE_TET_HPP
-#define STEPS_TETEXACT_SOLVER_CORE_TET_HPP 1
+#ifndef STEPS_TETEXACT_SOLVER_CORE_TRI_HPP
+#define STEPS_TETEXACT_SOLVER_CORE_TRI_HPP 1
 
 // Autotools definitions.
 #ifdef HAVE_CONFIG_H
@@ -35,55 +35,54 @@
 
 // STEPS headers.
 #include <steps/common.h>
-#include <steps/sim/shared/compdef.hpp>
+#include <steps/sim/shared/patchdef.hpp>
 #include <steps/tetexact/solver_core/kproc.hpp>
 
 // Forward declarations.
-class Diff;
-class Reac;
 class Sched;
+class SReac;
 class Tet;
 class Tri;
 
 // Auxiliary declarations.
-typedef Tet *                           TetP;
-typedef std::vector<TetP>               TetPVec;
-typedef TetPVec::iterator               TetPVecI;
-typedef TetPVec::const_iterator         TetPVecCI;
+typedef Tri *                           TriP;
+typedef std::vector<TriP>               TriPVec;
+typedef TriPVec::iterator               TriPVecI;
+typedef TriPVec::const_iterator         TriPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
  
-class Tet
+class Tri
 {
 
 public:
 
     ////////////////////////////////////////////////////////////////////////
-    // OBJECT CONSTRUCTION & DESTRUCTION
+    
+    /// Constructor.
+    Tri(steps::sim::PatchDef * pdef, double area);
+    
+    /// Destructor.
+    ~Tri(void);
+
+    ////////////////////////////////////////////////////////////////////////
+    // TRIANGLE SETUP
     ////////////////////////////////////////////////////////////////////////
     
-    Tet
-    (
-        steps::sim::CompDef * cdef, double vol, 
-        double a0, double a1, double a2, double a3, 
-        double d0, double d1, double d2, double d3
-    );
-    ~Tet(void);
-
-    /// Set pointer to the next neighbouring tetrahedron.
+    /// Set pointer to the 'inside' neighbouring tetrahedron.
     ///
-    void setNextTet(uint i, Tet * t);
+    void setInnerTet(Tet * t);
     
-    /// Set pointer to the next neighbouring triangle.
+    /// Set pointer to the 'outside' neighbouring tetrahedron.
     ///
-    void setNextTri(uint i, Tri * t);
+    void setOuterTet(Tet * t);
     
     /// Create the kinetic processes -- to be called when all tetrahedrons 
     /// and triangles have been fully declared and connected.
     ///
     void setupKProcs(Sched * s);
     
-    /// Once all the kinetic processes have been created in all tetraedrons
+    /// Once all the kinetic processes have been created in all tetrahedrons
     /// and triangles, their interdepencies are pre-computed so that they
     /// are immediately available during actual simulation. This is the
     /// final step of the initialization. (Except of course calling 
@@ -92,47 +91,31 @@ public:
     void setupDeps(void);
     
     ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: GENERAL
+    ////////////////////////////////////////////////////////////////////////
     
+    inline steps::sim::PatchDef * patchdef(void) const
+    { return pPatchDef; }
+    
+    ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: SHAPE & CONNECTIVITY
+    ////////////////////////////////////////////////////////////////////////
+    
+    inline double area(void) const
+    { return pArea; }
+    
+    inline Tet * iTet(void) const
+    { return pInnerTet; }
+    
+    inline Tet * oTet(void) const
+    { return pOuterTet; }
+    
+    ////////////////////////////////////////////////////////////////////////
+    // MAIN FUNCTIONALITY
+    ////////////////////////////////////////////////////////////////////////
+    
+    /// Set all pool flags and molecular populations to zero.
     void reset(void);
-    
-    ////////////////////////////////////////////////////////////////////////
-    // GENERAL INFORMATION
-    ////////////////////////////////////////////////////////////////////////
-    
-    inline steps::sim::CompDef * compdef(void) const
-    { return pCompDef; }
-    
-    ////////////////////////////////////////////////////////////////////////
-    // SHAPE & CONNECTIVITY INFORMATION.
-    ////////////////////////////////////////////////////////////////////////
-    
-    /// Get pointer to the next neighbouring tetrahedron.
-    ///
-    inline Tet * nextTet(uint i) const
-    { return pNextTet[i]; }
-    
-    /// Get pointer to the next neighbouring triangle.
-    ///
-    inline Tri * nextTri(uint i) const
-    { return pNextTri[i]; }
-    
-    /// Get the volume.
-    ///
-    inline double vol(void) const
-    { return pVol; }
-    
-    /// Get the area of a boundary triangle.
-    ///
-    inline double area(uint i) const
-    { return pAreas[i]; }
-    
-    /// Get the distance to the centroid of the next neighbouring 
-    /// tetrahedron. 
-    ///
-    inline double dist(uint i) const
-    { return pDist[i]; }
-    
-    ////////////////////////////////////////////////////////////////////////
     
     inline uint * pools(void) const
     { return pPoolCount; }
@@ -155,8 +138,7 @@ public:
     inline uint countKProcs(void) const
     { return pKProcs.size(); }
     
-    Diff * diff(uint lidx) const;
-    Reac * reac(uint lidx) const;
+    SReac * sreac(uint lidx) const;
     
     ////////////////////////////////////////////////////////////////////////
     
@@ -165,16 +147,13 @@ private:
     ////////////////////////////////////////////////////////////////////////
     
     /// Type of tetrahedron.
-    steps::sim::CompDef *       pCompDef;
+    steps::sim::PatchDef *      pPatchDef;
     
     /// Pointers to neighbouring tetrahedra.
-    Tet *                       pNextTet[4];
-    /// Pointers to neighbouring triangles.
-    Tri *                       pNextTri[4];
+    Tet *                       pInnerTet;
+    Tet *                       pOuterTet;
     
-    double                      pVol;
-    double                      pAreas[4];
-    double                      pDist[4];
+    double                      pArea;
     
     /// Numbers of molecules -- stored as machine word integers.
     uint *                      pPoolCount;
@@ -191,6 +170,6 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 #endif
-// STEPS_TETEXACT_SOLVER_CORE_TET_HPP
+// STEPS_TETEXACT_SOLVER_CORE_TRI_HPP
 
 // END

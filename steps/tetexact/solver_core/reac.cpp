@@ -35,15 +35,20 @@
 #include <steps/math/constants.hpp>
 #include <steps/sim/shared/compdef.hpp> 
 #include <steps/sim/shared/reacdef.hpp>
+#include <steps/sim/shared/types.hpp>
+#include <steps/tetexact/solver_core/kproc.hpp>
 #include <steps/tetexact/solver_core/reac.hpp>
+#include <steps/tetexact/solver_core/sched.hpp>
 #include <steps/tetexact/solver_core/state.hpp>
 #include <steps/tetexact/solver_core/tet.hpp>
+#include <steps/tetexact/solver_core/tri.hpp>
 
 NAMESPACE_ALIAS(steps::math, smath);
+NAMESPACE_ALIAS(steps::sim, ssim);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-inline double comp_ccst(double kcst, double vol, uint order)
+static inline double comp_ccst(double kcst, double vol, uint order)
 {
     double vscale = 1.0e3 * vol * smath::AVOGADRO;
     int o1 = static_cast<int>(order) - 1;
@@ -53,8 +58,9 @@ inline double comp_ccst(double kcst, double vol, uint order)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Reac::Reac(ReacDef * rdef, Tet * tet)
-: pReacDef(rdef)
+Reac::Reac(ssim::ReacDef * rdef, Tet * tet)
+: KProc()
+, pReacDef(rdef)
 , pTet(tet)
 , pUpdVec()
 , pCcst(0.0)
@@ -75,51 +81,40 @@ Reac::~Reac(void)
 
 void Reac::setupDeps(void)
 {
-    typedef std::vector<uint> uintVec;
-    typedef uintVec::const_iterator uintVecCI;
+    SchedIDXSet updset; 
+    ssim::gidxTVecCI sbgn = def()->bgnUpdColl();
+    ssim::gidxTVecCI send = def()->endUpdColl();
     
-    // Collect the global indices of all species that are updated by a 
-    // single occurence of this reaction.
-    CompDef * cdef = pTet->compdef();
-    uint l_ridx = cdef->reacG2L(def()->gidx());
-    int * lupds = cdef->reacSpecUpds(l_ridx);
-    uint nspecs = cdef->countSpecs();
-    uintVec upd;
-    for (uint i = 0; i < nspecs; ++i)
-    {
-        if (lupds[i] != 0) upd.push_back(cdef->specL2G(i));
-    }
-    uintVecCI upd_end = upd.end();
-    
-    // Search for dependencies among kinetic processes in local voxel.
+    // Search in local tetrahedron.
     KProcPVecCI kprocend = pTet->kprocEnd();
     for (KProcPVecCI k = pTet->kprocBegin(); k != kprocend; ++k)
     {
-        for (uintVecCI u = upd.begin(); u != upd_end; ++u)
+        for (ssim::gidxTVecCI s = sbgn; s != send; ++s)
         {
-            if ((*k)->depSpecTet(*u, pTet) == true) 
-                pUpdVec.push_back((*k)->schedIDX());
+            if ((*k)->depSpecTet(*s, pTet) == true) 
+                updset.insert((*k)->schedIDX());
         }
     }
     
-    // Search for dependencies among kprocs in neighbouring tetrahedrons.
-    // Strictly, this would currently never have to be the case...?
+    // Search in neighbouring triangles.
     for (uint i = 0; i < 4; ++i)
     {
-        // Fetch next tetrahedron, if it exists.
-        Tet * next = pTet->nextTet(i);
+        // Fetch next triangle, if it exists.
+        Tri * next = pTet->nextTri(i);
         if (next == 0) continue;
         
         kprocend = next->kprocEnd();
         for (KProcPVecCI k = next->kprocBegin(); k != kprocend; ++k)
         {
-            for (uintVecCI u = upd.begin(); u != upd_end; ++u)
+            for (ssim::gidxTVecCI s = sbgn; s != send; ++s)
             {
-                if ((*k)->depSpecTet(*u, pTet) == true) 
-                    pUpdVec.push_back((*k)->schedIDX());
+                if ((*k)->depSpecTet(*s, pTet) == true) 
+                    updset.insert((*k)->schedIDX());
             }
         }
     }
+    
+    schedIDXSet_To_Vec(updset, pUpdVec);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -127,7 +122,14 @@ void Reac::setupDeps(void)
 bool Reac::depSpecTet(uint gidx, Tet * tet)
 {
     if (pTet != tet) return false;
-    return def()->dependsOnSpec(gidx);
+    return def()->dep(gidx);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool Reac::depSpecTri(uint gidx, Tri * tri)
+{
+    return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -141,24 +143,24 @@ void Reac::reset(void)
 double Reac::rate(void) const
 {
     // Prefetch some variables.
-    CompDef * cdef = pTet->compdef();
+    ssim::CompDef * cdef = pTet->compdef();
     uint nspecs = cdef->countSpecs();
-    uint * deps = cdef->reacSpecDeps(cdef->reacG2L(def()->gidx()));
-    uint * cnts = pTet->pools();
+    uint * lhs_vec = cdef->reac_lhs_bgn(cdef->reacG2L(def()->gidx()));
+    uint * cnt_vec = pTet->pools();
     
     // Compute combinatorial part.
     double h_mu = 1.0;
     for (uint pool = 0; pool < nspecs; ++pool)
     {
-        uint dep = deps[pool];
-        if (dep == 0) continue;
-        uint cnt = cnts[pool];
-        if (dep > cnt) 
+        uint lhs = lhs_vec[pool];
+        if (lhs == 0) continue;
+        uint cnt = cnt_vec[pool];
+        if (lhs > cnt) 
         {
             h_mu = 0.0;
             break;
         }
-        switch (dep)
+        switch (lhs)
         {
             case 4:
             {
@@ -194,13 +196,13 @@ double Reac::rate(void) const
 SchedIDXVec const & Reac::apply(State * s)
 {
     uint * local = pTet->pools();
-    CompDef * cdef = pTet->compdef();
+    ssim::CompDef * cdef = pTet->compdef();
     uint l_ridx = cdef->reacG2L(def()->gidx());
-    int * upds = cdef->reacSpecUpds(l_ridx);
+    int * upd_vec = cdef->reac_upd_bgn(l_ridx);
     uint nspecs = cdef->countSpecs();
     for (uint i = 0; i < nspecs; ++i)
     {
-        int j = upds[i];
+        int j = upd_vec[i];
         if (j == 0) continue;
         local[i] += j;
     }

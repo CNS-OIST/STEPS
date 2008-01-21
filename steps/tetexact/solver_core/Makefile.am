@@ -37,28 +37,36 @@ AM_CPPFLAGS = -I$(top_srcdir)
 lib_LTLIBRARIES = libsteps_tetexact.la
 
 libsteps_tetexact_la_SOURCES = \
+    comp.cpp \
     diff.cpp \
     func_core.cpp \
     func_ssa.cpp \
     func_tetmesh.cpp \
     kproc.cpp \
+    patch.cpp \
     reac.cpp \
     sched.cpp \
+    sreac.cpp \
     state.cpp \
-    tet.cpp
+    tet.cpp \
+    tri.cpp
 
 libsteps_tetexact_la_LIBADD = \
     ../../sim/shared/libsimshared.la \
     ../../rng/libsteps_rng.la
 
 header_steps_tetexact_solver_core_HEADERS = \
+    comp.hpp \
     diff.hpp \
     doxygen.hpp \
     kproc.hpp \
+    patch.hpp \
     reac.hpp \
     sched.hpp \
+    sreac.hpp \
     state.hpp \
-    tet.hpp
+    tet.hpp \
+    tri.hpp
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 

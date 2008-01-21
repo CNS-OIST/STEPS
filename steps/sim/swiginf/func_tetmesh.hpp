@@ -61,8 +61,9 @@ uint siNewTri(State * s, uint pidx, double area);
 void siBeginConnectDef(State * s);
 void siEndConnectDef(State * s);
 void siConnectTetTet(State * s, uint side, uint tidx1, uint tidx2);
-void siConnectTetTriInside(State * s, uint side, uint tetidx, uint triidx);
-void siConnectTetTriOutside(State * s, uint side, uint tetidx, uint triidx);
+void siConnectTetTri(State * s, uint side, uint tetidx, uint triidx);
+void siConnectTriTetInner(State * s, uint triidx, uint tetidx);
+void siConnectTriTetOuter(State * s, uint triidx, uint tetidx);
 
 ////////////////////////////////////////////////////////////////////////////////
 // SOLVER STATE ACCESS: 

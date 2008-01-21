@@ -108,9 +108,17 @@ public:
     // DATA ACCESS: STOICHIOMETRY
     ////////////////////////////////////////////////////////////////////////
     
-    uint lhs(gidxT idx) const;    
+    uint lhs(gidxT idx) const;
+    depT dep(gidxT idx) const;
     uint rhs(gidxT idx) const;
-
+    int upd(gidxT idx) const;
+    bool req(gidxT idx) const;
+    
+    inline gidxTVecCI bgnUpdColl(void) const
+    { return pSpec_UPD_Coll.begin(); }
+    inline gidxTVecCI endUpdColl(void) const
+    { return pSpec_UPD_Coll.end(); }
+    
     ////////////////////////////////////////////////////////////////////////
     
     /// Check whether occurence of a reaction rule <EM>depends</EM> on 
@@ -159,6 +167,9 @@ private:
     /// Default (MACROscopic) reaction constant.
     double                      pKcst;
     
+    /// Tracks whether SReacDef::setupFinal has been called.
+    bool                        pFinalSetupDone;
+    
     ////////////////////////////////////////////////////////////////////////
     // DATA: STOICHIOMETRY
     ////////////////////////////////////////////////////////////////////////
@@ -167,6 +178,7 @@ private:
     uint *                      pSpec_LHS;
     uint *                      pSpec_RHS;
     int *                       pSpec_UPD;
+    gidxTVec                    pSpec_UPD_Coll;
 
     ////////////////////////////////////////////////////////////////////////
     

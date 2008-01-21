@@ -161,6 +161,12 @@ public:
     gidxT reacL2G(lidxT idx) const
     { return pReac_L2G[idx]; }
     
+    depT reac_dep(lidxT reac, lidxT spec) const;
+    uint * reac_lhs_bgn(lidxT reac) const;
+    uint * reac_lhs_end(lidxT reac) const;
+    int * reac_upd_bgn(lidxT reac) const;
+    int * reac_upd_end(lidxT reac) const;
+    
     /// Return a reaction definition (a pointer to an object of type 
     /// ReacDef) by its local index.
     ///
@@ -178,6 +184,9 @@ public:
     
     gidxT diffL2G(lidxT idx) const
     { return pDiff_L2G[idx]; }
+    
+    depT diff_dep(lidxT diff, lidxT spec) const;
+    lidxT diff_lig(lidxT diff) const;
     
     /// Return a diffusion definition (a pointer to an object of type 
     /// DiffDef) by its local index.
@@ -224,7 +233,12 @@ private:
     lidxT *                     pReac_G2L;
     /// Table to resolve reaction rule indices (local -> global).
     gidxT *                     pReac_L2G;
-    
+
+    inline uint _IDX_Reac_Spec(lidxT reac) const
+    { return countSpecs() * reac; }
+    inline uint _IDX_Reac_Spec(lidxT reac, lidxT spec) const
+    { return (countSpecs() * reac) + spec; }
+        
     depT *                      pReac_DEP_Spec;
     uint *                      pReac_LHS_Spec;
     int *                       pReac_UPD_Spec;
@@ -240,7 +254,13 @@ private:
     /// Table to resolve diffusion rule indices (local -> global).
     gidxT *                     pDiff_L2G;
     
+    inline uint _IDX_Diff_Spec(lidxT diff) const
+    { return countSpecs() * diff; }
+    inline uint _IDX_Diff_Spec(lidxT diff, lidxT spec) const
+    { return (countSpecs() * diff) + spec; }
+    
     depT *                      pDiff_DEP_Spec;
+    lidxT *                     pDiff_LIG;
     
     ////////////////////////////////////////////////////////////////////////
     

@@ -31,13 +31,14 @@
 
 // STEPS headers.
 #include <steps/common.h>
+#include <steps/sim/shared/diffdef.hpp>
 #include <steps/tetexact/solver_core/kproc.hpp>
 #include <steps/tetexact/solver_core/sched.hpp>
 
 // Forward declarations.
-class DiffDef;
 class State;
 class Tet;
+class Tri;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -49,12 +50,12 @@ public:
     
     ////////////////////////////////////////////////////////////////////////
 
-    Diff(DiffDef * ddef, Tet * tet);
+    Diff(steps::sim::DiffDef * ddef, Tet * tet);
     virtual ~Diff(void);
 
     ////////////////////////////////////////////////////////////////////////
     
-    inline DiffDef * def(void) const
+    inline steps::sim::DiffDef * def(void) const
     { return pDiffDef; }
         
     ////////////////////////////////////////////////////////////////////////
@@ -63,6 +64,7 @@ public:
     
     virtual void setupDeps(void);
     virtual bool depSpecTet(uint gidx, Tet * tet);
+    virtual bool depSpecTri(uint gidx, Tri * tri);
     virtual void reset(void);
     virtual double rate(void) const;
     virtual SchedIDXVec const & apply(State * s);
@@ -71,7 +73,7 @@ public:
     
 private:
 
-    DiffDef *                   pDiffDef;
+    steps::sim::DiffDef *       pDiffDef;
     Tet *                       pTet;
     SchedIDXVec                 pUpdVec[4];
     /// Properly scaled diffusivity constant.

@@ -41,6 +41,7 @@
 // Forward declarations.
 class State;
 class Tet;
+class Tri;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -87,6 +88,11 @@ public:
     /// in a given tetrahedron. False otherwise.
     ///
     virtual bool depSpecTet(uint gidx, Tet * tet) = 0;
+    
+    /// Returns true if the occurence of this kproc depends on the number
+    /// of molecules of some species in a given triangle. False otherwise.
+    ///
+    virtual bool depSpecTri(uint gidx, Tri * tri) = 0;
     
     /// Reset this Kproc.
     ///

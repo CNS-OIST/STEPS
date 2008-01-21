@@ -31,12 +31,17 @@
 
 // STEPS headers.
 #include <steps/common.h>
-#include <steps/sim/swiginf/func_ssa.hpp>
+#include <steps/sim/shared/compdef.hpp>
+#include <steps/sim/shared/patchdef.hpp>
+#include <steps/sim/swiginf/func_tetmesh.hpp>
 #include <steps/tetexact/solver_core/diff.hpp>
 #include <steps/tetexact/solver_core/reac.hpp>
 #include <steps/tetexact/solver_core/sched.hpp>
 #include <steps/tetexact/solver_core/state.hpp>
 #include <steps/tetexact/solver_core/tet.hpp>
+#include <steps/tetexact/solver_core/tri.hpp>
+
+NAMESPACE_ALIAS(steps::sim, ssim);
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -61,6 +66,12 @@ void siBeginTetDef(State * s)
 
 void siEndTetDef(State * s)
 {
+    assert(s != 0);
+    CompPVecCI c_end = s->endComp();
+    for (CompPVecCI c = s->bgnComp(); c != c_end; ++c)
+    {
+        (*c)->computeVol();
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -69,8 +80,39 @@ uint siNewTet(State * s, uint cidx, double vol,
     double a1, double a2, double a3, double a4,
     double d1, double d2, double d3, double d4)
 {
-    CompDef * cdef = s->def()->comp(cidx);
-    return s->addTet(cdef, vol, a1, a2, a3, a4, d1, d2, d3, d4);
+    assert(s != 0);
+    Comp * comp = s->comp(cidx);
+    assert(comp != 0);
+    return s->addTet(comp, vol, a1, a2, a3, a4, d1, d2, d3, d4);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void siBeginTriDef(State * s)
+{
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void siEndTriDef(State * s)
+{
+    assert(s != 0);
+    PatchPVecCI p_end = s->endPatch();
+    for (PatchPVecCI p = s->bgnPatch(); p != p_end; ++p)
+    {
+        (*p)->computeArea();
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint siNewTri(State * s, uint pidx, double area)
+{
+    assert(s != 0);
+    Patch * patch = s->patch(pidx);
+    assert(patch != 0);
+    assert(area >= 0.0);
+    return s->addTri(patch, area);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -96,21 +138,44 @@ void siConnectTetTet(State * s, uint side, uint tidx1, uint tidx2)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void siConnectTetTriInside(State * s, uint side, uint tetidx, uint triidx)
+void siConnectTetTri(State * s, uint side, uint tetidx, uint triidx)
 {
+    TetP tet = s->tet(tetidx);
+    assert(tet != 0);
+    TriP tri = s->tri(triidx);
+    assert(tri != 0);
+    tet->setNextTri(side, tri);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void siConnectTetTriOutside(State * s, uint side, uint tetidx, uint triidx)
+void siConnectTriTetInner(State * s, uint triidx, uint tetidx)
 {
+    TetP tet = s->tet(tetidx);
+    assert(tet != 0);
+    TriP tri = s->tri(triidx);
+    assert(tri != 0);
+    tri->setInnerTet(tet);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void siConnectTriTetOuter(State * s, uint triidx, uint tetidx)
+{
+    TetP tet = s->tet(tetidx);
+    assert(tet != 0);
+    TriP tri = s->tri(triidx);
+    assert(tri != 0);
+    tri->setOuterTet(tet);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double siGetTetVol(State * s, uint tidx)
 {
-    return 0.0;
+    TetP tet = s->tet(tidx);
+    assert(tet != 0);
+    return tet->vol();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -144,29 +209,8 @@ void siSetTetCount(State * s, uint tidx, uint sidx, uint n)
     if (l_sidx == 0xFFFF) return;
     tet->pools()[l_sidx] = n;
     
-    // Make updates to the schedule.
-    // DEBUG: 04-Sep-2007
-    CompUpd * cupd = tet->compdef()->updateSpec(l_sidx);
-    SchedIDXVec updvec;
-    
-    // Loop over diffusions.
-    std::vector<uint>::const_iterator diff_end = cupd->endLDiffs();
-    for (std::vector<uint>::const_iterator diff = cupd->beginLDiffs();
-        diff != diff_end; ++diff)
-    {
-        updvec.push_back(tet->diff(*diff)->schedIDX());
-    }
-    
-    // Loop over reactions.
-    std::vector<uint>::const_iterator reac_end = cupd->endLReacs();
-    for (std::vector<uint>::const_iterator reac = cupd->beginLReacs();
-        reac != reac_end; ++reac)
-    {
-        updvec.push_back(tet->reac(*reac)->schedIDX());
-    }
-    
     // Send the list of kprocs that need to be updated to the schedule.
-    s->sched()->update(updvec);
+    s->sched()->updateSpec(tet, l_sidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -253,6 +297,76 @@ bool siGetTetDiffActive(State * s, uint tidx, uint didx)
 
 void siGetTetDiffActive(State * s, uint tidx, uint didx, bool act)
 {
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double siGetTriArea(State * s, uint tidx)
+{
+    
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void siSetTriArea(State * s, uint tidx, double area)
+{
+    
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint siGetTriCount(State * s, uint tidx, uint sidx)
+{
+    
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void siSetTriCount(State * s, uint tidx, uint sidx, uint n)
+{
+    
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool siGetTriClamped(State * s, uint tidx, uint sidx)
+{
+    
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void siSetTriClamped(State * s, uint tidx, uint sidx, bool buf)
+{
+    
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double siGetTriSReacK(State * s, uint tidx, uint ridx)
+{
+    
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void siSetTriSReacK(State * s, uint tidx, uint ridx, double kf)
+{
+    
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool siGetTriSReacActive(State * s, uint tidx, uint ridx)
+{
+    
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void siSetTriSReacActive(State * s, uint tidx, uint ridx, bool act)
+{
+    
 }
 
 ////////////////////////////////////////////////////////////////////////////////

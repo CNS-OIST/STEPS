@@ -57,6 +57,14 @@ USING(std, vector);
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void schedIDXSet_To_Vec(SchedIDXSet const & s, SchedIDXVec & v)
+{
+    v.resize(s.size());
+    std::copy(s.begin(), s.end(), v.begin());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 /// Unary function that calls the array delete[] operator on pointers. Easy
 /// to use with STL/Boost (see steps::tools::DeletePointer).
 ///
@@ -373,6 +381,57 @@ void Sched::update(SchedIDXVec const & entries)
     {
         pA0 += toplevel[i];
     }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Sched::updateSpec(Tet * tet, uint spec_lidx)
+{
+    SchedIDXSet updset;
+    
+    // Loop over tet.
+    KProcPVecCI kproc_end = tet->kprocEnd();
+    for (KProcPVecCI k = tet->kprocBegin(); k != kproc_end; ++k)
+    {
+        updset.insert((*k)->schedIDX());
+    }
+    
+    // Loop over neighbouring triangles.
+    for (uint i = 0; i < 4; ++i)
+    {
+        Tri * tri = tet->nextTri(i);
+        if (tri == 0) continue;
+        kproc_end = tri->kprocEnd();
+        for (KProcPVecCI k = tri->kprocBegin(); k != kproc_end; ++k)
+        {
+            updset.insert((*k)->schedIDX());
+        }
+    }
+    
+    // Send the list of kprocs that need to be updated to the schedule.
+    if (updset.empty()) return;
+    SchedIDXVec updvec;
+    schedIDXSet_To_Vec(updset, updvec);
+    update(updvec);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Sched::updateSpec(Tri * tri, uint spec_lidx)
+{
+    SchedIDXSet updset;
+    
+    KProcPVecCI kproc_end = tri->kprocEnd();
+    for (KProcPVecCI k = tri->kprocBegin(); k != kproc_end; ++k)
+    {
+        updset.insert((*k)->schedIDX());
+    }
+    
+    // Send the list of kprocs that need to be updated to the schedule.
+    if (updset.empty()) return;
+    SchedIDXVec updvec;
+    schedIDXSet_To_Vec(updset, updvec);
+    update(updvec);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

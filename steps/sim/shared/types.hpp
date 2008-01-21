@@ -43,6 +43,10 @@ typedef std::vector<gidxT>              gidxTVec;
 typedef gidxTVec::iterator              gidxTVecI;
 typedef gidxTVec::const_iterator        gidxTVecCI;
 
+typedef std::vector<gidxT*>             gidxTPVec;
+typedef gidxTPVec::iterator             gidxTPVecI;
+typedef gidxTPVec::const_iterator       gidxTPVecCI;
+
 static const gidxT GIDX_UNDEFINED = 0xFFFF;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -53,20 +57,22 @@ typedef std::vector<lidxT>              lidxTVec;
 typedef lidxTVec::iterator              lidxTVecI;
 typedef lidxTVec::const_iterator        lidxTVecCI;
 
+typedef std::vector<lidxT*>             lidxTPVec;
+typedef lidxTPVec::iterator             lidxTPVecI;
+typedef lidxTPVec::const_iterator       lidxTPVecCI;
+
 static const lidxT LIDX_UNDEFINED = 0xFFFF;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-enum depT
-{
-    DEP_NONE   = 0,
-    DEP_STOICH = 1,
-    DEP_RATE   = 2
-};
-
+typedef int                             depT;
 typedef std::vector<depT>               depTVec;
 typedef depTVec::iterator               depTVecI;
 typedef depTVec::const_iterator         depTVecCI;
+
+static const depT DEP_NONE              = 0;
+static const depT DEP_STOICH            = 1;
+static const depT DEP_RATE              = 2;
 
 ////////////////////////////////////////////////////////////////////////////////
 

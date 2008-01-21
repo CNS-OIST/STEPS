@@ -31,6 +31,7 @@
 
 // Standard library & STL headers.
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -41,19 +42,26 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 // Forward declarations.
-
-// See: steps/sim/tetexact/kproc.hpp
 class KProc;
-// See: steps/sim/tetexact/state.hpp
 class State;
+class Tet;
+class Tri;
 
 // Auxiliary declarations.
-
 typedef uint                            SchedIDX;
-
+typedef std::set<SchedIDX>              SchedIDXSet;
+typedef SchedIDXSet::iterator           SchedIDXSetI;
+typedef SchedIDXSet::const_iterator     SchedIDXSetCI;
 typedef std::vector<SchedIDX>           SchedIDXVec;
 typedef SchedIDXVec::iterator           SchedIDXVecI;
 typedef SchedIDXVec::const_iterator     SchedIDXVecCI;
+
+////////////////////////////////////////////////////////////////////////////////
+
+/// Copies the contents of a set of SchedIDX entries into a vector.
+/// The contents of the vector are completely overridden.
+///
+extern void schedIDXSet_To_Vec(SchedIDXSet const & s, SchedIDXVec & v);
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -88,6 +96,17 @@ public:
     void recomp(void);
     
     void update(SchedIDXVec const & entries);
+    
+    /// Update the kproc's of a tet, after a species has been changed.
+    /// This also updates kproc's in surrounding triangles.
+    /// Currently doesn't care about the species.
+    void updateSpec(Tet * tet, uint spec_lidx);
+    
+    /// Update the kproc's of a triangle, after a species has been changed.
+    /// This does not need to update the kproc's of any neighbouring
+    /// tetrahedrons.
+    /// Currently doesn't care about the species.
+    void updateSpec(Tri * tri, uint spec_lidx);
 
 private:
 

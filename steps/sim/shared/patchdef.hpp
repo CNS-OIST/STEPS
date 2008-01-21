@@ -31,9 +31,12 @@
 
 // STL headers.
 #include <string>
+#include <vector>
 
 // STEPS headers.
 #include <steps/common.h>
+#include <steps/sim/shared/compdef.hpp>
+#include <steps/sim/shared/types.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -41,7 +44,6 @@ START_NAMESPACE(steps)
 START_NAMESPACE(sim)
 
 // Forward declarations.
-class CompDef;
 class PatchDef;
 class SpecDef;
 class SReacDef;
@@ -60,17 +62,12 @@ class PatchDef
 
 public:
 
-    /// Constructor.
-    ///
     PatchDef
     (
         StateDef * sdef, gidxT idx, 
         std::string const & name, 
         CompDef * inner, CompDef * outer
     );
-    
-    /// Destructor.
-    ///
     ~PatchDef(void);
     
     ////////////////////////////////////////////////////////////////////////
@@ -89,8 +86,18 @@ public:
     void addSReac(gidxT idx);
     
     /// Build a set of local indices for species and sreaction rules 
-    /// (called during setup, by StateDef::setupFinal()).
+    /// (called during setup, by StateDef::setupFinal()). Requires that
+    /// setupLocalIndices() has already been called for all CompDef's.
+    /// (Or at least for the CompDef objects that are connected to this
+    /// PatchDef.)
     ///
+    /// This method assumes that the inner and outer compartments have
+    /// already been set up properly. (TODO: add assertions.)
+    ///
+    /// \todo{
+    /// This method also performs consistency checks. Make sure any errors 
+    /// are properly reported.
+    /// }
     void setupLocalIndices(void);
     
     /// Create update objects for all species and sreaction rules.
@@ -105,72 +112,59 @@ public:
     // DATA ACCESS: GENERAL 
     ////////////////////////////////////////////////////////////////////////
     
-    StateDef * statedef(void) const
+    inline StateDef * statedef(void) const
     { return pStateDef; }
     
-    gidxT gidx(void) const
+    inline gidxT gidx(void) const
     { return pGIDX; }
     
-    std::string const & name(void) const
+    inline std::string const & name(void) const
     { return pName; }
     
     ////////////////////////////////////////////////////////////////////////
     
-    double area(void) const
+    inline double area(void) const
     { return pArea; }
     
-    void setArea(double const & area)
+    inline void setArea(double const & area)
     { pArea = area; }
     
     ////////////////////////////////////////////////////////////////////////
 
-    CompDef * icompdef(void) const
+    inline CompDef * icompdef(void) const
     { return pInner; }
     
-    CompDef * ocompdef(void) const
+    inline CompDef * ocompdef(void) const
     { return pOuter; }
     
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SPECIES
     ////////////////////////////////////////////////////////////////////////
     
-    uint countSpecs(void) const
-    { return pSpec_N; }
+    /// Return the number of species defined for this surface patch.
+    inline uint countSpecs(void) const
+    { return pSpec_N_S; }
+    /// Return the number of species defined for the inner compartment.
+    /// Should not be called before PatchDef::setupLocalIndices.
+    inline uint countSpecs_I(void) const
+    { return pSpec_N_I; }
+    /// Return the number of species defined for the outer compartment.
+    /// Should not be called before PatchDef::setupLocalIndices.
+    inline uint countSpecs_O(void) const
+    { return pSpec_N_O; }
     
-    lidxT specG2L(gidxT idx) const
+    inline lidxT specG2L(gidxT idx) const
     { return pSpec_G2L[idx]; }
     
-    gidxT specL2G(lidxT idx) const
+    inline gidxT specL2G(lidxT idx) const
     { return pSpec_L2G[idx]; }
-    
-    /// Auxiliary function: resolves a species gidx for the outer
-    /// compartment.
-    ///
-    /// \return The local index or steps::sim::shared::LIDX_UNDEFINED.
-    ///
-    lidxT specG2L_O(gidxT idx) const
-    {
-        if (ocompdef() == 0) return LIDX_UNDEFINED;
-        return ocompdef()->specG2L(idx);
-    }
-    
-    /// Auxiliary function: resolves a species lidx for the outer
-    /// compartment.
-    ///
-    /// \return The global index or steps::sim::shared::GIDX_UNDEFINED.
-    ///
-    gidxT specL2G_O(lidxT idx) const
-    {
-        if (ocompdef() == 0) return GIDX_UNDEFINED;
-        return ocompdef()->specL2G(idx);
-    }
     
     /// Auxiliary function: resolves a species gidx for the inner
     /// compartment.
     ///
     /// \return The local index or steps::sim::shared::LIDX_UNDEFINED.
     ///
-    lidxT specG2L_I(gidxT idx) const
+    inline lidxT specG2L_I(gidxT idx) const
     {
         if (icompdef() == 0) return LIDX_UNDEFINED;
         return icompdef()->specG2L(idx);
@@ -181,10 +175,32 @@ public:
     ///
     /// \return The local index or steps::sim::shared::GIDX_UNDEFINED.
     ///
-    gidxT specL2G_I(lidxT idx) const
+    inline gidxT specL2G_I(lidxT idx) const
     {
         if (icompdef() == 0) return GIDX_UNDEFINED;
         return icompdef()->specL2G(idx);
+    }
+    
+    /// Auxiliary function: resolves a species gidx for the outer
+    /// compartment.
+    ///
+    /// \return The local index or steps::sim::shared::LIDX_UNDEFINED.
+    ///
+    inline lidxT specG2L_O(gidxT idx) const
+    {
+        if (ocompdef() == 0) return LIDX_UNDEFINED;
+        return ocompdef()->specG2L(idx);
+    }
+    
+    /// Auxiliary function: resolves a species lidx for the outer
+    /// compartment.
+    ///
+    /// \return The global index or steps::sim::shared::GIDX_UNDEFINED.
+    ///
+    inline gidxT specL2G_O(lidxT idx) const
+    {
+        if (ocompdef() == 0) return GIDX_UNDEFINED;
+        return ocompdef()->specL2G(idx);
     }
     
     /// Return a species definition (a pointer to an object of type 
@@ -196,19 +212,49 @@ public:
     // DATA ACCESS: SURFACE REACTION RULES
     ////////////////////////////////////////////////////////////////////////
     
-    uint countSReacs(void) const
+    inline uint countSReacs(void) const
     { return pSReac_N; }
     
-    lidxT sreacG2L(gidxT idx) const
+    inline lidxT sreacG2L(gidxT idx) const
     { return pSReac_G2L[idx]; }
     
-    gidxT sreacL2G(lidxT idx) const
+    inline gidxT sreacL2G(lidxT idx) const
     { return pSReac_L2G[idx]; }
     
     /// Return a surface reaction definition (a pointer to an object of 
     /// type SReacDef) by its local index.
     ///
     SReacDef * sreac(lidxT idx) const;
+    
+    //@{
+    /// Warning: these methods perform no error checking!
+    ///
+    depT sreac_dep_I(lidxT sreac, lidxT spec) const;
+    depT sreac_dep_S(lidxT sreac, lidxT spec) const;
+    depT sreac_dep_O(lidxT sreac, lidxT spec) const;
+    //@}
+    
+    //@{
+    /// Warning: these methods perform no error checking!
+    ///
+    uint * sreac_lhs_I_bgn(lidxT sreac) const;
+    uint * sreac_lhs_I_end(lidxT sreac) const;
+    uint * sreac_lhs_S_bgn(lidxT sreac) const;
+    uint * sreac_lhs_S_end(lidxT sreac) const;
+    uint * sreac_lhs_O_bgn(lidxT sreac) const;
+    uint * sreac_lhs_O_end(lidxT sreac) const;
+    //@}
+    
+    //@{
+    /// Warning: these methods perform no error checking!
+    ///
+    int * sreac_upd_I_bgn(lidxT sreac) const;
+    int * sreac_upd_I_end(lidxT sreac) const;
+    int * sreac_upd_S_bgn(lidxT sreac) const;
+    int * sreac_upd_S_end(lidxT sreac) const;
+    int * sreac_upd_O_bgn(lidxT sreac) const;
+    int * sreac_upd_O_end(lidxT sreac) const;
+    //@}
     
     ////////////////////////////////////////////////////////////////////////
     
@@ -234,12 +280,19 @@ private:
     /// Pointer to outer compartment CompDef.
     CompDef *                   pOuter;
     
+    bool                        pLocalIndicesSetupDone;
+    
     ////////////////////////////////////////////////////////////////////////
     // DATA: SPECIES
     ////////////////////////////////////////////////////////////////////////
     
-    /// Number of species embedded in patch.
-    uint                        pSpec_N;
+    //@{
+    /// Number of species embedded in inner volume (_I), patch (_S) 
+    /// and outer volume (_O).
+    uint                        pSpec_N_I;
+    uint                        pSpec_N_S;
+    uint                        pSpec_N_O;
+    //@}
     /// Table to resolve species index (global -> local).
     lidxT *                     pSpec_G2L;
     /// Table to resolve species index (local -> global).
@@ -256,6 +309,19 @@ private:
     /// Table to resolve reaction rule indices (local -> global).
     gidxT *                     pSReac_L2G;
 
+    inline uint _IDX_SReac_I_Spec(lidxT sreac)
+    { return countSpecs_I() * sreac; }
+    inline uint _IDX_SReac_I_Spec(lidxT sreac, lidxT spec)
+    { return (countSpecs_I() * sreac) + spec; }
+    inline uint _IDX_SReac_S_Spec(lidxT sreac)
+    { return countSpecs() * sreac; }
+    inline uint _IDX_SReac_S_Spec(lidxT sreac, lidxT spec)
+    { return (countSpecs() * sreac) + spec; }
+    inline uint _IDX_SReac_O_Spec(lidxT sreac)
+    { return countSpecs_O() * sreac; }
+    inline uint _IDX_SReac_O_Spec(lidxT sreac, lidxT spec)
+    { return (countSpecs_O() * sreac) + spec; }
+    
     depT *                      pSReac_DEP_I_Spec;
     depT *                      pSReac_DEP_S_Spec;
     depT *                      pSReac_DEP_O_Spec;

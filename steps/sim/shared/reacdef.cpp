@@ -48,10 +48,12 @@ ReacDef::ReacDef(StateDef * sdef, gidxT idx, std::string const & name)
 , pName(name)
 , pOrder(0)
 , pKcst(0.0)
+, pFinalSetupDone(false)
 , pSpec_DEP(0)
 , pSpec_LHS(0)
 , pSpec_RHS(0)
 , pSpec_UPD(0)
+, pSpec_UPD_Coll()
 {
     uint nspecs = statedef()->countSpecs();
     if (nspecs == 0) return; // Would be weird, but okay.
@@ -79,6 +81,7 @@ ReacDef::~ReacDef(void)
 
 uint ReacDef::incLHS(gidxT idx)
 {
+    assert(pFinalSetupDone == false);
     assert(idx < statedef()->countSpecs());
     pSpec_LHS[idx] += 1;
     computeOrder();
@@ -89,6 +92,7 @@ uint ReacDef::incLHS(gidxT idx)
 
 void ReacDef::setLHS(gidxT idx, uint n)
 {
+    assert(pFinalSetupDone == false);
     assert(idx < statedef()->countSpecs());
     pSpec_LHS[idx] = n;
     computeOrder();
@@ -98,6 +102,7 @@ void ReacDef::setLHS(gidxT idx, uint n)
 
 uint ReacDef::incRHS(gidxT idx)
 {
+    assert(pFinalSetupDone == false);
     assert(idx < statedef()->countSpecs());
     pSpec_RHS[idx] += 1;
     return pSpec_RHS[idx];
@@ -107,6 +112,7 @@ uint ReacDef::incRHS(gidxT idx)
 
 void ReacDef::setRHS(gidxT idx, uint n)
 {
+    assert(pFinalSetupDone == false);
     assert(idx < statedef()->countSpecs());
     pSpec_RHS[idx] = n;
 }
@@ -115,14 +121,19 @@ void ReacDef::setRHS(gidxT idx, uint n)
 
 void ReacDef::setupFinal(void)
 {
+    assert(pFinalSetupDone == false);
+    
     computeOrder();
     uint nspecs = statedef()->countSpecs();
     for (uint i = 0; i < nspecs; ++i)
     {
         int lhs = static_cast<int>(pSpec_LHS[i]); 
-        pSpec_UPD[i] = static_cast<int>(pSpec_RHS[i]) - lhs;
-        if (lhs != 0) pSpec_DEP[i] = DEP_STOICH;
+        int aux = pSpec_UPD[i] = static_cast<int>(pSpec_RHS[i]) - lhs;
+        if (lhs != 0) pSpec_DEP[i] |= DEP_STOICH;
+        if (aux != 0) pSpec_UPD_Coll.push_back(i);
     }
+    
+    pFinalSetupDone = true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -135,12 +146,41 @@ uint ReacDef::lhs(gidxT idx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
+depT ReacDef::dep(gidxT idx) const
+{
+    assert(pFinalSetupDone == false);
+    assert(idx < statedef()->countSpecs());
+    return pSpec_DEP[idx];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 uint ReacDef::rhs(gidxT idx) const
 {
     assert(idx < statedef()->countSpecs());
     return pSpec_RHS[idx];
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+int ReacDef::upd(gidxT idx) const
+{
+    assert(pFinalSetupDone == false);
+    assert(idx < statedef()->countSpecs());
+    return pSpec_UPD[idx];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool ReacDef::req(gidxT idx) const
+{
+    assert(pFinalSetupDone == false);
+    assert(idx < statedef()->countSpecs());
+    if (pSpec_DEP[idx] != DEP_NONE) return true;
+    if (pSpec_RHS[idx] != 0) return true;
+    return false;
+}
+    
 ////////////////////////////////////////////////////////////////////////////////
 /*
 bool ReacDef::dependsOnSpec(uint gidx) const

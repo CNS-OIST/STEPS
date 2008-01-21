@@ -39,11 +39,16 @@
 #include <steps/rng/rng.hpp>
 #include <steps/sim/shared/compdef.hpp>
 #include <steps/sim/shared/statedef.hpp>
+#include <steps/tetexact/solver_core/comp.hpp>
 #include <steps/tetexact/solver_core/diff.hpp>
 #include <steps/tetexact/solver_core/kproc.hpp>
+#include <steps/tetexact/solver_core/patch.hpp>
 #include <steps/tetexact/solver_core/sched.hpp>
 #include <steps/tetexact/solver_core/state.hpp>
 #include <steps/tetexact/solver_core/tet.hpp>
+#include <steps/tetexact/solver_core/tri.hpp>
+
+NAMESPACE_ALIAS(steps::sim, ssim);
 
 ////////////////////////////////////////////////////////////////////////////////
     
@@ -52,9 +57,12 @@ State::State(void)
 , pRNG(0)
 , pSched(0)
 , pTime(0.0)
+, pComps()
 , pTets()
+, pPatches()
+, pTris()
 {
-    pStateDef = new StateDef();
+    pStateDef = new ssim::StateDef();
     pSched = new Sched();
 }
 
@@ -63,6 +71,14 @@ State::State(void)
 State::~State(void)
 {
     delete pStateDef;
+    CompPVecCI comp_e = pComps.end();
+    for (CompPVecCI c = pComps.begin(); c != comp_e; ++c) delete *c;
+    TetPVecCI tet_e = pTets.end();
+    for (TetPVecCI tet = pTets.begin(); tet != tet_e; ++tet) delete *tet;
+    PatchPVecCI patch_e = pPatches.end();
+    for (PatchPVecCI p = pPatches.begin(); p != patch_e; ++p) delete *p;
+    TriPVecCI tri_e = pTris.end();
+    for (TriPVecCI tri = pTris.begin(); tri != tri_e; ++tri) delete *tri;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -76,21 +92,35 @@ void State::setupState(void)
 void State::setupTetmesh(void)
 {
     // First we create all kinetic processes.
-    for (std::vector<Tet*>::const_iterator i = pTets.begin(); 
-        i != pTets.end(); ++i)
+    TetPVecCI tet_e = pTets.end();
+    for (TetPVecCI tet = pTets.begin(); tet != tet_e; ++tet) 
     {
-        (*i)->setupKProcs(pSched);
+        (*tet)->setupKProcs(pSched);
     }
-    // Next, we resolve all dependencies.
-    for (std::vector<Tet*>::const_iterator i = pTets.begin(); 
-            i != pTets.end(); ++i)
+    TriPVecCI tri_e = pTris.end();
+    for (TriPVecCI tri = pTris.begin(); tri != tri_e; ++tri)
     {
-        KProcPVecCI kprocend = (*i)->kprocEnd();
-        for (KProcPVecCI k = (*i)->kprocBegin(); k != kprocend; ++k)
+        (*tri)->setupKProcs(pSched);
+    }
+    
+    // Next, we resolve all dependencies.
+    for (TetPVecCI tet = pTets.begin(); tet != tet_e; ++tet)
+    {
+        KProcPVecCI kprocend = (*tet)->kprocEnd();
+        for (KProcPVecCI k = (*tet)->kprocBegin(); k != kprocend; ++k)
         {
             (*k)->setupDeps();
         }
     }
+    for (TriPVecCI tri = pTris.begin(); tri != tri_e; ++tri)
+    {
+        KProcPVecCI kprocend = (*tri)->kprocEnd();
+        for (KProcPVecCI k = (*tri)->kprocBegin(); k != kprocend; ++k)
+        {
+            (*k)->setupDeps();
+        }
+    }
+    
     sched()->build();
 }
 
@@ -99,6 +129,7 @@ void State::setupTetmesh(void)
 void State::reset(void)
 {
     std::for_each(pTets.begin(), pTets.end(), std::mem_fun(&Tet::reset));
+    std::for_each(pTris.begin(), pTris.end(), std::mem_fun(&Tri::reset));
     pSched->reset();
     resetTime();
     resetNSteps();
@@ -136,16 +167,68 @@ void State::run(double maxt)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+uint State::addComp(ssim::CompDef * cdef)
+{
+    Comp * comp = new Comp(cdef);
+    assert(comp != 0);
+    uint compidx = pComps.size();
+    pComps.push_back(comp);
+    return compidx;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+Comp * State::comp(uint idx) const
+{
+    assert(idx < pComps.size());
+    return pComps[idx];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 uint State::addTet
 (
-    CompDef * cdef, double vol, 
+    Comp * comp, double vol, 
     double a1, double a2, double a3, double a4,
     double d1, double d2, double d3, double d4
 )
 {
-    Tet * t = new Tet(cdef, vol, a1, a2, a3, a4, d1, d2, d3, d4);
+    ssim::CompDef * compdef = comp->def(); 
+    TetP t = new Tet(compdef, vol, a1, a2, a3, a4, d1, d2, d3, d4);
     uint tidx = pTets.size();
     pTets.push_back(t);
+    comp->addTet(t);
+    return tidx;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint State::addPatch(ssim::PatchDef * pdef)
+{
+    Patch * patch = new Patch(pdef);
+    assert(patch != 0);
+    uint patchidx = pPatches.size();
+    pPatches.push_back(patch);
+    return patchidx;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+Patch * State::patch(uint idx) const
+{
+    assert(idx < pPatches.size());
+    return pPatches[idx];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint State::addTri(Patch * patch, double area)
+{
+    ssim::PatchDef * patchdef = patch->def();
+    TriP t = new Tri(patchdef, area);
+    uint tidx = pTris.size();
+    pTris.push_back(t);
+    patch->addTri(t);
     return tidx;
 }
 

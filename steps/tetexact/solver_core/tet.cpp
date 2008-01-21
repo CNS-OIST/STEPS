@@ -37,26 +37,34 @@
 #include <steps/common.h>
 #include <steps/sim/shared/compdef.hpp>
 #include <steps/sim/shared/diffdef.hpp>
+#include <steps/sim/shared/reacdef.hpp>
 #include <steps/tetexact/solver_core/diff.hpp>
 #include <steps/tetexact/solver_core/reac.hpp>
 #include <steps/tetexact/solver_core/sched.hpp>
 #include <steps/tetexact/solver_core/tet.hpp>
+#include <steps/tetexact/solver_core/tri.hpp>
+
+NAMESPACE_ALIAS(steps::sim, ssim);
 
 ////////////////////////////////////////////////////////////////////////////////
 
 Tet::Tet
 (
-    CompDef * cdef, double vol, 
+    ssim::CompDef * cdef, double vol, 
     double a0, double a1, double a2, double a3, 
     double d0, double d1, double d2, double d3
 )
 {
-    // Copy all this crap.
+    // Copy all this stuff.
     pCompDef = cdef;
     pNextTet[0] = 0;
     pNextTet[1] = 0;
     pNextTet[2] = 0;
     pNextTet[3] = 0;
+    pNextTri[0] = 0;
+    pNextTri[1] = 0;
+    pNextTri[2] = 0;
+    pNextTri[3] = 0;
     // Tetrahedral volumes.
     assert(vol >= 0.0);
     pVol = vol;
@@ -108,6 +116,14 @@ void Tet::setNextTet(uint i, Tet * t)
     pNextTet[i] = t;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Tet::setNextTri(uint i, Tri * t)
+{
+    pNextTri[i] = t;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void Tet::setupKProcs(Sched * sched)
@@ -117,7 +133,7 @@ void Tet::setupKProcs(Sched * sched)
     uint ndiffs = compdef()->countDiffs();
     for (uint i = 0; i < ndiffs; ++i)
     {
-        DiffDef * ddef = compdef()->diff(i);
+        ssim::DiffDef * ddef = compdef()->diff(i);
         Diff * d = new Diff(ddef, this);
         pKProcs[j++] = d;
         sched->addKProc(d);
@@ -127,7 +143,7 @@ void Tet::setupKProcs(Sched * sched)
     uint nreacs = compdef()->countReacs();
     for (uint i = 0; i < nreacs; ++i)
     {
-        ReacDef * rdef = compdef()->reac(i);
+        ssim::ReacDef * rdef = compdef()->reac(i);
         Reac * r = new Reac(rdef, this);
         pKProcs[j++] = r;
         sched->addKProc(r);

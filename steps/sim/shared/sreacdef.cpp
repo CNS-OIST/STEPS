@@ -49,6 +49,7 @@ SReacDef::SReacDef(StateDef * sdef, gidxT idx, string const & name, orientT o)
 , pOrient(o)
 , pOrder(0)
 , pKcst(0.0)
+, pFinalSetupDone(false)
 , pSpec_I_DEP(0)
 , pSpec_S_DEP(0)
 , pSpec_O_DEP(0)
@@ -121,6 +122,7 @@ SReacDef::~SReacDef(void)
 
 uint SReacDef::incLHS_I(gidxT idx)
 {
+    assert(pFinalSetupDone == false);
     if (outside()) return 0;
     assert(idx < statedef()->countSpecs());
     pSpec_I_LHS[idx] += 1;
@@ -132,6 +134,7 @@ uint SReacDef::incLHS_I(gidxT idx)
 
 uint SReacDef::incLHS_S(gidxT idx)
 {
+    assert(pFinalSetupDone == false);
     assert(idx < statedef()->countSpecs());
     pSpec_S_LHS[idx] += 1;
     computeOrder();
@@ -142,6 +145,7 @@ uint SReacDef::incLHS_S(gidxT idx)
 
 uint SReacDef::incLHS_O(gidxT idx)
 {
+    assert(pFinalSetupDone == false);
     if (inside()) return 0;
     assert(idx < statedef()->countSpecs());
     pSpec_O_LHS[idx] += 1;
@@ -153,6 +157,7 @@ uint SReacDef::incLHS_O(gidxT idx)
 
 void SReacDef::setLHS_I(gidxT idx, uint n)
 {
+    assert(pFinalSetupDone == false);
     if (outside()) return;
     assert(idx < statedef()->countSpecs());
     pSpec_I_LHS[idx] = n;
@@ -163,6 +168,7 @@ void SReacDef::setLHS_I(gidxT idx, uint n)
 
 void SReacDef::setLHS_S(gidxT idx, uint n)
 {
+    assert(pFinalSetupDone == false);
     assert(idx < statedef()->countSpecs());
     pSpec_S_LHS[idx] = n;
     computeOrder();
@@ -172,6 +178,7 @@ void SReacDef::setLHS_S(gidxT idx, uint n)
 
 void SReacDef::setLHS_O(gidxT idx, uint n)
 {
+    assert(pFinalSetupDone == false);
     if (inside()) return;
     assert(idx < statedef()->countSpecs());
     pSpec_O_LHS[idx] = n;
@@ -182,6 +189,7 @@ void SReacDef::setLHS_O(gidxT idx, uint n)
 
 uint SReacDef::incRHS_I(gidxT idx)
 {
+    assert(pFinalSetupDone == false);
     assert(idx < statedef()->countSpecs());
     pSpec_I_RHS[idx] += 1;
     return pSpec_I_RHS[idx];
@@ -191,6 +199,7 @@ uint SReacDef::incRHS_I(gidxT idx)
 
 uint SReacDef::incRHS_S(gidxT idx)
 {
+    assert(pFinalSetupDone == false);
     assert(idx < statedef()->countSpecs());
     pSpec_S_RHS[idx] += 1;
     return pSpec_S_RHS[idx];
@@ -200,6 +209,7 @@ uint SReacDef::incRHS_S(gidxT idx)
 
 uint SReacDef::incRHS_O(gidxT idx)
 {
+    assert(pFinalSetupDone == false);
     assert(idx < statedef()->countSpecs());
     pSpec_O_RHS[idx] += 1;
     return pSpec_O_RHS[idx];
@@ -209,6 +219,7 @@ uint SReacDef::incRHS_O(gidxT idx)
 
 void SReacDef::setRHS_I(gidxT idx, uint n)
 {
+    assert(pFinalSetupDone == false);
     assert(idx < statedef()->countSpecs());
     pSpec_I_RHS[idx] = n;
 }
@@ -217,6 +228,7 @@ void SReacDef::setRHS_I(gidxT idx, uint n)
 
 void SReacDef::setRHS_S(gidxT idx, uint n)
 {
+    assert(pFinalSetupDone == false);
     assert(idx < statedef()->countSpecs());
     pSpec_S_RHS[idx] = n;
 }
@@ -225,6 +237,7 @@ void SReacDef::setRHS_S(gidxT idx, uint n)
 
 void SReacDef::setRHS_O(gidxT idx, uint n)
 {
+    assert(pFinalSetupDone == false);
     assert(idx < statedef()->countSpecs());
     pSpec_O_RHS[idx] = n;
 }
@@ -233,8 +246,11 @@ void SReacDef::setRHS_O(gidxT idx, uint n)
 
 void SReacDef::setupFinal(void)
 {
+    assert(pFinalSetupDone == false);
+    
     computeOrder();
     uint nspecs = statedef()->countSpecs();
+    
     // Deal with surface.
     for (uint i = 0; i < nspecs; ++i)
     {
@@ -243,6 +259,7 @@ void SReacDef::setupFinal(void)
         if (lhs != 0) pSpec_S_DEP[i] |= DEP_STOICH;
         if (aux != 0) pSpec_S_UPD_Coll.push_back(i);
     }
+    
     // Deal with inside.
     for (uint i = 0; i < nspecs; ++i)
     {
@@ -251,16 +268,62 @@ void SReacDef::setupFinal(void)
         if (lhs != 0) pSpec_I_DEP[i] |= DEP_STOICH;
         if (aux != 0) pSpec_I_UPD_Coll.push_back(i);
     }
+    
     // Deal with outside.
     for (uint i = 0; i < nspecs; ++i)
     {
         int lhs = (outside() ? static_cast<int>(pSpec_O_LHS[i]) : 0); 
         int aux = pSpec_O_UPD[i] = static_cast<int>(pSpec_O_RHS[i]) - lhs;
         if (lhs != 0) pSpec_O_DEP[i] |= DEP_STOICH;
-        if (aux != 0) pSpec_O_UPD_Coll.upsh_back(i);
-    }        
+        if (aux != 0) pSpec_O_UPD_Coll.push_back(i);
+    }
+    
+    pFinalSetupDone = true;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+bool SReacDef::reqInside(void) const
+{
+    assert(pFinalSetupDone == true);
+    
+    // This can be checked by seeing if DEP_I or RHS_I is non-zero 
+    // for any species.
+    uint nspecs = statedef()->countSpecs();
+    for (uint i = 0; i < nspecs; ++i)
+        if (req_I(i) == true) return true;
+    return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool SReacDef::reqOutside(void) const
+{
+    assert(pFinalSetupDone == true);
+    
+    // This can be checked by seeing if DEP_I or RHS_I is non-zero 
+    // for any species.
+    uint nspecs = statedef()->countSpecs();
+    for (uint i = 0; i < nspecs; ++i)
+        if (req_O(i) == true) return true;
+    return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double SReacDef::kcst(void) const
+{
+    return pKcst;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void SReacDef::setKcst(double const & k)
+{
+    assert(pFinalSetupDone == false);
+    pKcst = k;
+}
+    
 ////////////////////////////////////////////////////////////////////////////////
 
 uint SReacDef::lhs_I(gidxT idx) const
@@ -289,24 +352,27 @@ uint SReacDef::lhs_O(gidxT idx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-depT SReacDef::dependsOnSpec_I(gidxT idx) const
+depT SReacDef::dep_I(gidxT idx) const
 {
+    assert(pFinalSetupDone == true);
     assert(idx < statedef()->countSpecs());
     return pSpec_I_DEP[idx]; 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-depT SReacDef::dependsOnSpec_S(gidxT idx) const
+depT SReacDef::dep_S(gidxT idx) const
 {
+    assert(pFinalSetupDone == true);
     assert(idx < statedef()->countSpecs());
     return pSpec_S_DEP[idx];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-depT SReacDef::dependsOnSpec_O(gidxT idx) const
+depT SReacDef::dep_O(gidxT idx) const
 {
+    assert(pFinalSetupDone == true);
     assert(idx < statedef()->countSpecs());
     return pSpec_O_DEP[idx];
 }
@@ -339,6 +405,7 @@ uint SReacDef::rhs_O(gidxT idx) const
 
 int SReacDef::upd_I(gidxT idx) const
 {
+    assert(pFinalSetupDone == true);
     assert(idx < statedef()->countSpecs());
     return pSpec_I_UPD[idx];
 }
@@ -347,6 +414,7 @@ int SReacDef::upd_I(gidxT idx) const
 
 int SReacDef::upd_S(gidxT idx) const
 {
+    assert(pFinalSetupDone == true);
     assert(idx < statedef()->countSpecs());
     return pSpec_S_UPD[idx];
 }
@@ -355,8 +423,42 @@ int SReacDef::upd_S(gidxT idx) const
 
 int SReacDef::upd_O(gidxT idx) const
 {
+    assert(pFinalSetupDone == true);
     assert(idx < statedef()->countSpecs());
     return pSpec_O_UPD[idx];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool SReacDef::req_I(gidxT idx) const
+{
+    assert(pFinalSetupDone == true);
+    assert(idx < statedef()->countSpecs());
+    if (pSpec_I_DEP[idx] != DEP_NONE) return true;
+    if (pSpec_I_RHS[idx] != 0) return true;
+    return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool SReacDef::req_S(gidxT idx) const
+{
+    assert(pFinalSetupDone == true);
+    assert(idx < statedef()->countSpecs());
+    if (pSpec_S_DEP[idx] != DEP_NONE) return true;
+    if (pSpec_S_RHS[idx] != 0) return true;
+    return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool SReacDef::req_O(gidxT idx) const
+{
+    assert(pFinalSetupDone == true);
+    assert(idx < statedef()->countSpecs());
+    if (pSpec_O_DEP[idx] != DEP_NONE) return true;
+    if (pSpec_O_RHS[idx] != 0) return true;
+    return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

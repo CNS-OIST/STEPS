@@ -43,11 +43,15 @@
 #include <steps/tetexact/solver_core/sched.hpp>
 #include <steps/tetexact/solver_core/state.hpp>
 #include <steps/tetexact/solver_core/tet.hpp>
+#include <steps/tetexact/solver_core/tri.hpp>
+
+NAMESPACE_ALIAS(steps::sim, ssim);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Diff::Diff(DiffDef * ddef, Tet * tet)
-: pDiffDef(ddef)
+Diff::Diff(ssim::DiffDef * ddef, Tet * tet)
+: KProc()
+, pDiffDef(ddef)
 , pTet(tet)
 , pUpdVec()
 , pScaledDcst(0.0)
@@ -103,16 +107,42 @@ Diff::~Diff(void)
 
 void Diff::setupDeps(void)
 {
-    // Fetch ligand index.
+    // We will check all KProcs of the following simulation elements:
+    //   * the 'source' tetrahedron
+    //   * any neighbouring triangles
+    //
+    // But also in the possible 'destination' tetrahedrons (leading to
+    // four different dependency lists, each containing a copy of the
+    // dependencies in the 'source' tet):
+    //   * any neighbouring tetrahedrons
+    //   * any neighbouring triangles of these neighbouring tets
+    //
+    // Since there can be no diffusion between tetrahedrons blocked by
+    // a triangle, there is no need to filter out duplicate dependent
+    // kprocs.
+    
     uint gidx = def()->lig();
     
-    // Search for local dependencies.
+    // Search for dependencies in the 'source' tetrahedron.
     SchedIDXVec local;
     KProcPVecCI kprocend = pTet->kprocEnd();
     for (KProcPVecCI k = pTet->kprocBegin(); k != kprocend; ++k)
     {
+        // Check locally.
         if ((*k)->depSpecTet(gidx, pTet) == true)
             local.push_back((*k)->schedIDX());
+    }
+    // Check the neighbouring triangles.
+    for (uint i = 0; i < 4; ++i)
+    {
+        Tri * next = pTet->nextTri(i);
+        if (next == 0) continue;
+        kprocend = next->kprocEnd();
+        for (KProcPVecCI k = next->kprocBegin(); k != kprocend; ++k)
+        {
+            if ((*k)->depSpecTet(gidx, pTet) == true)
+                pUpdVec[i].push_back((*k)->schedIDX());
+        }
     }
     
     // Search for dependencies in neighbouring tetrahedrons.
@@ -121,18 +151,36 @@ void Diff::setupDeps(void)
         // Fetch next tetrahedron, if it exists.
         Tet * next = pTet->nextTet(i);
         if (next == 0) continue;
-        // Later, also check if there is a triangle that might block
-        // diffusion.
+        if (pTet->nextTri(i) != 0) continue;
         
         // Copy local dependencies.
         std::copy(local.begin(), local.end(), 
             std::inserter(pUpdVec[i], pUpdVec[i].end()));
-        // Find the ones in the next tet.
+        
+        // Find the ones 'locally' in the next tet.
         kprocend = next->kprocEnd();
         for (KProcPVecCI k = next->kprocBegin(); k != kprocend; ++k)
         {
             if ((*k)->depSpecTet(gidx, next) == true)
                 pUpdVec[i].push_back((*k)->schedIDX());
+        }
+        
+        // Find deps in neighbouring triangles in the next tet.
+        // As said before, this cannot logically include the shared 
+        // triangle.
+        for (uint j = 0; j < 4; ++j)
+        {
+            // Fetch next triangle, if it exists.
+            Tri * next2 = next->nextTri(j);
+            if (next2 == 0) continue;
+            
+            // Find deps.
+            kprocend = next2->kprocEnd(); 
+            for (KProcPVecCI k = next2->kprocBegin(); k != kprocend; ++k)
+            {
+                if ((*k)->depSpecTet(gidx, next) == true)
+                    pUpdVec[i].push_back((*k)->schedIDX());
+            }
         }
     }
 }
@@ -148,6 +196,13 @@ bool Diff::depSpecTet(uint gidx, Tet * tet)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+bool Diff::depSpecTri(uint gidx, Tri * tri)
+{
+    return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void Diff::reset(void)
 {
 }
@@ -157,7 +212,7 @@ void Diff::reset(void)
 double Diff::rate(void) const
 {
     // Pre-fetch some general info.
-    CompDef * cdef = pTet->compdef();
+    ssim::CompDef * cdef = pTet->compdef();
     // Fetch the ligand as global index.
     uint gidx = pDiffDef->lig();
     // As local index.
@@ -175,7 +230,7 @@ double Diff::rate(void) const
 SchedIDXVec const & Diff::apply(State * s)
 {
     // Pre-fetch some general info.
-    CompDef * cdef = pTet->compdef();
+    ssim::CompDef * cdef = pTet->compdef();
     // Fetch the ligand as global index.
     uint gidx = def()->lig();
     // As local index.

@@ -40,7 +40,6 @@ SUBDIRS	= \
     tests \
     tetexact \
     thirdparty \
-    wmdirect \
     .
 
 # Python package.

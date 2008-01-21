@@ -29,103 +29,110 @@
 // STL headers.
 #include <algorithm>
 #include <cassert>
-#include <string>
+#include <cmath>
+#include <vector>
 
 // STEPS headers.
 #include <steps/common.h>
-#include <steps/sim/shared/diffdef.hpp>
-#include <steps/sim/shared/statedef.hpp>
-#include <steps/sim/shared/types.hpp>
+#include <steps/sim/shared/patchdef.hpp>
+#include <steps/sim/shared/sreacdef.hpp>
+#include <steps/tetexact/solver_core/kproc.hpp>
+#include <steps/tetexact/solver_core/sched.hpp>
+#include <steps/tetexact/solver_core/sreac.hpp>
+#include <steps/tetexact/solver_core/tet.hpp>
+#include <steps/tetexact/solver_core/tri.hpp>
 
-USING(std, string);
-USING_NAMESPACE(steps::sim);
+NAMESPACE_ALIAS(steps::sim, ssim);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-DiffDef::DiffDef(StateDef * sdef, gidxT idx, string const & name)
-: pStateDef(sdef)
-, pFinalSetupDone(false)
-, pGIDX(idx)
-, pName(name)
-, pDcst(0.0)
-, pSpec_DEP(0)
-, pSpec_LIG(GIDX_UNDEFINED)
+Tri::Tri(ssim::PatchDef * pdef, double area)
+: pPatchDef(pdef)
+, pInnerTet(0)
+, pOuterTet(0)
+, pArea(area)
+, pPoolCount(0)
+, pPoolFlags(0)
+, pKProcs()
 {
-    uint nspecs = statedef()->countSpecs();
-    if (nspecs == 0) return; // Would be weird, but okay.
-    pSpec_DEP = new depT[nspecs];
-    std::fill_n(pSpec_DEP, nspecs, DEP_NONE);
+    assert(pPatchDef != 0);
+    assert(pArea >= 0.0);
+    uint nspecs = patchdef()->countSpecs();
+    pPoolCount = new uint[nspecs];
+    pPoolFlags = new uint[nspecs];
+    std::fill_n(pPoolCount, nspecs, 0);
+    std::fill_n(pPoolFlags, nspecs, 0);
+    pKProcs.resize(pPatchDef->countSReacs());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-DiffDef::~DiffDef(void)
+Tri::~Tri(void)
 {
-    delete[] pSpec_DEP;
+    delete[] pPoolCount;
+    delete[] pPoolFlags;
+    KProcPVecCI e = pKProcs.end();
+    for (KProcPVecCI i = pKProcs.begin(); i != e; ++i) delete *i;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void DiffDef::setLig(gidxT idx)
+void Tri::setInnerTet(Tet * t)
 {
-    assert(pFinalSetupDone == false);
-    pSpec_LIG = idx;
+    pInnerTet = t;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void DiffDef::setupFinal(void)
+void Tri::setOuterTet(Tet * t)
 {
-    assert(pFinalSetupDone == false);
-    pSpec_DEP[lig()] = DEP_STOICH;
-    pFinalSetupDone = true;
+    pOuterTet = t;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void DiffDef::setDcst(double const & d)
+void Tri::setupKProcs(Sched * sched)
 {
-    assert(pFinalSetupDone == false);
-    pDcst = d;
+    uint j = 0;
+    // Create surface reaction kproc's.
+    uint nsreacs = patchdef()->countSReacs();
+    for (uint i = 0; i < nsreacs; ++i)
+    {
+        ssim::SReacDef * srdef = patchdef()->sreac(i);
+        SReac * sr = new SReac(srdef, this);
+        assert(sr != 0);
+        pKProcs[j++] = sr;
+        sched->addKProc(sr);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-depT DiffDef::dep(gidxT idx) const
+void Tri::setupDeps(void)
 {
-    assert(pFinalSetupDone == false);
-    assert(idx < statedef()->countSpecs());
-    return pSpec_DEP[idx];
+    std::for_each(pKProcs.begin(), pKProcs.end(), 
+        std::mem_fun(&KProc::setupDeps));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool DiffDef::req(gidxT idx) const
+void Tri::reset(void)
 {
-    assert(pFinalSetupDone == false);
-    assert(idx < statedef()->countSpecs());
-    if (pSpec_DEP[idx] != DEP_NONE) return true;
-    return false;
+    uint nspecs = patchdef()->countSpecs();
+    std::fill_n(pPoolCount, nspecs, 0);
+    std::fill_n(pPoolFlags, nspecs, 0);
+    std::for_each(pKProcs.begin(), pKProcs.end(), 
+        std::mem_fun(&KProc::reset));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-/*
-bool DiffDef::dependsOnSpec(uint gidx) const
+
+SReac * Tri::sreac(uint lidx) const
 {
-    assert(gidx < statedef()->countSpecs());
-    if (gidx != pLig) return false;
-    return true;
+    assert(lidx < patchdef()->countSReacs());
+    return dynamic_cast<SReac*>(pKProcs[lidx]);
 }
-*/
-////////////////////////////////////////////////////////////////////////////////
-/*
-bool DiffDef::affectsSpec(uint gidx) const
-{
-    assert(gidx < statedef()->countSpecs());
-    if (gidx != pLig) return false;
-    return true;
-}
-*/
+
 ////////////////////////////////////////////////////////////////////////////////
 
 // END

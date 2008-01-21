@@ -114,8 +114,10 @@ public:
     
     /// Return the global index of the ligand species.
     ///
-    gidxT lig(void) const
+    inline gidxT lig(void) const
     { return pSpec_LIG; }
+    depT dep(gidxT idx) const;
+    bool req(gidxT idx) const;
 
     ////////////////////////////////////////////////////////////////////////
     
@@ -154,7 +156,7 @@ private:
     
     /// Keeps track of whether method setupFinal() has already been called.
     ///
-    bool                        pFinalSetupFinished;
+    bool                        pFinalSetupDone;
     
     gidxT                       pGIDX;
     
