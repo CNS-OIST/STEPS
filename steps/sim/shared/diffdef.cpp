@@ -93,7 +93,7 @@ void DiffDef::setDcst(double const & d)
 
 depT DiffDef::dep(gidxT idx) const
 {
-    assert(pFinalSetupDone == false);
+    assert(pFinalSetupDone == true);
     assert(idx < statedef()->countSpecs());
     return pSpec_DEP[idx];
 }
@@ -102,7 +102,7 @@ depT DiffDef::dep(gidxT idx) const
 
 bool DiffDef::req(gidxT idx) const
 {
-    assert(pFinalSetupDone == false);
+    assert(pFinalSetupDone == true);
     assert(idx < statedef()->countSpecs());
     if (pSpec_DEP[idx] != DEP_NONE) return true;
     return false;

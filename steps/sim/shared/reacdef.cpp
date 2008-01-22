@@ -148,7 +148,7 @@ uint ReacDef::lhs(gidxT idx) const
 
 depT ReacDef::dep(gidxT idx) const
 {
-    assert(pFinalSetupDone == false);
+    assert(pFinalSetupDone == true);
     assert(idx < statedef()->countSpecs());
     return pSpec_DEP[idx];
 }
@@ -165,7 +165,7 @@ uint ReacDef::rhs(gidxT idx) const
 
 int ReacDef::upd(gidxT idx) const
 {
-    assert(pFinalSetupDone == false);
+    assert(pFinalSetupDone == true);
     assert(idx < statedef()->countSpecs());
     return pSpec_UPD[idx];
 }
@@ -174,7 +174,7 @@ int ReacDef::upd(gidxT idx) const
 
 bool ReacDef::req(gidxT idx) const
 {
-    assert(pFinalSetupDone == false);
+    assert(pFinalSetupDone == true);
     assert(idx < statedef()->countSpecs());
     if (pSpec_DEP[idx] != DEP_NONE) return true;
     if (pSpec_RHS[idx] != 0) return true;

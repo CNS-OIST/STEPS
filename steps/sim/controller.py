@@ -119,7 +119,7 @@ class FuncCore(object):
         self._siBeginDiffDef = self._rsf('siBeginDiffDef')
         self._siEndDiffDef = self._rsf('siEndDiffDef')
         self._siNewDiff = self._rsf('siNewDiff')
-        self._siBeginSReacDef = self._rsf('siNewDiff')
+        self._siBeginSReacDef = self._rsf('siBeginSReacDef')
         self._siEndSReacDef = self._rsf('siEndSReacDef')
         self._siNewSReac = self._rsf('siNewSReac')
         self._siAddSReacLHS_I = self._rsf('siAddSReacLHS_I')
@@ -688,10 +688,10 @@ class FuncCore(object):
             # First, declare the patch itself.
             c_i_idx = 0xFFFF;
             if p.icomp is not None:
-                c_i_idx = _comp(p.icomp.id)
+                c_i_idx = self._comp(p.icomp.id)
             c_o_idx = 0xFFFF;
             if p.ocomp is not None:
-                c_o_idx = _comp(p.ocomp.id)
+                c_o_idx = self._comp(p.ocomp.id)
             pid = p.id
             pidx = self._siNewPatch(self._state, pid, p.area, c_i_idx, c_o_idx)
             if self._lut_patchnames.has_key(pidx):
