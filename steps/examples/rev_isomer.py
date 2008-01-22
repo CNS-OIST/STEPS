@@ -34,7 +34,7 @@ from steps.model import Spec
 from steps.model import Volsys
 
 import steps.rng
-import steps.sim.wmdirect
+import steps.tetexact as stetexact
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -63,7 +63,7 @@ def geom():
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-class wmdirect(object):
+class tetexact(object):
 
 
     def __init__(self):

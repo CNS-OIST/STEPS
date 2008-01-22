@@ -267,7 +267,6 @@ AC_OUTPUT([
 doc/Makefile
 extras/Makefile
 steps/distmesh/Makefile
-steps/examples/Makefile
 steps/geom/Makefile
 steps/math/Makefile
 steps/model/Makefile
@@ -275,9 +274,6 @@ steps/rng/Makefile
 steps/sim/shared/Makefile
 steps/sim/swiginf/Makefile
 steps/sim/Makefile
-steps/tests/model/Makefile
-steps/tests/sim/Makefile
-steps/tests/Makefile
 steps/tetexact/solver_core/Makefile
 steps/tetexact/Makefile
 steps/thirdparty/qhull/Makefile

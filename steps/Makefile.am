@@ -31,13 +31,11 @@ VPATH = @srcdir@
 # Process subdirectories.
 SUBDIRS	= \
     distmesh \
-    examples \
     rng \
     geom \
     math \
     model \
     sim \
-    tests \
     tetexact \
     thirdparty \
     .
