@@ -512,6 +512,15 @@ class Tri(object):
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
     
     
+    def getArea(self):
+        return numpy.asscalar(stri.area(self._mesh._pnts, self._nodes))
+    
+    area = property(getArea)
+    
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    
     def getPatch(self):
         return self._mesh._tri_patches[self._tidx]
     
