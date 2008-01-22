@@ -364,6 +364,7 @@ void siSetTetReacActive(State * s, uint tidx, uint ridx, bool act)
 double siGetTetDiffD(State * s, uint tidx, uint didx)
 {
     // Currently not implemented.
+    return 0.0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -390,7 +391,7 @@ bool siGetTetDiffActive(State * s, uint tidx, uint didx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void siGetTetDiffActive(State * s, uint tidx, uint didx, bool act)
+void siSetTetDiffActive(State * s, uint tidx, uint didx, bool act)
 {
     assert(s != 0);
     Tet * tet = s->tet(tidx);

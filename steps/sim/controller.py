@@ -1349,7 +1349,7 @@ class FuncSSA(FuncCore):
         self._siResetCompReacExtent = self._rsf('siResetCompReacExtent')
         self._siGetPatchSReacC = self._rsf('siGetPatchSReacC')
         self._siGetPatchSReacH = self._rsf('siGetPatchSReacH')
-        self._siGetPatchCReacA = self._rsf('siGetPatchCReacA')
+        self._siGetPatchSReacA = self._rsf('siGetPatchSReacA')
         self._siGetPatchSReacExtent = self._rsf('siGetPatchSReacExtent')
         self._siResetPatchSReacExtent = self._rsf('siResetPatchSReacExtent')
 

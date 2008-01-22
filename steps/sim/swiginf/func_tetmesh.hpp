@@ -95,7 +95,7 @@ extern double 	siGetTetDiffD(State * s, uint tidx, uint didx);
 extern void 	siSetTetDiffD(State * s, uint tidx, uint didx);
 
 extern bool		siGetTetDiffActive(State * s, uint tidx, uint didx);
-extern void 	siGetTetDiffActive(State * s, uint tidx, uint didx, bool act);
+extern void 	siSetTetDiffActive(State * s, uint tidx, uint didx, bool act);
 
 ////////////////////////////////////////////////////////////////////////////////
 // SOLVER STATE ACCESS: 
