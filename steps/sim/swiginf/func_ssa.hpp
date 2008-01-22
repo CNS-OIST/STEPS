@@ -75,7 +75,7 @@ extern void     siResetCompReacExtent(State * s, uint cidx, uint ridx);
 
 extern double   siGetPatchSReacC(State * s, uint pidx, uint ridx);
 extern double   siGetPatchSReacH(State * s, uint pidx, uint ridx);
-extern double   siGetPatchCReacA(State * s, uint pidx, uint ridx);
+extern double   siGetPatchSReacA(State * s, uint pidx, uint ridx);
 
 extern uint     siGetPatchSReacExtent(State * s, uint pidx, uint ridx);
 extern void     siResetPatchSReacExtent(State * s, uint pidx, uint ridx);
