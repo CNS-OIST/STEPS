@@ -251,7 +251,7 @@ class SReac(object):
         self._surfsys = None
         self.__id = stools.checkID(id)
         try:
-            surfsys._handleReacAdd(self)
+            surfsys._handleSReacAdd(self)
         except:
             self._surfsys = None
             raise
@@ -303,7 +303,7 @@ class SReac(object):
         if id == self.__id: return
         # The following might raise an exception, e.g. if the id is not
         # valid or not unique.
-        self._surfsys._handleReacIDChange(self.__id, id)
+        self._surfsys._handleSReacIDChange(self.__id, id)
         self.__id = id
 
     id = property(getID, setID)

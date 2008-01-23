@@ -33,6 +33,7 @@ python_steps_modeldir = $(pythondir)/steps/model
 python_steps_model_PYTHON = \
     __init__.py \
     model.py \
+    surfsys.py \
     volsys.py
 
 # Files that should be cleaned when building a distribution.
