@@ -29,6 +29,7 @@
 // Standard library & STL headers.
 #include <cassert>
 #include <cmath>
+#include <iostream>
 
 // STEPS headers.
 #include <steps/common.h>
@@ -387,7 +388,7 @@ SchedIDXVec const & SReac::apply(State * s)
         int upd = upd_s_vec[s];
         if (upd == 0) continue;
         int nc = static_cast<int>(cnt_s_vec[s]) + upd;
-        assert(nc > 0);
+        assert(nc >= 0);
         cnt_s_vec[s] = static_cast<uint>(nc);
     }
     
@@ -404,7 +405,7 @@ SchedIDXVec const & SReac::apply(State * s)
             int upd = upd_i_vec[s];
             if (upd == 0) continue;
             int nc = static_cast<int>(cnt_i_vec[s]) + upd;
-            assert(nc > 0);
+            assert(nc >= 0);
             cnt_i_vec[s] = static_cast<uint>(nc);
         }
     }
@@ -422,7 +423,7 @@ SchedIDXVec const & SReac::apply(State * s)
             int upd = upd_o_vec[s];
             if (upd == 0) continue;
             int nc = static_cast<int>(cnt_o_vec[s]) + upd;
-            assert(nc > 0);
+            assert(nc >= 0);
             cnt_o_vec[s] = static_cast<uint>(nc);
         }
     }
