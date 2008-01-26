@@ -96,6 +96,9 @@ public:
     ///
     void reset(void);
     
+    double getRate(uint i) const
+    { return pLevels[0][i]; }
+    
     /// Same as Sched::reset(), but doesn't ask kproc's to recompute
     /// their rates.
     ///

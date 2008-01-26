@@ -137,16 +137,41 @@ class Surfsys(object):
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
 
 
-    def getAllSpecs(self):
-        """Create a list of all species involved in this surface system. 
-        The list contains no duplicates but is not ordered in any way.
+    def getAllSpecsI(self):
+        """Create a list of all species involved in the inside volume
+        solution of this surface system. The list contains no duplicates 
+        but is not ordered in any way.
         """
         s = set()
         for id, r in self.__sreacs.iteritems():
             r = self.getSReac(r)
-            s = s.union(r.getAllSpecs())
+            s = s.union(r.getAllSpecsI())
         return list(s)
-            
+
+
+    def getAllSpecsS(self):
+        """Create a list of all species involved in this surface system,
+        on the surface part. The list contains no duplicates but is not 
+        ordered in any way.
+        """
+        s = set()
+        for id, r in self.__sreacs.iteritems():
+            r = self.getSReac(r)
+            s = s.union(r.getAllSpecsS())
+        return list(s)
+    
+    
+    def getAllSpecsO(self):
+        """Create a list of all species involved in the outside volume
+        solution of this surface system. The list contains no duplicates 
+        but is not ordered in any way.
+        """
+        s = set()
+        for id, r in self.__sreacs.iteritems():
+            r = self.getSReac(r)
+            s = s.union(r.getAllSpecsO())
+        return list(s)
+    
     
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
 
@@ -469,18 +494,27 @@ class SReac(object):
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # 
 
 
-    def getAllSpecs(self):
+    def getAllSpecsI(self):
+        s = set(self.__irhs)
+        if self.inner: s.union(self.__vlhs)
+        return list(s)
+
+
+    def getAllSpecsS(self):
         """Create a list of all species involved in this sreaction, on both
         the left- and righthand side. The list contains no duplicate members
         but is not ordered in any way.
         """
-        s = set(self.__vlhs)
-        s.union(self.__slhs)
-        s.union(self.__irhs)
+        s = set(self.__slhs)
         s.union(self.__srhs)
-        s.union(self.__orhs)
-        return list(s)        
-
+        return list(s)
+    
+    
+    def getAllSpecsO(self):
+        s = set(self.__orhs)
+        if self.outer: s.union(self.__vlhs)
+        return list(s)
+    
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 

@@ -113,7 +113,15 @@ Tet::~Tet(void)
 
 void Tet::setNextTet(uint i, Tet * t)
 {
-    pNextTet[i] = t;
+    if (t->compdef() != compdef()) 
+    {
+        pNextTet[i] = 0;
+    }
+    else
+    {
+        pNextTet[i] = t;
+        pNextTri[i] = 0;
+    }
 }
 
 
@@ -121,6 +129,7 @@ void Tet::setNextTet(uint i, Tet * t)
 
 void Tet::setNextTri(uint i, Tri * t)
 {
+    pNextTet[i] = 0;
     pNextTri[i] = t;
 }
 

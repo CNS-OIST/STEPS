@@ -162,7 +162,8 @@ void PatchDef::setupLocalIndices(void)
     //             resolved.
     
     assert(pLocalIndicesSetupDone == false);
-    
+    pLocalIndicesSetupDone = true;
+        
     // 1 -- DEAL WITH PATCH SPECIES
     uint ngspecs = statedef()->countSpecs();
     if (countSpecs() != 0) 
@@ -278,9 +279,6 @@ void PatchDef::setupLocalIndices(void)
             }
         }
     }
-    
-    // Flip the switch.
-    pLocalIndicesSetupDone = true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

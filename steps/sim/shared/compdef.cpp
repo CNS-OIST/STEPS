@@ -29,6 +29,7 @@
 // STL headers.
 #include <algorithm>
 #include <cassert>
+#include <iostream>
 #include <string>
 
 // STEPS headers.
@@ -49,6 +50,8 @@ CompDef::CompDef(StateDef * sdef, gidxT idx, string const & name)
 : pStateDef(sdef)
 , pGIDX(idx)
 , pName(name)
+, pVolume(0.0)
+, pLocalIndicesSetupDone(false)
 , pSpec_N(0)
 , pSpec_G2L(0)
 , pSpec_L2G(0)
@@ -96,6 +99,7 @@ CompDef::~CompDef(void)
 
 void CompDef::addSpec(gidxT idx)
 {
+    assert(pLocalIndicesSetupDone == false);
     assert(statedef()->spec(idx) != 0);
     if (pSpec_G2L[idx] != LIDX_UNDEFINED) return;
     pSpec_G2L[idx] = pSpec_N++;
@@ -105,6 +109,7 @@ void CompDef::addSpec(gidxT idx)
 
 void CompDef::addReac(gidxT idx)
 {
+    assert(pLocalIndicesSetupDone == false);
     assert(statedef()->reac(idx) != 0);
     if (pReac_G2L[idx] != LIDX_UNDEFINED) return;
     pReac_G2L[idx] = pReac_N++;
@@ -117,6 +122,7 @@ void CompDef::addReac(gidxT idx)
 
 void CompDef::addDiff(gidxT idx)
 {
+    assert(pLocalIndicesSetupDone == false);
     assert(statedef()->diff(idx) != 0);
     if (pDiff_G2L[idx] != LIDX_UNDEFINED) return;
     pDiff_G2L[idx] = pDiff_N++;
@@ -129,6 +135,9 @@ void CompDef::addDiff(gidxT idx)
 
 void CompDef::setupLocalIndices(void)
 {
+    assert(pLocalIndicesSetupDone == false);
+    pLocalIndicesSetupDone = true;
+    
     if (pSpec_N != 0)
     {
         pSpec_L2G = new gidxT[pSpec_N];
@@ -297,6 +306,7 @@ void CompDef::setupDependencies(void)
 
 SpecDef * CompDef::spec(lidxT idx) const
 {
+    assert(pLocalIndicesSetupDone == true);
     return statedef()->spec(specL2G(idx));
 }
 
@@ -339,6 +349,7 @@ int * CompDef::reac_upd_end(lidxT reac) const
 
 ReacDef * CompDef::reac(lidxT idx) const
 {
+    assert(pLocalIndicesSetupDone == true);
     return statedef()->reac(reacL2G(idx));
 }
 
@@ -360,6 +371,7 @@ lidxT CompDef::diff_lig(lidxT diff) const
 
 DiffDef * CompDef::diff(lidxT idx) const
 {
+    assert(pLocalIndicesSetupDone == true);
     return statedef()->diff(diffL2G(idx));
 }
 

@@ -38,6 +38,7 @@
 #include <steps/rng/rng.hpp>
 #include <steps/sim/shared/compdef.hpp>
 #include <steps/sim/shared/diffdef.hpp>
+#include <steps/sim/shared/specdef.hpp>
 #include <steps/tetexact/solver_core/diff.hpp>
 #include <steps/tetexact/solver_core/kproc.hpp>
 #include <steps/tetexact/solver_core/sched.hpp>
@@ -73,7 +74,7 @@ Diff::Diff(ssim::DiffDef * ddef, Tet * tet)
     {
         // Compute the scaled diffusion constant.
         double dist = pTet->dist(i);
-        if (dist > 0.0)
+        if ((dist > 0.0) && (next[i] != 0))
             d[i] = (pTet->area(i) * dcst) / (pTet->vol() * dist);
     }
     
@@ -124,13 +125,13 @@ void Diff::setupDeps(void)
     uint gidx = def()->lig();
     
     // Search for dependencies in the 'source' tetrahedron.
-    SchedIDXVec local;
+    SchedIDXSet local;
     KProcPVecCI kprocend = pTet->kprocEnd();
     for (KProcPVecCI k = pTet->kprocBegin(); k != kprocend; ++k)
     {
         // Check locally.
         if ((*k)->depSpecTet(gidx, pTet) == true)
-            local.push_back((*k)->schedIDX());
+            local.insert((*k)->schedIDX());
     }
     // Check the neighbouring triangles.
     for (uint i = 0; i < 4; ++i)
@@ -141,7 +142,7 @@ void Diff::setupDeps(void)
         for (KProcPVecCI k = next->kprocBegin(); k != kprocend; ++k)
         {
             if ((*k)->depSpecTet(gidx, pTet) == true)
-                pUpdVec[i].push_back((*k)->schedIDX());
+                local.insert((*k)->schedIDX());
         }
     }
     
@@ -154,15 +155,16 @@ void Diff::setupDeps(void)
         if (pTet->nextTri(i) != 0) continue;
         
         // Copy local dependencies.
+        SchedIDXSet local2;
         std::copy(local.begin(), local.end(), 
-            std::inserter(pUpdVec[i], pUpdVec[i].end()));
+            std::inserter(local2, local2.end()));
         
         // Find the ones 'locally' in the next tet.
         kprocend = next->kprocEnd();
         for (KProcPVecCI k = next->kprocBegin(); k != kprocend; ++k)
         {
             if ((*k)->depSpecTet(gidx, next) == true)
-                pUpdVec[i].push_back((*k)->schedIDX());
+                local2.insert((*k)->schedIDX());
         }
         
         // Find deps in neighbouring triangles in the next tet.
@@ -179,9 +181,12 @@ void Diff::setupDeps(void)
             for (KProcPVecCI k = next2->kprocBegin(); k != kprocend; ++k)
             {
                 if ((*k)->depSpecTet(gidx, next) == true)
-                    pUpdVec[i].push_back((*k)->schedIDX());
+                    local2.insert((*k)->schedIDX());
             }
         }
+        
+        // Copy the set to the update vector.
+        schedIDXSet_To_Vec(local2, pUpdVec[i]);
     }
 }
 
@@ -240,11 +245,10 @@ SchedIDXVec const & Diff::apply(State * s)
     uint lidx = cdef->specG2L(gidx);
     
     // Apply local change.
+    uint * local = pTet->pools() + lidx;
     if (pTet->clamped(lidx) == false)
     {
-        uint * local = pTet->pools() + lidx;
         assert(*local > 0);
-        *local -= 1;
     }
     
     // Apply change in next voxel: select a direction.
@@ -256,6 +260,7 @@ SchedIDXVec const & Diff::apply(State * s)
         if (nexttet->clamped(lidx) == false)
         {
             uint * next = nexttet->pools() + lidx;
+            *local -= 1;
             *next += 1;
         }
         return pUpdVec[0];
@@ -267,6 +272,7 @@ SchedIDXVec const & Diff::apply(State * s)
         if (nexttet->clamped(lidx) == false)
         {
             uint * next = nexttet->pools() + lidx;
+            *local -= 1;
             *next += 1;
         }
         return pUpdVec[1];
@@ -278,6 +284,7 @@ SchedIDXVec const & Diff::apply(State * s)
         if (nexttet->clamped(lidx) == false)
         {
             uint * next = nexttet->pools() + lidx;
+            *local -= 1;
             *next += 1;
         }
         return pUpdVec[2];
@@ -289,6 +296,7 @@ SchedIDXVec const & Diff::apply(State * s)
         if (nexttet->clamped(lidx) == false)
         {
             uint * next = nexttet->pools() + lidx;
+            *local -= 1;
             *next += 1;
         }
         return pUpdVec[3];

@@ -708,13 +708,21 @@ class FuncCore(object):
                 # Find the Surfsys object with the given name.
                 ssys = model.getSurfsys(ssys)
                 # Add species.
-                for spec in ssys.getAllSpecs():
+                if p.icomp is not None:
+                    for spec in ssys.getAllSpecsI():
+                        self._siAddCompSpec(self._state, \
+                            c_i_idx, self._spec(spec.id))
+                for spec in ssys.getAllSpecsS():
                     self._siAddPatchSpec(self._state, \
                         pidx, self._spec(spec.id))
+                if p.ocomp is not None:
+                    for spec in ssys.getAllSpecsO():
+                        self._siAddCompSpec(self._state, \
+                            c_o_idx, self._spec(spec.id))
                 # Add surface reaction channels.
                 for sreac in ssys.getAllSReacs():
                     self._siAddPatchSReac(self._state, \
-                        cidx, self._sreac(sreac.id))
+                        pidx, self._sreac(sreac.id))
         self._siEndPatchDef(self._state)
         
         

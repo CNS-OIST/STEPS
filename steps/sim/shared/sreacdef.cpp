@@ -356,6 +356,7 @@ depT SReacDef::dep_I(gidxT idx) const
 {
     assert(pFinalSetupDone == true);
     assert(idx < statedef()->countSpecs());
+    if (outside()) return DEP_NONE;
     return pSpec_I_DEP[idx]; 
 }
 
@@ -374,6 +375,7 @@ depT SReacDef::dep_O(gidxT idx) const
 {
     assert(pFinalSetupDone == true);
     assert(idx < statedef()->countSpecs());
+    if (inside()) return DEP_NONE;
     return pSpec_O_DEP[idx];
 }
     
@@ -434,7 +436,8 @@ bool SReacDef::req_I(gidxT idx) const
 {
     assert(pFinalSetupDone == true);
     assert(idx < statedef()->countSpecs());
-    if (pSpec_I_DEP[idx] != DEP_NONE) return true;
+    if (inside())
+        if (pSpec_I_DEP[idx] != DEP_NONE) return true;
     if (pSpec_I_RHS[idx] != 0) return true;
     return false;
 }
@@ -456,7 +459,8 @@ bool SReacDef::req_O(gidxT idx) const
 {
     assert(pFinalSetupDone == true);
     assert(idx < statedef()->countSpecs());
-    if (pSpec_O_DEP[idx] != DEP_NONE) return true;
+    if (outside())
+        if (pSpec_O_DEP[idx] != DEP_NONE) return true;
     if (pSpec_O_RHS[idx] != 0) return true;
     return false;
 }

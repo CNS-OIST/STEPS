@@ -168,6 +168,9 @@ class Volsys(object):
         for id, r in self.__reacs.iteritems():
             r = self.getReac(r)
             s = s.union(r.getAllSpecs())
+        for id, d in self.__diffs.iteritems():
+            d = self.getDiff(d)
+            s = s.union(d.getAllSpecs())
         return list(s)
             
     
@@ -644,7 +647,7 @@ class Diff(object):
         
         Currently, this can obviously return only one species.
         """
-        return [ self.__ligand ]
+        return [ self.__lig ]
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
