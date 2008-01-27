@@ -37,8 +37,14 @@ AM_CPPFLAGS = -I$(top_srcdir)
 lib_LTLIBRARIES = libsteps_wmdirect.la
 
 libsteps_wmdirect_la_SOURCES = \
+    comp.cpp \
 	func_core.cpp \
     func_ssa.cpp \
+    kproc.cpp \
+    patch.cpp \
+    reac.cpp \
+    sched.cpp \
+    sreac.cpp \
     state.cpp
 
 libsteps_wmdirect_la_LIBADD = \
@@ -46,7 +52,13 @@ libsteps_wmdirect_la_LIBADD = \
 	../../rng/libsteps_rng.la
 
 header_steps_wmdirect_solver_core_HEADERS = \
+    comp.hpp \
 	doxygen.hpp \
+	kproc.hpp \
+	patch.hpp \
+	reac.hpp \
+	sched.hpp \
+	sreac.hpp \
 	state.hpp
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

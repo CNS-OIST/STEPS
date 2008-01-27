@@ -30,13 +30,20 @@
 #endif
 
 // STL headers.
+#include <cassert>
+#include <map>
 #include <string>
 #include <vector>
 
 // STEPS headers.
 #include <steps/common.h>
 #include <steps/rng/rng.hpp>
+#include <steps/sim/shared/compdef.hpp>
+#include <steps/sim/shared/patchdef.hpp>
 #include <steps/sim/shared/statedef.hpp>
+#include <steps/wmdirect/solver_core/comp.hpp>
+#include <steps/wmdirect/solver_core/patch.hpp>
+#include <steps/wmdirect/solver_core/sched.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -63,17 +70,15 @@ public:
     State(void);
     ~State(void);
     
-    StateDef * def(void) const
+    inline steps::sim::StateDef * def(void) const
     { return pStateDef; }
+    
+    inline Sched * sched(void) const
+    { return pSched; }
 
     ////////////////////////////////////////////////////////////////////////
 
     void setupState(void);
-    
-    /// Should this be a method, or be implemented in wmdirect.cpp? I chose
-    /// the first, for unclear reasons ;-)
-    ///
-    void setupTetmesh(void);
 
     /// Should this be a method, or be implemented in wmdirect.cpp? I chose
     /// the first, for unclear reasons ;-)
@@ -81,46 +86,107 @@ public:
     void reset(void);
 
     ////////////////////////////////////////////////////////////////////////
-
-    /// Computes a mesoscopic reaction constant (quantity 'c_mu' in 
-    /// Gillespie's papers) from the macroscopic reaction constant K. 
-    /// The scaling depends on the order of the reaction.
-    ///
-    /// This method does not automatically recompute the reaction 
-    /// propensity of the corresponding reaction.
-    ///
-    void computeCcst(uint cidx, uint l_ridx);
     
-    /// If the reaction is not active, this method just sets a propensity
-    /// of zero and returns immediately. 
-    ///
-    void computeReacProp(uint cidx, uint l_ridx);
+    void step(void);
+    void run(double maxt);
+    
+    ////////////////////////////////////////////////////////////////////////
 
-    double computeZeroProp(void) const;
+    inline void setRNG(steps::rng::RNG * rng)
+    { pRNG = rng; }
+    
+    inline steps::rng::RNG * rng(void) const
+    { return pRNG; }
 
     ////////////////////////////////////////////////////////////////////////
 
-    double                      fTime;
+    inline double time(void) const
+    { return pTime; }
     
-    uint                        fNSteps;
+    inline uint nsteps(void) const
+    { return pNSteps; }
     
-    uint **                     fPoolCount;
-    uint **                     fPoolFlags;
-    /// Forward reaction constants.
-    double **                   fReacKcsts;
-    /// Scaled forward reaction constants.
-    double **                   fReacCcsts;
-    double **                   fReacHs;
-    double **                   fReacProps;
-    uint **                     fReacFlags;
-    uint **                     fReacExtents;
-    double *                    fCompVols;
+    ////////////////////////////////////////////////////////////////////////
     
-    steps::rng::RNG *           fRNG;
-
+    uint addComp(steps::sim::CompDef * cdef);
+        
+    inline uint countComps(void) const
+    { return pComps.size(); }
+    
+    Comp * comp(uint idx) const;
+    
+    inline CompPVecCI bgnComp(void) const
+    { return pComps.begin(); }
+    inline CompPVecCI endComp(void) const
+    { return pComps.end(); }
+    
+    ////////////////////////////////////////////////////////////////////////
+    
+    uint addPatch(steps::sim::PatchDef * pdef);
+    
+    inline uint countPatches(void) const
+    { return pPatches.size(); }
+    
+    Patch * patch(uint idx) const;
+    
+    inline PatchPVecCI bgnPatch(void) const
+    { return pPatches.begin(); }
+    inline PatchPVecCI endPatch(void) const
+    { return pPatches.end(); }
+    
+    ////////////////////////////////////////////////////////////////////////
+    
 private:
-
-    StateDef *                  pStateDef;
+    
+    void executeStep(KProc * kp, double dt);
+    
+    ////////////////////////////////////////////////////////////////////////
+    
+    steps::sim::StateDef *      pStateDef;
+    
+    steps::rng::RNG *           pRNG;
+    
+    ////////////////////////////////////////////////////////////////////////
+    // TIME
+    ////////////////////////////////////////////////////////////////////////
+    
+    inline void incTime(double dt)
+    { pTime += dt; }
+    
+    inline void setTime(double t)
+    { pTime = t; }
+    
+    inline void resetTime(void)
+    { pTime = 0.0; }
+    
+    double                      pTime;
+    
+    ////////////////////////////////////////////////////////////////////////
+    // DISCRETE STEP COUNTER
+    ////////////////////////////////////////////////////////////////////////
+    
+    inline void incNSteps(uint i = 1)
+    { pNSteps += i; }
+    
+    inline void resetNSteps(void)
+    { pNSteps = 0; }
+    
+    uint                        pNSteps;
+    
+    ////////////////////////////////////////////////////////////////////////
+    
+    Sched *                     pSched;
+    
+    ////////////////////////////////////////////////////////////////////////
+    // THE MESH ELEMENTS
+    ////////////////////////////////////////////////////////////////////////
+    
+    CompPVec                    pComps;
+    std::map<steps::sim::CompDef *, Comp *> pCompMap;
+    
+    PatchPVec                   pPatches;
+    
+    ////////////////////////////////////////////////////////////////////////
 
 };
 

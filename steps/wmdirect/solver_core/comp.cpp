@@ -18,7 +18,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA
 //
-// $Id:func_ssa.cpp 64 2007-08-20 06:25:41Z stefan $
+// $Id$
 ////////////////////////////////////////////////////////////////////////////////
 
 // Autotools definitions.
@@ -27,111 +27,114 @@
 #endif
 
 // STL headers.
+#include <algorithm>
 #include <cassert>
-#include <cmath>
-#include <iostream>
-#include <string>
+#include <functional>
 #include <vector>
 
 // STEPS headers.
 #include <steps/common.h>
-#include <steps/math/constants.hpp>
-#include <steps/rng/rng.hpp>
 #include <steps/sim/shared/compdef.hpp>
-#include <steps/sim/shared/reacdef.hpp>
-#include <steps/sim/shared/specdef.hpp>
-#include <steps/sim/shared/statedef.hpp>
-#include <steps/sim/swiginf/func_ssa.hpp>
-#include <steps/wmdirect/solver_core/state.hpp>
+#include <steps/wmdirect/solver_core/comp.hpp>
+#include <steps/wmdirect/solver_core/reac.hpp>
+#include <steps/wmdirect/solver_core/kproc.hpp>
+
+NAMESPACE_ALIAS(steps::sim, ssim);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double siStep(State * s)
+Comp::Comp(ssim::CompDef * compdef)
+: pCompDef(compdef)
+, pPoolCount(0)
+, pPoolFlags(0)
+, pKProcs()
+, pIPatches()
+, pOPatches()
 {
-    s->step();
-    return s->time();
+    assert(pCompDef != 0);
+    uint nspecs = def()->countSpecs();
+    pPoolCount = new uint[nspecs];
+    pPoolFlags = new uint[nspecs];
+    std::fill_n(pPoolCount, nspecs, 0);
+    std::fill_n(pPoolFlags, nspecs, 0);
+    pKProcs.resize(def()->countReacs());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint siGetNSteps(State * s)
+Comp::~Comp(void)
 {
-    return s->nsteps();
+    delete[] pPoolCount;
+    delete[] pPoolFlags;
+    for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
+    {
+        delete *k;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double siGetA0(State * s)
+void Comp::setupKProcs(Sched * s)
 {
-    return 0.0;
+    // Create reaction kproc's.
+    uint nreacs = def()->countReacs();
+    for (uint i = 0; i < nreacs; ++i)
+    {
+        ssim::ReacDef * rdef = def()->reac(i);
+        Reac * r = new Reac(rdef, this);
+        pKProcs.push_back(r);
+        s->addKProc(r);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double siGetCompReacC(State * s, uint cidx, uint ridx)
+void Comp::setupDeps(void)
 {
-    return 0.0;
+    std::for_each(pKProcs.begin(), pKProcs.end(), 
+        std::mem_fun(&KProc::setupDeps));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double siGetCompReacH(State * s, uint cidx, uint ridx)
+void Comp::reset(void)
 {
-    return 0.0;
+    uint nspecs = def()->countSpecs();
+    std::fill_n(pPoolCount, nspecs, 0);
+    std::fill_n(pPoolFlags, nspecs, 0);
+    std::for_each(pKProcs.begin(), pKProcs.end(), std::mem_fun(&KProc::reset));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double siGetCompReacA(State * s, uint cidx, uint ridx)
+void Comp::setClamped(uint lidx, bool clamp)
 {
-    return 0.0;
+    if (clamp == true) pPoolFlags[lidx] |= CLAMPED;
+    else pPoolFlags[lidx] &= ~CLAMPED;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint siGetCompReacExtent(State * s, uint cidx, uint ridx)
+Reac * Comp::reac(uint lidx) const
 {
-    return 0;
+    assert(lidx < def()->countReacs());
+    return dynamic_cast<Reac*>(pKProcs[lidx]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void siResetCompReacExtent(State * s, uint cidx, uint ridx)
+void Comp::addIPatch(Patch * p)
 {
+    assert(std::find(pIPatches.begin(), pIPatches.end(), p) == pIPatches.end());
+    pIPatches.push_back(p);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double siGetPatchSReacC(State * s, uint pidx, uint ridx)
+void Comp::addOPatch(Patch * p)
 {
-    return 0.0;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-double siGetPatchSReacH(State * s, uint pidx, uint ridx)
-{
-    return 0.0;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-double siGetPatchSReacA(State * s, uint pidx, uint ridx)
-{
-    return 0.0;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-uint siGetPatchSReacExtent(State * s, uint pidx, uint ridx)
-{
-    return 0;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void siResetPatchSReacExtent(State * s, uint pidx, uint ridx)
-{
+    assert(std::find(pOPatches.begin(), pOPatches.end(), p) == pOPatches.end());
+    pOPatches.push_back(p);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

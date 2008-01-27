@@ -38,6 +38,7 @@ SUBDIRS	= \
     sim \
     tetexact \
     thirdparty \
+    wmdirect \
     .
 
 # Python package.

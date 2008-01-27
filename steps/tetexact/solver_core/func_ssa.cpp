@@ -49,6 +49,7 @@
 
 double siStep(State * s)
 {
+    s->step();
     return s->time();
 }
 
