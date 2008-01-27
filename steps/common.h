@@ -38,14 +38,14 @@ STEPS_EXTERN "C" {
 /* ************************************************************************** */
 
 /* General contact. */
-#define STEPS_CONTACT_GENERAL       "stefan@tnb.ua.ac.be"
+#define STEPS_CONTACT_GENERAL       "wils@oist.jp"
 
 /* Primary author. */
-#define STEPS_CONTACT_FIRSTAUTHOR   "stefan@tnb.ua.ac.be"
+#define STEPS_CONTACT_FIRSTAUTHOR   "wils@oist.jp"
 
 /* Use this address for composing (error) messages that advise a user to
  * contact the development ...uh... 'team'. */
-#define STEPS_CONTACT_BUGREPORT     "stefan@tnb.ua.ac.be"
+#define STEPS_CONTACT_BUGREPORT     "wils@oist.jp"
 
 /* Official website URL. */
 #define STEPS_CONTACT_HOMEPAGE      "http://www.tnb.ua.ac.be/steps"

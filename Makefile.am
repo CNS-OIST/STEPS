@@ -37,8 +37,8 @@ SUBDIRS	= \
     .
 
 # Things that should go in the distribution.
-EXTRA_DIST = \
-    setup.py
+#EXTRA_DIST = \
+#    setup.py
 
 # Headers that are generated during the build but should be installed.
 nobase_nodist_include_HEADERS = \
