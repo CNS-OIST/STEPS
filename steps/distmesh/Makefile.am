@@ -32,7 +32,8 @@ VPATH = @srcdir@
 python_steps_distmeshdir = $(pythondir)/steps/distmesh
 python_steps_distmesh_PYTHON = \
     __init__.py \
-    core.py
+    core.py \
+    tools.py
     
 # Files that should be cleaned when building a distribution.
 distclean-local:

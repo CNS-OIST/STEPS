@@ -58,6 +58,38 @@ class Sphere(object):
         return h
 
 
+class Cylinder(object):
+    
+    def __init__(self, p1, p2, rad):
+        self._p1 = numpy.asarray(p1)
+        self._p2 = numpy.asarray(p2)
+        self._rad = rad
+        self._p12 = self._p2 - self._p1
+        self._dp2 = numpy.sum(self._p12 * self._p12)
+        self._dp = math.sqrt(self._dp2)
+        
+    def sigdist(self, p):
+        """Returns the signed distance of one or more test points.
+        """
+        npoints = p.shape[0] 
+        # Compute projected parametric coordinates.
+        t = -numpy.sum((self._p1 - p) * self._p12, axis=1) / self._dp2
+        # Compute coaxial signed distance to p1 and p2.
+        d0 = -t * self._dp
+        d1 = (t - 1.0) * self._dp
+        # Compute radial distance.
+        p00 = (numpy.c_[t,t,t] * self._p12) + self._p1
+        pp00 = p00-p
+        dr = numpy.sqrt(numpy.sum(pp00*pp00,axis=1)) - self._rad
+        df = numpy.c_[d0,d1,dr]
+        df.sort(axis=1)
+        return df[:,2]
+    
+    def relsize(self, p):
+        npoints = p.shape[0]
+        h = numpy.ones(npoints)
+        return h
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
