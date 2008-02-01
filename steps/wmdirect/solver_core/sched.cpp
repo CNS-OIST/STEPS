@@ -113,7 +113,7 @@ void Sched::build(void)
     // Setup level.
     uint clevel = 0;
     uint clsize = pKProcs.size();
-    
+
     // Work up.
     while (clsize > 1)
     {
@@ -206,6 +206,9 @@ KProc * Sched::getNext(State * state) const
 
 void Sched::reset(void)
 {
+    // DEBUG: 1-Feb-2008
+    if (countKProcs() == 0) return;
+    
     // Reset the basic level: compute rates.
     double * oldlevel = pLevels[0];
     uint cur_node = 0;
@@ -252,6 +255,9 @@ void Sched::reset(void)
 
 void Sched::recomp(void)
 {
+    // DEBUG: 1-Feb-2008
+    if (countKProcs() == 0) return; 
+    
     // Setup.
     double * oldlevel = pLevels[0];
     uint cur_node = 0;
@@ -293,6 +299,9 @@ void Sched::recomp(void)
 
 void Sched::update(SchedIDXVec const & entries)
 {
+    // DEBUG: 1-Feb-2008
+    if (countKProcs() == 0) return;
+    
     // Prefetch zero level.
     double * level0 = pLevels[0];
     // Number of entries.
