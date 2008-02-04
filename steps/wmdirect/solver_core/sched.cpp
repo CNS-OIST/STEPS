@@ -111,13 +111,17 @@ void Sched::addKProc(KProc * kproc)
 void Sched::build(void)
 {
     // Setup level.
-    uint clevel = 0;
     uint clsize = pKProcs.size();
-
+    if (clsize == 0) return;
+    
+    // DEBUG 4-Feb-2008: Modified to correctly deal with situations when
+    // there are only 0 or 1 kproc's.
+    
     // Work up.
-    while (clsize > 1)
+    uint clevel = 0;
+    do
     {
-        // Make sure the new size is a multiple of SchedWIDTH.
+        // Make sure the new size is a multiple of SCHEDULEWIDTH.
         uint extra = clsize % SCHEDULEWIDTH;
         if (extra != 0) clsize += SCHEDULEWIDTH - extra;
         
@@ -131,6 +135,7 @@ void Sched::build(void)
         clevel++;
         clsize = clsize / SCHEDULEWIDTH;
     }
+    while (clsize > 1);
     
     // Set top level.
     pA0 = 0.0;
