@@ -652,9 +652,9 @@ class FuncCore(object):
                 # Find the Volsys object with the given name.
                 vsys = model.getVolsys(vsys)
                 # Add species.
-                for spec in vsys.getAllSpecs():
-                    self._siAddCompSpec(self._state, \
-                        cidx, self._spec(spec.id))
+                #for spec in vsys.getAllSpecs():
+                #    self._siAddCompSpec(self._state, \
+                #        cidx, self._spec(spec.id))
                 # Add reaction channels.
                 for reac in vsys.getAllReacs():
                     self._siAddCompReac(self._state, \
@@ -708,17 +708,17 @@ class FuncCore(object):
                 # Find the Surfsys object with the given name.
                 ssys = model.getSurfsys(ssys)
                 # Add species.
-                if p.icomp is not None:
-                    for spec in ssys.getAllSpecsI():
-                        self._siAddCompSpec(self._state, \
-                            c_i_idx, self._spec(spec.id))
-                for spec in ssys.getAllSpecsS():
-                    self._siAddPatchSpec(self._state, \
-                        pidx, self._spec(spec.id))
-                if p.ocomp is not None:
-                    for spec in ssys.getAllSpecsO():
-                        self._siAddCompSpec(self._state, \
-                            c_o_idx, self._spec(spec.id))
+                #if p.icomp is not None:
+                #    for spec in ssys.getAllSpecsI():
+                #        self._siAddCompSpec(self._state, \
+                #            c_i_idx, self._spec(spec.id))
+                #for spec in ssys.getAllSpecsS():
+                #    self._siAddPatchSpec(self._state, \
+                #        pidx, self._spec(spec.id))
+                #if p.ocomp is not None:
+                #    for spec in ssys.getAllSpecsO():
+                #        self._siAddCompSpec(self._state, \
+                #            c_o_idx, self._spec(spec.id))
                 # Add surface reaction channels.
                 for sreac in ssys.getAllSReacs():
                     self._siAddPatchSReac(self._state, \

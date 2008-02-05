@@ -30,12 +30,15 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <set>
 #include <string>
+#include <vector>
 
 // STEPS headers.
 #include <steps/common.h>
 #include <steps/sim/shared/compdef.hpp>
 #include <steps/sim/shared/diffdef.hpp>
+#include <steps/sim/shared/patchdef.hpp>
 #include <steps/sim/shared/reacdef.hpp>
 #include <steps/sim/shared/specdef.hpp>
 #include <steps/sim/shared/statedef.hpp>
@@ -52,6 +55,8 @@ CompDef::CompDef(StateDef * sdef, gidxT idx, string const & name)
 , pName(name)
 , pVolume(0.0)
 , pLocalIndicesSetupDone(false)
+, pIPatches()
+, pOPatches()
 , pSpec_N(0)
 , pSpec_G2L(0)
 , pSpec_L2G(0)
@@ -113,9 +118,6 @@ void CompDef::addReac(gidxT idx)
     assert(statedef()->reac(idx) != 0);
     if (pReac_G2L[idx] != LIDX_UNDEFINED) return;
     pReac_G2L[idx] = pReac_N++;
-    
-    // Also add all the referenced species in the reaction.
-    // TODO
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -126,9 +128,37 @@ void CompDef::addDiff(gidxT idx)
     assert(statedef()->diff(idx) != 0);
     if (pDiff_G2L[idx] != LIDX_UNDEFINED) return;
     pDiff_G2L[idx] = pDiff_N++;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void CompDef::addReferences(void)
+{
+    uint ngspecs = statedef()->countSpecs();
+    uint ngreacs = statedef()->countReacs();
+    uint ngdiffs = statedef()->countDiffs();
     
-    // Also add the ligand to the compartment.
-    // TODO
+    for (uint r = 0; r < ngreacs; ++r)
+    {
+        if (pReac_G2L[r] == LIDX_UNDEFINED) continue;
+        ReacDef * rdef = statedef()->reac(r);
+        assert(rdef != 0);
+        for (uint s = 0; s < ngspecs; ++s)
+        {
+            if (rdef->req(s) == true) addSpec(s);
+        }
+    }
+    
+    for (uint d = 0; d < ngdiffs; ++d)
+    {
+        if (pDiff_G2L[d] == LIDX_UNDEFINED) continue;
+        DiffDef * ddef = statedef()->diff(d);
+        assert(ddef != 0);
+        for (uint s = 0; s < ngspecs; ++s)
+        {
+            if (ddef->req(s) == true) addSpec(s);
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -302,6 +332,42 @@ void CompDef::setupDependencies(void)
     */
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+void CompDef::addIPatchDef(PatchDef * p)
+{
+    // Make some checks.
+    assert(p != 0);
+    assert(p->ocompdef() == this);
+    // Check whether it's already included.
+    PatchDefPVecI ip_end = pIPatches.end();
+    if (std::find(pIPatches.begin(), ip_end, p) != ip_end) return;
+#ifndef NDEBUG
+    PatchDefPVecI op_end = pOPatches.end();
+    assert(std::find(pOPatches.begin(), op_end, p) == op_end);
+#endif
+    // Include.
+    pIPatches.push_back(p);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void CompDef::addOPatchDef(PatchDef * p)
+{
+    // Make some checks.
+    assert(p != 0);
+    assert(p->icompdef() == this);
+    // Check whether it's already included.
+    PatchDefPVecI op_end = pOPatches.end();
+    if (std::find(pOPatches.begin(), op_end, p) != op_end) return;
+#ifndef NDEBUG
+    PatchDefPVecI ip_end = pIPatches.end();
+    assert(std::find(pIPatches.begin(), ip_end, p) == ip_end);
+#endif
+    // Include.
+    pOPatches.push_back(p);
+}
+    
 ////////////////////////////////////////////////////////////////////////////////
 
 SpecDef * CompDef::spec(lidxT idx) const

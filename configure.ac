@@ -88,20 +88,12 @@ dnl ----------------------------------------------------------------------------
 dnl Dynamic loading
 dnl ----------------------------------------------------------------------------
 
-dnl Check for dlopen support -- else, libtool will revert to dlpreopening.
-dnl AC_LIBTOOL_DLOPEN
-dnl Request for ltdl on the host; else use a copy shipped with the package.
-dnl AC_LIBLTDL_INSTALLABLE
+dnl Build dlls on Windows. For this to work all exported library symbols  
+dnl must be properly marked with __declspec(dllexport). 
+AC_LIBTOOL_WIN32_DLL
 dnl Use libtool to build the system (we use AC_PROG_LIBTOOL instead of 
 dnl AM_PROG_LIBTOOL, since we're using libtool/automake >= 1.4).
 AC_PROG_LIBTOOL
-dnl The preprocessor flag that should be used to compile programs that
-dnl include `ltdl.h'.
-dnl AC_SUBST(INCLTDL)
-dnl The link flag that you should use to link with libltdl.
-dnl AC_SUBST(LIBLTDL)
-dnl Run configure in the libltdl subdirectory.
-dnl AC_CONFIG_SUBDIRS(libltdl)
 
 dnl Perform a build-time sanity check.
 AM_SANITY_CHECK

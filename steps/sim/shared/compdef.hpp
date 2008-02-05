@@ -45,6 +45,7 @@ START_NAMESPACE(sim)
 // Forward declarations.
 class CompDef;
 class DiffDef;
+class PatchDef;
 class ReacDef;
 class SpecDef;
 class StateDef;
@@ -91,12 +92,16 @@ public:
     /// Declare that a diffusion rule, specified by its global index, 
     /// can occur in this compartment.
     ///
-    /// Currently, this method adds the ligand to the list of species
-    /// that can occur in this compartment (the alternative would be
-    /// to report an error saying that the ligand was not explicitly
-    /// added to the compartment).
-    ///
     void addDiff(gidxT idx);
+    
+    /// Make sure everything referenced in reaction and diffusion objects
+    /// will be present in the compartment. 
+    ///
+    /// Before it was done immediately in CompDef::addReac and 
+    /// CompDef::addDiff, but with the addition of new and more complicated 
+    /// features in the future, it was decided to do this in a separate step.
+    ///
+    void addReferences(void);
     
     /// Build a set of local indices for species, reaction and 
     /// diffusion rules (called during setup, by StateDef::setupFinal()).
@@ -108,6 +113,18 @@ public:
     /// that CompDef::setupLocalIndices() has been called prior to this).
     ///
     void setupDependencies(void);
+    
+    /// Adds a patch that's on the inside of this compartment. From the
+    /// point of view of the patch, therefore, this must correspond to the 
+    /// outer compartment.
+    ///
+    void addIPatchDef(PatchDef * p);
+    
+    /// Adds a patch that's on the outside of this compartment. From the
+    /// point of view of the patch, therefore, this must correspond to the
+    /// inner compartment.
+    ///
+    void addOPatchDef(PatchDef * p);
     
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: GENERAL
@@ -212,7 +229,16 @@ private:
     /// The volume of the compartment.
     double                      pVolume;
     
+    /// Keeps track of whether setupLocalIndices() has been called.
     bool                        pLocalIndicesSetupDone;
+    
+    ////////////////////////////////////////////////////////////////////////
+    // DATA: CONNECTIVITY
+    ////////////////////////////////////////////////////////////////////////
+    
+    /// A list of patches surrounding 
+    std::vector<PatchDef *>     pIPatches;
+    std::vector<PatchDef *>     pOPatches;
     
     ////////////////////////////////////////////////////////////////////////
     // DATA: SPECIES

@@ -180,25 +180,7 @@ bool ReacDef::req(gidxT idx) const
     if (pSpec_RHS[idx] != 0) return true;
     return false;
 }
-    
-////////////////////////////////////////////////////////////////////////////////
-/*
-bool ReacDef::dependsOnSpec(uint gidx) const
-{
-    assert(gidx < statedef()->countSpecs());
-    if (lhs(gidx) == 0) return false;
-    return true;
-}
-*/
-////////////////////////////////////////////////////////////////////////////////
-/*
-bool ReacDef::affectsSpec(uint gidx) const
-{
-    assert(gidx < statedef()->countSpecs());
-    if ((rhs(gidx) - lhs(gidx)) == 0) return false;
-    return true;
-}
-*/
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void ReacDef::computeOrder(void)

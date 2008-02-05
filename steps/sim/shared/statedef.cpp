@@ -100,6 +100,13 @@ void StateDef::setupFinal(void)
     for (SReacDefPVecI i = pSReacs.begin(); i != pSReacs.end(); ++i)
         (*i)->setupFinal();
     
+    // Make sure all variables required by the kinetic processes and rules
+    // are present in each compartment and patch.
+    for (CompDefPVecI i = pComps.begin(); i != pComps.end(); ++i)
+        (*i)->addReferences();
+    for (PatchDefPVecI i = pPatches.begin(); i != pPatches.end(); ++i)
+        (*i)->addReferences();
+    
     // Make local indices for species, reactions, diffusion rules, ... in 
     // compartments and then in patches.
     for (CompDefPVecI i = pComps.begin(); i != pComps.end(); ++i)

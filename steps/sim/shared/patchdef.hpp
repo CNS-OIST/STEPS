@@ -84,7 +84,16 @@ public:
     /// index, can occur in this compartment.
     ///
     void addSReac(gidxT idx);
-    
+
+    /// Make sure everything referenced in reaction and diffusion objects
+    /// will be present in the compartment.
+    ///
+    /// Before it was done immediately in PatchDef::addSReac, but with the 
+    /// addition of new and more complicated features in the future, it was 
+    /// decided to do this in a separate step.
+    ///
+    void addReferences(void);
+        
     /// Build a set of local indices for species and sreaction rules 
     /// (called during setup, by StateDef::setupFinal()). Requires that
     /// setupLocalIndices() has already been called for all CompDef's.

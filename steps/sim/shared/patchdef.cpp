@@ -79,10 +79,12 @@ PatchDef::PatchDef
     if (pInner != 0)
     {
         assert(pStateDef == pInner->statedef());
+        pInner->addOPatchDef(this);
     }
     if (pOuter != 0)
     {
         assert(pStateDef == pOuter->statedef());
+        pOuter->addIPatchDef(this);
     }
     
     // Pre-generate certain arrays.
@@ -131,6 +133,34 @@ void PatchDef::addSReac(gidxT idx)
     assert(statedef()->sreac(idx) != 0);
     if (pSReac_G2L[idx] != LIDX_UNDEFINED) return;
     pSReac_G2L[idx] = pSReac_N++;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void PatchDef::addReferences(void)
+{
+    uint ngspecs = statedef()->countSpecs();
+    uint ngsreacs = statedef()->countSReacs();
+    
+    for (uint sr = 0; sr < ngsreacs; ++sr)
+    {
+        if (pSReac_G2L[sr] == LIDX_UNDEFINED) continue;
+        SReacDef * srdef = statedef()->sreac(sr);
+        for (uint s = 0; s < ngspecs; ++s)
+        {
+            if (srdef->req_S(s) == true) addSpec(s);
+            if (srdef->req_I(s) == true)
+            {
+                assert(icompdef() != 0);
+                icompdef()->addSpec(s);
+            }
+            if (srdef->req_O(s) == true)
+            {
+                assert(ocompdef() != 0);
+                ocompdef()->addSpec(s);
+            }
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
