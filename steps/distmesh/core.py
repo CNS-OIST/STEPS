@@ -358,7 +358,7 @@ def meshgenloop(maxcount, gd, p0, h):
             # SKIP
             
             # Increase triangulation counter.
-            if count == maxcount:
+            if (maxcount != 0) and (count == maxcount):
                 return (p, t)
             count = count + 1
         
