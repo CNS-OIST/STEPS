@@ -47,6 +47,8 @@ libsteps_wmdirect_la_SOURCES = \
     sreac.cpp \
     state.cpp
 
+libsteps_wmdirect_la_SOURCES = -no-undefined
+
 libsteps_wmdirect_la_LIBADD = \
     ../../sim/shared/libsimshared.la \
 	../../rng/libsteps_rng.la

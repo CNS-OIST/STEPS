@@ -43,7 +43,7 @@ SWIG_SOURCES = solver_core.i
 pyexec_steps_wmdirect_LTLIBRARIES = \
     _solver_core.la
 
-_solver_core_la_LDFLAGS = -module -avoid-version $(PYTHON_LDFLAGS)
+_solver_core_la_LDFLAGS = -module -avoid-version -no-undefined $(PYTHON_LDFLAGS)
 _solver_core_la_SOURCES = \
     $(SWIG_SOURCES) \
     solver_core_wrap.cpp

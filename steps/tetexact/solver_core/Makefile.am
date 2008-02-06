@@ -51,6 +51,8 @@ libsteps_tetexact_la_SOURCES = \
     tet.cpp \
     tri.cpp
 
+libsteps_tetexact_la_LDFLAGS = -no-undefined
+
 libsteps_tetexact_la_LIBADD = \
     ../../sim/shared/libsimshared.la \
     ../../rng/libsteps_rng.la

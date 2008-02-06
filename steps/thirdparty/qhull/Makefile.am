@@ -39,7 +39,7 @@ header_steps_thirdparty_qhulldir = $(pkgincludedir)/steps/thirdparty/qhull
 AM_CPPFLAGS = $(PYTHON_CPPFLAGS) $(NUMPY_CPPFLAGS) -I$(top_srcdir)
 
 pyexec_steps_thirdparty_qhull_LTLIBRARIES = _qhull.la
-_qhull_la_LDFLAGS = -module -avoid-version $(PYTHON_LDFLAGS)
+_qhull_la_LDFLAGS = -module -avoid-version -no-undefined $(PYTHON_LDFLAGS)
 
 _qhull_la_SOURCES = \
     _qhullmodule.c \

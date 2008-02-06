@@ -34,7 +34,7 @@ distclean-local:
 
 pyexec_steps_mathdir = $(pythondir)/steps/math
 python_steps_mathdir = $(pythondir)/steps/math
-header_steps_mathdir = $(pkgincludedir)/steps/thirdparty/qhull
+header_steps_mathdir = $(pkgincludedir)/steps/math
 
 AM_CPPFLAGS = $(PYTHON_CPPFLAGS) $(NUMPY_CPPFLAGS) -I$(top_srcdir)
 
@@ -52,7 +52,7 @@ pkginclude_HEADERS = \
     tools.hpp 
 
 pyexec_steps_math_LTLIBRARIES = tetrahedron.la
-tetrahedron_la_LDFLAGS = -module -avoid-version $(PYTHON_LDFLAGS)
+tetrahedron_la_LDFLAGS = -module -avoid-version -no-undefined $(PYTHON_LDFLAGS)
 tetrahedron_la_SOURCES = tetrahedron.cpp
 tetrahedron_la_LIBADD = ../rng/libsteps_rng.la
     

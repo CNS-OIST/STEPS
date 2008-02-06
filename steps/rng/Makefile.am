@@ -40,7 +40,7 @@ SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@ -I$(top_srcdir)
 	$(SWIG) $(SWIG_PYTHON_OPT) -o $@ $<
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# LIBRARY: LIBSRNG
+# LIBRARY: LIBSTEPS_RNG
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 lib_LTLIBRARIES = libsteps_rng.la
@@ -48,6 +48,8 @@ lib_LTLIBRARIES = libsteps_rng.la
 libsteps_rng_la_SOURCES = \
     mt19937.cpp \
     rng.cpp
+
+libsteps_rng_la_LDFLAGS = -no-undefined
 
 header_steps_rng_HEADERS = \
     doxygen.hpp \
@@ -61,7 +63,7 @@ header_steps_rng_HEADERS = \
 SWIG_SOURCES = rng_core.i
 
 pyexec_steps_rng_LTLIBRARIES = _rng_core.la
-_rng_core_la_LDFLAGS = -module -avoid-version $(PYTHON_LDFLAGS)
+_rng_core_la_LDFLAGS = -module -avoid-version -no-undefined $(PYTHON_LDFLAGS) 
 
 _rng_core_la_SOURCES = \
     $(SWIG_SOURCES) \
