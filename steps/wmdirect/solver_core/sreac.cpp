@@ -29,6 +29,7 @@
 // Standard library headers.
 #include <cassert>
 #include <cmath>
+#include <iostream>
 
 // STEPS headers.
 #include <steps/common.h>
@@ -378,6 +379,11 @@ double SReac::rate(void) const
 
 SchedIDXVec const & SReac::apply(State * s)
 {
+    if (rate() == 0.0)
+    {
+        std::cerr << "time: " << s->time() << std::endl;
+    }
+    
     ssim::PatchDef * pdef = pPatch->def();
     ssim::lidxT lidx = pdef->sreacG2L(def()->gidx());
     
