@@ -109,6 +109,25 @@ void siBeginStateDef(State * s)
 void siEndStateDef(State * s)
 {
     s->def()->setupFinal();
+
+    // Create the actual compartments.
+    ssim::CompDefPVecCI c_end = s->def()->endComp();
+    for (ssim::CompDefPVecCI c = s->def()->bgnComp(); c != c_end; ++c)
+    {
+        uint compdef_gidx = (*c)->gidx();
+        uint comp_idx = s->addComp(*c);
+        assert(compdef_gidx == comp_idx);
+    }
+    
+    // Create the actual patches.
+    ssim::PatchDefPVecCI p_end = s->def()->endPatch();
+    for (ssim::PatchDefPVecCI p = s->def()->bgnPatch(); p != p_end; ++p)
+    {
+        uint patchdef_gidx = (*p)->gidx();
+        uint patch_idx = s->addPatch(*p);
+        assert(patchdef_gidx == patch_idx);
+    }
+    
     s->setupState();
 }
 
@@ -291,39 +310,34 @@ uint siNewComp(State * s, char * name, double vol)
     ssim::CompDef * compdef = s->def()->createCompDef(name);
     assert(compdef != 0);
     compdef->setVol(vol);
-    uint compdef_gidx = compdef->gidx();
-    
-    uint comp_idx = s->addComp(compdef);
-    assert(compdef_gidx == comp_idx);
-    
-    return compdef_gidx;
+    return compdef->gidx();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siAddCompSpec(State * s, uint cidx, uint sidx)
 {
-    ssim::CompDef * comp = s->def()->comp(cidx);
-    assert(comp != 0);
-    comp->addSpec(sidx);
+    ssim::CompDef * compdef = s->def()->comp(cidx);
+    assert(compdef != 0);
+    compdef->addSpec(sidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siAddCompReac(State * s, uint cidx, uint ridx)
 {
-    ssim::CompDef * comp = s->def()->comp(cidx);
-    assert(comp != 0);
-    comp->addReac(ridx);
+    ssim::CompDef * compdef = s->def()->comp(cidx);
+    assert(compdef != 0);
+    compdef->addReac(ridx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siAddCompDiff(State * s, uint cidx, uint didx)
 {
-    ssim::CompDef * comp = s->def()->comp(cidx);
-    assert(comp != 0);
-    comp->addDiff(didx);
+    ssim::CompDef * compdef = s->def()->comp(cidx);
+    assert(compdef != 0);
+    compdef->addDiff(didx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -357,12 +371,8 @@ uint siNewPatch
     ssim::PatchDef * pdef = s->def()->createPatchDef(name, cdef_i, cdef_o);
     assert(pdef != 0);
     pdef->setArea(area);
-    uint patchdef_gidx = pdef->gidx();
     
-    uint patch_idx = s->addPatch(pdef);
-    assert(patchdef_gidx == patch_idx);
-    
-    return patchdef_gidx;
+    return pdef->gidx();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

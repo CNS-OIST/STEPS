@@ -154,7 +154,7 @@ public:
     { return (isValidComp(idx) ? pComps[idx] : 0); }
 
     ///
-    std::vector<CompDef*>::const_iterator beginComp(void) const
+    std::vector<CompDef*>::const_iterator bgnComp(void) const
     { return pComps.begin(); }
     
     ///
@@ -227,7 +227,7 @@ public:
     PatchDef * patch(gidxT idx) const
     { return (isValidPatch(idx) ? pPatches[idx] : 0); }
     
-    std::vector<PatchDef*>::const_iterator beginPatch(void) const
+    std::vector<PatchDef*>::const_iterator bgnPatch(void) const
     { return pPatches.begin(); }
     
     std::vector<PatchDef*>::const_iterator endPatch(void) const

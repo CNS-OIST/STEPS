@@ -36,12 +36,14 @@
 #include <steps/math/constants.hpp>
 #include <steps/sim/shared/compdef.hpp>
 #include <steps/sim/shared/patchdef.hpp>
+#include <steps/sim/shared/specdef.hpp>
 #include <steps/sim/shared/sreacdef.hpp>
 #include <steps/wmdirect/solver_core/comp.hpp>
 #include <steps/wmdirect/solver_core/kproc.hpp>
 #include <steps/wmdirect/solver_core/patch.hpp>
 #include <steps/wmdirect/solver_core/sched.hpp>
 #include <steps/wmdirect/solver_core/sreac.hpp>
+#include <steps/wmdirect/solver_core/state.hpp>
 
 NAMESPACE_ALIAS(steps::math, smath);
 NAMESPACE_ALIAS(steps::sim, ssim);
@@ -377,13 +379,8 @@ double SReac::rate(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-SchedIDXVec const & SReac::apply(State * s)
-{
-    if (rate() == 0.0)
-    {
-        std::cerr << "time: " << s->time() << std::endl;
-    }
-    
+SchedIDXVec const & SReac::apply(State * state)
+{   
     ssim::PatchDef * pdef = pPatch->def();
     ssim::lidxT lidx = pdef->sreacG2L(def()->gidx());
     
@@ -391,12 +388,13 @@ SchedIDXVec const & SReac::apply(State * s)
     int * upd_s_vec = pdef->sreac_upd_S_bgn(lidx);
     uint * cnt_s_vec = pPatch->pools();
     uint nspecs_s = pdef->countSpecs();
+    
     for (uint s = 0; s < nspecs_s; ++s)
     {
         if (pPatch->clamped(s) == true) continue;
         int upd = upd_s_vec[s];
         if (upd == 0) continue;
-        int nc = static_cast<int>(cnt_s_vec[s]) + upd;
+        int nc = static_cast<int>(cnt_s_vec[s]) + upd; 
         assert(nc >= 0);
         cnt_s_vec[s] = static_cast<uint>(nc);
     }

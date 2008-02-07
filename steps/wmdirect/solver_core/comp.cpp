@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <cassert>
 #include <functional>
+#include <iostream>
 #include <vector>
 
 // STEPS headers.
@@ -57,6 +58,8 @@ Comp::Comp(ssim::CompDef * compdef)
     pPoolFlags = new uint[nspecs];
     std::fill_n(pPoolCount, nspecs, 0);
     std::fill_n(pPoolFlags, nspecs, 0);
+    
+    // We already set the local KProcs to the expected number.
     pKProcs.resize(def()->countReacs());
 }
 
@@ -82,7 +85,7 @@ void Comp::setupKProcs(Sched * s)
     {
         ssim::ReacDef * rdef = def()->reac(i);
         Reac * r = new Reac(rdef, this);
-        pKProcs.push_back(r);
+        pKProcs[i] = r;
         s->addKProc(r);
     }
 }

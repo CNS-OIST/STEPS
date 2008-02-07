@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <cassert>
 #include <functional>
+#include <iostream>
 #include <vector>
 
 // STEPS headers.
@@ -87,7 +88,7 @@ void Patch::setupKProcs(Sched * s)
     {
         ssim::SReacDef * srdef = def()->sreac(i);
         SReac * sr = new SReac(srdef, this);
-        pKProcs.push_back(sr);
+        pKProcs[i] = sr;
         s->addKProc(sr);
     }
 }
