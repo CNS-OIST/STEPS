@@ -232,12 +232,20 @@ void PatchDef::setupLocalIndices(void)
         pSReac_DEP_S_Spec = new depT[arrsize_s];
         pSReac_LHS_S_Spec = new uint[arrsize_s];
         pSReac_UPD_S_Spec = new int[arrsize_s];
+        // DEBUG: 08-Feb-2008
+        std::fill_n(pSReac_DEP_S_Spec, arrsize_s, 0);
+        std::fill_n(pSReac_LHS_S_Spec, arrsize_s, 0);
+        std::fill_n(pSReac_UPD_S_Spec, arrsize_s, 0);
         if (icompdef() != 0) // Only create if inner comp exists.
         {
             arrsize_i = countSpecs_I() * countSReacs();
             pSReac_DEP_I_Spec = new depT[arrsize_i];
             pSReac_LHS_I_Spec = new uint[arrsize_i];
             pSReac_UPD_I_Spec = new int[arrsize_i];
+            // DEBUG: 08-Feb-2008
+            std::fill_n(pSReac_DEP_I_Spec, arrsize_i, 0);
+            std::fill_n(pSReac_LHS_I_Spec, arrsize_i, 0);
+            std::fill_n(pSReac_UPD_I_Spec, arrsize_i, 0);
         }
         if (ocompdef() != 0) // Only create if outer comp exists.
         {
@@ -245,6 +253,10 @@ void PatchDef::setupLocalIndices(void)
             pSReac_DEP_O_Spec = new depT[arrsize_o];
             pSReac_LHS_O_Spec = new uint[arrsize_o];
             pSReac_UPD_O_Spec = new int[arrsize_o];
+            // DEBUG: 08-Feb-2008
+            std::fill_n(pSReac_DEP_O_Spec, arrsize_o, 0);
+            std::fill_n(pSReac_LHS_O_Spec, arrsize_o, 0);
+            std::fill_n(pSReac_UPD_O_Spec, arrsize_o, 0);
         }
         
         // Fill the vectors with all kinds of useful information.
