@@ -32,7 +32,7 @@ from rng_core import *
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-def create(type, bufsize):
+def create(type, bufsize = 512):
     """
     """
     from steps.error import Error
