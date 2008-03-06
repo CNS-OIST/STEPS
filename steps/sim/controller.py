@@ -146,8 +146,8 @@ class FuncCore(object):
         self._siSetCompVol = self._rsf('siSetCompVol')
         self._siGetCompCount = self._rsf('siGetCompCount')
         self._siSetCompCount = self._rsf('siSetCompCount')
-        self._siGetCompMass = self._rsf('siGetCompMass')
-        self._siSetCompMass = self._rsf('siSetCompMass')
+        self._siGetCompAmount = self._rsf('siGetCompAmount')
+        self._siSetCompAmount = self._rsf('siSetCompAmount')
         self._siGetCompConc = self._rsf('siGetCompConc')
         self._siSetCompConc = self._rsf('siSetCompConc')
         self._siGetCompClamped = self._rsf('siGetCompClamped')
@@ -164,8 +164,8 @@ class FuncCore(object):
         self._siSetPatchArea = self._rsf('siSetPatchArea')
         self._siGetPatchCount = self._rsf('siGetPatchCount')
         self._siSetPatchCount = self._rsf('siSetPatchCount')
-        self._siGetPatchMass = self._rsf('siGetPatchMass')
-        self._siSetPatchMass = self._rsf('siSetPatchMass')
+        self._siGetPatchAmount = self._rsf('siGetPatchAmount')
+        self._siSetPatchAmount = self._rsf('siSetPatchAmount')
         self._siGetPatchClamped = self._rsf('siGetPatchClamped')
         self._siSetPatchClamped = self._rsf('siSetPatchClamped')
         self._siGetPatchSReacK = self._rsf('siGetPatchSReacK')
@@ -909,11 +909,11 @@ class FuncCore(object):
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
 
 
-    def getCompMass(self, comp, spec):
-        """Return the mass of some species in a compartment (in mole).
+    def getCompAmount(self, comp, spec):
+        """Return the amount of some species in a compartment (in mole).
         
         Note: when used in the context of a mesh-based simulation, the
-        total mass is computed as the sum of the mass in all voxels of
+        total amount is computed as the sum of the amount in all voxels of
         the compartment.
         
         Argument:
@@ -924,18 +924,18 @@ class FuncCore(object):
         """
         comp = self._comp(comp)
         spec = self._spec(spec)
-        m = self._siGetCompMass(self._state, comp, spec)
+        m = self._siGetCompAmount(self._state, comp, spec)
         assert m >= 0.0, \
-            'Mass of \'%s\' in \'%s\' is negative (%f).' \
+            'Amount of \'%s\' in \'%s\' is negative (%f).' \
             % ( self._specName(spec), self._compName(comp), m )
         return m
         
     
-    def setCompMass(self, comp, spec, mass):
-        """Set the mass of some species in a compartment (in mole).
+    def setCompAmount(self, comp, spec, amount):
+        """Set the amount of some species in a compartment (in mole).
         
         Note: when used in the context of a mesh-based simulation, the 
-        total mass is equally divided over all voxels in the compartment
+        total amount is equally divided over all voxels in the compartment
         (i.e., it will results in a uniform distribution throughout the 
         compartment).
         
@@ -944,18 +944,18 @@ class FuncCore(object):
                 The compartment, identified by name or global index.
             spec
                 The species, identified by name or global index.
-            mass
-                The mass, specified in moles.
+            amount
+                The amount, specified in moles.
         
         RAISES:
             steps.error.ArgumentError
-                When a negative mass was specified.
+                When a negative amount was specified.
         """
-        if mass < 0.0:
+        if amount < 0.0:
             raise serr.ArgumentError, \
-                'Specified mass is negative (%f).' % mass
-        self._siSetCompMass(self._state, \
-            self._comp(comp), self._spec(spec), mass)
+                'Specified amount is negative (%f).' % amount
+        self._siSetCompAmount(self._state, \
+            self._comp(comp), self._spec(spec), amount)
     
 
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
@@ -998,7 +998,7 @@ class FuncCore(object):
                 The compartment, identified by name or global index.
             spec
                 The species, identified by name or global index.
-            mass
+            amount
                 The concentration, in molar units.
         
         RAISES:
@@ -1245,26 +1245,26 @@ class FuncCore(object):
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
     
     
-    def getPatchMass(self, patch, spec):
+    def getPatchAmount(self, patch, spec):
         """
         """
         patch = self._patch(patch)
         spec = self._spec(spec)
-        m = self._siGetPatchMass(self._state, patch, spec)
+        m = self._siGetPatchAmount(self._state, patch, spec)
         assert m >= 0.0, \
-            'Mass of \'%s\' in \'%s\' is negative (%f).' \
+            'Amount of \'%s\' in \'%s\' is negative (%f).' \
             % ( self._specName(spec), self._patchName(patch), m )
         return m
     
     
-    def setPatchMass(self, patch, spec, mass):
+    def setPatchAmount(self, patch, spec, amount):
         """
         """
-        if mass < 0.0:
+        if amount < 0.0:
             raise serr.ArgumentError, \
-                'Specified mass is negative (%f).' % mass
-        self._siSetPatchMass(self._state, \
-            self._patch(patch), self._spec(spec), mass)
+                'Specified amount is negative (%f).' % amount
+        self._siSetPatchAmount(self._state, \
+            self._patch(patch), self._spec(spec), amount)
     
     
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
@@ -1616,8 +1616,8 @@ class FuncTetmesh(FuncCore):
         self._siSetTetVol = self._rsf('siSetTetVol')
         self._siGetTetCount = self._rsf('siGetTetCount')
         self._siSetTetCount = self._rsf('siSetTetCount')
-        self._siGetTetMass = self._rsf('siGetTetMass')
-        self._siSetTetMass = self._rsf('siSetTetMass')
+        self._siGetTetAmount = self._rsf('siGetTetAmount')
+        self._siSetTetAmount = self._rsf('siSetTetAmount')
         self._siGetTetConc = self._rsf('siGetTetConc')
         self._siSetTetConc = self._rsf('siSetTetConc')
         self._siGetTetClamped = self._rsf('siGetTetClamped')
@@ -1791,24 +1791,24 @@ class FuncTetmesh(FuncCore):
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
     
     
-    def getTetMass(self, tet):
+    def getTetAmount(self, tet):
         """
         """
         spec = self._spec(spec)
-        m = self._siGetTetMass(self._state, tet, spec)
+        m = self._siGetTetAmount(self._state, tet, spec)
         assert m >= 0, \
-            'Mass of \'%s\' in tetrahedron #%d is negative (%d).' \
+            'Amount of \'%s\' in tetrahedron #%d is negative (%d).' \
             % ( self._specName(spec), tet, m )
         return m
     
     
-    def setTetMass(self, tet, mass):
+    def setTetAmount(self, tet, amount):
         """
         """
-        if mass < 0.0:
+        if amount < 0.0:
             raise serr.ArgumentError, \
-                'Specified mass is negative (%d).' % mass
-        self._siSetTetMass(self._state, tet, self._spec(spec), mass)
+                'Specified amount is negative (%d).' % amount
+        self._siSetTetAmount(self._state, tet, self._spec(spec), amount)
     
     
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #

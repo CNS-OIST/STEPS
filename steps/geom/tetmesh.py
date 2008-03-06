@@ -67,7 +67,7 @@ import scipy.io.mio as mio
 import steps.error as serr
 import steps.math.tetrahedron as stet
 import steps.math.triangle as stri
-import core
+import wm
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -563,7 +563,7 @@ class Tri(object):
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-class TetMesh(core.Container):
+class TetMesh(wm.Geom):
 
 
     """The main container class for static tetrahedral meshes.
@@ -639,7 +639,7 @@ class TetMesh(core.Container):
             ---
         """
         # Call the initializer for the parent class.
-        core.Container.__init__(self)
+        wm.Geom.__init__(self)
         
         # SET UP: CORNER POINTS
         assert pnts.shape[1] == 3
@@ -1140,7 +1140,7 @@ class TetMesh(core.Container):
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-class Comp(core.Comp):
+class Comp(wm.Comp):
 
 
     """Provides annotation for a group of tetrahedrons in a TetMesh.
@@ -1375,7 +1375,7 @@ class Comp(core.Comp):
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-class Patch(core.Patch):
+class Patch(wm.Patch):
 
 
     """

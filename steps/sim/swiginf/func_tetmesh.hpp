@@ -76,8 +76,8 @@ extern void     siSetTetVol(State * s, uint tidx, double vol);
 extern uint     siGetTetCount(State * s, uint tidx, uint sidx);
 extern void     siSetTetCount(State * s, uint tidx, uint sidx, uint n);
 
-extern double   siGetTetMass(State * s, uint tidx, uint sidx);
-extern void     siSetTetMass(State * s, uint tidx, uint sidx, double m);
+extern double   siGetTetAmount(State * s, uint tidx, uint sidx);
+extern void     siSetTetAmount(State * s, uint tidx, uint sidx, double m);
 
 extern double   siGetTetConc(State * s, uint tidx, uint sidx);
 extern void     siSetTetConc(State * s, uint tidx, uint sidx, double c);

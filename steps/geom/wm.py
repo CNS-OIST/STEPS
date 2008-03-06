@@ -37,7 +37,7 @@ import steps.tools as stools
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-class Container(object):
+class Geom(object):
 
 
     """

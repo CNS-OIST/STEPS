@@ -222,7 +222,7 @@ void siSetTetCount(State * s, uint tidx, uint sidx, uint n)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double siGetTetMass(State * s, uint tidx, uint sidx)
+double siGetTetAmount(State * s, uint tidx, uint sidx)
 {
     double count = static_cast<double>(siGetTetCount(s, tidx, sidx));
     return count / smath::AVOGADRO;
@@ -230,7 +230,7 @@ double siGetTetMass(State * s, uint tidx, uint sidx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void siSetTetMass(State * s, uint tidx, uint sidx, double m)
+void siSetTetAmount(State * s, uint tidx, uint sidx, double m)
 {
     assert(s != 0);
     assert(m >= 0.0);

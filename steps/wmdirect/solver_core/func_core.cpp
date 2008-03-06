@@ -470,7 +470,7 @@ void siSetCompCount(State * s, uint cidx, uint sidx, uint n)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double siGetCompMass(State * s, uint cidx, uint sidx)
+double siGetCompAmount(State * s, uint cidx, uint sidx)
 {
     double count = static_cast<double>(siGetCompCount(s, cidx, sidx));
     return count / smath::AVOGADRO; 
@@ -478,7 +478,7 @@ double siGetCompMass(State * s, uint cidx, uint sidx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void siSetCompMass(State * s, uint cidx, uint sidx, double m)
+void siSetCompAmount(State * s, uint cidx, uint sidx, double m)
 {
     assert(s != 0);
     assert(m >= 0.0);
@@ -688,7 +688,7 @@ void siSetPatchCount(State * s, uint pidx, uint sidx, uint n)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double siGetPatchMass(State * s, uint pidx, uint sidx)
+double siGetPatchAmount(State * s, uint pidx, uint sidx)
 {
     double count = static_cast<double>(siGetPatchCount(s, pidx, sidx));
     return count / smath::AVOGADRO; 
@@ -696,7 +696,7 @@ double siGetPatchMass(State * s, uint pidx, uint sidx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void siSetPatchMass(State * s, uint pidx, uint sidx, double m)
+void siSetPatchAmount(State * s, uint pidx, uint sidx, double m)
 {
     assert(s != 0);
     assert(m >= 0.0);

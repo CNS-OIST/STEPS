@@ -126,8 +126,8 @@ extern void     siSetCompVol(State * s, uint cidx, double vol);
 extern uint     siGetCompCount(State * s, uint cidx, uint sidx);
 extern void     siSetCompCount(State * s, uint cidx, uint sidx, uint n);
 
-extern double   siGetCompMass(State * s, uint cidx, uint sidx);
-extern void     siSetCompMass(State * s, uint cidx, uint sidx, double m);
+extern double   siGetCompAmount(State * s, uint cidx, uint sidx);
+extern void     siSetCompAmount(State * s, uint cidx, uint sidx, double m);
 
 extern double   siGetCompConc(State * s, uint cidx, uint sidx);
 extern void     siSetCompConc(State * s, uint cidx, uint sidx, double c);
@@ -158,8 +158,8 @@ extern void     siSetPatchArea(State * s, uint pidx, double area);
 extern uint     siGetPatchCount(State * s, uint pidx, uint sidx);
 extern void     siSetPatchCount(State * s, uint pidx, uint sidx, uint n);
 
-extern double   siGetPatchMass(State * s, uint pidx, uint sidx);
-extern void     siSetPatchMass(State * s, uint pidx, uint sidx, double m);
+extern double   siGetPatchAmount(State * s, uint pidx, uint sidx);
+extern void     siSetPatchAmount(State * s, uint pidx, uint sidx, double m);
 
 extern bool     siGetPatchClamped(State * s, uint pidx, uint sidx);
 extern void     siSetPatchClamped(State * s, uint pidx, uint sidx, bool buf);
