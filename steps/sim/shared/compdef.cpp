@@ -197,6 +197,10 @@ void CompDef::setupLocalIndices(void)
         pReac_DEP_Spec = new depT[arrsize];
         pReac_LHS_Spec = new uint[arrsize];
         pReac_UPD_Spec = new int[arrsize];
+        // DEBUG: 08-Feb-2008
+        std::fill_n(pReac_DEP_Spec, arrsize, 0);
+        std::fill_n(pReac_LHS_Spec, arrsize, 0);
+        std::fill_n(pReac_UPD_Spec, arrsize, 0);
         for (uint ri = 0; ri < countReacs(); ++ri)
         {
             ReacDef * reacdef = reac(ri);
@@ -229,6 +233,8 @@ void CompDef::setupLocalIndices(void)
         
         uint arrsize = countSpecs() * countDiffs();
         pDiff_DEP_Spec = new depT[arrsize];
+        // DEBUG: 08-Feb-2008
+        std::fill_n(pReac_DEP_Spec, arrsize, 0);
         pDiff_LIG = new lidxT[countDiffs()];
         for (uint di = 0; di < countDiffs(); ++di)
         {

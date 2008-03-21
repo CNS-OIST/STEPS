@@ -1167,7 +1167,7 @@ class Comp(wm.Comp):
                 when the identifier is not valid.
         
         See also:
-            steps.geom.core.Comp.__init__()
+            steps.geom.wm.Comp.__init__()
         """        
         # Store all tetrahedron indices as a set.
         tetset = set(tets)
@@ -1184,7 +1184,7 @@ class Comp(wm.Comp):
                     'Cannot add tetrahedron to compartment.'
 
         # Call parent object initializer.
-        core.Comp.__init__(self, id, container)
+        wm.Comp.__init__(self, id, container)
         
         # Compute volume.
         self._vol = self.container._tet_vols[self._tet_indices].sum()
@@ -1213,7 +1213,7 @@ class Comp(wm.Comp):
         """Method disabled. Volume is computed automatically.
         
         See also:
-            steps.geom.core.Comp.setVol()
+            steps.geom.wm.Comp.setVol()
         """
         pass
     
@@ -1416,7 +1416,7 @@ class Patch(wm.Patch):
                 specified compartments; when the identifier is not valid.
         
         See also:
-            steps.geom.core.Patch.__init__()
+            steps.geom.wm.Patch.__init__()
         """
         # Store all triangle indices as a set.
         triset = set(tris)
@@ -1457,7 +1457,7 @@ class Patch(wm.Patch):
         # start changing data structures.
         #
         # First, we call parent object initializer.
-        core.Patch.__init__(self, id, container, icomp, ocomp)
+        wm.Patch.__init__(self, id, container, icomp, ocomp)
         
         # Next, we compute area.
         self._area = self.container._tri_areas[self._tri_indices].sum()
@@ -1500,7 +1500,7 @@ class Patch(wm.Patch):
         """Method disabled. Area is computed automatically.
         
         See also:
-            steps.geom.core.Patch.setArea()
+            steps.geom.wm.Patch.setArea()
         """
         pass
 
