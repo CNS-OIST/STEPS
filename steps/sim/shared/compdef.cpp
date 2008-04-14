@@ -234,7 +234,8 @@ void CompDef::setupLocalIndices(void)
         uint arrsize = countSpecs() * countDiffs();
         pDiff_DEP_Spec = new depT[arrsize];
         // DEBUG: 08-Feb-2008
-        std::fill_n(pReac_DEP_Spec, arrsize, 0);
+        // DEBUG: 14-Apr-2008
+        std::fill_n(pDiff_DEP_Spec, arrsize, 0);
         pDiff_LIG = new lidxT[countDiffs()];
         for (uint di = 0; di < countDiffs(); ++di)
         {
