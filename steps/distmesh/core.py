@@ -43,14 +43,15 @@ class Sphere(object):
         self._r = r
     
     def sigdist(self, p):
-        npoints = p.shape[0]
-        d = numpy.zeros(npoints)
-        for i in xrange(npoints):
-            d[i] = math.sqrt(p[i,0]*p[i,0] \
-                           + p[i,1]*p[i,1] \
-                           + p[i,2]*p[i,2]) \
-                 - self._r
-        return d
+        #npoints = p.shape[0]
+        return numpy.sqrt(numpy.sum(p*p,axis=1)) - self._r
+        #d = numpy.zeros(npoints)
+        #for i in xrange(npoints):
+        #    d[i] = math.sqrt(p[i,0]*p[i,0] \
+        #                   + p[i,1]*p[i,1] \
+        #                   + p[i,2]*p[i,2]) \
+        #         - self._r
+        #return d
 
     def relsize(self, p):
         npoints = p.shape[0]

@@ -232,6 +232,7 @@ bool SReac::depSpecPatch(uint gidx, Patch * patch)
 
 void SReac::reset(void)
 {
+    resetExtent();
     setActive(true);
 }
 
@@ -435,6 +436,7 @@ SchedIDXVec const & SReac::apply(State * state)
         }
     }
     
+    rExtent++;
     return pUpdVec;
 }
 

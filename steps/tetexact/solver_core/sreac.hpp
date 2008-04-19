@@ -73,6 +73,11 @@ public:
     virtual void reset(void);
     virtual double rate(void) const;
     virtual SchedIDXVec const & apply(State * s);
+
+    ////////////////////////////////////////////////////////////////////////
+    
+    double c(void) const
+    { return pCcst; }
     
     ////////////////////////////////////////////////////////////////////////
     

@@ -137,6 +137,7 @@ bool Reac::depSpecTri(uint gidx, Tri * tri)
 void Reac::reset(void)
 {
     setActive(true);
+    resetExtent();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -211,6 +212,7 @@ SchedIDXVec const & Reac::apply(State * s)
         int nc = static_cast<int>(local[i]) + j;
         local[i] = static_cast<uint>(nc);
     }
+    rExtent++;
     return pUpdVec;
 }
 

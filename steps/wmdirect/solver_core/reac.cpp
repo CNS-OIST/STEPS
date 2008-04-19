@@ -145,6 +145,7 @@ bool Reac::depSpecPatch(uint gidx, Patch * tri)
 
 void Reac::reset(void)
 {
+    resetExtent();
     setActive(true);
 }
 
@@ -220,6 +221,7 @@ SchedIDXVec const & Reac::apply(State * s)
         int nc = static_cast<int>(local[i]) + j;
         local[i] = static_cast<uint>(nc);
     }
+    rExtent++;
     return pUpdVec;
 }
 

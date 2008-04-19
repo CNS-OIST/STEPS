@@ -210,6 +210,7 @@ bool Diff::depSpecTri(uint gidx, Tri * tri)
 
 void Diff::reset(void)
 {
+    resetExtent();
     setActive(true);
 }
 
@@ -263,6 +264,7 @@ SchedIDXVec const & Diff::apply(State * s)
             *local -= 1;
             *next += 1;
         }
+        rExtent++;
         return pUpdVec[0];
     }
     else if (sel < pCDFSelector[1])
@@ -275,6 +277,7 @@ SchedIDXVec const & Diff::apply(State * s)
             *local -= 1;
             *next += 1;
         }
+        rExtent++;
         return pUpdVec[1];
     }
     else if (sel < pCDFSelector[2])
@@ -287,6 +290,7 @@ SchedIDXVec const & Diff::apply(State * s)
             *local -= 1;
             *next += 1;
         }
+        rExtent++;
         return pUpdVec[2];
     }
     else 
@@ -299,6 +303,7 @@ SchedIDXVec const & Diff::apply(State * s)
             *local -= 1;
             *next += 1;
         }
+        rExtent++;
         return pUpdVec[3];
     }
     

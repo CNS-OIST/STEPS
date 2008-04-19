@@ -226,6 +226,7 @@ bool SReac::depSpecTri(uint gidx, Tri * triangle)
 
 void SReac::reset(void)
 {
+    resetExtent();
     setActive(true);
 }
 
@@ -427,6 +428,8 @@ SchedIDXVec const & SReac::apply(State * s)
             cnt_o_vec[s] = static_cast<uint>(nc);
         }
     }
+    
+    rExtent++;
     
     // Update outer tet pools.
     return pUpdVec;

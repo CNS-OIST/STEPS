@@ -38,11 +38,23 @@
 #include <steps/math/constants.hpp>
 #include <steps/rng/rng.hpp>
 #include <steps/sim/shared/compdef.hpp>
+#include <steps/sim/shared/diffdef.hpp>
+#include <steps/sim/shared/patchdef.hpp>
 #include <steps/sim/shared/reacdef.hpp>
 #include <steps/sim/shared/specdef.hpp>
+#include <steps/sim/shared/sreacdef.hpp>
 #include <steps/sim/shared/statedef.hpp>
+#include <steps/sim/shared/types.hpp>
 #include <steps/sim/swiginf/func_ssa.hpp>
+#include <steps/wmdirect/solver_core/comp.hpp>
+#include <steps/wmdirect/solver_core/kproc.hpp>
+#include <steps/wmdirect/solver_core/patch.hpp>
+#include <steps/wmdirect/solver_core/reac.hpp>
+#include <steps/wmdirect/solver_core/sched.hpp>
+#include <steps/wmdirect/solver_core/sreac.hpp>
 #include <steps/wmdirect/solver_core/state.hpp>
+
+USING_NAMESPACE(steps::sim);
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -63,14 +75,20 @@ uint siGetNSteps(State * s)
 
 double siGetA0(State * s)
 {
-    return 0.0;
+    return s->sched()->getA0();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double siGetCompReacC(State * s, uint cidx, uint ridx)
 {
-    return 0.0;
+    Comp * c = s->comp(cidx);
+    CompDef * cdef = c->def();
+    lidxT lridx = cdef->reacG2L(ridx);
+    if (lridx == LIDX_UNDEFINED) return 0.0;
+    
+    Reac * r = c->reac(lridx);
+    return r->c(); 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -84,27 +102,52 @@ double siGetCompReacH(State * s, uint cidx, uint ridx)
 
 double siGetCompReacA(State * s, uint cidx, uint ridx)
 {
-    return 0.0;
+    Comp * c = s->comp(cidx);
+    CompDef * cdef = c->def();
+    lidxT lridx = cdef->reacG2L(ridx);
+    if (lridx == LIDX_UNDEFINED) return 0.0;
+    
+    Reac * r = c->reac(lridx);
+    return r->rate(); 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint siGetCompReacExtent(State * s, uint cidx, uint ridx)
 {
-    return 0;
+    Comp * c = s->comp(cidx);
+    CompDef * cdef = c->def();
+    lidxT lridx = cdef->reacG2L(ridx);
+    if (lridx == LIDX_UNDEFINED) return 0;
+    
+    Reac * r = c->reac(lridx);
+    return r->getExtent(); 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siResetCompReacExtent(State * s, uint cidx, uint ridx)
 {
+    Comp * c = s->comp(cidx);
+    CompDef * cdef = c->def();
+    lidxT lridx = cdef->reacG2L(ridx);
+    if (lridx == LIDX_UNDEFINED) return;
+    
+    Reac * r = c->reac(lridx);
+    r->resetExtent(); 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double siGetPatchSReacC(State * s, uint pidx, uint ridx)
 {
-    return 0.0;
+    Patch * p = s->patch(pidx);
+    PatchDef * pdef = p->def();
+    lidxT lridx = pdef->sreacG2L(ridx);
+    if (lridx == LIDX_UNDEFINED) return 0.0;
+    
+    SReac * r = p->sreac(lridx);
+    return r->c(); 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -118,20 +161,39 @@ double siGetPatchSReacH(State * s, uint pidx, uint ridx)
 
 double siGetPatchSReacA(State * s, uint pidx, uint ridx)
 {
-    return 0.0;
+    Patch * p = s->patch(pidx);
+    PatchDef * pdef = p->def();
+    lidxT lridx = pdef->sreacG2L(ridx);
+    if (lridx == LIDX_UNDEFINED) return 0.0;
+    
+    SReac * r = p->sreac(lridx);
+    return r->rate(); 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint siGetPatchSReacExtent(State * s, uint pidx, uint ridx)
 {
-    return 0;
+    Patch * p = s->patch(pidx);
+    PatchDef * pdef = p->def();
+    lidxT lridx = pdef->sreacG2L(ridx);
+    if (lridx == LIDX_UNDEFINED) return 0;
+    
+    SReac * r = p->sreac(lridx);
+    return r->getExtent(); 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void siResetPatchSReacExtent(State * s, uint pidx, uint ridx)
 {
+    Patch * p = s->patch(pidx);
+    PatchDef * pdef = p->def();
+    lidxT lridx = pdef->sreacG2L(ridx);
+    if (lridx == LIDX_UNDEFINED) return;
+    
+    SReac * r = p->sreac(lridx);
+    return r->resetExtent(); 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
