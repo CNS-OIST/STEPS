@@ -310,7 +310,7 @@ void Sched::update(SchedIDXVec const & entries)
     // Prefetch zero level.
     double * level0 = pLevels[0];
     // Number of entries.
-    assert(entries.size() <= 16);
+    //assert(entries.size() <= 16);
 
     // Recompute rates.
     uint indices[16];
