@@ -88,11 +88,15 @@ extern void     siSetTetClamped(State * s, uint tidx, uint sidx, bool buf);
 extern double   siGetTetReacK(State * s, uint tidx, uint ridx);
 extern void     siSetTetReacK(State * s, uint tidx, uint ridx, double kf);
 
+extern double   siGetTetReacA(State * s, uint tidx, uint ridx);
+
 extern bool     siGetTetReacActive(State * s, uint tidx, uint ridx);
 extern void     siSetTetReacActive(State * s, uint tidx, uint ridx, bool act);
 
 extern double 	siGetTetDiffD(State * s, uint tidx, uint didx);
 extern void 	siSetTetDiffD(State * s, uint tidx, uint didx);
+
+extern double   siGetTetDiffA(State * s, uint tidx, uint didx);
 
 extern bool		siGetTetDiffActive(State * s, uint tidx, uint didx);
 extern void 	siSetTetDiffActive(State * s, uint tidx, uint didx, bool act);

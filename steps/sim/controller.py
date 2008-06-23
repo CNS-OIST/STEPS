@@ -1624,10 +1624,12 @@ class FuncTetmesh(FuncCore):
         self._siSetTetClamped = self._rsf('siSetTetClamped')
         self._siGetTetReacK = self._rsf('siGetTetReacK')
         self._siSetTetReacK = self._rsf('siSetTetReacK')
+        self._siGetTetReacA = self._rsf('siGetTetReacA')
         self._siGetTetReacActive = self._rsf('siGetTetReacActive')
         self._siSetTetReacActive = self._rsf('siSetTetReacActive')
         self._siGetTetDiffD = self._rsf('siGetTetDiffD')
         self._siSetTetDiffD = self._rsf('siSetTetDiffD')
+        self._siGetTetDiffA = self._rsf('siGetTetDiffA')
         self._siGetTetDiffActive = self._rsf('siGetTetDiffActive')
         self._siSetTetDiffActive = self._rsf('siSetTetDiffActive')
         self._siGetTriArea = self._rsf('siGetTriArea')
@@ -1877,6 +1879,17 @@ class FuncTetmesh(FuncCore):
         self._siSetTetReacK(self._state, tet, self._reac(reac), k)
     
     
+    def getTetReacA(self, tet, reac):
+        """
+        """
+        reac = self._reac(reac)
+        k = self._siGetTetReacA(self._state, tet, reac)
+        assert k >= 0.0, \
+            'Propensity of \'%s\' in tetrahedron #%d is negative (%d).' \
+            % ( self._reacName(reac), tet, k )
+        return k
+    
+    
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
     
     
@@ -1915,6 +1928,17 @@ class FuncTetmesh(FuncCore):
         self._siSetTetDiffD(self._state, tet, self._diff(diff), d)
     
     
+    def getTetDiffA(self, tet, diff):
+        """
+        """
+        diff = self._diff(diff)
+        d = self._siGetTetDiffA(self._state, tet, diff)
+        assert d >= 0.0, \
+            'Propensity of \'%s\' in tetrahedron #%d is negative (%d).' \
+            % ( self._diffName(diff), tet, d )
+        return d
+        
+        
     #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
     
     
