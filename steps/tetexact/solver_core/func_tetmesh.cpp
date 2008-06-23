@@ -328,6 +328,20 @@ void siSetTetReacK(State * s, uint tidx, uint ridx, double kf)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+double siGetTetReacA(State * s, uint tidx, uint ridx)
+{
+    assert(s != 0);
+    Tet * tet = s->tet(tidx);
+    assert(tet != 0);
+    
+    uint lridx = tet->compdef()->reacG2L(ridx);
+    if (lridx == ssim::LIDX_UNDEFINED) return 0.0;
+    
+    return tet->reac(lridx)->rate();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 bool siGetTetReacActive(State * s, uint tidx, uint ridx)
 {
     assert(s != 0);
@@ -372,6 +386,20 @@ double siGetTetDiffD(State * s, uint tidx, uint didx)
 void siSetTetDiffD(State * s, uint tidx, uint didx)
 {
     // Currently not implemented.
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double siGetTetDiffA(State * s, uint tidx, uint didx)
+{
+    assert(s != 0);
+    Tet * tet = s->tet(tidx);
+    assert(tet != 0);
+    
+    uint ldidx = tet->compdef()->diffG2L(didx);
+    if (ldidx == ssim::LIDX_UNDEFINED) return 0.0;
+    
+    return tet->diff(ldidx)->rate();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
