@@ -1509,6 +1509,13 @@ class Patch(wm.Patch):
         """Perform a consistency check on the patch.
         """
         pass
+    
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
+    
+    def getTris(self):
+        return _tri_iterator(self.container, self._tri_indices)
+    
+    tris = property(getTris)
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
