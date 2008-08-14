@@ -60,7 +60,9 @@
 ---Performing Simulations---\\
 Version \stepsversion}
 \author{Stefan Wils\\
-\texttt{wils@oist.jp}}
+\texttt{wils@oist.jp} \and
+Iain Hepburn\\
+\texttt{ihepburn@oist.jp}}
 \maketitle
 
 \tableofcontents
@@ -74,13 +76,13 @@ The aim of this document is to get you started quickly with STEPS by working thr
 
 \subsection{Python}
 
-To be able to follow the examples, some basic exposure to Python is required. This knowledge can be obtained from one of many excellent text books on Python. That you have to learn Python in order to use STEPS might seem a little off putting at first. However, Python is very simple to get in to, and in contrast to simulator environments that come with their own interpreted language such as Genesis or Neuron, Python is a \emph{very} widely adopted language. In other words, you will quickly discover that Python is also useful for tasks that are related to STEPS only indirectly, such as for postprocessing of data obtained with a STEPS simulation and for visualization. Or even for tasks not related to STEPS at all. As they say in the community, Python comes ``with batteries included'', which means it's a very complete environment for almost any sort of task.
+To be able to follow the examples, some basic exposure to Python is required. This knowledge can be obtained from one of many excellent text books on Python. That you have to learn Python in order to use STEPS might seem a little off putting at first. However, Python is very simple to get in to, and in contrast to simulator environments that come with their own interpreted language such as Genesis \cite{Bower:BookOfGenesis:1998} or Neuron, Python is a \emph{very} widely adopted language. In other words, you will quickly discover that Python is also useful for tasks that are related to STEPS only indirectly, such as for postprocessing of data obtained with a STEPS simulation and for visualization. Or even for tasks not related to STEPS at all. As they say in the community, Python comes ``with batteries included'', which means it's a very complete environment for almost any sort of task.
 
 \subsection{Scientific Python}
 
-Through the use of a number of packages, namely NumPy, SciPy and optionally Matplotlib, Python can be made to resemble the Matlab environment for scientific computing rather closely. The NumPy package brings very powerful array objects to Python. These array objects will typically rely on an optimized linear algebra package to make the operations on them very fast. SciPy builds on top of NumPy and adds even more functionality for signal processing, numerical integration, etc. Finally, Matplotlib adds a collection of powerful 2D plotting tools to your Python environment, that once again resemble the plotting commands familiar from Matlab.
+Through the use of a number of packages, namely NumPy, SciPy and optionally Matplotlib, Python can be made to resemble the Matlab environment for scientific computing rather closely. The NumPy package brings powerful array objects to Python. These array objects will typically rely on an optimized linear algebra package to make the operations on them very fast. SciPy builds on top of NumPy and adds even more functionality for signal processing, numerical integration, etc. Finally, Matplotlib adds a collection of powerful 2D plotting tools to your Python environment, that once again resemble the plotting commands familiar from Matlab.
 
-These add-on packages are in very common use among the scientific computing community, and it should therefore not come as a surprise that STEPS requires two of these packages (NumPy and SciPy) to be installed on your system. Although \emph{using} STEPS for simple simulations does not require you to know how to use these packages per se, we highly recommend you do take the time to get acquainted with them, as they will make it much easier to run simulations, collect output and perform extra processing on this data. Starting from the very first example, therefore, we will also show how NumPy arrays can be used for these tasks.
+These add-on packages are in common use among the scientific computing community, and it should therefore not come as a surprise that STEPS requires two of these packages (NumPy and SciPy) to be installed on your system. Although \emph{using} STEPS for simple simulations does not require you to know how to use these packages per se, we highly recommend you do take the time to get acquainted with them, as they will make it much easier to run simulations, collect output and perform extra processing on this data. Starting from the very first example, therefore, we will also show how NumPy arrays can be used for these tasks.
 
 To fully appreciate this NumPy angle, you can visit the following online resources:
 
@@ -172,7 +174,7 @@ $ config/bootstrap
 The actual output of the bootstrap script might differ between various systems and even between different versions of the autotools. If successful, the rest of the compilation process is similar to that described earlier.
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
-\chapter{Well-mixed reaction systems}
+\chapter{Well-mixed reaction systems}\label{chap:wmkinetics}
 
 In this chapter, we'll use some simple classical reaction systems as examples to show the very basics of using STEPS. More specifically, we'll focus on reaction systems that occur in a single, well-mixed reaction volume. STEPS can deal with much more than what is covered in this chapter, such as surface-volume interactions, diffusion, 3D environments, etc. These topics are presented in later chapters, but build on the material presented in this chapter.
 
@@ -239,16 +241,16 @@ The initializer for \texttt{Reac} takes a bit more information than the initiali
 
 \begin{itemize}
 \item
-A list called \texttt{lhs}, which gives the left-hand side of the stoichiometry (i.e. the reactants). If a reactant occurs more than once, as can be the case in e.g. a dimerization reaction, the \texttt{Spec} object has be listed the required number of times.
+A list called \texttt{lhs}, which gives the left-hand side of the stoichiometry (i.e. the reactants). If a reactant occurs more than once, as can be the case in e.g. a dimerization reaction, the \texttt{Spec} object has to be listed the required number of times.
 \item
 A list called \texttt{rhs}, which gives the right hand side of the stoichiometry (i.e. the reaction products). The same remarks that applied for parameter \texttt{lhs} apply here.
 \end{itemize}
 
-Both lists can also be empty (e.g. \texttt{lhs=[]} or \texttt{rhs=[]}). If the left hand side is empty, we have a zero order reaction that can create molecules ``out of thin air''. If the right hand side is empty, we have a sink reaction that merely destroys molecules. Obviously, within one single reaction rule, you cannot set \emph{both} \texttt{lhs} and \texttt{rhs} to an empty list.
+Both lists can also be empty (e.g. \texttt{lhs=[]} or \texttt{rhs=[]}). If the left hand side is empty, we have a zero order reaction that acts as a source, i.e. it creates molecules ``out of thin air''. If the right hand side is empty, we have a sink reaction that merely destroys molecules. Obviously, within one single reaction rule, you cannot set \emph{both} \texttt{lhs} and \texttt{rhs} to an empty list.
 
 We can also already set the rate constants for both the forward and backward reaction, by manipulating the \texttt{kcst} property of the \texttt{Reac} objects. These rate constants can be changed later on during the simulation, but values given here will be used as default values when a simulation state is initialized.
 
-Generally speaking, physical constants in STEPS must be specified in SI units.\footnote{A future version of STEPS might provide facilities for working with custom units.} This is also true for reaction constants, where of course the actual interpretation of the unit of a reaction rule depends on the order of that reaction. In other words, it depends on the number of species in the left hand side. The constant for a zero or first reaction rule has units $1/s$; for a second order reaction this is $1/Ms$; for a third order reaction this is $1/M^2s$; and so on. While there is no upper limit on the order of the reaction when working with \texttt{Reac} objects within the context of package \texttt{steps.model}, STEPS simulators will not deal with any reaction rule that has an order larger than 4. 
+Generally speaking, physical constants in STEPS must be specified in SI units.\footnote{A future version of STEPS might provide facilities for working with custom units.} This is also true for reaction constants, where of course the actual interpretation of the unit of a reaction rule depends on the order of that reaction. In other words, it depends on the number of species in the left hand side. The constant for a zero or first reaction rule has units $s^{-1}$; for a second order reaction this is $(Ms)^{-1}$; for a third order reaction this is $(M^2s)^{-1}$; and so on. While there is no upper limit on the order of the reaction when working with \texttt{Reac} objects within the context of package \texttt{steps.model}, STEPS simulators will not deal with any reaction rule that has an order larger than 4. 
 
 Finally, the full Python code of our model description looks like this:
 
@@ -293,7 +295,7 @@ import steps.geom.wm as swm
 
 Next we generate a parent container object, that will collect and store the actual compartments. The purpose of this object is in many ways similar to the purpose of the \texttt{steps.model.Model} object we discussed in the previous section:
 \begin{verbatim}
-mesh = swm.Geometry()
+mesh = swm.Geom()
 \end{verbatim}
 
 Finally, the actual compartment we need for simulating our model must be created:
@@ -316,13 +318,13 @@ The third line sets the volume of the compartment. Once again, SI units must be 
 
 With all this in place, we can finally start doing simulations. Since STEPS is a set of Python packages and extensions, simulations can either be fully scripted and run automatically, or they can be controlled interactively from the Python prompt. In this text, we'll just run a simulation ``automatically'' from begin to end, without any interactive input. 
 
-The simulator (or \emph{solver}) we'll be using here is the \texttt{wmdirect} solver. \texttt{wmdirect} is an implementation of Gillespie's well-known Direct Method for stochastic simulation and has the following properties:
+The simulator (or \emph{solver}) we'll be using here is the \texttt{wmdirect} solver. \texttt{wmdirect} is an implementation of Gillespie's Direct Method \cite{Gillespie:JPhysChem:1977} for stochastic simulation and has the following properties:
 
 \begin{itemize}
 \item It's a \emph{well-mixed} solver, meaning that you will normally present it with well-mixed geometry.\footnote{However, if you present a well-mixed solver in STEPS with a tetrahedral mesh, the solver will automatically extract the well-mixed properties (i.e. the volumes of compartments, the areas of patches and their connectivity) out of the mesh. This will be explained in more detail in the chapter on diffusion.} Well-mixed solvers have no concept of concentration gradients within a given compartment, but rather assume that all molecules in any given compartment are uniformly distributed.\footnote{That molecules in \texttt{wmdirect} are implicitly assumed to be uniformly distributed within a compartment, does not mean that they are \emph{regularly} distributed. This is an important conceptual difference between stochastic solvers such as \texttt{wmdirect} and deterministic solvers (where, in a way, such an assumption of regularity is made).} Therefore there is also no concept of diffusion within a compartment. However, we will later see that even in simulations with well-mixed solvers, it is possible to implement diffusive fluxes \emph{in between} compartments, by linking them with patches.
 \item It's a \emph{stochastic} solver, meaning that it uses random numbers to create possible ``realizations'' (also called ``iterations'') of the stochastic interpretation of the reaction system. In other words, for the same set of initial conditions, running the simulation multiple times with different initial seed values for the random number generator will generate different results. 
 \item It's a \emph{discrete} stochastic solver, meaning that the amount of mass in the system is (at least internally) not being tracked over time as continuous concentrations, but as integer molecular counts. This is not a big deal when considering the difference between 100000 molecules and 100001 molecules, but it does become a big deal when considering the difference between 5 and 6 molecules --- especially when these particular molecules are involved in some feedback mechanism. Consequently, each realization is a sequence of discrete, singular reaction events occuring on continuous time points.
-\item It's an \emph{exact} stochastic solver, which means that each iteration is perfect w.r.t. the master equation governing the reaction system. 
+\item It's an \emph{exact} stochastic solver, which means that each iteration is perfect with respect to the master equation governing the reaction system. 
 \end{itemize}
 
 To perform a simulation of the above kinetic model and geometry with \texttt{wmdirect}, we first need to create a random number generator. This must be done explicitly by the user, because this allows you to choose which random number generator to use (even though that choice is rather limited right now) and more importantly, \emph{how} to use it. Random number generation objects can be found in package \texttt{steps.rng}:
@@ -370,7 +372,7 @@ for t in xrange(0,2001):
 \end{verbatim}
 We loop over all time points using an \texttt{xrange} to generate indices. Then we use the basic solver function \texttt{run} to forward the simulation until the time specified by the function's argument.\footnote{The first time the loop is executed, the current time is of course 0.0 because we called the \texttt{reset()} function earlier. In this case, \texttt{sim.run(0.0)} doesn't move the simulation forward.} After having forwarded the simulation, we use function \texttt{getCompCount} to sample the number of molecules present in compartment \texttt{comp} for each of our three species. All of these functions, like \texttt{run}, \texttt{setCompConc} and \texttt{getCompCount}, are described in more detail in~\ref{app:solverfunctions:core}.
 
-Finally, we can plot these values using Matplotlib (result shown in figure~\ref{fig:secondorderreaction01}):
+Finally, we can plot these values using Matplotlib (result shown in figure~\ref{fig:chap02:secondorderreaction01}):
 \begin{verbatim}
 plot(tpnt, res[:,0])
 plot(tpnt, res[:,1])
@@ -382,12 +384,12 @@ show()
 \end{verbatim}
 \begin{figure}
 \centering
-\includegraphics[width=13cm]{secondorderreaction01.pdf}
+\includegraphics[width=13cm]{chap02_secondorderreaction01.pdf}
 \caption{Simulating a single iteration of the second order reaction given in equation~\ref{eqn:secondorderreaction} with solver \texttt{wmdirect}. Because of the low numbers of molecules, we can clearly see the reactions occuring as discrete events.}
-\label{fig:secondorderreaction01}
+\label{fig:chap02:secondorderreaction01}
 \end{figure}
 
-If we're using a stochastic simulation algorithm such as that implemented in solver \texttt{wmdirect}, we're usually interested in analysing the range of behaviours produced by different iterations. One way of doing that is by taking the mean over multiple iterations, as is done in the following simulation code (result shown in figure~\ref{fig:secondorderreaction02}):
+If we're using a stochastic simulation algorithm such as that implemented in solver \texttt{wmdirect}, we're usually interested in analysing the range of behaviours produced by different iterations. One way of doing that is by taking the mean over multiple iterations, as is done in the following simulation code (result shown in figure~\ref{fig:chap02:secondorderreaction02}):
 
 \begin{verbatim}
 res = numpy.zeros([100,2001,3])
@@ -417,9 +419,9 @@ show()
 
 \begin{figure}
 \centering
-\includegraphics[width=13cm]{secondorderreaction02.pdf}
+\includegraphics[width=13cm]{chap02_secondorderreaction02.pdf}
 \caption{Average of multiple ($n=100$) iterations of the second order reaction given in equation~\ref{eqn:secondorderreaction}.}
-\label{fig:secondorderreaction02}
+\label{fig:chap02:secondorderreaction02}
 \end{figure}
 
 As you can see, the array that will be used to store the simulation results (array \texttt{res}) is now a three dimensional array, with the first dimension set to record 100 iterations. The loop that runs over all time points is now embedded in a loop that runs over the iterations. The \texttt{reset} function and the initial conditions are called at the beginning of each iteration. Since we don't need any detailed control over which iteration starts with which RNG seed value, we initialize the RNG just once, prior to anything else. Once the 100 iterations are done, we call NumPy's \texttt{mean} function to compute the mean over the first dimension, and then plot these mean values. 
@@ -428,7 +430,7 @@ As you can see, the array that will be used to store the simulation results (arr
 
 In the previous section, we stopped the simulation at regular time intervals to only record the concentrations of various molecules. The only time we actively \emph{changed} the simulation state was at $t=0$, to set the initial conditions. However, the function calls we used to set initial conditions can be called at any time during the simulation. 
 
-As an example, let's interrupt our simulation at $t=1$ sec to add 10 molecules of species $A$. A single iteration of this simulation can be seen in figure~\ref{fig:secondorderreaction03}; the mean behaviour in figure~\ref{fig:secondorderreaction04}. 
+As an example, let's interrupt our simulation at $t=1$ sec to add 10 molecules of species $A$. A single iteration of this simulation can be seen in figure~\ref{fig:chap02:secondorderreaction03}; the mean behaviour in figure~\ref{fig:chap02:secondorderreaction04}. 
 
 \begin{verbatim}
 for t in xrange(0,1001):
@@ -449,21 +451,21 @@ for t in xrange(1001,2001):
 
 \begin{figure}
 \centering
-\includegraphics[width=13cm]{secondorderreaction03.pdf}
+\includegraphics[width=13cm]{chap02_secondorderreaction03.pdf}
 \caption{A single iteration of the second order reaction, with an injection of 10 molecules of species $A$ at $t=1.0$.}
-\label{fig:secondorderreaction03}
+\label{fig:chap02:secondorderreaction03}
 \end{figure}
 
 \begin{figure}
 \centering
-\includegraphics[width=13cm]{secondorderreaction04.pdf}
+\includegraphics[width=13cm]{chap02_secondorderreaction04.pdf}
 \caption{The mean of multiple ($N=100$) iterations of the second order reaction, with an injection of 10 molecules of species $A$ at $t=1.0$.}
-\label{fig:secondorderreaction04}
+\label{fig:chap02:secondorderreaction04}
 \end{figure}
 
 When you have to do these things regularly, you might want to encapsulate various parts of this code in separate functions to save yourself some coding time. 
 
-Quite often, one does not want to simulate the sudden injection of molecules, but rather keep the concentration of some species constant at a controlled value. This means that any reaction involving the buffered molecule will still occur if the reactants are present in sufficiently large numbers, but the occurrence of this reaction will not actually change the amount of the buffered species that is present. The following code snippet shows how, during the time interval $0.1 \leq t < 0.6$, the concentration of species $A$ is clamped to whatever its value was at $t = 0.5$.\footnote{This way of using the compartmental buffering mechanism will not often be used in a real simulation; more often clamping will be combined with a call to \texttt{setCompCount} or one of its variants.} Results can be seen in figure~\ref{fig:secondorderreaction05} for a single iteration and \ref{fig:secondorderreaction06} for the mean of multiple iterations.
+Quite often, one does not want to simulate the sudden injection of molecules, but rather keep the concentration of some species constant at a controlled value. This means that any reaction involving the buffered molecule will still occur if the reactants are present in sufficiently large numbers, but the occurrence of this reaction will not actually change the amount of the buffered species that is present. The following code snippet shows how, during the time interval $0.1 \leq t < 0.6$, the concentration of species $A$ is clamped to whatever its value was at $t = 0.5$.\footnote{This way of using the compartmental buffering mechanism will not often be used in a real simulation; more often clamping will be combined with a call to \texttt{setCompCount} or one of its variants.} Results can be seen in figure~\ref{fig:chap02:secondorderreaction05} for a single iteration and \ref{fig:chap02:secondorderreaction06} for the mean of multiple iterations.
 
 \begin{verbatim}
 for t in xrange(0,101):
@@ -491,16 +493,16 @@ for t in xrange(601,2001):
 
 \begin{figure}
 \centering
-\includegraphics[width=13cm]{secondorderreaction05.pdf}
+\includegraphics[width=13cm]{chap02_secondorderreaction05.pdf}
 \caption{A single iteration of the second order reaction, where the concentration of $A$ is clamped during the interval $0.1 \leq t < 0.6$.}
-\label{fig:secondorderreaction05}
+\label{fig:chap02:secondorderreaction05}
 \end{figure}
 
 \begin{figure}
 \centering
-\includegraphics[width=13cm]{secondorderreaction06.pdf}
+\includegraphics[width=13cm]{chap02_secondorderreaction06.pdf}
 \caption{The mean of multiple ($N=100$) iterations of the second order reaction, where the concentration of $A$ is clamped during the interval $0.1 \leq t < 0.6$.}
-\label{fig:secondorderreaction06}
+\label{fig:chap02:secondorderreaction06}
 \end{figure}
 
 The function \texttt{setCompClamped} takes a boolean which is used to turn on or off the clamping of the species in the specified compartment. 
@@ -538,20 +540,20 @@ sim.setCompReacActive('comp', 'kreac_f', False)
 sim.setCompReacActive('comp', 'kreac_b', False)
 run(i,10001,12001)
 \end{verbatim}
-The results of this code can be seen in figures~\ref{fig:secondorderreaction07} and~\ref{fig:secondorderreaction08}.
+The results of this code can be seen in figures~\ref{fig:chap02:secondorderreaction07} and~\ref{fig:chap02:secondorderreaction08}.
 
 \begin{figure}
 \centering
-\includegraphics[width=13cm]{secondorderreaction07.pdf}
+\includegraphics[width=13cm]{chap02_secondorderreaction07.pdf}
 \caption{A single iteration of the second order reaction, with the forward and backward reaction turned on and off.}
-\label{fig:secondorderreaction07}
+\label{fig:chap02:secondorderreaction07}
 \end{figure}
 
 \begin{figure}
 \centering
-\includegraphics[width=13cm]{secondorderreaction08.pdf}
+\includegraphics[width=13cm]{chap02_secondorderreaction08.pdf}
 \caption{The mean of multiple ($N=100$) iterations of the second order reaction, with the forward and backward reaction turned on and off.}
-\label{fig:secondorderreaction08}
+\label{fig:chap02:secondorderreaction08}
 \end{figure}
 
 \section{The Lotka-Volterra system}
@@ -567,7 +569,58 @@ To be added.
 \chapter{An \inspt\ receptor model}
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
-\chapter{Simulating diffusion}
+\chapter{Simulating diffusion}\label{chap:simulatingdiffusion}
+
+This chapter introduces modeling and simulation of diffusion systems. We start by explaining how the diffusive motion of one or more molecules can be described in \texttt{steps.model} models. Next, we describe a few examples of simulating diffusion and reaction-diffusion systems using solver \texttt{tetexact}, which is an extension of solver \texttt{wmdirect} which was introduced in Chapter~\ref{chap:wmkinetics}. Since \texttt{tetexact} requires a tetrahedral mesh, this chapter also briefly introduces working with these objects. A more detailed explanation on the use and, more importantly, the construction of such meshes is explained in another chapter.
+
+\section{A simple diffusion system}
+
+As usual, we begin with a simple problem. In this case, we will simulate the diffusion of molecules of a single species, called $A$, in a simple stretched-out bar of length 20~$\mu m$. At $t=0$, we inject the molecules in the middle of the bar and let them diffuse towards equilibrium. Let's assume that the diffusion constant of $A$, $D_{A}$, is 0.08~$\mu m^{2}ms^{-1}$, for no particular reason.\footnote{0.08~$\mu m^{2}ms^{-1}$ is actually the diffusion constant of dextran in the cytosol.}
+
+\subsection{PDE solution}
+
+Before we perform this simulation with STEPS, let's have quick peak at the results that we will expect STEPS to produce, by integrating the diffusion equation numerically. For simplicity, we will solve the PDE for only 1 spatial dimension, even though the actual STEPS simulation will work in 3 dimensions. The PDE is of course given by the diffusion equation:
+
+\begin{equation}\label{eqn:simplediffusion01}
+\frac{\partial A(x,t)}{\partial t} = D_A \cdot \frac{\partial^2 A(x,t)}{\partial x^2}
+\end{equation}
+
+$A(x,t)$ refers to the concentration of $A$ at position $x$ and time $t$. Since we will simulate diffusion in a bar of limited length, we need to make sure that we have reflective boundary conditions at the end points of the bar. This is expressed with the following Neumann boundary conditions:
+
+\begin{equation}\label{eqn:simplediffusion02}
+\left.\frac{\partial A(x,t)}{\partial x} = 0\ \right|_{x=-10,+10\ \mu m}
+\end{equation}
+
+Our initial condition consists of the following: 
+
+\begin{equation}\label{eqn:simplediffusion03}
+A(x,0) =
+\left\{
+\begin{aligned}
+A_0 \quad & x \in [-0.1\ \mu m,\ +0.1\ \mu m]\\
+0 \quad & \text{otherwise}
+\end{aligned}
+\right.
+\end{equation}
+
+In Figure~\ref{fig:simplediffusion01}, we can see the solution of this problem for different times, for $t$ going up to 640 $ms$, at which point it has almost reached equilibrium. We can also measure the apparent diffusion constant $D_\text{app}$ by computing the change in $\left< x^2 \right> / 2 t$ over time. This is plotted in Figure~\ref{fig:simplediffusion02}. For diffusion in an infinite space, $D_\text{app}$ would be equal to 0.08~$\mu m^{2}ms^{-1}$ for every time. In Figure~\ref{fig:simplediffusion02}, however, we see that $D_\text{app}$ starts to fall sharply somewhere around $t = 100\ ms$. This is of course caused by our reflective boundary conditions, which start to exert a increasingly large influence on the diffusion process around that point in time.\footnote{Furthermore, $D_\text{app}$ is slightly larger than 0.08~$\mu m^{2}ms^{-1}$ in the first few milliseconds, because our initial condition was not a Dirac delta function but a square pulse.}
+
+\begin{figure}
+\centering
+\includegraphics[width=13cm]{simplediffusion01.pdf}
+\caption{Solution for Equation~\ref{eqn:simplediffusion01} with the boundary conditions specified in Equation~\ref{eqn:simplediffusion02} and the initial condition of Equation~\ref{eqn:simplediffusion03}.}
+\label{fig:simplediffusion01}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=13cm]{simplediffusion02.pdf}
+\caption{Apparent diffusion constant, $D_\text{app}$, measured over time for the simulation in Figure~\ref{fig:simplediffusion01}.}
+\label{fig:simplediffusion02}
+\end{figure}
+
+\subsection{Modeling diffusion}
+When specifying your model in STEPS, adding diffusion rules for various  is very simple. It basically consists of nothing more 
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 \chapter{The \inspt\ receptor model in 3D}
