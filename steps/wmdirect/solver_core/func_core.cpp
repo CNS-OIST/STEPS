@@ -756,7 +756,20 @@ double siGetPatchSReacK(State * s, uint pidx, uint ridx)
 
 void siSetPatchSReacK(State * s, uint pidx, uint ridx, double kf)
 {
-    // Currently not implemented.
+    assert(s != 0);
+    assert(pidx < s->countPatches());
+    Patch * patch = s->patch(pidx);
+    assert(patch != 0);
+    
+    uint lridx = patch->def()->sreacG2L(ridx);
+    if (lridx == ssim::LIDX_UNDEFINED) return;
+    
+    SReac * sr = patch->sreac(lridx); 
+    sr->setK(kf);
+    
+    SchedIDXVec updvec; 
+    updvec.push_back(sr->schedIDX());
+    s->sched()->update(updvec);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

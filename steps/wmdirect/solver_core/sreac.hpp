@@ -73,6 +73,8 @@ public:
     
     ////////////////////////////////////////////////////////////////////////
     
+    void setK(double kcst);
+    
     double c(void) const
     { return pCcst; }
     

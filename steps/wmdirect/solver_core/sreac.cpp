@@ -442,4 +442,22 @@ SchedIDXVec const & SReac::apply(State * state)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void SReac::setK(double kcst)
+{
+    double vol;
+    if (pSReacDef->inside() == true)
+    {
+        assert(pPatch->iComp() != 0);
+        vol = pPatch->iComp()->vol();
+    }
+    else
+    {
+        assert(pPatch->oComp() != 0);
+        vol = pPatch->oComp()->vol();
+    }
+    pCcst = comp_ccst(kcst, vol, pSReacDef->order());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 // END
