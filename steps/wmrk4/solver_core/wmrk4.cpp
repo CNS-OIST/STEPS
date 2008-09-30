@@ -339,7 +339,7 @@ void Wmrk4::setderivs(dVec& vals, dVec& dydx)
 		for(uint r=0; r< pReacs_tot; ++r)
 		{	
 			/// check reaction flags
-			if (pRFlags[r] && State::INACTIVE_REACFLAG)						
+			if (pRFlags[r] & State::INACTIVE_REACFLAG)						
 			{
 				pDyDxlhs[n][r] = 0.0;
 				continue;
