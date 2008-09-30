@@ -18,12 +18,12 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA
 //
-// $Id:func_core.cpp 64 2007-08-20 06:25:41Z stefan $
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 // Autotools definitions.
 #ifdef HAVE_CONFIG_H
-#include <steps/config.h>
+#include <steps/config.h>																			
 #endif
 
 // STL headers.
@@ -34,21 +34,20 @@
 #include <vector>
 
 // STEPS headers.
-#include <steps/common.h>
-#include <steps/math/constants.hpp>
+#include <steps/common.h>																			
+#include <steps/math/constants.hpp>																	
 #include <steps/rng/rng.hpp>
-#include <steps/sim/shared/compdef.hpp>
+#include <steps/sim/shared/compdef.hpp>																
 #include <steps/sim/shared/diffdef.hpp>
-#include <steps/sim/shared/reacdef.hpp>
-#include <steps/sim/shared/specdef.hpp>
-#include <steps/sim/shared/statedef.hpp>
+#include <steps/sim/shared/reacdef.hpp>																
+#include <steps/sim/shared/specdef.hpp>	
+#include <steps/sim/shared/sreacdef.hpp>
+#include <steps/sim/shared/statedef.hpp>															
 #include <steps/sim/swiginf/func_core.hpp>
-#include <steps/wmdirect/solver_core/comp.hpp>
-#include <steps/wmdirect/solver_core/patch.hpp>
-#include <steps/wmdirect/solver_core/reac.hpp>
-#include <steps/wmdirect/solver_core/sched.hpp>
-#include <steps/wmdirect/solver_core/sreac.hpp>
-#include <steps/wmdirect/solver_core/state.hpp>
+#include <steps/wmrk4/solver_core/comp.hpp>													
+#include <steps/wmrk4/solver_core/patch.hpp>												
+#include <steps/wmrk4/solver_core/state.hpp>												
+#include <steps/wmrk4/solver_core/wmrk4.hpp>												
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -60,28 +59,28 @@ NAMESPACE_ALIAS(steps::sim, ssim);
 
 char * siGetSolverName(void)
 {
-    return "wmdirect";
+    return "wmrk4";																			
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 char * siGetSolverDesc(void)
 {
-    return "SSA Direct Method in well-mixed conditions";
+    return "Runge-Kutta Method in well-mixed conditions";									
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 char * siGetSolverAuthors(void)
 {
-    return "Stefan Wils";
+    return "Iain Hepburn and Stefan Wils";													
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 char * siGetSolverEmail(void)
 {
-    return "wils@oist.jp";
+    return "wils@oist.jp, ihepburn@oist.jp";												
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -109,7 +108,7 @@ void siBeginStateDef(State * s)
 void siEndStateDef(State * s)
 {
     s->def()->setupFinal();
-
+	
     // Create the actual compartments.
     ssim::CompDefPVecCI c_end = s->def()->endComp();
     for (ssim::CompDefPVecCI c = s->def()->bgnComp(); c != c_end; ++c)
@@ -128,7 +127,7 @@ void siEndStateDef(State * s)
         assert(patchdef_gidx == patch_idx);
     }
     
-    s->setupState();
+    s->setupState();																		
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -356,11 +355,11 @@ void siEndPatchDef(State * s)
 
 uint siNewPatch
 (
-    State * s, 
-    char * name, 
-    double area, 
-    uint cidx_in, 
-    uint cidx_out
+ State * s, 
+ char * name, 
+ double area, 
+ uint cidx_in, 
+ uint cidx_out
 )
 {
     ssim::CompDef * cdef_i = 0;
@@ -402,12 +401,6 @@ void siSetRNG(State * s, steps::rng::RNG * rng)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void siSetDT(State * s, double dt)
-{
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 void siReset(State * s)
 {
     s->reset();
@@ -422,13 +415,20 @@ void siRun(State * s, double endtime)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void siSetDT(State * s, double dt)
+{
+	assert (dt > 0.0);
+	s->setDT(dt);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 double siGetTime(State * s)
 {
     return s->time();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
 
 double siGetCompVol(State * s, uint cidx)
 {
@@ -447,7 +447,7 @@ void siSetCompVol(State * s, uint cidx, double vol)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double siGetCompCount(State * s, uint cidx, uint sidx)
+double siGetCompCount(State * s, uint cidx, uint sidx)						
 {
     assert(s != 0);
     assert(cidx < s->countComps());
@@ -456,33 +456,25 @@ double siGetCompCount(State * s, uint cidx, uint sidx)
     uint slidx = comp->def()->specG2L(sidx);
     if (slidx == ssim::LIDX_UNDEFINED) return 0;
     
-	double count = static_cast<double> (comp->pools()[slidx]);
-    return count;
+    return comp->pools()[slidx];									
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void siSetCompCount(State * s, uint cidx, uint sidx, double n)
+void siSetCompCount(State * s, uint cidx, uint sidx, double n)			
 {
+	
     assert(s != 0);
     assert(cidx < s->countComps());
     Comp * comp = s->comp(cidx);
     assert(comp != 0);
     ssim::lidxT slidx = comp->def()->specG2L(sidx);
     if (slidx == ssim::LIDX_UNDEFINED) return;
-	
-	double n_int = std::floor(n);
-    double n_frc = n - n_int;
-    uint c = static_cast<uint>(n_int);
-    if (n_frc > 0.0)
-    {
-        double rand01 = s->rng()->getUnfIE();
-        if (rand01 < n_frc) c++;
-    }
     
-    comp->pools()[slidx] = c;
-    // It's cheaper to just recompute everything.
-    s->sched()->reset();
+    comp->pools()[slidx] = n;
+	
+    // copy counts to wmrk4
+	s->wmrk4()->refill();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -502,7 +494,7 @@ void siSetCompAmount(State * s, uint cidx, uint sidx, double m)
     
     double m2 = m * smath::AVOGADRO;
     
-    siSetCompCount(s, cidx, sidx, m2);
+    siSetCompCount(s, cidx, sidx, m2);											
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -514,7 +506,7 @@ double siGetCompConc(State * s, uint cidx, uint sidx)
     Comp * comp = s->comp(cidx);
     assert(comp != 0);
     
-    double count = siGetCompCount(s, cidx, sidx);
+    double count = siGetCompCount(s, cidx, sidx);								
     double vol = comp->vol();
     return count / (1.0e3 * vol * smath::AVOGADRO); 
 }
@@ -525,14 +517,14 @@ void siSetCompConc(State * s, uint cidx, uint sidx, double c)
 {
     assert(s != 0);
     assert(c >= 0.0);
-
+	
     assert(cidx < s->countComps());
     Comp * comp = s->comp(cidx);
     assert(comp != 0);    
     
     double c2 = c * (1.0e3 * comp->vol() * smath::AVOGADRO);
     
-    siSetCompCount(s, cidx, sidx, c2);
+    siSetCompCount(s, cidx, sidx, c2);											
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -562,7 +554,10 @@ void siSetCompClamped(State * s, uint cidx, uint sidx, bool buf)
     uint lsidx = comp->def()->specG2L(sidx);
     if (lsidx == ssim::LIDX_UNDEFINED) return;
     
-    comp->setClamped(lsidx, buf);
+    comp->setClamped(lsidx, buf);	
+	
+	// copy flags to wmrk4
+	s->wmrk4()->refill();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -592,7 +587,7 @@ bool siGetCompReacActive(State * s, uint cidx, uint ridx)
     uint lridx = comp->def()->reacG2L(ridx);
     if (lridx == ssim::LIDX_UNDEFINED) return false;
     
-    return !(comp->reac(lridx)->inactive());
+    return (comp->active(ridx));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -607,10 +602,10 @@ void siSetCompReacActive(State * s, uint cidx, uint ridx, bool act)
     uint lridx = comp->def()->reacG2L(ridx);
     if (lridx == ssim::LIDX_UNDEFINED) return;
     
-    comp->reac(lridx)->setActive(act);
+    comp->setActive(lridx, act);
     
-    // It's cheaper to just recompute everything.
-    s->sched()->reset();
+    // copy flags to wmrk4
+    s->wmrk4()->refill();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -659,7 +654,7 @@ void siSetPatchArea(State * s, uint pidx, double area)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double siGetPatchCount(State * s, uint pidx, uint sidx)
+double siGetPatchCount(State * s, uint pidx, uint sidx)						
 {
     assert(s != 0);
     assert(pidx < s->countPatches());
@@ -668,13 +663,12 @@ double siGetPatchCount(State * s, uint pidx, uint sidx)
     uint slidx = patch->def()->specG2L(sidx);
     if (slidx == ssim::LIDX_UNDEFINED) return 0;
     
-	double count = static_cast<double> (patch->pools()[slidx]);
-    return count;
+    return patch->pools()[slidx];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void siSetPatchCount(State * s, uint pidx, uint sidx, double n)
+void siSetPatchCount(State * s, uint pidx, uint sidx, double n)				
 {
     assert(s != 0);
     assert(pidx < s->countPatches());
@@ -683,24 +677,17 @@ void siSetPatchCount(State * s, uint pidx, uint sidx, double n)
     uint slidx = patch->def()->specG2L(sidx);
     if (slidx == ssim::LIDX_UNDEFINED) return;
     
-	double n_int = std::floor(n);
-    double n_frc = n - n_int;
-    uint c = static_cast<uint>(n_int);
-    if (n_frc > 0.0)
-    {
-        double rand01 = s->rng()->getUnfIE();
-        if (rand01 < n_frc) c++;
-    }
-    patch->pools()[slidx] = c;
-    // It's cheaper to just recompute everything.
-    s->sched()->reset();
+    patch->pools()[slidx] = n;
+	
+    // copy counts to wmrk4 
+	s->wmrk4()->refill();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double siGetPatchAmount(State * s, uint pidx, uint sidx)
 {
-    double count = siGetPatchCount(s, pidx, sidx);
+    double count = siGetPatchCount(s, pidx, sidx);								
     return count / smath::AVOGADRO; 
 }
 
@@ -711,8 +698,8 @@ void siSetPatchAmount(State * s, uint pidx, uint sidx, double m)
     assert(s != 0);
     assert(m >= 0.0);
     
-    double m2 = m * smath::AVOGADRO;
-    
+    double m2 = m * smath::AVOGADRO;											
+	
     siSetPatchCount(s, pidx, sidx, m2);
 }
 
@@ -743,7 +730,10 @@ void siSetPatchClamped(State * s, uint pidx, uint sidx, bool buf)
     uint lsidx = patch->def()->specG2L(sidx);
     if (lsidx == ssim::LIDX_UNDEFINED) return;
     
-    patch->setClamped(lsidx, buf);
+    patch->setClamped(lsidx, buf);	
+	
+	/// copy flags to wmrk4
+	s->wmrk4()->refill();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -758,20 +748,7 @@ double siGetPatchSReacK(State * s, uint pidx, uint ridx)
 
 void siSetPatchSReacK(State * s, uint pidx, uint ridx, double kf)
 {
-    assert(s != 0);
-    assert(pidx < s->countPatches());
-    Patch * patch = s->patch(pidx);
-    assert(patch != 0);
-    
-    uint lridx = patch->def()->sreacG2L(ridx);
-    if (lridx == ssim::LIDX_UNDEFINED) return;
-    
-    SReac * sr = patch->sreac(lridx); 
-    sr->setK(kf);
-    
-    SchedIDXVec updvec; 
-    updvec.push_back(sr->schedIDX());
-    s->sched()->update(updvec);
+    // Currently not implemented.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -786,7 +763,7 @@ bool siGetPatchSReacActive(State * s, uint pidx, uint ridx)
     uint lridx = patch->def()->sreacG2L(ridx);
     if (lridx == ssim::LIDX_UNDEFINED) return false;
     
-    return !(patch->sreac(lridx)->inactive());
+    return patch->active(lridx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -801,12 +778,15 @@ void siSetPatchSReacActive(State * s, uint pidx, uint ridx, bool a)
     uint lridx = patch->def()->sreacG2L(ridx);
     if (lridx == ssim::LIDX_UNDEFINED) return;
     
-    patch->sreac(lridx)->setActive(a);
+    patch->setActive(lridx, a);
     
-    // It's cheaper to just recompute everything.
-    s->sched()->reset();
+	// copy flags to wmrk4
+    s->wmrk4()->refill();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 // END
+
+
+

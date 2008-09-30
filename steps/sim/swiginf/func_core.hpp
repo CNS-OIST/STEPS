@@ -107,6 +107,7 @@ extern void     siSetRNG(State * s, steps::rng::RNG * rng);
 
 extern void     siReset(State * s);
 extern void     siRun(State * s, double endtime);
+extern void		siSetDT(State * s, double dt);
 
 ////////////////////////////////////////////////////////////////////////////////
 // SOLVER STATE ACCESS: 
@@ -123,8 +124,8 @@ extern double   siGetTime(State * s);
 extern double   siGetCompVol(State * s, uint cidx);
 extern void     siSetCompVol(State * s, uint cidx, double vol);
 
-extern uint     siGetCompCount(State * s, uint cidx, uint sidx);
-extern void     siSetCompCount(State * s, uint cidx, uint sidx, uint n);
+extern double   siGetCompCount(State * s, uint cidx, uint sidx);				
+extern void     siSetCompCount(State * s, uint cidx, uint sidx, double n);		
 
 extern double   siGetCompAmount(State * s, uint cidx, uint sidx);
 extern void     siSetCompAmount(State * s, uint cidx, uint sidx, double m);
@@ -155,8 +156,8 @@ extern void 	siSetCompDiffActive(State * s, uint cidx, uint didx, bool act);
 extern double   siGetPatchArea(State * s, uint pidx);
 extern void     siSetPatchArea(State * s, uint pidx, double area);
 
-extern uint     siGetPatchCount(State * s, uint pidx, uint sidx);
-extern void     siSetPatchCount(State * s, uint pidx, uint sidx, uint n);
+extern double   siGetPatchCount(State * s, uint pidx, uint sidx);
+extern void     siSetPatchCount(State * s, uint pidx, uint sidx, double n);
 
 extern double   siGetPatchAmount(State * s, uint pidx, uint sidx);
 extern void     siSetPatchAmount(State * s, uint pidx, uint sidx, double m);

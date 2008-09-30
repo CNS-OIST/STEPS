@@ -18,48 +18,31 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA
 #
-# $Id$
+# 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# Set $MAKE if necessary.
-@SET_MAKE@
+from steps.sim.controller import FuncCore
+import solver_core
 
-# VPATH support.
-srcdir = @srcdir@
-VPATH = @srcdir@
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# Process subdirectories.
-SUBDIRS	= \
-    distmesh \
-    rng \
-    geom \
-    math \
-    model \
-    sim \
-    tetexact \
-    thirdparty \
-    wmdirect \
-	wmrk4 \
-    .
+class Solver(FuncCore):
 
-# Python package.
-stepsdir = $(pythondir)/steps
-steps_PYTHON = \
-    __init__.py \
-    error.py \
-    tools.py
+    """Controller class for Runge-Kutta method in well-mixed
+    conditions.
+    """
 
-# Headers that should be included in the distribution and installed.
-pkginclude_HEADERS = \
-    common.h \
-    doxygen.hpp
+    #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #
 
-# Compiler flags.
-AM_CXXFLAGS = \
-	-I$(top_srcdir)
 
-# Files that should be cleaned when building a distribution.
-distclean-local:
-	-rm -rf .DS_Store *~ *.bak
+    def __init__(self, model, geom, rng):
+        FuncCore.__init__(self, solver_core, model, geom, rng)
+
+
+    def __del__(self):
+        FuncCore.__del__(self)
+        
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # END

@@ -18,48 +18,20 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA
 #
-# $Id$
+# $Id: __init__.py 112 2008-01-27 09:25:39Z stefan $
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# Set $MAKE if necessary.
-@SET_MAKE@
 
-# VPATH support.
-srcdir = @srcdir@
-VPATH = @srcdir@
+"""
+"""
 
-# Process subdirectories.
-SUBDIRS	= \
-    distmesh \
-    rng \
-    geom \
-    math \
-    model \
-    sim \
-    tetexact \
-    thirdparty \
-    wmdirect \
-	wmrk4 \
-    .
 
-# Python package.
-stepsdir = $(pythondir)/steps
-steps_PYTHON = \
-    __init__.py \
-    error.py \
-    tools.py
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# Headers that should be included in the distribution and installed.
-pkginclude_HEADERS = \
-    common.h \
-    doxygen.hpp
 
-# Compiler flags.
-AM_CXXFLAGS = \
-	-I$(top_srcdir)
+from solver import Solver
 
-# Files that should be cleaned when building a distribution.
-distclean-local:
-	-rm -rf .DS_Store *~ *.bak
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # END

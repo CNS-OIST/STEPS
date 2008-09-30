@@ -141,6 +141,7 @@ class FuncCore(object):
         self._siAddPatchSReac = self._rsf('siAddPatchSReac')
         self._siReset = self._rsf('siReset')
         self._siRun = self._rsf('siRun')
+        self._siSetDT = self._rsf('siSetDT')
         self._siGetTime = self._rsf('siGetTime')
         self._siGetCompVol = self._rsf('siGetCompVol')
         self._siSetCompVol = self._rsf('siSetCompVol')
@@ -777,7 +778,14 @@ class FuncCore(object):
         """
         self._siReset(self._state)
 		
-
+    def setDT(self, dt):
+        """ set the maximum time step: required for the Runge_Kutta solver
+        """
+        if (dt < 0):
+            raise serr.ArgumentError, \
+                'Time step cannot be negative!'
+        self._siSetDT(self._state, dt)
+				        
     def run(self, endtime):
         """Forward the simulation until the specified time is reached.
         
@@ -1322,7 +1330,7 @@ class FuncCore(object):
     def setPatchSReacActive(self, patch, sreac, act):
         """
         """
-        self._siSetPatchReacActive(self._state, \
+        self._siSetPatchSReacActive(self._state, \
             self._patch(patch), self._sreac(sreac), act)
 
 

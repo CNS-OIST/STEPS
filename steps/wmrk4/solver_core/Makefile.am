@@ -18,48 +18,43 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA
 #
-# $Id$
+# 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# Set $MAKE if necessary.
 @SET_MAKE@
 
-# VPATH support.
 srcdir = @srcdir@
 VPATH = @srcdir@
 
-# Process subdirectories.
-SUBDIRS	= \
-    distmesh \
-    rng \
-    geom \
-    math \
-    model \
-    sim \
-    tetexact \
-    thirdparty \
-    wmdirect \
-	wmrk4 \
-    .
-
-# Python package.
-stepsdir = $(pythondir)/steps
-steps_PYTHON = \
-    __init__.py \
-    error.py \
-    tools.py
-
-# Headers that should be included in the distribution and installed.
-pkginclude_HEADERS = \
-    common.h \
-    doxygen.hpp
-
-# Compiler flags.
-AM_CXXFLAGS = \
-	-I$(top_srcdir)
-
-# Files that should be cleaned when building a distribution.
 distclean-local:
 	-rm -rf .DS_Store *~ *.bak
+
+header_steps_wmrk4_solver_coredir = \
+    $(pkgincludedir)/steps/wmrk4/solver_core
+
+AM_CPPFLAGS = -I$(top_srcdir)
+
+lib_LTLIBRARIES = libsteps_wmrk4.la
+
+libsteps_wmrk4_la_SOURCES = \
+    comp.cpp \
+	func_core.cpp \
+    patch.cpp \
+    state.cpp \
+    wmrk4.cpp
+
+libsteps_wmrk4_la_LDFLAGS = -no-undefined
+
+libsteps_wmrk4_la_LIBADD = \
+    ../../sim/shared/libsimshared.la \
+	../../rng/libsteps_rng.la
+
+header_steps_wmrk4_solver_core_HEADERS = \
+    comp.hpp \
+	patch.hpp \
+	state.hpp \
+	wmrk4.hpp 
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # END

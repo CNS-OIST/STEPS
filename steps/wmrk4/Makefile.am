@@ -18,48 +18,47 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA
 #
-# $Id$
+# 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# Set $MAKE if necessary.
 @SET_MAKE@
 
-# VPATH support.
 srcdir = @srcdir@
 VPATH = @srcdir@
 
-# Process subdirectories.
-SUBDIRS	= \
-    distmesh \
-    rng \
-    geom \
-    math \
-    model \
-    sim \
-    tetexact \
-    thirdparty \
-    wmdirect \
-	wmrk4 \
-    .
-
-# Python package.
-stepsdir = $(pythondir)/steps
-steps_PYTHON = \
-    __init__.py \
-    error.py \
-    tools.py
-
-# Headers that should be included in the distribution and installed.
-pkginclude_HEADERS = \
-    common.h \
-    doxygen.hpp
-
-# Compiler flags.
-AM_CXXFLAGS = \
-	-I$(top_srcdir)
-
-# Files that should be cleaned when building a distribution.
 distclean-local:
 	-rm -rf .DS_Store *~ *.bak
+
+pyexec_steps_wmrk4dir = $(pythondir)/steps/wmrk4
+python_steps_wmrk4dir = $(pythondir)/steps/wmrk4
+header_steps_wmrk4dir = $(pkgincludedir)/steps/wmrk4
+
+AM_CPPFLAGS = $(SWIG_PYTHON_CPPFLAGS) $(PYTHON_CPPFLAGS) -I$(top_srcdir)
+
+SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@ -I$(top_srcdir) 
+%_wrap.cpp: %.i
+	$(SWIG) $(SWIG_PYTHON_OPT) -o $@ $<
+SWIG_SOURCES = solver_core.i
+
+pyexec_steps_wmrk4_LTLIBRARIES = \
+    _solver_core.la
+
+_solver_core_la_LDFLAGS = -module -avoid-version -no-undefined $(PYTHON_LDFLAGS)
+_solver_core_la_SOURCES = \
+    $(SWIG_SOURCES) \
+    solver_core_wrap.cpp
+_solver_core_la_LIBADD = \
+    ./solver_core/libsteps_wmrk4.la
+
+python_steps_wmrk4_PYTHON = \
+    __init__.py \
+    solver.py \
+    solver_core.py
+
+SUBDIRS = \
+    solver_core \
+    .
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # END

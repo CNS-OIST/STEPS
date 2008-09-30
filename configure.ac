@@ -272,6 +272,8 @@ steps/thirdparty/qhull/Makefile
 steps/thirdparty/Makefile
 steps/wmdirect/solver_core/Makefile
 steps/wmdirect/Makefile
+steps/wmrk4/Makefile
+steps/wmrk4/solver_core/Makefile
 steps/Makefile
 thirdparty/Makefile
 Makefile

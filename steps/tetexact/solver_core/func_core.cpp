@@ -397,6 +397,12 @@ void siSetRNG(State * s, steps::rng::RNG * rng)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void siSetDT(State * s, double dt)
+{
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void siReset(State * s)
 {
     s->reset();
@@ -437,7 +443,7 @@ void siSetCompVol(State * s, uint cidx, double vol)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint siGetCompCount(State * s, uint cidx, uint sidx)
+double siGetCompCount(State * s, uint cidx, uint sidx)			
 {
     assert(s != 0);
     assert(cidx < s->countComps());
@@ -453,12 +459,12 @@ uint siGetCompCount(State * s, uint cidx, uint sidx)
         count += (*t)->pools()[slidx];
     }
     
-    return count;
+    return (static_cast<double>(count));							
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void siSetCompCount(State * s, uint cidx, uint sidx, uint n)
+void siSetCompCount(State * s, uint cidx, uint sidx, double n)  
 {
     assert(s != 0);
     assert(cidx < s->countComps());
@@ -469,25 +475,34 @@ void siSetCompCount(State * s, uint cidx, uint sidx, uint n)
     
     double totalvol = comp->vol();
     TetPVecCI t_end = comp->endTet();
-    
-    if (n >= comp->countTets())
+	
+    double n_int = std::floor(n);
+    double n_frc = n - n_int;
+    uint c = static_cast<uint>(n_int);
+    if (n_frc > 0.0)
+    {
+        double rand01 = s->rng()->getUnfIE();
+        if (rand01 < n_frc) c++;
+    }
+	
+    if (c >= comp->countTets())
     {
         for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
         {
             Tet * tet = *t;
-            double fract = static_cast<double>(n) * (tet->vol() / totalvol);
+            double fract = static_cast<double>(c) * (tet->vol() / totalvol);
             uint n3 = static_cast<uint>(std::floor(fract));
             tet->pools()[slidx] = n3;
-            n -= n3;
+            c -= n3;
         }
     }
     
-    while (n != 0)
+    while (c != 0)
     {
         Tet * tet = comp->pickTetByVol(s->rng()->getUnfIE());
         assert(tet != 0);
         tet->pools()[slidx] += 1;
-        n--;
+        c--;
     }
     
     for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
@@ -500,7 +515,7 @@ void siSetCompCount(State * s, uint cidx, uint sidx, uint n)
 
 double siGetCompAmount(State * s, uint cidx, uint sidx)
 {
-    double count = static_cast<double>(siGetCompCount(s, cidx, sidx));
+    double count = siGetCompCount(s, cidx, sidx);
     return count / smath::AVOGADRO; 
 }
 
@@ -512,16 +527,8 @@ void siSetCompAmount(State * s, uint cidx, uint sidx, double m)
     assert(m >= 0.0);
     
     double m2 = m * smath::AVOGADRO;
-    double m_int = std::floor(m2);
-    double m_frc = m2 - m_int;
-    uint c = static_cast<uint>(m_int);
-    if (m_frc > 0.0)
-    {
-        double rand01 = s->rng()->getUnfIE();
-        if (rand01 < m_frc) c++;
-    }
-    
-    siSetCompCount(s, cidx, sidx, c);
+        
+    siSetCompCount(s, cidx, sidx, m2);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -533,7 +540,7 @@ double siGetCompConc(State * s, uint cidx, uint sidx)
     Comp * comp = s->comp(cidx);
     assert(comp != 0);
     
-    double count = static_cast<double>(siGetCompCount(s, cidx, sidx));
+    double count = siGetCompCount(s, cidx, sidx);
     double vol = comp->vol();
     return count / (1.0e3 * vol * smath::AVOGADRO); 
 }
@@ -550,16 +557,8 @@ void siSetCompConc(State * s, uint cidx, uint sidx, double c)
     assert(comp != 0);    
     
     double c2 = c * (1.0e3 * comp->vol() * smath::AVOGADRO);
-    double c_int = std::floor(c2);
-    double c_frc = c2 - c_int;
-    uint count = static_cast<uint>(c_int);
-    if (c_frc > 0.0)
-    {
-        double rand01 = s->rng()->getUnfIE();
-        if (rand01 < c_frc) count++;
-    }
     
-    siSetCompCount(s, cidx, sidx, count);
+    siSetCompCount(s, cidx, sidx, c2);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -737,7 +736,7 @@ void siSetPatchArea(State * s, uint pidx, double area)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint siGetPatchCount(State * s, uint pidx, uint sidx)
+double siGetPatchCount(State * s, uint pidx, uint sidx)				
 {
     assert(s != 0);
     assert(pidx < s->countPatches());
@@ -753,12 +752,12 @@ uint siGetPatchCount(State * s, uint pidx, uint sidx)
         count += (*t)->pools()[slidx];
     }
     
-    return count;
+    return (static_cast<double>(count));								
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void siSetPatchCount(State * s, uint pidx, uint sidx, uint n)
+void siSetPatchCount(State * s, uint pidx, uint sidx, double n)		 
 {
     assert(s != 0);
     assert(pidx < s->countPatches());
@@ -770,24 +769,33 @@ void siSetPatchCount(State * s, uint pidx, uint sidx, uint n)
     double totalarea = patch->area();
     TriPVecCI t_end = patch->endTri();
     
-    if (n >= patch->countTris())
+	double n_int = std::floor(n);
+    double n_frc = n - n_int;
+    uint c = static_cast<uint>(n_int);
+    if (n_frc > 0.0)
+    {
+        double rand01 = s->rng()->getUnfIE();
+        if (rand01 < n_frc) c++;
+    }
+	
+    if (c >= patch->countTris())
     {
         for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
         {
             Tri * tri = *t;
-            double fract = static_cast<double>(n) * (tri->area() / totalarea);
+            double fract = static_cast<double>(c) * (tri->area() / totalarea);
             uint n3 = static_cast<uint>(std::floor(fract));
             tri->pools()[slidx] = n3;
-            n -= n3;
+            c -= n3;
         }
     }
     
-    while (n != 0)
+    while (c != 0)
     {
         Tri * tri = patch->pickTriByArea(s->rng()->getUnfIE());
         assert(tri != 0);
         tri->pools()[slidx] += 1;
-        n--;
+        c--;
     }
     
     for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
@@ -800,7 +808,7 @@ void siSetPatchCount(State * s, uint pidx, uint sidx, uint n)
 
 double siGetPatchAmount(State * s, uint pidx, uint sidx)
 {
-    double count = static_cast<double>(siGetPatchCount(s, pidx, sidx));
+    double count = siGetPatchCount(s, pidx, sidx);
     return count / smath::AVOGADRO; 
 }
 
@@ -812,16 +820,8 @@ void siSetPatchAmount(State * s, uint pidx, uint sidx, double m)
     assert(m >= 0.0);
     
     double m2 = m * smath::AVOGADRO;
-    double m_int = std::floor(m2);
-    double m_frc = m2 - m_int;
-    uint c = static_cast<uint>(m_int);
-    if (m_frc > 0.0)
-    {
-        double rand01 = s->rng()->getUnfIE();
-        if (rand01 < m_frc) c++;
-    }
     
-    siSetPatchCount(s, pidx, sidx, c);
+    siSetPatchCount(s, pidx, sidx, m2);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
