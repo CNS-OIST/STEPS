@@ -431,7 +431,7 @@ void Wmrk4::update(void)
 	for (uint i=0; i< pSpecs_tot; ++i)
 	{
 		/// check clamped flag and only update if not clamped
-		if (pSFlags[i] == State::CLAMPED_POOLFLAG)
+		if (pSFlags[i] & State::CLAMPED_POOLFLAG)
 		{
 			continue;
 		}
