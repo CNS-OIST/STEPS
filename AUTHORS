@@ -13,6 +13,11 @@ The following people have contributed to the development of STEPS:
     Ivan Raikov
         Helped to straighten out the autotools stuff and set up the 
         Subversion archive.
+        
+2008
+
+    Iain Hepburn
+        WMRK4 solver (Runge Kutta ODE engine)
 
 If you contributed to STEPS and we forgot to put your name in this list, 
 don't hesitate to contact us.
