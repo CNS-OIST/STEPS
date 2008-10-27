@@ -313,7 +313,7 @@ void Sched::update(SchedIDXVec const & entries)
     //assert(entries.size() <= 16);
 
     // Recompute rates.
-    uint indices[16];
+    uint indices[32];
     SchedIDXVecCI sidx_end = entries.end();
     uint prev_e = 0xFFFFFFFF;
     uint cur_e = 0;

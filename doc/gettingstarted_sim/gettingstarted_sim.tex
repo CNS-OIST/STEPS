@@ -565,8 +565,33 @@ To be added.
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 \chapter{Surface-volume reactions}
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
-\chapter{An \inspt\ receptor model}
+In the previous chapter, we restricted ourselves to working in a single compartment. Here we will be linking together multiple compartments by defining ``patches'' in between them. These patches can contain chemically reacting species just like compartments...
+
+\section{Modeling surface systems}
+
+Before we get the patches, we introduce surface systems.
+
+Just like volume systems are collections of reaction rules, surface systems are collections of surface reactions. A surface reaction is a reaction in which the stoichiometry is annotated to specify where the reactant or product is located.
+
+Let's look at some examples. 
+
+A receptor binding a ligand on the inside.
+
+A poor man's current.
+
+\section{An \inspt\ receptor model}
+
+To illustrate working with surface systems in practice, let's perform some simulations of an \inspt\ model originally published in \cite{Doi:JNeurosci:2005}. 
+
+This model consists of 7 states. We'll use the poor man's current to describe the flow of \catpl ions; at this point we won't be setting the constant.
+
+As in the original paper, we'll be fitting the ``current'' to correspond to an experimental observation of Bezprozvanny, namely that 5400 ions flow bla bla.
+
+In figure 1, we plot different values for the flux constant versus the amount of ions flow per minute. This corresponds nicely. (The actual results are fairly robust w.r.t. to the choice of constant here.)
+
+In figure 2, we plot for different levels of cytosolic \catpl, the opening probability for a single IP3 receptor. This is looking good w.r.t. the paper.
+
+Now we can use this little model for looking at Ca-induced Ca release in a spine model. In figure 3, for an injection of ... Ca we get the typical .
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 \chapter{Simulating diffusion}\label{chap:simulatingdiffusion}
