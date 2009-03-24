@@ -29,6 +29,7 @@
 // Standard library & STL headers.
 #include <cassert>
 #include <cmath>
+#include <iostream>
 
 // STEPS headers.
 #include <steps/common.h>
