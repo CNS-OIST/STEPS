@@ -151,8 +151,6 @@ double stetmesh::Tet::getTetDist(uint i) const
 	int tetidx = getTetIdx(i);
 	if (tetidx == -1)
 	{
-		std::cout << "WARNING: No tet neighbour for index " << i;
-		std::cout << "\nReturning 0.0";
 		return 0.0;
 	}
 	Tet * tettemp = new Tet(pTetmesh, tetidx);

@@ -112,7 +112,7 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
 	// Perform upcast.
 	pMesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom());
 	// TODO: deal with situation that it's not a mesh in a proper way -> throw exception
-
+	
 	// First initialise the pTets, pTris vector, because
 	// want tets and tris to maintain indexing from Geometry
 	uint ntets = mesh()->countTets();
@@ -121,7 +121,7 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
 	uint ntris = mesh()->countTris();
 	pTris = std::vector<steps::tetexact::Tri *>();
 	for (uint i=0; i < ntris; ++i) pTris.push_back(0);
-
+	
 	// Now create the actual compartments.
 	ssolver::CompDefPVecCI c_end = statedef()->endComp();
     for (ssolver::CompDefPVecCI c = statedef()->bgnComp(); c != c_end; ++c)
@@ -138,7 +138,7 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
         uint patch_idx = _addPatch(*p);
         assert(patchdef_gidx == patch_idx);
     }
-
+	
     uint ncomps = pComps.size();
     assert (mesh()->_countComps() == ncomps);
     for (uint c = 0; c < ncomps; ++c)
@@ -170,13 +170,13 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
         	int tet1 = tet->getTet1Idx();
         	int tet2 = tet->getTet2Idx();
         	int tet3 = tet->getTet3Idx();
-
+			
         	_addTet((*t), localcomp, vol, a0, a1, a2, a3, d0, d1, d2, d3,
         			tet0, tet1, tet2, tet3);
         	delete tet;
         }
     }
-
+	
     uint npatches = pPatches.size();
     assert (mesh()->_countPatches() == npatches);
     for (uint p = 0; p < npatches; ++p)
@@ -190,7 +190,7 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
     	std::vector<uint> triindcs = tmpatch->getAllTriIndices();
     	std::vector<uint>::const_iterator t_end = triindcs.end();
     	for (std::vector<uint>::const_iterator t = triindcs.begin();
-			t != t_end; ++t)
+			 t != t_end; ++t)
     	{
     		steps::tetmesh::Tri * tri = new steps::tetmesh::Tri(mesh(), (*t));
     		assert (tri->getPatch() == tmpatch);
@@ -202,26 +202,26 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
     		// double d2 = tri->getTri2Dist();
     		int tetinner = tri->getTet0Idx();
     		int tetouter = tri->getTet1Idx();
-
+			
     		_addTri((*t), localpatch, area, tetinner, tetouter);
     		delete tri;
     	}
     }
-
+	
     // All tets and tris that belong to some comp or patch have been created
     // locally- now we can connect them locally
     // NOTE: currently if a tetrahedron's neighbour belongs to a different
     // comp they do not talk to each other (see stex::Tet::setNextTet())
     //
-
+	
     assert (ntets == pTets.size());
     // pTets member size of all tets in geometry, but may not be filled with
     // local tets if they have not been added to a compartment
     /*
-    std::vector<steps::tetexact::Tet *>::const_iterator t_end = pTets.end();
-    for (std::vector<steps::tetexact::Tet *>::const_iterator t = pTets.begin();
-		 t < nlocaltets; ++t)
-		 */
+	 std::vector<steps::tetexact::Tet *>::const_iterator t_end = pTets.end();
+	 for (std::vector<steps::tetexact::Tet *>::const_iterator t = pTets.begin();
+	 t < nlocaltets; ++t)
+	 */
     for (uint t = 0; t < ntets; ++t)
     {
     	if (pTets[t] == 0) continue;
@@ -238,13 +238,13 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
     	// for surface triangles
     }
     assert (ntris == pTris.size());
-
+	
     for (uint t = 0; t < ntris; ++t)
     {
     	if (pTris[t] == 0) continue;
     	int tetinner = pTris[t]->tet(0);
     	int tetouter = pTris[t]->tet(1);
-
+		
     	// DEBUG 18/03/09:
     	// Now correct check, previously didn't allow for tet index == 0
     	if (tetinner >= 0)
@@ -267,9 +267,9 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
     			pTets[tetinner]->setNextTri(i, pTris[t]);
     			break;
     		}
-
+			
     	}
-
+		
     	// DEBUG 18/03/09:
     	// Now correct check, previously didn't allow for tet index == 0
     	if (tetouter >= 0)
@@ -286,7 +286,7 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
     		}
     	}
     }
-
+	
     _setup();
 }
 
@@ -298,14 +298,14 @@ stex::Tetexact::~Tetexact(void)
     for (CompPVecCI c = pComps.begin(); c != comp_e; ++c) delete *c;
     PatchPVecCI patch_e = pPatches.end();
     for (PatchPVecCI p = pPatches.begin(); p != patch_e; ++p) delete *p;
-
+	
     TetPVecCI tet_e = pTets.end();
     for (TetPVecCI t = pTets.begin(); t != tet_e; ++t) delete *t;
     TriPVecCI tri_e = pTris.end();
     for (TriPVecCI t = pTris.end(); t != tri_e; ++t) delete *t;
-
+	
     std::for_each(pLevels.begin(), pLevels.end(), DeleteArray());
-
+	
     delete[] pIndices;
     delete[] pRannum;
 }
@@ -354,17 +354,15 @@ void stex::Tetexact::_setup(void)
 	{
 		(*t)->setupKProcs(this);
 	}
-
 	TriPVecCI tri_end = pTris.end();
 	for (TriPVecCI t = pTris.begin(); t != tri_end; ++t)
 	{
 		// DEBUG: vector holds all possible triangles, but
 		// only patch triangles are filled
 		if ((*t) == 0) continue;
-
+		
 		(*t)->setupKProcs(this);
 	}
-
 	// Resolve all dependencies
 	for (TetPVecCI t = pTets.begin(); t != tet_end; ++t)
 	{
@@ -379,14 +377,14 @@ void stex::Tetexact::_setup(void)
 		// DEBUG: vector holds all possible triangles, but
 		// only patch triangles are filled
 		if ((*t) == 0) continue;
-
+		
 	    KProcPVecCI kprocend = (*t)->kprocEnd();
 	    for (KProcPVecCI k = (*t)->kprocBegin(); k != kprocend; ++k)
 	    {
 	        (*k)->setupDeps();
 	    }
 	}
-
+	
 	_build();
 }
 
@@ -407,10 +405,10 @@ uint stex::Tetexact::_addComp(steps::solver::Compdef * cdef)
 uint stex::Tetexact::_addPatch(steps::solver::Patchdef * pdef)
 {
     /* Comp * icomp = 0;
-    Comp * ocomp = 0;
-    if (pdef->icompdef()) icomp = pCompMap[pdef->icompdef()];
-    if (pdef->ocompdef()) ocomp = pCompMap[pdef->ocompdef()];
-    */
+	 Comp * ocomp = 0;
+	 if (pdef->icompdef()) icomp = pCompMap[pdef->icompdef()];
+	 if (pdef->ocompdef()) ocomp = pCompMap[pdef->ocompdef()];
+	 */
     stex::Patch * patch = new Patch(pdef);
     assert(patch != 0);
     uint patchidx = pPatches.size();
@@ -456,19 +454,19 @@ void stex::Tetexact::reset(void)
 {
 	std::for_each(pComps.begin(), pComps.end(), std::mem_fun(&Comp::reset));
 	std::for_each(pPatches.begin(), pPatches.end(), std::mem_fun(&Patch::reset));
-
+	
     std::for_each(pTets.begin(), pTets.end(), std::mem_fun(&Tet::reset));
-
+	
 	TriPVecCI tri_end = pTris.end();
 	for (TriPVecCI t = pTris.begin(); t != tri_end; ++t)
 	{
 		if ((*t) == 0) continue;
 		(*t)->reset();
 	}
-
+	
 	statedef()->resetTime();
 	statedef()->resetNSteps();
-
+	
 	_reset();
 }
 
@@ -543,7 +541,7 @@ double stex::Tetexact::_getCompCount(uint cidx, uint sidx) const
 	assert(comp != 0);
 	uint slidx = comp->def()->specG2L(sidx);
 	if (slidx == ssolver::LIDX_UNDEFINED) return 0.0;
-
+	
 	return comp->pools()[slidx];
 }
 
@@ -558,10 +556,10 @@ void stex::Tetexact::_setCompCount(uint cidx, uint sidx, double n)
 	stex::Comp * comp = _comp(cidx);
 	uint slidx = comp->def()->specG2L(sidx);
 	if (slidx == ssolver::LIDX_UNDEFINED) return;
-
+	
 	double totalvol = comp->def()->vol();
 	TetPVecCI t_end = comp->endTet();
-
+	
 	double n_int = std::floor(n);
 	double n_frc = n - n_int;
 	uint c = static_cast<uint>(n_int);
@@ -581,7 +579,7 @@ void stex::Tetexact::_setCompCount(uint cidx, uint sidx, double n)
 			c -= n3;
 		}
 	}
-
+	
 	while (c != 0)
 	{
 		Tet * tet = comp->pickTetByVol(rng()->getUnfIE());
@@ -589,12 +587,12 @@ void stex::Tetexact::_setCompCount(uint cidx, uint sidx, double n)
         tet->setCount(slidx, (tet->pools()[slidx] + 1.0));
         c--;
 	}
-
+	
 	for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
 	{
 		_updateSpec(*t, slidx);
 	}
-
+	
 	// Rates have changed
 	_reset();
 }
@@ -654,7 +652,7 @@ bool stex::Tetexact::_getCompClamped(uint cidx, uint sidx) const
 	assert(comp != 0);
 	uint lsidx = comp->def()->specG2L(sidx);
     if (lsidx == ssolver::LIDX_UNDEFINED) return false;
-
+	
     TetPVecCI t_end = comp->endTet();
     for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
     {
@@ -708,7 +706,7 @@ bool stex::Tetexact::_getCompReacActive(uint cidx, uint ridx) const
 	assert(comp != 0);
 	uint lridx = comp->def()->reacG2L(ridx);
 	if (lridx == ssolver::LIDX_UNDEFINED) return false;
-
+	
 	TetPVecCI t_end = comp->endTet();
 	for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
 	{
@@ -728,7 +726,7 @@ void stex::Tetexact::_setCompReacActive(uint cidx, uint ridx, bool a)
 	assert(comp != 0);
 	uint lridx = comp->def()->reacG2L(ridx);
 	if (lridx == ssolver::LIDX_UNDEFINED) return;
-
+	
 	TetPVecCI t_end = comp->endTet();
 	for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
 	{
@@ -763,7 +761,7 @@ bool stex::Tetexact::_getCompDiffActive(uint cidx, uint didx) const
 	assert (comp != 0);
 	uint ldidx = comp->def()->diffG2L(didx);
 	if (ldidx == ssolver::LIDX_UNDEFINED) return false;
-
+	
 	TetPVecCI t_end = comp->endTet();
 	for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
 	{
@@ -783,7 +781,7 @@ void stex::Tetexact::_setCompDiffActive(uint cidx, uint didx, bool act)
 	assert (comp != 0);
 	uint ldidx = comp->def()->diffG2L(didx);
 	if (ldidx == ssolver::LIDX_UNDEFINED) return;
-
+	
 	TetPVecCI t_end = comp->endTet();
 	for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
 	{
@@ -815,7 +813,7 @@ double stex::Tetexact::_getPatchCount(uint pidx, uint sidx) const
 	assert (patch != 0);
 	uint slidx = patch->def()->specG2L(sidx);
 	if (slidx == ssolver::LIDX_UNDEFINED) return 0.0;
-
+	
 	return patch->pools()[slidx];
 }
 
@@ -831,10 +829,10 @@ void stex::Tetexact::_setPatchCount(uint pidx, uint sidx, double n)
 	assert (patch != 0);
 	uint slidx = patch->def()->specG2L(sidx);
 	if (slidx == ssolver::LIDX_UNDEFINED) return;
-
+	
 	double totalarea = patch->def()->area();
 	TriPVecCI t_end = patch->endTri();
-
+	
 	double n_int = std::floor(n);
 	double n_frc = n - n_int;
 	uint c = static_cast<uint>(n_int);
@@ -843,7 +841,7 @@ void stex::Tetexact::_setPatchCount(uint pidx, uint sidx, double n)
 		double rand01 = rng()->getUnfIE();
 		if (rand01 < n_frc) c++;
 	}
-
+	
 	if (c >= patch->countTris())
 	{
 		for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
@@ -855,7 +853,7 @@ void stex::Tetexact::_setPatchCount(uint pidx, uint sidx, double n)
             c -= n3;
 		}
 	}
-
+	
 	while(c != 0)
 	{
 		Tri * tri = patch->pickTriByArea(rng()->getUnfIE());
@@ -867,7 +865,7 @@ void stex::Tetexact::_setPatchCount(uint pidx, uint sidx, double n)
 	{
 		_updateSpec(*t, slidx);
 	}
-
+	
 	// Rates have changed
 	_reset();
 }
@@ -903,7 +901,7 @@ bool stex::Tetexact::_getPatchClamped(uint pidx, uint sidx) const
 	assert(patch != 0);
 	uint lsidx = patch->def()->specG2L(sidx);
     if (lsidx == ssolver::LIDX_UNDEFINED) return false;
-
+	
     TriPVecCI t_end = patch->endTri();
     for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
     {
@@ -923,13 +921,13 @@ void stex::Tetexact::_setPatchClamped(uint pidx, uint sidx, bool buf)
 	assert(patch != 0);
 	uint lsidx = patch->def()->specG2L(sidx);
     if (lsidx == ssolver::LIDX_UNDEFINED) return;
-
+	
     TriPVecCI t_end = patch->endTri();
     for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
     {
         (*t)->setClamped(lsidx, buf);
     }
-
+	
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -959,7 +957,7 @@ bool stex::Tetexact::_getPatchSReacActive(uint pidx, uint ridx) const
 	assert(patch != 0);
 	uint lsridx = patch->def()->sreacG2L(ridx);
     if (lsridx == ssolver::LIDX_UNDEFINED) return false;
-
+	
     TriPVecCI t_end = patch->endTri();
     for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
     {
@@ -979,7 +977,7 @@ void stex::Tetexact::_setPatchSReacActive(uint pidx, uint ridx, bool a)
 	assert(patch != 0);
 	uint lsridx = patch->def()->sreacG2L(ridx);
     if (lsridx == ssolver::LIDX_UNDEFINED) return;
-
+	
     TriPVecCI t_end = patch->endTri();
     for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
     {
@@ -994,7 +992,7 @@ void stex::Tetexact::_setPatchSReacActive(uint pidx, uint ridx, bool a)
 void stex::Tetexact::addKProc(steps::tetexact::KProc * kp)
 {
 	assert (kp != 0);
-
+	
 	SchedIDX nidx = pKProcs.size();
 	pKProcs.push_back(kp);
 	kp->setSchedIDX(nidx);
@@ -1005,11 +1003,11 @@ void stex::Tetexact::addKProc(steps::tetexact::KProc * kp)
 void stex::Tetexact::_build(void)
 {
 	assert (pBuilt == false);
-
+	
     // Setup level.
     uint clsize = pKProcs.size();
     if (clsize == 0) return;
-
+	
     // Work up.
     uint clevel = 0;
     do
@@ -1017,49 +1015,81 @@ void stex::Tetexact::_build(void)
         // Make sure the new size is a multiple of SCHEDULEWIDTH.
         uint extra = clsize % SCHEDULEWIDTH;
         if (extra != 0) clsize += SCHEDULEWIDTH - extra;
-
+		
         // Create the level and add it.
         double * level = new double[clsize];
         std::fill_n(level, clsize, 0.0);
         pLevelSizes.push_back(clsize);
         pLevels.push_back(level);
-
+		
         // Prepare for next level.
         clevel++;
         clsize = clsize / SCHEDULEWIDTH;
     }
     while (clsize > 1);
-
+	
     // Set top level.
     pA0 = 0.0;
-
+	
     // Time to create ONE indices table to hold the run's present reaction of
     // choice's update vector. This will be re-used and replace old-version's
     // hard-coded table in _update. Size is the maximum possible, found by looping
     // over all KProcs. This little bit of computational time is well worth all
     // that needless memory allocation
-    uint maxupdate = 0;
-    std::vector<KProc*>::iterator kp_end = pKProcs.end();
-    for (std::vector<KProc*>::iterator kp = pKProcs.begin(); kp != kp_end; ++kp)
-    {
-        uint thisupdate = (*kp)->updVecSize();
-        if (thisupdate > maxupdate) maxupdate = thisupdate;
-    }
-    // maxupdate should be well above zero for a diffusion solver, but theoretically
-    // minimum is zero (weird model)
-    assert(maxupdate >= 0);
-
-    // NOTE: no need to initialise with zeros or something, will get filled as
-    // and when needed by _update
-    pIndices = new uint[maxupdate];
-
+	uint maxupdvecsize = 0;
+	TetPVecCI tet_end = pTets.end();
+	for (TetPVecCI tet = pTets.begin(); tet != tet_end; ++tet)
+	{
+		SchedIDXSet updset;
+		KProcPVecCI kproc_end = (*tet)->kprocEnd();
+		for (KProcPVecCI k = (*tet)->kprocBegin(); k != kproc_end; ++k)
+		{
+			updset.insert((*k)->schedIDX());
+		}
+		
+	    // Loop over neighbouring triangles.
+		for (uint i = 0; i < 4; ++i)
+		{
+			Tri * tri = (*tet)->nextTri(i);
+			if (tri == 0) continue;
+			kproc_end = tri->kprocEnd();
+			for (KProcPVecCI k = tri->kprocBegin(); k != kproc_end; ++k)
+			{
+				updset.insert((*k)->schedIDX());
+			}
+		}
+		SchedIDXVec updvec;
+		schedIDXSet_To_Vec(updset, updvec);
+		if (maxupdvecsize < updvec.size()) maxupdvecsize = updvec.size();
+	}
+	TriPVecCI tri_end = pTris.end();
+	for (TriPVecCI tri = pTris.begin(); tri != tri_end; ++tri)
+	{
+		//DEBUG: Didn't allow for a zero pointer (not added to geometry i.e. not 
+		// a surface triangle
+		if ((*tri) == 0) continue;
+		
+		SchedIDXSet updset;
+	    KProcPVecCI kproc_end = (*tri)->kprocEnd();
+		for (KProcPVecCI k = (*tri)->kprocBegin(); k != kproc_end; ++k)
+		{
+			updset.insert((*k)->schedIDX());
+		}	
+		SchedIDXVec updvec;
+		schedIDXSet_To_Vec(updset, updvec);
+		if (maxupdvecsize < updvec.size()) maxupdvecsize = updvec.size();
+	}
+	
+	pMaxUpSize = maxupdvecsize;
+	pIndices = new uint[pMaxUpSize];
+	
     // Also let's create a random number holder-table,
     // size of number of KProcs % SCHEDULEWIDTH or pLevels.size()
     // This will be re-used in _getNext as apposed to hard-coded (again maximum
     // limit).
     uint lsize = pLevels.size();
     pRannum = new double[lsize];
-
+	
     pBuilt = true;
 }
 
@@ -1070,18 +1100,18 @@ steps::tetexact::KProc * stex::Tetexact::_getNext(void) const
     assert(pA0 >= 0.0);
     // Quick check to see whether nothing is there.
     if (pA0 == 0.0) return 0;
-
+	
     // Start at top level.
     uint clevel = pLevels.size();
     // And start at the first node of that level.
     uint cur_node = 0;
-
+	
     // Prepare random numbers.
     for (uint i = 0; i < clevel; ++i)
     {
         pRannum[i] = rng()->getUnfIE();
     }
-
+	
     // Run until top level.
     double a0 = pA0;
     double * level = 0;
@@ -1092,13 +1122,13 @@ steps::tetexact::KProc * stex::Tetexact::_getNext(void) const
         // and start looking in the right place.
         cur_node *= SCHEDULEWIDTH;
         uint max_node = cur_node + SCHEDULEWIDTH;
-
+		
         // Fetch the level.
         level = pLevels[clevel];
-
+		
         // Compute local selector.
         double selector = pRannum[clevel] * a0;
-
+		
         // Compare.
         double accum = 0.0;
         double old = 0.0;
@@ -1111,13 +1141,13 @@ steps::tetexact::KProc * stex::Tetexact::_getNext(void) const
             old = accum;
             cur_node++;
         }
-
+		
         // Checks.
         assert(cur_node < max_node);
         assert(curval > 0.0);
         a0 = curval;
     }
-
+	
     // Check.
     assert(cur_node < pKProcs.size());
     return pKProcs[cur_node];
@@ -1128,7 +1158,7 @@ steps::tetexact::KProc * stex::Tetexact::_getNext(void) const
 void stex::Tetexact::_reset(void)
 {
     if (pKProcs.size() == 0) return;
-
+	
     // Reset the basic level: compute rates.
     double * oldlevel = pLevels[0];
     uint cur_node = 0;
@@ -1137,16 +1167,16 @@ void stex::Tetexact::_reset(void)
     {
         oldlevel[cur_node++] = (*kp)->rate();
     }
-
+	
     // Work up.
     for (uint cur_level = 1; cur_level < pLevels.size(); ++cur_level)
     {
         // Compute the number of nodes to reset on this level.
         uint numnodes = pLevelSizes[cur_level - 1] / SCHEDULEWIDTH;
-
+		
         // Fetch a pointer to this level.
         double * level = pLevels[cur_level];
-
+		
         // Recompute them.
         uint child_node = 0;
         for (cur_node = 0; cur_node < numnodes; ++cur_node)
@@ -1158,11 +1188,11 @@ void stex::Tetexact::_reset(void)
             }
             level[cur_node] = val;
         }
-
+		
         // Copy the level.
         oldlevel = level;
     }
-
+	
     // Compute zero propensity.
     pA0 = 0.0;
     for (uint i = 0; i < SCHEDULEWIDTH; ++i)
@@ -1186,12 +1216,12 @@ void stex::Tetexact::_executeStep(steps::tetexact::KProc * kp, double dt)
 void stex::Tetexact::_update(SchedIDXVec const & entries)
 {
     if (countKProcs() == 0) return;
-
+	
     // Prefetch zero level.
     double * level0 = pLevels[0];
     // Number of entries.
     assert(entries.size() <= pMaxUpSize);											/////////
-
+	
     // Recompute rates.
     SchedIDXVecCI sidx_end = entries.end();
     uint prev_e = 0xFFFFFFFF;
@@ -1203,7 +1233,7 @@ void stex::Tetexact::_update(SchedIDXVec const & entries)
         // Recompute rate, get difference, and store.
         double newrate = pKProcs[idx]->rate();
         level0[idx] = newrate;
-
+		
         // Store and collapse if possible.
         idx /= SCHEDULEWIDTH;
         if (prev_e == 0xFFFFFFFF)
@@ -1218,7 +1248,7 @@ void stex::Tetexact::_update(SchedIDXVec const & entries)
         }
     }
     uint nentries = cur_e;
-
+	
     // Update upper levels.
     uint nlevels = pLevels.size();
     double * prevlevel = pLevels[0];
@@ -1227,16 +1257,16 @@ void stex::Tetexact::_update(SchedIDXVec const & entries)
         // Update the first entry.
         cur_e = 0;
         prev_e = 0xFFFFFFFF;
-
+		
         // Fetch a pointer to the current level.
         double * currlevel = pLevels[l];
-
+		
         // Recompute the entries.
         for (uint e = 0; e < nentries; ++e)
         {
             // Fetch index.
             uint idx = pIndices[e];
-
+			
             // Recompute.
             double val = 0.0;
             uint idx2 = idx * SCHEDULEWIDTH;
@@ -1245,7 +1275,7 @@ void stex::Tetexact::_update(SchedIDXVec const & entries)
                 val += prevlevel[idx2++];
             }
             currlevel[idx] = val;
-
+			
             // Store and collapse if possible.
             idx /= SCHEDULEWIDTH;
             if (prev_e == 0xFFFFFFFF)
@@ -1259,14 +1289,14 @@ void stex::Tetexact::_update(SchedIDXVec const & entries)
                 pIndices[cur_e++] = idx;
             }
         }
-
+		
         // Update the pointer to the previous level.
         prevlevel = currlevel;
-
+		
         // cur_e now is the new number of entries to handle.
         nentries = cur_e;
     }
-
+	
     // Update zero propensity.
     double * toplevel = pLevels[pLevels.size() - 1];
     pA0 = 0.0;
@@ -1281,14 +1311,14 @@ void stex::Tetexact::_update(SchedIDXVec const & entries)
 void stex::Tetexact::_updateSpec(steps::tetexact::Tet * tet, uint spec_lidx)
 {
     SchedIDXSet updset;
-
+	
     // Loop over tet.
     KProcPVecCI kproc_end = tet->kprocEnd();
     for (KProcPVecCI k = tet->kprocBegin(); k != kproc_end; ++k)
     {
         updset.insert((*k)->schedIDX());
     }
-
+	
     // Loop over neighbouring triangles.
     for (uint i = 0; i < 4; ++i)
     {
@@ -1300,11 +1330,12 @@ void stex::Tetexact::_updateSpec(steps::tetexact::Tet * tet, uint spec_lidx)
             updset.insert((*k)->schedIDX());
         }
     }
-
+	
     // Send the list of kprocs that need to be updated to the schedule.
     if (updset.empty()) return;
     SchedIDXVec updvec;
     schedIDXSet_To_Vec(updset, updvec);
+	
     _update(updvec);
 }
 
@@ -1313,17 +1344,18 @@ void stex::Tetexact::_updateSpec(steps::tetexact::Tet * tet, uint spec_lidx)
 void stex::Tetexact::_updateSpec(steps::tetexact::Tri * tri, uint spec_lidx)
 {
     SchedIDXSet updset;
-
+	
     KProcPVecCI kproc_end = tri->kprocEnd();
     for (KProcPVecCI k = tri->kprocBegin(); k != kproc_end; ++k)
     {
         updset.insert((*k)->schedIDX());
     }
-
+	
     // Send the list of kprocs that need to be updated to the schedule.
     if (updset.empty()) return;
     SchedIDXVec updvec;
     schedIDXSet_To_Vec(updset, updvec);
+	
     _update(updvec);
 }
 
@@ -1337,22 +1369,22 @@ double stex::Tetexact::_getCompReacH(uint cidx, uint ridx) const
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
 	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
-
+	
 	// The 'local' Comp object has same index as solver::Compdef object
 	stex::Comp * lcomp = pComps[cidx];
 	assert (lcomp->def() == comp);
-
+	
 	TetPVecCI t_bgn = lcomp->bgnTet();
 	TetPVecCI t_end = lcomp->endTet();
 	if (t_bgn == t_end) return 0.0;
-
+	
 	double h = 0.0;
 	for (TetPVecCI t = t_bgn; t != t_end; ++t)
 	{
 		stex::Reac * reac = (*t)->reac(lridx);
 		h += reac->h();
 	}
-
+	
 	return h;
 }
 
@@ -1366,11 +1398,11 @@ double stex::Tetexact::_getCompReacC(uint cidx, uint ridx) const
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
 	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
-
+	
 	// The 'local' Comp object has same index as solver::Compdef object
 	stex::Comp * lcomp = pComps[cidx];
 	assert (lcomp->def() == comp);
-
+	
 	TetPVecCI t_bgn = lcomp->bgnTet();
 	TetPVecCI t_end = lcomp->endTet();
 	if (t_bgn == t_end) return 0.0;
@@ -1397,22 +1429,22 @@ double stex::Tetexact::_getCompReacA(uint cidx, uint ridx) const
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
 	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
-
+	
 	// The 'local' Comp object has same index as solver::Compdef object
 	stex::Comp * lcomp = pComps[cidx];
 	assert (lcomp->def() == comp);
-
+	
 	TetPVecCI t_bgn = lcomp->bgnTet();
 	TetPVecCI t_end = lcomp->endTet();
 	if (t_bgn == t_end) return 0.0;
-
+	
 	double a = 0.0;
 	for (TetPVecCI t = t_bgn; t != t_end; ++t)
 	{
 		stex::Reac * reac = (*t)->reac(lridx);
 		a += reac->rate();
 	}
-
+	
 	return a;
 }
 
@@ -1426,22 +1458,22 @@ uint stex::Tetexact::_getCompReacExtent(uint cidx, uint ridx) const
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
 	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
-
+	
 	// The 'local' Comp object has same index as solver::Compdef object
 	stex::Comp * lcomp = pComps[cidx];
 	assert (lcomp->def() == comp);
-
+	
 	TetPVecCI t_bgn = lcomp->bgnTet();
 	TetPVecCI t_end = lcomp->endTet();
 	if (t_bgn == t_end) return 0.0;
-
+	
 	uint x = 0.0;
 	for (TetPVecCI t = t_bgn; t != t_end; ++t)
 	{
 		stex::Reac * reac = (*t)->reac(lridx);
 		x += reac->getExtent();
 	}
-
+	
 	return x;
 }
 
@@ -1455,15 +1487,15 @@ void stex::Tetexact::_resetCompReacExtent(uint cidx, uint ridx)
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
 	if (lridx == ssolver::LIDX_UNDEFINED) return;
-
+	
 	// The 'local' Comp object has same index as solver::Compdef object
 	stex::Comp * lcomp = pComps[cidx];
 	assert (lcomp->def() == comp);
-
+	
 	TetPVecCI t_bgn = lcomp->bgnTet();
 	TetPVecCI t_end = lcomp->endTet();
 	if (t_bgn == t_end) return;
-
+	
 	for (TetPVecCI t = t_bgn; t != t_end; ++t)
 	{
 		stex::Reac * reac = (*t)->reac(lridx);
@@ -1480,22 +1512,22 @@ double stex::Tetexact::_getPatchSReacH(uint pidx, uint ridx) const
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	uint lsridx = patch->sreacG2L(ridx);
 	if (lsridx == ssolver::LIDX_UNDEFINED) return 0.0;
-
+	
 	// The 'local' Patch object has same index as solver::Patchdef object
 	stex::Patch * lpatch = pPatches[pidx];
 	assert (lpatch->def() == patch);
-
+	
 	TriPVecCI t_bgn = lpatch->bgnTri();
 	TriPVecCI t_end = lpatch->endTri();
 	if (t_bgn == t_end) return 0.0;
-
+	
 	double h = 0.0;
 	for (TriPVecCI t = t_bgn; t != t_end; ++t)
 	{
 		stex::SReac * sreac = (*t)->sreac(lsridx);
 		h += sreac->h();
 	}
-
+	
 	return h;
 }
 
@@ -1508,15 +1540,15 @@ double stex::Tetexact::_getPatchSReacC(uint pidx, uint ridx) const
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	uint lsridx = patch->sreacG2L(ridx);
 	if (lsridx == ssolver::LIDX_UNDEFINED) return 0.0;
-
+	
 	// The 'local' Patch object has same index as solver::Patchdef object
 	stex::Patch * lpatch = pPatches[pidx];
 	assert (lpatch->def() == patch);
-
+	
 	TriPVecCI t_bgn = lpatch->bgnTri();
 	TriPVecCI t_end = lpatch->endTri();
 	if (t_bgn == t_end) return 0.0;
-
+	
 	double c = 0.0;
 	double a = 0.0;
 	for (TriPVecCI t = t_bgn; t != t_end; ++t)
@@ -1539,15 +1571,15 @@ double stex::Tetexact::_getPatchSReacA(uint pidx, uint ridx) const
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	uint lsridx = patch->sreacG2L(ridx);
 	if (lsridx == ssolver::LIDX_UNDEFINED) return 0.0;
-
+	
 	// The 'local' Patch object has same index as solver::Patchdef object
 	stex::Patch * lpatch = pPatches[pidx];
 	assert (lpatch->def() == patch);
-
+	
 	TriPVecCI t_bgn = lpatch->bgnTri();
 	TriPVecCI t_end = lpatch->endTri();
 	if (t_bgn == t_end) return 0.0;
-
+	
 	double a = 0.0;
 	for (TriPVecCI t = t_bgn; t != t_end; ++t)
 	{
@@ -1566,15 +1598,15 @@ uint stex::Tetexact::_getPatchSReacExtent(uint pidx, uint ridx) const
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	uint lsridx = patch->sreacG2L(ridx);
 	if (lsridx == ssolver::LIDX_UNDEFINED) return 0.0;
-
+	
 	// The 'local' Patch object has same index as solver::Patchdef object
 	stex::Patch * lpatch = pPatches[pidx];
 	assert (lpatch->def() == patch);
-
+	
 	TriPVecCI t_bgn = lpatch->bgnTri();
 	TriPVecCI t_end = lpatch->endTri();
 	if (t_bgn == t_end) return 0.0;
-
+	
 	double x = 0.0;
 	for (TriPVecCI t = t_bgn; t != t_end; ++t)
 	{
@@ -1593,15 +1625,15 @@ void stex::Tetexact::_resetPatchSReacExtent(uint pidx, uint ridx)
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	uint lsridx = patch->sreacG2L(ridx);
 	if (lsridx == ssolver::LIDX_UNDEFINED) return;
-
+	
 	// The 'local' Patch object has same index as solver::Patchdef object
 	stex::Patch * lpatch = pPatches[pidx];
 	assert (lpatch->def() == patch);
-
+	
 	TriPVecCI t_bgn = lpatch->bgnTri();
 	TriPVecCI t_end = lpatch->endTri();
 	if (t_bgn == t_end) return;
-
+	
 	for (TriPVecCI t = t_bgn; t != t_end; ++t)
 	{
 		stex::SReac * sreac = (*t)->sreac(lsridx);
@@ -1644,10 +1676,10 @@ void stex::Tetexact::_setTetCount(uint tidx, uint sidx, double n)
 	assert (sidx < statedef()->countSpecs());
 	assert (n >= 0.0);
 	stex::Tet * tet = pTets[tidx];
-
+	
 	uint lsidx = tet->compdef()->specG2L(sidx);
 	if (lsidx == ssolver::LIDX_UNDEFINED) return;
-
+	
 	double n_int = std::floor(n);
 	double n_frc = n - n_int;
 	uint c = static_cast<uint>(n_int);
@@ -1656,7 +1688,7 @@ void stex::Tetexact::_setTetCount(uint tidx, uint sidx, double n)
 		double rand01 = rng()->getUnfIE();
 		if (rand01 < n_frc) c++;
 	}
-
+	
 	tet->setCount(lsidx, c);
 	_updateSpec(tet, lsidx);
 }
@@ -1710,7 +1742,7 @@ bool stex::Tetexact::_getTetClamped(uint tidx, uint sidx) const
 	assert (tidx < pTets.size());
 	assert (sidx < statedef()->countSpecs());
 	stex::Tet * tet = pTets[tidx];
-
+	
 	uint lsidx = tet->compdef()->specG2L(sidx);
 	if (lsidx == ssolver::LIDX_UNDEFINED) return false;
 	return tet->clamped(lsidx);
@@ -1723,10 +1755,10 @@ void stex::Tetexact::_setTetClamped(uint tidx, uint sidx, bool buf)
 	assert (tidx < pTets.size());
 	assert (sidx < statedef()->countSpecs());
 	stex::Tet * tet = pTets[tidx];
-
+	
 	uint lsidx = tet->compdef()->specG2L(sidx);
 	if (lsidx == ssolver::LIDX_UNDEFINED) return;
-
+	
 	tet->setClamped(lsidx, buf);
 }
 
@@ -1751,10 +1783,10 @@ bool stex::Tetexact::_getTetReacActive(uint tidx, uint ridx) const
 	assert (tidx < pTets.size());
 	assert (ridx < statedef()->countReacs());
 	stex::Tet * tet = pTets[tidx];
-
+	
 	uint lridx = tet->compdef()->reacG2L(ridx);
 	if (lridx == ssolver::LIDX_UNDEFINED) return false;
-
+	
 	if (tet->reac(lridx)->inactive() == true) return false;
 	return true;
 }
@@ -1766,12 +1798,12 @@ void stex::Tetexact::_setTetReacActive(uint tidx, uint ridx, bool act)
 	assert (tidx < pTets.size());
 	assert (ridx < statedef()->countReacs());
 	stex::Tet * tet = pTets[tidx];
-
+	
 	uint lridx = tet->compdef()->reacG2L(ridx);
 	if (lridx == ssolver::LIDX_UNDEFINED) return;
-
+	
 	tet->reac(lridx)->setActive(act);
-
+	
 	SchedIDXVec updvec;
 	updvec.push_back(tet->reac(lridx)->schedIDX());
 	_update(updvec);
@@ -1798,10 +1830,10 @@ bool stex::Tetexact::_getTetDiffActive(uint tidx, uint didx) const
 	assert (tidx < pTets.size());
 	assert (didx < statedef()->countDiffs());
 	stex::Tet * tet = pTets[tidx];
-
+	
 	uint ldidx = tet->compdef()->diffG2L(didx);
 	if (ldidx == ssolver::LIDX_UNDEFINED) return false;
-
+	
 	if (tet->diff(ldidx)->inactive() == true) return false;
 	return true;
 }
@@ -1813,12 +1845,12 @@ void stex::Tetexact::_setTetDiffActive(uint tidx, uint didx, bool act)
 	assert (tidx < pTets.size());
 	assert (didx < statedef()->countDiffs());
 	stex::Tet * tet = pTets[tidx];
-
+	
 	uint ldidx = tet->compdef()->diffG2L(didx);
 	if (ldidx == ssolver::LIDX_UNDEFINED) return;
-
+	
 	tet->diff(ldidx)->setActive(act);
-
+	
 	SchedIDXVec updvec;
 	updvec.push_back(tet->diff(ldidx)->schedIDX());
 	_update(updvec);
@@ -1831,10 +1863,10 @@ double stex::Tetexact::_getTetReacH(uint tidx, uint ridx) const
 	assert (tidx < pTets.size());
 	assert (ridx < statedef()->countReacs());
 	stex::Tet * tet = pTets[tidx];
-
+	
 	uint lridx = tet->compdef()->reacG2L(ridx);
 	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
-
+	
 	return tet->reac(lridx)->h();
 }
 
@@ -1845,10 +1877,10 @@ double stex::Tetexact::_getTetReacC(uint tidx, uint ridx) const
 	assert (tidx < pTets.size());
 	assert (ridx < statedef()->countReacs());
 	stex::Tet * tet = pTets[tidx];
-
+	
 	uint lridx = tet->compdef()->reacG2L(ridx);
 	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
-
+	
 	return tet->reac(lridx)->c();
 }
 
@@ -1859,10 +1891,10 @@ double stex::Tetexact::_getTetReacA(uint tidx, uint ridx) const
 	assert (tidx < pTets.size());
 	assert (ridx < statedef()->countReacs());
 	stex::Tet * tet = pTets[tidx];
-
+	
 	uint lridx = tet->compdef()->reacG2L(ridx);
 	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
-
+	
 	return tet->reac(lridx)->rate();
 }
 
@@ -1873,10 +1905,10 @@ double stex::Tetexact::_getTetDiffA(uint tidx, uint didx) const
 	assert (tidx < pTets.size());
 	assert (didx < statedef()->countDiffs());
 	stex::Tet * tet = pTets[tidx];
-
+	
 	uint ldidx = tet->compdef()->diffG2L(didx);
 	if (ldidx == ssolver::LIDX_UNDEFINED) return 0.0;
-
+	
 	return tet->diff(ldidx)->rate();
 }
 
@@ -1904,7 +1936,7 @@ double stex::Tetexact::_getTriCount(uint tidx, uint sidx) const
 	stex::Tri * tri = pTris[tidx];
 	uint lsidx = tri->patchdef()->specG2L(sidx);
 	if (lsidx == ssolver::LIDX_UNDEFINED) return 0.0;
-
+	
 	return tri->pools()[lsidx];
 }
 
@@ -1918,7 +1950,7 @@ void stex::Tetexact::_setTriCount(uint tidx, uint sidx, double n)
 	stex::Tri * tri = pTris[tidx];
 	uint lsidx = tri->patchdef()->specG2L(sidx);
 	if (lsidx == ssolver::LIDX_UNDEFINED) return;
-
+	
 	double n_int = std::floor(n);
 	double n_frc = n - n_int;
 	uint c = static_cast<uint>(n_int);
@@ -1927,7 +1959,7 @@ void stex::Tetexact::_setTriCount(uint tidx, uint sidx, double n)
 		double rand01 = rng()->getUnfIE();
 		if (rand01 < n_frc) c++;
 	}
-
+	
 	tri->setCount(lsidx, c);
 	_updateSpec(tri, lsidx);
 }
@@ -1939,10 +1971,10 @@ bool stex::Tetexact::_getTriClamped(uint tidx, uint sidx) const
 	assert (tidx < pTris.size());
 	assert (sidx < statedef()->countSpecs());
 	stex::Tri * tri = pTris[tidx];
-
+	
 	uint lsidx = tri->patchdef()->specG2L(sidx);
 	if (lsidx == ssolver::LIDX_UNDEFINED) return false;
-
+	
 	return tri->clamped(lsidx);
 }
 
@@ -1953,10 +1985,10 @@ void stex::Tetexact::_setTriClamped(uint tidx, uint sidx, bool buf)
 	assert (tidx < pTris.size());
 	assert (sidx < statedef()->countSpecs());
 	stex::Tri * tri = pTris[tidx];
-
+	
 	uint lsidx = tri->patchdef()->specG2L(sidx);
 	if (lsidx == ssolver::LIDX_UNDEFINED) return;
-
+	
 	tri->setClamped(lsidx, buf);
 }
 
@@ -1981,10 +2013,10 @@ bool stex::Tetexact::_getTriSReacActive(uint tidx, uint ridx) const
 	assert (tidx < pTris.size());
 	assert (ridx < statedef()->countSReacs());
 	stex::Tri * tri = pTris[tidx];
-
+	
 	uint lsridx = tri->patchdef()->sreacG2L(ridx);
 	if (lsridx == ssolver::LIDX_UNDEFINED) return false;
-
+	
 	if (tri->sreac(lsridx)->inactive() == true) return false;
 	return true;
 }
@@ -1996,12 +2028,12 @@ void stex::Tetexact::_setTriSReacActive(uint tidx, uint ridx, bool act)
 	assert (tidx < pTris.size());
 	assert (ridx < statedef()->countSReacs());
 	stex::Tri * tri = pTris[tidx];
-
+	
 	uint lsridx = tri->patchdef()->sreacG2L(ridx);
 	if (lsridx == ssolver::LIDX_UNDEFINED) return;
-
+	
 	tri->sreac(lsridx)->setActive(act);
-
+	
 	SchedIDXVec updvec;
 	updvec.push_back(tri->sreac(lsridx)->schedIDX());
 	_update(updvec);
@@ -2014,10 +2046,10 @@ double stex::Tetexact::_getTriSReacH(uint tidx, uint ridx) const
 	assert (tidx < pTris.size());
 	assert (ridx < statedef()->countSReacs());
 	stex::Tri * tri = pTris[tidx];
-
+	
 	uint lsridx = tri->patchdef()->sreacG2L(ridx);
 	if (lsridx == ssolver::LIDX_UNDEFINED) return 0.0;
-
+	
 	return tri->sreac(lsridx)->h();
 }
 
@@ -2028,10 +2060,10 @@ double stex::Tetexact::_getTriSReacC(uint tidx, uint ridx) const
 	assert (tidx < pTris.size());
 	assert (ridx < statedef()->countSReacs());
 	stex::Tri * tri = pTris[tidx];
-
+	
 	uint lsridx = tri->patchdef()->sreacG2L(ridx);
 	if (lsridx == ssolver::LIDX_UNDEFINED) return 0.0;
-
+	
 	return tri->sreac(lsridx)->c();
 }
 
@@ -2042,10 +2074,10 @@ double stex::Tetexact::_getTriSReacA(uint tidx, uint ridx) const
 	assert (tidx < pTris.size());
 	assert (ridx < statedef()->countSReacs());
 	stex::Tri * tri = pTris[tidx];
-
+	
 	uint lsridx = tri->patchdef()->sreacG2L(ridx);
 	if (lsridx == ssolver::LIDX_UNDEFINED) return 0.0;
-
+	
 	return tri->sreac(lsridx)->rate();
 }
 

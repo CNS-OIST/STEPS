@@ -326,7 +326,6 @@ stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
 
 stetmesh::TmPatch::~TmPatch(void)
 {
-	std::cout << "\nIn tmpatch destructor";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
