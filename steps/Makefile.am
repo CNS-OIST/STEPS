@@ -33,7 +33,7 @@ srcdir = @srcdir@
 VPATH = @srcdir@
 
 # Include local top source directory to include path.
-AM_CPPFLAGS = -I$(top_srcdir)/cpp
+AM_CPPFLAGS = $(PYTHON_CPPFLAGS) -I$(top_srcdir)/cpp
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
