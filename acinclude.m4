@@ -1,6 +1,6 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # STEPS - STochastic Engine for Pathway Simulation
-# Copyright (C) 2005-2007 Stefan Wils. All rights reserved.
+# Copyright (C) 2005-2008 Stefan Wils. All rights reserved.
 #
 # This file is part of STEPS.
 #
@@ -20,4 +20,3 @@
 #
 # $Id$
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-

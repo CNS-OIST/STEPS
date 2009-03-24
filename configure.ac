@@ -4,22 +4,22 @@ dnl $Id$
 dnl ----------------------------------------------------------------------------
 dnl     BOILERPLATE
 dnl
-dnl	    Standard boilerplate code.
+dnl     Standard boilerplate code.
 dnl ----------------------------------------------------------------------------
 
 dnl Initialize the autotools system.
-AC_INIT([steps], [0.4.3], [wils@oist.jp])
+AC_INIT([steps], [0.5.0], [wils@oist.jp])
 
 AC_PREREQ(2.57)
 
 dnl Copyright notice.
 AC_COPYRIGHT([[STEPS -- STochastic Engine for Pathway Simulation
-Copyright (C) 2005-2007 by Stefan Wils. All rights reserved.
+Copyright (C) 2005-2008 by Stefan Wils. All rights reserved.
 See the LICENSE file in the root directory for more information.
 ]])
 
 dnl Specify the location for the configuration header.
-AM_CONFIG_HEADER(steps/config.h)
+AM_CONFIG_HEADER(cpp/steps/config.h)
 
 
 dnl Surround the config.h file with a header include guard.
@@ -141,8 +141,8 @@ dnl ----------------------------------------------------------------------------
 dnl Python
 dnl ----------------------------------------------------------------------------
 
-AM_PATH_PYTHON(2.4)
-AC_PYTHON_DEVEL(2.4)
+AM_PATH_PYTHON(2.5)
+AC_PYTHON_DEVEL(2.5)
 
 dnl ----------------------------------------------------------------------------
 dnl SWIG
@@ -150,6 +150,7 @@ dnl ----------------------------------------------------------------------------
 
 AC_PROG_SWIG(1.3.20)
 SWIG_ENABLE_CXX
+dnl SWIG_MULTI_MODULE_SUPPORT
 SWIG_PYTHON
 
 dnl ----------------------------------------------------------------------------
@@ -201,7 +202,7 @@ dnl Check for basic standard c library.
 AC_HEADER_STDC
 
 dnl ----------------------------------------------------------------------------
-dnl		TYPEDEFS AND STRUCTURES
+dnl     TYPEDEFS AND STRUCTURES
 dnl
 dnl     Checks for typedefs come after checking for headers for the simple
 dnl     reason that typedefs appear in headers, and we need to know which 
@@ -256,25 +257,21 @@ dnl     Generate the autotools system for this package.
 dnl ----------------------------------------------------------------------------
 
 AC_OUTPUT([
-doc/Makefile
-extras/Makefile
-steps/distmesh/Makefile
-steps/geom/Makefile
-steps/math/Makefile
-steps/model/Makefile
-steps/rng/Makefile
-steps/sim/shared/Makefile
-steps/sim/swiginf/Makefile
-steps/sim/Makefile
-steps/tetexact/solver_core/Makefile
-steps/tetexact/Makefile
-steps/thirdparty/qhull/Makefile
-steps/thirdparty/Makefile
-steps/wmdirect/solver_core/Makefile
-steps/wmdirect/Makefile
-steps/wmrk4/Makefile
-steps/wmrk4/solver_core/Makefile
+cpp/steps/compat/Makefile
+cpp/steps/console/Makefile
+cpp/steps/geom/Makefile
+cpp/steps/math/Makefile
+cpp/steps/model/Makefile
+cpp/steps/rng/Makefile
+cpp/steps/solver/Makefile
+cpp/steps/tetexact/Makefile
+cpp/steps/tools/Makefile
+cpp/steps/wmdirect/Makefile
+cpp/steps/wmrk4/Makefile
+cpp/steps/Makefile
+cpp/Makefile
 steps/Makefile
-thirdparty/Makefile
 Makefile
 ])
+dnl PUT THIS IN THE ABOVE LIST cpp/steps/tetmesh/Makefile
+

@@ -5,19 +5,20 @@ The following people have contributed to the development of STEPS:
 
 2006
 
-    Stefan Wils
+    Stefan Wils (OIST, UA)
         Principal author.
 
 2007
 
-    Ivan Raikov
+    Ivan Raikov (OIST)
         Helped to straighten out the autotools stuff and set up the 
         Subversion archive.
         
 2008
 
-    Iain Hepburn
-        WMRK4 solver (Runge Kutta ODE engine)
+    Iain Hepburn (OIST)
+        wmrk4 solver.
+        Major re-write of the code.
 
 If you contributed to STEPS and we forgot to put your name in this list, 
 don't hesitate to contact us.
