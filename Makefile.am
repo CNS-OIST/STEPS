@@ -1,6 +1,6 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # STEPS - STochastic Engine for Pathway Simulation
-# Copyright (C) 2005-2007 Stefan Wils. All rights reserved.
+# Copyright (C) 2005-2008 Stefan Wils. All rights reserved.
 #
 # This file is part of STEPS.
 #
@@ -21,6 +21,10 @@
 # $Id$
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+# Makefile.am
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 # Set $MAKE if necessary.
 @SET_MAKE@
 
@@ -28,24 +32,23 @@
 srcdir = @srcdir@
 VPATH = @srcdir@
 
+# Include local top source directory to include path.
+AM_CPPFLAGS = -I$(top_srcdir)/cpp
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 # Process subdirectories.
-SUBDIRS	= \
-    doc \
-    extras \
+SUBDIRS = \
+    cpp \
     steps \
-    thirdparty \
     .
 
-# Things that should go in the distribution.
-#EXTRA_DIST = \
-#    setup.py
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # Headers that are generated during the build but should be installed.
 nobase_nodist_include_HEADERS = \
-    steps/config.h
+    cpp/steps/config.h
 
-# Files that should be cleaned when building a distribution.
-distclean-local:
-	-rm -rf .DS_Store *~ *.bak
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # END
