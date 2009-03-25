@@ -967,7 +967,6 @@ void swmrk4::Wmrk4::_rksteps(double t1, double t2)
 	if (tfrac != 0.0 && tfrac/pDT >= 0.01) 
 	{
 		assert (tfrac < pDT);
-        std::cout << "\nIn tfrac bit. TFrac is : " << tfrac;
 		_setderivs(pVals, pDyDx);
 		_rk4(tfrac);
 		_update();
