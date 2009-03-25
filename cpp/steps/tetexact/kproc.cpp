@@ -27,7 +27,8 @@
 #endif
 
 // Standard library & STL headers.
-// #include <vector>
+#include <vector>
+#include <cassert>
 
 // STEPS headers.
 #include <steps/common.h>
