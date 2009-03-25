@@ -87,6 +87,9 @@ public:
     double rate(void) const;
     std::vector<uint> const & apply(void);
 
+	uint updVecSize(void) const
+    { return pUpdVec.size(); }
+	
     ////////////////////////////////////////////////////////////////////////
 
     inline steps::solver::Reacdef * defr(void) const

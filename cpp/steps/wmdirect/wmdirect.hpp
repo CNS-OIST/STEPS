@@ -253,6 +253,14 @@ private:
     bool                                       pBuilt;
 
 	////////////////////////////////////////////////////////////////////////
+	
+    // Tables to hold update vector indices and random numbers respectively,
+    // to be re-used each step.
+    uint                                     * pIndices;
+    uint 									   pMaxUpSize;
+    double                                   * pRannum;
+	
+	////////////////////////////////////////////////////////////////////////
 
 };
 

@@ -94,6 +94,9 @@ swmd::Wmdirect::Wmdirect(steps::model::Model * m, steps::wm::Geom * g, steps::rn
 , pLevelSizes()
 , pLevels()
 , pBuilt(false)
+, pIndices(0)
+, pMaxUpSize(0)
+, pRannum(0)
 {
 	assert (model() != 0);
 	assert (geom() != 0);
@@ -129,7 +132,8 @@ swmd::Wmdirect::~Wmdirect(void)
     for (PatchPVecCI p = pPatches.begin(); p != patch_e; ++p) delete *p;
 
     std::for_each(pLevels.begin(), pLevels.end(), DeleteArray());
-
+	delete[] pIndices;
+    delete[] pRannum;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -961,6 +965,29 @@ void swmd::Wmdirect::_build(void)
     // Set top level.
     pA0 = 0.0;
 
+	// Time to create ONE indices table to hold the run's present reaction of
+    // choice's update vector. This will be re-used and replace old-version's
+    // hard-coded table in _update. Size is the maximum possible, found by looping
+    // over all KProcs. This little bit of computational time is well worth all
+    // that needless memory allocation
+	uint maxupvecsize = 0;
+	KProcPVecCI kproc_end = pKProcs.end();
+	for (KProcPVecCI kproc = pKProcs.begin(); kproc != kproc_end; ++kproc)
+	{
+		if ((*kproc)->updVecSize() > maxupvecsize) maxupvecsize = (*kproc)->updVecSize();
+	}
+	
+	pMaxUpSize = maxupvecsize;
+	pIndices = new uint[pMaxUpSize];
+	
+    // Also let's create a random number holder-table,
+    // size of number of KProcs % SCHEDULEWIDTH or pLevels.size()
+    // This will be re-used in _getNext as apposed to hard-coded (again maximum
+    // limit).
+    uint lsize = pLevels.size();
+    pRannum = new double[lsize];
+	
+	
     pBuilt = true;
 }
 
@@ -978,10 +1005,9 @@ swmd::KProc * swmd::Wmdirect::_getNext(void) const
     uint cur_node = 0;
 
     // Prepare random numbers.
-    double rannum[32];
     for (uint i = 0; i < clevel; ++i)
     {
-        rannum[i] = rng()->getUnfIE();
+        pRannum[i] = rng()->getUnfIE();
     }
 
     // Run until top level.
@@ -999,7 +1025,7 @@ swmd::KProc * swmd::Wmdirect::_getNext(void) const
         level = pLevels[clevel];
 
         // Compute local selector.
-        double selector = rannum[clevel] * a0;
+        double selector = pRannum[clevel] * a0;
 
         // Compare.
         double accum = 0.0;
@@ -1082,10 +1108,9 @@ void swmd::Wmdirect::_update(SchedIDXVec const & entries)
     // Prefetch zero level.
     double * level0 = pLevels[0];
     // Number of entries.
-    assert(entries.size() <= 32);											/////////
-
+    assert(entries.size() <= pMaxUpSize);											/////////
+	
     // Recompute rates.
-    uint indices[32];														////////
     SchedIDXVecCI sidx_end = entries.end();
     uint prev_e = 0xFFFFFFFF;
     uint cur_e = 0;
@@ -1102,12 +1127,12 @@ void swmd::Wmdirect::_update(SchedIDXVec const & entries)
         if (prev_e == 0xFFFFFFFF)
         {
             prev_e = 0;
-            indices[cur_e++] = idx;
+            pIndices[cur_e++] = idx;
         }
-        else if (indices[prev_e] != idx)
+        else if (pIndices[prev_e] != idx)
         {
             prev_e = cur_e;
-            indices[cur_e++] = idx;
+            pIndices[cur_e++] = idx;
         }
     }
     uint nentries = cur_e;
@@ -1128,7 +1153,7 @@ void swmd::Wmdirect::_update(SchedIDXVec const & entries)
         for (uint e = 0; e < nentries; ++e)
         {
             // Fetch index.
-            uint idx = indices[e];
+            uint idx = pIndices[e];
 
             // Recompute.
             double val = 0.0;
@@ -1144,12 +1169,12 @@ void swmd::Wmdirect::_update(SchedIDXVec const & entries)
             if (prev_e == 0xFFFFFFFF)
             {
                 prev_e = 0;
-                indices[cur_e++] = idx;
+                pIndices[cur_e++] = idx;
             }
-            else if (indices[prev_e] != idx)
+            else if (pIndices[prev_e] != idx)
             {
                 prev_e = cur_e;
-                indices[cur_e++] = idx;
+                pIndices[cur_e++] = idx;
             }
         }
 

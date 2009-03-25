@@ -128,6 +128,8 @@ public:
     ///
     virtual std::vector<uint> const & apply(void) = 0;
 
+	virtual uint updVecSize(void) const = 0;
+
     ////////////////////////////////////////////////////////////////////////
 
     uint getExtent(void) const;

@@ -100,6 +100,9 @@ public:
     double h(void) const
     { return (rate()/pCcst); }
 
+	uint updVecSize(void) const
+    { return pUpdVec.size(); }
+	
     ////////////////////////////////////////////////////////////////////////
 
 private:
