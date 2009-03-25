@@ -902,18 +902,18 @@ void swmrk4::Wmrk4::_setderivs(dVec & vals, dVec & dydx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrk4::Wmrk4::_rk4(void)
+void swmrk4::Wmrk4::_rk4(double pdt)
 {
-	double dt_2 = pDT/2.0;
-	double dt_6 = pDT/6.0;
-
+	double dt_2 = pdt/2.0;
+	double dt_6 = pdt/6.0;
+	
 	for(uint i=0; i< pSpecs_tot; ++i) yt[i] = pVals[i] + (dt_2 * pDyDx[i]);
 	_setderivs(yt, dyt);
 	for(uint i =0; i< pSpecs_tot; ++i) yt[i]= pVals[i] + (dt_2 * dyt[i]);
 	_setderivs(yt, dym);
 	for (uint i=0; i< pSpecs_tot; ++i)
 	{
-		yt[i] = pVals[i] + (pDT * dym[i]);
+		yt[i] = pVals[i] + (pdt * dym[i]);
 		dym[i] += dyt[i];
 	}
 	_setderivs(yt, dyt);
@@ -942,15 +942,37 @@ void swmrk4::Wmrk4::_rksteps(double t1, double t2)
 		os << "dt is larger than simulation step.";
 		throw steps::ArgErr(os.str());
 	}
-
+	
 	/// step up until over maximum time
 	while(t < t2)
 	{
+		if ((t+pDT) > t2) break;
+		
 		_setderivs(pVals, pDyDx);
-		_rk4();
+		_rk4(pDT);
 		_update();
 		t += pDT;
 	}
+	
+	////////////////////////////////////////////////////////////////////////////
+	// DEBUG: 25/03/09. This is general fix for this solver, inspired by a
+	// problem with evaluating two supposedly equal double values as non-equal.
+	// Now any descrepancy betwwen simulation time and the end step time is dealt
+	// with by solving to the simulation time by passing in the fraction (see below)
+	// Changed _rk4() to take the dt as a double argument
+	double tfrac = t2-t;
+	assert (tfrac >= 0.0);
+	
+	// Lets only concern ourselves with fractions greater than 1 percent
+	if (tfrac != 0.0 && tfrac/pDT >= 0.01) 
+	{
+		assert (tfrac < pDT);
+        std::cout << "\nIn tfrac bit. TFrac is : " << tfrac;
+		_setderivs(pVals, pDyDx);
+		_rk4(tfrac);
+		_update();
+	}
+	////////////////////////////////////////////////////////////////////////////
 }
 
 ////////////////////////////////////////////////////////////////////////////////

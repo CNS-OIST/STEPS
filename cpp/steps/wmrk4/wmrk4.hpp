@@ -174,7 +174,7 @@ private:
 
 	/// the Runge-Kutta algorithm
 	///
-	void _rk4(void);
+	void _rk4(double pdt);
 
 	/// the simple stepper
 	///
