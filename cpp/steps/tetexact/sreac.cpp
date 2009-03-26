@@ -62,6 +62,7 @@ stex::SReac::SReac(ssolver::SReacdef * srdef, stex::Tri * tri)
 , pTri(tri)
 , pUpdVec()
 , pCcst(0.0)
+, pKcst(0.0)
 {
 	assert (pSReacdef != 0);
 	assert (pTri != 0);
@@ -76,7 +77,11 @@ stex::SReac::SReac(ssolver::SReacdef * srdef, stex::Tri * tri)
 		assert (pTri->oTet() != 0);
 		vol = pTri->oTet()->vol();
 	}
-	pCcst = comp_ccst(pSReacdef->kcst(), vol, pSReacdef->order());
+
+	uint lsridx = pTri->patchdef()->sreacG2L(pSReacdef->gidx());
+	double kcst = pTri->patchdef()->kcst(lsridx);
+	pKcst = kcst;
+	pCcst = comp_ccst(kcst, vol, pSReacdef->order());
 	assert (pCcst >= 0);
 }
 
@@ -91,6 +96,7 @@ stex::SReac::~SReac(void)
 void stex::SReac::reset(void)
 {
     resetExtent();
+    resetCcst();
 	setActive(true);
 }
 
@@ -109,8 +115,34 @@ void stex::SReac::resetCcst(void)
 		assert (pTri->oTet() != 0);
 		vol = pTri->oTet()->vol();
 	}
-	pCcst = comp_ccst(pSReacdef->kcst(), vol, pSReacdef->order());
+	uint lsridx = pTri->patchdef()->sreacG2L(pSReacdef->gidx());
+	double kcst = pTri->patchdef()->kcst(lsridx);
+	pKcst = kcst;
+	pCcst = comp_ccst(kcst, vol, pSReacdef->order());
 	assert (pCcst >= 0);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stex::SReac::setKcst(double k)
+{
+	assert (k >= 0.0);
+	pKcst = k;
+
+	double vol;
+	if (pSReacdef->inside() == true)
+	{
+		assert(pTri->iTet() != 0);
+		vol = pTri->iTet()->vol();
+	}
+	else
+	{
+		assert (pTri->oTet() != 0);
+		vol = pTri->oTet()->vol();
+	}
+
+	pCcst = comp_ccst(k, vol, pSReacdef->order());
+	assert(pCcst >= 0.0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

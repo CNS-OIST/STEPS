@@ -71,6 +71,10 @@ public:
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
+    inline double dcst(void) const
+    { return pDcst; }
+    void setDcst(double d);
+
     void setupDeps(void);
     bool depSpecTet(uint gidx, steps::tetexact::Tet * tet);
     bool depSpecTri(uint gidx, steps::tetexact::Tri * tri);
@@ -96,6 +100,8 @@ private:
     std::vector<uint>                   pUpdVec[4];
     /// Properly scaled diffusivity constant.
     double                              pScaledDcst;
+    // Compartmental dcst. Stored for convenience
+    double                              pDcst;
     /// Used in selecting which directory the molecule should go.
     double                              pCDFSelector[3];
 

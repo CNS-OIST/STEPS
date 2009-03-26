@@ -152,7 +152,7 @@ public:
     void _resetCompReacExtent(uint cidx, uint ridx);
 
 	double _getCompDiffD(uint cidx, uint didx) const;
-	void _setCompDiffD(uint cidx, uint didx);
+	void _setCompDiffD(uint cidx, uint didx, double dk);
 
 	bool _getCompDiffActive(uint cidx, uint didx) const;
 	void _setCompDiffActive(uint cidx, uint didx, bool act);
@@ -213,7 +213,7 @@ public:
     void _setTetReacActive(uint tidx, uint ridx, bool act);
 
     double _getTetDiffD(uint tidx, uint didx) const;
-    void _setTetDiffD(uint tidx, uint didx);
+    void _setTetDiffD(uint tidx, uint didx, double dk);
 
     bool _getTetDiffActive(uint tidx, uint didx) const;
     void _setTetDiffActive(uint tidx, uint didx, bool act);

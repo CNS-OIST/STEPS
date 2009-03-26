@@ -55,6 +55,8 @@ ssolver::Compdef::Compdef(Statedef * sd, uint idx, steps::wm::Comp * c)
 , pSetupIndsdone(false)
 , pPoolFlags(0)
 , pPoolCount(0)
+, pReacKcst(0)
+, pDiffDcst(0)
 , pReacFlags(0)
 , pSpecsN(0)
 , pSpec_G2L(0)
@@ -99,9 +101,13 @@ ssolver::Compdef::~Compdef(void)
 	delete[] pReac_DEP_Spec;
 	delete[] pReac_LHS_Spec;
 	delete[] pReac_UPD_Spec;
+	delete[] pDiff_DEP_Spec;
+	delete[] pDiff_LIG;
 	delete[] pPoolFlags;
 	delete[] pPoolCount;
+	delete[] pReacKcst;
 	delete[] pReacFlags;
+	delete[] pDiffDcst;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -259,13 +265,32 @@ void ssolver::Compdef::setup_indices(void)
     	}
     }
 
-    // Finally initialise the pools and flags members to zeros.
+    // Initialise the pools and flags members to zeros.
     pPoolCount = new double[pSpecsN];
     pPoolFlags = new uint[pSpecsN];
     pReacFlags = new uint[pReacsN];
     std::fill_n(pPoolCount, pSpecsN, 0.0);
     std::fill_n(pPoolFlags, pSpecsN, 0);
 	std::fill_n(pReacFlags, pReacsN, 0);
+
+	// Finally initialise constants to user-supplied values
+    pReacKcst = new double[pReacsN];
+
+	for (uint i = 0; i < pReacsN; ++i)
+	{
+		// reacdef() returns global Reacdef by local index
+		ssolver::Reacdef * reac = reacdef(i);
+		pReacKcst[i] = reac->kcst();
+	}
+
+	pDiffDcst = new double[pDiffsN];
+
+	for (uint i = 0; i <pDiffsN; ++i)
+	{
+		// diffdef() returns global Diffdef by local index
+		ssolver::Diffdef * diff = diffdef(i);
+		pDiffDcst[i] = diff->dcst();
+	}
 
     pSetupIndsdone = true;
 }
@@ -348,6 +373,17 @@ void ssolver::Compdef::reset(void)
     std::fill_n(pPoolCount, pSpecsN, 0.0);
     std::fill_n(pPoolFlags, pSpecsN, 0);
 	std::fill_n(pReacFlags, pReacsN, 0);
+	for (uint i = 0; i < pReacsN; ++i)
+	{
+		ssolver::Reacdef * reac = reacdef(i);
+		pReacKcst[i] = reac->kcst();
+	}
+
+	for (uint i = 0; i <pDiffsN; ++i)
+	{
+		ssolver::Diffdef * diff = diffdef(i);
+		pDiffDcst[i] = diff->dcst();
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -425,6 +461,28 @@ ssolver::Reacdef * ssolver::Compdef::reacdef(uint rlidx) const
 	assert(pSetupRefsdone == true);
 	assert (rlidx < pReacsN);
 	return pStatedef->reacdef(pReac_L2G[rlidx]);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void ssolver::Compdef::setKcst(uint rlidx, double kcst)
+{
+	assert(pSetupRefsdone == true);
+	assert(pSetupIndsdone == true);
+	assert(rlidx < pReacsN);
+	assert(kcst >= 0.0);
+	pReacKcst[rlidx] = kcst;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void ssolver::Compdef::setDcst(uint dlidx, double dcst)
+{
+	assert(pSetupRefsdone == true);
+	assert(pSetupIndsdone == true);
+	assert(dlidx < pDiffsN);
+	assert(dcst >= 0.0);
+	pDiffDcst[dlidx] = dcst;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

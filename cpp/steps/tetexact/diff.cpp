@@ -53,6 +53,7 @@ stex::Diff::Diff(ssolver::Diffdef * ddef, stex::Tet * tet)
 , pTet(tet)
 , pUpdVec()
 , pScaledDcst(0.0)
+, pDcst(0.0)
 , pCDFSelector()
 {
 	assert(pDiffdef != 0);
@@ -66,7 +67,10 @@ stex::Diff::Diff(ssolver::Diffdef * ddef, stex::Tet * tet)
 	};
 
     // Precalculate part of the scaled diffusion constant.
-    double dcst = pDiffdef->dcst();
+	uint ldidx = pTet->compdef()->diffG2L(pDiffdef->gidx());
+	double dcst = pTet->compdef()->dcst(ldidx);
+    pDcst = dcst;
+
     double d[4] = { 0.0, 0.0, 0.0, 0.0 };
     for (uint i = 0; i < 4; ++i)
     {
@@ -208,7 +212,55 @@ bool stex::Diff::depSpecTri(uint gidx, stex::Tri * tri)
 void stex::Diff::reset(void)
 {
     resetExtent();
+
+    uint ldidx = pTet->compdef()->diffG2L(pDiffdef->gidx());
+	double dcst = pTet->compdef()->dcst(ldidx);
+    setDcst(dcst);
+
     setActive(true);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stex::Diff::setDcst(double dcst)
+{
+	assert(dcst >= 0.0);
+	pDcst = dcst;
+
+	stex::Tet * next[4] =
+	{
+		pTet->nextTet(0),
+		pTet->nextTet(1),
+		pTet->nextTet(2),
+		pTet->nextTet(3)
+	};
+
+    double d[4] = { 0.0, 0.0, 0.0, 0.0 };
+    for (uint i = 0; i < 4; ++i)
+    {
+        // Compute the scaled diffusion constant.
+        double dist = pTet->dist(i);
+        if ((dist > 0.0) && (next[i] != 0))
+            d[i] = (pTet->area(i) * dcst) / (pTet->vol() * dist);
+    }
+    // Compute scaled "diffusion constant".
+    pScaledDcst = d[0] + d[1] + d[2] + d[3];
+    // Should not be negative!
+    assert(pScaledDcst >= 0);
+
+    // Setup the selector distribution.
+    if (pScaledDcst == 0.0)
+    {
+        pCDFSelector[0] = 0.0;
+        pCDFSelector[1] = 0.0;
+        pCDFSelector[2] = 0.0;
+    }
+    else
+    {
+        pCDFSelector[0] = d[0] / pScaledDcst;
+        pCDFSelector[1] = pCDFSelector[0] + (d[1] / pScaledDcst);
+        pCDFSelector[2] = pCDFSelector[1] + (d[2] / pScaledDcst);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

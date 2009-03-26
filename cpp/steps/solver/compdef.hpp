@@ -180,9 +180,16 @@ public:
 	inline bool active(uint rlidx) const
 	{ return !(pReacFlags[rlidx] & INACTIVATED); }
 
+	// Return the kcst for a reaction specified by local index
+	inline double kcst(uint rlidx) const
+	{ return pReacKcst[rlidx]; }
+
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: REACTIONS
     ////////////////////////////////////////////////////////////////////////
+
+	// Set the reaction kcst for reaction specified by local index
+	void setKcst(uint rlidx, double kcst);
 
 	// Activate or inactivate a reaction specified by local index argument.
 	void setActive(uint rlidx, bool active);
@@ -203,6 +210,16 @@ public:
 	{ return pDiff_G2L[gidx]; }
 
 	uint diff_dep(uint dlidx, uint slidx) const;
+
+	inline double dcst(uint dlidx) const
+	{ return pDiffDcst[dlidx]; }
+
+    ////////////////////////////////////////////////////////////////////////
+    // SOLVER METHODS: REACTIONS
+    ////////////////////////////////////////////////////////////////////////
+
+	// Set the diffusion dcst for diffusion rule specified by local index
+	void setDcst(uint dlidx, double dcst);
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -257,6 +274,9 @@ private:
     // Table to resolve reaction rule indices (local -> global).
 	uint                              * pReac_L2G;
 
+	// Table of the K-constants of the reaction rules in this compartment
+	double                            * pReacKcst;
+
 	// Table of 'active' flags on the reaction rules.
 	uint                              * pReacFlags;
 
@@ -279,6 +299,9 @@ private:
 
     // Table to resolve diffusion rule indices (local -> global).
 	uint                              * pDiff_L2G;
+
+	// Table of the D-constants of the diffusion rules in this compartment
+	double                            * pDiffDcst;
 
     inline uint _IDX_Diff_Spec(uint diff, uint spec) const
     { return (pSpecsN * diff) + spec; }

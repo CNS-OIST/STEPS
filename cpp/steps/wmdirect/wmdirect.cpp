@@ -440,7 +440,7 @@ void swmd::Wmdirect::_setCompClamped(uint cidx, uint sidx, bool b)
     if (lsidx == ssolver::LIDX_UNDEFINED) return;
 
     comp->setClamped(lsidx, b);
-																								//// don't need to copy flags to this object??
+
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -454,7 +454,7 @@ double swmd::Wmdirect::_getCompReacK(uint cidx, uint ridx) const
 	uint lridx = comp->reacG2L(ridx);
 	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
 
-	return comp->reacdef(lridx)->kcst();
+	return comp->kcst(lridx);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -469,7 +469,7 @@ void swmd::Wmdirect::_setCompReacK(uint cidx, uint ridx, double kf)
 	uint lridx = comp->reacG2L(ridx);
 	if (lridx == ssolver::LIDX_UNDEFINED) return;
 
-	comp->reacdef(lridx)->setKcst(kf);
+	comp->setKcst(lridx, kf);
 
 	// Reset the reaction C constants
 	swmd::Comp * lcomp = pComps[cidx];
@@ -728,7 +728,7 @@ void swmd::Wmdirect::_setPatchClamped(uint pidx, uint sidx, bool buf)
     if (lsidx == ssolver::LIDX_UNDEFINED) return;
 
     patch->setClamped(lsidx, buf);
-																				//// no need to copy flags??
+
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -742,7 +742,7 @@ double swmd::Wmdirect::_getPatchSReacK(uint pidx, uint ridx) const
 	uint lridx = patch->sreacG2L(ridx);
 	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
 
-	return patch->sreacdef(lridx)->kcst();
+	return patch->kcst(lridx);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -757,9 +757,7 @@ void swmd::Wmdirect::_setPatchSReacK(uint pidx, uint ridx, double kf)
 	uint lridx = patch->sreacG2L(ridx);
 	if (lridx == ssolver::LIDX_UNDEFINED) return;
 
-	ssolver::SReacdef * sreac = patch->sreacdef(lridx);
-	assert (sreac != 0);
-	sreac->setKcst(kf);
+	patch->setKcst(lridx, kf);
 
 	// The 'local' Patch object has same index as solver::Patchdef object
 	swmd::Patch * lpatch = pPatches[pidx];
@@ -976,18 +974,18 @@ void swmd::Wmdirect::_build(void)
 	{
 		if ((*kproc)->updVecSize() > maxupvecsize) maxupvecsize = (*kproc)->updVecSize();
 	}
-	
+
 	pMaxUpSize = maxupvecsize;
 	pIndices = new uint[pMaxUpSize];
-	
+
     // Also let's create a random number holder-table,
     // size of number of KProcs % SCHEDULEWIDTH or pLevels.size()
     // This will be re-used in _getNext as apposed to hard-coded (again maximum
     // limit).
     uint lsize = pLevels.size();
     pRannum = new double[lsize];
-	
-	
+
+
     pBuilt = true;
 }
 
@@ -1109,7 +1107,7 @@ void swmd::Wmdirect::_update(SchedIDXVec const & entries)
     double * level0 = pLevels[0];
     // Number of entries.
     assert(entries.size() <= pMaxUpSize);											/////////
-	
+
     // Recompute rates.
     SchedIDXVecCI sidx_end = entries.end();
     uint prev_e = 0xFFFFFFFF;

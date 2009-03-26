@@ -224,9 +224,17 @@ public:
 	inline bool active(uint rlidx) const
 	{ return !(pSReacFlags[rlidx] & INACTIVATED); }
 
+	// Return the kcst for a surface reaction specified by local index
+	inline double kcst(uint rlidx) const
+	{ return pSReacKcst[rlidx];
+
+	}
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: REACTIONS
     ////////////////////////////////////////////////////////////////////////
+
+	// Set the kcst for surface reaction specified by local index
+	void setKcst(uint srlidx, double kcst);
 
 	// Activate or inactivate a surface reaction specified by local index.
 	void setActive(uint srlidx, bool active);
@@ -284,10 +292,15 @@ private:
 
     /// Number of surface reactions occuring in patch.
     uint                                pSReacsN;
+
     /// Table to resolve reaction rule indices (global -> local).
     uint                              * pSReac_G2L;
+
     /// Table to resolve reaction rule indices (local -> global).
     uint                              * pSReac_L2G;
+
+	// Table of the K-constants of the surface reac rules in this patch
+	double                            * pSReacKcst;
 
 	// Table of 'active' flags on the surface reaction rules.
 	uint                              * pSReacFlags;

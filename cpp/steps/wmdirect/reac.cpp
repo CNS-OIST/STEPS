@@ -64,7 +64,9 @@ swmd::Reac::Reac(ssolver::Reacdef * rdef, swmd::Comp * comp)
 {
 	assert (pReacdef != 0);
 	assert (pComp != 0);
-	pCcst = comp_ccst(pReacdef->kcst(), pComp->def()->vol(), pReacdef->order());
+	uint lridx = pComp->def()->reacG2L(pReacdef->gidx());
+	double kcst = pComp->def()->kcst(lridx);
+	pCcst = comp_ccst(kcst, pComp->def()->vol(), pReacdef->order());
 	assert (pCcst >= 0.0);
 }
 
@@ -95,7 +97,9 @@ void swmd::Reac::reset(void)
 
 void swmd::Reac::resetCcst(void)
 {
-	pCcst = comp_ccst(pReacdef->kcst(), pComp->def()->vol(), pReacdef->order());
+	uint lridx = pComp->def()->reacG2L(pReacdef->gidx());
+	double kcst = pComp->def()->kcst(lridx);
+	pCcst = comp_ccst(kcst, pComp->def()->vol(), pReacdef->order());
 	assert (pCcst >= 0);
 }
 

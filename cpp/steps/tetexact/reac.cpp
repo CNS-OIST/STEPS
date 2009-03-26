@@ -62,11 +62,16 @@ stex::Reac::Reac(ssolver::Reacdef * rdef, stex::Tet * tet)
 , pTet(tet)
 , pUpdVec()
 , pCcst(0.0)
+, pKcst(0.0)
 {
 	assert (pReacdef != 0);
 	assert (pTet != 0);
-	pCcst = comp_ccst(pReacdef->kcst(), pTet->vol(), pReacdef->order());
-	assert (pCcst >= 0);
+
+	uint lridx = pTet->compdef()->reacG2L(pReacdef->gidx());
+	double kcst = pTet->compdef()->kcst(lridx);
+	pKcst = kcst;
+	pCcst = comp_ccst(kcst, pTet->vol(), pReacdef->order());
+	assert (pCcst >= 0.0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -80,6 +85,7 @@ stex::Reac::~Reac(void)
 void stex::Reac::reset(void)
 {
     resetExtent();
+    resetCcst();
 	setActive(true);
 }
 
@@ -87,8 +93,22 @@ void stex::Reac::reset(void)
 
 void stex::Reac::resetCcst(void)
 {
-	pCcst = comp_ccst(pReacdef->kcst(), pTet->vol(), pReacdef->order());
-	assert (pCcst >= 0);
+	uint lridx = pTet->compdef()->reacG2L(pReacdef->gidx());
+	double kcst = pTet->compdef()->kcst(lridx);
+	// Also reset kcst
+	pKcst = kcst;
+	pCcst = comp_ccst(kcst, pTet->vol(), pReacdef->order());
+	assert (pCcst >= 0.0);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stex::Reac::setKcst(double k)
+{
+	assert (k >= 0.0);
+	pKcst = k;
+	pCcst = comp_ccst(k, pTet->vol(), pReacdef->order());
+	assert (pCcst >= 0.0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

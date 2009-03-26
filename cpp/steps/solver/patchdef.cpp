@@ -63,6 +63,7 @@ ssolver::Patchdef::Patchdef(Statedef * sd, uint idx, steps::wm::Patch * p)
 , pSReacsN(0)
 , pSReac_G2L(0)
 , pSReac_L2G(0)
+, pSReacKcst(0)
 , pSReacFlags(0)
 , pSReac_DEP_I_Spec(0)
 , pSReac_DEP_S_Spec(0)
@@ -103,7 +104,10 @@ ssolver::Patchdef::~Patchdef(void)
 	delete[] pSReac_DEP_O_Spec;
 	delete[] pSReac_LHS_O_Spec;
 	delete[] pSReac_UPD_O_Spec;
-
+	delete[] pPoolCount;
+	delete[] pPoolFlags;
+	delete[] pSReacFlags;
+	delete[] pSReacKcst;
 
 }
 
@@ -332,13 +336,23 @@ void ssolver::Patchdef::setup_indices(void)
         }
     }
 
-    // Finally initialise the pools and flags members to zeros.
+    // Initialise the pools and flags members to zeros.
     pPoolCount = new double[pSpecsN_S];
     pPoolFlags = new uint[pSpecsN_S];
     pSReacFlags = new uint[pSReacsN];
     std::fill_n(pPoolCount, pSpecsN_S, 0.0);
     std::fill_n(pPoolFlags, pSpecsN_S, 0);
 	std::fill_n(pSReacFlags, pSReacsN, 0);
+
+	// Finally initialise Kcsts to user-supplied values
+    pSReacKcst = new double[pSReacsN];
+
+	for (uint i = 0; i < pSReacsN; ++i)
+	{
+		// sreacdef() returns global Reacdef by local index
+		ssolver::SReacdef * sreac = sreacdef(i);
+		pSReacKcst[i] = sreac->kcst();
+	}
 
 	pSetupIndsdone = true;
 }
@@ -379,6 +393,13 @@ void ssolver::Patchdef::reset(void)
     std::fill_n(pPoolCount, pSpecsN_S, 0.0);
     std::fill_n(pPoolFlags, pSpecsN_S, 0);
 	std::fill_n(pSReacFlags, pSReacsN, 0);
+
+	for (uint i = 0; i < pSReacsN; ++i)
+	{
+		// sreacdef() returns global Reacdef by local index
+		ssolver::SReacdef * sreac = sreacdef(i);
+		pSReacKcst[i] = sreac->kcst();
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -515,6 +536,17 @@ int * ssolver::Patchdef::sreac_upd_O_bgn(uint lidx) const
 int * ssolver::Patchdef::sreac_upd_O_end(uint lidx) const
 {
     return pSReac_UPD_O_Spec + ((lidx + 1) * pSpecsN_O);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void ssolver::Patchdef::setKcst(uint srlidx, double kcst)
+{
+	assert(pSetupRefsdone == true);
+	assert(pSetupIndsdone == true);
+	assert(srlidx < pSReacsN);
+	assert (kcst >= 0.0);
+	pSReacKcst[srlidx] = kcst;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

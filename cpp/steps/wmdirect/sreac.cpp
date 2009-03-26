@@ -76,7 +76,9 @@ swmd::SReac::SReac(ssolver::SReacdef * srdef, swmd::Patch * patch)
 		vol = pPatch->oComp()->def()->vol();
 	}
 
-	pCcst = comp_ccst(pSReacdef->kcst(), vol, pSReacdef->order());
+	uint lsridx = pPatch->def()->sreacG2L(pSReacdef->gidx());
+	double kcst = pPatch->def()->kcst(lsridx);
+	pCcst = comp_ccst(kcst, vol, pSReacdef->order());
 	assert (pCcst >= 0);
 }
 
@@ -257,7 +259,9 @@ void swmd::SReac::resetCcst(void)
 		vol = pPatch->oComp()->def()->vol();
 	}
 
-	pCcst = comp_ccst(pSReacdef->kcst(), vol, pSReacdef->order());
+	uint lsridx = pPatch->def()->sreacG2L(pSReacdef->gidx());
+	double kcst = pPatch->def()->kcst(lsridx);
+	pCcst = comp_ccst(kcst, vol, pSReacdef->order());
 	assert (pCcst >= 0);
 
 }

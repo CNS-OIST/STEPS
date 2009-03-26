@@ -75,6 +75,10 @@ public:
     { return pCcst; }
     void resetCcst(void);
 
+    inline double kcst(void) const
+    { return pKcst; }
+    void setKcst(double k);
+
     double h(void) const
     { return (rate()/pCcst); }
 
@@ -108,6 +112,8 @@ private:
     std::vector<uint>                   pUpdVec;
     /// Properly scaled reaction constant.
     double                              pCcst;
+    // Store the kcst for convenience
+    double                              pKcst;
 
     ////////////////////////////////////////////////////////////////////////
 
