@@ -906,7 +906,7 @@ void swmrk4::Wmrk4::_rk4(double pdt)
 {
 	double dt_2 = pdt/2.0;
 	double dt_6 = pdt/6.0;
-	
+
 	for(uint i=0; i< pSpecs_tot; ++i) yt[i] = pVals[i] + (dt_2 * pDyDx[i]);
 	_setderivs(yt, dyt);
 	for(uint i =0; i< pSpecs_tot; ++i) yt[i]= pVals[i] + (dt_2 * dyt[i]);
@@ -942,18 +942,18 @@ void swmrk4::Wmrk4::_rksteps(double t1, double t2)
 		os << "dt is larger than simulation step.";
 		throw steps::ArgErr(os.str());
 	}
-	
+
 	/// step up until over maximum time
 	while(t < t2)
 	{
 		if ((t+pDT) > t2) break;
-		
+
 		_setderivs(pVals, pDyDx);
 		_rk4(pDT);
 		_update();
 		t += pDT;
 	}
-	
+
 	////////////////////////////////////////////////////////////////////////////
 	// DEBUG: 25/03/09. This is general fix for this solver, inspired by a
 	// problem with evaluating two supposedly equal double values as non-equal.
@@ -962,9 +962,9 @@ void swmrk4::Wmrk4::_rksteps(double t1, double t2)
 	// Changed _rk4() to take the dt as a double argument
 	double tfrac = t2-t;
 	assert (tfrac >= 0.0);
-	
+
 	// Lets only concern ourselves with fractions greater than 1 percent
-	if (tfrac != 0.0 && tfrac/pDT >= 0.01) 
+	if (tfrac != 0.0 && tfrac/pDT >= 0.01)
 	{
 		assert (tfrac < pDT);
 		_setderivs(pVals, pDyDx);
