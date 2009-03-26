@@ -19,7 +19,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA
 //
 //
-////////////////////////////////////////////////////////////////////////////////pdt
+////////////////////////////////////////////////////////////////////////////////
 
 // Autotools definitions.
 #ifdef HAVE_CONFIG_H
@@ -957,7 +957,7 @@ void swmrk4::Wmrk4::_rksteps(double t1, double t2)
 	////////////////////////////////////////////////////////////////////////////
 	// DEBUG: 25/03/09. This is general fix for this solver, inspired by a
 	// problem with evaluating two supposedly equal double values as non-equal.
-	// Now any descrepancy betwwen simulation time and the end step time is dealt
+	// Now any discrepancy between simulation time and the end step time is dealt
 	// with by solving to the simulation time by passing in the fraction (see below)
 	// Changed _rk4() to take the dt as a double argument
 	double tfrac = t2-t;
