@@ -88,6 +88,24 @@ class Tetmesh(geom_swig.Tetmesh) :
     ntris = geom_swig._swig_property(_geom_swig.Tetmesh_countTris)
     ntets = geom_swig._swig_property(_geom_swig.Tetmesh_countTets)
 
+class Tet(geom_swig.Tet) :
+    def __init__(self, *args): 
+        """__init__(self, Tetmesh mesh, unsigned int tidx) -> Tet"""
+        this = _geom_swig.new_Tet(*args)
+        try: self.this.append(this)
+        except: self.this = this
+        # this object owned by python
+        self.thisown = True
+
+class Tri(geom_swig.Tri) :
+    def __init__(self, *args): 
+        """__init__(self, Tetmesh mesh, unsigned int tidx) -> Tri"""
+        this = _geom_swig.new_Tri(*args)
+        try: self.this.append(this)
+        except: self.this = this
+        # this object is owned by python
+        self.thisown = True
+
 class TmComp(geom_swig.TmComp) :
     def __init__(self, *args, **kwargs): 
         """__init__(self, string id, Tetmesh container, vector_uint tets, Volsys volsys=0) -> TmComp"""
