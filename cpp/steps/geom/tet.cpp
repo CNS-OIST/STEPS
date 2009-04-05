@@ -37,9 +37,11 @@
 #include <steps/math/tetrahedron.hpp>
 #include <steps/math/tools.hpp>
 #include <steps/geom/tet.hpp>
+#include <steps/geom/tetmesh.hpp>
 #include <steps/error.hpp>
 
 NAMESPACE_ALIAS(steps::tetmesh, stetmesh);
+USING(stetmesh, Tetmesh);
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -113,16 +115,23 @@ double stetmesh::Tet::getQualityAR(void) const
 
 double stetmesh::Tet::getQualityRER(void) const
 {
-	std::vector<double> pnt0 = getVertex(0);
-	std::vector<double> pnt1 = getVertex(1);
-	std::vector<double> pnt2 = getVertex(2);
-	std::vector<double> pnt3 = getVertex(3);
-	double p0[3] = {pnt0[0], pnt0[1], pnt0[2]};
-	double p1[3] = {pnt1[0], pnt1[2], pnt1[2]};
-	double p2[3] = {pnt2[0], pnt2[1], pnt2[2]};
-	double p3[3] = {pnt3[0], pnt3[1], pnt3[2]};
-	return (steps::math::tet_circumrad(p0, p1, p2, p3)/
-			steps::math::tet_shortestedge(p0, p1, p2, p3));
+	//std::vector<double> pnt0 = getVertex(0);
+	//std::vector<double> pnt1 = getVertex(1);
+	//std::vector<double> pnt2 = getVertex(2);
+	//std::vector<double> pnt3 = getVertex(3);
+	//double p0[3] = {pnt0[0], pnt0[1], pnt0[2]};
+	//double p1[3] = {pnt1[0], pnt1[2], pnt1[2]};
+	//double p2[3] = {pnt2[0], pnt2[1], pnt2[2]};
+	//double p3[3] = {pnt3[0], pnt3[1], pnt3[2]};
+	//return (steps::math::tet_circumrad(p0, p1, p2, p3)/
+	//		steps::math::tet_shortestedge(p0, p1, p2, p3));
+    // DEBUG 5-Apr-2009
+    double * v0 = pTetmesh->_getVertex(pVerts[0]);
+    double * v1 = pTetmesh->_getVertex(pVerts[1]);
+    double * v2 = pTetmesh->_getVertex(pVerts[2]);
+    double * v3 = pTetmesh->_getVertex(pVerts[3]);
+    return (steps::math::tet_circumrad(v0, v1, v2, v3) /
+            steps::math::tet_shortestedge(v0, v1, v2, v3));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
