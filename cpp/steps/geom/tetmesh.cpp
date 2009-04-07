@@ -48,7 +48,7 @@ stetmesh::Tetmesh::Tetmesh(uint nverts, uint ntris, uint ntets)
 , pSetupDone(false)
 , pVertsN(nverts)
 , pVerts(0)
-, pTrisN(ntris)
+, pTrisN(ntris) // initialise this member with user supplied numer, but this will be modified later
 , pTris(0)
 , pTri_areas(0)
 , pTri_norms(0)
@@ -60,13 +60,14 @@ stetmesh::Tetmesh::Tetmesh(uint nverts, uint ntris, uint ntets)
 , pTet_comps(0)
 , pTet_tri_neighbours(0)
 , pTet_tet_neighbours(0)
+, pTris_user(0)
 , pXmin(0.0)
 , pXmax(0.0)
 , pYmin(0.0)
 , pYmax(0.0)
 , pZmin(0.0)
 , pZmax(0.0)
-{
+{	/*
     assert(pVertsN > 0);
     assert(pTrisN > 0);
     assert(pTetsN > 0);
@@ -96,6 +97,50 @@ stetmesh::Tetmesh::Tetmesh(uint nverts, uint ntris, uint ntets)
     // does not explicitly check if it is a surface tet. Normally only 1 face could be on the surface,
     // but in some cases 2 or even 3 faces could be on the surface
     std::fill_n(pTet_tet_neighbours, (pTetsN * 4), -1);
+    */
+
+	// DEBUG 7/4/09 Constructor didn't have enough margin for user error, particularly the
+	// user had to supply the total number of surface triangles in the mesh (i.e. not just
+	// surface ones)
+	// Now this constructor simply creates vectors (to be filled by setTet, setTri and
+	// setVert) and setup is
+	if (nverts < 4)
+	{
+	    std::ostringstream os;
+	    os << "Number of vertices must be positive and greater than 3.";
+	    throw steps::ArgErr(os.str());
+	}
+	if (ntris < 0)
+	{
+	    std::ostringstream os;
+	    os << "Number of triangles must be positive or zero.";
+	    throw steps::ArgErr(os.str());
+	}
+	if (ntets < 1)
+	{
+	    std::ostringstream os;
+	    os << "Number of tetrahedra must be positive and greater than zero.";
+	    throw steps::ArgErr(os.str());
+	}
+
+    pVerts = new double[pVertsN * 3];
+    pTets = new uint[pTetsN * 4];
+    pTet_vols = new double[pTetsN];
+    pTet_comps = new stetmesh::TmComp*[pTetsN];
+    // Initialise comp pointers to zero (fill_n doesn't work for zero pointers)
+    for (uint i=0; i<pTetsN; ++i) pTet_comps[i] = 0;
+    pTet_tri_neighbours = new uint[pTetsN * 4];
+    pTet_tet_neighbours = new int[pTetsN * 4];
+    // Initialise the Tet_tet_neighbour array with -1, which implies no neighbour
+    // (tetrahedron is on the surface)
+    // This is currently the only method of setting the -1, the main algorithm
+    // does not explicitly check if it is a surface tet. Normally only 1 face could be on the surface,
+    // but in some cases 2 or even 3 faces could be on the surface
+    std::fill_n(pTet_tet_neighbours, (pTetsN * 4), -1);
+
+    // Make the pTris_user array available for user entry. Actual number of ALL triangles
+    // will be found later
+    pTris_user = new uint[ntris * 3];
 
 }
 
@@ -114,6 +159,7 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 , pTri_norms(0)
 , pTri_patches(0)
 , pTri_tet_neighbours(0)
+, pTris_user(0) // not used by this contructor
 , pTetsN(0)
 , pTets(0)
 , pTet_vols(0)
@@ -166,7 +212,7 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 	std::fill_n(pTet_tet_neighbours, (pTetsN * 4), -1);
 
 	// Create some triangle data arrays initially with maximum theoretical size. Each
-	// tettahedron must share at least 2 triangles with a neighbour -> maximum
+	// tetrahedron must share at least 2 triangles with a neighbour -> maximum
 	// number of triangles is (TetsN x 3) + 1
 	uint trisn_max = (pTetsN*3) + 1;
 
@@ -446,6 +492,9 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 
 stetmesh::Tetmesh::~Tetmesh(void)
 {
+	// Memory created in 2nd constructor must be freed if setup hasn't been called
+	if (pSetupDone == false) delete[] pTris_user;
+
 	delete[] pVerts;
 	delete[] pTris;
 	delete[] pTri_areas;
@@ -469,7 +518,12 @@ void stetmesh::Tetmesh::setVertex(uint vidx, double x, double y, double z)
 		os << "Vertex index is out of range.";
 		throw steps::ArgErr(os.str());
 	}
-    assert(pSetupDone == false);
+	if (pSetupDone == true)
+	{
+		std::ostringstream os;
+		os << "Cannot set vertex after mesh has been setup.";
+		throw steps::ArgErr(os.str());
+	}
 
     uint vidx2 = vidx * 3;
     pVerts[vidx2++] = x;
@@ -484,7 +538,7 @@ void stetmesh::Tetmesh::setTri(uint tidx, uint vidx0, uint vidx1, uint vidx2)
 	if (tidx >= pTrisN)
 	{
 		std::ostringstream os;
-		os << "Triangle index out of range.";
+		os << "Triangle index out of user-supplied range.";
 		throw steps::ArgErr(os.str());
 	}
 	if (vidx0 >= pVertsN || vidx1 >= pVertsN || vidx2 >= pVertsN)
@@ -493,13 +547,17 @@ void stetmesh::Tetmesh::setTri(uint tidx, uint vidx0, uint vidx1, uint vidx2)
 		os << "Vertex index is out of range.";
 		throw steps::ArgErr(os.str());
 	}
-
-    assert(pSetupDone == false);
+	if (pSetupDone == true)
+	{
+		std::ostringstream os;
+		os << "Cannot set triangle after mesh has been setup.";
+		throw steps::ArgErr(os.str());
+	}
 
     uint tidx2 = tidx * 3;
-    pVerts[tidx2++] = vidx0;
-    pVerts[tidx2++] = vidx1;
-    pVerts[tidx2] = vidx2;
+    pTris_user[tidx2++] = vidx0;
+    pTris_user[tidx2++] = vidx1;
+    pTris_user[tidx2] = vidx2;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -523,14 +581,18 @@ void stetmesh::Tetmesh::setTet
 		os << "Vertex index out of range.";
 		throw steps::ArgErr(os.str());
 	}
+	if (pSetupDone == true)
+	{
+		std::ostringstream os;
+		os << "Cannot set tetrahedron after mesh has been setup.";
+		throw steps::ArgErr(os.str());
+	}
 
-    assert(pSetupDone == false);
-
-    uint tidx2 = tidx * 3;
-    pVerts[tidx2++] = vidx0;
-    pVerts[tidx2++] = vidx1;
-    pVerts[tidx2++] = vidx2;
-    pVerts[tidx2] = vidx3;
+    uint tidx2 = tidx * 4;
+    pTets[tidx2++] = vidx0;
+    pTets[tidx2++] = vidx1;
+    pTets[tidx2++] = vidx2;
+    pTets[tidx2] = vidx3;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -543,6 +605,10 @@ void stetmesh::Tetmesh::setTet
 /// bounding box values, areas, volumes, and neighbouring triangle and
 /// tetrahedral information
 //
+// DEBUG: User may have only supplied surface triangle information. Ok up to now,
+// but this code must find the 'real' number of triangles, similar to the
+// second constructor
+//
 void stetmesh::Tetmesh::setup(void)
 {
 	if (pSetupDone = true)
@@ -551,6 +617,8 @@ void stetmesh::Tetmesh::setup(void)
 		os << "Setup completed.";
 		throw steps::ArgErr(os.str());
 	}
+	/* replaced the below code with code similar to second constructor. See notes
+	// in first constructor
 
 	/// Find the minimal and maximal boundary values
 	double xmin = pVerts[0];
@@ -760,6 +828,285 @@ void stetmesh::Tetmesh::setup(void)
 		assert (tris_added == 4);
 
 	} // end of loop over all tetrahedra
+	*/
+	// End of replaced code
+
+
+	// Create some triangle data arrays initially with maximum theoretical size. Each
+	// tetrahedron must share at least 2 triangles with a neighbour -> maximum
+	// number of triangles is (TetsN x 3) + 1
+	uint trisn_max = (pTetsN*3) + 1;
+
+	uint * tris_temp = new uint[trisn_max * 3];
+	int * tri_tet_neighbours_temp = new int[trisn_max * 2];
+	std::fill_n(tri_tet_neighbours_temp, (trisn_max *2), -1);
+
+	// Add any triangles supplied first; maintaining indices
+	uint tris_added = 0;
+	for (uint i=0; i<pTrisN*3; i+=3)
+	{
+		int triele[3] = {pTris_user[i+0], pTris_user[i+1], pTris_user[i+2]};
+		std::sort(triele, triele + 3);
+		tris_temp[i+0] = triele[0];
+		tris_temp[i+1] = triele[1];
+		tris_temp[i+2] = triele[2];
+		tris_added++;
+	}
+	// Now can free memory for array of user-supplied triangle information
+	delete[] pTris_user;
+
+	uint tettetadded = 0;
+	// Loop over all tetrahedra and fill tris_temp, pTet_tri_neighbours,
+	// pTet_tet_neighbours, tri_tet_neighbours_temp
+	for (uint tet=0; tet < pTetsN; ++tet)
+	{
+		/// set this tetrahedron's volume
+		///
+		// find pointers to this tetrahedron's 4 vertices
+		double * vert0 = pVerts + (3 * pTets[tet*4]);
+		double * vert1 = pVerts + (3 * pTets[(tet*4)+1]);
+		double * vert2 = pVerts + (3 * pTets[(tet*4)+2]);
+		double * vert3 = pVerts + (3 * pTets[(tet*4)+3]);
+		pTet_vols[tet] = steps::math::tet_vol(vert0, vert1, vert2, vert3);
+
+		// create array for triangle formed by edges (0,1,2)
+		// will also sort for ease of comparison
+		uint tri_vert0[3] = {pTets[tet*4], pTets[(tet*4)+1], pTets[(tet*4)+2]};
+		std::sort(tri_vert0, tri_vert0 + 3);
+		// create array for triangle formed by edges (0,1,3)
+		uint tri_vert1[3] = {pTets[tet*4], pTets[(tet*4)+1], pTets[(tet*4)+3]};
+		std::sort(tri_vert1, tri_vert1 + 3);
+		// create array for triangle formed by edges (0,2,3)
+		uint tri_vert2[3] = {pTets[tet*4], pTets[(tet*4)+2], pTets[(tet*4)+3]};
+		std::sort(tri_vert2, tri_vert2 + 3);
+		// create array for triangle formed by edges (1,2,3)
+		uint tri_vert3[3] = {pTets[(tet*4)+1], pTets[(tet*4)+2], pTets[(tet*4)+3]};
+		std::sort(tri_vert3, tri_vert3 + 3);
+
+		int tri0idx = -1;
+		int tri1idx = -1;
+		int tri2idx = -1;
+		int tri3idx = -1;
+		uint trisfound = 0;	/// unused at the moment
+		for (uint tri = 0; tri < tris_added; ++tri)
+		{
+			uint thistri[3] = {tris_temp[tri*3], tris_temp[(tri*3)+1], tris_temp[(tri*3)+2]};
+			// should be no need to sort them now // std::sort(thistri, thistri + 3);
+			if (tri0idx == -1 && array_srt_cmp(tri_vert0, thistri, 3)) tri0idx = tri;
+			if (tri1idx == -1 && array_srt_cmp(tri_vert1, thistri, 3)) tri1idx = tri;
+			if (tri2idx == -1 && array_srt_cmp(tri_vert2, thistri, 3)) tri2idx = tri;
+			if (tri3idx == -1 && array_srt_cmp(tri_vert3, thistri, 3)) tri3idx = tri;
+		}
+		// First add the triangles that are not already included
+		if (tri0idx == -1)
+		{
+			tris_temp[tris_added*3] = tri_vert0[0];
+			tris_temp[(tris_added*3)+1] = tri_vert0[1];
+			tris_temp[(tris_added*3)+2] = tri_vert0[2];
+			// label this triangle and increment triangle counter
+			tri0idx = tris_added++;
+		}
+		if (tri1idx == -1)
+		{
+			tris_temp[tris_added*3] = tri_vert1[0];
+			tris_temp[(tris_added*3)+1] = tri_vert1[1];
+			tris_temp[(tris_added*3)+2] = tri_vert1[2];
+			// label this triangle and increment triangle counter
+			tri1idx = tris_added++;
+		}
+		if (tri2idx == -1)
+		{
+			tris_temp[tris_added*3] = tri_vert2[0];
+			tris_temp[(tris_added*3)+1] = tri_vert2[1];
+			tris_temp[(tris_added*3)+2] = tri_vert2[2];
+			// label this triangle and increment triangle counter
+			tri2idx = tris_added++;
+		}
+		if (tri3idx == -1)
+		{
+			tris_temp[tris_added*3] = tri_vert3[0];
+			tris_temp[(tris_added*3)+1] = tri_vert3[1];
+			tris_temp[(tris_added*3)+2] = tri_vert3[2];
+			// label this triangle and increment triangle counter
+			tri3idx = tris_added++;
+		}
+
+		// Use this information to fill neighbours information
+		pTet_tri_neighbours[tet*4] = tri0idx;
+		pTet_tri_neighbours[(tet*4)+1] = tri1idx;
+		pTet_tri_neighbours[(tet*4)+2] = tri2idx;
+		pTet_tri_neighbours[(tet*4)+3] = tri3idx;
+
+		// Add this tet to neighbours of first triangle
+		if (tri_tet_neighbours_temp[tri0idx*2] == -1) tri_tet_neighbours_temp[tri0idx*2] = tet;
+		else if (tri_tet_neighbours_temp[(tri0idx*2)+1] == -1)
+		{
+			tri_tet_neighbours_temp[(tri0idx*2)+1] = tet;
+
+			// This triangle has a 2 tet neighbours now- time to tell those tets they are neighbours
+			uint tet1 = tri_tet_neighbours_temp[tri0idx*2];
+
+			// Add the tet in the main loop to it's neighbour's neighbours
+			if (pTet_tet_neighbours[tet1*4] == -1) pTet_tet_neighbours[tet1*4] = tet;
+			else if (pTet_tet_neighbours[(tet1*4)+1] == -1) pTet_tet_neighbours[(tet1*4)+1] = tet;
+			else if (pTet_tet_neighbours[(tet1*4)+2] == -1) pTet_tet_neighbours[(tet1*4)+2] = tet;
+			else if (pTet_tet_neighbours[(tet1*4)+3] == -1) pTet_tet_neighbours[(tet1*4)+3] = tet;
+			else assert(false);
+			tettetadded++;
+
+			// Add tet1 to tet's neighbours
+			if (pTet_tet_neighbours[tet*4] == -1) pTet_tet_neighbours[tet*4] = tet1;
+			else if (pTet_tet_neighbours[(tet*4)+1] == -1) pTet_tet_neighbours[(tet*4)+1] = tet1;
+			else if (pTet_tet_neighbours[(tet*4)+2] == -1) pTet_tet_neighbours[(tet*4)+2] = tet1;
+			else if (pTet_tet_neighbours[(tet*4)+3] == -1) pTet_tet_neighbours[(tet*4)+3] = tet1;
+			else assert(false);
+			tettetadded++;
+		}
+		else assert(false);
+		if (tri_tet_neighbours_temp[tri1idx*2] == -1) tri_tet_neighbours_temp[tri1idx*2] = tet;
+		else if (tri_tet_neighbours_temp[(tri1idx*2)+1] == -1)
+		{
+			tri_tet_neighbours_temp[(tri1idx*2)+1] = tet;
+			// This triangle has a 2 tet neighbours now- time to tell those tets they are neighbours
+			uint tet1 = tri_tet_neighbours_temp[tri1idx*2];
+
+			// Add the tet in the main loop to it's neighbour's neighbours
+			if (pTet_tet_neighbours[tet1*4] == -1) pTet_tet_neighbours[tet1*4] = tet;
+			else if (pTet_tet_neighbours[(tet1*4)+1] == -1) pTet_tet_neighbours[(tet1*4)+1] = tet;
+			else if (pTet_tet_neighbours[(tet1*4)+2] == -1) pTet_tet_neighbours[(tet1*4)+2] = tet;
+			else if (pTet_tet_neighbours[(tet1*4)+3] == -1) pTet_tet_neighbours[(tet1*4)+3] = tet;
+			else assert(false);
+			tettetadded++;
+
+			// Add tet1 to tet's neighbours
+			if (pTet_tet_neighbours[tet*4] == -1) pTet_tet_neighbours[tet*4] = tet1;
+			else if (pTet_tet_neighbours[(tet*4)+1] == -1) pTet_tet_neighbours[(tet*4)+1] = tet1;
+			else if (pTet_tet_neighbours[(tet*4)+2] == -1) pTet_tet_neighbours[(tet*4)+2] = tet1;
+			else if (pTet_tet_neighbours[(tet*4)+3] == -1) pTet_tet_neighbours[(tet*4)+3] = tet1;
+			else assert(false);
+			tettetadded++;
+		}
+		else assert(false);
+		if (tri_tet_neighbours_temp[tri2idx*2] == -1) tri_tet_neighbours_temp[tri2idx*2] = tet;
+		else if (tri_tet_neighbours_temp[(tri2idx*2)+1] == -1)
+		{
+			tri_tet_neighbours_temp[(tri2idx*2)+1] = tet;
+			// This triangle has a 2 tet neighbours now- time to tell those tets they are neighbours
+			uint tet1 = tri_tet_neighbours_temp[tri2idx*2];
+
+			// Add the tet in the main loop to it's neighbour's neighbours
+			if (pTet_tet_neighbours[tet1*4] == -1) pTet_tet_neighbours[tet1*4] = tet;
+			else if (pTet_tet_neighbours[(tet1*4)+1] == -1) pTet_tet_neighbours[(tet1*4)+1] = tet;
+			else if (pTet_tet_neighbours[(tet1*4)+2] == -1) pTet_tet_neighbours[(tet1*4)+2] = tet;
+			else if (pTet_tet_neighbours[(tet1*4)+3] == -1) pTet_tet_neighbours[(tet1*4)+3] = tet;
+			else assert(false);
+			tettetadded++;
+
+			// Add tet1 to tet's neighbours
+			if (pTet_tet_neighbours[tet*4] == -1) pTet_tet_neighbours[tet*4] = tet1;
+			else if (pTet_tet_neighbours[(tet*4)+1] == -1) pTet_tet_neighbours[(tet*4)+1] = tet1;
+			else if (pTet_tet_neighbours[(tet*4)+2] == -1) pTet_tet_neighbours[(tet*4)+2] = tet1;
+			else if (pTet_tet_neighbours[(tet*4)+3] == -1) pTet_tet_neighbours[(tet*4)+3] = tet1;
+			tettetadded++;
+		}
+		else assert(false);
+		if (tri_tet_neighbours_temp[tri3idx*2] == -1) tri_tet_neighbours_temp[tri3idx*2] = tet;
+		else if (tri_tet_neighbours_temp[(tri3idx*2)+1] == -1)
+		{
+			tri_tet_neighbours_temp[(tri3idx*2)+1] = tet;
+			// This triangle has a 2 tet neighbours now- time to tell those tets they are neighbours
+			uint tet1 = tri_tet_neighbours_temp[tri3idx*2];
+
+			// Add the tet in the main loop to it's neighbour's neighbours
+			if (pTet_tet_neighbours[tet1*4] == -1) pTet_tet_neighbours[tet1*4] = tet;
+			else if (pTet_tet_neighbours[(tet1*4)+1] == -1) pTet_tet_neighbours[(tet1*4)+1] = tet;
+			else if (pTet_tet_neighbours[(tet1*4)+2] == -1) pTet_tet_neighbours[(tet1*4)+2] = tet;
+			else if (pTet_tet_neighbours[(tet1*4)+3] == -1) pTet_tet_neighbours[(tet1*4)+3] = tet;
+			else assert(false);
+			tettetadded++;
+
+			// Add tet1 to tet's neighbours
+			if (pTet_tet_neighbours[tet*4] == -1) pTet_tet_neighbours[tet*4] = tet1;
+			else if (pTet_tet_neighbours[(tet*4)+1] == -1) pTet_tet_neighbours[(tet*4)+1] = tet1;
+			else if (pTet_tet_neighbours[(tet*4)+2] == -1) pTet_tet_neighbours[(tet*4)+2] = tet1;
+			else if (pTet_tet_neighbours[(tet*4)+3] == -1) pTet_tet_neighbours[(tet*4)+3] = tet1;
+			tettetadded++;
+		}
+		else assert(false);
+	} // end of loop over all tetrahedra
+
+	// Most tetrahedra should have had 4 tetneighbours added, but fewer for surface tets
+	assert (tettetadded < pTetsN*4);
+
+    ////////////////////////////////////////////////////////////////////////
+
+	// We know know how many triangles are in the mesh
+	// Replace previous user-supplied number with total number
+	pTrisN = tris_added;
+
+	pTris = new uint[pTrisN * 3];
+	// copy the supplied triangles information to pTris member
+	for (uint i = 0; i < pTrisN*3; ++i) pTris[i] = tris_temp[i];
+	pTri_areas = new double[pTrisN];
+	pTri_norms = new double[pTrisN * 3];
+	pTri_patches = new stetmesh::TmPatch*[pTrisN];
+	// Initialise patch pointers to zero (fill_n doesn't work for zero pointers)
+	for (uint i=0; i<pTrisN; ++i) pTri_patches[i] = 0;
+	pTri_tet_neighbours = new int[pTrisN * 2];
+	for (uint i=0; i < pTrisN*2; ++i) pTri_tet_neighbours[i] = tri_tet_neighbours_temp[i];
+
+	// Free up memory from temporary tables
+	delete[] tris_temp;
+	delete[] tri_tet_neighbours_temp;
+
+	/// loop over all triangles and set pTri_areas and pTri_norms
+	for (uint tri = 0; tri < pTrisN; ++tri)
+	{
+		/// set this triangle's area
+		///
+		// find pointers to this triangle's 3 vertices
+		double * vert0 = pVerts + (3 * pTris[tri*3]);
+		double * vert1 = pVerts + (3 * pTris[(tri*3)+1]);
+		double * vert2 = pVerts + (3 * pTris[(tri*3)+2]);
+		// call steps::math method to set the area
+		pTri_areas[tri] = steps::math::triArea(vert0, vert1, vert2);
+
+		// create an array to store this triangle's normal
+		double norm[3];
+		// call steps::math method to find the normal and store in norm array
+		steps::math::triNormal(vert0, vert1, vert2, norm);
+		// set the normal
+		pTri_norms[tri*3] = norm[0];
+		pTri_norms[(tri*3)+1] = norm[1];
+		pTri_norms[(tri*3)+2] = norm[2];
+	}
+
+    ////////////////////////////////////////////////////////////////////////
+
+	/// Find the minimal and maximal boundary values
+	double xmin = pVerts[0];
+	double xmax = pVerts[0];
+	double ymin = pVerts[1];
+	double ymax = pVerts[1];
+	double zmin = pVerts[2];
+	double zmax = pVerts[2];
+
+	for (uint i=1; i<pVertsN; ++i)
+	{
+		if (pVerts[i*3] < xmin) xmin = pVerts[i*3];
+		if (pVerts[i*3] > xmax) xmax = pVerts[i*3];
+		if (pVerts[(i*3)+1] < ymin) ymin = pVerts[(i*3)+1];
+		if (pVerts[(i*3)+1] > ymax) ymax = pVerts[(i*3)+1];
+		if (pVerts[(i*3)+2] < zmin) zmin = pVerts[(i*3)+2];
+		if (pVerts[(i*3)+2] > zmax) zmax = pVerts[(i*3)+2];
+	}
+	pXmin = xmin;
+	pXmax = xmax;
+	pYmin = ymin;
+	pYmax = ymax;
+	pZmin = zmin;
+	pZmax = zmax;
+
 
 	pSetupDone = true;
 }

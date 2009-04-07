@@ -126,12 +126,15 @@ double stetmesh::Tet::getQualityRER(void) const
 	//return (steps::math::tet_circumrad(p0, p1, p2, p3)/
 	//		steps::math::tet_shortestedge(p0, p1, p2, p3));
     // DEBUG 5-Apr-2009
+	/*  ########### DISABLE THIS METHOD FOR COMPILATION ###########
     double * v0 = pTetmesh->_getVertex(pVerts[0]);
     double * v1 = pTetmesh->_getVertex(pVerts[1]);
     double * v2 = pTetmesh->_getVertex(pVerts[2]);
     double * v3 = pTetmesh->_getVertex(pVerts[3]);
     return (steps::math::tet_circumrad(v0, v1, v2, v3) /
             steps::math::tet_shortestedge(v0, v1, v2, v3));
+    */
+	return 0.0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

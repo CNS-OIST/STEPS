@@ -217,6 +217,8 @@ private:
     uint                                pTrisN;
     /// The triangles by vertices index
     uint                              * pTris;
+    /// Array available for user-supplied triangle data for 2nd constructor
+    uint                              * pTris_user;
     /// The areas of the triangles
     double                            * pTri_areas;
     /// The triangle normals
