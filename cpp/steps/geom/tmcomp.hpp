@@ -104,6 +104,11 @@ public:
     std::vector<double> getBoundMax(void) const;
 
 	////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS (EXPOSED TO C++)
+    ////////////////////////////////////////////////////////////////////////
+    
+    inline std::vector<uint> const & _getAllTetIndices(void) const
+    { return pTet_indices; }
 
 private:
 

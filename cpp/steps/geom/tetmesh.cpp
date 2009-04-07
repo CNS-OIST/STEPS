@@ -29,6 +29,7 @@
 // STL headers.
 #include <cassert>
 #include <algorithm>
+#include <iostream>
 #include <vector>
 #include <sstream>
 
@@ -185,8 +186,8 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 	    os << " are not of the expected dimensions";
 	    throw steps::ArgErr(os.str());
 	}
-	pVertsN = verts.size()/3;
-	pTetsN = tets.size()/4;
+	pVertsN = verts.size() / 3;
+	pTetsN = tets.size() / 4;
 	if (pVertsN == 0 || pTetsN == 0)
 	{
 		std::ostringstream os;
@@ -614,7 +615,7 @@ void stetmesh::Tetmesh::setTet
 //
 void stetmesh::Tetmesh::setup(void)
 {
-	if (pSetupDone = true)
+	if (pSetupDone == true)
 	{
 		std::ostringstream os;
 		os << "Setup completed.";
@@ -631,7 +632,7 @@ void stetmesh::Tetmesh::setup(void)
 	double zmin = pVerts[2];
 	double zmax = pVerts[2];
 
-	for (uint i=1; i<pVertsN; ++i)
+	for (uint i=1; i < pVertsN; ++i)
 	{
 		if (pVerts[i*3] < xmin) xmin = pVerts[i*3];
 		if (pVerts[i*3] > xmax) xmax = pVerts[i*3];
@@ -1439,6 +1440,27 @@ std::vector<double> stetmesh::Tetmesh::getBoundMax(void) const
 	b_max[1] = pYmax;
 	b_max[2] = pZmax;
 	return b_max;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double * stetmesh::Tetmesh::_getVertex(uint vidx) const
+{
+    return pVerts + (vidx * 3);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint * stetmesh::Tetmesh::_getTri(uint tidx) const
+{
+    return pTris + (tidx * 3);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint * stetmesh::Tetmesh::_getTet(uint tidx) const
+{
+    return pTets + (tidx * 4);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

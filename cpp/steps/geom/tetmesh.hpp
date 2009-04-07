@@ -141,7 +141,7 @@ public:
 	// DATA ACCESS (EXPOSED TO PYTHON): TRIANGLES
 	////////////////////////////////////////////////////////////////////////
 
-    std::vector<uint>  getTri(uint tidx) const;
+    std::vector<uint> getTri(uint tidx) const;
 
     inline uint countTris(void) const
     { return pTrisN; }
@@ -198,6 +198,16 @@ public:
     // get the total volume of the mesh
     double getMeshVolume(void) const;
 
+    ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS (C++ INTERNAL)
+    ////////////////////////////////////////////////////////////////////////
+    
+    double * _getVertex(uint vidx) const;
+    uint * _getTri(uint tidx) const;
+    uint * _getTet(uint tidx) const;
+    
+    ////////////////////////////////////////////////////////////////////////
+    
 private:
 
     ////////////////////////////////////////////////////////////////////////

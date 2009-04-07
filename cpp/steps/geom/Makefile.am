@@ -45,6 +45,7 @@ header_steps_geom_HEADERS = \
     geom.hpp \
     patch.hpp \
     tet.hpp \
+    tetmesh_rw.hpp \
     tetmesh.hpp \
     tmcomp.hpp \
     tmpatch.hpp \
@@ -56,6 +57,7 @@ libsteps_geom_la_SOURCES = \
     geom.cpp \
     patch.cpp \
     tet.cpp \
+    tetmesh_rw.cpp \
     tetmesh.cpp \
     tmcomp.cpp \
     tmpatch.cpp \
