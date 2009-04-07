@@ -102,8 +102,11 @@ stetmesh::Tetmesh::Tetmesh(uint nverts, uint ntris, uint ntets)
 	// DEBUG 7/4/09 Constructor didn't have enough margin for user error, particularly the
 	// user had to supply the total number of surface triangles in the mesh (i.e. not just
 	// surface ones)
-	// Now this constructor simply creates vectors (to be filled by setTet, setTri and
-	// setVert) and setup is
+	// Now this constructor creates tetrahedron and vertex arrays, but makes pTris_user
+	// available to user to supply triangle information. Total number of triangles will then
+	// be found by setup() after user has supplied all tetrahedron (and vertex, and possible
+	// some triangle) data
+	//
 	if (nverts < 4)
 	{
 	    std::ostringstream os;
@@ -492,7 +495,7 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 
 stetmesh::Tetmesh::~Tetmesh(void)
 {
-	// Memory created in 2nd constructor must be freed if setup hasn't been called
+	// Memory created in 1st constructor must be freed if setup hasn't been called
 	if (pSetupDone == false) delete[] pTris_user;
 
 	delete[] pVerts;
