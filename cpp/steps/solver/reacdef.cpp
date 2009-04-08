@@ -147,14 +147,6 @@ double ssolver::Reacdef::kcst(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Reacdef::setKcst(double k)
-{
-	assert (k >= 0.0);
-	pReac->setKcst(k);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 uint ssolver::Reacdef::lhs(uint gidx) const
 {
     assert(gidx < pStatedef->countSpecs());

@@ -672,6 +672,10 @@ void stex::Tetexact::_setCompClamped(uint cidx, uint sidx, bool b)
 	assert(comp != 0);
 	uint lsidx = comp->def()->specG2L(sidx);
 	if (lsidx == ssolver::LIDX_UNDEFINED) return;
+
+	// Set the flag in def object, though this may not be necessary
+	comp->def()->setClamped(lsidx, b);
+
 	TetPVecCI t_end = comp->endTet();
 	for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
 	{
@@ -985,6 +989,10 @@ void stex::Tetexact::_setPatchClamped(uint pidx, uint sidx, bool buf)
 	uint lsidx = patch->def()->specG2L(sidx);
     if (lsidx == ssolver::LIDX_UNDEFINED) return;
 
+    // Set the flag in def object for consistency, though this is not
+    // entirely necessary
+    patch->def()->setClamped(lsidx, buf);
+
     TriPVecCI t_end = patch->endTri();
     for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
     {
@@ -1068,6 +1076,10 @@ void stex::Tetexact::_setPatchSReacActive(uint pidx, uint ridx, bool a)
 	assert(patch != 0);
 	uint lsridx = patch->def()->sreacG2L(ridx);
     if (lsridx == ssolver::LIDX_UNDEFINED) return;
+
+    // First set the flags in def object for consistency, though this is
+    // not entirely necessary for this solver
+    patch->def()->setActive(lsridx, a);
 
     TriPVecCI t_end = patch->endTri();
     for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
@@ -1780,6 +1792,7 @@ void stex::Tetexact::_setTetCount(uint tidx, uint sidx, double n)
 		if (rand01 < n_frc) c++;
 	}
 
+	// Tet object updates def level Comp object counts
 	tet->setCount(lsidx, c);
 	_updateSpec(tet, lsidx);
 }
@@ -2091,6 +2104,7 @@ void stex::Tetexact::_setTriCount(uint tidx, uint sidx, double n)
 		if (rand01 < n_frc) c++;
 	}
 
+	// Tri object updates counts in def level Comp object
 	tri->setCount(lsidx, c);
 	_updateSpec(tri, lsidx);
 }

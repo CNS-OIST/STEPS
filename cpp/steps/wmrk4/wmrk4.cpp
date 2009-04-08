@@ -258,13 +258,14 @@ void swmrk4::Wmrk4::_setCompCount(uint cidx, uint sidx, double n)
 {
 	assert(cidx < statedef()->countComps());
 	assert(sidx < statedef()->countSpecs());
+	assert (n >= 0.0);
 	Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint slidx = comp->specG2L(sidx);
 	if (slidx == ssolver::LIDX_UNDEFINED) return;
 	comp->setCount(slidx, n);
 	// easier to recompute all counts with _refill method
-	_refill();													/// may be a better way of doing this
+	_refill();					/// may be a better way of doing this
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -354,7 +355,7 @@ double swmrk4::Wmrk4::_getCompReacK(uint cidx, uint ridx) const
 	uint lridx = comp->reacG2L(ridx);
 	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
 
-	return comp->reacdef(lridx)->kcst();
+	return comp->kcst(lridx);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -369,7 +370,7 @@ void swmrk4::Wmrk4::_setCompReacK(uint cidx, uint ridx, double kf)
 	uint lridx = comp->reacG2L(ridx);
 	if (lridx == ssolver::LIDX_UNDEFINED) return;
 
-	comp->reacdef(lridx)->setKcst(kf);
+	comp->setKcst(lridx, kf);
 
 	// recompute the reaction constants
 	_refillCcst();
@@ -517,7 +518,7 @@ double swmrk4::Wmrk4::_getPatchSReacK(uint pidx, uint ridx) const
 	uint lridx = patch->sreacG2L(ridx);
 	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
 
-	return patch->sreacdef(lridx)->kcst();
+	return patch->kcst(lridx);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -532,7 +533,7 @@ void swmrk4::Wmrk4::_setPatchSReacK(uint pidx, uint ridx, double kf)
 	uint lridx = patch->sreacG2L(ridx);
 	if (lridx == ssolver::LIDX_UNDEFINED) return;
 
-	patch->sreacdef(lridx)->setKcst(kf);
+	patch->setKcst(lridx, kf);
 
 	// recompute the reaction constants
 	_refillCcst();
@@ -645,7 +646,7 @@ void swmrk4::Wmrk4::_setup(void)
 				pUpdMtx[rowp + j][colp + k] = upd;
 			}
 			/// set scaled reaction constant
-			double reac_kcst = statedef()->compdef(i)->reacdef(j)->kcst();
+			double reac_kcst = statedef()->compdef(i)->kcst(j);
 			double comp_vol = statedef()->compdef(i)->vol();
 			uint reac_order = statedef()->compdef(i)->reacdef(j)->order();
 			pCcst.push_back(_ccst(reac_kcst, comp_vol, reac_order));
@@ -723,7 +724,7 @@ void swmrk4::Wmrk4::_setup(void)
 				assert(statedef()->patchdef(i)->ocompdef() != 0);
 				vol = statedef()->patchdef(i)->ocompdef()->vol();
 			}
-			double sreac_kcst = statedef()->patchdef(i)->sreacdef(j)->kcst();
+			double sreac_kcst = statedef()->patchdef(i)->kcst(j);
 			uint sreac_order = statedef()->patchdef(i)->sreacdef(j)->order();
 			pCcst.push_back(_ccst(sreac_kcst, vol, sreac_order));
 		}
@@ -810,7 +811,9 @@ void swmrk4::Wmrk4::_refillCcst(void)
         for(uint j=0; j< compReacs_N; ++j)
 		{
 			/// set scaled reaction constant
-			double reac_kcst = statedef()->compdef(i)->reacdef(j)->kcst();
+        	// DEBUG 8/4/09: reaction constants were found from model level objects
+        	// so didn't take into account sim-level changes
+			double reac_kcst = statedef()->compdef(i)->kcst(j);
 			double comp_vol = statedef()->compdef(i)->vol();
 			uint reac_order = statedef()->compdef(i)->reacdef(j)->order();
 			pCcst.push_back(_ccst(reac_kcst, comp_vol, reac_order));
@@ -841,7 +844,9 @@ void swmrk4::Wmrk4::_refillCcst(void)
 				assert(statedef()->patchdef(i)->ocompdef() != 0);
 				vol = statedef()->patchdef(i)->ocompdef()->vol();
 			}
-			double sreac_kcst = statedef()->patchdef(i)->sreacdef(j)->kcst();
+        	// DEBUG 8/4/09: reaction constants were found from model level objects
+        	// so didn't take into account sim-level changes
+			double sreac_kcst = statedef()->patchdef(i)->kcst(j);
 			uint sreac_order = statedef()->patchdef(i)->sreacdef(j)->order();
 			pCcst.push_back(_ccst(sreac_kcst, vol, sreac_order));
 		}
