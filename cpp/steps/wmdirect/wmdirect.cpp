@@ -980,7 +980,7 @@ void swmd::Wmdirect::_build(void)
 
     // Also let's create a random number holder-table,
     // size of number of KProcs % SCHEDULEWIDTH or pLevels.size()
-    // This will be re-used in _getNext as apposed to hard-coded (again maximum
+    // This will be re-used in _getNext as opposed to hard-coded (again maximum
     // limit).
     uint lsize = pLevels.size();
     pRannum = new double[lsize];

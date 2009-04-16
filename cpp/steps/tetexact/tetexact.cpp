@@ -1143,11 +1143,14 @@ void stex::Tetexact::_build(void)
 	TetPVecCI tet_end = pTets.end();
 	for (TetPVecCI tet = pTets.begin(); tet != tet_end; ++tet)
 	{
+		// To find the maximum size of an individual kproc's upd vec size
+		uint kpuv_size = 0;
 		SchedIDXSet updset;
 		KProcPVecCI kproc_end = (*tet)->kprocEnd();
 		for (KProcPVecCI k = (*tet)->kprocBegin(); k != kproc_end; ++k)
 		{
 			updset.insert((*k)->schedIDX());
+			if ((*k)->updVecSize() > kpuv_size) kpuv_size = (*k)->updVecSize();
 		}
 
 	    // Loop over neighbouring triangles.
@@ -1164,10 +1167,12 @@ void stex::Tetexact::_build(void)
 		SchedIDXVec updvec;
 		schedIDXSet_To_Vec(updset, updvec);
 		if (maxupdvecsize < updvec.size()) maxupdvecsize = updvec.size();
+		if (maxupdvecsize < kpuv_size) maxupdvecsize = kpuv_size;
 	}
 	TriPVecCI tri_end = pTris.end();
 	for (TriPVecCI tri = pTris.begin(); tri != tri_end; ++tri)
 	{
+		uint kpuv_size = 0;
 		//DEBUG: Didn't allow for a zero pointer (not added to geometry i.e. not
 		// a surface triangle
 		if ((*tri) == 0) continue;
@@ -1177,10 +1182,12 @@ void stex::Tetexact::_build(void)
 		for (KProcPVecCI k = (*tri)->kprocBegin(); k != kproc_end; ++k)
 		{
 			updset.insert((*k)->schedIDX());
+			if ((*k)->updVecSize() > kpuv_size) kpuv_size = (*k)->updVecSize();
 		}
 		SchedIDXVec updvec;
 		schedIDXSet_To_Vec(updset, updvec);
 		if (maxupdvecsize < updvec.size()) maxupdvecsize = updvec.size();
+		if (maxupdvecsize < kpuv_size) maxupdvecsize = kpuv_size;
 	}
 
 	pMaxUpSize = maxupdvecsize;
