@@ -34,6 +34,7 @@
 #include <steps/geom/tri.hpp>
 #include <steps/geom/tetmesh.hpp>
 #include <steps/geom/tmcomp.hpp>
+#include <steps/rng/rng.hpp> 
 
 
 // STL headers
@@ -260,7 +261,7 @@ public:
     /// default number is 1. Returns a pointer to an array of size N * 3
     /// of doubles.
     ///
-    std::vector<double> getRanPnt(uint n = 1) const;
+    std::vector<double> getRanPnt(steps::rng::RNG * r, uint n = 1) const;
 
     ////////////////////////////////////////////////////////////////////////
 

@@ -38,8 +38,10 @@
 #include <steps/math/tools.hpp>
 #include <steps/geom/tet.hpp>
 #include <steps/geom/tetmesh.hpp>
+#include <steps/rng/rng.hpp>
 #include <steps/error.hpp>
 
+NAMESPACE_ALIAS(steps::rng, srng);
 NAMESPACE_ALIAS(steps::tetmesh, stetmesh);
 USING(stetmesh, Tetmesh);
 
@@ -255,7 +257,7 @@ bool stetmesh::Tet::isInside(double * p) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> stetmesh::Tet::getRanPnt(uint n) const
+std::vector<double> stetmesh::Tet::getRanPnt(srng::RNG * r, uint n) const
 {
 	double * p = new double[n*3];
 
@@ -269,9 +271,9 @@ std::vector<double> stetmesh::Tet::getRanPnt(uint n) const
 	double p3[3] = {pnt3[0], pnt3[1], pnt3[2]};
 	for (uint i=0; i< n; ++i)
 	{
-		double rn1 = steps::math::getSysRand(0.0, 1.0);
-		double rn2 = steps::math::getSysRand(0.0, 1.0);
-		double rn3 = steps::math::getSysRand(0.0, 1.0);
+		double rn1 = r->getUnfIE();
+		double rn2 = r->getUnfIE();
+		double rn3 = r->getUnfIE();
 		steps::math::tet_ranpnt(p0, p1, p2, p3, rn1, rn2, rn3, (p+(i*3)));
 	}
 
