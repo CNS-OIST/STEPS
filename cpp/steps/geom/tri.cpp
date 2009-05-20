@@ -46,6 +46,7 @@ stetmesh::Tri::Tri(Tetmesh * mesh, uint tidx)
 : pTetmesh(mesh)
 , pTidx(tidx)
 , pVerts()
+, pBaryc()
 {
 	if (pTetmesh == 0)
     {
@@ -54,17 +55,19 @@ stetmesh::Tri::Tri(Tetmesh * mesh, uint tidx)
         throw steps::ArgErr(os.str());
     }
 
-    std::vector<uint> tri_temp = pTetmesh->getTri(tidx);
+    uint * tri_temp = pTetmesh->_getTri(tidx);
     pVerts[0] = tri_temp[0];
     pVerts[1] = tri_temp[1];
     pVerts[2] = tri_temp[2];
+
+    pBaryc = new double[3];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 stetmesh::Tri::~Tri(void)
 {
-
+	delete pBaryc;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -79,16 +82,16 @@ double stetmesh::Tri::getArea(void) const
 
 std::vector<double> stetmesh::Tri::getBarycenter(void) const
 {
-	std::vector<double> v0vec = pTetmesh->getVertex(pVerts[0]);
-	std::vector<double> v1vec = pTetmesh->getVertex(pVerts[1]);
-	std::vector<double> v2vec = pTetmesh->getVertex(pVerts[2]);
-	double v0[3], v1[3], v2[3];
+	double * v0 = pTetmesh->_getVertex(pVerts[0]);
+	double * v1 = pTetmesh->_getVertex(pVerts[1]);
+	double * v2 = pTetmesh->_getVertex(pVerts[2]);
+	/*double v0[3], v1[3], v2[3];	// Defunct code. Pointers directly fetched
 	for (uint i=0; i < 3; ++i)
 	{
 		v0[i] = v0vec[i];
 		v1[i] = v1vec[i];
 		v2[i] = v2vec[i];
-	}
+	}*/
 	double baryc[3];
 	steps::math::triBarycenter(v0, v1, v2, baryc);
 	std::vector<double> barycentre(3);
@@ -119,7 +122,7 @@ stetmesh::TmPatch * stetmesh::Tri::getPatch(void) const
 stetmesh::Tet stetmesh::Tri::getTet(uint i) const
 {
 	assert(i <= 1);
-	int tetidx = pTetmesh->getTriTetNeighb(pTidx)[i];
+	int tetidx = pTetmesh->_getTriTetNeighb(pTidx)[i];
 	assert(tetidx != -1);
 	return (Tet(pTetmesh, tetidx));
 }
@@ -129,7 +132,7 @@ stetmesh::Tet stetmesh::Tri::getTet(uint i) const
 int stetmesh::Tri::getTetIdx(uint i) const
 {
 	assert(i <= 1);
-	return (pTetmesh->getTriTetNeighb(pTidx)[i]);
+	return (pTetmesh->_getTriTetNeighb(pTidx)[i]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -166,6 +169,27 @@ stetmesh::Tet stetmesh::Tri::getInnerTet(void) const
 stetmesh::Tet stetmesh::Tri::getOuterTet(void) const
 {
 	return getTet(1);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double * stetmesh::Tri::_getNorm(void) const
+{
+	assert (pTetmesh != 0);
+	return (pTetmesh->_getTriNorm(pTidx));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double * stetmesh::Tri::_getBarycenter(void) const
+{
+	double * v0 = pTetmesh->_getVertex(pVerts[0]);
+	double * v1 = pTetmesh->_getVertex(pVerts[1]);
+	double * v2 = pTetmesh->_getVertex(pVerts[2]);
+
+	steps::math::triBarycenter(v0, v1, v2, pBaryc);
+
+	return pBaryc;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

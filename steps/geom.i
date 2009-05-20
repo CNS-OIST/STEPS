@@ -248,7 +248,7 @@ public:
 	std::vector<double> getVertex(unsigned int vidx) const;
 	unsigned int countVertices(void) const;
 	
-	steps::tetmesh::TmPatch * getTmPatch(std::string const & id) const;
+	//steps::tetmesh::TmPatch * getTmPatch(std::string const & id) const;
 	std::vector<unsigned int> getTri(unsigned int tidx) const;
 	unsigned int countTris(void) const;
 	double getTriArea(unsigned int tidx) const;
@@ -257,7 +257,7 @@ public:
 	void setTriPatch(unsigned int tidx, steps::tetmesh::TmPatch * patch);
 	std::vector<int> getTriTetNeighb(unsigned int tidx) const;
 	
-	steps::tetmesh::TmComp * getTmComp(std::string const & id) const;
+	//steps::tetmesh::TmComp * getTmComp(std::string const & id) const;
 	std::vector<unsigned int> getTet(unsigned int tidx) const;
 	unsigned int countTets(void) const;
 	double getTetVol(unsigned int tidx) const;

@@ -34,7 +34,7 @@
 #include <steps/geom/tri.hpp>
 #include <steps/geom/tetmesh.hpp>
 #include <steps/geom/tmcomp.hpp>
-#include <steps/rng/rng.hpp> 
+#include <steps/rng/rng.hpp>
 
 
 // STL headers
@@ -94,6 +94,9 @@ public:
     /// Returns the barycenter of this tetrahedron.
     ///
     std::vector<double> getBarycenter(void) const;
+
+    // Auxiliary method for internal c++ use
+    double * _getBarycenter(void) const;
 
     /// Computes the quality of the tetrahedron.
     ///
@@ -239,6 +242,9 @@ public:
 
     std::vector<double> getVertex(uint i) const;
 
+    // Auxiliary function for internal use
+    double * _getVertex(uint i) const;
+
     inline uint getVertex0(void) const
     { return getVertexIdx(0); }
     inline uint getVertex1(void) const
@@ -281,6 +287,9 @@ private:
 
     /// The four vertices of this tetrahedron, by index
     uint                        pVerts[4];
+
+    // The Barycentre- currently calculated each time _getBarycentre is called
+    double                    * pBaryc;
 
 };
 

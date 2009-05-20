@@ -149,7 +149,7 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
         // Perform upcast
         steps::tetmesh::TmComp * tmcomp = dynamic_cast<steps::tetmesh::TmComp*>(wmcomp);
         steps::tetexact::Comp * localcomp = pComps[c];
-        std::vector<uint> tetindcs = tmcomp->getAllTetIndices();
+        std::vector<uint> const & tetindcs = tmcomp->_getAllTetIndices();
         std::vector<uint>::const_iterator t_end = tetindcs.end();
         for (std::vector<uint>::const_iterator t = tetindcs.begin();
              t != t_end; ++t)
@@ -187,7 +187,7 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
         // Perform upcast
         steps::tetmesh::TmPatch * tmpatch = dynamic_cast<steps::tetmesh::TmPatch*>(wmpatch);
     	steps::tetexact::Patch * localpatch = pPatches[p];
-    	std::vector<uint> triindcs = tmpatch->getAllTriIndices();
+    	std::vector<uint> const & triindcs = tmpatch->_getAllTriIndices();
     	std::vector<uint>::const_iterator t_end = triindcs.end();
     	for (std::vector<uint>::const_iterator t = triindcs.begin();
 			 t != t_end; ++t)

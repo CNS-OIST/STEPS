@@ -100,8 +100,8 @@ stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
     	// add to 'flip list' if necessary
     	//
     	// fetch the tet indices of the inner and outer comps (may be -1, no comp)
-    	int icmpidx = pTetmesh->getTriTetNeighb(tris[i])[0];
-    	int ocmpidx = pTetmesh->getTriTetNeighb(tris[i])[1];
+    	int icmpidx = pTetmesh->_getTriTetNeighb(tris[i])[0];
+    	int ocmpidx = pTetmesh->_getTriTetNeighb(tris[i])[1];
     	stetmesh::TmComp * icmp = 0;
     	stetmesh::TmComp * ocmp = 0;
     	if (icmpidx != -1) icmp = pTetmesh->getTetComp(icmpidx);
@@ -150,15 +150,15 @@ stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
     	// first create the triangle object
     	steps::tetmesh::Tri tri(pTetmesh, pTri_indices[t]);
     	// now fetch the barycentre of the triangle
-    	std::vector<double> baryctri = tri.getBarycenter();
+    	double * baryctri = tri._getBarycenter();
     	// now create the tetrahedron object of the INNER tet
     	steps::tetmesh::Tet tet = tri.getInnerTet();
     	// now fetch the barycentre of the inner tet
-    	std::vector<double> baryctet = tet.getBarycenter();
+    	double * baryctet = tet._getBarycenter();
     	// now find the vector from the tet barycentre to the
     	// tri barycentre. If dot prod with tri normal is positive, tri verts don't have to be flipped
-    	std::vector<double> vec1(3);
-    	std::vector<double> vec2(3);
+    	double vec1[3];
+		std::vector<double> vec2(3);
     	vec1[0] = baryctri[0] - baryctet[0];
     	vec1[1] = baryctri[1] - baryctet[1];
     	vec1[2] = baryctri[2] - baryctet[2];
@@ -242,8 +242,8 @@ stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
     	// add to 'flip list' if necessary
     	//
     	// fetch the tet indices of the inner and outer comps (may be -1, no comp)
-    	int icmpidx = pTetmesh->getTriTetNeighb(tris[i])[0];
-    	int ocmpidx = pTetmesh->getTriTetNeighb(tris[i])[1];
+    	int icmpidx = pTetmesh->_getTriTetNeighb(tris[i])[0];
+    	int ocmpidx = pTetmesh->_getTriTetNeighb(tris[i])[1];
     	stetmesh::TmComp * icmp = 0;
     	stetmesh::TmComp * ocmp = 0;
     	if (icmpidx != -1) icmp = pTetmesh->getTetComp(icmpidx);
@@ -292,15 +292,15 @@ stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
     	// first create the triangle object
     	steps::tetmesh::Tri tri(pTetmesh, pTri_indices[t]);
     	// now fetch the barycentre of the triangle
-    	std::vector<double> baryctri = tri.getBarycenter();
+    	double * baryctri = tri._getBarycenter();
     	// now create the tetrahedron object of the INNER tet
     	steps::tetmesh::Tet tet = tri.getInnerTet();
     	// now fetch the barycentre of the inner tet
-    	std::vector<double> baryctet = tet.getBarycenter();
+    	double * baryctet = tet._getBarycenter();
     	// now find the vector from the tet barycentre to the
     	// tri barycentre. If dot prod with tri normal is positive, tri verts don't have to be flipped
-    	std::vector<double> vec1(3);
-    	std::vector<double> vec2(3);
+    	double vec1[3];
+		std::vector<double> vec2(3);
     	vec1[0] = baryctri[0] - baryctet[0];
     	vec1[1] = baryctri[1] - baryctet[1];
     	vec1[2] = baryctri[2] - baryctet[2];

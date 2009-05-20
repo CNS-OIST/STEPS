@@ -51,6 +51,7 @@ stetmesh::Tet::Tet(Tetmesh * mesh, uint tidx)
 : pTetmesh(mesh)
 , pTidx(tidx)
 , pVerts()
+, pBaryc()
 {
 	if (pTetmesh == 0)
     {
@@ -59,18 +60,20 @@ stetmesh::Tet::Tet(Tetmesh * mesh, uint tidx)
         throw steps::ArgErr(os.str());
     }
 
-	std::vector<uint> tet_temp = pTetmesh->getTet(tidx);
+	uint * tet_temp = pTetmesh->_getTet(tidx);
 	pVerts[0] = tet_temp[0];
 	pVerts[1] = tet_temp[1];
 	pVerts[2] = tet_temp[2];
 	pVerts[3] = tet_temp[3];
+
+	pBaryc = new double[3];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 stetmesh::Tet::~Tet(void)
 {
-
+	delete pBaryc;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -85,18 +88,18 @@ double stetmesh::Tet::getVol(void) const
 
 std::vector<double> stetmesh::Tet::getBarycenter(void) const
 {
-	std::vector<double> v0vec = pTetmesh->getVertex(pVerts[0]);
-	std::vector<double> v1vec = pTetmesh->getVertex(pVerts[1]);
-	std::vector<double> v2vec = pTetmesh->getVertex(pVerts[2]);
-	std::vector<double> v3vec = pTetmesh->getVertex(pVerts[3]);
-	double v0[3], v1[3], v2[3], v3[3];
-	for (uint i=0; i < 3; ++i)
+	double * v0 = pTetmesh->_getVertex(pVerts[0]);
+	double * v1 = pTetmesh->_getVertex(pVerts[1]);
+	double * v2 = pTetmesh->_getVertex(pVerts[2]);
+	double * v3 = pTetmesh->_getVertex(pVerts[3]);
+	/*double v0[3], v1[3], v2[3], v3[3];		// Defunct code- now use internal
+	for (uint i=0; i < 3; ++i)					// method which returns pointer
 	{
 		v0[i] = v0vec[i];
 		v1[i] = v1vec[i];
 		v2[i] = v2vec[i];
 		v3[i] = v3vec[i];
-	}
+	}*/
 	double baryc[3];
 	steps::math::tet_barycenter(v0, v1, v2, v3, baryc);
 	std::vector<double> barycentre(3);
@@ -149,7 +152,7 @@ stetmesh::TmComp * stetmesh::Tet::getComp(void) const
 stetmesh::Tet stetmesh::Tet::getTet(uint i) const
 {
 	assert (i <= 3);
-	int tetidx = pTetmesh->getTetTetNeighb(pTidx)[i];
+	int tetidx = pTetmesh->_getTetTetNeighb(pTidx)[i];
 	assert(tetidx != -1);
 	return (Tet(pTetmesh, tetidx));
 }
@@ -165,8 +168,8 @@ double stetmesh::Tet::getTetDist(uint i) const
 		return 0.0;
 	}
 	Tet * tettemp = new Tet(pTetmesh, tetidx);
-	std::vector<double> bary1 = getBarycenter();
-	std::vector<double> bary2 = tettemp->getBarycenter();
+	double * bary1 = _getBarycenter();
+	double * bary2 = tettemp->_getBarycenter();
 	double xdist = bary1[0] - bary2[0];
 	double ydist = bary1[1] - bary2[1];
 	double zdist = bary1[2] - bary2[2];
@@ -179,7 +182,7 @@ double stetmesh::Tet::getTetDist(uint i) const
 int stetmesh::Tet::getTetIdx(uint i) const
 {
 	assert(i <= 3);
-	return (pTetmesh->getTetTetNeighb(pTidx)[i]);
+	return (pTetmesh->_getTetTetNeighb(pTidx)[i]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -187,7 +190,7 @@ int stetmesh::Tet::getTetIdx(uint i) const
 stetmesh::Tri stetmesh::Tet::getTri(uint i) const
 {
 	assert (i<=3);
-	uint triidx = pTetmesh->getTetTriNeighb(pTidx)[i];
+	uint triidx = pTetmesh->_getTetTriNeighb(pTidx)[i];
 	return (Tri(pTetmesh, triidx));
 }
 
@@ -196,7 +199,7 @@ stetmesh::Tri stetmesh::Tet::getTri(uint i) const
 uint stetmesh::Tet::getTriIdx(uint i) const
 {
 	assert(i<=3);
-	return (pTetmesh->getTetTriNeighb(pTidx)[i]);
+	return (pTetmesh->_getTetTriNeighb(pTidx)[i]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -206,8 +209,8 @@ double stetmesh::Tet::getTriDist(uint i) const
 	assert(i <= 3);
 	uint triidx = getTriIdx(i);
 	Tri * tritemp = new Tri(pTetmesh, triidx);
-	std::vector<double> bary1 = getBarycenter();
-	std::vector<double> bary2 = tritemp->getBarycenter();
+	double * bary1 = _getBarycenter();
+	double * bary2 = tritemp->_getBarycenter();
 	double xdist = bary1[0] - bary2[0];
 	double ydist = bary1[1] - bary2[1];
 	double zdist = bary1[2] - bary2[2];
@@ -220,7 +223,7 @@ double stetmesh::Tet::getTriDist(uint i) const
 double stetmesh::Tet::getTriArea(uint i) const
 {
 	assert(i <= 3);
-	uint triidx = pTetmesh->getTetTriNeighb(pTidx)[i];
+	uint triidx = pTetmesh->_getTetTriNeighb(pTidx)[i];
 	return (pTetmesh->getTriArea(triidx));
 }
 
@@ -244,14 +247,14 @@ std::vector<double> stetmesh::Tet::getVertex(uint i) const
 
 bool stetmesh::Tet::isInside(double * p) const
 {
-	std::vector<double> pnt0 = getVertex(0);
-	std::vector<double> pnt1 = getVertex(1);
-	std::vector<double> pnt2 = getVertex(2);
-	std::vector<double> pnt3 = getVertex(3);
-	double p0[3] = {pnt0[0], pnt0[1], pnt0[2]};
+	double * p0 = _getVertex(0);
+	double * p1 = _getVertex(1);
+	double * p2 = _getVertex(2);
+	double * p3 = _getVertex(3);
+	/*double p0[3] = {pnt0[0], pnt0[1], pnt0[2]};	// Defunct code
 	double p1[3] = {pnt1[0], pnt1[2], pnt1[2]};
 	double p2[3] = {pnt2[0], pnt2[1], pnt2[2]};
-	double p3[3] = {pnt3[0], pnt3[1], pnt3[2]};
+	double p3[3] = {pnt3[0], pnt3[1], pnt3[2]}; */
 	return (steps::math::tet_inside(p0, p1, p2, p3, p));
 }
 
@@ -261,14 +264,14 @@ std::vector<double> stetmesh::Tet::getRanPnt(srng::RNG * r, uint n) const
 {
 	double * p = new double[n*3];
 
-	std::vector<double> pnt0 = getVertex(0);
-	std::vector<double> pnt1 = getVertex(1);
-	std::vector<double> pnt2 = getVertex(2);
-	std::vector<double> pnt3 = getVertex(3);
-	double p0[3] = {pnt0[0], pnt0[1], pnt0[2]};
+	double * p0 = _getVertex(0);
+	double * p1 = _getVertex(1);
+	double * p2 = _getVertex(2);
+	double * p3 = _getVertex(3);
+	/*double p0[3] = {pnt0[0], pnt0[1], pnt0[2]}; 	// Defunct code
 	double p1[3] = {pnt1[0], pnt1[2], pnt1[2]};
 	double p2[3] = {pnt2[0], pnt2[1], pnt2[2]};
-	double p3[3] = {pnt3[0], pnt3[1], pnt3[2]};
+	double p3[3] = {pnt3[0], pnt3[1], pnt3[2]}; */
 	for (uint i=0; i< n; ++i)
 	{
 		double rn1 = r->getUnfIE();
@@ -313,6 +316,36 @@ stetmesh::Tri stetmesh::Tet::getTri2(void) const
 stetmesh::Tri stetmesh::Tet::getTri3(void) const
 {
 	return getTri(3);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+double * stetmesh::Tet::_getBarycenter(void) const
+{
+	double * v0 = pTetmesh->_getVertex(pVerts[0]);
+	double * v1 = pTetmesh->_getVertex(pVerts[1]);
+	double * v2 = pTetmesh->_getVertex(pVerts[2]);
+	double * v3 = pTetmesh->_getVertex(pVerts[3]);
+	/*double v0[3], v1[3], v2[3], v3[3];		// Defunct code- now use internal
+	for (uint i=0; i < 3; ++i)					// method which returns pointer
+	{
+		v0[i] = v0vec[i];
+		v1[i] = v1vec[i];
+		v2[i] = v2vec[i];
+		v3[i] = v3vec[i];
+	}*/
+	steps::math::tet_barycenter(v0, v1, v2, v3, pBaryc);
+
+	return pBaryc;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double * stetmesh::Tet::_getVertex(uint i) const
+{
+	assert (i <= 3);
+	return (pTetmesh->_getVertex(getVertexIdx(i)));
 }
 
 ////////////////////////////////////////////////////////////////////////////////

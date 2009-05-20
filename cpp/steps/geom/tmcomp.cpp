@@ -107,30 +107,30 @@ stetmesh::TmComp::TmComp(std::string const & id, Tetmesh * container,
 
 	// Compute the bounds of this compartment
 	// first fetch vector of first tetrahedron's vertices
-	std::vector<uint> tet = pTetmesh->getTet(pTet_indices[0]);
+	uint * tet = pTetmesh->_getTet(pTet_indices[0]);
 	// initialise min and max x coordinates with first x coordinate of first tet
-	pXmin = pTetmesh->getVertex(tet[0])[0];
-	pXmax = pTetmesh->getVertex(tet[0])[0];
+	pXmin = pTetmesh->_getVertex(tet[0])[0];
+	pXmax = pTetmesh->_getVertex(tet[0])[0];
 	// initialise min and max y coordinates with first y coordinate of first tet
-	pYmax = pTetmesh->getVertex(tet[0])[1];
-	pYmin = pTetmesh->getVertex(tet[0])[1];
+	pYmax = pTetmesh->_getVertex(tet[0])[1];
+	pYmin = pTetmesh->_getVertex(tet[0])[1];
 	// initialise min and max z coordinates with first z coordinate of first tet
-	pZmin = pTetmesh->getVertex(tet[0])[2];
-	pZmax = pTetmesh->getVertex(tet[0])[2];
+	pZmin = pTetmesh->_getVertex(tet[0])[2];
+	pZmax = pTetmesh->_getVertex(tet[0])[2];
 	for (uint i=0; i< pTetsN; ++i)
 	{
 		// fetch the 4 vertices of the ith tet
-		std::vector<uint> tet = pTetmesh->getTet(pTet_indices[i]);
+		uint * tet = pTetmesh->_getTet(pTet_indices[i]);
 		// compare each vertex to current values
 		for (uint j=0; j<4; ++j)
 		{
-			double xtemp = pTetmesh->getVertex(tet[j])[0];
+			double xtemp = pTetmesh->_getVertex(tet[j])[0];
 			if (xtemp < pXmin) pXmin = xtemp;
 			if (xtemp > pXmax) pXmax = xtemp;
-			double ytemp = pTetmesh->getVertex(tet[j])[1];
+			double ytemp = pTetmesh->_getVertex(tet[j])[1];
 			if (ytemp < pYmin) pYmin = ytemp;
 			if (ytemp > pYmax) pYmax  = ytemp;
-			double ztemp = pTetmesh->getVertex(tet[j])[2];
+			double ztemp = pTetmesh->_getVertex(tet[j])[2];
 			if (ztemp < pZmin) pZmin = ztemp;
 			if (ztemp > pZmax) pZmax = ztemp;
 		}

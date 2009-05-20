@@ -93,9 +93,15 @@ public:
     ///
     std::vector<double> getBarycenter(void) const;
 
+    // Auxiliary method for internal c++ use
+    double * _getBarycenter(void) const;
+
     /// Returns the normal of this triangle
     /// by convention points away from the inner tetrahedron
     std::vector<double> getNorm(void) const;
+
+    // Auxilliary function to be used internally
+    double * _getNorm(void) const;
 
     /// Returns a pointer to the patch to which this triangle
     /// belongs. Can return 0, if the triangle has not been added to
@@ -161,6 +167,8 @@ private:
 
     /// The 3 vertices of this triangle, by index
     uint                        pVerts[3];
+
+    double 					  * pBaryc;
 
 };
 

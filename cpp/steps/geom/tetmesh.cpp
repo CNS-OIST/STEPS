@@ -1465,6 +1465,34 @@ uint * stetmesh::Tetmesh::_getTet(uint tidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
+int * stetmesh::Tetmesh::_getTriTetNeighb(uint tidx) const
+{
+	return pTri_tet_neighbours + (tidx * 2);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint * stetmesh::Tetmesh::_getTetTriNeighb(uint tidx) const
+{
+	return pTet_tri_neighbours + (tidx * 4);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int * stetmesh::Tetmesh::_getTetTetNeighb(uint tidx) const
+{
+	return pTet_tet_neighbours + (tidx * 4);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double * stetmesh::Tetmesh::_getTriNorm(uint tidx) const
+{
+	return pTri_norms + (tidx * 3);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 template <class T>
 bool stetmesh::array_srt_cmp(T ar1[], T ar2[], uint ar_size)
 {
