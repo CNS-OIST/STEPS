@@ -139,11 +139,11 @@ void ssolver::Patchdef::setup_references(void)
 	for(std::set<std::string>::const_iterator s = pssys.begin();
 		s != s_end; ++s)
 	{
-		std::vector<steps::model::SReac *> ssreacs = pStatedef->model()->getSurfsys(*s)->getAllSReacs();
-		steps::model::SReacPVecCI sr_end = ssreacs.end();
-		for(steps::model::SReacPVecCI sr = ssreacs.begin(); sr != sr_end; ++sr)
+		std::map<std::string, steps::model::SReac *> ssreacs = pStatedef->model()->getSurfsys(*s)->_getAllSReacs();
+		std::map<std::string, steps::model::SReac*>::const_iterator sr_end = ssreacs.end();
+		for(std::map<std::string, steps::model::SReac *>::const_iterator sr = ssreacs.begin(); sr != sr_end; ++sr)
 		{
-			uint gidx = pStatedef->getSReacIdx((*sr));
+			uint gidx = pStatedef->getSReacIdx((sr->second));
 			assert(gidx < ngsreacs);
 			if(pSReac_G2L[gidx] != LIDX_UNDEFINED) continue;
 			pSReac_G2L[gidx] = pSReacsN++;

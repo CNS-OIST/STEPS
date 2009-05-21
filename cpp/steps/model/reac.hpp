@@ -99,11 +99,11 @@ public:
 	// OPERATIONS (EXPOSED TO PYTHON):
 	////////////////////////////////////////////////////////////////////////
 
-	std::vector<Spec *> getLHS(void) const
+	const std::vector<Spec *> & getLHS(void) const
 	{ return pLHS; }
 	void setLHS(std::vector<Spec *> const & lhs);
 
-	std::vector<Spec *> getRHS(void) const
+	const std::vector<Spec *> & getRHS(void) const
 	{ return pRHS; }
 	void setRHS(std::vector<Spec *> const & rhs);
 

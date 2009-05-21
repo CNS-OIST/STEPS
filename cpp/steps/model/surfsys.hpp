@@ -128,6 +128,9 @@ public:
 	{ return pSReacs.size(); }
 	SReac * _getSReac(uint lidx) const;
 
+	const std::map<std::string, SReac *> & _getAllSReacs(void) const
+	{ return pSReacs; }
+
 	////////////////////////////////////////////////////////////////////////
 	// INTERNAL (NON-EXPOSED): STEPS::MODEL OPERATIONS
 	////////////////////////////////////////////////////////////////////////

@@ -132,20 +132,20 @@ void ssolver::Compdef::setup_references()
     for(std::set<std::string>::const_iterator v = cvsys.begin();
 		v != v_end; ++v)
     {
-    	std::vector<steps::model::Reac *> vreacs = pStatedef->model()->getVolsys(*v)->getAllReacs();
-    	steps::model::ReacPVecCI r_end = vreacs.end();
-       	for (steps::model::ReacPVecCI r = vreacs.begin(); r != r_end; ++r)
+    	std::map<std::string, steps::model::Reac *> vreacs = pStatedef->model()->getVolsys(*v)->_getAllReacs();
+		std::map<std::string, steps::model::Reac*>::const_iterator r_end = vreacs.end();
+       	for (std::map<std::string, steps::model::Reac*>::const_iterator r = vreacs.begin(); r != r_end; ++r)
        	{
-       		uint gidx = pStatedef->getReacIdx((*r));
+       		uint gidx = pStatedef->getReacIdx((r->second));
        		assert(gidx < ngreacs);
        		if (pReac_G2L[gidx] != LIDX_UNDEFINED) continue;
        		pReac_G2L[gidx] = pReacsN++;
       	}
-       	std::vector<steps::model::Diff *> vdiffs = pStatedef->model()->getVolsys(*v)->getAllDiffs();
-       	steps::model::DiffPVecCI d_end = vdiffs.end();
-       	for (steps::model::DiffPVecCI d = vdiffs.begin(); d != d_end; ++d)
+       	std::map<std::string, steps::model::Diff *> vdiffs = pStatedef->model()->getVolsys(*v)->_getAllDiffs();
+       	std::map<std::string, steps::model::Diff*>::const_iterator d_end = vdiffs.end();
+       	for (std::map<std::string, steps::model::Diff*>::const_iterator d = vdiffs.begin(); d != d_end; ++d)
        	{
-       		uint gidx = pStatedef->getDiffIdx((*d));
+       		uint gidx = pStatedef->getDiffIdx((d->second));
        		assert(gidx < ngdiffs);
        		if (pDiff_G2L[gidx] != LIDX_UNDEFINED) continue;
        		pDiff_G2L[gidx] = pDiffsN++;

@@ -110,23 +110,23 @@ public:
 	{ return pOuter; }
 	void setOuter(bool outer);
 
-	std::vector<Spec *> getVLHS(void) const
+	const std::vector<Spec *> & getVLHS(void) const
 	{ return pVLHS; }
 	void setVLHS(std::vector<Spec *> const & vlhs);
 
-	std::vector<Spec *> getSLHS(void) const
+	const std::vector<Spec *> & getSLHS(void) const
 	{ return pSLHS; }
 	void setSLHS(std::vector<Spec *> const & slhs);
 
-	std::vector<Spec *> getIRHS(void) const
+	const std::vector<Spec *> & getIRHS(void) const
 	{ return pIRHS; }
 	void setIRHS(std::vector<Spec *> const & irhs);
 
-	std::vector<Spec *> getSRHS(void) const
+	const std::vector<Spec *> & getSRHS(void) const
 	{ return pSRHS; }
 	void setSRHS(std::vector<Spec *> const & srhs);
 
-	std::vector<Spec *> getORHS(void) const
+	const std::vector<Spec *> & getORHS(void) const
 	{ return pORHS; }
 	void setORHS(std::vector<Spec *> const & orhs);
 

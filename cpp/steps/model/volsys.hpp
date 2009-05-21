@@ -149,9 +149,15 @@ public:
 	{ return pReacs.size(); }
 	Reac * _getReac(uint lidx) const;
 
+	const std::map<std::string, Reac *> & _getAllReacs(void) const
+	{ return pReacs; }
+
 	inline uint _countDiffs(void) const
 	{ return pDiffs.size(); }
 	Diff * _getDiff(uint lidx) const;
+
+	const std::map<std::string, Diff *> & _getAllDiffs(void) const
+	{ return pDiffs; }
 
 	////////////////////////////////////////////////////////////////////////
 	// INTERNAL (NON-EXPOSED): STEPS::MODEL OPERATIONS
