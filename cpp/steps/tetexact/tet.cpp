@@ -189,15 +189,26 @@ void stex::Tet::reset(void)
 void stex::Tet::setCount(uint lidx, uint count)
 {
 	assert (lidx < compdef()->countSpecs());
-	double oldcount = pPoolCount[lidx];
-	double c = static_cast<double>(count);
-	pPoolCount[lidx] = c;
+	uint oldcount = pPoolCount[lidx];
+	pPoolCount[lidx] = count;
 	// Now update the count in this tet's comp
-	double diff = c - oldcount;
-	double newcount = (compdef()->pools()[lidx]) + diff;
+	int diff = count - oldcount;
+	double newcount = (compdef()->pools()[lidx]) + static_cast<double>(diff);
 	// Compdef method will do the checking on the double argument
 	// (should be positive or zero!)
 	compdef()->setCount(lidx, newcount);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stex::Tet::incCount(uint lidx, int inc)
+{
+	assert (lidx < compdef()->countSpecs());
+	pPoolCount[lidx] += inc;
+	assert(pPoolCount[lidx] >= 0);
+
+	compdef()->setCount(lidx, (compdef()->pools()[lidx] + static_cast<double>(inc)));
+	assert(compdef()->pools()[lidx] >= 0.0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

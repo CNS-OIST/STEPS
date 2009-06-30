@@ -312,8 +312,8 @@ std::vector<uint> const & stex::Diff::apply(steps::rng::RNG * rng)
         assert (nexttet != 0);
         if (nexttet->clamped(lidx) == false)
         {
-            pTet->setCount(lidx, (pTet->pools()[lidx] -1));
-            nexttet->setCount(lidx, (nexttet->pools()[lidx] + 1));
+            pTet->incCount(lidx, -1);
+            nexttet->incCount(lidx,1);
         }
         rExtent++;
         return pUpdVec[0];
@@ -327,8 +327,8 @@ std::vector<uint> const & stex::Diff::apply(steps::rng::RNG * rng)
         assert (nexttet != 0);
         if (nexttet->clamped(lidx) == false)
         {
-            pTet->setCount(lidx, (pTet->pools()[lidx] -1));
-            nexttet->setCount(lidx, (nexttet->pools()[lidx] + 1));
+            pTet->incCount(lidx, -1);
+            nexttet->incCount(lidx,1);
         }
         rExtent++;
         return pUpdVec[1];
@@ -342,8 +342,8 @@ std::vector<uint> const & stex::Diff::apply(steps::rng::RNG * rng)
         assert (nexttet != 0);
         if (nexttet->clamped(lidx) == false)
         {
-            pTet->setCount(lidx, (pTet->pools()[lidx] -1));
-            nexttet->setCount(lidx, (nexttet->pools()[lidx] + 1));
+            pTet->incCount(lidx, -1);
+            nexttet->incCount(lidx,1);
         }
         rExtent++;
         return pUpdVec[2];
@@ -357,8 +357,8 @@ std::vector<uint> const & stex::Diff::apply(steps::rng::RNG * rng)
         assert (nexttet != 0);
         if (nexttet->clamped(lidx) == false)
         {
-            pTet->setCount(lidx, (pTet->pools()[lidx] -1));
-            nexttet->setCount(lidx, (nexttet->pools()[lidx] + 1));
+            pTet->incCount(lidx, -1);
+            nexttet->incCount(lidx,1);
         }
         rExtent++;
         return pUpdVec[3];

@@ -146,6 +146,7 @@ public:
     inline uint * pools(void) const
     { return pPoolCount; }
     void setCount(uint lidx, uint count);
+	void incCount(uint lidx, int inc);
 
     static const uint CLAMPED = 1;
 
