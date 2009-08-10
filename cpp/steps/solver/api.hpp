@@ -138,7 +138,7 @@ public:
     // Sets the concentration (in molar units) of species s in compartment c.
     // NOTE: in a mesh-based simulation, this method changes the
     // concentration to the same value in all voxels of the compartment.
-    void setCompConc(std::string const & c, std::string const & s, double c);
+    void setCompConc(std::string const & c, std::string const & s, double conc);
 
     // Returns whether the concentration of species s in compartment c
     // remains constant over time (unless changed explicitly).

@@ -63,13 +63,15 @@ double API::getTetVol(uint tidx) const
 void API::setTetVol(uint tidx, double vol)
 {
 	steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom());
-
+	try{
 	if (tidx >= mesh->countTets())
 	{
 		std::ostringstream os;
 		os << "Tetrahedron index out of range.";
 	    throw steps::ArgErr(os.str());
-	}
+	}}
+	catch(...)
+	{}
 	// NOTE: the following method may never be implemented
 	_setTetVol(tidx, vol);
 }
