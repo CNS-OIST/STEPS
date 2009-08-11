@@ -104,7 +104,10 @@ STEPS_EXTERN void checkID(std::string const & id);
 /// <LI>steps::model::Spec
 /// <LI>steps::model::Volsys
 /// <LI>steps::model::Surfsys
+/// <LI>steps::model::Diff
 /// </UL>
+/// \sa Spec, Volsys, Surfsys, Diff.
+/// \warning Methods start with an underscore is not exposed to Python.
 ///
 
 class Model
@@ -116,7 +119,9 @@ public:
 	// OBJECT CONSTRUCTION & DESTRUCTION
 	////////////////////////////////////////////////////////////////////////
 
+    /// Constructor
 	Model(void);
+    /// Destructor
 	~Model(void);
 
 	// Model * deepcopy(void);
@@ -124,59 +129,166 @@ public:
 	////////////////////////////////////////////////////////////////////////
 	// OPERATIONS: SPECIES (EXPOSED TO PYTHON)
 	////////////////////////////////////////////////////////////////////////
-
+    /// Return a species with name id.
+    ///
+    /// \param id ID of the species.
+    /// \return Pointer to the species.
 	Spec * getSpec(std::string const & id) const;
+
+    /// Delete a species with name id.
+    ///
+    /// \param id ID of the species.
 	void delSpec(std::string const & id);
+
+    /// Return a list of all species in the Model object.
+    ///
+    /// \return List of pointers to the species in the Model object.
 	std::vector<Spec *> getAllSpecs(void) const;
 
 	////////////////////////////////////////////////////////////////////////
 	// OPERATIONS: VOLSYS (EXPOSED TO PYTHON)
 	////////////////////////////////////////////////////////////////////////
 
+    /// Return a volume system with name id.
+    ///
+    /// \param id ID of the volume system.
+    /// \return Pointer to the volume system.
 	Volsys * getVolsys(std::string const & id) const;
+
+    /// Delete a volume system with name id.
+    ///
+    /// \param id ID of the volume system.
 	void delVolsys(std::string const & id);
 
 	////////////////////////////////////////////////////////////////////////
 	// OPERATIONS: SURFSYS (EXPOSED TO PYTHON)
 	////////////////////////////////////////////////////////////////////////
 
+    /// Return a surface system with name id.
+    ///
+    /// \param id ID of the surface system.
+    /// \return Pointer to the surface system.
 	Surfsys * getSurfsys(std::string const & id) const;
+
+    /// Delete a surface system with name id.
+    ///
+    /// \param id ID of the surface system.
 	void delSurfsys(std::string const & id);
 
 	////////////////////////////////////////////////////////////////////////
 	// INTERNAL (NON-EXPOSED): SOLVER HELPER METHODS
 	////////////////////////////////////////////////////////////////////////
 
+    /// Count the species in the Model object.
+    ///
+    /// \return Number of species.
 	inline uint _countSpecs(void) const
 	{ return pSpecs.size(); }
+
+    /// Return a species with index gidx.
+    ///
+    /// \param gidx Index of the species.
+    /// \return Pointer to the species.
 	Spec * _getSpec(uint gidx) const;
 
+    /// Count the reactions in the Model object.
+    ///
+    /// \return Number of reactions.
 	uint _countReacs(void) const;
+
+    /// Return a reaction with index gidx
+    ///
+    /// \param gidx Index of the reaction.
+    /// \return Pointer to the reaction.
 	Reac * _getReac(uint gidx) const;
 
+    /// Count the surface reactions in the Model object.
+    ///
+    /// \return Number of surface reactions.
 	uint _countSReacs(void) const;
+
+    /// Return a surface with index gidx.
+    ///
+    /// \param gidx Index of the surface reaction.
+    /// \return Pointer to the surface reaction.
 	SReac * _getSReac(uint gidx) const;
 
+    /// Count the diffusions in the Model object.
+    ///
+    /// \return Number of diffusions.
 	uint _countDiffs(void) const;
+
+    /// Return a diffusion with index gidx.
+    ///
+    /// \param gidx Index of the diffusion.
+    /// \return Pointer to the diffusion.
 	Diff * _getDiff(uint gidx) const;
 
 	////////////////////////////////////////////////////////////////////////
 	// INTERNAL (NON-EXPOSED): STEPS::MODEL OPERATIONS
 	////////////////////////////////////////////////////////////////////////
-
+    
+    /// Check if a species id is occupied.
+    ///
+    /// \param id ID of the species.
 	void _checkSpecID(std::string const & id) const;
+
+    /// Change the id of a species from o to n.
+    ///
+    /// \param o Old id of the species.
+    /// \param n New id of the species.
 	void _handleSpecIDChange(std::string const & o, std::string const & n);
+
+    /// Add a species to the Model.
+    ///
+    /// \param spec Pointer to the species being added.
 	void _handleSpecAdd(Spec * spec);
+
+    /// Delete a species in the Model.
+    ///
+    /// \param spec Pointer to the species being deleted.
 	void _handleSpecDel(Spec * spec);
 
+    /// Check if a volume system id is occupied.
+    ///
+    /// \param id ID of the volume system.
 	void _checkVolsysID(std::string const & id) const;
-	void _handleVolsysIDChange(std::string const & o, std::string const & n);
-	void _handleVolsysAdd(Volsys * volsys);
-	void _handleVolsysDel(Volsys * volsys);
 
+    /// Change the id of a volume system from o to n.
+    ///
+    /// \param o Old id of the volume system.
+    /// \param n New id of the volume system.
+	void _handleVolsysIDChange(std::string const & o, std::string const & n);
+
+    /// Add a volume system to the Model.
+    ///
+    /// \param volsys Pointer to the volume system being added.
+	void _handleVolsysAdd(Volsys * volsys);
+
+    /// Delete a volume system in the Model.
+    ///
+    /// \param volsys Pointer to the volume system being deleted.
+    void _handleVolsysDel(Volsys * volsys);
+
+    /// Check if a surface system id is occupied.
+    ///
+    /// \param id ID of the surface system.
 	void _checkSurfsysID(std::string const & id) const;
+
+    /// Change the id of a surface system from o to n.
+    ///
+    /// \param o Old id of the surface system.
+    /// \param n New id of the surface system.
 	void _handleSurfsysIDChange(std::string const & o, std::string const & n);
+
+    /// Add a surface system to the Model.
+    ///
+    /// \param surfsys Pointer to the surface system being added.
 	void _handleSurfsysAdd(Surfsys * surfsys);
+
+    /// Delete a surface system in the Model.
+    ///
+    /// \param surfsys Pointer to the surface system being deleted.
 	void _handleSurfsysDel(Surfsys * surfsys);
 
 	////////////////////////////////////////////////////////////////////////
