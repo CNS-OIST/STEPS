@@ -28,6 +28,7 @@
 
 // Standard library & STL headers.
 // #include <vector>
+#include <algorithm>
 
 // STEPS headers.
 #include <steps/common.h>

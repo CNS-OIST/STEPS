@@ -32,6 +32,7 @@
 #include <cassert>
 #include <iostream>
 #include <sstream>
+#include <algorithm>
 
 // STEPS headers.
 #include <steps/common.h>

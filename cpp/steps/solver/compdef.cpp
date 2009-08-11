@@ -29,6 +29,7 @@
 // STL headers.
 #include <string>
 #include <cassert>
+#include <algorithm>
 
 // STEPS headers.
 #include <steps/common.h>

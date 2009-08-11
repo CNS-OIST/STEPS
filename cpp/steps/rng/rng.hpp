@@ -30,6 +30,9 @@
 #include <steps/config.h>
 #endif
 
+// STL headers.
+#include <string>
+
 // STEPS headers.
 #include <steps/common.h>
 #include <steps/math/tools.hpp>

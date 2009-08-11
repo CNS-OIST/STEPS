@@ -48,12 +48,18 @@ USING_NAMESPACE(steps::solver);
 double API::getTetVol(uint tidx) const
 {
 	steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom());
-
+	try{
 	if (tidx >= mesh->countTets())
 	{
 		std::ostringstream os;
 		os << "Tetrahedron index out of range.";
 	    throw steps::ArgErr(os.str());
+	}}
+	catch(...)
+	{
+		std::ostringstream os;
+		os << "Method not available for this solver.";
+		throw steps::NotImplErr();
 	}
 	return _getTetVol(tidx);
 }
@@ -71,7 +77,11 @@ void API::setTetVol(uint tidx, double vol)
 	    throw steps::ArgErr(os.str());
 	}}
 	catch(...)
-	{}
+	{
+		std::ostringstream os;
+		os << "Method not available for this solver.";
+		throw steps::NotImplErr();
+	}
 	// NOTE: the following method may never be implemented
 	_setTetVol(tidx, vol);
 }
