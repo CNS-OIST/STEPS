@@ -56,9 +56,11 @@ class Tetmesh;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/// Class Tri is a helper class which provides a view on a triangle
+/// A helper class which provides a view on a triangle
 /// whose actual data is stored in the TetMesh object.
 ///
+///
+/// \warning Methods start with an underscore are not exposed to Python.
 class Tri
 {
 
@@ -70,6 +72,8 @@ public:
 
 	/// Constructor.
     ///
+    /// \param mesh Pointer to the Tetmesh container.
+    /// \param tidx Index of the triangle.
     Tri(Tetmesh * mesh, uint tidx);
 
     /// Destructor.
@@ -82,31 +86,46 @@ public:
 
     /// Returns the index of this triangle.
     ///
+    /// \return Index of the triangle.
     uint getIdx(void) const
     { return pTidx; }
 
     /// Returns the area of this triangle.
     ///
+    /// \return Area of the triangle.
     double getArea(void) const;
 
     /// Returns the barycenter of this triangle.
     ///
+    /// \return Barycenter of the triangle.
     std::vector<double> getBarycenter(void) const;
 
-    // Auxiliary method for internal c++ use
+    /// Returns the barycenter of this triangle.
+    ///
+    /// \return Barycenter of the triangle.
+    ///
+    /// Auxiliary method for internal c++ use.
     double * _getBarycenter(void) const;
 
     /// Returns the normal of this triangle
-    /// by convention points away from the inner tetrahedron
+    /// by convention points away from the inner tetrahedron.
+    ///
+    /// \return Normalised triangle.
     std::vector<double> getNorm(void) const;
 
-    // Auxilliary function to be used internally
+    /// Returns the normal of this triangle
+    /// by convention points away from the inner tetrahedron.
+    ///
+    /// \return Normalised triangle.
+    ///
+    /// Auxilliary function to be used internally
     double * _getNorm(void) const;
 
     /// Returns a pointer to the patch to which this triangle
     /// belongs. Can return 0, if the triangle has not been added to
-    /// any compartment
+    /// any compartment.
     ///
+    /// \return Pointer to the TmPatch object.
     steps::tetmesh::TmPatch * getPatch(void) const;
 
     ////////////////////////////////////////////////////////////////////////
@@ -114,16 +133,29 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Returns a Tet object encapsulating 1 of the 2 (possible)
+    ///
+    /// \param Storing index of the Tet object.
+    /// \return Pointer to the Tet object.
     steps::tetmesh::Tet getTet(uint i) const;
     // NOTE: couldn't compile with inline functions
     steps::tetmesh::Tet getTet0(void) const;
     steps::tetmesh::Tet getTet1(void) const;
 
+    /// Returns the inner Tet object.
+    ///
+    /// \return Pointer to the inner Tet object.
     steps::tetmesh::Tet getInnerTet(void) const;
+
+    /// Returns the outer Tet object.
+    ///
+    /// \return Pointer to the outer Tet object.
     steps::tetmesh::Tet getOuterTet(void) const;
 
     ////////////////////////////////////////////////////////////////////////
-
+    /// Returns the index a Tet object encapsulating 1 of the 2 (possible)
+    ///
+    /// \param Storing index of the Tet object.
+    /// \return Index the Tet object.
     int getTetIdx(uint i) const;
 
     inline int getTet0Idx(void) const
@@ -132,16 +164,25 @@ public:
     { return getTetIdx(1); }
 
     ////////////////////////////////////////////////////////////////////////
-
+    /// Returns the index of the inner Tet object.
+    ///
+    /// \return Index of the inner Tet object.
     inline int getInnerTetIdx(void) const
     { return getTetIdx(0); }
+
+    /// Returns the index of the outer Tet object.
+    ///
+    /// \return Index of the outer Tet object.
     inline int getOuterTetIdx(void) const
     { return getTetIdx(1); }
 
     ////////////////////////////////////////////////////////////////////////
     // NEIGHBOURING VERTEX INFORMATION
     ////////////////////////////////////////////////////////////////////////
-
+    /// Returns the index a vertex encapsulating 1 of the 3 (possible).
+    ///
+    /// \param Storing index of the vertex.
+    /// \return Index the vertex.
     uint getVertexIdx(uint i) const;
 
     inline uint getVertex0Idx(void) const

@@ -52,10 +52,10 @@ class Tetmesh;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-///   Class TmComp: derived from base wm::Comp class
+/// Provides annotation for a group of tetrahedron in a Tetmesh.
 ///
-/// - Provides annotation for a group of tetrahedra in a Tetmesh
 ///
+/// \warning Methods start with an underscore are not exposed to Python.
 class TmComp : public steps::wm::Comp
 {
 
@@ -67,43 +67,57 @@ public:
 
     /// Constructor.
     ///
-	/// Argument tets is a sequence of tetrahedra (by index) as a vector
-	/// of unsigned integers which is represented as a sequence of positive
-	/// integer values) in Python
+    /// \param id ID of the TmComp.
+	/// \param container Temesh container for the tetrahedrons.
+    /// \param tets A sequence of tetrahedron (by index) as a vector
+	///             of unsigned integers which is represented as a 
+    ///             sequence of positive integer values) in Python.
+    /// \param volsys Pointer to the volume system associated.
 	///
     TmComp(std::string const & id, Tetmesh * container,
     	 std::vector<uint> const & tets, steps::model::Volsys * volsys = 0);
 
     /// Destructor.
-    ///
     ~TmComp(void);
 
     ////////////////////////////////////////////////////////////////////////
     // BASE CLASS METHODS
     ////////////////////////////////////////////////////////////////////////
-
+    
 	void setVol(double vol);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO PYTHON):
     ////////////////////////////////////////////////////////////////////////
 
-	// Return a list of all tetrahedra by indices
+	/// Return a list of all tetrahedron by indices.
+    ///
+    /// \return List of indices of the tetrahedrons.
     inline std::vector<uint> getAllTetIndices(void) const
     { return pTet_indices; }
 
-    // return whether tetrahedra (specified by index) are inside this comp
+    // Return whether tetrahedrons (specified by index) are inside this compartment.
+    ///
+    /// \param tet List of indices of tetrahedrons.
+    /// \return List of results of the tetrahedrons are inside the compartment.
     std::vector<bool> isTetInside(std::vector<uint> tet) const;
 
-    // get the minimal coordinate of the rectangular bounding box
+    /// Get the minimal coordinate of the rectangular bounding box.
+    ///
+    /// \return Minimal coordinate of the rectangular bounding box.
     std::vector<double> getBoundMin(void) const;
-    // get the maximal coordinate of the rectangular bounding box
+    /// Get the maximal coordinate of the rectangular bounding box.
+    ///
+    /// \return Maximal coordinate of the rectangular bounding box.
     std::vector<double> getBoundMax(void) const;
 
 	////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO C++)
     ////////////////////////////////////////////////////////////////////////
-
+    
+    /// Return all tetrahedrons (by index) in the compartment.
+    ///
+    /// \return List of indices of tetrahedrons.
     inline std::vector<uint> const & _getAllTetIndices(void) const
     { return pTet_indices; }
 

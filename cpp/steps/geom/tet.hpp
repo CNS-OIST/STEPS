@@ -58,9 +58,11 @@ class Tri;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/// Class Tet is a helper class which provides a view on a tetrahedron
+/// Helper class which provides a view on a tetrahedron
 /// whose actual data is stored in the TetMesh object.
 ///
+/// \todo: implement getQualityAR
+/// \warning Methods start with an underscore are not exposed to Python.
 class Tet
 {
 
@@ -72,10 +74,11 @@ public:
 
     /// Constructor.
     ///
+    /// \param mesh The Tetmesh container.
+    /// \param tidx Index of the tetrahedron.
     Tet(Tetmesh * mesh, uint tidx);
 
     /// Destructor.
-    ///
     ~Tet(void);
 
     ////////////////////////////////////////////////////////////////////////
@@ -84,29 +87,36 @@ public:
 
     /// Returns the index of this tetrahedron.
     ///
+    /// \return Index of the tetrahedron.
     uint getIdx(void) const
     { return pTidx; }
 
     /// Returns the volume of this tetrahedron.
     ///
+    /// \return Volume of the tetrahedron.
     double getVol(void) const;
 
     /// Returns the barycenter of this tetrahedron.
     ///
+    /// \return Coordinates of the barycenter.
     std::vector<double> getBarycenter(void) const;
 
-    // Auxiliary method for internal c++ use
+    /// Returns the barycenter of this tetrahedron.
+    ///
+    /// \return Coordinates of the barycenter.
+    ///
+    /// Auxiliary method for internal c++ use.
     double * _getBarycenter(void) const;
 
-    /// Computes the quality of the tetrahedron.
-    ///
-    /// This method uses the aspect ratio (AR) metric for tetrahedron
-    /// quality, given by dividing the length of the longest edge with
-    /// the smallest altitude. The smaller this value, the more regular
-    /// the tetrahedron.
-    ///
-    /// TODO: implement getQualityAR
-    ///
+    // Computes the quality of the tetrahedron.
+    //
+    // This method uses the aspect ratio (AR) metric for tetrahedron
+    // quality, given by dividing the length of the longest edge with
+    // the smallest altitude. The smaller this value, the more regular
+    // the tetrahedron.
+    //
+
+
     //double getQualityAR(void) const;
 
     /// Computes the quality of the tetrahedron.
@@ -124,63 +134,116 @@ public:
     /// This is a slightly weaker metric than getQualityAR, because
     /// certain slivers (degenerate tetrahedrons) can still have a fairly
     /// small value.
-    ///
+    /// 
+    /// \return Quality of the tetrahedron.
     double getQualityRER(void) const;
 
     ////////////////////////////////////////////////////////////////////////
 
     /// Returns a pointer to the compartment to which this tetrahedron
-    /// belongs. Can return 0, if the tetrahedron has not been added to
-    /// any compartment.
+    /// belongs.
     ///
+    /// Can return 0, if the tetrahedron has not been added to
+    /// any compartment.
+    /// \return Pointer to the compartment.
     steps::tetmesh::TmComp * getComp(void) const;
 
     ////////////////////////////////////////////////////////////////////////
     // NEIGHBOURING TETRAHEDRON INFORMATION
     ////////////////////////////////////////////////////////////////////////
 
-    /// Returns a Tet object encapsulating 1 of the 4 (possible)
+    /// Returns a Tet object encapsulating 1 of the 4 (possible).
+    ///
+    /// \param i Encapuslating index of the Tet object.
+    /// \return Pointer to the Tet object.
     Tet getTet(uint i) const;
 
+    /// Return the Tet object 0.
+    ///
+    /// \return Pointer to the Tet object.
     inline Tet getTet0(void) const
     { return getTet(0); }
+
+    /// Return the Tet object 1.
+    ///
+    /// \return Pointer to the Tet object.
     inline Tet getTet1(void) const
     { return getTet(1); }
+
+    /// Return the Tet object 2.
+    ///
+    /// \return Pointer to the Tet object.
     inline Tet getTet2(void) const
     { return getTet(2); }
+
+    /// Return the Tet object 3.
+    ///
+    /// \return Pointer to the Tet object.
     inline Tet getTet3(void) const
     { return getTet(3); }
 
     ////////////////////////////////////////////////////////////////////////
-
+    /// Returns the index a Tet object encapsulating 1 of the 4 (possible).
+    ///
+    /// \param i Encapuslating index of the Tet object.
+    /// \return Index of the Tet object.
     int getTetIdx(uint i) const;
 
+    /// Return the Tet object 0.
+    ///
+    /// \return Index of the Tet object.
     inline int getTet0Idx(void) const
     { return getTetIdx(0); }
+
+    /// Return the Tet object 1.
+    ///
+    /// \return Index of the Tet object.
     inline int getTet1Idx(void) const
     { return getTetIdx(1); }
+
+    /// Return the Tet object 2.
+    ///
+    /// \return Index of the Tet object.
     inline int getTet2Idx(void) const
     { return getTetIdx(2); }
+
+    /// Return the Tet object 3.
+    ///
+    /// \return Index of the Tet object.
     inline int getTet3Idx(void) const
     { return getTetIdx(3); }
 
     ////////////////////////////////////////////////////////////////////////
-
+    /// Returns the distance between the barycenter
+    /// and a Tet object encapsulating 1 of the 4 (possible).
+    ///
+    /// \param i Encapuslating index of the Tet object.
+    /// \return Distance between the barycenter and the Tet object.
     double getTetDist(uint i) const;
 
+    /// Returns the distance between the barycenter and the Tet object 0.
     inline double getTet0Dist(void) const
     { return getTetDist(0); }
+
+    /// Returns the distance between the barycenter and the Tet object 1.
     inline double getTet1Dist(void) const
     { return getTetDist(1); }
+
+    /// Returns the distance between the barycenter and the Tet object 2.
     inline double getTet2Dist(void) const
     { return getTetDist(2); }
+
+    /// Returns the distance between the barycenter and the Tet object 3.
     inline double getTet3Dist(void) const
     { return getTetDist(3); }
 
     ////////////////////////////////////////////////////////////////////////
     // NEIGHBOURING TRIANGLE INFORMATION
     ////////////////////////////////////////////////////////////////////////
-
+    /// Returns a Tri object encapsulating 1 of the 4 (possible).
+    ///
+    /// \param i Encapuslating index of the Tri object.
+    /// \return Pointer to the Tri object.
     Tri getTri(uint i) const;
     // NOTE: couldn't compile with inline functions
     Tri getTri0(void) const;
@@ -189,7 +252,10 @@ public:
     Tri getTri3(void) const;
 
     ////////////////////////////////////////////////////////////////////////
-
+    /// Returns the index of a Tri object encapsulating 1 of the 4 (possible).
+    ///
+    /// \param i Encapuslating index of the Tri object.
+    /// \return Index of the Tri object.
     uint getTriIdx(uint i) const;
 
     inline uint getTri0Idx(void) const
@@ -201,6 +267,11 @@ public:
     inline uint getTri3Idx(void) const
     { return getTriIdx(3); }
 
+    /// Returns the distance between the barycenter
+    /// and a Tri object encapsulating 1 of the 4 (possible).
+    ///
+    /// \param i Encapuslating index of the Tri object.
+    /// \return Distance between the barycenter and the Tri object.
     double getTriDist(uint i) const;
 
     inline double getTri0Dist(void) const
@@ -213,7 +284,10 @@ public:
     { return getTriDist(3); }
 
     ////////////////////////////////////////////////////////////////////////
-
+    /// Returns the area of a Tri object encapsulating 1 of the 4 (possible).
+    ///
+    /// \param i Encapuslating index of the Tri object.
+    /// \return Area of the Tri object.
     double getTriArea(uint i) const;
 
     inline double getTri0Area(void) const
@@ -228,7 +302,10 @@ public:
     ////////////////////////////////////////////////////////////////////////
     // NEIGHBOURING VERTEX INFORMATION
     ////////////////////////////////////////////////////////////////////////
-
+    /// Returns the index of a Vertex object encapsulating 1 of the 4 (possible).
+    ///
+    /// \param i Encapuslating index of the Vertex object.
+    /// \return Index of the Vertex.
     uint getVertexIdx(uint i) const;
 
     inline uint getVertex0Idx(void) const
@@ -240,9 +317,17 @@ public:
     inline uint getVertex3Idx(void) const
     { return getVertexIdx(3); }
 
+    /// Returns the coordinates of a Vertex object encapsulating 1 of the 4 (possible).
+    ///
+    /// \param i Encapuslating index of the Vertex object.
+    /// \return Coordinates of the Vertex.
     std::vector<double> getVertex(uint i) const;
 
-    // Auxiliary function for internal use
+    /// Returns the coordinates of a Vertex object encapsulating 1 of the 4 (possible).
+    ///
+    /// Auxiliary function for internal use.
+    /// \param i Encapuslating index of the Vertex object.
+    /// \return Coordinates of the Vertex.
     double * _getVertex(uint i) const;
 
     inline uint getVertex0(void) const
@@ -261,12 +346,18 @@ public:
 
     /// Returns true if the point is inside the tetrahedron.
     ///
+    /// \param p coordinates of a point.
+    /// \return True if the point is inside the tetrahedron;
+    ///         False if else.
     bool isInside(double * p) const;
 
     /// Generate a number of random points in this tetrahedron. The
     /// default number is 1. Returns a pointer to an array of size N * 3
     /// of doubles.
     ///
+    /// \param r Random number generator.
+    /// \param n Number of points to be generated.
+    /// \return Coordinates of generated points.
     std::vector<double> getRanPnt(steps::rng::RNG * r, uint n = 1) const;
 
     ////////////////////////////////////////////////////////////////////////

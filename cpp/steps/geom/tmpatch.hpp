@@ -53,10 +53,9 @@ class TmComp;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/// Class TmPatch: derived from base wm::Patch class
+/// Provides annotation for a group of surface triangles of a Tetmesh.
 ///
-/// - Provides annotation for a group of surface triangles of a tet mesh
-
+/// \warning Methods start with an underscore are not exposed to Python.
 class TmPatch : public steps::wm::Patch
 {
 
@@ -67,18 +66,38 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Constructor.
-	/// Argument tets is a sequence of triangles (by index) as a vector
-	/// of unsigned integers which is represented as a sequence of positive
-	/// integer values) in Python
+    ///
+    /// \param id ID of the TmPatch.
+    /// \param container Pointer to the Tetmesh container.
+    /// \param tris A sequence of triangles (by index) as a vector
+	///             of unsigned integers which is represented as 
+    ///             a sequence of positive integer values) in Python.
+    /// \param icomp Pointer to the inner compartment.
+    /// \param ocomp Pointer to the outer compartment.
+    /// \param surfsys Pointer to the assocaited surface system.
+    ///
+    /// This is the constructor for the tetmesh (tetrahedron mesh) namespace.
     TmPatch(std::string const & id, Tetmesh * container,
        	 std::vector<uint> const & tris, steps::tetmesh::TmComp* icomp,
        	 steps::tetmesh::TmComp* ocomp = 0, steps::model::Surfsys * surfsys = 0);
+
+    /// Constructor.
+    ///
+    /// \param id ID of the TmPatch.
+    /// \param container Pointer to the Tetmesh container.
+    /// \param tris A sequence of triangles (by index) as a vector
+	///             of unsigned integers which is represented as 
+    ///             a sequence of positive integer values) in Python.
+    /// \param icomp Pointer to the inner compartment.
+    /// \param ocomp Pointer to the outer compartment.
+    /// \param surfsys Pointer to the assocaited surface system.
+    ///
+    /// This is the constructor for the wm (well-mixed) namespace.
 	TmPatch(std::string const & id, Tetmesh * container,
 		 std::vector<uint> const & tris, steps::wm::Comp* icomp,
 			steps::wm::Comp* ocomp = 0, steps::model::Surfsys * surfsys = 0);
 
     /// Destructor.
-    ///
     ~TmPatch(void);
 
     ////////////////////////////////////////////////////////////////////////
@@ -91,9 +110,15 @@ public:
     // DATA ACCESS (EXPOSED TO PYTHON):
     ////////////////////////////////////////////////////////////////////////
 
-    // return whether triangles (specified by index) are inside this patch
+    /// Return whether triangles (specified by index) are inside this patch.
+    ///
+    /// \param tri List of indices of triangles.
+    /// \return Results of whether the triangles are inside the patch.
     std::vector<bool> isTriInside(std::vector<uint> tri) const;
 
+    /// Return all triangles (by index) in the patch.
+    ///
+    /// \return List of indices of triangles.
     inline std::vector<uint> getAllTriIndices(void) const
     { return pTri_indices; }
 
@@ -101,6 +126,9 @@ public:
     // DATA ACCESS (EXPOSED TO C++)
     ////////////////////////////////////////////////////////////////////////
 
+    /// Return all triangles (by index) in the patch.
+    ///
+    /// \return List of indices of triangles.
     inline std::vector<uint> const & _getAllTriIndices(void) const
     { return pTri_indices; }
 
