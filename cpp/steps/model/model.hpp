@@ -107,7 +107,7 @@ STEPS_EXTERN void checkID(std::string const & id);
 /// <LI>steps::model::Diff
 /// </UL>
 /// \sa Spec, Volsys, Surfsys, Diff.
-/// \warning Methods start with an underscore is not exposed to Python.
+/// \warning Methods start with an underscore are not exposed to Python.
 ///
 
 class Model

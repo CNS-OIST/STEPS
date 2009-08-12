@@ -39,7 +39,6 @@
 #include <steps/common.h>
 
 ////////////////////////////////////////////////////////////////////////////////
-
 START_NAMESPACE(steps)
 START_NAMESPACE(model)
 
@@ -61,6 +60,16 @@ typedef ReacPVec::iterator               ReacPVecI;
 typedef ReacPVec::const_iterator         ReacPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
+/// Reaction in a volume system.
+///
+/// A kinetic reaction is specified by:
+///     - Species appear in the left hand side of the reaction (lhs).
+///     - Species appear in the right hand side of the reaction (rhs).
+///     - Rate constant for the reaction (kcst).
+///
+/// \sa SReac, Volsys.
+/// \warning Methods start with an underscore are not exposed to Python.
+///
 
 class Reac
 {
@@ -70,62 +79,106 @@ public:
 	////////////////////////////////////////////////////////////////////////
 	// OBJECT CONSTRUCTION & DESTRUCTION
 	////////////////////////////////////////////////////////////////////////
-
+    /// Constructor
+    ///
+    /// \param id ID of the reaction.
+    /// \param volsys Pointer to the parent volume system.
+    /// \param lhs Vector of pointers to the species in the left hand side of the reaction.
+    /// \param rhs Vector of pointers to the species in the right hand side of the reaction.
+    /// \param kcst Rate constant for the reaction.
 	Reac(std::string const & id, Volsys * volsys,
 		 std::vector<Spec *> const & lhs = std::vector<Spec *>(),
 		 std::vector<Spec *> const & rhs = std::vector<Spec *>(),
 		 double kcst = 0.0);
+
+    /// Destructor
 	~Reac(void);
 
 	////////////////////////////////////////////////////////////////////////
 	// REACTION RULE PROPERTIES
 	////////////////////////////////////////////////////////////////////////
 
-	// Return the reaction rule ID.
+	/// Return the reaction rule ID.
+    ///
+    /// \return ID of the reaction.
 	std::string getID(void) const
 	{ return pID; }
-	// Set or change the reaction rule ID.
+
+	/// Set or change the reaction rule ID.
+    ///
+    /// \param id ID of the reaction.
 	void setID(std::string const & id);
 
-	// Return a pointer to the parent volume system.
+	/// Return a pointer to the parent volume system.
+    ///
+    /// \return Pointer to the volume system.
 	Volsys * getVolsys(void) const
 	{ return pVolsys; }
 
-	// Return a pointer to the parent model.
+	/// Return a pointer to the parent model.
+    ///
+    /// \return Pointer to the parent Model.
 	Model * getModel(void) const
 	{ return pModel; }
 
 	////////////////////////////////////////////////////////////////////////
 	// OPERATIONS (EXPOSED TO PYTHON):
 	////////////////////////////////////////////////////////////////////////
-
+    /// Get the species in the left hand side of the reaction.
+    ///
+    /// \return Vector of pointers to the species.
 	const std::vector<Spec *> & getLHS(void) const
 	{ return pLHS; }
+
+    /// Set or reset the species in the left hand side of the reaction.
+    ///
+    /// \param lhs Vector of pointers to the species.
 	void setLHS(std::vector<Spec *> const & lhs);
 
-	const std::vector<Spec *> & getRHS(void) const
+    /// Get the species in the right hand side of the reaction.
+    ///
+    ///    \return Vector of pointers to the species.
+    const std::vector<Spec *> & getRHS(void) const
 	{ return pRHS; }
+
+    /// Set or reset the species in the right hand side of the reaction.
+    ///
+    /// \param rhs Vector of pointers to the species.    
 	void setRHS(std::vector<Spec *> const & rhs);
 
-	// This method returns a list of all species involved in this
-	// reaction, on both the left and right-hand side and does not contain
-	// any duplicate members
+    /// Return all species invloved in the reaction.
+    ///
+    ///	This method returns a list of all species involved in this reaction, 
+    /// on both the left and right-hand side. No duplicate member includes.
+    ///
+    /// \return Vector of pointers to the species.
 	std::vector<Spec *> getAllSpecs(void) const;
 
+    /// Return the order of the reaction.
+    ///
+    /// \return The order of the reaction.
 	uint getOrder(void) const
 	{ return pOrder; }
 
+    /// Return the rate constant of the reaction.
+    ///
+    /// \return The rate constant of the reaction.
 	double getKcst(void) const
 	{ return pKcst; }
 
+    /// Set or reset the rate constant of the reaction.
+    ///
+    /// \param kcst The rate constant of the reaction.
 	void setKcst(double kcst);
 
 	////////////////////////////////////////////////////////////////////////
 	// INTERNAL (NON-EXPOSED) OPERATIONS: DELETION
 	////////////////////////////////////////////////////////////////////////
 
-	// Called if Python object deleted, or from del method in parent object.
-	// Will only be called once
+    /// Self delete.
+    ///
+	/// Called if Python object deleted, or from del method in parent object.
+	/// \warning Will only be called once
 	void _handleSelfDelete(void);
 
 	////////////////////////////////////////////////////////////////////////
