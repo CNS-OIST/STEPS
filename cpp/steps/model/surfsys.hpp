@@ -58,10 +58,12 @@ typedef SurfsysPMap::iterator           SurfsysPMapI;
 typedef SurfsysPMap::const_iterator     SurfsysPMapCI;
 
 ////////////////////////////////////////////////////////////////////////////////
-
+/// Surface system.
 /// Container that collects reactions involving a reactant
 /// embedded in a membrane.
 ///
+/// \warning Methods start with an underscore are not exposed to Python.
+
 class Surfsys
 {
 
@@ -71,7 +73,13 @@ public:
 	// OBJECT CONSTRUCTION & DESTRUCTION
 	////////////////////////////////////////////////////////////////////////
 
+    /// Constructor
+    ///
+    /// \param id ID of the surface system.
+    /// \param model Pointer to the parent model.
 	Surfsys(std::string const & id, Model * model);
+
+    /// Destructor
 	~Surfsys(void);
 
 	////////////////////////////////////////////////////////////////////////
@@ -79,12 +87,18 @@ public:
 	////////////////////////////////////////////////////////////////////////
 
 	/// Return the surface system ID.
+    ///
+    /// \return ID of the surface system.
 	std::string getID(void) const
 	{ return pID; }
 	/// Set or change the surface system ID.
+    ///
+    /// \param id ID of the surface system.
 	void setID(std::string const & id);
 
 	/// Return a pointer to the parent model.
+    ///
+    /// \return Pointer to the parent model.
 	Model * getModel(void) const
 	{ return pModel; }
 
@@ -92,49 +106,94 @@ public:
 	// OPERATIONS (EXPOSED TO PYTHON): SURFACE REACTIONS
 	////////////////////////////////////////////////////////////////////////
 
+    /// Return a surface reaction with name id.
+    ///
+    /// \param id ID of the surface reaction.
+    /// \return Pointer to the surface reaction.
 	SReac * getSReac(std::string const & id) const;
+
+    /// Delete a surace reaction with name id.
+    ///
+    /// \param id ID of the surface reaction.
 	void delSReac(std::string const & id);
 
+    /// Return a list of all surface reactions.
+    ///
+    /// \return List of pointers to surface reactions.
 	std::vector<SReac *> getAllSReacs(void) const;
 
 	////////////////////////////////////////////////////////////////////////
 	// INTERNAL (NON-EXPOSED) OPERATIONS: SURFACE REACTIONS
 	////////////////////////////////////////////////////////////////////////
 
+    /// Check if a surface reaction id is occupied.
+    ///
+    /// \param id ID of the surface reaction.
 	void _checkSReacID(std::string const & id) const;
+
+    /// Change a surface reaction id from o to n.
+    ///
+    /// \param o Old id of the surface reaction.
+    /// \param n New id of the surface reaction.
 	void _handleSReacIDChange(std::string const & o, std::string const & n);
+
+    /// Add a surface reaction to the surface system.
+    ///
+    /// \param Pointer to the surface reaction.
 	void _handleSReacAdd(SReac * sreac);
+
+    /// Delete a surface reaction in the surface system.
+    ///
+    /// \param Pointer to the surface reaction.
 	void _handleSReacDel(SReac * sreac);
 
 	////////////////////////////////////////////////////////////////////////
 	// OPERATIONS (EXPOSED TO PYTHON): SPECIES
 	////////////////////////////////////////////////////////////////////////
 
+    /// Return all species in the surface system.
+    ///
+    /// \return List of pointers to the species.
 	std::vector<Spec *> getAllSpecs(void) const;
 
 	////////////////////////////////////////////////////////////////////////
 	// INTERNAL (NON-EXPOSED) OPERATIONS: DELETION
 	////////////////////////////////////////////////////////////////////////
 
-	// Called if Python object deleted, or from del method in parent object.
-	// Will only be called once
+    /// Self delete.
+    ///
+	/// Called if Python object deleted, or from del method in parent object.
+	/// Will only be called once
 	void _handleSelfDelete(void);
 
 	////////////////////////////////////////////////////////////////////////
 	// INTERNAL (NON-EXPOSED): SOLVER HELPER METHODS
 	////////////////////////////////////////////////////////////////////////
 
+    /// Count the surface reactions in the surface system.
+    ///
+    /// \return Number of surface reactions.
 	inline uint _countSReacs(void) const
 	{ return pSReacs.size(); }
+
+    /// Get a surface reaction with index lidx.
+    ///
+    /// \param lidx Index of the surface reaction.
+    /// \return Pointer to the surface reaction.
 	SReac * _getSReac(uint lidx) const;
 
+    /// Get all surface reactions in the surface system.
+    ///
+    /// \return Map of surface reactions.
 	const std::map<std::string, SReac *> & _getAllSReacs(void) const
 	{ return pSReacs; }
 
 	////////////////////////////////////////////////////////////////////////
 	// INTERNAL (NON-EXPOSED): STEPS::MODEL OPERATIONS
 	////////////////////////////////////////////////////////////////////////
-
+    /// Delete a species in the surface system.
+    ///
+    /// \param spec Pointer to the species.
 	void _handleSpecDelete(Spec * spec);
 
 	////////////////////////////////////////////////////////////////////////

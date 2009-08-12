@@ -60,10 +60,12 @@ typedef SpecPVec::iterator              SpecPVecI;
 typedef SpecPVec::const_iterator        SpecPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
-
-/// Model component that represents a reactant that can be referred to from
+/// Species reactant.
+/// Component that represents a reactant that can be referred to from
 /// volume and surface systems.
 ///
+/// \warning Methods start with an underscore are not exposed to Python.
+
 class Spec
 {
 
@@ -72,8 +74,14 @@ public:
 	////////////////////////////////////////////////////////////////////////
 	// OBJECT CONSTRUCTION & DESTRUCTION
 	////////////////////////////////////////////////////////////////////////
-
+    
+    /// Constructor
+    ///
+    /// \param id ID of the species.
+    /// \param model Pointer to the parent model.
 	Spec(std::string const & id, Model * model);
+
+    /// Destructor
 	~Spec(void);
 
 	////////////////////////////////////////////////////////////////////////
@@ -81,12 +89,19 @@ public:
 	////////////////////////////////////////////////////////////////////////
 
 	/// Return the species ID.
+    ///
+    /// \return ID of the species.
 	std::string getID(void) const
 	{ return pID; }
+
 	/// Set or change the species ID.
+    ///
+    /// \param id ID of the species.
 	void setID(std::string const & id);
 
 	/// Return a pointer to the parent model.
+    ///
+    /// \return Pointer to the parent model.
 	Model * getModel(void) const
 	{ return pModel; }
 
@@ -94,8 +109,10 @@ public:
 	// INTERNAL (NON-EXPOSED) OPERATIONS: DELETION
 	////////////////////////////////////////////////////////////////////////
 
-	// Called if Python object deleted, or from del method in parent object.
-	// Will only be called once
+    /// Self delete.
+    ///
+	/// Called if Python object deleted, or from del method in parent object.
+	/// Will only be called once
 	void _handleSelfDelete(void);
 
 	////////////////////////////////////////////////////////////////////////

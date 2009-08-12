@@ -60,7 +60,7 @@ typedef VolsysPMap::const_iterator      VolsysPMapCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/// Volume System
+/// Volume system
 ///
 /// Container that collects reactions
 /// involving a reactant enclosed in a compartment.

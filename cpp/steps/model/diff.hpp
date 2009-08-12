@@ -61,6 +61,9 @@ typedef DiffPVec::iterator              DiffPVecI;
 typedef DiffPVec::const_iterator        DiffPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
+/// Diffusion rule in a volume system.
+/// 
+///\warning Methods start with an underscore are not exposed to Python.
 
 class Diff
 {
@@ -70,24 +73,42 @@ public:
 	////////////////////////////////////////////////////////////////////////
 	// OBJECT CONSTRUCTION & DESTRUCTION
 	////////////////////////////////////////////////////////////////////////
-
+    
+    /// Constructor
+    ///
+    /// \param id ID of the difusion rule.
+    /// \param volsys Volume system which the diffusion rule belongs to.
+    /// \param lig Pointers to the species which the diffusion applies to.
+    /// \param dcst Rate constant of the diffusion rule.
 	Diff(std::string const & id, Volsys * volsys, Spec * lig, double dcst=0.0);
+
+    /// Destructor
 	~Diff(void);
 
 	////////////////////////////////////////////////////////////////////////
 	// DIFFUSION RULE PROPERTIES
 	////////////////////////////////////////////////////////////////////////
 
-	// Return the diffusion rule ID.
+	/// Return the diffusion rule ID.
+    ///
+    /// \return ID of the diffusion rule.
 	std::string getID(void) const
 	{ return pID; }
+
+    /// Set the ID of the diffusion rule.
+    ///
+    /// \param id ID of the diffusion rule.
 	void setID(std::string const & id);
 
-	// Return a pointer to the parent volume system.
+	/// Return a pointer to the parent volume system.
+    ///
+    /// \return Pointer to the parent volume system.
 	Volsys * getVolsys(void) const
 	{ return pVolsys; }
 
-	// Return a pointer to the parent model.
+	/// Return a pointer to the parent model.
+    ///
+    /// \return Pointer to the parent model.
 	Model * getModel(void) const
 	{ return pModel; }
 
@@ -95,25 +116,42 @@ public:
 	// OPERATIONS (EXPOSED TO PYTHON):
 	////////////////////////////////////////////////////////////////////////
 
-	// Return a pointer to the species to which this diffusion rule applies
+	/// Return a pointer to the species to which this diffusion rule applies
+    ///
+    /// \return Pointer of the species
 	Spec * getLig(void) const
 	{ return pLig; }
+
+    /// Set the species which this difusion rule applies to.
+    ///
+    /// \param lig Pointer to the species
 	void setLig(Spec * lig);
 
+    /// Get the rate constant of the diffusion rule.
+    ///
+    /// \return Rate constant of the diffusion rule.
 	double getDcst(void) const
 	{ return pDcst; }
+
+    /// Set the rate constant of the diffusion rule.
+    ///
+    /// \param Rate constant of the diffusion rule.
 	void setDcst(double dcst);
 
-	// Create a vector of all species in this diffusion rule
-	// Currently will return only one species
+	///  Return a list of all species in this diffusion rule.
+	///
+    /// \return List of pointers of species.
+    /// \warning Currently will return only one species.
 	std::vector<Spec *> getAllSpecs(void) const;
 
 	////////////////////////////////////////////////////////////////////////
 	// INTERNAL (NON-EXPOSED) OPERATIONS: DELETION
 	////////////////////////////////////////////////////////////////////////
 
-	// Called if Python object deleted, or from del method in parent object.
-	// Will only be called once
+    /// Self delete.
+    ///
+	/// Called if Python object deleted, or from del method in parent object.
+	/// Will only be called once
 	void _handleSelfDelete(void);
 
 	////////////////////////////////////////////////////////////////////////

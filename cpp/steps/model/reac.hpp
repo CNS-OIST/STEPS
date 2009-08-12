@@ -63,8 +63,8 @@ typedef ReacPVec::const_iterator         ReacPVecCI;
 /// Reaction in a volume system.
 ///
 /// A kinetic reaction is specified by:
-///     - Species appear in the left hand side of the reaction (lhs).
-///     - Species appear in the right hand side of the reaction (rhs).
+///     - Species appear on the left hand side of the reaction (lhs).
+///     - Species appear on the right hand side of the reaction (rhs).
 ///     - Rate constant for the reaction (kcst).
 ///
 /// \sa SReac, Volsys.
@@ -83,8 +83,8 @@ public:
     ///
     /// \param id ID of the reaction.
     /// \param volsys Pointer to the parent volume system.
-    /// \param lhs Vector of pointers to the species in the left hand side of the reaction.
-    /// \param rhs Vector of pointers to the species in the right hand side of the reaction.
+    /// \param lhs Vector of pointers to the species on the left hand side of the reaction.
+    /// \param rhs Vector of pointers to the species on the right hand side of the reaction.
     /// \param kcst Rate constant for the reaction.
 	Reac(std::string const & id, Volsys * volsys,
 		 std::vector<Spec *> const & lhs = std::vector<Spec *>(),
@@ -124,26 +124,26 @@ public:
 	////////////////////////////////////////////////////////////////////////
 	// OPERATIONS (EXPOSED TO PYTHON):
 	////////////////////////////////////////////////////////////////////////
-    /// Get the species in the left hand side of the reaction.
+    /// Get the species on the left hand side of the reaction.
     ///
-    /// \return Vector of pointers to the species.
+    /// \return Vector of pointers to the left hand side species.
 	const std::vector<Spec *> & getLHS(void) const
 	{ return pLHS; }
 
-    /// Set or reset the species in the left hand side of the reaction.
+    /// Set or reset the species on the left hand side of the reaction.
     ///
-    /// \param lhs Vector of pointers to the species.
+    /// \param lhs Vector of pointers to the left hand side species.
 	void setLHS(std::vector<Spec *> const & lhs);
 
-    /// Get the species in the right hand side of the reaction.
+    /// Get the species on the right hand side of the reaction.
     ///
-    ///    \return Vector of pointers to the species.
+    ///    \return Vector of pointers to the right hand side species.
     const std::vector<Spec *> & getRHS(void) const
 	{ return pRHS; }
 
-    /// Set or reset the species in the right hand side of the reaction.
+    /// Set or reset the species on the right hand side of the reaction.
     ///
-    /// \param rhs Vector of pointers to the species.    
+    /// \param rhs Vector of pointers to the right hand side species.    
 	void setRHS(std::vector<Spec *> const & rhs);
 
     /// Return all species invloved in the reaction.
