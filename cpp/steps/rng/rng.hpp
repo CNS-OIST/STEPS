@@ -41,17 +41,29 @@ START_NAMESPACE(steps)
 START_NAMESPACE(rng)
 
 ////////////////////////////////////////////////////////////////////////////////
-
+/// Base class of random number generator.
+/// 
+/// The RNG class can be inherited by other classes of random number generators.
 class RNG
 {
 
 public:
-
+    
+    /// Constructor
+    ///
+    /// \param bufsize Size of the buffer.
     RNG(uint bufsize);
+
+    /// Destructor
     virtual ~RNG(void);
 
+    /// Initialize the generator with seed.
+    ///
+    /// \param seed Seed for the generator.
     void initialize(ulong const & seed);
 
+    /// Return the next random int in the buffer of the generator.
+    ///
     inline uint get(void)
     {
         if (rNext == rEnd) { concreteFillBuffer(); rNext = rBuffer; }
@@ -59,6 +71,7 @@ public:
     }
 
     /// Generates a uniform random number on [0,1] real interval.
+    ///
     inline double getUnfII(void)
     {
         // Divided by 2^32-1.
@@ -66,6 +79,7 @@ public:
     }
 
     /// Generates a uniform random number on [0,1) real interval.
+    ///
     inline double getUnfIE(void)
     {
         // Divided by 2^32.
@@ -73,6 +87,7 @@ public:
     }
 
     /// Generates a uniform random number on (0,1) real interval.
+    ///
     inline double getUnfEE(void)
     {
         // Divided by 2^32.
@@ -80,6 +95,7 @@ public:
     }
 
     /// Generates a uniform random number on [0,1) with 53-bit resolution.
+    ///
     inline double getUnfIE53(void)
     {
         ulong a = get() >> 5, b = get() >> 6;
@@ -94,9 +110,11 @@ public:
     virtual double getExp(double lambda);
 
     /// Get a Poisson-distributed number with mean lambda.
+    ///
     long getPsn(float lambda);
 
     /// Get a standard normally distributed random number.
+    ///
     float getStdNrm(void);
 
 protected:
@@ -110,6 +128,7 @@ protected:
     virtual void concreteInitialize(ulong seed) = 0;
 
     /// Fills the buffer with random numbers on [0,0xffffffff]-interval.
+    ///
     virtual void concreteFillBuffer(void) = 0;
 
 private:
@@ -119,8 +138,15 @@ private:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-
+/// Create a MT19937 random number generator and return as RNG object.
+///
+/// \param buffsize Size of buffer.
 RNG * create_mt19937(uint bufsize);
+
+/// Create a random number generator with name rng_name and return as RNG object.
+///
+/// \param rng_name Name of the random number generator.
+/// \param buffsize Size of buffer.
 
 RNG * create(std::string rng_name, uint bufsize);
 

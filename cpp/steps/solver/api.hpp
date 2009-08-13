@@ -48,52 +48,86 @@ START_NAMESPACE(solver)
 class Statedef;
 
 ////////////////////////////////////////////////////////////////////////////////
-
+/// API class for a solver.
+///
+/// The API class provides all APIs for each solver.
+///
+/// \warning Not every API in this class is implemented in the solver.
+///          If a API is not implemented in a solver, 
+///          STEPS will throw an error message to the user.
+///////////////////////////////////////////////////////////////////////////////
 class API
 {
 
 public:
 
+    /// Constructor
+    ///
+    /// \param m Pointer to the model.
+    /// \param g Pointer to the geometr container.
+    /// \param r Pointer to the random number generator.
     API(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r);
+
+    /// Destructor
+    ///
     virtual ~API(void);
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER INFORMATION
     ////////////////////////////////////////////////////////////////////////
 
+    /// Return the solver's name.
     virtual std::string getSolverName(void) const = 0;
+    /// Return the solver's description.
     virtual std::string getSolverDesc(void) const = 0;
+    /// Return the solver's author.
     virtual std::string getSolverAuthors(void) const = 0;
+    /// Return the solver's email.
     virtual std::string getSolverEmail(void) const = 0;
 
     ////////////////////////////////////////////////////////////////////////
     // SIMULATION CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
 
+    /// Save the solver's state in a file.
+    ///
+    /// \param filename The file name to save the solver's state.
     virtual void saveState(std::string const & filename);
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROLS
     ////////////////////////////////////////////////////////////////////////
 
+    /// Reset the solver.
     virtual void reset(void) = 0;
+
+    /// Run the solver until a given end time.
+    ///
+    /// \param endtime Time to end the solver.
     virtual void run(double endtime) = 0;
 
+    /// Run the solver for a step.
     virtual void step(void);
 
+    /// Set DT of the solver.
+    ///
+    /// \param dt Dt.
+    /// \todo Ask Iain about this.
     virtual void setDT(double dt);
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
     //      GENERAL
     ////////////////////////////////////////////////////////////////////////
-
+    /// Return the time.
     virtual double getTime(void) const = 0;
-
+    /// Return the DT
+    /// \todo ask iain
     virtual double getDT(void) const;
-
+    /// Return the A0
+    /// \todo ask iain
     virtual double getA0(void) const;
-
+    /// Return the number of steps.
     virtual uint getNSteps(void) const;
 
     ////////////////////////////////////////////////////////////////////////
@@ -101,7 +135,9 @@ public:
     //      COMPARTMENT
     ////////////////////////////////////////////////////////////////////////
 
-    // Returns the volume of compartment c (in m^3).
+    /// Returns the volume of compartment c (in m^3).
+    ///
+    /// \param c Name of the compartment.
     double getCompVol(std::string const & c) const;
 
     // Sets the volume of compartment c.

@@ -48,7 +48,6 @@ NAMESPACE_ALIAS(steps::rng, srng);
 USING(srng, RNG);
 
 ////////////////////////////////////////////////////////////////////////////////
-
 RNG::RNG(uint bufsize)
 : rBuffer(0)
 , rSize(bufsize)

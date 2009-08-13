@@ -88,20 +88,34 @@ START_NAMESPACE(rng)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/// MT19937 Random number generator.
+/// 
+/// This random number generator is based on the original Mersenne Twister code (mt19937.c).
+
 class MT19937
 : public RNG
 {
 
 public:
 
+    /// Constructor
+    ///
+    /// \param bufsize Size of the buffer.
     MT19937(uint bufsize);
+
+    /// Destructor
+    ///
     virtual ~MT19937(void);
 
 protected:
 
+    /// Initialize the generator with seed.
+    ///
+    /// \param seed Seed for the generator.
     virtual void concreteInitialize(ulong seed);
 
     /// Fills the buffer with random numbers on [0,0xffffffff]-interval.
+    ///
     virtual void concreteFillBuffer(void);
 
 private:

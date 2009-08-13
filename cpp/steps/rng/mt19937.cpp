@@ -45,7 +45,6 @@ NAMESPACE_ALIAS(steps::rng, srng);
 USING(srng, MT19937);
 
 ////////////////////////////////////////////////////////////////////////////////
-
 void MT19937::concreteInitialize(ulong seed)
 {
     pState[0] = seed & 0xffffffffUL;

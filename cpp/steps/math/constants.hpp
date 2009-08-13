@@ -49,7 +49,7 @@ const double  IEEE_HUGE                 = 1e150;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/// Source: physics.nist.gov/cgi-bin/cuu/Value?na|search_for=avogadrp
+// Source: physics.nist.gov/cgi-bin/cuu/Value?na|search_for=avogadrp
 const double AVOGADRO                   = 6.0221415e23;
 
 ////////////////////////////////////////////////////////////////////////////////
