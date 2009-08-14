@@ -318,30 +318,42 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 		pTet_tri_neighbours[(tet*4)+2] = tri2idx;
 		pTet_tri_neighbours[(tet*4)+3] = tri3idx;
 
+
+		/* BUGFIX 13/08/09 In following if else section:
+		 * Indexing of triangle and tet neighbours were not aligned.
+		 * This was causing descrepancies in the setting of the scaled dcsts in the simulation
+		 * layer algorithm, causing concentration differences at steady-state.
+		 * It was decided to fix the indexing here rather than alter the sim algorithm.
+		 */
+
 		// Add this tet to neighbours of first triangle
 		if (tri_tet_neighbours_temp[tri0idx*2] == -1) tri_tet_neighbours_temp[tri0idx*2] = tet;
 		else if (tri_tet_neighbours_temp[(tri0idx*2)+1] == -1)
 		{
+
 			tri_tet_neighbours_temp[(tri0idx*2)+1] = tet;
 
 			// This triangle has a 2 tet neighbours now- time to tell those tets they are neighbours
 			uint tet1 = tri_tet_neighbours_temp[tri0idx*2];
 
-			// Add the tet in the main loop to it's neighbour's neighbours
-			if (pTet_tet_neighbours[tet1*4] == -1) pTet_tet_neighbours[tet1*4] = tet;
-			else if (pTet_tet_neighbours[(tet1*4)+1] == -1) pTet_tet_neighbours[(tet1*4)+1] = tet;
-			else if (pTet_tet_neighbours[(tet1*4)+2] == -1) pTet_tet_neighbours[(tet1*4)+2] = tet;
-			else if (pTet_tet_neighbours[(tet1*4)+3] == -1) pTet_tet_neighbours[(tet1*4)+3] = tet;
-			else assert(false);
-			tettetadded++;
+			assert(pTet_tet_neighbours[(tet*4)] == -1);
+			pTet_tet_neighbours[(tet*4)] = tet1;
 
-			// Add tet1 to tet's neighbours
-			if (pTet_tet_neighbours[tet*4] == -1) pTet_tet_neighbours[tet*4] = tet1;
-			else if (pTet_tet_neighbours[(tet*4)+1] == -1) pTet_tet_neighbours[(tet*4)+1] = tet1;
-			else if (pTet_tet_neighbours[(tet*4)+2] == -1) pTet_tet_neighbours[(tet*4)+2] = tet1;
-			else if (pTet_tet_neighbours[(tet*4)+3] == -1) pTet_tet_neighbours[(tet*4)+3] = tet1;
-			else assert(false);
-			tettetadded++;
+			// Find this triangle's index from tet1's triangle neighbours
+			for (uint idx = 0; idx <=4; ++idx)
+			{
+				assert(idx != 4);
+				int tet1tri0idx = pTet_tri_neighbours[(tet1*4)+idx];
+				assert(tet1tri0idx >= 0);
+				if (tet1tri0idx == tri0idx)
+				{
+					assert(pTet_tet_neighbours[(tet1*4)+idx] == -1);
+					pTet_tet_neighbours[(tet1*4)+idx] = tet;
+					break;
+				}
+			}
+
+			tettetadded+=2;
 		}
 		else assert(false);
 		if (tri_tet_neighbours_temp[tri1idx*2] == -1) tri_tet_neighbours_temp[tri1idx*2] = tet;
@@ -351,21 +363,24 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 			// This triangle has a 2 tet neighbours now- time to tell those tets they are neighbours
 			uint tet1 = tri_tet_neighbours_temp[tri1idx*2];
 
-			// Add the tet in the main loop to it's neighbour's neighbours
-			if (pTet_tet_neighbours[tet1*4] == -1) pTet_tet_neighbours[tet1*4] = tet;
-			else if (pTet_tet_neighbours[(tet1*4)+1] == -1) pTet_tet_neighbours[(tet1*4)+1] = tet;
-			else if (pTet_tet_neighbours[(tet1*4)+2] == -1) pTet_tet_neighbours[(tet1*4)+2] = tet;
-			else if (pTet_tet_neighbours[(tet1*4)+3] == -1) pTet_tet_neighbours[(tet1*4)+3] = tet;
-			else assert(false);
-			tettetadded++;
+			assert(pTet_tet_neighbours[(tet*4)+1] == -1);
+			pTet_tet_neighbours[(tet*4)+1] = tet1;
 
-			// Add tet1 to tet's neighbours
-			if (pTet_tet_neighbours[tet*4] == -1) pTet_tet_neighbours[tet*4] = tet1;
-			else if (pTet_tet_neighbours[(tet*4)+1] == -1) pTet_tet_neighbours[(tet*4)+1] = tet1;
-			else if (pTet_tet_neighbours[(tet*4)+2] == -1) pTet_tet_neighbours[(tet*4)+2] = tet1;
-			else if (pTet_tet_neighbours[(tet*4)+3] == -1) pTet_tet_neighbours[(tet*4)+3] = tet1;
-			else assert(false);
-			tettetadded++;
+			// Find this triangle's index from tet1's triangle neighbours
+			for (uint idx = 0; idx <= 4; ++idx)
+			{
+				assert(idx != 4);
+				int tet1tri1idx = pTet_tri_neighbours[(tet1*4)+idx];
+				assert(tet1tri1idx >= 0);
+				if (tet1tri1idx == tri1idx)
+				{
+					assert(pTet_tet_neighbours[(tet1*4)+idx] == -1);
+					pTet_tet_neighbours[(tet1*4)+idx] = tet;
+					break;
+				}
+			}
+
+			tettetadded+=2;
 		}
 		else assert(false);
 		if (tri_tet_neighbours_temp[tri2idx*2] == -1) tri_tet_neighbours_temp[tri2idx*2] = tet;
@@ -375,20 +390,24 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 			// This triangle has a 2 tet neighbours now- time to tell those tets they are neighbours
 			uint tet1 = tri_tet_neighbours_temp[tri2idx*2];
 
-			// Add the tet in the main loop to it's neighbour's neighbours
-			if (pTet_tet_neighbours[tet1*4] == -1) pTet_tet_neighbours[tet1*4] = tet;
-			else if (pTet_tet_neighbours[(tet1*4)+1] == -1) pTet_tet_neighbours[(tet1*4)+1] = tet;
-			else if (pTet_tet_neighbours[(tet1*4)+2] == -1) pTet_tet_neighbours[(tet1*4)+2] = tet;
-			else if (pTet_tet_neighbours[(tet1*4)+3] == -1) pTet_tet_neighbours[(tet1*4)+3] = tet;
-			else assert(false);
-			tettetadded++;
+			assert(pTet_tet_neighbours[(tet*4)+2] == -1);
+			pTet_tet_neighbours[(tet*4)+2] = tet1;
 
-			// Add tet1 to tet's neighbours
-			if (pTet_tet_neighbours[tet*4] == -1) pTet_tet_neighbours[tet*4] = tet1;
-			else if (pTet_tet_neighbours[(tet*4)+1] == -1) pTet_tet_neighbours[(tet*4)+1] = tet1;
-			else if (pTet_tet_neighbours[(tet*4)+2] == -1) pTet_tet_neighbours[(tet*4)+2] = tet1;
-			else if (pTet_tet_neighbours[(tet*4)+3] == -1) pTet_tet_neighbours[(tet*4)+3] = tet1;
-			tettetadded++;
+			// Find this triangle's index from tet1's triangle neighbours
+			for (uint idx = 0; idx <= 4; ++idx)
+			{
+				assert(idx != 4);
+				int tet1tri2idx = pTet_tri_neighbours[(tet1*4)+idx];
+				assert(tet1tri2idx >= 0);
+				if (tet1tri2idx == tri2idx)
+				{
+					assert(pTet_tet_neighbours[(tet1*4)+idx] == -1);
+					pTet_tet_neighbours[(tet1*4)+idx] = tet;
+					break;
+				}
+			}
+
+			tettetadded+=2;
 		}
 		else assert(false);
 		if (tri_tet_neighbours_temp[tri3idx*2] == -1) tri_tet_neighbours_temp[tri3idx*2] = tet;
@@ -398,20 +417,24 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 			// This triangle has a 2 tet neighbours now- time to tell those tets they are neighbours
 			uint tet1 = tri_tet_neighbours_temp[tri3idx*2];
 
-			// Add the tet in the main loop to it's neighbour's neighbours
-			if (pTet_tet_neighbours[tet1*4] == -1) pTet_tet_neighbours[tet1*4] = tet;
-			else if (pTet_tet_neighbours[(tet1*4)+1] == -1) pTet_tet_neighbours[(tet1*4)+1] = tet;
-			else if (pTet_tet_neighbours[(tet1*4)+2] == -1) pTet_tet_neighbours[(tet1*4)+2] = tet;
-			else if (pTet_tet_neighbours[(tet1*4)+3] == -1) pTet_tet_neighbours[(tet1*4)+3] = tet;
-			else assert(false);
-			tettetadded++;
+			assert(pTet_tet_neighbours[(tet*4)+3] == -1);
+			pTet_tet_neighbours[(tet*4)+3] = tet1;
 
-			// Add tet1 to tet's neighbours
-			if (pTet_tet_neighbours[tet*4] == -1) pTet_tet_neighbours[tet*4] = tet1;
-			else if (pTet_tet_neighbours[(tet*4)+1] == -1) pTet_tet_neighbours[(tet*4)+1] = tet1;
-			else if (pTet_tet_neighbours[(tet*4)+2] == -1) pTet_tet_neighbours[(tet*4)+2] = tet1;
-			else if (pTet_tet_neighbours[(tet*4)+3] == -1) pTet_tet_neighbours[(tet*4)+3] = tet1;
-			tettetadded++;
+			// Find this triangle's index from tet1's triangle neighbours
+			for (uint idx = 0; idx <= 4; ++idx)
+			{
+				assert(idx != 4);
+				int tet1tri3idx = pTet_tri_neighbours[(tet1*4)+idx];
+				assert(tet1tri3idx >= 0);
+				if (tet1tri3idx == tri3idx)
+				{
+					assert(pTet_tet_neighbours[(tet1*4)+idx] == -1);
+					pTet_tet_neighbours[(tet1*4)+idx] = tet;
+					break;
+				}
+			}
+
+			tettetadded+=2;
 		}
 		else assert(false);
 	} // end of loop over all tetrahedra
