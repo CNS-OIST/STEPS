@@ -58,6 +58,7 @@ stetmesh::Tetmesh::Tetmesh(uint nverts, uint ntris, uint ntets)
 , pTetsN(ntets)
 , pTets(0)
 , pTet_vols(0)
+, pTet_barycentres(0)
 , pTet_comps(0)
 , pTet_tri_neighbours(0)
 , pTet_tet_neighbours(0)
@@ -130,6 +131,7 @@ stetmesh::Tetmesh::Tetmesh(uint nverts, uint ntris, uint ntets)
     pVerts = new double[pVertsN * 3];
     pTets = new uint[pTetsN * 4];
     pTet_vols = new double[pTetsN];
+    pTet_barycentres = new double[pTetsN*3];
     pTet_comps = new stetmesh::TmComp*[pTetsN];
     // Initialise comp pointers to zero (fill_n doesn't work for zero pointers)
     for (uint i=0; i<pTetsN; ++i) pTet_comps[i] = 0;
@@ -203,6 +205,7 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 	// copy the supplied tetrahedron information to the pTets member
 	for (uint i = 0; i< pTetsN*4; ++i) pTets[i] = tets[i];
 	pTet_vols = new double[pTetsN];
+    pTet_barycentres = new double[pTetsN*3];
 	pTet_comps = new stetmesh::TmComp*[pTetsN];
 	// Initialise comp pointers to zero (fill_n doesn't appear to work for zero pointers)
 	for (uint i=0; i<pTetsN; ++i) pTet_comps[i] = 0;
@@ -249,6 +252,7 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 		double * vert2 = pVerts + (3 * pTets[(tet*4)+2]);
 		double * vert3 = pVerts + (3 * pTets[(tet*4)+3]);
 		pTet_vols[tet] = steps::math::tet_vol(vert0, vert1, vert2, vert3);
+		steps::math::tet_barycenter(vert0, vert1, vert2, vert3,pTet_barycentres + tet*3);
 
 		// create array for triangle formed by edges (0,1,2)
 		// will also sort for ease of comparison
@@ -533,6 +537,7 @@ stetmesh::Tetmesh::~Tetmesh(void)
 	delete[] pTet_comps;
 	delete[] pTet_tri_neighbours;
 	delete[] pTet_tet_neighbours;
+	delete[] pTet_barycentres;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -895,6 +900,7 @@ void stetmesh::Tetmesh::setup(void)
 		double * vert2 = pVerts + (3 * pTets[(tet*4)+2]);
 		double * vert3 = pVerts + (3 * pTets[(tet*4)+3]);
 		pTet_vols[tet] = steps::math::tet_vol(vert0, vert1, vert2, vert3);
+		steps::math::tet_barycenter(vert0, vert1, vert2, vert3,pTet_barycentres + tet*3);
 
 		// create array for triangle formed by edges (0,1,2)
 		// will also sort for ease of comparison
@@ -1344,6 +1350,24 @@ double stetmesh::Tetmesh::getTetVol(uint tidx) const
 		throw steps::ArgErr(os.str());
 	}
 	return (pTet_vols[tidx]);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<double> stetmesh::Tetmesh::getTetBarycenter(uint tidx) const
+{
+	assert(pSetupDone == true);
+	if (tidx >= pTetsN)
+	{
+		std::ostringstream os;
+		os << "Tetrahedron index out of range.";
+		throw steps::ArgErr(os.str());
+	}
+	std::vector<double> baryctemp(3);
+	baryctemp[0] = pTet_barycentres[tidx*3];
+	baryctemp[1] = pTet_barycentres[(tidx*3)+1];
+	baryctemp[2] = pTet_barycentres[(tidx*3)+2];
+	return baryctemp;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

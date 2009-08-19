@@ -261,6 +261,7 @@ public:
 	std::vector<unsigned int> getTet(unsigned int tidx) const;
 	unsigned int countTets(void) const;
 	double getTetVol(unsigned int tidx) const;
+	std::vector<double> getTetBarycenter(unsigned int tidx) const;
 	steps::tetmesh::TmComp * getTetComp(unsigned int tidx) const;
 	void setTetComp(unsigned int tidx, steps::tetmesh::TmComp * comp);
 	std::vector<unsigned int> getTetTriNeighb(unsigned int tidx) const;

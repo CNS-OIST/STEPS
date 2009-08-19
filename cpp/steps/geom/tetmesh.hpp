@@ -102,7 +102,7 @@ NOTES:
       initiation is currently not implemented
 
     \warning Methods start with an underscore are not exposed to Python.
-*/ 
+*/
 
 class Tetmesh : public steps::wm::Geom
 {
@@ -188,11 +188,11 @@ public:
 	////////////////////////////////////////////////////////////////////////
 	// DATA ACCESS (EXPOSED TO PYTHON): TRIANGLES
 	////////////////////////////////////////////////////////////////////////
-    
+
     /// Return the triangle with index tidx
     ///
     /// \param tidx Index of the triangle.
-    /// \return Indices of the vertices form the triangle. 
+    /// \return Indices of the vertices form the triangle.
     std::vector<uint> getTri(uint tidx) const;
 
     /// Count the triangles in the Temesh.
@@ -217,19 +217,19 @@ public:
     ///
     /// \param tidx Index of the triangle.
     /// \return Pointer to the patch.
-     
+
     steps::tetmesh::TmPatch * getTriPatch(uint tidx) const;
     ///Set the patch which a triangle belongs to.
     ///
     /// \param tidx Index of the triangle.
     /// \param patch Pointer to the associated patch.
-     
+
     void setTriPatch(uint tidx, steps::tetmesh::TmPatch * patch);
     ///Return the tetrahedron neighbors of a triangle by its index.
     ///
     /// \param tidx Index of the triangle.
     /// \return Vector of the tetrahedron neighbors.
-     
+
     std::vector<int> getTriTetNeighb(uint tidx) const;
 
     /// Flip the triangle's inner and outer tetrahedron.
@@ -259,33 +259,39 @@ public:
     ///
     /// \param tidx Index of the tetrahedron.
     /// \return Volume of the tetrahedron.
-     
+
     double getTetVol(uint tidx) const;
+
+	/// Return the barycentre of the tetrahedron in x,y,z coordinates
+    /// \param tidx Index of the tetrahedron
+    /// \return Barycentre of the tetrahedron
+	std::vector<double> getTetBarycenter(uint tidx) const;
+
     /// Return the compartment which a tetrahedron with index tidx belongs to.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \return Pointer to the compartment object.
-     
+
     steps::tetmesh::TmComp * getTetComp(uint tidx) const;
     ///Set the compartment which a tetrahedron with index tidx belongs to.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param comp Pointer to the compartment object.
-     
+
     void setTetComp(uint tidx, steps::tetmesh::TmComp * comp);
     ///Return the triangle neighbors of a tetrahedron with index tidx.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \return Vector of the triangle neighbors.
-     
+
     std::vector<uint> getTetTriNeighb(uint tidx) const;
     ///Return the tetrahedron neighbors of a tetrahedron with index tidx.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \return Vector of the tetrahedron neighbors.
-     
+
     std::vector<int> getTetTetNeighb(uint tidx) const;
-    
+
     /// Find a tetrahedron which encompasses a given point.
     /// Return the index of the tetrahedron that encompasses point;
     ///  return -1 if point is outside mesh;
@@ -293,7 +299,7 @@ public:
     /// returns first tetrahedron found.
     /// \param p A point given by its coordinates.
     /// \return ID of the found tetrahedron.
-     
+
     int findTetByPoint(std::vector<double> p) const;
 
 	////////////////////////////////////////////////////////////////////////
@@ -316,7 +322,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (C++ INTERNAL)
     ////////////////////////////////////////////////////////////////////////
-    
+
     /// Return a vertex with index vidx.
     ///
     /// \param vidx Index of the vertex.
@@ -399,6 +405,8 @@ private:
     uint                              * pTets;
     /// The volume of the tetrahedron
     double                            * pTet_vols;
+	/// The barycentres of the tetrahedra
+	double                            * pTet_barycentres;
     /// The compartment a tetrahedron belongs to
     steps::tetmesh::TmComp           ** pTet_comps;
     /// The triangle neighbours of each tetrahedron (by index)
