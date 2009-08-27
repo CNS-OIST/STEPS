@@ -137,7 +137,9 @@ class Reac(model_swig.Reac) :
 class SReac(model_swig.SReac) :
     def __init__(self, *args, **kwargs): 
         """
-        __init__(self, string id, Surfsys surfsys, vector_spc vlhs=std::vector< steps::model::Spec * >(), 
+        __init__(self, string id, Surfsys surfsys, 
+            vector_spc olhs=std::vector< steps::model::Spec * >(), 
+            vector_spc ilhs=std::vector< steps::model::Spec * >(), 
             vector_spc slhs=std::vector< steps::model::Spec * >(), 
             vector_spc irhs=std::vector< steps::model::Spec * >(), 
             vector_spc srhs=std::vector< steps::model::Spec * >(), 
@@ -155,10 +157,11 @@ class SReac(model_swig.SReac) :
         self.__swig_setmethods__["kcst"] = _model_swig.SReac_setKcst
         self.__swig_getmethods__["kcst"] = _model_swig.SReac_getKcst
         self.__swig_getmethods__["order"] = _model_swig.SReac_getOrder
-        self.__swig_setmethods__["outer"] = _model_swig.SReac_setOuter
         self.__swig_getmethods__["outer"] = _model_swig.SReac_getOuter
-        self.__swig_setmethods__["vlhs"] = _model_swig.SReac_setVLHS
-        self.__swig_getmethods__["vlhs"] = _model_swig.SReac_getVLHS
+        self.__swig_setmethods__["olhs"] = _model_swig.SReac_setOLHS
+        self.__swig_getmethods__["olhs"] = _model_swig.SReac_getOLHS
+        self.__swig_setmethods__["ilhs"] = _model_swig.SReac_setILHS
+        self.__swig_getmethods__["ilhs"] = _model_swig.SReac_getILHS
         self.__swig_setmethods__["slhs"] = _model_swig.SReac_setSLHS
         self.__swig_getmethods__["slhs"] = _model_swig.SReac_getSLHS
         self.__swig_setmethods__["irhs"] = _model_swig.SReac_setIRHS
@@ -171,8 +174,9 @@ class SReac(model_swig.SReac) :
     model = model_swig._swig_property(_model_swig.SReac_getModel)
     surfsys = model_swig._swig_property(_model_swig.SReac_getSurfsys)
     kcst = model_swig._swig_property(_model_swig.SReac_getKcst, _model_swig.SReac_setKcst)
-    outer = model_swig._swig_property(_model_swig.SReac_getOuter, _model_swig.SReac_setOuter)
-    vlhs = model_swig._swig_property(_model_swig.SReac_getVLHS, _model_swig.SReac_setVLHS)
+    outer = model_swig._swig_property(_model_swig.SReac_getOuter)
+    olhs = model_swig._swig_property(_model_swig.SReac_getOLHS, _model_swig.SReac_setOLHS)
+    ilhs = model_swig._swig_property(_model_swig.SReac_getILHS, _model_swig.SReac_setILHS)
     slhs = model_swig._swig_property(_model_swig.SReac_getSLHS, _model_swig.SReac_setSLHS)
     irhs = model_swig._swig_property(_model_swig.SReac_getIRHS, _model_swig.SReac_setIRHS)
     srhs = model_swig._swig_property(_model_swig.SReac_getSRHS, _model_swig.SReac_setSRHS)

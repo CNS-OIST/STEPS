@@ -63,7 +63,7 @@ typedef SReacPVec::const_iterator       SReacPVecCI;
 ////////////////////////////////////////////////////////////////////////////////
 /// Surface reaction.
 ///
-/// A SReac object describes a reaction which takes place on a surface system, 
+/// A SReac object describes a reaction which takes place on a surface system,
 /// i.e. a patch between two compartments.
 ///
 /// \warning Methods start with an underscore are not exposed to Python.
@@ -79,7 +79,10 @@ public:
     ///
     /// \param id ID of the surface reaction.
     /// \param surfsys Pointer to the parent surface system.
-    /// \param vlhs Volume species on the left hand side of the reaction.
+    /// \param olhs Volume species in the outer compartment
+    ///	            on the left hand side of the reaction.
+    /// \param ilhs Volume species in the inner compartment
+    ///             and on the left hand side of the reaction.
     /// \param slhs Surface species on the left hand side of the reaction.
     /// \param irhs Volume species in the inner compartment
     ///             and on the right hand side of the reaction.
@@ -92,7 +95,8 @@ public:
     ///          call setInner and SetOuter to change this default setting.
     /// \sa setInner, setOuter.
 	SReac(std::string const & id, Surfsys * surfsys,
-		  std::vector<Spec *> const & vlhs = std::vector<Spec *>(),
+		  std::vector<Spec *> const & olhs = std::vector<Spec *>(),
+		  std::vector<Spec *> const & ilhs = std::vector<Spec *>(),
 		  std::vector<Spec *> const & slhs = std::vector<Spec *>(),
 		  std::vector<Spec *> const & irhs = std::vector<Spec *>(),
 		  std::vector<Spec *> const & srhs = std::vector<Spec *>(),
@@ -133,42 +137,44 @@ public:
 	// OPERATIONS (EXPOSED TO PYTHON):
 	////////////////////////////////////////////////////////////////////////
 
-    /// Check if the vlhs is assigned to the inner compartment.
+    /// Check if the lhs invloves species in the inner compartment.
     ///
-    /// \return True if vlhs is assigned to the inner compartment;
-    ///         False if else.   
+    /// \return True if ilhs is set.
+    ///         False if else.
 	bool getInner(void) const
 	{ return (! pOuter); }
 
-    /// Assign the vlhs to the inner compartment.
-    ///
-    /// \param inner True to assign vlhs to the inner compartment;
-    ///              False to assign vlhs to the outer compartment.
-	void setInner(bool inner);
 
-    /// Check if the vlhs is assigned to the outer compartment.
+    /// Check if the lhs involves species in the outer compartment,
+	/// or there are no volume species on the lhs.
     ///
-    /// \return True if vlhs is assigned to the outer compartment;
+    /// \return True if olhs is set, or neither olhs or ilhs are set.
     ///         False if else.
 	bool getOuter(void) const
 	{ return pOuter; }
 
-    /// Assign the vlhs to the outer compartment.
-    ///
-    /// \param outer True to assign vlhs to the outer compartment;
-    ///              False to assign vlhs to the outer compartment.
-	void setOuter(bool outer);
 
-    /// Return a list of volume species on the left hand side of reaction.
+    /// Return a list of outer volume species on the left hand side of reaction.
     ///
-    /// \return List of pointers of left hand side volume species.
-	const std::vector<Spec *> & getVLHS(void) const
-	{ return pVLHS; }
+    /// \return List of pointers of left hand side outer volume species.
+	const std::vector<Spec *> & getOLHS(void) const
+	{ return pOLHS; }
 
-    /// Set the volume species on the left hand side of reaction.
+    /// Set the outer volume species on the left hand side of reaction.
     ///
-    /// \param vlhs Volume species on the left hand side of reaction.
-	void setVLHS(std::vector<Spec *> const & vlhs);
+    /// \param olhs Outer volume species on the left hand side of reaction.
+	void setOLHS(std::vector<Spec *> const & olhs);
+
+    /// Return a list of inner volume species on the left hand side of reaction.
+    ///
+    /// \return List of pointers of left hand side inner volume species.
+	const std::vector<Spec *> & getILHS(void) const
+	{ return pILHS; }
+
+    /// Set the inner volume species on the left hand side of reaction.
+    ///
+    /// \param ilhs Inner volume species on the left hand side of reaction.
+	void setILHS(std::vector<Spec *> const & ilhs);
 
     /// Return a list of surface species on the left hand side of reaction.
     ///
@@ -260,7 +266,8 @@ private:
 	Surfsys                           * pSurfsys;
 
 	bool                                pOuter;
-	std::vector<Spec *>                 pVLHS;
+	std::vector<Spec *>                 pOLHS;
+	std::vector<Spec *>                 pILHS;
 	std::vector<Spec *>                 pSLHS;
 	std::vector<Spec *>                 pIRHS;
 	std::vector<Spec *>                 pSRHS;

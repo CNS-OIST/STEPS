@@ -267,7 +267,8 @@ class SReac
 public:
 	
 	SReac(std::string const & id, Surfsys * surfsys, 
-		  std::vector<Spec *> const & vlhs = std::vector<Spec *>(),
+		  std::vector<Spec *> const & olhs = std::vector<Spec *>(),
+		  std::vector<Spec *> const & ilhs = std::vector<Spec *>(),
 		  std::vector<Spec *> const & slhs = std::vector<Spec *>(), 
 		  std::vector<Spec *> const & irhs = std::vector<Spec *>(),
 		  std::vector<Spec *> const & srhs = std::vector<Spec *>(), 
@@ -283,12 +284,13 @@ public:
 	Model * getModel(void) const;
 	
 	bool getInner(void) const;
-	void setInner(bool inner);
 	bool getOuter(void) const;
-	void setOuter(bool outer);
 	
-	std::vector<Spec *> getVLHS(void) const;
-	void setVLHS(std::vector<Spec *> const & vlhs);
+	std::vector<Spec *> getOLHS(void) const;
+	void setOLHS(std::vector<Spec *> const & olhs);
+
+	std::vector<Spec *> getILHS(void) const;
+	void setILHS(std::vector<Spec *> const & ilhs);
 	
 	std::vector<Spec *> getSLHS(void) const;
 	void setSLHS(std::vector<Spec *> const & slhs);

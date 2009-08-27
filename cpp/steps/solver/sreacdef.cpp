@@ -159,25 +159,30 @@ void ssolver::SReacdef::setup(void)
 
 	// first retrieve the information about the reaction stoichiometry from the
 	// SReac object
-	smod::SpecPVec vlhs = pSReac->getVLHS();
-	smod::SpecPVecCI vl_end = vlhs.end();
-	if (inside())
-	{
-		for (smod::SpecPVecCI vl = vlhs.begin(); vl != vl_end; ++vl)
-		{
-			uint sidx = pStatedef->getSpecIdx(*vl);
-			pSpec_I_LHS[sidx] += 1;
-		}
-	}
-	else if (outside())
-	{
-		for (smod::SpecPVecCI vl = vlhs.begin(); vl != vl_end; ++vl)
-		{
-			uint sidx = pStatedef->getSpecIdx(*vl);
-			pSpec_O_LHS[sidx] += 1;
-		}
-	}
+
+	smod::SpecPVec olhs = pSReac->getOLHS();
+	smod::SpecPVec ilhs = pSReac->getILHS();
+
+	if (outside()) { assert (ilhs.size() == 0); }
+	else if (inside()) { assert (olhs.size() == 0); }
 	else assert (false);
+
+	smod::SpecPVecCI ol_end = olhs.end();
+
+	for (smod::SpecPVecCI ol = olhs.begin(); ol != ol_end; ++ol)
+	{
+		uint sidx = pStatedef->getSpecIdx(*ol);
+		pSpec_O_LHS[sidx] += 1;
+	}
+
+	smod::SpecPVecCI il_end = ilhs.end();
+
+	for (smod::SpecPVecCI il = ilhs.begin(); il != il_end; ++il)
+	{
+		uint sidx = pStatedef->getSpecIdx(*il);
+		pSpec_I_LHS[sidx] += 1;
+	}
+
 
 	smod::SpecPVec slhs = pSReac->getSLHS();
 	smod::SpecPVecCI sl_end = slhs.end();
