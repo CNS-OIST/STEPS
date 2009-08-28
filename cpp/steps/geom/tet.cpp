@@ -100,12 +100,11 @@ std::vector<double> stetmesh::Tet::getBarycenter(void) const
 		v2[i] = v2vec[i];
 		v3[i] = v3vec[i];
 	}*/
-	double baryc[3];
-	steps::math::tet_barycenter(v0, v1, v2, v3, baryc);
+	steps::math::tet_barycenter(v0, v1, v2, v3, pBaryc);
 	std::vector<double> barycentre(3);
-	barycentre[0] = baryc[0];
-	barycentre[1] = baryc[1];
-	barycentre[2] = baryc[2];
+	barycentre[0] = pBaryc[0];
+	barycentre[1] = pBaryc[1];
+	barycentre[2] = pBaryc[2];
 	return barycentre;
  }
 

@@ -134,7 +134,7 @@ public:
     /// This is a slightly weaker metric than getQualityAR, because
     /// certain slivers (degenerate tetrahedrons) can still have a fairly
     /// small value.
-    /// 
+    ///
     /// \return Quality of the tetrahedron.
     double getQualityRER(void) const;
 
@@ -380,7 +380,7 @@ private:
     uint                        pVerts[4];
 
     // The Barycentre- currently calculated each time _getBarycentre is called
-    double                    * pBaryc;
+    double                     * pBaryc;
 
 };
 
