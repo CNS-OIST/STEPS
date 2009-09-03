@@ -42,8 +42,8 @@ AM_CPPFLAGS = $(PYTHON_CPPFLAGS) -I$(top_srcdir)/cpp
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-pyexec_stepsdir = $(pythondir)/steps_0_5_0
-python_stepsdir = $(pythondir)/steps_0_5_0
+pyexec_stepsdir = $(pythondir)/steps
+python_stepsdir = $(pythondir)/steps
 
 pyexec_steps_LTLIBRARIES = \
     _model_swig.la \
