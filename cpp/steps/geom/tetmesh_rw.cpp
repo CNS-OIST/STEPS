@@ -63,9 +63,9 @@ USING(steps::wm, Patch);
 
 // TODO:
 // * Change to a binary format, this will obviously be much more effective
-//   for larger meshes. Maybe use something like the NetCDF library for 
-//   this. It will make loading the mesh from e.g. Matlab easier. 
-// * Add a LOT more error checking and throw exceptions (while keeping in 
+//   for larger meshes. Maybe use something like the NetCDF library for
+//   this. It will make loading the mesh from e.g. Matlab easier.
+// * Add a LOT more error checking and throw exceptions (while keeping in
 //   mind to clean up along the call path!! As always!!!!!!!!)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -77,7 +77,7 @@ Tetmesh * steps::tetmesh::loadASCII(string pathname)
     typedef vector<double> doublevec_t;
     typedef vector<uint> uintvec_t;
     typedef map<string, TmComp*> compmap_t;
-    
+
     ifstream mf(pathname.c_str());
     if (!mf)
     {
@@ -85,7 +85,7 @@ Tetmesh * steps::tetmesh::loadASCII(string pathname)
         os << "Cannot open file \"" << pathname << "\"";
         throw steps::IOErr(os.str());
     }
-    
+
     // Read vertices.
     uint nverts = 0;
     mf >> nverts;
@@ -96,7 +96,7 @@ Tetmesh * steps::tetmesh::loadASCII(string pathname)
         mf >> v;
         verts[i] = v;
     }
-    
+
     // Read triangles.
     uint ntris = 0;
     mf >> ntris;
@@ -107,7 +107,7 @@ Tetmesh * steps::tetmesh::loadASCII(string pathname)
         mf >> v;
         tris[i] = v;
     }
-    
+
     // Read tetrahedrons.
     uint ntets = 0;
     mf >> ntets;
@@ -118,10 +118,10 @@ Tetmesh * steps::tetmesh::loadASCII(string pathname)
         mf >> v;
         tets[i] = v;
     }
-    
+
     // Build mesh and set stuff using new style constructor).
     Tetmesh * m = new Tetmesh(verts, tets, tris);
-    
+
     // Read compartments.
     uint ncomps = 0;
     mf >> ncomps;
@@ -130,7 +130,7 @@ Tetmesh * steps::tetmesh::loadASCII(string pathname)
     {
         string compid;
         mf >> compid;
-        
+
         uint nvolsys;
         mf >> nvolsys;
         strvec_t volsys;
@@ -140,7 +140,7 @@ Tetmesh * steps::tetmesh::loadASCII(string pathname)
             mf >> volsysid;
             volsys.push_back(volsysid);
         }
-        
+
         uint ntets_in_c;
         mf >> ntets_in_c;
         uintvec_t comptets(ntets_in_c);
@@ -150,14 +150,14 @@ Tetmesh * steps::tetmesh::loadASCII(string pathname)
             mf >> v;
             comptets[t] = v;
         }
-        
+
         TmComp * newcomp = new TmComp(compid, m, comptets);
         compmap[compid] = newcomp;
         strvec_ci volsys_end = volsys.end();
         for (strvec_ci vsys = volsys.begin(); vsys != volsys_end; ++vsys)
             newcomp->addVolsys(*vsys);
     }
-    
+
     // Read patches.
     uint npatches = 0;
     mf >> npatches;
@@ -166,7 +166,7 @@ Tetmesh * steps::tetmesh::loadASCII(string pathname)
         // Read patch name.
         string patchid;
         mf >> patchid;
-        
+
         // Read inner comp.
         uint icomp_switch = 0;
         TmComp * icomp = 0;
@@ -177,7 +177,7 @@ Tetmesh * steps::tetmesh::loadASCII(string pathname)
             mf >> icomp_id;
             icomp = compmap[icomp_id];
         }
-        
+
         // Read outer comp.
         uint ocomp_switch = 0;
         TmComp * ocomp = 0;
@@ -188,7 +188,7 @@ Tetmesh * steps::tetmesh::loadASCII(string pathname)
             mf >> ocomp_id;
             ocomp = compmap[ocomp_id];
         }
-        
+
         // Read surface systems.
         uint nsurfsys = 0;
         mf >> nsurfsys;
@@ -199,7 +199,7 @@ Tetmesh * steps::tetmesh::loadASCII(string pathname)
             mf >> ssysid;
             surfsys.push_back(ssysid);
         }
-        
+
         // Read triangles.
         uint ntris_in_p = 0;
         mf >> ntris_in_p;
@@ -210,7 +210,7 @@ Tetmesh * steps::tetmesh::loadASCII(string pathname)
             mf >> v;
             patchtris[t] = v;
         }
-        
+
         TmPatch * patch = new TmPatch(patchid, m, patchtris, icomp, ocomp);
         strvec_ci surfsys_end = surfsys.end();
         for (strvec_ci ssys = surfsys.begin(); ssys != surfsys_end; ++ssys)
@@ -229,14 +229,14 @@ void steps::tetmesh::saveASCII(string pathname, Tetmesh * m)
     typedef strset::const_iterator strset_ci;
     typedef vector<uint> uintvec;
     typedef uintvec::const_iterator uintvec_ci;
-    
+
     if (m == 0)
     {
         ostringstream os;
         os << "No model specified";
         throw steps::ArgErr(os.str());
     }
-    
+
     ofstream mf(pathname.c_str());
     if (!mf)
     {
@@ -244,12 +244,12 @@ void steps::tetmesh::saveASCII(string pathname, Tetmesh * m)
         os << "Cannot open file \"" << pathname << "\"";
         throw steps::IOErr(os.str());
     }
-    
-    // Increase digit precision a bit to accurately store doubles 
-    // in ASCII. Otherwise last few binary digits might get rounded 
+
+    // Increase digit precision a bit to accurately store doubles
+    // in ASCII. Otherwise last few binary digits might get rounded
     // wrongly when reading back in.
     mf.precision(13);
-    
+
     // Dump vertices.
     uint nverts = m->countVertices();
     mf << nverts << endl;
@@ -264,7 +264,7 @@ void steps::tetmesh::saveASCII(string pathname, Tetmesh * m)
         mf << verts[2] << endl;
     }
     mf << endl;
-    
+
     // Dump triangles.
     uint ntris = m->countTris();
     mf << ntris << endl;
@@ -279,7 +279,7 @@ void steps::tetmesh::saveASCII(string pathname, Tetmesh * m)
         mf << tri[2] << endl;
     }
     mf << endl;
-    
+
     // Dump tetrahedrons.
     uint ntets = m->countTets();
     mf << ntets << endl;
@@ -296,7 +296,7 @@ void steps::tetmesh::saveASCII(string pathname, Tetmesh * m)
         mf << tet[3] << endl;
     }
     mf << endl;
-    
+
     // Dump compartments.
     uint ncomps = m->_countComps();
     mf << ncomps << endl;
@@ -304,7 +304,7 @@ void steps::tetmesh::saveASCII(string pathname, Tetmesh * m)
     {
         TmComp * comp = m->getTetComp(cidx);
         mf << comp->getID() << endl;
-        
+
         strset volsys = comp->getVolsys();
         mf << volsys.size() << endl;
         strset_ci v_end = volsys.end();
@@ -312,7 +312,7 @@ void steps::tetmesh::saveASCII(string pathname, Tetmesh * m)
         {
             mf << *v << endl;
         }
-        
+
         uintvec tets = comp->_getAllTetIndices();
         mf << tets.size() << endl;
         uintvec_ci t_end = tets.end();
@@ -335,7 +335,7 @@ void steps::tetmesh::saveASCII(string pathname, Tetmesh * m)
         if (numctr != 0) mf << endl;
         mf << endl;
     }
-    
+
     // Dump patches.
     uint npatches = m->_countPatches();
     mf << npatches << endl;
@@ -343,15 +343,15 @@ void steps::tetmesh::saveASCII(string pathname, Tetmesh * m)
     {
         TmPatch * patch = m->getTriPatch(pidx);
         mf << patch->getID() << endl;
-        
+
         Comp * icomp = patch->getIComp();
         if (icomp == 0) mf << "0" << endl;
         else mf << "1" << "    " << icomp->getID() << endl;
-        
+
         Comp * ocomp = patch->getOComp();
         if (ocomp == 0) mf << "0" << endl;
         else mf << "1" << "    " << ocomp->getID() << endl;
-        
+
         strset surfsys = patch->getSurfsys();
         mf << surfsys.size() << endl;
         strset_ci s_end = surfsys.end();
@@ -359,7 +359,7 @@ void steps::tetmesh::saveASCII(string pathname, Tetmesh * m)
         {
             mf << *s << endl;
         }
-        
+
         uintvec tris = patch->_getAllTriIndices();
         mf << tris.size() << endl;
         uintvec_ci t_end = tris.end();
@@ -382,7 +382,7 @@ void steps::tetmesh::saveASCII(string pathname, Tetmesh * m)
         if (numctr != 0) mf << endl;
         mf << endl;
     }
-    
+
     mf.close();
 }
 
