@@ -87,7 +87,7 @@ typedef DiffdefPVec::iterator            DiffdefPVecI;
 typedef DiffdefPVec::const_iterator      DiffdefPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
-
+/// Defined State
 class Statedef
 {
 
@@ -108,30 +108,46 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
+    /// Constructor
+    /// 
+    /// \param m Pointer to the model object.
+    /// \param g Pointer to the geometry container.
+    /// \param r Pointer to the random number generator.
     Statedef(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r);
+
+    /// Destructor
     ~Statedef(void);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: COMPARTMENTS
     ////////////////////////////////////////////////////////////////////////
 
-    // Return pointer to Compdef object specified by global index argument.
+    /// Return pointer to Compdef object specified by global index argument.
+    ///
+    /// \param gidx Global index of the Compdef object.
     Compdef * compdef(uint gidx) const;
 
-    // Return the total number of compartments in the simulation state.
+    /// Return the total number of compartments in the simulation state.
     inline uint countComps(void) const
     { return pCompdefs.size(); }
 
-    // Return the global index of compartment identified by string argument,
-    // or object argument.
-    // Throw exception if geometry does not contain comp with this identifier.
+    /// Return the global index of compartment identified by string argument.
+    ///
+    /// \param c Name of the compartment.
+    /// \exception Throw exception if geometry does not contain comp with this identifier.
     uint getCompIdx(std::string const & c) const;
+
+    /// Return the global index of compartment identified by  object argument.
+    ///
+    /// \param comp Pointer to the Comp object..
+    /// \exception Throw exception if geometry does not contain comp with this identifier.
     uint getCompIdx(steps::wm::Comp * comp) const;
 
-
+    /// Return the beginning iterator of the Compdefs objects.
     std::vector<Compdef*>::const_iterator bgnComp(void) const
     { return pCompdefs.begin(); }
 
+    /// Return the end iterator of the Compdefs objects.
     std::vector<Compdef*>::const_iterator endComp(void) const
     { return pCompdefs.end(); }
 
@@ -139,22 +155,32 @@ public:
     // DATA ACCESS: PATCHES
     ////////////////////////////////////////////////////////////////////////
 
-    // Return pointer to Patchdef object specified by global index argument.
+    /// Return pointer to Patchdef object specified by global index argument.
+    ///
+    /// \param gidx Global index of the patch.
     Patchdef * patchdef(uint gidx) const;
 
-    // Return the total number of patches in the simulation state.
+    /// Return the total number of patches in the simulation state.
     uint countPatches(void) const
     { return pPatchdefs.size(); }
 
-    // Return the global index of patch identified by string argument,
-    // or object argument.
-    // Throw exception if geometry does not contain patch with this identifier.
+    /// Return the global index of patch identified by string argument.
+    ///
+    /// \param p Name of the patch.
+    /// \exception Throw exception if geometry does not contain patch with this identifier.
     uint getPatchIdx(std::string const & p) const;
+
+    /// Return the global index of patch identified by string argument.
+    ///
+    /// \param patch Pointer to the patch.
+    /// \exception Throw exception if geometry does not contain patch with this identifier.
     uint getPatchIdx(steps::wm::Patch * patch) const;
 
+    /// Return the beginning iterator of the Patchdefs objects.
     std::vector<Patchdef*>::const_iterator bgnPatch(void) const
     { return pPatchdefs.begin(); }
 
+    /// Return the end iterator of the Patchdefs objects.
     std::vector<Patchdef*>::const_iterator endPatch(void) const
     { return pPatchdefs.end(); }
 
@@ -162,16 +188,19 @@ public:
     // DATA ACCESS: SPECIES
     ////////////////////////////////////////////////////////////////////////
 
-    // Return the total number of species in the simulation state.
+    /// Return the total number of species in the simulation state.
     uint countSpecs(void) const
     { return pSpecdefs.size(); }
 
-    // Return pointer to Specdef object specified by global index argument.
+    /// Return pointer to Specdef object specified by global index argument.
+    ///
+    /// \param gidx Global index of the species.
     Specdef * specdef(uint gidx) const;
 
-    // Return the global index of species identified by string argument,
-    // or object argument.
-    // Throw exception if model does not contain species with this identifier.
+    /// Return the global index of species identified by string argument.
+    ///
+    /// \param s Name of the species.
+    /// \exception Throw exception if model does not contain species with this identifier.
     uint getSpecIdx(std::string const & s) const;
     uint getSpecIdx(steps::model::Spec * spec) const;
 
@@ -179,64 +208,89 @@ public:
     // DATA ACCESS: REACTIONS
     ////////////////////////////////////////////////////////////////////////
 
-    // Return the total number of reactions in the simulation state.
+    /// Return the total number of reactions in the simulation state.
     uint countReacs(void) const
     { return pReacdefs.size(); }
 
-    // Return pointer to Reacdef object specified by global index argument.
+    /// Return pointer to Reacdef object specified by global index argument.
+    ///
+    /// \param gidx Global index of the reaction.
     Reacdef * reacdef(uint gidx) const;
 
-    // Return the global index of reac identified by string argument,
-    // or object argument.
-    // Throw exception if model does not contain reac with this identifier.
+    /// Return the global index of reac identified by string argument.
+    ///
+    /// \param r Name of the reaction.
+    /// \exception Throw exception if model does not contain reac with this identifier.
     uint getReacIdx(std::string const & r) const;
+
+    /// Return the global index of reac identified by object argument.
+    ///
+    /// \param reac Pointer to the reaction object.
+    /// \exception Throw exception if model does not contain reac with this identifier.
     uint getReacIdx(steps::model::Reac * reac) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SURFACE REACTIONS
     ////////////////////////////////////////////////////////////////////////
 
-    // Return the total number of surface reactions in the simulation state.
+    /// Return the total number of surface reactions in the simulation state.
     uint countSReacs(void) const
     { return pSReacdefs.size(); }
 
-    // Return pointer to SReacdef object specified by global index argument.
+    /// Return pointer to SReacdef object specified by global index argument.
+    ///
+    /// \param gidx Global index of the surface reaction.
     SReacdef * sreacdef(uint gidx) const;
 
-    // Return the global index of surface reaction identified by string
-    // argument, or object argument.
-    // Throw exception if model does not contain sreac with this identifier.
+    /// Return the global index of surface reaction identified by string argument.
+    ///
+    /// \param sr Name of the surface reaction.
+    /// \exception Throw exception if model does not contain sreac with this identifier.
     uint getSReacIdx(std::string const & sr) const;
+    /// Return the global index of surface reaction identified by object argument.
+    ///
+    /// \param sreac Pointer to the surface reaction object..
+    /// \exception Throw exception if model does not contain sreac with this identifier.
     uint getSReacIdx(steps::model::SReac * sreac) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: DIFFUSION
     ////////////////////////////////////////////////////////////////////////
 
-    // Return the total number of diffusion rules in the simulation state.
+    /// Return the total number of diffusion rules in the simulation state.
     uint countDiffs(void) const
     { return pDiffdefs.size(); }
 
-    // Return pointer to Diffdef object specified by global index argument.
+    /// Return pointer to Diffdef object specified by global index argument.
+    ///
+    /// \param gidx Global index of the diffusion.
     Diffdef * diffdef(uint gidx) const;
 
-    // Return the global index of diffusion identified by string argument,
-    // or object argument.
-    // Throw exception if model does not contain diff with this identifier.
+    /// Return the global index of diffusion identified by string argument.
+    /// 
+    /// \param d Name of the diffusion.
+    /// \exception Throw exception if model does not contain diff with this identifier.
     uint getDiffIdx(std::string const & d) const;
+
+    /// Return the global index of diffusion identified by object argument.
+    /// 
+    /// \param diff Pointer to the diffusion object.
+    /// \exception Throw exception if model does not contain diff with this identifier.
     uint getDiffIdx(steps::model::Diff * diff) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: STATE
     ////////////////////////////////////////////////////////////////////////
 
-    // Return the current simulation time.
+    /// Return the current simulation time.
     inline double time(void) const
     { return pTime; }
-
+    
+    /// Return the model object.
     inline steps::model::Model * model(void) const
     { return pModel; }
 
+    /// Return the random number generator object.
     inline steps::rng::RNG * rng(void) const
     { return pRNG; }
 
@@ -244,21 +298,30 @@ public:
     // SOLVER METHODS: STATE
     ////////////////////////////////////////////////////////////////////////
 
-    // Set the current simulation time.
+    /// Set the current simulation time.
+    ///
+    /// \param t Simulation time.
     void setTime(double t);
 
-    // Increase the current simulation time
+    /// Increase the current simulation time.
+    ///
+    /// \param dt Discrete time.
     void incTime(double dt);
 
-    // Reset the simulation time to 0s.
+    /// Reset the simulation time to 0s.
     inline void resetTime(void)
     { pTime = 0.0; }
 
+    /// Increase the time step.
+    ///
+    /// \param Time step to be increased.
     void incNSteps(uint i = 1);
 
+    /// Reset the time step to 0.
     inline void resetNSteps(void)
     { pNSteps = 0; }
 
+    /// Return current simulation time step.
     inline uint nsteps(void) const
     { return pNSteps; }
 

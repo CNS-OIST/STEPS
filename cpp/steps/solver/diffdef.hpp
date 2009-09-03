@@ -46,26 +46,33 @@ START_NAMESPACE(solver)
 //class Statedef;
 
 ////////////////////////////////////////////////////////////////////////////////
-
+/// Defined diffusion object.
 class Diffdef
 {
 
 public:
+    /// Constructor
+    ///
+    /// \param sd State of the solver.
+    /// \param idx Global index of the object.
+    /// \param d Pointer to the associated Diff object.
 	Diffdef(Statedef * sd, uint idx, steps::model::Diff * d);
 
+    /// Destructor
 	~Diffdef(void);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: DIFFUSION RULE
     ////////////////////////////////////////////////////////////////////////
 
-	// Return the global index of this diffusion rule.
+	/// Return the global index of this diffusion rule.
 	inline uint gidx(void) const
 	{ return pIdx; }
 
+    /// Return the name of this diffusion rule.
 	std::string const name(void) const;
 
-	// Return the diffusion constant.
+	/// Return the diffusion constant.
 	double dcst(void) const;
 
     ////////////////////////////////////////////////////////////////////////
@@ -75,7 +82,9 @@ public:
     /// Return the global index of the ligand species.
     uint lig(void) const;
 
+    /// \todo check
     int dep(uint gidx) const;
+    /// \todo check
     bool reqspec(uint gidx) const;
 
 
@@ -83,16 +92,21 @@ public:
     // SOLVER METHODS: SETUP
     ////////////////////////////////////////////////////////////////////////
 
+    /// Setup the object.
 	void setup(void);
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: DIFFUSION RULE
     ////////////////////////////////////////////////////////////////////////
 
-	// Set the diffusion constant for this diffusion rule.
+	/// Set the diffusion constant for this diffusion rule.
+    ///
+    /// \param d Rate constant of the diffusion rule.
 	void setDcst(double d);
 
-	// Set the ligand of the diffusion rule by its global index
+	/// Set the ligand of the diffusion rule by its global index
+    ///
+    /// \param gidx Global index of the diffusion rule.
 	void setLig(uint gidx);
 
     ////////////////////////////////////////////////////////////////////////

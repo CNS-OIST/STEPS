@@ -49,41 +49,51 @@ class Statedef;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/// Defined Surface Reaction.
+/// \todo imcompleted.
 class SReacdef
 {
 
 public:
 
-    enum orientT
+    enum orientT  ///< Orientation of the reaction.
     {
         INSIDE = 0,
         OUTSIDE = 1
     };
 
+    /// Constructor
+    ///
+    /// \param sd State of the solver.
+    /// \param idx Global index of the surface reaction.
+    /// \param sr Pointer to the SReac object.
 	SReacdef(Statedef * sd, uint idx, steps::model::SReac * sr);
 
+    /// Destructor
 	~SReacdef(void);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SURFACE REACTION RULE
     ////////////////////////////////////////////////////////////////////////
 
-	// Return the global index of this surface reaction rule.
+	/// Return the global index of this surface reaction rule.
 	inline uint gidx(void) const
 	{ return pIdx; }
 
+    /// Return the name of the surface reaction.
 	std::string const name(void) const;
 
-	// Return the order of this surface reaction.
+	/// Return the order of this surface reaction.
 	uint order(void) const;
 
-	// Return the MACROscopic reaction constant.
+	/// Return the MACROscopic reaction constant.
 	double kcst(void) const;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: SETUP
     ////////////////////////////////////////////////////////////////////////
 
+    /// Setup the object.
 	void setup(void);
 
     ////////////////////////////////////////////////////////////////////////

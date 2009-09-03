@@ -55,6 +55,7 @@ class Statedef;
 /// \warning Not every API in this class is implemented in the solver.
 ///          If a API is not implemented in a solver, 
 ///          STEPS will throw an error message to the user.
+/// \warning Methods start with underscore are not exposed to Python.
 ///////////////////////////////////////////////////////////////////////////////
 class API
 {
@@ -140,51 +141,82 @@ public:
     /// \param c Name of the compartment.
     double getCompVol(std::string const & c) const;
 
-    // Sets the volume of compartment c.
-    // NOTE: this method may throw an exception if this does not make sense
-    // for a solver (e.g. a tetrahedral mesh-based solver).
+    /// Sets the volume of compartment c.
+    ///
+    /// NOTE: this method may throw an exception if this does not make sense
+    /// for a solver (e.g. a tetrahedral mesh-based solver).
+    /// \param c Name of the compartment.
+    /// \param vol Volume of the compartment.
     void setCompVol(std::string const & c, double vol);
 
-    // Returns the number of molecules of species s in compartment c.
-    // NOTE: in a mesh-based simulation, the total count is computed as
-    // the sum of the counts in all voxels of the compartment.
+    /// Returns the number of molecules of species s in compartment c.
+    ///
+    /// NOTE: in a mesh-based simulation, the total count is computed as
+    /// the sum of the counts in all voxels of the compartment.
+    /// \param c Name of the compartment.
+    /// \param s Name of the species.
     double getCompCount(std::string const & c, std::string const & s) const;
 
-    // Sets the number of molecules of species s in compartment c.
-    // NOTE: in a mesh-based simulation, the total amount is equally divided
-    // over all voxels in the compartment (i.e. a uniform distribution).
+    /// Sets the number of molecules of species s in compartment c.
+    ///
+    /// NOTE: in a mesh-based simulation, the total amount is equally divided
+    /// over all voxels in the compartment (i.e. a uniform distribution).
+    /// \param c Name of the compartment.
+    /// \param s Name of the species.
+    /// \param n Number of molecules of the species.
     void setCompCount(std::string const & c, std::string const & s, double n);
 
-    // Returns the amount (in mols) of species s in compartment c.
-    // NOTE: in a mesh-based simulation, the total amount is computed as
-    // the sum of the amounts in all voxels of the compartment.
+    /// Returns the amount (in mols) of species s in compartment c.
+    ///
+    /// NOTE: in a mesh-based simulation, the total amount is computed as
+    /// the sum of the amounts in all voxels of the compartment.
+    /// \param c Name of the compartment.
+    /// \param s Name of the species.
     double getCompAmount(std::string const & c, std::string const & s) const;
 
-    // Set the amount (in mols) of species s in compartment c.
-    // NOTE: in a mesh-based simulation, the total amount is equally divided
-    // over all voxels in the compartment (i.e. a uniform distribution).
+    /// Set the amount (in mols) of species s in compartment c.
+    ///
+    /// NOTE: in a mesh-based simulation, the total amount is equally divided
+    /// over all voxels in the compartment (i.e. a uniform distribution).
+    /// \param c Name of the compartment.
+    /// \param s Name of the species.
+    /// \param a Amount of the species.
     void setCompAmount(std::string const & c, std::string const & s, double a);
 
-    // Returns the concentration (in molar units) of species s in compartment c.
-    // NOTE: in a mesh-based simulation, the overall concentration in a
-    // compartment is computed by taking the volume-weighted sum of the
-    // concentration in all voxels of the compartment.
+    /// Returns the concentration (in molar units) of species s in compartment c.
+    ///
+    /// NOTE: in a mesh-based simulation, the overall concentration in a
+    /// compartment is computed by taking the volume-weighted sum of the
+    /// concentration in all voxels of the compartment.
+    /// \param c Name of the compartment.
+    /// \param s Name of the species.
     double getCompConc(std::string const & c, std::string const & s) const;
 
-    // Sets the concentration (in molar units) of species s in compartment c.
-    // NOTE: in a mesh-based simulation, this method changes the
-    // concentration to the same value in all voxels of the compartment.
+    /// Sets the concentration (in molar units) of species s in compartment c.
+    ///
+    /// NOTE: in a mesh-based simulation, this method changes the
+    /// concentration to the same value in all voxels of the compartment.
+    /// \param c Name of the compartment.
+    /// \param s Name of the species.
+    /// \param conc Concentration of the species.
     void setCompConc(std::string const & c, std::string const & s, double conc);
 
-    // Returns whether the concentration of species s in compartment c
-    // remains constant over time (unless changed explicitly).
-    // NOTE: in a mesh-based simulation, this method will only return true
-    // only if the species has been clamped in all voxels of the compartment.
+    /// Returns whether the concentration of species s in compartment c
+    /// remains constant over time (unless changed explicitly).
+    ///
+    /// NOTE: in a mesh-based simulation, this method will only return true
+    /// only if the species has been clamped in all voxels of the compartment.
+    /// \param c Name of the compartment.
+    /// \param s Name of the species.
     bool getCompClamped(std::string const & c, std::string const & s) const;
 
-    // Turns clamping of species s in compartment c on or off.
-    // NOTE: in a mesh based simulation, this method turns clamping on/off
-    // in all voxels of the compartment.
+    /// Turns clamping of species s in compartment c on or off.
+    ///
+    /// NOTE: in a mesh based simulation, this method turns clamping on/off
+    /// in all voxels of the compartment.
+    /// \param c Name of the compartment.
+    /// \param s Name of the species.
+    /// \param b Flag to trun clamping of species on / off.
     void setCompClamped(std::string const & c, std::string const & s, bool b);
 
     // Returns the macroscopic reaction constant of reaction r in
@@ -194,64 +226,104 @@ public:
     // compartment.
     double getCompReacK(std::string const & c, std::string const & r) const;
 
-    // Sets the macroscopic reaction constant of reaction r in compartment c
-    // (units vary according to the order of the reaction).
-    // NOTE: in a mesh-based simulation, this method changes the reaction
-    // constant equally in all voxels of the compartment.
+    /// Sets the macroscopic reaction constant of reaction r in compartment c
+    /// (units vary according to the order of the reaction).
+    ///
+    /// NOTE: in a mesh-based simulation, this method changes the reaction
+    /// constant equally in all voxels of the compartment.
+    /// \param c Name of the compartment.
+    /// \param r Name of te reaction.
+    /// \param kf Reaction constant.
     void setCompReacK(std::string const & c, std::string const & r, double kf);
 
-    // Returns whether reaction r in compartment c is active or not
-    // NOTE: in a mesh-based simulation, this method returns false only when
-    // the reaction has been inactivated in all voxels.
+    /// Returns whether reaction r in compartment c is active or not
+    ///
+    /// NOTE: in a mesh-based simulation, this method returns false only when
+    /// the reaction has been inactivated in all voxels.
+    /// \param c Name of the compartment.
+    /// \param r Name of the reaction.
     bool getCompReacActive(std::string const & c, std::string const & r) const;
 
-    // Activate or inactivate reaction r in compartment c.
-    // NOTE: in a mesh-based simulation, activation/inactivation of a reaction
-    // turns it on/off in all voxels.
+    /// Activate or inactivate reaction r in compartment c.
+    ///
+    /// NOTE: in a mesh-based simulation, activation/inactivation of a reaction
+    /// turns it on/off in all voxels.
+    /// \param c Name of the compartment.
+    /// \param r Name of the reaction.
+    /// \param a Flag to activate or deactivate the reaction.
     void setCompReacActive(std::string const & c, std::string const & r, bool a);
 
-    // Returns the diffusion constant of diffusion rule d in compartment c.
+    /// Returns the diffusion constant of diffusion rule d in compartment c.
+    ///
+    /// \param c Name of the compartment.
+    /// \param d Name of the diffusion.
     double getCompDiffD(std::string const & c, std::string const & d) const;
 
-    // Set the diffusion constant of diffusion rule d in compartment c.
+    /// Set the diffusion constant of diffusion rule d in compartment c.
+    ///
+    /// \param c Name of the compartment.
+    /// \param d Name of the diffusion.
+    /// \param dcst Rate constant of the diffusion.
     void setCompDiffD(std::string const & c, std::string const & d, double dcst);
 
-    // Returns whether diffusion rule d in compartment c is active or not.
+    /// Returns whether diffusion rule d in compartment c is active or not.
+    ///
+    /// \param c Name of the compartment.
+    /// \param d Name of the diffusion.
     bool getCompDiffActive(std::string const & c, std::string const & d) const;
 
-    // Activate or deactivate diffusion rule d in compartment c.
+    /// Activate or deactivate diffusion rule d in compartment c.
+    ///
+    /// \param c Name of the compartment.
+    /// \param d Name of the diffusion.
+    /// \param act Flag to activate or deactivate the diffusion.
     void setCompDiffActive(std::string const & c, std::string const & d, bool act);
 
     ////////////////////////////////////////////////////////////////////////
 
-    // Returns c_mu, the mesoscopic reaction constant of reaction r in
-    // compartment c.
-    // NOTE: in a mesh-based simulation, the mesoscopic reaction constant is
-    // computed as the sum of the mesoscopic constants in all voxels of the
-    // compartment.
+    /// Returns c_mu, the mesoscopic reaction constant of reaction r in
+    /// compartment c.
+    ///
+    /// NOTE: in a mesh-based simulation, the mesoscopic reaction constant is
+    /// computed as the sum of the mesoscopic constants in all voxels of the
+    /// compartment.
+    /// \param c Name of the compartment.
+    /// \param r Name of the reaction.
     double getCompReacC(std::string const & c, std::string const & r) const;
 
-    // Returns h_mu, the distinct number of ways in which reaction r can
-    // occur in compartment c, by computing the product of its reactants.
-    // NOTE: in a mesh-based simulation, it returns the sum of the h_mu's
-    // over all voxels of the compartment. This can become a very large value.
+    /// Returns h_mu, the distinct number of ways in which reaction r can
+    /// occur in compartment c, by computing the product of its reactants.
+    ///
+    /// NOTE: in a mesh-based simulation, it returns the sum of the h_mu's
+    /// over all voxels of the compartment. This can become a very large value.
+    /// \param c Name of the compartment.
+    /// \param r Name of the reaction.
     double getCompReacH(std::string const & c, std::string const & r) const;
 
-    // Returns the propensity, a_mu, of reaction r in compartment c.
-    // The propensity value gives the probability per unit time that this
-    // reaction will occur in the current state.
-    // NOTE: in a mesh-based simulation, a_mu is computed as the sum of the
-    // a_mu in all voxels of the compartment.
+    /// Returns the propensity, a_mu, of reaction r in compartment c.
+    /// The propensity value gives the probability per unit time that this
+    /// reaction will occur in the current state.
+    ///
+    /// NOTE: in a mesh-based simulation, a_mu is computed as the sum of the
+    /// a_mu in all voxels of the compartment.
+    /// \param c Name of the compartment.
+    /// \param r Name of the reaction.
     double getCompReacA(std::string const & c, std::string const & r) const;
 
-    // Returns the extent of reaction r in compartment c.
-    // NOTE: in a mesh-based simulation, returns the sum of the reaction
-    // extents in all voxels of the compartment.
+    /// Returns the extent of reaction r in compartment c.
+    ///
+    /// NOTE: in a mesh-based simulation, returns the sum of the reaction
+    /// extents in all voxels of the compartment.
+    /// \param c Name of the compartment.
+    /// \param r Name of the reaction.
     uint getCompReacExtent(std::string const & c, std::string const & r) const;
 
-    // Resets the extent of reaction r in compartment c to zero.
-    // NOTE: in a mesh-based simulation, resets the extents of the reaction
-    // in all voxels of the compartment.
+    /// Resets the extent of reaction r in compartment c to zero.
+    ///
+    /// NOTE: in a mesh-based simulation, resets the extents of the reaction
+    /// in all voxels of the compartment.
+    /// \param c Name of the compartment.
+    /// \param r Name of the reaction.
     void resetCompReacExtent(std::string const & c, std::string const & r);
 
     ////////////////////////////////////////////////////////////////////////
@@ -259,78 +331,152 @@ public:
     //      TETRAHEDRAL VOLUME ELEMENTS
     ////////////////////////////////////////////////////////////////////////
 
-    // Returns the volume of a tetrahedron (in m^3).
+    /// Returns the volume of a tetrahedron (in m^3).
+    ///
+    /// \param tidx Index of the tetrahedron.
     double getTetVol(uint tidx) const;
-																							////////////
+
+    /// Set the volume of a tetrahedron (in m^3).
+    ///
+    /// \param tidx Index of the tetrahedron.
+    /// \param vol Volume of the tetrahedron.
     void setTetVol(uint tidx, double vol);
 
-    // Returns the number of molecules of species s in a tetrahedral volume
-    // element (voxel).
+    /// Returns the number of molecules of species s in a tetrahedral volume
+    /// element (voxel).
+    ///
+    /// \parem tidx Index of the tetrahedron.
+    /// \param s Name of the species.
     double getTetCount(uint tidx, std::string const & s) const;
 
-    // Sets the number of molecules of species s in a voxel.
+    /// Sets the number of molecules of species s in a voxel.
+    ///
+    /// \parem tidx Index of the tetrahedron.
+    /// \param s Name of the species.
+    /// \param n Number of molecules of the species.
     void setTetCount(uint tidx, std::string const & s, double n);
 
-    // Returns the amount (in mols) of species s in a voxel
+    /// Returns the amount (in mols) of species s in a voxel.
+    ///
+    /// \param tidx Index of the tetrahedron.
+    /// \param s Name of the species.
     double getTetAmount(uint tidx, std::string const & s) const;
 
-    // Sets the amount (in mols) of species s in a voxel.
+    /// Sets the amount (in mols) of species s in a voxel.
+    ///
+    /// \param tidx Index of the tetrahedron.
+    /// \param s Name of the species.
+    /// \param m Amount of the species.
     void setTetAmount(uint tidx, std::string const & s, double m);
 
-    // Returns the concentration (in molar units) of species s in a voxel..
+    /// Returns the concentration (in molar units) of species s in a voxel..
+    ///
+    /// \param tidx Index of the tetrahedron.
+    /// \param s Name of the species.
     double getTetConc(uint tidx, std::string const & s) const;
 
-    // Sets the concentration (in molar units) of species s in a voxel.
+    /// Sets the concentration (in molar units) of species s in a voxel.
+    ///
+    /// \param tidx Index of the tetrahedron.
+    /// \param s Name of the species.
+    /// \param c Concentration of the species.
     void setTetConc(uint tidx, std::string const & s, double c);
 
-    // Returns whether the concentration of species s in a voxel
-    // remains constant over time (unless changed explicitly).
+    /// Returns whether the concentration of species s in a voxel
+    /// remains constant over time (unless changed explicitly).
+    ///
+    /// \param tidx Index of the tetrahedron.
+    /// \param s Name of the species.
     bool getTetClamped(uint tidx, std::string const & s) const;
 
-    // Sets clamping of species s in a voxel on or off.
+    /// Sets clamping of species s in a voxel on or off.
+    ///
+    /// \param tidx Index of the tetrahedron.
+    /// \param s Name of the species.
+    /// \param buf Flag to turn the clamping of species on or off.
     void setTetClamped(uint tidx, std::string const & s, bool buf);
 
-    // Returns the macroscopic reaction constant of reaction r in a voxel
-    // (units vary with order of reaction).
+    /// Returns the macroscopic reaction constant of reaction r in a voxel
+    /// (units vary with order of reaction).
+    ///
+    /// \param tidx Index of the tetrahedron.
+    /// \param r Name of the reaction.
     double getTetReacK(uint tidx, std::string const & r) const;
 
-    // Sets the macroscopic reaction constant of reaction r in a voxel.
+    /// Sets the macroscopic reaction constant of reaction r in a voxel.
+    ///
+    /// \param tidx Index of the tetrahedron.
+    /// \param r Name of the reaction.
+    /// \param kf Rate constant of the reaction.
     void setTetReacK(uint tidx, std::string const & r, double kf);
 
-    // Returns whether reaction r in a voxel is active or not
+    /// Returns whether reaction r in a voxel is active or not
+    ///
+    /// \param tidx Index of the tetrahedron.
+    /// \param r Name of the reaction.
     bool getTetReacActive(uint tidx, std::string const & r) const;
 
-    // Activates/inactivates reaction r in a voxel.
+    /// Activates/deactivates reaction r in a voxel.
+    ///
+    /// \param tidx Index of the tetrahedron.
+    /// \param r Name of the reaction.
+    /// \param act Flag to activate or deactivate the reaction.
     void setTetReacActive(uint tidx, std::string const & r, bool act);
 
-    // Returns the diffusion constant of diffusion rule d in a voxel.
+    /// Returns the diffusion constant of diffusion rule d in a voxel.
+    ///
+    /// \param tidx Index of the tetrahedron.
+    /// \param d Name of the deffusion.
     double getTetDiffD(uint tidx, std::string const & d) const;
 
-    // Sets the diffusion constant of diffusion rule d in a voxel.
+    /// Sets the diffusion constant of diffusion rule d in a voxel.
+    ///
+    /// \param tidx Index of the tetrahedron.
+    /// \param d Name of the diffusion.
+    /// \param dk Rate constant of the diffusion.
     void setTetDiffD(uint tidx, std::string const & d, double dk);
 
-    // Returns whether diffusion rule d in a voxel is active or not.
+    /// Returns whether diffusion rule d in a voxel is active or not.
+    ///
+    /// \param tidx Index of the tetrahedron.
+    /// \param d Name of the diffusion.
     bool getTetDiffActive(uint tidx, std::string const & d) const;
 
-    // Activates/deactivates diffusion rule d in a voxel.
+    /// Activates/deactivates diffusion rule d in a voxel.
+    ///
+    /// \param tidx Index of the tetrahedron.
+    /// \param d Name of the diffusion.
+    /// \param act Flag to activate / deactivate the diffusion.
     void setTetDiffActive(uint tidx, std::string const & d, bool act);
 
     ////////////////////////////////////////////////////////////////////////
 
-    // Returns c_mu, the mesoscopic reaction constant of reaction r in
-    // a voxel
+    /// Returns c_mu, the mesoscopic reaction constant of reaction r in
+    /// a voxel
+    ///
+    /// \param tidx Index of the diffusion.
+    /// \param r Name of the reaction.
     double getTetReacC(uint tidx, std::string const & r) const;
 
-    // Returns h_mu, the distinct number of ways in which reaction r can
-    // occur in a voxel, by computing the product of its reactants.
+    /// Returns h_mu, the distinct number of ways in which reaction r can
+    /// occur in a voxel, by computing the product of its reactants.
+    ///
+    /// \param tidx Index of the tetrahedron.
+    /// \param Name of the reaction.
     double getTetReacH(uint tidx, std::string const & r) const;
 
-    // Returns the propensity, a_mu, of reaction r in a voxel.
-    // The propensity value gives the probability per unit time that this
-    // reaction will occur in the current state.
+    /// Returns the propensity, a_mu, of reaction r in a voxel.
+    /// The propensity value gives the probability per unit time that this
+    /// reaction will occur in the current state.
+    ///
+    /// \param tidx Index of the tetrahedron.
+    /// \param r Name of the reaction.
     double getTetReacA(uint tidx, std::string const & r) const;
 
-    // Returns the propensity, a_mu of diffusion rule d in a voxel.
+    /// Returns the propensity, a_mu of diffusion rule d in a voxel.
+    ///
+    /// \param tidx Index of the tetrahedron.
+    /// \param d Name of the diffusion.
     double getTetDiffA(uint tidx, std::string const & d) const;
 
     ////////////////////////////////////////////////////////////////////////
@@ -338,98 +484,154 @@ public:
     //      PATCH
     ////////////////////////////////////////////////////////////////////////
 
-    // Returns the area of patch p (in m^2)
+    /// Returns the area of patch p (in m^2)
+    ///
+    /// \param p Name of the patch.
     double getPatchArea(std::string const & p) const;
 
-    // Sets the area of patch p.
-    // NOTE: this method may throw an exception if this does not make sense
-    // for a solver (e.g. a tetrahedral mesh-based solver).
+    /// Sets the area of patch p.
+    ///
+    /// NOTE: this method may throw an exception if this does not make sense
+    /// for a solver (e.g. a tetrahedral mesh-based solver).
+    /// \param p Name of the patch.
+    /// \param area Area of the patch.
     void setPatchArea(std::string const & p, double area);
 
-    // Returns the number of molecules of species s in patch p.
-    // NOTE: in a mesh-based simulation, the total count is computed as
-    // the sum of the counts in all triangles of the patch.
+    /// Returns the number of molecules of species s in patch p.
+    ///
+    /// NOTE: in a mesh-based simulation, the total count is computed as
+    /// the sum of the counts in all triangles of the patch.
+    /// \param p Name of the path.
+    /// \param s Name of the species.
     double getPatchCount(std::string const & p, std::string const & s) const;
 
-    // Sets the number of molecules of species s in patch p.
-    // NOTE: in a mesh-based simulation, the total amount is equally divided
-    // over all triangles in the patch.
+    /// Sets the number of molecules of species s in patch p.
+    ///
+    /// NOTE: in a mesh-based simulation, the total amount is equally divided
+    /// over all triangles in the patch.
+    /// \param p Name of the patch.
+    /// \param s Name of the species.
+    /// \param n Number of molecules of species.
     void setPatchCount(std::string const & p, std::string const & s, double n);
 
-    // Returns the amount (in mols) of species s in patch p.
-    // NOTE: in a mesh-based simulation, the total amount is computed as
-    // the sum of the amounts in all triangles of the patch.
+    /// Returns the amount (in mols) of species s in patch p.
+    ///
+    /// NOTE: in a mesh-based simulation, the total amount is computed as
+    /// the sum of the amounts in all triangles of the patch.
+    /// \param p Name of the patch.
+    /// \param s Name of the species.
     double getPatchAmount(std::string const & p, std::string const & s) const;
 
-    // Sets the amount (in mols) of species s in patch p.
-    // NOTE: in a mesh-based simulation, the total amount is equally divided
-    // over all triangles in the patch.
+    /// Sets the amount (in mols) of species s in patch p.
+    ///
+    /// NOTE: in a mesh-based simulation, the total amount is equally divided
+    /// over all triangles in the patch.
+    /// \param p Name of the patch.
+    /// \param s Name of the species.
+    /// \param a Amount of the species.
     void setPatchAmount(std::string const & p, std::string const & s, double a);
 
-    // Returns whether the count of species s in patch p remains constant
-    // over time (unless changed explicitly).
-    // NOTE: this method will only return true if the species has been
-    // clamped in all triangles in the patch.
+    /// Returns whether the count of species s in patch p remains constant.
+    /// over time (unless changed explicitly).
+    ///
+    /// NOTE: this method will only return true if the species has been
+    /// clamped in all triangles in the patch.
+    /// \param p Name of the patch.
+    /// \param s Name of the species.
     bool getPatchClamped(std::string const & p, std::string const & s) const;
 
-    // Turns clamping of species in patch p on or off.
-    // NOTE: in a mesh-based simulation, this method turns clamping on/off
-    // in all triangles in the patch.
+    /// Turns clamping of species in patch p on or off.
+    ///
+    /// NOTE: in a mesh-based simulation, this method turns clamping on/off
+    /// in all triangles in the patch.
+    /// \param p Name of the patch.
+    /// \param s Name of the species.
+    /// \param buf Flag to turn clamping of species on /off.
     void setPatchClamped(std::string const & p, std::string const & s, bool buf);
 
-    // Returns the macroscopic reaction constant of surface reaction r
-    // in patch p.
-    // NOTE: in a mesh-based simulation, the value is computed as the
-    // area-weighted sum of the reaction constants in all triangles of
-    // the patch.
+    /// Returns the macroscopic reaction constant of surface reaction r
+    /// in patch p.
+    ///
+    /// NOTE: in a mesh-based simulation, the value is computed as the
+    /// area-weighted sum of the reaction constants in all triangles of
+    /// the patch.
+    /// \param p Name of the patch.
+    /// \param r Name of the reaction.
     double getPatchSReacK(std::string const & p, std::string const & r) const;
 
-    // Sets the macroscopic reaction constant of surface reaction r
-    // in patch p.
-    // NOTE: in a mesh-based simulation this method changes the reaction
-    // constant equally in all triangles of the patch.
+    /// Sets the macroscopic reaction constant of surface reaction r
+    /// in patch p.
+    ///
+    /// NOTE: in a mesh-based simulation this method changes the reaction
+    /// constant equally in all triangles of the patch.
+    /// \param p Name of the patch.
+    /// \param r Name of the reaction.
+    /// \param kf Rate constant of the reaction.
     void setPatchSReacK(std::string const & p, std::string const & r, double kf);
 
-    // Returns whether surface reaction r in patch p is active or not.
-    // NOTE: in a mesh-based simulation, only returns false when the
-    // reaction has been inactivated in all triangles.
+    /// Returns whether surface reaction r in patch p is active or not.
+    ///
+    /// NOTE: in a mesh-based simulation, only returns false when the
+    /// reaction has been inactivated in all triangles.
+    /// \param p Name of the patch.
+    /// \param r Name of the reaction.
     bool getPatchSReacActive(std::string const & p, std::string const & r) const;
 
-    // Activate or inactivate surface reaction r in patch p.
-    // NOTE: in a mesh-based simulation, activation/inactivation of a
-    // surface reaction turns it on/off in all triangles.
+    /// Activate or inactivate surface reaction r in patch p.
+    ///
+    /// NOTE: in a mesh-based simulation, activation/inactivation of a
+    /// surface reaction turns it on/off in all triangles.
+    /// \param p Name of the patch.
+    /// \param r Name of the reaction.
+    /// \param a Flag to activate / deactivate the reaction.
     void setPatchSReacActive(std::string const & p, std::string const & r, bool a);
 
     ////////////////////////////////////////////////////////////////////////
 
-    // Returns c_mu, the mesoscopic reaction constant of surface reaction r
-    // in patch p.
-    // NOTE: in a mesh_based simulation, the mesoscopic reaction constant
-    // is computed as the sum of the mesoscopic reaction constants from all
-    // triangles of the patch.
+    /// Returns c_mu, the mesoscopic reaction constant of surface reaction r
+    /// in patch p.
+    ///
+    /// NOTE: in a mesh_based simulation, the mesoscopic reaction constant
+    /// is computed as the sum of the mesoscopic reaction constants from all
+    /// triangles of the patch.
+    /// \param p Name of the patch.
+    /// \param r Name of the reacton.
     double getPatchSReacC(std::string const & p, std::string const & r) const;
 
-    // Returns h_mu, the distinct number of ways in which a surface reaction
-    // r can occur in patch p, by computing the product of its reactants.
-    // NOTE: in a mesh-based simulation, it returns the sum of the h_mu's
-    // over all triangles triangles of the patch.
+    /// Returns h_mu, the distinct number of ways in which a surface reaction
+    /// r can occur in patch p, by computing the product of its reactants.
+    ///
+    /// NOTE: in a mesh-based simulation, it returns the sum of the h_mu's
+    /// over all triangles triangles of the patch.
+    /// \param p Name of the patch.
+    /// \param r Name of the reaction.
     double getPatchSReacH(std::string const & p, std::string const & r) const;
 
-    // Returns the propensity, a_mu of surface reaction r in patch p.
-    // This propensity value gives the probability per unit time that this
-    // surface reaction will occur in the current state.
-    // NOTE: in a mesh-based simulation, a_mu is computed as the sum of the
-    // a_mu in all triangles in the patch.
+    /// Returns the propensity, a_mu of surface reaction r in patch p.
+    ///
+    /// This propensity value gives the probability per unit time that this
+    /// surface reaction will occur in the current state.
+    ///
+    /// NOTE: in a mesh-based simulation, a_mu is computed as the sum of the
+    /// a_mu in all triangles in the patch.
+    /// \param p Name of the patch.
+    /// \param r Name of the reaction.
     double getPatchSReacA(std::string const & p, std::string const & r) const;
 
-    // Returns the extent of surface reaction r in patch p.
-    // NOTE: in a mesh-based simulation, returns the sum of the extents in
-    // all triangles of the patch.
+    /// Returns the extent of surface reaction r in patch p.
+    ///
+    /// NOTE: in a mesh-based simulation, returns the sum of the extents in
+    /// all triangles of the patch.
+    /// \param p Name of the patch.
+    /// \param r Name of the reaction.
     uint getPatchSReacExtent(std::string const & p, std::string const & r) const;
 
-    // Resets the extent of surface reaction r in patch p to zero.
-    // NOTE: in a mesh-based simulation, resets the extents of the
-    // surface reaction in all triangles of the patch.
+    /// Resets the extent of surface reaction r in patch p to zero.
+    ///
+    /// NOTE: in a mesh-based simulation, resets the extents of the
+    /// surface reaction in all triangles of the patch.
+    /// \param p Name of the patch.
+    /// \param r Name of the reaction.
     void resetPatchSReacExtent(std::string const & p, std::string const & r);
 
     ////////////////////////////////////////////////////////////////////////
@@ -437,52 +639,94 @@ public:
     //      TRIANGULAR SURFACE ELEMENTS
     ////////////////////////////////////////////////////////////////////////
 
-    // Returns the area of the triangle (in m^2).
+    /// Returns the area of the triangle (in m^2).
+    ///
+    /// \param tidx Index of the triangle.
     double getTriArea(uint tidx) const;
 
-    //
+    /// Set the area (in m^2) of the triangle.
+    ///
+    /// \param tidx Index of the triangle.
+    /// \param area Area of teh triangle.
     void setTriArea(uint tidx, double area);
 
-    // Returns the number of molecules of species s in a triangle.
+    /// Returns the number of molecules of species s in a triangle.
+    ///
+    /// \param tidx Index of the triangle.
+    /// \param s Name of the species.
     double getTriCount(uint tidx, std::string const & s) const;
 
-    // Sets the number of molecules of species s in a triangle.
+    /// Sets the number of molecules of species s in a triangle.
+    ///
+    /// \param tidx Index of the triangle.
+    /// \param s Name of the species.
+    /// \param n Number of molecules of the species.
     void setTriCount(uint tidx, std::string const & s, double n);
 
-    // Returns whether the number of molecules of species s in a triangle
-    // remains constant over time (unless changed explicitly)
+    /// Returns whether the number of molecules of species s in a triangle
+    /// remains constant over time (unless changed explicitly)
+    ///
+    /// \param tidx Index of the triangle.
+    /// \param s name of the species.
     bool getTriClamped(uint tidx, std::string const & s) const;
 
-    // Sets clamping of species s in a triangle on or off.
+    /// Sets clamping of species s in a triangle on or off.
+    ///
+    /// \param tidx Index of the triangle.
+    /// \param s name of the species.
+    /// \param buf Flag to set clamping of species on /off.
     void setTriClamped(uint tidx, std::string const & s, bool buf);
 
-    // Returns the macroscopic reaction constant of surface reaction r
+    /// Returns the macroscopic reaction constant of surface reaction r
     // in a triangle (units vary with order of reaction).
+    ///
+    /// \param tidx Index of the triangle.
+    /// \param r name of the reaction.
     double getTriSReacK(uint tidx, std::string const & r) const;
 
-    // Sets the macroscopic reaction constant of surface reaction r in
+    /// Sets the macroscopic reaction constant of surface reaction r in
     // a triangle.
+    ///
+    /// \param tidx Index of the triangle.
+    /// \param r name of the reaction.
+    /// \param kf Rate constant of the reaction.
     void setTriSReacK(uint tidx, std::string const & r, double kf);
 
-    // Returns whether surface reaction r in a triangle is active or not.
+    /// Returns whether surface reaction r in a triangle is active or not.
+    ///
+    /// \param tidx Index of the triangle.
+    /// \param r name of the reaction.
     bool getTriSReacActive(uint tidx, std::string const & r) const;
 
-    // Activates/inactivates surface reaction r in a triangle.
+    /// Activates/inactivates surface reaction r in a triangle.
+    ///
+    /// \param tidx Index of the triangle.
+    /// \param r name of the reaction.
+    /// \param act Flag to activate / deactivate the reaction.
     void setTriSReacActive(uint tidx, std::string const & r, bool act);
 
     ////////////////////////////////////////////////////////////////////////
 
     // Returns c_mu, the mesoscopic reaction constant of surface reaction r
     // in a triangle.
+    ///
+    /// \param tidx Index of the triangle.
+    /// \param r name of the reaction.
     double getTriSReacC(uint tidx, std::string const & r) const;
 
     // Returns h_mu, the distinct number of ways in which surface reaction r
     // can occur in a triangle, by computing the product of it's reactants.
+    ///
+    /// \param tidx Index of the triangle.
+    /// \param r name of the reaction.
     double getTriSReacH(uint tidx, std::string const & r) const;
 
     // Returns the propensity, a_mu, of surface reaction r in a triangle.
     // The propensity value gives the probability per unit time that this
     // surface reaction will occur in the current state.
+    ///
+    /// \param tidx Index of the triangle.
+    /// \param r name of the reaction.
     double getTriSReacA(uint tidx, std::string const & r) const;
 
     ////////////////////////////////////////////////////////////////////////
@@ -629,16 +873,19 @@ protected:
     virtual double _getTriSReacA(uint tidx, uint ridx) const;
 
     ////////////////////////////////////////////////////////////////////////
-
+    /// Return a reference of the Model object.
     steps::model::Model * model(void) const
     { return pModel; }
 
+    /// Return a reference of the Geom object.
     steps::wm::Geom * geom(void) const
     { return pGeom; }
 
+    /// Return a reference of the RNG obje
     steps::rng::RNG * rng(void) const
     { return pRNG; }
 
+    /// Return a reference of the Statedef object.
     steps::solver::Statedef * statedef(void) const
     { return pStatedef; }
 

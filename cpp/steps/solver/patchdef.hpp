@@ -56,30 +56,40 @@ typedef PatchDefPVec::const_iterator    PatchDefPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/// Defined patch object.
 class Patchdef
 {
 
 public:
+    /// Constructor
+    ///
+    /// \param sd State of the solver.
+    /// \param idx Global index of the patch.
+    /// \param p Pointer to the Patch object.
 	Patchdef(Statedef * sd, uint idx, steps::wm::Patch * p);
 
+    /// Destructor
 	~Patchdef(void);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: PATCH
     ////////////////////////////////////////////////////////////////////////
 
-	// Return the area of this patch
+	/// Return the area of this patch.
 	double area(void) const;
 
-	// Return the global index of this patch
+	/// Return the global index of this patch.
 	inline uint gidx(void) const
 	{ return pIdx; }
 
+    /// Return the name of the patch.
 	std::string const name(void) const;
 
+    /// Return a pointer to the inner compartment.
 	inline Compdef * icompdef(void) const
 	{ return pInner; }
 
+    /// Return a pointer to the outer compartment.
 	inline Compdef * ocompdef(void) const
 	{ return pOuter; }
 
@@ -87,18 +97,24 @@ public:
     // SOLVER METHODS: SETUP
     ////////////////////////////////////////////////////////////////////////
 
+    /// Setup all references.
 	void setup_references(void);
+
+    /// Setup all indices.
 	void setup_indices(void);
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: PATCH
     ////////////////////////////////////////////////////////////////////////
 
-	// Set the area of this patch
+	/// Set the area of this patch.
+    ///
+    /// \param a Area of the patch.
 	void setArea(double a);
 
-	// Reset count, flags members of this patch. Called when reset()
-	// method in solver object is executed.
+	/// Reset count, flags members of this patch. Called when reset()
+	/// method in solver object is executed.
+    ///
 	void reset(void);
 
     ////////////////////////////////////////////////////////////////////////
@@ -119,7 +135,9 @@ public:
     inline uint countSpecs_O(void) const
     { return pSpecsN_O; }
 
-    // Return the local species index for global index argument.
+    /// Return the local species index for global index argument.
+    ///
+    /// \param gidx Global index of the species.
     inline uint specG2L(uint gidx) const
     { return pSpec_G2L[gidx]; }
 
@@ -130,27 +148,33 @@ public:
 
     /// Auxiliary function: resolves a species gidx for the inner
     /// compartment.
+    ///
+    /// \param gidx Global index of the species.
     /// \return The local index or steps::sim::shared::LIDX_UNDEFINED.
     ///
     uint specG2L_I(uint gidx) const;
     /// Auxiliary function: resolves a species gidx for the outer
     /// compartment.
+    ///
+    /// \param gidx Global index of the species.
     /// \return The local index or steps::sim::shared::LIDX_UNDEFINED.
     ///
     uint specG2L_O(uint gidx) const;
 
-	// Return pointer to species' counts on this patch.
+	/// Return pointer to species' counts on this patch.
 	inline double * pools(void) const
 	{ return pPoolCount; }
 
-	// Returns pointer to flags on species for this patch.
+	/// Returns pointer to flags on species for this patch.
 	inline uint * flags(void) const
 	{ return pPoolFlags; }
 
 	static const uint CLAMPED = 1;
 
-	// Return whether a species, specified by local index argument, is
-	// clamped or not
+	/// Return whether a species, specified by local index argument, is
+	/// clamped or not.
+    ///
+    /// \param slidx Local index of the species.
 	inline bool clamped(uint slidx) const
 	{ return pPoolFlags[slidx] & CLAMPED; }
 
@@ -158,22 +182,30 @@ public:
     // SOLVER METHODS: SPECIES
     ////////////////////////////////////////////////////////////////////////
 
-	// Set the species count of species specified by local index argument.
+	/// Set the species count of species specified by local index argument.
+    ///
+    /// \param slidx Local index of the species.
+    /// \param count Count of species.
 	void setCount(uint slidx, double count);
 
-	// Clamp or unclamp species specified by local index argument
+	/// Clamp or unclamp species specified by local index argument
+    ///
+    /// \param slidx Local index of the species.
+    /// \param clamp Flag to clamp or unclamp species.
 	void setClamped(uint slidx, bool clamp);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SURFACE REACTION RULES
     ////////////////////////////////////////////////////////////////////////
 
-	// Return the total number of surface reactions that can occur on this
-	// patch.
+	/// Return the total number of surface reactions that can occur on this
+	/// patch.
     inline uint countSReacs(void) const
     { return pSReacsN; }
 
-	// Return the local surface reaction index for global index argument.
+	/// Return the local surface reaction index for global index argument.
+    ///
+    /// \param gidx Global index of the surface reaction.
     inline uint sreacG2L(uint gidx) const
     { return pSReac_G2L[gidx]; }
     /*
@@ -181,12 +213,12 @@ public:
     { return pSReac_L2G[idx]; }
 	*/
 
-	// Return a pointer to reaction definition object (type Reacdef)
-	// specified by local index.
+	/// Return a pointer to reaction definition object (type Reacdef)
+	/// specified by local index.
     SReacdef * sreacdef(uint lidx) const;
 
     /// Warning: these methods perform no error checking!
-    ///
+    /// \todo imcompleted.
     int sreac_dep_I(uint srlidx, uint splidx) const;
     int sreac_dep_S(uint srlidx, uint splidx) const;
     int sreac_dep_O(uint srlidx, uint splidx) const;
@@ -213,18 +245,22 @@ public:
     int * sreac_upd_O_bgn(uint lidx) const;
     int * sreac_upd_O_end(uint lidx) const;
 
-	// Return pointer to flags on surface reactions for this patch.
+	/// Return pointer to flags on surface reactions for this patch.
 	inline uint * srflags(void) const
 	{ return pSReacFlags; }
 
 	static const uint INACTIVATED = 1;
 
-	// Return whether a surface reaction, specified by local index argument,
-	// is active or not.
+	/// Return whether a surface reaction, specified by local index argument,
+	/// is active or not.
+    ///
+    /// \param rlidx Local index of the surface reaction.
 	inline bool active(uint rlidx) const
 	{ return !(pSReacFlags[rlidx] & INACTIVATED); }
 
-	// Return the kcst for a surface reaction specified by local index
+	/// Return the kcst for a surface reaction specified by local index
+    ///
+    /// \param rlidx Local index of the surface reaction.
 	inline double kcst(uint rlidx) const
 	{ return pSReacKcst[rlidx];
 
@@ -233,10 +269,16 @@ public:
     // SOLVER METHODS: REACTIONS
     ////////////////////////////////////////////////////////////////////////
 
-	// Set the kcst for surface reaction specified by local index
+	/// Set the kcst for surface reaction specified by local index
+    ///
+    /// \param srlidx Local index of the surface reaction.
+    /// \param kcst Rate constant of the surface reaction.
 	void setKcst(uint srlidx, double kcst);
 
-	// Activate or inactivate a surface reaction specified by local index.
+	/// Activate or inactivate a surface reaction specified by local index.
+    ///
+    /// \param srlidx Local index of the surface reaction.
+    /// \param active Flag to activate / inactivate the surface reaction.
 	void setActive(uint srlidx, bool active);
 
 private:

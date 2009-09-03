@@ -47,34 +47,43 @@ START_NAMESPACE(solver)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/// Defined Species
 class Specdef
 {
 
 public:
+    /// Constructor
+    ///
+    /// \param sd State of the solver.
+    /// \param idx Global index of the species.
+    /// \param d Pointer to the assocaited Spec object.
 	Specdef(Statedef * sd, uint idx, steps::model::Spec * d);
 
+    /// Destructor
 	~Specdef(void);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SPECIES
     ////////////////////////////////////////////////////////////////////////
 
-	// Return the global index of this species.
+	/// Return the global index of this species.
 	inline uint gidx(void) const
 	{ return pIdx; }
 
+    /// Return the name of the species.
 	std::string const name(void) const;
 
-	// Return a pointer to the steps::model::Spec object this class defines.
+	/// Return a pointer to the steps::model::Spec object this class defines.
 	inline steps::model::Spec * spec(void) const
 	{ return  pSpec; }
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: SETUP
     ////////////////////////////////////////////////////////////////////////
-
-	// This method is included for consistency with other def objects,
-	// but currently does nothing.
+    /// Setup the object.
+    ///
+	/// This method is included for consistency with other def objects,
+	/// but currently does nothing.
 	void setup(void);
 
     ////////////////////////////////////////////////////////////////////////

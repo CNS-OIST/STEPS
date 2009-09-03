@@ -49,34 +49,42 @@ class Statedef;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/// Defined Reaction.
 class Reacdef
 {
 
 public:
+    /// Constructor
+    /// 
+    /// \param sd State of the solver.
+    /// \param idx Global index of the reaction.
+    /// \param r Pointer to the associated Reac object.
 	Reacdef(Statedef * sd, uint idx, steps::model::Reac * r);
 
+    /// Destructor
 	~Reacdef(void);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: REACTION RULE
     ////////////////////////////////////////////////////////////////////////
 
-	// Return the global index of this reaction rule.
+	/// Return the global index of this reaction rule.
 	inline uint gidx(void) const
 	{ return pIdx; }
 
+    /// Return the name of the reaction.
 	std::string const name(void) const;
 
-	// Return the order of this reaction.
+	/// Return the order of this reaction.
 	uint order(void) const;
 
-	// Return the MACROscopic reaction constant.
+	/// Return the MACROscopic reaction constant.
 	double kcst(void) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: STOICHIOMETRY
     ////////////////////////////////////////////////////////////////////////
-
+    /// \todo imcompleted.
     uint lhs(uint gidx) const;
     int dep(uint gidx) const;
     uint rhs(uint gidx) const;
@@ -91,7 +99,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: SETUP
     ////////////////////////////////////////////////////////////////////////
-
+    /// Setup the object.
 	void setup(void);
 
     ////////////////////////////////////////////////////////////////////////
