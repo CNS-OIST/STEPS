@@ -49,7 +49,7 @@ stetmesh::Tetmesh::Tetmesh(uint nverts, uint ntris, uint ntets)
 , pSetupDone(false)
 , pVertsN(nverts)
 , pVerts(0)
-, pTrisN(ntris) // initialise this member with user supplied numer, but this will be modified later
+, pTrisN(ntris) // initialise this member with user supplied number, but this will be modified later
 , pTris(0)
 , pTri_areas(0)
 , pTri_norms(0)
@@ -489,6 +489,213 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 	}
 
     ////////////////////////////////////////////////////////////////////////
+
+	/// Find the minimal and maximal boundary values
+	double xmin = pVerts[0];
+	double xmax = pVerts[0];
+	double ymin = pVerts[1];
+	double ymax = pVerts[1];
+	double zmin = pVerts[2];
+	double zmax = pVerts[2];
+
+	for (uint i=1; i<pVertsN; ++i)
+	{
+		if (pVerts[i*3] < xmin) xmin = pVerts[i*3];
+		if (pVerts[i*3] > xmax) xmax = pVerts[i*3];
+		if (pVerts[(i*3)+1] < ymin) ymin = pVerts[(i*3)+1];
+		if (pVerts[(i*3)+1] > ymax) ymax = pVerts[(i*3)+1];
+		if (pVerts[(i*3)+2] < zmin) zmin = pVerts[(i*3)+2];
+		if (pVerts[(i*3)+2] > zmax) zmax = pVerts[(i*3)+2];
+	}
+	pXmin = xmin;
+	pXmax = xmax;
+	pYmin = ymin;
+	pYmax = ymax;
+	pZmin = zmin;
+	pZmax = zmax;
+
+	// Constructor has completed all necessary setting-up: Set flag.
+	pSetupDone = true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
+		std::vector<uint> const & tris,
+   		std::vector<double> const & tri_areas,
+   		std::vector<double> const & tri_norms,
+   		std::vector<int> const & tri_tet_neighbs,
+   		std::vector<uint> const & tets,
+   		std::vector<double> const & tet_vols,
+   		std::vector<double> const & tet_barycs,
+   		std::vector<uint> const & tet_tri_neighbs,
+   		std::vector<int> const & tet_tet_neighbs)
+: Geom()
+, pSetupDone(false)
+, pVertsN(0)
+, pVerts(0)
+, pTrisN(0)
+, pTris(0)
+, pTri_areas(0)
+, pTri_norms(0)
+, pTri_patches(0)
+, pTri_tet_neighbours(0)
+, pTris_user(0) // not used by this contructor
+, pTetsN(0)
+, pTets(0)
+, pTet_vols(0)
+, pTet_comps(0)
+, pTet_tri_neighbours(0)
+, pTet_tet_neighbours(0)
+, pXmin(0.0)
+, pXmax(0.0)
+, pYmin(0.0)
+, pYmax(0.0)
+, pZmin(0.0)
+, pZmax(0.0)
+{
+	// Check all vectors are of expected size
+   	if ((verts.size() % 3) != 0 )
+   	{
+   	    std::ostringstream os;
+   	    os << "Vertex coordinate data supplied to Tet mesh initialiser function ";
+   	    os << " is not of the expected dimensions (3)";
+   	    throw steps::ArgErr(os.str());
+   	}
+   	if ((tris.size() % 3) != 0 )
+   	{
+   	    std::ostringstream os;
+   	    os << "Triangle node data supplied to Tet mesh initialiser function ";
+   	    os << " is not of the expected dimensions (3)";
+   	    throw steps::ArgErr(os.str());
+   	}
+   	if ((tets.size() % 4) != 0 )
+   	{
+   	    std::ostringstream os;
+   	    os << "Tetrahedron node data supplied to Tet mesh initialiser function ";
+   	    os << " is not of the expected dimensions (4)";
+   	    throw steps::ArgErr(os.str());
+   	}
+
+	pVertsN = verts.size() / 3;
+	pTrisN = tris.size() /3;
+	pTetsN = tets.size() / 4;
+	if (pVertsN == 0 || pTrisN == 0 || pTetsN == 0)
+	{
+		std::ostringstream os;
+	    os << "Vertex, Triangle or Tet table not supplied to Tet mesh initialiser function.";
+	    throw steps::ArgErr(os.str());
+	}
+
+	if (tri_areas.size() != pTrisN)
+	{
+		std::ostringstream os;
+	    os << "Triangle areas table is not of expected size.";
+	    throw steps::ArgErr(os.str());
+	}
+	if (tri_norms.size() != pTrisN*3)
+	{
+		std::ostringstream os;
+	    os << "Triangle normals table is not of expected size.";
+	    throw steps::ArgErr(os.str());
+	}
+	if (tri_tet_neighbs.size() != pTrisN*2)
+	{
+		std::ostringstream os;
+	    os << "Triangle tet neighbours table is not of expected size.";
+	    throw steps::ArgErr(os.str());
+	}
+	if (tet_vols.size() != pTetsN)
+	{
+		std::ostringstream os;
+	    os << "Tetrahedron volumes table is not of expected size.";
+	    throw steps::ArgErr(os.str());
+	}
+	if (tet_barycs.size() != pTetsN*3)
+	{
+		std::ostringstream os;
+	    os << "Tetrahedron barycenters table is not of expected size.";
+	    throw steps::ArgErr(os.str());
+	}
+	if (tet_tri_neighbs.size() != pTetsN*4)
+	{
+		std::ostringstream os;
+	    os << "Tetrahedron tri neighbours table is not of expected size.";
+	    throw steps::ArgErr(os.str());
+	}
+	if (tet_tet_neighbs.size() != pTetsN*4)
+	{
+		std::ostringstream os;
+	    os << "Tetrahedron tet neighbours table is not of expected size.";
+	    throw steps::ArgErr(os.str());
+	}
+
+	//
+
+	pVerts = new double[pVertsN * 3];
+	pTris = new uint[pTrisN * 3];
+	pTri_areas = new double[pTrisN];
+	pTri_norms = new double[pTrisN*3];
+	pTri_tet_neighbours = new int[pTrisN*2];
+	pTets = new uint[pTetsN * 4];
+	pTet_vols = new double[pTetsN];
+	pTet_barycentres = new double[pTetsN*3];
+	pTet_tri_neighbours = new uint[pTetsN*4];
+	pTet_tet_neighbours = new int[pTetsN*4];
+
+	pTet_comps = new stetmesh::TmComp*[pTetsN];
+	// Initialise comp pointers to zero (fill_n doesn't appear to work for zero pointers)
+	for (uint i=0; i<pTetsN; ++i) pTet_comps[i] = 0;
+	pTri_patches = new stetmesh::TmPatch*[pTrisN];
+	// Initialise patch pointers to zero (fill_n doesn't appear to work for zero pointers)
+	for (uint i=0; i<pTrisN; ++i) pTri_patches[i] = 0;
+
+	// copy the supplied vertices information to pVerts member
+	for (uint i = 0; i < pVertsN*3; ++i) pVerts[i] = verts[i];
+
+	// Loop once over triangle indexes and copy the information to the local structures
+	for (uint t = 0; t < pTrisN; ++t)
+	{
+		pTris[t*3] = tris[t*3];
+		pTris[(t*3)+1] = tris[(t*3)+1];
+		pTris[(t*3)+2] = tris[(t*3)+2];
+
+		pTri_areas[t] = tri_areas[t];
+
+		pTri_norms[t*3] = tri_norms[t*3];
+		pTri_norms[(t*3)+1] = tri_norms[(t*3)+1];
+		pTri_norms[(t*3)+2] = tri_norms[(t*3)+2];
+
+		pTri_tet_neighbours[t*2] = tri_tet_neighbs[t*2];
+		pTri_tet_neighbours[(t*2)+1] = tri_tet_neighbs[(t*2)+1];
+	}
+
+	for (uint t = 0; t < pTetsN; ++t)
+	{
+		pTets[t*4] = tets[t*4];
+		pTets[(t*4)+1] = tets[(t*4)+1];
+		pTets[(t*4)+2] = tets[(t*4)+2];
+		pTets[(t*4)+3] = tets[(t*4)+3];
+
+		pTet_vols[t] = tet_vols[t];
+
+		pTet_barycentres[t*3] = tet_barycs[t*3];
+		pTet_barycentres[(t*3)+1] = tet_barycs[(t*3)+1];
+		pTet_barycentres[(t*3)+2] = tet_barycs[(t*3)+2];
+
+		pTet_tri_neighbours[t*4] = tet_tri_neighbs[t*4];
+		pTet_tri_neighbours[(t*4)+1] = tet_tri_neighbs[(t*4)+1];
+		pTet_tri_neighbours[(t*4)+2] = tet_tri_neighbs[(t*4)+2];
+		pTet_tri_neighbours[(t*4)+3] = tet_tri_neighbs[(t*4)+3];
+
+		pTet_tet_neighbours[t*4] = tet_tet_neighbs[t*4];
+		pTet_tet_neighbours[(t*4)+1] = tet_tet_neighbs[(t*4)+1];
+		pTet_tet_neighbours[(t*4)+2] = tet_tet_neighbs[(t*4)+2];
+		pTet_tet_neighbours[(t*4)+3] = tet_tet_neighbs[(t*4)+3];
+
+	}
+
 
 	/// Find the minimal and maximal boundary values
 	double xmin = pVerts[0];
@@ -1439,7 +1646,7 @@ std::vector<int> stetmesh::Tetmesh::getTetTetNeighb(uint tidx) const
 int stetmesh::Tetmesh::findTetByPoint(std::vector<double> p) const
 {
     assert(pSetupDone == true);
-    uint tetidx = -1;
+    int tetidx = -1;
     // initial check to see if point is outside boundary box
     if (p[0] < pXmin || p[1] < pYmin || p[2] < pZmin
     	|| p[0] > pXmax || p[1] > pYmax || p[2] > pZmax)

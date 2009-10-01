@@ -233,6 +233,17 @@ public:
 	Tetmesh(std::vector<double> const & verts,
 			std::vector<unsigned int> const & tets,
 			std::vector<unsigned int> const & tris = std::vector<unsigned int>());
+	Tetmesh(std::vector<double> const & verts,
+			std::vector<unsigned int> const & tris,
+			std::vector<double> const & tri_areas,
+			std::vector<double> const & tri_norms,
+			std::vector<int> const & tri_tet_neighbs,
+			std::vector<unsigned int> const & tets,
+			std::vector<double> const & tet_vols,
+			std::vector<double> const & tet_barycs,
+			std::vector<unsigned int> const & tet_tri_neighbs,
+			std::vector<int> const & tet_tet_neighbs);
+	
 	virtual ~Tetmesh(void);
 	
 	void setVertex(unsigned int vidx, double x, double y, double z);
