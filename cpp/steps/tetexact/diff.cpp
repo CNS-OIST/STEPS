@@ -296,7 +296,9 @@ std::vector<uint> const & stex::Diff::apply(steps::rng::RNG * rng)
 
     // Apply local change.
     uint * local = pTet->pools() + lidx;
-    if (pTet->clamped(lidx) == false)
+	bool clamped = pTet->clamped(lidx);
+
+    if (clamped == false)
     {
         assert(*local > 0);
     }
@@ -312,9 +314,10 @@ std::vector<uint> const & stex::Diff::apply(steps::rng::RNG * rng)
         assert (nexttet != 0);
         if (nexttet->clamped(lidx) == false)
         {
-            pTet->incCount(lidx, -1);
             nexttet->incCount(lidx,1);
         }
+        if (clamped == false) {pTet->incCount(lidx, -1); }
+
         rExtent++;
         return pUpdVec[0];
     }
@@ -327,9 +330,10 @@ std::vector<uint> const & stex::Diff::apply(steps::rng::RNG * rng)
         assert (nexttet != 0);
         if (nexttet->clamped(lidx) == false)
         {
-            pTet->incCount(lidx, -1);
             nexttet->incCount(lidx,1);
         }
+        if (clamped == false) {pTet->incCount(lidx, -1); }
+
         rExtent++;
         return pUpdVec[1];
     }
@@ -342,9 +346,10 @@ std::vector<uint> const & stex::Diff::apply(steps::rng::RNG * rng)
         assert (nexttet != 0);
         if (nexttet->clamped(lidx) == false)
         {
-            pTet->incCount(lidx, -1);
             nexttet->incCount(lidx,1);
         }
+        if (clamped == false) {pTet->incCount(lidx, -1); }
+
         rExtent++;
         return pUpdVec[2];
     }
@@ -357,9 +362,10 @@ std::vector<uint> const & stex::Diff::apply(steps::rng::RNG * rng)
         assert (nexttet != 0);
         if (nexttet->clamped(lidx) == false)
         {
-            pTet->incCount(lidx, -1);
             nexttet->incCount(lidx,1);
         }
+        if (clamped == false) {pTet->incCount(lidx, -1); }
+
         rExtent++;
         return pUpdVec[3];
     }
