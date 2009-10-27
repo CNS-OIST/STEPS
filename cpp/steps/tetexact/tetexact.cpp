@@ -117,11 +117,9 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
 	// First initialise the pTets, pTris vector, because
 	// want tets and tris to maintain indexing from Geometry
 	uint ntets = mesh()->countTets();
-	pTets = std::vector<steps::tetexact::Tet *>();
-	for (uint i=0; i < ntets; ++i) pTets.push_back(0);					/// some std:: method instead??
+	pTets = std::vector<steps::tetexact::Tet *>(ntets, NULL);
 	uint ntris = mesh()->countTris();
-	pTris = std::vector<steps::tetexact::Tri *>();
-	for (uint i=0; i < ntris; ++i) pTris.push_back(0);
+	pTris = std::vector<steps::tetexact::Tri *>(ntris, NULL);
 
 	// Now create the actual compartments.
 	ssolver::CompDefPVecCI c_end = statedef()->endComp();
@@ -1242,14 +1240,15 @@ steps::tetexact::KProc * stex::Tetexact::_getNext(void) const
 
         // Compare.
         double accum = 0.0;
-        double old = 0.0;
+        // 27/10/09 I.H. 'old' removed from for loop because not used.
+        // double old = 0.0;
         double curval = 0.0;
         for (uint i = 0; i < SCHEDULEWIDTH; ++i)
         {
             curval = level[cur_node];
             if (selector < curval + accum) break;
             accum += curval;
-            old = accum;
+            // old = accum;
             cur_node++;
         }
 

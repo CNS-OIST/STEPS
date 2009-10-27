@@ -1028,14 +1028,15 @@ swmd::KProc * swmd::Wmdirect::_getNext(void) const
 
         // Compare.
         double accum = 0.0;
-        double old = 0.0;
+        // 27/10/09 I.H. 'old' removed from for loop because not used.
+        // double old = 0.0;
         double curval = 0.0;
         for (uint i = 0; i < SCHEDULEWIDTH; ++i)
         {
             curval = level[cur_node];
             if (selector < curval + accum) break;
             accum += curval;
-            old = accum;
+            // old = accum;
             cur_node++;
         }
 
