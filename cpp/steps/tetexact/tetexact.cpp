@@ -569,14 +569,21 @@ void stex::Tetexact::_setCompCount(uint cidx, uint sidx, double n)
 	}
 	if (c >= comp->countTets())
 	{
+		uint nremoved = 0;
 		for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
 		{
 			Tet * tet = *t;
 			double fract = static_cast<double>(c) * (tet->vol() / totalvol);
 			uint n3 = static_cast<uint>(std::floor(fract));
 			tet->setCount(slidx, n3);
-			c -= n3;
+            // BUGFIX 18/11/09 IH. By reducing c here we were not giving all
+            // tets an equal share. Tets with low index would have a
+            // greater share than those with higher index.
+			//c -= n3;
+			nremoved += n3;
 		}
+		assert(nremoved <= c);
+		c -= nremoved;
 	}
 
 	while (c != 0)
@@ -910,14 +917,21 @@ void stex::Tetexact::_setPatchCount(uint pidx, uint sidx, double n)
 
 	if (c >= patch->countTris())
 	{
+		uint nremoved = 0;
 		for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
 		{
 			Tri * tri = *t;
 			double fract = static_cast<double>(c) * (tri->area()/totalarea);
             uint n3 = static_cast<uint>(std::floor(fract));
             tri->setCount(slidx, n3);
-            c -= n3;
+            // BUGFIX 18/11/09 IH. By reducing c here we were not giving all
+            // triangles an equal share. Triangles with low index would have a
+            // greater share than those with higher index.
+            // c -= n3;
+            nremoved += n3;
 		}
+		assert(nremoved <= c);
+		c -= nremoved;
 	}
 
 	while(c != 0)
