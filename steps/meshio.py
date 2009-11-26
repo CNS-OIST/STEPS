@@ -1,4 +1,4 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # STEPS - STochastic Engine for Pathway Simulation
 # Copyright (C) 2005-2009 Stefan Wils. All rights reserved.
 #
@@ -19,28 +19,78 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA
 #
 # $Id: meshio.py 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-"""
-Mesh saving and loading tool. 
-Once a Tetmesh object hs been created this file allows the user to save the 
+""" Mesh saving and loading tool. 
+Once a Tetmesh object has been created this file allows the user to save the 
 data in two files: 
 	An xml annotated file containing the nodes, triangles and tetrahedra.
 	A text file containing further information needed by STEPS solvers found in
 	Tetmesh object constructor. 
-
-TODO: add descriptions of xml and text files here
+This is intened to drastically reduce mesh-loading time for large meshes 
+(over ~100,000 voxels) by storing all data required by STEPS internally so this 
+infomation does not have to be found each time by the Tetmesh object constructor. 
 """
 
 import numpy
 import steps.geom as stetmesh
 
-###############################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 def saveXML(pathname, tetmesh):
     
+	""" Save a STEPS Tetmesh in two separate files: 
+	1) an XML file.
+	This file stores the basic information about the mesh which tends to be
+	common information for any software that supports tetrahedral meshes.
+	- NODES are stored by cartesian coordinates.
+	- TRIANGLES are stored by the indices of their 3 nodes.
+	- TETRAHEDRONS are sotred by the indices of their 4 nodes.
+	
+	 The XML file also stores infomation about any compartments or 
+	 patches created in STEPS (class steps.geom.TmComp steps.geom.TmPatch
+	 respectively). 
+	 - COMPARTMENT(S) are stored by: 
+		their string identification.
+		a list of any volume systems added to the compartment at time of saving.
+		a list of tetrahedrons belonging to the compartment
+	 - PATCH(ES) are stored by:
+		their string identification.
+		a list of any surface systems added to the patch at time of saving.
+		the inner compartment id.
+		the outer compartment id (if it exists).
+		a list of trianlges belonging to this patch.
+		
+	2) An ASCII file storing information important to STEPS internally. This
+	information must be found by STEPS once from the basic mesh infomation and
+	is vital for simulations in STEPS. This can take a significant amount of 
+	time for larger meshes, so storing this information in this way can drastically
+	reduce future mesh loading times. The information stored is:
+	- each triangle's area.
+	- each triangle's normal.
+	- each triangle's two (or one for surface tris) tetrahedron neighbours.
+	- each tetrahedron's volume.
+	- each tetrahedron's barycenter.
+	- each tetrahedron's four neighbouring triangles.
+	- each tetrahedron's four (or fewer for surface tets) tetrahedron neighbours.
+	
+	PARAMETERS:
+		1) pathname: the root of the path to store the files. 
+			e.g. 'meshes/spine1' will save data in /meshes/spine1.xml and /meshes/spine1.txt
+		2) tetmesh: A valid STEPS Tetmesh object (of class steps.geom.Tetmesh). This mesh 
+				can be made in a variety of ways, e.g. to save a CUBIT mesh: 
+			>>> import cubit
+			>>> ### Use cubit script to create steps.geom.Tetmesh object from CUBIT output file ###
+			>>> mymesh = cubit.makeMesh(cubitfilename, 1e-6)
+			>>> import meshio
+			>>> ### Save this mesh in XML (and ASCII) format for quick-loading in future ###
+			>>> meshio.saveXML('/meshes/spine1', mymesh)
+		
+	"""
+	
+	
 	if (tetmesh.__str__()[1:19] != 'steps.geom.Tetmesh'):
-		print "2nd argument not a valid steps.geom.Tetmesh object."
+		print "2nd parameter not a valid steps.geom.Tetmesh object."
 		return 0
 	
 	# Following will throw IOError if pathname not a valid directory
@@ -113,7 +163,7 @@ def saveXML(pathname, tetmesh):
 	xmlfile.write('\t</tetrahedrons>\n')
 	
 	
-	## Write the comp and patch information. 
+	### Write the comp and patch information. 
 	# TODO: Changes need to be made to steps code to make it easier to get the tet
 	# and tri members. Currently the mesh returns base pointer (Comp or Patch) 
 	# which cannot be used to find the indices. 
@@ -212,13 +262,31 @@ def saveXML(pathname, tetmesh):
 ###############################################################
 
 def loadXML(pathname):
-	### A less memory-intesive version than pervious effort. 
-	### This method does not involve creating an Element object,
-	### but simply reads xml file and creates objects as it goes and thus does not hold information
-	### in memory twice
-
-	xmlfile = open(pathname+'.xml', 'r')
+	""" Load a mesh in STEPS from the XML (and ASCII) file. This will
+	work with just the XML file, but this is akin to creating the mesh in STEPS
+	from scratch and really negates the use of storing the mesh infomation at all.
+	For maximum benefit the XML file should be accompanied by the ASCII file, which
+	contains all the internal information.
+	 
+	PARAMETERS:
+		1) pathname: the root of the path where the file(s) are stored. 
+			e.g. with 'meshes/spine1' this function will look for files /meshes/spine1.xml 
+			and /meshes/spine1.txt
 	
+	RETURNS: A tuple (mesh, comps, patches)
+		mesh 
+			The STEPS Tetmesh object (steps.geom.Tetmesh)
+		comps
+			A list of any compartment objects (steps.geom.TmComp) from XML file 
+		patches
+			A list of any patches objects (steps.geom.TmPatch) from XML file 
+	"""
+
+
+	# Try to open the XML file. An error will be thrown if it doesn't exist
+	xmlfile = open(pathname+'.xml', 'r')
+
+	# Try to open the text file. A warning will be shown and a flag set if it doesn't exist	
 	havetxt = True
 	try :
 		textfile = open(pathname+'.txt', 'r')
@@ -226,6 +294,7 @@ def loadXML(pathname):
 		havetxt = False
 	if (havetxt == False) : print "WARNING: text file not found. Will construct mesh from information in XML file only."
 	
+	# Perform a basic check to see if we have the expected kind of file which has not been altered.
 	info = xmlfile.readline()
 	if(xmlfile.readline().rstrip() != '<tetmesh>'):
 		print 'XML file is not a recognised STEPS mesh file'
@@ -383,4 +452,4 @@ def loadXML(pathname):
 	
 	return (mesh,comps_out,patches_out)
 
-###############################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
