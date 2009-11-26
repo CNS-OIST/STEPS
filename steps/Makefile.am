@@ -82,7 +82,7 @@ python_steps_PYTHON = \
     rng.py \
     solver_swig.py \
     solver.py \
-    tetgen.py
+    meshio.py
 
 # TODO: add model.i (or *.i) to package, even though it's not realy used.
 
