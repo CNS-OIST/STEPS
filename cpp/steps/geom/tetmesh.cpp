@@ -44,7 +44,7 @@ NAMESPACE_ALIAS(steps::tetmesh, stetmesh);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stetmesh::Tetmesh::Tetmesh(uint nverts, uint ntris, uint ntets)
+stetmesh::Tetmesh::Tetmesh(uint nverts, uint ntets, uint ntris)
 : Geom()
 , pSetupDone(false)
 , pVertsN(nverts)

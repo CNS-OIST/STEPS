@@ -349,7 +349,7 @@ public:
     /// \param p coordinates of a point.
     /// \return True if the point is inside the tetrahedron;
     ///         False if else.
-    bool isInside(double * p) const;
+    bool isInside(std::vector<double> p) const;
 
     /// Generate a number of random points in this tetrahedron. The
     /// default number is 1. Returns a pointer to an array of size N * 3

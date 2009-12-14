@@ -118,7 +118,7 @@ class Tetmesh(geom_swig.Tetmesh):
     
     def __init__(self, *args): 
         """
-        __init__(self, unsigned int nverts, unsigned int ntris, unsigned int ntets) -> Tetmesh
+        __init__(self, unsigned int nverts, unsigned int ntets, unsigned int ntris) -> Tetmesh
         __init__(self, vector_dbl verts, vector_uint tets, vector_uint tris=std::vector< unsigned int >()) -> Tetmesh
         __init__(self, vector_dbl verts, vector_uint tets) -> Tetmesh
         """

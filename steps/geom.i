@@ -228,7 +228,7 @@ class Tetmesh : public steps::wm::Geom
 
 public:
 	
-	Tetmesh(unsigned int nverts, unsigned int ntris, unsigned int ntets);
+	Tetmesh(unsigned int nverts, unsigned int ntets, unsigned int ntris);
 	Tetmesh(std::vector<double> const & verts,
 			std::vector<unsigned int> const & tets,
 			std::vector<unsigned int> const & tris = std::vector<unsigned int>());
@@ -264,7 +264,6 @@ public:
 	double getTriArea(unsigned int tidx) const;
 	std::vector<double> getTriNorm(unsigned int tidx) const;
 	steps::tetmesh::TmPatch * getTriPatch(unsigned int tidx) const;
-	void setTriPatch(unsigned int tidx, steps::tetmesh::TmPatch * patch);
 	std::vector<int> getTriTetNeighb(unsigned int tidx) const;
 	
 	//steps::tetmesh::TmComp * getTmComp(std::string const & id) const;
@@ -273,7 +272,6 @@ public:
 	double getTetVol(unsigned int tidx) const;
 	std::vector<double> getTetBarycenter(unsigned int tidx) const;
 	steps::tetmesh::TmComp * getTetComp(unsigned int tidx) const;
-	void setTetComp(unsigned int tidx, steps::tetmesh::TmComp * comp);
 	std::vector<unsigned int> getTetTriNeighb(unsigned int tidx) const;
 	std::vector<int> getTetTetNeighb(unsigned int tidx) const;
 	int findTetByPoint(std::vector<double> p) const;
@@ -308,15 +306,20 @@ public:
 	
 	Tet getTet0(void) const;
     Tet getTet1(void) const;
+    
+    /*
     Tet getInnerTet(void) const;
     Tet getOuterTet(void) const;
-	
+    */
+    
     unsigned int getTet0Idx(void) const;
     unsigned int getTet1Idx(void) const;
 
+    /*
     unsigned int getInnerTetIdx(void) const;
     unsigned int getOuterTetIdx(void) const;
-	
+    */
+
     unsigned int getVertex0Idx(void) const;
     unsigned int getVertex1Idx(void) const;
     unsigned int getVertex2Idx(void) const;
@@ -384,7 +387,7 @@ public:
     unsigned int getVertex2(void) const;
     unsigned int getVertex3(void) const;
 	
-    bool isInside(double * p) const;
+    bool isInside(std::vector<double> p) const;
 	std::vector<double> getRanPnt(steps::rng::RNG * r, unsigned int n = 1) const;
 
 };

@@ -244,17 +244,19 @@ std::vector<double> stetmesh::Tet::getVertex(uint i) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool stetmesh::Tet::isInside(double * p) const
+bool stetmesh::Tet::isInside(std::vector<double> p) const
 {
 	double * p0 = _getVertex(0);
 	double * p1 = _getVertex(1);
 	double * p2 = _getVertex(2);
 	double * p3 = _getVertex(3);
+
+	double pnt[3] = {p[0], p[1], p[2]};
 	/*double p0[3] = {pnt0[0], pnt0[1], pnt0[2]};	// Defunct code
 	double p1[3] = {pnt1[0], pnt1[2], pnt1[2]};
 	double p2[3] = {pnt2[0], pnt2[1], pnt2[2]};
 	double p3[3] = {pnt3[0], pnt3[1], pnt3[2]}; */
-	return (steps::math::tet_inside(p0, p1, p2, p3, p));
+	return (steps::math::tet_inside(p0, p1, p2, p3, pnt));
 }
 
 ////////////////////////////////////////////////////////////////////////////////

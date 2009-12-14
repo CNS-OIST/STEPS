@@ -116,9 +116,9 @@ public:
     /// Constructor
     ///
     /// \param nverts Number of vertices.
-    /// \param ntris Number of triangles.
-    /// \param ntets Number of tetrahedrons
-    Tetmesh(uint nverts, uint ntris, uint ntets);
+    /// \param ntets Number of tetrahedrons.
+    /// \param ntris Number of triangles
+    Tetmesh(uint nverts, uint ntets, uint ntris);
 
     /// Constructor
     ///
