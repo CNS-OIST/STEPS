@@ -8,14 +8,15 @@ dnl     Standard boilerplate code.
 dnl ----------------------------------------------------------------------------
 
 dnl Initialize the autotools system.
-AC_INIT([steps], [0.5.0], [wils@oist.jp])
+AC_INIT([steps], [1.0.0], [stepsdev@gmail.com])
 
 AC_PREREQ(2.57)
 
 dnl Copyright notice.
 AC_COPYRIGHT([[STEPS -- STochastic Engine for Pathway Simulation
-Copyright (C) 2005-2008 by Stefan Wils. All rights reserved.
-See the LICENSE file in the root directory for more information.
+Copyright (C) 2007-2009 Okinawa Institute of Science and Technology, Japan.
+Copyright (C) 2003-2006 University of Antwerp, Belgium.
+All rights reserved.See the LICENSE file in the root directory for more information.
 ]])
 
 dnl Specify the location for the configuration header.
@@ -189,8 +190,8 @@ dnl ----------------------------------------------------------------------------
 dnl NumPy stuff.
 dnl ----------------------------------------------------------------------------
 
-AC_PYTHON_MODULE([numpy])
-AX_NUMPY_INCLUDE
+dnl AC_PYTHON_MODULE([numpy])
+dnl AX_NUMPY_INCLUDE
 
 dnl ----------------------------------------------------------------------------
 dnl     HEADERS
@@ -271,6 +272,7 @@ cpp/steps/wmrk4/Makefile
 cpp/steps/Makefile
 cpp/Makefile
 steps/Makefile
+steps/utilities/Makefile
 Makefile
 ])
 
