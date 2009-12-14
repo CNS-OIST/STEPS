@@ -83,10 +83,7 @@ python_steps_PYTHON = \
     rng.py \
     solver_swig.py \
     solver.py \
-    utilities/meshio.py \
-    utilities/__init__.py
 
-# TODO: add model.i (or *.i) to package, even though it's not realy used.
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
