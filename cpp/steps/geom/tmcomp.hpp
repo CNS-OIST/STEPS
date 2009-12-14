@@ -70,12 +70,12 @@ public:
     /// \param id ID of the TmComp.
 	/// \param container Temesh container for the tetrahedrons.
     /// \param tets A sequence of tetrahedron (by index) as a vector
-	///             of unsigned integers which is represented as a 
+	///             of unsigned integers which is represented as a
     ///             sequence of positive integer values) in Python.
     /// \param volsys Pointer to the volume system associated.
 	///
     TmComp(std::string const & id, Tetmesh * container,
-    	 std::vector<uint> const & tets, steps::model::Volsys * volsys = 0);
+    	 std::vector<uint> const & tets);
 
     /// Destructor.
     ~TmComp(void);
@@ -83,7 +83,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
     // BASE CLASS METHODS
     ////////////////////////////////////////////////////////////////////////
-    
+
 	void setVol(double vol);
 
     ////////////////////////////////////////////////////////////////////////
@@ -114,7 +114,7 @@ public:
 	////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO C++)
     ////////////////////////////////////////////////////////////////////////
-    
+
     /// Return all tetrahedrons (by index) in the compartment.
     ///
     /// \return List of indices of tetrahedrons.

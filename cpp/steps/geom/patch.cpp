@@ -45,7 +45,7 @@ NAMESPACE_ALIAS(steps::wm, swm);
 ////////////////////////////////////////////////////////////////////////////////
 
 swm::Patch::Patch(std::string const & id, swm::Geom * container, swm::Comp* icomp,
-		swm::Comp* ocomp, steps::model::Surfsys* surfsys, double area)
+		swm::Comp* ocomp, double area)
 : pID(id)
 , pContainer(container)
 , pIComp()
@@ -63,10 +63,6 @@ swm::Patch::Patch(std::string const & id, swm::Geom * container, swm::Comp* icom
 	_setIComp(icomp);
 	if (ocomp != 0) _setOComp(ocomp);
 
-	if (surfsys != 0)
-	{
-		pSurfsys.insert(surfsys->getID());
-	}
 	if (pArea < 0.0)
 	{
 		ostringstream os;

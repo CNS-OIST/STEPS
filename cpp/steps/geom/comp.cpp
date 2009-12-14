@@ -47,7 +47,7 @@ NAMESPACE_ALIAS(steps::wm, swm);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swm::Comp::Comp(string const & id, swm::Geom * container, steps::model::Volsys * volsys, double vol)
+swm::Comp::Comp(string const & id, swm::Geom * container, double vol)
 : pID(id)
 , pContainer(container)
 , pVolsys()
@@ -61,10 +61,7 @@ swm::Comp::Comp(string const & id, swm::Geom * container, steps::model::Volsys *
         os << "No container provided to Comp initializer function";
         throw steps::ArgErr(os.str());
     }
-	if (volsys != 0)
-	{
-		pVolsys.insert(volsys->getID());
-	}
+
 	if (pVol < 0.0)
 	{
 		ostringstream os;

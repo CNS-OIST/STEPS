@@ -42,9 +42,8 @@ NAMESPACE_ALIAS(steps::tetmesh, stetmesh);
 ////////////////////////////////////////////////////////////////////////////////
 
 stetmesh::TmComp::TmComp(std::string const & id, Tetmesh * container,
-		                 std::vector<uint> const & tets,
-		                 steps::model::Volsys * volsys)
-: steps::wm::Comp(id, container, volsys,0.0)
+		                 std::vector<uint> const & tets)
+: steps::wm::Comp(id, container, 0.0)
 , pTetmesh(container)
 , pTetsN(0)
 , pTet_indices(0)

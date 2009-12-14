@@ -93,8 +93,7 @@ public:
     /// \param container Pointer to the parent geometry container.
     /// \param volsys Pointer to the implemented volume system.
     /// \param vol Volume of the compartment.
-	Comp(std::string const & id, steps::wm::Geom * container,
-		 steps::model::Volsys * volsys = 0, double vol = 0.0);
+	Comp(std::string const & id, steps::wm::Geom * container, double vol = 0.0);
 
     /// Destructor
 	virtual ~Comp(void);
@@ -174,7 +173,7 @@ public:
 	////////////////////////////////////////////////////////////////////////
 	// INTERNAL (NON-EXPOSED) OPERATIONS: PATCHES
 	////////////////////////////////////////////////////////////////////////
-    
+
     /// Add a inner patch.
     ///
     /// \param patch Pointer to the inner patch.

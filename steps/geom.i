@@ -160,8 +160,7 @@ class Patch
 public:
 	
 	Patch(std::string const & id, steps::wm::Geom * container, 
-		  steps::wm::Comp * icomp, steps::wm::Comp * ocomp = 0, 
-		  steps::model::Surfsys * surfsys = 0, double area = 0.0);
+		  steps::wm::Comp * icomp, steps::wm::Comp * ocomp = 0, double area = 0.0);
 	virtual ~Patch(void);
 	
 	std::string getID(void) const;
@@ -190,7 +189,7 @@ class Comp
 public:
 	
 	Comp(std::string const & id, steps::wm::Geom * container,
-		 steps::model::Volsys * volsys = 0, double vol = 0.0);
+		 double vol = 0.0);
 	virtual ~Comp(void);
 	
 	std::string getID(void) const;
@@ -286,11 +285,11 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-
+/*
 Tetmesh * loadASCII(std::string pathname);
 
 void saveASCII(std::string pathname, Tetmesh * m);
-
+*/
 ////////////////////////////////////////////////////////////////////////////////
 
 class Tri	
@@ -399,8 +398,7 @@ class TmComp : public steps::wm::Comp
 public:
 		
 	TmComp(std::string const & id, Tetmesh * container, 
-		 std::vector<unsigned int> const & tets,
-		 steps::model::Volsys * volsys = 0);
+		 std::vector<unsigned int> const & tets);
 	virtual ~TmComp(void);
 	
 	virtual void setVol(double vol);
@@ -427,7 +425,7 @@ public:
 	*/
 	TmPatch(std::string const & id, Tetmesh * container,
 			std::vector<unsigned int> const & tris, steps::wm::Comp* icomp,
-			steps::wm::Comp* ocomp = 0, steps::model::Surfsys * surfsys = 0);
+			steps::wm::Comp* ocomp = 0);
 	virtual ~TmPatch(void);
 	
 	virtual void setArea(double area);

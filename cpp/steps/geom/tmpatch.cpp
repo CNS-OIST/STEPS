@@ -48,8 +48,8 @@ NAMESPACE_ALIAS(steps::tetmesh, stetmesh);
 
 stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
        	 std::vector<uint> const & tris, steps::tetmesh::TmComp* icomp,
-       	 steps::tetmesh::TmComp* ocomp, steps::model::Surfsys * surfsys)
-: steps::wm::Patch(id, container, icomp, ocomp, surfsys, 0.0)
+       	 steps::tetmesh::TmComp* ocomp)
+: steps::wm::Patch(id, container, icomp, ocomp,  0.0)
 , pTetmesh(container)
 , pTri_indices()
 , pTrisN(0)
@@ -184,8 +184,8 @@ stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
 
 stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
 						   std::vector<uint> const & tris, steps::wm::Comp* wmicomp,
-						   steps::wm::Comp* wmocomp, steps::model::Surfsys * surfsys)
-: steps::wm::Patch(id, container, wmicomp, wmocomp, surfsys, 0.0)
+						   steps::wm::Comp* wmocomp)
+: steps::wm::Patch(id, container, wmicomp, wmocomp, 0.0)
 , pTetmesh(container)
 , pTri_indices()
 , pTrisN(0)

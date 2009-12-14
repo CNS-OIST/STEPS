@@ -70,7 +70,7 @@ public:
     /// \param id ID of the TmPatch.
     /// \param container Pointer to the Tetmesh container.
     /// \param tris A sequence of triangles (by index) as a vector
-	///             of unsigned integers which is represented as 
+	///             of unsigned integers which is represented as
     ///             a sequence of positive integer values) in Python.
     /// \param icomp Pointer to the inner compartment.
     /// \param ocomp Pointer to the outer compartment.
@@ -79,14 +79,14 @@ public:
     /// This is the constructor for the tetmesh (tetrahedron mesh) namespace.
     TmPatch(std::string const & id, Tetmesh * container,
        	 std::vector<uint> const & tris, steps::tetmesh::TmComp* icomp,
-       	 steps::tetmesh::TmComp* ocomp = 0, steps::model::Surfsys * surfsys = 0);
+       	 steps::tetmesh::TmComp* ocomp = 0);
 
     /// Constructor.
     ///
     /// \param id ID of the TmPatch.
     /// \param container Pointer to the Tetmesh container.
     /// \param tris A sequence of triangles (by index) as a vector
-	///             of unsigned integers which is represented as 
+	///             of unsigned integers which is represented as
     ///             a sequence of positive integer values) in Python.
     /// \param icomp Pointer to the inner compartment.
     /// \param ocomp Pointer to the outer compartment.
@@ -95,7 +95,7 @@ public:
     /// This is the constructor for the wm (well-mixed) namespace.
 	TmPatch(std::string const & id, Tetmesh * container,
 		 std::vector<uint> const & tris, steps::wm::Comp* icomp,
-			steps::wm::Comp* ocomp = 0, steps::model::Surfsys * surfsys = 0);
+			steps::wm::Comp* ocomp = 0);
 
     /// Destructor.
     ~TmPatch(void);

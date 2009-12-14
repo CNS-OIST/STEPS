@@ -105,8 +105,7 @@ public:
     /// \param surfsys Pointer to the associated surface system.
     /// \param area Area of the patch.
 	Patch(std::string const & id, steps::wm::Geom * container,
-		  steps::wm::Comp* icomp, steps::wm::Comp* ocomp = 0,
-		  steps::model::Surfsys* surfsys = 0, double area = 0.0);
+		  steps::wm::Comp* icomp, steps::wm::Comp* ocomp = 0, double area = 0.0);
 
     /// Destructor
 	virtual ~Patch(void);
@@ -120,7 +119,7 @@ public:
     /// \return ID of the patch.
 	std::string getID(void) const
 	{ return pID; }
-    
+
 	/// Set or change the patch id.
     ///
     /// \param id ID of the patch.
