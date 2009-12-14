@@ -82,7 +82,7 @@ python_steps_PYTHON = \
     rng_swig.py \
     rng.py \
     solver_swig.py \
-    solver.py \
+    solver.py
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

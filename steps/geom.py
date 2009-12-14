@@ -35,7 +35,8 @@ destructor).
 import geom_swig
 import _geom_swig
 
-from geom_swig import loadASCII, saveASCII
+### Now defunct mesh saving/loading tool ###
+# from geom_swig import loadASCII, saveASCII
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
@@ -59,7 +60,7 @@ class Patch(geom_swig.Patch):
     def __init__(self, *args, **kwargs): 
         """
         __init__(self, string id, Geom container, Comp icomp, Comp ocomp=0, 
-            Surfsys surfsys=0, double area=0.0) -> Patch
+            double area=0.0) -> Patch
         """
         this = _geom_swig.new_Patch(*args, **kwargs)
         try: self.this.append(this)
@@ -88,7 +89,7 @@ class Patch(geom_swig.Patch):
 class Comp(geom_swig.Comp):
     
     def __init__(self, *args, **kwargs): 
-        """__init__(self, string id, Geom container, Volsys volsys=0, double vol=0.0) -> Comp"""
+        """__init__(self, string id, Geom container, double vol=0.0) -> Comp"""
         this = _geom_swig.new_Comp(*args, **kwargs)
         try: self.this.append(this)
         except: self.this = this
@@ -168,7 +169,7 @@ class Tri(geom_swig.Tri):
 class TmComp(geom_swig.TmComp):
     
     def __init__(self, *args, **kwargs): 
-        """__init__(self, string id, Tetmesh container, vector_uint tets, Volsys volsys=0) -> TmComp"""
+        """__init__(self, string id, Tetmesh container, vector_uint tets) -> TmComp"""
         this = _geom_swig.new_TmComp(*args, **kwargs)
         try: self.this.append(this)
         except: self.this = this
@@ -186,7 +187,7 @@ class TmPatch(geom_swig.TmPatch):
     def __init__(self, *args, **kwargs): 
         """
         __init__(self, string id, Tetmesh container, vector_uint tris, TmComp icomp, 
-            TmComp ocomp=0, Surfsys surfsys=0) -> TmPatch
+            TmComp ocomp=0) -> TmPatch
         """
         this = _geom_swig.new_TmPatch(*args, **kwargs)
         try: self.this.append(this)
@@ -199,7 +200,8 @@ class TmPatch(geom_swig.TmPatch):
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-loadASCII.__doc__ = """
+"""
+loadASCII.__doc__ = 
 Reads a tetrahedral mesh from a simple ASCII format. Please refer to 
 the documentation of steps.geom.saveASCII for more information on this
 file format.  
@@ -219,9 +221,9 @@ EXCEPTIONS
 
 SEE ALSO
     steps.geom.saveASCII
-"""
 
-saveASCII.__doc__ = """
+
+saveASCII.__doc__ = 
 saveASCII() saves a tetmesh to a very simple STEPS-centered ASCII 
 (i.e. text based) format. The format is straightforward and consists 
 of five parts, following the five parts of the tetmesh itself.
