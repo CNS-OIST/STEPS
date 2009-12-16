@@ -71,6 +71,24 @@ API::API(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r)
         throw steps::ArgErr(os.str());
     }
 
+    if (m->_countSpecs() == 0)
+    {
+    	std::ostringstream os;
+    	os << "Cannot create solver object with this ";
+    	os << "steps.model.Model description object.";
+    	os << " Model contains no Species!";
+    	throw steps::ArgErr(os.str());
+    }
+
+    if (g->_countComps() == 0)
+    {
+    	std::ostringstream os;
+    	os << "Cannot create solver object with this ";
+    	os << "steps.geom.Geom geometry description object";
+    	os << " Geometry contains no Compartments!";
+    	throw steps::ArgErr(os.str());
+
+    }
     // create state object, which will in turn create compdef, specdef etc
     //objects and initialise
     pStatedef = new Statedef(m, g, r);
