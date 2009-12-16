@@ -165,7 +165,7 @@ public:
 
     double getTetVol(unsigned int tidx) const;
 
-    void setTetVol(unsigned int tidx, double vol);
+    // void setTetVol(unsigned int tidx, double vol);
 
     double getTetCount(unsigned int tidx, std::string const & s) const;
 	
@@ -243,12 +243,16 @@ public:
 
     double getTriArea(unsigned int tidx) const;
 	
-    void setTriArea(unsigned int tidx, double area);
+    // void setTriArea(unsigned int tidx, double area);
 	
     double getTriCount(unsigned int tidx, std::string const & s) const;
 
     void setTriCount(unsigned int tidx, std::string const & s, double n);
 
+    double getTriAmount(unsigned int tidx, std::string const & s) const;
+
+    void setTriAmount(unsigned int tidx, std::string const & s, double m);
+    
     bool getTriClamped(unsigned int tidx, std::string const & s) const;
 	
     void setTriClamped(unsigned int tidx, std::string const & s, bool buf);

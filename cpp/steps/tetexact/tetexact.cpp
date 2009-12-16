@@ -2132,6 +2132,26 @@ void stex::Tetexact::_setTriCount(uint tidx, uint sidx, double n)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+double stex::Tetexact::_getTriAmount(uint tidx, uint sidx) const
+{
+	// following method does all necessary argument checking
+	double count = _getTriCount(tidx, sidx);
+	return count/steps::math::AVOGADRO;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stex::Tetexact::_setTriAmount(uint tidx, uint sidx, double m)
+{
+	// convert amount in mols to number of molecules
+	double m2 = m * steps::math::AVOGADRO;
+	// the following method does all the necessary argument checking
+	_setTriCount(tidx, sidx, m2);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool stex::Tetexact::_getTriClamped(uint tidx, uint sidx) const
 {
 	assert (tidx < pTris.size());

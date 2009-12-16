@@ -150,6 +150,64 @@ void API::setTriCount(uint tidx, string const & s, double n)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+double API::getTriAmount(uint tidx, string const & s) const
+{
+	if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+	{
+		if (tidx >= mesh->countTris())
+		{
+			std::ostringstream os;
+			os << "Triangle index out of range.";
+			throw steps::ArgErr(os.str());
+		}
+		// the following may throw exception if string is unknown
+		uint sidx = pStatedef->getSpecIdx(s);
+
+		return _getTriAmount(tidx, sidx);
+	}
+
+	else
+	{
+		std::ostringstream os;
+		os << "Method not available for this solver.";
+		throw steps::NotImplErr();
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void API::setTriAmount(uint tidx, string const & s, double m)
+{
+	if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+	{
+		if (tidx >= mesh->countTris())
+		{
+			std::ostringstream os;
+			os << "Triangle index out of range.";
+			throw steps::ArgErr(os.str());
+		}
+		if (m < 0.0)
+		{
+			std::ostringstream os;
+			os << "Amount of mols cannot be negative.";
+			throw steps::ArgErr(os.str());
+		}
+		// the following may throw exception if string is unknown
+		uint sidx = pStatedef->getSpecIdx(s);
+
+		_setTriAmount(tidx, sidx, m);
+	}
+
+	else
+	{
+		std::ostringstream os;
+		os << "Method not available for this solver.";
+		throw steps::NotImplErr();
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 bool API::getTriClamped(uint tidx, string const & s) const
 {
 	if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
@@ -413,6 +471,20 @@ double API::_getTriCount(uint tidx, uint sidx) const
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTriCount(uint tidx, uint sidx, double n)
+{
+    throw steps::NotImplErr();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::_getTriAmount(uint tidx, uint sidx) const
+{
+    throw steps::NotImplErr();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void API::_setTriAmount(uint tidx, uint sidx, double m)
 {
     throw steps::NotImplErr();
 }

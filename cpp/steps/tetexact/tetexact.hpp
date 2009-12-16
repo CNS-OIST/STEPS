@@ -237,6 +237,9 @@ public:
     double _getTriCount(uint tidx, uint sidx) const;
     void _setTriCount(uint tidx, uint sidx, double n);
 
+    double _getTriAmount(uint tidx, uint sidx) const;
+    void _setTriAmount(uint tidx, uint sidx, double m);
+
     bool _getTriClamped(uint tidx, uint sidx) const;
     void _setTriClamped(uint tidx, uint sidx, bool buf);
 

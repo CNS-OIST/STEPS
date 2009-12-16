@@ -53,7 +53,7 @@ class Statedef;
 /// The API class provides all APIs for each solver.
 ///
 /// \warning Not every API in this class is implemented in the solver.
-///          If a API is not implemented in a solver, 
+///          If a API is not implemented in a solver,
 ///          STEPS will throw an error message to the user.
 /// \warning Methods start with underscore are not exposed to Python.
 ///////////////////////////////////////////////////////////////////////////////
@@ -663,6 +663,19 @@ public:
     /// \param n Number of molecules of the species.
     void setTriCount(uint tidx, std::string const & s, double n);
 
+    /// Returns the amount (in mols) of species s in a triangle.
+    ///
+    /// \param tidx Index of the triangle.
+    /// \param s Name of the species.
+    double getTriAmount(uint tidx, std::string const & s) const;
+
+    /// Sets the amount (in mols) of species s in a triangle.
+    ///
+    /// \param tidx Index of the triangle.
+    /// \param s Name of the species.
+    /// \param m Amount of the species.
+    void setTriAmount(uint tidx, std::string const & s, double m);
+
     /// Returns whether the number of molecules of species s in a triangle
     /// remains constant over time (unless changed explicitly)
     ///
@@ -856,6 +869,9 @@ protected:
 
     virtual double _getTriCount(uint tidx, uint sidx) const;
     virtual void _setTriCount(uint tidx, uint sidx, double n);
+
+    virtual double _getTriAmount(uint tidx, uint sidx) const;
+    virtual void _setTriAmount(uint tidx, uint sidx, double m);
 
     virtual bool _getTriClamped(uint tidx, uint sidx) const;
     virtual void _setTriClamped(uint tidx, uint sidx, bool buf);
