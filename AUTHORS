@@ -3,27 +3,36 @@ $Id$
 
 The following people have contributed to the development of STEPS:
 
-2006
+2006 - 2009
 
     Stefan Wils (OIST, UA)
         Principal author.
+        
+        
+2008 - 
 
+    Iain Hepburn (OIST)
+        Added the wmrk4 solver.
+        Major re-write of the code
+         - Shifted all model, geometry description to c++ 
+         	(with exposure to Python through SWIG)
+         - Implemented the solver API abstract base class,
+         	with all solvers now derived from this class
+
+
+2009 - 
+
+    Weiliang Chen (OIST)
+        Documentation.
+
+                
 2007
 
     Ivan Raikov (OIST)
         Helped to straighten out the autotools stuff and set up the 
         Subversion archive.
         
-2008
 
-    Iain Hepburn (OIST)
-        wmrk4 solver.
-        Major re-write of the code.
 
-2009
-
-    Weiliang Chen (OIST)
-        Documentation.
-
-If you contributed to STEPS and we forgot to put your name in this list, 
+If you contributed to STEPS and you name is not included here, 
 don't hesitate to contact us.

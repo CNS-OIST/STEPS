@@ -1,30 +1,31 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2005-2008 Stefan Wils. All rights reserved.
+// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
+//
+// See the file AUTHORS for details.
 //
 // This file is part of STEPS.
 //
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// STEPSÊis free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// This library is distributed in the hope that it will be useful,
+// STEPSÊis distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA
+// You should have received a copy of the GNU General Public License
+// along with this program.ÊIf not, see <http://www.gnu.org/licenses/>.
 //
-// $Id$
 ////////////////////////////////////////////////////////////////////////////////
 
 /// \namespace steps::solver
 ///
 /// This namespace contains all the code that is shared by each solver
-/// implemented in STEPS. This currently includes the code for the 
+/// implemented in STEPS. This currently includes the code for the
 /// solver API and the code that stores information about dependencies
 /// and indices for the kinetic model.
 ///
@@ -32,7 +33,7 @@
 /// layout of a state. Unlike the Python classes in package steps.model,
 /// this classes are designed for . This means they have little or no
 /// flexibility to allow for changes to the state during simulation (i.e.
-/// adding/deleting new species, reactions, compartments etc). They 
+/// adding/deleting new species, reactions, compartments etc). They
 /// work largely on the basis of integer indices.
 ///
 /// When studying these classes, the key method to examine is

@@ -1,23 +1,24 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2005-2008 Stefan Wils. All rights reserved.
+// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
+//
+// See the file AUTHORS for details.
 //
 // This file is part of STEPS.
 //
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// STEPSÊis free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// This library is distributed in the hope that it will be useful,
+// STEPSÊis distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA
-//
+// You should have received a copy of the GNU General Public License
+// along with this program.ÊIf not, see <http://www.gnu.org/licenses/>.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -117,9 +118,32 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
 	// First initialise the pTets, pTris vector, because
 	// want tets and tris to maintain indexing from Geometry
 	uint ntets = mesh()->countTets();
-	pTets = std::vector<steps::tetexact::Tet *>(ntets, NULL);
 	uint ntris = mesh()->countTris();
+	pTets = std::vector<steps::tetexact::Tet *>(ntets, NULL);
 	pTris = std::vector<steps::tetexact::Tri *>(ntris, NULL);
+
+	/*
+	// Now check that every Tetrahedron has been added to a compartment.
+	// This is a requirement for the forseeable future
+	uint ntmcomps = mesh()->_countComps();
+	uint tetcount = 0;
+
+	for (uint c = 0; c < ntmcomps; ++c)
+	{
+		steps::wm::Comp * wmcomp = mesh()->_getComp(c);
+		steps::tetmesh::TmComp * tmcomp = dynamic_cast<steps::tetmesh::TmComp*>(wmcomp);
+		tetcount += tmcomp->countTets();
+	}
+    if (tetcount != ntets)
+    {
+    	std::ostringstream os;
+    	os << "Cannot create solver object with this ";
+    	os << "steps.geom.Tetmesh geometry description object";
+    	os << " All tetrahedrons in Tetmesh must be assigned to a";
+    	os << " steps.geom.TmComp compartment object.";
+    	throw steps::ArgErr(os.str());
+    }
+	*/
 
 	// Now create the actual compartments.
 	ssolver::CompDefPVecCI c_end = statedef()->endComp();
@@ -229,10 +253,22 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
     	int tet2 = pTets[t]->tet(2);
     	int tet3 = pTets[t]->tet(3);
     	// DEBUG 19/03/09 : again, incorrectly didn't allow for tet index == 0
-    	if (tet0 >= 0) pTets[t]->setNextTet(0, pTets[tet0]);
-    	if (tet1 >= 0) pTets[t]->setNextTet(1, pTets[tet1]);
-    	if (tet2 >= 0) pTets[t]->setNextTet(2, pTets[tet2]);
-    	if (tet3 >= 0) pTets[t]->setNextTet(3, pTets[tet3]);
+    	if (tet0 >= 0)
+    	{
+			if (pTets[tet0] != 0) pTets[t]->setNextTet(0, pTets[tet0]);
+    	}
+    	if (tet1 >= 0)
+    	{
+			if (pTets[tet1] != 0) pTets[t]->setNextTet(1, pTets[tet1]);
+    	}
+    	if (tet2 >= 0)
+    	{
+    		if (pTets[tet2] != 0) pTets[t]->setNextTet(2, pTets[tet2]);
+    	}
+    	if (tet3 >= 0)
+    	{
+    		if (pTets[tet3] != 0) pTets[t]->setNextTet(3, pTets[tet3]);
+    	}
     	// Not setting Tet triangles at this point- only want to set
     	// for surface triangles
     }
@@ -248,40 +284,45 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
     	// Now correct check, previously didn't allow for tet index == 0
     	if (tetinner >= 0)
     	{
-    		pTris[t]->setInnerTet(pTets[tetinner]);
-    		// Now add this triangle to inner tet's list of neighbours
-    		for (uint i=0; i <= 4; ++i)
+    		if (pTets[tetinner] != 0)
     		{
-    			// include assert for debugging purposes and remove
-    			// once this is tested
-    			assert (i < 4);														//////////
-    			// check if there is already a neighbouring tet or tri
-    			// In theory if there is a tri to add, the tet should
-    			// have less than 4 neighbouring tets added because
-    			// a neighbouring tet(s) is in a different compartment
-    			// Also check tris because in some cases a surface tet
-    			// may have more than 1 neighbouring tri
-    			if (pTets[tetinner]->nextTet(i) != 0) continue;
-    			if (pTets[tetinner]->nextTri(i) != 0) continue;
-    			pTets[tetinner]->setNextTri(i, pTris[t]);
-    			break;
+    			pTris[t]->setInnerTet(pTets[tetinner]);
+    			// Now add this triangle to inner tet's list of neighbours
+    			for (uint i=0; i <= 4; ++i)
+    			{
+    				// include assert for debugging purposes and remove
+    				// once this is tested
+    				assert (i < 4);														//////////
+    				// check if there is already a neighbouring tet or tri
+    				// In theory if there is a tri to add, the tet should
+    				// have less than 4 neighbouring tets added because
+    				// a neighbouring tet(s) is in a different compartment
+    				// Also check tris because in some cases a surface tet
+    				// may have more than 1 neighbouring tri
+    				if (pTets[tetinner]->nextTet(i) != 0) continue;
+    				if (pTets[tetinner]->nextTri(i) != 0) continue;
+    				pTets[tetinner]->setNextTri(i, pTris[t]);
+    				break;
+    			}
     		}
-
     	}
 
     	// DEBUG 18/03/09:
     	// Now correct check, previously didn't allow for tet index == 0
     	if (tetouter >= 0)
     	{
-    		pTris[t]->setOuterTet(pTets[tetouter]);
-    		// Add this triangle to outer tet's list of neighbours
-    		for (uint i=0; i <= 4; ++i)
+    		if (pTets[tetouter] != 0)
     		{
-				assert (i < 4);
-				if (pTets[tetouter]->nextTet(i) != 0) continue;
-				if (pTets[tetouter]->nextTri(i) != 0) continue;
-				pTets[tetouter]->setNextTri(i, pTris[t]);
-				break;
+    			pTris[t]->setOuterTet(pTets[tetouter]);
+    			// Add this triangle to outer tet's list of neighbours
+    			for (uint i=0; i <= 4; ++i)
+    			{
+    				assert (i < 4);
+    				if (pTets[tetouter]->nextTet(i) != 0) continue;
+    				if (pTets[tetouter]->nextTri(i) != 0) continue;
+    				pTets[tetouter]->setNextTri(i, pTris[t]);
+    				break;
+				}
     		}
     	}
     }
@@ -351,8 +392,13 @@ void stex::Tetexact::_setup(void)
 	TetPVecCI tet_end = pTets.end();
 	for (TetPVecCI t = pTets.begin(); t != tet_end; ++t)
 	{
+		// DEBUG: vector holds all possible tetrahedrons,
+		// but they have not necessarily been added to a compartment.
+		if ((*t) == 0) continue;
+
 		(*t)->setupKProcs(this);
 	}
+
 	TriPVecCI tri_end = pTris.end();
 	for (TriPVecCI t = pTris.begin(); t != tri_end; ++t)
 	{
@@ -365,6 +411,10 @@ void stex::Tetexact::_setup(void)
 	// Resolve all dependencies
 	for (TetPVecCI t = pTets.begin(); t != tet_end; ++t)
 	{
+		// DEBUG: vector holds all possible tetrahedrons,
+		// but they have not necessarily been added to a compartment.
+		if ((*t) == 0) continue;
+
 		KProcPVecCI kprocend = (*t)->kprocEnd();
 		for (KProcPVecCI k = (*t)->kprocBegin(); k != kprocend; ++k)
 		{
@@ -454,7 +504,14 @@ void stex::Tetexact::reset(void)
 	std::for_each(pComps.begin(), pComps.end(), std::mem_fun(&Comp::reset));
 	std::for_each(pPatches.begin(), pPatches.end(), std::mem_fun(&Patch::reset));
 
-    std::for_each(pTets.begin(), pTets.end(), std::mem_fun(&Tet::reset));
+    // std::for_each(pTets.begin(), pTets.end(), std::mem_fun(&Tet::reset));
+
+    TetPVecCI tet_end = pTets.end();
+    for (TetPVecCI t = pTets.begin(); t != tet_end; ++t)
+    {
+    	if ((*t) == 0) continue;
+    	(*t)->reset();
+    }
 
 	TriPVecCI tri_end = pTris.end();
 	for (TriPVecCI t = pTris.begin(); t != tri_end; ++t)
@@ -1156,6 +1213,9 @@ void stex::Tetexact::_build(void)
 	TetPVecCI tet_end = pTets.end();
 	for (TetPVecCI tet = pTets.begin(); tet != tet_end; ++tet)
 	{
+		// DEBUG: pTets element may be zero pointer if tet not added to a compartment
+		if ((*tet) == 0) continue;
+
 		// To find the maximum size of an individual kproc's upd vec size
 		uint kpuv_size = 0;
 		SchedIDXSet updset;
@@ -1187,7 +1247,7 @@ void stex::Tetexact::_build(void)
 	{
 		uint kpuv_size = 0;
 		//DEBUG: Didn't allow for a zero pointer (not added to geometry i.e. not
-		// a surface triangle
+		// belonging to a patch
 		if ((*tri) == 0) continue;
 
 		SchedIDXSet updset;
@@ -1770,6 +1830,12 @@ void stex::Tetexact::_resetPatchSReacExtent(uint pidx, uint ridx)
 double stex::Tetexact::_getTetVol(uint tidx) const
 {
 	assert (tidx < pTets.size());
+	if (pTets[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
+    	throw steps::ArgErr(os.str());
+	}
 	return pTets[tidx]->vol();
 }
 
@@ -1786,6 +1852,14 @@ double stex::Tetexact::_getTetCount(uint tidx, uint sidx) const
 {
 	assert (tidx < pTets.size());
 	assert (sidx < statedef()->countSpecs());
+
+	if (pTets[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tet * tet = pTets[tidx];
 	uint lsidx = tet->compdef()->specG2L(sidx);
 	if (lsidx == ssolver::LIDX_UNDEFINED) return 0.0;
@@ -1799,6 +1873,14 @@ void stex::Tetexact::_setTetCount(uint tidx, uint sidx, double n)
 	assert (tidx < pTets.size());
 	assert (sidx < statedef()->countSpecs());
 	assert (n >= 0.0);
+
+	if (pTets[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tet * tet = pTets[tidx];
 
 	uint lsidx = tet->compdef()->specG2L(sidx);
@@ -1854,6 +1936,14 @@ void stex::Tetexact::_setTetConc(uint tidx, uint sidx, double c)
 {
 	assert (c >= 0.0);
 	assert (tidx < pTets.size());
+
+	if (pTets[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tet * tet = pTets[tidx];
 	double count = c * (1.0e3 * tet->vol() * steps::math::AVOGADRO);
 	// the following method does all the necessary argument checking
@@ -1866,6 +1956,14 @@ bool stex::Tetexact::_getTetClamped(uint tidx, uint sidx) const
 {
 	assert (tidx < pTets.size());
 	assert (sidx < statedef()->countSpecs());
+
+	if (pTets[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tet * tet = pTets[tidx];
 
 	uint lsidx = tet->compdef()->specG2L(sidx);
@@ -1879,6 +1977,14 @@ void stex::Tetexact::_setTetClamped(uint tidx, uint sidx, bool buf)
 {
 	assert (tidx < pTets.size());
 	assert (sidx < statedef()->countSpecs());
+
+	if (pTets[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tet * tet = pTets[tidx];
 
 	uint lsidx = tet->compdef()->specG2L(sidx);
@@ -1893,6 +1999,14 @@ double stex::Tetexact::_getTetReacK(uint tidx, uint ridx) const
 {
 	assert (tidx < pTets.size());
 	assert (ridx < statedef()->countReacs());
+
+	if (pTets[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Tetrahedron with this index does not belong to a compartment.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tet * tet = pTets[tidx];
 
 	uint lridx = tet->compdef()->reacG2L(ridx);
@@ -1908,6 +2022,14 @@ void stex::Tetexact::_setTetReacK(uint tidx, uint ridx, double kf)
 	assert (tidx < pTets.size());
 	assert (ridx < statedef()->countReacs());
 	assert (kf >= 0.0);
+
+	if (pTets[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tet * tet = pTets[tidx];
 
 	uint lridx = tet->compdef()->reacG2L(ridx);
@@ -1927,6 +2049,14 @@ bool stex::Tetexact::_getTetReacActive(uint tidx, uint ridx) const
 {
 	assert (tidx < pTets.size());
 	assert (ridx < statedef()->countReacs());
+
+	if (pTets[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tet * tet = pTets[tidx];
 
 	uint lridx = tet->compdef()->reacG2L(ridx);
@@ -1942,6 +2072,14 @@ void stex::Tetexact::_setTetReacActive(uint tidx, uint ridx, bool act)
 {
 	assert (tidx < pTets.size());
 	assert (ridx < statedef()->countReacs());
+
+	if (pTets[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Tetrahedron with this index does not belong to a compartment.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tet * tet = pTets[tidx];
 
 	uint lridx = tet->compdef()->reacG2L(ridx);
@@ -1960,6 +2098,14 @@ double stex::Tetexact::_getTetDiffD(uint tidx, uint didx) const
 {
 	assert (tidx < pTets.size());
 	assert (didx < statedef()->countDiffs());
+
+	if (pTets[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Tetrahedron with this index does not belong to a compartment.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tet * tet = pTets[tidx];
 
 	uint ldidx = tet->compdef()->diffG2L(didx);
@@ -1975,6 +2121,14 @@ void stex::Tetexact::_setTetDiffD(uint tidx, uint didx, double dk)
 {
 	assert (tidx < pTets.size());
 	assert (didx < statedef()->countDiffs());
+
+	if (pTets[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tet * tet = pTets[tidx];
 
 	uint ldidx = tet->compdef()->diffG2L(didx);
@@ -1994,6 +2148,14 @@ bool stex::Tetexact::_getTetDiffActive(uint tidx, uint didx) const
 {
 	assert (tidx < pTets.size());
 	assert (didx < statedef()->countDiffs());
+
+	if (pTets[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tet * tet = pTets[tidx];
 
 	uint ldidx = tet->compdef()->diffG2L(didx);
@@ -2009,6 +2171,14 @@ void stex::Tetexact::_setTetDiffActive(uint tidx, uint didx, bool act)
 {
 	assert (tidx < pTets.size());
 	assert (didx < statedef()->countDiffs());
+
+	if (pTets[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tet * tet = pTets[tidx];
 
 	uint ldidx = tet->compdef()->diffG2L(didx);
@@ -2027,6 +2197,14 @@ double stex::Tetexact::_getTetReacH(uint tidx, uint ridx) const
 {
 	assert (tidx < pTets.size());
 	assert (ridx < statedef()->countReacs());
+
+	if (pTets[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tet * tet = pTets[tidx];
 
 	uint lridx = tet->compdef()->reacG2L(ridx);
@@ -2041,6 +2219,14 @@ double stex::Tetexact::_getTetReacC(uint tidx, uint ridx) const
 {
 	assert (tidx < pTets.size());
 	assert (ridx < statedef()->countReacs());
+
+	if (pTets[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tet * tet = pTets[tidx];
 
 	uint lridx = tet->compdef()->reacG2L(ridx);
@@ -2055,6 +2241,14 @@ double stex::Tetexact::_getTetReacA(uint tidx, uint ridx) const
 {
 	assert (tidx < pTets.size());
 	assert (ridx < statedef()->countReacs());
+
+	if (pTets[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tet * tet = pTets[tidx];
 
 	uint lridx = tet->compdef()->reacG2L(ridx);
@@ -2069,6 +2263,14 @@ double stex::Tetexact::_getTetDiffA(uint tidx, uint didx) const
 {
 	assert (tidx < pTets.size());
 	assert (didx < statedef()->countDiffs());
+
+	if (pTets[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tet * tet = pTets[tidx];
 
 	uint ldidx = tet->compdef()->diffG2L(didx);
@@ -2082,6 +2284,14 @@ double stex::Tetexact::_getTetDiffA(uint tidx, uint didx) const
 double stex::Tetexact::_getTriArea(uint tidx) const
 {
 	assert (tidx < pTris.size());
+
+	if (pTris[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Triangle " << tidx << " has not been assigned to a patch.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	return pTris[tidx]->area();
 }
 
@@ -2098,6 +2308,14 @@ double stex::Tetexact::_getTriCount(uint tidx, uint sidx) const
 {
 	assert (tidx < pTris.size());
 	assert (sidx < statedef()->countSpecs());
+
+	if (pTris[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Triangle " << tidx << " has not been assigned to a patch.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tri * tri = pTris[tidx];
 	uint lsidx = tri->patchdef()->specG2L(sidx);
 	if (lsidx == ssolver::LIDX_UNDEFINED) return 0.0;
@@ -2112,6 +2330,14 @@ void stex::Tetexact::_setTriCount(uint tidx, uint sidx, double n)
 	assert (tidx < pTris.size());
 	assert (sidx < statedef()->countSpecs());
 	assert (n >= 0.0);
+
+	if (pTris[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Triangle " << tidx << " has not been assigned to a patch.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tri * tri = pTris[tidx];
 	uint lsidx = tri->patchdef()->specG2L(sidx);
 	if (lsidx == ssolver::LIDX_UNDEFINED) return;
@@ -2156,6 +2382,14 @@ bool stex::Tetexact::_getTriClamped(uint tidx, uint sidx) const
 {
 	assert (tidx < pTris.size());
 	assert (sidx < statedef()->countSpecs());
+
+	if (pTris[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Triangle " << tidx << " has not been assigned to a patch.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tri * tri = pTris[tidx];
 
 	uint lsidx = tri->patchdef()->specG2L(sidx);
@@ -2170,6 +2404,14 @@ void stex::Tetexact::_setTriClamped(uint tidx, uint sidx, bool buf)
 {
 	assert (tidx < pTris.size());
 	assert (sidx < statedef()->countSpecs());
+
+	if (pTris[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Triangle " << tidx << " has not been assigned to a patch.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tri * tri = pTris[tidx];
 
 	uint lsidx = tri->patchdef()->specG2L(sidx);
@@ -2184,6 +2426,14 @@ double stex::Tetexact::_getTriSReacK(uint tidx, uint ridx) const
 {
 	assert (tidx < pTris.size());
 	assert (ridx < statedef()->countSReacs());
+
+	if (pTris[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Triangle " << tidx << " has not been assigned to a patch.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tri * tri = pTris[tidx];
 
 	uint lsridx = tri->patchdef()->sreacG2L(ridx);
@@ -2198,6 +2448,14 @@ void stex::Tetexact::_setTriSReacK(uint tidx, uint ridx, double kf)
 {
 	assert (tidx < pTris.size());
 	assert (ridx < statedef()->countSReacs());
+
+	if (pTris[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Triangle " << tidx << " has not been assigned to a patch.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tri * tri = pTris[tidx];
 
 	uint lsridx = tri->patchdef()->sreacG2L(ridx);
@@ -2218,6 +2476,14 @@ bool stex::Tetexact::_getTriSReacActive(uint tidx, uint ridx) const
 {
 	assert (tidx < pTris.size());
 	assert (ridx < statedef()->countSReacs());
+
+	if (pTris[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Triangle " << tidx << " has not been assigned to a patch.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tri * tri = pTris[tidx];
 
 	uint lsridx = tri->patchdef()->sreacG2L(ridx);
@@ -2233,6 +2499,14 @@ void stex::Tetexact::_setTriSReacActive(uint tidx, uint ridx, bool act)
 {
 	assert (tidx < pTris.size());
 	assert (ridx < statedef()->countSReacs());
+
+	if (pTris[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Triangle " << tidx << " has not been assigned to a patch.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tri * tri = pTris[tidx];
 
 	uint lsridx = tri->patchdef()->sreacG2L(ridx);
@@ -2251,6 +2525,14 @@ double stex::Tetexact::_getTriSReacH(uint tidx, uint ridx) const
 {
 	assert (tidx < pTris.size());
 	assert (ridx < statedef()->countSReacs());
+
+	if (pTris[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Triangle " << tidx << " has not been assigned to a patch.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tri * tri = pTris[tidx];
 
 	uint lsridx = tri->patchdef()->sreacG2L(ridx);
@@ -2265,6 +2547,14 @@ double stex::Tetexact::_getTriSReacC(uint tidx, uint ridx) const
 {
 	assert (tidx < pTris.size());
 	assert (ridx < statedef()->countSReacs());
+
+	if (pTris[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Triangle " << tidx << " has not been assigned to a patch.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tri * tri = pTris[tidx];
 
 	uint lsridx = tri->patchdef()->sreacG2L(ridx);
@@ -2279,6 +2569,14 @@ double stex::Tetexact::_getTriSReacA(uint tidx, uint ridx) const
 {
 	assert (tidx < pTris.size());
 	assert (ridx < statedef()->countSReacs());
+
+	if (pTris[tidx] == 0)
+	{
+    	std::ostringstream os;
+    	os << "Triangle " << tidx << " has not been assigned to a patch.";
+    	throw steps::ArgErr(os.str());
+	}
+
 	stex::Tri * tri = pTris[tidx];
 
 	uint lsridx = tri->patchdef()->sreacG2L(ridx);

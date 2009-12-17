@@ -1,24 +1,25 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2005-2009 Stefan Wils. All rights reserved.
+// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
+//
+// See the file AUTHORS for details.
 //
 // This file is part of STEPS.
 //
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// STEPSÊis free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// This library is distributed in the hope that it will be useful,
+// STEPSÊis distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA
+// You should have received a copy of the GNU General Public License
+// along with this program.ÊIf not, see <http://www.gnu.org/licenses/>.
 //
-// $Id$
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef STEPS_TETMESH_TETMESH_RW_HPP
@@ -47,34 +48,34 @@ class Tetmesh;
 ////////////////////////////////////////////////////////////////////////////////
 
 //@{
-/// loadASCII() and saveASCII() are functions that read and write a 
-/// tetmesh to a very simple STEPS-centered ASCII (i.e. text based) 
-/// format. The format is straightforward and consists of five parts, 
+/// loadASCII() and saveASCII() are functions that read and write a
+/// tetmesh to a very simple STEPS-centered ASCII (i.e. text based)
+/// format. The format is straightforward and consists of five parts,
 /// following the five parts of the tetmesh itself.
 ///
 /// <OL>
 /// <LI>A list of vertices: first the number of vertices is given. Then
 ///     for each vertex there is a line with its x, y and z coordinates
 ///     in scientific notation.
-/// <LI>A list of triangles. First the total number of triangles is given.  
-///     After this, we have 1 line per triangle giving its three corner 
+/// <LI>A list of triangles. First the total number of triangles is given.
+///     After this, we have 1 line per triangle giving its three corner
 ///     points as indices into the vertex list.
-/// <LI>A list of tetrahedrons. On a first line, the number of tets is 
+/// <LI>A list of tetrahedrons. On a first line, the number of tets is
 ///     specified. After this, for each tet, follows a line with its four
 ///     corner points, given as indices into the vertex list.
 /// <LI>The compartments in the mesh. First the number of compartments is
-///     given on a single line. Then each of these compartments is 
+///     given on a single line. Then each of these compartments is
 ///     specified using the following structure:
 ///     <OL>
 ///     <LI>Its name (ID string) on a single line.
 ///     <LI>The number of volume systems that have been added to the
 ///         compartment.
-///     <LI>For each volume system, its name (ID string) is given on a 
+///     <LI>For each volume system, its name (ID string) is given on a
 ///         separate line.
 ///     <LI>The number of tetrahedrons associated with the compartment.
 ///     <LI>The indices of these tetrahedrons (8 per line).
 ///     </OL>
-/// <LI>A similar approach is taken to list all patches in the meshes. 
+/// <LI>A similar approach is taken to list all patches in the meshes.
 ///     first, we specify the number of patches attached to the mesh.
 ///     Then, for each patch, we describe like this:
 ///     <OL>
@@ -93,14 +94,14 @@ class Tetmesh;
 /// <LI>
 /// </OL>
 ///
-/// All indices start from zero in this format, as they do in 
-/// STEPS (and C++) internally. 
-/// 
-/// \todo More care could be taken in handling wrongly specified 
-/// ASCII files. A binary format, or better even a format based a 
+/// All indices start from zero in this format, as they do in
+/// STEPS (and C++) internally.
+///
+/// \todo More care could be taken in handling wrongly specified
+/// ASCII files. A binary format, or better even a format based a
 /// library like NetCDF (or HDF), would be more efficient in terms
-/// occupying disk space and could make it easier to read meshes from  
-/// other software such as Matlab. (But first see whether Matlab's 
+/// occupying disk space and could make it easier to read meshes from
+/// other software such as Matlab. (But first see whether Matlab's
 /// support for these formats is actually as easy as they say it is.)
 ///
 Tetmesh * loadASCII(std::string pathname);

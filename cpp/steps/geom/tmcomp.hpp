@@ -1,23 +1,24 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2005-2008 Stefan Wils. All rights reserved.
+// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
+//
+// See the file AUTHORS for details.
 //
 // This file is part of STEPS.
 //
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// STEPSÊis free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// This library is distributed in the hope that it will be useful,
+// STEPSÊis distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA
-//
+// You should have received a copy of the GNU General Public License
+// along with this program.ÊIf not, see <http://www.gnu.org/licenses/>.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -96,6 +97,12 @@ public:
     inline std::vector<uint> getAllTetIndices(void) const
     { return pTet_indices; }
 
+    /// Return the number of tetrahedrons in this TmComp
+    ///
+    /// \return the number of tetrahedrons in this TmCOmp
+    inline uint countTets(void) const
+    { return pTetsN; }
+
     // Return whether tetrahedrons (specified by index) are inside this compartment.
     ///
     /// \param tet List of indices of tetrahedrons.
@@ -120,6 +127,7 @@ public:
     /// \return List of indices of tetrahedrons.
     inline std::vector<uint> const & _getAllTetIndices(void) const
     { return pTet_indices; }
+
 
 private:
 
