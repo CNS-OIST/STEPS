@@ -67,6 +67,13 @@ class Tri
 
 public:
 
+	// TODO: Fix this object before exposure to Python.
+	// These objects are not referenced by anything
+	// in c++ so ownership is in Python. However, methods like getTet create
+	// objects in c++ and cannot be cleaned up by Python.
+	// All this data is available in the parent Tetmesh class anyway, so
+	// this object may be removed in the future.
+	//
 	////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////

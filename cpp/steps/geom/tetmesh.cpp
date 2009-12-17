@@ -53,6 +53,7 @@ stetmesh::Tetmesh::Tetmesh(uint nverts, uint ntets, uint ntris)
 , pTrisN(ntris) // initialise this member with user supplied number, but this will be modified later
 , pTris(0)
 , pTri_areas(0)
+, pTri_barycs(0)
 , pTri_norms(0)
 , pTri_patches(0)
 , pTri_tet_neighbours(0)
@@ -164,6 +165,7 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 , pTris(0)
 , pTri_areas(0)
 , pTri_norms(0)
+, pTri_barycs(0)
 , pTri_patches(0)
 , pTri_tet_neighbours(0)
 , pTris_user(0) // not used by this contructor
@@ -456,6 +458,7 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 	// copy the supplied triangles information to pTris member
 	for (uint i = 0; i < pTrisN*3; ++i) pTris[i] = tris_temp[i];
 	pTri_areas = new double[pTrisN];
+	pTri_barycs = new double[pTrisN * 3];
 	pTri_norms = new double[pTrisN * 3];
 	pTri_patches = new stetmesh::TmPatch*[pTrisN];
 	// Initialise patch pointers to zero (fill_n doesn't work for zero pointers)
@@ -479,10 +482,17 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 		// call steps::math method to set the area
 		pTri_areas[tri] = steps::math::triArea(vert0, vert1, vert2);
 
-		// create an array to store this triangle's normal
+		// create arrays to store this triangle's barycenter and normal
+		double baryc[3];
 		double norm[3];
-		// call steps::math method to find the normal and store in norm array
+		// call math methods to find the barycenter, normal and store in arrays
+		steps::math::triBarycenter(vert0, vert1, vert2, baryc);
 		steps::math::triNormal(vert0, vert1, vert2, norm);
+
+		// set the barycenter
+		pTri_barycs[tri*3] = baryc[0];
+		pTri_barycs[(tri*3)+1] = baryc[1];
+		pTri_barycs[(tri*3)+2] = baryc[2];
 		// set the normal
 		pTri_norms[tri*3] = norm[0];
 		pTri_norms[(tri*3)+1] = norm[1];
@@ -540,6 +550,7 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 , pTris(0)
 , pTri_areas(0)
 , pTri_norms(0)
+, pTri_barycs(0)
 , pTri_patches(0)
 , pTri_tet_neighbours(0)
 , pTris_user(0) // not used by this contructor
@@ -638,6 +649,7 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 	pTris = new uint[pTrisN * 3];
 	pTri_areas = new double[pTrisN];
 	pTri_norms = new double[pTrisN*3];
+	pTri_barycs = new double[pTrisN*3];
 	pTri_tet_neighbours = new int[pTrisN*2];
 	pTets = new uint[pTetsN * 4];
 	pTet_vols = new double[pTetsN];
@@ -670,6 +682,21 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 
 		pTri_tet_neighbours[t*2] = tri_tet_neighbs[t*2];
 		pTri_tet_neighbours[(t*2)+1] = tri_tet_neighbs[(t*2)+1];
+
+		// The barycenter of the triangle is not store in the text file right now
+		/// set this triangle's barycenter
+		///
+		// find pointers to this triangle's 3 vertices
+		double * vert0 = pVerts + (3 * tris[t*3]);
+		double * vert1 = pVerts + (3 * tris[(t*3)+1]);
+		double * vert2 = pVerts + (3 * tris[(t*3)+2]);
+		// create array to store this triangle's barycenter
+		double baryc[3];
+		steps::math::triBarycenter(vert0, vert1, vert2, baryc);
+		// set the barycenter
+		pTri_barycs[t*3] = baryc[0];
+		pTri_barycs[(t*3)+1] = baryc[1];
+		pTri_barycs[(t*3)+2] = baryc[2];
 	}
 
 	for (uint t = 0; t < pTetsN; ++t)
@@ -1401,6 +1428,24 @@ double stetmesh::Tetmesh::getTriArea(uint tidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
+std::vector<double> stetmesh::Tetmesh::getTriBarycenter(uint tidx) const
+{
+	if (tidx >= pTrisN)
+	{
+		std::ostringstream os;
+		os << "Triangle index is out of range.";
+		throw steps::ArgErr(os.str());
+	}
+	std::vector<double> baryc(3);
+	baryc[0] = pTri_barycs[(tidx*3)];
+	baryc[1] = pTri_barycs[(tidx*3)+1];
+	baryc[2] = pTri_barycs[(tidx*3)+2];
+
+	return baryc;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 std::vector<double> stetmesh::Tetmesh::getTriNorm(uint tidx) const
 {
     assert(pSetupDone == true);
@@ -1414,6 +1459,7 @@ std::vector<double> stetmesh::Tetmesh::getTriNorm(uint tidx) const
 	norm[0] = pTri_norms[(tidx*3)];
 	norm[1] = pTri_norms[(tidx*3)+1];
 	norm[2] = pTri_norms[(tidx*3)+2];
+
 	return norm;
 }
 

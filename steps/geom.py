@@ -139,29 +139,41 @@ class Tetmesh(geom_swig.Tetmesh):
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
+"""
+////////////////////////////////////////////////////////////////////////////////
+//////// OBJECT REMOVED BECAUSE OF MEMORY ISSUES. SEE TODO NOTE IN C++ /////////
+///////////////////////// CONSTRUCTOR FOR DETAILS //////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+"""
 
-class Tet(geom_swig.Tet):
-    def __init__(self, *args): 
-        """__init__(self, Tetmesh mesh, unsigned int tidx) -> Tet"""
-        this = _geom_swig.new_Tet(*args)
-        try: self.this.append(this)
-        except: self.this = this
-        # this object owned by python
-        self.thisown = True
+# class Tet(geom_swig.Tet):
+#    def __init__(self, *args): 
+#        """__init__(self, Tetmesh mesh, unsigned int tidx) -> Tet"""
+#        this = _geom_swig.new_Tet(*args)
+#        try: self.this.append(this)
+#        except: self.this = this
+#        # this object owned by python
+#        self.thisown = True
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
+"""
+////////////////////////////////////////////////////////////////////////////////
+//////// OBJECT REMOVED BECAUSE OF MEMORY ISSUES. SEE TODO NOTE IN C++ /////////
+///////////////////////// CONSTRUCTOR FOR DETAILS //////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+"""
 
-class Tri(geom_swig.Tri):
-
-    def __init__(self, *args): 
-        """__init__(self, Tetmesh mesh, unsigned int tidx) -> Tri"""
-        this = _geom_swig.new_Tri(*args)
-        try: self.this.append(this)
-        except: self.this = this
-        # this object is owned by python
-        self.thisown = True
+# class Tri(geom_swig.Tri):
+#
+#    def __init__(self, *args): 
+#        """__init__(self, Tetmesh mesh, unsigned int tidx) -> Tri"""
+#        this = _geom_swig.new_Tri(*args)
+#        try: self.this.append(this)
+#        except: self.this = this
+#        # this object is owned by python
+#        self.thisown = True
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 

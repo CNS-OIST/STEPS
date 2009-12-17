@@ -222,12 +222,20 @@ public:
     /// \return Area of the triangle.
     double getTriArea(uint tidx) const;
 
+    /// Return the barycenter of triangle with index tidx
+    ///
+    /// \param tidx Index of the triangle.
+    /// \return Barycenter of the triangle.
+    std::vector<double> getTriBarycenter(uint tidx) const;
+
+
     /// Return the normalised triangle with index tidx
     ///
     /// \param tidx Index of the triangle.
     /// \return Coordinate of the normalised vertices form the triangle.
     std::vector<double> getTriNorm(uint tidx) const;
 
+    //getTriBarycenter
     /// Return the patch which a triangle associated to.
     ///
     /// \param tidx Index of the triangle.
@@ -405,6 +413,8 @@ private:
     uint                              * pTris_user;
     /// The areas of the triangles
     double                            * pTri_areas;
+    /// The triangle barycenters
+    double                            * pTri_barycs;
     /// The triangle normals
     double                            * pTri_norms;
     /// The patch a triangle belongs to

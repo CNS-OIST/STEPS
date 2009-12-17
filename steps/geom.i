@@ -263,6 +263,7 @@ public:
 	std::vector<unsigned int> getTri(unsigned int tidx) const;
 	unsigned int countTris(void) const;
 	double getTriArea(unsigned int tidx) const;
+	std::vector<double> getTriBarycenter(unsigned int tidx) const;
 	std::vector<double> getTriNorm(unsigned int tidx) const;
 	steps::tetmesh::TmPatch * getTriPatch(unsigned int tidx) const;
 	std::vector<int> getTriTetNeighb(unsigned int tidx) const;
@@ -291,6 +292,11 @@ void saveASCII(std::string pathname, Tetmesh * m);
 */
 ////////////////////////////////////////////////////////////////////////////////
 
+/* /////////////////////////////////////////////////////////////////////////////
+//////// OBJECT REMOVED BECAUSE OF MEMORY ISSUES. SEE TODO NOTE IN C++ /////////
+///////////////////////// CONSTRUCTOR FOR DETAILS //////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 class Tri	
 {
 	
@@ -308,18 +314,18 @@ public:
 	Tet getTet0(void) const;
     Tet getTet1(void) const;
     
-    /*
+    
     Tet getInnerTet(void) const;
     Tet getOuterTet(void) const;
-    */
+    
     
     unsigned int getTet0Idx(void) const;
     unsigned int getTet1Idx(void) const;
 
-    /*
+    
     unsigned int getInnerTetIdx(void) const;
     unsigned int getOuterTetIdx(void) const;
-    */
+    
 
     unsigned int getVertex0Idx(void) const;
     unsigned int getVertex1Idx(void) const;
@@ -327,6 +333,11 @@ public:
 	
 };
 	
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+//////// OBJECT REMOVED BECAUSE OF MEMORY ISSUES. SEE TODO NOTE IN C++ /////////
+///////////////////////// CONSTRUCTOR FOR DETAILS //////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
 class Tet
@@ -392,7 +403,8 @@ public:
 	std::vector<double> getRanPnt(steps::rng::RNG * r, unsigned int n = 1) const;
 
 };
-	
+
+*/
 ////////////////////////////////////////////////////////////////////////////////
 	
 %feature("kwargs") TmComp::TmComp;
