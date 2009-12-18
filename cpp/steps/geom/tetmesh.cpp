@@ -1608,6 +1608,29 @@ double stetmesh::Tetmesh::getTetVol(uint tidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
+double stetmesh::Tetmesh::getTetQualityRER(uint tidx) const
+{
+	assert(pSetupDone == true);
+	if (tidx >= pTetsN)
+	{
+		std::ostringstream os;
+		os << "Tetrahedron index out of range.";
+		throw steps::ArgErr(os.str());
+	}
+
+	uint * verts = _getTet(tidx);
+
+    double * v0 = _getVertex(verts[0]);
+    double * v1 = _getVertex(verts[1]);
+    double * v2 = _getVertex(verts[2]);
+    double * v3 = _getVertex(verts[3]);
+
+    return (steps::math::tet_circumrad(v0, v1, v2, v3) /
+            steps::math::tet_shortestedge(v0, v1, v2, v3));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 std::vector<double> stetmesh::Tetmesh::getTetBarycenter(uint tidx) const
 {
 	assert(pSetupDone == true);

@@ -285,7 +285,26 @@ public:
 
     double getTetVol(uint tidx) const;
 
-	/// Return the barycentre of the tetrahedron in x,y,z coordinates
+    /// Computes the quality of the tetrahedron.
+    ///
+    /// This method uses the radius-edge ratio (RER) metric for tetrahedron
+    /// quality, given by dividing the radius of the tetrahedron's
+    /// circumsphere with the length of the shortest edge.
+    ///
+    /// The smaller this value, the more regular the tetrahedron. The
+    /// lowest possible value of this metric is given by computing the
+    /// RER for a fully regular tetrahedron:
+    ///
+    ///    Q = sqrt(6)/4 ~ 0.612
+    ///
+    /// This is a slightly weaker metric than getQualityAR, because
+    /// certain slivers (degenerate tetrahedrons) can still have a fairly
+    /// small value.
+    ///
+    /// \return Quality RER of the tetrahedron.
+    double getTetQualityRER(uint tidx) const;
+
+    /// Return the barycentre of the tetrahedron in x,y,z coordinates
     /// \param tidx Index of the tetrahedron
     /// \return Barycentre of the tetrahedron
 	std::vector<double> getTetBarycenter(uint tidx) const;

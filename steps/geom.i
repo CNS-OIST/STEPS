@@ -264,6 +264,8 @@ public:
 	unsigned int countTris(void) const;
 	double getTriArea(unsigned int tidx) const;
 	std::vector<double> getTriBarycenter(unsigned int tidx) const;
+	double getTetQualityRER(unsigned int tidx) const;
+
 	std::vector<double> getTriNorm(unsigned int tidx) const;
 	steps::tetmesh::TmPatch * getTriPatch(unsigned int tidx) const;
 	std::vector<int> getTriTetNeighb(unsigned int tidx) const;
