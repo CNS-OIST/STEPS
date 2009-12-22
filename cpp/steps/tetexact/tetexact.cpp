@@ -549,6 +549,21 @@ void stex::Tetexact::run(double endtime)
 	statedef()->setTime(endtime);
 }
 
+////////////////////////////////////////////////////////////////////////
+
+void stex::Tetexact::advance(double adv)
+{
+	if (adv < 0.0)
+	{
+		std::ostringstream os;
+		os << "Time to advance cannot be negative";
+	    throw steps::ArgErr(os.str());
+	}
+
+	double endtime = statedef()->time() + adv;
+	run(endtime);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void stex::Tetexact::step(void)

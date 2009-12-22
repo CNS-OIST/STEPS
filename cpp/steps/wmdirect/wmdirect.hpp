@@ -103,6 +103,7 @@ public:
 
     void reset(void);
     void run(double endtime);
+    void advance(double adv);
     void step(void);
 
     ////////////////////////////////////////////////////////////////////////

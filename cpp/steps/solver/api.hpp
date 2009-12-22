@@ -108,6 +108,11 @@ public:
     /// \param endtime Time to end the solver.
     virtual void run(double endtime) = 0;
 
+    /// Advance the solver a given time.
+    ///
+    /// \param adv Time to advance the solver
+    virtual void advance(double adv);
+
     /// Run the solver for a step.
     virtual void step(void);
 

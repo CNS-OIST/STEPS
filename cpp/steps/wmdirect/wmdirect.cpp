@@ -282,6 +282,21 @@ void swmd::Wmdirect::run(double endtime)
 
 ////////////////////////////////////////////////////////////////////////
 
+void swmd::Wmdirect::advance(double adv)
+{
+	if (adv < 0.0)
+	{
+		std::ostringstream os;
+		os << "Time to advance cannot be negative";
+	    throw steps::ArgErr(os.str());
+	}
+
+	double endtime = statedef()->time() + adv;
+	run(endtime);
+}
+
+////////////////////////////////////////////////////////////////////////
+
 void swmd::Wmdirect::step(void)
 {
 	swmd::KProc * kp = _getNext();

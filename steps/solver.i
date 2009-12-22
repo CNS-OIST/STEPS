@@ -105,7 +105,7 @@ public:
 	
     virtual void reset(void) = 0;
     virtual void run(double endtime) = 0;
-	
+	virtual void advance(double adv);
     virtual void step(void);
 	
     virtual void setDT(double dt);

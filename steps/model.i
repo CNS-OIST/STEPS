@@ -220,7 +220,6 @@ public:
 	double getDcst(void) const;
 	void setDcst(double dcst);
 	
-	std::vector<Spec *> getAllSpecs(void) const;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
