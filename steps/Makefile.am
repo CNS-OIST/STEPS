@@ -77,7 +77,6 @@ python_steps_PYTHON = \
     __init__.py \
     model.py \
     model_swig.py \
-	error_swig.py \
     geom.py \
     geom_swig.py \
     rng_swig.py \

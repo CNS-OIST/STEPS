@@ -3,7 +3,7 @@
 SWIG=swig
 
 $SWIG -c++ -python -o steps/model_wrap.cpp steps/model.i
-$SWIG -c++ -python -o steps/error_wrap.cpp steps/error.i
+#$SWIG -c++ -python -o steps/error_wrap.cpp steps/error.i
 $SWIG -c++ -python -o steps/geom_wrap.cpp steps/geom.i
 $SWIG -c++ -python -o steps/rng_wrap.cpp steps/rng.i
 $SWIG -c++ -python -o steps/solver_wrap.cpp steps/solver.i

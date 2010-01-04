@@ -1,36 +1,30 @@
-$Id$
-================================================================================
 
 The following people have contributed to the development of STEPS:
 
-2006 - 2009
 
-    Stefan Wils (OIST, UA)
-        Principal author.
-        
-        
-2008 - 
+MEMBERS
 
-    Iain Hepburn (OIST)
-        Added the wmrk4 solver.
-        Major re-write of the code
-         - Shifted all model, geometry description to c++ 
-         	(with exposure to Python through SWIG)
-         - Implemented the solver API abstract base class,
-         	with all solvers now derived from this class
+Current Active Members:
+Erik De Schutter (OIST, UA, since 2006)
+Iain Hepburn (OIST, since 2008)
+Weiliang Chen (OIST, since 2009)
+
+Previous Members:
+Stefan Wils (OIST, UA, 2006 - 2009)
 
 
-2009 - 
+DUTIES
 
-    Weiliang Chen (OIST)
-        Documentation.
+STEPS project supervision: Erik De Schutter
+STEPS programming: Stefan Wils, Iain Hepburn, Weiliang Chen
+Debugging and Profiling: Iain Hepburn, Weiliang Chen
+Website adminstration: Weiliang Chen
 
-                
-2007
 
-    Ivan Raikov (OIST)
-        Helped to straighten out the autotools stuff and set up the 
-        Subversion archive.
+ACKNOWLEDGEMENT
+
+Ivan Raikov (OIST): Configuration of subversion archive and autotools.
+Mika Holm: STEPS logo.
         
 
 

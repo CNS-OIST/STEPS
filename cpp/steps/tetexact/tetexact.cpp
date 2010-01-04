@@ -276,36 +276,42 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
 
     for (uint t = 0; t < ntris; ++t)
     {
+    	// Looping over all possible tris, but only some have been added to a patch
     	if (pTris[t] == 0) continue;
+
+    	// By convention, triangles in a patch should have an inner tetrahedron defined
+    	// (neighbouring tets 'flipped' if necessary in Tetmesh)
+    	// but not necessarily an outer tet
     	int tetinner = pTris[t]->tet(0);
     	int tetouter = pTris[t]->tet(1);
 
     	// DEBUG 18/03/09:
     	// Now correct check, previously didn't allow for tet index == 0
-    	if (tetinner >= 0)
+    	assert(tetinner >= 0);
+    	assert(pTets[tetinner] != 0 );
+
+		pTris[t]->setInnerTet(pTets[tetinner]);
+    	// Now add this triangle to inner tet's list of neighbours
+    	for (uint i=0; i <= 4; ++i)
     	{
-    		if (pTets[tetinner] != 0)
-    		{
-    			pTris[t]->setInnerTet(pTets[tetinner]);
-    			// Now add this triangle to inner tet's list of neighbours
-    			for (uint i=0; i <= 4; ++i)
-    			{
-    				// include assert for debugging purposes and remove
-    				// once this is tested
-    				assert (i < 4);														//////////
-    				// check if there is already a neighbouring tet or tri
-    				// In theory if there is a tri to add, the tet should
-    				// have less than 4 neighbouring tets added because
-    				// a neighbouring tet(s) is in a different compartment
-    				// Also check tris because in some cases a surface tet
-    				// may have more than 1 neighbouring tri
-    				if (pTets[tetinner]->nextTet(i) != 0) continue;
-    				if (pTets[tetinner]->nextTri(i) != 0) continue;
-    				pTets[tetinner]->setNextTri(i, pTris[t]);
-    				break;
-    			}
-    		}
+    		// include assert for debugging purposes and remove
+    		// once this is tested
+    		assert (i < 4);														//////////
+    		// check if there is already a neighbouring tet or tri
+    		// In theory if there is a tri to add, the tet should
+    		// have less than 4 neighbouring tets added because
+    		// a neighbouring tet(s) is in a different compartment
+    		// Also check tris because in some cases a surface tet
+    		// may have more than 1 neighbouring tri
+    		// NOTE: The order here will end up being different to the
+    		// neighbour order at the Tetmesh level
+    		if (pTets[tetinner]->nextTet(i) != 0) continue;
+    		if (pTets[tetinner]->nextTri(i) != 0) continue;
+    		pTets[tetinner]->setNextTri(i, pTris[t]);
+    		break;
     	}
+
+
 
     	// DEBUG 18/03/09:
     	// Now correct check, previously didn't allow for tet index == 0
