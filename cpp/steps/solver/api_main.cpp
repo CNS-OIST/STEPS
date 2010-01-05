@@ -76,8 +76,8 @@ API::API(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r)
     {
     	std::ostringstream os;
     	os << "Cannot create solver object with this ";
-    	os << "steps.model.Model description object.";
-    	os << " Model must contain at least one chemical Species.";
+    	os << "steps.model.Model description object. ";
+    	os << "Model must contain at least one chemical Species.";
     	throw steps::ArgErr(os.str());
     }
 
@@ -85,11 +85,26 @@ API::API(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r)
     {
     	std::ostringstream os;
     	os << "Cannot create solver object with this ";
-    	os << "steps.geom.Geom geometry description object";
-    	os << " Geometry must contains at least one Compartment.";
+    	os << "steps.geom.Geom geometry description object. ";
+    	os << "Geometry must contain at least one Compartment.";
     	throw steps::ArgErr(os.str());
 
     }
+
+    std::vector<steps::wm::Comp *> comps = g->getAllComps();
+    std::vector<steps::wm::Comp *>::const_iterator c_end = comps.end();
+    for (std::vector<steps::wm::Comp *>::const_iterator c = comps.begin(); c != c_end; ++c)
+    {
+    	if ((*c)->getVol() == 0.0)
+    	{
+        	std::ostringstream os;
+        	os << "Cannot create solver object with this ";
+        	os << "steps.geom.Geom geometry description object. ";
+        	os << "All Compartments must have non-zero volume.";
+        	throw steps::ArgErr(os.str());
+    	}
+    }
+
     // create state object, which will in turn create compdef, specdef etc
     //objects and initialise
     pStatedef = new Statedef(m, g, r);
