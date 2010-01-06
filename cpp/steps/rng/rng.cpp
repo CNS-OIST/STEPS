@@ -32,6 +32,7 @@
 #include <cassert>
 #include <cmath>
 #include <string>
+#include <iostream>
 
 // STEPS headers.
 #include <steps/common.h>
@@ -268,8 +269,8 @@ S120:
     // JJV added argument checker here.
     if(mu >= 0.0) goto S125;
 	// NO EXIT!
-    fprintf(stderr,"MU < 0 in IGNPOI: MU %16.6E\n",mu);
-    fputs("Abort\n", stderr);
+    std::cerr << "MU < 0 in IGNPOI: MU:" << mu << std::endl;
+    std::cerr << "Abort\n";
     exit(1);
 
 S125:

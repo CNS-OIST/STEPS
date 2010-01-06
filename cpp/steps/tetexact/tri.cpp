@@ -137,11 +137,14 @@ void stex::Tri::setCount(uint lidx, uint count)
 	double oldcount = pPoolCount[lidx];
 	double c = static_cast<double>(count);
 	pPoolCount[lidx] = c;
+
+	/* 16/01/10 IH: Counts no longer stored in patch object.
 	// Now update the count in this tri's patch
 	double diff = c - oldcount;
 	double newcount = (patchdef()->pools()[lidx]) + diff;
 	// Patchdef method will do the checking on the double argument (should be positive!)
 	patchdef()->setCount(lidx, newcount);
+	*/
 }
 
 ////////////////////////////////////////////////////////////////////////////////

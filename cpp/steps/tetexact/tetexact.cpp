@@ -619,7 +619,14 @@ double stex::Tetexact::_getCompCount(uint cidx, uint sidx) const
 	uint slidx = comp->def()->specG2L(sidx);
 	if (slidx == ssolver::LIDX_UNDEFINED) return 0.0;
 
-	return comp->pools()[slidx];
+	uint count = 0;
+	TetPVecCI t_end = comp->endTet();
+	for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
+	{
+		count += (*t)->pools()[slidx];
+	}
+
+	return count;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -965,7 +972,14 @@ double stex::Tetexact::_getPatchCount(uint pidx, uint sidx) const
 	uint slidx = patch->def()->specG2L(sidx);
 	if (slidx == ssolver::LIDX_UNDEFINED) return 0.0;
 
-	return patch->pools()[slidx];
+	uint count = 0;
+	TriPVecCI t_end = patch->endTri();
+	for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
+	{
+		count += (*t)->pools()[slidx];
+	}
+
+	return count;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
