@@ -2038,7 +2038,7 @@ double stex::Tetexact::_getTetReacK(uint tidx, uint ridx) const
 	if (pTets[tidx] == 0)
 	{
     	std::ostringstream os;
-    	os << "Tetrahedron with this index does not belong to a compartment.";
+    	os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
     	throw steps::ArgErr(os.str());
 	}
 
@@ -2111,7 +2111,7 @@ void stex::Tetexact::_setTetReacActive(uint tidx, uint ridx, bool act)
 	if (pTets[tidx] == 0)
 	{
     	std::ostringstream os;
-    	os << "Tetrahedron with this index does not belong to a compartment.";
+    	os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
     	throw steps::ArgErr(os.str());
 	}
 
@@ -2137,7 +2137,7 @@ double stex::Tetexact::_getTetDiffD(uint tidx, uint didx) const
 	if (pTets[tidx] == 0)
 	{
     	std::ostringstream os;
-    	os << "Tetrahedron with this index does not belong to a compartment.";
+    	os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
     	throw steps::ArgErr(os.str());
 	}
 
