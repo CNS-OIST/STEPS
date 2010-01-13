@@ -1,0 +1,99 @@
+Install From Binaries
+=====================
+
+    We provide precompiled binary packages for varies of operating
+systems, user is recommanded to use these packages when possible.
+
+    For systems which precomplied binary is unavailable, user may
+install STEPS following the steps in the Basic Installation section.
+
+Basic Installation
+==================
+
+The simplest way to compile this package is:
+
+  1. `cd' to the directory containing the package's source code and type
+     `./configure' to configure the package for your system.  If you're
+     using `csh' on an old version of System V, you might need to type
+     `sh ./configure' instead to prevent `csh' from trying to execute
+     `configure' itself.
+
+     Running `configure' takes awhile.  While running, it prints some
+     messages telling which features it is checking for.
+
+  2. Type `make' to compile the package.
+
+  3. Type `sudo make install' to install the programs and any data files 
+     and documentation. Your superuser password is required for the 
+     installation.
+
+  4. You can remove the program binaries and object files from the
+     source code directory by typing `make clean'.  To also remove the
+     files that `configure' created (so you can compile the package for
+     a different kind of computer), type `make distclean'.  There is
+     also a `make maintainer-clean' target, but that is intended mainly
+     for the package's developers.  If you use it, you may have to get
+     all sorts of other programs in order to regenerate files that came
+     with the distribution.
+
+Python Version
+==================
+    The configure script will attempt to locate software that is required, 
+such as a suitable Python distribution. To tell it to use a specific Python
+distribution installed on your system, you can set the PYTHON shell variable
+to point to the location of the corresponding Python interpreter. Everything
+else remains the same. For instance, to use Python distribution installed
+under /opt/local:
+
+    export PYTHON=/opt/local/bin/python2.6
+    ./configure
+    make
+    sudo make install
+
+Installation Names
+==================
+
+   By default, `make install' will install the package's files in
+`/usr/local/lib' (STEPS library), `/usr/local/lib/python_version/site-packages'
+(Python side package), etc. You can specify an installation prefix other than
+`/usr/local' by giving `configure' the option `--prefix=PATH'. 
+For instance, to install the STEPS libraries under /opt/local:
+
+    ./configure --prefix=/opt/local 
+    make 
+    sudo make install
+
+Cygwin
+==================
+For Cygwin environment, an extra LDFLAGS is needed for the linking.
+    
+    ./configure
+    make LDFLAGS=-no-undefined
+    make install
+
+Python Search Path
+==================
+
+    If you've changed the installing path you need to manually add the
+path to the PYTHONPATH variable so that Python can find the STEPS package.
+For example, STEPS is installed in /opt/local/lib/python2.6/site-packages/:
+
+    export PYTHONPATH=$PYTHONPATH:/opt/local/lib/python2.6/site-packages/
+
+For Windows, add the following environment variable:
+    PYTHONPATH=%PYTHONPATH%;path_to_steps_dir
+
+Import Error
+============
+
+If you have similar Import Error while running STEPS:
+
+ImportError: libsteps.so.0: cannot open shared object file: 
+no such file or directory
+
+Please add the path to the STEPS library to the LD_LIBRARY_PATH variable
+(For Mac, it is DYLD_LIBRARY_PATH, For Windows, it is PATH).
+
+For instance, if you installed the STEPS with installation prefix /opt/local
+
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/local/lib
