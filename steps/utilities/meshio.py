@@ -395,8 +395,8 @@ def importTetGen(pathroot):
     elefname = pathroot + '.ele'
     facefname = pathroot + '.face'
 
-    nodeproxy = ElementProxy('node', 3);
-    tetproxy = ElementProxy('tet', 4);
+    nodeproxy = ElementProxy('node', 3)
+    tetproxy = ElementProxy('tet', 4)
     triproxy = ElementProxy('tri', 3) 
 
     # Is there a .node file?
