@@ -8,7 +8,7 @@ dnl     Standard boilerplate code.
 dnl ----------------------------------------------------------------------------
 
 dnl Initialize the autotools system.
-AC_INIT([steps], [1.0.0], [stepsdev@gmail.com])
+AC_INIT([steps], [1.0], [steps.dev@gmail.com])
 
 AC_PREREQ(2.57)
 
