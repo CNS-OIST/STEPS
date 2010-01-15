@@ -46,6 +46,9 @@ SUBDIRS = \
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+EXTRA_DIST = LICENSE \
+    gpl-3.0.txt
+
 # Headers that are generated during the build but should be installed.
 nobase_nodist_include_HEADERS = \
     cpp/steps/config.h
