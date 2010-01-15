@@ -33,7 +33,7 @@ destructor).
 """
 
 
-import geom_swig
+from . import geom_swig
 import _geom_swig
 
 ### Now defunct mesh saving/loading tool ###

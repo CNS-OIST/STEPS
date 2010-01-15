@@ -31,7 +31,7 @@ RNG object is owned by Python
 """
 ####### currently only imports swig file !! ##############
 
-from rng_swig import *
+from .rng_swig import *
 
 """
 import rng_swig

@@ -324,7 +324,7 @@ class ElementProxy:
         converted_groups = {}
         for key in it:
             blockrange = self.blocks[key]
-            converted_groups[key] = range(blockrange[0], blockrange[1] + 1)
+            converted_groups[key] = list(range(blockrange[0], blockrange[1] + 1))
         return converted_groups
 
 
@@ -401,10 +401,10 @@ def importTetGen(pathroot):
 
     # Is there a .node file?
     if not opath.isfile(nodefname):
-        print nodefname
+        print(nodefname)
         return None
     if not opath.isfile(elefname):
-        print elefname
+        print(elefname)
         return None
     if not opath.isfile(facefname):
         facefname = ''
@@ -505,13 +505,13 @@ def importTetGen(pathroot):
         # Close the file.
         facefile.close()
 
-    print "Read TetGen files succesfully"    
+    print("Read TetGen files succesfully")    
     
     nodedata = nodeproxy.getAllData()
     tetdata = tetproxy.getAllData() 
     tridata = triproxy.getAllData() 
 
-    print "creating Tetmesh object in STEPS..."
+    print("creating Tetmesh object in STEPS...")
     mesh = stetmesh.Tetmesh(nodedata, tetdata, tridata)
 
     return mesh, nodeproxy, tetproxy, triproxy
@@ -551,7 +551,7 @@ def importAbaqus(filename, scale):
    amount of time to create the Tetmesh object, comparing to the loadTetmesh() method.
 
     """
-    print "Reading Abaqus file..."
+    print("Reading Abaqus file...")
     btime = time.time()
     
     abaqusfile = open(filename, 'r')
@@ -573,7 +573,7 @@ def importAbaqus(filename, scale):
         elif (line.find('*NODE', 0, 5) == 0):
             if (currmap != None):
                 currmap.blockEnd()
-            print 'Found *NODE section, start reading nodes.'
+            print('Found *NODE section, start reading nodes.')
             lineset = line.split('=') 
             if (len(lineset) == 1):
                 nodeproxy.blockBegin('AllNodes')
@@ -583,7 +583,7 @@ def importAbaqus(filename, scale):
         elif (line.find('*ELEMENT', 0, 8) == 0):
             if (currmap != None):
                 currmap.blockEnd()
-            print 'Found *Element section, start reading elements.'
+            print('Found *Element section, start reading elements.')
             lineset = line.split(',') 
             elementtype = lineset[1].split('=')[1]
             blockname = 'AllElements'
@@ -638,13 +638,13 @@ def importAbaqus(filename, scale):
         currmap.blockEnd()
 
     abaqusfile.close()
-    print "Read Abaqus file succesfully"    
+    print("Read Abaqus file succesfully")    
     
     nodedata = nodeproxy.getAllData()
     tetdata = tetproxy.getAllData() 
     tridata = triproxy.getAllData() 
 
-    print "creating Tetmesh object in STEPS..."
+    print("creating Tetmesh object in STEPS...")
     mesh = stetmesh.Tetmesh(nodedata, tetdata, tridata)
     
     return mesh, nodeproxy, tetproxy,triproxy
@@ -711,7 +711,7 @@ def saveMesh(pathname, tetmesh):
     
     # Performa a basic test on the object itself
     if (tetmesh.__str__()[1:19] != 'steps.geom.Tetmesh'):
-        print "2nd parameter not a valid steps.geom.Tetmesh object."
+        print("2nd parameter not a valid steps.geom.Tetmesh object.")
         return 0
     
     # Following will throw IOError if pathname not a valid directory
@@ -729,7 +729,7 @@ def saveMesh(pathname, tetmesh):
     xmlfile.write('\t<nodes size = "'+str(nverts)+'">\n')
     textfile.write(str(nverts)+'\n\n')
     
-    for node in xrange(nverts):
+    for node in range(nverts):
         # Write indices and coordinates to xml file
         xmlfile.write('\t\t<node idx = "' + str(node) + '">\n')
         coords = str(tetmesh.getVertex(node)).strip(')').strip('(')
@@ -744,7 +744,7 @@ def saveMesh(pathname, tetmesh):
     xmlfile.write('\t<triangles size = "' +str(ntris)+'">\n')
     textfile.write(str(ntris)+'\n')
     
-    for tri in xrange(ntris):
+    for tri in range(ntris):
         # Write indices and nodes to xml file
         xmlfile.write('\t\t<tri idx = "' + str(tri) + '">\n')
         nodes = str(tetmesh.getTri(tri)).strip(')').strip('(')
@@ -766,7 +766,7 @@ def saveMesh(pathname, tetmesh):
     xmlfile.write('\t<tetrahedrons size = "' +str(ntets)+'">\n')
     textfile.write('\n' +str(ntets)+'\n')
     
-    for tet in xrange(ntets):
+    for tet in range(ntets):
         # Write indices and nodes to xml file
         xmlfile.write ('\t\t<tet idx = "' + str(tet) + '">\n')
         nodes = str(tetmesh.getTet(tet)).strip(')').strip('(')
@@ -797,22 +797,22 @@ def saveMesh(pathname, tetmesh):
         ids = []
         vsys=[]
         tets = []
-        for c in xrange(ncomps):
+        for c in range(ncomps):
             ids.append(comps[c].getID())
             vsys.append(comps[c].getVolsys())
             tets.append([])
         assert(tets.__len__() == ncomps)
         # Only choice right now is to loop over all tets and compare comp to tet id
-        for tet in xrange(ntets):
+        for tet in range(ntets):
             comptemp = tetmesh.getTetComp(tet)
             if not comptemp: continue
             idtemp = comptemp.getID()
-            for c in xrange(ncomps):
+            for c in range(ncomps):
                 if idtemp == ids[c]:
                     tets[c].append(tet)
                     break
         # Now we have the tet members of each comp, we can write this to xml
-        for c in xrange(ncomps):
+        for c in range(ncomps):
             xmlfile.write('\t\t<comp idx = "' +str(c) + '">\n')
             xmlfile.write('\t\t\t<id>' + ids[c] + '</id>\n')
             xmlfile.write('\t\t\t<volsys>')
@@ -838,7 +838,7 @@ def saveMesh(pathname, tetmesh):
         icomp=[]
         ocomp=[]
         tris = []
-        for p in xrange(npatches):
+        for p in range(npatches):
             ids.append(patches[p].getID())
             ssys.append(patches[p].getSurfsys())
             icomp.append(patches[p].getIComp().getID())
@@ -847,16 +847,16 @@ def saveMesh(pathname, tetmesh):
             tris.append([])
         assert(ids.__len__() == ssys.__len__() == icomp.__len__() == ocomp.__len__() == tris.__len__() == npatches)
         
-        for tri in xrange(ntris):
+        for tri in range(ntris):
             patchtemp = tetmesh.getTriPatch(tri)
             if not patchtemp: continue
             idtemp = patchtemp.getID()
-            for p in xrange(npatches):
+            for p in range(npatches):
                 if idtemp == ids[p]:
                     tris[p].append(tri)
                     break
         # Write all to xml
-        for p in xrange(npatches):
+        for p in range(npatches):
             xmlfile.write('\t\t<patch idx = "'+str(p) + '">\n')
             xmlfile.write('\t\t\t<id>' + ids[p] + '</id>\n')
             xmlfile.write('\t\t\t<surfsys>')
@@ -913,12 +913,12 @@ def loadMesh(pathname):
         textfile = open(pathname+'.txt', 'r')
     except:
         havetxt = False
-    if (havetxt == False) : print "WARNING: text file not found. Will construct mesh from information in XML file only."
+    if (havetxt == False) : print("WARNING: text file not found. Will construct mesh from information in XML file only.")
     
     # Perform a basic check to see if we have the expected kind of file which has not been altered.
     info = xmlfile.readline()
     if(xmlfile.readline().rstrip() != '<tetmesh>'):
-        print 'XML file is not a recognised STEPS mesh file'
+        print('XML file is not a recognised STEPS mesh file')
         return
     
     # Collect basic node information and perform some checks on the data read from XML file
@@ -929,7 +929,7 @@ def loadMesh(pathname):
     if (havetxt): assert (nnodes == int(textfile.readline()))
     
     nodes_out = [0.0]*(nnodes*3)    
-    for i in xrange(nnodes):
+    for i in range(nnodes):
         idxtemp = xmlfile.readline().strip()
         assert(int(idxtemp[13:-2]) == i)
         coordtemp = xmlfile.readline().strip()
@@ -955,7 +955,7 @@ def loadMesh(pathname):
         trinorms_out = [0.0]*(ntris*3)	# numpy.zeros(ntris*3)
         tritetns_out = [0]*(ntris*2)	# numpy.zeros(ntris*2, dtype = 'int')
     
-    for i in xrange(ntris): 
+    for i in range(ntris): 
         idxtemp = xmlfile.readline().strip()
         assert(int(idxtemp[12:-2]) == i)
         nodetemp = xmlfile.readline().strip()
@@ -986,7 +986,7 @@ def loadMesh(pathname):
         tetbarycs_out = [0.0]*(ntets*3)	# numpy.zeros(ntets*3)
         tettrins_out = 	[0]*(ntets*4)	# numpy.zeros(ntets*4, dtype = 'int')
         tettetns_out = 	[0]*(ntets*4)	# numpy.zeros(ntets*4, dtype = 'int')
-    for i in xrange(ntets): 
+    for i in range(ntets): 
         idxtemp = xmlfile.readline().strip()
         assert(int(idxtemp[12:-2]) == i)
         nodetemp = xmlfile.readline().strip()
@@ -1013,7 +1013,7 @@ def loadMesh(pathname):
     assert(compinfo[-2:] == '">')
     ncomps = int(compinfo[22:-2])
     comps_out = []
-    for i in xrange(ncomps):
+    for i in range(ncomps):
         idxtemp = xmlfile.readline().strip()
         assert(int(idxtemp[13:-2]) == i)
         idtemp = xmlfile.readline().strip()
@@ -1028,7 +1028,7 @@ def loadMesh(pathname):
         tettemp = tettemp[6:-7].split(',')
         nctets = tettemp.__len__()
         ctets = [0]*nctets		# numpy.zeros(nctets, dtype = 'int')
-        for ct in xrange(nctets): ctets[ct] = int(tettemp[ct])
+        for ct in range(nctets): ctets[ct] = int(tettemp[ct])
         c_out = stetmesh.TmComp(idtemp, mesh, ctets)
         for v in volsystemp: c_out.addVolsys(v)
         comps_out.append(c_out) 
@@ -1041,7 +1041,7 @@ def loadMesh(pathname):
     assert(patchinfo[-2:] == '">')
     npatches = int(patchinfo[17:-2])
     patches_out = []
-    for i in xrange(npatches):
+    for i in range(npatches):
         idxtemp = xmlfile.readline().strip()
         assert(int(idxtemp[14:-2]) == i)
         idtemp = xmlfile.readline().strip()
@@ -1062,7 +1062,7 @@ def loadMesh(pathname):
         tritemp = tritemp[6:-7].split(',')
         nptris = tritemp.__len__()
         ptris = [0]*nptris		# numpy.zeros(nptris, dtype='int')
-        for pt in xrange(nptris): ptris[pt] = int(tritemp[pt])
+        for pt in range(nptris): ptris[pt] = int(tritemp[pt])
         if (ocomptemp != 'null'): p_out = stetmesh.TmPatch(idtemp, mesh, ptris, mesh.getComp(icomptemp), mesh.getComp(ocomptemp))
         else :  p_out = stetmesh.TmPatch(idtemp, mesh, ptris, mesh.getComp(icomptemp))
         for s in surfsystemp: p_out.addSurfsys(s)

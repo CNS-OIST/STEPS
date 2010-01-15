@@ -32,7 +32,7 @@ all the cleaning-up of these objects (see cpp/steps/model/model.cpp class destru
 
 """
 
-import model_swig
+from . import model_swig
 import _model_swig
 
 

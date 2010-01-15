@@ -31,7 +31,7 @@ All objects are owned by Python.
 
 """
 
-import solver_swig
+from . import solver_swig
 import _solver_swig
 
 class Wmrk4(solver_swig.Wmrk4) :
