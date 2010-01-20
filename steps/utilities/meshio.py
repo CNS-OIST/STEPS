@@ -497,7 +497,7 @@ def importTetGen(pathroot):
             if len(tokens) == 0: 
                 continue
             triid = int(tokens[0])
-            tri = [0, 0, 0, 0]
+            tri = [0, 0, 0]
             tri[0] = nodeproxy.getSTEPSID(int(tokens[1]))
             tri[1] = nodeproxy.getSTEPSID(int(tokens[2]))
             tri[2] = nodeproxy.getSTEPSID(int(tokens[3]))
@@ -513,7 +513,7 @@ def importTetGen(pathroot):
 
     print("creating Tetmesh object in STEPS...")
     mesh = stetmesh.Tetmesh(nodedata, tetdata, tridata)
-
+    print("Tetmesh object created.")
     return mesh, nodeproxy, tetproxy, triproxy
     
 
@@ -646,6 +646,7 @@ def importAbaqus(filename, scale):
 
     print("creating Tetmesh object in STEPS...")
     mesh = stetmesh.Tetmesh(nodedata, tetdata, tridata)
+    print("Tetmesh object created.")
     
     return mesh, nodeproxy, tetproxy,triproxy
 
