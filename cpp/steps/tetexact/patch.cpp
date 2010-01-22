@@ -90,7 +90,7 @@ stex::Tri * stex::Patch::pickTriByArea(double rand01) const
     for (TriPVecCI t = bgnTri(); t != t_end; ++t)
     {
         accum += (*t)->area();
-        if (selector < accum) return *t;
+        if (selector <= accum) return *t;
     }
 
     assert(false);

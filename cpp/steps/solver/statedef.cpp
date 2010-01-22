@@ -1,6 +1,7 @@
+
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2007-2010ÊOkinawa Institute of Science and Technology, Japan.
 // Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
 //
 // See the file AUTHORS for details.
@@ -68,8 +69,8 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     assert(pGeom != 0);
     assert(pRNG != 0);
 
-    uint nspecs = pModel->_countSpecs();		//////// I think these should be made in a certain order
-    assert (nspecs > 0);					/////// check their constructors
+    uint nspecs = pModel->_countSpecs();
+    assert (nspecs > 0);
     for (uint sidx = 0; sidx < nspecs; ++sidx)
     {
     	ssolver::Specdef * specdef = new Specdef(this, sidx,  pModel->_getSpec(sidx));

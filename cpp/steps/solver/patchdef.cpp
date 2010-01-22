@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2007-2010ÊOkinawa Institute of Science and Technology, Japan.
 // Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
 //
 // See the file AUTHORS for details.
@@ -49,7 +49,11 @@ NAMESPACE_ALIAS(steps::solver, ssolver);
 ssolver::Patchdef::Patchdef(Statedef * sd, uint idx, steps::wm::Patch * p)
 : pStatedef(sd)
 , pIdx(idx)
-, pPatch(p)
+, pName()
+, pArea()
+, pPssys()
+, pIcomp(0)
+, pOcomp(0)
 , pInner(0)
 , pOuter(0)
 , pSetupRefsdone(false)
@@ -77,7 +81,13 @@ ssolver::Patchdef::Patchdef(Statedef * sd, uint idx, steps::wm::Patch * p)
 , pSReac_UPD_O_Spec(0)
 {
 	assert(pStatedef != 0);
-	assert(pPatch != 0);
+	assert(p != 0);
+
+	pName = p->getID();
+	pArea = p->getArea();
+	pPssys = p->getSurfsys();
+	pIcomp = p->getIComp();
+	pOcomp = p->getOComp();
 
 	uint nspecs = pStatedef->countSpecs();
 	pSpec_G2L = new uint[nspecs];
@@ -88,7 +98,7 @@ ssolver::Patchdef::Patchdef(Statedef * sd, uint idx, steps::wm::Patch * p)
 
 }
 
-////////////////////////////////////////////////////////////////////////////////new
+////////////////////////////////////////////////////////////////////////////////
 
 ssolver::Patchdef::~Patchdef(void)
 {
@@ -120,14 +130,12 @@ void ssolver::Patchdef::setup_references(void)
 	assert(pSetupIndsdone == false);
 
 	// first find the inner and outer comps of this patch
-	steps::wm::Comp * icomp = pPatch->getIComp();
-	steps::wm::Comp * ocomp = pPatch->getOComp();
-	assert (icomp != 0);
-	uint icompidx = pStatedef->getCompIdx(icomp);				///// bit long-winded, add new method to statedef??
+	assert (pIcomp != 0);
+	uint icompidx = pStatedef->getCompIdx(pIcomp);				///// bit long-winded, add new method to statedef??
 	pInner = pStatedef->compdef(icompidx);
-	if (ocomp != 0)
+	if (pOcomp != 0)
 	{
-		uint ocompidx = pStatedef->getCompIdx(ocomp);
+		uint ocompidx = pStatedef->getCompIdx(pOcomp);
 		pOuter = pStatedef->compdef(ocompidx);
 	}
 
@@ -135,9 +143,8 @@ void ssolver::Patchdef::setup_references(void)
 	uint ngsreacs = pStatedef->countSReacs();
 
 	// set up local sreac indices
-	std::set<std::string> pssys = pPatch->getSurfsys();
-	std::set<std::string>::const_iterator s_end = pssys.end();
-	for(std::set<std::string>::const_iterator s = pssys.begin();
+	std::set<std::string>::const_iterator s_end = pPssys.end();
+	for(std::set<std::string>::const_iterator s = pPssys.begin();
 		s != s_end; ++s)
 	{
 		std::map<std::string, steps::model::SReac *> ssreacs = pStatedef->model()->getSurfsys(*s)->_getAllSReacs();
@@ -362,18 +369,14 @@ void ssolver::Patchdef::setup_indices(void)
 
 double ssolver::Patchdef::area(void) const
 {
-	assert(pPatch != 0);
-	double p = pPatch->getArea();
-	assert (p >0.0);
-	return p;
+	return pArea;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 std::string const ssolver::Patchdef::name(void) const
 {
-	assert(pPatch != 0);
-	return pPatch->getID();
+	return pName;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -381,8 +384,7 @@ std::string const ssolver::Patchdef::name(void) const
 void ssolver::Patchdef::setArea(double a)
 {
 	assert (a > 0.0);
-	assert(pPatch != 0);
-	pPatch->setArea(a);
+	pArea = a;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

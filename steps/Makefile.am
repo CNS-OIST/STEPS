@@ -50,7 +50,7 @@ python_stepsdir = $(pythondir)/steps
 pyexec_steps_LTLIBRARIES = \
     _model_swig.la \
     _geom_swig.la \
-    _rng_swig.la \
+    _rng.la \
     _solver_swig.la
 
 _model_swig_la_LDFLAGS = -module -avoid-version -no-undefined $(PYTHON_LDFLAGS) 
@@ -65,9 +65,9 @@ _geom_swig_la_LDFLAGS = -module -avoid-version -no-undefined $(PYTHON_LDFLAGS)
 _geom_swig_la_SOURCES = geom_wrap.cpp
 _geom_swig_la_LIBADD = $(top_srcdir)/cpp/steps/libsteps.la
 
-_rng_swig_la_LDFLAGS = -module -avoid-version -no-undefined $(PYTHON_LDFLAGS)
-_rng_swig_la_SOURCES = rng_wrap.cpp
-_rng_swig_la_LIBADD = $(top_srcdir)/cpp/steps/libsteps.la
+_rng_la_LDFLAGS = -module -avoid-version -no-undefined $(PYTHON_LDFLAGS)
+_rng_la_SOURCES = rng_wrap.cpp
+_rng_la_LIBADD = $(top_srcdir)/cpp/steps/libsteps.la
 
 _solver_swig_la_LDFLAGS = -module -avoid-version -no-undefined $(PYTHON_LDFLAGS)
 _solver_swig_la_SOURCES = solver_wrap.cpp
@@ -79,7 +79,6 @@ python_steps_PYTHON = \
     model_swig.py \
     geom.py \
     geom_swig.py \
-    rng_swig.py \
     rng.py \
     solver_swig.py \
     solver.py

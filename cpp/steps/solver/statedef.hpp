@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2007-2010ÊOkinawa Institute of Science and Technology, Japan.
 // Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
 //
 // See the file AUTHORS for details.
@@ -203,6 +203,11 @@ public:
     /// \param s Name of the species.
     /// \exception Throw exception if model does not contain species with this identifier.
     uint getSpecIdx(std::string const & s) const;
+
+    /// Return the global index of spec identified by object argument.
+    ///
+    /// \param spec Pointer to the species object.
+    /// \exception Throw exception if model does not contain spec with this identifier.
     uint getSpecIdx(steps::model::Spec * spec) const;
 
     ////////////////////////////////////////////////////////////////////////

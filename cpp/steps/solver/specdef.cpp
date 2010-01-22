@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2007-2010ÊOkinawa Institute of Science and Technology, Japan.
 // Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
 //
 // See the file AUTHORS for details.
@@ -48,12 +48,13 @@ NAMESPACE_ALIAS(steps::solver, ssolver);
 ssolver::Specdef::Specdef(Statedef * sd, uint idx, steps::model::Spec * s)
 : pStatedef(sd)
 , pIdx(idx)
-, pSpec(s)
+, pName()
 , pSetupdone(false)
 {
 	assert(pStatedef != 0);
-	assert(pSpec != 0);
-																////// anything else????
+	assert(s != 0);
+	pName = s->getID();
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,8 +68,7 @@ ssolver::Specdef::~Specdef(void)
 
 std::string const ssolver::Specdef::name(void) const
 {
-	assert (pSpec != 0);
-	return pSpec->getID();
+	return pName;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2007-2010ÊOkinawa Institute of Science and Technology, Japan.
 // Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
 //
 // See the file AUTHORS for details.
@@ -50,12 +50,18 @@ NAMESPACE_ALIAS(steps::model, smod);
 ssolver::Diffdef::Diffdef(Statedef * sd, uint idx, steps::model::Diff * d)
 : pStatedef(sd)
 , pIdx(idx)
-, pDiff(d)
+, pName()
+, pDcst()
+, pLig()
 , pSetupdone(false)
 , pSpec_DEP(0)
 {
     assert(pStatedef != 0);
-    assert(pDiff != 0);
+    assert(d != 0);
+
+    pName = d->getID();
+    pDcst = d->getDcst();
+    pLig = d->getLig()->getID();
 
     uint nspecs = pStatedef->countSpecs();
     if (nspecs == 0) return;
@@ -87,16 +93,14 @@ void ssolver::Diffdef::setup(void)
 
 std::string const ssolver::Diffdef::name(void) const
 {
-	assert (pDiff != 0);
-	return pDiff->getID();
+	return pName;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double ssolver::Diffdef::dcst(void) const
 {
-	assert (pDiff != 0);
-	return pDiff->getDcst();
+	return pDcst;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -104,27 +108,24 @@ double ssolver::Diffdef::dcst(void) const
 void ssolver::Diffdef::setDcst(double d)
 {
 	assert (d >= 0.0);
-	pDiff->setDcst(d);
+	pDcst = d;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint ssolver::Diffdef::lig(void) const
 {
-	assert (pDiff != 0);
 	assert (pStatedef != 0);
-	smod::Spec * spec =  pDiff->getLig();
-	return pStatedef->getSpecIdx(spec);
+	return pStatedef->getSpecIdx(pLig);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void ssolver::Diffdef::setLig(uint gidx)
 {
-	assert (pDiff != 0);
 	assert (gidx < pStatedef->countSpecs());
 	ssolver::Specdef * spec = pStatedef->specdef(gidx);
-	pDiff->setLig(spec->spec());
+	pLig = spec->name();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

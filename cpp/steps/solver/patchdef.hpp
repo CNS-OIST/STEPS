@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2007-2010ÊOkinawa Institute of Science and Technology, Japan.
 // Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
 //
 // See the file AUTHORS for details.
@@ -291,11 +291,21 @@ private:
     /// A pointer to the state definition.
     Statedef                          * pStatedef;
 
-	// A pointer to the steps::wm::Patch object this object defines.
-	steps::wm::Patch                  * pPatch;
+	// The string identifier of the patch
+	std::string                         pName;
+
+	// The area of the patch
+	double                              pArea;
 
     /// The index of the patch.
     uint                                pIdx;
+
+	// The enclosed surface systems, stored as strings
+	std::set<std::string> 				pPssys;
+
+	// Pointers to geom level comps, to be used during setup and NOT later.
+	steps::wm::Comp 				  * pIcomp;
+	steps::wm::Comp                   * pOcomp;
 
     /// Pointer to inner compartment CompDef.
     Compdef                           * pInner;

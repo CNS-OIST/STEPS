@@ -91,8 +91,9 @@ stex::Tet * stex::Comp::pickTetByVol(double rand01) const
 	for (TetPVecCI t = bgnTet(); t != t_end; ++t)
 	{
 		accum += (*t)->vol();
-		if (selector < accum) return (*t);
+		if (selector <= accum) return (*t);
 	}
+
 	assert(false);
 	return 0;
 }

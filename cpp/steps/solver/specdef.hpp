@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2007-2010ÊOkinawa Institute of Science and Technology, Japan.
 // Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
 //
 // See the file AUTHORS for details.
@@ -74,10 +74,6 @@ public:
     /// Return the name of the species.
 	std::string const name(void) const;
 
-	/// Return a pointer to the steps::model::Spec object this class defines.
-	inline steps::model::Spec * spec(void) const
-	{ return  pSpec; }
-
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: SETUP
     ////////////////////////////////////////////////////////////////////////
@@ -94,8 +90,8 @@ private:
     ////////////////////////////////////////////////////////////////////////
 
 	Statedef                          * pStatedef;
-	steps::model::Spec                * pSpec;
 	uint                                pIdx;
+	std::string                         pName;
 	bool								pSetupdone;
 
     ////////////////////////////////////////////////////////////////////////

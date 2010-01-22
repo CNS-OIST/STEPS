@@ -117,8 +117,20 @@ private:
     ////////////////////////////////////////////////////////////////////////
 
 	Statedef                          * pStatedef;
-	steps::model::Diff                * pDiff;
+
+	// The global index of this diffusion rule
 	uint                                pIdx;
+
+	// The string identifier of this diffusion rule
+	std::string                         pName;
+
+	// The diffusion constant
+	double                              pDcst;
+
+	// The chemical species to which this diffusion rule applies,
+	// safer to store as a sting, rather than model level spec object pointer
+	std::string 						pLig;
+
 	bool								pSetupdone;
 
     ////////////////////////////////////////////////////////////////////////
@@ -140,3 +152,4 @@ END_NAMESPACE(steps)
 // STEPS_SOLVER_DIFFDEF_HPP
 
 // END
+

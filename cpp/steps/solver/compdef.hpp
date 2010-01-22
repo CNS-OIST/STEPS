@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2007-2010ÊOkinawa Institute of Science and Technology, Japan.
 // Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
 //
 // See the file AUTHORS for details.
@@ -314,11 +314,17 @@ private:
 	// A pointer to the state definition.
 	Statedef                          * pStatedef;
 
-	// A pointer to the steps:wm::Comp object this object defines.
-	steps::wm::Comp                   * pComp;
+	// The string identifier of the compartment
+	std::string                         pName;
+
+	// The volume of the compartment
+	double                              pVol;
 
 	// The global index of the compartment.
 	uint                                pIdx;
+
+	// The enclosed volume systems, stored as strings
+	std::set<std::string> 				pCvsys;
 
 	// Keep track of whether setup_ has been called.
 	bool                                pSetupRefsdone;

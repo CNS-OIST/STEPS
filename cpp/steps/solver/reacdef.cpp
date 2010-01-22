@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2007-2010ÊOkinawa Institute of Science and Technology, Japan.
 // Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
 //
 // See the file AUTHORS for details.
@@ -51,7 +51,11 @@ NAMESPACE_ALIAS(steps::model, smod);
 ssolver::Reacdef::Reacdef(Statedef * sd, uint idx, steps::model::Reac * r)
 : pStatedef(sd)
 , pIdx(idx)
-, pReac(r)
+, pName()
+, pOrder()
+, pKcst()
+, pLhs()
+, pRhs()
 , pSetupdone(false)
 , pSpec_DEP(0)
 , pSpec_LHS(0)
@@ -60,7 +64,13 @@ ssolver::Reacdef::Reacdef(Statedef * sd, uint idx, steps::model::Reac * r)
 , pSpec_UPD_Coll()
 {
     assert(pStatedef != 0);
-    assert(pReac != 0);
+    assert(r != 0);
+
+    pName = r->getID();
+    pOrder = r->getOrder();
+    pKcst = r->getKcst();
+    pLhs = r->getLHS();
+    pRhs = r->getRHS();
 
     uint nspecs = pStatedef->countSpecs();
     if (nspecs == 0) return; // Would be weird, but okay.
@@ -90,19 +100,16 @@ ssolver::Reacdef::~Reacdef(void)
 void ssolver::Reacdef::setup(void)
 {
 	assert (pSetupdone == false);
-	assert (pReac != 0);
 
 	// first copy the information about the reaction stoichiometry from Reac object
-	smod::SpecPVec lhs = pReac->getLHS();
-	smod::SpecPVecCI l_end = lhs.end();
-	for (smod::SpecPVecCI l = lhs.begin(); l != l_end; ++l)
+	smod::SpecPVecCI l_end = pLhs.end();
+	for (smod::SpecPVecCI l = pLhs.begin(); l != l_end; ++l)
 	{
 		uint sidx = pStatedef->getSpecIdx(*l);
 		pSpec_LHS[sidx] += 1;
 	}
-	smod::SpecPVec rhs = pReac->getRHS();
-	smod::SpecPVecCI r_end = rhs.end();
-	for (smod::SpecPVecCI r = rhs.begin(); r != r_end; ++r)
+	smod::SpecPVecCI r_end = pRhs.end();
+	for (smod::SpecPVecCI r = pRhs.begin(); r != r_end; ++r)
 	{
 		uint sidx = pStatedef->getSpecIdx(*r);
 		pSpec_RHS[sidx] += 1;
@@ -126,24 +133,21 @@ void ssolver::Reacdef::setup(void)
 
 std::string const ssolver::Reacdef::name(void) const
 {
-	assert (pReac != 0);
-	return pReac->getID();
+	return pName;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint ssolver::Reacdef::order(void) const
 {
-	assert (pReac != 0);
-	return pReac->getOrder();
+	return pOrder;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double ssolver::Reacdef::kcst(void) const
 {
-	assert (pReac != 0);
-	return pReac->getKcst();
+	return pKcst;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

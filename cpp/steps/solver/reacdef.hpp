@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2007-2010ÊOkinawa Institute of Science and Technology, Japan.
 // Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
 //
 // See the file AUTHORS for details.
@@ -38,6 +38,7 @@
 #include <steps/solver/statedef.hpp>
 #include <steps/solver/api.hpp>
 #include <steps/model/reac.hpp>
+#include <steps/model/spec.hpp>
 #include <steps/solver/types.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -110,8 +111,16 @@ private:
     ////////////////////////////////////////////////////////////////////////
 
 	Statedef                          * pStatedef;
-	steps::model::Reac                * pReac;
 	uint                                pIdx;
+	std::string 						pName;
+	uint 								pOrder;
+	double 								pKcst;
+
+	// The stoichiometry stored as model level Spec objects.
+	// To be used during setup ONLY
+	steps::model::SpecPVec 				pLhs;
+	steps::model::SpecPVec 				pRhs;
+
 	bool								pSetupdone;
 
     ////////////////////////////////////////////////////////////////////////

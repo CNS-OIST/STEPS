@@ -1,6 +1,6 @@
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2007-2010ÊOkinawa Institute of Science and Technology, Japan.
 // Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
 //
 // See the file AUTHORS for details.
@@ -49,7 +49,15 @@ NAMESPACE_ALIAS(steps::model, smod);
 ssolver::SReacdef::SReacdef(Statedef * sd, uint idx, steps::model::SReac * sr)
 : pStatedef(sd)
 , pIdx(idx)
-, pSReac(sr)
+, pName()
+, pOrder()
+, pKcst()
+, pIlhs()
+, pOlhs()
+, pSlhs()
+, pIrhs()
+, pOrhs()
+, pSrhs()
 , pSetupdone(false)
 , pSpec_I_DEP(0)
 , pSpec_S_DEP(0)
@@ -69,7 +77,18 @@ ssolver::SReacdef::SReacdef(Statedef * sd, uint idx, steps::model::SReac * sr)
 {
 
 	assert (pStatedef != 0);
-	assert (pSReac != 0);
+	assert (sr != 0);
+
+    pName = sr->getID();
+    pOrder = sr->getOrder();
+    pKcst = sr->getKcst();
+    pIlhs = sr->getILHS();
+    pOlhs = sr->getOLHS();
+    pSlhs = sr->getSLHS();
+
+    pIrhs = sr->getIRHS();
+    pOrhs = sr->getORHS();
+    pSrhs = sr->getSRHS();
 
 	if (sr->getInner() == true) pOrient = SReacdef::INSIDE;
 	else pOrient = SReacdef::OUTSIDE;
@@ -131,24 +150,21 @@ ssolver::SReacdef::~SReacdef(void)
 
 std::string const ssolver::SReacdef::name(void) const
 {
-	assert (pSReac != 0);
-	return pSReac->getID();
+	return pName;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint ssolver::SReacdef::order(void) const
 {
-	assert (pSReac != 0);
-	return pSReac->getOrder();
+	return pOrder;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double ssolver::SReacdef::kcst(void) const
 {
-	assert (pSReac != 0);
-	return pSReac->getKcst();
+	return pKcst;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -156,62 +172,53 @@ double ssolver::SReacdef::kcst(void) const
 void ssolver::SReacdef::setup(void)
 {
 	assert(pSetupdone == false);
-	assert (pSReac != 0);
 
 	// first retrieve the information about the reaction stoichiometry from the
 	// SReac object
 
-	smod::SpecPVec olhs = pSReac->getOLHS();
-	smod::SpecPVec ilhs = pSReac->getILHS();
 
-	if (outside()) { assert (ilhs.size() == 0); }
-	else if (inside()) { assert (olhs.size() == 0); }
+	if (outside()) { assert (pIlhs.size() == 0); }
+	else if (inside()) { assert (pOlhs.size() == 0); }
 	else assert (false);
 
-	smod::SpecPVecCI ol_end = olhs.end();
-
-	for (smod::SpecPVecCI ol = olhs.begin(); ol != ol_end; ++ol)
+	smod::SpecPVecCI ol_end = pOlhs.end();
+	for (smod::SpecPVecCI ol = pOlhs.begin(); ol != ol_end; ++ol)
 	{
 		uint sidx = pStatedef->getSpecIdx(*ol);
 		pSpec_O_LHS[sidx] += 1;
 	}
 
-	smod::SpecPVecCI il_end = ilhs.end();
-
-	for (smod::SpecPVecCI il = ilhs.begin(); il != il_end; ++il)
+	smod::SpecPVecCI il_end = pIlhs.end();
+	for (smod::SpecPVecCI il = pIlhs.begin(); il != il_end; ++il)
 	{
 		uint sidx = pStatedef->getSpecIdx(*il);
 		pSpec_I_LHS[sidx] += 1;
 	}
 
 
-	smod::SpecPVec slhs = pSReac->getSLHS();
-	smod::SpecPVecCI sl_end = slhs.end();
-	for (smod::SpecPVecCI sl = slhs.begin(); sl != sl_end; ++sl)
+	smod::SpecPVecCI sl_end = pSlhs.end();
+	for (smod::SpecPVecCI sl = pSlhs.begin(); sl != sl_end; ++sl)
 	{
 		uint sidx = pStatedef->getSpecIdx(*sl);
 		pSpec_S_LHS[sidx] += 1;
 	}
 
-	smod::SpecPVec irhs = pSReac->getIRHS();
-	smod::SpecPVecCI ir_end = irhs.end();
-	for (smod::SpecPVecCI ir = irhs.begin(); ir != ir_end; ++ir)
+	smod::SpecPVecCI ir_end = pIrhs.end();
+	for (smod::SpecPVecCI ir = pIrhs.begin(); ir != ir_end; ++ir)
 	{
 		uint sidx = pStatedef->getSpecIdx(*ir);
 		pSpec_I_RHS[sidx] += 1;
 	}
 
-	smod::SpecPVec srhs = pSReac->getSRHS();
-	smod::SpecPVecCI sr_end = srhs.end();
-	for (smod::SpecPVecCI sr = srhs.begin(); sr != sr_end; ++sr)
+	smod::SpecPVecCI sr_end = pSrhs.end();
+	for (smod::SpecPVecCI sr = pSrhs.begin(); sr != sr_end; ++sr)
 	{
 		uint sidx = pStatedef->getSpecIdx(*sr);
 		pSpec_S_RHS[sidx] += 1;
 	}
 
-	smod::SpecPVec orhs = pSReac->getORHS();
-	smod::SpecPVecCI orh_end = orhs.end();
-	for (smod::SpecPVecCI orh = orhs.begin(); orh != orh_end; ++orh)
+	smod::SpecPVecCI orh_end = pOrhs.end();
+	for (smod::SpecPVecCI orh = pOrhs.begin(); orh != orh_end; ++orh)
 	{
 		uint sidx = pStatedef->getSpecIdx(*orh);
 		pSpec_O_RHS[sidx] += 1;

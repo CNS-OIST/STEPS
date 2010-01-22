@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2007-2010ÊOkinawa Institute of Science and Technology, Japan.
 // Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
 //
 // See the file AUTHORS for details.
@@ -52,7 +52,9 @@ NAMESPACE_ALIAS(steps::solver, ssolver);
 ssolver::Compdef::Compdef(Statedef * sd, uint idx, steps::wm::Comp * c)
 : pStatedef(sd)
 , pIdx(idx)
-, pComp(c)
+, pName()
+, pVol()
+, pCvsys()
 , pSetupRefsdone(false)
 , pSetupIndsdone(false)
 , pPoolFlags(0)
@@ -76,7 +78,11 @@ ssolver::Compdef::Compdef(Statedef * sd, uint idx, steps::wm::Comp * c)
 , pDiff_LIG(0)
 {
     assert(pStatedef != 0);
-    assert(pComp != 0);
+    assert(c != 0);
+
+    pName = c->getID();
+    pVol = c->getVol();
+    pCvsys = c->getVolsys();
 
     uint nspecs = pStatedef->countSpecs();
     pSpec_G2L = new uint[nspecs];
@@ -129,9 +135,8 @@ void ssolver::Compdef::setup_references()
 
 	// set up local reac indices ////vsys also has _countReacs and Reac * _getReac(lidx)
     // The local reacs index count (pReacsN) starts at 0.
-    std::set<std::string> cvsys = pComp->getVolsys();
-    std::set<std::string>::const_iterator v_end = cvsys.end();
-    for(std::set<std::string>::const_iterator v = cvsys.begin();
+    std::set<std::string>::const_iterator v_end = pCvsys.end();
+    for(std::set<std::string>::const_iterator v = pCvsys.begin();
 		v != v_end; ++v)
     {
     	std::map<std::string, steps::model::Reac *> vreacs = pStatedef->model()->getVolsys(*v)->_getAllReacs();
@@ -343,18 +348,15 @@ void ssolver::Compdef::addSpec(uint gidx)
 
 double ssolver::Compdef::vol(void) const
 {
-	assert (pComp != 0);
-	double v = pComp->getVol();
-	assert (v > 0.0);
-	return v;
+	return pVol;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 std::string const ssolver::Compdef::name(void) const
 {
-	assert (pComp != 0);
-	return pComp->getID();
+	return pName;
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -362,8 +364,7 @@ std::string const ssolver::Compdef::name(void) const
 void ssolver::Compdef::setVol(double v)
 {
     assert (v > 0.0);
-    assert(pComp != 0);
-    pComp->setVol(v);
+    pVol = v;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
