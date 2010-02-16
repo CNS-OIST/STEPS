@@ -254,6 +254,11 @@ public:
     /// \return Vector of the tetrahedron neighbors.
 
     std::vector<int> getTriTetNeighb(uint tidx) const;
+    
+    /// Return the triangles which form the surface boundary of the mesh.
+    /// \return Vector of the triangle boundary.
+    // Weiliang 2010.02.02
+    std::vector<int> getTriBoundary(void) const;
 
     /// Flip the triangle's inner and outer tetrahedron.
     ///

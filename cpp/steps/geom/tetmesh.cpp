@@ -1508,6 +1508,22 @@ std::vector<int> stetmesh::Tetmesh::getTriTetNeighb(uint tidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
+// Created by weiliang 2010.02.02
+std::vector<int> stetmesh::Tetmesh::getTriBoundary(void) const 
+{
+    assert(pSetupDone == true);
+    std::vector<int> tribounds;
+    for (int t = 0; t < pTrisN; t++) {
+        std::vector<int> trineighbor = getTriTetNeighb(t);
+        if (trineighbor[0] == -1 || trineighbor[1] == -1) {
+            tribounds.push_back(t);
+        }
+    }
+    return tribounds;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void stetmesh::Tetmesh::_flipTriTetNeighb(uint tidx)
 {
     assert(pSetupDone == true);

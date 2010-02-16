@@ -269,7 +269,8 @@ public:
 	std::vector<double> getTriNorm(unsigned int tidx) const;
 	steps::tetmesh::TmPatch * getTriPatch(unsigned int tidx) const;
 	std::vector<int> getTriTetNeighb(unsigned int tidx) const;
-	
+    // added by Weiliang
+	std::vector<int> getTriBoundary(void) const;
 	//steps::tetmesh::TmComp * getTmComp(std::string const & id) const;
 	std::vector<unsigned int> getTet(unsigned int tidx) const;
 	unsigned int countTets(void) const;
