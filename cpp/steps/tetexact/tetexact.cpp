@@ -23,6 +23,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+/*
+ *  Last Changed Rev:  $Rev$
+ *  Last Changed Date: $Date$
+ *  Last Changed By:   $Author$
+ */
+
 // Standard library & STL headers.
 #include <cmath>
 #include <vector>

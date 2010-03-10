@@ -22,6 +22,11 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+/*
+ *  Last Changed Rev:  $Rev$
+ *  Last Changed Date: $Date$
+ *  Last Changed By:   $Author$
+ */
 
 #ifndef STEPS_SIM_SHARED_TYPES_HPP
 #define STEPS_SIM_SHARED_TYPES_HPP 1
