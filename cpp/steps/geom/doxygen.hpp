@@ -22,6 +22,12 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+/*
+ *  Last Changed Rev:  $Rev$
+ *  Last Changed Date: $Date$
+ *  Last Changed By:   $Author$
+ */
+
 /// \namespace steps::geom
 ///
 /// Code for storing and manipulating tetrahedral meshes.

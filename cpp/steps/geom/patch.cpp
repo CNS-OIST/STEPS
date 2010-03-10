@@ -22,6 +22,12 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+/*
+ *  Last Changed Rev:  $Rev$
+ *  Last Changed Date: $Date$
+ *  Last Changed By:   $Author$
+ */
+
 // Autotools definitions.
 #ifdef HAVE_CONFIG_H
 #include <steps/config.h>

@@ -22,6 +22,11 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+/*
+ *  Last Changed Rev:  $Rev$
+ *  Last Changed Date: $Date$
+ *  Last Changed By:   $Author$
+ */
 
 #ifndef STEPS_RNG_RNG_HPP
 #define STEPS_RNG_RNG_HPP 1

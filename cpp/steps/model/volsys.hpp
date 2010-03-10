@@ -22,6 +22,12 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+/*
+ *  Last Changed Rev:  $Rev$
+ *  Last Changed Date: $Date$
+ *  Last Changed By:   $Author$
+ */
+
 #ifndef STEPS_MODEL_VOLSYS_HPP
 #define STEPS_MODEL_VOLSYS_HPP 1
 

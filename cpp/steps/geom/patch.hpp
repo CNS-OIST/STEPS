@@ -22,6 +22,12 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+/*
+ *  Last Changed Rev:  $Rev$
+ *  Last Changed Date: $Date$
+ *  Last Changed By:   $Author$
+ */
+
 #ifndef STEPS_WM_PATCH_HPP
 #define STEPS_WM_PATCH_HPP 1
 

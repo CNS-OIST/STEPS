@@ -22,6 +22,9 @@
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+#  Last Changed Rev:  $Rev$
+#  Last Changed Date: $Date$
+#  Last Changed By:   $Author$
 
 """
 This file is the user-interface file for all model objects in steps.
@@ -30,6 +33,7 @@ Model container object is owned by Python
 All other objects are owned by c++ and Model container is responsible for 
 all the cleaning-up of these objects (see cpp/steps/model/model.cpp class destructor).
 
+  
 """
 
 from . import model_swig

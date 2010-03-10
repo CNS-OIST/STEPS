@@ -22,6 +22,9 @@
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+#  Last Changed Rev:  $Rev$
+#  Last Changed Date: $Date$
+#  Last Changed By:   $Author$
 
 """
 
@@ -29,6 +32,7 @@ This file is the user-interface file for all solver objects.
 All objects are directly derived from the corresponding swig objects.
 All objects are owned by Python.
 
+ 
 """
 
 import _model_swig

@@ -22,6 +22,13 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+
+/*
+ *  Last Changed Rev:  $Rev$
+ *  Last Changed Date: $Date$
+ *  Last Changed By:   $Author$
+ */
+
 /// \namespace steps::math
 ///
 /// This namespace contains a catalogue of mathematical tools, such
