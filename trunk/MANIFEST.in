@@ -1,7 +1,0 @@
-recursive-include cpp *.cpp *.hpp *.h
-recursive-include steps *.cpp *.i *.py
-include AUTHORS
-include gpl-3.0.txt
-include LICENSE
-include RELEASES
-include runswig
