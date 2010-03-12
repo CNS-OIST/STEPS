@@ -1,5 +1,5 @@
-From Binaries
-==================
+Install From Binaries
+=====================
 
     We provide precompiled binary packages for various operating
 systems. The user is recommended to use these packages when possible.
@@ -13,99 +13,52 @@ Basic Installation
 
 The simplest way to compile this package is:
 
-  1. `cd' to the directory containing the package's source code and type
-     `./configure' to configure the package for your system.  If you're
-     using `csh' on an old version of System V, you might need to type
-     `sh ./configure' instead to prevent `csh' from trying to execute
-     `configure' itself.
+  1. Before the installation:
+     1.1 Make sure you have Python and a c++ compiler installed in your system.
+     1.2 If you've installed STEPS with version below 1.1.0, please remove the
+         binaries before any installation.
+         By default, it is installed in
+         /usr/local/lib/pythonx.x/site-packages/steps
+         /usr/local/lib/libsteps*
+         Please also remove any "stepsredirect.pth" file in your system.
+         
+  2. Download the source code package from STEPS website.
+     The package name should be similar to the following:
+                     STEPS-x.x.x.tar.gz
+     where x.x.x is the version number of the package.
+  
+  3. 'cd' to the directory containing the source code package. Unpack the package,
+     e.g. in Mac/Linux, type
+                tar -xvzf STEPS-x.x.x.tar.gz
+     The source code will be unpacked in folder "STEPS-x.x.x".
+                
+  4. 'cd' to the unpacked folder
+                cd STEPS-x.x.x
 
-     Running `configure' may take a while.  While running, it prints some
-     messages telling which features it is checking for.
+  5. Build the binaries from source code (general).
+                python setup.py build
+ 
+    5.1. For MinGW in Windows, replace the general command with
+                python setup.py build --compiler=mingw32
+                
+    5.2. For Cygwin in Windows, replace the general command with
+                python setup.py build --compiler=cygwin
 
-  2. Type `make' to compile the package.
-
-  3. Type `sudo make install' to install the programs and any data files 
-     and documentation. Your superuser password is required for the 
-     installation.
-
-  4. You can remove the program binaries and object files from the
-     source code directory by typing `make clean'.  To also remove the
-     files that `configure' created (so you can compile the package for
-     a different kind of computer), type `make distclean'.  There is
-     also a `make maintainer-clean' target, but that is intended mainly
-     for the package's developers.  If you use it, you may have to get
-     all sorts of other programs in order to regenerate files that came
-     with the distribution.
+  6. Install the binary package.
+                python setup.py install
 
 Example:
-    $ cd ~/Downlaods/steps-1.0
-    $ ./configure
-    $ make
-    $ sudo make install
-
-
-Python Version
-==================
-    The configure script will attempt to locate software that is required, 
-such as a suitable Python distribution. To tell it to use a specific Python
-distribution installed on your system, you can set the PYTHON shell variable
-to point to the location of the corresponding Python interpreter. Everything
-else remains the same. For instance, to use Python distribution installed
-under /opt/local:
-
-    $ export PYTHON=/opt/local/bin/python2.6
-    $ ./configure
-    $ make
-    $ sudo make install
-
-
-Installation Names
-==================
-
-   By default, `make install' will install the package's files in
-'/usr/local/lib' (STEPS library), '/usr/local/lib/python_version/site-packages'
-(Python side package), etc. You can specify an installation prefix other than
-'/usr/local' by giving 'configure' the option '--prefix=PATH'. 
-For instance, to install the STEPS libraries under /opt/local:
-
-    $ ./configure --prefix=/opt/local 
-    $ make 
-    # sudo make install
-
-
-Cygwin
-==================
-For the Cygwin environment, an extra LDFLAGS is required for the linking.
+    $ cd ~/Downlaods
+    $ tar -xvzf STEPS-1.1.0.tar.gz
+    $ cd STEPS-1.1.0
+    $ python setup.py build
+    $ python setup.py install
     
-    $ ./configure
-    $ make LDFLAGS=-no-undefined
-    $ make install
+Advanced Installation
+=====================
+    Please refer to http://docs.python.org/install/index.html
+    for more information about python module installation.
 
 
-Python Search Path
-==================
-
-    If you've changed the installation path you need to manually add the
-path to the PYTHONPATH variable so that Python can find the STEPS package.
-For example, STEPS is installed in /opt/local/lib/python2.6/site-packages/:
-
-    $ export PYTHONPATH=$PYTHONPATH:/opt/local/lib/python2.6/site-packages/
-
-For Windows, add the following environment variable:
-    $ PYTHONPATH=%PYTHONPATH%;path_to_steps_dir
 
 
-Import Error
-============
-
-If you see something similar to the following Import Error while running STEPS:
-
-ImportError: libsteps.so.0: cannot open shared object file: 
-no such file or directory
-
-Please add the path to the STEPS library to the LD_LIBRARY_PATH variable
-(For Mac, it is DYLD_LIBRARY_PATH, For Windows, it is PATH).
-
-For instance, if you installed the STEPS with installation prefix '/opt/local'
-
-    $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/local/lib
