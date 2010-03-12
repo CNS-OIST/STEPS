@@ -1,3 +1,31 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# STEPS - STochastic Engine for Pathway Simulation
+# Copyright (C) 2007-2009 Okinawa Institute of Science and Technology, Japan.
+# Copyright (C) 2003-2006 University of Antwerp, Belgium.
+#
+# See the file AUTHORS for details.
+#
+# This file is part of STEPS.
+#
+# STEPS is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# STEPS is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+#  Last Changed Rev:  $Rev$
+#  Last Changed Date: $Date$
+#  Last Changed By:   $Author$
+
 from distutils.core import setup
 from distutils.extension import Extension
 
@@ -26,6 +54,15 @@ setup(name='steps',
         'steps/geom_wrap.cpp']),
         Extension('_solver_swig',
         sources = ['cpp/steps/error.cpp',
+        'cpp/steps/rng/rng.cpp', 'cpp/steps/rng/mt19937.cpp',
+        'cpp/steps/model/model.cpp', 'cpp/steps/model/diff.cpp',
+        'cpp/steps/model/reac.cpp','cpp/steps/model/spec.cpp','cpp/steps/model/sreac.cpp',
+        'cpp/steps/model/surfsys.cpp','cpp/steps/model/volsys.cpp',
+        'cpp/steps/math/tetrahedron.cpp','cpp/steps/geom/tetmesh.cpp',
+        'cpp/steps/math/linsolve.cpp','cpp/steps/math/triangle.cpp',
+        'cpp/steps/geom/comp.cpp','cpp/steps/geom/geom.cpp','cpp/steps/geom/patch.cpp',
+        'cpp/steps/geom/tet.cpp', 'cpp/steps/geom/tetmesh_rw.cpp',
+        'cpp/steps/geom/tmcomp.cpp','cpp/steps/geom/tmpatch.cpp','cpp/steps/geom/tri.cpp',
         'cpp/steps/solver/api_comp.cpp','cpp/steps/solver/api_main.cpp',
         'cpp/steps/solver/api_patch.cpp','cpp/steps/solver/api_tet.cpp',
         'cpp/steps/solver/api_tri.cpp','cpp/steps/solver/compdef.cpp',
