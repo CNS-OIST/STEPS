@@ -29,8 +29,16 @@
 from distutils.core import setup
 from distutils.extension import Extension
 
-setup(name='steps',
-      version='1.1.0',
+
+setup(name = 'STEPS',
+      version = '1.1.0',
+      author = 'STEPS Development Team',
+      author_email = 'steps.dev@gmail.com',
+      url = 'http://steps.sourceforge.net',
+      description = 'STochastic Engine for Pathway Simulation',
+      download_url = 'http://sourceforge.net/projects/steps/files/',
+      platforms = ['Mac OS X', 'Windows XP', 'Windows Vista', 'Linux', 'Unix'],
+      license = 'GNU General Public License Version 3.0',
       py_modules=['steps/__init__','steps/rng','steps/model','steps/geom', 'steps/solver',
         'steps/model_swig','steps/geom_swig', 'steps/solver_swig',
         'steps/utilities/meshio', 'steps/utilities/visual', 'steps/utilities/__init__'],

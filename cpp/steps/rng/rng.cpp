@@ -232,7 +232,7 @@ S70:
     // CASE IGNPOI .LT. 10 USES FACTORIALS FROM TABLE FACT/
     if(ignpoi >= 10) goto S80;
     px = -mu;
-    py = pow(mu, (double)ignpoi) / *(fact + ignpoi);
+    py = pow((double)mu, (double)ignpoi) / *(fact + ignpoi);
     goto S110;
 
 S80:
