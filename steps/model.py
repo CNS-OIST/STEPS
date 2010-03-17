@@ -26,15 +26,15 @@
 #  Last Changed Date: $Date$
 #  Last Changed By:   $Author$
 
-"""
-This file is the user-interface file for all model objects in steps.
-All objects are directly derived from the corresponding swig objects.
-Model container object is owned by Python
-All other objects are owned by c++ and Model container is responsible for 
-all the cleaning-up of these objects (see cpp/steps/model/model.cpp class destructor).
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# This file is the user-interface file for all model objects in steps.
+# All objects are directly derived from the corresponding swig objects.
+# Model container object is owned by Python
+# All other objects are owned by c++ and Model container is responsible for 
+# all the cleaning-up of these objects (see cpp/steps/model/model.cpp class 
+# destructor).
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-  
-"""
 
 from . import model_swig
 import _model_swig
@@ -62,9 +62,23 @@ class kcst(object):
 """
 ###########################################
 
-class Model(model_swig.Model) :
-    def __init__(self, *args): 
-        """__init__(self) -> Model"""
+class Model(model_swig.Model) : 
+    """
+    Top-level container for the objects in a kinetic model.
+    
+    """
+    
+    def __init__(self, *args):
+        """
+        Construction:
+            m = steps.model.Model()
+            
+        Create a model container object.
+            
+        Arguments: 
+            None
+        """
+        
         this = _model_swig.new_Model(*args)
         try: self.this.append(this)
         except: self.this = this
@@ -72,8 +86,23 @@ class Model(model_swig.Model) :
         self.thisown = True
 
 class Spec(model_swig.Spec) :
+
+    """
+    A chemical species which can be a reactant and/or product in reaction 
+    stoichiometry and/or associated with a diffusion rule. 
+    """
     def __init__(self, *args): 
-        """__init__(self, string id, Model model) -> Spec"""
+        """        
+        Construction:
+            s = steps.model.Spec(id, mdl)
+            
+        Create a species object with identifier string id and assign the 
+        object mdl as its parent model.
+            
+        Arguments: 
+            * string id
+            * steps.model.Model mdl
+        """
         this = _model_swig.new_Spec(*args)
         try: self.this.append(this)
         except: self.this = this
@@ -82,11 +111,26 @@ class Spec(model_swig.Spec) :
         self.__swig_getmethods__["id"] = _model_swig.Spec_getID
         self.__swig_getmethods__["model"] = _model_swig.Spec_getModel
     id = model_swig._swig_property(_model_swig.Spec_getID, _model_swig.Spec_setID)
+    """Identifier string of the species."""
     model = model_swig._swig_property(_model_swig.Spec_getModel)
+    """Reference to parent model."""
 
 class Surfsys(model_swig.Surfsys):
+    """
+    A container that groups reactions involving a reactant embedded in a membrane.
+    """
     def __init__(self, *args): 
-        """__init__(self, string id, Model model) -> Surfsys"""
+        """
+        Construction:
+            s = steps.model.Surfsys(id, mdl)
+            
+        Construct a surface system object with identifier string id and assign 
+        the object mdl as its parent model.
+        
+        Arguments: 
+            * string id
+            * steps.model.Model mdl
+        """
         this = _model_swig.new_Surfsys(*args)
         try: self.this.append(this)
         except: self.this = this
@@ -95,11 +139,26 @@ class Surfsys(model_swig.Surfsys):
         self.__swig_getmethods__["id"] = _model_swig.Surfsys_getID
         self.__swig_getmethods__["model"] = _model_swig.Surfsys_getModel
     id = model_swig._swig_property(_model_swig.Surfsys_getID, _model_swig.Surfsys_setID)
+    """Identifier string of the surface system."""
     model = model_swig._swig_property(_model_swig.Surfsys_getModel)
+    """Reference to parent model."""
 
 class Volsys(model_swig.Volsys) :
+    """
+    A container that groups reactions involving reactants embedded in a volume.
+    """
     def __init__(self, *args): 
-        """__init__(self, string id, Model model) -> Volsys"""
+        """
+        Construction:
+            v = steps.model.Volsys(id, mdl)
+            
+        Construct a volume system object with identifier string id and assign 
+        the object mdl as its parent model.
+        
+        Arguments: 
+            * string id
+            * steps.model.Model mdl
+        """
         this = _model_swig.new_Volsys(*args)
         try: self.this.append(this)
         except: self.this = this
@@ -108,11 +167,33 @@ class Volsys(model_swig.Volsys) :
         self.__swig_getmethods__["id"] = _model_swig.Volsys_getID
         self.__swig_getmethods__["model"] = _model_swig.Volsys_getModel
     id = model_swig._swig_property(_model_swig.Volsys_getID, _model_swig.Volsys_setID)
+    """Identifier string of the volume system."""
     model = model_swig._swig_property(_model_swig.Volsys_getModel)
+    """Reference to parent model."""
 
 class Diff(model_swig.Diff) :
+    """
+    A diffusion rule for a chemical species in a volume.
+    
+    A diffusion rule is described by:
+    * Species to which the diffusion rule applies (lig).
+    * Diffusion constant (dcst) specified in s.i. units.
+    """
     def __init__(self, *args, **kwargs): 
-        """__init__(self, string id, Volsys volsys, Spec lig, double dcst=0.0) -> Diff"""
+        """
+        Construction:
+            diff = steps.model.Diff(id, volsys, lig, dcst = 0.0)
+            
+        Construct a diffusion rule object with identifier string id applied to species 
+        lig and assign volsys as the parent volume system. Diffusion constant is 
+        set by dcst.
+        
+        Arguments: 
+            * string id
+            * steps.model.Volsys volsys
+            * steps.model.Spec lig
+            * float dcst (default = 0.0)
+        """
         this = _model_swig.new_Diff(*args, **kwargs)
         try: self.this.append(this)
         except: self.this = this
@@ -126,18 +207,42 @@ class Diff(model_swig.Diff) :
         self.__swig_setmethods__["dcst"] = _model_swig.Diff_setDcst
         self.__swig_getmethods__["dcst"] = _model_swig.Diff_getDcst
     id = model_swig._swig_property(_model_swig.Diff_getID, _model_swig.Diff_setID)
+    """Identifier string of the diffusion."""
     model = model_swig._swig_property(_model_swig.Diff_getModel)
+    """Reference to parent model."""
     volsys = model_swig._swig_property(_model_swig.Diff_getVolsys)
+    """Reference to parent volume system."""
     dcst = model_swig._swig_property(_model_swig.Diff_getDcst, _model_swig.Diff_setDcst)
+    """Diffusion constant."""
     lig = model_swig._swig_property(_model_swig.Diff_getLig, _model_swig.Diff_setLig)
+    """Reference to diffusion species."""
 
 class Reac(model_swig.Reac) :
+    """
+    A kinetic reaction rule in a volume.
+    
+    The reaction rule is specified by:
+    * Species on the left hand side of the reaction: the reactants (lhs).
+    * Species on the right hand side of the reaction: the products (rhs).
+    * Rate constant for the reaction, supplied in s.i. units (kcst).
+    """
     def __init__(self, *args, **kwargs): 
+        """
+        Construction:
+            reac = steps.model.Reac(id, volsys, lhs = [ ], rhs = [ ], kcst = 0.0)
+            
+        Construct a reaction rule object with identifier string id and assign 
+        volsys as the parent volume system. A list of left hand side reactants 
+        may be assigned with lhs, whilst a list of right hand side products may 
+        be assigned with rhs, the kinetic reaction rate constant is set by kcst.
         
-        #__init__(self, string id, Volsys volsys, vector_spc lhs=std::vector< steps::model::Spec * >(), 
-        #    vector_spc rhs=std::vector< steps::model::Spec * >(), 
-        #    double kcst=0.0) -> Reac
-        
+        Arguments: 
+            * string id
+            * steps.model.Volsys volsys
+            * list(steps.model.Spec) lhs (default = [ ]) 
+            * list(steps.model.Spec) rhs (default = [ ]) 
+            * float kcst (default = 0.0)
+        """
         this = _model_swig.new_Reac(*args, **kwargs)
         try: self.this.append(this)
         except: self.this = this
@@ -154,24 +259,62 @@ class Reac(model_swig.Reac) :
         self.__swig_getmethods__["rhs"] = _model_swig.Reac_getRHS
         self.__swig_getmethods__["order"] = _model_swig.Reac_getOrder
     id = model_swig._swig_property(_model_swig.Reac_getID, _model_swig.Reac_setID)
+    """Identifier string of the reaction."""
     model = model_swig._swig_property(_model_swig.Reac_getModel)
+    """Reference to parent model."""
     volsys = model_swig._swig_property(_model_swig.Reac_getVolsys)
+    """Reference to parent volume system."""
     kcst = model_swig._swig_property(_model_swig.Reac_getKcst, _model_swig.Reac_setKcst)
+    """Reaction constant."""
     lhs = model_swig._swig_property(_model_swig.Reac_getLHS, _model_swig.Reac_setLHS)
+    """Left hand side reactants."""
     rhs = model_swig._swig_property(_model_swig.Reac_getRHS, _model_swig.Reac_setRHS)
+    """Right hand side reactants."""
     order = model_swig._swig_property(_model_swig.Reac_getOrder)
-
+    """Order of the reaction."""
+    
 class SReac(model_swig.SReac) :
+    """
+    A reaction rule where at least one reactant is embedded in a surface. 
+
+    In a surface reaction, the species can be classified as:
+    
+    * Reactants on the left hand side of the reaction:
+        * Species in the 'outer' compartment (olhs)
+        * or Species in the 'inner' compartment (ilhs)
+        * Species on the surface (slhs)
+    * Reactants on right hand side of the reaction:
+        * Species in the 'outer' compartment (orhs)
+        * Species in the 'inner' compartment (irhs)
+        * Species on the surface (srhs)
+    * The reaction rate is defined by kcst, supplied in s.i. units.
+    """
     def __init__(self, *args, **kwargs): 
         """
-        __init__(self, string id, Surfsys surfsys, 
-            vector_spc olhs=std::vector< steps::model::Spec * >(), 
-            vector_spc ilhs=std::vector< steps::model::Spec * >(), 
-            vector_spc slhs=std::vector< steps::model::Spec * >(), 
-            vector_spc irhs=std::vector< steps::model::Spec * >(), 
-            vector_spc srhs=std::vector< steps::model::Spec * >(), 
-            vector_spc orhs=std::vector< steps::model::Spec * >(), 
-            double kcst=0.0) -> SReac
+        Construction:
+            sreac = steps.model.Reac(id, surfsys, 
+                                    ilhs = [ ], olhs = [ ], slhs = [ ],
+                                    irhs = [ ], orhs = [], srhs = [ ],
+                                    kcst = 0.0)
+            
+        Construct a surface reaction rule object with identifier string 
+        id and assign surfsys as the parent surface system. A list of 
+        left hand reactants are assigned with ilhs, olhs and slhs 
+        (default for each is an empty list). A list of right hand side 
+        products are assigned with irhs, orhs and srhs (default for each 
+        is an empty list). The kinetic reaction rate constant is set with kcst.
+        
+        
+        Arguments: 
+            * string id
+            * steps.model.Surfsys surfsys
+            * list(steps.model.Spec) ilhs (default = [ ]) 
+            * list(steps.model.Spec) olhs (default = [ ])
+            * list(steps.model.Spec) slhs (default = [ ])  
+            * list(steps.model.Spec) irhs (default = [ ])
+            * list(steps.model.Spec) orhs (default = [ ])
+            * list(steps.model.Spec) srhs (default = [ ])
+            * float kcst (default = 0.0)
         """
         this = _model_swig.new_SReac(*args, **kwargs)
         try: self.this.append(this)
@@ -198,17 +341,28 @@ class SReac(model_swig.SReac) :
         self.__swig_setmethods__["orhs"] = _model_swig.SReac_setORHS
         self.__swig_getmethods__["orhs"] = _model_swig.SReac_getORHS
     id = model_swig._swig_property(_model_swig.SReac_getID, _model_swig.SReac_setID)
+    """Identifier string of the surface reaction."""
     model = model_swig._swig_property(_model_swig.SReac_getModel)
+    """Reference to parent model."""
     surfsys = model_swig._swig_property(_model_swig.SReac_getSurfsys)
+    """Reference to parent surface system."""
     kcst = model_swig._swig_property(_model_swig.SReac_getKcst, _model_swig.SReac_setKcst)
+    """Reaction constant."""
     outer = model_swig._swig_property(_model_swig.SReac_getOuter)
+    """Obsolete"""
     olhs = model_swig._swig_property(_model_swig.SReac_getOLHS, _model_swig.SReac_setOLHS)
+    """Left hand side reactants in outer compartment."""
     ilhs = model_swig._swig_property(_model_swig.SReac_getILHS, _model_swig.SReac_setILHS)
+    """Left hand side reactants in inner compartment."""
     slhs = model_swig._swig_property(_model_swig.SReac_getSLHS, _model_swig.SReac_setSLHS)
+    """Left hand side reactants on surface."""
     irhs = model_swig._swig_property(_model_swig.SReac_getIRHS, _model_swig.SReac_setIRHS)
+    """Right hand side reactants in inner compartment."""
     srhs = model_swig._swig_property(_model_swig.SReac_getSRHS, _model_swig.SReac_setSRHS)
+    """Right hand side reactants on surface."""
     orhs = model_swig._swig_property(_model_swig.SReac_getORHS, _model_swig.SReac_setORHS)
+    """Right hand side reactants in outer compartment."""
     order = model_swig._swig_property(_model_swig.SReac_getOrder)
-
+    """Order of the reaction."""
 
 

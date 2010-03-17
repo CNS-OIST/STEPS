@@ -987,31 +987,100 @@ class Model(_object):
     __swig_destroy__ = _model_swig.delete_Model
     __del__ = lambda self : None;
     def getSpec(*args):
-        """getSpec(self, string id) -> Spec"""
+        """
+        Returns a reference to the steps.model.Spec species object with 
+        identifier string spec_id (if defined).
+
+        Arguments:
+            string spec_id
+                     
+        Return:
+            steps.model.Spec
+
+        """
         return _model_swig.Model_getSpec(*args)
 
     def delSpec(*args):
-        """delSpec(self, string id)"""
+        """
+        Remove the steps.model.Spec species object with identifier 
+        string spec_id (if defined) from the model.
+
+        Arguments:
+            string spec_id
+
+        Return:
+            None
+
+        """
         return _model_swig.Model_delSpec(*args)
 
     def getAllSpecs(*args):
-        """getAllSpecs(self) -> vector_spc"""
+        """
+        Returns a list of steps.model.Spec object references of all species in the model.
+
+        Arguments:
+            None
+                     
+        Return:
+            list(steps.model.Spec)
+
+        """
         return _model_swig.Model_getAllSpecs(*args)
 
     def getVolsys(*args):
-        """getVolsys(self, string id) -> Volsys"""
+        """
+        Returns a reference to the steps.model.Volsys volume system object with 
+        identifier string vsys_id (if defined).
+
+        Arguments:
+            string vsys_id
+
+        Return:
+            steps.model.Volsys
+
+        """
         return _model_swig.Model_getVolsys(*args)
 
     def delVolsys(*args):
-        """delVolsys(self, string id)"""
+        """
+        Remove the steps.model.Volsys volume system object with identifier string 
+        vsys_id (if defined) from the model.
+
+        Arguments:
+            string vsys_id
+
+        Return:
+            None
+
+        """
         return _model_swig.Model_delVolsys(*args)
 
     def getSurfsys(*args):
-        """getSurfsys(self, string id) -> Surfsys"""
+        """
+        Returns a reference to the steps.model.Surfsys surface system object with 
+        identifier string ssys_id (if defined).
+
+        Arguments:
+            string ssys_id
+
+        Return:
+            steps.model.Surfsys
+
+        """
         return _model_swig.Model_getSurfsys(*args)
 
     def delSurfsys(*args):
-        """delSurfsys(self, string id)"""
+        """
+        Remove the steps.model.Surfsys surface system object with identifier string 
+        ssys_id (if defined) from the model.
+
+        Arguments:
+            string ssys_id
+
+        Return:
+            None
+
+        """
         return _model_swig.Model_delSurfsys(*args)
 
 Model_swigregister = _model_swig.Model_swigregister
@@ -1032,15 +1101,45 @@ class Spec(_object):
     __swig_destroy__ = _model_swig.delete_Spec
     __del__ = lambda self : None;
     def getID(*args):
-        """getID(self) -> string"""
+        """
+        Get the identifier string of the species.
+
+        Arguments:
+            None
+
+        Return:
+            string
+
+        """
         return _model_swig.Spec_getID(*args)
 
     def setID(*args):
-        """setID(self, string id)"""
+        """
+        Set the identifier string of the species.
+
+        Arguments:
+            string name
+
+        Return:
+            None
+
+        """
         return _model_swig.Spec_setID(*args)
 
     def getModel(*args):
-        """getModel(self) -> Model"""
+        """
+        Returns a reference to the parent steps.model.Model container object.
+
+        Arguments:
+            None
+
+        Return:
+            steps.model.Model
+            
+        Attribute:
+            model
+
+        """
         return _model_swig.Spec_getModel(*args)
 
 Spec_swigregister = _model_swig.Spec_swigregister
@@ -1061,31 +1160,99 @@ class Surfsys(_object):
     __swig_destroy__ = _model_swig.delete_Surfsys
     __del__ = lambda self : None;
     def getID(*args):
-        """getID(self) -> string"""
+        """
+        Get the identifier string of the surface system.
+
+        Arguments:
+            None
+
+        Return:
+            string
+
+        """
         return _model_swig.Surfsys_getID(*args)
 
     def setID(*args):
-        """setID(self, string id)"""
+        """
+        Set the identifier string of the surface system.
+
+        Arguments:
+            string name
+
+        Return:
+            None
+
+        """
         return _model_swig.Surfsys_setID(*args)
 
     def getModel(*args):
-        """getModel(self) -> Model"""
+        """
+        Returns a reference to the parent steps.model.Model container object.
+
+        Arguments:
+            None
+
+        Return:
+            steps.model.Model
+
+        """
         return _model_swig.Surfsys_getModel(*args)
 
     def getSReac(*args):
-        """getSReac(self, string id) -> SReac"""
+        """
+        Returns a reference to the steps.model.SReac surface-reaction object 
+        with identifier sreac_id (if defined in the surface system.
+
+        Arguments:
+            string sreac_id
+
+        Return:
+            steps.model.SReac
+
+        """
         return _model_swig.Surfsys_getSReac(*args)
 
     def delSReac(*args):
-        """delSReac(self, string id)"""
+        """
+        Remove the steps.model.SReac surface-reaction object with identifier 
+        sreac_id from the surface system.
+
+        Arguments:
+            string sreac_id
+
+        Return:
+            None
+
+        """
         return _model_swig.Surfsys_delSReac(*args)
 
     def getAllSReacs(*args):
-        """getAllSReacs(self) -> vector_src"""
+        """
+        Returns a list of references to all steps.model.SReac surface-reaction 
+        objects defined in the surface system.
+
+        Arguments:
+            None
+
+        Return:
+            list(steps.model.SReac)
+
+        """
         return _model_swig.Surfsys_getAllSReacs(*args)
 
     def getAllSpecs(*args):
-        """getAllSpecs(self) -> vector_spc"""
+        """
+        Returns a list of references to all steps.model.Spec species objects included 
+        in the surface system; that is all reactants and products in the surface 
+        reactions belonging to this surface system. No duplicate member is included.
+
+        Arguments:
+            None
+
+        Return:
+            list(steps.model.Spec)
+
+        """
         return _model_swig.Surfsys_getAllSpecs(*args)
 
 Surfsys_swigregister = _model_swig.Surfsys_swigregister
@@ -1106,43 +1273,143 @@ class Volsys(_object):
     __swig_destroy__ = _model_swig.delete_Volsys
     __del__ = lambda self : None;
     def getID(*args):
-        """getID(self) -> string"""
+        """
+        Get the identifier string of the volume system.
+
+        Arguments:
+            None
+
+        Return:
+            string
+
+        """
         return _model_swig.Volsys_getID(*args)
 
     def setID(*args):
-        """setID(self, string id)"""
+        """
+        Set the identifier string of the volume system.
+
+        Arguments:
+            string name
+
+        Return:
+            None
+
+        """
         return _model_swig.Volsys_setID(*args)
 
     def getModel(*args):
-        """getModel(self) -> Model"""
+        """
+        Returns a reference to the parent steps.model.Model container object.
+
+        Arguments:
+            None
+
+        Return:
+            steps.model.Model
+
+        """
         return _model_swig.Volsys_getModel(*args)
 
     def getReac(*args):
-        """getReac(self, string id) -> Reac"""
+        """
+        Returns a reference to the steps.model.Reac reaction-rule object with 
+        identifier string reac_id (if defined in the volume system).
+
+        Arguments:
+            string reac_id
+
+        Return:
+            steps.model.Reac
+
+        """
         return _model_swig.Volsys_getReac(*args)
 
     def delReac(*args):
-        """delReac(self, string id)"""
+        """
+        Remove the steps.model.Reac reaction-rule object with identifier reac_id 
+        (if defined) from the volume system.
+
+        Arguments:
+            string reac_id
+
+        Return:
+            None
+
+        """
         return _model_swig.Volsys_delReac(*args)
 
     def getAllReacs(*args):
-        """getAllReacs(self) -> vector_rec"""
+        """
+        Returns a list of references to all steps.model.Spec objects in this volume 
+        system; that is all reactants, products or diffusing species in the reaction 
+        and diffusion rules belonging to this volume system. No duplicate member is 
+        included.
+
+        Arguments:
+            None
+
+        Return:
+            list(steps.model.Reac)
+
+        """
         return _model_swig.Volsys_getAllReacs(*args)
 
     def getDiff(*args):
-        """getDiff(self, string id) -> Diff"""
+        """
+        Returns a reference to the steps.model.Diff diffusion-rule object with 
+        identifier diff_id (if defined in the volume system).
+
+        Arguments:
+            string diff_id
+
+        Return:
+            steps.model.Diff
+
+        """
         return _model_swig.Volsys_getDiff(*args)
 
     def delDiff(*args):
-        """delDiff(self, string id)"""
+        """
+        Remove the steps.model.Diff diffusion-rule object with identifier diff_id 
+        from the volume system.
+
+        Arguments:
+            string diff_id
+
+        Return:
+            None
+
+        """
         return _model_swig.Volsys_delDiff(*args)
 
     def getAllDiffs(*args):
-        """getAllDiffs(self) -> vector_dif"""
+        """
+        Returns a list of references to all steps.model.Diff diffusion-rule objects 
+        defined in the volume system.
+
+        Arguments:
+            None
+
+        Return:
+            list(steps.model.Diff)
+
+        """
         return _model_swig.Volsys_getAllDiffs(*args)
 
     def getAllSpecs(*args):
-        """getAllSpecs(self) -> vector_spc"""
+        """
+        Returns a list of references to all steps.model.Spec objects in this volume system; 
+        that is all reactants, products or diffusing species in the reaction and diffusion 
+        rules belonging to this volume system. No duplicate member is included.
+
+        Arguments:
+            None
+
+        Return:
+            list(steps.model.Spec)
+
+        """
         return _model_swig.Volsys_getAllSpecs(*args)
 
 Volsys_swigregister = _model_swig.Volsys_swigregister
@@ -1163,35 +1430,109 @@ class Diff(_object):
     __swig_destroy__ = _model_swig.delete_Diff
     __del__ = lambda self : None;
     def getID(*args):
-        """getID(self) -> string"""
+        """
+        Get the identifier string of the diffusion rule.
+
+        Arguments:
+            None
+
+        Return:
+            string
+
+        """
         return _model_swig.Diff_getID(*args)
 
     def setID(*args):
-        """setID(self, string id)"""
+        """
+        Set the identifier string of the diffusion rule.
+
+        Arguments:
+            string name
+
+        Return:
+            None
+
+        """
         return _model_swig.Diff_setID(*args)
 
     def getVolsys(*args):
-        """getVolsys(self) -> Volsys"""
+        """
+        Returns a reference to the parent steps.model.Volsys volume system object.
+
+        Arguments:
+            None
+
+        Return:
+            steps.model.Volsys
+
+        """
         return _model_swig.Diff_getVolsys(*args)
 
     def getModel(*args):
-        """getModel(self) -> Model"""
+        """
+        Returns a reference to the parent steps.model.Model container object.
+
+        Arguments:
+            None
+
+        Return:
+            steps.model.Model
+
+        """
         return _model_swig.Diff_getModel(*args)
 
     def getLig(*args):
-        """getLig(self) -> Spec"""
+        """
+        get a reference to the steps.model.Spec species object to which this 
+        diffusion rule is applied.
+
+        Arguments:
+            None
+
+        Return:
+            steps.model.Spec
+
+        """
         return _model_swig.Diff_getLig(*args)
 
     def setLig(*args):
-        """setLig(self, Spec lig)"""
+        """
+        Set a reference to the steps.model.Spec species object to which this 
+        diffusion rule is applied.
+
+        Arguments:
+            steps.model.Spec lig
+
+        Return:
+            None
+
+        """
         return _model_swig.Diff_setLig(*args)
 
     def getDcst(*args):
-        """getDcst(self) -> double"""
+        """
+        Get the diffusion constant for the diffusion rule, in s.i. units.
+
+        Arguments:
+            None
+
+        Return:
+            float
+
+        """
         return _model_swig.Diff_getDcst(*args)
 
     def setDcst(*args):
-        """setDcst(self, double dcst)"""
+        """
+        Set the diffusion constant for the diffusion rule, in s.i. units.
+
+        Arguments:
+            float dcst
+
+        Return:
+            None
+
+        """
         return _model_swig.Diff_setDcst(*args)
 
 Diff_swigregister = _model_swig.Diff_swigregister
@@ -1216,51 +1557,167 @@ class Reac(_object):
     __swig_destroy__ = _model_swig.delete_Reac
     __del__ = lambda self : None;
     def getID(*args):
-        """getID(self) -> string"""
+        """
+        Get the identifier string of the reaction rule.
+
+        Arguments:
+            None
+
+        Return:
+            string
+
+        """
         return _model_swig.Reac_getID(*args)
 
     def setID(*args):
-        """setID(self, string id)"""
+        """
+        Set the identifier string of the reaction rule.
+
+        Arguments:
+            string name
+
+        Return:
+            None
+
+        """
         return _model_swig.Reac_setID(*args)
 
     def getVolsys(*args):
-        """getVolsys(self) -> Volsys"""
+        """
+        Returns a reference to the parent steps.model.Volsys volume system object.
+
+        Arguments:
+            None
+
+        Return:
+            steps.model.Volsys
+
+        """
         return _model_swig.Reac_getVolsys(*args)
 
     def getModel(*args):
-        """getModel(self) -> Model"""
+        """
+        Returns a reference to the parent steps.model.Model container object.
+
+        Arguments:
+            None
+
+        Return:
+            steps.model.Model
+
+        """
         return _model_swig.Reac_getModel(*args)
 
     def getLHS(*args):
-        """getLHS(self) -> vector_spc"""
+        """
+        Get a list of references to steps.model.Spec species objects on the 
+        left hand side of the reaction: the reactants.
+
+        Arguments:
+            None
+
+        Return:
+            list(steps.model.Spec)
+
+        """
         return _model_swig.Reac_getLHS(*args)
 
     def setLHS(*args):
-        """setLHS(self, vector_spc lhs)"""
+        """
+        Set a list of references to steps.model.Spec species objects on the 
+        left hand side of the reaction: the reactants.
+
+        Arguments:
+            list(steps.model.Spec) lhs
+
+        Return:
+            None
+
+        """
         return _model_swig.Reac_setLHS(*args)
 
     def getRHS(*args):
-        """getRHS(self) -> vector_spc"""
+        """
+        Get a list of references to steps.model.Spec species objects on the 
+        right hand side of the reaction: the reactants.
+
+        Arguments:
+            None
+
+        Return:
+            list(steps.model.Spec)
+
+        """
         return _model_swig.Reac_getRHS(*args)
 
     def setRHS(*args):
-        """setRHS(self, vector_spc rhs)"""
+        """
+        Set a list of references to steps.model.Spec species objects on the 
+        right hand side of the reaction: the reactants.
+
+        Arguments:
+            list(steps.model.Spec) rhs
+
+        Return:
+            None
+
+        """
         return _model_swig.Reac_setRHS(*args)
 
     def getOrder(*args):
-        """getOrder(self) -> int"""
+        """
+        Returns the order of this reaction.
+
+        Arguments:
+            None
+
+        Return:
+            int
+
+        """
         return _model_swig.Reac_getOrder(*args)
 
     def getKcst(*args):
-        """getKcst(self) -> double"""
+        """
+        Get the kinetic reaction rate constant, in s.i. units, 
+        where the actual units depend on the order of the reaction.
+
+        Arguments:
+            None
+
+        Return:
+            float
+
+        """
         return _model_swig.Reac_getKcst(*args)
 
     def setKcst(*args):
-        """setKcst(self, double kcst)"""
+        """
+        Set the kinetic reaction rate constant, in s.i. units, 
+        where the actual units depend on the order of the reaction.
+
+        Arguments:
+            float kcst
+
+        Return:
+            None
+
+        """
         return _model_swig.Reac_setKcst(*args)
 
     def getAllSpecs(*args):
-        """getAllSpecs(self) -> vector_spc"""
+        """
+        Returns a list of references to all steps.model.Spec species objects in 
+        the reaction; that is all reactants and products. No duplicate member 
+        is included.
+
+        Arguments:
+            None
+
+        Return:
+            list(steps.model.Spec)
+
+        """
         return _model_swig.Reac_getAllSpecs(*args)
 
 Reac_swigregister = _model_swig.Reac_swigregister
@@ -1289,91 +1746,287 @@ class SReac(_object):
     __swig_destroy__ = _model_swig.delete_SReac
     __del__ = lambda self : None;
     def getID(*args):
-        """getID(self) -> string"""
+        """
+        Get the identifier string of the surface reaction rule.
+
+        Arguments:
+            None
+
+        Return:
+            string
+
+        """
         return _model_swig.SReac_getID(*args)
 
     def setID(*args):
-        """setID(self, string id)"""
+        """
+        Set the identifier string of the surface reaction rule.
+
+        Arguments:
+            string name
+
+        Return:
+            None
+
+        """
         return _model_swig.SReac_setID(*args)
 
     def getSurfsys(*args):
-        """getSurfsys(self) -> Surfsys"""
+        """
+        Returns a reference to the parent steps.model.Surfsys surface system object.
+
+        Arguments:
+            None
+
+        Return:
+            steps.model.Surfsys
+
+        """
         return _model_swig.SReac_getSurfsys(*args)
 
     def getModel(*args):
-        """getModel(self) -> Model"""
+        """
+        Returns a reference to the parent steps.model.Model container object.
+
+        Arguments:
+            None
+
+        Return:
+            steps.model.Model
+
+        """
         return _model_swig.SReac_getModel(*args)
 
     def getInner(*args):
-        """getInner(self) -> bool"""
+        """Obsolete"""
         return _model_swig.SReac_getInner(*args)
 
     def getOuter(*args):
-        """getOuter(self) -> bool"""
+        """Obsolete"""
         return _model_swig.SReac_getOuter(*args)
 
     def getOLHS(*args):
-        """getOLHS(self) -> vector_spc"""
+        """
+        Get a list of references to steps.model.Spec species objects; 
+        the left hand side outer volume reactants.
+
+        Arguments:
+            None
+
+        Return:
+            list(steps.model.Spec)
+
+        """
         return _model_swig.SReac_getOLHS(*args)
 
     def setOLHS(*args):
-        """setOLHS(self, vector_spc olhs)"""
+        """
+        Set a list of references to steps.model.Spec species objects; 
+        the left hand side outer volume reactants.
+
+        Arguments:
+            list(steps.model.Spec) olhs
+
+        Return:
+            None
+
+        """
         return _model_swig.SReac_setOLHS(*args)
 
     def getILHS(*args):
-        """getILHS(self) -> vector_spc"""
+        """
+        Get a list of references to steps.model.Spec species objects; 
+        the left hand side inner volume reactants.
+
+        Arguments:
+            None
+
+        Return:
+            list(steps.model.Spec)
+
+        """
         return _model_swig.SReac_getILHS(*args)
 
     def setILHS(*args):
-        """setILHS(self, vector_spc ilhs)"""
+        """
+        Set a list of references to steps.model.Spec species objects; 
+        the left hand side inner volume reactants.
+
+        Arguments:
+            list(steps.model.Spec) ilhs
+
+        Return:
+            None
+
+        """
         return _model_swig.SReac_setILHS(*args)
 
     def getSLHS(*args):
-        """getSLHS(self) -> vector_spc"""
+        """
+        Get a list of references to steps.model.Spec species objects; 
+        the left hand side surface reactants.
+
+        Arguments:
+            None
+
+        Return:
+            list(steps.model.Spec)
+
+        """
         return _model_swig.SReac_getSLHS(*args)
 
     def setSLHS(*args):
-        """setSLHS(self, vector_spc slhs)"""
+        """
+        Set a list of references to steps.model.Spec species objects; 
+        the left hand side surface reactants.
+
+        Arguments:
+            list(steps.model.Spec) slhs
+
+        Return:
+            None
+
+        """
         return _model_swig.SReac_setSLHS(*args)
 
     def getIRHS(*args):
-        """getIRHS(self) -> vector_spc"""
+        """
+        Get a list of references to steps.model.Spec species objects; 
+        the right hand side inner volume reactants.
+
+        Arguments:
+            None
+
+        Return:
+            list(steps.model.Spec)
+
+        """
         return _model_swig.SReac_getIRHS(*args)
 
     def setIRHS(*args):
-        """setIRHS(self, vector_spc irhs)"""
+        """
+        Set a list of references to steps.model.Spec species objects; 
+        the right hand side inner volume reactants.
+
+        Arguments:
+            list(steps.model.Spec) irhs
+
+        Return:
+            None
+
+        """
         return _model_swig.SReac_setIRHS(*args)
 
     def getSRHS(*args):
-        """getSRHS(self) -> vector_spc"""
+        """
+        Get a list of references to steps.model.Spec species objects; 
+        the right hand side surface reactants.
+
+        Arguments:
+            None
+
+        Return:
+            list(steps.model.Spec)
+
+        """
         return _model_swig.SReac_getSRHS(*args)
 
     def setSRHS(*args):
-        """setSRHS(self, vector_spc srhs)"""
+        """
+        Set a list of references to steps.model.Spec species objects; 
+        the right hand side surface reactants.
+
+        Arguments:
+            list(steps.model.Spec) srhs
+
+        Return:
+            None
+
+        """
         return _model_swig.SReac_setSRHS(*args)
 
     def getORHS(*args):
-        """getORHS(self) -> vector_spc"""
+        """
+        Get a list of references to steps.model.Spec species objects; 
+        the right hand side outer volume reactants.
+
+        Arguments:
+            None
+
+        Return:
+            list(steps.model.Spec)
+
+        """
         return _model_swig.SReac_getORHS(*args)
 
     def setORHS(*args):
-        """setORHS(self, vector_spc orhs)"""
+        """
+        Get a list of references to steps.model.Spec species objects; 
+        the right hand side outer volume reactants.
+
+        Arguments:
+            list(steps.model.Spec) orhs
+
+        Return:
+            None
+
+        """
         return _model_swig.SReac_setORHS(*args)
 
     def getOrder(*args):
-        """getOrder(self) -> int"""
+        """
+        Returns the order of this surface reaction.
+
+        Arguments:
+            None
+
+        Return:
+            int
+
+        """
         return _model_swig.SReac_getOrder(*args)
 
     def getKcst(*args):
-        """getKcst(self) -> double"""
+        """
+        Get the kinetic reaction rate constant, in s.i. units, 
+        where the actual units depend on the order of the surface reaction.
+
+        Arguments:
+            None
+
+        Return:
+            float
+
+        """
         return _model_swig.SReac_getKcst(*args)
 
     def setKcst(*args):
-        """setKcst(self, double kcst)"""
+        """
+        Set the kinetic reaction rate constant, in s.i. units, 
+        where the actual units depend on the order of the surface reaction.
+
+        Arguments:
+            float kcst
+
+        Return:
+            None
+
+        """
         return _model_swig.SReac_setKcst(*args)
 
     def getAllSpecs(*args):
-        """getAllSpecs(self) -> vector_spc"""
+        """
+        Returns a list of references to all steps.model.Spec species objects in 
+        the surface reaction; that is all reactants and products. No duplicate member 
+        is included.
+
+        Arguments:
+            None
+
+        Return:
+            list(steps.model.Spec)
+
+        """
         return _model_swig.SReac_getAllSpecs(*args)
 
 SReac_swigregister = _model_swig.SReac_swigregister
