@@ -155,363 +155,1432 @@ class API(_object):
     __swig_destroy__ = _solver_swig.delete_API
     __del__ = lambda self : None;
     def getSolverName(*args):
-        """getSolverName(self) -> string"""
+        """
+        Returns a string of the solver's name.
+
+        Arguments:
+            None
+
+        Return:
+            string
+
+        """
         return _solver_swig.API_getSolverName(*args)
 
     def getSolverDesc(*args):
-        """getSolverDesc(self) -> string"""
+        """
+        Returns a string giving a short description of the solver.
+
+        Arguments:
+            None
+
+        Return:
+            string
+
+        """
         return _solver_swig.API_getSolverDesc(*args)
 
     def getSolverAuthors(*args):
-        """getSolverAuthors(self) -> string"""
+        """
+        Returns a string of the solver authors names.
+
+        Arguments:
+            None
+
+        Return:
+            string
+
+        """
         return _solver_swig.API_getSolverAuthors(*args)
 
     def getSolverEmail(*args):
-        """getSolverEmail(self) -> string"""
+        """
+        Returns a string giving the author's email address.
+
+        Arguments:
+            None
+
+        Return:
+            string
+
+        """
         return _solver_swig.API_getSolverEmail(*args)
 
     def reset(*args):
-        """reset(self)"""
+        """
+        Reset the simulation to the state the solver was initialised to. 
+        Typically, this resets all concentrations of all chemical species in 
+        all elements (whether compartments and patches in a well-mixed solver 
+        or tetrahedrons and triangles in a mesh-based solver) to zero, 
+        resets the simulation time to zero and resets reaction (and diffusion) 
+        rates to the default values described in the steps.model objects. 
+        All reaction (and diffusion) rules are reset to active and all 
+        compartment volumes and patch areas are reset to default values 
+        described in steps.geom objects (for well-mixed solvers). 
+        Usually, this method should be called before starting each simulation iteration.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_reset(*args)
 
     def run(*args):
-        """run(self, double endtime)"""
+        """
+        Advance the simulation until endtime (given in seconds) is reached. 
+        The endtime must be larger or equal to the current simulation time.
+
+        Arguments:
+            float endtime
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_run(*args)
 
     def advance(*args):
-        """advance(self, double adv)"""
+        """
+        Advance the simulation for secs seconds. 
+
+        Arguments:
+            float adv
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_advance(*args)
 
     def step(*args):
-        """step(self)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_step(*args)
 
     def setDT(*args):
-        """setDT(self, double dt)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setDT(*args)
 
     def getTime(*args):
-        """getTime(self) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTime(*args)
 
     def setTime(*args):
-        """setTime(self, double time)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setTime(*args)
 
     def getDT(*args):
-        """getDT(self) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getDT(*args)
 
     def getA0(*args):
-        """getA0(self) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getA0(*args)
 
     def getNSteps(*args):
-        """getNSteps(self) -> unsigned int"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getNSteps(*args)
 
     def setNSteps(*args):
-        """setNSteps(self, unsigned int nsteps)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setNSteps(*args)
 
     def getCompVol(*args):
-        """getCompVol(self, string c) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getCompVol(*args)
 
     def setCompVol(*args):
-        """setCompVol(self, string c, double vol)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setCompVol(*args)
 
     def getCompCount(*args):
-        """getCompCount(self, string c, string s) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getCompCount(*args)
 
     def setCompCount(*args):
-        """setCompCount(self, string c, string s, double n)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setCompCount(*args)
 
     def getCompAmount(*args):
-        """getCompAmount(self, string c, string s) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getCompAmount(*args)
 
     def setCompAmount(*args):
-        """setCompAmount(self, string c, string s, double a)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setCompAmount(*args)
 
     def getCompConc(*args):
-        """getCompConc(self, string c, string s) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getCompConc(*args)
 
     def setCompConc(*args):
-        """setCompConc(self, string c, string s, double c)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setCompConc(*args)
 
     def getCompClamped(*args):
-        """getCompClamped(self, string c, string s) -> bool"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getCompClamped(*args)
 
     def setCompClamped(*args):
-        """setCompClamped(self, string c, string s, bool b)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setCompClamped(*args)
 
     def getCompReacK(*args):
-        """getCompReacK(self, string c, string r) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getCompReacK(*args)
 
     def setCompReacK(*args):
-        """setCompReacK(self, string c, string r, double kf)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setCompReacK(*args)
 
     def getCompReacActive(*args):
-        """getCompReacActive(self, string c, string r) -> bool"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getCompReacActive(*args)
 
     def setCompReacActive(*args):
-        """setCompReacActive(self, string c, string r, bool a)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setCompReacActive(*args)
 
     def getCompDiffD(*args):
-        """getCompDiffD(self, string c, string d) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getCompDiffD(*args)
 
     def setCompDiffD(*args):
-        """setCompDiffD(self, string c, string d, double dcst)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setCompDiffD(*args)
 
     def getCompDiffActive(*args):
-        """getCompDiffActive(self, string c, string d) -> bool"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getCompDiffActive(*args)
 
     def setCompDiffActive(*args):
-        """setCompDiffActive(self, string c, string d, bool act)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setCompDiffActive(*args)
 
     def getCompReacC(*args):
-        """getCompReacC(self, string c, string r) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getCompReacC(*args)
 
     def getCompReacH(*args):
-        """getCompReacH(self, string c, string r) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getCompReacH(*args)
 
     def getCompReacA(*args):
-        """getCompReacA(self, string c, string r) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getCompReacA(*args)
 
     def getCompReacExtent(*args):
-        """getCompReacExtent(self, string c, string r) -> unsigned int"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getCompReacExtent(*args)
 
     def resetCompReacExtent(*args):
-        """resetCompReacExtent(self, string c, string r)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_resetCompReacExtent(*args)
 
     def getTetVol(*args):
-        """getTetVol(self, unsigned int tidx) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTetVol(*args)
 
     def getTetCount(*args):
-        """getTetCount(self, unsigned int tidx, string s) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTetCount(*args)
 
     def setTetCount(*args):
-        """setTetCount(self, unsigned int tidx, string s, double n)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setTetCount(*args)
 
     def getTetAmount(*args):
-        """getTetAmount(self, unsigned int tidx, string s) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTetAmount(*args)
 
     def setTetAmount(*args):
-        """setTetAmount(self, unsigned int tidx, string s, double m)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setTetAmount(*args)
 
     def getTetConc(*args):
-        """getTetConc(self, unsigned int tidx, string s) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTetConc(*args)
 
     def setTetConc(*args):
-        """setTetConc(self, unsigned int tidx, string s, double c)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setTetConc(*args)
 
     def getTetClamped(*args):
-        """getTetClamped(self, unsigned int tidx, string s) -> bool"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTetClamped(*args)
 
     def setTetClamped(*args):
-        """setTetClamped(self, unsigned int tidx, string s, bool buf)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setTetClamped(*args)
 
     def getTetReacK(*args):
-        """getTetReacK(self, unsigned int tidx, string r) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTetReacK(*args)
 
     def setTetReacK(*args):
-        """setTetReacK(self, unsigned int tidx, string r, double kf)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setTetReacK(*args)
 
     def getTetReacActive(*args):
-        """getTetReacActive(self, unsigned int tidx, string r) -> bool"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTetReacActive(*args)
 
     def setTetReacActive(*args):
-        """setTetReacActive(self, unsigned int tidx, string r, bool act)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setTetReacActive(*args)
 
     def getTetDiffD(*args):
-        """getTetDiffD(self, unsigned int tidx, string d) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTetDiffD(*args)
 
     def setTetDiffD(*args):
-        """setTetDiffD(self, unsigned int tidx, string d, double dk)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setTetDiffD(*args)
 
     def getTetDiffActive(*args):
-        """getTetDiffActive(self, unsigned int tidx, string d) -> bool"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTetDiffActive(*args)
 
     def setTetDiffActive(*args):
-        """setTetDiffActive(self, unsigned int tidx, string d, bool act)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setTetDiffActive(*args)
 
     def getTetReacC(*args):
-        """getTetReacC(self, unsigned int tidx, string r) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTetReacC(*args)
 
     def getTetReacH(*args):
-        """getTetReacH(self, unsigned int tidx, string r) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTetReacH(*args)
 
     def getTetReacA(*args):
-        """getTetReacA(self, unsigned int tidx, string r) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTetReacA(*args)
 
     def getTetDiffA(*args):
-        """getTetDiffA(self, unsigned int tidx, string d) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTetDiffA(*args)
 
     def getPatchArea(*args):
-        """getPatchArea(self, string p) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getPatchArea(*args)
 
     def setPatchArea(*args):
-        """setPatchArea(self, string p, double area)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setPatchArea(*args)
 
     def getPatchCount(*args):
-        """getPatchCount(self, string p, string s) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getPatchCount(*args)
 
     def setPatchCount(*args):
-        """setPatchCount(self, string p, string s, double n)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setPatchCount(*args)
 
     def getPatchAmount(*args):
-        """getPatchAmount(self, string p, string s) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getPatchAmount(*args)
 
     def setPatchAmount(*args):
-        """setPatchAmount(self, string p, string s, double a)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setPatchAmount(*args)
 
     def getPatchClamped(*args):
-        """getPatchClamped(self, string p, string s) -> bool"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getPatchClamped(*args)
 
     def setPatchClamped(*args):
-        """setPatchClamped(self, string p, string s, bool buf)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setPatchClamped(*args)
 
     def getPatchSReacK(*args):
-        """getPatchSReacK(self, string p, string r) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getPatchSReacK(*args)
 
     def setPatchSReacK(*args):
-        """setPatchSReacK(self, string p, string r, double kf)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setPatchSReacK(*args)
 
     def getPatchSReacActive(*args):
-        """getPatchSReacActive(self, string p, string r) -> bool"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getPatchSReacActive(*args)
 
     def setPatchSReacActive(*args):
-        """setPatchSReacActive(self, string p, string r, bool a)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setPatchSReacActive(*args)
 
     def getPatchSReacC(*args):
-        """getPatchSReacC(self, string p, string r) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getPatchSReacC(*args)
 
     def getPatchSReacH(*args):
-        """getPatchSReacH(self, string p, string r) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getPatchSReacH(*args)
 
     def getPatchSReacA(*args):
-        """getPatchSReacA(self, string p, string r) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getPatchSReacA(*args)
 
     def getPatchSReacExtent(*args):
-        """getPatchSReacExtent(self, string p, string r) -> unsigned int"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getPatchSReacExtent(*args)
 
     def resetPatchSReacExtent(*args):
-        """resetPatchSReacExtent(self, string p, string r)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_resetPatchSReacExtent(*args)
 
     def getTriArea(*args):
-        """getTriArea(self, unsigned int tidx) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTriArea(*args)
 
     def getTriCount(*args):
-        """getTriCount(self, unsigned int tidx, string s) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTriCount(*args)
 
     def setTriCount(*args):
-        """setTriCount(self, unsigned int tidx, string s, double n)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setTriCount(*args)
 
     def getTriAmount(*args):
-        """getTriAmount(self, unsigned int tidx, string s) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTriAmount(*args)
 
     def setTriAmount(*args):
-        """setTriAmount(self, unsigned int tidx, string s, double m)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setTriAmount(*args)
 
     def getTriClamped(*args):
-        """getTriClamped(self, unsigned int tidx, string s) -> bool"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTriClamped(*args)
 
     def setTriClamped(*args):
-        """setTriClamped(self, unsigned int tidx, string s, bool buf)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setTriClamped(*args)
 
     def getTriSReacK(*args):
-        """getTriSReacK(self, unsigned int tidx, string r) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTriSReacK(*args)
 
     def setTriSReacK(*args):
-        """setTriSReacK(self, unsigned int tidx, string r, double kf)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setTriSReacK(*args)
 
     def getTriSReacActive(*args):
-        """getTriSReacActive(self, unsigned int tidx, string r) -> bool"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTriSReacActive(*args)
 
     def setTriSReacActive(*args):
-        """setTriSReacActive(self, unsigned int tidx, string r, bool act)"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_setTriSReacActive(*args)
 
     def getTriSReacC(*args):
-        """getTriSReacC(self, unsigned int tidx, string r) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTriSReacC(*args)
 
     def getTriSReacH(*args):
-        """getTriSReacH(self, unsigned int tidx, string r) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTriSReacH(*args)
 
     def getTriSReacA(*args):
-        """getTriSReacA(self, unsigned int tidx, string r) -> double"""
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction “event”). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Arguments:
+            None
+
+        Return:
+            None
+
+        """
         return _solver_swig.API_getTriSReacA(*args)
 
 API_swigregister = _solver_swig.API_swigregister
@@ -525,50 +1594,10 @@ class Wmrk4(API):
     __swig_getmethods__ = {}
     for _s in [API]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, Wmrk4, name)
+    def __init__(self): raise AttributeError, "No constructor defined"
     __repr__ = _swig_repr
-    def __init__(self, *args): 
-        """__init__(self, steps::model::Model m, steps::wm::Geom g, steps::rng::RNG r) -> Wmrk4"""
-        this = _solver_swig.new_Wmrk4(*args)
-        try: self.this.append(this)
-        except: self.this = this
     __swig_destroy__ = _solver_swig.delete_Wmrk4
     __del__ = lambda self : None;
-    def getSolverName(*args):
-        """getSolverName(self) -> string"""
-        return _solver_swig.Wmrk4_getSolverName(*args)
-
-    def getSolverDesc(*args):
-        """getSolverDesc(self) -> string"""
-        return _solver_swig.Wmrk4_getSolverDesc(*args)
-
-    def getSolverAuthors(*args):
-        """getSolverAuthors(self) -> string"""
-        return _solver_swig.Wmrk4_getSolverAuthors(*args)
-
-    def getSolverEmail(*args):
-        """getSolverEmail(self) -> string"""
-        return _solver_swig.Wmrk4_getSolverEmail(*args)
-
-    def reset(*args):
-        """reset(self)"""
-        return _solver_swig.Wmrk4_reset(*args)
-
-    def run(*args):
-        """run(self, double endtime)"""
-        return _solver_swig.Wmrk4_run(*args)
-
-    def step(*args):
-        """step(self)"""
-        return _solver_swig.Wmrk4_step(*args)
-
-    def setDT(*args):
-        """setDT(self, double dt)"""
-        return _solver_swig.Wmrk4_setDT(*args)
-
-    def getTime(*args):
-        """getTime(self) -> double"""
-        return _solver_swig.Wmrk4_getTime(*args)
-
 Wmrk4_swigregister = _solver_swig.Wmrk4_swigregister
 Wmrk4_swigregister(Wmrk4)
 
@@ -580,66 +1609,10 @@ class Wmdirect(API):
     __swig_getmethods__ = {}
     for _s in [API]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, Wmdirect, name)
+    def __init__(self): raise AttributeError, "No constructor defined"
     __repr__ = _swig_repr
-    def __init__(self, *args): 
-        """__init__(self, steps::model::Model m, steps::wm::Geom g, steps::rng::RNG r) -> Wmdirect"""
-        this = _solver_swig.new_Wmdirect(*args)
-        try: self.this.append(this)
-        except: self.this = this
     __swig_destroy__ = _solver_swig.delete_Wmdirect
     __del__ = lambda self : None;
-    def getSolverName(*args):
-        """getSolverName(self) -> string"""
-        return _solver_swig.Wmdirect_getSolverName(*args)
-
-    def getSolverDesc(*args):
-        """getSolverDesc(self) -> string"""
-        return _solver_swig.Wmdirect_getSolverDesc(*args)
-
-    def getSolverAuthors(*args):
-        """getSolverAuthors(self) -> string"""
-        return _solver_swig.Wmdirect_getSolverAuthors(*args)
-
-    def getSolverEmail(*args):
-        """getSolverEmail(self) -> string"""
-        return _solver_swig.Wmdirect_getSolverEmail(*args)
-
-    def reset(*args):
-        """reset(self)"""
-        return _solver_swig.Wmdirect_reset(*args)
-
-    def run(*args):
-        """run(self, double endtime)"""
-        return _solver_swig.Wmdirect_run(*args)
-
-    def advance(*args):
-        """advance(self, double adv)"""
-        return _solver_swig.Wmdirect_advance(*args)
-
-    def step(*args):
-        """step(self)"""
-        return _solver_swig.Wmdirect_step(*args)
-
-    def getTime(*args):
-        """getTime(self) -> double"""
-        return _solver_swig.Wmdirect_getTime(*args)
-
-    def getA0(*args):
-        """getA0(self) -> double"""
-        return _solver_swig.Wmdirect_getA0(*args)
-
-    def getNSteps(*args):
-        """getNSteps(self) -> unsigned int"""
-        return _solver_swig.Wmdirect_getNSteps(*args)
-
-    def setTime(*args):
-        """setTime(self, double time)"""
-        return _solver_swig.Wmdirect_setTime(*args)
-
-    def setNSteps(*args):
-        """setNSteps(self, unsigned int nsteps)"""
-        return _solver_swig.Wmdirect_setNSteps(*args)
-
 Wmdirect_swigregister = _solver_swig.Wmdirect_swigregister
 Wmdirect_swigregister(Wmdirect)
 
@@ -651,66 +1624,10 @@ class Tetexact(API):
     __swig_getmethods__ = {}
     for _s in [API]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, Tetexact, name)
+    def __init__(self): raise AttributeError, "No constructor defined"
     __repr__ = _swig_repr
-    def __init__(self, *args): 
-        """__init__(self, steps::model::Model m, steps::wm::Geom g, steps::rng::RNG r) -> Tetexact"""
-        this = _solver_swig.new_Tetexact(*args)
-        try: self.this.append(this)
-        except: self.this = this
     __swig_destroy__ = _solver_swig.delete_Tetexact
     __del__ = lambda self : None;
-    def getSolverName(*args):
-        """getSolverName(self) -> string"""
-        return _solver_swig.Tetexact_getSolverName(*args)
-
-    def getSolverDesc(*args):
-        """getSolverDesc(self) -> string"""
-        return _solver_swig.Tetexact_getSolverDesc(*args)
-
-    def getSolverAuthors(*args):
-        """getSolverAuthors(self) -> string"""
-        return _solver_swig.Tetexact_getSolverAuthors(*args)
-
-    def getSolverEmail(*args):
-        """getSolverEmail(self) -> string"""
-        return _solver_swig.Tetexact_getSolverEmail(*args)
-
-    def reset(*args):
-        """reset(self)"""
-        return _solver_swig.Tetexact_reset(*args)
-
-    def run(*args):
-        """run(self, double endtime)"""
-        return _solver_swig.Tetexact_run(*args)
-
-    def step(*args):
-        """step(self)"""
-        return _solver_swig.Tetexact_step(*args)
-
-    def advance(*args):
-        """advance(self, double adv)"""
-        return _solver_swig.Tetexact_advance(*args)
-
-    def getTime(*args):
-        """getTime(self) -> double"""
-        return _solver_swig.Tetexact_getTime(*args)
-
-    def getA0(*args):
-        """getA0(self) -> double"""
-        return _solver_swig.Tetexact_getA0(*args)
-
-    def getNSteps(*args):
-        """getNSteps(self) -> unsigned int"""
-        return _solver_swig.Tetexact_getNSteps(*args)
-
-    def setTime(*args):
-        """setTime(self, double time)"""
-        return _solver_swig.Tetexact_setTime(*args)
-
-    def setNSteps(*args):
-        """setNSteps(self, unsigned int nsteps)"""
-        return _solver_swig.Tetexact_setNSteps(*args)
-
 Tetexact_swigregister = _solver_swig.Tetexact_swigregister
 Tetexact_swigregister(Tetexact)
 

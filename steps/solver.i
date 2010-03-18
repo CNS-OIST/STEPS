@@ -98,15 +98,113 @@ public:
     API(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r);
     virtual ~API(void);
 	
+    %feature("autodoc", 
+"
+Returns a string of the solver's name.
+
+Arguments:
+    None
+
+Return:
+    string
+");
     virtual std::string getSolverName(void) const = 0;
+    
+    %feature("autodoc", 
+"
+Returns a string giving a short description of the solver.
+
+Arguments:
+    None
+
+Return:
+    string
+");
     virtual std::string getSolverDesc(void) const = 0;
+    
+    %feature("autodoc", 
+"
+Returns a string of the solver authors names.
+
+Arguments:
+    None
+
+Return:
+    string
+");
     virtual std::string getSolverAuthors(void) const = 0;
+    
+    %feature("autodoc", 
+"
+Returns a string giving the author's email address.
+
+Arguments:
+    None
+
+Return:
+    string
+");
     virtual std::string getSolverEmail(void) const = 0;
 
-	
+    %feature("autodoc", 
+"
+Reset the simulation to the state the solver was initialised to. 
+Typically, this resets all concentrations of all chemical species in 
+all elements (whether compartments and patches in a well-mixed solver 
+or tetrahedrons and triangles in a mesh-based solver) to zero, 
+resets the simulation time to zero and resets reaction (and diffusion) 
+rates to the default values described in the steps.model objects. 
+All reaction (and diffusion) rules are reset to active and all 
+compartment volumes and patch areas are reset to default values 
+described in steps.geom objects (for well-mixed solvers). 
+Usually, this method should be called before starting each simulation iteration.
+
+Arguments:
+    None
+
+Return:
+    None
+");
     virtual void reset(void) = 0;
+    
+    %feature("autodoc", 
+"
+Advance the simulation until endtime (given in seconds) is reached. 
+The endtime must be larger or equal to the current simulation time.
+
+Arguments:
+    float endtime
+
+Return:
+    None
+");
     virtual void run(double endtime) = 0;
+    
+    %feature("autodoc", 
+"
+Advance the simulation for secs seconds. 
+
+Arguments:
+    float adv
+
+Return:
+    None
+");
 	virtual void advance(double adv);
+    
+    %feature("autodoc", 
+"
+Advance the simulation for one 'step'. In stochastic solvers this is one 
+'realization' of the Gillespie SSA (one reaction “event”). 
+In numerical solvers (currently Wmrk4) this is one time-step, with the 
+stepsize defined with the setDT method.
+
+Arguments:
+    None
+
+Return:
+    None
+");
     virtual void step(void);
 	
     virtual void setDT(double dt);
@@ -296,12 +394,8 @@ public:
 	Wmrk4(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r);
 	~Wmrk4(void);
 
-	std::string getSolverName(void) const;
-	std::string getSolverDesc(void) const;
-	std::string getSolverAuthors(void) const;
-	std::string getSolverEmail(void) const;
 
-
+/*
 	void reset(void);
 	void run(double endtime);
 	void step(void);
@@ -309,6 +403,8 @@ public:
 	void setDT(double dt);
 		
 	double getTime(void) const;
+    
+*/
 	////////////////////////////////////////////////////////////////////////			
 		
 };
@@ -332,11 +428,7 @@ public:
 	Wmdirect(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r);
 	~Wmdirect(void);
 	
-	std::string getSolverName(void) const;
-	std::string getSolverDesc(void) const;
-	std::string getSolverAuthors(void) const;
-	std::string getSolverEmail(void) const;
-	
+	/*
 	
 	void reset(void);
 	void run(double endtime);
@@ -349,7 +441,9 @@ public:
 	
     unsigned int getNSteps(void) const;
     void setTime(double time);
-    void setNSteps(unsigned int nsteps);	
+    void setNSteps(unsigned int nsteps);
+    
+    */
 	////////////////////////////////////////////////////////////////////////			
 	
 };
@@ -373,11 +467,7 @@ public:
     Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r);
     ~Tetexact(void);
 
-	std::string getSolverName(void) const;
-	std::string getSolverDesc(void) const;
-	std::string getSolverAuthors(void) const;
-	std::string getSolverEmail(void) const;
-	
+/*	
 	
 	void reset(void);
 	void run(double endtime);
@@ -391,7 +481,7 @@ public:
     unsigned int getNSteps(void) const;
     void setTime(double time);
     void setNSteps(unsigned int nsteps);
-	
+*/	
 	////////////////////////////////////////////////////////////////////////			
 	
 };

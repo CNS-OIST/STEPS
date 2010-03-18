@@ -117,7 +117,11 @@ NotImplErr_swigregister = _rng.NotImplErr_swigregister
 NotImplErr_swigregister(NotImplErr)
 
 class RNG(_object):
-    """Proxy of C++ RNG class"""
+    """
+    Proxy of C++ random number generator.
+
+
+    """
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, RNG, name, value)
     __swig_getmethods__ = {}

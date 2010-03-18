@@ -28,13 +28,29 @@
 #  Last Changed Date: $Date$
 #  Last Changed By:   $Author$
 
-"""
-
-This file is the user-interface file for all solver objects.
-All objects are directly derived from the corresponding swig objects.
-All objects are owned by Python.
-
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# This file is the user-interface file for all solver objects.
+# All objects are directly derived from the corresponding swig objects.
+# All objects are owned by Python.
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
  
+"""
+Implementation of simulation solvers. 
+
+Each solver is a partial or full implementation of the STEPS solver API.
+At the moment STEPS implements three different solvers. 
+
+The steps.solver.Wmrk4 class implements a well-mixed, deterministic solver 
+based on the Runge–Kutta method. 
+
+The steps.solver.Wmdirect class implements a stochastic, well-mixed solver 
+based on Gillespie's Direct SSA Method. 
+
+The steps.solver.Tetexact class implements a stochastic reaction-diffusion 
+solver, based on Gillespie's Direct SSA Method extended for diffusive fluxes 
+between tetrahedral elements in complex geometries.
+
 """
 
 import _model_swig
@@ -49,7 +65,17 @@ import cPickle
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 class Wmrk4(solver_swig.Wmrk4) :
     def __init__(self, *args): 
-        """__init__(self, steps::model::Model m, steps::wm::Geom g, steps::rng::RNG r) -> Wmrk4"""
+        """
+        Construction:
+            sim = steps.solver.Wmrk4(model, geom, rng)
+            
+        Create a well-mixed RK4 simulation solver.
+            
+        Arguments: 
+            * steps.model.Model model
+            * steps.geom.Geom geom
+            * steps.rng.RNG rng
+        """
         this = _solver_swig.new_Wmrk4(*args)
         try: self.this.append(this)
         except: self.this = this
@@ -60,7 +86,17 @@ class Wmrk4(solver_swig.Wmrk4) :
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 class Wmdirect(solver_swig.Wmdirect) :
     def __init__(self, model, geom, rng): 
-        """__init__(self, steps::model::Model m, steps::wm::Geom g, steps::rng::RNG r) -> Wmdirect"""
+        """
+        Construction:
+            sim = steps.solver.Wmdirect(model, geom, rng)
+            
+        Create a well-mixed Direct SSA simulation solver.
+            
+        Arguments: 
+            * steps.model.Model model
+            * steps.geom.Geom geom
+            * steps.rng.RNG rng
+        """
         this = _solver_swig.new_Wmdirect(model, geom, rng)
         try: self.this.append(this)
         except: self.this = this
@@ -259,7 +295,17 @@ class Wmdirect(solver_swig.Wmdirect) :
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #        
 class Tetexact(solver_swig.Tetexact) :  
     def __init__(self, model, geom, rng): 
-        """__init__(self, steps::model::Model m, steps::wm::Geom g, steps::rng::RNG r) -> Tetexact"""
+        """
+        Construction:
+            sim = steps.solver.Tetexact(model, mesh, rng)
+            
+        Create a tetrahedral mesh-based Direct SSA simulation solver.
+            
+        Arguments: 
+            * steps.model.Model model
+            * steps.geom.Tetmesh mesh
+            * steps.rng.RNG rng
+        """
         this = _solver_swig.new_Tetexact(model, geom, rng)
         try: self.this.append(this)
         except: self.this = this
