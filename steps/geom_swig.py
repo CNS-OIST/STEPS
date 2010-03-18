@@ -1401,27 +1401,87 @@ class Geom(_object):
     __swig_destroy__ = _geom_swig.delete_Geom
     __del__ = lambda self : None;
     def getComp(*args):
-        """getComp(self, string id) -> Comp"""
+        """
+        Returns a reference to the steps.model.Comp compartment object with 
+        identifier string comp_id (if defined).
+
+        Arguments:
+            string comp_id
+                     
+        Return:
+            steps.model.Comp
+
+        """
         return _geom_swig.Geom_getComp(*args)
 
     def delComp(*args):
-        """delComp(self, string id)"""
+        """
+        Removes the steps.geom.Comp object with identifier string comp_id (if defined) 
+        from the geometry container.
+
+        Arguments:
+            string comp_id
+                     
+        Return:
+            None
+
+        """
         return _geom_swig.Geom_delComp(*args)
 
     def getAllComps(*args):
-        """getAllComps(self) -> vector_cmp"""
+        """
+        Returns a list of references to all steps.geom.Comp compartment objects in the 
+        geometry container.
+
+        Arguments:
+            None
+                     
+        Return:
+            list<steps.geom.Comp>
+
+        """
         return _geom_swig.Geom_getAllComps(*args)
 
     def getPatch(*args):
-        """getPatch(self, string id) -> Patch"""
+        """
+        Removes the steps.geom.Patch object with identifier string patch_id (if defined) 
+        from the geometry container.
+
+        Arguments:
+            string patch_id
+                     
+        Return:
+            steps.geom.Patch
+
+        """
         return _geom_swig.Geom_getPatch(*args)
 
     def delPatch(*args):
-        """delPatch(self, string id)"""
+        """
+        Removes the steps.geom.Patch object with identifier string patch_id (if defined) 
+        from the geometry container.
+
+        Arguments:
+            string patch_id
+                     
+        Return:
+            None
+
+        """
         return _geom_swig.Geom_delPatch(*args)
 
     def getAllPatches(*args):
-        """getAllPatches(self) -> vector_ptc"""
+        """
+        Returns a list of references to all steps.geom.Patch patch objects in the 
+        geometry container.
+
+        Arguments:
+            None
+                     
+        Return:
+            list<steps.geom.Patch>
+
+        """
         return _geom_swig.Geom_getAllPatches(*args)
 
 Geom_swigregister = _geom_swig.Geom_swigregister
@@ -1445,43 +1505,136 @@ class Patch(_object):
     __swig_destroy__ = _geom_swig.delete_Patch
     __del__ = lambda self : None;
     def getID(*args):
-        """getID(self) -> string"""
+        """
+        Get the identifier string of the patch.
+
+        Arguments:
+            None
+                     
+        Return:
+            string
+
+        """
         return _geom_swig.Patch_getID(*args)
 
     def setID(*args):
-        """setID(self, string id)"""
+        """
+        Set the identifier string of the patch.
+
+        Arguments:
+            string name
+                     
+        Return:
+            None
+
+        """
         return _geom_swig.Patch_setID(*args)
 
     def getContainer(*args):
-        """getContainer(self) -> Geom"""
+        """
+        Returns a reference to the parent steps.geom.Geom container object.
+
+        Arguments:
+            None
+                     
+        Return:
+            steps.geom.Geom
+
+        """
         return _geom_swig.Patch_getContainer(*args)
 
     def getArea(*args):
-        """getArea(self) -> double"""
+        """
+        Get the area of the patch (in m^2).
+
+        Arguments:
+            None
+                     
+        Return:
+            float
+
+        """
         return _geom_swig.Patch_getArea(*args)
 
     def setArea(*args):
-        """setArea(self, double vol)"""
+        """
+        Set the area of the patch (in m^2).
+
+        Arguments:
+            float area
+                     
+        Return:
+            None
+
+        """
         return _geom_swig.Patch_setArea(*args)
 
     def addSurfsys(*args):
-        """addSurfsys(self, string id)"""
+        """
+        Add surface system identifier string surfsys_id to the patch object.
+
+        Arguments:
+            string surfsys_id
+                     
+        Return:
+            None
+
+        """
         return _geom_swig.Patch_addSurfsys(*args)
 
     def getSurfsys(*args):
-        """getSurfsys(self) -> set_str"""
+        """
+        Returns a list of the surface system identifier strings which have 
+        been added to the patch.
+
+        Arguments:
+            None
+                     
+        Return:
+            list<string>
+
+        """
         return _geom_swig.Patch_getSurfsys(*args)
 
     def delSurfsys(*args):
-        """delSurfsys(self, string id)"""
+        """
+        Removes surface system identifier string surfsys_id from this patch.
+
+        Arguments:
+            string surfsys_id
+                     
+        Return:
+            None
+
+        """
         return _geom_swig.Patch_delSurfsys(*args)
 
     def getIComp(*args):
-        """getIComp(self) -> Comp"""
+        """
+        Returns a reference to the steps.geom.Comp compartment object representing
+         the inner compartment.
+
+        Arguments:
+            None
+                     
+        Return:
+            steps.geom.Comp
+
+        """
         return _geom_swig.Patch_getIComp(*args)
 
     def getOComp(*args):
-        """getOComp(self) -> Comp"""
+        """
+        Returns a reference to the steps.geom.Comp compartment object representing
+         the outer compartment.
+
+        Arguments:
+            None
+                     
+        Return:
+            steps.geom.Comp
+
+        """
         return _geom_swig.Patch_getOComp(*args)
 
 Patch_swigregister = _geom_swig.Patch_swigregister
@@ -1502,43 +1655,136 @@ class Comp(_object):
     __swig_destroy__ = _geom_swig.delete_Comp
     __del__ = lambda self : None;
     def getID(*args):
-        """getID(self) -> string"""
+        """
+        Get the identifier string of the compartment.
+
+        Arguments:
+            None
+                     
+        Return:
+            string
+
+        """
         return _geom_swig.Comp_getID(*args)
 
     def setID(*args):
-        """setID(self, string id)"""
+        """
+        Set the identifier string of the compartment.
+
+        Arguments:
+            string name
+                     
+        Return:
+            None
+
+        """
         return _geom_swig.Comp_setID(*args)
 
     def getContainer(*args):
-        """getContainer(self) -> Geom"""
+        """
+        Returns a reference to the parent steps.geom.Geom container object.
+
+        Arguments:
+            None
+                     
+        Return:
+            steps.geom.Geom
+
+        """
         return _geom_swig.Comp_getContainer(*args)
 
     def getVol(*args):
-        """getVol(self) -> double"""
+        """
+        Get the volume of the compartment (in m^3).
+
+        Arguments:
+            None
+                     
+        Return:
+            float
+
+        """
         return _geom_swig.Comp_getVol(*args)
 
     def setVol(*args):
-        """setVol(self, double vol)"""
+        """
+        Set the volume of the compartment (in m^3).
+
+        Arguments:
+            float vol
+                     
+        Return:
+            None
+
+        """
         return _geom_swig.Comp_setVol(*args)
 
     def addVolsys(*args):
-        """addVolsys(self, string id)"""
+        """
+        Add volume system identifier string volsys_id to the compartment object.
+
+        Arguments:
+            string volsys_id
+                     
+        Return:
+            None
+
+        """
         return _geom_swig.Comp_addVolsys(*args)
 
     def getVolsys(*args):
-        """getVolsys(self) -> set_str"""
+        """
+        Returns a list of the volume system identifier strings which have been 
+        added to the compartment.
+
+        Arguments:
+            None
+                     
+        Return:
+            list<string>
+
+        """
         return _geom_swig.Comp_getVolsys(*args)
 
     def delVolsys(*args):
-        """delVolsys(self, string id)"""
+        """
+        Removes volume system identifier string volsys_id from this compartment.
+
+        Arguments:
+            string volsys_id
+                     
+        Return:
+            None
+
+        """
         return _geom_swig.Comp_delVolsys(*args)
 
     def getIPatches(*args):
-        """getIPatches(self) -> set_ptc"""
+        """
+        Returns a list of references to steps.geom.Patch patch objects: 
+        the 'inner' patches.
+
+        Arguments:
+            None
+                     
+        Return:
+            list<steps.geom.Patch>
+
+        """
         return _geom_swig.Comp_getIPatches(*args)
 
     def getOPatches(*args):
-        """getOPatches(self) -> set_ptc"""
+        """
+        Returns a list of references to steps.geom.Patch patch objects: 
+        the 'outer' patches.
+
+        Arguments:
+            None
+                     
+        Return:
+            list<steps.geom.Patch>
+
+        """
         return _geom_swig.Comp_getOPatches(*args)
 
 Comp_swigregister = _geom_swig.Comp_swigregister
@@ -1555,14 +1801,45 @@ class Tetmesh(Geom):
     __repr__ = _swig_repr
     def __init__(self, *args): 
         """
-        __init__(self, unsigned int nverts, unsigned int ntets, unsigned int ntris) -> Tetmesh
-        __init__(self, vector_dbl verts, vector_uint tets, vector_uint tris=std::vector<unsigned int >()) -> Tetmesh
-        __init__(self, vector_dbl verts, vector_uint tets) -> Tetmesh
-        __init__(self, vector_dbl verts, vector_uint tris, vector_dbl tri_areas, 
-            vector_dbl tri_norms, vector_int tri_tet_neighbs, 
-            vector_uint tets, vector_dbl tet_vols, 
-            vector_dbl tet_barycs, vector_uint tet_tri_neighbs, 
-            vector_int tet_tet_neighbs) -> Tetmesh
+        Returns a list of references to all steps.geom.Patch patch objects in the 
+        geometry container.
+
+        Arguments:
+            None
+                     
+        Return:
+            list<steps.geom.Patch>
+
+
+        Returns a list of references to all steps.geom.Patch patch objects in the 
+        geometry container.
+
+        Arguments:
+            None
+                     
+        Return:
+            list<steps.geom.Patch>
+
+
+        Returns a list of references to all steps.geom.Patch patch objects in the 
+        geometry container.
+
+        Arguments:
+            None
+                     
+        Return:
+            list<steps.geom.Patch>
+
+
+        Returns a list of references to all steps.geom.Patch patch objects in the 
+        geometry container.
+
+        Arguments:
+            None
+                     
+        Return:
+            list<steps.geom.Patch>
+
         """
         this = _geom_swig.new_Tetmesh(*args)
         try: self.this.append(this)
@@ -1570,117 +1847,385 @@ class Tetmesh(Geom):
     __swig_destroy__ = _geom_swig.delete_Tetmesh
     __del__ = lambda self : None;
     def setVertex(*args):
-        """setVertex(self, unsigned int vidx, double x, double y, double z)"""
+        """
+        Set a vertex with index vidx to coordinates x, y, z. Should be used nverts 
+        number of times to supply all vertex information if the second constructor 
+        is used. Cannot be called after setup() has been called.
+
+        Arguments:
+            * uint vidx
+            * float x
+            * float y
+            * float z
+                     
+        Return:
+            None
+
+        """
         return _geom_swig.Tetmesh_setVertex(*args)
 
     def setTri(*args):
         """
-        setTri(self, unsigned int tidx, unsigned int vidx0, unsigned int vidx1, 
-            unsigned int vidx2)
+        Set the triangle with index tidx formed by vertices vidx0, vidx1, vidx2. 
+        Should be called ntris number of times to supply triangle information if the 
+        second constructor is used. Cannot be called after setup() has been called.
+
+        Arguments:
+            * uint tidx
+            * uint vidx0
+            * uint vidx1
+            * uint vidx2
+                     
+        Return:
+            None
+
         """
         return _geom_swig.Tetmesh_setTri(*args)
 
     def setTet(*args):
         """
-        setTet(self, unsigned int tidx, unsigned int vidx0, unsigned int vidx1, 
-            unsigned int vidx2, unsigned int vidx3)
+        Set the tetrahedron with index tidx formed by vertices vidx0, vidx1, 
+        vidx2, vidx3. Should be called ntets number of times to supply tetrahedron 
+        information if the second constructor is used. Cannot be called after setup() 
+        has been called. 
+
+        Arguments:
+            * uint tidx
+            * uint vidx0
+            * uint vidx1
+            * uint vidx2
+            * uint vidx3
+                     
+        Return:
+            None
+
         """
         return _geom_swig.Tetmesh_setTet(*args)
 
     def setup(*args):
-        """setup(self)"""
+        """
+        Setup the Tetmesh object by computing the auxiliary data. This method should 
+        be called when the second constructor is used and all vertex, tetrahedron and 
+        triangle information has been supplied with the set methods. The first constructor 
+        calls this method internally, so setup does not have to be called when using the 
+        first constructor.
+
+        Arguments:
+            None
+                     
+        Return:
+            None
+
+        """
         return _geom_swig.Tetmesh_setup(*args)
 
     def isSetupDone(*args):
-        """isSetupDone(self) -> bool"""
+        """
+        Check if setup() has been called, either internally by the first constructor, 
+        or by the user if the second constructor was used.
+
+        Arguments:
+            None
+                     
+        Return:
+            True if setup is done.
+            False if setup is not done.
+
+        """
         return _geom_swig.Tetmesh_isSetupDone(*args)
 
     def getVertex(*args):
-        """getVertex(self, unsigned int vidx) -> vector_dbl"""
+        """
+        Returns the coordinates of vertex with index vidx in the container.
+
+        Arguments:
+            uint vidx
+                     
+        Return:
+            list<float, length = 3>
+
+        """
         return _geom_swig.Tetmesh_getVertex(*args)
 
     def countVertices(*args):
-        """countVertices(self) -> unsigned int"""
+        """
+        Returns the total number of vertices in the mesh.
+
+        Arguments:
+            None
+                     
+        Return:
+            uint
+
+        """
         return _geom_swig.Tetmesh_countVertices(*args)
 
     def getTri(*args):
-        """getTri(self, unsigned int tidx) -> vector_uint"""
+        """
+        Returns the triangle with index tidx in the container by its three vertex indices.
+
+        Arguments:
+            uint tidx
+                     
+        Return:
+            list<uint, length = 3>
+
+        """
         return _geom_swig.Tetmesh_getTri(*args)
 
     def countTris(*args):
-        """countTris(self) -> unsigned int"""
+        """
+        Returns the total number of triangles in the mesh.
+
+        Arguments:
+            None
+                     
+        Return:
+            uint
+
+        """
         return _geom_swig.Tetmesh_countTris(*args)
 
     def getTriArea(*args):
-        """getTriArea(self, unsigned int tidx) -> double"""
+        """
+        Returns the area of the triangle with index tidx.
+
+        Arguments:
+            uint tidx
+                     
+        Return:
+            float
+
+        """
         return _geom_swig.Tetmesh_getTriArea(*args)
 
     def getTriBarycenter(*args):
-        """getTriBarycenter(self, unsigned int tidx) -> vector_dbl"""
+        """
+        Returns the Cartesian coordinates of the barycenter of triangle with index tidx.
+
+        Arguments:
+            uint tidx
+                     
+        Return:
+            list<float, length = 3>
+
+        """
         return _geom_swig.Tetmesh_getTriBarycenter(*args)
 
     def getTetQualityRER(*args):
-        """getTetQualityRER(self, unsigned int tidx) -> double"""
+        """
+        Returns the radius-edge-ratio (a quality measurement) of tetrahedron with index tidx.
+
+        Arguments:
+            uint tidx
+                     
+        Return:
+            float
+
+        """
         return _geom_swig.Tetmesh_getTetQualityRER(*args)
 
     def getTriNorm(*args):
-        """getTriNorm(self, unsigned int tidx) -> vector_dbl"""
+        """
+        Returns the normal vector of the triangle with index tidx.
+
+        Arguments:
+            uint tidx
+                     
+        Return:
+            list<float, length = 3>
+
+        """
         return _geom_swig.Tetmesh_getTriNorm(*args)
 
     def getTriPatch(*args):
-        """getTriPatch(self, unsigned int tidx) -> TmPatch"""
+        """
+        Returns a reference to a step.geom.TmPatch object: the patch which triangle 
+        with index tidx belongs to. Returns None if triangle not assigned to a patch.
+
+        Arguments:
+            uint tidx
+                     
+        Return:
+            steps.geom.TmPatch
+
+        """
         return _geom_swig.Tetmesh_getTriPatch(*args)
 
     def getTriTetNeighb(*args):
-        """getTriTetNeighb(self, unsigned int tidx) -> vector_int"""
+        """
+        Returns the indices of the two neighbouring tetrahedrons of triangle with 
+        index tidx. An index of -1 indicates no neighbour (triangle is on the mesh border). 
+
+        Arguments:
+            uint tidx
+                     
+        Return:
+            list<int, length = 2>
+
+        """
         return _geom_swig.Tetmesh_getTriTetNeighb(*args)
 
     def getTriBoundary(*args):
-        """getTriBoundary(self) -> vector_int"""
+        """
+        Returns a list of triangles that form the mesh boundary.
+        Support function for steps.utilities.visual.
+
+        Arguments:
+            None
+                     
+        Return:
+            list<int>
+
+        """
         return _geom_swig.Tetmesh_getTriBoundary(*args)
 
     def getTet(*args):
-        """getTet(self, unsigned int tidx) -> vector_uint"""
+        """
+        Returns the tetrahedron with index tidx in the container by its four vertex indices.
+
+        Arguments:
+            uint tidx
+                     
+        Return:
+            list<uint, length = 4>
+
+        """
         return _geom_swig.Tetmesh_getTet(*args)
 
     def countTets(*args):
-        """countTets(self) -> unsigned int"""
+        """
+        Returns the total number of tetrahedrons in the mesh.
+
+        Arguments:
+            None
+                     
+        Return:
+            uint
+
+        """
         return _geom_swig.Tetmesh_countTets(*args)
 
     def getTetVol(*args):
-        """getTetVol(self, unsigned int tidx) -> double"""
+        """
+        Returns the volume of the tetrahedron with index tidx.
+
+        Arguments:
+            uint tidx
+                     
+        Return:
+            float
+
+        """
         return _geom_swig.Tetmesh_getTetVol(*args)
 
     def getTetBarycenter(*args):
-        """getTetBarycenter(self, unsigned int tidx) -> vector_dbl"""
+        """
+        Returns the barycenter of the tetrahedron with index tidx.
+
+        Arguments:
+            uint tidx
+                     
+        Return:
+            list<float, length = 3>
+
+        """
         return _geom_swig.Tetmesh_getTetBarycenter(*args)
 
     def getTetComp(*args):
-        """getTetComp(self, unsigned int tidx) -> TmComp"""
+        """
+        Returns a reference to a steps.geom.Comp object: the compartment which 
+        tetrahedron with index tidx belongs to. Returns None if tetrahedron not 
+        assigned to a compartment.
+
+        Arguments:
+            uint tidx
+                     
+        Return:
+            steps.geom.TmComp
+
+        """
         return _geom_swig.Tetmesh_getTetComp(*args)
 
     def getTetTriNeighb(*args):
-        """getTetTriNeighb(self, unsigned int tidx) -> vector_uint"""
+        """
+        Returns the indices of the four neighbouring triangles of tetrahedron with index tidx.
+
+        Arguments:
+            uint tidx
+                     
+        Return:
+            list<uint, length = 4>
+
+        """
         return _geom_swig.Tetmesh_getTetTriNeighb(*args)
 
     def getTetTetNeighb(*args):
-        """getTetTetNeighb(self, unsigned int tidx) -> vector_int"""
+        """
+        Returns the indices of the four neighbouring tetrahedrons of tetrahedron with index tidx. 
+        An index of -1 indicates no neighbour (tetrahedron is on the mesh border).
+
+        Arguments:
+            uint tidx
+                     
+        Return:
+            list<int, length = 4>
+
+        """
         return _geom_swig.Tetmesh_getTetTetNeighb(*args)
 
     def findTetByPoint(*args):
-        """findTetByPoint(self, vector_dbl p) -> int"""
+        """
+        Returns the index of the tetrahedron which encompasses a given point 
+        p (given in Cartesian coordinates x,y,z). Returns -1 if p is a position 
+        outside the mesh.
+
+        Arguments:
+            list<float, length = 3> p
+                     
+        Return:
+            int
+
+        """
         return _geom_swig.Tetmesh_findTetByPoint(*args)
 
     def getBoundMin(*args):
-        """getBoundMin(self) -> vector_dbl"""
+        """
+        Returns the minimal Cartesian coordinate of the rectangular bounding box of the mesh. 
+
+        Arguments:
+            None
+                     
+        Return:
+            list<float, length = 3>
+
+        """
         return _geom_swig.Tetmesh_getBoundMin(*args)
 
     def getBoundMax(*args):
-        """getBoundMax(self) -> vector_dbl"""
+        """
+        Returns the maximal Cartesian coordinate of the rectangular bounding box of the mesh. 
+
+        Arguments:
+            None
+                     
+        Return:
+            list<float, length = 3>
+
+        """
         return _geom_swig.Tetmesh_getBoundMax(*args)
 
     def getMeshVolume(*args):
-        """getMeshVolume(self) -> double"""
+        """
+        Returns the total volume of the mesh. 
+
+        Arguments:
+            None
+                     
+        Return:
+            float
+
+        """
         return _geom_swig.Tetmesh_getMeshVolume(*args)
 
 Tetmesh_swigregister = _geom_swig.Tetmesh_swigregister
@@ -1696,34 +2241,92 @@ class TmComp(Comp):
     __getattr__ = lambda self, name: _swig_getattr(self, TmComp, name)
     __repr__ = _swig_repr
     def __init__(self, *args, **kwargs): 
-        """__init__(self, string id, Tetmesh container, vector_uint tets) -> TmComp"""
+        """
+        Returns a list of references to steps.geom.Patch patch objects: 
+        the 'outer' patches.
+
+        Arguments:
+            None
+                     
+        Return:
+            list<steps.geom.Patch>
+
+        """
         this = _geom_swig.new_TmComp(*args, **kwargs)
         try: self.this.append(this)
         except: self.this = this
     __swig_destroy__ = _geom_swig.delete_TmComp
     __del__ = lambda self : None;
     def setVol(*args):
-        """setVol(self, double vol)"""
+        """Obsolete"""
         return _geom_swig.TmComp_setVol(*args)
 
     def getAllTetIndices(*args):
-        """getAllTetIndices(self) -> vector_uint"""
+        """
+        Returns a list of indices of all tetrahedrons assigned to the compartment. 
+
+        Arguments:
+            None
+                     
+        Return:
+            list<uint>
+
+        """
         return _geom_swig.TmComp_getAllTetIndices(*args)
 
     def countTets(*args):
-        """countTets(self) -> unsigned int"""
+        """
+        Returns the number of tetrahedrons assigned to the compartment. 
+
+        Arguments:
+            None
+                     
+        Return:
+            uint
+
+        """
         return _geom_swig.TmComp_countTets(*args)
 
     def isTetInside(*args):
-        """isTetInside(self, vector_uint tet) -> vector_bool"""
+        """
+        Returns a list of Booleans describing if tetrahedrons tets are 
+        assigned to the compartment.
+
+        Arguments:
+            list<uint> tets
+                     
+        Return:
+            list<bool, length = length(tets)>
+
+        """
         return _geom_swig.TmComp_isTetInside(*args)
 
     def getBoundMin(*args):
-        """getBoundMin(self) -> vector_dbl"""
+        """
+        Returns the minimal Cartesian coordinate of the rectangular bounding box 
+        of the compartment. 
+
+        Arguments:
+            None
+                     
+        Return:
+            list<float, length = 3>
+
+        """
         return _geom_swig.TmComp_getBoundMin(*args)
 
     def getBoundMax(*args):
-        """getBoundMax(self) -> vector_dbl"""
+        """
+        Returns the maximal Cartesian coordinate of the rectangular bounding box 
+        of the compartment. 
+
+        Arguments:
+            None
+                     
+        Return:
+            list<float, length = 3>
+
+        """
         return _geom_swig.TmComp_getBoundMax(*args)
 
 TmComp_swigregister = _geom_swig.TmComp_swigregister
@@ -1740,8 +2343,15 @@ class TmPatch(Patch):
     __repr__ = _swig_repr
     def __init__(self, *args, **kwargs): 
         """
-        __init__(self, string id, Tetmesh container, vector_uint tris, Comp icomp, 
-            Comp ocomp=0) -> TmPatch
+        Returns a reference to the steps.geom.Comp compartment object representing
+         the outer compartment.
+
+        Arguments:
+            None
+                     
+        Return:
+            steps.geom.Comp
+
         """
         this = _geom_swig.new_TmPatch(*args, **kwargs)
         try: self.this.append(this)
@@ -1749,15 +2359,34 @@ class TmPatch(Patch):
     __swig_destroy__ = _geom_swig.delete_TmPatch
     __del__ = lambda self : None;
     def setArea(*args):
-        """setArea(self, double area)"""
+        """Obsolete"""
         return _geom_swig.TmPatch_setArea(*args)
 
     def getAllTriIndices(*args):
-        """getAllTriIndices(self) -> vector_uint"""
+        """
+        Returns a list of indices of all triangles assigned to the patch.
+
+        Arguments:
+            None
+                     
+        Return:
+            list<uint>
+
+        """
         return _geom_swig.TmPatch_getAllTriIndices(*args)
 
     def isTriInside(*args):
-        """isTriInside(self, vector_uint tet) -> vector_bool"""
+        """
+        Returns a list of Booleans describing if triangles tris are 
+        assigned to the patch.
+
+        Arguments:
+            list<uint> tris
+                     
+        Return:
+            list<bool, length = length(tris)>
+
+        """
         return _geom_swig.TmPatch_isTriInside(*args)
 
 TmPatch_swigregister = _geom_swig.TmPatch_swigregister

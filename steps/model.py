@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # STEPS - STochastic Engine for Pathway Simulation
 # Copyright (C) 2007-2009 Okinawa Institute of Science and Technology, Japan.

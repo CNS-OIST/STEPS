@@ -154,7 +154,7 @@ Arguments:
     None
              
 Return:
-    list(steps.model.Spec)
+    list<steps.model.Spec>
 ");
 	std::vector<Spec *> getAllSpecs(void) const;
     
@@ -344,7 +344,7 @@ Arguments:
     None
 
 Return:
-    list(steps.model.SReac)
+    list<steps.model.SReac>
 ");	
 	std::vector<SReac *> getAllSReacs(void) const;
 
@@ -358,7 +358,7 @@ Arguments:
     None
 
 Return:
-    list(steps.model.Spec)
+    list<steps.model.Spec>
 ");		
 	std::vector<Spec *> getAllSpecs(void) const;
 	
@@ -447,7 +447,7 @@ Arguments:
     None
 
 Return:
-    list(steps.model.Reac)
+    list<steps.model.Reac>
 ");
 	std::vector<Reac *> getAllReacs(void) const;
 	
@@ -486,7 +486,7 @@ Arguments:
     None
 
 Return:
-    list(steps.model.Diff)
+    list<steps.model.Diff>
 ");
 	std::vector<Diff *> getAllDiffs(void) const;
 	
@@ -500,7 +500,7 @@ Arguments:
     None
 
 Return:
-    list(steps.model.Spec)
+    list<steps.model.Spec>
 ");
 	std::vector<Spec *> getAllSpecs(void) const;
 	
@@ -688,7 +688,7 @@ Arguments:
     None
 
 Return:
-    list(steps.model.Spec)
+    list<steps.model.Spec>
 ");
 	std::vector<Spec *> getLHS(void) const;
     
@@ -698,7 +698,7 @@ Set a list of references to steps.model.Spec species objects on the
 left hand side of the reaction: the reactants.
 
 Arguments:
-    list(steps.model.Spec) lhs
+    list<steps.model.Spec> lhs
 
 Return:
     None
@@ -714,7 +714,7 @@ Arguments:
     None
 
 Return:
-    list(steps.model.Spec)
+    list<steps.model.Spec>
 ");
 	std::vector<Spec *> getRHS(void) const;
 
@@ -724,7 +724,7 @@ Set a list of references to steps.model.Spec species objects on the
 right hand side of the reaction: the reactants.
 
 Arguments:
-    list(steps.model.Spec) rhs
+    list<steps.model.Spec> rhs
 
 Return:
     None
@@ -779,7 +779,7 @@ Arguments:
     None
 
 Return:
-    list(steps.model.Spec)
+    list<steps.model.Spec>
 ");
 	std::vector<Spec *> getAllSpecs(void) const;
 };
@@ -865,7 +865,7 @@ Arguments:
     None
 
 Return:
-    list(steps.model.Spec)
+    list<steps.model.Spec>
 ");
 	std::vector<Spec *> getOLHS(void) const;
 
@@ -875,7 +875,7 @@ Set a list of references to steps.model.Spec species objects;
 the left hand side outer volume reactants.
 
 Arguments:
-    list(steps.model.Spec) olhs
+    list<steps.model.Spec) olhs
 
 Return:
     None
@@ -891,7 +891,7 @@ Arguments:
     None
 
 Return:
-    list(steps.model.Spec)
+    list<steps.model.Spec>
 ");
 	std::vector<Spec *> getILHS(void) const;
     
@@ -901,7 +901,7 @@ Set a list of references to steps.model.Spec species objects;
 the left hand side inner volume reactants.
 
 Arguments:
-    list(steps.model.Spec) ilhs
+    list<steps.model.Spec> ilhs
 
 Return:
     None
@@ -917,7 +917,7 @@ Arguments:
     None
 
 Return:
-    list(steps.model.Spec)
+    list<steps.model.Spec>
 ");
 	std::vector<Spec *> getSLHS(void) const;
 
@@ -927,7 +927,7 @@ Set a list of references to steps.model.Spec species objects;
 the left hand side surface reactants.
 
 Arguments:
-    list(steps.model.Spec) slhs
+    list<steps.model.Spec> slhs
 
 Return:
     None
@@ -943,7 +943,7 @@ Arguments:
     None
 
 Return:
-    list(steps.model.Spec)
+    list<steps.model.Spec>
 ");
 	std::vector<Spec *> getIRHS(void) const;
     
@@ -953,7 +953,7 @@ Set a list of references to steps.model.Spec species objects;
 the right hand side inner volume reactants.
 
 Arguments:
-    list(steps.model.Spec) irhs
+    list<steps.model.Spec> irhs
 
 Return:
     None
@@ -969,7 +969,7 @@ Arguments:
     None
 
 Return:
-    list(steps.model.Spec)
+    list<steps.model.Spec>
 ");
 	std::vector<Spec *> getSRHS(void) const;
     
@@ -979,7 +979,7 @@ Set a list of references to steps.model.Spec species objects;
 the right hand side surface reactants.
 
 Arguments:
-    list(steps.model.Spec) srhs
+    list<steps.model.Spec> srhs
 
 Return:
     None
@@ -995,7 +995,7 @@ Arguments:
     None
 
 Return:
-    list(steps.model.Spec)
+    list<steps.model.Spec>
 ");
 	std::vector<Spec *> getORHS(void) const;
     
@@ -1005,7 +1005,7 @@ Get a list of references to steps.model.Spec species objects;
 the right hand side outer volume reactants.
 
 Arguments:
-    list(steps.model.Spec) orhs
+    list<steps.model.Spec> orhs
 
 Return:
     None
@@ -1060,7 +1060,7 @@ Arguments:
     None
 
 Return:
-    list(steps.model.Spec)
+    list<steps.model.Spec>
 ");
 	std::vector<Spec *> getAllSpecs(void) const;
 	

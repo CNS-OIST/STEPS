@@ -1022,7 +1022,7 @@ class Model(_object):
             None
                      
         Return:
-            list(steps.model.Spec)
+            list<steps.model.Spec>
 
         """
         return _model_swig.Model_getAllSpecs(*args)
@@ -1235,7 +1235,7 @@ class Surfsys(_object):
             None
 
         Return:
-            list(steps.model.SReac)
+            list<steps.model.SReac>
 
         """
         return _model_swig.Surfsys_getAllSReacs(*args)
@@ -1250,7 +1250,7 @@ class Surfsys(_object):
             None
 
         Return:
-            list(steps.model.Spec)
+            list<steps.model.Spec>
 
         """
         return _model_swig.Surfsys_getAllSpecs(*args)
@@ -1350,7 +1350,7 @@ class Volsys(_object):
             None
 
         Return:
-            list(steps.model.Reac)
+            list<steps.model.Reac>
 
         """
         return _model_swig.Volsys_getAllReacs(*args)
@@ -1392,7 +1392,7 @@ class Volsys(_object):
             None
 
         Return:
-            list(steps.model.Diff)
+            list<steps.model.Diff>
 
         """
         return _model_swig.Volsys_getAllDiffs(*args)
@@ -1407,7 +1407,7 @@ class Volsys(_object):
             None
 
         Return:
-            list(steps.model.Spec)
+            list<steps.model.Spec>
 
         """
         return _model_swig.Volsys_getAllSpecs(*args)
@@ -1617,7 +1617,7 @@ class Reac(_object):
             None
 
         Return:
-            list(steps.model.Spec)
+            list<steps.model.Spec>
 
         """
         return _model_swig.Reac_getLHS(*args)
@@ -1628,7 +1628,7 @@ class Reac(_object):
         left hand side of the reaction: the reactants.
 
         Arguments:
-            list(steps.model.Spec) lhs
+            list<steps.model.Spec> lhs
 
         Return:
             None
@@ -1645,7 +1645,7 @@ class Reac(_object):
             None
 
         Return:
-            list(steps.model.Spec)
+            list<steps.model.Spec>
 
         """
         return _model_swig.Reac_getRHS(*args)
@@ -1656,7 +1656,7 @@ class Reac(_object):
         right hand side of the reaction: the reactants.
 
         Arguments:
-            list(steps.model.Spec) rhs
+            list<steps.model.Spec> rhs
 
         Return:
             None
@@ -1715,7 +1715,7 @@ class Reac(_object):
             None
 
         Return:
-            list(steps.model.Spec)
+            list<steps.model.Spec>
 
         """
         return _model_swig.Reac_getAllSpecs(*args)
@@ -1814,7 +1814,7 @@ class SReac(_object):
             None
 
         Return:
-            list(steps.model.Spec)
+            list<steps.model.Spec>
 
         """
         return _model_swig.SReac_getOLHS(*args)
@@ -1825,7 +1825,7 @@ class SReac(_object):
         the left hand side outer volume reactants.
 
         Arguments:
-            list(steps.model.Spec) olhs
+            list<steps.model.Spec) olhs
 
         Return:
             None
@@ -1842,7 +1842,7 @@ class SReac(_object):
             None
 
         Return:
-            list(steps.model.Spec)
+            list<steps.model.Spec>
 
         """
         return _model_swig.SReac_getILHS(*args)
@@ -1853,7 +1853,7 @@ class SReac(_object):
         the left hand side inner volume reactants.
 
         Arguments:
-            list(steps.model.Spec) ilhs
+            list<steps.model.Spec> ilhs
 
         Return:
             None
@@ -1870,7 +1870,7 @@ class SReac(_object):
             None
 
         Return:
-            list(steps.model.Spec)
+            list<steps.model.Spec>
 
         """
         return _model_swig.SReac_getSLHS(*args)
@@ -1881,7 +1881,7 @@ class SReac(_object):
         the left hand side surface reactants.
 
         Arguments:
-            list(steps.model.Spec) slhs
+            list<steps.model.Spec> slhs
 
         Return:
             None
@@ -1898,7 +1898,7 @@ class SReac(_object):
             None
 
         Return:
-            list(steps.model.Spec)
+            list<steps.model.Spec>
 
         """
         return _model_swig.SReac_getIRHS(*args)
@@ -1909,7 +1909,7 @@ class SReac(_object):
         the right hand side inner volume reactants.
 
         Arguments:
-            list(steps.model.Spec) irhs
+            list<steps.model.Spec> irhs
 
         Return:
             None
@@ -1926,7 +1926,7 @@ class SReac(_object):
             None
 
         Return:
-            list(steps.model.Spec)
+            list<steps.model.Spec>
 
         """
         return _model_swig.SReac_getSRHS(*args)
@@ -1937,7 +1937,7 @@ class SReac(_object):
         the right hand side surface reactants.
 
         Arguments:
-            list(steps.model.Spec) srhs
+            list<steps.model.Spec> srhs
 
         Return:
             None
@@ -1954,7 +1954,7 @@ class SReac(_object):
             None
 
         Return:
-            list(steps.model.Spec)
+            list<steps.model.Spec>
 
         """
         return _model_swig.SReac_getORHS(*args)
@@ -1965,7 +1965,7 @@ class SReac(_object):
         the right hand side outer volume reactants.
 
         Arguments:
-            list(steps.model.Spec) orhs
+            list<steps.model.Spec> orhs
 
         Return:
             None
@@ -2024,7 +2024,7 @@ class SReac(_object):
             None
 
         Return:
-            list(steps.model.Spec)
+            list<steps.model.Spec>
 
         """
         return _model_swig.SReac_getAllSpecs(*args)
