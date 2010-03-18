@@ -63,6 +63,11 @@ namespace steps
 		
 		////////////////////////////////////////////////////////////////////////////////
 		
+        %feature("autodoc", 
+"
+Proxy of C++ random number generator.
+
+");	
 		class RNG
 		{
 			
@@ -71,6 +76,16 @@ namespace steps
 			RNG(unsigned int bufsize);
 			virtual ~RNG(void);
 			
+            %feature("autodoc", 
+"
+Initialize the random number generator with given seed value.
+
+Arguments:
+    uint
+
+Return:
+    None
+");
 			void initialize(unsigned long const & seed);
 			
 			unsigned int get(void);
@@ -93,9 +108,30 @@ namespace steps
 		};
 		
 		////////////////////////////////////////////////////////////////////////////////
-		
+        %feature("autodoc", 
+"
+Equivalent to: create('mt19937', buffer_size)
+
+Arguments:
+    uint buffer_size
+
+Return:
+    steps.rng.RNG
+");		
 		RNG * create_mt19937(unsigned int bufsize);
 		
+        %feature("autodoc", 
+"
+Creates and returns a reference to a steps.rng.RNG random number generator object, 
+which is specified by type and pre-allocates a buffer list with size of buffer_size.
+
+Arguments:
+    * string type
+    * uint buffer_size
+
+Return:
+    steps.rng.RNG
+");	
 		RNG * create(std::string rng_name, unsigned int bufsize);
 		
 		////////////////////////////////////////////////////////////////////////////////

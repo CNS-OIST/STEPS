@@ -1612,7 +1612,7 @@ class Patch(_object):
     def getIComp(*args):
         """
         Returns a reference to the steps.geom.Comp compartment object representing
-         the inner compartment.
+        the inner compartment.
 
         Arguments:
             None
@@ -1626,7 +1626,7 @@ class Patch(_object):
     def getOComp(*args):
         """
         Returns a reference to the steps.geom.Comp compartment object representing
-         the outer compartment.
+        the outer compartment.
 
         Arguments:
             None
@@ -2344,7 +2344,7 @@ class TmPatch(Patch):
     def __init__(self, *args, **kwargs): 
         """
         Returns a reference to the steps.geom.Comp compartment object representing
-         the outer compartment.
+        the outer compartment.
 
         Arguments:
             None

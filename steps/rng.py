@@ -127,43 +127,133 @@ class RNG(_object):
     __swig_destroy__ = _rng.delete_RNG
     __del__ = lambda self : None;
     def initialize(*args):
-        """initialize(self, unsigned long seed)"""
+        """
+        Initialize the random number generator with given seed value.
+
+        Arguments:
+            uint
+
+        Return:
+            None
+
+        """
         return _rng.RNG_initialize(*args)
 
     def get(*args):
-        """get(self) -> unsigned int"""
+        """
+        Initialize the random number generator with given seed value.
+
+        Arguments:
+            uint
+
+        Return:
+            None
+
+        """
         return _rng.RNG_get(*args)
 
     def getUnfII(*args):
-        """getUnfII(self) -> double"""
+        """
+        Initialize the random number generator with given seed value.
+
+        Arguments:
+            uint
+
+        Return:
+            None
+
+        """
         return _rng.RNG_getUnfII(*args)
 
     def getUnfIE(*args):
-        """getUnfIE(self) -> double"""
+        """
+        Initialize the random number generator with given seed value.
+
+        Arguments:
+            uint
+
+        Return:
+            None
+
+        """
         return _rng.RNG_getUnfIE(*args)
 
     def getUnfEE(*args):
-        """getUnfEE(self) -> double"""
+        """
+        Initialize the random number generator with given seed value.
+
+        Arguments:
+            uint
+
+        Return:
+            None
+
+        """
         return _rng.RNG_getUnfEE(*args)
 
     def getUnfIE53(*args):
-        """getUnfIE53(self) -> double"""
+        """
+        Initialize the random number generator with given seed value.
+
+        Arguments:
+            uint
+
+        Return:
+            None
+
+        """
         return _rng.RNG_getUnfIE53(*args)
 
     def getStdExp(*args):
-        """getStdExp(self) -> float"""
+        """
+        Initialize the random number generator with given seed value.
+
+        Arguments:
+            uint
+
+        Return:
+            None
+
+        """
         return _rng.RNG_getStdExp(*args)
 
     def getExp(*args):
-        """getExp(self, double lambda) -> double"""
+        """
+        Initialize the random number generator with given seed value.
+
+        Arguments:
+            uint
+
+        Return:
+            None
+
+        """
         return _rng.RNG_getExp(*args)
 
     def getPsn(*args):
-        """getPsn(self, float lambda) -> long"""
+        """
+        Initialize the random number generator with given seed value.
+
+        Arguments:
+            uint
+
+        Return:
+            None
+
+        """
         return _rng.RNG_getPsn(*args)
 
     def getStdNrm(*args):
-        """getStdNrm(self) -> float"""
+        """
+        Initialize the random number generator with given seed value.
+
+        Arguments:
+            uint
+
+        Return:
+            None
+
+        """
         return _rng.RNG_getStdNrm(*args)
 
 RNG_swigregister = _rng.RNG_swigregister
@@ -171,11 +261,31 @@ RNG_swigregister(RNG)
 
 
 def create_mt19937(*args):
-  """create_mt19937(unsigned int bufsize) -> RNG"""
+  """
+    Equivalent to: create('mt19937', buffer_size)
+
+    Arguments:
+        uint buffer_size
+
+    Return:
+        steps.rng.RNG
+
+    """
   return _rng.create_mt19937(*args)
 
 def create(*args):
-  """create(string rng_name, unsigned int bufsize) -> RNG"""
+  """
+    Creates and returns a reference to a steps.rng.RNG random number generator object, 
+    which is specified by type and pre-allocates a buffer list with size of buffer_size.
+
+    Arguments:
+        * string type
+        * uint buffer_size
+
+    Return:
+        steps.rng.RNG
+
+    """
   return _rng.create(*args)
 
 
