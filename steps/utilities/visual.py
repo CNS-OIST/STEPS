@@ -1,4 +1,14 @@
 
+""" 
+**Note**
+
+This module is preliminary, means some of the functions are still under development.
+Code modification / debugging is wellcomed.
+Please email steps.dev@gmail.com if you would like to share you changes with others.
+
+Graphical Frontend for Mesh Based Simulation
+
+"""
 import wx
 import sys
 
@@ -274,9 +284,9 @@ class SimCtrlPanel(wx.Panel):
         box.AddSpacer(10)
         box.Add(self.runbtn, 0, wx.ALIGN_CENTER, border = 10)
         
-        self.replaybtn = wx.Button(self, -1, "Replay")
-        box.AddSpacer(10)
-        box.Add(self.replaybtn, 0, wx.ALIGN_CENTER, border = 10)
+        #self.replaybtn = wx.Button(self, -1, "Replay")
+        #box.AddSpacer(10)
+        #box.Add(self.replaybtn, 0, wx.ALIGN_CENTER, border = 10)
 
         box.AddSpacer(10)
         btn_box = color_box = wx.BoxSizer(wx.HORIZONTAL)
@@ -371,7 +381,7 @@ class SimCtrlPanel(wx.Panel):
         self.resetbtn.Bind(wx.EVT_BUTTON, self.OnResetView, id = self.resetbtn.GetId())
         self.savebtn.Bind(wx.EVT_BUTTON, self.OnSave, id = self.savebtn.GetId())
         self.loadbtn.Bind(wx.EVT_BUTTON, self.OnLoad, id = self.loadbtn.GetId())       
-        self.replaybtn.Bind(wx.EVT_BUTTON, self.OnReplay, id = self.replaybtn.GetId()) 
+        #self.replaybtn.Bind(wx.EVT_BUTTON, self.OnReplay, id = self.replaybtn.GetId()) 
         
     def refreshSpecList(self, list):
         self.spec_list = list
@@ -470,21 +480,21 @@ class SimCtrlPanel(wx.Panel):
             self.parent.disp_panel.OnDraw()
         dlg.Destroy()
  
-    def OnReplay(self, event):
-        dlg = wx.FileDialog(
-            self, message="Choose a file",
-            defaultDir=os.getcwd(), 
-            defaultFile="",
-            style=wx.OPEN | wx.CHANGE_DIR
-            )
-
-        if dlg.ShowModal() == wx.ID_OK:
-            path = dlg.GetPath()
-            self.solver.restore(path)
-            self.simtime_txt.SetLabel("%e" % (self.solver.getTime()))
-            self.parent.updateSpecs()
-            self.parent.disp_panel.OnDraw()
-        dlg.Destroy()
+    #def OnReplay(self, event):
+    #    dlg = wx.FileDialog(
+    #        self, message="Choose a file",
+    #        defaultDir=os.getcwd(), 
+    #        defaultFile="",
+    #        style=wx.OPEN | wx.CHANGE_DIR
+    #        )
+#
+ #       if dlg.ShowModal() == wx.ID_OK:
+  #          path = dlg.GetPath()
+    #        self.solver.restore(path)
+   #         self.simtime_txt.SetLabel("%e" % (self.solver.getTime()))
+    #        self.parent.updateSpecs()
+    #        self.parent.disp_panel.OnDraw()
+     #   dlg.Destroy()
         
 class SimPanel(wx.SplitterWindow):
     def __init__(self, parent, model, mesh, solver, scale = 1e-6, color_map = [[255,0,0], [0,0,255]]):
@@ -514,8 +524,19 @@ class SimPanel(wx.SplitterWindow):
     
 
 def GUISim(model, mesh, solver, scale = 1e-6, color_map = [[255,0,0], [0,0,255]]):
+    """
+    Create a graphical frontend for a mesh based simulation.
+    
+    Arguements:
+        * steps.model.Model model
+        * steps.geom.Tetmesh mesh
+        * steps.solver.Tetexact solver
+        
+    Example:
+        see examples/diffusion
+    """
     app = wx.App(False)
-    frame = wx.Frame(None, wx.ID_ANY, 'STEPS Visual Simulation', size = (1200,900), style=wx.DEFAULT_FRAME_STYLE)
+    frame = wx.Frame(None, wx.ID_ANY, 'STEPS Visual Frontend for Mesh Based Simulation http://steps.sourceforge.net', size = (1200,900), style=wx.DEFAULT_FRAME_STYLE)
     sim_panel = SimPanel(frame, model, mesh, solver, scale, color_map)
     frame.Centre()
     frame.Show()
