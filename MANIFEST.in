@@ -1,5 +1,7 @@
 recursive-include cpp *.cpp *.hpp *.h
-recursive-include steps *.cpp *.i *.py
+recursive-include steps *.py
+recursive-include swig *.cpp *.i
+recursive-include examples *
 include AUTHORS
 include README
 include gpl-3.0.txt
