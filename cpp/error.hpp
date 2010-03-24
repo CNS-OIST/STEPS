@@ -23,9 +23,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /*
- *  Last Changed Rev:  $Rev: -1 $
- *  Last Changed Date: $Date: $
- *  Last Changed By:   $Author: $
+ *  Last Changed Rev:  $Rev$
+ *  Last Changed Date: $Date$
+ *  Last Changed By:   $Author$
  */
 
 #ifndef STEPS_ERROR_HPP

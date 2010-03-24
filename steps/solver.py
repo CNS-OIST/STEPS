@@ -24,9 +24,9 @@
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-#  Last Changed Rev:  $Rev: 293 $
-#  Last Changed Date: $Date: 2010-03-18 15:05:18 +0900 (Thu, 18 Mar 2010) $
-#  Last Changed By:   $Author: wchen $
+#  Last Changed Rev:  $Rev$
+#  Last Changed Date: $Date$
+#  Last Changed By:   $Author$
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #

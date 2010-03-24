@@ -23,9 +23,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /*
- *  Last Changed Rev:  $Rev: 283 $
- *  Last Changed Date: $Date: 2010-03-12 11:24:37 +0900 (Fri, 12 Mar 2010) $
- *  Last Changed By:   $Author: wchen $
+ *  Last Changed Rev:  $Rev$
+ *  Last Changed Date: $Date$
+ *  Last Changed By:   $Author$
  */
 
 // Standard library & STL headers.
