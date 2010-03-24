@@ -1,37 +1,3 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# STEPS - STochastic Engine for Pathway Simulation
-# Copyright (C) 2007-2009 Okinawa Institute of Science and Technology, Japan.
-# Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#
-# See the file AUTHORS for details.
-#
-# This file is part of STEPS.
-#
-# STEPS is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# STEPS is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program. If not, see <http://www.gnu.org/licenses/>.
-#
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-#  Last Changed Rev:  $Rev$
-#  Last Changed Date: $Date$
-#  Last Changed By:   $Author$
-"""
-**Note**
-
-This module is preliminary, means some of the functions are still under development.
-Code modification / debugging is wellcomed.
-Please email steps.dev@gmail.com if you would like to share you changes with others.
-"""
 
 import wx
 import sys
@@ -60,9 +26,12 @@ try:
 except ImportError:
     haveSTEPS = False
 
-import time    
+import time
+import os   
+import cPickle 
 
-
+wildcard = "STEPS CheckPoint File (*.checkpoint)|*.checkpoint|"     \
+           "All files (*.*)|*.*"
 #----------------------------------------------------------------------
 #
 #                          Mesh Display
@@ -300,9 +269,26 @@ class SimCtrlPanel(wx.Panel):
         box.AddSpacer(10)
         box.Add(self.advance_text, 0, wx.ALIGN_CENTER, border = 10)
         
+
         self.runbtn = wx.Button(self, -1, "Run")
         box.AddSpacer(10)
         box.Add(self.runbtn, 0, wx.ALIGN_CENTER, border = 10)
+        
+        self.replaybtn = wx.Button(self, -1, "Replay")
+        box.AddSpacer(10)
+        box.Add(self.replaybtn, 0, wx.ALIGN_CENTER, border = 10)
+
+        box.AddSpacer(10)
+        btn_box = color_box = wx.BoxSizer(wx.HORIZONTAL)
+        self.savebtn = wx.Button(self, -1, "Save")
+        btn_box.AddSpacer(5)
+        btn_box.Add(self.savebtn, 0, wx.ALIGN_CENTER, border = 10)
+        
+        self.loadbtn = wx.Button(self, -1, "Load")
+        btn_box.AddSpacer(5)
+        btn_box.Add(self.loadbtn, 0, wx.ALIGN_CENTER, border = 10)
+        
+        box.Add(btn_box, 0, wx.ALIGN_CENTER, border = 5)
         
         box.AddSpacer(20)
         box.Add(wx.StaticText(self, -1, "Species"), 0, wx.ALIGN_CENTER, border = 10)
@@ -382,7 +368,10 @@ class SimCtrlPanel(wx.Panel):
         self.runbtn.Bind(wx.EVT_BUTTON, self.OnRun, id = self.runbtn.GetId())
         self.rotatebox.Bind(wx.EVT_RADIOBOX, self.OnCordChange, id = self.rotatebox.GetId())
         self.rotate_slider.Bind(wx.EVT_SCROLL, self.OnRotateDisp, id = self.rotate_slider.GetId()) 
-        self.resetbtn.Bind(wx.EVT_BUTTON, self.OnResetView, id = self.resetbtn.GetId())       
+        self.resetbtn.Bind(wx.EVT_BUTTON, self.OnResetView, id = self.resetbtn.GetId())
+        self.savebtn.Bind(wx.EVT_BUTTON, self.OnSave, id = self.savebtn.GetId())
+        self.loadbtn.Bind(wx.EVT_BUTTON, self.OnLoad, id = self.loadbtn.GetId())       
+        self.replaybtn.Bind(wx.EVT_BUTTON, self.OnReplay, id = self.replaybtn.GetId()) 
         
     def refreshSpecList(self, list):
         self.spec_list = list
@@ -451,7 +440,52 @@ class SimCtrlPanel(wx.Panel):
             self.parent.updateSpecs()
             self.parent.disp_panel.OnDraw()
             self.Update()
+            
+    def OnSave(self,event):
+        dlg = wx.FileDialog(
+            self, message="Save file as ...", defaultDir=os.getcwd(), 
+            defaultFile="Untitled.checkpoint", wildcard=wildcard, style=wx.SAVE
+            )
 
+        dlg.SetFilterIndex(2)
+        if dlg.ShowModal() == wx.ID_OK:
+            path = dlg.GetPath()
+            self.solver.checkpoint(path)
+        dlg.Destroy()
+        
+    def OnLoad(self, event):
+        dlg = wx.FileDialog(
+            self, message="Choose a file",
+            defaultDir=os.getcwd(), 
+            defaultFile="",
+            wildcard=wildcard,
+            style=wx.OPEN | wx.CHANGE_DIR
+            )
+
+        if dlg.ShowModal() == wx.ID_OK:
+            path = dlg.GetPath()
+            self.solver.restore(path)
+            self.simtime_txt.SetLabel("%e" % (self.solver.getTime()))
+            self.parent.updateSpecs()
+            self.parent.disp_panel.OnDraw()
+        dlg.Destroy()
+ 
+    def OnReplay(self, event):
+        dlg = wx.FileDialog(
+            self, message="Choose a file",
+            defaultDir=os.getcwd(), 
+            defaultFile="",
+            style=wx.OPEN | wx.CHANGE_DIR
+            )
+
+        if dlg.ShowModal() == wx.ID_OK:
+            path = dlg.GetPath()
+            self.solver.restore(path)
+            self.simtime_txt.SetLabel("%e" % (self.solver.getTime()))
+            self.parent.updateSpecs()
+            self.parent.disp_panel.OnDraw()
+        dlg.Destroy()
+        
 class SimPanel(wx.SplitterWindow):
     def __init__(self, parent, model, mesh, solver, scale = 1e-6, color_map = [[255,0,0], [0,0,255]]):
         wx.SplitterWindow.__init__(self, parent, -1)
@@ -480,25 +514,6 @@ class SimPanel(wx.SplitterWindow):
     
 
 def GUISim(model, mesh, solver, scale = 1e-6, color_map = [[255,0,0], [0,0,255]]):
-    """
-    Create Graphical Frontend for the simulation.
-    
-    Example::
-        
-        steps.utilities.visual.GUISim(model, mesh, solver)
-    
-    Arguments:
-        
-        * steps.model.Model model
-        * steps.geom.Tetmesh mesh
-        * steps.solver.Tetexact solver
-        
-    Key Arguments:
-    
-        * scale: Scale translate between mesh and visual display.
-        * color_map: Color mapping of species
-        
-    """
     app = wx.App(False)
     frame = wx.Frame(None, wx.ID_ANY, 'STEPS Visual Simulation', size = (1200,900), style=wx.DEFAULT_FRAME_STYLE)
     sim_panel = SimPanel(frame, model, mesh, solver, scale, color_map)
