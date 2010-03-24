@@ -111,30 +111,30 @@ class Wmdirect(solver_swig.Wmdirect) :
         
     def run(self, end_time, cp_interval = 0.0):
         if cp_interval > 0.0:
-            while (end_time - _solver_swig.Wmdirect_getTime(self)) > cp_interval:
-                _solver_swig.Wmdirect_advance(self, cp_interval)
+            while (end_time - _solver_swig.API_getTime(self)) > cp_interval:
+                _solver_swig.API_advance(self, cp_interval)
                 self.checkpoint()
-            _solver_swig.Wmdirect_run(self, end_time)
+            _solver_swig.API_run(self, end_time)
             self.checkpoint()
         else:
-            _solver_swig.Wmdirect_run(self, end_time)
+            _solver_swig.API_run(self, end_time)
     
     def advance(self, advance_time, cp_interval = 0.0):
         if cp_interval > 0.0:
             remain = advance_time
             while remain > cp_interval:
-                _solver_swig.Wmdirect_advance(self, cp_interval)
+                _solver_swig.API_advance(self, cp_interval)
                 self.checkpoint()
                 remain -= cp_interval
-            _solver_swig.Wmdirect_advance(self, remain)
+            _solver_swig.API_advance(self, remain)
             self.checkpoint()
         else:
-            _solver_swig.Wmdirect_advance(self, advance_time)        
+            _solver_swig.API_advance(self, advance_time)        
     
     
     def getFile(self, name):
         if name == None:
-            filename = "%s%e%s" % (self.cp_prefix, _solver_swig.Wmdirect_getTime(self), ".checkpoint")
+            filename = "%s%e%s" % (self.cp_prefix, _solver_swig.API_getTime(self), ".checkpoint")
             print "\nCheck pointing -> ", filename
             output = file(filename, "wb")
         else:
@@ -150,8 +150,8 @@ class Wmdirect(solver_swig.Wmdirect) :
         # check point general info
         info = {}
         info["Solver"] = "Wmdirect"
-        info["SimTime"] = _solver_swig.Wmdirect_getTime(self)
-        info["SimNSteps"] = _solver_swig.Wmdirect_getNSteps(self)
+        info["SimTime"] = _solver_swig.API_getTime(self)
+        info["SimNSteps"] = _solver_swig.API_getNSteps(self)
         spec_ids = []
         for spec in specs:
             spec_ids.append(spec.id)
@@ -264,8 +264,8 @@ class Wmdirect(solver_swig.Wmdirect) :
         print "\nPatches:"
         print info["Patches"]
         
-        _solver_swig.Wmdirect_setTime(self, info["SimTime"])
-        _solver_swig.Wmdirect_setNSteps(self, info["SimNSteps"])
+        _solver_swig.API_setTime(self, info["SimTime"])
+        _solver_swig.API_setNSteps(self, info["SimNSteps"])
         
         print "\nRestoring Data..."
         while(True):
@@ -306,6 +306,8 @@ class Tetexact(solver_swig.Tetexact) :
             * steps.geom.Tetmesh mesh
             * steps.rng.RNG rng
         """
+        
+        print "Create tetexact"
         this = _solver_swig.new_Tetexact(model, geom, rng)
         try: self.this.append(this)
         except: self.this = this
@@ -314,36 +316,37 @@ class Tetexact(solver_swig.Tetexact) :
         self.model = model
         self.geom = geom
         
+        
     def setCheckPointPrefix(self, prefix):
         """Setup check pointing file prefix including path"""
         self.cp_prefix = prefix
         
     def run(self, end_time, cp_interval = 0.0):
         if cp_interval > 0.0:
-            while (end_time - _solver_swig.Tetexact_getTime(self)) > cp_interval:
-                _solver_swig.Tetexact_advance(self, cp_interval)
+            while (end_time - _solver_swig.API_getTime(self)) > cp_interval:
+                _solver_swig.API_advance(self, cp_interval)
                 self.checkpoint()
-            _solver_swig.Tetexact_run(self, end_time)
+            _solver_swig.API_run(self, end_time)
             self.checkpoint()
         else:
-            _solver_swig.Tetexact_run(self, end_time)
+            _solver_swig.API_run(self, end_time)
     
     def advance(self, advance_time, cp_interval = 0.0):
         if cp_interval > 0.0:
             remain = advance_time
             while remain > cp_interval:
-                _solver_swig.Tetexact_advance(self, cp_interval)
+                _solver_swig.API_advance(self, cp_interval)
                 self.checkpoint()
                 remain -= cp_interval
-            _solver_swig.Tetexact_advance(self, remain)
+            _solver_swig.API_advance(self, remain)
             self.checkpoint()
         else:
-            _solver_swig.Tetexact_advance(self, advance_time)        
+            _solver_swig.API_advance(self, advance_time)        
     
     
     def getFile(self, name):
         if name == None:
-            filename = "%s%e%s" % (self.cp_prefix, _solver_swig.Tetexact_getTime(self), ".checkpoint")
+            filename = "%s%e%s" % (self.cp_prefix, _solver_swig.API_getTime(self), ".checkpoint")
             print "\nCheck pointing -> ", filename
             output = file(filename, "wb")
         else:
@@ -361,8 +364,8 @@ class Tetexact(solver_swig.Tetexact) :
         # check point general info
         info = {}
         info["Solver"] = "Tetexact"
-        info["SimTime"] = _solver_swig.Tetexact_getTime(self)
-        info["SimNSteps"] = _solver_swig.Tetexact_getNSteps(self)
+        info["SimTime"] = _solver_swig.API_getTime(self)
+        info["SimNSteps"] = _solver_swig.API_getNSteps(self)
         info["NTets"] = ntets
         info["NTris"] = ntris
         spec_ids = []
@@ -439,8 +442,8 @@ class Tetexact(solver_swig.Tetexact) :
         print "\nSpecies:"
         print info["Specs"]
         
-        _solver_swig.Tetexact_setTime(self, info["SimTime"])
-        _solver_swig.Tetexact_setNSteps(self, info["SimNSteps"])
+        _solver_swig.API_setTime(self, info["SimTime"])
+        _solver_swig.API_setNSteps(self, info["SimNSteps"])
         
         print "\nRestoring Data..."
         while(True):

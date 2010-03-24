@@ -2473,17 +2473,20 @@ SWIG_Python_MustGetPtr(PyObject *obj, swig_type_info *ty, int argnum, int flags)
 #define SWIGTYPE_p_steps__ArgErr swig_types[2]
 #define SWIGTYPE_p_steps__Err swig_types[3]
 #define SWIGTYPE_p_steps__NotImplErr swig_types[4]
-#define SWIGTYPE_p_steps__solver__API swig_types[5]
-#define SWIGTYPE_p_steps__tetexact__Tetexact swig_types[6]
-#define SWIGTYPE_p_steps__wmdirect__Wmdirect swig_types[7]
-#define SWIGTYPE_p_steps__wmrk4__Wmrk4 swig_types[8]
-#define SWIGTYPE_p_swig__PySwigIterator swig_types[9]
-#define SWIGTYPE_p_unsigned_char swig_types[10]
-#define SWIGTYPE_p_unsigned_int swig_types[11]
-#define SWIGTYPE_p_unsigned_long swig_types[12]
-#define SWIGTYPE_p_unsigned_short swig_types[13]
-static swig_type_info *swig_types[15];
-static swig_module_info swig_module = {swig_types, 14, 0, 0, 0, 0};
+#define SWIGTYPE_p_steps__model__Model swig_types[5]
+#define SWIGTYPE_p_steps__rng__RNG swig_types[6]
+#define SWIGTYPE_p_steps__solver__API swig_types[7]
+#define SWIGTYPE_p_steps__tetexact__Tetexact swig_types[8]
+#define SWIGTYPE_p_steps__wm__Geom swig_types[9]
+#define SWIGTYPE_p_steps__wmdirect__Wmdirect swig_types[10]
+#define SWIGTYPE_p_steps__wmrk4__Wmrk4 swig_types[11]
+#define SWIGTYPE_p_swig__PySwigIterator swig_types[12]
+#define SWIGTYPE_p_unsigned_char swig_types[13]
+#define SWIGTYPE_p_unsigned_int swig_types[14]
+#define SWIGTYPE_p_unsigned_long swig_types[15]
+#define SWIGTYPE_p_unsigned_short swig_types[16]
+static swig_type_info *swig_types[18];
+static swig_module_info swig_module = {swig_types, 17, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -4521,6 +4524,38 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_API_getTime(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::solver::API *arg1 = (steps::solver::API *) 0 ;
+  double result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:API_getTime",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__solver__API, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "API_getTime" "', argument " "1"" of type '" "steps::solver::API const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::solver::API * >(argp1);
+  {
+    try {
+      result = (double)((steps::solver::API const *)arg1)->getTime();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_From_double(static_cast< double >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_API_advance(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   steps::solver::API *arg1 = (steps::solver::API *) 0 ;
@@ -4649,38 +4684,6 @@ SWIGINTERN PyObject *_wrap_API_getDT(PyObject *SWIGUNUSEDPARM(self), PyObject *a
   {
     try {
       result = (double)((steps::solver::API const *)arg1)->getDT();
-    } catch (steps::ArgErr & ae) {
-      PyErr_SetString(PyExc_NameError, ae.getMsg());
-      return NULL;
-    } catch (steps::NotImplErr & nie) {
-      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
-      return NULL;
-    }
-  }
-  resultobj = SWIG_From_double(static_cast< double >(result));
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_API_getTime(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  steps::solver::API *arg1 = (steps::solver::API *) 0 ;
-  double result;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  
-  if (!PyArg_ParseTuple(args,(char *)"O:API_getTime",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__solver__API, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "API_getTime" "', argument " "1"" of type '" "steps::solver::API const *""'"); 
-  }
-  arg1 = reinterpret_cast< steps::solver::API * >(argp1);
-  {
-    try {
-      result = (double)((steps::solver::API const *)arg1)->getTime();
     } catch (steps::ArgErr & ae) {
       PyErr_SetString(PyExc_NameError, ae.getMsg());
       return NULL;
@@ -9528,6 +9531,56 @@ SWIGINTERN PyObject *API_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *
   return SWIG_Py_Void();
 }
 
+SWIGINTERN PyObject *_wrap_new_Wmrk4(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::model::Model *arg1 = (steps::model::Model *) 0 ;
+  steps::wm::Geom *arg2 = (steps::wm::Geom *) 0 ;
+  steps::rng::RNG *arg3 = (steps::rng::RNG *) 0 ;
+  steps::wmrk4::Wmrk4 *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  void *argp3 = 0 ;
+  int res3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:new_Wmrk4",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__model__Model, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_Wmrk4" "', argument " "1"" of type '" "steps::model::Model *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::model::Model * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_p_steps__wm__Geom, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "new_Wmrk4" "', argument " "2"" of type '" "steps::wm::Geom *""'"); 
+  }
+  arg2 = reinterpret_cast< steps::wm::Geom * >(argp2);
+  res3 = SWIG_ConvertPtr(obj2, &argp3,SWIGTYPE_p_steps__rng__RNG, 0 |  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "new_Wmrk4" "', argument " "3"" of type '" "steps::rng::RNG *""'"); 
+  }
+  arg3 = reinterpret_cast< steps::rng::RNG * >(argp3);
+  {
+    try {
+      result = (steps::wmrk4::Wmrk4 *)new steps::wmrk4::Wmrk4(arg1,arg2,arg3);
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_steps__wmrk4__Wmrk4, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_delete_Wmrk4(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   steps::wmrk4::Wmrk4 *arg1 = (steps::wmrk4::Wmrk4 *) 0 ;
@@ -9560,12 +9613,293 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_Wmrk4_getSolverName(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::wmrk4::Wmrk4 *arg1 = (steps::wmrk4::Wmrk4 *) 0 ;
+  std::string result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Wmrk4_getSolverName",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__wmrk4__Wmrk4, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Wmrk4_getSolverName" "', argument " "1"" of type '" "steps::wmrk4::Wmrk4 const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::wmrk4::Wmrk4 * >(argp1);
+  {
+    try {
+      result = ((steps::wmrk4::Wmrk4 const *)arg1)->getSolverName();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Wmrk4_getSolverDesc(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::wmrk4::Wmrk4 *arg1 = (steps::wmrk4::Wmrk4 *) 0 ;
+  std::string result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Wmrk4_getSolverDesc",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__wmrk4__Wmrk4, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Wmrk4_getSolverDesc" "', argument " "1"" of type '" "steps::wmrk4::Wmrk4 const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::wmrk4::Wmrk4 * >(argp1);
+  {
+    try {
+      result = ((steps::wmrk4::Wmrk4 const *)arg1)->getSolverDesc();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Wmrk4_getSolverAuthors(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::wmrk4::Wmrk4 *arg1 = (steps::wmrk4::Wmrk4 *) 0 ;
+  std::string result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Wmrk4_getSolverAuthors",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__wmrk4__Wmrk4, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Wmrk4_getSolverAuthors" "', argument " "1"" of type '" "steps::wmrk4::Wmrk4 const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::wmrk4::Wmrk4 * >(argp1);
+  {
+    try {
+      result = ((steps::wmrk4::Wmrk4 const *)arg1)->getSolverAuthors();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Wmrk4_getSolverEmail(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::wmrk4::Wmrk4 *arg1 = (steps::wmrk4::Wmrk4 *) 0 ;
+  std::string result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Wmrk4_getSolverEmail",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__wmrk4__Wmrk4, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Wmrk4_getSolverEmail" "', argument " "1"" of type '" "steps::wmrk4::Wmrk4 const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::wmrk4::Wmrk4 * >(argp1);
+  {
+    try {
+      result = ((steps::wmrk4::Wmrk4 const *)arg1)->getSolverEmail();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Wmrk4_reset(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::wmrk4::Wmrk4 *arg1 = (steps::wmrk4::Wmrk4 *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Wmrk4_reset",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__wmrk4__Wmrk4, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Wmrk4_reset" "', argument " "1"" of type '" "steps::wmrk4::Wmrk4 *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::wmrk4::Wmrk4 * >(argp1);
+  {
+    try {
+      (arg1)->reset();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Wmrk4_run(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::wmrk4::Wmrk4 *arg1 = (steps::wmrk4::Wmrk4 *) 0 ;
+  double arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  double val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:Wmrk4_run",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__wmrk4__Wmrk4, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Wmrk4_run" "', argument " "1"" of type '" "steps::wmrk4::Wmrk4 *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::wmrk4::Wmrk4 * >(argp1);
+  ecode2 = SWIG_AsVal_double(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Wmrk4_run" "', argument " "2"" of type '" "double""'");
+  } 
+  arg2 = static_cast< double >(val2);
+  {
+    try {
+      (arg1)->run(arg2);
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Wmrk4_getTime(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::wmrk4::Wmrk4 *arg1 = (steps::wmrk4::Wmrk4 *) 0 ;
+  double result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Wmrk4_getTime",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__wmrk4__Wmrk4, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Wmrk4_getTime" "', argument " "1"" of type '" "steps::wmrk4::Wmrk4 const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::wmrk4::Wmrk4 * >(argp1);
+  {
+    try {
+      result = (double)((steps::wmrk4::Wmrk4 const *)arg1)->getTime();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_From_double(static_cast< double >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *Wmrk4_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *obj;
   if (!PyArg_ParseTuple(args,(char*)"O|swigregister", &obj)) return NULL;
   SWIG_TypeNewClientData(SWIGTYPE_p_steps__wmrk4__Wmrk4, SWIG_NewClientData(obj));
   return SWIG_Py_Void();
 }
+
+SWIGINTERN PyObject *_wrap_new_Wmdirect(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::model::Model *arg1 = (steps::model::Model *) 0 ;
+  steps::wm::Geom *arg2 = (steps::wm::Geom *) 0 ;
+  steps::rng::RNG *arg3 = (steps::rng::RNG *) 0 ;
+  steps::wmdirect::Wmdirect *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  void *argp3 = 0 ;
+  int res3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:new_Wmdirect",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__model__Model, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_Wmdirect" "', argument " "1"" of type '" "steps::model::Model *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::model::Model * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_p_steps__wm__Geom, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "new_Wmdirect" "', argument " "2"" of type '" "steps::wm::Geom *""'"); 
+  }
+  arg2 = reinterpret_cast< steps::wm::Geom * >(argp2);
+  res3 = SWIG_ConvertPtr(obj2, &argp3,SWIGTYPE_p_steps__rng__RNG, 0 |  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "new_Wmdirect" "', argument " "3"" of type '" "steps::rng::RNG *""'"); 
+  }
+  arg3 = reinterpret_cast< steps::rng::RNG * >(argp3);
+  {
+    try {
+      result = (steps::wmdirect::Wmdirect *)new steps::wmdirect::Wmdirect(arg1,arg2,arg3);
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_steps__wmdirect__Wmdirect, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
 
 SWIGINTERN PyObject *_wrap_delete_Wmdirect(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
@@ -9599,12 +9933,293 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_Wmdirect_getSolverName(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::wmdirect::Wmdirect *arg1 = (steps::wmdirect::Wmdirect *) 0 ;
+  std::string result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Wmdirect_getSolverName",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__wmdirect__Wmdirect, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Wmdirect_getSolverName" "', argument " "1"" of type '" "steps::wmdirect::Wmdirect const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::wmdirect::Wmdirect * >(argp1);
+  {
+    try {
+      result = ((steps::wmdirect::Wmdirect const *)arg1)->getSolverName();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Wmdirect_getSolverDesc(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::wmdirect::Wmdirect *arg1 = (steps::wmdirect::Wmdirect *) 0 ;
+  std::string result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Wmdirect_getSolverDesc",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__wmdirect__Wmdirect, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Wmdirect_getSolverDesc" "', argument " "1"" of type '" "steps::wmdirect::Wmdirect const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::wmdirect::Wmdirect * >(argp1);
+  {
+    try {
+      result = ((steps::wmdirect::Wmdirect const *)arg1)->getSolverDesc();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Wmdirect_getSolverAuthors(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::wmdirect::Wmdirect *arg1 = (steps::wmdirect::Wmdirect *) 0 ;
+  std::string result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Wmdirect_getSolverAuthors",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__wmdirect__Wmdirect, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Wmdirect_getSolverAuthors" "', argument " "1"" of type '" "steps::wmdirect::Wmdirect const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::wmdirect::Wmdirect * >(argp1);
+  {
+    try {
+      result = ((steps::wmdirect::Wmdirect const *)arg1)->getSolverAuthors();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Wmdirect_getSolverEmail(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::wmdirect::Wmdirect *arg1 = (steps::wmdirect::Wmdirect *) 0 ;
+  std::string result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Wmdirect_getSolverEmail",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__wmdirect__Wmdirect, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Wmdirect_getSolverEmail" "', argument " "1"" of type '" "steps::wmdirect::Wmdirect const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::wmdirect::Wmdirect * >(argp1);
+  {
+    try {
+      result = ((steps::wmdirect::Wmdirect const *)arg1)->getSolverEmail();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Wmdirect_reset(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::wmdirect::Wmdirect *arg1 = (steps::wmdirect::Wmdirect *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Wmdirect_reset",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__wmdirect__Wmdirect, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Wmdirect_reset" "', argument " "1"" of type '" "steps::wmdirect::Wmdirect *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::wmdirect::Wmdirect * >(argp1);
+  {
+    try {
+      (arg1)->reset();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Wmdirect_run(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::wmdirect::Wmdirect *arg1 = (steps::wmdirect::Wmdirect *) 0 ;
+  double arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  double val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:Wmdirect_run",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__wmdirect__Wmdirect, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Wmdirect_run" "', argument " "1"" of type '" "steps::wmdirect::Wmdirect *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::wmdirect::Wmdirect * >(argp1);
+  ecode2 = SWIG_AsVal_double(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Wmdirect_run" "', argument " "2"" of type '" "double""'");
+  } 
+  arg2 = static_cast< double >(val2);
+  {
+    try {
+      (arg1)->run(arg2);
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Wmdirect_getTime(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::wmdirect::Wmdirect *arg1 = (steps::wmdirect::Wmdirect *) 0 ;
+  double result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Wmdirect_getTime",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__wmdirect__Wmdirect, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Wmdirect_getTime" "', argument " "1"" of type '" "steps::wmdirect::Wmdirect const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::wmdirect::Wmdirect * >(argp1);
+  {
+    try {
+      result = (double)((steps::wmdirect::Wmdirect const *)arg1)->getTime();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_From_double(static_cast< double >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *Wmdirect_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *obj;
   if (!PyArg_ParseTuple(args,(char*)"O|swigregister", &obj)) return NULL;
   SWIG_TypeNewClientData(SWIGTYPE_p_steps__wmdirect__Wmdirect, SWIG_NewClientData(obj));
   return SWIG_Py_Void();
 }
+
+SWIGINTERN PyObject *_wrap_new_Tetexact(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::model::Model *arg1 = (steps::model::Model *) 0 ;
+  steps::wm::Geom *arg2 = (steps::wm::Geom *) 0 ;
+  steps::rng::RNG *arg3 = (steps::rng::RNG *) 0 ;
+  steps::tetexact::Tetexact *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  void *argp3 = 0 ;
+  int res3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:new_Tetexact",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__model__Model, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_Tetexact" "', argument " "1"" of type '" "steps::model::Model *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::model::Model * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_p_steps__wm__Geom, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "new_Tetexact" "', argument " "2"" of type '" "steps::wm::Geom *""'"); 
+  }
+  arg2 = reinterpret_cast< steps::wm::Geom * >(argp2);
+  res3 = SWIG_ConvertPtr(obj2, &argp3,SWIGTYPE_p_steps__rng__RNG, 0 |  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "new_Tetexact" "', argument " "3"" of type '" "steps::rng::RNG *""'"); 
+  }
+  arg3 = reinterpret_cast< steps::rng::RNG * >(argp3);
+  {
+    try {
+      result = (steps::tetexact::Tetexact *)new steps::tetexact::Tetexact(arg1,arg2,arg3);
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_steps__tetexact__Tetexact, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
 
 SWIGINTERN PyObject *_wrap_delete_Tetexact(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
@@ -9632,6 +10247,237 @@ SWIGINTERN PyObject *_wrap_delete_Tetexact(PyObject *SWIGUNUSEDPARM(self), PyObj
     }
   }
   resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Tetexact_getSolverName(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::tetexact::Tetexact *arg1 = (steps::tetexact::Tetexact *) 0 ;
+  std::string result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Tetexact_getSolverName",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__tetexact__Tetexact, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Tetexact_getSolverName" "', argument " "1"" of type '" "steps::tetexact::Tetexact const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::tetexact::Tetexact * >(argp1);
+  {
+    try {
+      result = ((steps::tetexact::Tetexact const *)arg1)->getSolverName();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Tetexact_getSolverDesc(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::tetexact::Tetexact *arg1 = (steps::tetexact::Tetexact *) 0 ;
+  std::string result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Tetexact_getSolverDesc",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__tetexact__Tetexact, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Tetexact_getSolverDesc" "', argument " "1"" of type '" "steps::tetexact::Tetexact const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::tetexact::Tetexact * >(argp1);
+  {
+    try {
+      result = ((steps::tetexact::Tetexact const *)arg1)->getSolverDesc();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Tetexact_getSolverAuthors(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::tetexact::Tetexact *arg1 = (steps::tetexact::Tetexact *) 0 ;
+  std::string result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Tetexact_getSolverAuthors",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__tetexact__Tetexact, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Tetexact_getSolverAuthors" "', argument " "1"" of type '" "steps::tetexact::Tetexact const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::tetexact::Tetexact * >(argp1);
+  {
+    try {
+      result = ((steps::tetexact::Tetexact const *)arg1)->getSolverAuthors();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Tetexact_getSolverEmail(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::tetexact::Tetexact *arg1 = (steps::tetexact::Tetexact *) 0 ;
+  std::string result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Tetexact_getSolverEmail",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__tetexact__Tetexact, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Tetexact_getSolverEmail" "', argument " "1"" of type '" "steps::tetexact::Tetexact const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::tetexact::Tetexact * >(argp1);
+  {
+    try {
+      result = ((steps::tetexact::Tetexact const *)arg1)->getSolverEmail();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Tetexact_reset(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::tetexact::Tetexact *arg1 = (steps::tetexact::Tetexact *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Tetexact_reset",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__tetexact__Tetexact, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Tetexact_reset" "', argument " "1"" of type '" "steps::tetexact::Tetexact *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::tetexact::Tetexact * >(argp1);
+  {
+    try {
+      (arg1)->reset();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Tetexact_run(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::tetexact::Tetexact *arg1 = (steps::tetexact::Tetexact *) 0 ;
+  double arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  double val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:Tetexact_run",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__tetexact__Tetexact, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Tetexact_run" "', argument " "1"" of type '" "steps::tetexact::Tetexact *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::tetexact::Tetexact * >(argp1);
+  ecode2 = SWIG_AsVal_double(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Tetexact_run" "', argument " "2"" of type '" "double""'");
+  } 
+  arg2 = static_cast< double >(val2);
+  {
+    try {
+      (arg1)->run(arg2);
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Tetexact_getTime(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::tetexact::Tetexact *arg1 = (steps::tetexact::Tetexact *) 0 ;
+  double result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Tetexact_getTime",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__tetexact__Tetexact, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Tetexact_getTime" "', argument " "1"" of type '" "steps::tetexact::Tetexact const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::tetexact::Tetexact * >(argp1);
+  {
+    try {
+      result = (double)((steps::tetexact::Tetexact const *)arg1)->getTime();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_From_double(static_cast< double >(result));
   return resultobj;
 fail:
   return NULL;
@@ -9680,11 +10526,11 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"API_getSolverEmail", _wrap_API_getSolverEmail, METH_VARARGS, NULL},
 	 { (char *)"API_reset", _wrap_API_reset, METH_VARARGS, NULL},
 	 { (char *)"API_run", _wrap_API_run, METH_VARARGS, NULL},
+	 { (char *)"API_getTime", _wrap_API_getTime, METH_VARARGS, NULL},
 	 { (char *)"API_advance", _wrap_API_advance, METH_VARARGS, NULL},
 	 { (char *)"API_step", _wrap_API_step, METH_VARARGS, NULL},
 	 { (char *)"API_setDT", _wrap_API_setDT, METH_VARARGS, NULL},
 	 { (char *)"API_getDT", _wrap_API_getDT, METH_VARARGS, NULL},
-	 { (char *)"API_getTime", _wrap_API_getTime, METH_VARARGS, NULL},
 	 { (char *)"API_setTime", _wrap_API_setTime, METH_VARARGS, NULL},
 	 { (char *)"API_getA0", _wrap_API_getA0, METH_VARARGS, NULL},
 	 { (char *)"API_getNSteps", _wrap_API_getNSteps, METH_VARARGS, NULL},
@@ -9765,11 +10611,35 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"API_getTriSReacH", _wrap_API_getTriSReacH, METH_VARARGS, NULL},
 	 { (char *)"API_getTriSReacA", _wrap_API_getTriSReacA, METH_VARARGS, NULL},
 	 { (char *)"API_swigregister", API_swigregister, METH_VARARGS, NULL},
+	 { (char *)"new_Wmrk4", _wrap_new_Wmrk4, METH_VARARGS, NULL},
 	 { (char *)"delete_Wmrk4", _wrap_delete_Wmrk4, METH_VARARGS, NULL},
+	 { (char *)"Wmrk4_getSolverName", _wrap_Wmrk4_getSolverName, METH_VARARGS, NULL},
+	 { (char *)"Wmrk4_getSolverDesc", _wrap_Wmrk4_getSolverDesc, METH_VARARGS, NULL},
+	 { (char *)"Wmrk4_getSolverAuthors", _wrap_Wmrk4_getSolverAuthors, METH_VARARGS, NULL},
+	 { (char *)"Wmrk4_getSolverEmail", _wrap_Wmrk4_getSolverEmail, METH_VARARGS, NULL},
+	 { (char *)"Wmrk4_reset", _wrap_Wmrk4_reset, METH_VARARGS, NULL},
+	 { (char *)"Wmrk4_run", _wrap_Wmrk4_run, METH_VARARGS, NULL},
+	 { (char *)"Wmrk4_getTime", _wrap_Wmrk4_getTime, METH_VARARGS, NULL},
 	 { (char *)"Wmrk4_swigregister", Wmrk4_swigregister, METH_VARARGS, NULL},
+	 { (char *)"new_Wmdirect", _wrap_new_Wmdirect, METH_VARARGS, NULL},
 	 { (char *)"delete_Wmdirect", _wrap_delete_Wmdirect, METH_VARARGS, NULL},
+	 { (char *)"Wmdirect_getSolverName", _wrap_Wmdirect_getSolverName, METH_VARARGS, NULL},
+	 { (char *)"Wmdirect_getSolverDesc", _wrap_Wmdirect_getSolverDesc, METH_VARARGS, NULL},
+	 { (char *)"Wmdirect_getSolverAuthors", _wrap_Wmdirect_getSolverAuthors, METH_VARARGS, NULL},
+	 { (char *)"Wmdirect_getSolverEmail", _wrap_Wmdirect_getSolverEmail, METH_VARARGS, NULL},
+	 { (char *)"Wmdirect_reset", _wrap_Wmdirect_reset, METH_VARARGS, NULL},
+	 { (char *)"Wmdirect_run", _wrap_Wmdirect_run, METH_VARARGS, NULL},
+	 { (char *)"Wmdirect_getTime", _wrap_Wmdirect_getTime, METH_VARARGS, NULL},
 	 { (char *)"Wmdirect_swigregister", Wmdirect_swigregister, METH_VARARGS, NULL},
+	 { (char *)"new_Tetexact", _wrap_new_Tetexact, METH_VARARGS, NULL},
 	 { (char *)"delete_Tetexact", _wrap_delete_Tetexact, METH_VARARGS, NULL},
+	 { (char *)"Tetexact_getSolverName", _wrap_Tetexact_getSolverName, METH_VARARGS, NULL},
+	 { (char *)"Tetexact_getSolverDesc", _wrap_Tetexact_getSolverDesc, METH_VARARGS, NULL},
+	 { (char *)"Tetexact_getSolverAuthors", _wrap_Tetexact_getSolverAuthors, METH_VARARGS, NULL},
+	 { (char *)"Tetexact_getSolverEmail", _wrap_Tetexact_getSolverEmail, METH_VARARGS, NULL},
+	 { (char *)"Tetexact_reset", _wrap_Tetexact_reset, METH_VARARGS, NULL},
+	 { (char *)"Tetexact_run", _wrap_Tetexact_run, METH_VARARGS, NULL},
+	 { (char *)"Tetexact_getTime", _wrap_Tetexact_getTime, METH_VARARGS, NULL},
 	 { (char *)"Tetexact_swigregister", Tetexact_swigregister, METH_VARARGS, NULL},
 	 { NULL, NULL, 0, NULL }
 };
@@ -9797,8 +10667,11 @@ static swig_type_info _swigt__p_std__invalid_argument = {"_p_std__invalid_argume
 static swig_type_info _swigt__p_steps__ArgErr = {"_p_steps__ArgErr", "steps::ArgErr *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_steps__Err = {"_p_steps__Err", "steps::Err *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_steps__NotImplErr = {"_p_steps__NotImplErr", "steps::NotImplErr *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_steps__model__Model = {"_p_steps__model__Model", "steps::model::Model *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_steps__rng__RNG = {"_p_steps__rng__RNG", "steps::rng::RNG *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_steps__solver__API = {"_p_steps__solver__API", "steps::solver::API *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_steps__tetexact__Tetexact = {"_p_steps__tetexact__Tetexact", "steps::tetexact::Tetexact *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_steps__wm__Geom = {"_p_steps__wm__Geom", "steps::wm::Geom *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_steps__wmdirect__Wmdirect = {"_p_steps__wmdirect__Wmdirect", "steps::wmdirect::Wmdirect *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_steps__wmrk4__Wmrk4 = {"_p_steps__wmrk4__Wmrk4", "steps::wmrk4::Wmrk4 *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_swig__PySwigIterator = {"_p_swig__PySwigIterator", "swig::PySwigIterator *", 0, 0, (void*)0, 0};
@@ -9813,8 +10686,11 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_steps__ArgErr,
   &_swigt__p_steps__Err,
   &_swigt__p_steps__NotImplErr,
+  &_swigt__p_steps__model__Model,
+  &_swigt__p_steps__rng__RNG,
   &_swigt__p_steps__solver__API,
   &_swigt__p_steps__tetexact__Tetexact,
+  &_swigt__p_steps__wm__Geom,
   &_swigt__p_steps__wmdirect__Wmdirect,
   &_swigt__p_steps__wmrk4__Wmrk4,
   &_swigt__p_swig__PySwigIterator,
@@ -9829,8 +10705,11 @@ static swig_cast_info _swigc__p_std__invalid_argument[] = {  {&_swigt__p_std__in
 static swig_cast_info _swigc__p_steps__ArgErr[] = {  {&_swigt__p_steps__ArgErr, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_steps__Err[] = {  {&_swigt__p_steps__NotImplErr, _p_steps__NotImplErrTo_p_steps__Err, 0, 0},  {&_swigt__p_steps__ArgErr, _p_steps__ArgErrTo_p_steps__Err, 0, 0},  {&_swigt__p_steps__Err, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_steps__NotImplErr[] = {  {&_swigt__p_steps__NotImplErr, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_steps__model__Model[] = {  {&_swigt__p_steps__model__Model, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_steps__rng__RNG[] = {  {&_swigt__p_steps__rng__RNG, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_steps__solver__API[] = {  {&_swigt__p_steps__wmrk4__Wmrk4, _p_steps__wmrk4__Wmrk4To_p_steps__solver__API, 0, 0},  {&_swigt__p_steps__wmdirect__Wmdirect, _p_steps__wmdirect__WmdirectTo_p_steps__solver__API, 0, 0},  {&_swigt__p_steps__tetexact__Tetexact, _p_steps__tetexact__TetexactTo_p_steps__solver__API, 0, 0},  {&_swigt__p_steps__solver__API, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_steps__tetexact__Tetexact[] = {  {&_swigt__p_steps__tetexact__Tetexact, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_steps__wm__Geom[] = {  {&_swigt__p_steps__wm__Geom, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_steps__wmdirect__Wmdirect[] = {  {&_swigt__p_steps__wmdirect__Wmdirect, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_steps__wmrk4__Wmrk4[] = {  {&_swigt__p_steps__wmrk4__Wmrk4, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_swig__PySwigIterator[] = {  {&_swigt__p_swig__PySwigIterator, 0, 0, 0},{0, 0, 0, 0}};
@@ -9845,8 +10724,11 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_steps__ArgErr,
   _swigc__p_steps__Err,
   _swigc__p_steps__NotImplErr,
+  _swigc__p_steps__model__Model,
+  _swigc__p_steps__rng__RNG,
   _swigc__p_steps__solver__API,
   _swigc__p_steps__tetexact__Tetexact,
+  _swigc__p_steps__wm__Geom,
   _swigc__p_steps__wmdirect__Wmdirect,
   _swigc__p_steps__wmrk4__Wmrk4,
   _swigc__p_swig__PySwigIterator,

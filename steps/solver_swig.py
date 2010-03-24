@@ -242,6 +242,19 @@ class API(_object):
         """
         return _solver_swig.API_run(*args)
 
+    def getTime(*args):
+        """
+        Returns the current simulation time in seconds.
+
+        Arguments:
+            None
+
+        Return:
+            float
+
+        """
+        return _solver_swig.API_getTime(*args)
+
     def advance(*args):
         """
         Advance the simulation for secs seconds. 
@@ -300,19 +313,6 @@ class API(_object):
 
         """
         return _solver_swig.API_getDT(*args)
-
-    def getTime(*args):
-        """
-        Returns the current simulation time in seconds.
-
-        Arguments:
-            None
-
-        Return:
-            float
-
-        """
-        return _solver_swig.API_getTime(*args)
 
     def setTime(*args):
         """
@@ -1716,10 +1716,130 @@ class Wmrk4(API):
     __swig_getmethods__ = {}
     for _s in [API]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, Wmrk4, name)
-    def __init__(self): raise AttributeError, "No constructor defined"
     __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        this = _solver_swig.new_Wmrk4(*args)
+        try: self.this.append(this)
+        except: self.this = this
     __swig_destroy__ = _solver_swig.delete_Wmrk4
     __del__ = lambda self : None;
+    def getSolverName(*args):
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        return _solver_swig.Wmrk4_getSolverName(*args)
+
+    def getSolverDesc(*args):
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        return _solver_swig.Wmrk4_getSolverDesc(*args)
+
+    def getSolverAuthors(*args):
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        return _solver_swig.Wmrk4_getSolverAuthors(*args)
+
+    def getSolverEmail(*args):
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        return _solver_swig.Wmrk4_getSolverEmail(*args)
+
+    def reset(*args):
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        return _solver_swig.Wmrk4_reset(*args)
+
+    def run(*args):
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        return _solver_swig.Wmrk4_run(*args)
+
+    def getTime(*args):
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        return _solver_swig.Wmrk4_getTime(*args)
+
 Wmrk4_swigregister = _solver_swig.Wmrk4_swigregister
 Wmrk4_swigregister(Wmrk4)
 
@@ -1731,10 +1851,130 @@ class Wmdirect(API):
     __swig_getmethods__ = {}
     for _s in [API]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, Wmdirect, name)
-    def __init__(self): raise AttributeError, "No constructor defined"
     __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        this = _solver_swig.new_Wmdirect(*args)
+        try: self.this.append(this)
+        except: self.this = this
     __swig_destroy__ = _solver_swig.delete_Wmdirect
     __del__ = lambda self : None;
+    def getSolverName(*args):
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        return _solver_swig.Wmdirect_getSolverName(*args)
+
+    def getSolverDesc(*args):
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        return _solver_swig.Wmdirect_getSolverDesc(*args)
+
+    def getSolverAuthors(*args):
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        return _solver_swig.Wmdirect_getSolverAuthors(*args)
+
+    def getSolverEmail(*args):
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        return _solver_swig.Wmdirect_getSolverEmail(*args)
+
+    def reset(*args):
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        return _solver_swig.Wmdirect_reset(*args)
+
+    def run(*args):
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        return _solver_swig.Wmdirect_run(*args)
+
+    def getTime(*args):
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        return _solver_swig.Wmdirect_getTime(*args)
+
 Wmdirect_swigregister = _solver_swig.Wmdirect_swigregister
 Wmdirect_swigregister(Wmdirect)
 
@@ -1746,10 +1986,130 @@ class Tetexact(API):
     __swig_getmethods__ = {}
     for _s in [API]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, Tetexact, name)
-    def __init__(self): raise AttributeError, "No constructor defined"
     __repr__ = _swig_repr
+    def __init__(self, *args): 
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        this = _solver_swig.new_Tetexact(*args)
+        try: self.this.append(this)
+        except: self.this = this
     __swig_destroy__ = _solver_swig.delete_Tetexact
     __del__ = lambda self : None;
+    def getSolverName(*args):
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        return _solver_swig.Tetexact_getSolverName(*args)
+
+    def getSolverDesc(*args):
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        return _solver_swig.Tetexact_getSolverDesc(*args)
+
+    def getSolverAuthors(*args):
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        return _solver_swig.Tetexact_getSolverAuthors(*args)
+
+    def getSolverEmail(*args):
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        return _solver_swig.Tetexact_getSolverEmail(*args)
+
+    def reset(*args):
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        return _solver_swig.Tetexact_reset(*args)
+
+    def run(*args):
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        return _solver_swig.Tetexact_run(*args)
+
+    def getTime(*args):
+        """
+        Returns the propensity of surface reaction with identifier string sreac 
+        in triangular element with index idx. 
+
+        Arguments:
+            * uint idx
+            * string reac
+
+        Return:
+           float
+
+        """
+        return _solver_swig.Tetexact_getTime(*args)
+
 Tetexact_swigregister = _solver_swig.Tetexact_swigregister
 Tetexact_swigregister(Tetexact)
 

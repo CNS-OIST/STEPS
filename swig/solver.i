@@ -182,6 +182,18 @@ Return:
     
     %feature("autodoc", 
 "
+Returns the current simulation time in seconds.
+
+Arguments:
+    None
+
+Return:
+    float
+");
+    virtual double getTime(void) const = 0;
+    
+    %feature("autodoc", 
+"
 Advance the simulation for secs seconds. 
 
 Arguments:
@@ -235,17 +247,6 @@ Return:
 ");
     virtual double getDT(void) const;
 
-    %feature("autodoc", 
-"
-Returns the current simulation time in seconds.
-
-Arguments:
-    None
-
-Return:
-    float
-");
-    virtual double getTime(void) const = 0;
     
     %feature("autodoc", 
 "
@@ -1590,6 +1591,14 @@ public:
 	
 	Wmrk4(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r);
 	~Wmrk4(void);
+    
+    virtual std::string getSolverName(void) const;
+    virtual std::string getSolverDesc(void) const;
+    virtual std::string getSolverAuthors(void) const;
+    virtual std::string getSolverEmail(void) const;
+    virtual void reset(void);
+    virtual void run(double endtime);
+    virtual double getTime(void) const;
 
 
 	////////////////////////////////////////////////////////////////////////			
@@ -1614,6 +1623,14 @@ class Wmdirect : public steps::solver::API
 public:
 	Wmdirect(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r);
 	~Wmdirect(void);
+    
+    virtual std::string getSolverName(void) const;
+    virtual std::string getSolverDesc(void) const;
+    virtual std::string getSolverAuthors(void) const;
+    virtual std::string getSolverEmail(void) const;
+    virtual void reset(void);
+    virtual void run(double endtime);
+    virtual double getTime(void) const;
 	
 	////////////////////////////////////////////////////////////////////////			
 	
@@ -1637,6 +1654,14 @@ class Tetexact : public steps::solver::API
 public:
     Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r);
     ~Tetexact(void);
+    
+    virtual std::string getSolverName(void) const;
+    virtual std::string getSolverDesc(void) const;
+    virtual std::string getSolverAuthors(void) const;
+    virtual std::string getSolverEmail(void) const;
+    virtual void reset(void);
+    virtual void run(double endtime);
+    virtual double getTime(void) const;
 	
 	////////////////////////////////////////////////////////////////////////			
 	

@@ -101,6 +101,8 @@ public:
     /// \param endtime Time to end the solver.
     virtual void run(double endtime) = 0;
 
+    /// Return the time.
+    virtual double getTime(void) const = 0;
     /// Advance the solver a given time.
     ///
     /// \param adv Time to advance the solver
@@ -114,22 +116,10 @@ public:
     /// \param dt Dt.
     virtual void setDT(double dt);
     
-    ////////////////////////////////////////////////////////////////////////
-    // SOLVER ADVANCE CONTROLS
-    // Notice:
-    // These controls should normally not be used directly by users, 
-    // but can be accessed by python-side scripts
-    ////////////////////////////////////////////////////////////////////////
-    
     virtual void setNSteps(uint nsteps);
-    virtual void setTime(double time);
     
-    ////////////////////////////////////////////////////////////////////////
-    // SOLVER STATE ACCESS:
-    //      GENERAL
-    ////////////////////////////////////////////////////////////////////////
-    /// Return the time.
-    virtual double getTime(void) const = 0;
+    virtual void setTime(double time);
+
 
     /// Return the DT
 
