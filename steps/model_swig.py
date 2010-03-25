@@ -991,6 +991,10 @@ class Model(_object):
         Returns a reference to the steps.model.Spec species object with 
         identifier string spec_id (if defined).
 
+        Syntax::
+
+            getSpec(spec_id)
+
         Arguments:
             string spec_id
                      
@@ -1005,6 +1009,10 @@ class Model(_object):
         Remove the steps.model.Spec species object with identifier 
         string spec_id (if defined) from the model.
 
+        Syntax::
+
+            delSpec(spec_id)
+
         Arguments:
             string spec_id
 
@@ -1018,6 +1026,10 @@ class Model(_object):
         """
         Returns a list of steps.model.Spec object references of all species in the model.
 
+        Syntax::
+
+            getAllSpecs()
+            
         Arguments:
             None
                      
@@ -1031,6 +1043,10 @@ class Model(_object):
         """
         Returns a reference to the steps.model.Volsys volume system object with 
         identifier string vsys_id (if defined).
+
+        Syntax::
+
+            getVolsys(vsys_id)
 
         Arguments:
             string vsys_id
@@ -1046,6 +1062,10 @@ class Model(_object):
         Remove the steps.model.Volsys volume system object with identifier string 
         vsys_id (if defined) from the model.
 
+        Syntax::
+
+            delVolsys(vsys_id)
+
         Arguments:
             string vsys_id
 
@@ -1060,6 +1080,10 @@ class Model(_object):
         Returns a reference to the steps.model.Surfsys surface system object with 
         identifier string ssys_id (if defined).
 
+        Syntax::
+
+            getSurfsys(ssys_id)
+
         Arguments:
             string ssys_id
 
@@ -1073,6 +1097,10 @@ class Model(_object):
         """
         Remove the steps.model.Surfsys surface system object with identifier string 
         ssys_id (if defined) from the model.
+
+        Syntax::
+
+            delSurfsys(ssys_id)
 
         Arguments:
             string ssys_id
@@ -1104,6 +1132,10 @@ class Spec(_object):
         """
         Get the identifier string of the species.
 
+        Syntax::
+
+            getID()
+
         Arguments:
             None
 
@@ -1116,6 +1148,10 @@ class Spec(_object):
     def setID(*args):
         """
         Set the identifier string of the species.
+
+        Syntax::
+
+            setID(name)
 
         Arguments:
             string name
@@ -1130,6 +1166,10 @@ class Spec(_object):
         """
         Returns a reference to the parent steps.model.Model container object.
 
+        Syntax::
+
+            getModel()
+            
         Arguments:
             None
 
@@ -1163,6 +1203,10 @@ class Surfsys(_object):
         """
         Get the identifier string of the surface system.
 
+        Syntax::
+            
+            getID()
+
         Arguments:
             None
 
@@ -1176,6 +1220,10 @@ class Surfsys(_object):
         """
         Set the identifier string of the surface system.
 
+        Syntax::
+
+            setID(name)
+            
         Arguments:
             string name
 
@@ -1188,6 +1236,10 @@ class Surfsys(_object):
     def getModel(*args):
         """
         Returns a reference to the parent steps.model.Model container object.
+
+        Syntax::
+
+            getModel()
 
         Arguments:
             None
@@ -1203,6 +1255,10 @@ class Surfsys(_object):
         Returns a reference to the steps.model.SReac surface-reaction object 
         with identifier sreac_id (if defined in the surface system.
 
+        Syntax::
+
+            getSReac(sreac_id)
+
         Arguments:
             string sreac_id
 
@@ -1217,6 +1273,10 @@ class Surfsys(_object):
         Remove the steps.model.SReac surface-reaction object with identifier 
         sreac_id from the surface system.
 
+        Syntax::
+
+            delSReac(sreac_id)
+            
         Arguments:
             string sreac_id
 
@@ -1230,6 +1290,10 @@ class Surfsys(_object):
         """
         Returns a list of references to all steps.model.SReac surface-reaction 
         objects defined in the surface system.
+
+        Syntax::
+
+            getAllSReacs()
 
         Arguments:
             None
@@ -1246,6 +1310,10 @@ class Surfsys(_object):
         in the surface system; that is all reactants and products in the surface 
         reactions belonging to this surface system. No duplicate member is included.
 
+        Syntax::
+
+            getAllSpecs()
+            
         Arguments:
             None
 
@@ -1276,6 +1344,10 @@ class Volsys(_object):
         """
         Get the identifier string of the volume system.
 
+        Syntax::
+
+            getID()
+            
         Arguments:
             None
 
@@ -1289,6 +1361,10 @@ class Volsys(_object):
         """
         Set the identifier string of the volume system.
 
+        Syntax::
+
+            setID(name)
+            
         Arguments:
             string name
 
@@ -1302,6 +1378,10 @@ class Volsys(_object):
         """
         Returns a reference to the parent steps.model.Model container object.
 
+        Syntax::
+
+            getModel()
+            
         Arguments:
             None
 
@@ -1316,6 +1396,10 @@ class Volsys(_object):
         Returns a reference to the steps.model.Reac reaction-rule object with 
         identifier string reac_id (if defined in the volume system).
 
+        Syntax::
+
+            getReac(reac_id)
+            
         Arguments:
             string reac_id
 
@@ -1329,6 +1413,10 @@ class Volsys(_object):
         """
         Remove the steps.model.Reac reaction-rule object with identifier reac_id 
         (if defined) from the volume system.
+
+        Syntax::
+
+            delReac(reac_id)
 
         Arguments:
             string reac_id
@@ -1346,6 +1434,10 @@ class Volsys(_object):
         and diffusion rules belonging to this volume system. No duplicate member is 
         included.
 
+        Syntax::
+
+            getAllReacs()
+            
         Arguments:
             None
 
@@ -1360,6 +1452,10 @@ class Volsys(_object):
         Returns a reference to the steps.model.Diff diffusion-rule object with 
         identifier diff_id (if defined in the volume system).
 
+        Syntax::
+
+            getDiff(diff_id)
+            
         Arguments:
             string diff_id
 
@@ -1374,6 +1470,10 @@ class Volsys(_object):
         Remove the steps.model.Diff diffusion-rule object with identifier diff_id 
         from the volume system.
 
+        Syntax::
+
+            delDiff(diff_id)
+            
         Arguments:
             string diff_id
 
@@ -1388,6 +1488,10 @@ class Volsys(_object):
         Returns a list of references to all steps.model.Diff diffusion-rule objects 
         defined in the volume system.
 
+        Syntax::
+
+            getAllDiffs()
+            
         Arguments:
             None
 
@@ -1403,6 +1507,10 @@ class Volsys(_object):
         that is all reactants, products or diffusing species in the reaction and diffusion 
         rules belonging to this volume system. No duplicate member is included.
 
+        Syntax::
+
+            getAllSpecs()
+            
         Arguments:
             None
 
@@ -1433,6 +1541,10 @@ class Diff(_object):
         """
         Get the identifier string of the diffusion rule.
 
+        Syntax::
+
+            getID()
+            
         Arguments:
             None
 
@@ -1446,6 +1558,10 @@ class Diff(_object):
         """
         Set the identifier string of the diffusion rule.
 
+        Syntax::
+
+            setID(name)
+            
         Arguments:
             string name
 
@@ -1459,6 +1575,10 @@ class Diff(_object):
         """
         Returns a reference to the parent steps.model.Volsys volume system object.
 
+        Syntax::
+
+            getVolsys()
+            
         Arguments:
             None
 
@@ -1472,6 +1592,10 @@ class Diff(_object):
         """
         Returns a reference to the parent steps.model.Model container object.
 
+        Syntax::
+
+            getModel()
+            
         Arguments:
             None
 
@@ -1486,6 +1610,10 @@ class Diff(_object):
         get a reference to the steps.model.Spec species object to which this 
         diffusion rule is applied.
 
+        Syntax::
+
+            getLig()
+            
         Arguments:
             None
 
@@ -1500,6 +1628,10 @@ class Diff(_object):
         Set a reference to the steps.model.Spec species object to which this 
         diffusion rule is applied.
 
+        Syntax::
+
+            setLig(lig)
+            
         Arguments:
             steps.model.Spec lig
 
@@ -1513,6 +1645,10 @@ class Diff(_object):
         """
         Get the diffusion constant for the diffusion rule, in s.i. units.
 
+        Syntax::
+
+            getDcst()
+            
         Arguments:
             None
 
@@ -1526,6 +1662,10 @@ class Diff(_object):
         """
         Set the diffusion constant for the diffusion rule, in s.i. units.
 
+        Syntax::
+
+            setDcst(dcst)
+            
         Arguments:
             float dcst
 
@@ -1560,6 +1700,10 @@ class Reac(_object):
         """
         Get the identifier string of the reaction rule.
 
+        Syntax::
+
+            getID()
+            
         Arguments:
             None
 
@@ -1573,6 +1717,10 @@ class Reac(_object):
         """
         Set the identifier string of the reaction rule.
 
+        Syntax::
+
+            setID(name)
+            
         Arguments:
             string name
 
@@ -1586,6 +1734,10 @@ class Reac(_object):
         """
         Returns a reference to the parent steps.model.Volsys volume system object.
 
+        Syntax::
+
+            getVolsys()
+            
         Arguments:
             None
 
@@ -1599,6 +1751,10 @@ class Reac(_object):
         """
         Returns a reference to the parent steps.model.Model container object.
 
+        Syntax::
+
+            getModel()
+            
         Arguments:
             None
 
@@ -1613,6 +1769,10 @@ class Reac(_object):
         Get a list of references to steps.model.Spec species objects on the 
         left hand side of the reaction: the reactants.
 
+        Syntax::
+
+            getLHS()
+            
         Arguments:
             None
 
@@ -1626,6 +1786,10 @@ class Reac(_object):
         """
         Set a list of references to steps.model.Spec species objects on the 
         left hand side of the reaction: the reactants.
+
+        Syntax::
+
+            setLHS(lhs)
 
         Arguments:
             list<steps.model.Spec> lhs
@@ -1641,6 +1805,10 @@ class Reac(_object):
         Get a list of references to steps.model.Spec species objects on the 
         right hand side of the reaction: the reactants.
 
+        Syntax::
+
+            getRHS()
+
         Arguments:
             None
 
@@ -1655,6 +1823,10 @@ class Reac(_object):
         Set a list of references to steps.model.Spec species objects on the 
         right hand side of the reaction: the reactants.
 
+        Syntax::
+
+            setRHS(rhs)
+            
         Arguments:
             list<steps.model.Spec> rhs
 
@@ -1668,6 +1840,10 @@ class Reac(_object):
         """
         Returns the order of this reaction.
 
+        Syntax::
+
+            getOrder()
+            
         Arguments:
             None
 
@@ -1681,6 +1857,10 @@ class Reac(_object):
         """
         Get the kinetic reaction rate constant, in s.i. units, 
         where the actual units depend on the order of the reaction.
+
+        Syntax::
+            
+            getKcst()
 
         Arguments:
             None
@@ -1696,6 +1876,10 @@ class Reac(_object):
         Set the kinetic reaction rate constant, in s.i. units, 
         where the actual units depend on the order of the reaction.
 
+        Syntax::
+            
+            setKcst(kcst)
+
         Arguments:
             float kcst
 
@@ -1710,6 +1894,10 @@ class Reac(_object):
         Returns a list of references to all steps.model.Spec species objects in 
         the reaction; that is all reactants and products. No duplicate member 
         is included.
+
+        Syntax::
+
+            getAllSpecs()
 
         Arguments:
             None
@@ -1749,6 +1937,10 @@ class SReac(_object):
         """
         Get the identifier string of the surface reaction rule.
 
+        Syntax::
+
+            getID()
+            
         Arguments:
             None
 
@@ -1762,6 +1954,10 @@ class SReac(_object):
         """
         Set the identifier string of the surface reaction rule.
 
+        Syntax::
+
+            setID(name)
+            
         Arguments:
             string name
 
@@ -1775,6 +1971,10 @@ class SReac(_object):
         """
         Returns a reference to the parent steps.model.Surfsys surface system object.
 
+        Syntax::
+
+            getSurfsys()
+            
         Arguments:
             None
 
@@ -1788,6 +1988,10 @@ class SReac(_object):
         """
         Returns a reference to the parent steps.model.Model container object.
 
+        Syntax::
+
+            getModel()
+            
         Arguments:
             None
 
@@ -1810,6 +2014,10 @@ class SReac(_object):
         Get a list of references to steps.model.Spec species objects; 
         the left hand side outer volume reactants.
 
+        Syntax::
+
+            getOLHS()
+            
         Arguments:
             None
 
@@ -1824,6 +2032,10 @@ class SReac(_object):
         Set a list of references to steps.model.Spec species objects; 
         the left hand side outer volume reactants.
 
+        Syntax::
+
+            setOLHS(olhs)
+            
         Arguments:
             list<steps.model.Spec) olhs
 
@@ -1837,6 +2049,10 @@ class SReac(_object):
         """
         Get a list of references to steps.model.Spec species objects; 
         the left hand side inner volume reactants.
+
+        Syntax::
+            
+            getILHS()
 
         Arguments:
             None
@@ -1852,6 +2068,10 @@ class SReac(_object):
         Set a list of references to steps.model.Spec species objects; 
         the left hand side inner volume reactants.
 
+        Syntax::
+
+            setILHS(ilhs)
+
         Arguments:
             list<steps.model.Spec> ilhs
 
@@ -1866,6 +2086,10 @@ class SReac(_object):
         Get a list of references to steps.model.Spec species objects; 
         the left hand side surface reactants.
 
+        Syntax::
+
+            getSLHS()
+            
         Arguments:
             None
 
@@ -1880,6 +2104,10 @@ class SReac(_object):
         Set a list of references to steps.model.Spec species objects; 
         the left hand side surface reactants.
 
+        Syntax::
+
+            setSLHS(slhs)
+            
         Arguments:
             list<steps.model.Spec> slhs
 
@@ -1894,6 +2122,10 @@ class SReac(_object):
         Get a list of references to steps.model.Spec species objects; 
         the right hand side inner volume reactants.
 
+        Syntax::
+
+            getIRHS()
+            
         Arguments:
             None
 
@@ -1908,6 +2140,10 @@ class SReac(_object):
         Set a list of references to steps.model.Spec species objects; 
         the right hand side inner volume reactants.
 
+        Syntax::
+
+            setIRHS(irhs)
+            
         Arguments:
             list<steps.model.Spec> irhs
 
@@ -1921,6 +2157,10 @@ class SReac(_object):
         """
         Get a list of references to steps.model.Spec species objects; 
         the right hand side surface reactants.
+
+        Syntax::
+            
+            getSRHS()
 
         Arguments:
             None
@@ -1936,6 +2176,10 @@ class SReac(_object):
         Set a list of references to steps.model.Spec species objects; 
         the right hand side surface reactants.
 
+        Syntax::
+
+            setSRHS(srhs)
+            
         Arguments:
             list<steps.model.Spec> srhs
 
@@ -1950,6 +2194,10 @@ class SReac(_object):
         Get a list of references to steps.model.Spec species objects; 
         the right hand side outer volume reactants.
 
+        Syntax::
+
+            getORHS()
+            
         Arguments:
             None
 
@@ -1964,6 +2212,10 @@ class SReac(_object):
         Get a list of references to steps.model.Spec species objects; 
         the right hand side outer volume reactants.
 
+        Syntax::
+
+            setORHS(orhs)
+            
         Arguments:
             list<steps.model.Spec> orhs
 
@@ -1977,6 +2229,10 @@ class SReac(_object):
         """
         Returns the order of this surface reaction.
 
+        Syntax::
+
+            getOrder()
+            
         Arguments:
             None
 
@@ -1991,6 +2247,10 @@ class SReac(_object):
         Get the kinetic reaction rate constant, in s.i. units, 
         where the actual units depend on the order of the surface reaction.
 
+        Syntax::
+
+            getKcst()
+            
         Arguments:
             None
 
@@ -2005,6 +2265,10 @@ class SReac(_object):
         Set the kinetic reaction rate constant, in s.i. units, 
         where the actual units depend on the order of the surface reaction.
 
+        Syntax::
+
+            setKcst(kcst)
+            
         Arguments:
             float kcst
 
@@ -2020,6 +2284,10 @@ class SReac(_object):
         the surface reaction; that is all reactants and products. No duplicate member 
         is included.
 
+        Syntax::
+
+            getAllSpecs()
+            
         Arguments:
             None
 

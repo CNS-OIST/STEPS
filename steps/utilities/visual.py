@@ -6,7 +6,7 @@ This module is preliminary, means some of the functions are still under developm
 Code modification / debugging is wellcomed.
 Please email steps.dev@gmail.com if you would like to share you changes with others.
 
-Graphical Frontend for Mesh Based Simulation
+Visual Toolkit
 
 """
 import wx
@@ -526,6 +526,10 @@ class SimPanel(wx.SplitterWindow):
 def GUISim(model, mesh, solver, scale = 1e-6, color_map = [[255,0,0], [0,0,255]]):
     """
     Create a graphical frontend for a mesh based simulation.
+    
+    **Note**
+    
+    The graphical frontend should be used for mesh based simulation only.
     
     Arguements:
         * steps.model.Model model

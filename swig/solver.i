@@ -64,7 +64,6 @@ namespace std
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
 %feature("autodoc", "1");
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -95,13 +94,19 @@ class API
 {
 public:
 	
+    %feature("autodoc", "1");
     API(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r);
+    %feature("autodoc", "1");
     virtual ~API(void);
 	
     %feature("autodoc", 
 "
 Returns a string of the solver's name.
 
+Syntax::
+    
+    getSolverName()
+    
 Arguments:
     None
 
@@ -114,6 +119,10 @@ Return:
 "
 Returns a string giving a short description of the solver.
 
+Syntax::
+    
+    getSolverDesc()
+    
 Arguments:
     None
 
@@ -126,6 +135,10 @@ Return:
 "
 Returns a string of the solver authors names.
 
+Syntax::
+    
+    getSolverAuthors()
+    
 Arguments:
     None
 
@@ -138,6 +151,10 @@ Return:
 "
 Returns a string giving the author's email address.
 
+Syntax::
+    
+    getSolverEmail()
+    
 Arguments:
     None
 
@@ -159,6 +176,10 @@ compartment volumes and patch areas are reset to default values
 described in steps.geom objects (for well-mixed solvers). 
 Usually, this method should be called before starting each simulation iteration.
 
+Syntax::
+    
+    reset()
+    
 Arguments:
     None
 
@@ -172,6 +193,10 @@ Return:
 Advance the simulation until endtime (given in seconds) is reached. 
 The endtime must be larger or equal to the current simulation time.
 
+Syntax::
+    
+    run(endtime)
+    
 Arguments:
     float endtime
 
@@ -184,6 +209,10 @@ Return:
 "
 Returns the current simulation time in seconds.
 
+Syntax::
+    
+    getTime()
+    
 Arguments:
     None
 
@@ -196,6 +225,10 @@ Return:
 "
 Advance the simulation for secs seconds. 
 
+Syntax::
+    
+    advance(adv)
+    
 Arguments:
     float adv
 
@@ -211,6 +244,10 @@ Advance the simulation for one 'step'. In stochastic solvers this is one
 In numerical solvers (currently Wmrk4) this is one time-step, with the 
 stepsize defined with the setDT method.
 
+Syntax::
+    
+    step()
+    
 Arguments:
     None
 
@@ -227,6 +264,10 @@ stepsize. The deterministic solver Wmrk4 implements a fixed stepsize
 (i.e. not adaptive), although the stepsize can be altered at any point 
 during the simulation with this method.
 
+Syntax::
+    
+    setDT(dt)
+    
 Arguments:
     float dt
 
@@ -239,6 +280,10 @@ Return:
 "
 Returns the stepsize for numerical solvers.
 
+Syntax::
+    
+    getDT()
+    
 Arguments:
     None
 
@@ -252,6 +297,10 @@ Return:
 "
 Set the current simulation time.
 
+Syntax::
+    
+    setTime(time)
+    
 Arguments:
     folat time
 
@@ -269,6 +318,10 @@ time dt gives the probability that a reaction will occur in that dt).
 For Tetexact this includes the propensity from the extension of the SSA 
 for diffusive flux between tetrahedral elements in the mesh.
 
+Syntax::
+    
+    getA0()
+    
 Arguments:
     None
 
@@ -282,6 +335,10 @@ Return:
 Return the number of 'realizations' of the SSA, the number of reaction 
 (and diffusion) events in stochastic solvers.
 
+Syntax::
+    
+    getNSteps()
+    
 Arguments:
     None
 
@@ -296,6 +353,10 @@ Return:
 Set the number of 'realizations' of the SSA, the number of reaction 
 (and diffusion) events in stochastic solvers.
 
+Syntax::
+    
+    setNSteps(nsteps)
+    
 Arguments:
     uint nsteps
 
@@ -308,6 +369,10 @@ Return:
 "
 Returns the volume of compartment with identifier string comp (in m^3).
 
+Syntax::
+    
+    getCompVol(comp)
+    
 Arguments:
     string comp
 
@@ -320,6 +385,10 @@ Return:
 "
 Set the volume of compartment with identifier string comp (in m^3).
 
+Syntax::
+    
+    setCompVol(comp, vol)
+    
 Arguments:
     * string comp
     * float vol
@@ -337,6 +406,10 @@ in compartment with identifier string comp.
 In a mesh-based simulation (i.e. Tetexact) this is the combined count from 
 all tetrahedral elements in the compartment.
 
+Syntax::
+    
+    getCompCount(comp, spec)
+    
 Arguments:
     * string comp
     * string spec
@@ -354,6 +427,10 @@ in compartment with identifier string comp.
 In a mesh-based simulation (i.e. Tetexact) this is the combined count from 
 all tetrahedral elements in the compartment.
 
+Syntax::
+    
+    setCompCount(comp, spec, nspec)
+    
 Arguments:
     * string comp
     * string spec
@@ -372,6 +449,10 @@ with identifier string comp.
 In a mesh-based simulation (i.e. Tetexact) this is the combined amount from all 
 tetrahedral elements in the compartment.
 
+Syntax::
+    
+    getCompAmount(comp, spec)
+    
 Arguments:
     * string comp
     * string spec
@@ -389,6 +470,10 @@ with identifier string comp.
 In a mesh-based simulation (i.e. Tetexact) this is the combined amount from all 
 tetrahedral elements in the compartment.
 
+Syntax::
+    
+    setCompAmount(comp, spec, amount)
+    
 Arguments:
     * string comp
     * string spec
@@ -408,6 +493,10 @@ Note: in a mesh-based simulation (i.e. Tetexact) this is calculated from the com
 number of molecules from all tetrahedral elements in the compartment and the total 
 volume of the tetrahedrons.
 
+Syntax::
+    
+    getCompConc(comp, spec)
+    
 Arguments:
     * string comp
     * string spec
@@ -428,6 +517,10 @@ Note: in a mesh-based simulation (i.e. Tetexact) the molecules are divided as
 equally as possible over all tetrahedral elements in the compartment (i.e. a 
 uniform distribution).
 
+Syntax::
+
+    setCompConc(comp, spec, conc)
+    
 Arguments:
     * string comp
     * string spec
@@ -448,6 +541,10 @@ Returns False if not.
 Note: in a mesh-based simulation (i.e. Tetexact) it returns True only if the species 
 is clamped in all tetrahedral elements of the compartment.
 
+Syntax::
+    
+    getCompClamped(comp, spec)
+    
 Arguments:
     * string comp
     * string spec
@@ -467,6 +564,10 @@ that consume or produce molecules of the species.
 Note: in a mesh-based simulation (i.e. Tetexact) this will set the species to be 
 clamped or not in all tetrahedral elements of the compartment.
 
+Syntax::
+    
+    setCompClamped(comp, spec, clamped)
+    
 Arguments:
     * string comp
     * string spec
@@ -487,6 +588,10 @@ Note: In a mesh-based simulation (i.e. Tetexact) the value for the compartment i
 returned, although individual tetrahedral elements may have different values 
 (set with setTetReacK).
 
+Syntax::
+    
+    getCompReacK(comp, reac)
+    
 Arguments:
     * string comp
     * string reac
@@ -508,6 +613,10 @@ constant in all tetrahedral elements of the compartment to kf
 Note: The default value still comes from the steps.model description, so 
 calling reset() will return the reaction constant to that value.
 
+Syntax::
+    
+    setCompReacK(comp, reac, kf)
+    
 Arguments:
     * string comp
     * string reac
@@ -528,6 +637,10 @@ sufficient numbers or not.
 Note: In a mesh-based simulation (i.e. Tetexact) this method will return True only 
 if the reaction is active in all tetrahedral elements in the compartment. 
 
+Syntax::
+    
+    getCompReacActive(comp, reac)
+    
 Arguments:
     * string comp
     * string reac
@@ -547,6 +660,10 @@ present in sufficient numbers or not.
 Note: In a mesh-based simulation (i.e. Tetexact) this will activate/deactivate the 
 reaction in all tetrahedral elements in the compartment. 
 
+Syntax::
+    
+    setCompReacActive(comp, reac, active)
+    
 Arguments:
     * string comp
     * string reac
@@ -567,6 +684,10 @@ Note: In a mesh-based solver (i.e. Tetexact) the value for the compartment is
 returned, although individual or groups of tetrahedral elements may have different 
 values (set with setTetDiffD). 
 
+Syntax::
+    
+    getCompDiffD(comp, diff)
+    
 Arguments:
     * string comp
     * string diff
@@ -588,6 +709,10 @@ in the compartment.
 Note: The default value still comes from the steps.model description, 
 so calling reset() will return the diffusion constants to that value. 
 
+Syntax::
+    
+    setCompDiffD(comp, diff, dcst)
+    
 Arguments:
     * string comp
     * string diff
@@ -605,6 +730,10 @@ identifier string comp is active (True) or not (False). If diffusion of a specie
 is inactive this means the molecules will remain in place and has the same effect 
 as a diffusion constant of zero. 
 
+Syntax::
+    
+    getCompDiffActive(comp, diff)
+    
 Arguments:
     * string comp
     * string diff
@@ -621,6 +750,10 @@ identifier string diff in compartment with identifier string comp. If diffusion
 of a species is inactive this means the molecules will remain in place and is 
 effectively the same as setting the diffusion constant to zero
 
+Syntax::
+    
+    setCompDiffActive(comp, diff, active)
+    
 Arguments:
     * string comp
     * string diff
@@ -644,6 +777,10 @@ Note: in a mesh-based simulation (i.e. Tetexact), the stochastic reaction consta
 is computed as the weighted mean of the stochastic reaction constants in all 
 tetrahedral elements of the compartment.
 
+Syntax::
+    
+    getCompReacC(comp, reac)
+    
 Arguments:
     * string comp
     * string reac
@@ -660,6 +797,10 @@ reac can occur in compartment with identifier string comp, by computing the prod
 of its reactants. Note: in a mesh-based simulation (i.e. Tetexact), returns the sum 
 of the h_mu's over all tetrahedral elements in the compartment. 
 
+Syntax::
+    
+    getCompReacH(comp, reac)
+    
 Arguments:
     * string comp
     * string reac
@@ -683,6 +824,10 @@ Note: in a mesh-based simulation (i.e. Tetexact), the propensity of a reaction
 in a compartment is computed as the sum of the propensities in all tetrahedral 
 elements of the compartment. 
 
+Syntax::
+    
+    getCompReacA(comp, reac)
+    
 Arguments:
     * string comp
     * string reac
@@ -701,6 +846,10 @@ to the current simulation time.
 Note: in a mesh-based simulation (i.e. Tetexact), returns the sum of the reaction 
 extents in all tetrahedral elements of the compartment.
 
+Syntax::
+    
+    getCompReacExtent(comp, reac)
+    
 Arguments:
     * string comp
     * string reac
@@ -718,6 +867,10 @@ identifier string comp to zero.
 Note: in a mesh-based simulation (i.e. Tetexact), 
 resets the extents of the reaction in all tetrahedral elements of the compartment.
 
+Syntax::
+    
+    resetCompReacExtent(comp, reac)
+    
 Arguments:
     * string comp
     * string reac
@@ -731,6 +884,10 @@ Return:
 "
 Returns the volume (in m^3) of the tetrahedral element with index idx.
 
+Syntax::
+    
+    getTetVol(idx)
+    
 Arguments:
     * uint idx
 
@@ -746,6 +903,10 @@ Return:
 Returns the number of molecules of species with identifier string spec 
 in the tetrahedral element with index idx.
 
+Syntax::
+    
+    getTetCount(idx, spec)
+    
 Arguments:
     * uint idx
     * string spec
@@ -760,6 +921,10 @@ Return:
 Sets the number of molecules of species with identifier string spec in 
 tetrahedral element with index idx to n.
 
+Syntax::
+    
+    setTetCount(idx, spec, n)
+    
 Arguments:
     * uint idx
     * string spec
@@ -775,6 +940,10 @@ Return:
 Returns the amount (in mols) of species with identifier string spec in 
 tetrahedral element with index idx.
 
+Syntax::
+    
+    getTetAmount(idx, spec)
+    
 Arguments:
     * uint idx
     * string spec
@@ -795,6 +964,10 @@ Due to the small volumes of tetrahedral elements the difference
 between 'rounding up' and 'rounding down' can be a significant difference in 
 concentration.
 
+Syntax::
+    
+    setTetAmount(idx, spec, a)
+    
 Arguments:
     * uint idx
     * string spec
@@ -810,6 +983,10 @@ Return:
 Returns the concentration (in Molar units) of species with identifier 
 string spec in a tetrahedral element with index idx.
 
+Syntax::
+    
+    getTetConc(idx, spec)
+    
 Arguments:
     * uint idx
     * string spec
@@ -829,10 +1006,14 @@ converted internally to a discrete number of molecules.
 Due to the small volumes of tetrahedral elements the difference between 'rounding 
 up' and 'rounding down' can be a large difference in concentration.
 
+Syntax::
+    
+    setTetConc(idx, spec, conc)
+    
 Arguments:
     * uint idx
     * string spec
-    * cont
+    * conc
 
 Return:
     None
@@ -847,6 +1028,10 @@ same regardless of reactions that consume or produce molecules of this species o
 diffusion of this species into or out of the tetrahedral element. Returns False if 
 not.
 
+Syntax::
+    
+    getTetClamped(idx, spec)
+    
 Arguments:
     * uint idx
     * string spec
@@ -864,6 +1049,10 @@ If a species is clamped the concentration stays the same regardless
 of reactions that consume or produce molecules of the species or 
 diffusion of the species into or out of the tetrahedral element.
 
+Syntax::
+    
+    setTetClamped(idx, spec, clamped)
+    
 Arguments:
     * uint idx
     * string spec
@@ -880,6 +1069,10 @@ Returns the macroscopic reaction constant of reaction with identifier string rea
 in tetrahedral element with index idx. The unit of the reaction constant depends 
 on the order of the reaction.
 
+Syntax::
+    
+    getTetReacK(idx, reac)
+    
 Arguments:
     * uint idx
     * string reac
@@ -895,6 +1088,10 @@ Sets the macroscopic reaction constant of reaction with identifier string reac
 in tetrahedral element with index idx to kf. The units of the reaction constant 
 depends on the order of the reaction.
 
+Syntax::
+    
+    setTetReacK(idx, reac, kf)
+    
 Arguments:
     * uint idx
     * string reac
@@ -912,6 +1109,10 @@ with index idx is active (True) or not (False). If it's not active this means
 that the reaction will never occur regardless of whether reactants are present 
 in sufficient numbers or not.
 
+Syntax::
+    
+    getTetReacActive(idx, reac)
+    
 Arguments:
     * uint idx
     * string reac
@@ -928,6 +1129,10 @@ string reac in tetrahedral element with index idx. If it's not active this means
 that the reaction will never occur regardless of whether reactants are present 
 in sufficient numbers or not.
 
+Syntax::
+    
+    setTetReacActive(idx, reac, active)
+    
 Arguments:
     * uint idx
     * string reac
@@ -944,6 +1149,10 @@ Return:
 Returns the diffusion constant of diffusion rule with identifier string diff 
 in tetrahedral element with index idx. This constant is in units m^2/s. 
 
+Syntax::
+    
+    getTetDiffD(idx, diff)
+    
 Arguments:
     * uint idx
     * string diff
@@ -958,6 +1167,10 @@ Return:
 Sets the diffusion constant of diffusion rule with identifier string diff in 
 tetrahedral element with index idx to dcst (in m^2/s).
 
+Syntax::
+    
+    setTetDiffD(idx, diff, dcst)
+    
 Arguments:
     * uint idx
     * string diff
@@ -975,6 +1188,10 @@ with index idx is active (True) or not (False). If diffusion of a species
 is inactive this means the molecules will never diffuse out of the tetrahedron 
 and has the same effect as a diffusion constant of zero.
 
+Syntax::
+    
+    getTetDiffActive(idx, diff)
+    
 Arguments:
     * uint idx
     * string diff
@@ -991,6 +1208,10 @@ identifier string diff in tetrahedral element with index idx. If diffusion of
 a species is inactive this means the molecules will never diffuse out of the 
 tetrahedron and has the same effect as a diffusion constant of zero. 
 
+Syntax::
+    
+    setTetDiffActive(idx, diff, active)
+    
 Arguments:
     * uint idx
     * string diff
@@ -1006,6 +1227,10 @@ Return:
 Returns the 'stochastic reaction constant' (or 'specific probability rate constant') 
 of reaction with identifier string reac in tetrahedral element with index idx.
 
+Syntax::
+    
+    getTetReacC(idx, reac)
+    
 Arguments:
     * uint idx
     * string reac
@@ -1021,6 +1246,10 @@ Returns h_mu, the distinct number of ways in which reaction with identifier stri
 reac can occur in tetrahedral element with index idx, by computing the product of 
 its reactants.
 
+Syntax::
+    
+    getTetReacH(idx, reac)
+    
 Arguments:
     * uint idx
     * string reac
@@ -1035,6 +1264,10 @@ Return:
 Returns the propensity of reaction with identifier string reac in tetrahedral 
 element with index idx.
 
+Syntax::
+    
+    getTetReacA(idx, reac)
+    
 Arguments:
     * uint idx
     * string reac
@@ -1049,6 +1282,10 @@ Return:
 Returns the propensityof diffusion rule with identifier string diff in 
 tetrahedral element with index idx. 
 
+Syntax::
+    
+    getTetDiffA(idx, reac)
+    
 Arguments:
     * uint idx
     * string reac
@@ -1062,6 +1299,10 @@ Return:
 "
 Returns the area of patch with identifier string pat (in m^2).
 
+Syntax::
+    
+    getPatchArea(pat)
+    
 Arguments:
     * string pat
 
@@ -1074,6 +1315,10 @@ Return:
 "
 Sets the area of patch with identifier string pat to area a (in m^2).
 
+Syntax::
+    
+    setPatchArea(pat, area)
+    
 Arguments:
     * string pat
     * float area
@@ -1089,6 +1334,10 @@ Returns the number of molecules of species with identifier string spec in patch
 with identifier string pat.Note: in a mesh-based simulation (i.e. Tetexact) this 
 is the combined count from all triangular elements in the patch. 
 
+Syntax::
+    
+    getPatchCount(pat, spec)
+    
 Arguments:
     * string pat
     * string spec
@@ -1105,6 +1354,10 @@ with identifier string pat to n. Note: in a mesh-based simulation (i.e. Tetexact
 the molecules are divided as equally as possible over all triangular elements in 
 the patch (i.e. a uniform distribution). 
 
+Syntax::
+    
+    setPatchCount(pat, spec, n)
+    
 Arguments:
     * string pat
     * string spec
@@ -1123,6 +1376,10 @@ with identifier string pat.
 Note: in a mesh-based simulation (i.e. Tetexact) this is the combined amount 
 from all triangular elements in the patch. 
 
+Syntax::
+    
+    getPatchAmount(pat, spec)
+    
 Arguments:
     * string pat
     * string spec
@@ -1143,6 +1400,10 @@ Note: in a mesh-based simulation (i.e. Tetexact) the molecules are divided as
 equally as possible over all triangular elements in the patch (i.e. a uniform 
 distribution).
 
+Syntax::
+    
+    setPatchAmount(pat, spec, a)
+    
 Arguments:
     * string pat
     * string spec
@@ -1163,6 +1424,10 @@ by multiplication with Avogadro's number.
 Note: in a mesh-based simulation (i.e. Tetexact) the molecules are divided as equally 
 as possible over all triangular elements in the patch (i.e. a uniform distribution).
 
+Syntax::
+    
+    getPatchClamped(pat, spec)
+    
 Arguments:
     * string pat
     * string spec
@@ -1182,6 +1447,10 @@ that consume or produce molecules of the species.
 Note: in a mesh-based simulation this will set the species to be clamped in all 
 triangular elements of the patch.
 
+Syntax::
+    
+    setPatchClamped(pat, spec, clamped)
+    
 Arguments:
     * string pat
     * string spec
@@ -1202,6 +1471,10 @@ Note: In a mesh-based solver (i.e. Tetexact) the value for the patch is returned
 although individual triangle elements may have different values 
 (set with setTriSReacK).
 
+Syntax::
+    
+    getPatchSReacK(pat, reac)
+    
 Arguments:
     * string pat
     * string reac
@@ -1223,6 +1496,10 @@ reaction constant in all triangular elements of the patch to kf.
 Note: The default value still comes from the steps.model description, so calling 
 reset() will return the surface reaction constant to that value.
 
+Syntax::
+    
+    setPatchSReacK(pat, reac, kf)
+    
 Arguments:
     * string pat
     * string reac
@@ -1243,6 +1520,10 @@ present in sufficient numbers or not.
 Note: In a mesh-based simulation (i.e. Tetexact) this method will return True only 
 if the surface reaction is active in all triangular elements in the patch.
 
+Syntax::
+    
+    getPatchSReacActive(pat, reac)
+    
 Arguments:
     * string pat
     * string reac
@@ -1262,6 +1543,10 @@ reactants are present in sufficient numbers or not.
 Note: In a mesh-based simulation (i.e. Tetexact) this will activate/ deactivate the 
 reaction in all triangular elements in the patch.
 
+Syntax::
+    
+    setPatchSReacActive(pat, reac, active)
+    
 Arguments:
     * string pat
     * string reac
@@ -1281,6 +1566,10 @@ Note: in a mesh-based simulation (i.e. Tetexact), the stochastic reaction consta
 computed as the weighted mean of the stochastic reaction constants in all triangular 
 elements of the patch.
 
+Syntax::
+    
+    getPatchSReacC(pat, reac)
+    
 Arguments:
     * string pat
     * string reac
@@ -1297,6 +1586,10 @@ string sreac can occur in patch with identifier string pat, by computing the pro
 of its reactants. Note: in a mesh-based simulation (i.e. Tetexact), returns the sum 
 of the h_mu's over all triangular elements in the patch. 
 
+Syntax::
+    
+    getPatchSReacH(pat, reac)
+    
 Arguments:
     * string pat
     * string reac
@@ -1313,6 +1606,10 @@ with identifier string pat. Note: in a mesh-based simulation (i.e. Tetexact),
 the propensity of a surface reaction in a patch is computed as the sum of the 
 propensities in all triangular elements of the patch.
 
+Syntax::
+    
+    getPatchSReacA(pat, reac)
+    
 Arguments:
     * string pat
     * string reac
@@ -1331,6 +1628,10 @@ has occurred up to the current simulation time.
 Note: in a mesh-based simulation (i.e. Tetexact), returns the sum of the reaction 
 extents in all triangular elements of the patch.
 
+Syntax::
+    
+    getPatchSReacExtent(pat,reac)
+    
 Arguments:
     * string pat
     * string reac
@@ -1348,6 +1649,10 @@ string pat to zero.
 Note: in a mesh-based simulation (i.e. Tetexact), resets the extents of the reaction 
 in all triangular elements of the patch.
 
+Syntax::
+    
+    resetPatchSReacExtent(pat, reac)
+    
 Arguments:
     * string pat
     * string reac
@@ -1361,6 +1666,10 @@ Return:
 "
 Returns the area (in m^2) of the triangular element with index idx.
 
+Syntax::
+    
+    getTriArea(idx)
+    
 Arguments:
     * uint idx
 
@@ -1376,6 +1685,10 @@ Return:
 Returns the number of molecules of species with identifier string spec 
 in the triangular element with index idx.
 
+Syntax::
+    
+    getTriCount(idx, spec)
+    
 Arguments:
     * uint idx
     * string spec
@@ -1390,6 +1703,10 @@ Return:
 Sets the number of molecules of species with identifier string spec in 
 triangular element with index idx to n. 
 
+Syntax::
+    
+    setTriCount(idx, spec, n)
+    
 Arguments:
     * uint idx
     * string spec
@@ -1405,6 +1722,10 @@ Return:
 Returns the amount (in mols) of species with identifier string spec in triangular 
 element with index idx.  
 
+Syntax::
+    
+    getTriAmount(idx, spec)
+    
 Arguments:
     * uint idx
     * string spec
@@ -1420,6 +1741,10 @@ Sets the amount (in mols) of species with identifier string spec in triangular
 element with index idx to a. This continuous value must be converted internally 
 to a discrete number of molecules by multiplication with Avogadro's number. 
 
+Syntax::
+    
+    setTriAmount(idx, spec, a)
+    
 Arguments:
     * uint idx
     * string spec
@@ -1437,6 +1762,10 @@ with index idx is clamped (buffered), which means the number of molecules stays
 the same regardless of reactions that consume or produce molecules of this species. 
 Returns False if not.
 
+Syntax::
+    
+    getTriClamped(idx, spec)
+    
 Arguments:
     * uint idx
     * string spec
@@ -1453,6 +1782,10 @@ is clamped (clamped = True) or not (clamped = False). If a species is clamped th
 concentration stays the same regardless of reactions that consume or produce 
 molecules of the species. 
 
+Syntax::
+    
+    setTriClamped(idx, spec, clamped)
+    
 Arguments:
     * uint idx
     * string spec
@@ -1469,6 +1802,10 @@ Returns the macroscopic reaction constant of surface reaction with identifier
 string sreac in triangular element with index idx. The units of the reaction 
 constant depends on the order of the reaction. 
 
+Syntax::
+    
+    getTriSReacK(idx, reac)
+    
 Arguments:
     * uint idx
     * string reac
@@ -1484,6 +1821,10 @@ Sets the macroscopic reaction constant of surface reaction with identifier
 string sreac in triangular element with index idx to kf. The units of the 
 reaction constant depends on the order of the reaction.
 
+Syntax::
+    
+    setTriSReacK(idx, reac, kf)
+    
 Arguments:
     * uint idx
     * string reac
@@ -1501,6 +1842,10 @@ element with index idx is active (True) or not (False). If it's not active
 this means that the surface reaction will never occur regardless of whether 
 reactants are present in sufficient numbers or not. 
 
+Syntax::
+    
+    getTriSReacActive(idx, reac)
+    
 Arguments:
     * uint idx
     * string reac
@@ -1517,6 +1862,10 @@ with identifier string sreac in triangular element with index idx. If it's
 not active this means that the surface reaction will never occur regardless 
 of whether reactants are present in sufficient numbers or not.  
 
+Syntax::
+    
+    setTriSReacActive(idx, reac, active)
+    
 Arguments:
     * uint idx
     * string reac
@@ -1532,6 +1881,10 @@ Return:
 Returns the 'stochastic reaction constant' (or 'specific probability rate constant') 
 of surface reaction with identifier string sreac in triangular element with index idx.  
 
+Syntax::
+    
+    getTriSReacC(idx, reac)
+    
 Arguments:
     * uint idx
     * string reac
@@ -1547,6 +1900,10 @@ Returns h_mu, the distinct number of ways in which surface reaction with identif
 string sreac can occur in triangular element with index idx, by computing the product 
 of its reactants. 
 
+Syntax::
+    
+    getTriSReacH(idx, reac)
+    
 Arguments:
     * uint idx
     * string reac
@@ -1561,6 +1918,10 @@ Return:
 Returns the propensity of surface reaction with identifier string sreac 
 in triangular element with index idx. 
 
+Syntax::
+    
+    getTriSReacA(idx, reac)
+    
 Arguments:
     * uint idx
     * string reac
@@ -1579,6 +1940,8 @@ Return:
 
 ////////////////////////////////////////////////////////////////////////////////
 
+%feature("autodoc", "1");
+
 namespace steps
 {
 namespace wmrk4
@@ -1588,16 +1951,131 @@ class Wmrk4 : public steps::solver::API
 {
 	
 public:
-	
+	%feature("autodoc", "1");
 	Wmrk4(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r);
+    %feature("autodoc", "1");
 	~Wmrk4(void);
     
+    %feature("autodoc", 
+"
+Returns a string of the solver's name.
+
+Syntax::
+    
+    getSolverName()
+    
+Arguments:
+    None
+
+Return:
+    string
+");
     virtual std::string getSolverName(void) const;
+    
+    %feature("autodoc", 
+"
+Returns a string giving a short description of the solver.
+
+Syntax::
+    
+    getSolverDesc()
+    
+Arguments:
+    None
+
+Return:
+    string
+");
     virtual std::string getSolverDesc(void) const;
+    
+    %feature("autodoc", 
+"
+Returns a string of the solver authors names.
+
+Syntax::
+    
+    getSolverAuthors()
+    
+Arguments:
+    None
+
+Return:
+    string
+");
     virtual std::string getSolverAuthors(void) const;
+    
+    %feature("autodoc", 
+"
+Returns a string giving the author's email address.
+
+Syntax::
+    
+    getSolverEmail()
+    
+Arguments:
+    None
+
+Return:
+    string
+");
     virtual std::string getSolverEmail(void) const;
+
+    %feature("autodoc", 
+"
+Reset the simulation to the state the solver was initialised to. 
+Typically, this resets all concentrations of all chemical species in 
+all elements (whether compartments and patches in a well-mixed solver 
+or tetrahedrons and triangles in a mesh-based solver) to zero, 
+resets the simulation time to zero and resets reaction (and diffusion) 
+rates to the default values described in the steps.model objects. 
+All reaction (and diffusion) rules are reset to active and all 
+compartment volumes and patch areas are reset to default values 
+described in steps.geom objects (for well-mixed solvers). 
+Usually, this method should be called before starting each simulation iteration.
+
+Syntax::
+    
+    reset()
+    
+Arguments:
+    None
+
+Return:
+    None
+");
     virtual void reset(void);
+    
+    %feature("autodoc", 
+"
+Advance the simulation until endtime (given in seconds) is reached. 
+The endtime must be larger or equal to the current simulation time.
+
+Syntax::
+    
+    run(endtime)
+    
+Arguments:
+    float endtime
+
+Return:
+    None
+");
     virtual void run(double endtime);
+    
+    %feature("autodoc", 
+"
+Returns the current simulation time in seconds.
+
+Syntax::
+    
+    getTime()
+    
+Arguments:
+    None
+
+Return:
+    float
+");
     virtual double getTime(void) const;
 
 
@@ -1621,16 +2099,133 @@ class Wmdirect : public steps::solver::API
 {
 
 public:
+    %feature("autodoc", "1");
 	Wmdirect(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r);
-	~Wmdirect(void);
+	%feature("autodoc", "1");
+    ~Wmdirect(void);
+     %feature("autodoc", 
+"
+Returns a string of the solver's name.
+
+Syntax::
     
+    getSolverName()
+    
+Arguments:
+    None
+
+Return:
+    string
+");
     virtual std::string getSolverName(void) const;
+    
+    %feature("autodoc", 
+"
+Returns a string giving a short description of the solver.
+
+Syntax::
+    
+    getSolverDesc()
+    
+Arguments:
+    None
+
+Return:
+    string
+");
     virtual std::string getSolverDesc(void) const;
+    
+    %feature("autodoc", 
+"
+Returns a string of the solver authors names.
+
+Syntax::
+    
+    getSolverAuthors()
+    
+Arguments:
+    None
+
+Return:
+    string
+");
     virtual std::string getSolverAuthors(void) const;
+    
+    %feature("autodoc", 
+"
+Returns a string giving the author's email address.
+
+Syntax::
+    
+    getSolverEmail()
+    
+Arguments:
+    None
+
+Return:
+    string
+");
     virtual std::string getSolverEmail(void) const;
+
+    %feature("autodoc", 
+"
+Reset the simulation to the state the solver was initialised to. 
+Typically, this resets all concentrations of all chemical species in 
+all elements (whether compartments and patches in a well-mixed solver 
+or tetrahedrons and triangles in a mesh-based solver) to zero, 
+resets the simulation time to zero and resets reaction (and diffusion) 
+rates to the default values described in the steps.model objects. 
+All reaction (and diffusion) rules are reset to active and all 
+compartment volumes and patch areas are reset to default values 
+described in steps.geom objects (for well-mixed solvers). 
+Usually, this method should be called before starting each simulation iteration.
+
+Syntax::
+    
+    reset()
+    
+Arguments:
+    None
+
+Return:
+    None
+");
     virtual void reset(void);
+    
+    %feature("autodoc", 
+"
+Advance the simulation until endtime (given in seconds) is reached. 
+The endtime must be larger or equal to the current simulation time.
+
+Syntax::
+    
+    run(endtime)
+    
+Arguments:
+    float endtime
+
+Return:
+    None
+");
     virtual void run(double endtime);
+    
+    %feature("autodoc", 
+"
+Returns the current simulation time in seconds.
+
+Syntax::
+    
+    getTime()
+    
+Arguments:
+    None
+
+Return:
+    float
+");
     virtual double getTime(void) const;
+
+
 	
 	////////////////////////////////////////////////////////////////////////			
 	
@@ -1652,16 +2247,133 @@ class Tetexact : public steps::solver::API
 {	
 
 public:
+    %feature("autodoc", "1");
     Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r);
+    %feature("autodoc", "1");
     ~Tetexact(void);
+    %feature("autodoc", 
+"
+Returns a string of the solver's name.
+
+Syntax::
     
+    getSolverName()
+    
+Arguments:
+    None
+
+Return:
+    string
+");
     virtual std::string getSolverName(void) const;
+    
+    %feature("autodoc", 
+"
+Returns a string giving a short description of the solver.
+
+Syntax::
+    
+    getSolverDesc()
+    
+Arguments:
+    None
+
+Return:
+    string
+");
     virtual std::string getSolverDesc(void) const;
+    
+    %feature("autodoc", 
+"
+Returns a string of the solver authors names.
+
+Syntax::
+    
+    getSolverAuthors()
+    
+Arguments:
+    None
+
+Return:
+    string
+");
     virtual std::string getSolverAuthors(void) const;
+    
+    %feature("autodoc", 
+"
+Returns a string giving the author's email address.
+
+Syntax::
+    
+    getSolverEmail()
+    
+Arguments:
+    None
+
+Return:
+    string
+");
     virtual std::string getSolverEmail(void) const;
+
+    %feature("autodoc", 
+"
+Reset the simulation to the state the solver was initialised to. 
+Typically, this resets all concentrations of all chemical species in 
+all elements (whether compartments and patches in a well-mixed solver 
+or tetrahedrons and triangles in a mesh-based solver) to zero, 
+resets the simulation time to zero and resets reaction (and diffusion) 
+rates to the default values described in the steps.model objects. 
+All reaction (and diffusion) rules are reset to active and all 
+compartment volumes and patch areas are reset to default values 
+described in steps.geom objects (for well-mixed solvers). 
+Usually, this method should be called before starting each simulation iteration.
+
+Syntax::
+    
+    reset()
+    
+Arguments:
+    None
+
+Return:
+    None
+");
     virtual void reset(void);
+    
+    %feature("autodoc", 
+"
+Advance the simulation until endtime (given in seconds) is reached. 
+The endtime must be larger or equal to the current simulation time.
+
+Syntax::
+    
+    run(endtime)
+    
+Arguments:
+    float endtime
+
+Return:
+    None
+");
     virtual void run(double endtime);
+    
+    %feature("autodoc", 
+"
+Returns the current simulation time in seconds.
+
+Syntax::
+    
+    getTime()
+    
+Arguments:
+    None
+
+Return:
+    float
+");
     virtual double getTime(void) const;
+
+
 	
 	////////////////////////////////////////////////////////////////////////			
 	

@@ -66,7 +66,8 @@ import cPickle
 class Wmrk4(solver_swig.Wmrk4) :
     def __init__(self, *args): 
         """
-        Construction:
+        Construction::
+        
             sim = steps.solver.Wmrk4(model, geom, rng)
             
         Create a well-mixed RK4 simulation solver.
@@ -87,7 +88,8 @@ class Wmrk4(solver_swig.Wmrk4) :
 class Wmdirect(solver_swig.Wmdirect) :
     def __init__(self, model, geom, rng): 
         """
-        Construction:
+        Construction::
+        
             sim = steps.solver.Wmdirect(model, geom, rng)
             
         Create a well-mixed Direct SSA simulation solver.
@@ -106,10 +108,18 @@ class Wmdirect(solver_swig.Wmdirect) :
         self.geom = geom
 
     def setCheckPointPrefix(self, prefix):
-        """Setup check pointing file prefix including path"""
+        """
+        Setup checkpointing file prefix including path.
+        
+        Arguments:
+            string prefix path prefix for checkpoint files.
+        """
         self.cp_prefix = prefix
         
     def run(self, end_time, cp_interval = 0.0):
+        """
+        Run the simulation until end_time, automatic checkpoint for every cp_interval.
+        """
         if cp_interval > 0.0:
             while (end_time - _solver_swig.API_getTime(self)) > cp_interval:
                 _solver_swig.API_advance(self, cp_interval)
@@ -120,6 +130,9 @@ class Wmdirect(solver_swig.Wmdirect) :
             _solver_swig.API_run(self, end_time)
     
     def advance(self, advance_time, cp_interval = 0.0):
+        """
+        Avdance the simulation for advance_time, automatic checkpoint for every cp_interval.
+        """
         if cp_interval > 0.0:
             remain = advance_time
             while remain > cp_interval:
@@ -135,19 +148,22 @@ class Wmdirect(solver_swig.Wmdirect) :
     def getFile(self, name):
         if name == None:
             filename = "%s%e%s" % (self.cp_prefix, _solver_swig.API_getTime(self), ".checkpoint")
-            print "\nCheck pointing -> ", filename
+            print "\ncheckpointing -> ", filename
             output = file(filename, "wb")
         else:
-            print "Check pointing -> ", name
+            print "checkpointing -> ", name
             output = file(name, "wb")
         return output
         
     def checkpoint(self, filename = None):
+        """
+        Checkpoint state to filename.
+        """
         output = self.getFile(filename)
 
         specs = self.model.getAllSpecs()
         
-        # check point general info
+        # checkpoint general info
         info = {}
         info["Solver"] = "Wmdirect"
         info["SimTime"] = _solver_swig.API_getTime(self)
@@ -171,7 +187,7 @@ class Wmdirect(solver_swig.Wmdirect) :
         cPickle.dump(info,output)
         
         
-        # check point comp info
+        # checkpoint comp info
         for comp in comp_ids:
             scan = {}
             scan["DataType"] = "Comp"
@@ -184,7 +200,7 @@ class Wmdirect(solver_swig.Wmdirect) :
             scan["SpecsDist"] = specs_dist
             cPickle.dump(scan, output)
         
-        # check point patch info
+        # checkpoint patch info
         for patch in patch_ids:
             scan = {}
             scan["DataType"] = "Patch"
@@ -200,17 +216,20 @@ class Wmdirect(solver_swig.Wmdirect) :
         print "Done."
         
     def restore(self, file):
+        """
+        Restore simulation state from checkpoint file
+        """
         input = open(file, 'rb')
         
         if input == None:
-            print "Unable to load check point file."
+            print "Unable to load checkpoint file."
             return
         
         print "\nRestoring data from %s:" %(file)
         print "Checking general info..."
         info = cPickle.load(input)
         if info["Solver"] != "Wmdirect":
-            print "Solver mismatch: this check point file requires a %s solver." % (info["Solver"])
+            print "Solver mismatch: this checkpoint file requires a %s solver." % (info["Solver"])
             return
             
         model_specs = self.model.getAllSpecs()
@@ -296,7 +315,8 @@ class Wmdirect(solver_swig.Wmdirect) :
 class Tetexact(solver_swig.Tetexact) :  
     def __init__(self, model, geom, rng): 
         """
-        Construction:
+        Construction::
+        
             sim = steps.solver.Tetexact(model, mesh, rng)
             
         Create a tetrahedral mesh-based Direct SSA simulation solver.
@@ -317,10 +337,18 @@ class Tetexact(solver_swig.Tetexact) :
         
         
     def setCheckPointPrefix(self, prefix):
-        """Setup check pointing file prefix including path"""
+        """
+        Setup checkpointing file prefix including path.
+        
+        Arguments:
+            string prefix path prefix for checkpoint files.
+        """
         self.cp_prefix = prefix
         
     def run(self, end_time, cp_interval = 0.0):
+        """
+        Run the simulation until end_time, automatic checkpoint for every cp_interval.
+        """
         if cp_interval > 0.0:
             while (end_time - _solver_swig.API_getTime(self)) > cp_interval:
                 _solver_swig.API_advance(self, cp_interval)
@@ -331,6 +359,9 @@ class Tetexact(solver_swig.Tetexact) :
             _solver_swig.API_run(self, end_time)
     
     def advance(self, advance_time, cp_interval = 0.0):
+        """
+        Avdance the simulation for advance_time, automatic checkpoint for every cp_interval.
+        """
         if cp_interval > 0.0:
             remain = advance_time
             while remain > cp_interval:
@@ -346,21 +377,24 @@ class Tetexact(solver_swig.Tetexact) :
     def getFile(self, name):
         if name == None:
             filename = "%s%e%s" % (self.cp_prefix, _solver_swig.API_getTime(self), ".checkpoint")
-            print "\nCheck pointing -> ", filename
+            print "\ncheckpointing -> ", filename
             output = file(filename, "wb")
         else:
-            print "Check pointing -> ", name
+            print "checkpointing -> ", name
             output = file(name, "wb")
         return output
         
     def checkpoint(self, filename = None):
+        """
+        Checkpoint state to filename.
+        """
         output = self.getFile(filename)
 
         specs = self.model.getAllSpecs()
         ntets = self.geom.ntets
         ntris = self.geom.ntris
         
-        # check point general info
+        # checkpoint general info
         info = {}
         info["Solver"] = "Tetexact"
         info["SimTime"] = _solver_swig.API_getTime(self)
@@ -373,7 +407,7 @@ class Tetexact(solver_swig.Tetexact) :
         info["Specs"] = spec_ids
         cPickle.dump(info,output)
         
-        # check point tet info
+        # checkpoint tet info
         for t in range(ntets):
             if self.geom.getTetComp(t) == None:
                 continue
@@ -387,7 +421,7 @@ class Tetexact(solver_swig.Tetexact) :
             scan["SpecsDist"] = specs_dist
             cPickle.dump(scan, output)
         
-        # check point tri info    
+        # checkpoint tri info    
         for t in range(ntris):
             if self.geom.getTriPatch(t) == None:
                 continue
@@ -404,16 +438,19 @@ class Tetexact(solver_swig.Tetexact) :
         print "Done."
         
     def restore(self, file):
+        """
+        Restore simulation state from checkpoint file
+        """
         input = open(file, 'rb')
         if input == None:
-            print "Unable to load check point file."
+            print "Unable to load checkpoint file."
             return
         
         print "\nRestoring data from %s:" %(file)
         print "Checking general info..."
         info = cPickle.load(input)
         if info["Solver"] != "Tetexact":
-            print "Solver mismatch: this check point file requires a %s solver." % (info["Solver"])
+            print "Solver mismatch: this checkpoint file requires a %s solver." % (info["Solver"])
             return
         if info["NTets"] != self.geom.ntets:
             print "Tet number mismatch: %i (file) -- % i (mesh)." (info["NTets"], self.geom.ntets)

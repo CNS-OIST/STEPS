@@ -1405,6 +1405,10 @@ class Geom(_object):
         Returns a reference to the steps.model.Comp compartment object with 
         identifier string comp_id (if defined).
 
+        Syntax::
+
+            getComp(comp_id)
+            
         Arguments:
             string comp_id
                      
@@ -1419,6 +1423,10 @@ class Geom(_object):
         Removes the steps.geom.Comp object with identifier string comp_id (if defined) 
         from the geometry container.
 
+        Syntax::
+
+            delComp(comp_id)
+            
         Arguments:
             string comp_id
                      
@@ -1433,6 +1441,10 @@ class Geom(_object):
         Returns a list of references to all steps.geom.Comp compartment objects in the 
         geometry container.
 
+        Syntax::
+
+            getAllComps()
+            
         Arguments:
             None
                      
@@ -1447,6 +1459,10 @@ class Geom(_object):
         Removes the steps.geom.Patch object with identifier string patch_id (if defined) 
         from the geometry container.
 
+        Syntax::
+
+            getPatch(patch_id)
+            
         Arguments:
             string patch_id
                      
@@ -1461,6 +1477,10 @@ class Geom(_object):
         Removes the steps.geom.Patch object with identifier string patch_id (if defined) 
         from the geometry container.
 
+        Syntax::
+
+            delPatch(patch_id)
+            
         Arguments:
             string patch_id
                      
@@ -1475,6 +1495,10 @@ class Geom(_object):
         Returns a list of references to all steps.geom.Patch patch objects in the 
         geometry container.
 
+        Syntax::
+
+            getAllPatches()
+            
         Arguments:
             None
                      
@@ -1508,6 +1532,10 @@ class Patch(_object):
         """
         Get the identifier string of the patch.
 
+        Syntax::
+
+            getID()
+            
         Arguments:
             None
                      
@@ -1521,6 +1549,10 @@ class Patch(_object):
         """
         Set the identifier string of the patch.
 
+        Syntax::
+
+            setID(name)
+            
         Arguments:
             string name
                      
@@ -1534,6 +1566,10 @@ class Patch(_object):
         """
         Returns a reference to the parent steps.geom.Geom container object.
 
+        Syntax::
+
+            getContainer()
+            
         Arguments:
             None
                      
@@ -1546,6 +1582,10 @@ class Patch(_object):
     def getArea(*args):
         """
         Get the area of the patch (in m^2).
+
+        Syntax::
+
+            getArea()
 
         Arguments:
             None
@@ -1560,6 +1600,10 @@ class Patch(_object):
         """
         Set the area of the patch (in m^2).
 
+        Syntax::
+
+            setArea(area)
+            
         Arguments:
             float area
                      
@@ -1573,6 +1617,10 @@ class Patch(_object):
         """
         Add surface system identifier string surfsys_id to the patch object.
 
+        Syntax::
+
+            addSurfsys(surfsys_id)
+            
         Arguments:
             string surfsys_id
                      
@@ -1587,6 +1635,10 @@ class Patch(_object):
         Returns a list of the surface system identifier strings which have 
         been added to the patch.
 
+        Syntax::
+
+            getSurfsys()
+            
         Arguments:
             None
                      
@@ -1599,6 +1651,10 @@ class Patch(_object):
     def delSurfsys(*args):
         """
         Removes surface system identifier string surfsys_id from this patch.
+
+        Syntax::
+
+            delSurfsys(surfsys_id)
 
         Arguments:
             string surfsys_id
@@ -1614,6 +1670,10 @@ class Patch(_object):
         Returns a reference to the steps.geom.Comp compartment object representing
         the inner compartment.
 
+        Syntax::
+
+            getIComp()
+
         Arguments:
             None
                      
@@ -1627,6 +1687,10 @@ class Patch(_object):
         """
         Returns a reference to the steps.geom.Comp compartment object representing
         the outer compartment.
+
+        Syntax::
+            
+            getOComp()
 
         Arguments:
             None
@@ -1658,6 +1722,10 @@ class Comp(_object):
         """
         Get the identifier string of the compartment.
 
+        Syntax::
+
+            getID()
+
         Arguments:
             None
                      
@@ -1670,6 +1738,10 @@ class Comp(_object):
     def setID(*args):
         """
         Set the identifier string of the compartment.
+
+        Syntax::
+
+            setID(name)
 
         Arguments:
             string name
@@ -1684,6 +1756,10 @@ class Comp(_object):
         """
         Returns a reference to the parent steps.geom.Geom container object.
 
+        Syntax::
+
+            getContainer()
+
         Arguments:
             None
                      
@@ -1697,6 +1773,10 @@ class Comp(_object):
         """
         Get the volume of the compartment (in m^3).
 
+        Syntax::
+
+            getVol()
+            
         Arguments:
             None
                      
@@ -1710,6 +1790,10 @@ class Comp(_object):
         """
         Set the volume of the compartment (in m^3).
 
+        Syntax::
+
+            setVol(vol)
+
         Arguments:
             float vol
                      
@@ -1722,6 +1806,10 @@ class Comp(_object):
     def addVolsys(*args):
         """
         Add volume system identifier string volsys_id to the compartment object.
+
+        Syntax::
+
+            addVolsys(volsys_id)
 
         Arguments:
             string volsys_id
@@ -1737,6 +1825,10 @@ class Comp(_object):
         Returns a list of the volume system identifier strings which have been 
         added to the compartment.
 
+        Syntax::
+
+            getVolsys()
+
         Arguments:
             None
                      
@@ -1749,6 +1841,10 @@ class Comp(_object):
     def delVolsys(*args):
         """
         Removes volume system identifier string volsys_id from this compartment.
+
+        Syntax::
+
+            delVolsys(volsys_id)
 
         Arguments:
             string volsys_id
@@ -1764,6 +1860,10 @@ class Comp(_object):
         Returns a list of references to steps.geom.Patch patch objects: 
         the 'inner' patches.
 
+        Syntax::
+
+            getIPatches()
+
         Arguments:
             None
                      
@@ -1777,6 +1877,10 @@ class Comp(_object):
         """
         Returns a list of references to steps.geom.Patch patch objects: 
         the 'outer' patches.
+
+        Syntax::
+
+            getOPatches()
 
         Arguments:
             None
@@ -1804,6 +1908,10 @@ class Tetmesh(Geom):
         Returns a list of references to all steps.geom.Patch patch objects in the 
         geometry container.
 
+        Syntax::
+
+            getAllPatches()
+            
         Arguments:
             None
                      
@@ -1814,6 +1922,10 @@ class Tetmesh(Geom):
         Returns a list of references to all steps.geom.Patch patch objects in the 
         geometry container.
 
+        Syntax::
+
+            getAllPatches()
+            
         Arguments:
             None
                      
@@ -1824,6 +1936,10 @@ class Tetmesh(Geom):
         Returns a list of references to all steps.geom.Patch patch objects in the 
         geometry container.
 
+        Syntax::
+
+            getAllPatches()
+            
         Arguments:
             None
                      
@@ -1834,6 +1950,10 @@ class Tetmesh(Geom):
         Returns a list of references to all steps.geom.Patch patch objects in the 
         geometry container.
 
+        Syntax::
+
+            getAllPatches()
+            
         Arguments:
             None
                      
@@ -1851,6 +1971,10 @@ class Tetmesh(Geom):
         Set a vertex with index vidx to coordinates x, y, z. Should be used nverts 
         number of times to supply all vertex information if the second constructor 
         is used. Cannot be called after setup() has been called.
+
+        Syntax::
+
+            setVertex(vidx, x, y, z)
 
         Arguments:
             * uint vidx
@@ -1870,6 +1994,10 @@ class Tetmesh(Geom):
         Should be called ntris number of times to supply triangle information if the 
         second constructor is used. Cannot be called after setup() has been called.
 
+        Syntax::
+
+            setTri(tidx, vidx0, vidx1, vidx2)
+                        
         Arguments:
             * uint tidx
             * uint vidx0
@@ -1888,6 +2016,10 @@ class Tetmesh(Geom):
         vidx2, vidx3. Should be called ntets number of times to supply tetrahedron 
         information if the second constructor is used. Cannot be called after setup() 
         has been called. 
+
+        Syntax::
+
+            setTet(tidx, vidx0, vidx1, vidx2, vidx3)
 
         Arguments:
             * uint tidx
@@ -1910,6 +2042,10 @@ class Tetmesh(Geom):
         calls this method internally, so setup does not have to be called when using the 
         first constructor.
 
+        Syntax::
+
+            setup()
+
         Arguments:
             None
                      
@@ -1923,6 +2059,10 @@ class Tetmesh(Geom):
         """
         Check if setup() has been called, either internally by the first constructor, 
         or by the user if the second constructor was used.
+
+        Syntax::
+
+            isSetupDone()
 
         Arguments:
             None
@@ -1938,6 +2078,10 @@ class Tetmesh(Geom):
         """
         Returns the coordinates of vertex with index vidx in the container.
 
+        Syntax::
+
+            getVertex(vidx)
+
         Arguments:
             uint vidx
                      
@@ -1950,6 +2094,10 @@ class Tetmesh(Geom):
     def countVertices(*args):
         """
         Returns the total number of vertices in the mesh.
+
+        Syntax::
+
+            countVertices()
 
         Arguments:
             None
@@ -1964,6 +2112,10 @@ class Tetmesh(Geom):
         """
         Returns the triangle with index tidx in the container by its three vertex indices.
 
+        Syntax::
+
+            getTri(tidx)
+
         Arguments:
             uint tidx
                      
@@ -1976,6 +2128,10 @@ class Tetmesh(Geom):
     def countTris(*args):
         """
         Returns the total number of triangles in the mesh.
+
+        Syntax::
+
+            countTris()
 
         Arguments:
             None
@@ -1990,6 +2146,10 @@ class Tetmesh(Geom):
         """
         Returns the area of the triangle with index tidx.
 
+        Syntax::
+
+            getTriArea(tidx)
+
         Arguments:
             uint tidx
                      
@@ -2002,6 +2162,10 @@ class Tetmesh(Geom):
     def getTriBarycenter(*args):
         """
         Returns the Cartesian coordinates of the barycenter of triangle with index tidx.
+
+        Syntax::
+
+            getTriBarycenter(tidx)
 
         Arguments:
             uint tidx
@@ -2016,6 +2180,10 @@ class Tetmesh(Geom):
         """
         Returns the radius-edge-ratio (a quality measurement) of tetrahedron with index tidx.
 
+        Syntax::
+            
+            getTetQualityRER(tidx)
+
         Arguments:
             uint tidx
                      
@@ -2028,6 +2196,10 @@ class Tetmesh(Geom):
     def getTriNorm(*args):
         """
         Returns the normal vector of the triangle with index tidx.
+
+        Syntax::
+
+            getTriNorm(tidx)
 
         Arguments:
             uint tidx
@@ -2043,6 +2215,10 @@ class Tetmesh(Geom):
         Returns a reference to a step.geom.TmPatch object: the patch which triangle 
         with index tidx belongs to. Returns None if triangle not assigned to a patch.
 
+        Syntax::
+
+            getTriPatch(tidx)
+
         Arguments:
             uint tidx
                      
@@ -2056,6 +2232,10 @@ class Tetmesh(Geom):
         """
         Returns the indices of the two neighbouring tetrahedrons of triangle with 
         index tidx. An index of -1 indicates no neighbour (triangle is on the mesh border). 
+
+        Syntax::
+
+            getTriTetNeighb(tidx)
 
         Arguments:
             uint tidx
@@ -2071,6 +2251,10 @@ class Tetmesh(Geom):
         Returns a list of triangles that form the mesh boundary.
         Support function for steps.utilities.visual.
 
+        Syntax::
+
+            getTriBoundary()
+
         Arguments:
             None
                      
@@ -2084,6 +2268,9 @@ class Tetmesh(Geom):
         """
         Returns the tetrahedron with index tidx in the container by its four vertex indices.
 
+        Syntax::
+            getTet(tidx)
+            
         Arguments:
             uint tidx
                      
@@ -2096,6 +2283,10 @@ class Tetmesh(Geom):
     def countTets(*args):
         """
         Returns the total number of tetrahedrons in the mesh.
+
+        Syntax::
+
+            countTets()
 
         Arguments:
             None
@@ -2110,6 +2301,10 @@ class Tetmesh(Geom):
         """
         Returns the volume of the tetrahedron with index tidx.
 
+        Syntax::
+
+            getTetVol(tidx)
+
         Arguments:
             uint tidx
                      
@@ -2122,6 +2317,10 @@ class Tetmesh(Geom):
     def getTetBarycenter(*args):
         """
         Returns the barycenter of the tetrahedron with index tidx.
+
+        Syntax::
+
+            getTetBarycenter(tidx)
 
         Arguments:
             uint tidx
@@ -2138,6 +2337,10 @@ class Tetmesh(Geom):
         tetrahedron with index tidx belongs to. Returns None if tetrahedron not 
         assigned to a compartment.
 
+        Syntax::
+
+            getTetComp(tidx)
+
         Arguments:
             uint tidx
                      
@@ -2150,6 +2353,10 @@ class Tetmesh(Geom):
     def getTetTriNeighb(*args):
         """
         Returns the indices of the four neighbouring triangles of tetrahedron with index tidx.
+
+        Syntax::
+
+            getTetTriNeighb(tidx)
 
         Arguments:
             uint tidx
@@ -2164,6 +2371,10 @@ class Tetmesh(Geom):
         """
         Returns the indices of the four neighbouring tetrahedrons of tetrahedron with index tidx. 
         An index of -1 indicates no neighbour (tetrahedron is on the mesh border).
+
+        Syntax::
+
+            getTetTetNeighb(tidx)
 
         Arguments:
             uint tidx
@@ -2180,6 +2391,10 @@ class Tetmesh(Geom):
         p (given in Cartesian coordinates x,y,z). Returns -1 if p is a position 
         outside the mesh.
 
+        Syntax::
+
+            findTetByPoint(p)
+
         Arguments:
             list<float, length = 3> p
                      
@@ -2192,6 +2407,10 @@ class Tetmesh(Geom):
     def getBoundMin(*args):
         """
         Returns the minimal Cartesian coordinate of the rectangular bounding box of the mesh. 
+
+        Syntax::
+
+            getBoundMin()
 
         Arguments:
             None
@@ -2206,6 +2425,10 @@ class Tetmesh(Geom):
         """
         Returns the maximal Cartesian coordinate of the rectangular bounding box of the mesh. 
 
+        Syntax::
+
+            getBoundMax()
+
         Arguments:
             None
                      
@@ -2218,6 +2441,10 @@ class Tetmesh(Geom):
     def getMeshVolume(*args):
         """
         Returns the total volume of the mesh. 
+
+        Syntax::
+
+            getMeshVolume()
 
         Arguments:
             None
@@ -2245,6 +2472,10 @@ class TmComp(Comp):
         Returns a list of references to steps.geom.Patch patch objects: 
         the 'outer' patches.
 
+        Syntax::
+
+            getOPatches()
+
         Arguments:
             None
                      
@@ -2265,6 +2496,10 @@ class TmComp(Comp):
         """
         Returns a list of indices of all tetrahedrons assigned to the compartment. 
 
+        Syntax::
+
+            getAllTetIndices()
+
         Arguments:
             None
                      
@@ -2277,6 +2512,10 @@ class TmComp(Comp):
     def countTets(*args):
         """
         Returns the number of tetrahedrons assigned to the compartment. 
+
+        Syntax::
+
+            countTets()
 
         Arguments:
             None
@@ -2292,6 +2531,10 @@ class TmComp(Comp):
         Returns a list of Booleans describing if tetrahedrons tets are 
         assigned to the compartment.
 
+        Syntax::
+            
+            isTetInside(tets)
+
         Arguments:
             list<uint> tets
                      
@@ -2306,6 +2549,10 @@ class TmComp(Comp):
         Returns the minimal Cartesian coordinate of the rectangular bounding box 
         of the compartment. 
 
+        Syntax::
+
+            getBoundMin()
+
         Arguments:
             None
                      
@@ -2319,6 +2566,10 @@ class TmComp(Comp):
         """
         Returns the maximal Cartesian coordinate of the rectangular bounding box 
         of the compartment. 
+
+        Syntax::
+
+            getBoundMax()
 
         Arguments:
             None
@@ -2346,6 +2597,10 @@ class TmPatch(Patch):
         Returns a reference to the steps.geom.Comp compartment object representing
         the outer compartment.
 
+        Syntax::
+            
+            getOComp()
+
         Arguments:
             None
                      
@@ -2366,6 +2621,10 @@ class TmPatch(Patch):
         """
         Returns a list of indices of all triangles assigned to the patch.
 
+        Syntax::
+
+            getAllTriIndices()
+
         Arguments:
             None
                      
@@ -2379,6 +2638,10 @@ class TmPatch(Patch):
         """
         Returns a list of Booleans describing if triangles tris are 
         assigned to the patch.
+
+        Syntax::
+
+            isTriInside(tris)
 
         Arguments:
             list<uint> tris

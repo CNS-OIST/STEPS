@@ -59,7 +59,8 @@ class Geom(geom_swig.Geom):
     """
     def __init__(self, *args): 
         """
-        Construction:
+        Construction::
+        
             g = steps.geom.Geom()
             
         Create a geometry container object.
@@ -95,7 +96,7 @@ class Patch(geom_swig.Patch):
     """
     def __init__(self, *args, **kwargs): 
         """
-        Construction:
+        Construction::
         
             patch = steps.geom.Patch(id, container, icomp, ocomp = None, area = 0.0)
             
@@ -180,7 +181,8 @@ class Comp(geom_swig.Comp):
     """     
     def __init__(self, *args, **kwargs): 
         """
-        Construction:
+        Construction::
+        
             comp = steps.geom.Comp(id, container, vol = 0.0)
             
         Construct a compartment object with identifier string id and assign 
@@ -261,8 +263,7 @@ class Tetmesh(geom_swig.Tetmesh):
     """
     def __init__(self, *args): 
         """
-        Construction:
-        1.
+        Construction1::
         
             mesh = steps.geom.Tetmesh(verts, tets, tris)
             
@@ -285,7 +286,7 @@ class Tetmesh(geom_swig.Tetmesh):
             * list<uint> tets
             * list<unit> tris
             
-        2.
+        Construction2::
             mesh = steps.geom.Tetmesh(nverts, ntets, ntris)
             
         Construct a Tetmesh container by the “second” method: Supply only the 
@@ -369,7 +370,8 @@ class TmComp(geom_swig.TmComp):
     """
     def __init__(self, *args, **kwargs): 
         """
-        Construction:
+        Construction::
+        
             tmcomp = steps.geom.Comp(id, container, tets)
             
         Construct a TmComp object with identifier string id and assign container 
@@ -403,7 +405,8 @@ class TmPatch(geom_swig.TmPatch):
     """    
     def __init__(self, *args, **kwargs): 
         """
-        Construction:
+        Construction::
+        
             tmpatch = steps.geom.Comp(id, container, tris, icomp, ocomp = None)
             
         Construct a TmPatch object with identifier string id and assign container 

@@ -42,27 +42,6 @@ from . import model_swig
 import _model_swig
 
 
-###########################################
-"""
-class kcst(object):
-    def __init__(self, fget, fset, _fget, _fset) :
-        self.fget = fget
-        self.fset = fset
-        self._fget = _fget
-        self._fset = _fset
-    def __get__(self, instance, cls):
-        k = self._fget(instance)
-        self.fset(instance,k)
-        return self.fget(instance)
-    def __set__(self, instance, value):
-        __swig_setmethods__(instance, value)
-        self.fset(instance, value)
-    def __swig_getmethods__ (self,instance,cls):
-        return self._fget(instance)
-    def __swig_setmethods__(self,instance,value):
-        self._fset(instance,value)
-"""
-###########################################
 
 class Model(model_swig.Model) : 
     """
@@ -72,7 +51,8 @@ class Model(model_swig.Model) :
     
     def __init__(self, *args):
         """
-        Construction:
+        Construction::
+        
             m = steps.model.Model()
             
         Create a model container object.
@@ -95,7 +75,8 @@ class Spec(model_swig.Spec) :
     """
     def __init__(self, *args): 
         """        
-        Construction:
+        Construction::
+        
             s = steps.model.Spec(id, mdl)
             
         Create a species object with identifier string id and assign the 
@@ -123,7 +104,8 @@ class Surfsys(model_swig.Surfsys):
     """
     def __init__(self, *args): 
         """
-        Construction:
+        Construction::
+        
             s = steps.model.Surfsys(id, mdl)
             
         Construct a surface system object with identifier string id and assign 
@@ -151,7 +133,8 @@ class Volsys(model_swig.Volsys) :
     """
     def __init__(self, *args): 
         """
-        Construction:
+        Construction::
+        
             v = steps.model.Volsys(id, mdl)
             
         Construct a volume system object with identifier string id and assign 
@@ -183,7 +166,8 @@ class Diff(model_swig.Diff) :
     """
     def __init__(self, *args, **kwargs): 
         """
-        Construction:
+        Construction::
+        
             diff = steps.model.Diff(id, volsys, lig, dcst = 0.0)
             
         Construct a diffusion rule object with identifier string id applied to species 
@@ -230,7 +214,8 @@ class Reac(model_swig.Reac) :
     """
     def __init__(self, *args, **kwargs): 
         """
-        Construction:
+        Construction::
+        
             reac = steps.model.Reac(id, volsys, lhs = [ ], rhs = [ ], kcst = 0.0)
             
         Construct a reaction rule object with identifier string id and assign 
@@ -293,10 +278,11 @@ class SReac(model_swig.SReac) :
     """
     def __init__(self, *args, **kwargs): 
         """
-        Construction:
+        Construction::
+        
             sreac = steps.model.Reac(id, surfsys, 
                                     ilhs = [ ], olhs = [ ], slhs = [ ],
-                                    irhs = [ ], orhs = [], srhs = [ ],
+                                    irhs = [ ], orhs = [ ], srhs = [ ],
                                     kcst = 0.0)
             
         Construct a surface reaction rule object with identifier string 

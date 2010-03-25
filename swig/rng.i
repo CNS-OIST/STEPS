@@ -80,8 +80,13 @@ Proxy of C++ random number generator.
 "
 Initialize the random number generator with given seed value.
 
+
+Syntax::
+    
+    initialize(seed)
+    
 Arguments:
-    uint
+    uint seed
 
 Return:
     None
@@ -112,6 +117,10 @@ Return:
 "
 Equivalent to: create('mt19937', buffer_size)
 
+Syntax::
+
+    create_mt19937(buffer_size)
+    
 Arguments:
     uint buffer_size
 
@@ -124,6 +133,10 @@ Return:
 "
 Creates and returns a reference to a steps.rng.RNG random number generator object, 
 which is specified by type and pre-allocates a buffer list with size of buffer_size.
+
+Syntax::
+    
+    create(type, buffer_size)
 
 Arguments:
     * string type
