@@ -1,0 +1,379 @@
+.. _ip3:
+
+*********************************************
+Example: Surface-Volume Reactions (IP3 Model)
+*********************************************
+
+In :doc:`/well_mixed` we use objects of type :class:`steps.model.Reac` to represent
+a reaction taking place inside a volume. In this chapter we consider another 
+type of kinetic reaction represented by the :class:`steps.model.SReac` class 
+(associated with the :class:`steps.model.Surfsys` container) which defines a 
+reaction taking place on a surface (patch) which separates two compartments 
+(arbitrarily naming one of them the “inner” compartment, and the other one 
+the “outer” compartment). Reactants and products can then be freely moving 
+around in a compartment adjoined to the patch or embedded in the surface. 
+Therefore, it is necessary to firstly specify the location of the reactant 
+and product species [#f1]_.
+   
+The stoichiometry of the surface reaction is specified by the following lists:
+
+* Species on the left hand side of the reaction (the reactants):
+    * Species on the surface (``slhs``).
+    * Species in the “outer” compartment (``olhs``).
+    * or Species in the “inner” compartment (``ilhs``) [#f2]_.
+
+* Species on the right hand side of the reaction (the reactants):
+    * Species on the surface (``srhs``).
+    * Species in the “outer” compartment (``orhs``).
+    * or Species in the “inner” compartment (``irhs``).
+    
+To become familiar with these objects we will build a simplified version of 
+the inositol 1,4,5-trisphosphate (IP :math:`_{3}`) model
+:ref:`Figure 3.1 <figure_3_1>` (described in [#f3]_) in STEPS.
+:ref:`Figure 3.2 <figure_3_2>` provides the schematic diagram of the states 
+and transitions in the model. We see that our reactions take place on the 
+membrane between the cytosol and the Endoplasmic Reticulum (ER) and therefore 
+must be described by an SReac object, with each “binding” reaction described 
+by a second order surface reaction and each “unbinding” reaction by a first 
+order surface reaction.
+
+.. _figure_3_1:
+
+.. figure:: images/ip3_2.tiff
+   :height: 4in
+   :width: 5.5in
+   
+   In the IP3 receptor model, reactions (i.e. receptor binding of IP3 and 
+   calcium molecules) take place on the membrane separating the endoplasmic 
+   reticulum (ER) and the cytosol. Therefore, we will use Surface Reaction 
+   objects to describe the reactions.
+   
+.. _figure_3_2:
+
+.. figure:: images/IP3_schem_new.tiff
+   :height: 4in
+   :width: 5.5in
+   
+   The schematic diagram of the states and 
+   transitions in the IP :math:`_{\text{3}}` receptor model.
+   
+We will go through the Python code to build this model in STEPS, 
+but providing only brief descriptions of operations we are familiar 
+with from the previous chapter. 
+
+Model specification
+===================
+
+First we need to import the :mod:`steps.model` package and create a **Model** 
+container object named mdl, as we did in section::
+    
+    >>> import steps.model as smodel
+    >>> mdl = smodel.Model()
+    
+Now we create the species in this model based on :ref:`Figure 3.2 <figure_3_2>`, 
+declaring all receptor states as separate Spec objects. Recall that all 
+identifier strings must be unique and we should also make sure not to reuse 
+a variable name so that we do not lose any references to the objects we create::
+
+    >>> # Calcium
+    >>> Ca = smodel.Spec('Ca', mdl)
+    >>>
+    >>> # IP3
+    >>> IP3 = smodel.Spec('IP3', mdl)
+    >>>
+    >>> ############### receptor state objects ###############
+    >>> # receptor state: 'naive' state (no bound ligands)
+    >>> R = smodel.Spec('R', mdl)
+    >>> 
+    >>> # receptor state: bound IP3 
+    >>> RIP3 = smodel.Spec('RIP3', mdl)
+    >>> 
+    >>> # receptor state: bound IP3 and Ca (open)
+    >>> Ropen = smodel.Spec('Ropen', mdl)
+    >>>
+    >>> # receptor state: Ca bound to one inactivation site
+    >>> RCa = smodel.Spec('RCa', mdl)
+    >>>
+    >>> # receptor state: Ca bound to two inactivation sites
+    >>> R2Ca = smodel.Spec('R2Ca', mdl)
+    >>>
+    >>> # receptor state: Ca bound to three inactivation sites
+    >>> R3Ca = smodel.Spec('R3Ca', mdl)
+    >>> 
+    >>> # receptor state: Ca bound to four inactivation sites
+    >>> R4Ca = smodel.Spec('R4Ca', mdl)
+    >>> #######################################################
+
+Next we create a *surface system*. The function of a surface system is similar 
+to the volume system used to group Reac objects in :doc:`/well_mixed`. Basically, 
+surface systems group a set of stoichiometric reaction rules that are described 
+by **SReac** objects. It is often the case that such reactions are modeled as 
+taking place on a membrane surface and not within a volume, although this is 
+actually not a necessity. We need to create an object of type
+:class:`steps.model.Surfsys`. The arguments to the class constructor are an identifier 
+string and a reference to the parent **Model** object::
+
+    >>> surfsys = smodel.Surfsys('ssys', mdl)
+    
+Now it is time to specify the reaction stoichiometry, defined in 
+:ref:`Figure 3.2 <figure_3_2>`. Unlike the model in :doc:`/well_mixed`, 
+reactions in this model are defined by the surface reaction objects 
+(:class:`steps.model.SReac`) in which the arguments include information about 
+which compartment or patch the reactants and products belong to. 
+At this stage we must chose which compartment we will label 'outer' 
+and which we will label 'inner' and make sure to maintain this labelling 
+throughout our definitions, and also in our geometry description. 
+We chose to label the cytosol as the 'outer' compartment and the ER 
+as the 'inner' compartment. 
+
+We will first complete all “forward” binding reactions, recalling that 
+“forward” and “backward” reactions must be declared separately::
+
+    >>> # The 'forward' binding reactions:
+    >>> 
+    >>> R_bind_IP3_f = smodel.SReac('R_bind_IP3_f', surfsys, \
+            olhs=[IP3], slhs=[R], srhs=[RIP3])
+
+    >>> RIP3_bind_Ca_f = smodel.SReac('RIP3_bind_Ca_f', surfsys, \
+            olhs=[Ca], slhs=[RIP3], srhs = [Ropen])
+
+    >>> R_bind_Ca_f = smodel.SReac('R_bind_Ca_f', surfsys, \
+            olhs=[Ca], slhs=[R], srhs=[RCa])
+    >>>
+    >>> RCa_bind_Ca_f = smodel.SReac('RCa_bind_Ca_f', surfsys, \
+            olhs=[Ca], slhs=[RCa],srhs = [R2Ca])
+    >>>
+    >>> R2Ca_bind_Ca_f = smodel.SReac('R2Ca_bind_Ca_f', surfsys, \
+            olhs=[Ca], slhs= [R2Ca], srhs = [R3Ca])
+    >>>
+    >>> R3Ca_bind_Ca_f = smodel.SReac('R3Ca_bind_ca_f', surfsys, \
+            olhs=[Ca], slhs=[R3Ca], srhs=[R4Ca])
+
+The backslash used here merely allows us to continue our statement 
+on the next line and is used to make the code more readable.
+
+Now for the “backward” unbinding reactions::
+
+    >>> # The 'backward' unbinding reactions:
+    >>>
+    >>> R_bind_IP3_b = smodel.SReac('R_bind_IP3_b', surfsys, \
+            slhs=[RIP3], orhs=[IP3], srhs=[R])
+    >>>
+    >>> RIP3_bind_Ca_b = smodel.SReac('RIP3_bind_Ca_b', surfsys, \
+            slhs=[Ropen], orhs=[Ca], srhs=[RIP3])
+    >>>
+    >>> R_bind_Ca_b = smodel.SReac('R_bind_Ca_b', surfsys, \
+            slhs=[RCa], orhs=[Ca], srhs=[R])
+    >>>
+    >>> RCa_bind_Ca_b = smodel.SReac('RCa_bind_Ca_b', surfsys, \
+            slhs=[R2Ca], orhs=[Ca], srhs=[RCa])
+    >>>
+    >>> R2Ca_bind_Ca_b = smodel.SReac('R2Ca_bind_Ca_b', surfsys, \
+            slhs=[R3Ca], orhs=[Ca], srhs= [R2Ca])
+    >>>
+    >>> R3Ca_bind_Ca_b = smodel.SReac('R3Ca_bind_ca_b', surfsys, \
+            slhs=[R4Ca], orhs=[Ca], srhs=[R3Ca])
+            
+We model our calcium flux from the ER to the cytosol as a second order reaction. 
+In effect we are saying, when such a reaction takes place, a calcium ion from 
+the ER passes instantaneously through an open receptor to the cytosol.
+
+::
+
+    >>> # Ca ions passing through open IP3R channel
+    >>> R_Ca_channel_f = smodel.SReac('R_Ca_channel_f', surfsys, \
+            ilhs=[Ca], slhs=[Ropen], orhs=[Ca], srhs=[Ropen])
+            
+We can see that it is vital that when we come to describing our geometry 
+that our compartment labelling is maintained. At this level we have specified 
+whether some reactants and products belong to the 'inner' or 'outer' compartment, 
+with the intention to label the cytosol as the 'outer' compartment and the ER as 
+the 'inner' compartment, but we will not actually make that distinction until 
+we come to describing our geometry.
+
+Next, we set all reaction constants' default values (see [#f3]_). These constants 
+could have been passed to the initializer when we were creating our SReac objects,
+but for clarity we chose to set them here with method ``setKcst``. We must make 
+sure to supply our values in s.i. units, like all parameters in STEPS::
+
+    >>> R_bind_IP3_f.setKcst(1000e6)
+    >>> R_bind_IP3_b.setKcst(25800)
+    >>> RIP3_bind_Ca_f.setKcst(8000e6)
+    >>> RIP3_bind_Ca_b.setKcst(2000)
+    >>> R_bind_Ca_f.setKcst(8.889e6)
+    >>> R_bind_Ca_b.setKcst(5)
+    >>> RCa_bind_Ca_f.setKcst(20e6)
+    >>> RCa_bind_Ca_b.setKcst(10)
+    >>> R2Ca_bind_Ca_f.setKcst(40e6)
+    >>> R2Ca_bind_Ca_b.setKcst(15)
+    >>> R3Ca_bind_Ca_f.setKcst(60e6)
+    >>> R3Ca_bind_Ca_b.setKcst(20)
+    >>> R_Ca_channel_f.setKcst(2e8)
+    
+Geometry specification
+======================
+
+The next step is to create the geometry for the model. We will chose well-mixed 
+geometry, as in [sub:well-mixed geom], but we now have two compartments which 
+are connected by a surface patch. We create two :class:`steps.geom.Comp` objects 
+to represent the Endoplasmic Reticulum (which we intend to label the 'inner' 
+compartment) and the cytosol ('outer' compartment), and a :class:`steps.geom.Patch` 
+object to represent the ER membrane between the ER and cytosol. 
+We then add the stoichiometry we previously defined and grouped in our 
+Surfsys object to the Patch object [#f4]_.
+
+First we create the two well-mixed compartments. With more than one compartment 
+in the model we must make sure that the identifier strings are be unique amongst
+all compartments in the geometry container. We create the cytosol compartment 
+with the minimum information (identifier string and reference to container), 
+setting the volume with class method setVol, but set the volume of the ER during 
+object construction purely to demonstrate the two possible ways to achieve the task::
+    
+    >>> import steps.geom as swm
+    >>> wmgeom = swm.Geom()
+    >>>
+    >>> # Create the cytosol compartment
+    >>> cyt = swm.Comp('cyt', wmgeom)					
+    >>> cyt.setVol(1.6572e-19)
+    >>>
+    >>> # Create the Endoplasmic Reticulum compartment
+    >>> ER = swm.Comp('ER', wmgeom, vol = 1.968e-20)
+    
+We now create a Patch object, defining the 'inner' and 'outer' compartments. 
+We wish to label the ER as the 'inner' Comp and the cytosol as the 'outer' Comp, 
+which we achieve by their order to the Patch object constructor. 
+The 3rd (required) argument to the constructor is a reference to the 'inner' 
+compartment and the 4th (optional) argument is a reference to the 'outer' 
+compartment. It is vital that care is taken in the order to the constructor 
+of the Comp objects, so that the required labelling from or Surface Reaction 
+definitions is maintained [#f5]_.  We can check the labelling is as desired after 
+object construction with methods ``getOComp`` and ``getIComp`` [#f6]_.
+
+We also set the surface area of the patch::
+
+    >>> # ER is the 'inner' compartment, cyt is the 'outer' compartment
+    >>> memb = swm.Patch('memb', wmgeom, ER, cyt)		
+    >>> memb.addSurfsys('ssys')
+    >>> memb.setArea(0.4143e-12)
+    >>> 
+    >>> print 'Inner compartment to memb is', memb.getIComp().getID()
+    Inner compartment to memb is ER
+    >>> print 'Outer compartment to patch is', memb.getOComp().getID()
+    Outer compartment to memb is cyt
+    
+Simulation with ``Wmdirect``
+============================
+
+Now the model is completed and ready for simulation. To run the simulation, 
+we create a random number generator object, as we did previously in 
+:doc:`/well_mixed`::
+    
+    >>> import steps.rng as srng
+    >>> r = srng.create('mt19937', 512)
+    >>> r.initialize(7233)
+    
+and use the ``Wmdirect`` solver as we also did::
+    
+    >>> import steps.solver as ssolver
+    >>> sim = ssolver.Wmdirect(mdl, wmgeom, r)
+    
+To run the simulation and plot the data, we import modules from pylab and 
+numpy and create arrays to store the data, as we also did previously. 
+This time, however, we also want to plot the standard deviation so we 
+create arrays to store that data too. Here we create variable ``NITER`` 
+and assign it the value 100, the number of iterations we wish to run [#f7]_::
+
+    >>> NITER = 100
+    >>> import pylab
+    >>> import numpy
+    >>> tpnt = numpy.arange(0.0, 0.201, 0.001)
+    >>> res = numpy.zeros([NITER, 201, 2]) 
+    >>> res_std = numpy.zeros([201, 2])  
+    >>> res_std1 = numpy.zeros([201, 2])
+    >>> res_std2 = numpy.zeros([201, 2])
+    
+At the beginning of the simulation, we reset the solver state and set the 
+initial concentration or count (by “count” we mean the number of molecules) 
+of each species (any species we don't explicitly assign a concentration or 
+count to will be initialized with the default value of zero which was set 
+when we called the reset function) and run the simulation for NITER number 
+of iterations. In the following example code, we record the number of IP3 
+receptors in open state ('Ropen' in 'memb') and the concentration of calcium 
+in the cytosol ('Ca' in 'cyt'). We include a pylab.plot call within our main 
+loop to plot the number of open receptors for each individual iteration::
+
+    >>> for i in xrange (0, NITER):
+            sim.reset()
+            sim.setCompConc('cyt', 'Ca', 3.30657e-8)               
+            sim.setCompCount('cyt', 'IP3', 6)                   
+            sim.setCompConc('ER', 'Ca', 150e-6)
+            sim.setCompClamped('ER', 'Ca', True)
+            sim.setPatchCount('memb', 'R', 160)	
+            for t in xrange(0,201):
+                sim.run(tpnt[t])
+                res[i,t,0] = sim.getPatchCount('memb', 'Ropen')
+                res[i,t,1] = sim.getCompConc('cyt', 'Ca')
+            pylab.plot(tpnt, res[i,:,0], color = 'blue', linewidth = 0.1)
+    >>>
+
+We can also calculate the mean and standard deviation of our data using 
+NumPy functions and plot in the same figure as our individual runs 
+:ref:`Figure 3.3 <figure_3_3>`::
+
+    >>> res_mean = numpy.mean(res, 0)
+    >>> res_std = numpy.std(res, 0)
+    >>> res_std1 = res_mean[:,0] + res_std[:,0]
+    >>> res_std2 = res_mean[:,0]- res_std[:,0]
+    >>>
+    >>> pylab.plot(tpnt, res_mean[:,0], color = 'black', \
+            linewidth = 2.0, label = 'mean')
+    >>> pylab.plot(tpnt, res_std1, color = 'gray', \
+        linewidth = 1.0, label='std')
+    >>> pylab.plot(tpnt, res_std2,color = 'gray', linewidth = 1.0)
+    >>>
+    >>> pylab.xlabel('Time (sec)')
+    >>> pylab.ylabel('# IP3 receptors in open state')
+    >>> pylab.title('IP3 receptor model: %d iterations with Wmdirect'\
+        %NITER)
+    >>> pylab.ylim(0)
+    >>> pylab.legend()
+    >>> pylab.show()    
+
+.. _figure_3_3:
+
+.. figure:: images/ip3_fig1png.png
+   :height: 4.6in
+   :width: 6in
+   
+   The number of IP3 receptors in open state: blue traces show individual 
+   iterations, black trace shows the mean and gray trace shows the standard 
+   deviation of 100 iterations. Simulated with the ``Wmdirect`` solver.
+   
+
+.. rubric:: Footnotes
+.. [#f1] Surface reactions are designed to represent reactions where one 
+   reactant is embedded in a membrane, but in fact if all reactants and 
+   products belong to the same compartment and none appear on a patch 
+   it will behave exactly like the equivalent Reac object. 
+.. [#f2] Reactant species cannot belong to different compartments, 
+   so attempting to create an SReac object with both olhs and ``ilhs`` will 
+   result in an error.
+.. [#f3] Doi T, Kuroda S, Mishikawa T, Kawato M: Inositol 
+   1,4,5-Triphosphate-Dependent :math:`Ca^{\text{2+}}` Threshold Dynamics 
+   Detect Spike Timing in Cerebellar Purkinje Cells. J Neurosci 2005, 25(4):950-961
+.. [#f4] Any volume-reactions we defined with Reac objects and grouped in Volsys 
+   containers would be added to the Compartments at this stage.
+.. [#f5] A Patch must have an inner compartment by convention, 
+   but does not require an outer compartment. Obviously any surface reaction 
+   rules that contain reactants or products in the outer compartment cannot be 
+   added to such a Patch.
+.. [#f6] Typically, get functions return references to the object, not the identifier 
+   string, so we can use any of the object methods on the returned reference to 
+   access information about the object. Here we use method getID, which returns 
+   the identifier string of the object.
+.. [#f7] It is perhaps better to group simulation parameters together at the 
+   beginning of the script (such as number of iterations, simulation end time, 
+   data collection time step, etc) so we can change a parameter simply by 
+   changing one variable, which reduces the amount of typing and reduces the 
+   scope for error. This is an approach we will adopt in the next chapter.
+   

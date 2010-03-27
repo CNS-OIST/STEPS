@@ -1,0 +1,533 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>6.5. steps.utilities.meshio &mdash; STEPS User Manual v1.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '1.1.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="STEPS User Manual v1.1.0 documentation" href="index.html" />
+    <link rel="up" title="6. API References" href="API_ref.html" />
+    <link rel="next" title="6.6. steps.utilities.visual" href="API_utilities_visual.html" />
+    <link rel="prev" title="6.4. steps.solver" href="API_solver.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<a href="http://steps.sourceforge.net"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="API_utilities_visual.html" title="6.6. steps.utilities.visual"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="API_solver.html" title="6.4. steps.solver"
+             accesskey="P">previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li>
+          <li><a href="API_ref.html" accesskey="U">6. API References</a> &raquo;</li> 
+      </ul>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-steps.utilities.meshio">
+<span id="api-utilities-meshio"></span><h1>6.5. steps.utilities.meshio<a class="headerlink" href="#module-steps.utilities.meshio" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This module is preliminary, means some of the functions are still under development.
+Code modification / debugging is wellcomed.
+Please email <a class="reference external" href="mailto:steps&#46;dev&#37;&#52;&#48;gmail&#46;com">steps<span>&#46;</span>dev<span>&#64;</span>gmail<span>&#46;</span>com</a> if you would like to share you changes with others.</p>
+</div>
+<p>Mesh Import and Export Utilities</p>
+<p>The MeshIO utilities are designed for importing geometry data from outside mesh-generators,
+as well as creating STEPS mesh object and exporting it using STEPS&#8217; own format.</p>
+<p>Current importing support includes:</p>
+<ul>
+<li><p class="first">Abaqus data format (<a class="reference external" href="http://www.simulia.com">http://www.simulia.com</a>)</p>
+<p>Abaqus format is supported by CUBIT (<a class="reference external" href="http://cubit.sandia.gov/">http://cubit.sandia.gov/</a>) 
+and Netgen (<a class="reference external" href="http://sourceforge.net/projects/netgen-mesher/">http://sourceforge.net/projects/netgen-mesher/</a>)</p>
+</li>
+<li><p class="first">Tengen&#8217;s data formats (<a class="reference external" href="http://tetgen.berlios.de/">http://tetgen.berlios.de/</a>)</p>
+<p>Currently, only the .node, .ele and .face files are supported, 
+other Tetgen files is not used in STEPS.</p>
+</li>
+</ul>
+<p>Each import function (either importTetgen or importAbaqus) will read and import data 
+from given data file(s), returns a Tetmesh object for STEPS simulation, and three 
+ElementProxy objects where geometry data and id mapping are stored.</p>
+<p>Once a Tetmesh object has been created the data can be saved to two separate files 
+by the saveTetmesh() function:</p>
+<ul class="simple">
+<li>An xml annotated file containing the nodes, triangles and tetrahedra.</li>
+<li>A text file containing further information needed by STEPS solvers found 
+in Tetmesh object constructor.</li>
+</ul>
+<p>These files can later be loaded by the loadTetmesh() method and reconstruct
+the Tetmesh object. This is intened to drastically reduce mesh-loading time
+for large meshes (over ~100,000 voxels). By storing all data required by STEPS
+internallyin these two files this infomation does not have to be found each time
+by the Tetmesh object constructor.</p>
+<p><strong>IMPORTANT NOTICE</strong></p>
+<p>User is recommanded to save the tetmesh objects using the saveTetmesh() method
+and recreate the objects from the saved files, instead of creating the objects
+via the importing functions each time, if the tetmesh objects are intented to
+be used in multiple simulations. Since the importing functions require a massive
+amount of time to create the Tetmesh object, comparing to the loadTetmesh() method.</p>
+<dl class="class">
+<dt id="steps.utilities.meshio.ElementProxy">
+<em class="property">class </em><tt class="descclassname">steps.utilities.meshio.</tt><tt class="descname">ElementProxy</tt><big>(</big><em>type</em>, <em>unitlength</em><big>)</big><a class="headerlink" href="#steps.utilities.meshio.ElementProxy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Element Proxy Object</p>
+<p>The Element Proxy object contains data imported from outside files (Abaqus, Tetgen),
+as well as the mapping from the element&#8217;s import id to its STEPS id, and vice versa.
+it also records block and/or group information contained in the imported file, which
+could be used for data tracing and compartment/patch creactions:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">ElementProxy</span><span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="n">unitlength</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Construct an empty ElementProxy object.</p>
+<p>Parameters:</p>
+<ul class="simple">
+<li>type (string): The type of the elements stored in this object.</li>
+<li>unitlength (int): The length of vector units required for each element data.
+e.g. A node with 3 coordinates requires unitlength of 3,
+a tetrahedron with 4 nodes requires unitlength of 4.
+A triangle requires unitlength of 3.</li>
+</ul>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">nodeproxy</span> <span class="o">=</span> <span class="n">ElementProxy</span><span class="p">(</span><span class="s">&#39;node&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="steps.utilities.meshio.ElementProxy.addGroup">
+<tt class="descname">addGroup</tt><big>(</big><em>group_name</em>, <em>group_ids</em><big>)</big><a class="headerlink" href="#steps.utilities.meshio.ElementProxy.addGroup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a group of elements in the Element Map object.</p>
+<p>An group is defined as a list of element ids. Unlike blocks (see blockBegin() method),
+the ids of a group need not be continual. For this reason, user should provide a list
+which contains all ids of elements belong to this group. Each group has a unique name
+for data access.</p>
+<p>No uniqueness or order is predefined for a group, this can be defined by the user for
+specific usage.</p>
+<p>Groups can be used to construct compartments and patches in STEPS, please refer to the
+user manual for examples about using groups and blocks.</p>
+<p>Parameters:</p>
+<ul class="simple">
+<li>group_name (string): Name of the element group.</li>
+<li>group_ids (list): A list of ids of elements belong to the group.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.utilities.meshio.ElementProxy.blockBegin">
+<tt class="descname">blockBegin</tt><big>(</big><em>block_name</em><big>)</big><a class="headerlink" href="#steps.utilities.meshio.ElementProxy.blockBegin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Notify the Element Map object that a new block with name block_name begins from
+the next element.</p>
+<p>A block is a special type of group whose element&#8217;s STEPS ids is continual,
+i.e. can be represented by a begin id and an end id. An unique name should be 
+given to each block, which can be used to access associated block information
+(i.e. a two unit list contains the block begin id and block end id).</p>
+<p>If another block was initialized before calling the blockEnd() method,
+this method will also end the previous block and the its data will be stored.</p>
+<p>A dictionary of blocks can be converted to a dictionary of group via the 
+blocksToGroups() method.</p>
+<p>Notice:</p>
+<p>Although a block will be finished and stored when a new block is notified without
+calling the blockEnd() method, user is recommanded to call blockEnd() in the usual
+case.</p>
+<p>Parameters:</p>
+<ul class="simple">
+<li>block_name (string): Name of the element block.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.utilities.meshio.ElementProxy.blockEnd">
+<tt class="descname">blockEnd</tt><big>(</big><big>)</big><a class="headerlink" href="#steps.utilities.meshio.ElementProxy.blockEnd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Notify the Element Map object that the current element block should be ended.
+Block information (i.e. a dictionary element blockname:[begin_id, end_id]) will
+be added to the ElementProxy object.</p>
+<p>Notice:</p>
+<p>If the blockEnd() method is called before any block begins, or a block has been
+ended and there is no new block started, no information will be added to the block
+dictionary.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.utilities.meshio.ElementProxy.blocksToGroups">
+<tt class="descname">blocksToGroups</tt><big>(</big><big>)</big><a class="headerlink" href="#steps.utilities.meshio.ElementProxy.blocksToGroups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the block dictionary to a group dictionary.</p>
+<p>Return:</p>
+<p>A dictionary of groups.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.utilities.meshio.ElementProxy.getAllData">
+<tt class="descname">getAllData</tt><big>(</big><big>)</big><a class="headerlink" href="#steps.utilities.meshio.ElementProxy.getAllData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all data as an one dimentional list. 
+This list can be used to construct the Tetmesh.</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">nodedata</span> <span class="o">=</span> <span class="n">nodeproxy</span><span class="o">.</span><span class="n">getAllData</span><span class="p">()</span>
+<span class="n">tetdata</span> <span class="o">=</span> <span class="n">tetproxy</span><span class="o">.</span><span class="n">getAllData</span><span class="p">()</span>
+<span class="n">mesh</span> <span class="o">=</span> <span class="n">steps</span><span class="o">.</span><span class="n">geom</span><span class="o">.</span><span class="n">Tetmesh</span><span class="p">(</span><span class="n">nodedata</span><span class="p">,</span> <span class="n">tetdata</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.utilities.meshio.ElementProxy.getBlocks">
+<tt class="descname">getBlocks</tt><big>(</big><big>)</big><a class="headerlink" href="#steps.utilities.meshio.ElementProxy.getBlocks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the block dictionary stored in the Element Map object.</p>
+<p>A block dictionary uses the unique block names as keys, and a list of the start and
+end ids as values.</p>
+<p>Example:</p>
+<p>The following block dictionary contains two blocks: &#8220;Block1&#8221; starts from element with
+id of 0 and end at element 100, &#8220;Block2&#8221; starts from element 101 and ends at element 110:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">blocks</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&quot;Block1&quot;</span><span class="p">:[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span> <span class="s">&quot;Block2&quot;</span><span class="p">:[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">110</span><span class="p">]</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>To access individual blocks, for example &#8220;Block1&#8221;, type:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">block1</span> <span class="o">=</span> <span class="n">blocks</span><span class="p">[</span><span class="s">&quot;Block1&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>User is recommanded to check Python&#8217;s manual for the usage of dictionary.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.utilities.meshio.ElementProxy.getDataFromImportID">
+<tt class="descname">getDataFromImportID</tt><big>(</big><em>import_id</em><big>)</big><a class="headerlink" href="#steps.utilities.meshio.ElementProxy.getDataFromImportID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the data of element with import id import_id.</p>
+<p>Parameters:</p>
+<p>import_id (int): 
+The import id of the element, this id is given by outside generator
+and contained in the imported file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.utilities.meshio.ElementProxy.getDataFromSTEPSID">
+<tt class="descname">getDataFromSTEPSID</tt><big>(</big><em>steps_id</em><big>)</big><a class="headerlink" href="#steps.utilities.meshio.ElementProxy.getDataFromSTEPSID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the data of element with STEPS id steps_id.</p>
+<p>Parameters:</p>
+<ul class="simple">
+<li>steps_id (int): The STEPS id of the element, this id is automatically allocated when
+inserting the element to the Element Map (see insert() method).</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.utilities.meshio.ElementProxy.getGroups">
+<tt class="descname">getGroups</tt><big>(</big><big>)</big><a class="headerlink" href="#steps.utilities.meshio.ElementProxy.getGroups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all groups stored in the Element Map object.</p>
+<p>Example:</p>
+<p>The following group dictionary contains two groups:</p>
+<div class="highlight-python"><pre>"Group1" contains element ids 1,2,6,4,8
+"Group2" contains element ids 3,1,2,1
+
+groups = {"Group1":[1,2,6,4,8], "Group2":[3,1,2,1]}</pre>
+</div>
+<p>Note that element 1 appears twice in &#8220;Group2&#8221;.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.utilities.meshio.ElementProxy.getImportID">
+<tt class="descname">getImportID</tt><big>(</big><em>steps_id</em><big>)</big><a class="headerlink" href="#steps.utilities.meshio.ElementProxy.getImportID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the import id of a element from its STEPS id.</p>
+<p>Parameters:</p>
+<ul class="simple">
+<li>steps_id (int): The STEPS id of the element.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.utilities.meshio.ElementProxy.getSTEPSID">
+<tt class="descname">getSTEPSID</tt><big>(</big><em>import_id</em><big>)</big><a class="headerlink" href="#steps.utilities.meshio.ElementProxy.getSTEPSID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the STEPS id of a element from its import id.</p>
+<p>Parameters:</p>
+<ul class="simple">
+<li>import_id (int): The import id of the element.</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.utilities.meshio.ElementProxy.getSize">
+<tt class="descname">getSize</tt><big>(</big><big>)</big><a class="headerlink" href="#steps.utilities.meshio.ElementProxy.getSize" title="Permalink to this definition">¶</a></dt>
+<dd>Return the number of elements stored in the Element Map object.</dd></dl>
+
+<dl class="method">
+<dt id="steps.utilities.meshio.ElementProxy.getType">
+<tt class="descname">getType</tt><big>(</big><big>)</big><a class="headerlink" href="#steps.utilities.meshio.ElementProxy.getType" title="Permalink to this definition">¶</a></dt>
+<dd>Return the type of elements stored in this Element Map object.</dd></dl>
+
+<dl class="method">
+<dt id="steps.utilities.meshio.ElementProxy.insert">
+<tt class="descname">insert</tt><big>(</big><em>import_id</em>, <em>import_data</em><big>)</big><a class="headerlink" href="#steps.utilities.meshio.ElementProxy.insert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Insert an element to the Element Map object, a STEPS id will be assigned automatically.</p>
+<p>Parameters:</p>
+<ul class="simple">
+<li>import_id (int): The id of the element given by the importing file.</li>
+<li>import_data (list): a list of data belongs to the element, 
+e.g. for a node, a 3 units list of its coordinates.</li>
+</ul>
+<p>Example:</p>
+<p>nodeproxy.insert(1, [0.1, 0.2, 0.4])</p>
+<p>Insert a node with import id 1 and coordinates x = 0.1, y = 0.2, z = 0.4 to nodeproxy.
+type nodeproxy.getSTEPSID(1) will return the STEPS id of this element.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="steps.utilities.meshio.importAbaqus">
+<tt class="descclassname">steps.utilities.meshio.</tt><tt class="descname">importAbaqus</tt><big>(</big><em>filename</em>, <em>scale</em><big>)</big><a class="headerlink" href="#steps.utilities.meshio.importAbaqus" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<p>Read a ABAQUS-formated mesh file, return the created steps.geom.Tetmesh object, 
+the element mapping for nodes, tetraedrons and triangles.</p>
+<p>PARAMETERS:</p>
+<ul class="simple">
+<li>filename: the Abaqus filename (or path) including any suffix.</li>
+<li>scale: LENGTH scale from the importing mesh to real geometry. e.g. a radius 
+of 10 in the importing file to a radius of 1 micron in STEPS, scale is 1e-7.</li>
+</ul>
+<p>RETURNS:</p>
+<p>mesh, nodeproxy, tetproxy, triproxy</p>
+<ul class="simple">
+<li>mesh: The STEPS TetMesh object</li>
+<li>nodeproxy: Element Map for nodes</li>
+<li>tetproxy: Element Map for tetrahedrons</li>
+<li>triproxy: Element Map for triangles</li>
+</ul>
+</blockquote>
+<p>IMPORTANT NOTICE:</p>
+<p>User is recommanded to save the tetmesh objects using the saveTetmesh() method
+and recreate the objects from the saved files, instead of creating the objects
+via the importing functions each time, if the tetmesh objects are intented to
+be used in multiple simulations. Since the importing functions require a massive
+amount of time to create the Tetmesh object, comparing to the loadTetmesh() method.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="steps.utilities.meshio.importTetGen">
+<tt class="descclassname">steps.utilities.meshio.</tt><tt class="descname">importTetGen</tt><big>(</big><em>pathroot</em><big>)</big><a class="headerlink" href="#steps.utilities.meshio.importTetGen" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<p>Read a TetGen-generated or refined mesh from a set of files.</p>
+<p>The TetGen file format for describing a mesh actually consists of 
+multiple files with varying suffixes. Currently, this routine only
+reads meshes consisting of three files:</p>
+<ul class="simple">
+<li>&lt;input&gt;.node: describing the tetrahedral mesh node points.</li>
+<li>&lt;input&gt;.ele: describing tetrahedral elements, each of which
+consists of 4 pointers into the &lt;input&gt;.node file. (TetGen
+also supports 10-node elements; these 6 extra nodes are obviously 
+not read by STEPS.)</li>
+<li>&lt;input&gt;.face: describing triangular faces, each of which 
+consists of 3 pointers into the &lt;input&gt;.node file. This file is optional.</li>
+</ul>
+<p>Other files are .vol (list of maximum volumes), .var (variant constraints)
+.neigh (list of neighbours), .smesh (simple PLC descriptions) and .edge
+(list of boundary edges) files. None of these seem relevant for our
+use cases, so we don&#8217;t load them even when they are there. In particular,
+the .neigh file is computed by STEPS itself.</p>
+<p>Please refer to the TetGen manual (pages 31-40 in the last edition)
+for more information on these file formats</p>
+<p>tetgen.berlios.de/files/tetgen-manual.pdf</p>
+<p>(See the documentation for steps.geom.tetmesh for details about the mesh object.)</p>
+<p>PARAMETERS:</p>
+<ul class="simple">
+<li>pathroot
+The root of the path name. E.g. mesh/torus would make this
+routine try to read files mesh/torus.node, mesh/torus.ele 
+and optionally for mesh/torus.face</li>
+</ul>
+<p>RETURNS:</p>
+<p>mesh, nodeproxy, tetproxy, triproxy</p>
+<p>mesh: The STEPS TetMesh object
+nodeproxy: Element Map for nodes
+tetproxy: Element Map for tetrahedrons
+triproxy: Element Map for triangles</p>
+</blockquote>
+<p>IMPORTANT NOTICE:</p>
+<p>User is recommanded to save the tetmesh objects using the saveTetmesh() method
+and recreate the objects from the saved files, instead of creating the objects
+via the importing functions each time, if the tetmesh objects are intented to
+be used in multiple simulations. Since the importing functions require a massive
+amount of time to create the Tetmesh object, comparing to the loadTetmesh() method.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="steps.utilities.meshio.loadMesh">
+<tt class="descclassname">steps.utilities.meshio.</tt><tt class="descname">loadMesh</tt><big>(</big><em>pathname</em><big>)</big><a class="headerlink" href="#steps.utilities.meshio.loadMesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a mesh in STEPS from the XML (and ASCII) file. This will
+work with just the XML file, but this is akin to creating the mesh in STEPS
+from scratch and really negates the use of storing the mesh infomation at all.
+For maximum benefit the XML file should be accompanied by the ASCII file, which
+contains all the internal information.</p>
+<p>PARAMETERS:</p>
+<ul class="simple">
+<li>pathname: the root of the path where the file(s) are stored. 
+e.g. with &#8216;meshes/spine1&#8217; this function will look for files /meshes/spine1.xml 
+and /meshes/spine1.txt</li>
+</ul>
+<p>RETURNS: A tuple (mesh, comps, patches)</p>
+<ul class="simple">
+<li>mesh 
+The STEPS Tetmesh object (steps.geom.Tetmesh)</li>
+<li>comps
+A list of any compartment objects (steps.geom.TmComp) from XML file</li>
+<li>patches
+A list of any patches objects (steps.geom.TmPatch) from XML file</li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="steps.utilities.meshio.saveMesh">
+<tt class="descclassname">steps.utilities.meshio.</tt><tt class="descname">saveMesh</tt><big>(</big><em>pathname</em>, <em>tetmesh</em><big>)</big><a class="headerlink" href="#steps.utilities.meshio.saveMesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save a STEPS Tetmesh in two separate files</p>
+<ol class="arabic">
+<li><p class="first">An XML file.
+This file stores the basic information about the mesh which tends to be
+common information for any software that supports tetrahedral meshes.</p>
+<ul class="simple">
+<li>NODES are stored by cartesian coordinates.</li>
+<li>TRIANGLES are stored by the indices of their 3 nodes.</li>
+<li>TETRAHEDRONS are stored by the indices of their 4 nodes.</li>
+</ul>
+<p>The XML file also stores infomation about any compartments or 
+patches created in STEPS (class steps.geom.TmComp steps.geom.TmPatch
+respectively).</p>
+<ul class="simple">
+<li>COMPARTMENT(S) are stored by:<ul>
+<li>their string identification.</li>
+<li>a list of any volume systems added to the compartment at time of saving.</li>
+<li>a list of tetrahedrons belonging to the compartment</li>
+</ul>
+</li>
+<li>PATCH(ES) are stored by:<ul>
+<li>their string identification.</li>
+<li>a list of any surface systems added to the patch at time of saving.</li>
+<li>the inner compartment id.</li>
+<li>the outer compartment id (if it exists).</li>
+<li>a list of trianlges belonging to this patch.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p class="first">An ASCII file storing information important to STEPS internally. This
+information must be found by STEPS once from the basic mesh infomation and
+is vital for simulations in STEPS. This can take a significant amount of 
+time for larger meshes, so storing this information in this way can drastically
+reduce future mesh loading times. The information stored is:</p>
+<ul class="simple">
+<li>each triangle&#8217;s area.</li>
+<li>each triangle&#8217;s normal.</li>
+<li>each triangle&#8217;s two (or one for surface tris) tetrahedron neighbours.</li>
+<li>each tetrahedron&#8217;s volume.</li>
+<li>each tetrahedron&#8217;s barycenter.</li>
+<li>each tetrahedron&#8217;s four neighbouring triangles.</li>
+<li>each tetrahedron&#8217;s four (or fewer for surface tets) tetrahedron neighbours.</li>
+</ul>
+</li>
+</ol>
+<p>PARAMETERS:</p>
+<ul>
+<li><p class="first">pathname:</p>
+<p>the root of the path to store the files.</p>
+<p>e.g. &#8216;meshes/spine1&#8217; will save data in /meshes/spine1.xml and /meshes/spine1.txt</p>
+</li>
+<li><p class="first">tetmesh:</p>
+<p>A valid STEPS Tetmesh object (of class steps.geom.Tetmesh). 
+This mesh can be made in a variety of ways, e.g. to save a mesh loaded from tetgen:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">meshio</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c">### Use cubit script to create steps.geom.Tetmesh object from tetgen output file ###</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mymesh</span> <span class="o">=</span> <span class="n">meshio</span><span class="o">.</span><span class="n">readTetgen</span><span class="p">(</span><span class="n">tetgenfilename</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c">### Save this mesh in XML (and ASCII) format for quick-loading in future ###</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">meshio</span><span class="o">.</span><span class="n">saveMesh</span><span class="p">(</span><span class="s">&#39;/meshes/spine1&#39;</span><span class="p">,</span> <span class="n">mymesh</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="API_solver.html"
+                                  title="previous chapter">6.4. steps.solver</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="API_utilities_visual.html"
+                                  title="next chapter">6.6. steps.utilities.visual</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/API_utilities_meshio.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="API_utilities_visual.html" title="6.6. steps.utilities.visual"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="API_solver.html" title="6.4. steps.solver"
+             >previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li>
+          <li><a href="API_ref.html" >6. API References</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, The STEPS Development Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.5.
+    </div>
+  </body>
+</html>

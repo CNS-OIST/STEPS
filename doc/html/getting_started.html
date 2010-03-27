@@ -1,0 +1,283 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>1. Getting Started &mdash; STEPS User Manual v1.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '1.1.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="STEPS User Manual v1.1.0 documentation" href="index.html" />
+    <link rel="next" title="2. Example: Well-Mixed Reaction Systems" href="well_mixed.html" />
+    <link rel="prev" title="STEPS User Manual and API References" href="manual_index.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<a href="http://steps.sourceforge.net"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="well_mixed.html" title="2. Example: Well-Mixed Reaction Systems"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="manual_index.html" title="STEPS User Manual and API References"
+             accesskey="P">previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="getting-started">
+<span id="id1"></span><h1>1. Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
+<p><strong>The aim of this document is to get you started quickly with STEPS
+by working through a number of examples that highlight the various
+capabilities of this software package. However, before you can do
+that, you need to have a working copy of STEPS installed on your
+computer. So we will first explain the requirements of STEPS in terms
+of third party software and prior knowledge and then how to compile
+and install on your system.</strong></p>
+<div class="section" id="prerequisites">
+<span id="id2"></span><h2>1.1. Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="for-steps-core-modules">
+<h3>1.1.1. For STEPS Core Modules<a class="headerlink" href="#for-steps-core-modules" title="Permalink to this headline">¶</a></h3>
+<p><strong>Python</strong></p>
+<p>The interface to STEPS is in Python, which is a relatively simple,
+intuitive language to get in to and can therefore be picked up quickly.
+It may be possible to follow the examples in this document and to start
+setting up basic STEPS simulations independently without any exposure
+to Python, but to get the most out of STEPS some basic working knowledge
+is required. There are many excellent introductory text books on Python
+from which this knowledge can be gained and within a few hours of study
+it should be possible to become comfortable with utilizing object methods
+and writing basic loops in Python to give you the ability to achieve almost
+any task required to set up and run a STEPS simulation. In contrast to simulator
+environments that come with their own interpreted language, Python is a very widely
+adopted language which is useful for tasks that are related to STEPS only indirectly,
+such as for post-processing of data obtained with a STEPS simulation and for visualization.
+Python is a very complete environment adaptable for almost any kind of task,
+so the knowledge gained could be useful for other tasks not related to STEPS at all with
+more and more scientific software packages adopting an interface in Python.</p>
+<p>There are many different versions of Python available. We recommend Python Version 2.6 as
+it is the main supported version. It is also possible to run STEPS in Python 2.5/3.0 but no
+extensive test has been performed yet.</p>
+<p>Latest version of Python can be downloaded from <a class="reference external" href="http://www.python.org">http://www.python.org</a>.</p>
+<p><strong>C++ Complier</strong></p>
+<p>To build STEPS from source code a c++ compiler is required. For most Unix-like operating systems
+gcc/g++ is commonly pre-installed. For Windows, we recommend Microsoft&#8217;s Visual C++, or g++ in
+MingGW/Cygwin, although other compilers may work as well.</p>
+</div>
+<div class="section" id="for-steps-advanced-modules">
+<h3>1.1.2. For STEPS Advanced Modules<a class="headerlink" href="#for-steps-advanced-modules" title="Permalink to this headline">¶</a></h3>
+<p><strong>STEPS Visual Toolkit</strong></p>
+<p>The steps.utilities.visual module is a visualization toolkit for displaying
+mesh-based simulation in a 3D environment. This module requires the following packages:</p>
+<ul class="simple">
+<li><a class="reference external" href="http://pyopengl.sourceforge.net">PyOpenGL</a></li>
+<li><a class="reference external" href="http://www.wxpython.org">WxPython</a></li>
+</ul>
+<p><strong>Note:</strong> Currently WxPython only supports Python running in 32-bit mode, on the other hand
+the pre-installed Python in Mac OS X 10.6 runs in 64-bit mode by default. To run Python
+in 32-bit mode, user should set the <strong>VERSIONER_PYTHON_PREFER_32_BIT flag</strong> to “yes”, for more
+details, please refer to <a class="reference external" href="http://developer.apple.com/mac/library/documentation/Darwin/Reference/ManPages/man1/python.1.html">Apple&#8217;s User Manual</a>.</p>
+<p>For more details about the visual toolkit, see <a class="reference external" href="preliminary_func.html"><em>Preliminary Functionalities</em></a>.</p>
+</div>
+<div class="section" id="other-recommended">
+<h3>1.1.3. Other Recommended<a class="headerlink" href="#other-recommended" title="Permalink to this headline">¶</a></h3>
+<p><strong>Scientific Python</strong></p>
+<p>Through the use of a number of packages, namely NumPy, SciPy and Matplotlib,
+Python can be made to resemble the Matlab environment for scientific computing
+rather closely. The NumPy package brings powerful array objects to Python.
+These array objects will typically rely on an optimized linear algebra package
+to make the operations on them very fast. SciPy builds on top of NumPy and adds
+even more functionality for signal processing, numerical integration, etc.
+Finally, Matplotlib adds a collection of powerful 2D plotting tools to your
+Python environment, that once again resemble the plotting commands familiar from Matlab.</p>
+<p>These add-on packages are in common use among the scientific computing community and
+it is highly recommended that two of these packages (NumPy and SciPy) are installed
+on your system. Although one could use STEPS without taking advantage of these packages,
+we highly recommend you do take the time to get acquainted with them as they will make it
+easier to run simulations, collect output and perform extra processing on this data. Starting
+from the very first example we will show how NumPy arrays can be used for these tasks rather
+than the basic built-in types in Python (lists, tuples etc), although one could replace a NumPy
+array with a list in the code, for example, if more comfortable with the built-in types.
+For further information on these packages you can visit the following online resources:</p>
+<ul class="simple">
+<li><a class="reference external" href="http://www.scipy.org/Documentation">Documentation Link to NumPy and SciPy</a></li>
+<li><a class="reference external" href="http://www.scipy.org/NumPy_for_Matlab_Users">NumPy for Matlab users</a></li>
+<li><a class="reference external" href="http://numpy.sourceforge.net/numdoc/HTML/numdoc.htm">A very good NumPy tutorial content-wise.</a></li>
+</ul>
+</div>
+<div class="section" id="obtaining-steps">
+<h3>1.1.4. Obtaining STEPS<a class="headerlink" href="#obtaining-steps" title="Permalink to this headline">¶</a></h3>
+<p>The latest stable version of STEPS can be downloaded from <a class="reference external" href="http://sourceforge.net/projects/steps/">STEPS Sourceforge Homepage</a>.
+Here you will also find documentation, examples and support.</p>
+</div>
+<div class="section" id="compilation">
+<h3>1.1.5. Compilation<a class="headerlink" href="#compilation" title="Permalink to this headline">¶</a></h3>
+<p>This section describes how to compile and install STEPS on a generic Unix system.
+We have successfully achieved this on Mac OS X (currently the main design platform),
+Linux and Windows (tested using MinGW and Cygwin). Many other systems should work as
+well, however.</p>
+<p><strong>Note:</strong> Started from Version 1.1.0, STEPS has adapted Python&#8217;s Distutils for building
+and installation, replacing the GNU autotools used in older releases. Due to this change,
+we recommend user to remove previous installed version before the installation of new release.</p>
+<div class="section" id="install-from-binaries">
+<h4>1.1.5.1. Install From Binaries<a class="headerlink" href="#install-from-binaries" title="Permalink to this headline">¶</a></h4>
+<p>STEPS provides varies pre-built binaries for different platforms, user is recommended to install
+STEPS from these binaries when possible. Please download the related package and follow the
+instruction within the package to install.</p>
+</div>
+<div class="section" id="install-from-source-code-package">
+<h4>1.1.5.2. Install From Source Code Package<a class="headerlink" href="#install-from-source-code-package" title="Permalink to this headline">¶</a></h4>
+<p>STEPS uses Python&#8217;s Distutils for building and inatallation. The general process involves two steps:</p>
+<div class="highlight-python"><pre>$ python setup.py build
+$ [sudo] python setup.py install</pre>
+</div>
+<p>For MinGW in Windows, replace commands with:</p>
+<div class="highlight-python"><pre>$ python setup.py build --compiler=mingw32
+$ python setup.py install</pre>
+</div>
+<p>For Cygwin in Windows, replace commands with:</p>
+<div class="highlight-python"><pre>$ python setup.py build --compiler=cygwin
+$ python setup.py install</pre>
+</div>
+<p>Please refer to <a class="reference external" href="http://docs.python.org/install/index.html">Python&#8217;s Distutils manual</a>
+for more information about installation.</p>
+</div>
+</div>
+<div class="section" id="running-steps">
+<h3>1.1.6. Running STEPS<a class="headerlink" href="#running-steps" title="Permalink to this headline">¶</a></h3>
+<p>If STEPS has been installed successfully on your system you can run STEPS
+interactively in Python. By default, STEPS will be installed in your default
+Python path. However, if you&#8217;ve changed the installation path manually, you
+need to make sure that the path to your installed files is known to Python,
+which you may need to do by setting the <strong>PYTHONPATH</strong> shell variable. So if, for
+example, STEPS is installed in /opt/local/lib/python2.6/site-packages/:</p>
+<div class="highlight-python"><pre>$ export PYTHONPATH=/opt/local/lib/python2.6/site-packages/
+$ python
+&gt;&gt;&gt; import steps
+&gt;&gt;&gt;</pre>
+</div>
+<p>Just about every task related to building a model, describing the geometry and
+running a simulation in STEPS involves creating <strong>objects</strong> in Python and utilising
+the object methods (so it is highly recommend that you are familiar with Python objects
+and comfortable using them, though you will gain more experience by working through the
+examples in this document). The class definitions for these objects reside in Python modules
+in the steps directory (<a title="" class="reference external" href="API_model.html#module-steps.model"><tt class="xref docutils literal"><span class="pre">steps.model</span></tt></a>, <a title="" class="reference external" href="API_geom.html#module-steps.geom"><tt class="xref docutils literal"><span class="pre">steps.geom</span></tt></a>, <a title="" class="reference external" href="API_solver.html#module-steps.solver"><tt class="xref docutils literal"><span class="pre">steps.solver</span></tt></a> etc).
+So to test installation,
+try to create your first STEPS object. What this object is and how it is used will become clear
+in the next chapter. So, from the Python prompt:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">steps.model</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">modobject</span> <span class="o">=</span> <span class="n">steps</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>Installation was successful if you can create this object.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="manual_index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#">1. Getting Started</a><ul>
+<li><a class="reference external" href="#prerequisites">1.1. Prerequisites</a><ul>
+<li><a class="reference external" href="#for-steps-core-modules">1.1.1. For STEPS Core Modules</a></li>
+<li><a class="reference external" href="#for-steps-advanced-modules">1.1.2. For STEPS Advanced Modules</a></li>
+<li><a class="reference external" href="#other-recommended">1.1.3. Other Recommended</a></li>
+<li><a class="reference external" href="#obtaining-steps">1.1.4. Obtaining STEPS</a></li>
+<li><a class="reference external" href="#compilation">1.1.5. Compilation</a><ul>
+<li><a class="reference external" href="#install-from-binaries">1.1.5.1. Install From Binaries</a></li>
+<li><a class="reference external" href="#install-from-source-code-package">1.1.5.2. Install From Source Code Package</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#running-steps">1.1.6. Running STEPS</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="manual_index.html"
+                                  title="previous chapter">STEPS User Manual and API References</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="well_mixed.html"
+                                  title="next chapter">2. Example: Well-Mixed Reaction Systems</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/getting_started.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="well_mixed.html" title="2. Example: Well-Mixed Reaction Systems"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="manual_index.html" title="STEPS User Manual and API References"
+             >previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, The STEPS Development Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.5.
+    </div>
+  </body>
+</html>

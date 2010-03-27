@@ -1,0 +1,854 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>2. Example: Well-Mixed Reaction Systems &mdash; STEPS User Manual v1.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '1.1.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="STEPS User Manual v1.1.0 documentation" href="index.html" />
+    <link rel="next" title="3. Example: Surface-Volume Reactions (IP3 Model)" href="ip3.html" />
+    <link rel="prev" title="1. Getting Started" href="getting_started.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<a href="http://steps.sourceforge.net"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="ip3.html" title="3. Example: Surface-Volume Reactions (IP3 Model)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="getting_started.html" title="1. Getting Started"
+             accesskey="P">previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="example-well-mixed-reaction-systems">
+<span id="well-mixed"></span><h1>2. Example: Well-Mixed Reaction Systems<a class="headerlink" href="#example-well-mixed-reaction-systems" title="Permalink to this headline">¶</a></h1>
+<p>In this chapter, we&#8217;ll use some simple classical reaction systems as examples
+to introduce the basics of using STEPS. More specifically, we&#8217;ll focus on reaction
+systems that occur in a single, well-mixed reaction volume. The topics presented
+in later chapters (such as surface-volume interactions, diffusion, 3D environments,
+etc) will build on the material presented in this chapter.</p>
+<p>In our first STEPS simulation, we&#8217;ll be working with the following simple system,
+which consists of a single reversible reaction:</p>
+<div class="math" id="equation-2.1">
+<p><span class="eqno">(1)</span><img src="_images/math/379b9ef073a1cc3cd392726aaa53de1a23564db4.png" alt="A+B\underset{{k_{b}}}{\overset{{k_{f}}}{{\rightleftarrows}}}C" /></p>
+</div><p>with &#8216;forward&#8217; and &#8216;backward&#8217; reaction constants <img class="math" src="_images/math/206857bbc2aa3c6b106122080609ae255d7a4358.png" alt="k_{f}"/> and <img class="math" src="_images/math/6b9ed6e107212dc52aab9e790903d6d2b7c40dc6.png" alt="k_{b}"/>,
+respectively.</p>
+<div class="section" id="model-specification">
+<h2>2.1. Model Specification<a class="headerlink" href="#model-specification" title="Permalink to this headline">¶</a></h2>
+<p>The first thing we need to do, is to write some Python code that “passes”
+this equation on to STEPS. This is called model specification, which in
+STEPS consists of building a hierarchy of Python objects that list the species
+occurring in your model, their relevant chemical and physical properties and
+their interactions. As explained in the chapter introduction, here we deal only
+with sets of reaction rules that occur together within one single chemical volume.</p>
+<div class="section" id="model-container">
+<h3>2.1.1. Model container<a class="headerlink" href="#model-container" title="Permalink to this headline">¶</a></h3>
+<p>The first step in model specification is to import package <a title="" class="reference external" href="API_model.html#module-steps.model"><tt class="xref docutils literal"><span class="pre">steps.model</span></tt></a>.
+This package contains all the definitions of the objects and functions you need
+to describe the physics and chemistry of your model within STEPS. This entire
+package has been written in c++ and exposed to Python through SWIG (Simplified
+Wrapper and Interface Generator), like most packages in STEPS. We import the package
+using an alias, smodel, to reduce the required amount of typing (a common
+convention in Python):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">steps.model</span> <span class="kn">as</span> <span class="nn">smodel</span>
+</pre></div>
+</div>
+<p>smodel now refers to the <a title="" class="reference external" href="API_model.html#module-steps.model"><tt class="xref docutils literal"><span class="pre">steps.model</span></tt></a> Python module containing the class
+definitions.</p>
+<p>Next, we&#8217;re going to create a top-level container object for our
+model (<a title="steps.model.Model" class="reference external" href="API_model.html#steps.model.Model"><tt class="xref docutils literal"><span class="pre">steps.model.Model</span></tt></a>). This top level container is required for
+all simulations in STEPS but itself does not contain much information and
+merely acts as a hub that allows the other objects in the model specification
+to reference each other. In the code listing below, we store our Model object
+in variable mdl. When you create an object in Python information inside the
+parenthesis is passed onto the class constructor. Each constructor requires
+specific information, though some information can be omitted and will be given
+default values, as we will see. However, for a <a title="steps.model.Model" class="reference external" href="API_model.html#steps.model.Model"><tt class="xref docutils literal"><span class="pre">steps.model.Model</span></tt></a> object, the
+constructor does not require any information at all:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mdl</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="species">
+<h3>2.1.2. Species<a class="headerlink" href="#species" title="Permalink to this headline">¶</a></h3>
+<p>Our next task is to enumerate all the chemical species that can occur in the model.
+This means creating a number of objects of type <a title="steps.model.Spec" class="reference external" href="API_model.html#steps.model.Spec"><tt class="xref docutils literal"><span class="pre">steps.model.Spec</span></tt></a> and passing them
+on to the <a title="steps.model.Model" class="reference external" href="API_model.html#steps.model.Model"><tt class="xref docutils literal"><span class="pre">steps.model.Model</span></tt></a> container. For our simple reaction equation <a href="#equation-2.1">(1)</a>,
+we create
+three <a title="steps.model.Spec" class="reference external" href="API_model.html#steps.model.Spec"><tt class="xref docutils literal"><span class="pre">steps.model.Spec</span></tt></a> objects (<strong>molA, molB, and molC</strong>) corresponding to our
+three chemical species:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">molA</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Spec</span><span class="p">(</span><span class="s">&#39;molA&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">molB</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Spec</span><span class="p">(</span><span class="s">&#39;molB&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">molC</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Spec</span><span class="p">(</span><span class="s">&#39;molC&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The initializer of class <a title="steps.model.Spec" class="reference external" href="API_model.html#steps.model.Spec"><tt class="xref docutils literal"><span class="pre">steps.model.Spec</span></tt></a> requires two arguments: first an
+identifier string that can be used later on to refer to this object. This
+identifier string has to be unique among all species objects. It&#8217;s important
+to distinguish between the Python variable we use to store the reference to
+the newly created object on the one hand (e.g. molA), and the identifier
+string on the other (e.g. &#8216;molA&#8217;). In this example they bear the same name,
+but this is not required. These identifier strings are a common requirement
+for STEPS objects at this level and we will see when and how they are necessary
+later in this chapter, when describing geometry and performing simulations with
+our model.</p>
+<p>We should note at this point that our object reference variables should be
+named differently also, though Python will allow you to reuse the same name
+(one could even use the same name to reference objects of different type because
+a variable in Python does not have to reference a specific type, as is the case
+in c++ for example). So this will not result in an error in Python:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Spec</span><span class="p">(</span><span class="s">&#39;molA&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Spec</span><span class="p">(</span><span class="s">&#39;molB&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>and since the identifier strings are different this is not a STEPS error either.
+However, in the above code in the first line spec at first references the
+&#8216;molA&#8217; object, but in the second line the object spec references changes
+to the &#8216;molB&#8217; object, and the reference to the &#8216;molA&#8217; object is lost.
+These object references are required when defining the species&#8217; interactions,
+as we will see, so as a rule in STEPS all variables should be given a unique
+name so that no object references are lost. Actually, we could use container
+methods to return references to objects, but let&#8217;s keep things simple for now.</p>
+<p>The second argument in the <a title="steps.model.Spec" class="reference external" href="API_model.html#steps.model.Spec"><tt class="xref docutils literal"><span class="pre">steps.model.Spec</span></tt></a> initializer is an object reference
+to the model we just created (stored in variable <strong>mdl</strong>). This will allow the <strong>Spec</strong>
+initializer to add itself to the <a title="steps.model.Model" class="reference external" href="API_model.html#steps.model.Model"><tt class="xref docutils literal"><span class="pre">steps.model.Model</span></tt></a> container.</p>
+</div>
+<div class="section" id="volume-system">
+<h3>2.1.3. Volume System<a class="headerlink" href="#volume-system" title="Permalink to this headline">¶</a></h3>
+<p>Next, we will create a <em>volume system</em>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">vsys</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Volsys</span><span class="p">(</span><span class="s">&#39;vsys&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Volume systems (objects of class <a title="steps.model.Volsys" class="reference external" href="API_model.html#steps.model.Volsys"><tt class="xref docutils literal"><span class="pre">steps.model.Volsys</span></tt></a>) are container
+objects that group a number of stoichiometric reaction rules
+(in later chapters we&#8217;ll see how diffusion rules can also be added
+to these volume systems). The user has the option of grouping all
+reactions in the entire system into one single big volume system,
+or using multiple volume systems to organize reaction rules that
+belong together. The second option may be preferred for larger models,
+but for our simple example we only require one volume system.</p>
+<p>The arguments for the <a title="steps.model.Volsys" class="reference external" href="API_model.html#steps.model.Volsys"><tt class="xref docutils literal"><span class="pre">steps.model.Volsys</span></tt></a> initializer are the same
+as for <a title="steps.model.Spec" class="reference external" href="API_model.html#steps.model.Spec"><tt class="xref docutils literal"><span class="pre">steps.model.Spec</span></tt></a>:
+The first argument must be an identifier string, which can be used
+for future referencing. This identifier must be unique among all volume
+systems in the model. The second argument is the reference to the <a title="steps.model.Model" class="reference external" href="API_model.html#steps.model.Model"><tt class="xref docutils literal"><span class="pre">steps.model.Model</span></tt></a>
+parent object of which this <a title="steps.model.Volsys" class="reference external" href="API_model.html#steps.model.Volsys"><tt class="xref docutils literal"><span class="pre">steps.model.Volsys</span></tt></a> will be a child.</p>
+</div>
+<div class="section" id="reactions">
+<h3>2.1.4. Reactions<a class="headerlink" href="#reactions" title="Permalink to this headline">¶</a></h3>
+<p>Finally, we need to create the reaction rules themselves.
+In STEPS a single reversible reaction has to be regarded as two separate
+reaction rules; the first rule corresponding to the “forward” reaction and
+the second rule to the “backward” reaction. So for our simple model in
+equation <a href="#equation-2.1">(1)</a>, we have to create two objects of class <a title="steps.model.Reac" class="reference external" href="API_model.html#steps.model.Reac"><tt class="xref docutils literal"><span class="pre">steps.model.Reac</span></tt></a>
+and add them to the <a title="steps.model.Volsys" class="reference external" href="API_model.html#steps.model.Volsys"><tt class="xref docutils literal"><span class="pre">steps.model.Volsys</span></tt></a> object we just created:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">kreac_f</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Reac</span><span class="p">(</span><span class="s">&#39;kreac_f&#39;</span><span class="p">,</span> <span class="n">vsys</span><span class="p">,</span> <span class="n">lhs</span><span class="o">=</span><span class="p">[</span><span class="n">molA</span><span class="p">,</span><span class="n">molB</span><span class="p">],</span> \
+<span class="go">rhs=[molC], kcst=0.3e6)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kreac_b</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Reac</span><span class="p">(</span><span class="s">&#39;kreac_b&#39;</span><span class="p">,</span> <span class="n">vsys</span><span class="p">,</span> <span class="n">lhs</span><span class="o">=</span><span class="p">[</span><span class="n">molC</span><span class="p">],</span> <span class="n">rhs</span><span class="o">=</span><span class="p">[</span><span class="n">molA</span><span class="p">,</span><span class="n">molB</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kreac_b</span><span class="o">.</span><span class="n">kcst</span> <span class="o">=</span> <span class="mf">0.7</span>
+</pre></div>
+</div>
+<p>The initializer for <strong>Reac</strong> can be provided with a bit more information than the
+initializers for the other objects until now (the backslash used here simply
+allows us to continue our code on a new line and is used purely to fit the code
+into this document). Aside from the required identifier string (which is checked
+to be unique among all reactions in all volume systems) and a required reference
+to the <strong>Volsys</strong> object to which this reaction will be added, we can also specify
+reaction stoichiometry at this stage (alternatively we can create the object with
+the minimum information and set the stoichiometry with object methods). This
+stoichiometry is specified by two Python lists:</p>
+<ul class="simple">
+<li>A list called <tt class="docutils literal"><span class="pre">lhs</span></tt>, which gives the left-hand side of the stoichiometry
+(i.e. the reactants). If a reactant occurs more than once, as can be the
+case in e.g. a dimerization reaction, the Spec object has to be listed the
+required number of times.</li>
+<li>A list called <tt class="docutils literal"><span class="pre">rhs</span></tt>, which gives the right hand side of the stoichiometry
+(i.e. the reaction products). The same remarks that applied for parameter
+<tt class="docutils literal"><span class="pre">lhs</span></tt> apply here.</li>
+</ul>
+<p>The lists must contain references to the required Spec objects
+(and not identifier strings), so we can see why it was important
+not to lose these object references when we created our Spec objects.
+Both lists can also be empty e.g. <tt class="docutils literal"><span class="pre">lhs=[]</span></tt> or <tt class="docutils literal"><span class="pre">rhs=[]</span></tt> (this is the default
+behavior if lists are not supplied to the constructor, but can be changed
+with object methods <tt class="docutils literal"><span class="pre">setLHS</span></tt> and <tt class="docutils literal"><span class="pre">setRHS</span></tt>). Care should be used in the case of
+empty lists because either situation could break physical laws such as the
+conservation of mass, although they are available because they can be useful
+for some simulation approximations. If the left hand side is empty, we have a
+zero order reaction that acts as a source, i.e. it creates molecules “out of
+thin air”. If the right hand side is empty, we have a sink reaction that
+merely destroys molecules. Obviously, within one single reaction rule,
+it doesn&#8217;t make sense to set both <tt class="docutils literal"><span class="pre">lhs</span></tt> and <tt class="docutils literal"><span class="pre">rhs</span></tt> to an empty list.</p>
+<p>We can also already set the default rate constants for both the forward
+and backward reaction, by manipulating the <tt class="docutils literal"><span class="pre">kcst</span></tt> property of the Reac objects.
+As shown above these rate constants can be initialized as a parameter during
+object construction, or by using object methods after the object has been
+created, which is common to many properties of objects in STEPS <a class="footnote-reference" href="#f1" id="id1">[1]</a>.</p>
+<p>These rate constants can also be changed later on during the simulation, but values
+given here will be used as default values when a simulation state is initialized.
+<strong>Generally speaking, physical constants in STEPS must be specified in SI units</strong> <a class="footnote-reference" href="#f2" id="id2">[2]</a>.
+This is also true for reaction constants, where of course the actual interpretation
+of the unit of a reaction rule depends on the order of that reaction.
+In other words, it depends on the number of species in the left hand side.
+The constant for a zero or first reaction rule has units <img class="math" src="_images/math/9555c802aeda3db5e8b95b5ca081de42cd651cd2.png" alt="s^{-1}"/>; for a
+second order reaction this is <img class="math" src="_images/math/23cc903af742edb9067b994f478dce177e84898f.png" alt="\left(Ms\right)^{-1}"/>; for a third order
+reaction this is <img class="math" src="_images/math/d9e14329134c495108bf3044c5d9fc72d90abeea.png" alt="\left(M^{2}s\right)^{-1}"/>; and so on. While there is no
+upper limit on the order of the reaction when working with Reac objects within
+the context of package steps.model, STEPS simulators will not deal with any
+reaction rule that has an order larger than 4.</p>
+<p>Finally, the full Python code of our model description looks like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">steps.model</span> <span class="kn">as</span> <span class="nn">smodel</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mdl</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">molA</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Spec</span><span class="p">(</span><span class="s">&#39;molA&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">molB</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Spec</span><span class="p">(</span><span class="s">&#39;molB&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">molC</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Spec</span><span class="p">(</span><span class="s">&#39;molC&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">volsys</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Volsys</span><span class="p">(</span><span class="s">&#39;vsys&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kreac_f</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Reac</span><span class="p">(</span><span class="s">&#39;kreac_f&#39;</span><span class="p">,</span> <span class="n">volsys</span><span class="p">,</span> <span class="n">lhs</span><span class="o">=</span><span class="p">[</span><span class="n">molA</span><span class="p">,</span><span class="n">molB</span><span class="p">],</span> \
+<span class="go">    rhs=[molC], kcst = 0.3e6)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kreac_b</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Reac</span><span class="p">(</span><span class="s">&#39;kreac_b&#39;</span><span class="p">,</span> <span class="n">volsys</span><span class="p">,</span> <span class="n">lhs</span><span class="o">=</span><span class="p">[</span><span class="n">molC</span><span class="p">],</span> <span class="n">rhs</span><span class="o">=</span><span class="p">[</span><span class="n">molA</span><span class="p">,</span><span class="n">molB</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kreac_b</span><span class="o">.</span><span class="n">kcst</span> <span class="o">=</span> <span class="mf">0.7</span>
+</pre></div>
+</div>
+<p>Notice that we have said nothing about the actual geometry of our model at
+this point, nor have we said anything related to the simulation itself
+(initial conditions, special events during the simulation, etc).
+We have just created a hierarchy of Python objects that describes
+the interactions between chemical species and we have done this on a
+rather abstract level.</p>
+</div>
+</div>
+<div class="section" id="preparing-geometry-for-well-mixed-simulation">
+<h2>2.2. Preparing geometry for well-mixed simulation<a class="headerlink" href="#preparing-geometry-for-well-mixed-simulation" title="Permalink to this headline">¶</a></h2>
+<p>Before we can start doing simulations, we need to say something about
+the environment in which our reactions will occur. Specifically, we need
+to specify the volume compartments in which reactions take place, and sometimes
+also the surface patches around or in between these compartments <a class="footnote-reference" href="#f3" id="id3">[3]</a>. We then link
+each of these compartments with one or more of the volume systems defined
+in the kinetic model, in a process called annotation. There are currently
+two types of geometry that can be specified in STEPS:</p>
+<ol class="arabic">
+<li><p class="first"><em>Well-mixed geometry</em></p>
+<p>In this type of geometry description, compartments are described
+only by their volume in cubic meters and patches by their area in
+square meters and connectivity to compartments. Nothing is said
+about the actual shape.</p>
+</li>
+<li><p class="first"><em>Tetrahedral mesh geometry</em></p>
+<p>In this type of geometry, a compartment is a collection of 3D tetrahedral
+voxels and a patch is a 2D section between compartments composed of
+triangular surface in between tetrahedrons.</p>
+</li>
+</ol>
+<p>We will talk about tetrahedral meshes (and their relationship with
+well-mixed geometry) in the chapter on <a class="reference external" href="diffusion.html"><em>Example: Simulating Diffusion</em></a>.
+In this chapter, however, we will restrict ourselves to well-mixed geometry,
+because we will only use the well-mixed stochastic solver. Specifying a
+well-mixed compartment that can be used together with the kinetic model
+from the previous section is very easy. First, need we to import the STEPS
+module that contains the objects used to define the geometry, namely <a title="" class="reference external" href="API_geom.html#module-steps.geom"><tt class="xref docutils literal"><span class="pre">steps.geom</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">steps.geom</span> <span class="kn">as</span> <span class="nn">swm</span>
+</pre></div>
+</div>
+<p>Like before we give the <a title="" class="reference external" href="API_geom.html#module-steps.geom"><tt class="xref docutils literal"><span class="pre">steps.geom</span></tt></a> module an alias <strong>swm</strong>, simply to reduce later
+typing. Next we generate a parent container object, that will collect and store
+the actual compartments. The purpose of this object is in many ways similar to
+the purpose of the <a title="steps.model.Model" class="reference external" href="API_model.html#steps.model.Model"><tt class="xref docutils literal"><span class="pre">steps.model.Model</span></tt></a> object we discussed in the previous section,
+and the constructor does not require any information:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">wmgeom</span> <span class="o">=</span> <span class="n">swm</span><span class="o">.</span><span class="n">Geom</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Finally, the actual compartment we need for simulating our model must be created:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">comp</span> <span class="o">=</span> <span class="n">swm</span><span class="o">.</span><span class="n">Comp</span><span class="p">(</span><span class="s">&#39;comp&#39;</span><span class="p">,</span> <span class="n">wmgeom</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">comp</span><span class="o">.</span><span class="n">addVolsys</span><span class="p">(</span><span class="s">&#39;vsys&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">comp</span><span class="o">.</span><span class="n">setVol</span><span class="p">(</span><span class="mf">1.6667e-21</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Since our model is very simple, we only create one compartment, an object of
+type <a title="steps.geom.Comp" class="reference external" href="API_geom.html#steps.geom.Comp"><tt class="xref docutils literal"><span class="pre">steps.geom.Comp</span></tt></a>, and we store it in the variable called <strong>comp</strong>.
+The initializer takes two arguments here: first a unique identifier string
+(that will once again be used later on, during actual simulation) and a
+reference to the container object. Since we only have one compartment,
+we use the rather unimaginative identifier <strong>comp</strong>.</p>
+<p>The second line corresponds to the annotation, which in this case is very simple.
+It links the compartment we just created with a volume system that carries the
+identifier &#8216;vsys&#8217;. At this stage, only the string is stored in the Comp object.
+In other words, STEPS makes no attempt to resolve the link by searching for a
+<a title="steps.model.Volsys" class="reference external" href="API_model.html#steps.model.Volsys"><tt class="xref docutils literal"><span class="pre">steps.model.Volsys</span></tt></a> object that has the identifier &#8216;vsys&#8217;. In fact, STEPS
+couldn&#8217;t resolve the link at this point, because the kinetic model and the
+geometric model remain completely separated in memory. They will remain
+separate until the time we create an actual simulation; that is the point
+where these cross references between kinetic model and geometry will be resolved.</p>
+<p>This “workflow” enables us to build several kinetic model descriptions and geometry
+descriptions separately, and put them together as needed for simulation. The only
+requirement for any combination of kinetic model and geometry to work is that
+<strong>the volume systems referenced from the geometry have been defined in the
+kinetic model</strong>. An error will result when creating the simulation object
+(which we will do next) if any compartment contains a reference to a volume
+system that is unknown in the model description.</p>
+<p>The third line sets the volume of the compartment. Once again, SI units must be
+used, meaning that the volume is specified in <img class="math" src="_images/math/c939ee1937b310658e5cdd3f2239d4e52ea4bd0c.png" alt="m^{\text{3}}"/>. The volume of
+compartment &#8216;comp&#8217; therefore has a volume of <img class="math" src="_images/math/a19045d46f2754f399bd08815d2720b30e125390.png" alt="1.6667*10^{-3}\mu m^{3}"/>.
+This parameter can be set in the Comp object initializer, explicitly with the
+<tt class="docutils literal"><span class="pre">setVol</span></tt> method (as above), or with the property function <tt class="docutils literal"><span class="pre">vol</span></tt> (i.e.
+<tt class="docutils literal"><span class="pre">comp.vol</span> <span class="pre">=</span> <span class="pre">1.667e-21</span></tt>).</p>
+</div>
+<div class="section" id="simulation-with-wmdirect">
+<h2>2.3. Simulation with <tt class="docutils literal"><span class="pre">Wmdirect</span></tt><a class="headerlink" href="#simulation-with-wmdirect" title="Permalink to this headline">¶</a></h2>
+<p>With all this in place, we can finally start performing simulations.
+Since STEPS is a set of Python packages and extensions, simulations
+can either be fully scripted and run automatically, or they can be
+controlled interactively from the Python prompt. In this text, we&#8217;ll
+just run a simulation “automatically” from begin to end, without any
+interactive input.</p>
+<p>The simulator (or <em>solver</em>) we&#8217;ll be using here is the <tt class="docutils literal"><span class="pre">Wmdirect</span></tt> solver.
+<tt class="docutils literal"><span class="pre">Wmdirect</span></tt> is
+an implementation of Gillespie&#8217;s Direct Method <a class="footnote-reference" href="#f4" id="id4">[4]</a> for stochastic simulation and
+has the following properties:</p>
+<ul class="simple">
+<li>It&#8217;s a <em>well-mixed</em> solver, meaning that you will need to present
+it with well-mixed geometry <a class="footnote-reference" href="#f5" id="id5">[5]</a>.Well-mixed solvers have no
+concept of concentration gradients within a given compartment, but rather
+assume that all molecules in any given compartment are kept uniformly
+distributed by elastic (non-reactive) collisions between molecules.
+Therefore there is also no concept of diffusion within a compartment.
+However, we will later see that even in simulations with well-mixed solvers,
+it is possible to implement diffusive fluxes in between compartments,
+by linking them with patches.</li>
+<li>It&#8217;s a <em>stochastic</em> solver, meaning that it uses random numbers to create
+possible “realizations” (also called “iterations”) of the stochastic
+interpretation of the reaction system. In other words, for the same set
+of initial conditions, running the simulation multiple times (with different
+initial seed values for the random number generator) will generate different
+results each time.</li>
+<li>It&#8217;s a <em>discrete</em> stochastic solver, meaning that the amount of mass in the
+system is (at least internally) not being tracked over time as continuous
+concentrations, but as integer molecular counts. This may be a negligible
+distinction with large numbers of molecules present in the system, but it
+becomes very important when any species involved in the system has a small
+population of only a few molecules (especially when these particular molecules
+are involved in some feedback mechanism). Consequently, each realization is a
+sequence of discrete, singular reaction events.</li>
+<li>It&#8217;s an <em>exact</em> stochastic solver, which means that each iteration is exact
+with respect to the master equation governing the reaction system.</li>
+</ul>
+<p>To perform a simulation of the above kinetic model and geometry with <tt class="docutils literal"><span class="pre">Wmdirect</span></tt>,
+we first need to create a random number generator. This must be done explicitly by
+the user, because this allows you to choose which random number generator to use
+(even though that choice is rather limited right now) and, more importantly, how
+to use it. Random number generation objects can be found in package <a title="" class="reference external" href="API_rng.html#module-steps.rng"><tt class="xref docutils literal"><span class="pre">steps.rng</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">steps.rng</span> <span class="kn">as</span> <span class="nn">srng</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">srng</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s">&#39;mt19937&#39;</span><span class="p">,</span> <span class="mi">256</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">r</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="mi">23412</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In the first line, we import the <a title="" class="reference external" href="API_rng.html#module-steps.rng"><tt class="xref docutils literal"><span class="pre">steps.rng</span></tt></a> package with alias <strong>srng</strong>.
+In the next line, we actually generate a random number generator using the
+function <a title="steps.rng.create" class="reference external" href="API_rng.html#steps.rng.create"><tt class="xref docutils literal"><span class="pre">steps.rng.create()</span></tt></a>. The first argument selects which type of random
+number generator we want. STEPS currently only implements one pseudo RNG
+algorithm, &#8216;mt19937&#8217;, also known as the “Mersenne Twister”. The Mersenne
+Twister is supported because it is considered to be quite simply the current
+best choice for numerical simulations, because of its large period and fast
+runtime. The second argument selects how many random numbers are pre-generated
+and stored in a buffer.</p>
+<p>In the third line, we initialize the random number generator with a seed value.
+Here, we initialize the random number generator only once. You can, however,
+also re-initialize it prior to each iteration, for instance to ensure a
+simulation starts with some specific seed value <a class="footnote-reference" href="#f6" id="id6">[6]</a>.</p>
+<p>Next we will create the actual solver object. Since we will be doing
+simulations using solver <tt class="docutils literal"><span class="pre">Wmdirect</span></tt>, we first import the package in which all
+solvers have been implemented, then create the <a title="steps.solver.Wmdirect" class="reference external" href="API_solver.html#steps.solver.Wmdirect"><tt class="xref docutils literal"><span class="pre">steps.solver.Wmdirect</span></tt></a> object:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">steps.solver</span> <span class="kn">as</span> <span class="nn">ssolver</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sim</span> <span class="o">=</span> <span class="n">ssolver</span><span class="o">.</span><span class="n">Wmdirect</span><span class="p">(</span><span class="n">mdl</span><span class="p">,</span> <span class="n">wmgeom</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For all <tt class="xref docutils literal"><span class="pre">steps.solver</span></tt> objects (currently <tt class="docutils literal"><span class="pre">Wmdirect</span></tt>, <tt class="docutils literal"><span class="pre">Wmrk4</span></tt> and <tt class="docutils literal"><span class="pre">Tetexact</span></tt>)
+the initializer requires three arguments. The first argument is the model
+description (a variable that references the steps.model.Model object we
+created in the first section of this chapter), followed by the the
+well-mixed geometry description (a variable that references a <a title="steps.geom.Geom" class="reference external" href="API_geom.html#steps.geom.Geom"><tt class="xref docutils literal"><span class="pre">steps.geom.Geom</span></tt></a>
+object) and finally also a variable that references the random number generator
+we just constructed. And that&#8217;s it.</p>
+<p>The variable sim now references the solver object we just created which contains
+all the methods we require to run and control our simulation, so now we can
+start performing simulations. First we call the reset function on the solver object:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sim</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This method sets all values within the solver “state” to their default values.
+This state includes the concentration of species in all compartments (set to 0
+everywhere), rate constants (set to their defaults from the <a title="" class="reference external" href="API_model.html#module-steps.model"><tt class="xref docutils literal"><span class="pre">steps.model</span></tt></a> objects)
+etc. If you want to re-initialize the random number generator prior to each
+individual iteration, setting the seed value right before calling the reset
+function would be a good choice <a class="footnote-reference" href="#f7" id="id7">[7]</a>.</p>
+<p>After the <cite>reset</cite> function call, we can start manipulating the “state” of the
+simulation, i.e. setting up the initial conditions of the simulation.
+Each solver implemented in STEPS includes a numbers of functions for doing that.
+Each solver, including the <tt class="docutils literal"><span class="pre">Wmdirect</span></tt> solver that we&#8217;re using here, implements a
+basic set of functions that allows you e.g. to get/set concentration of species
+in compartments and patches as a whole. In addition, solvers will typically
+implement additional functions that only make sense for their specific
+implementation. Due to the internal structure of the code, all solver methods
+are available for all solvers, but methods which don&#8217;t make sense for a particular
+solver (e.g. getting/setting concentration in individual tetrahedrons doesn&#8217;t
+make sense for a well-mixed solver) will display an error message if called
+and will not affect your simulation at all. A detailed list of which methods
+are available for which solvers is available in <a class="reference external" href="API_solver.html"><em>steps.solver</em></a>.</p>
+<p>Now let&#8217;s set up our initial conditions with simulation object methods:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sim</span><span class="o">.</span><span class="n">setCompConc</span><span class="p">(</span><span class="s">&#39;comp&#39;</span><span class="p">,</span> <span class="s">&#39;molA&#39;</span><span class="p">,</span> <span class="mf">31.4e-6</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sim</span><span class="o">.</span><span class="n">setCompConc</span><span class="p">(</span><span class="s">&#39;comp&#39;</span><span class="p">,</span> <span class="s">&#39;molB&#39;</span><span class="p">,</span> <span class="mf">22.3e-6</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This means we&#8217;re setting the concentration of molA to <img class="math" src="_images/math/0a71c6247e4b987ca685219f8d2b5d4699be8483.png" alt="31.4 \mu M"/> and the
+concentration of molB to <img class="math" src="_images/math/1a2f73ee86cb0ee6594324886a1f71aa3df2a245.png" alt="22.3 \mu M"/> in our compartment comp.
+We&#8217;re setting these concentration values at simulation time <img class="math" src="_images/math/288e2a39b58d673182c57dc6214b702a448341ea.png" alt="t = 0"/>,
+but these functions can be called at any point in time, to control the
+concentration of species during simulation. Here we see an example of why
+the identifier strings were necessary during our model specification.
+The simulation methods require the identifier strings to the <a title="" class="reference external" href="API_model.html#module-steps.model"><tt class="xref docutils literal"><span class="pre">steps.model</span></tt></a> and
+<a title="" class="reference external" href="API_geom.html#module-steps.geom"><tt class="xref docutils literal"><span class="pre">steps.geom</span></tt></a> objects and not a variable that references the objects.
+This is necessary because the model and geometry specification are separate
+from the simulation and could be organised inside functions or even separate
+modules meaning a reference to the object will often not be available.</p>
+<p>Next we&#8217;ll use NumPy to generate some auxiliary numerical arrays that will be
+used during simulation <a class="footnote-reference" href="#f8" id="id8">[8]</a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tpnt</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">2.001</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">2001</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>The first array, <cite>tpnt</cite>, contains the time points at which we will pause the
+simulation. This range of numbers starts at 0.0 and runs to 2.0 seconds with
+<img class="math" src="_images/math/25ac22264fa8489960b66e6deb5ccadf43995c96.png" alt="1ms"/> intervals. That gives us a total of 2001 “time points”.
+The second array, res, will be used to store the concentrations of molA,
+molB and molC over time: that&#8217;s why the array has 2001 rows and 3 columns.
+We use NumPy&#8217;s zeros function, which not only allocates the array but also
+initializes all elements to zero.</p>
+<p>Now it&#8217;s time to actually run an iteration:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2001</span><span class="p">):</span>
+<span class="go">    sim.run(tpnt[t])</span>
+<span class="go">    res[t,0] = sim.getCompCount(&#39;comp&#39;, &#39;molA&#39;)</span>
+<span class="go">    res[t,1] = sim.getCompCount(&#39;comp&#39;, &#39;molB&#39;)</span>
+<span class="go">    res[t,2] = sim.getCompCount(&#39;comp&#39;, &#39;molC&#39;)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>We loop over all time points using an xrange to generate indices.
+Then we use the basic solver function run to forward the simulation
+until the time specified by the function&#8217;s argument <a class="footnote-reference" href="#f9" id="id9">[9]</a>.</p>
+<p>After having forwarded the simulation one millisecond, we use function
+<cite>getCompCount</cite> to sample the number of molecules present in compartment
+comp for each of our three species. All of these functions are described
+in more detail in <a class="reference external" href="API_solver.html"><em>steps.solver</em></a>.</p>
+<p>Finally, we can plot these values using Matplotlib (result shown in
+<a class="reference internal" href="#figure-2-1"><em>Figure 2.1</em></a>):</p>
+<div class="figure" id="figure-2-1">
+<img alt="_images/fig2.1.png" src="_images/fig2.1.png" style="width: 6.5in; height: 5in;" />
+<p class="caption">Simulation results from a single iteration of the second order reaction
+given in equation <a href="#equation-2.1">(1)</a> with solver <tt class="docutils literal"><span class="pre">Wmdirect</span></tt>. Due to the low numbers
+of molecules, we can clearly see the reactions occurring as discrete events.</p>
+</div>
+<dl class="docutils">
+<dt>::</dt>
+<dd><div class="first last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pylab</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># Plot number of molecules of &#39;molA&#39; over the time range:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tpnt</span><span class="p">,</span> <span class="n">res</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">label</span> <span class="o">=</span> <span class="s">&#39;A&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># Plot number of molecules of &#39;molB&#39; over the time range:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tpnt</span><span class="p">,</span> <span class="n">res</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">label</span> <span class="o">=</span> <span class="s">&#39;B&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># Plot number of molecules of &#39;molC&#39; over the time range:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tpnt</span><span class="p">,</span> <span class="n">res</span><span class="p">[:,</span><span class="mi">2</span><span class="p">],</span> <span class="n">label</span> <span class="o">=</span> <span class="s">&#39;C&#39;</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;Time (sec)&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;#molecules&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<p>If we&#8217;re using a stochastic simulation algorithm such as that implemented in
+solver <tt class="docutils literal"><span class="pre">Wmdirect</span></tt>, we&#8217;re usually interested in analysing the range of behaviours
+produced by different iterations. One way of doing that is by taking the mean
+over multiple iterations (100 in this example), as is shown in the following
+simulation code (result shown in <a class="reference internal" href="#figure-2-2"><em>Figure 2.2</em></a>):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">NITER</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">NITER</span><span class="p">,</span><span class="mi">2001</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tpnt</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">2.001</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">NITER</span><span class="p">):</span>
+<span class="go">        sim.reset()</span>
+<span class="go">        sim.setCompConc(&#39;comp&#39;, &#39;molA&#39;, 31.4e-6)</span>
+<span class="go">        sim.setCompConc(&#39;comp&#39;, &#39;molB&#39;, 22.3e-6)</span>
+
+<span class="go">        for t in xrange(0,2001):</span>
+<span class="go">            sim.run(tpnt[t])</span>
+<span class="go">            res[i,t,0] = sim.getCompCount(&#39;comp&#39;, &#39;molA&#39;)</span>
+<span class="go">            res[i,t,1] = sim.getCompCount(&#39;comp&#39;, &#39;molB&#39;)</span>
+<span class="go">            res[i,t,2] = sim.getCompCount(&#39;comp&#39;, &#39;molC&#39;)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res_mean</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># Plot mean number of molecules of &#39;molA&#39; over the time range:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tpnt</span><span class="p">,</span> <span class="n">res_mean</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">label</span> <span class="o">=</span> <span class="s">&#39;A&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># Plot mean number of molecules of &#39;molB&#39; over the time range:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tpnt</span><span class="p">,</span> <span class="n">res_mean</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">label</span> <span class="o">=</span> <span class="s">&#39;B&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># Plot mean number of molecules of &#39;molC&#39; over the time range:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tpnt</span><span class="p">,</span> <span class="n">res_mean</span><span class="p">[:,</span><span class="mi">2</span><span class="p">],</span> <span class="n">label</span> <span class="o">=</span> <span class="s">&#39;C&#39;</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;Time (sec)&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;#molecules&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="figure" id="figure-2-2">
+<img alt="_images/fig2.2.png" src="_images/fig2.2.png" style="width: 6.5in; height: 5in;" />
+<p class="caption">Average of multiple (n = 100) iterations of the second order
+reaction given in equation <a href="#equation-2.1">(1)</a>.</p>
+</div>
+<p>As you can see, the array that will be used to store the simulation results
+(array res) is now a three dimensional array, with the first dimension set to
+record 100 iterations. The loop that runs over all time points is now embedded
+in a loop that runs over the iterations. The reset function and the initial
+conditions are called at the beginning of each iteration. Since we don&#8217;t need
+any detailed control over which iteration starts with which RNG seed value,
+we initialize the RNG just once, prior to everything else. Once the 100 iterations
+are completed, we call NumPy&#8217;s mean function to compute the mean over the first
+dimension, and then plot these mean values.</p>
+</div>
+<div class="section" id="controlling-the-simulation">
+<h2>2.4. Controlling the simulation<a class="headerlink" href="#controlling-the-simulation" title="Permalink to this headline">¶</a></h2>
+<p>In the previous section, we paused the simulation at regular time intervals
+only to record the concentrations of various molecules. The only time we actively
+changed the simulation state was at t=0, to set the initial conditions. However,
+the function calls we used to set initial conditions can be called at any time
+during the simulation.</p>
+<p>As an example, let&#8217;s interrupt our simulation at t=1sec to add 10 molecules
+of species molA. The mean behaviour of this simulation is shown in
+<a class="reference internal" href="#figure-2-3"><em>Figure 2.3</em></a>):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">NITER</span><span class="p">):</span>
+<span class="go">        sim.reset()</span>
+<span class="go">        sim.setCompConc(&#39;comp&#39;, &#39;molA&#39;, 31.4e-6)</span>
+<span class="go">        sim.setCompConc(&#39;comp&#39;, &#39;molB&#39;, 22.3e-6)</span>
+
+<span class="go">        for t in xrange(0,1001):</span>
+<span class="go">            sim.run(tpnt[t])</span>
+<span class="go">            res[i,t,0] = sim.getCompCount(&#39;comp&#39;, &#39;molA&#39;)</span>
+<span class="go">            res[i,t,1] = sim.getCompCount(&#39;comp&#39;, &#39;molB&#39;)</span>
+<span class="go">            res[i,t,2] = sim.getCompCount(&#39;comp&#39;, &#39;molC&#39;)</span>
+
+<span class="go">        # Add 10 molecules of species A</span>
+<span class="go">        sim.setCompCount(&#39;comp&#39;, &#39;molA&#39;, sim.getCompCount(&#39;comp&#39;, &#39;molA&#39;) + 10)</span>
+<span class="go">        for t in xrange(1001,2001):</span>
+<span class="go">            sim.run(tpnt[t])</span>
+<span class="go">            res[i,t,0] = sim.getCompCount(&#39;comp&#39;, &#39;molA&#39;)</span>
+<span class="go">            res[i,t,1] = sim.getCompCount(&#39;comp&#39;, &#39;molB&#39;)</span>
+<span class="go">            res[i,t,2] = sim.getCompCount(&#39;comp&#39;, &#39;molC&#39;)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<div class="figure" id="figure-2-3">
+<img alt="_images/fig2.3.tiff" src="_images/fig2.3.tiff" style="width: 6.5in; height: 5in;" />
+<p class="caption">The mean of multiple (n = 100) iterations of the second order
+reaction, with an injection of 10 molecules of species A at t = 1.0.</p>
+</div>
+<p>When you have to do these things regularly, you might want to encapsulate
+various parts of this code in separate functions to save yourself some coding time.</p>
+<p>Quite often, one does not want to simulate the sudden injection of molecules,
+but rather keep the concentration of some species constant at a controlled value.
+This means that any reaction involving the buffered molecule will still occur
+if the reactants are present in sufficiently large numbers, but the occurrence
+of this reaction will not actually change the amount of the buffered species
+that is present. The following code snippet shows how, during the time
+interval <img class="math" src="_images/math/bc832d670606b8511747823e1ec87da680ccbd67.png" alt="0.1\leq t&lt;0.6"/>, the concentration of species A is clamped to
+whatever its value was at <img class="math" src="_images/math/db057f7b86289804222d6f88b38ccdbaee605b66.png" alt="t=0.5"/> <a class="footnote-reference" href="#f10" id="id10">[10]</a>. Results can be seen in
+<a class="reference internal" href="#figure-2-4"><em>Figure 2.4</em></a>) for a single iteration.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">NITER</span><span class="p">):</span>
+<span class="go">        sim.reset()</span>
+<span class="go">        sim.setCompConc(&#39;comp&#39;, &#39;molA&#39;, 31.4e-6)</span>
+<span class="go">        sim.setCompConc(&#39;comp&#39;, &#39;molB&#39;, 22.3e-6)</span>
+
+<span class="go">        for t in xrange(0,101):</span>
+<span class="go">            sim.run(tpnt[t])</span>
+<span class="go">            res[i,t,0] = sim.getCompCount(&#39;comp&#39;, &#39;molA&#39;)</span>
+<span class="go">            res[i,t,1] = sim.getCompCount(&#39;comp&#39;, &#39;molB&#39;)</span>
+<span class="go">            res[i,t,2] = sim.getCompCount(&#39;comp&#39;, &#39;molC&#39;)</span>
+
+<span class="go">        sim.setCompClamped(&#39;comp&#39;, &#39;molA&#39;, True)</span>
+
+<span class="go">        for t in xrange(101,601):</span>
+<span class="go">            sim.run(tpnt[t])</span>
+<span class="go">            res[i,t,0] = sim.getCompCount(&#39;comp&#39;, &#39;molA&#39;)</span>
+<span class="go">            res[i,t,1] = sim.getCompCount(&#39;comp&#39;, &#39;molB&#39;)</span>
+<span class="go">            res[i,t,2] = sim.getCompCount(&#39;comp&#39;, &#39;molC&#39;)</span>
+
+<span class="go">        sim.setCompClamped(&#39;comp&#39;, &#39;molA&#39;, False)</span>
+
+<span class="go">        for t in xrange(601,2001):</span>
+<span class="go">            sim.run(tpnt[t])</span>
+<span class="go">            res[i,t,0] = sim.getCompCount(&#39;comp&#39;, &#39;molA&#39;)</span>
+<span class="go">            res[i,t,1] = sim.getCompCount(&#39;comp&#39;, &#39;molB&#39;)</span>
+<span class="go">            res[i,t,2] = sim.getCompCount(&#39;comp&#39;, &#39;molC&#39;)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<div class="figure" id="figure-2-4">
+<img alt="_images/fig2.4.tiff" src="_images/fig2.4.tiff" style="width: 6.5in; height: 5in;" />
+<p class="caption">A single iteration of the second order reaction, where the
+concentration of A is clamped during the interval <img class="math" src="_images/math/bc832d670606b8511747823e1ec87da680ccbd67.png" alt="0.1\leq t&lt;0.6"/>.</p>
+</div>
+<p>The function setCompClamped takes a boolean which is used to turn on or off
+the clamping of the species in the specified compartment.</p>
+<p>A final way in which we will control our simulation in this chapter is
+by activating/inactivating a reaction channel. Inactivating a reaction channel
+means that it will never occur, regardless of whether the required reactants
+are present in sufficient numbers. In the following simulation:</p>
+<ul class="simple">
+<li>we will turn off the forward reaction of equation <a href="#equation-2.1">(1)</a> during
+interval <img class="math" src="_images/math/7508515f39a02948d55812b97eaf6494179ec7f7.png" alt="2.0\leq t&lt;4.0"/>;</li>
+<li>turn it back on and let everything recover during <img class="math" src="_images/math/88e05547758f671eebb85786aa9cc16481f2e8d4.png" alt="4.0\leq t&lt;6.0"/>;</li>
+<li>turn off the backward reaction during <img class="math" src="_images/math/6ec000d7724b0ce61bfd78df8eae81f77a7be0df.png" alt="6.0\leq t&lt;8.0"/>;</li>
+<li>turn it back on and let everything recover again during <img class="math" src="_images/math/70c98bba474287fb9914d117fc833b761308ef3f.png" alt="8.0\leq t&lt;10.0"/>;</li>
+<li>and finally turn off both the forward and backward channel during a final
+interval <img class="math" src="_images/math/6d14a9b44d1088344889e0403d44e1cd52f8e389.png" alt="10.0\leq t&lt;12.0"/>.</li>
+</ul>
+<p>This time, we&#8217;ll wrap the run-until-time-t part of the code in a separate
+function to save ourselves some writing, and we also have to alter our <cite>tpnt</cite>
+and <cite>res</cite> arrays to store data for 12 seconds:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">tp1</span><span class="p">,</span> <span class="n">tp2</span><span class="p">):</span>
+<span class="go">        for t in xrange(tp1,tp2):</span>
+<span class="go">            sim.run(tpnt[t])</span>
+<span class="go">            res[i,t,0] = sim.getCompCount(&#39;comp&#39;, &#39;molA&#39;)</span>
+<span class="go">            res[i,t,1] = sim.getCompCount(&#39;comp&#39;, &#39;molB&#39;)</span>
+<span class="go">            res[i,t,2] = sim.getCompCount(&#39;comp&#39;, &#39;molC&#39;)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">NITER</span><span class="p">,</span><span class="mi">12001</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tpnt</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">12.001</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The actual simulation code now becomes:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">NITER</span><span class="p">):</span>
+<span class="go">        sim.reset()</span>
+<span class="go">        sim.setCompConc(&#39;comp&#39;, &#39;molA&#39;, 31.4e-6)</span>
+<span class="go">        sim.setCompConc(&#39;comp&#39;, &#39;molB&#39;, 22.3e-6)</span>
+<span class="go">        run(i,0,2001)</span>
+<span class="go">        sim.setCompReacActive(&#39;comp&#39;, &#39;kreac_f&#39;, False)</span>
+<span class="go">        run(i,2001,4001)</span>
+<span class="go">        sim.setCompReacActive(&#39;comp&#39;, &#39;kreac_f&#39;, True)</span>
+<span class="go">        run(i,4001,6001)</span>
+<span class="go">        sim.setCompReacActive(&#39;comp&#39;, &#39;kreac_b&#39;, False)</span>
+<span class="go">        run(i,6001,8001)</span>
+<span class="go">        sim.setCompReacActive(&#39;comp&#39;, &#39;kreac_b&#39;, True)</span>
+<span class="go">        run(i,8001,10001)</span>
+<span class="go">        sim.setCompReacActive(&#39;comp&#39;, &#39;kreac_f&#39;, False)</span>
+<span class="go">        sim.setCompReacActive(&#39;comp&#39;, &#39;kreac_b&#39;, False)</span>
+<span class="go">        run(i,10001,12001)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>The results of this code can be seen in <a class="reference internal" href="#figure-2-5"><em>Figure 2.5</em></a>.</p>
+<div class="figure" id="figure-2-5">
+<img alt="_images/fig2.5.tiff" src="_images/fig2.5.tiff" style="width: 6.5in; height: 5in;" />
+<p class="caption">The mean of multiple (n = 100) iterations of the second order
+reaction, with the forward and backward reaction turned on and off, as
+described in the text.</p>
+</div>
+<p class="rubric">Footnotes</p>
+<table class="docutils footnote" frame="void" id="f1" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>This is an example of an object property: <tt class="docutils literal"><span class="pre">kcst</span></tt> is a property of
+our <strong>Reac</strong> object. In this example <tt class="docutils literal"><span class="pre">kreac_f.kcst</span> <span class="pre">=</span> <span class="pre">0.3e6</span></tt> is an indirect call
+to object method <tt class="docutils literal"><span class="pre">kreac_f.setKcst(0.3e6)</span></tt>. For more information on available
+property functions see <a class="reference external" href="API_ref.html"><em>API References</em></a>.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="f2" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[2]</a></td><td>A future version of STEPS may provide facilities for working with custom
+units.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="f3" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id3">[3]</a></td><td>Patches will be discussed in the next chapter.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="f4" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id4">[4]</a></td><td>Gillespie DT: Exact stochastic simulation of coupled chemical reactions.
+J Phys Chem 1977, 81:2340-2361</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="f5" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id5">[5]</a></td><td>However, if you present a well-mixed solver in STEPS with a tetrahedral
+mesh, the solver will automatically extract the well-mixed properties
+(i.e. the volumes of compartments, the areas of patches and their connectivity)
+from the mesh.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="f6" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id6">[6]</a></td><td>Solver <tt class="docutils literal"><span class="pre">Wmdirect</span></tt> guarantees that a stochastic simulation started with the
+same seed value will recreate the exact same chain of events. The same is true
+for solver Tetexact. This might not be the case in future solvers, particularly
+in solvers that have been parallellized using some form of “look-ahead” execution.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="f7" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id7">[7]</a></td><td>Since reset currently doesn&#8217;t use any random numbers, in principle you
+might also initialize the random number generator&#8217;s seed value right after
+calling it. This might change with future solvers, so as a rule you&#8217;re better
+off if you make it a habit to initialize the random number generator before
+calling reset.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="f8" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id8">[8]</a></td><td>Presently, all structures for storing simulation results are explicitly
+created by the user and it is also up to the user to include in their script,
+typically, a for loop that will run the simulation, collect data and store this
+data in an appropriate structure, such as a list or NumPy array. In the future
+we may implement the option to pass to the simulation object information about
+what data to store, which will then be collected internally and returned to the
+user or saved automatically in files. This will make it much simpler to run a
+simulation and improved runtime, for the cost of a slightly lengthier
+initialization process.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="f9" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id9">[9]</a></td><td>The first time the loop is executed, the current time is 0.0 because we
+called the reset() function earlier. In this case, sim.run(0.0) doesn&#8217;t move
+the simulation forward.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="f10" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id10">[10]</a></td><td>This way of using the compartmental buffering mechanism will not often
+be used in a real simulation; more often clamping will be combined with a call
+to <tt class="docutils literal"><span class="pre">setCompCount</span></tt> or one of its variants.</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="manual_index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#">2. Example: Well-Mixed Reaction Systems</a><ul>
+<li><a class="reference external" href="#model-specification">2.1. Model Specification</a><ul>
+<li><a class="reference external" href="#model-container">2.1.1. Model container</a></li>
+<li><a class="reference external" href="#species">2.1.2. Species</a></li>
+<li><a class="reference external" href="#volume-system">2.1.3. Volume System</a></li>
+<li><a class="reference external" href="#reactions">2.1.4. Reactions</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#preparing-geometry-for-well-mixed-simulation">2.2. Preparing geometry for well-mixed simulation</a></li>
+<li><a class="reference external" href="#simulation-with-wmdirect">2.3. Simulation with <tt class="docutils literal"><span class="pre">Wmdirect</span></tt></a></li>
+<li><a class="reference external" href="#controlling-the-simulation">2.4. Controlling the simulation</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="getting_started.html"
+                                  title="previous chapter">1. Getting Started</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="ip3.html"
+                                  title="next chapter">3. Example: Surface-Volume Reactions (IP3 Model)</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/well_mixed.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="ip3.html" title="3. Example: Surface-Volume Reactions (IP3 Model)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="getting_started.html" title="1. Getting Started"
+             >previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, The STEPS Development Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.5.
+    </div>
+  </body>
+</html>

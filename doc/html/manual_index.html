@@ -1,0 +1,192 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>STEPS User Manual and API References &mdash; STEPS User Manual v1.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '1.1.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="STEPS User Manual v1.1.0 documentation" href="index.html" />
+    <link rel="next" title="1. Getting Started" href="getting_started.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<a href="http://steps.sourceforge.net"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="getting_started.html" title="1. Getting Started"
+             accesskey="N">next</a> |</li>
+        <li><a href="#">STEPS User Manual v1.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="steps-user-manual-and-api-references">
+<h1>STEPS User Manual and API References<a class="headerlink" href="#steps-user-manual-and-api-references" title="Permalink to this headline">¶</a></h1>
+<p><strong>Current Version: 1.1.0</strong></p>
+<p>Contents:</p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="getting_started.html">1. Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference external" href="getting_started.html#prerequisites">1.1. Prerequisites</a><ul>
+<li class="toctree-l3"><a class="reference external" href="getting_started.html#for-steps-core-modules">1.1.1. For STEPS Core Modules</a></li>
+<li class="toctree-l3"><a class="reference external" href="getting_started.html#for-steps-advanced-modules">1.1.2. For STEPS Advanced Modules</a></li>
+<li class="toctree-l3"><a class="reference external" href="getting_started.html#other-recommended">1.1.3. Other Recommended</a></li>
+<li class="toctree-l3"><a class="reference external" href="getting_started.html#obtaining-steps">1.1.4. Obtaining STEPS</a></li>
+<li class="toctree-l3"><a class="reference external" href="getting_started.html#compilation">1.1.5. Compilation</a></li>
+<li class="toctree-l3"><a class="reference external" href="getting_started.html#running-steps">1.1.6. Running STEPS</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="well_mixed.html">2. Example: Well-Mixed Reaction Systems</a><ul>
+<li class="toctree-l2"><a class="reference external" href="well_mixed.html#model-specification">2.1. Model Specification</a><ul>
+<li class="toctree-l3"><a class="reference external" href="well_mixed.html#model-container">2.1.1. Model container</a></li>
+<li class="toctree-l3"><a class="reference external" href="well_mixed.html#species">2.1.2. Species</a></li>
+<li class="toctree-l3"><a class="reference external" href="well_mixed.html#volume-system">2.1.3. Volume System</a></li>
+<li class="toctree-l3"><a class="reference external" href="well_mixed.html#reactions">2.1.4. Reactions</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference external" href="well_mixed.html#preparing-geometry-for-well-mixed-simulation">2.2. Preparing geometry for well-mixed simulation</a></li>
+<li class="toctree-l2"><a class="reference external" href="well_mixed.html#simulation-with-wmdirect">2.3. Simulation with <tt class="docutils literal"><span class="pre">Wmdirect</span></tt></a></li>
+<li class="toctree-l2"><a class="reference external" href="well_mixed.html#controlling-the-simulation">2.4. Controlling the simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="ip3.html">3. Example: Surface-Volume Reactions (IP3 Model)</a><ul>
+<li class="toctree-l2"><a class="reference external" href="ip3.html#model-specification">3.1. Model specification</a></li>
+<li class="toctree-l2"><a class="reference external" href="ip3.html#geometry-specification">3.2. Geometry specification</a></li>
+<li class="toctree-l2"><a class="reference external" href="ip3.html#simulation-with-wmdirect">3.3. Simulation with <tt class="docutils literal"><span class="pre">Wmdirect</span></tt></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="diffusion.html">4. Example: Simulating Diffusion</a><ul>
+<li class="toctree-l2"><a class="reference external" href="diffusion.html#analytical-solution">4.1. Analytical solution</a></li>
+<li class="toctree-l2"><a class="reference external" href="diffusion.html#modeling-solution">4.2. Modeling solution</a><ul>
+<li class="toctree-l3"><a class="reference external" href="diffusion.html#organisation-of-code">4.2.1. Organisation of code</a></li>
+<li class="toctree-l3"><a class="reference external" href="diffusion.html#model-specification">4.2.2. Model specification</a></li>
+<li class="toctree-l3"><a class="reference external" href="diffusion.html#geometry-specification">4.2.3. Geometry specification</a></li>
+<li class="toctree-l3"><a class="reference external" href="diffusion.html#simulation-with-tetexact">4.2.4. Simulation with <tt class="docutils literal"><span class="pre">Tetexact</span></tt></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="preliminary_func.html">5. Preliminary Functionalities</a><ul>
+<li class="toctree-l2"><a class="reference external" href="preliminary_func.html#meshio-mesh-input-output-module">5.1. meshio: Mesh Input/Output Module</a></li>
+<li class="toctree-l2"><a class="reference external" href="preliminary_func.html#checkpointing">5.2. Checkpointing</a></li>
+<li class="toctree-l2"><a class="reference external" href="preliminary_func.html#graphical-frontend-for-mesh-based-simulation">5.3. Graphical Frontend for Mesh Based Simulation</a><ul>
+<li class="toctree-l3"><a class="reference external" href="preliminary_func.html#display">5.3.1. Display</a></li>
+<li class="toctree-l3"><a class="reference external" href="preliminary_func.html#run-simulation">5.3.2. Run Simulation</a></li>
+<li class="toctree-l3"><a class="reference external" href="preliminary_func.html#id1">5.3.3. Checkpointing</a></li>
+<li class="toctree-l3"><a class="reference external" href="preliminary_func.html#species-display">5.3.4. Species Display</a></li>
+<li class="toctree-l3"><a class="reference external" href="preliminary_func.html#mesh-and-background-display">5.3.5. Mesh and Background Display</a></li>
+<li class="toctree-l3"><a class="reference external" href="preliminary_func.html#rotating-display">5.3.6. Rotating Display</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="API_ref.html">6. API References</a><ul>
+<li class="toctree-l2"><a class="reference external" href="API_model.html">6.1. steps.model</a></li>
+<li class="toctree-l2"><a class="reference external" href="API_geom.html">6.2. steps.geom</a></li>
+<li class="toctree-l2"><a class="reference external" href="API_rng.html">6.3. steps.rng</a></li>
+<li class="toctree-l2"><a class="reference external" href="API_solver.html">6.4. steps.solver</a></li>
+<li class="toctree-l2"><a class="reference external" href="API_utilities_meshio.html">6.5. steps.utilities.meshio</a></li>
+<li class="toctree-l2"><a class="reference external" href="API_utilities_visual.html">6.6. steps.utilities.visual</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference external" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference external" href="modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference external" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="#">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#">STEPS User Manual and API References</a><ul>
+</ul>
+</li>
+<li><a class="reference external" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+            <h4>Next topic</h4>
+            <p class="topless"><a href="getting_started.html"
+                                  title="next chapter">1. Getting Started</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/manual_index.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="getting_started.html" title="1. Getting Started"
+             >next</a> |</li>
+        <li><a href="#">STEPS User Manual v1.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, The STEPS Development Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.5.
+    </div>
+  </body>
+</html>

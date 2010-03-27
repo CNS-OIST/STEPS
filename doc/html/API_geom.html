@@ -1,0 +1,1882 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>6.2. steps.geom &mdash; STEPS User Manual v1.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '1.1.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="STEPS User Manual v1.1.0 documentation" href="index.html" />
+    <link rel="up" title="6. API References" href="API_ref.html" />
+    <link rel="next" title="6.3. steps.rng" href="API_rng.html" />
+    <link rel="prev" title="6.1. steps.model" href="API_model.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<a href="http://steps.sourceforge.net"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="API_rng.html" title="6.3. steps.rng"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="API_model.html" title="6.1. steps.model"
+             accesskey="P">previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li>
+          <li><a href="API_ref.html" accesskey="U">6. API References</a> &raquo;</li> 
+      </ul>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-steps.geom">
+<span id="api-geom"></span><h1>6.2. steps.geom<a class="headerlink" href="#module-steps.geom" title="Permalink to this headline">¶</a></h1>
+<p>Namespace for geometry objects.</p>
+<div class="figure align-center">
+<img alt="_images/steps.geom.jpg" src="_images/steps.geom.jpg" />
+<p class="caption">Class diagram for steps.geom namespace.</p>
+</div>
+<ul class="simple">
+<li><a title="steps.geom.Geom" class="reference internal" href="#steps.geom.Geom"><tt class="xref docutils literal"><span class="pre">steps.geom.Geom</span></tt></a></li>
+<li><a title="steps.geom.Comp" class="reference internal" href="#steps.geom.Comp"><tt class="xref docutils literal"><span class="pre">steps.geom.Comp</span></tt></a></li>
+<li><a title="steps.geom.Patch" class="reference internal" href="#steps.geom.Patch"><tt class="xref docutils literal"><span class="pre">steps.geom.Patch</span></tt></a></li>
+<li><a title="steps.geom.Tetmesh" class="reference internal" href="#steps.geom.Tetmesh"><tt class="xref docutils literal"><span class="pre">steps.geom.Tetmesh</span></tt></a></li>
+<li><a title="steps.geom.TmComp" class="reference internal" href="#steps.geom.TmComp"><tt class="xref docutils literal"><span class="pre">steps.geom.TmComp</span></tt></a></li>
+<li><a title="steps.geom.TmPatch" class="reference internal" href="#steps.geom.TmPatch"><tt class="xref docutils literal"><span class="pre">steps.geom.TmPatch</span></tt></a></li>
+</ul>
+<dl class="class">
+<dt id="steps.geom.Geom">
+<em class="property">class </em><tt class="descclassname">steps.geom.</tt><tt class="descname">Geom</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Geom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Top-level geometry container to which a number of compartment objects 
+and patches objects may be grouped.</p>
+<p>A steps.geom.Geom object is parent to the following objects:</p>
+<ul class="simple">
+<li>steps.geom.Comp</li>
+<li>steps.geom.Patch</li>
+</ul>
+<p>Construction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">g</span> <span class="o">=</span> <span class="n">steps</span><span class="o">.</span><span class="n">geom</span><span class="o">.</span><span class="n">Geom</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Create a geometry container object.</p>
+<dl class="docutils">
+<dt>Arguments: </dt>
+<dd>None</dd>
+</dl>
+<dl class="method">
+<dt id="steps.geom.Geom.delComp">
+<tt class="descname">delComp</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Geom.delComp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the steps.geom.Comp object with identifier string comp_id (if defined) 
+from the geometry container.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">delComp</span><span class="p">(</span><span class="n">comp_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string comp_id</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Geom.delPatch">
+<tt class="descname">delPatch</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Geom.delPatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the steps.geom.Patch object with identifier string patch_id (if defined) 
+from the geometry container.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">delPatch</span><span class="p">(</span><span class="n">patch_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string patch_id</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Geom.getAllComps">
+<tt class="descname">getAllComps</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Geom.getAllComps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of references to all steps.geom.Comp compartment objects in the 
+geometry container.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getAllComps</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.geom.Comp&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Geom.getAllPatches">
+<tt class="descname">getAllPatches</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Geom.getAllPatches" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of references to all steps.geom.Patch patch objects in the 
+geometry container.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getAllPatches</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.geom.Patch&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Geom.getComp">
+<tt class="descname">getComp</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Geom.getComp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the steps.model.Comp compartment object with 
+identifier string comp_id (if defined).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getComp</span><span class="p">(</span><span class="n">comp_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string comp_id</dd>
+<dt>Return:</dt>
+<dd>steps.model.Comp</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Geom.getPatch">
+<tt class="descname">getPatch</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Geom.getPatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the steps.geom.Patch object with identifier string patch_id (if defined) 
+from the geometry container.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatch</span><span class="p">(</span><span class="n">patch_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string patch_id</dd>
+<dt>Return:</dt>
+<dd>steps.geom.Patch</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="steps.geom.Comp">
+<em class="property">class </em><tt class="descclassname">steps.geom.</tt><tt class="descname">Comp</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#steps.geom.Comp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for compartment objects. It provides basic functionality and data 
+that is shared by the derived class steps.geom.TmComp (that is used to 
+describe a compartment in a tetrahedral mesh):</p>
+<ul class="simple">
+<li>Getting and setting a valid compartment identifier string, and handling 
+the interaction with the container object.</li>
+<li>Getting (and at least in this base class also setting) the total volume 
+of the compartment.</li>
+<li>Adding volume systems to the compartment.</li>
+<li>References to steps.geom.Patch objects to which the compartment is adjoined.</li>
+</ul>
+<p>This base class can be used directly with well-mixed solvers.</p>
+<p><strong>Relationship between Compartments and Patches</strong></p>
+<p>It is necessary to explain the inner/outer relationship between compartments 
+and patches. When a patch object is created (a surface of a compartment, which 
+may be shared with another compartment). it is necessary to arbitrarily label the 
+compartment(s) &#8220;inner&#8221; and &#8220;outer&#8221; (if a patch is connected to only one compartment
+then the compartment must be labelled &#8220;inner&#8221; by convention). This is necessary 
+in order to fully describe the surface reaction rules. Accordingly, compartments 
+also store a list of connections, &#8220;inner&#8221; patches and &#8220;outer&#8221; patches. So if a 
+patch1 is created with comp1 as it&#8217;s &#8220;inner&#8221; compartment, comp1 knows patch 1 as 
+an &#8220;outer&#8221; patch. The labelling is purely defined when creating the Patch objects, 
+bearing in mind the stoichiometry defined in the surface reaction objects. This may 
+seem a little confusing at first, but will become clearer when experience is gained 
+with these objects.</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference external" href="ip3.html#ip3"><em>Example: Surface-Volume Reactions (IP3 Model)</em></a></p>
+</div>
+<p>Construction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">comp</span> <span class="o">=</span> <span class="n">steps</span><span class="o">.</span><span class="n">geom</span><span class="o">.</span><span class="n">Comp</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">container</span><span class="p">,</span> <span class="n">vol</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Construct a compartment object with identifier string id and assign 
+container as the parent geometry container. Optionally set volume 
+to vol (in m^3).</p>
+<dl class="docutils">
+<dt>Arguments: </dt>
+<dd><ul class="first last simple">
+<li>string id</li>
+<li>steps.geom.Geom container</li>
+<li>float vol (default = 0.0)</li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="steps.geom.Comp.addVolsys">
+<tt class="descname">addVolsys</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Comp.addVolsys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add volume system identifier string volsys_id to the compartment object.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">addVolsys</span><span class="p">(</span><span class="n">volsys_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string volsys_id</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Comp.delVolsys">
+<tt class="descname">delVolsys</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Comp.delVolsys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes volume system identifier string volsys_id from this compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">delVolsys</span><span class="p">(</span><span class="n">volsys_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string volsys_id</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Comp.getContainer">
+<tt class="descname">getContainer</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Comp.getContainer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the parent steps.geom.Geom container object.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getContainer</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>steps.geom.Geom</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Comp.getID">
+<tt class="descname">getID</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Comp.getID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the identifier string of the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getID</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Comp.getIPatches">
+<tt class="descname">getIPatches</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Comp.getIPatches" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of references to steps.geom.Patch patch objects: 
+the &#8216;inner&#8217; patches.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getIPatches</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.geom.Patch&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Comp.getOPatches">
+<tt class="descname">getOPatches</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Comp.getOPatches" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of references to steps.geom.Patch patch objects: 
+the &#8216;outer&#8217; patches.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getOPatches</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.geom.Patch&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Comp.getVol">
+<tt class="descname">getVol</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Comp.getVol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the volume of the compartment (in m^3).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getVol</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Comp.getVolsys">
+<tt class="descname">getVolsys</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Comp.getVolsys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of the volume system identifier strings which have been 
+added to the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getVolsys</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;string&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Comp.setID">
+<tt class="descname">setID</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Comp.setID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the identifier string of the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setID</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string name</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Comp.setVol">
+<tt class="descname">setVol</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Comp.setVol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the volume of the compartment (in m^3).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setVol</span><span class="p">(</span><span class="n">vol</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>float vol</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.geom.Comp.container">
+<tt class="descname">container</tt><a class="headerlink" href="#steps.geom.Comp.container" title="Permalink to this definition">¶</a></dt>
+<dd>Reference to parent steps.geom.Geom container.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.geom.Comp.id">
+<tt class="descname">id</tt><a class="headerlink" href="#steps.geom.Comp.id" title="Permalink to this definition">¶</a></dt>
+<dd>Identifier string of the compartment.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.geom.Comp.ipatches">
+<tt class="descname">ipatches</tt><a class="headerlink" href="#steps.geom.Comp.ipatches" title="Permalink to this definition">¶</a></dt>
+<dd>List of reference to inner patches.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.geom.Comp.opatches">
+<tt class="descname">opatches</tt><a class="headerlink" href="#steps.geom.Comp.opatches" title="Permalink to this definition">¶</a></dt>
+<dd>List of reference to outer patches.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.geom.Comp.vol">
+<tt class="descname">vol</tt><a class="headerlink" href="#steps.geom.Comp.vol" title="Permalink to this definition">¶</a></dt>
+<dd>Volume of the compartment.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.geom.Comp.volsys">
+<tt class="descname">volsys</tt><a class="headerlink" href="#steps.geom.Comp.volsys" title="Permalink to this definition">¶</a></dt>
+<dd>Reference to assocated volume system.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="steps.geom.Patch">
+<em class="property">class </em><tt class="descclassname">steps.geom.</tt><tt class="descname">Patch</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#steps.geom.Patch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for patch objects. A patch is a piece of 2D surface surrounding 
+(part of) a 3D compartment, which may be connected to another compartment. 
+It provides basic functionality and descriptive data that is shared by the derived 
+class steps.geom.TmPatch (that is used to describe a surface comprised of 
+triangles in a tetrahedral mesh):</p>
+<ul class="simple">
+<li>Getting and setting a valid patch identifier string, and handling 
+the interaction with the container object.</li>
+<li>Getting (and at least in this base class also setting) the total area of the patch.</li>
+<li>Adding surface systems to the patch.</li>
+<li>References to inside/outside compartments to which the patch is adjoined.</li>
+</ul>
+<p>This base class can be used directly with well-mixed solvers.</p>
+<p>Construction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">patch</span> <span class="o">=</span> <span class="n">steps</span><span class="o">.</span><span class="n">geom</span><span class="o">.</span><span class="n">Patch</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">container</span><span class="p">,</span> <span class="n">icomp</span><span class="p">,</span> <span class="n">ocomp</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">area</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Construct a patch object with identifier string id, assign container 
+as the parent geometry container and assign icomp as the &#8220;inner&#8221; 
+compartment. Assign also ocomp as the &#8220;outer&#8221; compartment (if required) 
+and optionally set the area to area (in m^2).</p>
+<dl class="docutils">
+<dt>Arguments: </dt>
+<dd><ul class="first last simple">
+<li>string id</li>
+<li>steps.geom.Geom container</li>
+<li>steps.geom.Comp icomp</li>
+<li>steps.geom.Comp ocomp (default = None)</li>
+<li>float area (default = 0.0)</li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="steps.geom.Patch.addSurfsys">
+<tt class="descname">addSurfsys</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Patch.addSurfsys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add surface system identifier string surfsys_id to the patch object.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">addSurfsys</span><span class="p">(</span><span class="n">surfsys_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string surfsys_id</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Patch.delSurfsys">
+<tt class="descname">delSurfsys</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Patch.delSurfsys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes surface system identifier string surfsys_id from this patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">delSurfsys</span><span class="p">(</span><span class="n">surfsys_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string surfsys_id</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Patch.getArea">
+<tt class="descname">getArea</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Patch.getArea" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the area of the patch (in m^2).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getArea</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Patch.getContainer">
+<tt class="descname">getContainer</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Patch.getContainer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the parent steps.geom.Geom container object.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getContainer</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>steps.geom.Geom</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Patch.getIComp">
+<tt class="descname">getIComp</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Patch.getIComp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the steps.geom.Comp compartment object representing
+the inner compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getIComp</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>steps.geom.Comp</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Patch.getID">
+<tt class="descname">getID</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Patch.getID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the identifier string of the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getID</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Patch.getOComp">
+<tt class="descname">getOComp</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Patch.getOComp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the steps.geom.Comp compartment object representing
+the outer compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getOComp</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>steps.geom.Comp</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Patch.getSurfsys">
+<tt class="descname">getSurfsys</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Patch.getSurfsys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of the surface system identifier strings which have 
+been added to the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getSurfsys</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;string&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Patch.setArea">
+<tt class="descname">setArea</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Patch.setArea" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the area of the patch (in m^2).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setArea</span><span class="p">(</span><span class="n">area</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>float area</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Patch.setID">
+<tt class="descname">setID</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Patch.setID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the identifier string of the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setID</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string name</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.geom.Patch.area">
+<tt class="descname">area</tt><a class="headerlink" href="#steps.geom.Patch.area" title="Permalink to this definition">¶</a></dt>
+<dd>Area of the patch.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.geom.Patch.container">
+<tt class="descname">container</tt><a class="headerlink" href="#steps.geom.Patch.container" title="Permalink to this definition">¶</a></dt>
+<dd>Reference to parent steps.geom.Geom container.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.geom.Patch.icomp">
+<tt class="descname">icomp</tt><a class="headerlink" href="#steps.geom.Patch.icomp" title="Permalink to this definition">¶</a></dt>
+<dd>Reference to the inner compartment.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.geom.Patch.id">
+<tt class="descname">id</tt><a class="headerlink" href="#steps.geom.Patch.id" title="Permalink to this definition">¶</a></dt>
+<dd>Identifier string of the patch.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.geom.Patch.ocomp">
+<tt class="descname">ocomp</tt><a class="headerlink" href="#steps.geom.Patch.ocomp" title="Permalink to this definition">¶</a></dt>
+<dd>reference to the outer compartment.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.geom.Patch.surfsys">
+<tt class="descname">surfsys</tt><a class="headerlink" href="#steps.geom.Patch.surfsys" title="Permalink to this definition">¶</a></dt>
+<dd>Reference to assocated surface system.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="steps.geom.Tetmesh">
+<em class="property">class </em><tt class="descclassname">steps.geom.</tt><tt class="descname">Tetmesh</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main container class for static tetrahedral meshes. This class stores the 
+vertices points, 3D tetrahedral and 2D triangular elements that comprise 
+the mesh. The indices of the elements will be stored as unsigned integers 
+(a positive integer or zero) beginning at zero and incremented by 1. For 
+example, if there are ntets number of tetrahedrons in the mesh, the indices 
+of the tetrahedrons will be [0,1,2,..., (ntets-1)]. In addition, this class 
+computes and contains some auxiliary data from the mesh:</p>
+<ul class="simple">
+<li>Rectangular, axis-aligned bounding box.</li>
+<li>Overall volume.</li>
+<li>The total number of tetrahedrons in the mesh.</li>
+<li>The total number of triangles in the mesh.</li>
+<li>The total number of vertices in the mesh.</li>
+</ul>
+<p>Auxiliary data is also stored for each tetrahedron:</p>
+<ul class="simple">
+<li>Volume of the tetrahedron.</li>
+<li>Indices of the 4 neighbouring tetrahedrons. If there is no neighbour 
+(i.e. if the tetrahedron lies on the border), this index will be -1. 
+The sequence of neighbours is determined by the following common boundary 
+triangles: (0,1,2), (0,1,3), (0,2,3), (1,2,3).</li>
+<li>Indices of the 4 neighbouring boundary triangles. The sequence of neighbours 
+is also determined by (0,1,2), (0,1,3), (0,2,3), (1,2,3).</li>
+<li>Compartment (steps.geom.TmComp object) that the tetrahedron belongs to. 
+Stores zero pointer if the tetrahedron has not been assigned to a compartment.</li>
+</ul>
+<p>And for each triangle:</p>
+<ul class="simple">
+<li>Area of the triangle.</li>
+<li>Normal vector of the triangle, normalized to length 1.0.</li>
+<li>Indices of the 2 neighbouring tetrahedrons. If one tetrahedron does not exist 
+(because the triangle lies on the outer boundary), this index will be -1.</li>
+<li>Patch (steps.geom.TmPatch object) that a triangle belongs to. Stores zero pointer 
+if triangle has not been assigned to a patch.</li>
+</ul>
+<p>Construction1:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">mesh</span> <span class="o">=</span> <span class="n">steps</span><span class="o">.</span><span class="n">geom</span><span class="o">.</span><span class="n">Tetmesh</span><span class="p">(</span><span class="n">verts</span><span class="p">,</span> <span class="n">tets</span><span class="p">,</span> <span class="n">tris</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Construct a Tetmesh container by the “first” method: Supply a list of all 
+vertices verts (by Cartesian coordinates), supply a list of all tetrahedrons 
+tets (by indices of the 4 vertices) and supply a full or partial list of 
+triangles tris (by indices of the 3 vertices). Indexing in STEPS begins at 
+zero, so the first 3 coordinates in verts will describe the zeroth vertex, t
+he next 3 coordinates will describe the 1st vertex and so on. Labelling of 
+the vertices in tets and tris should follow this indexing. Lists must be 
+one-dimensional. Length of verts = nverts*3 where nverts is the total 
+number of vertices; length of tets = ntets*4 where ntets is the total 
+number of tetrahedrons; maximum length of tris ntris*3 where ntris is 
+the total number of triangles. For example, if we have just three tetrahedrons; 
+tet0=[0,1,2,3], tet1=[0,1,3,4] and tet2=[1,3,4,5] then the required 
+one-dimensional list tets=[0,1,2,3,0,1,3,4,1,3,4,5].</p>
+<dl class="docutils">
+<dt>Arguments: </dt>
+<dd><ul class="first last simple">
+<li>list&lt;float&gt; verts</li>
+<li>list&lt;uint&gt; tets</li>
+<li>list&lt;unit&gt; tris</li>
+</ul>
+</dd>
+<dt>Construction2::</dt>
+<dd>mesh = steps.geom.Tetmesh(nverts, ntets, ntris)</dd>
+</dl>
+<p>Construct a Tetmesh container by the “second” method: Supply only the 
+number of vertices nverts, the number of tetrahedrons ntets and the number 
+of triangles ntris to the initializer, then use set methods to supply the 
+vertex, tetrahedron and triangle information one by one. It is up to the 
+user to make sure all information is supplied and then call setup() explicitly. 
+It is highly recommended to use the first constructor wherever possible due to t
+he scope for user error when using this method.</p>
+<dl class="docutils">
+<dt>Arguments: </dt>
+<dd><ul class="first last simple">
+<li>uint nverts</li>
+<li>uint ntets</li>
+<li>uint ntris</li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="steps.geom.Tetmesh.countTets">
+<tt class="descname">countTets</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.countTets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the total number of tetrahedrons in the mesh.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">countTets</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>uint</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.countTris">
+<tt class="descname">countTris</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.countTris" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the total number of triangles in the mesh.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">countTris</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>uint</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.countVertices">
+<tt class="descname">countVertices</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.countVertices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the total number of vertices in the mesh.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">countVertices</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>uint</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.delComp">
+<tt class="descname">delComp</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.delComp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the steps.geom.Comp object with identifier string comp_id (if defined) 
+from the geometry container.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">delComp</span><span class="p">(</span><span class="n">comp_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string comp_id</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.delPatch">
+<tt class="descname">delPatch</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.delPatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the steps.geom.Patch object with identifier string patch_id (if defined) 
+from the geometry container.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">delPatch</span><span class="p">(</span><span class="n">patch_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string patch_id</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.findTetByPoint">
+<tt class="descname">findTetByPoint</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.findTetByPoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the index of the tetrahedron which encompasses a given point 
+p (given in Cartesian coordinates x,y,z). Returns -1 if p is a position 
+outside the mesh.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">findTetByPoint</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>list&lt;float, length = 3&gt; p</dd>
+<dt>Return:</dt>
+<dd>int</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getAllComps">
+<tt class="descname">getAllComps</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getAllComps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of references to all steps.geom.Comp compartment objects in the 
+geometry container.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getAllComps</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.geom.Comp&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getAllPatches">
+<tt class="descname">getAllPatches</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getAllPatches" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of references to all steps.geom.Patch patch objects in the 
+geometry container.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getAllPatches</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.geom.Patch&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getBoundMax">
+<tt class="descname">getBoundMax</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getBoundMax" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the maximal Cartesian coordinate of the rectangular bounding box of the mesh.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getBoundMax</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;float, length = 3&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getBoundMin">
+<tt class="descname">getBoundMin</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getBoundMin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the minimal Cartesian coordinate of the rectangular bounding box of the mesh.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getBoundMin</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;float, length = 3&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getComp">
+<tt class="descname">getComp</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getComp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the steps.model.Comp compartment object with 
+identifier string comp_id (if defined).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getComp</span><span class="p">(</span><span class="n">comp_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string comp_id</dd>
+<dt>Return:</dt>
+<dd>steps.model.Comp</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getMeshVolume">
+<tt class="descname">getMeshVolume</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getMeshVolume" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the total volume of the mesh.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getMeshVolume</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getPatch">
+<tt class="descname">getPatch</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getPatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the steps.geom.Patch object with identifier string patch_id (if defined) 
+from the geometry container.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatch</span><span class="p">(</span><span class="n">patch_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string patch_id</dd>
+<dt>Return:</dt>
+<dd>steps.geom.Patch</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getTet">
+<tt class="descname">getTet</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getTet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the tetrahedron with index tidx in the container by its four vertex indices.</p>
+<dl class="docutils">
+<dt>Syntax::</dt>
+<dd>getTet(tidx)</dd>
+<dt>Arguments:</dt>
+<dd>uint tidx</dd>
+<dt>Return:</dt>
+<dd>list&lt;uint, length = 4&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getTetBarycenter">
+<tt class="descname">getTetBarycenter</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getTetBarycenter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the barycenter of the tetrahedron with index tidx.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTetBarycenter</span><span class="p">(</span><span class="n">tidx</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>uint tidx</dd>
+<dt>Return:</dt>
+<dd>list&lt;float, length = 3&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getTetComp">
+<tt class="descname">getTetComp</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getTetComp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to a steps.geom.Comp object: the compartment which 
+tetrahedron with index tidx belongs to. Returns None if tetrahedron not 
+assigned to a compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTetComp</span><span class="p">(</span><span class="n">tidx</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>uint tidx</dd>
+<dt>Return:</dt>
+<dd>steps.geom.TmComp</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getTetQualityRER">
+<tt class="descname">getTetQualityRER</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getTetQualityRER" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the radius-edge-ratio (a quality measurement) of tetrahedron with index tidx.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTetQualityRER</span><span class="p">(</span><span class="n">tidx</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>uint tidx</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getTetTetNeighb">
+<tt class="descname">getTetTetNeighb</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getTetTetNeighb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the indices of the four neighbouring tetrahedrons of tetrahedron with index tidx. 
+An index of -1 indicates no neighbour (tetrahedron is on the mesh border).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTetTetNeighb</span><span class="p">(</span><span class="n">tidx</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>uint tidx</dd>
+<dt>Return:</dt>
+<dd>list&lt;int, length = 4&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getTetTriNeighb">
+<tt class="descname">getTetTriNeighb</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getTetTriNeighb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the indices of the four neighbouring triangles of tetrahedron with index tidx.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTetTriNeighb</span><span class="p">(</span><span class="n">tidx</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>uint tidx</dd>
+<dt>Return:</dt>
+<dd>list&lt;uint, length = 4&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getTetVol">
+<tt class="descname">getTetVol</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getTetVol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the volume of the tetrahedron with index tidx.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTetVol</span><span class="p">(</span><span class="n">tidx</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>uint tidx</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getTri">
+<tt class="descname">getTri</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getTri" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the triangle with index tidx in the container by its three vertex indices.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTri</span><span class="p">(</span><span class="n">tidx</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>uint tidx</dd>
+<dt>Return:</dt>
+<dd>list&lt;uint, length = 3&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getTriArea">
+<tt class="descname">getTriArea</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getTriArea" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the area of the triangle with index tidx.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTriArea</span><span class="p">(</span><span class="n">tidx</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>uint tidx</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getTriBarycenter">
+<tt class="descname">getTriBarycenter</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getTriBarycenter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Cartesian coordinates of the barycenter of triangle with index tidx.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTriBarycenter</span><span class="p">(</span><span class="n">tidx</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>uint tidx</dd>
+<dt>Return:</dt>
+<dd>list&lt;float, length = 3&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getTriBoundary">
+<tt class="descname">getTriBoundary</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getTriBoundary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of triangles that form the mesh boundary.
+Support function for steps.utilities.visual.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTriBoundary</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;int&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getTriNorm">
+<tt class="descname">getTriNorm</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getTriNorm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the normal vector of the triangle with index tidx.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTriNorm</span><span class="p">(</span><span class="n">tidx</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>uint tidx</dd>
+<dt>Return:</dt>
+<dd>list&lt;float, length = 3&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getTriPatch">
+<tt class="descname">getTriPatch</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getTriPatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to a step.geom.TmPatch object: the patch which triangle 
+with index tidx belongs to. Returns None if triangle not assigned to a patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTriPatch</span><span class="p">(</span><span class="n">tidx</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>uint tidx</dd>
+<dt>Return:</dt>
+<dd>steps.geom.TmPatch</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getTriTetNeighb">
+<tt class="descname">getTriTetNeighb</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getTriTetNeighb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the indices of the two neighbouring tetrahedrons of triangle with 
+index tidx. An index of -1 indicates no neighbour (triangle is on the mesh border).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTriTetNeighb</span><span class="p">(</span><span class="n">tidx</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>uint tidx</dd>
+<dt>Return:</dt>
+<dd>list&lt;int, length = 2&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.getVertex">
+<tt class="descname">getVertex</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.getVertex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the coordinates of vertex with index vidx in the container.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getVertex</span><span class="p">(</span><span class="n">vidx</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>uint vidx</dd>
+<dt>Return:</dt>
+<dd>list&lt;float, length = 3&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.isSetupDone">
+<tt class="descname">isSetupDone</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.isSetupDone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if setup() has been called, either internally by the first constructor, 
+or by the user if the second constructor was used.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">isSetupDone</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>True if setup is done.
+False if setup is not done.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.setTet">
+<tt class="descname">setTet</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.setTet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the tetrahedron with index tidx formed by vertices vidx0, vidx1, 
+vidx2, vidx3. Should be called ntets number of times to supply tetrahedron 
+information if the second constructor is used. Cannot be called after setup() 
+has been called.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setTet</span><span class="p">(</span><span class="n">tidx</span><span class="p">,</span> <span class="n">vidx0</span><span class="p">,</span> <span class="n">vidx1</span><span class="p">,</span> <span class="n">vidx2</span><span class="p">,</span> <span class="n">vidx3</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint tidx</li>
+<li>uint vidx0</li>
+<li>uint vidx1</li>
+<li>uint vidx2</li>
+<li>uint vidx3</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.setTri">
+<tt class="descname">setTri</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.setTri" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the triangle with index tidx formed by vertices vidx0, vidx1, vidx2. 
+Should be called ntris number of times to supply triangle information if the 
+second constructor is used. Cannot be called after setup() has been called.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setTri</span><span class="p">(</span><span class="n">tidx</span><span class="p">,</span> <span class="n">vidx0</span><span class="p">,</span> <span class="n">vidx1</span><span class="p">,</span> <span class="n">vidx2</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint tidx</li>
+<li>uint vidx0</li>
+<li>uint vidx1</li>
+<li>uint vidx2</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.setVertex">
+<tt class="descname">setVertex</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.setVertex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a vertex with index vidx to coordinates x, y, z. Should be used nverts 
+number of times to supply all vertex information if the second constructor 
+is used. Cannot be called after setup() has been called.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setVertex</span><span class="p">(</span><span class="n">vidx</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint vidx</li>
+<li>float x</li>
+<li>float y</li>
+<li>float z</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.Tetmesh.setup">
+<tt class="descname">setup</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.Tetmesh.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup the Tetmesh object by computing the auxiliary data. This method should 
+be called when the second constructor is used and all vertex, tetrahedron and 
+triangle information has been supplied with the set methods. The first constructor 
+calls this method internally, so setup does not have to be called when using the 
+first constructor.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setup</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.geom.Tetmesh.ntets">
+<tt class="descname">ntets</tt><a class="headerlink" href="#steps.geom.Tetmesh.ntets" title="Permalink to this definition">¶</a></dt>
+<dd>Number of tetrahedrons in the mesh.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.geom.Tetmesh.ntris">
+<tt class="descname">ntris</tt><a class="headerlink" href="#steps.geom.Tetmesh.ntris" title="Permalink to this definition">¶</a></dt>
+<dd>Number of triangles in the mesh.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.geom.Tetmesh.nverts">
+<tt class="descname">nverts</tt><a class="headerlink" href="#steps.geom.Tetmesh.nverts" title="Permalink to this definition">¶</a></dt>
+<dd>Number of vertices in the mesh.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="steps.geom.TmComp">
+<em class="property">class </em><tt class="descclassname">steps.geom.</tt><tt class="descname">TmComp</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#steps.geom.TmComp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Derived class from base steps.geom.Comp class. It provides the same 
+functionality as the steps.geom.Comp class extended for annotation of 
+a group of tetrahedrons in a Tetmesh. The volume is the total volume of 
+the encapsulated tetrahedrons.</p>
+<p>Construction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">tmcomp</span> <span class="o">=</span> <span class="n">steps</span><span class="o">.</span><span class="n">geom</span><span class="o">.</span><span class="n">Comp</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">container</span><span class="p">,</span> <span class="n">tets</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Construct a TmComp object with identifier string id and assign container 
+as the parent Tetmesh container. Set the group of tetrahedrons that describe 
+this compartment with tets.</p>
+<dl class="docutils">
+<dt>Arguments: </dt>
+<dd><ul class="first last simple">
+<li>string id</li>
+<li>steps.geom.Tetmesh container</li>
+<li>list&lt;uint&gt; tets</li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="steps.geom.TmComp.addVolsys">
+<tt class="descname">addVolsys</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmComp.addVolsys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add volume system identifier string volsys_id to the compartment object.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">addVolsys</span><span class="p">(</span><span class="n">volsys_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string volsys_id</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmComp.countTets">
+<tt class="descname">countTets</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmComp.countTets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of tetrahedrons assigned to the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">countTets</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>uint</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmComp.delVolsys">
+<tt class="descname">delVolsys</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmComp.delVolsys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes volume system identifier string volsys_id from this compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">delVolsys</span><span class="p">(</span><span class="n">volsys_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string volsys_id</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmComp.getAllTetIndices">
+<tt class="descname">getAllTetIndices</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmComp.getAllTetIndices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of indices of all tetrahedrons assigned to the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getAllTetIndices</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;uint&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmComp.getBoundMax">
+<tt class="descname">getBoundMax</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmComp.getBoundMax" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the maximal Cartesian coordinate of the rectangular bounding box 
+of the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getBoundMax</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;float, length = 3&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmComp.getBoundMin">
+<tt class="descname">getBoundMin</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmComp.getBoundMin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the minimal Cartesian coordinate of the rectangular bounding box 
+of the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getBoundMin</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;float, length = 3&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmComp.getContainer">
+<tt class="descname">getContainer</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmComp.getContainer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the parent steps.geom.Geom container object.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getContainer</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>steps.geom.Geom</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmComp.getID">
+<tt class="descname">getID</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmComp.getID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the identifier string of the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getID</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmComp.getIPatches">
+<tt class="descname">getIPatches</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmComp.getIPatches" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of references to steps.geom.Patch patch objects: 
+the &#8216;inner&#8217; patches.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getIPatches</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.geom.Patch&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmComp.getOPatches">
+<tt class="descname">getOPatches</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmComp.getOPatches" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of references to steps.geom.Patch patch objects: 
+the &#8216;outer&#8217; patches.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getOPatches</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.geom.Patch&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmComp.getVol">
+<tt class="descname">getVol</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmComp.getVol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the volume of the compartment (in m^3).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getVol</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmComp.getVolsys">
+<tt class="descname">getVolsys</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmComp.getVolsys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of the volume system identifier strings which have been 
+added to the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getVolsys</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;string&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmComp.isTetInside">
+<tt class="descname">isTetInside</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmComp.isTetInside" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of Booleans describing if tetrahedrons tets are 
+assigned to the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">isTetInside</span><span class="p">(</span><span class="n">tets</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>list&lt;uint&gt; tets</dd>
+<dt>Return:</dt>
+<dd>list&lt;bool, length = length(tets)&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmComp.setID">
+<tt class="descname">setID</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmComp.setID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the identifier string of the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setID</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string name</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmComp.setVol">
+<tt class="descname">setVol</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmComp.setVol" title="Permalink to this definition">¶</a></dt>
+<dd>Obsolete</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.geom.TmComp.tets">
+<tt class="descname">tets</tt><a class="headerlink" href="#steps.geom.TmComp.tets" title="Permalink to this definition">¶</a></dt>
+<dd>List of indices of tetrahedrons associated to the compartment.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="steps.geom.TmPatch">
+<em class="property">class </em><tt class="descclassname">steps.geom.</tt><tt class="descname">TmPatch</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#steps.geom.TmPatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Derived class from base steps.geom.Patch class. It provides the same 
+functionality as the steps.geom.Patch class extended for annotation of 
+a group of triangles in a Tetmesh. The area is the total area of the 
+encapsulated triangles.</p>
+<p>Construction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">tmpatch</span> <span class="o">=</span> <span class="n">steps</span><span class="o">.</span><span class="n">geom</span><span class="o">.</span><span class="n">Comp</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">container</span><span class="p">,</span> <span class="n">tris</span><span class="p">,</span> <span class="n">icomp</span><span class="p">,</span> <span class="n">ocomp</span> <span class="o">=</span> <span class="bp">None</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Construct a TmPatch object with identifier string id and assign container 
+as the parent geometry container. Assign icomp as the “inner” compartment 
+and assign also ocomp as the “outer” compartment (if required).</p>
+<dl class="docutils">
+<dt>Arguments: </dt>
+<dd><ul class="first last simple">
+<li>string id</li>
+<li>steps.geom.Tetmesh container</li>
+<li>list&lt;uint&gt; tris</li>
+<li>steps.geom.TmComp icomp</li>
+<li>steps.geom.TmComp ocomp (default = None)</li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="steps.geom.TmPatch.addSurfsys">
+<tt class="descname">addSurfsys</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmPatch.addSurfsys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add surface system identifier string surfsys_id to the patch object.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">addSurfsys</span><span class="p">(</span><span class="n">surfsys_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string surfsys_id</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmPatch.delSurfsys">
+<tt class="descname">delSurfsys</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmPatch.delSurfsys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes surface system identifier string surfsys_id from this patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">delSurfsys</span><span class="p">(</span><span class="n">surfsys_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string surfsys_id</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmPatch.getAllTriIndices">
+<tt class="descname">getAllTriIndices</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmPatch.getAllTriIndices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of indices of all triangles assigned to the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getAllTriIndices</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;uint&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmPatch.getArea">
+<tt class="descname">getArea</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmPatch.getArea" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the area of the patch (in m^2).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getArea</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmPatch.getContainer">
+<tt class="descname">getContainer</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmPatch.getContainer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the parent steps.geom.Geom container object.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getContainer</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>steps.geom.Geom</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmPatch.getIComp">
+<tt class="descname">getIComp</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmPatch.getIComp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the steps.geom.Comp compartment object representing
+the inner compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getIComp</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>steps.geom.Comp</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmPatch.getID">
+<tt class="descname">getID</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmPatch.getID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the identifier string of the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getID</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmPatch.getOComp">
+<tt class="descname">getOComp</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmPatch.getOComp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the steps.geom.Comp compartment object representing
+the outer compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getOComp</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>steps.geom.Comp</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmPatch.getSurfsys">
+<tt class="descname">getSurfsys</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmPatch.getSurfsys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of the surface system identifier strings which have 
+been added to the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getSurfsys</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;string&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmPatch.isTriInside">
+<tt class="descname">isTriInside</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmPatch.isTriInside" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of Booleans describing if triangles tris are 
+assigned to the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">isTriInside</span><span class="p">(</span><span class="n">tris</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>list&lt;uint&gt; tris</dd>
+<dt>Return:</dt>
+<dd>list&lt;bool, length = length(tris)&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmPatch.setArea">
+<tt class="descname">setArea</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmPatch.setArea" title="Permalink to this definition">¶</a></dt>
+<dd>Obsolete</dd></dl>
+
+<dl class="method">
+<dt id="steps.geom.TmPatch.setID">
+<tt class="descname">setID</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.geom.TmPatch.setID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the identifier string of the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setID</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string name</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.geom.TmPatch.tris">
+<tt class="descname">tris</tt><a class="headerlink" href="#steps.geom.TmPatch.tris" title="Permalink to this definition">¶</a></dt>
+<dd>List of indices of triangles associated to the patch.</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="API_model.html"
+                                  title="previous chapter">6.1. steps.model</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="API_rng.html"
+                                  title="next chapter">6.3. steps.rng</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/API_geom.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="API_rng.html" title="6.3. steps.rng"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="API_model.html" title="6.1. steps.model"
+             >previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li>
+          <li><a href="API_ref.html" >6. API References</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, The STEPS Development Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.5.
+    </div>
+  </body>
+</html>

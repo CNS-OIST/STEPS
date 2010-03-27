@@ -1,0 +1,8 @@
+.. _API_utilities_visual:
+
+**********************
+steps.utilities.visual
+**********************
+
+.. automodule:: steps.utilities.visual
+   :members: GUISim

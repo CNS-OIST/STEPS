@@ -1,0 +1,4021 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>6.4. steps.solver &mdash; STEPS User Manual v1.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '1.1.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="STEPS User Manual v1.1.0 documentation" href="index.html" />
+    <link rel="up" title="6. API References" href="API_ref.html" />
+    <link rel="next" title="6.5. steps.utilities.meshio" href="API_utilities_meshio.html" />
+    <link rel="prev" title="6.3. steps.rng" href="API_rng.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<a href="http://steps.sourceforge.net"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="API_utilities_meshio.html" title="6.5. steps.utilities.meshio"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="API_rng.html" title="6.3. steps.rng"
+             accesskey="P">previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li>
+          <li><a href="API_ref.html" accesskey="U">6. API References</a> &raquo;</li> 
+      </ul>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-steps.solver">
+<span id="api-solver"></span><h1>6.4. steps.solver<a class="headerlink" href="#module-steps.solver" title="Permalink to this headline">¶</a></h1>
+<p>Implementation of simulation solvers.</p>
+<div class="figure align-center">
+<img alt="_images/steps.solver.jpg" src="_images/steps.solver.jpg" />
+<p class="caption">Class diagram for steps.solver namespace.</p>
+</div>
+<ul class="simple">
+<li><a title="steps.solver.Wmrk4" class="reference internal" href="#steps.solver.Wmrk4"><tt class="xref docutils literal"><span class="pre">steps.solver.Wmrk4</span></tt></a></li>
+<li><a title="steps.solver.Wmdirect" class="reference internal" href="#steps.solver.Wmdirect"><tt class="xref docutils literal"><span class="pre">steps.solver.Wmdirect</span></tt></a></li>
+<li><a title="steps.solver.Tetexact" class="reference internal" href="#steps.solver.Tetexact"><tt class="xref docutils literal"><span class="pre">steps.solver.Tetexact</span></tt></a></li>
+</ul>
+<p>Each solver is a partial or full implementation of the STEPS solver API.
+At the moment STEPS implements three different solvers.</p>
+<p><a title="steps.solver.Wmrk4" class="reference internal" href="#steps.solver.Wmrk4"><tt class="xref docutils literal"><span class="pre">steps.solver.Wmrk4</span></tt></a> implements a well-mixed, deterministic solver
+based on the Runge–Kutta method.</p>
+<p><a title="steps.solver.Wmdirect" class="reference internal" href="#steps.solver.Wmdirect"><tt class="xref docutils literal"><span class="pre">steps.solver.Wmdirect</span></tt></a> implements a stochastic, well-mixed solver
+based on Gillespie&#8217;s Direct SSA Method.</p>
+<p><a title="steps.solver.Tetexact" class="reference internal" href="#steps.solver.Tetexact"><tt class="xref docutils literal"><span class="pre">steps.solver.Tetexact</span></tt></a> implements a stochastic reaction-diffusion
+solver, based on Gillespie&#8217;s Direct SSA Method extended for diffusive fluxes
+between tetrahedral elements in complex geometries.</p>
+<dl class="class">
+<dt id="steps.solver.Wmrk4">
+<em class="property">class </em><tt class="descclassname">steps.solver.</tt><tt class="descname">Wmrk4</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">sim</span> <span class="o">=</span> <span class="n">steps</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">Wmrk4</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Create a well-mixed RK4 simulation solver.</p>
+<dl class="docutils">
+<dt>Arguments: </dt>
+<dd><ul class="first last simple">
+<li>steps.model.Model model</li>
+<li>steps.geom.Geom geom</li>
+<li>steps.rng.RNG rng</li>
+</ul>
+</dd>
+</dl>
+<p><strong>Solver Information</strong></p>
+<dl class="method">
+<dt id="steps.solver.Wmrk4.getSolverName">
+<tt class="descname">getSolverName</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.getSolverName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a string of the solver&#8217;s name.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getSolverName</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.getSolverDesc">
+<tt class="descname">getSolverDesc</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.getSolverDesc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a string giving a short description of the solver.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getSolverDesc</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.getSolverAuthors">
+<tt class="descname">getSolverAuthors</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.getSolverAuthors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a string of the solver authors names.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getSolverAuthors</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.getSolverEmail">
+<tt class="descname">getSolverEmail</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.getSolverEmail" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a string giving the author&#8217;s email address.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getSolverEmail</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<p><strong>Solver Control</strong></p>
+<dl class="method">
+<dt id="steps.solver.Wmrk4.reset">
+<tt class="descname">reset</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the simulation to the state the solver was initialised to. 
+Typically, this resets all concentrations of all chemical species in 
+all elements (whether compartments and patches in a well-mixed solver 
+or tetrahedrons and triangles in a mesh-based solver) to zero, 
+resets the simulation time to zero and resets reaction (and diffusion) 
+rates to the default values described in the steps.model objects. 
+All reaction (and diffusion) rules are reset to active and all 
+compartment volumes and patch areas are reset to default values 
+described in steps.geom objects (for well-mixed solvers). 
+Usually, this method should be called before starting each simulation iteration.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">reset</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.run">
+<tt class="descname">run</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Advance the simulation until endtime (given in seconds) is reached. 
+The endtime must be larger or equal to the current simulation time.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">run</span><span class="p">(</span><span class="n">endtime</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>float endtime</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.advance">
+<tt class="descname">advance</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.advance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Advance the simulation for secs seconds.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">advance</span><span class="p">(</span><span class="n">adv</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>float adv</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.step">
+<tt class="descname">step</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Advance the simulation for one &#8216;step&#8217;. In stochastic solvers this is one 
+&#8216;realization&#8217; of the Gillespie SSA (one reaction &#8216;event&#8217;). 
+In numerical solvers (currently Wmrk4) this is one time-step, with the 
+stepsize defined with the setDT method.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">step</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.setDT">
+<tt class="descname">setDT</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.setDT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the stepsize for numerical solvers. Must be called before running a 
+simulation with these solvers (currently Wmrk4) since there is no default 
+stepsize. The deterministic solver Wmrk4 implements a fixed stepsize 
+(i.e. not adaptive), although the stepsize can be altered at any point 
+during the simulation with this method.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setDT</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>float dt</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.getDT">
+<tt class="descname">getDT</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.getDT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the stepsize for numerical solvers.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getDT</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.getTime">
+<tt class="descname">getTime</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.getTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the current simulation time in seconds.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTime</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.setTime">
+<tt class="descname">setTime</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.setTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the current simulation time.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setTime</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>folat time</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<p><strong>Compartment Data Access</strong></p>
+<dl class="method">
+<dt id="steps.solver.Wmrk4.getCompVol">
+<tt class="descname">getCompVol</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.getCompVol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the volume of compartment with identifier string comp (in m^3).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompVol</span><span class="p">(</span><span class="n">comp</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string comp</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.setCompVol">
+<tt class="descname">setCompVol</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.setCompVol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the volume of compartment with identifier string comp (in m^3).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompVol</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">vol</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>float vol</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.getCompCount">
+<tt class="descname">getCompCount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.getCompCount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of molecules of a species with identifier string spec 
+in compartment with identifier string comp.</p>
+<p>In a mesh-based simulation (i.e. Tetexact) this is the combined count from 
+all tetrahedral elements in the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompCount</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.setCompCount">
+<tt class="descname">setCompCount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.setCompCount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the number of molecules of a species with identifier string spec 
+in compartment with identifier string comp.</p>
+<p>In a mesh-based simulation (i.e. Tetexact) this is the combined count from 
+all tetrahedral elements in the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompCount</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">nspec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+<li>uint nspec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.getCompAmount">
+<tt class="descname">getCompAmount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.getCompAmount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the amount (in mols) of species with identifier string spec in compartment 
+with identifier string comp.</p>
+<p>In a mesh-based simulation (i.e. Tetexact) this is the combined amount from all 
+tetrahedral elements in the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompAmount</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.setCompAmount">
+<tt class="descname">setCompAmount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.setCompAmount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the amount (in mols) of species with identifier string spec in compartment 
+with identifier string comp.</p>
+<p>In a mesh-based simulation (i.e. Tetexact) this is the combined amount from all 
+tetrahedral elements in the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompAmount</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">amount</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+<li>float amount</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.getCompConc">
+<tt class="descname">getCompConc</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.getCompConc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the concentration (in Molar units) of species with identifier string spec 
+in compartment with identifier string comp.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact) this is calculated from the combined 
+number of molecules from all tetrahedral elements in the compartment and the total 
+volume of the tetrahedrons.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompConc</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.setCompConc">
+<tt class="descname">setCompConc</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.setCompConc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the concentration (in Molar units) of species with identifier string spec 
+in compartment with identifier string comp to conc. In a discrete solver the 
+continuous concentration is converted to a discrete number of 
+molecules.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact) the molecules are divided as 
+equally as possible over all tetrahedral elements in the compartment (i.e. a 
+uniform distribution).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompConc</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">conc</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+<li>float conc</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.getCompClamped">
+<tt class="descname">getCompClamped</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.getCompClamped" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if species with identifier string spec in compartment with identifier 
+string comp is clamped (buffered), which means the concentration remains the same 
+regardless of reactions that consume or produce molecules of this species. 
+Returns False if not.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact) it returns True only if the species 
+is clamped in all tetrahedral elements of the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompClamped</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>bool</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.setCompClamped">
+<tt class="descname">setCompClamped</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.setCompClamped" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets whether the concentration of species with identifier string spec in compartment 
+with identifier string comp is clamped (clamped = True) or not (clamped = False). 
+If a species is clamped the concentration stays the same regardless of reactions 
+that consume or produce molecules of the species.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact) this will set the species to be 
+clamped or not in all tetrahedral elements of the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompClamped</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">clamped</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+<li>bool clamped</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>bool</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.getCompReacK">
+<tt class="descname">getCompReacK</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.getCompReacK" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the macroscopic reaction constant of reaction with identifier string reac 
+in compartment with identifier string comp. The unit of the reaction constant depends 
+on the order of the reaction.</p>
+<p>Note: In a mesh-based simulation (i.e. Tetexact) the value for the compartment is 
+returned, although individual tetrahedral elements may have different values 
+(set with setTetReacK).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompReacK</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.setCompReacK">
+<tt class="descname">setCompReacK</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.setCompReacK" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the macroscopic reaction constant of reaction with identifier string reac 
+in compartment with identifier string comp to kf. The unit of the reaction constant 
+depends on the order of the reaction.</p>
+<p>Note: In a mesh-based simulation (i.e. Tetexact) this method sets the reaction 
+constant in all tetrahedral elements of the compartment to kf</p>
+<p>Note: The default value still comes from the steps.model description, so 
+calling reset() will return the reaction constant to that value.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompReacK</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">,</span> <span class="n">kf</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+<li>float kf</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.getCompReacActive">
+<tt class="descname">getCompReacActive</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.getCompReacActive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether a reaction with identifier string reac in compartment with identifier 
+string comp is active (True) or not (False). If it&#8217;s not active this means that a 
+reaction will never occur regardless of whether the reactants are present in 
+sufficient numbers or not.</p>
+<p>Note: In a mesh-based simulation (i.e. Tetexact) this method will return True only 
+if the reaction is active in all tetrahedral elements in the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompReacActive</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>bool</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.setCompReacActive">
+<tt class="descname">setCompReacActive</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.setCompReacActive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Activate (active = True) or deactivate (active = False) a reaction with identifier 
+string reac in compartment with identifier string comp. If a reaction is not active 
+this means that a reaction will never occur regardless of whether the reactants are 
+present in sufficient numbers or not.</p>
+<p>Note: In a mesh-based simulation (i.e. Tetexact) this will activate/deactivate the 
+reaction in all tetrahedral elements in the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompReacActive</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">,</span> <span class="n">active</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+<li>bool active</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<p><strong>Patch Data Access</strong></p>
+<dl class="method">
+<dt id="steps.solver.Wmrk4.getPatchArea">
+<tt class="descname">getPatchArea</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.getPatchArea" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the area of patch with identifier string pat (in m^2).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchArea</span><span class="p">(</span><span class="n">pat</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.setPatchArea">
+<tt class="descname">setPatchArea</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.setPatchArea" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the area of patch with identifier string pat to area a (in m^2).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setPatchArea</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">area</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>float area</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.getPatchCount">
+<tt class="descname">getPatchCount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.getPatchCount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of molecules of species with identifier string spec in patch 
+with identifier string pat.Note: in a mesh-based simulation (i.e. Tetexact) this 
+is the combined count from all triangular elements in the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchCount</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.setPatchCount">
+<tt class="descname">setPatchCount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.setPatchCount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the number of molecules of species with identifier string spec in patch 
+with identifier string pat to n. Note: in a mesh-based simulation (i.e. Tetexact) 
+the molecules are divided as equally as possible over all triangular elements in 
+the patch (i.e. a uniform distribution).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setPatchCount</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string spec</li>
+<li>uint n</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.getPatchAmount">
+<tt class="descname">getPatchAmount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.getPatchAmount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the amount (in mols) of species with identifier string spec in patch 
+with identifier string pat.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact) this is the combined amount 
+from all triangular elements in the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchAmount</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.setPatchAmount">
+<tt class="descname">setPatchAmount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.setPatchAmount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the amount (in mols) of species with identifier string spec in patch with 
+identifier string pat to a. In a discrete solver, such as Wmdirect and Tetexact, 
+this continuous value is converted internally into a discrete number of molecules 
+by multiplication with Avogadro&#8217;s number.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact) the molecules are divided as 
+equally as possible over all triangular elements in the patch (i.e. a uniform 
+distribution).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setPatchAmount</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string spec</li>
+<li>float a</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.getPatchClamped">
+<tt class="descname">getPatchClamped</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.getPatchClamped" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the amount (in mols) of species with identifier string spec in patch with 
+identifier string pat to a. In a discrete solver, such as Wmdirect and Tetexact, 
+this continuous value is converted internally into a discrete number of molecules 
+by multiplication with Avogadro&#8217;s number.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact) the molecules are divided as equally 
+as possible over all triangular elements in the patch (i.e. a uniform distribution).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchClamped</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>bool</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.setPatchClamped">
+<tt class="descname">setPatchClamped</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.setPatchClamped" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets whether the species with identifier string spec in patch with identifier 
+string pat is clamped (clamped = True) or not (clamped = False). If a species 
+is clamped the number of molecules stays the same regardless of surface reactions 
+that consume or produce molecules of the species.</p>
+<p>Note: in a mesh-based simulation this will set the species to be clamped in all 
+triangular elements of the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setPatchClamped</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">clamped</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string spec</li>
+<li>bool clamped</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.getPatchSReacK">
+<tt class="descname">getPatchSReacK</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.getPatchSReacK" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the macroscopic reaction constant of surface reaction with identifier 
+string sreac in patch with identifier string pat. The unit of the reaction constant 
+depends on the order of the reaction.</p>
+<p>Note: In a mesh-based solver (i.e. Tetexact) the value for the patch is returned, 
+although individual triangle elements may have different values 
+(set with setTriSReacK).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchSReacK</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.setPatchSReacK">
+<tt class="descname">setPatchSReacK</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.setPatchSReacK" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the macroscopic reaction constant of surface reaction with identifier 
+string sreac in patch with identifier string pat to kf. The unit of the reaction 
+constant depends on the order of the reaction.</p>
+<p>Note: In a mesh-based simulation (i.e. Tetexact) this method sets the surface 
+reaction constant in all triangular elements of the patch to kf.</p>
+<p>Note: The default value still comes from the steps.model description, so calling 
+reset() will return the surface reaction constant to that value.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setPatchSReacK</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">reac</span><span class="p">,</span> <span class="n">kf</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+<li>float kf</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.getPatchSReacActive">
+<tt class="descname">getPatchSReacActive</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.getPatchSReacActive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether a surface reaction with identifier string sreac in patch with 
+identifier string pat is active (True) or not (False). If it&#8217;s not active this means 
+that a surface reaction will never occur regardless of whether the reactants are 
+present in sufficient numbers or not.</p>
+<p>Note: In a mesh-based simulation (i.e. Tetexact) this method will return True only 
+if the surface reaction is active in all triangular elements in the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchSReacActive</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>bool</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmrk4.setPatchSReacActive">
+<tt class="descname">setPatchSReacActive</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmrk4.setPatchSReacActive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Activate (active = True) or deactivate (active = False) a surface reaction with 
+identifier string sreac in patch with identifier string pat. If a surface reaction 
+is not active this means that a reaction will never occur regardless of whether the 
+reactants are present in sufficient numbers or not.</p>
+<p>Note: In a mesh-based simulation (i.e. Tetexact) this will activate/ deactivate the 
+reaction in all triangular elements in the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setPatchSReacActive</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">reac</span><span class="p">,</span> <span class="n">active</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+<li>bool active</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="steps.solver.Wmdirect">
+<em class="property">class </em><tt class="descclassname">steps.solver.</tt><tt class="descname">Wmdirect</tt><big>(</big><em>model</em>, <em>geom</em>, <em>rng</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">sim</span> <span class="o">=</span> <span class="n">steps</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">Wmdirect</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">geom</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Create a well-mixed Direct SSA simulation solver.</p>
+<dl class="docutils">
+<dt>Arguments: </dt>
+<dd><ul class="first last simple">
+<li>steps.model.Model model</li>
+<li>steps.geom.Geom geom</li>
+<li>steps.rng.RNG rng</li>
+</ul>
+</dd>
+</dl>
+<p><strong>Solver Information</strong></p>
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getSolverName">
+<tt class="descname">getSolverName</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getSolverName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a string of the solver&#8217;s name.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getSolverName</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getSolverDesc">
+<tt class="descname">getSolverDesc</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getSolverDesc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a string giving a short description of the solver.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getSolverDesc</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getSolverAuthors">
+<tt class="descname">getSolverAuthors</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getSolverAuthors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a string of the solver authors names.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getSolverAuthors</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getSolverEmail">
+<tt class="descname">getSolverEmail</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getSolverEmail" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a string giving the author&#8217;s email address.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getSolverEmail</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<p><strong>Solver Control</strong></p>
+<dl class="method">
+<dt id="steps.solver.Wmdirect.reset">
+<tt class="descname">reset</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the simulation to the state the solver was initialised to. 
+Typically, this resets all concentrations of all chemical species in 
+all elements (whether compartments and patches in a well-mixed solver 
+or tetrahedrons and triangles in a mesh-based solver) to zero, 
+resets the simulation time to zero and resets reaction (and diffusion) 
+rates to the default values described in the steps.model objects. 
+All reaction (and diffusion) rules are reset to active and all 
+compartment volumes and patch areas are reset to default values 
+described in steps.geom objects (for well-mixed solvers). 
+Usually, this method should be called before starting each simulation iteration.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">reset</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.run">
+<tt class="descname">run</tt><big>(</big><em>end_time</em>, <em>cp_interval=0.0</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.run" title="Permalink to this definition">¶</a></dt>
+<dd>Run the simulation until end_time, automatic checkpoint for every cp_interval.</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.advance">
+<tt class="descname">advance</tt><big>(</big><em>advance_time</em>, <em>cp_interval=0.0</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.advance" title="Permalink to this definition">¶</a></dt>
+<dd>Avdance the simulation for advance_time, automatic checkpoint for every cp_interval.</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.step">
+<tt class="descname">step</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Advance the simulation for one &#8216;step&#8217;. In stochastic solvers this is one 
+&#8216;realization&#8217; of the Gillespie SSA (one reaction &#8216;event&#8217;). 
+In numerical solvers (currently Wmrk4) this is one time-step, with the 
+stepsize defined with the setDT method.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">step</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getTime">
+<tt class="descname">getTime</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the current simulation time in seconds.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTime</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.setTime">
+<tt class="descname">setTime</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.setTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the current simulation time.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setTime</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>folat time</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getA0">
+<tt class="descname">getA0</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getA0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the total propensity of the current simulation state 
+(the total propensity multiplied by an infinitesimally small 
+time dt gives the probability that a reaction will occur in that dt). 
+For Tetexact this includes the propensity from the extension of the SSA 
+for diffusive flux between tetrahedral elements in the mesh.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getA0</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getNSteps">
+<tt class="descname">getNSteps</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getNSteps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of &#8216;realizations&#8217; of the SSA, the number of reaction 
+(and diffusion) events in stochastic solvers.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getNSteps</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>uint</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.setNSteps">
+<tt class="descname">setNSteps</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.setNSteps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the number of &#8216;realizations&#8217; of the SSA, the number of reaction 
+(and diffusion) events in stochastic solvers.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setNSteps</span><span class="p">(</span><span class="n">nsteps</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>uint nsteps</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<p><strong>Compartment Data Access</strong></p>
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getCompVol">
+<tt class="descname">getCompVol</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getCompVol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the volume of compartment with identifier string comp (in m^3).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompVol</span><span class="p">(</span><span class="n">comp</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string comp</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.setCompVol">
+<tt class="descname">setCompVol</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.setCompVol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the volume of compartment with identifier string comp (in m^3).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompVol</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">vol</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>float vol</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getCompCount">
+<tt class="descname">getCompCount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getCompCount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of molecules of a species with identifier string spec 
+in compartment with identifier string comp.</p>
+<p>In a mesh-based simulation (i.e. Tetexact) this is the combined count from 
+all tetrahedral elements in the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompCount</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.setCompCount">
+<tt class="descname">setCompCount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.setCompCount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the number of molecules of a species with identifier string spec 
+in compartment with identifier string comp.</p>
+<p>In a mesh-based simulation (i.e. Tetexact) this is the combined count from 
+all tetrahedral elements in the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompCount</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">nspec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+<li>uint nspec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getCompAmount">
+<tt class="descname">getCompAmount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getCompAmount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the amount (in mols) of species with identifier string spec in compartment 
+with identifier string comp.</p>
+<p>In a mesh-based simulation (i.e. Tetexact) this is the combined amount from all 
+tetrahedral elements in the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompAmount</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.setCompAmount">
+<tt class="descname">setCompAmount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.setCompAmount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the amount (in mols) of species with identifier string spec in compartment 
+with identifier string comp.</p>
+<p>In a mesh-based simulation (i.e. Tetexact) this is the combined amount from all 
+tetrahedral elements in the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompAmount</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">amount</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+<li>float amount</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getCompConc">
+<tt class="descname">getCompConc</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getCompConc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the concentration (in Molar units) of species with identifier string spec 
+in compartment with identifier string comp.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact) this is calculated from the combined 
+number of molecules from all tetrahedral elements in the compartment and the total 
+volume of the tetrahedrons.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompConc</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.setCompConc">
+<tt class="descname">setCompConc</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.setCompConc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the concentration (in Molar units) of species with identifier string spec 
+in compartment with identifier string comp to conc. In a discrete solver the 
+continuous concentration is converted to a discrete number of 
+molecules.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact) the molecules are divided as 
+equally as possible over all tetrahedral elements in the compartment (i.e. a 
+uniform distribution).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompConc</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">conc</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+<li>float conc</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getCompClamped">
+<tt class="descname">getCompClamped</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getCompClamped" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if species with identifier string spec in compartment with identifier 
+string comp is clamped (buffered), which means the concentration remains the same 
+regardless of reactions that consume or produce molecules of this species. 
+Returns False if not.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact) it returns True only if the species 
+is clamped in all tetrahedral elements of the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompClamped</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>bool</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.setCompClamped">
+<tt class="descname">setCompClamped</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.setCompClamped" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets whether the concentration of species with identifier string spec in compartment 
+with identifier string comp is clamped (clamped = True) or not (clamped = False). 
+If a species is clamped the concentration stays the same regardless of reactions 
+that consume or produce molecules of the species.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact) this will set the species to be 
+clamped or not in all tetrahedral elements of the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompClamped</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">clamped</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+<li>bool clamped</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>bool</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getCompReacK">
+<tt class="descname">getCompReacK</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getCompReacK" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the macroscopic reaction constant of reaction with identifier string reac 
+in compartment with identifier string comp. The unit of the reaction constant depends 
+on the order of the reaction.</p>
+<p>Note: In a mesh-based simulation (i.e. Tetexact) the value for the compartment is 
+returned, although individual tetrahedral elements may have different values 
+(set with setTetReacK).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompReacK</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.setCompReacK">
+<tt class="descname">setCompReacK</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.setCompReacK" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the macroscopic reaction constant of reaction with identifier string reac 
+in compartment with identifier string comp to kf. The unit of the reaction constant 
+depends on the order of the reaction.</p>
+<p>Note: In a mesh-based simulation (i.e. Tetexact) this method sets the reaction 
+constant in all tetrahedral elements of the compartment to kf</p>
+<p>Note: The default value still comes from the steps.model description, so 
+calling reset() will return the reaction constant to that value.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompReacK</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">,</span> <span class="n">kf</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+<li>float kf</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getCompReacActive">
+<tt class="descname">getCompReacActive</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getCompReacActive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether a reaction with identifier string reac in compartment with identifier 
+string comp is active (True) or not (False). If it&#8217;s not active this means that a 
+reaction will never occur regardless of whether the reactants are present in 
+sufficient numbers or not.</p>
+<p>Note: In a mesh-based simulation (i.e. Tetexact) this method will return True only 
+if the reaction is active in all tetrahedral elements in the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompReacActive</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>bool</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.setCompReacActive">
+<tt class="descname">setCompReacActive</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.setCompReacActive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Activate (active = True) or deactivate (active = False) a reaction with identifier 
+string reac in compartment with identifier string comp. If a reaction is not active 
+this means that a reaction will never occur regardless of whether the reactants are 
+present in sufficient numbers or not.</p>
+<p>Note: In a mesh-based simulation (i.e. Tetexact) this will activate/deactivate the 
+reaction in all tetrahedral elements in the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompReacActive</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">,</span> <span class="n">active</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+<li>bool active</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getCompReacC">
+<tt class="descname">getCompReacC</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getCompReacC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the &#8216;stochastic reaction constant&#8217; (or &#8216;specific probability rate constant&#8217;) 
+of reaction with identifier string reac in compartment with identifier string comp.</p>
+<p>The &#8216;stochastic reaction constant&#8217; multiplied by infinitesimal time interval dt 
+gives the average probability that one reaction channel of this reaction type 
+will react accordingly in dt.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact), the stochastic reaction constant 
+is computed as the weighted mean of the stochastic reaction constants in all 
+tetrahedral elements of the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompReacC</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getCompReacH">
+<tt class="descname">getCompReacH</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getCompReacH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns h_mu, the distinct number of ways in which reaction with identifier string 
+reac can occur in compartment with identifier string comp, by computing the product 
+of its reactants. Note: in a mesh-based simulation (i.e. Tetexact), returns the sum 
+of the h_mu&#8217;s over all tetrahedral elements in the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompReacH</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getCompReacA">
+<tt class="descname">getCompReacA</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getCompReacA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the propensity of reaction with identifier string reac in compartment 
+with identifier string comp.</p>
+<p>The propensity of a reaction is a function of state and is defined as the 
+function whose product with infinitesimal time dt gives the probability 
+that the reaction will occur in the next dt. It is the &#8216;stochastic reaction 
+constant&#8217; multiplied by &#8216;h_mu&#8217;.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact), the propensity of a reaction 
+in a compartment is computed as the sum of the propensities in all tetrahedral 
+elements of the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompReacA</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getCompReacExtent">
+<tt class="descname">getCompReacExtent</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getCompReacExtent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the extent of reaction with identifier string reac in compartment with 
+identifier string comp, that is the number of times the reaction has occurred up 
+to the current simulation time.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact), returns the sum of the reaction 
+extents in all tetrahedral elements of the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompReacExtent</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>uint</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.resetCompReacExtent">
+<tt class="descname">resetCompReacExtent</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.resetCompReacExtent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Resets the extent of reaction with identifier string reac in compartment with 
+identifier string comp to zero.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact), 
+resets the extents of the reaction in all tetrahedral elements of the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">resetCompReacExtent</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<p><strong>Patch Data Access</strong></p>
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getPatchArea">
+<tt class="descname">getPatchArea</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getPatchArea" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the area of patch with identifier string pat (in m^2).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchArea</span><span class="p">(</span><span class="n">pat</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.setPatchArea">
+<tt class="descname">setPatchArea</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.setPatchArea" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the area of patch with identifier string pat to area a (in m^2).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setPatchArea</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">area</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>float area</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getPatchCount">
+<tt class="descname">getPatchCount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getPatchCount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of molecules of species with identifier string spec in patch 
+with identifier string pat.Note: in a mesh-based simulation (i.e. Tetexact) this 
+is the combined count from all triangular elements in the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchCount</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.setPatchCount">
+<tt class="descname">setPatchCount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.setPatchCount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the number of molecules of species with identifier string spec in patch 
+with identifier string pat to n. Note: in a mesh-based simulation (i.e. Tetexact) 
+the molecules are divided as equally as possible over all triangular elements in 
+the patch (i.e. a uniform distribution).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setPatchCount</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string spec</li>
+<li>uint n</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getPatchAmount">
+<tt class="descname">getPatchAmount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getPatchAmount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the amount (in mols) of species with identifier string spec in patch 
+with identifier string pat.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact) this is the combined amount 
+from all triangular elements in the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchAmount</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.setPatchAmount">
+<tt class="descname">setPatchAmount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.setPatchAmount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the amount (in mols) of species with identifier string spec in patch with 
+identifier string pat to a. In a discrete solver, such as Wmdirect and Tetexact, 
+this continuous value is converted internally into a discrete number of molecules 
+by multiplication with Avogadro&#8217;s number.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact) the molecules are divided as 
+equally as possible over all triangular elements in the patch (i.e. a uniform 
+distribution).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setPatchAmount</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string spec</li>
+<li>float a</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getPatchClamped">
+<tt class="descname">getPatchClamped</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getPatchClamped" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the amount (in mols) of species with identifier string spec in patch with 
+identifier string pat to a. In a discrete solver, such as Wmdirect and Tetexact, 
+this continuous value is converted internally into a discrete number of molecules 
+by multiplication with Avogadro&#8217;s number.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact) the molecules are divided as equally 
+as possible over all triangular elements in the patch (i.e. a uniform distribution).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchClamped</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>bool</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.setPatchClamped">
+<tt class="descname">setPatchClamped</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.setPatchClamped" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets whether the species with identifier string spec in patch with identifier 
+string pat is clamped (clamped = True) or not (clamped = False). If a species 
+is clamped the number of molecules stays the same regardless of surface reactions 
+that consume or produce molecules of the species.</p>
+<p>Note: in a mesh-based simulation this will set the species to be clamped in all 
+triangular elements of the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setPatchClamped</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">clamped</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string spec</li>
+<li>bool clamped</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getPatchSReacK">
+<tt class="descname">getPatchSReacK</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getPatchSReacK" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the macroscopic reaction constant of surface reaction with identifier 
+string sreac in patch with identifier string pat. The unit of the reaction constant 
+depends on the order of the reaction.</p>
+<p>Note: In a mesh-based solver (i.e. Tetexact) the value for the patch is returned, 
+although individual triangle elements may have different values 
+(set with setTriSReacK).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchSReacK</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.setPatchSReacK">
+<tt class="descname">setPatchSReacK</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.setPatchSReacK" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the macroscopic reaction constant of surface reaction with identifier 
+string sreac in patch with identifier string pat to kf. The unit of the reaction 
+constant depends on the order of the reaction.</p>
+<p>Note: In a mesh-based simulation (i.e. Tetexact) this method sets the surface 
+reaction constant in all triangular elements of the patch to kf.</p>
+<p>Note: The default value still comes from the steps.model description, so calling 
+reset() will return the surface reaction constant to that value.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setPatchSReacK</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">reac</span><span class="p">,</span> <span class="n">kf</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+<li>float kf</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getPatchSReacActive">
+<tt class="descname">getPatchSReacActive</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getPatchSReacActive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether a surface reaction with identifier string sreac in patch with 
+identifier string pat is active (True) or not (False). If it&#8217;s not active this means 
+that a surface reaction will never occur regardless of whether the reactants are 
+present in sufficient numbers or not.</p>
+<p>Note: In a mesh-based simulation (i.e. Tetexact) this method will return True only 
+if the surface reaction is active in all triangular elements in the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchSReacActive</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>bool</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.setPatchSReacActive">
+<tt class="descname">setPatchSReacActive</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.setPatchSReacActive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Activate (active = True) or deactivate (active = False) a surface reaction with 
+identifier string sreac in patch with identifier string pat. If a surface reaction 
+is not active this means that a reaction will never occur regardless of whether the 
+reactants are present in sufficient numbers or not.</p>
+<p>Note: In a mesh-based simulation (i.e. Tetexact) this will activate/ deactivate the 
+reaction in all triangular elements in the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setPatchSReacActive</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">reac</span><span class="p">,</span> <span class="n">active</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+<li>bool active</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getPatchSReacC">
+<tt class="descname">getPatchSReacC</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getPatchSReacC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the &#8216;stochastic reaction constant&#8217; (or &#8216;specific probability rate constant&#8217;) 
+of surface reaction with identifier string sreac in patch with identifier string pat.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact), the stochastic reaction constant is 
+computed as the weighted mean of the stochastic reaction constants in all triangular 
+elements of the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchSReacC</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getPatchSReacH">
+<tt class="descname">getPatchSReacH</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getPatchSReacH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns h_mu, the distinct number of ways in which surface reaction with identifier 
+string sreac can occur in patch with identifier string pat, by computing the product 
+of its reactants. Note: in a mesh-based simulation (i.e. Tetexact), returns the sum 
+of the h_mu&#8217;s over all triangular elements in the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchSReacH</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getPatchSReacA">
+<tt class="descname">getPatchSReacA</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getPatchSReacA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the propensity of surface reaction with identifier string sreac in patch 
+with identifier string pat. Note: in a mesh-based simulation (i.e. Tetexact), 
+the propensity of a surface reaction in a patch is computed as the sum of the 
+propensities in all triangular elements of the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchSReacA</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.getPatchSReacExtent">
+<tt class="descname">getPatchSReacExtent</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.getPatchSReacExtent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the extent of surface reaction with identifier string sreac in patch 
+with identifier string pat, that is the number of times the surface reaction 
+has occurred up to the current simulation time.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact), returns the sum of the reaction 
+extents in all triangular elements of the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchSReacExtent</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span><span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>uint</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Wmdirect.resetPatchSReacExtent">
+<tt class="descname">resetPatchSReacExtent</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Wmdirect.resetPatchSReacExtent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Resets the extent of reaction with identifier string sreac in patch with identifier 
+string pat to zero.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact), resets the extents of the reaction 
+in all triangular elements of the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">resetPatchSReacExtent</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="steps.solver.Tetexact">
+<em class="property">class </em><tt class="descclassname">steps.solver.</tt><tt class="descname">Tetexact</tt><big>(</big><em>model</em>, <em>geom</em>, <em>rng</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">sim</span> <span class="o">=</span> <span class="n">steps</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">Tetexact</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">mesh</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Create a tetrahedral mesh-based Direct SSA simulation solver.</p>
+<dl class="docutils">
+<dt>Arguments: </dt>
+<dd><ul class="first last simple">
+<li>steps.model.Model model</li>
+<li>steps.geom.Tetmesh mesh</li>
+<li>steps.rng.RNG rng</li>
+</ul>
+</dd>
+</dl>
+<p><strong>Solver Information</strong></p>
+<dl class="method">
+<dt id="steps.solver.Tetexact.getSolverName">
+<tt class="descname">getSolverName</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getSolverName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a string of the solver&#8217;s name.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getSolverName</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getSolverDesc">
+<tt class="descname">getSolverDesc</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getSolverDesc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a string giving a short description of the solver.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getSolverDesc</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getSolverAuthors">
+<tt class="descname">getSolverAuthors</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getSolverAuthors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a string of the solver authors names.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getSolverAuthors</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getSolverEmail">
+<tt class="descname">getSolverEmail</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getSolverEmail" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a string giving the author&#8217;s email address.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getSolverEmail</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<p><strong>Solver Control</strong></p>
+<dl class="method">
+<dt id="steps.solver.Tetexact.reset">
+<tt class="descname">reset</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the simulation to the state the solver was initialised to. 
+Typically, this resets all concentrations of all chemical species in 
+all elements (whether compartments and patches in a well-mixed solver 
+or tetrahedrons and triangles in a mesh-based solver) to zero, 
+resets the simulation time to zero and resets reaction (and diffusion) 
+rates to the default values described in the steps.model objects. 
+All reaction (and diffusion) rules are reset to active and all 
+compartment volumes and patch areas are reset to default values 
+described in steps.geom objects (for well-mixed solvers). 
+Usually, this method should be called before starting each simulation iteration.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">reset</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.run">
+<tt class="descname">run</tt><big>(</big><em>end_time</em>, <em>cp_interval=0.0</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.run" title="Permalink to this definition">¶</a></dt>
+<dd>Run the simulation until end_time, automatic checkpoint for every cp_interval.</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.advance">
+<tt class="descname">advance</tt><big>(</big><em>advance_time</em>, <em>cp_interval=0.0</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.advance" title="Permalink to this definition">¶</a></dt>
+<dd>Avdance the simulation for advance_time, automatic checkpoint for every cp_interval.</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.step">
+<tt class="descname">step</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Advance the simulation for one &#8216;step&#8217;. In stochastic solvers this is one 
+&#8216;realization&#8217; of the Gillespie SSA (one reaction &#8216;event&#8217;). 
+In numerical solvers (currently Wmrk4) this is one time-step, with the 
+stepsize defined with the setDT method.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">step</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTime">
+<tt class="descname">getTime</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the current simulation time in seconds.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTime</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setTime">
+<tt class="descname">setTime</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the current simulation time.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setTime</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>folat time</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getA0">
+<tt class="descname">getA0</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getA0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the total propensity of the current simulation state 
+(the total propensity multiplied by an infinitesimally small 
+time dt gives the probability that a reaction will occur in that dt). 
+For Tetexact this includes the propensity from the extension of the SSA 
+for diffusive flux between tetrahedral elements in the mesh.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getA0</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getNSteps">
+<tt class="descname">getNSteps</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getNSteps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of &#8216;realizations&#8217; of the SSA, the number of reaction 
+(and diffusion) events in stochastic solvers.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getNSteps</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>uint</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setNSteps">
+<tt class="descname">setNSteps</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setNSteps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the number of &#8216;realizations&#8217; of the SSA, the number of reaction 
+(and diffusion) events in stochastic solvers.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setNSteps</span><span class="p">(</span><span class="n">nsteps</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>uint nsteps</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<p><strong>Compartment Data Access</strong></p>
+<dl class="method">
+<dt id="steps.solver.Tetexact.getCompVol">
+<tt class="descname">getCompVol</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getCompVol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the volume of compartment with identifier string comp (in m^3).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompVol</span><span class="p">(</span><span class="n">comp</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string comp</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getCompCount">
+<tt class="descname">getCompCount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getCompCount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of molecules of a species with identifier string spec 
+in compartment with identifier string comp.</p>
+<p>In a mesh-based simulation (i.e. Tetexact) this is the combined count from 
+all tetrahedral elements in the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompCount</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setCompCount">
+<tt class="descname">setCompCount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setCompCount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the number of molecules of a species with identifier string spec 
+in compartment with identifier string comp.</p>
+<p>In a mesh-based simulation (i.e. Tetexact) this is the combined count from 
+all tetrahedral elements in the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompCount</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">nspec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+<li>uint nspec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getCompAmount">
+<tt class="descname">getCompAmount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getCompAmount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the amount (in mols) of species with identifier string spec in compartment 
+with identifier string comp.</p>
+<p>In a mesh-based simulation (i.e. Tetexact) this is the combined amount from all 
+tetrahedral elements in the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompAmount</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setCompAmount">
+<tt class="descname">setCompAmount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setCompAmount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the amount (in mols) of species with identifier string spec in compartment 
+with identifier string comp.</p>
+<p>In a mesh-based simulation (i.e. Tetexact) this is the combined amount from all 
+tetrahedral elements in the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompAmount</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">amount</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+<li>float amount</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getCompConc">
+<tt class="descname">getCompConc</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getCompConc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the concentration (in Molar units) of species with identifier string spec 
+in compartment with identifier string comp.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact) this is calculated from the combined 
+number of molecules from all tetrahedral elements in the compartment and the total 
+volume of the tetrahedrons.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompConc</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setCompConc">
+<tt class="descname">setCompConc</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setCompConc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the concentration (in Molar units) of species with identifier string spec 
+in compartment with identifier string comp to conc. In a discrete solver the 
+continuous concentration is converted to a discrete number of 
+molecules.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact) the molecules are divided as 
+equally as possible over all tetrahedral elements in the compartment (i.e. a 
+uniform distribution).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompConc</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">conc</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+<li>float conc</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getCompClamped">
+<tt class="descname">getCompClamped</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getCompClamped" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if species with identifier string spec in compartment with identifier 
+string comp is clamped (buffered), which means the concentration remains the same 
+regardless of reactions that consume or produce molecules of this species. 
+Returns False if not.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact) it returns True only if the species 
+is clamped in all tetrahedral elements of the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompClamped</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>bool</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setCompClamped">
+<tt class="descname">setCompClamped</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setCompClamped" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets whether the concentration of species with identifier string spec in compartment 
+with identifier string comp is clamped (clamped = True) or not (clamped = False). 
+If a species is clamped the concentration stays the same regardless of reactions 
+that consume or produce molecules of the species.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact) this will set the species to be 
+clamped or not in all tetrahedral elements of the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompClamped</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">clamped</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string spec</li>
+<li>bool clamped</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>bool</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getCompReacK">
+<tt class="descname">getCompReacK</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getCompReacK" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the macroscopic reaction constant of reaction with identifier string reac 
+in compartment with identifier string comp. The unit of the reaction constant depends 
+on the order of the reaction.</p>
+<p>Note: In a mesh-based simulation (i.e. Tetexact) the value for the compartment is 
+returned, although individual tetrahedral elements may have different values 
+(set with setTetReacK).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompReacK</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setCompReacK">
+<tt class="descname">setCompReacK</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setCompReacK" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the macroscopic reaction constant of reaction with identifier string reac 
+in compartment with identifier string comp to kf. The unit of the reaction constant 
+depends on the order of the reaction.</p>
+<p>Note: In a mesh-based simulation (i.e. Tetexact) this method sets the reaction 
+constant in all tetrahedral elements of the compartment to kf</p>
+<p>Note: The default value still comes from the steps.model description, so 
+calling reset() will return the reaction constant to that value.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompReacK</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">,</span> <span class="n">kf</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+<li>float kf</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getCompReacActive">
+<tt class="descname">getCompReacActive</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getCompReacActive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether a reaction with identifier string reac in compartment with identifier 
+string comp is active (True) or not (False). If it&#8217;s not active this means that a 
+reaction will never occur regardless of whether the reactants are present in 
+sufficient numbers or not.</p>
+<p>Note: In a mesh-based simulation (i.e. Tetexact) this method will return True only 
+if the reaction is active in all tetrahedral elements in the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompReacActive</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>bool</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setCompReacActive">
+<tt class="descname">setCompReacActive</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setCompReacActive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Activate (active = True) or deactivate (active = False) a reaction with identifier 
+string reac in compartment with identifier string comp. If a reaction is not active 
+this means that a reaction will never occur regardless of whether the reactants are 
+present in sufficient numbers or not.</p>
+<p>Note: In a mesh-based simulation (i.e. Tetexact) this will activate/deactivate the 
+reaction in all tetrahedral elements in the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompReacActive</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">,</span> <span class="n">active</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+<li>bool active</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getCompDiffD">
+<tt class="descname">getCompDiffD</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getCompDiffD" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the diffusion constant of diffusion rule with identifier string diff 
+in compartment with identifier string comp. This constant is in units m^2/s.</p>
+<p>Note: In a mesh-based solver (i.e. Tetexact) the value for the compartment is 
+returned, although individual or groups of tetrahedral elements may have different 
+values (set with setTetDiffD).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompDiffD</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">diff</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string diff</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setCompDiffD">
+<tt class="descname">setCompDiffD</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setCompDiffD" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the diffusion constant of diffusion rule with identifier string diff 
+in compartment with identifier string comp to dcst (in m^2/s).</p>
+<p>Note: This method will set the diffusion constant in all tetrahedral elements 
+in the compartment.</p>
+<p>Note: The default value still comes from the steps.model description, 
+so calling reset() will return the diffusion constants to that value.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompDiffD</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">diff</span><span class="p">,</span> <span class="n">dcst</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string diff</li>
+<li>float dcst</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getCompDiffActive">
+<tt class="descname">getCompDiffActive</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getCompDiffActive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether a diffusion rule with identifier string diff in compartment with 
+identifier string comp is active (True) or not (False). If diffusion of a species 
+is inactive this means the molecules will remain in place and has the same effect 
+as a diffusion constant of zero.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompDiffActive</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">diff</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string diff</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>bool</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setCompDiffActive">
+<tt class="descname">setCompDiffActive</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setCompDiffActive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Activate (active = True) or deactivate (active = False) a diffusion rule with 
+identifier string diff in compartment with identifier string comp. If diffusion 
+of a species is inactive this means the molecules will remain in place and is 
+effectively the same as setting the diffusion constant to zero</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setCompDiffActive</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">diff</span><span class="p">,</span> <span class="n">active</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string diff</li>
+<li>bool active</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getCompReacC">
+<tt class="descname">getCompReacC</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getCompReacC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the &#8216;stochastic reaction constant&#8217; (or &#8216;specific probability rate constant&#8217;) 
+of reaction with identifier string reac in compartment with identifier string comp.</p>
+<p>The &#8216;stochastic reaction constant&#8217; multiplied by infinitesimal time interval dt 
+gives the average probability that one reaction channel of this reaction type 
+will react accordingly in dt.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact), the stochastic reaction constant 
+is computed as the weighted mean of the stochastic reaction constants in all 
+tetrahedral elements of the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompReacC</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getCompReacH">
+<tt class="descname">getCompReacH</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getCompReacH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns h_mu, the distinct number of ways in which reaction with identifier string 
+reac can occur in compartment with identifier string comp, by computing the product 
+of its reactants. Note: in a mesh-based simulation (i.e. Tetexact), returns the sum 
+of the h_mu&#8217;s over all tetrahedral elements in the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompReacH</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getCompReacA">
+<tt class="descname">getCompReacA</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getCompReacA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the propensity of reaction with identifier string reac in compartment 
+with identifier string comp.</p>
+<p>The propensity of a reaction is a function of state and is defined as the 
+function whose product with infinitesimal time dt gives the probability 
+that the reaction will occur in the next dt. It is the &#8216;stochastic reaction 
+constant&#8217; multiplied by &#8216;h_mu&#8217;.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact), the propensity of a reaction 
+in a compartment is computed as the sum of the propensities in all tetrahedral 
+elements of the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompReacA</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getCompReacExtent">
+<tt class="descname">getCompReacExtent</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getCompReacExtent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the extent of reaction with identifier string reac in compartment with 
+identifier string comp, that is the number of times the reaction has occurred up 
+to the current simulation time.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact), returns the sum of the reaction 
+extents in all tetrahedral elements of the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getCompReacExtent</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>uint</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.resetCompReacExtent">
+<tt class="descname">resetCompReacExtent</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.resetCompReacExtent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Resets the extent of reaction with identifier string reac in compartment with 
+identifier string comp to zero.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact), 
+resets the extents of the reaction in all tetrahedral elements of the compartment.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">resetCompReacExtent</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string comp</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<p><strong>Patch Data Access</strong></p>
+<dl class="method">
+<dt id="steps.solver.Tetexact.getPatchArea">
+<tt class="descname">getPatchArea</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getPatchArea" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the area of patch with identifier string pat (in m^2).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchArea</span><span class="p">(</span><span class="n">pat</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getPatchCount">
+<tt class="descname">getPatchCount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getPatchCount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of molecules of species with identifier string spec in patch 
+with identifier string pat.Note: in a mesh-based simulation (i.e. Tetexact) this 
+is the combined count from all triangular elements in the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchCount</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setPatchCount">
+<tt class="descname">setPatchCount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setPatchCount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the number of molecules of species with identifier string spec in patch 
+with identifier string pat to n. Note: in a mesh-based simulation (i.e. Tetexact) 
+the molecules are divided as equally as possible over all triangular elements in 
+the patch (i.e. a uniform distribution).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setPatchCount</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string spec</li>
+<li>uint n</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getPatchAmount">
+<tt class="descname">getPatchAmount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getPatchAmount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the amount (in mols) of species with identifier string spec in patch 
+with identifier string pat.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact) this is the combined amount 
+from all triangular elements in the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchAmount</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setPatchAmount">
+<tt class="descname">setPatchAmount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setPatchAmount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the amount (in mols) of species with identifier string spec in patch with 
+identifier string pat to a. In a discrete solver, such as Wmdirect and Tetexact, 
+this continuous value is converted internally into a discrete number of molecules 
+by multiplication with Avogadro&#8217;s number.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact) the molecules are divided as 
+equally as possible over all triangular elements in the patch (i.e. a uniform 
+distribution).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setPatchAmount</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string spec</li>
+<li>float a</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getPatchClamped">
+<tt class="descname">getPatchClamped</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getPatchClamped" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the amount (in mols) of species with identifier string spec in patch with 
+identifier string pat to a. In a discrete solver, such as Wmdirect and Tetexact, 
+this continuous value is converted internally into a discrete number of molecules 
+by multiplication with Avogadro&#8217;s number.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact) the molecules are divided as equally 
+as possible over all triangular elements in the patch (i.e. a uniform distribution).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchClamped</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>bool</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setPatchClamped">
+<tt class="descname">setPatchClamped</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setPatchClamped" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets whether the species with identifier string spec in patch with identifier 
+string pat is clamped (clamped = True) or not (clamped = False). If a species 
+is clamped the number of molecules stays the same regardless of surface reactions 
+that consume or produce molecules of the species.</p>
+<p>Note: in a mesh-based simulation this will set the species to be clamped in all 
+triangular elements of the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setPatchClamped</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">clamped</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string spec</li>
+<li>bool clamped</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getPatchSReacK">
+<tt class="descname">getPatchSReacK</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getPatchSReacK" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the macroscopic reaction constant of surface reaction with identifier 
+string sreac in patch with identifier string pat. The unit of the reaction constant 
+depends on the order of the reaction.</p>
+<p>Note: In a mesh-based solver (i.e. Tetexact) the value for the patch is returned, 
+although individual triangle elements may have different values 
+(set with setTriSReacK).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchSReacK</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setPatchSReacK">
+<tt class="descname">setPatchSReacK</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setPatchSReacK" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the macroscopic reaction constant of surface reaction with identifier 
+string sreac in patch with identifier string pat to kf. The unit of the reaction 
+constant depends on the order of the reaction.</p>
+<p>Note: In a mesh-based simulation (i.e. Tetexact) this method sets the surface 
+reaction constant in all triangular elements of the patch to kf.</p>
+<p>Note: The default value still comes from the steps.model description, so calling 
+reset() will return the surface reaction constant to that value.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setPatchSReacK</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">reac</span><span class="p">,</span> <span class="n">kf</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+<li>float kf</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getPatchSReacActive">
+<tt class="descname">getPatchSReacActive</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getPatchSReacActive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether a surface reaction with identifier string sreac in patch with 
+identifier string pat is active (True) or not (False). If it&#8217;s not active this means 
+that a surface reaction will never occur regardless of whether the reactants are 
+present in sufficient numbers or not.</p>
+<p>Note: In a mesh-based simulation (i.e. Tetexact) this method will return True only 
+if the surface reaction is active in all triangular elements in the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchSReacActive</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>bool</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setPatchSReacActive">
+<tt class="descname">setPatchSReacActive</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setPatchSReacActive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Activate (active = True) or deactivate (active = False) a surface reaction with 
+identifier string sreac in patch with identifier string pat. If a surface reaction 
+is not active this means that a reaction will never occur regardless of whether the 
+reactants are present in sufficient numbers or not.</p>
+<p>Note: In a mesh-based simulation (i.e. Tetexact) this will activate/ deactivate the 
+reaction in all triangular elements in the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setPatchSReacActive</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">reac</span><span class="p">,</span> <span class="n">active</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+<li>bool active</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getPatchSReacC">
+<tt class="descname">getPatchSReacC</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getPatchSReacC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the &#8216;stochastic reaction constant&#8217; (or &#8216;specific probability rate constant&#8217;) 
+of surface reaction with identifier string sreac in patch with identifier string pat.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact), the stochastic reaction constant is 
+computed as the weighted mean of the stochastic reaction constants in all triangular 
+elements of the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchSReacC</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getPatchSReacH">
+<tt class="descname">getPatchSReacH</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getPatchSReacH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns h_mu, the distinct number of ways in which surface reaction with identifier 
+string sreac can occur in patch with identifier string pat, by computing the product 
+of its reactants. Note: in a mesh-based simulation (i.e. Tetexact), returns the sum 
+of the h_mu&#8217;s over all triangular elements in the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchSReacH</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getPatchSReacA">
+<tt class="descname">getPatchSReacA</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getPatchSReacA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the propensity of surface reaction with identifier string sreac in patch 
+with identifier string pat. Note: in a mesh-based simulation (i.e. Tetexact), 
+the propensity of a surface reaction in a patch is computed as the sum of the 
+propensities in all triangular elements of the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchSReacA</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getPatchSReacExtent">
+<tt class="descname">getPatchSReacExtent</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getPatchSReacExtent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the extent of surface reaction with identifier string sreac in patch 
+with identifier string pat, that is the number of times the surface reaction 
+has occurred up to the current simulation time.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact), returns the sum of the reaction 
+extents in all triangular elements of the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getPatchSReacExtent</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span><span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>uint</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.resetPatchSReacExtent">
+<tt class="descname">resetPatchSReacExtent</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.resetPatchSReacExtent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Resets the extent of reaction with identifier string sreac in patch with identifier 
+string pat to zero.</p>
+<p>Note: in a mesh-based simulation (i.e. Tetexact), resets the extents of the reaction 
+in all triangular elements of the patch.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">resetPatchSReacExtent</span><span class="p">(</span><span class="n">pat</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string pat</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<p><strong>Tetrahedral Data Access</strong></p>
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTetVol">
+<tt class="descname">getTetVol</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTetVol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the volume (in m^3) of the tetrahedral element with index idx.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTetVol</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTetCount">
+<tt class="descname">getTetCount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTetCount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of molecules of species with identifier string spec 
+in the tetrahedral element with index idx.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTetCount</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>uint</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setTetCount">
+<tt class="descname">setTetCount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setTetCount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the number of molecules of species with identifier string spec in 
+tetrahedral element with index idx to n.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setTetCount</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string spec</li>
+<li>uint n</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTetAmount">
+<tt class="descname">getTetAmount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTetAmount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the amount (in mols) of species with identifier string spec in 
+tetrahedral element with index idx.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTetAmount</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setTetAmount">
+<tt class="descname">setTetAmount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setTetAmount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the amount (in mols) of species with identifier string spec in tetrahedral 
+element with index idx to a. This continuous value must be converted internally 
+to a discrete number of molecules by multiplication with Avogadro&#8217;s 
+number.</p>
+<p>Due to the small volumes of tetrahedral elements the difference 
+between &#8216;rounding up&#8217; and &#8216;rounding down&#8217; can be a significant difference in 
+concentration.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setTetAmount</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string spec</li>
+<li>float a</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTetConc">
+<tt class="descname">getTetConc</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTetConc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the concentration (in Molar units) of species with identifier 
+string spec in a tetrahedral element with index idx.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTetConc</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setTetConc">
+<tt class="descname">setTetConc</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setTetConc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the concentration (in Molar units) of species with identifier string spec 
+in a tetrahedral element with index idx to conc.This continuous value must be 
+converted internally to a discrete number of molecules.</p>
+<p>Due to the small volumes of tetrahedral elements the difference between &#8216;rounding 
+up&#8217; and &#8216;rounding down&#8217; can be a large difference in concentration.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setTetConc</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">conc</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string spec</li>
+<li>conc</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTetClamped">
+<tt class="descname">getTetClamped</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTetClamped" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if concentration of species with identifier string spec in tetrahedral 
+element with index idx is clamped (buffered), which means the concentration stays the 
+same regardless of reactions that consume or produce molecules of this species or 
+diffusion of this species into or out of the tetrahedral element. Returns False if 
+not.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTetClamped</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>bool</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setTetClamped">
+<tt class="descname">setTetClamped</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setTetClamped" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets whether the concentration of species spec in tetrahedral element with 
+index idx is clamped (clamped = True) or not (clamped = False). 
+If a species is clamped the concentration stays the same regardless 
+of reactions that consume or produce molecules of the species or 
+diffusion of the species into or out of the tetrahedral element.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setTetClamped</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">clamped</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string spec</li>
+<li>bool clamped</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTetReacK">
+<tt class="descname">getTetReacK</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTetReacK" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the macroscopic reaction constant of reaction with identifier string reac 
+in tetrahedral element with index idx. The unit of the reaction constant depends 
+on the order of the reaction.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTetReacK</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setTetReacK">
+<tt class="descname">setTetReacK</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setTetReacK" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the macroscopic reaction constant of reaction with identifier string reac 
+in tetrahedral element with index idx to kf. The units of the reaction constant 
+depends on the order of the reaction.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setTetReacK</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">reac</span><span class="p">,</span> <span class="n">kf</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string reac</li>
+<li>float kf</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTetReacActive">
+<tt class="descname">getTetReacActive</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTetReacActive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether reaction with identifier string reac in tetrahedral element 
+with index idx is active (True) or not (False). If it&#8217;s not active this means 
+that the reaction will never occur regardless of whether reactants are present 
+in sufficient numbers or not.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTetReacActive</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>bool</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setTetReacActive">
+<tt class="descname">setTetReacActive</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setTetReacActive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Activate (active = True) or deactivate (active = False) a reaction with identifier 
+string reac in tetrahedral element with index idx. If it&#8217;s not active this means 
+that the reaction will never occur regardless of whether reactants are present 
+in sufficient numbers or not.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setTetReacActive</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">reac</span><span class="p">,</span> <span class="n">active</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string reac</li>
+<li>bool active</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTetDiffD">
+<tt class="descname">getTetDiffD</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTetDiffD" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the diffusion constant of diffusion rule with identifier string diff 
+in tetrahedral element with index idx. This constant is in units m^2/s.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTetDiffD</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">diff</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string diff</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setTetDiffD">
+<tt class="descname">setTetDiffD</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setTetDiffD" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the diffusion constant of diffusion rule with identifier string diff in 
+tetrahedral element with index idx to dcst (in m^2/s).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setTetDiffD</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">diff</span><span class="p">,</span> <span class="n">dcst</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string diff</li>
+<li>dcst</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTetDiffActive">
+<tt class="descname">getTetDiffActive</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTetDiffActive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether diffusion with identifier string diff in tetrahedral element 
+with index idx is active (True) or not (False). If diffusion of a species 
+is inactive this means the molecules will never diffuse out of the tetrahedron 
+and has the same effect as a diffusion constant of zero.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTetDiffActive</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">diff</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string diff</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>bool</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setTetDiffActive">
+<tt class="descname">setTetDiffActive</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setTetDiffActive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Activate (active = True) or deactivate (active = False) diffusion rule with 
+identifier string diff in tetrahedral element with index idx. If diffusion of 
+a species is inactive this means the molecules will never diffuse out of the 
+tetrahedron and has the same effect as a diffusion constant of zero.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setTetDiffActive</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">diff</span><span class="p">,</span> <span class="n">active</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string diff</li>
+<li>bool active</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTetReacC">
+<tt class="descname">getTetReacC</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTetReacC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the &#8216;stochastic reaction constant&#8217; (or &#8216;specific probability rate constant&#8217;) 
+of reaction with identifier string reac in tetrahedral element with index idx.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTetReacC</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTetReacH">
+<tt class="descname">getTetReacH</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTetReacH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns h_mu, the distinct number of ways in which reaction with identifier string 
+reac can occur in tetrahedral element with index idx, by computing the product of 
+its reactants.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTetReacH</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTetReacA">
+<tt class="descname">getTetReacA</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTetReacA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the propensity of reaction with identifier string reac in tetrahedral 
+element with index idx.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTetReacA</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTetDiffA">
+<tt class="descname">getTetDiffA</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTetDiffA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the propensityof diffusion rule with identifier string diff in 
+tetrahedral element with index idx.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTetDiffA</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<p><strong>Triangular Data Access</strong></p>
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTriArea">
+<tt class="descname">getTriArea</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTriArea" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the area (in m^2) of the triangular element with index idx.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTriArea</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTriCount">
+<tt class="descname">getTriCount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTriCount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of molecules of species with identifier string spec 
+in the triangular element with index idx.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTriCount</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setTriCount">
+<tt class="descname">setTriCount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setTriCount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the number of molecules of species with identifier string spec in 
+triangular element with index idx to n.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setTriCount</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string spec</li>
+<li>uint n</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTriAmount">
+<tt class="descname">getTriAmount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTriAmount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the amount (in mols) of species with identifier string spec in triangular 
+element with index idx.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTriAmount</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setTriAmount">
+<tt class="descname">setTriAmount</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setTriAmount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the amount (in mols) of species with identifier string spec in triangular 
+element with index idx to a. This continuous value must be converted internally 
+to a discrete number of molecules by multiplication with Avogadro&#8217;s number.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setTriAmount</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string spec</li>
+<li>float a</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTriClamped">
+<tt class="descname">getTriClamped</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTriClamped" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the species with identifier string spec in triangular element 
+with index idx is clamped (buffered), which means the number of molecules stays 
+the same regardless of reactions that consume or produce molecules of this species. 
+Returns False if not.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTriClamped</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string spec</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>bool</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setTriClamped">
+<tt class="descname">setTriClamped</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setTriClamped" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets whether the concentration of species spec in triangular element with index idx 
+is clamped (clamped = True) or not (clamped = False). If a species is clamped the 
+concentration stays the same regardless of reactions that consume or produce 
+molecules of the species.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setTriClamped</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">clamped</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string spec</li>
+<li>bool clamped</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTriSReacK">
+<tt class="descname">getTriSReacK</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTriSReacK" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the macroscopic reaction constant of surface reaction with identifier 
+string sreac in triangular element with index idx. The units of the reaction 
+constant depends on the order of the reaction.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTriSReacK</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setTriSReacK">
+<tt class="descname">setTriSReacK</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setTriSReacK" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the macroscopic reaction constant of surface reaction with identifier 
+string sreac in triangular element with index idx to kf. The units of the 
+reaction constant depends on the order of the reaction.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setTriSReacK</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">reac</span><span class="p">,</span> <span class="n">kf</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string reac</li>
+<li>float kf</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTriSReacActive">
+<tt class="descname">getTriSReacActive</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTriSReacActive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether surface reaction with identifier string sreac in triangular 
+element with index idx is active (True) or not (False). If it&#8217;s not active 
+this means that the surface reaction will never occur regardless of whether 
+reactants are present in sufficient numbers or not.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTriSReacActive</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>bool</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.setTriSReacActive">
+<tt class="descname">setTriSReacActive</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.setTriSReacActive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Activate (active = True) or deactivate (active = False) a surface reaction 
+with identifier string sreac in triangular element with index idx. If it&#8217;s 
+not active this means that the surface reaction will never occur regardless 
+of whether reactants are present in sufficient numbers or not.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setTriSReacActive</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">reac</span><span class="p">,</span> <span class="n">active</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string reac</li>
+<li>active</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTriSReacC">
+<tt class="descname">getTriSReacC</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTriSReacC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the &#8216;stochastic reaction constant&#8217; (or &#8216;specific probability rate constant&#8217;) 
+of surface reaction with identifier string sreac in triangular element with index idx.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTriSReacC</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTriSReacH">
+<tt class="descname">getTriSReacH</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTriSReacH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns h_mu, the distinct number of ways in which surface reaction with identifier 
+string sreac can occur in triangular element with index idx, by computing the product 
+of its reactants.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTriSReacH</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.solver.Tetexact.getTriSReacA">
+<tt class="descname">getTriSReacA</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.solver.Tetexact.getTriSReacA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the propensity of surface reaction with identifier string sreac 
+in triangular element with index idx.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getTriSReacA</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">reac</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>uint idx</li>
+<li>string reac</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="API_rng.html"
+                                  title="previous chapter">6.3. steps.rng</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="API_utilities_meshio.html"
+                                  title="next chapter">6.5. steps.utilities.meshio</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/API_solver.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="API_utilities_meshio.html" title="6.5. steps.utilities.meshio"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="API_rng.html" title="6.3. steps.rng"
+             >previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li>
+          <li><a href="API_ref.html" >6. API References</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, The STEPS Development Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.5.
+    </div>
+  </body>
+</html>

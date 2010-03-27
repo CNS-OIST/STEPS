@@ -1,0 +1,58 @@
+.. _API_model:
+
+***********
+steps.model
+***********
+
+Namespace for objects of species, reactions and diffusions, 
+as well as their containers.
+   
+.. figure::  images/steps.model.jpg
+   :align:   center
+   
+   Class diagram for steps.model namespace.
+   
+* :class:`steps.model.Model`
+* :class:`steps.model.Spec`
+* :class:`steps.model.Volsys`
+* :class:`steps.model.Surfsys`
+* :class:`steps.model.Reac`
+* :class:`steps.model.SReac`
+* :class:`steps.model.Diff`
+
+.. automodule:: steps.model
+
+.. autoclass:: steps.model.Model
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+.. autoclass:: steps.model.Spec
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+.. autoclass:: steps.model.Volsys
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+.. autoclass:: steps.model.Surfsys
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+.. autoclass:: steps.model.Reac
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+.. autoclass:: steps.model.SReac
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+.. autoclass:: steps.model.Diff
+   :members:
+   :undoc-members:
+   :inherited-members:

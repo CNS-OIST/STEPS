@@ -1,0 +1,1606 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>6.1. steps.model &mdash; STEPS User Manual v1.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '1.1.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="STEPS User Manual v1.1.0 documentation" href="index.html" />
+    <link rel="up" title="6. API References" href="API_ref.html" />
+    <link rel="next" title="6.2. steps.geom" href="API_geom.html" />
+    <link rel="prev" title="6. API References" href="API_ref.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<a href="http://steps.sourceforge.net"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="API_geom.html" title="6.2. steps.geom"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="API_ref.html" title="6. API References"
+             accesskey="P">previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li>
+          <li><a href="API_ref.html" accesskey="U">6. API References</a> &raquo;</li> 
+      </ul>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-steps.model">
+<span id="api-model"></span><h1>6.1. steps.model<a class="headerlink" href="#module-steps.model" title="Permalink to this headline">¶</a></h1>
+<p>Namespace for objects of species, reactions and diffusions,
+as well as their containers.</p>
+<div class="figure align-center">
+<img alt="_images/steps.model.jpg" src="_images/steps.model.jpg" />
+<p class="caption">Class diagram for steps.model namespace.</p>
+</div>
+<ul class="simple">
+<li><a title="steps.model.Model" class="reference internal" href="#steps.model.Model"><tt class="xref docutils literal"><span class="pre">steps.model.Model</span></tt></a></li>
+<li><a title="steps.model.Spec" class="reference internal" href="#steps.model.Spec"><tt class="xref docutils literal"><span class="pre">steps.model.Spec</span></tt></a></li>
+<li><a title="steps.model.Volsys" class="reference internal" href="#steps.model.Volsys"><tt class="xref docutils literal"><span class="pre">steps.model.Volsys</span></tt></a></li>
+<li><a title="steps.model.Surfsys" class="reference internal" href="#steps.model.Surfsys"><tt class="xref docutils literal"><span class="pre">steps.model.Surfsys</span></tt></a></li>
+<li><a title="steps.model.Reac" class="reference internal" href="#steps.model.Reac"><tt class="xref docutils literal"><span class="pre">steps.model.Reac</span></tt></a></li>
+<li><a title="steps.model.SReac" class="reference internal" href="#steps.model.SReac"><tt class="xref docutils literal"><span class="pre">steps.model.SReac</span></tt></a></li>
+<li><a title="steps.model.Diff" class="reference internal" href="#steps.model.Diff"><tt class="xref docutils literal"><span class="pre">steps.model.Diff</span></tt></a></li>
+</ul>
+<dl class="class">
+<dt id="steps.model.Model">
+<em class="property">class </em><tt class="descclassname">steps.model.</tt><tt class="descname">Model</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Top-level container for the objects in a kinetic model.</p>
+<p>Construction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">m</span> <span class="o">=</span> <span class="n">steps</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Create a model container object.</p>
+<dl class="docutils">
+<dt>Arguments: </dt>
+<dd>None</dd>
+</dl>
+<dl class="method">
+<dt id="steps.model.Model.delSpec">
+<tt class="descname">delSpec</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Model.delSpec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove the steps.model.Spec species object with identifier 
+string spec_id (if defined) from the model.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">delSpec</span><span class="p">(</span><span class="n">spec_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string spec_id</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Model.delSurfsys">
+<tt class="descname">delSurfsys</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Model.delSurfsys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove the steps.model.Surfsys surface system object with identifier string 
+ssys_id (if defined) from the model.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">delSurfsys</span><span class="p">(</span><span class="n">ssys_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string ssys_id</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Model.delVolsys">
+<tt class="descname">delVolsys</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Model.delVolsys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove the steps.model.Volsys volume system object with identifier string 
+vsys_id (if defined) from the model.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">delVolsys</span><span class="p">(</span><span class="n">vsys_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string vsys_id</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Model.getAllSpecs">
+<tt class="descname">getAllSpecs</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Model.getAllSpecs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of steps.model.Spec object references of all species in the model.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getAllSpecs</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.model.Spec&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Model.getSpec">
+<tt class="descname">getSpec</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Model.getSpec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the steps.model.Spec species object with 
+identifier string spec_id (if defined).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getSpec</span><span class="p">(</span><span class="n">spec_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string spec_id</dd>
+<dt>Return:</dt>
+<dd>steps.model.Spec</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Model.getSurfsys">
+<tt class="descname">getSurfsys</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Model.getSurfsys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the steps.model.Surfsys surface system object with 
+identifier string ssys_id (if defined).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getSurfsys</span><span class="p">(</span><span class="n">ssys_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string ssys_id</dd>
+<dt>Return:</dt>
+<dd>steps.model.Surfsys</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Model.getVolsys">
+<tt class="descname">getVolsys</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Model.getVolsys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the steps.model.Volsys volume system object with 
+identifier string vsys_id (if defined).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getVolsys</span><span class="p">(</span><span class="n">vsys_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string vsys_id</dd>
+<dt>Return:</dt>
+<dd>steps.model.Volsys</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="steps.model.Spec">
+<em class="property">class </em><tt class="descclassname">steps.model.</tt><tt class="descname">Spec</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Spec" title="Permalink to this definition">¶</a></dt>
+<dd><p>A chemical species which can be a reactant and/or product in reaction 
+stoichiometry and/or associated with a diffusion rule.</p>
+<p>Construction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">s</span> <span class="o">=</span> <span class="n">steps</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">Spec</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Create a species object with identifier string id and assign the 
+object mdl as its parent model.</p>
+<dl class="docutils">
+<dt>Arguments: </dt>
+<dd><ul class="first last simple">
+<li>string id</li>
+<li>steps.model.Model mdl</li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="steps.model.Spec.getID">
+<tt class="descname">getID</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Spec.getID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the identifier string of the species.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getID</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Spec.getModel">
+<tt class="descname">getModel</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Spec.getModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the parent steps.model.Model container object.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getModel</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>steps.model.Model</dd>
+<dt>Attribute:</dt>
+<dd>model</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Spec.setID">
+<tt class="descname">setID</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Spec.setID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the identifier string of the species.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setID</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string name</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.Spec.id">
+<tt class="descname">id</tt><a class="headerlink" href="#steps.model.Spec.id" title="Permalink to this definition">¶</a></dt>
+<dd>Identifier string of the species.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.Spec.model">
+<tt class="descname">model</tt><a class="headerlink" href="#steps.model.Spec.model" title="Permalink to this definition">¶</a></dt>
+<dd>Reference to parent model.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="steps.model.Volsys">
+<em class="property">class </em><tt class="descclassname">steps.model.</tt><tt class="descname">Volsys</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Volsys" title="Permalink to this definition">¶</a></dt>
+<dd><p>A container that groups reactions involving reactants embedded in a volume.</p>
+<p>Construction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">v</span> <span class="o">=</span> <span class="n">steps</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">Volsys</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Construct a volume system object with identifier string id and assign 
+the object mdl as its parent model.</p>
+<dl class="docutils">
+<dt>Arguments: </dt>
+<dd><ul class="first last simple">
+<li>string id</li>
+<li>steps.model.Model mdl</li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="steps.model.Volsys.delDiff">
+<tt class="descname">delDiff</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Volsys.delDiff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove the steps.model.Diff diffusion-rule object with identifier diff_id 
+from the volume system.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">delDiff</span><span class="p">(</span><span class="n">diff_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string diff_id</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Volsys.delReac">
+<tt class="descname">delReac</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Volsys.delReac" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove the steps.model.Reac reaction-rule object with identifier reac_id 
+(if defined) from the volume system.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">delReac</span><span class="p">(</span><span class="n">reac_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string reac_id</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Volsys.getAllDiffs">
+<tt class="descname">getAllDiffs</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Volsys.getAllDiffs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of references to all steps.model.Diff diffusion-rule objects 
+defined in the volume system.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getAllDiffs</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.model.Diff&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Volsys.getAllReacs">
+<tt class="descname">getAllReacs</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Volsys.getAllReacs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of references to all steps.model.Spec objects in this volume 
+system; that is all reactants, products or diffusing species in the reaction 
+and diffusion rules belonging to this volume system. No duplicate member is 
+included.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getAllReacs</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.model.Reac&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Volsys.getAllSpecs">
+<tt class="descname">getAllSpecs</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Volsys.getAllSpecs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of references to all steps.model.Spec objects in this volume system; 
+that is all reactants, products or diffusing species in the reaction and diffusion 
+rules belonging to this volume system. No duplicate member is included.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getAllSpecs</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.model.Spec&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Volsys.getDiff">
+<tt class="descname">getDiff</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Volsys.getDiff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the steps.model.Diff diffusion-rule object with 
+identifier diff_id (if defined in the volume system).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getDiff</span><span class="p">(</span><span class="n">diff_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string diff_id</dd>
+<dt>Return:</dt>
+<dd>steps.model.Diff</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Volsys.getID">
+<tt class="descname">getID</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Volsys.getID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the identifier string of the volume system.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getID</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Volsys.getModel">
+<tt class="descname">getModel</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Volsys.getModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the parent steps.model.Model container object.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getModel</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>steps.model.Model</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Volsys.getReac">
+<tt class="descname">getReac</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Volsys.getReac" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the steps.model.Reac reaction-rule object with 
+identifier string reac_id (if defined in the volume system).</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getReac</span><span class="p">(</span><span class="n">reac_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string reac_id</dd>
+<dt>Return:</dt>
+<dd>steps.model.Reac</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Volsys.setID">
+<tt class="descname">setID</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Volsys.setID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the identifier string of the volume system.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setID</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string name</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.Volsys.id">
+<tt class="descname">id</tt><a class="headerlink" href="#steps.model.Volsys.id" title="Permalink to this definition">¶</a></dt>
+<dd>Identifier string of the volume system.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.Volsys.model">
+<tt class="descname">model</tt><a class="headerlink" href="#steps.model.Volsys.model" title="Permalink to this definition">¶</a></dt>
+<dd>Reference to parent model.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="steps.model.Surfsys">
+<em class="property">class </em><tt class="descclassname">steps.model.</tt><tt class="descname">Surfsys</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Surfsys" title="Permalink to this definition">¶</a></dt>
+<dd><p>A container that groups reactions involving a reactant embedded in a membrane.</p>
+<p>Construction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">s</span> <span class="o">=</span> <span class="n">steps</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">Surfsys</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Construct a surface system object with identifier string id and assign 
+the object mdl as its parent model.</p>
+<dl class="docutils">
+<dt>Arguments: </dt>
+<dd><ul class="first last simple">
+<li>string id</li>
+<li>steps.model.Model mdl</li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="steps.model.Surfsys.delSReac">
+<tt class="descname">delSReac</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Surfsys.delSReac" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove the steps.model.SReac surface-reaction object with identifier 
+sreac_id from the surface system.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">delSReac</span><span class="p">(</span><span class="n">sreac_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string sreac_id</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Surfsys.getAllSReacs">
+<tt class="descname">getAllSReacs</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Surfsys.getAllSReacs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of references to all steps.model.SReac surface-reaction 
+objects defined in the surface system.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getAllSReacs</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.model.SReac&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Surfsys.getAllSpecs">
+<tt class="descname">getAllSpecs</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Surfsys.getAllSpecs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of references to all steps.model.Spec species objects included 
+in the surface system; that is all reactants and products in the surface 
+reactions belonging to this surface system. No duplicate member is included.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getAllSpecs</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.model.Spec&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Surfsys.getID">
+<tt class="descname">getID</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Surfsys.getID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the identifier string of the surface system.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getID</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Surfsys.getModel">
+<tt class="descname">getModel</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Surfsys.getModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the parent steps.model.Model container object.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getModel</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>steps.model.Model</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Surfsys.getSReac">
+<tt class="descname">getSReac</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Surfsys.getSReac" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the steps.model.SReac surface-reaction object 
+with identifier sreac_id (if defined in the surface system.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getSReac</span><span class="p">(</span><span class="n">sreac_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string sreac_id</dd>
+<dt>Return:</dt>
+<dd>steps.model.SReac</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Surfsys.setID">
+<tt class="descname">setID</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Surfsys.setID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the identifier string of the surface system.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setID</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string name</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.Surfsys.id">
+<tt class="descname">id</tt><a class="headerlink" href="#steps.model.Surfsys.id" title="Permalink to this definition">¶</a></dt>
+<dd>Identifier string of the surface system.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.Surfsys.model">
+<tt class="descname">model</tt><a class="headerlink" href="#steps.model.Surfsys.model" title="Permalink to this definition">¶</a></dt>
+<dd>Reference to parent model.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="steps.model.Reac">
+<em class="property">class </em><tt class="descclassname">steps.model.</tt><tt class="descname">Reac</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#steps.model.Reac" title="Permalink to this definition">¶</a></dt>
+<dd><p>A kinetic reaction rule in a volume.</p>
+<p>The reaction rule is specified by:
+* Species on the left hand side of the reaction: the reactants (lhs).
+* Species on the right hand side of the reaction: the products (rhs).
+* Rate constant for the reaction, supplied in s.i. units (kcst).</p>
+<p>Construction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">reac</span> <span class="o">=</span> <span class="n">steps</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">Reac</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">volsys</span><span class="p">,</span> <span class="n">lhs</span> <span class="o">=</span> <span class="p">[</span> <span class="p">],</span> <span class="n">rhs</span> <span class="o">=</span> <span class="p">[</span> <span class="p">],</span> <span class="n">kcst</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Construct a reaction rule object with identifier string id and assign 
+volsys as the parent volume system. A list of left hand side reactants 
+may be assigned with lhs, whilst a list of right hand side products may 
+be assigned with rhs, the kinetic reaction rate constant is set by kcst.</p>
+<dl class="docutils">
+<dt>Arguments: </dt>
+<dd><ul class="first last simple">
+<li>string id</li>
+<li>steps.model.Volsys volsys</li>
+<li>list(steps.model.Spec) lhs (default = [ ])</li>
+<li>list(steps.model.Spec) rhs (default = [ ])</li>
+<li>float kcst (default = 0.0)</li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="steps.model.Reac.getAllSpecs">
+<tt class="descname">getAllSpecs</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Reac.getAllSpecs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of references to all steps.model.Spec species objects in 
+the reaction; that is all reactants and products. No duplicate member 
+is included.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getAllSpecs</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.model.Spec&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Reac.getID">
+<tt class="descname">getID</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Reac.getID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the identifier string of the reaction rule.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getID</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Reac.getKcst">
+<tt class="descname">getKcst</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Reac.getKcst" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the kinetic reaction rate constant, in s.i. units, 
+where the actual units depend on the order of the reaction.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getKcst</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Reac.getLHS">
+<tt class="descname">getLHS</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Reac.getLHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of references to steps.model.Spec species objects on the 
+left hand side of the reaction: the reactants.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getLHS</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.model.Spec&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Reac.getModel">
+<tt class="descname">getModel</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Reac.getModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the parent steps.model.Model container object.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getModel</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>steps.model.Model</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Reac.getOrder">
+<tt class="descname">getOrder</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Reac.getOrder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the order of this reaction.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getOrder</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>int</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Reac.getRHS">
+<tt class="descname">getRHS</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Reac.getRHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of references to steps.model.Spec species objects on the 
+right hand side of the reaction: the reactants.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getRHS</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.model.Spec&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Reac.getVolsys">
+<tt class="descname">getVolsys</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Reac.getVolsys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the parent steps.model.Volsys volume system object.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getVolsys</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>steps.model.Volsys</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Reac.setID">
+<tt class="descname">setID</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Reac.setID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the identifier string of the reaction rule.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setID</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string name</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Reac.setKcst">
+<tt class="descname">setKcst</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Reac.setKcst" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the kinetic reaction rate constant, in s.i. units, 
+where the actual units depend on the order of the reaction.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setKcst</span><span class="p">(</span><span class="n">kcst</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>float kcst</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Reac.setLHS">
+<tt class="descname">setLHS</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Reac.setLHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a list of references to steps.model.Spec species objects on the 
+left hand side of the reaction: the reactants.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setLHS</span><span class="p">(</span><span class="n">lhs</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>list&lt;steps.model.Spec&gt; lhs</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Reac.setRHS">
+<tt class="descname">setRHS</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Reac.setRHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a list of references to steps.model.Spec species objects on the 
+right hand side of the reaction: the reactants.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setRHS</span><span class="p">(</span><span class="n">rhs</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>list&lt;steps.model.Spec&gt; rhs</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.Reac.id">
+<tt class="descname">id</tt><a class="headerlink" href="#steps.model.Reac.id" title="Permalink to this definition">¶</a></dt>
+<dd>Identifier string of the reaction.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.Reac.kcst">
+<tt class="descname">kcst</tt><a class="headerlink" href="#steps.model.Reac.kcst" title="Permalink to this definition">¶</a></dt>
+<dd>Reaction constant.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.Reac.lhs">
+<tt class="descname">lhs</tt><a class="headerlink" href="#steps.model.Reac.lhs" title="Permalink to this definition">¶</a></dt>
+<dd>Left hand side reactants.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.Reac.model">
+<tt class="descname">model</tt><a class="headerlink" href="#steps.model.Reac.model" title="Permalink to this definition">¶</a></dt>
+<dd>Reference to parent model.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.Reac.order">
+<tt class="descname">order</tt><a class="headerlink" href="#steps.model.Reac.order" title="Permalink to this definition">¶</a></dt>
+<dd>Order of the reaction.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.Reac.rhs">
+<tt class="descname">rhs</tt><a class="headerlink" href="#steps.model.Reac.rhs" title="Permalink to this definition">¶</a></dt>
+<dd>Right hand side reactants.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.Reac.volsys">
+<tt class="descname">volsys</tt><a class="headerlink" href="#steps.model.Reac.volsys" title="Permalink to this definition">¶</a></dt>
+<dd>Reference to parent volume system.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="steps.model.SReac">
+<em class="property">class </em><tt class="descclassname">steps.model.</tt><tt class="descname">SReac</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#steps.model.SReac" title="Permalink to this definition">¶</a></dt>
+<dd><p>A reaction rule where at least one reactant is embedded in a surface.</p>
+<p>In a surface reaction, the species can be classified as:</p>
+<ul>
+<li><dl class="first docutils">
+<dt>Reactants on the left hand side of the reaction:</dt>
+<dd><ul class="first last simple">
+<li>Species in the &#8216;outer&#8217; compartment (olhs)</li>
+<li>or Species in the &#8216;inner&#8217; compartment (ilhs)</li>
+<li>Species on the surface (slhs)</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Reactants on right hand side of the reaction:</dt>
+<dd><ul class="first last simple">
+<li>Species in the &#8216;outer&#8217; compartment (orhs)</li>
+<li>Species in the &#8216;inner&#8217; compartment (irhs)</li>
+<li>Species on the surface (srhs)</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p class="first">The reaction rate is defined by kcst, supplied in s.i. units.</p>
+</li>
+</ul>
+<p>Construction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">sreac</span> <span class="o">=</span> <span class="n">steps</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">Reac</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">surfsys</span><span class="p">,</span> 
+                        <span class="n">ilhs</span> <span class="o">=</span> <span class="p">[</span> <span class="p">],</span> <span class="n">olhs</span> <span class="o">=</span> <span class="p">[</span> <span class="p">],</span> <span class="n">slhs</span> <span class="o">=</span> <span class="p">[</span> <span class="p">],</span>
+                        <span class="n">irhs</span> <span class="o">=</span> <span class="p">[</span> <span class="p">],</span> <span class="n">orhs</span> <span class="o">=</span> <span class="p">[</span> <span class="p">],</span> <span class="n">srhs</span> <span class="o">=</span> <span class="p">[</span> <span class="p">],</span>
+                        <span class="n">kcst</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Construct a surface reaction rule object with identifier string 
+id and assign surfsys as the parent surface system. A list of 
+left hand reactants are assigned with ilhs, olhs and slhs 
+(default for each is an empty list). A list of right hand side 
+products are assigned with irhs, orhs and srhs (default for each 
+is an empty list). The kinetic reaction rate constant is set with kcst.</p>
+<dl class="docutils">
+<dt>Arguments: </dt>
+<dd><ul class="first last simple">
+<li>string id</li>
+<li>steps.model.Surfsys surfsys</li>
+<li>list(steps.model.Spec) ilhs (default = [ ])</li>
+<li>list(steps.model.Spec) olhs (default = [ ])</li>
+<li>list(steps.model.Spec) slhs (default = [ ])</li>
+<li>list(steps.model.Spec) irhs (default = [ ])</li>
+<li>list(steps.model.Spec) orhs (default = [ ])</li>
+<li>list(steps.model.Spec) srhs (default = [ ])</li>
+<li>float kcst (default = 0.0)</li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="steps.model.SReac.getAllSpecs">
+<tt class="descname">getAllSpecs</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.getAllSpecs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of references to all steps.model.Spec species objects in 
+the surface reaction; that is all reactants and products. No duplicate member 
+is included.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getAllSpecs</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.model.Spec&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.SReac.getID">
+<tt class="descname">getID</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.getID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the identifier string of the surface reaction rule.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getID</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.SReac.getILHS">
+<tt class="descname">getILHS</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.getILHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of references to steps.model.Spec species objects; 
+the left hand side inner volume reactants.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getILHS</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.model.Spec&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.SReac.getIRHS">
+<tt class="descname">getIRHS</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.getIRHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of references to steps.model.Spec species objects; 
+the right hand side inner volume reactants.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getIRHS</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.model.Spec&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.SReac.getInner">
+<tt class="descname">getInner</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.getInner" title="Permalink to this definition">¶</a></dt>
+<dd>Obsolete</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.SReac.getKcst">
+<tt class="descname">getKcst</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.getKcst" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the kinetic reaction rate constant, in s.i. units, 
+where the actual units depend on the order of the surface reaction.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getKcst</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.SReac.getModel">
+<tt class="descname">getModel</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.getModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the parent steps.model.Model container object.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getModel</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>steps.model.Model</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.SReac.getOLHS">
+<tt class="descname">getOLHS</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.getOLHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of references to steps.model.Spec species objects; 
+the left hand side outer volume reactants.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getOLHS</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.model.Spec&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.SReac.getORHS">
+<tt class="descname">getORHS</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.getORHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of references to steps.model.Spec species objects; 
+the right hand side outer volume reactants.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getORHS</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.model.Spec&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.SReac.getOrder">
+<tt class="descname">getOrder</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.getOrder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the order of this surface reaction.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getOrder</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>int</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.SReac.getOuter">
+<tt class="descname">getOuter</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.getOuter" title="Permalink to this definition">¶</a></dt>
+<dd>Obsolete</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.SReac.getSLHS">
+<tt class="descname">getSLHS</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.getSLHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of references to steps.model.Spec species objects; 
+the left hand side surface reactants.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getSLHS</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.model.Spec&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.SReac.getSRHS">
+<tt class="descname">getSRHS</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.getSRHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of references to steps.model.Spec species objects; 
+the right hand side surface reactants.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getSRHS</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>list&lt;steps.model.Spec&gt;</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.SReac.getSurfsys">
+<tt class="descname">getSurfsys</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.getSurfsys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the parent steps.model.Surfsys surface system object.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getSurfsys</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>steps.model.Surfsys</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.SReac.setID">
+<tt class="descname">setID</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.setID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the identifier string of the surface reaction rule.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setID</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string name</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.SReac.setILHS">
+<tt class="descname">setILHS</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.setILHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a list of references to steps.model.Spec species objects; 
+the left hand side inner volume reactants.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setILHS</span><span class="p">(</span><span class="n">ilhs</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>list&lt;steps.model.Spec&gt; ilhs</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.SReac.setIRHS">
+<tt class="descname">setIRHS</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.setIRHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a list of references to steps.model.Spec species objects; 
+the right hand side inner volume reactants.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setIRHS</span><span class="p">(</span><span class="n">irhs</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>list&lt;steps.model.Spec&gt; irhs</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.SReac.setKcst">
+<tt class="descname">setKcst</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.setKcst" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the kinetic reaction rate constant, in s.i. units, 
+where the actual units depend on the order of the surface reaction.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setKcst</span><span class="p">(</span><span class="n">kcst</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>float kcst</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.SReac.setOLHS">
+<tt class="descname">setOLHS</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.setOLHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a list of references to steps.model.Spec species objects; 
+the left hand side outer volume reactants.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setOLHS</span><span class="p">(</span><span class="n">olhs</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>list&lt;steps.model.Spec) olhs</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.SReac.setORHS">
+<tt class="descname">setORHS</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.setORHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of references to steps.model.Spec species objects; 
+the right hand side outer volume reactants.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setORHS</span><span class="p">(</span><span class="n">orhs</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>list&lt;steps.model.Spec&gt; orhs</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.SReac.setSLHS">
+<tt class="descname">setSLHS</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.setSLHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a list of references to steps.model.Spec species objects; 
+the left hand side surface reactants.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setSLHS</span><span class="p">(</span><span class="n">slhs</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>list&lt;steps.model.Spec&gt; slhs</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.SReac.setSRHS">
+<tt class="descname">setSRHS</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.SReac.setSRHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a list of references to steps.model.Spec species objects; 
+the right hand side surface reactants.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setSRHS</span><span class="p">(</span><span class="n">srhs</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>list&lt;steps.model.Spec&gt; srhs</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.SReac.id">
+<tt class="descname">id</tt><a class="headerlink" href="#steps.model.SReac.id" title="Permalink to this definition">¶</a></dt>
+<dd>Identifier string of the surface reaction.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.SReac.ilhs">
+<tt class="descname">ilhs</tt><a class="headerlink" href="#steps.model.SReac.ilhs" title="Permalink to this definition">¶</a></dt>
+<dd>Left hand side reactants in inner compartment.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.SReac.irhs">
+<tt class="descname">irhs</tt><a class="headerlink" href="#steps.model.SReac.irhs" title="Permalink to this definition">¶</a></dt>
+<dd>Right hand side reactants in inner compartment.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.SReac.kcst">
+<tt class="descname">kcst</tt><a class="headerlink" href="#steps.model.SReac.kcst" title="Permalink to this definition">¶</a></dt>
+<dd>Reaction constant.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.SReac.model">
+<tt class="descname">model</tt><a class="headerlink" href="#steps.model.SReac.model" title="Permalink to this definition">¶</a></dt>
+<dd>Reference to parent model.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.SReac.olhs">
+<tt class="descname">olhs</tt><a class="headerlink" href="#steps.model.SReac.olhs" title="Permalink to this definition">¶</a></dt>
+<dd>Left hand side reactants in outer compartment.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.SReac.order">
+<tt class="descname">order</tt><a class="headerlink" href="#steps.model.SReac.order" title="Permalink to this definition">¶</a></dt>
+<dd>Order of the reaction.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.SReac.orhs">
+<tt class="descname">orhs</tt><a class="headerlink" href="#steps.model.SReac.orhs" title="Permalink to this definition">¶</a></dt>
+<dd>Right hand side reactants in outer compartment.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.SReac.outer">
+<tt class="descname">outer</tt><a class="headerlink" href="#steps.model.SReac.outer" title="Permalink to this definition">¶</a></dt>
+<dd>Obsolete</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.SReac.slhs">
+<tt class="descname">slhs</tt><a class="headerlink" href="#steps.model.SReac.slhs" title="Permalink to this definition">¶</a></dt>
+<dd>Left hand side reactants on surface.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.SReac.srhs">
+<tt class="descname">srhs</tt><a class="headerlink" href="#steps.model.SReac.srhs" title="Permalink to this definition">¶</a></dt>
+<dd>Right hand side reactants on surface.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.SReac.surfsys">
+<tt class="descname">surfsys</tt><a class="headerlink" href="#steps.model.SReac.surfsys" title="Permalink to this definition">¶</a></dt>
+<dd>Reference to parent surface system.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="steps.model.Diff">
+<em class="property">class </em><tt class="descclassname">steps.model.</tt><tt class="descname">Diff</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#steps.model.Diff" title="Permalink to this definition">¶</a></dt>
+<dd><p>A diffusion rule for a chemical species in a volume.</p>
+<p>A diffusion rule is described by:
+* Species to which the diffusion rule applies (lig).
+* Diffusion constant (dcst) specified in s.i. units.</p>
+<p>Construction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">diff</span> <span class="o">=</span> <span class="n">steps</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">Diff</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">volsys</span><span class="p">,</span> <span class="n">lig</span><span class="p">,</span> <span class="n">dcst</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Construct a diffusion rule object with identifier string id applied to species 
+lig and assign volsys as the parent volume system. Diffusion constant is 
+set by dcst.</p>
+<dl class="docutils">
+<dt>Arguments: </dt>
+<dd><ul class="first last simple">
+<li>string id</li>
+<li>steps.model.Volsys volsys</li>
+<li>steps.model.Spec lig</li>
+<li>float dcst (default = 0.0)</li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="steps.model.Diff.getDcst">
+<tt class="descname">getDcst</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Diff.getDcst" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the diffusion constant for the diffusion rule, in s.i. units.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getDcst</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>float</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Diff.getID">
+<tt class="descname">getID</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Diff.getID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the identifier string of the diffusion rule.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getID</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>string</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Diff.getLig">
+<tt class="descname">getLig</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Diff.getLig" title="Permalink to this definition">¶</a></dt>
+<dd><p>get a reference to the steps.model.Spec species object to which this 
+diffusion rule is applied.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getLig</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>steps.model.Spec</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Diff.getModel">
+<tt class="descname">getModel</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Diff.getModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the parent steps.model.Model container object.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getModel</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>steps.model.Model</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Diff.getVolsys">
+<tt class="descname">getVolsys</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Diff.getVolsys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a reference to the parent steps.model.Volsys volume system object.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">getVolsys</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>None</dd>
+<dt>Return:</dt>
+<dd>steps.model.Volsys</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Diff.setDcst">
+<tt class="descname">setDcst</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Diff.setDcst" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the diffusion constant for the diffusion rule, in s.i. units.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setDcst</span><span class="p">(</span><span class="n">dcst</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>float dcst</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Diff.setID">
+<tt class="descname">setID</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Diff.setID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the identifier string of the diffusion rule.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setID</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>string name</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="steps.model.Diff.setLig">
+<tt class="descname">setLig</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.model.Diff.setLig" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a reference to the steps.model.Spec species object to which this 
+diffusion rule is applied.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">setLig</span><span class="p">(</span><span class="n">lig</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>steps.model.Spec lig</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.Diff.dcst">
+<tt class="descname">dcst</tt><a class="headerlink" href="#steps.model.Diff.dcst" title="Permalink to this definition">¶</a></dt>
+<dd>Diffusion constant.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.Diff.id">
+<tt class="descname">id</tt><a class="headerlink" href="#steps.model.Diff.id" title="Permalink to this definition">¶</a></dt>
+<dd>Identifier string of the diffusion.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.Diff.lig">
+<tt class="descname">lig</tt><a class="headerlink" href="#steps.model.Diff.lig" title="Permalink to this definition">¶</a></dt>
+<dd>Reference to diffusion species.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.Diff.model">
+<tt class="descname">model</tt><a class="headerlink" href="#steps.model.Diff.model" title="Permalink to this definition">¶</a></dt>
+<dd>Reference to parent model.</dd></dl>
+
+<dl class="attribute">
+<dt id="steps.model.Diff.volsys">
+<tt class="descname">volsys</tt><a class="headerlink" href="#steps.model.Diff.volsys" title="Permalink to this definition">¶</a></dt>
+<dd>Reference to parent volume system.</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="API_ref.html"
+                                  title="previous chapter">6. API References</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="API_geom.html"
+                                  title="next chapter">6.2. steps.geom</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/API_model.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="API_geom.html" title="6.2. steps.geom"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="API_ref.html" title="6. API References"
+             >previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li>
+          <li><a href="API_ref.html" >6. API References</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, The STEPS Development Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.5.
+    </div>
+  </body>
+</html>

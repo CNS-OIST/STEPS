@@ -1,18 +1,51 @@
 
-""" 
-**Note**
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# STEPS - STochastic Engine for Pathway Simulation
+# Copyright (C) 2007-2009 Okinawa Institute of Science and Technology, Japan.
+# Copyright (C) 2003-2006 University of Antwerp, Belgium.
+#
+# See the file AUTHORS for details.
+#
+# This file is part of STEPS.
+#
+# STEPS is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# STEPS is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-This module is preliminary, means some of the functions are still under development.
-Code modification / debugging is wellcomed.
-Please email steps.dev@gmail.com if you would like to share you changes with others.
+#  Last Changed Rev:  $Rev$
+#  Last Changed Date: $Date$
+#  Last Changed By:   $Author$
+
+""" 
+.. Note::
+
+    This module is preliminary, means some of the functions are still under development.
+    Code modification / debugging is wellcomed.
+    Please email steps.dev@gmail.com if you would like to share you changes with others.
 
 Visual Toolkit
 
 """
-import wx
-import sys
 
-import  wx.lib.colourselect as  csel
+try:
+    import wx
+    import sys
+    import  wx.lib.colourselect as  csel
+    haveWXPython = True
+except ImportError:
+    haveWXPython = False
+
 
 try:
     from wx import glcanvas
@@ -21,8 +54,6 @@ except ImportError:
     haveGLCanvas = False
 
 try:
-    # The Python OpenGL package can be found at
-    # http://PyOpenGL.sourceforge.net/
     from OpenGL.GL import *
     from OpenGL.GLU import *
     from OpenGL.GLUT import *
@@ -33,6 +64,7 @@ except ImportError:
 try:
     import steps
     from steps import geom
+    haveSTEPS = True
 except ImportError:
     haveSTEPS = False
 
@@ -527,9 +559,9 @@ def GUISim(model, mesh, solver, scale = 1e-6, color_map = [[255,0,0], [0,0,255]]
     """
     Create a graphical frontend for a mesh based simulation.
     
-    **Note**
+    .. Note::
     
-    The graphical frontend should be used for mesh based simulation only.
+        The graphical frontend should be used for mesh based simulation only.
     
     Arguements:
         * steps.model.Model model
@@ -539,6 +571,20 @@ def GUISim(model, mesh, solver, scale = 1e-6, color_map = [[255,0,0], [0,0,255]]
     Example:
         see examples/diffusion
     """
+    
+    if not haveSTEPS:
+        print("Cannot find STEPS! Please install it first.")
+        return
+    
+    if not haveWXPython:
+        print("Cannot find WxPython! Please install it first.")
+        return
+        
+    if not haveOpenGL:
+        print("Cannot find PyOpenGL! Please install it first.")
+        return
+        
+        
     app = wx.App(False)
     frame = wx.Frame(None, wx.ID_ANY, 'STEPS Visual Frontend for Mesh Based Simulation http://steps.sourceforge.net', size = (1200,900), style=wx.DEFAULT_FRAME_STYLE)
     sim_panel = SimPanel(frame, model, mesh, solver, scale, color_map)

@@ -1,0 +1,184 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>6.3. steps.rng &mdash; STEPS User Manual v1.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '1.1.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="STEPS User Manual v1.1.0 documentation" href="index.html" />
+    <link rel="up" title="6. API References" href="API_ref.html" />
+    <link rel="next" title="6.4. steps.solver" href="API_solver.html" />
+    <link rel="prev" title="6.2. steps.geom" href="API_geom.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<a href="http://steps.sourceforge.net"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="API_solver.html" title="6.4. steps.solver"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="API_geom.html" title="6.2. steps.geom"
+             accesskey="P">previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li>
+          <li><a href="API_ref.html" accesskey="U">6. API References</a> &raquo;</li> 
+      </ul>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-steps.rng">
+<span id="api-rng"></span><h1>6.3. steps.rng<a class="headerlink" href="#module-steps.rng" title="Permalink to this headline">¶</a></h1>
+<p>Namespace for random number generator classes.</p>
+<div class="figure align-center">
+<img alt="_images/steps.rng.jpg" src="_images/steps.rng.jpg" />
+<p class="caption">Class diagram for steps.rng namespace.</p>
+</div>
+<dl class="function">
+<dt id="steps.rng.create">
+<tt class="descclassname">steps.rng.</tt><tt class="descname">create</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.rng.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates and returns a reference to a steps.rng.RNG random number generator object, 
+which is specified by type and pre-allocates a buffer list with size of buffer_size.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">create</span><span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="n">buffer_size</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last simple">
+<li>string type</li>
+<li>uint buffer_size</li>
+</ul>
+</dd>
+<dt>Return:</dt>
+<dd>steps.rng.RNG</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="steps.rng.create_mt19937">
+<tt class="descclassname">steps.rng.</tt><tt class="descname">create_mt19937</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.rng.create_mt19937" title="Permalink to this definition">¶</a></dt>
+<dd><p>Equivalent to: create(&#8216;mt19937&#8217;, buffer_size)</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">create_mt19937</span><span class="p">(</span><span class="n">buffer_size</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>uint buffer_size</dd>
+<dt>Return:</dt>
+<dd>steps.rng.RNG</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="steps.rng.RNG">
+<em class="property">class </em><tt class="descclassname">steps.rng.</tt><tt class="descname">RNG</tt><a class="headerlink" href="#steps.rng.RNG" title="Permalink to this definition">¶</a></dt>
+<dd><p>Proxy of C++ random number generator.</p>
+<dl class="method">
+<dt id="steps.rng.RNG.initialize">
+<tt class="descname">initialize</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#steps.rng.RNG.initialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize the random number generator with given seed value.</p>
+<p>Syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">initialize</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd>uint seed</dd>
+<dt>Return:</dt>
+<dd>None</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="API_geom.html"
+                                  title="previous chapter">6.2. steps.geom</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="API_solver.html"
+                                  title="next chapter">6.4. steps.solver</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/API_rng.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="API_solver.html" title="6.4. steps.solver"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="API_geom.html" title="6.2. steps.geom"
+             >previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li>
+          <li><a href="API_ref.html" >6. API References</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, The STEPS Development Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.5.
+    </div>
+  </body>
+</html>

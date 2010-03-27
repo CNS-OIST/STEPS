@@ -27,11 +27,11 @@
 #  Last Changed By:   $Author$
 
 """ 
-**Note**
+.. Note::
 
-This module is preliminary, means some of the functions are still under development.
-Code modification / debugging is wellcomed.
-Please email steps.dev@gmail.com if you would like to share you changes with others.
+    This module is preliminary, means some of the functions are still under development.
+    Code modification / debugging is wellcomed.
+    Please email steps.dev@gmail.com if you would like to share you changes with others.
 
 Mesh Import and Export Utilities 
 
@@ -743,7 +743,7 @@ def saveMesh(pathname, tetmesh):
           >>> ### Use cubit script to create steps.geom.Tetmesh object from tetgen output file ###
           >>> mymesh = meshio.readTetgen(tetgenfilename)
           >>> ### Save this mesh in XML (and ASCII) format for quick-loading in future ###
-          >>> meshio.saveXML('/meshes/spine1', mymesh[0])
+          >>> meshio.saveMesh('/meshes/spine1', mymesh[0])
         
     """
     

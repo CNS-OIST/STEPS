@@ -59,6 +59,15 @@ Advanced Installation
     Please refer to http://docs.python.org/install/index.html
     for more information about python module installation.
 
+Documentation
+=============
 
+A html version of user manual and API references is included in the 
+doc folder, open doc/html/manual_index.html using your browser.
 
+Examples
+========
+
+We provide some simple examples in the user manual as well as the "example"
+folder. To run an example, cd to the folder and execute the python script.
 

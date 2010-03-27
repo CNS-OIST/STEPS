@@ -1,0 +1,174 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>6. API References &mdash; STEPS User Manual v1.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '1.1.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="STEPS User Manual v1.1.0 documentation" href="index.html" />
+    <link rel="next" title="6.1. steps.model" href="API_model.html" />
+    <link rel="prev" title="5. Preliminary Functionalities" href="preliminary_func.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<a href="http://steps.sourceforge.net"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="API_model.html" title="6.1. steps.model"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="preliminary_func.html" title="5. Preliminary Functionalities"
+             accesskey="P">previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="api-references">
+<span id="api-ref"></span><h1>6. API References<a class="headerlink" href="#api-references" title="Permalink to this headline">¶</a></h1>
+<p>Namespaces:</p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="API_model.html">6.1. steps.model</a></li>
+<li class="toctree-l1"><a class="reference external" href="API_geom.html">6.2. steps.geom</a></li>
+<li class="toctree-l1"><a class="reference external" href="API_rng.html">6.3. steps.rng</a></li>
+<li class="toctree-l1"><a class="reference external" href="API_solver.html">6.4. steps.solver</a></li>
+<li class="toctree-l1"><a class="reference external" href="API_utilities_meshio.html">6.5. steps.utilities.meshio</a></li>
+<li class="toctree-l1"><a class="reference external" href="API_utilities_visual.html">6.6. steps.utilities.visual</a></li>
+</ul>
+<p>Currently STEPS has 5 major namespaces, divided by functionality.
+The <a title="" class="reference external" href="API_model.html#module-steps.model"><tt class="xref docutils literal"><span class="pre">steps.model</span></tt></a> namespace defines classes of chemical species in the model,
+as well as the reaction and diffusion objects. The <a title="" class="reference external" href="API_geom.html#module-steps.geom"><tt class="xref docutils literal"><span class="pre">steps.geom</span></tt></a> namespace
+contains classes that define the geometry of the model (i.e. tetrahedral meshes,
+compartments and patches). The <a title="" class="reference external" href="API_rng.html#module-steps.rng"><tt class="xref docutils literal"><span class="pre">steps.rng</span></tt></a> namespace contains the random number
+generators (currently only one generator is available). The <a title="" class="reference external" href="API_model.html#module-steps.model"><tt class="xref docutils literal"><span class="pre">steps.model</span></tt></a> namespace
+implements the simulation solvers. The <tt class="xref docutils literal"><span class="pre">steps.utilities</span></tt> namespace provides useful
+tools related to the model and geometry description, currently providing 3D
+tetrahedral mesh loading and saving support.</p>
+<div class="figure align-center">
+<img alt="_images/steps.jpg" src="_images/steps.jpg" />
+<p class="caption">STEPS main class diagram.</p>
+</div>
+<p><strong>Methods and attributes</strong></p>
+<p>For most of the set and get methods, STEPS provides corresponding attributes
+which can be accessed and modified directly. For example (spec is a reference
+to an object of type <a title="steps.model.Spec" class="reference external" href="API_model.html#steps.model.Spec"><tt class="xref docutils literal"><span class="pre">steps.model.Spec</span></tt></a>):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span><span class="o">.</span><span class="n">setID</span><span class="p">(</span><span class="s">&#39;Ca&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>is equivalent to:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="s">&#39;Ca&#39;</span>
+</pre></div>
+</div>
+<p>and,</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">spec_id</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">getID</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>is equivalent to:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">spec_id</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">id</span>
+</pre></div>
+</div>
+<p>Available methods and attributes of an object can be found by the built-in
+dir command in Python. A convention maintained in STEPS is that all attributes
+are completely lower-case:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">dir</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+<span class="go">[&#39;__class__&#39;, &#39;__del__&#39;, &#39;__delattr__&#39;, &#39;__dict__&#39;, &#39;__doc__&#39;, &#39;__getattr__&#39;,</span>
+<span class="go">&#39;__getattribute__&#39;, &#39;__hash__&#39;, &#39;__init__&#39;, &#39;__module__&#39;, &#39;__new__&#39;,</span>
+<span class="go">&#39;__reduce__&#39;, &#39;__reduce_ex__&#39;, &#39;__repr__&#39;, &#39;__setattr__&#39;, &#39;__str__&#39;,</span>
+<span class="go">&#39;__swig_destroy__&#39;, &#39;__swig_getmethods__&#39;, &#39;__swig_setmethods__&#39;,</span>
+<span class="go">&#39;__weakref__&#39;, &#39;getID&#39;, &#39;getModel&#39;, &#39;id&#39;, &#39;model&#39;, &#39;setID&#39;, &#39;this&#39;]</span>
+</pre></div>
+</div>
+<p>All attributes beginning with double underscore are built-in attributes related
+to the implementation of the type and can be ignored. So, for our
+<a title="steps.model.Spec" class="reference external" href="API_model.html#steps.model.Spec"><tt class="xref docutils literal"><span class="pre">steps.model.Spec()</span></tt></a> object (one of the most basic objects in STEPS) we have
+functions <tt class="docutils literal"><span class="pre">getID</span></tt>, <tt class="docutils literal"><span class="pre">setID</span></tt> and <tt class="docutils literal"><span class="pre">getModel</span></tt> available with attributes <tt class="docutils literal"><span class="pre">id</span></tt>
+and <tt class="docutils literal"><span class="pre">model</span></tt> related to those functions.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="preliminary_func.html"
+                                  title="previous chapter">5. Preliminary Functionalities</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="API_model.html"
+                                  title="next chapter">6.1. steps.model</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/API_ref.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="API_model.html" title="6.1. steps.model"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="preliminary_func.html" title="5. Preliminary Functionalities"
+             >previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, The STEPS Development Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.5.
+    </div>
+  </body>
+</html>

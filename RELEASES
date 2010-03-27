@@ -20,5 +20,6 @@ Version 1.1.0 (2010-03-20)
     (steps.utilitis.visual)
 3. Provide checkpointing support for Wmdirect and Tetexact solvers.
     (Please check user manual for more details)
+4. New user manual and API reference
     
     

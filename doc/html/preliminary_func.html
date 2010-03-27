@@ -1,0 +1,278 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>5. Preliminary Functionalities &mdash; STEPS User Manual v1.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '1.1.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="STEPS User Manual v1.1.0 documentation" href="index.html" />
+    <link rel="next" title="6. API References" href="API_ref.html" />
+    <link rel="prev" title="4. Example: Simulating Diffusion" href="diffusion.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<a href="http://steps.sourceforge.net"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="API_ref.html" title="6. API References"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="diffusion.html" title="4. Example: Simulating Diffusion"
+             accesskey="P">previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="preliminary-functionalities">
+<span id="preliminary-func"></span><h1>5. Preliminary Functionalities<a class="headerlink" href="#preliminary-functionalities" title="Permalink to this headline">¶</a></h1>
+<p>STEPS has implemented several functionalities which are still preliminary.
+Most of them are written in Python scripts so that user can extend them easily
+to meet their individual requirements.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">We welcome any modification and/or extension of these functionarities.
+If you would like to share your extensions with other users,
+please contact us <a class="reference external" href="mailto:steps&#46;dev&#37;&#52;&#48;gmail&#46;com">steps<span>&#46;</span>dev<span>&#64;</span>gmail<span>&#46;</span>com</a></p>
+</div>
+<div class="section" id="meshio-mesh-input-output-module">
+<h2>5.1. meshio: Mesh Input/Output Module<a class="headerlink" href="#meshio-mesh-input-output-module" title="Permalink to this headline">¶</a></h2>
+<p>Tetrahedral mesh based simulation is one of the important features in STEPS.
+As there are many tetrahedral mesh generators available in public, STEPS provides
+a python based meshio module for importing meshes from 3rd party mesh files.</p>
+<p>Currently meshio module also provides one-stop importing functions for Abaqus and Tetgen
+formats.</p>
+<p>To import mesh from Abaqus(*.inp) files:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">mesh</span> <span class="o">=</span> <span class="n">steps</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">meshio</span><span class="o">.</span><span class="n">importAbaqus</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To import mesh from TetGen files:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">mesh</span> <span class="o">=</span> <span class="n">steps</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">meshio</span><span class="o">.</span><span class="n">importTetGen</span><span class="p">(</span><span class="n">pathroot</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To extend this module, experienced user could modify <tt class="docutils literal"><span class="pre">steps/utilities/meshio.py</span></tt>
+in the installed package.</p>
+<p>More details of the meshio module can be found in <a class="reference external" href="API_utilities_meshio.html"><em>steps.utilities.meshio</em></a>.</p>
+</div>
+<div class="section" id="checkpointing">
+<h2>5.2. Checkpointing<a class="headerlink" href="#checkpointing" title="Permalink to this headline">¶</a></h2>
+<p>Currently STEPS provides a basic checkpointing functionality
+for <a title="steps.solver.Wmdirect" class="reference external" href="API_solver.html#steps.solver.Wmdirect"><tt class="xref docutils literal"><span class="pre">steps.solver.Wmdirect</span></tt></a> and <a title="steps.solver.Tetexact" class="reference external" href="API_solver.html#steps.solver.Tetexact"><tt class="xref docutils literal"><span class="pre">steps.solver.Tetexact</span></tt></a> via
+Python&#8217;s CPickle module.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Currently STEPS only checkpoints the species distributions in the simulation,
+this means the user will need to reset any clamped or deactived reaction/diffusion
+when restoring from checkpointing files.</p>
+</div>
+<p>To run a simulation with automatic checkpointing, simply add the cp_interval as
+the second parameter in <tt class="docutils literal"><span class="pre">run</span></tt> or <tt class="docutils literal"><span class="pre">advance</span></tt> function:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">sim</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">endtime</span><span class="p">,</span> <span class="n">cp_interval</span><span class="p">)</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="n">adv</span><span class="p">,</span> <span class="n">cp_interval</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Here is an example of using the checkpointing functionality.</p>
+<p><a href="_downloads/well_mixed.py"><strong class="xref">Well Mixed with Checkpointing</strong></a></p>
+<p>Experienced user can extend this functionality by modifying <tt class="docutils literal"><span class="pre">steps/solver.py</span></tt>
+in the installed package.</p>
+</div>
+<div class="section" id="graphical-frontend-for-mesh-based-simulation">
+<h2>5.3. Graphical Frontend for Mesh Based Simulation<a class="headerlink" href="#graphical-frontend-for-mesh-based-simulation" title="Permalink to this headline">¶</a></h2>
+<p>STEPS provides a preliminary graphical frontend for tetrahedral mesh based simulations
+using <a title="steps.solver.Tetexact" class="reference external" href="API_solver.html#steps.solver.Tetexact"><tt class="xref docutils literal"><span class="pre">steps.solver.Tetexact</span></tt></a> solver.</p>
+<p>An example can be downloaded here:</p>
+<p><a href="_downloads/visual.zip"><strong class="xref">Graphical Frontend for Mesh Based Simulation</strong></a></p>
+<p>Before running the simulation, user needs to have the following following packages installed:</p>
+<ul class="simple">
+<li><a class="reference external" href="http://pyopengl.sourceforge.net">PyOpenGL</a></li>
+<li><a class="reference external" href="http://www.wxpython.org">WxPython</a></li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Currently WxPython only supports Python running in 32-bit mode, on the other hand
+the pre-installed Python in Mac OS X 10.6 runs in 64-bit mode by default. To run Python
+in 32-bit mode, user should set the <strong>VERSIONER_PYTHON_PREFER_32_BIT flag</strong> to “yes”, for more
+details, please refer to <a class="reference external" href="http://developer.apple.com/mac/library/documentation/Darwin/Reference/ManPages/man1/python.1.html">Apple&#8217;s User Manual</a>.</p>
+</div>
+<p>After unzip the example files, go to the unzipped folder and type:</p>
+<div class="highlight-python"><pre>cd visual
+python kisilevich.py</pre>
+</div>
+<div class="section" id="display">
+<h3>5.3.1. Display<a class="headerlink" href="#display" title="Permalink to this headline">¶</a></h3>
+<p>The graphical frontend should be shown as follows</p>
+<div class="figure">
+<img alt="_images/visual1.png" src="_images/visual1.png" style="width: 640px; height: 480px;" />
+</div>
+<p>The mesh and species distribution are shown in the major area, where you can move the
+mesh by draging it with your left mouse key down, or zoom in/out with mouse scroll.</p>
+</div>
+<div class="section" id="run-simulation">
+<h3>5.3.2. Run Simulation<a class="headerlink" href="#run-simulation" title="Permalink to this headline">¶</a></h3>
+<p>The right hand side is the control panel.</p>
+<p>The current simulation time is shown under <strong>Simulation Time</strong> as seconds.</p>
+<p>To run the simulation, enter the endtime under <strong>Stop at (Sec)</strong> and click <strong>Run</strong> button.
+Use <strong>Refresh Interval (Sec)</strong> to set the interval for refreshing display.</p>
+<div class="figure">
+<img alt="_images/visual2.png" src="_images/visual2.png" />
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Do not change any setting if the simulation is still running, it may crash the simulation.</p>
+</div>
+</div>
+<div class="section" id="id1">
+<h3>5.3.3. Checkpointing<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<p>The graphical frontend supports manually checkpointing and restoring.</p>
+<div class="figure">
+<img alt="_images/visual3.tiff" src="_images/visual3.tiff" />
+</div>
+<p>To checkpoint a state, click <strong>Save</strong> and modify the location and file name
+in the popup dialog, then confirm. To restore a state from a file,
+click <strong>Load</strong> and choose the checkpoint file then confirm.</p>
+<div class="figure">
+<img alt="_images/visual4.tiff" src="_images/visual4.tiff" />
+<p class="caption">Saving dialog.</p>
+</div>
+<div class="figure">
+<img alt="_images/visual5.tiff" src="_images/visual5.tiff" />
+<p class="caption">Loading dialog.</p>
+</div>
+</div>
+<div class="section" id="species-display">
+<h3>5.3.4. Species Display<a class="headerlink" href="#species-display" title="Permalink to this headline">¶</a></h3>
+<p>User can control the display of species via <strong>Sepecies</strong> section in the control panel.</p>
+<div class="figure">
+<img alt="_images/visual6.tiff" src="_images/visual6.tiff" />
+</div>
+<p>All species involved in the simulation are listed in the species list. To change the
+settings for one of them, click the species name, tick/untick the <strong>Display</strong> option
+to show and hide the species, chick the color panel to change the display color for the
+species.</p>
+</div>
+<div class="section" id="mesh-and-background-display">
+<h3>5.3.5. Mesh and Background Display<a class="headerlink" href="#mesh-and-background-display" title="Permalink to this headline">¶</a></h3>
+<div class="figure">
+<img alt="_images/visual7.tiff" src="_images/visual7.tiff" />
+</div>
+<p>Mesh color can be changed via the <strong>Mesh Color</strong> panel, pull the <strong>Transparency</strong>
+slider to change the transparency of the mesh. Background color can be changed via
+the <em>BG Color*</em> panel.</p>
+</div>
+<div class="section" id="rotating-display">
+<h3>5.3.6. Rotating Display<a class="headerlink" href="#rotating-display" title="Permalink to this headline">¶</a></h3>
+<div class="figure">
+<img alt="_images/visual8.tiff" src="_images/visual8.tiff" />
+</div>
+<p>To rotate the display, pick a coordinate from the rotate panel, use the slider to
+change the degree of rotation. Press the <strong>Reset</strong> button to reset the coordinates to
+(0.0, 0.0, 0.0).</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="manual_index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#">5. Preliminary Functionalities</a><ul>
+<li><a class="reference external" href="#meshio-mesh-input-output-module">5.1. meshio: Mesh Input/Output Module</a></li>
+<li><a class="reference external" href="#checkpointing">5.2. Checkpointing</a></li>
+<li><a class="reference external" href="#graphical-frontend-for-mesh-based-simulation">5.3. Graphical Frontend for Mesh Based Simulation</a><ul>
+<li><a class="reference external" href="#display">5.3.1. Display</a></li>
+<li><a class="reference external" href="#run-simulation">5.3.2. Run Simulation</a></li>
+<li><a class="reference external" href="#id1">5.3.3. Checkpointing</a></li>
+<li><a class="reference external" href="#species-display">5.3.4. Species Display</a></li>
+<li><a class="reference external" href="#mesh-and-background-display">5.3.5. Mesh and Background Display</a></li>
+<li><a class="reference external" href="#rotating-display">5.3.6. Rotating Display</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="diffusion.html"
+                                  title="previous chapter">4. Example: Simulating Diffusion</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="API_ref.html"
+                                  title="next chapter">6. API References</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/preliminary_func.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="API_ref.html" title="6. API References"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="diffusion.html" title="4. Example: Simulating Diffusion"
+             >previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, The STEPS Development Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.5.
+    </div>
+  </body>
+</html>

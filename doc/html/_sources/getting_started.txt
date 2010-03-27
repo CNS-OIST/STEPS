@@ -1,0 +1,176 @@
+.. _getting_started:
+
+
+***************
+Getting Started
+***************
+
+**The aim of this document is to get you started quickly with STEPS
+by working through a number of examples that highlight the various
+capabilities of this software package. However, before you can do
+that, you need to have a working copy of STEPS installed on your
+computer. So we will first explain the requirements of STEPS in terms
+of third party software and prior knowledge and then how to compile 
+and install on your system.**
+
+.. _prerequisites:
+
+Prerequisites
+=============
+
+For STEPS Core Modules
+----------------------
+
+**Python**
+
+The interface to STEPS is in Python, which is a relatively simple, 
+intuitive language to get in to and can therefore be picked up quickly. 
+It may be possible to follow the examples in this document and to start
+setting up basic STEPS simulations independently without any exposure
+to Python, but to get the most out of STEPS some basic working knowledge
+is required. There are many excellent introductory text books on Python
+from which this knowledge can be gained and within a few hours of study
+it should be possible to become comfortable with utilizing object methods
+and writing basic loops in Python to give you the ability to achieve almost 
+any task required to set up and run a STEPS simulation. In contrast to simulator
+environments that come with their own interpreted language, Python is a very widely
+adopted language which is useful for tasks that are related to STEPS only indirectly,
+such as for post-processing of data obtained with a STEPS simulation and for visualization.
+Python is a very complete environment adaptable for almost any kind of task, 
+so the knowledge gained could be useful for other tasks not related to STEPS at all with
+more and more scientific software packages adopting an interface in Python. 
+
+There are many different versions of Python available. We recommend Python Version 2.6 as
+it is the main supported version. It is also possible to run STEPS in Python 2.5/3.0 but no
+extensive test has been performed yet. 
+
+Latest version of Python can be downloaded from `http://www.python.org <http://www.python.org>`_.
+
+**C++ Complier**
+
+To build STEPS from source code a c++ compiler is required. For most Unix-like operating systems
+gcc/g++ is commonly pre-installed. For Windows, we recommend Microsoft's Visual C++, or g++ in 
+MingGW/Cygwin, although other compilers may work as well.
+
+For STEPS Advanced Modules
+--------------------------
+
+**STEPS Visual Toolkit**
+
+The steps.utilities.visual module is a visualization toolkit for displaying 
+mesh-based simulation in a 3D environment. This module requires the following packages:
+
+* `PyOpenGL <http://pyopengl.sourceforge.net>`_
+* `WxPython <http://www.wxpython.org>`_
+
+**Note:** Currently WxPython only supports Python running in 32-bit mode, on the other hand
+the pre-installed Python in Mac OS X 10.6 runs in 64-bit mode by default. To run Python 
+in 32-bit mode, user should set the **VERSIONER_PYTHON_PREFER_32_BIT flag** to “yes”, for more 
+details, please refer to `Apple's User Manual <http://developer.apple.com/mac/library/documentation/Darwin/Reference/ManPages/man1/python.1.html>`_.
+
+For more details about the visual toolkit, see :doc:`\preliminary_func`.
+
+Other Recommended
+-----------------
+
+**Scientific Python**
+
+Through the use of a number of packages, namely NumPy, SciPy and Matplotlib, 
+Python can be made to resemble the Matlab environment for scientific computing 
+rather closely. The NumPy package brings powerful array objects to Python. 
+These array objects will typically rely on an optimized linear algebra package 
+to make the operations on them very fast. SciPy builds on top of NumPy and adds 
+even more functionality for signal processing, numerical integration, etc. 
+Finally, Matplotlib adds a collection of powerful 2D plotting tools to your 
+Python environment, that once again resemble the plotting commands familiar from Matlab.
+
+These add-on packages are in common use among the scientific computing community and 
+it is highly recommended that two of these packages (NumPy and SciPy) are installed 
+on your system. Although one could use STEPS without taking advantage of these packages, 
+we highly recommend you do take the time to get acquainted with them as they will make it 
+easier to run simulations, collect output and perform extra processing on this data. Starting 
+from the very first example we will show how NumPy arrays can be used for these tasks rather 
+than the basic built-in types in Python (lists, tuples etc), although one could replace a NumPy 
+array with a list in the code, for example, if more comfortable with the built-in types. 
+For further information on these packages you can visit the following online resources:
+
+* `Documentation Link to NumPy and SciPy <http://www.scipy.org/Documentation>`_
+* `NumPy for Matlab users <http://www.scipy.org/NumPy_for_Matlab_Users>`_
+* `A very good NumPy tutorial content-wise. <http://numpy.sourceforge.net/numdoc/HTML/numdoc.htm>`_
+
+Obtaining STEPS
+---------------
+
+The latest stable version of STEPS can be downloaded from `STEPS Sourceforge Homepage <http://sourceforge.net/projects/steps/>`_. 
+Here you will also find documentation, examples and support. 
+
+Compilation
+-----------
+
+This section describes how to compile and install STEPS on a generic Unix system. 
+We have successfully achieved this on Mac OS X (currently the main design platform), 
+Linux and Windows (tested using MinGW and Cygwin). Many other systems should work as 
+well, however. 
+
+**Note:** Started from Version 1.1.0, STEPS has adapted Python's Distutils for building 
+and installation, replacing the GNU autotools used in older releases. Due to this change,
+we recommend user to remove previous installed version before the installation of new release.
+
+Install From Binaries
+^^^^^^^^^^^^^^^^^^^^^
+
+STEPS provides varies pre-built binaries for different platforms, user is recommended to install 
+STEPS from these binaries when possible. Please download the related package and follow the 
+instruction within the package to install.
+
+Install From Source Code Package
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+STEPS uses Python's Distutils for building and inatallation. The general process involves two steps::
+
+    $ python setup.py build
+    $ [sudo] python setup.py install
+    
+For MinGW in Windows, replace commands with::
+
+    $ python setup.py build --compiler=mingw32
+    $ python setup.py install
+    
+For Cygwin in Windows, replace commands with::
+
+    $ python setup.py build --compiler=cygwin
+    $ python setup.py install
+    
+Please refer to `Python's Distutils manual <http://docs.python.org/install/index.html>`_ 
+for more information about installation.
+
+Running STEPS
+-------------
+
+If STEPS has been installed successfully on your system you can run STEPS 
+interactively in Python. By default, STEPS will be installed in your default 
+Python path. However, if you've changed the installation path manually, you 
+need to make sure that the path to your installed files is known to Python, 
+which you may need to do by setting the **PYTHONPATH** shell variable. So if, for 
+example, STEPS is installed in /opt/local/lib/python2.6/site-packages/::
+
+    $ export PYTHONPATH=/opt/local/lib/python2.6/site-packages/
+    $ python
+    >>> import steps
+    >>>
+    
+Just about every task related to building a model, describing the geometry and 
+running a simulation in STEPS involves creating **objects** in Python and utilising 
+the object methods (so it is highly recommend that you are familiar with Python objects 
+and comfortable using them, though you will gain more experience by working through the 
+examples in this document). The class definitions for these objects reside in Python modules 
+in the steps directory (:mod:`steps.model`, :mod:`steps.geom`, :mod:`steps.solver` etc). 
+So to test installation, 
+try to create your first STEPS object. What this object is and how it is used will become clear 
+in the next chapter. So, from the Python prompt::
+
+    >>> import steps.model 
+    >>> modobject = steps.model.Model()
+    >>>
+
+Installation was successful if you can create this object.

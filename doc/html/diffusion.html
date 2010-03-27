@@ -1,0 +1,764 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>4. Example: Simulating Diffusion &mdash; STEPS User Manual v1.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '1.1.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="STEPS User Manual v1.1.0 documentation" href="index.html" />
+    <link rel="next" title="5. Preliminary Functionalities" href="preliminary_func.html" />
+    <link rel="prev" title="3. Example: Surface-Volume Reactions (IP3 Model)" href="ip3.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<a href="http://steps.sourceforge.net"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="preliminary_func.html" title="5. Preliminary Functionalities"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="ip3.html" title="3. Example: Surface-Volume Reactions (IP3 Model)"
+             accesskey="P">previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="example-simulating-diffusion">
+<span id="diffusion"></span><h1>4. Example: Simulating Diffusion<a class="headerlink" href="#example-simulating-diffusion" title="Permalink to this headline">¶</a></h1>
+<p>This chapter introduces how to model and simulate diffusion systems.
+First we will look at how to describe the diffusive motion of molecules
+by using object of Diff class available in <a title="" class="reference external" href="API_model.html#module-steps.model"><tt class="xref docutils literal"><span class="pre">steps.model</span></tt></a>, then how to import
+a tetrahedral mesh by using the <a title="" class="reference external" href="API_utilities_meshio.html#module-steps.utilities.meshio"><tt class="xref docutils literal"><span class="pre">steps.utilities.meshio</span></tt></a> methods
+and finally how to create a <a title="steps.solver.Tetexact" class="reference external" href="API_solver.html#steps.solver.Tetexact"><tt class="xref docutils literal"><span class="pre">steps.solver.Tetexact</span></tt></a> object to be used for
+the simulation itself. The <tt class="docutils literal"><span class="pre">Tetexact</span></tt> solver builds on the <tt class="docutils literal"><span class="pre">Wmdirect</span></tt> solver
+(we have used up until now) extended for diffusive fluxes between tetrahedral
+elements in a mesh. Each individual tetrahedron behaves like a well-mixed
+compartment where reactions can take place. Diffusive flux between
+tetrahedral elements is represented by a series of first-order reactions
+with rate constants derived from the local geometry and the diffusion
+constant parameter. Thus, this solver object can be used to simulate
+full reaction-diffusion systems in complex geometries, but in this introduction
+we will start with a simple diffusion system.</p>
+<p>We wish to simulate diffusion of one molecular species from a point source
+in an infinite volume, a problem chosen for simplicity and with a known analytical
+solution we can compare to our STEPS simulation results. As the volume in STEPS
+must of course be finite we will create a large spherical mesh, inject our
+molecules into the central tetrahedron (as there is no concept of a point
+source in STEPS) and compare our results to the analytical solution up to a
+time when there are zero or an insignificant number of boundary events.</p>
+<div class="section" id="analytical-solution">
+<h2>4.1. Analytical solution<a class="headerlink" href="#analytical-solution" title="Permalink to this headline">¶</a></h2>
+<p>To compare our mean results in STEPS to an analytical solution we must solve
+the diffusion equation for one spatial dimension, the radial distance from the
+point source. The problem is simplified to one dimension because the symmetry
+of the problem dictates that the concentration at any given radial distance r
+from the point source will be equal at all points in space forming a
+two-dimensional “shell” at that <em>r</em>.</p>
+<p>If all molecules exist at a single point at time 0, within an infinite boundary,
+the analytical solution is (see Crank, J. (1975) The Mathematics of Diffusion.
+Oxford: Clarendon Press):</p>
+<div class="math" id="equation-4.1">
+<p><span class="eqno">(1)</span><img src="_images/math/be1048347aabdf17d5fdbd636766cad58461a984.png" alt="C(r,t)=\frac{M}{8(\pi Dt)^{3/2}}\exp\left(\frac{-r^{2}}{4Dt}\right)" /></p>
+</div><p>where <em>C</em> is the concentration (in units of number of molecules/ <img class="math" src="_images/math/c939ee1937b310658e5cdd3f2239d4e52ea4bd0c.png" alt="m^{\text{3}}"/>)
+at radial distance <em>r</em> from source at time <em>t</em>, <em>M</em> is the total number of injected
+molecules and <em>D</em> is the diffusion constant (in units <img class="math" src="_images/math/d1dc7ad57e1fcac70346790b3ddc8b27c5e0d966.png" alt="m^{\text{2}}/s"/>) .</p>
+</div>
+<div class="section" id="modeling-solution">
+<h2>4.2. Modeling solution<a class="headerlink" href="#modeling-solution" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="organisation-of-code">
+<h3>4.2.1. Organisation of code<a class="headerlink" href="#organisation-of-code" title="Permalink to this headline">¶</a></h3>
+<p>To set up our model and run our simulation we will create a Python script,
+organising the script according to a certain template chosen for a good
+organisation of our workflow. However, for clarity, in these examples we
+will show the code as if it was typed at the Python prompt. As in previous
+chapters we will go through the code step by step and look at the statements
+in detail as we go.</p>
+<p>The first thing to do is to write statements to import all our steps packages
+with all the methods available to describe our model and run our simulation.
+We will also import other packages we require at this point in the script,
+such as math, numpy, pylab and random. We will make use of the random package
+to help with selecting tetrahedrons from our mesh to sample (which we look at
+in detail later) and math contains many useful basic mathematical functions useful
+for finding the analytical solution:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">math</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pylab</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">random</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">steps.model</span> <span class="kn">as</span> <span class="nn">smodel</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">steps.solver</span> <span class="kn">as</span> <span class="nn">solvmod</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">steps.tetgen</span> <span class="kn">as</span> <span class="nn">stetgen</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">steps.geom</span> <span class="kn">as</span> <span class="nn">stetmesh</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">steps.rng</span> <span class="kn">as</span> <span class="nn">srng</span>
+</pre></div>
+</div>
+<p>Now we set some parameters for our simulation. By keeping these variables grouped
+together at the beginning of a Python script we would make it easy to locate and
+change these simulation parameters if we wished to:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="c"># The number of iterations to run</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">NITER</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># The data collection time increment</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">DT</span> <span class="o">=</span> <span class="mf">0.001</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># The simulation endtime</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">INT</span> <span class="o">=</span> <span class="mf">0.2</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># The number of molecules to be injected</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">NINJECT</span> <span class="o">=</span> <span class="mi">100000</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># The number of tetrahedral elements to sample data from.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">SAMPLE</span> <span class="o">=</span> <span class="mi">2000</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># The diffusion constant for our diffusing species</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">DCST</span> <span class="o">=</span> <span class="mf">20.0e-12</span>
+</pre></div>
+</div>
+<p>At what stage these constants will be used will become clear as we work
+through the code.</p>
+<p>We want to sample data from individual tetrahedrons so we can analyse spatial
+data, so we now create two objects to store the indices <a class="footnote-reference" href="#f1" id="id1">[1]</a> and radial distance from
+center of the mesh tetrahedrons we will sample. We have decided in this case that
+we don&#8217;t want to save data for every single tetrahedron, but rather randomly
+randomly select 2000 tetrahedrons by setting the SAMPLE variable to 2000.
+We will look at how we select which tetrahedrons to sample in <a class="reference internal" href="#geom-spec"><em>Geometry specification</em></a>
+, but for now we just create numpy arrays initialized to zeros.
+The reason for creating these arrays at this point in the script will become
+clear later:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="c"># Array to hold tetrahedron indices (integers)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tetidxs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">SAMPLE</span><span class="p">,</span> <span class="n">dtype</span> <span class="o">=</span> <span class="s">&#39;int&#39;</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># Array to hold tetrahedron radial distances (floats)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tetrads</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">SAMPLE</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="model-specification">
+<h3>4.2.2. Model specification<a class="headerlink" href="#model-specification" title="Permalink to this headline">¶</a></h3>
+<p>So we now move on to our model description. This time we will organise the code
+into a function, which will return the <tt class="xref docutils literal"><span class="pre">steps.model.Model</span></tt> object we create. It is
+entirely up to you if you wish to organise your model description in this way,
+but it can be useful for larger models. <a class="footnote-reference" href="#f2" id="id2">[2]</a> This is our first function
+definition, so lets mention a little about the syntax for defining functions in
+Python. Firstly, we use the def statement to create a function object and assign
+it a name. Then we must provide all our function code with the same indentation.
+As soon as our indentation returns to the indentation for the def statement, we
+exit the function definition. We wish to return our <a title="steps.model.Model" class="reference external" href="API_model.html#steps.model.Model"><tt class="xref docutils literal"><span class="pre">steps.model.Model</span></tt></a> object,
+so we will provide a return statement at the end of the function. First we create
+our function and name it gen_model. In this simple example the function will not
+require any arguments:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">gen_model</span><span class="p">():</span>
+</pre></div>
+</div>
+<p>Next, as always, we create our class:<cite>steps.model.Model</cite> container object. As this is
+part of our function body, we must indent. We chose a tab:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">mdl</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Now we create our molecular species (only one in this simple model) and our volume
+system, much as before:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">A</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Spec</span><span class="p">(</span><span class="s">&#39;A&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+<span class="n">vsys</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Volsys</span><span class="p">(</span><span class="s">&#39;cytosolv&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now we create our diffusion rule. In STEPS this means creating a <a title="steps.model.Diff" class="reference external" href="API_model.html#steps.model.Diff"><tt class="xref docutils literal"><span class="pre">steps.model.Diff</span></tt></a>
+object and assigning it to a volume system. As well as the usual identifier string
+and a reference to the parent volume system, a required parameter for the object
+construction is a reference to the molecular species object to which this diffusion
+rule applies. An optional parameter to the object constructor is the diffusion
+constant, which is given in s.i. units (i.e. <img class="math" src="_images/math/4100cea452a764dea1e55f5d11cdcfd3d9ce596e.png" alt="m^{2}/s"/> so for example a
+diffusion constant of <img class="math" src="_images/math/24925e833e11aa6a21fda2769feadbc29ca90893.png" alt="100 \mu m^{2}/s = 100*10^{-12} m^{\text{2}}/s"/>).
+This default value for the diffusion constant can be changed with object method
+<tt class="docutils literal"><span class="pre">setDcst</span></tt> and can even be changed from the default value during simulation,
+much like the reaction constants we looked at in previous chapters. However, in
+this model we will not alter the diffusion constant later in the script, so this
+is the value that will be used during our simulation. Recall we defined the
+diffusion constant at the beginning or our script, the reason for which is that
+this variable is available when we come to finding the analytical solution:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">diff_A</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Diff</span><span class="p">(</span><span class="s">&#39;diff_A&#39;</span><span class="p">,</span> <span class="n">vsys</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">dcst</span> <span class="o">=</span> <span class="n">DCST</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Finally, we return the <a title="steps.model.Model" class="reference external" href="API_model.html#steps.model.Model"><tt class="xref docutils literal"><span class="pre">steps.model.Model</span></tt></a> object, which holds all the
+information we have defined about the chemical species and their associated
+reaction and diffusion rules that is required by our solver object:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">return</span> <span class="n">mdl</span>
+</pre></div>
+</div>
+<p>So our complete function is:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">gen_model</span><span class="p">():</span>
+<span class="go">        mdl = smodel.Model()</span>
+<span class="go">        A = smodel.Spec(&#39;A&#39;, mdl)</span>
+<span class="go">        vsys = smodel.Volsys(&#39;cytosolv&#39;, mdl)</span>
+<span class="go">        diff_A = smodel.Diff(&#39;diff_A&#39;, vsys, A, dcst = DCST)</span>
+<span class="go">        return mdl</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>We see here one of the reasons we require the identifier strings: the object
+references are not available at later parts in the script because they are in
+the function body and are not returned to the caller, and therefore the identifier
+string is the only way we can refer to objects such as the Spec and Diff objects
+later on, which we will see during our simulation.</p>
+</div>
+<div class="section" id="geometry-specification">
+<span id="geom-spec"></span><h3>4.2.3. Geometry specification<a class="headerlink" href="#geometry-specification" title="Permalink to this headline">¶</a></h3>
+<p>We now move on to describing our geometry. This is the section that stands out as
+very different to our previous well-mixed geometry description. The methods we
+provide for describing mesh-based geometry in STEPS give tools for importing meshes
+from some powerful mesh-generation packages, and methods for initialising and
+controlling your simulation conditions which are beyond the ground covered in this
+chapter. It is likely that you will only start to get the feel of how to use these
+methods to achieve your required description in more complex models with hands-on
+experience. This chapter begins to introduce some useful methods for mesh
+manipulation and it is hoped that this will give the user enough experience with
+the workflow to be able to go on to more advanced object manipulation that may be
+required for more complex models. A full list of tetrahedral mesh methods is
+available in <a class="reference external" href="API_ref.html"><em>API References</em></a>. Firstly, we chose to structure all our geometry code
+into a function, much like our model description:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">gen_geom</span><span class="p">():</span>
+</pre></div>
+</div>
+<p>We now load our mesh object. STEPS provides all mesh loading and saving tools in
+module <a title="" class="reference external" href="API_utilities_meshio.html#module-steps.utilities.meshio"><tt class="xref docutils literal"><span class="pre">steps.utilities.meshio</span></tt></a>. This module currently provides support for
+TetGen (<a class="reference external" href="http://tetgen.berlios.de/">http://tetgen.berlios.de/</a>), CUBIT (<a class="reference external" href="http://cubit.sandia.gov/">http://cubit.sandia.gov/</a>) and
+NETGEN (<a class="reference external" href="http://www.hpfem.jku.at/netgen/">http://www.hpfem.jku.at/netgen/</a>) mesh generators, along with other any
+others which support the Abaqus output format. The details of creating a mesh
+from these 3rd party packages and importing into STEPS are beyond the scope of
+this chapter, however we provide a full list of meshio methods in <a class="reference external" href="API_ref.html"><em>API References</em></a>.
+One of the functions provided in meshio is <tt class="docutils literal"><span class="pre">saveMesh</span></tt>, which allows the user to
+save the imported mesh in STEPS format. This is important because the information
+passed on from the mesh generators is often only very basic information about the
+mesh and STEPS must find a vast amount of information to pass on to the <tt class="docutils literal"><span class="pre">Tetexact</span></tt>
+reaction-diffusion solver object internally. This can be time-consuming for large
+meshes, however this process only needs to be performed once. With <tt class="docutils literal"><span class="pre">saveMesh</span></tt> the
+mesh is saved with basic information in an XML file, with an accompanying ASCII file
+containing all the extra information STEPS computed when importing the mesh. After
+these files have been created, the mesh can then be imported with the <tt class="docutils literal"><span class="pre">loadMesh</span></tt>
+method, which will only take a few seconds or minutes to load even very large
+meshes. Therefore, it is highly recommended that all meshes are saved in this way
+by using the meshio.saveMesh function. For this example we assume that we have mesh
+files sphere_1e-06.xml and sphere_10e-6.txt available in the current working
+directory, which we created previously with saveMesh from a mesh we imported from
+a mesh-generator with the <tt class="docutils literal"><span class="pre">importAbaqus</span></tt> function. We import the meshio module
+here for clarity, of course indenting because this is part of the function body:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">steps.utilities.meshio</span> <span class="kn">as</span> <span class="nn">meshio</span>
+<span class="n">mesh</span> <span class="o">=</span> <span class="n">meshio</span><span class="o">.</span><span class="n">loadMesh</span><span class="p">(</span><span class="s">&#39;sphere_10e-6&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Our tetrahedral mesh geometry object is very different from our well-mixed geometry
+(<a title="steps.geom.Geom" class="reference external" href="API_geom.html#steps.geom.Geom"><tt class="xref docutils literal"><span class="pre">steps.geom.Geom</span></tt></a>) object. The mesh geometry is described by a
+<a title="steps.geom.Tetmesh" class="reference external" href="API_geom.html#steps.geom.Tetmesh"><tt class="xref docutils literal"><span class="pre">steps.geom.Tetmesh</span></tt></a> object, which contains all the functionality of a
+<a title="steps.geom.Geom" class="reference external" href="API_geom.html#steps.geom.Geom"><tt class="xref docutils literal"><span class="pre">steps.geom.Geom</span></tt></a> object, extended with many more methods which only make sense
+for a tetrahedral mesh. A <a title="steps.geom.Tetmesh" class="reference external" href="API_geom.html#steps.geom.Tetmesh"><tt class="xref docutils literal"><span class="pre">steps.geom.Tetmesh</span></tt></a> object is created in <tt class="docutils literal"><span class="pre">loadMesh</span></tt>
+and returned to the caller, so in the above code the object is referenced by
+variable mesh. We will be introduced to some of the Tetmesh methods as we find our
+sample tetrahedrons, but first we must create our mesh compartments. A compartment
+object in a mesh is of type steps.geom.TmComp and requires a little extra
+information than a well-mixed compartment. A tetrahedral-mesh compartment is
+comprised of a group of tetrahedrons, so we must supply the object constructor
+with the indices of the enclosed tetrahedrons in a Python sequence (e.g. a list).
+A mesh can be separated into as many compartments as the user wishes,
+though compartments should be separated physically by a boundary
+(i.e. by a membrane) as <strong>there is no implicit diffusion between compartments
+in STEPS</strong>, even if they border each other. If a user wishes to modify behaviour
+for certain sections of a compartment, this can be achieved by grouping
+tetrahedrons together and utilising the simulation methods, all achievable in
+the Python interface (see <a class="reference external" href="API_solver.html"><em>steps.solver</em></a> for all available methods). However,
+for our example we only wish to have one compartment, and for that compartment
+to enclose the entire mesh. So we use a <a title="steps.geom.Tetmesh" class="reference external" href="API_geom.html#steps.geom.Tetmesh"><tt class="xref docutils literal"><span class="pre">steps.geom.Tetmesh</span></tt></a> object method to
+return the number of tetrahedrons in the mesh, and then pass a sequence of all
+the indices to the <a title="steps.geom.TmComp" class="reference external" href="API_geom.html#steps.geom.TmComp"><tt class="xref docutils literal"><span class="pre">steps.geom.TmComp</span></tt></a> object constructor <a class="footnote-reference" href="#f3" id="id3">[3]</a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Find the total number of tetrahedrons in the mesh</span>
+<span class="n">ntets</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">countTets</span><span class="p">()</span>
+<span class="c"># Create a compartment containing all tetrahedrons</span>
+<span class="n">comp</span> <span class="o">=</span> <span class="n">stetmesh</span><span class="o">.</span><span class="n">TmComp</span><span class="p">(</span><span class="s">&#39;cyto&#39;</span><span class="p">,</span> <span class="n">mesh</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="n">ntets</span><span class="p">))</span>
+<span class="n">comp</span><span class="o">.</span><span class="n">addVolsys</span><span class="p">(</span><span class="s">&#39;cytosolv&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that we do not (and indeed can not) set the volume of the compartment because
+the volume is calculated from the combined volume of the enclosed tetrahedrons.
+And that&#8217;s it for our geometry description. The remainder of our <tt class="docutils literal"><span class="pre">gen_geom</span></tt> function
+is used to collect, at random, the tetrahedrons to sample data from. This is
+introduced here because it is often undesirable to collect data from all
+tetrahedrons in large meshes and the user may wish to pick and chose certain
+tetrahedrons to sample. Such groups can be stored in a Python sequence with for
+loops used to loop over these groups and set simulation parameters or collect data.
+In this simple example we will just store the central tetrahedron and it&#8217;s 4
+neighbours, then find the rest at random, making sure not to store the same
+tetrahedron more than once. We will store the sample tetrahedron indices in the
+tetidxs numpy array we created at the top of our script. Along the way we will
+be introduced to some new <a title="steps.geom.Tetmesh" class="reference external" href="API_geom.html#steps.geom.Tetmesh"><tt class="xref docutils literal"><span class="pre">steps.geom.Tetmesh</span></tt></a> methods, which will be described as
+we go along. This section is intended to be only an introduction to finding
+information from the mesh, though a full list of the many Tetmesh methods that can
+be used for more complex tasks is available in <a class="reference external" href="API_ref.html"><em>API References</em></a>. First, we use the
+<tt class="docutils literal"><span class="pre">findTetByPoint</span></tt> method to get the index of the tetrahedron in the centre of our
+mesh. <tt class="docutils literal"><span class="pre">findTetByPoint</span></tt> returns the tetrahedron by index that encompasses the
+location given in Cartesian coordinates (in a list). Returns -1 if the location
+given is not inside the mesh. The mesh is a sphere, radius 10 microns, centered
+on the origin, so the centre of the mesh is at 0.0, 0.0, 0.0 in Cartesian
+coordinates. We store the returned index in our <tt class="docutils literal"><span class="pre">tetidxs</span></tt> array:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Fetch the central tetrahedron index and store:</span>
+<span class="n">ctetidx</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">findTetByPoint</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+<span class="n">tetidxs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">ctetidx</span>
+</pre></div>
+</div>
+<p>Next we wish to make sure that we include data from around the central tetrahedron,
+so we find the central tetrahedron&#8217;s four neighbours. To do this we use method
+<tt class="docutils literal"><span class="pre">getTetTetNeighb</span></tt>, which returns any tetrahedron&#8217;s 4 neighbours by index in a
+tuple. If any neighbour index is returned as -1 this means that this face of the
+tetrahedron is on the boundary and therefore has no neighbour in that direction
+<a class="footnote-reference" href="#f4" id="id4">[4]</a>. In this example it is safe to assume that the central tetrahedron is not
+on a surface and we will add our 4 neighbour indices to our <tt class="docutils literal"><span class="pre">tetidxs</span></tt> array:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Find the central tetrahedron&#39;s four neighbours:</span>
+<span class="n">neighbs</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">getTetTetNeighb</span><span class="p">(</span><span class="n">ctetidx</span><span class="p">)</span>
+<span class="n">tetidxs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">tetidxs</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="n">tetidxs</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span><span class="n">tetidxs</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">neighbs</span>
+</pre></div>
+</div>
+<p>Now we fill the rest of our tetidxs array with tetrahedrons chosen at random.
+A way to do this would be to simply fetch one randomly-generated number between
+0 and 1 and pick the nearest integer that it corresponds to when multiplied by
+the total number of tetrahedrons. However, the following technique is a different
+approach and finds a random point in space in the 3D bounding box of the mesh and
+stores the corresponding tetrahedron index if it not already stored (and the point
+is not outside the mesh). This would then make it easier to provide a bias towards
+the center of the mesh in order to get a more even distribution of radial distances,
+but this is not shown in this simple example. We will use methods <tt class="docutils literal"><span class="pre">getBoundMax</span></tt>
+and <tt class="docutils literal"><span class="pre">getBoundMin</span></tt>, which return the maximum and minimum Cartesian coordinates
+of the mesh respectively:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Keep track how many tet indices we have stored so far</span>
+<span class="n">stored</span> <span class="o">=</span> <span class="mi">5</span>
+
+<span class="c"># Run a loop until we have stored all tet indices we require</span>
+<span class="k">while</span> <span class="p">(</span><span class="n">stored</span> <span class="o">&lt;</span> <span class="n">SAMPLE</span><span class="p">):</span>
+
+    <span class="c"># Find the maximum and minimum coordinates of the mesh</span>
+    <span class="nb">max</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">getBoundMax</span><span class="p">()</span>
+    <span class="nb">min</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">getBoundMin</span><span class="p">()</span>
+
+    <span class="c"># Fetch 3 random numbers between 0 and 1:</span>
+    <span class="n">rnx</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+    <span class="n">rny</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+    <span class="n">rnz</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+
+    <span class="c"># Find the related coordinates in the mesh:</span>
+    <span class="n">xcrd</span> <span class="o">=</span> <span class="nb">min</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="nb">max</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="nb">min</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">*</span><span class="n">rnx</span>
+    <span class="n">ycrd</span> <span class="o">=</span> <span class="nb">min</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="nb">max</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="nb">min</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="n">rny</span>
+    <span class="n">zcrd</span> <span class="o">=</span> <span class="nb">min</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="nb">max</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">-</span><span class="nb">min</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span><span class="o">*</span><span class="n">rnz</span>
+
+    <span class="c"># Find the tetrahedron that encompasses this point:</span>
+    <span class="n">tidx</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">findTetByPoint</span><span class="p">([</span><span class="n">xcrd</span><span class="p">,</span> <span class="n">ycrd</span><span class="p">,</span> <span class="n">zcrd</span><span class="p">])</span>
+
+    <span class="c"># -1 was returned if point is outside the mesh:</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">tidx</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span> <span class="k">continue</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">tidx</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tetidxs</span><span class="p">):</span>
+        <span class="n">tetidxs</span><span class="p">[</span><span class="n">stored</span><span class="p">]</span> <span class="o">=</span> <span class="n">tidx</span>
+        <span class="n">stored</span> <span class="o">+=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>This example is intended to demonstrate that there is a lot of functionality
+in STEPS to enable you to find and store whatever spatial information is required
+that could not be passed on from the mesh generator, and that some knowledge of
+Python is very useful at this stage to enable you to produce code to get maximum
+benefit from the available methods. This geometry description stage is a good time
+to find and collect whatever spatial information is required for simulation
+initialization and data collection. We should note that in this example there is
+little error checking and more should be included in real simulation scripts
+(for example SAMPLE must be lower than the total number of tetrahedrons in the mesh).
+For a full list of the available <a title="steps.geom.Tetmesh" class="reference external" href="API_geom.html#steps.geom.Tetmesh"><tt class="xref docutils literal"><span class="pre">steps.geom.Tetmesh</span></tt></a> methods please
+see <a class="reference external" href="API_geom.html"><em>steps.geom</em></a>. Now, the final task we wish to perform at the geometry level
+is to find the radial distances of the tetrahedrons and fill our tetrads array
+with this information. These are stored separately in our example (for clarity)
+in the numpy array <tt class="docutils literal"><span class="pre">tetrads</span></tt>, and we must make sure that the distances saved
+relate to the distance for the tetrahedron at the same location in the <tt class="docutils literal"><span class="pre">tetidxs</span></tt>
+array, although we could easily have stored the indices and radial distances
+together in a 2D array. We will take the radial distance as the distance from
+the tetrahedron&#8217;s barycenter to the barycenter of the central tetrahedron.
+To find the barycenters we use method <tt class="docutils literal"><span class="pre">getTetBarycenter</span></tt>, which returns the
+barycenter Cartesian coordinates in a tuple:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Find the barycenter of the central tetrahedron</span>
+<span class="n">cbaryc</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">getTetBarycenter</span><span class="p">(</span><span class="n">ctetidx</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">SAMPLE</span><span class="p">):</span>
+    <span class="c"># Fetch the barycenter of the tetrahedron:</span>
+    <span class="n">baryc</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">getTetBarycenter</span><span class="p">(</span><span class="n">tetidxs</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="c"># Find the radial distance of this tetrahedron:</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">((</span><span class="n">baryc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">cbaryc</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="mi">2</span><span class="p">)</span> \
+                    <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">((</span><span class="n">baryc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">cbaryc</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span><span class="mi">2</span><span class="p">)</span> \
+                    <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">((</span><span class="n">baryc</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">-</span><span class="n">cbaryc</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span><span class="mi">2</span><span class="p">))</span>
+
+    <span class="c"># Store the radial distance (in microns):</span>
+    <span class="n">tetrads</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span><span class="o">*</span><span class="mf">1.0e6</span>
+</pre></div>
+</div>
+<p>Finally, we return the <a title="steps.geom.Tetmesh" class="reference external" href="API_geom.html#steps.geom.Tetmesh"><tt class="xref docutils literal"><span class="pre">steps.geom.Tetmesh</span></tt></a> object required for simulation
+object construction:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">return</span> <span class="n">mesh</span>
+</pre></div>
+</div>
+<p>Our complete <tt class="docutils literal"><span class="pre">gen_geom</span></tt> function is then:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">gen_geom</span><span class="p">():</span>
+<span class="go">        import steps.utilities.meshio as meshio</span>
+<span class="go">        mesh = meshio.loadMesh(&#39;sphere_10e-6&#39;)[0]</span>
+
+<span class="go">        # Find the total number of tetrahedrons in the mesh</span>
+<span class="go">        ntets = mesh.countTets()</span>
+<span class="go">        # Create a compartment object containing all tetrahedrons</span>
+<span class="go">        comp = stetmesh.TmComp(&#39;cyto&#39;, mesh, range(ntets))</span>
+<span class="go">        comp.addVolsys(&#39;cytosolv&#39;)</span>
+
+<span class="go">        # Fetch the central tetrahedron index and store:</span>
+<span class="go">        ctetidx = mesh.findTetByPoint([0.0, 0.0, 0.0])</span>
+<span class="go">        tetidxs[0] = ctetidx</span>
+
+<span class="go">        # Find the central tetrahedron&#39;s four neighbours:</span>
+<span class="go">        neighbidcs = mesh.getTetTetNeighb(ctetidx)</span>
+<span class="go">        tetidxs[1], tetidxs[2], tetidxs[3], tetidxs[4] = neighbidcs</span>
+
+<span class="go">        # Keep track how many tetrahedron we have stored so far</span>
+<span class="go">        stored = 5</span>
+
+<span class="go">        # Run a loop until we have stored as many indices as we require</span>
+<span class="go">        while (stored &lt; SAMPLE):</span>
+
+<span class="go">            # Find the maximum and minimum coordinates of the mesh</span>
+<span class="go">            max = mesh.getBoundMax()</span>
+<span class="go">            min = mesh.getBoundMin()</span>
+
+<span class="go">            # Fetch 3 random numbers between 0 and 1:</span>
+<span class="go">            rnx = random.random()</span>
+<span class="go">            rny = random.random()</span>
+<span class="go">            rnz = random.random()</span>
+
+<span class="go">            # Find the related coordinates in the mesh:</span>
+<span class="go">            xcrd = min[0] + (max[0]-min[0])*rnx</span>
+<span class="go">            ycrd = min[1] + (max[1]-min[1])*rny</span>
+<span class="go">            zcrd = min[2] + (max[2]-min[2])*rnz</span>
+
+<span class="go">            # Find the tetrahedron that encompasses this point:</span>
+<span class="go">            tidx = mesh.findTetByPoint([xcrd, ycrd, zcrd])</span>
+
+<span class="go">            # -1 was returned if point is outside the mesh:</span>
+<span class="go">            if (tidx == -1): continue</span>
+<span class="go">            if (tidx not in tetidxs):</span>
+<span class="go">                tetidxs[stored] = tidx</span>
+<span class="go">                stored += 1</span>
+
+<span class="go">        # Find the barycenter of the central tetrahedron</span>
+<span class="go">        cbaryc = mesh.getTetBarycenter(ctetidx)</span>
+
+<span class="go">        for i in range(SAMPLE):</span>
+<span class="go">            # Fetch the barycenter of the tetrahedron:</span>
+<span class="go">            baryc = mesh.getTetBarycenter(tetidxs[i])</span>
+
+<span class="go">            # Find the radial distance of this tetrahedron:</span>
+<span class="go">            r = math.sqrt(math.pow((baryc[0]-cbaryc[0]),2) \</span>
+<span class="go">                + math.pow((baryc[1]-cbaryc[1]),2) \</span>
+<span class="go">                + math.pow((baryc[2]-cbaryc[2]),2))</span>
+
+<span class="go">            # Store the radial distance (in microns):</span>
+<span class="go">            tetrads[i] = r*1.0e6</span>
+
+<span class="go">        return mesh</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="simulation-with-tetexact">
+<h3>4.2.4. Simulation with <tt class="docutils literal"><span class="pre">Tetexact</span></tt><a class="headerlink" href="#simulation-with-tetexact" title="Permalink to this headline">¶</a></h3>
+<p>Now it&#8217;s time to run a simulation and visualize the collected data,
+much as we did in previous chapters. This time we must call the <tt class="docutils literal"><span class="pre">gen_model</span></tt>
+and <tt class="docutils literal"><span class="pre">gen_geom</span></tt> functions to set up our model and return the container objects.
+We then create our random number generator object just as for the <tt class="docutils literal"><span class="pre">Wmdirect</span></tt>
+simulations:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span>  <span class="o">=</span> <span class="n">gen_model</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tmgeom</span> <span class="o">=</span> <span class="n">gen_geom</span><span class="p">()</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rng</span> <span class="o">=</span> <span class="n">srng</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s">&#39;mt19937&#39;</span><span class="p">,</span> <span class="mi">512</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rng</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="mi">2903</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now we can create our reaction-diffusion <a title="steps.solver.Tetexact" class="reference external" href="API_solver.html#steps.solver.Tetexact"><tt class="xref docutils literal"><span class="pre">steps.solver.Tetexact</span></tt></a> solver object,
+which requires a <tt class="docutils literal"><span class="pre">steps.geom.Tetmesh</span></tt> object to it&#8217;s initializing function
+(if we try to present it with simple well-mixed geometry an error message will
+appear):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sim</span> <span class="o">=</span> <span class="n">solvmod</span><span class="o">.</span><span class="n">Tetexact</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">tmgeom</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This solver builds on the functionality of the well-mixed solvers, with methods
+for manipulating certain regions in the mesh. We will see some examples in the
+following snippets of code, and a full list of available methods is available
+in <a class="reference external" href="API_solver.html"><em>steps.solver</em></a>. Similarly to our well-mixed simulations we must create the data
+structures for saving our results. We create the &#8216;time points&#8217; array (based on
+parameters we set at the beginning of our script) and the &#8216;results&#8217; array, which
+in this case will store data for all the tetrahedrons we are sampling:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">tpnts</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">INT</span><span class="p">,</span> <span class="n">DT</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># Find how many &#39;time points&#39; we have</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ntpnts</span> <span class="o">=</span> <span class="n">tpnts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">NITER</span><span class="p">,</span> <span class="n">ntpnts</span><span class="p">,</span> <span class="n">SAMPLE</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>We are now ready to run a simulation. This will look quite similar to our previous
+code for running a well-mixed simulation, but this time we are injecting molecules
+into and recording data from individual tetrahedrons, not the whole compartment
+(though this is also possible). We first need to find the central tetrahedron index
+again (as we did not pass this information on from the <tt class="docutils literal"><span class="pre">gen_geom</span></tt> function,
+though this is of course an option). We then use solver method <tt class="docutils literal"><span class="pre">setTetCount</span></tt> to
+set the number of molecules in the central tetrahedron at time t = 0 to the number
+stored in variable <tt class="docutils literal"><span class="pre">NINJECT</span></tt> (default number in all tetrahedrons is zero set by
+the reset method). We will then run our simulation and collect the data in a few
+lines of code in nested for loops:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="c"># Fetch the index of the tetrahedron at the centre of the mesh</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ctetidx</span> <span class="o">=</span> <span class="n">geom</span><span class="o">.</span><span class="n">findTetByPoint</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># Run NITER number of iterations:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">NITER</span><span class="p">):</span>
+<span class="go">        sim.reset()</span>
+
+<span class="go">        # Inject all molecules into the central tet:</span>
+<span class="go">        sim.setTetCount(ctetidx, &#39;A&#39;, NINJECT)</span>
+
+<span class="go">        for j in xrange(ntpnts):</span>
+<span class="go">            sim.run(tpnts[j])</span>
+
+<span class="go">            # Loop over the tetrahedrons we are saving data for</span>
+<span class="go">            for k in xrange(SAMPLE):</span>
+<span class="go">                # Save the concentration in the tetrahedron, in uM</span>
+<span class="go">                res[i,j,k] = sim.getTetConc(tetidxs[k], &#39;A&#39;)*1.0e6</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>That is all the code we require to run our simple diffusion simulation. We wish
+to look at the mean concentration in the tetrahedrons over all our iterations,
+so we simply use the <tt class="docutils literal"><span class="pre">numpy.mean</span></tt> function as in previous chapters:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">res_mean</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>So now we come to plotting our data. Now that we have spatial information the
+data we wish to plot is different to our previous well-mixed simulations where
+we were plotting the concentration in a well-mixed compartment. We will plot
+the mean concentration from individual tetrahedrons against their radial
+distance from origin, but at many different time points. To achieve this
+we will create another function, this time with a parameter relating to
+the &#8216;time point&#8217; we wish to plot. We can then call this function with a
+&#8216;time point&#8217; argument and our function will plot concentration v radial
+distance at the time relating to that &#8216;time point&#8217;, as desired. In our
+function we also label the axis and title the plot with the time:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">plotres</span><span class="p">(</span><span class="n">tidx</span><span class="p">):</span>
+<span class="go">        # Check the time index is in range</span>
+<span class="go">        if (tidx &gt;= INT/DT):</span>
+<span class="go">            print &#39;Time index is out of range.&#39;</span>
+<span class="go">            return</span>
+
+<span class="go">        pylab.scatter(tetrads, res_mean[tidx])</span>
+
+<span class="go">        # Set our plotting x and y bounds</span>
+<span class="go">        pylab.xlim(0,0, 10.0)</span>
+<span class="go">        pylab.ylim(0.0)</span>
+
+<span class="go">        # Label the axes</span>
+<span class="go">        pylab.xlabel(&#39;Radial distance ($\mu$m)&#39;)</span>
+<span class="go">        pylab.ylabel(&#39;Concentration ($\mu$M)&#39;)</span>
+<span class="go">        t = tpnts[tidx]</span>
+<span class="go">        pylab.title(&#39;Unbound diffusion. Time: &#39; + str(t) + &#39;s&#39;)</span>
+<span class="go">        plotanlyt(t)</span>
+<span class="go">        pylab.show()</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>You may have noticed that we call a function that we have not defined yet,
+<tt class="docutils literal"><span class="pre">plotanlyt</span></tt>. This function will plot the concentration from the analytical
+concentration given by equation <a href="#equation-4.1">(1)</a>. The function for plotting the
+analytical solution is provided here, but we will not go through this code
+in detail. Here we can see why the diffusion constant was stored in variable
+<tt class="docutils literal"><span class="pre">DCST</span></tt> at the top of our script:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">plotanlyt</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+<span class="go">        segs = 100</span>
+<span class="go">        anlytconc = numpy.zeros((segs))</span>
+<span class="go">        radialds = numpy.zeros((segs))</span>
+<span class="go">        maxrad = 0.0</span>
+<span class="go">        for i in tetrads:</span>
+<span class="go">            if (i &gt; maxrad): maxrad = i</span>
+<span class="go">        maxrad *= 1e-6</span>
+<span class="go">        intervals = maxrad/segs</span>
+<span class="go">        rad = 0.0</span>
+<span class="go">        for i in range((segs)):</span>
+<span class="go">            # Find the analytical concentration, and convert to mol/L</span>
+<span class="go">            anlytconc[i]=1.0e3*(1/6.022e23)*\</span>
+<span class="go">                ((NINJECT/(math.pow((4*math.pi*DCST*t),1.5)))*\</span>
+<span class="go">                (math.exp((-1.0*(rad*rad))/(4*DCST*t))))</span>
+<span class="go">            radialds[i] = rad*1e6</span>
+<span class="go">            rad += intervals</span>
+<span class="go">        pylab.plot(radialds, anlytconc, color = &#39;red&#39;)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>And that is everything we need to set up and run our simple diffusion simulation
+and plot the data, alongside the analytical solution for comparison. With this
+structure, it is intended that the plotting functions is called interactively,
+giving us the chance to visualise a number of different time plots, then save
+whichever plots we chose. It often makes sense to output the data to a file,
+then write plotting functions in separate modules that can load the saved data
+from these files and plot. This requires some knowledge of writing and reading
+files in Python, but like most operations in Python, can usually be picked up
+quite quickly. Let&#8217;s assume we have contained all of our unbound diffusion code
+from this chapter in a Python file diff_unb.py. We can then run our simulation
+interactively in Python by importing the module, then visualising the data with
+the plotres function we defined. For this example lets provide a call to our
+plotres function with argument 199 meaning we will plot data at &#8216;timepoint&#8217;
+199 (corresponding to time 0.199s), our last time point:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">diff_unb</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">diff_unb</span><span class="o">.</span><span class="n">plotres</span><span class="p">(</span><span class="mi">199</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Example output from such a call is shown in <a class="reference internal" href="#figure-4-1"><em>Figure 4.1</em></a>:</p>
+<div class="figure" id="figure-4-1">
+<img alt="_images/diff_fig1png.png" src="_images/diff_fig1png.png" style="width: 6.5in; height: 5in;" />
+<p class="caption">The mean concentration of diffusing species &#8216;A&#8217; in individual
+tetrahedrons in STEPS (black dots) is plotted with the analytical
+solution from equation <a href="#equation-4.1">(1)</a> (red). The discrepancy at small radial
+distances is due to the injection of molecules into a finite volume in
+STEPS whereas a point source assumed for the analytical solution.</p>
+</div>
+<p class="rubric">Footnotes</p>
+<table class="docutils footnote" frame="void" id="f1" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>Tetrahedrons are identified by an integer index (as are nodes and
+triangles). We will look at this in more detail in the geometry section.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="f2" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[2]</a></td><td>In this way, for example, multiple model descriptions can be defined
+in a separate module with each description clearly separated inside functions.
+You can then import whichever model description objects you chose into the
+simulation scripts. We will not explore this topic in detail here, but it is a
+good idea to keep in mind that this organisation is an option.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="f3" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id3">[3]</a></td><td>Tetrahedron indices in STEPS all ways begin at 0 and increment by 1,
+regardless of their indices in the mesh-generation software. So if a mesh has
+n tetrahedrons, the Python function range(n) will return a sequence
+[0, 1, ..., n-1] i.e. a complete list of the tetrahedrons in the mesh.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="f4" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id4">[4]</a></td><td>This property can be very useful if you wish to find information
+about border tetrahedrons or surface triangles.</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="manual_index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#">4. Example: Simulating Diffusion</a><ul>
+<li><a class="reference external" href="#analytical-solution">4.1. Analytical solution</a></li>
+<li><a class="reference external" href="#modeling-solution">4.2. Modeling solution</a><ul>
+<li><a class="reference external" href="#organisation-of-code">4.2.1. Organisation of code</a></li>
+<li><a class="reference external" href="#model-specification">4.2.2. Model specification</a></li>
+<li><a class="reference external" href="#geometry-specification">4.2.3. Geometry specification</a></li>
+<li><a class="reference external" href="#simulation-with-tetexact">4.2.4. Simulation with <tt class="docutils literal"><span class="pre">Tetexact</span></tt></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="ip3.html"
+                                  title="previous chapter">3. Example: Surface-Volume Reactions (IP3 Model)</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="preliminary_func.html"
+                                  title="next chapter">5. Preliminary Functionalities</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/diffusion.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="preliminary_func.html" title="5. Preliminary Functionalities"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="ip3.html" title="3. Example: Surface-Volume Reactions (IP3 Model)"
+             >previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, The STEPS Development Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.5.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,170 @@
+.. _preliminary_func:
+
+***************************
+Preliminary Functionalities
+***************************
+
+STEPS has implemented several functionalities which are still preliminary.
+Most of them are written in Python scripts so that user can extend them easily
+to meet their individual requirements.
+
+.. Note:: 
+
+    We welcome any modification and/or extension of these functionarities. 
+    If you would like to share your extensions with other users, 
+    please contact us steps.dev@gmail.com
+
+meshio: Mesh Input/Output Module
+================================
+
+Tetrahedral mesh based simulation is one of the important features in STEPS.
+As there are many tetrahedral mesh generators available in public, STEPS provides
+a python based meshio module for importing meshes from 3rd party mesh files.
+
+Currently meshio module also provides one-stop importing functions for Abaqus and Tetgen
+formats.
+
+To import mesh from Abaqus(\*.inp) files::
+    
+    mesh = steps.utilities.meshio.importAbaqus(filename, scale)
+    
+To import mesh from TetGen files::
+
+    mesh = steps.utilities.meshio.importTetGen(pathroot)
+    
+To extend this module, experienced user could modify ``steps/utilities/meshio.py`` 
+in the installed package.
+
+More details of the meshio module can be found in :doc:`API_utilities_meshio`.
+
+Checkpointing
+=============
+
+Currently STEPS provides a basic checkpointing functionality
+for :class:`steps.solver.Wmdirect` and :class:`steps.solver.Tetexact` via 
+Python's CPickle module. 
+
+.. note::
+    
+    Currently STEPS only checkpoints the species distributions in the simulation,
+    this means the user will need to reset any clamped or deactived reaction/diffusion
+    when restoring from checkpointing files.
+
+To run a simulation with automatic checkpointing, simply add the cp_interval as
+the second parameter in ``run`` or ``advance`` function::
+
+    sim.run(endtime, cp_interval)
+    sim.advance(adv, cp_interval)
+    
+Here is an example of using the checkpointing functionality.
+
+:download:`Well Mixed with Checkpointing<examples/well_mixed.py>`
+
+Experienced user can extend this functionality by modifying ``steps/solver.py``
+in the installed package.
+
+Graphical Frontend for Mesh Based Simulation
+============================================
+
+STEPS provides a preliminary graphical frontend for tetrahedral mesh based simulations 
+using :class:`steps.solver.Tetexact` solver.
+
+An example can be downloaded here:
+
+:download:`Graphical Frontend for Mesh Based Simulation<examples/visual.zip>`
+
+Before running the simulation, user needs to have the following following packages installed:
+
+* `PyOpenGL <http://pyopengl.sourceforge.net>`_
+* `WxPython <http://www.wxpython.org>`_
+
+.. Note:: 
+
+    Currently WxPython only supports Python running in 32-bit mode, on the other hand
+    the pre-installed Python in Mac OS X 10.6 runs in 64-bit mode by default. To run Python 
+    in 32-bit mode, user should set the **VERSIONER_PYTHON_PREFER_32_BIT flag** to “yes”, for more 
+    details, please refer to `Apple's User Manual <http://developer.apple.com/mac/library/documentation/Darwin/Reference/ManPages/man1/python.1.html>`_.
+
+After unzip the example files, go to the unzipped folder and type::
+
+    cd visual
+    python kisilevich.py
+    
+Display
+-------
+    
+The graphical frontend should be shown as follows
+
+.. figure:: images/visual1.png
+   :width:  640px
+   :height: 480px
+   
+The mesh and species distribution are shown in the major area, where you can move the
+mesh by draging it with your left mouse key down, or zoom in/out with mouse scroll.
+
+Run Simulation
+--------------
+
+The right hand side is the control panel.
+
+The current simulation time is shown under **Simulation Time** as seconds.
+
+To run the simulation, enter the endtime under **Stop at (Sec)** and click **Run** button.
+Use **Refresh Interval (Sec)** to set the interval for refreshing display.
+  
+.. figure:: images/visual2.png
+
+.. warning::
+    
+    Do not change any setting if the simulation is still running, it may crash the simulation.
+    
+Checkpointing
+-------------
+
+The graphical frontend supports manually checkpointing and restoring. 
+
+.. figure:: images/visual3.tiff
+
+To checkpoint a state, click **Save** and modify the location and file name 
+in the popup dialog, then confirm. To restore a state from a file, 
+click **Load** and choose the checkpoint file then confirm.
+
+
+.. figure:: images/visual4.tiff
+
+   Saving dialog.
+
+.. figure:: images/visual5.tiff
+
+   Loading dialog.
+
+Species Display
+---------------
+
+User can control the display of species via **Sepecies** section in the control panel.
+
+.. figure:: images/visual6.tiff
+
+All species involved in the simulation are listed in the species list. To change the 
+settings for one of them, click the species name, tick/untick the **Display** option
+to show and hide the species, chick the color panel to change the display color for the
+species.
+
+Mesh and Background Display
+---------------------------
+
+.. figure:: images/visual7.tiff
+
+Mesh color can be changed via the **Mesh Color** panel, pull the **Transparency** 
+slider to change the transparency of the mesh. Background color can be changed via
+the *BG Color** panel.
+
+Rotating Display
+----------------
+
+.. figure:: images/visual8.tiff
+
+To rotate the display, pick a coordinate from the rotate panel, use the slider to 
+change the degree of rotation. Press the **Reset** button to reset the coordinates to
+(0.0, 0.0, 0.0).
+

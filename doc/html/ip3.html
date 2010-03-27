@@ -1,0 +1,522 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>3. Example: Surface-Volume Reactions (IP3 Model) &mdash; STEPS User Manual v1.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '1.1.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="STEPS User Manual v1.1.0 documentation" href="index.html" />
+    <link rel="next" title="4. Example: Simulating Diffusion" href="diffusion.html" />
+    <link rel="prev" title="2. Example: Well-Mixed Reaction Systems" href="well_mixed.html" /> 
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<a href="http://steps.sourceforge.net"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="diffusion.html" title="4. Example: Simulating Diffusion"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="well_mixed.html" title="2. Example: Well-Mixed Reaction Systems"
+             accesskey="P">previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="example-surface-volume-reactions-ip3-model">
+<span id="ip3"></span><h1>3. Example: Surface-Volume Reactions (IP3 Model)<a class="headerlink" href="#example-surface-volume-reactions-ip3-model" title="Permalink to this headline">¶</a></h1>
+<p>In <a class="reference external" href="well_mixed.html"><em>Example: Well-Mixed Reaction Systems</em></a> we use objects of type <a title="steps.model.Reac" class="reference external" href="API_model.html#steps.model.Reac"><tt class="xref docutils literal"><span class="pre">steps.model.Reac</span></tt></a> to represent
+a reaction taking place inside a volume. In this chapter we consider another
+type of kinetic reaction represented by the <a title="steps.model.SReac" class="reference external" href="API_model.html#steps.model.SReac"><tt class="xref docutils literal"><span class="pre">steps.model.SReac</span></tt></a> class
+(associated with the <a title="steps.model.Surfsys" class="reference external" href="API_model.html#steps.model.Surfsys"><tt class="xref docutils literal"><span class="pre">steps.model.Surfsys</span></tt></a> container) which defines a
+reaction taking place on a surface (patch) which separates two compartments
+(arbitrarily naming one of them the “inner” compartment, and the other one
+the “outer” compartment). Reactants and products can then be freely moving
+around in a compartment adjoined to the patch or embedded in the surface.
+Therefore, it is necessary to firstly specify the location of the reactant
+and product species <a class="footnote-reference" href="#f1" id="id1">[1]</a>.</p>
+<p>The stoichiometry of the surface reaction is specified by the following lists:</p>
+<ul>
+<li><dl class="first docutils">
+<dt>Species on the left hand side of the reaction (the reactants):</dt>
+<dd><ul class="first last simple">
+<li>Species on the surface (<tt class="docutils literal"><span class="pre">slhs</span></tt>).</li>
+<li>Species in the “outer” compartment (<tt class="docutils literal"><span class="pre">olhs</span></tt>).</li>
+<li>or Species in the “inner” compartment (<tt class="docutils literal"><span class="pre">ilhs</span></tt>) <a class="footnote-reference" href="#f2" id="id2">[2]</a>.</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Species on the right hand side of the reaction (the reactants):</dt>
+<dd><ul class="first last simple">
+<li>Species on the surface (<tt class="docutils literal"><span class="pre">srhs</span></tt>).</li>
+<li>Species in the “outer” compartment (<tt class="docutils literal"><span class="pre">orhs</span></tt>).</li>
+<li>or Species in the “inner” compartment (<tt class="docutils literal"><span class="pre">irhs</span></tt>).</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p>To become familiar with these objects we will build a simplified version of
+the inositol 1,4,5-trisphosphate (IP <img class="math" src="_images/math/0e7a78b7bea800f729fc12586317fcbead4ea261.png" alt="_{3}"/>) model
+<a class="reference internal" href="#figure-3-1"><em>Figure 3.1</em></a> (described in <a class="footnote-reference" href="#f3" id="id3">[3]</a>) in STEPS.
+<a class="reference internal" href="#figure-3-2"><em>Figure 3.2</em></a> provides the schematic diagram of the states
+and transitions in the model. We see that our reactions take place on the
+membrane between the cytosol and the Endoplasmic Reticulum (ER) and therefore
+must be described by an SReac object, with each “binding” reaction described
+by a second order surface reaction and each “unbinding” reaction by a first
+order surface reaction.</p>
+<div class="figure" id="figure-3-1">
+<img alt="_images/ip3_2.tiff" src="_images/ip3_2.tiff" style="width: 5.5in; height: 4in;" />
+<p class="caption">In the IP3 receptor model, reactions (i.e. receptor binding of IP3 and
+calcium molecules) take place on the membrane separating the endoplasmic
+reticulum (ER) and the cytosol. Therefore, we will use Surface Reaction
+objects to describe the reactions.</p>
+</div>
+<div class="figure" id="figure-3-2">
+<img alt="_images/IP3_schem_new.tiff" src="_images/IP3_schem_new.tiff" style="width: 5.5in; height: 4in;" />
+<p class="caption">The schematic diagram of the states and
+transitions in the IP <img class="math" src="_images/math/3beb3e9f8a3a61f6ce62873e28f30b2cc01f92fc.png" alt="_{\text{3}}"/> receptor model.</p>
+</div>
+<p>We will go through the Python code to build this model in STEPS,
+but providing only brief descriptions of operations we are familiar
+with from the previous chapter.</p>
+<div class="section" id="model-specification">
+<h2>3.1. Model specification<a class="headerlink" href="#model-specification" title="Permalink to this headline">¶</a></h2>
+<p>First we need to import the <a title="" class="reference external" href="API_model.html#module-steps.model"><tt class="xref docutils literal"><span class="pre">steps.model</span></tt></a> package and create a <strong>Model</strong>
+container object named mdl, as we did in section:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">steps.model</span> <span class="kn">as</span> <span class="nn">smodel</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mdl</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Now we create the species in this model based on <a class="reference internal" href="#figure-3-2"><em>Figure 3.2</em></a>,
+declaring all receptor states as separate Spec objects. Recall that all
+identifier strings must be unique and we should also make sure not to reuse
+a variable name so that we do not lose any references to the objects we create:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="c"># Calcium</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Ca</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Spec</span><span class="p">(</span><span class="s">&#39;Ca&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># IP3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">IP3</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Spec</span><span class="p">(</span><span class="s">&#39;IP3&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c">############### receptor state objects ###############</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># receptor state: &#39;naive&#39; state (no bound ligands)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">R</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Spec</span><span class="p">(</span><span class="s">&#39;R&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># receptor state: bound IP3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">RIP3</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Spec</span><span class="p">(</span><span class="s">&#39;RIP3&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># receptor state: bound IP3 and Ca (open)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Ropen</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Spec</span><span class="p">(</span><span class="s">&#39;Ropen&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># receptor state: Ca bound to one inactivation site</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">RCa</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Spec</span><span class="p">(</span><span class="s">&#39;RCa&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># receptor state: Ca bound to two inactivation sites</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">R2Ca</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Spec</span><span class="p">(</span><span class="s">&#39;R2Ca&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># receptor state: Ca bound to three inactivation sites</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">R3Ca</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Spec</span><span class="p">(</span><span class="s">&#39;R3Ca&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># receptor state: Ca bound to four inactivation sites</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">R4Ca</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Spec</span><span class="p">(</span><span class="s">&#39;R4Ca&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c">#######################################################</span>
+</pre></div>
+</div>
+<p>Next we create a <em>surface system</em>. The function of a surface system is similar
+to the volume system used to group Reac objects in <a class="reference external" href="well_mixed.html"><em>Example: Well-Mixed Reaction Systems</em></a>. Basically,
+surface systems group a set of stoichiometric reaction rules that are described
+by <strong>SReac</strong> objects. It is often the case that such reactions are modeled as
+taking place on a membrane surface and not within a volume, although this is
+actually not a necessity. We need to create an object of type
+<a title="steps.model.Surfsys" class="reference external" href="API_model.html#steps.model.Surfsys"><tt class="xref docutils literal"><span class="pre">steps.model.Surfsys</span></tt></a>. The arguments to the class constructor are an identifier
+string and a reference to the parent <strong>Model</strong> object:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">surfsys</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">Surfsys</span><span class="p">(</span><span class="s">&#39;ssys&#39;</span><span class="p">,</span> <span class="n">mdl</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now it is time to specify the reaction stoichiometry, defined in
+<a class="reference internal" href="#figure-3-2"><em>Figure 3.2</em></a>. Unlike the model in <a class="reference external" href="well_mixed.html"><em>Example: Well-Mixed Reaction Systems</em></a>,
+reactions in this model are defined by the surface reaction objects
+(<a title="steps.model.SReac" class="reference external" href="API_model.html#steps.model.SReac"><tt class="xref docutils literal"><span class="pre">steps.model.SReac</span></tt></a>) in which the arguments include information about
+which compartment or patch the reactants and products belong to.
+At this stage we must chose which compartment we will label &#8216;outer&#8217;
+and which we will label &#8216;inner&#8217; and make sure to maintain this labelling
+throughout our definitions, and also in our geometry description.
+We chose to label the cytosol as the &#8216;outer&#8217; compartment and the ER
+as the &#8216;inner&#8217; compartment.</p>
+<p>We will first complete all “forward” binding reactions, recalling that
+“forward” and “backward” reactions must be declared separately:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="c"># The &#39;forward&#39; binding reactions:</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">R_bind_IP3_f</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">SReac</span><span class="p">(</span><span class="s">&#39;R_bind_IP3_f&#39;</span><span class="p">,</span> <span class="n">surfsys</span><span class="p">,</span> \
+<span class="go">        olhs=[IP3], slhs=[R], srhs=[RIP3])</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">RIP3_bind_Ca_f</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">SReac</span><span class="p">(</span><span class="s">&#39;RIP3_bind_Ca_f&#39;</span><span class="p">,</span> <span class="n">surfsys</span><span class="p">,</span> \
+<span class="go">        olhs=[Ca], slhs=[RIP3], srhs = [Ropen])</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">R_bind_Ca_f</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">SReac</span><span class="p">(</span><span class="s">&#39;R_bind_Ca_f&#39;</span><span class="p">,</span> <span class="n">surfsys</span><span class="p">,</span> \
+<span class="go">        olhs=[Ca], slhs=[R], srhs=[RCa])</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">RCa_bind_Ca_f</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">SReac</span><span class="p">(</span><span class="s">&#39;RCa_bind_Ca_f&#39;</span><span class="p">,</span> <span class="n">surfsys</span><span class="p">,</span> \
+<span class="go">        olhs=[Ca], slhs=[RCa],srhs = [R2Ca])</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">R2Ca_bind_Ca_f</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">SReac</span><span class="p">(</span><span class="s">&#39;R2Ca_bind_Ca_f&#39;</span><span class="p">,</span> <span class="n">surfsys</span><span class="p">,</span> \
+<span class="go">        olhs=[Ca], slhs= [R2Ca], srhs = [R3Ca])</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">R3Ca_bind_Ca_f</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">SReac</span><span class="p">(</span><span class="s">&#39;R3Ca_bind_ca_f&#39;</span><span class="p">,</span> <span class="n">surfsys</span><span class="p">,</span> \
+<span class="go">        olhs=[Ca], slhs=[R3Ca], srhs=[R4Ca])</span>
+</pre></div>
+</div>
+<p>The backslash used here merely allows us to continue our statement
+on the next line and is used to make the code more readable.</p>
+<p>Now for the “backward” unbinding reactions:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="c"># The &#39;backward&#39; unbinding reactions:</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">R_bind_IP3_b</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">SReac</span><span class="p">(</span><span class="s">&#39;R_bind_IP3_b&#39;</span><span class="p">,</span> <span class="n">surfsys</span><span class="p">,</span> \
+<span class="go">        slhs=[RIP3], orhs=[IP3], srhs=[R])</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">RIP3_bind_Ca_b</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">SReac</span><span class="p">(</span><span class="s">&#39;RIP3_bind_Ca_b&#39;</span><span class="p">,</span> <span class="n">surfsys</span><span class="p">,</span> \
+<span class="go">        slhs=[Ropen], orhs=[Ca], srhs=[RIP3])</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">R_bind_Ca_b</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">SReac</span><span class="p">(</span><span class="s">&#39;R_bind_Ca_b&#39;</span><span class="p">,</span> <span class="n">surfsys</span><span class="p">,</span> \
+<span class="go">        slhs=[RCa], orhs=[Ca], srhs=[R])</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">RCa_bind_Ca_b</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">SReac</span><span class="p">(</span><span class="s">&#39;RCa_bind_Ca_b&#39;</span><span class="p">,</span> <span class="n">surfsys</span><span class="p">,</span> \
+<span class="go">        slhs=[R2Ca], orhs=[Ca], srhs=[RCa])</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">R2Ca_bind_Ca_b</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">SReac</span><span class="p">(</span><span class="s">&#39;R2Ca_bind_Ca_b&#39;</span><span class="p">,</span> <span class="n">surfsys</span><span class="p">,</span> \
+<span class="go">        slhs=[R3Ca], orhs=[Ca], srhs= [R2Ca])</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">R3Ca_bind_Ca_b</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">SReac</span><span class="p">(</span><span class="s">&#39;R3Ca_bind_ca_b&#39;</span><span class="p">,</span> <span class="n">surfsys</span><span class="p">,</span> \
+<span class="go">        slhs=[R4Ca], orhs=[Ca], srhs=[R3Ca])</span>
+</pre></div>
+</div>
+<p>We model our calcium flux from the ER to the cytosol as a second order reaction.
+In effect we are saying, when such a reaction takes place, a calcium ion from
+the ER passes instantaneously through an open receptor to the cytosol.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="c"># Ca ions passing through open IP3R channel</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">R_Ca_channel_f</span> <span class="o">=</span> <span class="n">smodel</span><span class="o">.</span><span class="n">SReac</span><span class="p">(</span><span class="s">&#39;R_Ca_channel_f&#39;</span><span class="p">,</span> <span class="n">surfsys</span><span class="p">,</span> \
+<span class="go">        ilhs=[Ca], slhs=[Ropen], orhs=[Ca], srhs=[Ropen])</span>
+</pre></div>
+</div>
+<p>We can see that it is vital that when we come to describing our geometry
+that our compartment labelling is maintained. At this level we have specified
+whether some reactants and products belong to the &#8216;inner&#8217; or &#8216;outer&#8217; compartment,
+with the intention to label the cytosol as the &#8216;outer&#8217; compartment and the ER as
+the &#8216;inner&#8217; compartment, but we will not actually make that distinction until
+we come to describing our geometry.</p>
+<p>Next, we set all reaction constants&#8217; default values (see <a class="footnote-reference" href="#f3" id="id4">[3]</a>). These constants
+could have been passed to the initializer when we were creating our SReac objects,
+but for clarity we chose to set them here with method <tt class="docutils literal"><span class="pre">setKcst</span></tt>. We must make
+sure to supply our values in s.i. units, like all parameters in STEPS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">R_bind_IP3_f</span><span class="o">.</span><span class="n">setKcst</span><span class="p">(</span><span class="mf">1000e6</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">R_bind_IP3_b</span><span class="o">.</span><span class="n">setKcst</span><span class="p">(</span><span class="mi">25800</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">RIP3_bind_Ca_f</span><span class="o">.</span><span class="n">setKcst</span><span class="p">(</span><span class="mf">8000e6</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">RIP3_bind_Ca_b</span><span class="o">.</span><span class="n">setKcst</span><span class="p">(</span><span class="mi">2000</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">R_bind_Ca_f</span><span class="o">.</span><span class="n">setKcst</span><span class="p">(</span><span class="mf">8.889e6</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">R_bind_Ca_b</span><span class="o">.</span><span class="n">setKcst</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">RCa_bind_Ca_f</span><span class="o">.</span><span class="n">setKcst</span><span class="p">(</span><span class="mf">20e6</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">RCa_bind_Ca_b</span><span class="o">.</span><span class="n">setKcst</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">R2Ca_bind_Ca_f</span><span class="o">.</span><span class="n">setKcst</span><span class="p">(</span><span class="mf">40e6</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">R2Ca_bind_Ca_b</span><span class="o">.</span><span class="n">setKcst</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">R3Ca_bind_Ca_f</span><span class="o">.</span><span class="n">setKcst</span><span class="p">(</span><span class="mf">60e6</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">R3Ca_bind_Ca_b</span><span class="o">.</span><span class="n">setKcst</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">R_Ca_channel_f</span><span class="o">.</span><span class="n">setKcst</span><span class="p">(</span><span class="mf">2e8</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="geometry-specification">
+<h2>3.2. Geometry specification<a class="headerlink" href="#geometry-specification" title="Permalink to this headline">¶</a></h2>
+<p>The next step is to create the geometry for the model. We will chose well-mixed
+geometry, as in [sub:well-mixed geom], but we now have two compartments which
+are connected by a surface patch. We create two <a title="steps.geom.Comp" class="reference external" href="API_geom.html#steps.geom.Comp"><tt class="xref docutils literal"><span class="pre">steps.geom.Comp</span></tt></a> objects
+to represent the Endoplasmic Reticulum (which we intend to label the &#8216;inner&#8217;
+compartment) and the cytosol (&#8216;outer&#8217; compartment), and a <a title="steps.geom.Patch" class="reference external" href="API_geom.html#steps.geom.Patch"><tt class="xref docutils literal"><span class="pre">steps.geom.Patch</span></tt></a>
+object to represent the ER membrane between the ER and cytosol.
+We then add the stoichiometry we previously defined and grouped in our
+Surfsys object to the Patch object <a class="footnote-reference" href="#f4" id="id5">[4]</a>.</p>
+<p>First we create the two well-mixed compartments. With more than one compartment
+in the model we must make sure that the identifier strings are be unique amongst
+all compartments in the geometry container. We create the cytosol compartment
+with the minimum information (identifier string and reference to container),
+setting the volume with class method setVol, but set the volume of the ER during
+object construction purely to demonstrate the two possible ways to achieve the task:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">steps.geom</span> <span class="kn">as</span> <span class="nn">swm</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wmgeom</span> <span class="o">=</span> <span class="n">swm</span><span class="o">.</span><span class="n">Geom</span><span class="p">()</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># Create the cytosol compartment</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cyt</span> <span class="o">=</span> <span class="n">swm</span><span class="o">.</span><span class="n">Comp</span><span class="p">(</span><span class="s">&#39;cyt&#39;</span><span class="p">,</span> <span class="n">wmgeom</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cyt</span><span class="o">.</span><span class="n">setVol</span><span class="p">(</span><span class="mf">1.6572e-19</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c"># Create the Endoplasmic Reticulum compartment</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ER</span> <span class="o">=</span> <span class="n">swm</span><span class="o">.</span><span class="n">Comp</span><span class="p">(</span><span class="s">&#39;ER&#39;</span><span class="p">,</span> <span class="n">wmgeom</span><span class="p">,</span> <span class="n">vol</span> <span class="o">=</span> <span class="mf">1.968e-20</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We now create a Patch object, defining the &#8216;inner&#8217; and &#8216;outer&#8217; compartments.
+We wish to label the ER as the &#8216;inner&#8217; Comp and the cytosol as the &#8216;outer&#8217; Comp,
+which we achieve by their order to the Patch object constructor.
+The 3rd (required) argument to the constructor is a reference to the &#8216;inner&#8217;
+compartment and the 4th (optional) argument is a reference to the &#8216;outer&#8217;
+compartment. It is vital that care is taken in the order to the constructor
+of the Comp objects, so that the required labelling from or Surface Reaction
+definitions is maintained <a class="footnote-reference" href="#f5" id="id6">[5]</a>.  We can check the labelling is as desired after
+object construction with methods <tt class="docutils literal"><span class="pre">getOComp</span></tt> and <tt class="docutils literal"><span class="pre">getIComp</span></tt> <a class="footnote-reference" href="#f6" id="id7">[6]</a>.</p>
+<p>We also set the surface area of the patch:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="c"># ER is the &#39;inner&#39; compartment, cyt is the &#39;outer&#39; compartment</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">memb</span> <span class="o">=</span> <span class="n">swm</span><span class="o">.</span><span class="n">Patch</span><span class="p">(</span><span class="s">&#39;memb&#39;</span><span class="p">,</span> <span class="n">wmgeom</span><span class="p">,</span> <span class="n">ER</span><span class="p">,</span> <span class="n">cyt</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">memb</span><span class="o">.</span><span class="n">addSurfsys</span><span class="p">(</span><span class="s">&#39;ssys&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">memb</span><span class="o">.</span><span class="n">setArea</span><span class="p">(</span><span class="mf">0.4143e-12</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="s">&#39;Inner compartment to memb is&#39;</span><span class="p">,</span> <span class="n">memb</span><span class="o">.</span><span class="n">getIComp</span><span class="p">()</span><span class="o">.</span><span class="n">getID</span><span class="p">()</span>
+<span class="go">Inner compartment to memb is ER</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="s">&#39;Outer compartment to patch is&#39;</span><span class="p">,</span> <span class="n">memb</span><span class="o">.</span><span class="n">getOComp</span><span class="p">()</span><span class="o">.</span><span class="n">getID</span><span class="p">()</span>
+<span class="go">Outer compartment to memb is cyt</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="simulation-with-wmdirect">
+<h2>3.3. Simulation with <tt class="docutils literal"><span class="pre">Wmdirect</span></tt><a class="headerlink" href="#simulation-with-wmdirect" title="Permalink to this headline">¶</a></h2>
+<p>Now the model is completed and ready for simulation. To run the simulation,
+we create a random number generator object, as we did previously in
+<a class="reference external" href="well_mixed.html"><em>Example: Well-Mixed Reaction Systems</em></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">steps.rng</span> <span class="kn">as</span> <span class="nn">srng</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">srng</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s">&#39;mt19937&#39;</span><span class="p">,</span> <span class="mi">512</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">r</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="mi">7233</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>and use the <tt class="docutils literal"><span class="pre">Wmdirect</span></tt> solver as we also did:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">steps.solver</span> <span class="kn">as</span> <span class="nn">ssolver</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sim</span> <span class="o">=</span> <span class="n">ssolver</span><span class="o">.</span><span class="n">Wmdirect</span><span class="p">(</span><span class="n">mdl</span><span class="p">,</span> <span class="n">wmgeom</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To run the simulation and plot the data, we import modules from pylab and
+numpy and create arrays to store the data, as we also did previously.
+This time, however, we also want to plot the standard deviation so we
+create arrays to store that data too. Here we create variable <tt class="docutils literal"><span class="pre">NITER</span></tt>
+and assign it the value 100, the number of iterations we wish to run <a class="footnote-reference" href="#f7" id="id8">[7]</a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">NITER</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pylab</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tpnt</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.201</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">NITER</span><span class="p">,</span> <span class="mi">201</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res_std</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">201</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res_std1</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">201</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res_std2</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">201</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>At the beginning of the simulation, we reset the solver state and set the
+initial concentration or count (by “count” we mean the number of molecules)
+of each species (any species we don&#8217;t explicitly assign a concentration or
+count to will be initialized with the default value of zero which was set
+when we called the reset function) and run the simulation for NITER number
+of iterations. In the following example code, we record the number of IP3
+receptors in open state (&#8216;Ropen&#8217; in &#8216;memb&#8217;) and the concentration of calcium
+in the cytosol (&#8216;Ca&#8217; in &#8216;cyt&#8217;). We include a pylab.plot call within our main
+loop to plot the number of open receptors for each individual iteration:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">NITER</span><span class="p">):</span>
+<span class="go">        sim.reset()</span>
+<span class="go">        sim.setCompConc(&#39;cyt&#39;, &#39;Ca&#39;, 3.30657e-8)</span>
+<span class="go">        sim.setCompCount(&#39;cyt&#39;, &#39;IP3&#39;, 6)</span>
+<span class="go">        sim.setCompConc(&#39;ER&#39;, &#39;Ca&#39;, 150e-6)</span>
+<span class="go">        sim.setCompClamped(&#39;ER&#39;, &#39;Ca&#39;, True)</span>
+<span class="go">        sim.setPatchCount(&#39;memb&#39;, &#39;R&#39;, 160)</span>
+<span class="go">        for t in xrange(0,201):</span>
+<span class="go">            sim.run(tpnt[t])</span>
+<span class="go">            res[i,t,0] = sim.getPatchCount(&#39;memb&#39;, &#39;Ropen&#39;)</span>
+<span class="go">            res[i,t,1] = sim.getCompConc(&#39;cyt&#39;, &#39;Ca&#39;)</span>
+<span class="go">        pylab.plot(tpnt, res[i,:,0], color = &#39;blue&#39;, linewidth = 0.1)</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>We can also calculate the mean and standard deviation of our data using
+NumPy functions and plot in the same figure as our individual runs
+<a class="reference internal" href="#figure-3-3"><em>Figure 3.3</em></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">res_mean</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res_std</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res_std1</span> <span class="o">=</span> <span class="n">res_mean</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">res_std</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res_std2</span> <span class="o">=</span> <span class="n">res_mean</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span> <span class="n">res_std</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tpnt</span><span class="p">,</span> <span class="n">res_mean</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">color</span> <span class="o">=</span> <span class="s">&#39;black&#39;</span><span class="p">,</span> \
+<span class="go">        linewidth = 2.0, label = &#39;mean&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tpnt</span><span class="p">,</span> <span class="n">res_std1</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span> <span class="s">&#39;gray&#39;</span><span class="p">,</span> \
+<span class="go">    linewidth = 1.0, label=&#39;std&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tpnt</span><span class="p">,</span> <span class="n">res_std2</span><span class="p">,</span><span class="n">color</span> <span class="o">=</span> <span class="s">&#39;gray&#39;</span><span class="p">,</span> <span class="n">linewidth</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;Time (sec)&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;# IP3 receptors in open state&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&#39;IP3 receptor model: </span><span class="si">%d</span><span class="s"> iterations with Wmdirect&#39;</span>\
+<span class="go">    %NITER)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pylab</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="figure" id="figure-3-3">
+<img alt="_images/ip3_fig1png.png" src="_images/ip3_fig1png.png" style="width: 6in; height: 4.6in;" />
+<p class="caption">The number of IP3 receptors in open state: blue traces show individual
+iterations, black trace shows the mean and gray trace shows the standard
+deviation of 100 iterations. Simulated with the <tt class="docutils literal"><span class="pre">Wmdirect</span></tt> solver.</p>
+</div>
+<p class="rubric">Footnotes</p>
+<table class="docutils footnote" frame="void" id="f1" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>Surface reactions are designed to represent reactions where one
+reactant is embedded in a membrane, but in fact if all reactants and
+products belong to the same compartment and none appear on a patch
+it will behave exactly like the equivalent Reac object.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="f2" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[2]</a></td><td>Reactant species cannot belong to different compartments,
+so attempting to create an SReac object with both olhs and <tt class="docutils literal"><span class="pre">ilhs</span></tt> will
+result in an error.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="f3" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[3]</td><td><em>(<a class="fn-backref" href="#id3">1</a>, <a class="fn-backref" href="#id4">2</a>)</em> Doi T, Kuroda S, Mishikawa T, Kawato M: Inositol
+1,4,5-Triphosphate-Dependent <img class="math" src="_images/math/11e7ec151a80831dd8ddec1c9e30352fd517e2e7.png" alt="Ca^{\text{2+}}"/> Threshold Dynamics
+Detect Spike Timing in Cerebellar Purkinje Cells. J Neurosci 2005, 25(4):950-961</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="f4" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id5">[4]</a></td><td>Any volume-reactions we defined with Reac objects and grouped in Volsys
+containers would be added to the Compartments at this stage.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="f5" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id6">[5]</a></td><td>A Patch must have an inner compartment by convention,
+but does not require an outer compartment. Obviously any surface reaction
+rules that contain reactants or products in the outer compartment cannot be
+added to such a Patch.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="f6" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id7">[6]</a></td><td>Typically, get functions return references to the object, not the identifier
+string, so we can use any of the object methods on the returned reference to
+access information about the object. Here we use method getID, which returns
+the identifier string of the object.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="f7" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id8">[7]</a></td><td>It is perhaps better to group simulation parameters together at the
+beginning of the script (such as number of iterations, simulation end time,
+data collection time step, etc) so we can change a parameter simply by
+changing one variable, which reduces the amount of typing and reduces the
+scope for error. This is an approach we will adopt in the next chapter.</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="manual_index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#">3. Example: Surface-Volume Reactions (IP3 Model)</a><ul>
+<li><a class="reference external" href="#model-specification">3.1. Model specification</a></li>
+<li><a class="reference external" href="#geometry-specification">3.2. Geometry specification</a></li>
+<li><a class="reference external" href="#simulation-with-wmdirect">3.3. Simulation with <tt class="docutils literal"><span class="pre">Wmdirect</span></tt></a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="well_mixed.html"
+                                  title="previous chapter">2. Example: Well-Mixed Reaction Systems</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="diffusion.html"
+                                  title="next chapter">4. Example: Simulating Diffusion</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/ip3.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="diffusion.html" title="4. Example: Simulating Diffusion"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="well_mixed.html" title="2. Example: Well-Mixed Reaction Systems"
+             >previous</a> |</li>
+        <li><a href="manual_index.html">STEPS User Manual v1.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, The STEPS Development Team.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.5.
+    </div>
+  </body>
+</html>

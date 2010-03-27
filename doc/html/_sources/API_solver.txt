@@ -1,0 +1,253 @@
+.. _API_solver:
+
+************
+steps.solver
+************
+
+.. module:: steps.solver
+
+Implementation of simulation solvers. 
+
+.. figure::  images/steps.solver.jpg
+   :align:   center
+   
+   Class diagram for steps.solver namespace.
+   
+* :class:`steps.solver.Wmrk4`
+* :class:`steps.solver.Wmdirect`
+* :class:`steps.solver.Tetexact`
+
+Each solver is a partial or full implementation of the STEPS solver API.
+At the moment STEPS implements three different solvers. 
+
+:class:`steps.solver.Wmrk4` implements a well-mixed, deterministic solver 
+based on the Runge–Kutta method. 
+
+:class:`steps.solver.Wmdirect` implements a stochastic, well-mixed solver 
+based on Gillespie's Direct SSA Method. 
+
+:class:`steps.solver.Tetexact` implements a stochastic reaction-diffusion 
+solver, based on Gillespie's Direct SSA Method extended for diffusive fluxes 
+between tetrahedral elements in complex geometries.
+
+
+.. autoclass:: Wmrk4
+
+    **Solver Information**
+    
+    .. automethod:: getSolverName
+    .. automethod:: getSolverDesc
+    .. automethod:: getSolverAuthors
+    .. automethod:: getSolverEmail
+    
+    **Solver Control**
+    
+    .. automethod:: reset
+    .. automethod:: run
+    .. automethod:: advance
+    .. automethod:: step
+    .. automethod:: setDT
+    .. automethod:: getDT
+    .. automethod:: getTime
+    .. automethod:: setTime
+    
+    **Compartment Data Access**
+    
+    .. automethod:: getCompVol
+    .. automethod:: setCompVol
+    .. automethod:: getCompCount
+    .. automethod:: setCompCount
+    .. automethod:: getCompAmount
+    .. automethod:: setCompAmount
+    .. automethod:: getCompConc
+    .. automethod:: setCompConc
+    .. automethod:: getCompClamped
+    .. automethod:: setCompClamped 
+    .. automethod:: getCompReacK 
+    .. automethod:: setCompReacK
+    .. automethod:: getCompReacActive
+    .. automethod:: setCompReacActive
+        
+    **Patch Data Access**
+    
+    .. automethod:: getPatchArea
+    .. automethod:: setPatchArea
+    .. automethod:: getPatchCount
+    .. automethod:: setPatchCount
+    .. automethod:: getPatchAmount
+    .. automethod:: setPatchAmount
+    .. automethod:: getPatchClamped
+    .. automethod:: setPatchClamped
+    .. automethod:: getPatchSReacK
+    .. automethod:: setPatchSReacK
+    .. automethod:: getPatchSReacActive
+    .. automethod:: setPatchSReacActive
+    
+.. autoclass:: Wmdirect
+
+    **Solver Information**
+    
+    .. automethod:: getSolverName
+    .. automethod:: getSolverDesc
+    .. automethod:: getSolverAuthors
+    .. automethod:: getSolverEmail
+    
+    **Solver Control**
+    
+    .. automethod:: reset
+    .. automethod:: run
+    .. automethod:: advance
+    .. automethod:: step
+    .. automethod:: getTime
+    .. automethod:: setTime
+    .. automethod:: getA0
+    .. automethod:: getNSteps
+    .. automethod:: setNSteps
+    
+    **Compartment Data Access**
+    
+    .. automethod:: getCompVol
+    .. automethod:: setCompVol
+    .. automethod:: getCompCount
+    .. automethod:: setCompCount
+    .. automethod:: getCompAmount
+    .. automethod:: setCompAmount
+    .. automethod:: getCompConc
+    .. automethod:: setCompConc
+    .. automethod:: getCompClamped
+    .. automethod:: setCompClamped 
+    .. automethod:: getCompReacK 
+    .. automethod:: setCompReacK
+    .. automethod:: getCompReacActive
+    .. automethod:: setCompReacActive
+    .. automethod:: getCompReacC
+    .. automethod:: getCompReacH
+    .. automethod:: getCompReacA
+    .. automethod:: getCompReacExtent
+    .. automethod:: resetCompReacExtent
+        
+    **Patch Data Access**
+    
+    .. automethod:: getPatchArea
+    .. automethod:: setPatchArea
+    .. automethod:: getPatchCount
+    .. automethod:: setPatchCount
+    .. automethod:: getPatchAmount
+    .. automethod:: setPatchAmount
+    .. automethod:: getPatchClamped
+    .. automethod:: setPatchClamped
+    .. automethod:: getPatchSReacK
+    .. automethod:: setPatchSReacK
+    .. automethod:: getPatchSReacActive
+    .. automethod:: setPatchSReacActive
+    .. automethod:: getPatchSReacC
+    .. automethod:: getPatchSReacH
+    .. automethod:: getPatchSReacA
+    .. automethod:: getPatchSReacExtent
+    .. automethod:: resetPatchSReacExtent
+    
+.. autoclass:: Tetexact
+
+    **Solver Information**
+    
+    .. automethod:: getSolverName
+    .. automethod:: getSolverDesc
+    .. automethod:: getSolverAuthors
+    .. automethod:: getSolverEmail
+    
+    **Solver Control**
+    
+    .. automethod:: reset
+    .. automethod:: run
+    .. automethod:: advance
+    .. automethod:: step
+    .. automethod:: getTime
+    .. automethod:: setTime
+    .. automethod:: getA0
+    .. automethod:: getNSteps
+    .. automethod:: setNSteps
+    
+    **Compartment Data Access**
+    
+    .. automethod:: getCompVol
+    .. automethod:: getCompCount
+    .. automethod:: setCompCount
+    .. automethod:: getCompAmount
+    .. automethod:: setCompAmount
+    .. automethod:: getCompConc
+    .. automethod:: setCompConc
+    .. automethod:: getCompClamped
+    .. automethod:: setCompClamped 
+    .. automethod:: getCompReacK 
+    .. automethod:: setCompReacK
+    .. automethod:: getCompReacActive
+    .. automethod:: setCompReacActive
+    .. automethod:: getCompDiffD
+    .. automethod:: setCompDiffD
+    .. automethod:: getCompDiffActive
+    .. automethod:: setCompDiffActive
+    .. automethod:: getCompReacC
+    .. automethod:: getCompReacH
+    .. automethod:: getCompReacA
+    .. automethod:: getCompReacExtent
+    .. automethod:: resetCompReacExtent
+        
+    **Patch Data Access**
+    
+    .. automethod:: getPatchArea
+    .. automethod:: getPatchCount
+    .. automethod:: setPatchCount
+    .. automethod:: getPatchAmount
+    .. automethod:: setPatchAmount
+    .. automethod:: getPatchClamped
+    .. automethod:: setPatchClamped
+    .. automethod:: getPatchSReacK
+    .. automethod:: setPatchSReacK
+    .. automethod:: getPatchSReacActive
+    .. automethod:: setPatchSReacActive
+    .. automethod:: getPatchSReacC
+    .. automethod:: getPatchSReacH
+    .. automethod:: getPatchSReacA
+    .. automethod:: getPatchSReacExtent
+    .. automethod:: resetPatchSReacExtent
+    
+    **Tetrahedral Data Access**
+    
+    .. automethod:: getTetVol
+    .. automethod:: getTetCount
+    .. automethod:: setTetCount
+    .. automethod:: getTetAmount
+    .. automethod:: setTetAmount
+    .. automethod:: getTetConc
+    .. automethod:: setTetConc
+    .. automethod:: getTetClamped
+    .. automethod:: setTetClamped
+    .. automethod:: getTetReacK
+    .. automethod:: setTetReacK
+    .. automethod:: getTetReacActive
+    .. automethod:: setTetReacActive
+    .. automethod:: getTetDiffD
+    .. automethod:: setTetDiffD
+    .. automethod:: getTetDiffActive
+    .. automethod:: setTetDiffActive
+    .. automethod:: getTetReacC
+    .. automethod:: getTetReacH
+    .. automethod:: getTetReacA
+    .. automethod:: getTetDiffA
+    
+    **Triangular Data Access**
+    
+    .. automethod:: getTriArea
+    .. automethod:: getTriCount
+    .. automethod:: setTriCount
+    .. automethod:: getTriAmount
+    .. automethod:: setTriAmount
+    .. automethod:: getTriClamped
+    .. automethod:: setTriClamped
+    .. automethod:: getTriSReacK
+    .. automethod:: setTriSReacK
+    .. automethod:: getTriSReacActive
+    .. automethod:: setTriSReacActive
+    .. automethod:: getTriSReacC
+    .. automethod:: getTriSReacH
+    .. automethod:: getTriSReacA
