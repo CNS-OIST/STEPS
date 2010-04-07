@@ -180,7 +180,7 @@ def solver_ext():
         
             'cpp/model/model.cpp', 'cpp/model/diff.cpp',
             'cpp/model/reac.cpp','cpp/model/spec.cpp','cpp/model/sreac.cpp',
-            'cpp/model/surfsys.cpp','cpp/model/volsys.cpp'
+            'cpp/model/surfsys.cpp','cpp/model/volsys.cpp',
             
             'cpp/math/tetrahedron.cpp','cpp/geom/tetmesh.cpp',
             'cpp/math/linsolve.cpp','cpp/math/triangle.cpp',
