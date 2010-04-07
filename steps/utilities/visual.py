@@ -186,7 +186,7 @@ class MeshCanvas(MyCanvasBase):
         self.ntris = self.mesh.ntris
         self.verts = []
         self.tris = []
-        self.tribounds = self.mesh.getSurfTris()
+        self.tribounds = self.mesh.getTriBoundary()
         boundmin = self.mesh.getBoundMin()
         boundmax = self.mesh.getBoundMax()
         bmin = min(boundmin)
