@@ -26,8 +26,14 @@
 #  Last Changed Date: $Date$
 #  Last Changed By:   $Author$
 
-from distutils.core import setup
-from distutils.extension import Extension
+try:
+    import ez_setup
+    ez_setup.use_setuptools()
+    from setuptools import setup, Extension
+    
+except ImportError:
+    from distutils.core import setup
+    from distutils.extension import Extension
 
 
 def name():

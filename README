@@ -45,14 +45,14 @@ The simplest way to compile this package is:
                 python setup.py build --compiler=cygwin
 
   6. Install the binary package.
-                python setup.py install
+                [sudo] python setup.py install
 
 Example:
     $ cd ~/Downlaods
     $ tar -xvzf STEPS-1.1.0.tar.gz
     $ cd STEPS-1.1.0
     $ python setup.py build
-    $ python setup.py install
+    $ [sudo] python setup.py install
     
 Advanced Installation
 =====================
