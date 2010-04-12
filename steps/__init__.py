@@ -23,14 +23,13 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-"""STochastic Engine for Pathway Simulation
-"""
-
-
+__name__      = 'STochastic Engine for Pathway Simulation'
+__version__   = '1.1.1'
+__author__    = 'STEPS Development Team'
+__url__       = 'steps.sourceforge.net'
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-pass
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
