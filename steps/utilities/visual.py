@@ -23,9 +23,9 @@
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-#  Last Changed Rev:  $Rev$
-#  Last Changed Date: $Date$
-#  Last Changed By:   $Author$
+#  Last Changed Rev:  $Rev: 322 $
+#  Last Changed Date: $Date: 2010-04-07 10:43:03 +0900 (Wed, 07 Apr 2010) $
+#  Last Changed By:   $Author: wchen $
 
 """ 
 .. Note::

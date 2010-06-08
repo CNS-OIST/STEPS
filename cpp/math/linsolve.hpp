@@ -23,9 +23,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /*
- *  Last Changed Rev:  $Rev$
- *  Last Changed Date: $Date$
- *  Last Changed By:   $Author$
+ *  Last Changed Rev:  $Rev: 307 $
+ *  Last Changed Date: $Date: 2010-03-24 09:25:37 +0900 (Wed, 24 Mar 2010) $
+ *  Last Changed By:   $Author: wchen $
  */
 
 #ifndef STEPS_MATH_LINSOLVE_HPP

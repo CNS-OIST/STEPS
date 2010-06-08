@@ -24,9 +24,9 @@
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-#  Last Changed Rev:  $Rev$
-#  Last Changed Date: $Date$
-#  Last Changed By:   $Author$
+#  Last Changed Rev:  $Rev: 313 $
+#  Last Changed Date: $Date: 2010-03-25 16:24:21 +0900 (Thu, 25 Mar 2010) $
+#  Last Changed By:   $Author: wchen $
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # This file is the user-interface file for all model objects in steps.
@@ -38,12 +38,12 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-from . import model_swig
-import _model_swig
+from . import steps_swig
+import _steps_swig
 
 
 
-class Model(model_swig.Model) : 
+class Model(steps_swig.Model) : 
     """
     Top-level container for the objects in a kinetic model.
     
@@ -61,13 +61,13 @@ class Model(model_swig.Model) :
             None
         """
         
-        this = _model_swig.new_Model(*args)
+        this = _steps_swig.new_Model(*args)
         try: self.this.append(this)
         except: self.this = this
         # let the model object do the cleaning-up
         self.thisown = True
 
-class Spec(model_swig.Spec) :
+class Spec(steps_swig.Spec) :
 
     """
     A chemical species which can be a reactant and/or product in reaction 
@@ -86,19 +86,19 @@ class Spec(model_swig.Spec) :
             * string id
             * steps.model.Model mdl
         """
-        this = _model_swig.new_Spec(*args)
+        this = _steps_swig.new_Spec(*args)
         try: self.this.append(this)
         except: self.this = this
         self.thisown = False
-        self.__swig_setmethods__["id"] = _model_swig.Spec_setID
-        self.__swig_getmethods__["id"] = _model_swig.Spec_getID
-        self.__swig_getmethods__["model"] = _model_swig.Spec_getModel
-    id = model_swig._swig_property(_model_swig.Spec_getID, _model_swig.Spec_setID)
+        self.__swig_setmethods__["id"] = _steps_swig.Spec_setID
+        self.__swig_getmethods__["id"] = _steps_swig.Spec_getID
+        self.__swig_getmethods__["model"] = _steps_swig.Spec_getModel
+    id = steps_swig._swig_property(_steps_swig.Spec_getID, _steps_swig.Spec_setID)
     """Identifier string of the species."""
-    model = model_swig._swig_property(_model_swig.Spec_getModel)
+    model = steps_swig._swig_property(_steps_swig.Spec_getModel)
     """Reference to parent model."""
 
-class Surfsys(model_swig.Surfsys):
+class Surfsys(steps_swig.Surfsys):
     """
     A container that groups reactions involving a reactant embedded in a membrane.
     """
@@ -115,19 +115,19 @@ class Surfsys(model_swig.Surfsys):
             * string id
             * steps.model.Model mdl
         """
-        this = _model_swig.new_Surfsys(*args)
+        this = _steps_swig.new_Surfsys(*args)
         try: self.this.append(this)
         except: self.this = this
         self.thisown = False
-        self.__swig_setmethods__["id"] = _model_swig.Surfsys_setID
-        self.__swig_getmethods__["id"] = _model_swig.Surfsys_getID
-        self.__swig_getmethods__["model"] = _model_swig.Surfsys_getModel
-    id = model_swig._swig_property(_model_swig.Surfsys_getID, _model_swig.Surfsys_setID)
+        self.__swig_setmethods__["id"] = _steps_swig.Surfsys_setID
+        self.__swig_getmethods__["id"] = _steps_swig.Surfsys_getID
+        self.__swig_getmethods__["model"] = _steps_swig.Surfsys_getModel
+    id = steps_swig._swig_property(_steps_swig.Surfsys_getID, _steps_swig.Surfsys_setID)
     """Identifier string of the surface system."""
-    model = model_swig._swig_property(_model_swig.Surfsys_getModel)
+    model = steps_swig._swig_property(_steps_swig.Surfsys_getModel)
     """Reference to parent model."""
 
-class Volsys(model_swig.Volsys) :
+class Volsys(steps_swig.Volsys) :
     """
     A container that groups reactions involving reactants embedded in a volume.
     """
@@ -144,19 +144,19 @@ class Volsys(model_swig.Volsys) :
             * string id
             * steps.model.Model mdl
         """
-        this = _model_swig.new_Volsys(*args)
+        this = _steps_swig.new_Volsys(*args)
         try: self.this.append(this)
         except: self.this = this
         self.thisown = False
-        self.__swig_setmethods__["id"] = _model_swig.Volsys_setID
-        self.__swig_getmethods__["id"] = _model_swig.Volsys_getID
-        self.__swig_getmethods__["model"] = _model_swig.Volsys_getModel
-    id = model_swig._swig_property(_model_swig.Volsys_getID, _model_swig.Volsys_setID)
+        self.__swig_setmethods__["id"] = _steps_swig.Volsys_setID
+        self.__swig_getmethods__["id"] = _steps_swig.Volsys_getID
+        self.__swig_getmethods__["model"] = _steps_swig.Volsys_getModel
+    id = steps_swig._swig_property(_steps_swig.Volsys_getID, _steps_swig.Volsys_setID)
     """Identifier string of the volume system."""
-    model = model_swig._swig_property(_model_swig.Volsys_getModel)
+    model = steps_swig._swig_property(_steps_swig.Volsys_getModel)
     """Reference to parent model."""
 
-class Diff(model_swig.Diff) :
+class Diff(steps_swig.Diff) :
     """
     A diffusion rule for a chemical species in a volume.
     
@@ -180,30 +180,30 @@ class Diff(model_swig.Diff) :
             * steps.model.Spec lig
             * float dcst (default = 0.0)
         """
-        this = _model_swig.new_Diff(*args, **kwargs)
+        this = _steps_swig.new_Diff(*args, **kwargs)
         try: self.this.append(this)
         except: self.this = this
         self.thisown = False
-        self.__swig_setmethods__["id"] = _model_swig.Diff_setID
-        self.__swig_getmethods__["id"] = _model_swig.Diff_getID
-        self.__swig_getmethods__["model"] = _model_swig.Diff_getModel
-        self.__swig_getmethods__["volsys"] = _model_swig.Diff_getVolsys
-        self.__swig_setmethods__["lig"] = _model_swig.Diff_setLig
-        self.__swig_getmethods__["lig"] = _model_swig.Diff_getLig
-        self.__swig_setmethods__["dcst"] = _model_swig.Diff_setDcst
-        self.__swig_getmethods__["dcst"] = _model_swig.Diff_getDcst
-    id = model_swig._swig_property(_model_swig.Diff_getID, _model_swig.Diff_setID)
+        self.__swig_setmethods__["id"] = _steps_swig.Diff_setID
+        self.__swig_getmethods__["id"] = _steps_swig.Diff_getID
+        self.__swig_getmethods__["model"] = _steps_swig.Diff_getModel
+        self.__swig_getmethods__["volsys"] = _steps_swig.Diff_getVolsys
+        self.__swig_setmethods__["lig"] = _steps_swig.Diff_setLig
+        self.__swig_getmethods__["lig"] = _steps_swig.Diff_getLig
+        self.__swig_setmethods__["dcst"] = _steps_swig.Diff_setDcst
+        self.__swig_getmethods__["dcst"] = _steps_swig.Diff_getDcst
+    id = steps_swig._swig_property(_steps_swig.Diff_getID, _steps_swig.Diff_setID)
     """Identifier string of the diffusion."""
-    model = model_swig._swig_property(_model_swig.Diff_getModel)
+    model = steps_swig._swig_property(_steps_swig.Diff_getModel)
     """Reference to parent model."""
-    volsys = model_swig._swig_property(_model_swig.Diff_getVolsys)
+    volsys = steps_swig._swig_property(_steps_swig.Diff_getVolsys)
     """Reference to parent volume system."""
-    dcst = model_swig._swig_property(_model_swig.Diff_getDcst, _model_swig.Diff_setDcst)
+    dcst = steps_swig._swig_property(_steps_swig.Diff_getDcst, _steps_swig.Diff_setDcst)
     """Diffusion constant."""
-    lig = model_swig._swig_property(_model_swig.Diff_getLig, _model_swig.Diff_setLig)
+    lig = steps_swig._swig_property(_steps_swig.Diff_getLig, _steps_swig.Diff_setLig)
     """Reference to diffusion species."""
 
-class Reac(model_swig.Reac) :
+class Reac(steps_swig.Reac) :
     """
     A kinetic reaction rule in a volume.
     
@@ -230,37 +230,37 @@ class Reac(model_swig.Reac) :
             * list(steps.model.Spec) rhs (default = [ ]) 
             * float kcst (default = 0.0)
         """
-        this = _model_swig.new_Reac(*args, **kwargs)
+        this = _steps_swig.new_Reac(*args, **kwargs)
         try: self.this.append(this)
         except: self.this = this
         self.thisown = False
-        self.__swig_setmethods__["id"] = _model_swig.Reac_setID
-        self.__swig_getmethods__["id"] = _model_swig.Reac_getID
-        self.__swig_getmethods__["model"] = _model_swig.Reac_getModel
-        self.__swig_getmethods__["volsys"] = _model_swig.Reac_getVolsys
-        self.__swig_setmethods__["kcst"] = _model_swig.Reac_setKcst
-        self.__swig_getmethods__["kcst"] = _model_swig.Reac_getKcst
-        self.__swig_setmethods__["lhs"] = _model_swig.Reac_setLHS
-        self.__swig_getmethods__["lhs"] = _model_swig.Reac_getLHS
-        self.__swig_setmethods__["rhs"] = _model_swig.Reac_setRHS
-        self.__swig_getmethods__["rhs"] = _model_swig.Reac_getRHS
-        self.__swig_getmethods__["order"] = _model_swig.Reac_getOrder
-    id = model_swig._swig_property(_model_swig.Reac_getID, _model_swig.Reac_setID)
+        self.__swig_setmethods__["id"] = _steps_swig.Reac_setID
+        self.__swig_getmethods__["id"] = _steps_swig.Reac_getID
+        self.__swig_getmethods__["model"] = _steps_swig.Reac_getModel
+        self.__swig_getmethods__["volsys"] = _steps_swig.Reac_getVolsys
+        self.__swig_setmethods__["kcst"] = _steps_swig.Reac_setKcst
+        self.__swig_getmethods__["kcst"] = _steps_swig.Reac_getKcst
+        self.__swig_setmethods__["lhs"] = _steps_swig.Reac_setLHS
+        self.__swig_getmethods__["lhs"] = _steps_swig.Reac_getLHS
+        self.__swig_setmethods__["rhs"] = _steps_swig.Reac_setRHS
+        self.__swig_getmethods__["rhs"] = _steps_swig.Reac_getRHS
+        self.__swig_getmethods__["order"] = _steps_swig.Reac_getOrder
+    id = steps_swig._swig_property(_steps_swig.Reac_getID, _steps_swig.Reac_setID)
     """Identifier string of the reaction."""
-    model = model_swig._swig_property(_model_swig.Reac_getModel)
+    model = steps_swig._swig_property(_steps_swig.Reac_getModel)
     """Reference to parent model."""
-    volsys = model_swig._swig_property(_model_swig.Reac_getVolsys)
+    volsys = steps_swig._swig_property(_steps_swig.Reac_getVolsys)
     """Reference to parent volume system."""
-    kcst = model_swig._swig_property(_model_swig.Reac_getKcst, _model_swig.Reac_setKcst)
+    kcst = steps_swig._swig_property(_steps_swig.Reac_getKcst, _steps_swig.Reac_setKcst)
     """Reaction constant."""
-    lhs = model_swig._swig_property(_model_swig.Reac_getLHS, _model_swig.Reac_setLHS)
+    lhs = steps_swig._swig_property(_steps_swig.Reac_getLHS, _steps_swig.Reac_setLHS)
     """Left hand side reactants."""
-    rhs = model_swig._swig_property(_model_swig.Reac_getRHS, _model_swig.Reac_setRHS)
+    rhs = steps_swig._swig_property(_steps_swig.Reac_getRHS, _steps_swig.Reac_setRHS)
     """Right hand side reactants."""
-    order = model_swig._swig_property(_model_swig.Reac_getOrder)
+    order = steps_swig._swig_property(_steps_swig.Reac_getOrder)
     """Order of the reaction."""
     
-class SReac(model_swig.SReac) :
+class SReac(steps_swig.SReac) :
     """
     A reaction rule where at least one reactant is embedded in a surface. 
 
@@ -304,53 +304,53 @@ class SReac(model_swig.SReac) :
             * list(steps.model.Spec) srhs (default = [ ])
             * float kcst (default = 0.0)
         """
-        this = _model_swig.new_SReac(*args, **kwargs)
+        this = _steps_swig.new_SReac(*args, **kwargs)
         try: self.this.append(this)
         except: self.this = this
         self.thisown = False
-        self.__swig_setmethods__["id"] = _model_swig.SReac_setID
-        self.__swig_getmethods__["id"] = _model_swig.SReac_getID
-        self.__swig_getmethods__["model"] = _model_swig.SReac_getModel
-        self.__swig_getmethods__["surfsys"] = _model_swig.SReac_getSurfsys
-        self.__swig_setmethods__["kcst"] = _model_swig.SReac_setKcst
-        self.__swig_getmethods__["kcst"] = _model_swig.SReac_getKcst
-        self.__swig_getmethods__["order"] = _model_swig.SReac_getOrder
-        self.__swig_getmethods__["outer"] = _model_swig.SReac_getOuter
-        self.__swig_setmethods__["olhs"] = _model_swig.SReac_setOLHS
-        self.__swig_getmethods__["olhs"] = _model_swig.SReac_getOLHS
-        self.__swig_setmethods__["ilhs"] = _model_swig.SReac_setILHS
-        self.__swig_getmethods__["ilhs"] = _model_swig.SReac_getILHS
-        self.__swig_setmethods__["slhs"] = _model_swig.SReac_setSLHS
-        self.__swig_getmethods__["slhs"] = _model_swig.SReac_getSLHS
-        self.__swig_setmethods__["irhs"] = _model_swig.SReac_setIRHS
-        self.__swig_getmethods__["irhs"] = _model_swig.SReac_getIRHS
-        self.__swig_setmethods__["srhs"] = _model_swig.SReac_setSRHS
-        self.__swig_getmethods__["srhs"] = _model_swig.SReac_getSRHS
-        self.__swig_setmethods__["orhs"] = _model_swig.SReac_setORHS
-        self.__swig_getmethods__["orhs"] = _model_swig.SReac_getORHS
-    id = model_swig._swig_property(_model_swig.SReac_getID, _model_swig.SReac_setID)
+        self.__swig_setmethods__["id"] = _steps_swig.SReac_setID
+        self.__swig_getmethods__["id"] = _steps_swig.SReac_getID
+        self.__swig_getmethods__["model"] = _steps_swig.SReac_getModel
+        self.__swig_getmethods__["surfsys"] = _steps_swig.SReac_getSurfsys
+        self.__swig_setmethods__["kcst"] = _steps_swig.SReac_setKcst
+        self.__swig_getmethods__["kcst"] = _steps_swig.SReac_getKcst
+        self.__swig_getmethods__["order"] = _steps_swig.SReac_getOrder
+        self.__swig_getmethods__["outer"] = _steps_swig.SReac_getOuter
+        self.__swig_setmethods__["olhs"] = _steps_swig.SReac_setOLHS
+        self.__swig_getmethods__["olhs"] = _steps_swig.SReac_getOLHS
+        self.__swig_setmethods__["ilhs"] = _steps_swig.SReac_setILHS
+        self.__swig_getmethods__["ilhs"] = _steps_swig.SReac_getILHS
+        self.__swig_setmethods__["slhs"] = _steps_swig.SReac_setSLHS
+        self.__swig_getmethods__["slhs"] = _steps_swig.SReac_getSLHS
+        self.__swig_setmethods__["irhs"] = _steps_swig.SReac_setIRHS
+        self.__swig_getmethods__["irhs"] = _steps_swig.SReac_getIRHS
+        self.__swig_setmethods__["srhs"] = _steps_swig.SReac_setSRHS
+        self.__swig_getmethods__["srhs"] = _steps_swig.SReac_getSRHS
+        self.__swig_setmethods__["orhs"] = _steps_swig.SReac_setORHS
+        self.__swig_getmethods__["orhs"] = _steps_swig.SReac_getORHS
+    id = steps_swig._swig_property(_steps_swig.SReac_getID, _steps_swig.SReac_setID)
     """Identifier string of the surface reaction."""
-    model = model_swig._swig_property(_model_swig.SReac_getModel)
+    model = steps_swig._swig_property(_steps_swig.SReac_getModel)
     """Reference to parent model."""
-    surfsys = model_swig._swig_property(_model_swig.SReac_getSurfsys)
+    surfsys = steps_swig._swig_property(_steps_swig.SReac_getSurfsys)
     """Reference to parent surface system."""
-    kcst = model_swig._swig_property(_model_swig.SReac_getKcst, _model_swig.SReac_setKcst)
+    kcst = steps_swig._swig_property(_steps_swig.SReac_getKcst, _steps_swig.SReac_setKcst)
     """Reaction constant."""
-    outer = model_swig._swig_property(_model_swig.SReac_getOuter)
+    outer = steps_swig._swig_property(_steps_swig.SReac_getOuter)
     """Obsolete"""
-    olhs = model_swig._swig_property(_model_swig.SReac_getOLHS, _model_swig.SReac_setOLHS)
+    olhs = steps_swig._swig_property(_steps_swig.SReac_getOLHS, _steps_swig.SReac_setOLHS)
     """Left hand side reactants in outer compartment."""
-    ilhs = model_swig._swig_property(_model_swig.SReac_getILHS, _model_swig.SReac_setILHS)
+    ilhs = steps_swig._swig_property(_steps_swig.SReac_getILHS, _steps_swig.SReac_setILHS)
     """Left hand side reactants in inner compartment."""
-    slhs = model_swig._swig_property(_model_swig.SReac_getSLHS, _model_swig.SReac_setSLHS)
+    slhs = steps_swig._swig_property(_steps_swig.SReac_getSLHS, _steps_swig.SReac_setSLHS)
     """Left hand side reactants on surface."""
-    irhs = model_swig._swig_property(_model_swig.SReac_getIRHS, _model_swig.SReac_setIRHS)
+    irhs = steps_swig._swig_property(_steps_swig.SReac_getIRHS, _steps_swig.SReac_setIRHS)
     """Right hand side reactants in inner compartment."""
-    srhs = model_swig._swig_property(_model_swig.SReac_getSRHS, _model_swig.SReac_setSRHS)
+    srhs = steps_swig._swig_property(_steps_swig.SReac_getSRHS, _steps_swig.SReac_setSRHS)
     """Right hand side reactants on surface."""
-    orhs = model_swig._swig_property(_model_swig.SReac_getORHS, _model_swig.SReac_setORHS)
+    orhs = steps_swig._swig_property(_steps_swig.SReac_getORHS, _steps_swig.SReac_setORHS)
     """Right hand side reactants in outer compartment."""
-    order = model_swig._swig_property(_model_swig.SReac_getOrder)
+    order = steps_swig._swig_property(_steps_swig.SReac_getOrder)
     """Order of the reaction."""
 
 

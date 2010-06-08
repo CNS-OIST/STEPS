@@ -2,8 +2,4 @@
 
 SWIG=swig
 
-$SWIG -c++ -python -outdir steps -o swig/model_wrap.cpp swig/model.i
-$SWIG -c++ -python -outdir steps -o swig/error_wrap.cpp swig/error.i
-$SWIG -c++ -python -outdir steps -o swig/geom_wrap.cpp swig/geom.i
-$SWIG -c++ -python -outdir steps -o swig/rng_wrap.cpp swig/rng.i
-$SWIG -c++ -python -outdir steps -o swig/solver_wrap.cpp swig/solver.i
+$SWIG -c++ -python -outdir steps -o swig/steps_wrap.cpp swig/steps_swig.i

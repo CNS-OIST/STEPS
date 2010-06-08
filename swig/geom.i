@@ -23,9 +23,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /*
- *  Last Changed Rev:  $Rev$
- *  Last Changed Date: $Date$
- *  Last Changed By:   $Author$
+ *  Last Changed Rev:  $Rev: 313 $
+ *  Last Changed Date: $Date: 2010-03-25 16:24:21 +0900 (Thu, 25 Mar 2010) $
+ *  Last Changed By:   $Author: wchen $
  */
 
 %module geom_swig
@@ -130,8 +130,8 @@ namespace wm
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool isValidID(std::string const & id);
-void checkID(std::string const & id);
+//bool isValidID(std::string const & id);
+//void checkID(std::string const & id);
 
 ////////////////////////////////////////////////////////////////////////////////
 

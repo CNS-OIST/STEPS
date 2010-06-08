@@ -24,9 +24,9 @@
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-#  Last Changed Rev:  $Rev$
-#  Last Changed Date: $Date$
-#  Last Changed By:   $Author$
+#  Last Changed Rev:  $Rev: 313 $
+#  Last Changed Date: $Date: 2010-03-25 16:24:21 +0900 (Thu, 25 Mar 2010) $
+#  Last Changed By:   $Author: wchen $
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # This file is the user-interface file for all geom objects in STEPS.
@@ -38,16 +38,16 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-from . import geom_swig
-import _geom_swig
+from . import steps_swig
+import _steps_swig
 
 ### Now defunct mesh saving/loading tool ###
-# from geom_swig import loadASCII, saveASCII
+# from steps_swig import loadASCII, saveASCII
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
-class Geom(geom_swig.Geom):
+class Geom(steps_swig.Geom):
     """
     Top-level geometry container to which a number of compartment objects 
     and patches objects may be grouped. 
@@ -68,7 +68,7 @@ class Geom(geom_swig.Geom):
         Arguments: 
             None
         """
-        this = _geom_swig.new_Geom(*args)
+        this = _steps_swig.new_Geom(*args)
         try: self.this.append(this)
         except: self.this = this
         # set Geom object to do all the cleaning-up
@@ -78,7 +78,7 @@ class Geom(geom_swig.Geom):
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 
-class Patch(geom_swig.Patch):
+class Patch(steps_swig.Patch):
     """
     Base class for patch objects. A patch is a piece of 2D surface surrounding 
     (part of) a 3D compartment, which may be connected to another compartment. 
@@ -116,37 +116,37 @@ class Patch(geom_swig.Patch):
            by their order to the class constructor.
         
         """
-        this = _geom_swig.new_Patch(*args, **kwargs)
+        this = _steps_swig.new_Patch(*args, **kwargs)
         try: self.this.append(this)
         except: self.this = this
         self.thisown = False
-        self.__swig_setmethods__["id"] = _geom_swig.Patch_setID
-        self.__swig_getmethods__["id"] = _geom_swig.Patch_getID
-        self.__swig_getmethods__["container"] = _geom_swig.Patch_getContainer
-        self.__swig_getmethods__["surfsys"] = _geom_swig.Patch_getSurfsys
-        self.__swig_setmethods__["area"] = _geom_swig.Patch_setArea
-        self.__swig_getmethods__["area"] = _geom_swig.Patch_getArea
-        self.__swig_getmethods__["icomp"] = _geom_swig.Patch_getIComp
-        self.__swig_getmethods__["ocomp"] = _geom_swig.Patch_getOComp
+        self.__swig_setmethods__["id"] = _steps_swig.Patch_setID
+        self.__swig_getmethods__["id"] = _steps_swig.Patch_getID
+        self.__swig_getmethods__["container"] = _steps_swig.Patch_getContainer
+        self.__swig_getmethods__["surfsys"] = _steps_swig.Patch_getSurfsys
+        self.__swig_setmethods__["area"] = _steps_swig.Patch_setArea
+        self.__swig_getmethods__["area"] = _steps_swig.Patch_getArea
+        self.__swig_getmethods__["icomp"] = _steps_swig.Patch_getIComp
+        self.__swig_getmethods__["ocomp"] = _steps_swig.Patch_getOComp
         
-    id = geom_swig._swig_property(_geom_swig.Patch_getID, _geom_swig.Patch_setID)
+    id = steps_swig._swig_property(_steps_swig.Patch_getID, _steps_swig.Patch_setID)
     """Identifier string of the patch."""
-    container = geom_swig._swig_property(_geom_swig.Patch_getContainer)
+    container = steps_swig._swig_property(_steps_swig.Patch_getContainer)
     """Reference to parent steps.geom.Geom container."""
-    surfsys = geom_swig._swig_property(_geom_swig.Patch_getSurfsys)
+    surfsys = steps_swig._swig_property(_steps_swig.Patch_getSurfsys)
     """Reference to assocated surface system."""
-    area = geom_swig._swig_property(_geom_swig.Patch_getArea, _geom_swig.Patch_setArea)
+    area = steps_swig._swig_property(_steps_swig.Patch_getArea, _steps_swig.Patch_setArea)
     """Area of the patch."""
-    icomp = geom_swig._swig_property(_geom_swig.Patch_getIComp)
+    icomp = steps_swig._swig_property(_steps_swig.Patch_getIComp)
     """Reference to the inner compartment."""
-    ocomp = geom_swig._swig_property(_geom_swig.Patch_getOComp)
+    ocomp = steps_swig._swig_property(_steps_swig.Patch_getOComp)
     """reference to the outer compartment."""
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 
-class Comp(geom_swig.Comp):
+class Comp(steps_swig.Comp):
     """
     Base class for compartment objects. It provides basic functionality and data 
     that is shared by the derived class steps.geom.TmComp (that is used to 
@@ -194,37 +194,37 @@ class Comp(geom_swig.Comp):
             * steps.geom.Geom container
             * float vol (default = 0.0)
         """
-        this = _geom_swig.new_Comp(*args, **kwargs)
+        this = _steps_swig.new_Comp(*args, **kwargs)
         try: self.this.append(this)
         except: self.this = this
         self.thisown = False
-        self.__swig_setmethods__["id"] = _geom_swig.Comp_setID
-        self.__swig_getmethods__["id"] = _geom_swig.Comp_getID
-        self.__swig_getmethods__["container"] = _geom_swig.Comp_getContainer
-        self.__swig_getmethods__["volsys"] = _geom_swig.Comp_getVolsys
-        self.__swig_setmethods__["vol"] = _geom_swig.Comp_setVol
-        self.__swig_getmethods__["vol"] = _geom_swig.Comp_getVol
-        self.__swig_getmethods__["ipatches"] = _geom_swig.Comp_getIPatches
-        self.__swig_getmethods__["opatches"] = _geom_swig.Comp_getOPatches
+        self.__swig_setmethods__["id"] = _steps_swig.Comp_setID
+        self.__swig_getmethods__["id"] = _steps_swig.Comp_getID
+        self.__swig_getmethods__["container"] = _steps_swig.Comp_getContainer
+        self.__swig_getmethods__["volsys"] = _steps_swig.Comp_getVolsys
+        self.__swig_setmethods__["vol"] = _steps_swig.Comp_setVol
+        self.__swig_getmethods__["vol"] = _steps_swig.Comp_getVol
+        self.__swig_getmethods__["ipatches"] = _steps_swig.Comp_getIPatches
+        self.__swig_getmethods__["opatches"] = _steps_swig.Comp_getOPatches
     
-    id = geom_swig._swig_property(_geom_swig.Comp_getID, _geom_swig.Comp_setID)
+    id = steps_swig._swig_property(_steps_swig.Comp_getID, _steps_swig.Comp_setID)
     """Identifier string of the compartment."""
-    container = geom_swig._swig_property(_geom_swig.Comp_getContainer)
+    container = steps_swig._swig_property(_steps_swig.Comp_getContainer)
     """Reference to parent steps.geom.Geom container."""
-    volsys = geom_swig._swig_property(_geom_swig.Comp_getVolsys)
+    volsys = steps_swig._swig_property(_steps_swig.Comp_getVolsys)
     """Reference to assocated volume system."""
-    vol = geom_swig._swig_property(_geom_swig.Comp_getVol, _geom_swig.Comp_setVol)
+    vol = steps_swig._swig_property(_steps_swig.Comp_getVol, _steps_swig.Comp_setVol)
     """Volume of the compartment."""
-    ipatches = geom_swig._swig_property(_geom_swig.Comp_getIPatches)
+    ipatches = steps_swig._swig_property(_steps_swig.Comp_getIPatches)
     """List of reference to inner patches."""
-    opatches = geom_swig._swig_property(_geom_swig.Comp_getOPatches)
+    opatches = steps_swig._swig_property(_steps_swig.Comp_getOPatches)
     """List of reference to outer patches."""
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 
-class Tetmesh(geom_swig.Tetmesh):
+class Tetmesh(steps_swig.Tetmesh):
     """
     Main container class for static tetrahedral meshes. This class stores the 
     vertices points, 3D tetrahedral and 2D triangular elements that comprise 
@@ -302,20 +302,20 @@ class Tetmesh(geom_swig.Tetmesh):
             * uint ntets
             * uint ntris
         """        
-        this = _geom_swig.new_Tetmesh(*args)
+        this = _steps_swig.new_Tetmesh(*args)
         try: self.this.append(this)
         except: self.this = this
         # set Tetmesh object to do all the cleaning up
         self.thisown = True
-        self.__swig_getmethods__["nverts"] = _geom_swig.Tetmesh_countVertices
-        self.__swig_getmethods__["ntris"] = _geom_swig.Tetmesh_countTris
-        self.__swig_getmethods__["ntets"] = _geom_swig.Tetmesh_countTets
+        self.__swig_getmethods__["nverts"] = _steps_swig.Tetmesh_countVertices
+        self.__swig_getmethods__["ntris"] = _steps_swig.Tetmesh_countTris
+        self.__swig_getmethods__["ntets"] = _steps_swig.Tetmesh_countTets
     
-    nverts = geom_swig._swig_property(_geom_swig.Tetmesh_countVertices)
+    nverts = steps_swig._swig_property(_steps_swig.Tetmesh_countVertices)
     """Number of vertices in the mesh."""
-    ntris = geom_swig._swig_property(_geom_swig.Tetmesh_countTris)
+    ntris = steps_swig._swig_property(_steps_swig.Tetmesh_countTris)
     """Number of triangles in the mesh."""
-    ntets = geom_swig._swig_property(_geom_swig.Tetmesh_countTets)
+    ntets = steps_swig._swig_property(_steps_swig.Tetmesh_countTets)
     """Number of tetrahedrons in the mesh."""
 
 
@@ -328,10 +328,10 @@ class Tetmesh(geom_swig.Tetmesh):
 ////////////////////////////////////////////////////////////////////////////////
 """
 
-# class Tet(geom_swig.Tet):
+# class Tet(steps_swig.Tet):
 #    def __init__(self, *args): 
 #        """__init__(self, Tetmesh mesh, unsigned int tidx) -> Tet"""
-#        this = _geom_swig.new_Tet(*args)
+#        this = _steps_swig.new_Tet(*args)
 #        try: self.this.append(this)
 #        except: self.this = this
 #        # this object owned by python
@@ -347,11 +347,11 @@ class Tetmesh(geom_swig.Tetmesh):
 ////////////////////////////////////////////////////////////////////////////////
 """
 
-# class Tri(geom_swig.Tri):
+# class Tri(steps_swig.Tri):
 #
 #    def __init__(self, *args): 
 #        """__init__(self, Tetmesh mesh, unsigned int tidx) -> Tri"""
-#        this = _geom_swig.new_Tri(*args)
+#        this = _steps_swig.new_Tri(*args)
 #        try: self.this.append(this)
 #        except: self.this = this
 #        # this object is owned by python
@@ -361,7 +361,7 @@ class Tetmesh(geom_swig.Tetmesh):
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 
-class TmComp(geom_swig.TmComp):
+class TmComp(steps_swig.TmComp):
     """
     Derived class from base steps.geom.Comp class. It provides the same 
     functionality as the steps.geom.Comp class extended for annotation of 
@@ -383,20 +383,20 @@ class TmComp(geom_swig.TmComp):
             * steps.geom.Tetmesh container
             * list<uint> tets
         """
-        this = _geom_swig.new_TmComp(*args, **kwargs)
+        this = _steps_swig.new_TmComp(*args, **kwargs)
         try: self.this.append(this)
         except: self.this = this
         self.thisown = False
-        self.__swig_getmethods__["tets"] = _geom_swig.TmComp_getAllTetIndices
+        self.__swig_getmethods__["tets"] = _steps_swig.TmComp_getAllTetIndices
     
-    tets = geom_swig._swig_property(_geom_swig.TmComp_getAllTetIndices)
+    tets = steps_swig._swig_property(_steps_swig.TmComp_getAllTetIndices)
     """List of indices of tetrahedrons associated to the compartment."""
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 
-class TmPatch(geom_swig.TmPatch):
+class TmPatch(steps_swig.TmPatch):
     """
     Derived class from base steps.geom.Patch class. It provides the same 
     functionality as the steps.geom.Patch class extended for annotation of 
@@ -420,13 +420,13 @@ class TmPatch(geom_swig.TmPatch):
             * steps.geom.TmComp icomp
             * steps.geom.TmComp ocomp (default = None)
         """
-        this = _geom_swig.new_TmPatch(*args, **kwargs)
+        this = _steps_swig.new_TmPatch(*args, **kwargs)
         try: self.this.append(this)
         except: self.this = this
         self.thisown = False
-        self.__swig_getmethods__["tris"] = _geom_swig.TmPatch_getAllTriIndices
+        self.__swig_getmethods__["tris"] = _steps_swig.TmPatch_getAllTriIndices
         
-    tris = geom_swig._swig_property(_geom_swig.TmPatch_getAllTriIndices)
+    tris = steps_swig._swig_property(_steps_swig.TmPatch_getAllTriIndices)
     """List of indices of triangles associated to the patch."""
     
 

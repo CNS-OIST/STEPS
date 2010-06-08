@@ -1,0 +1,73 @@
+Install From Binaries
+=====================
+
+    We provide precompiled binary packages for various operating
+systems. The user is recommended to use these packages when possible.
+
+    For systems which a precomplied binary is unavailable, the user may
+install STEPS following the steps in the Basic Installation section.
+
+
+Basic Installation
+==================
+
+The simplest way to compile this package is:
+
+  1. Before the installation:
+     1.1 Make sure you have Python and a c++ compiler installed in your system.
+     1.2 If you've installed STEPS with version below 1.1.0, please remove the
+         binaries before any installation.
+         By default, it is installed in
+         /usr/local/lib/pythonx.x/site-packages/steps
+         /usr/local/lib/libsteps*
+         Please also remove any "stepsredirect.pth" file in your system.
+         
+  2. Download the source code package from STEPS website.
+     The package name should be similar to the following:
+                     STEPS-x.x.x.tar.gz
+     where x.x.x is the version number of the package.
+  
+  3. 'cd' to the directory containing the source code package. Unpack the package,
+     e.g. in Mac/Linux, type
+                tar -xvzf STEPS-x.x.x.tar.gz
+     The source code will be unpacked in folder "STEPS-x.x.x".
+                
+  4. 'cd' to the unpacked folder
+                cd STEPS-x.x.x
+
+  5. Build the binaries from source code (general).
+                python setup.py build
+ 
+    5.1. For MinGW in Windows, replace the general command with
+                python setup.py build --compiler=mingw32
+                
+    5.2. For Cygwin in Windows, replace the general command with
+                python setup.py build --compiler=cygwin
+
+  6. Install the binary package.
+                [sudo] python setup.py install
+
+Example:
+    $ cd ~/Downlaods
+    $ tar -xvzf STEPS-1.1.0.tar.gz
+    $ cd STEPS-1.1.0
+    $ python setup.py build
+    $ [sudo] python setup.py install
+    
+Advanced Installation
+=====================
+    Please refer to http://docs.python.org/install/index.html
+    for more information about python module installation.
+
+Documentation
+=============
+
+A html version of user manual and API references is included in the 
+doc folder, open doc/html/manual_index.html using your browser.
+
+Examples
+========
+
+We provide some simple examples in the user manual as well as the "example"
+folder. To run an example, cd to the folder and execute the python script.
+

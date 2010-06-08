@@ -24,9 +24,9 @@
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-#  Last Changed Rev:  $Rev$
-#  Last Changed Date: $Date$
-#  Last Changed By:   $Author$
+#  Last Changed Rev:  $Rev: 313 $
+#  Last Changed Date: $Date: 2010-03-25 16:24:21 +0900 (Thu, 25 Mar 2010) $
+#  Last Changed By:   $Author: wchen $
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
@@ -52,18 +52,14 @@ solver, based on Gillespie's Direct SSA Method extended for diffusive fluxes
 between tetrahedral elements in complex geometries.
 
 """
-
-import _model_swig
-import _geom_swig
-import _rng
-from . import solver_swig
-import _solver_swig
+from . import steps_swig
+import _steps_swig
 import cPickle
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Well-mixed RK4
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-class Wmrk4(solver_swig.Wmrk4) :
+class Wmrk4(steps_swig.Wmrk4) :
     def __init__(self, *args): 
         """
         Construction::
@@ -77,7 +73,7 @@ class Wmrk4(solver_swig.Wmrk4) :
             * steps.geom.Geom geom
             * steps.rng.RNG rng
         """
-        this = _solver_swig.new_Wmrk4(*args)
+        this = _steps_swig.new_Wmrk4(*args)
         try: self.this.append(this)
         except: self.this = this
         self.thisown = True
@@ -85,7 +81,7 @@ class Wmrk4(solver_swig.Wmrk4) :
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Well-mixed Direct SSA
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-class Wmdirect(solver_swig.Wmdirect) :
+class Wmdirect(steps_swig.Wmdirect) :
     def __init__(self, model, geom, rng): 
         """
         Construction::
@@ -99,7 +95,7 @@ class Wmdirect(solver_swig.Wmdirect) :
             * steps.geom.Geom geom
             * steps.rng.RNG rng
         """
-        this = _solver_swig.new_Wmdirect(model, geom, rng)
+        this = _steps_swig.new_Wmdirect(model, geom, rng)
         try: self.this.append(this)
         except: self.this = this
         self.thisown = True
@@ -121,13 +117,13 @@ class Wmdirect(solver_swig.Wmdirect) :
         Run the simulation until end_time, automatic checkpoint for every cp_interval.
         """
         if cp_interval > 0.0:
-            while (end_time - _solver_swig.API_getTime(self)) > cp_interval:
-                _solver_swig.API_advance(self, cp_interval)
+            while (end_time - _steps_swig.API_getTime(self)) > cp_interval:
+                _steps_swig.API_advance(self, cp_interval)
                 self.checkpoint()
-            _solver_swig.API_run(self, end_time)
+            _steps_swig.API_run(self, end_time)
             self.checkpoint()
         else:
-            _solver_swig.API_run(self, end_time)
+            _steps_swig.API_run(self, end_time)
     
     def advance(self, advance_time, cp_interval = 0.0):
         """
@@ -136,18 +132,18 @@ class Wmdirect(solver_swig.Wmdirect) :
         if cp_interval > 0.0:
             remain = advance_time
             while remain > cp_interval:
-                _solver_swig.API_advance(self, cp_interval)
+                _steps_swig.API_advance(self, cp_interval)
                 self.checkpoint()
                 remain -= cp_interval
-            _solver_swig.API_advance(self, remain)
+            _steps_swig.API_advance(self, remain)
             self.checkpoint()
         else:
-            _solver_swig.API_advance(self, advance_time)        
+            _steps_swig.API_advance(self, advance_time)        
     
     
     def getFile(self, name):
         if name == None:
-            filename = "%s%e%s" % (self.cp_prefix, _solver_swig.API_getTime(self), ".checkpoint")
+            filename = "%s%e%s" % (self.cp_prefix, _steps_swig.API_getTime(self), ".checkpoint")
             print "\ncheckpointing -> ", filename
             output = file(filename, "wb")
         else:
@@ -166,8 +162,8 @@ class Wmdirect(solver_swig.Wmdirect) :
         # checkpoint general info
         info = {}
         info["Solver"] = "Wmdirect"
-        info["SimTime"] = _solver_swig.API_getTime(self)
-        info["SimNSteps"] = _solver_swig.API_getNSteps(self)
+        info["SimTime"] = _steps_swig.API_getTime(self)
+        info["SimNSteps"] = _steps_swig.API_getNSteps(self)
         spec_ids = []
         for spec in specs:
             spec_ids.append(spec.id)
@@ -192,10 +188,10 @@ class Wmdirect(solver_swig.Wmdirect) :
             scan = {}
             scan["DataType"] = "Comp"
             scan["DataID"] = comp
-            scan["Volume"] = _solver_swig.API_getCompVol(self, comp)
+            scan["Volume"] = _steps_swig.API_getCompVol(self, comp)
             specs_dist = {}
             for spec in specs:
-                spec_count = _solver_swig.API_getCompCount(self, comp, spec.id)
+                spec_count = _steps_swig.API_getCompCount(self, comp, spec.id)
                 specs_dist[spec.id] = spec_count
             scan["SpecsDist"] = specs_dist
             cPickle.dump(scan, output)
@@ -205,10 +201,10 @@ class Wmdirect(solver_swig.Wmdirect) :
             scan = {}
             scan["DataType"] = "Patch"
             scan["DataID"] = patch
-            scan["Area"] = _solver_swig.API_getPatchArea(self, patch)
+            scan["Area"] = _steps_swig.API_getPatchArea(self, patch)
             specs_dist = {}
             for spec in specs:
-                spec_count = _solver_swig.API_getPatchCount(self, patch, spec.id)
+                spec_count = _steps_swig.API_getPatchCount(self, patch, spec.id)
                 specs_dist[spec.id] = spec_count
             scan["SpecsDist"] = specs_dist
             cPickle.dump(scan, output)
@@ -283,8 +279,8 @@ class Wmdirect(solver_swig.Wmdirect) :
         print "\nPatches:"
         print info["Patches"]
         
-        _solver_swig.API_setTime(self, info["SimTime"])
-        _solver_swig.API_setNSteps(self, info["SimNSteps"])
+        _steps_swig.API_setTime(self, info["SimTime"])
+        _steps_swig.API_setNSteps(self, info["SimNSteps"])
         
         print "\nRestoring Data..."
         while(True):
@@ -294,16 +290,16 @@ class Wmdirect(solver_swig.Wmdirect) :
                     name = data["DataID"]
                     specs_dist = data["SpecsDist"]
                     vol = data["Volume"]
-                    _solver_swig.API_setCompVol(self, name, vol)
+                    _steps_swig.API_setCompVol(self, name, vol)
                     for spec in specs_dist.keys():
-                        _solver_swig.API_setCompCount(self, name, spec, specs_dist[spec])
+                        _steps_swig.API_setCompCount(self, name, spec, specs_dist[spec])
                 elif data["DataType"] == "Patch":
                     name = data["DataID"]
                     specs_dist = data["SpecsDist"]
                     area = data["Area"]
-                    _solver_swig.API_setPatchArea(self, name, area)
+                    _steps_swig.API_setPatchArea(self, name, area)
                     for spec in specs_dist.keys():
-                        _solver_swig.API_setPatchCount(self, name, spec, specs_dist[spec])
+                        _steps_swig.API_setPatchCount(self, name, spec, specs_dist[spec])
             except EOFError:
                 break
         
@@ -312,7 +308,7 @@ class Wmdirect(solver_swig.Wmdirect) :
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Tetrahedral Direct SSA
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #        
-class Tetexact(solver_swig.Tetexact) :  
+class Tetexact(steps_swig.Tetexact) :  
     def __init__(self, model, geom, rng): 
         """
         Construction::
@@ -327,7 +323,7 @@ class Tetexact(solver_swig.Tetexact) :
             * steps.rng.RNG rng
         """
         
-        this = _solver_swig.new_Tetexact(model, geom, rng)
+        this = _steps_swig.new_Tetexact(model, geom, rng)
         try: self.this.append(this)
         except: self.this = this
         self.thisown = True
@@ -350,13 +346,13 @@ class Tetexact(solver_swig.Tetexact) :
         Run the simulation until end_time, automatic checkpoint for every cp_interval.
         """
         if cp_interval > 0.0:
-            while (end_time - _solver_swig.API_getTime(self)) > cp_interval:
-                _solver_swig.API_advance(self, cp_interval)
+            while (end_time - _steps_swig.API_getTime(self)) > cp_interval:
+                _steps_swig.API_advance(self, cp_interval)
                 self.checkpoint()
-            _solver_swig.API_run(self, end_time)
+            _steps_swig.API_run(self, end_time)
             self.checkpoint()
         else:
-            _solver_swig.API_run(self, end_time)
+            _steps_swig.API_run(self, end_time)
     
     def advance(self, advance_time, cp_interval = 0.0):
         """
@@ -365,18 +361,18 @@ class Tetexact(solver_swig.Tetexact) :
         if cp_interval > 0.0:
             remain = advance_time
             while remain > cp_interval:
-                _solver_swig.API_advance(self, cp_interval)
+                _steps_swig.API_advance(self, cp_interval)
                 self.checkpoint()
                 remain -= cp_interval
-            _solver_swig.API_advance(self, remain)
+            _steps_swig.API_advance(self, remain)
             self.checkpoint()
         else:
-            _solver_swig.API_advance(self, advance_time)        
+            _steps_swig.API_advance(self, advance_time)        
     
     
     def getFile(self, name):
         if name == None:
-            filename = "%s%e%s" % (self.cp_prefix, _solver_swig.API_getTime(self), ".checkpoint")
+            filename = "%s%e%s" % (self.cp_prefix, _steps_swig.API_getTime(self), ".checkpoint")
             print "\ncheckpointing -> ", filename
             output = file(filename, "wb")
         else:
@@ -397,8 +393,8 @@ class Tetexact(solver_swig.Tetexact) :
         # checkpoint general info
         info = {}
         info["Solver"] = "Tetexact"
-        info["SimTime"] = _solver_swig.API_getTime(self)
-        info["SimNSteps"] = _solver_swig.API_getNSteps(self)
+        info["SimTime"] = _steps_swig.API_getTime(self)
+        info["SimNSteps"] = _steps_swig.API_getNSteps(self)
         info["NTets"] = ntets
         info["NTris"] = ntris
         spec_ids = []
@@ -416,7 +412,7 @@ class Tetexact(solver_swig.Tetexact) :
             scan["DataID"] = t
             specs_dist = {}
             for spec in specs:
-                spec_count = _solver_swig.API_getTetCount(self, t, spec.id)
+                spec_count = _steps_swig.API_getTetCount(self, t, spec.id)
                 specs_dist[spec.id] = spec_count
             scan["SpecsDist"] = specs_dist
             cPickle.dump(scan, output)
@@ -430,7 +426,7 @@ class Tetexact(solver_swig.Tetexact) :
             scan["DataID"] = t
             specs_dist = {}
             for spec in specs:
-                spec_count = _solver_swig.API_getTriCount(self, t, spec.id)
+                spec_count = _steps_swig.API_getTriCount(self, t, spec.id)
                 specs_dist[spec.id] = spec_count
             scan["SpecsDist"] = specs_dist
             cPickle.dump(scan, output)
@@ -478,8 +474,8 @@ class Tetexact(solver_swig.Tetexact) :
         print "\nSpecies:"
         print info["Specs"]
         
-        _solver_swig.API_setTime(self, info["SimTime"])
-        _solver_swig.API_setNSteps(self, info["SimNSteps"])
+        _steps_swig.API_setTime(self, info["SimTime"])
+        _steps_swig.API_setNSteps(self, info["SimNSteps"])
         
         print "\nRestoring Data..."
         while(True):
@@ -489,12 +485,12 @@ class Tetexact(solver_swig.Tetexact) :
                     t = data["DataID"]
                     specs_dist = data["SpecsDist"]
                     for spec in specs_dist.keys():
-                        _solver_swig.API_setTetCount(self, t, spec, specs_dist[spec])
+                        _steps_swig.API_setTetCount(self, t, spec, specs_dist[spec])
                 elif data["DataType"] == "Tri":
                     t = data["DataID"]
                     specs_dist = data["SpecsDist"]
                     for spec in specs_dist.keys():
-                        _solver_swig.API_setTriCount(self, t, spec, specs_dist[spec])
+                        _steps_swig.API_setTriCount(self, t, spec, specs_dist[spec])
             except EOFError:
                 break
         
