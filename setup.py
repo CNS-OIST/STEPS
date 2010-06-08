@@ -22,9 +22,9 @@
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-#  Last Changed Rev:  $Rev: 326 $
-#  Last Changed Date: $Date: 2010-04-07 12:38:30 +0900 (Wed, 07 Apr 2010) $
-#  Last Changed By:   $Author: wchen $
+#  Last Changed Rev:  $Rev$
+#  Last Changed Date: $Date$
+#  Last Changed By:   $Author$
 
 try:
     import ez_setup

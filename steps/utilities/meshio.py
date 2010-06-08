@@ -22,9 +22,9 @@
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-#  Last Changed Rev:  $Rev: 314 $
-#  Last Changed Date: $Date: 2010-03-28 08:47:50 +0900 (Sun, 28 Mar 2010) $
-#  Last Changed By:   $Author: wchen $
+#  Last Changed Rev:  $Rev$
+#  Last Changed Date: $Date$
+#  Last Changed By:   $Author$
 
 """ 
 .. Note::

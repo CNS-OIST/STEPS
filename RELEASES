@@ -27,9 +27,9 @@ Version 1.1.1 (2010-04-7)
 1. New setup.py to fix undefined symbol error in Linux
 2. function name fix in utilities/visual.py
     
-
 Version 1.1.2 (2010-05-8)
 ==========================
-1. Source Code release to fix crashing problem of Tetexact solver in some
-Linux system. Binary packages are not affected.
+1. Solve crash problem of Tetexact solver in some Linux system.
+Binary packages of version 1.1.1 are not affected, 
+so only source package is released.
     
