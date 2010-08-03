@@ -57,7 +57,7 @@ SReac::SReac(string const & id, Surfsys * surfsys,
 : pID(id)
 , pModel(0)
 , pSurfsys(surfsys)
-, pOuter(true)
+, pOuter(false)
 , pOLHS()
 , pILHS()
 , pSLHS()
