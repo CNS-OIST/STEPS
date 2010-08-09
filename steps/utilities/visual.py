@@ -186,6 +186,8 @@ class MeshCanvas(MyCanvasBase):
         self.ntris = self.mesh.ntris
         self.verts = []
         self.tris = []
+        self.patchtris = []
+        self.patches = {}
         self.tribounds = self.mesh.getTriBoundary()
         boundmin = self.mesh.getBoundMin()
         boundmax = self.mesh.getBoundMax()
@@ -199,6 +201,13 @@ class MeshCanvas(MyCanvasBase):
             self.verts.append([unscaled[0]/self.scale,unscaled[1]/self.scale,unscaled[2]/self.scale])
         for n in range(self.ntris):
             self.tris.append(self.mesh.getTri(n))
+            patch = self.mesh.getTriPatch(n)
+            if patch != None:
+                self.patchtris.append(n)
+                if patch.getID() in self.patches:
+                    self.patches[patch.getID()].append(n)
+                else:
+                    self.patches[patch.getID()] = [n]
 
     def InitGL(self):
         # set viewing projection
@@ -252,6 +261,12 @@ class MeshCanvas(MyCanvasBase):
             for v in range(3):
                 vert = tri[v]
                 glVertex3f( self.verts[vert][0], self.verts[vert][1], self.verts[vert][2])
+        for patch in self.patches:
+            for t in self.patches[patch]:
+                tri = self.tris[t]
+                for v in range(3):
+                    vert = tri[v]
+                    glVertex3f( self.verts[vert][0], self.verts[vert][1], self.verts[vert][2])
         glEnd()
 
         glFlush()
@@ -270,7 +285,12 @@ class MeshCanvas(MyCanvasBase):
                     scaled_center = [center[0]/self.scale, center[1]/self.scale, center[2]/self.scale]
                     self.specs_data[key].extend(scaled_center)
         
-
+        for t in self.patchtris:
+            for key in self.specs_data.keys():
+                if(self.solver.getTriCount(t, key) > 0):
+                    center = self.mesh.getTriBarycenter(t)
+                    scaled_center = [center[0]/self.scale, center[1]/self.scale, center[2]/self.scale]
+                    self.specs_data[key].extend(scaled_center)
 #----------------------------------------------------------------------
 #
 #                           GUI Simulation Frontend
@@ -321,7 +341,7 @@ class SimCtrlPanel(wx.Panel):
         #box.Add(self.replaybtn, 0, wx.ALIGN_CENTER, border = 10)
 
         box.AddSpacer(10)
-        btn_box = color_box = wx.BoxSizer(wx.HORIZONTAL)
+        btn_box = wx.BoxSizer(wx.HORIZONTAL)
         self.savebtn = wx.Button(self, -1, "Save")
         btn_box.AddSpacer(5)
         btn_box.Add(self.savebtn, 0, wx.ALIGN_CENTER, border = 10)

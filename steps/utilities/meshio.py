@@ -245,6 +245,12 @@ class ElementProxy:
         """
 
         self.groups[group_name] = group_ids
+        
+    def addToGroup(self, group_name, id):
+        if (group_name in self.groups):
+            self.groups[group_name].append(id)
+        else:
+            self.groups[group_name] = [id]
 
     def getGroups(self):
         """
@@ -496,7 +502,8 @@ def importTetGen(pathroot):
         tet[2] = nodeproxy.getSTEPSID(int(tokens[3]))
         tet[3] = nodeproxy.getSTEPSID(int(tokens[4]))
         tetproxy.insert(tetid, tet)
-    # Close the file.
+        if nattribs == 1:
+            tetproxy.addToGroup(tokens[5], tetproxy.getSTEPSID(tetid))
     elefile.close()
 
     # Try to read the tri file.
@@ -526,8 +533,10 @@ def importTetGen(pathroot):
             tri[1] = nodeproxy.getSTEPSID(int(tokens[2]))
             tri[2] = nodeproxy.getSTEPSID(int(tokens[3]))
             triproxy.insert(triid, tri)
-        # Close the file.
-        facefile.close()
+            if nattribs == 1:
+                triproxy.addToGroup(tokens[4], triproxy.getSTEPSID(triid))
+    # Close the file.
+    facefile.close()
 
     print("Read TetGen files succesfully")    
     
@@ -674,6 +683,118 @@ def importAbaqus(filename, scale):
     print("Tetmesh object created.")
     
     return mesh, nodeproxy, tetproxy,triproxy
+
+#############################################################################################
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+#############################################################################################
+
+def importGmsh(filename, scale):
+    """ 
+    Read a Gmsh-formated mesh file, return the created steps.geom.Tetmesh object, 
+    the element mapping for nodes, tetraedrons and triangles.
+    
+    PARAMETERS:
+    
+    * filename: the Abaqus filename (or path) including any suffix.
+    * scale: LENGTH scale from the importing mesh to real geometry. e.g. a radius 
+      of 10 in the importing file to a radius of 1 micron in STEPS, scale is 1e-7.
+    
+    RETURNS:
+    
+    mesh, nodeproxy, tetproxy, triproxy 
+
+    * mesh: The STEPS TetMesh object
+    * nodeproxy: Element Map for nodes
+    * tetproxy: Element Map for tetrahedrons
+    * triproxy: Element Map for triangles
+
+   IMPORTANT NOTICE:
+   
+   User is recommanded to save the tetmesh objects using the saveTetmesh() method
+   and recreate the objects from the saved files, instead of creating the objects
+   via the importing functions each time, if the tetmesh objects are intented to
+   be used in multiple simulations. Since the importing functions require a massive
+   amount of time to create the Tetmesh object, comparing to the loadTetmesh() method.
+
+    """
+    print("Reading Gmsh file...")
+    btime = time.time()
+    
+    meshfile = open(filename, 'r')
+    
+    nodeproxy = ElementProxy('node', 3)
+    tetproxy = ElementProxy('tet', 4)
+    triproxy = ElementProxy('tri', 3)
+
+    line = meshfile.readline()
+    assert(line == '$MeshFormat\n')
+    line = meshfile.readline()
+    line = meshfile.readline()
+    assert(line == '$EndMeshFormat\n')
+    line = meshfile.readline()
+    assert(line == '$Nodes\n')
+    line = meshfile.readline()
+    n_nodes = int(line)
+    # read nodes
+    for i in range(n_nodes):
+        line = meshfile.readline()
+        linesec = line.split()
+        id = int(linesec[0])
+        node = [0.0,0.0,0.0]
+        node[0] = float(linesec[1])*scale
+        node[1] = float(linesec[2])*scale
+        node[2] = float(linesec[3])*scale
+        nodeproxy.insert(id, node)
+    line = meshfile.readline()
+    assert(line == '$EndNodes\n')   
+    
+    line = meshfile.readline()
+    assert(line == '$Elements\n')
+    
+    line = meshfile.readline()
+    n_elems = int(line)
+    # read elem
+    for i in range(n_elems):
+        line = meshfile.readline()
+        linesec = line.split()
+        id = int(linesec[0])
+        type = int(linesec[1])
+        # triangle
+        if type == 2:
+            node = [0,0,0]
+            node[0] = nodeproxy.getSTEPSID(int(linesec[6]))
+            node[1] = nodeproxy.getSTEPSID(int(linesec[7]))
+            node[2] = nodeproxy.getSTEPSID(int(linesec[8])) 
+            triproxy.insert(id, node)
+        # tet
+        if type == 4:
+            group_id = linesec[4]
+            node = [0,0,0,0]
+            node[0] = nodeproxy.getSTEPSID(int(linesec[6]))
+            node[1] = nodeproxy.getSTEPSID(int(linesec[7]))
+            node[2] = nodeproxy.getSTEPSID(int(linesec[8])) 
+            node[3] = nodeproxy.getSTEPSID(int(linesec[9])) 
+            tetproxy.insert(id, node)
+            tetproxy.addToGroup(group_id, tetproxy.getSTEPSID(id))
+            
+    line = meshfile.readline()
+    assert(line == '$EndElements\n')
+    meshfile.close()
+    print("Read Msh file succesfully")    
+    
+    nodedata = nodeproxy.getAllData()
+    tetdata = tetproxy.getAllData() 
+    tridata = triproxy.getAllData() 
+
+    print("creating Tetmesh object in STEPS...")
+    mesh = stetmesh.Tetmesh(nodedata, tetdata, tridata)
+    print("Tetmesh object created.")
+    
+    return mesh, nodeproxy, tetproxy,triproxy
+
+
 
 #############################################################################################
 
@@ -1116,3 +1237,23 @@ def loadMesh(pathname):
 #############################################################################################
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+#############################################################################################
+
+def intersecTris(mesh, comp1_tets, comp2_tets):
+
+    comp1_tris = set()
+    for i in comp1_tets:
+        tritemp = mesh.getTetTriNeighb(i)
+        for j in range(4): 
+            comp1_tris.add(tritemp[j])
+    print comp1_tris
+    comp2_tris = set()
+    for i in comp2_tets:
+        tritemp = mesh.getTetTriNeighb(i)
+        for j in range(4): 
+            comp2_tris.add(tritemp[j])
+
+    print comp2_tris
+    tris = comp1_tris.intersection(comp2_tris)
+    return list(tris)
