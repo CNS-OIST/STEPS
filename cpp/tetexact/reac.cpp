@@ -49,12 +49,21 @@ NAMESPACE_ALIAS(steps::math, smath);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static inline double comp_ccst(double kcst, double vol, uint order)
+static inline double comp_ccst(double kcst, double vol, uint order, double compvol)
 {
     double vscale = 1.0e3 * vol * smath::AVOGADRO;
     int o1 = static_cast<int>(order) - 1;
     if (o1 < 0) o1 = 0;
-    return kcst * pow(vscale, static_cast<double>(-o1));
+
+    // BUGFIX, IH 15/8/2010. Incorrect for zero-order reactions:
+    // rate was the same for all tets, not a fraction of the total volume
+    // return kcst * pow(vscale, static_cast<double>(-o1));
+
+    double ccst = kcst * pow(vscale, static_cast<double>(-o1));
+    // Special case for zero-order reactions right now:
+    if (order == 0) ccst *= (vol/compvol);
+
+    return ccst;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -73,7 +82,7 @@ stex::Reac::Reac(ssolver::Reacdef * rdef, stex::Tet * tet)
 	uint lridx = pTet->compdef()->reacG2L(pReacdef->gidx());
 	double kcst = pTet->compdef()->kcst(lridx);
 	pKcst = kcst;
-	pCcst = comp_ccst(kcst, pTet->vol(), pReacdef->order());
+	pCcst = comp_ccst(kcst, pTet->vol(), pReacdef->order(), pTet->compdef()->vol());
 	assert (pCcst >= 0.0);
 }
 
@@ -100,7 +109,7 @@ void stex::Reac::resetCcst(void)
 	double kcst = pTet->compdef()->kcst(lridx);
 	// Also reset kcst
 	pKcst = kcst;
-	pCcst = comp_ccst(kcst, pTet->vol(), pReacdef->order());
+	pCcst = comp_ccst(kcst, pTet->vol(), pReacdef->order(), pTet->compdef()->vol());
 	assert (pCcst >= 0.0);
 }
 
@@ -110,7 +119,7 @@ void stex::Reac::setKcst(double k)
 {
 	assert (k >= 0.0);
 	pKcst = k;
-	pCcst = comp_ccst(k, pTet->vol(), pReacdef->order());
+	pCcst = comp_ccst(k, pTet->vol(), pReacdef->order(), pTet->compdef()->vol());
 	assert (pCcst >= 0.0);
 }
 
