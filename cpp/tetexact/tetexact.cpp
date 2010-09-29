@@ -649,7 +649,19 @@ void stex::Tetexact::_setCompCount(uint cidx, uint sidx, double n)
 	assert (statedef()->countComps() == pComps.size());
 	stex::Comp * comp = _comp(cidx);
 	uint slidx = comp->def()->specG2L(sidx);
-	if (slidx == ssolver::LIDX_UNDEFINED) return;
+	if (slidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
+	if (n > std::numeric_limits<unsigned int>::max( ))
+	{
+		std::ostringstream os;
+		os << "Can't set count greater than maximum unsigned integer (";
+		os << std::numeric_limits<unsigned int>::max( ) << ").\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	double totalvol = comp->def()->vol();
 	TetPVecCI t_end = comp->endTet();
@@ -662,24 +674,41 @@ void stex::Tetexact::_setCompCount(uint cidx, uint sidx, double n)
 		double rand01 = rng()->getUnfIE();
 		if (rand01 < n_frc) c++;
 	}
-	if (c >= comp->countTets())
+
+	uint nremoved = 0;
+	for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
 	{
-		uint nremoved = 0;
-		for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
+		Tet * tet = *t;
+		double fract = static_cast<double>(c) * (tet->vol() / totalvol);
+		uint n3 = static_cast<uint>(std::floor(fract));
+
+		// BUGFIX 29/09/2010 IH. By not allowing the ceiling here
+		// concentration gradients could appear in the injection.
+		double n3_frac = fract - static_cast<double>(n3);
+		if (n3_frac > 0.0)
 		{
-			Tet * tet = *t;
-			double fract = static_cast<double>(c) * (tet->vol() / totalvol);
-			uint n3 = static_cast<uint>(std::floor(fract));
-			tet->setCount(slidx, n3);
-            // BUGFIX 18/11/09 IH. By reducing c here we were not giving all
-            // tets an equal share. Tets with low index would have a
-            // greater share than those with higher index.
-			//c -= n3;
-			nremoved += n3;
+			double rand01 = rng()->getUnfIE();
+			if (rand01 < n3_frac) n3++;
 		}
-		assert(nremoved <= c);
-		c -= nremoved;
+
+        // BUGFIX 18/11/09 IH. By reducing c here we were not giving all
+        // tets an equal share. Tets with low index would have a
+        // greater share than those with higher index.
+		//c -= n3;
+		nremoved += n3;
+
+		if (nremoved >= c)
+		{
+			n3 -= (nremoved-c);
+			nremoved = c;
+			tet->setCount(slidx, n3+tet->pools()[slidx]);
+			break;
+		}
+
+		tet->setCount(slidx, n3+tet->pools()[slidx]);
 	}
+	assert(nremoved <= c);
+	c -= nremoved;
 
 	while (c != 0)
 	{
