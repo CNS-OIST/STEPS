@@ -701,11 +701,11 @@ void stex::Tetexact::_setCompCount(uint cidx, uint sidx, double n)
 		{
 			n3 -= (nremoved-c);
 			nremoved = c;
-			tet->setCount(slidx, n3+tet->pools()[slidx]);
+			tet->setCount(slidx, n3);
 			break;
 		}
 
-		tet->setCount(slidx, n3+tet->pools()[slidx]);
+		tet->setCount(slidx, n3);
 	}
 	assert(nremoved <= c);
 	c -= nremoved;
@@ -1032,7 +1032,19 @@ void stex::Tetexact::_setPatchCount(uint pidx, uint sidx, double n)
 	stex::Patch * patch = _patch(pidx);
 	assert (patch != 0);
 	uint slidx = patch->def()->specG2L(sidx);
-	if (slidx == ssolver::LIDX_UNDEFINED) return;
+	if (slidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
+	if (n > std::numeric_limits<unsigned int>::max( ))
+	{
+		std::ostringstream os;
+		os << "Can't set count greater than maximum unsigned integer (";
+		os << std::numeric_limits<unsigned int>::max( ) << ").\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	double totalarea = patch->def()->area();
 	TriPVecCI t_end = patch->endTri();
@@ -1046,24 +1058,41 @@ void stex::Tetexact::_setPatchCount(uint pidx, uint sidx, double n)
 		if (rand01 < n_frc) c++;
 	}
 
-	if (c >= patch->countTris())
+	uint nremoved = 0;
+	for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
 	{
-		uint nremoved = 0;
-		for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
-		{
-			Tri * tri = *t;
-			double fract = static_cast<double>(c) * (tri->area()/totalarea);
-            uint n3 = static_cast<uint>(std::floor(fract));
+		Tri * tri = *t;
+		double fract = static_cast<double>(c) * (tri->area()/totalarea);
+        uint n3 = static_cast<uint>(std::floor(fract));
+
+		// BUGFIX 29/09/2010 IH. By not allowing the ceiling here
+		// concentration gradients could appear in the injection.
+        double n3_frac = fract - static_cast<double>(n3);
+        if (n3_frac > 0.0)
+        {
+            double rand01 = rng()->getUnfIE();
+            if (rand01 < n3_frac) n3++;
+        }
+
+        // BUGFIX 18/11/09 IH. By reducing c here we were not giving all
+        // triangles an equal share. Triangles with low index would have a
+        // greater share than those with higher index.
+        // c -= n3;
+        nremoved += n3;
+
+        if (nremoved >= c)
+        {
+            n3 -= (nremoved-c);
+            nremoved = c;
             tri->setCount(slidx, n3);
-            // BUGFIX 18/11/09 IH. By reducing c here we were not giving all
-            // triangles an equal share. Triangles with low index would have a
-            // greater share than those with higher index.
-            // c -= n3;
-            nremoved += n3;
-		}
-		assert(nremoved <= c);
-		c -= nremoved;
+            break;
+        }
+
+        tri->setCount(slidx, n3);
+
 	}
+	assert(nremoved <= c);
+	c -= nremoved;
 
 	while(c != 0)
 	{
@@ -1072,6 +1101,7 @@ void stex::Tetexact::_setPatchCount(uint pidx, uint sidx, double n)
 		tri->setCount(slidx, (tri->pools()[slidx] + 1.0));
 		c--;
 	}
+
 	for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
 	{
 		_updateSpec(*t, slidx);
