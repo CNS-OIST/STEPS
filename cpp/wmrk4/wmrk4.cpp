@@ -914,6 +914,11 @@ void swmrk4::Wmrk4::_setderivs(dVec & vals, dVec & dydx)
 		{
 			dydx[n] += pDyDxlhs[n][r];
 		}
+		// If species is clamped the dy/dx is zero:
+		if (pSFlags[n] & Statedef::CLAMPED_POOLFLAG)
+		{
+			dydx[n] = 0.0;
+		}
 	}
 }
 
