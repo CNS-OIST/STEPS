@@ -1,0 +1,35 @@
+Release Notes
+
+Version 1.0.0 (2010-01-05)
+==========================
+First release.
+
+Version 1.0.1 (2010-01-28)
+==========================
+1. Bug fix of utilities.meshio.importTetgen() method crashing.
+2. Changes to 'def' classes so that these classes no longer store
+   a pointer to model level objects or access data from those objects, 
+   instead coping all data during construction and setup. 
+   Also modified rng.py to be directly created by swig for 
+   compatability with python3.
+   
+Version 1.1.0 (2010-03-20)
+==========================
+1. Replace GNU distrubution system with Python Distutils.
+2. Provide a visualization toolkit for mesh based simulation 
+    (steps.utilitis.visual)
+3. Provide checkpointing support for Wmdirect and Tetexact solvers.
+    (Please check user manual for more details)
+4. New user manual and API reference
+    
+Version 1.1.1 (2010-04-7)
+==========================
+1. New setup.py to fix undefined symbol error in Linux
+2. function name fix in utilities/visual.py
+    
+Version 1.1.2 (2010-05-8)
+==========================
+1. Solve crash problem of Tetexact solver in some Linux system.
+Binary packages of version 1.1.1 are not affected, 
+so only source package is released.
+    
