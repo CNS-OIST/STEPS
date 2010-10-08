@@ -163,7 +163,7 @@ void swmrk4::Wmrk4::reset(void)
 	uint comps = statedef()->countComps();
 	for (uint i=0; i < comps; ++i) statedef()->compdef(i)->reset();
 	uint patches = statedef()->countPatches();
-	for (uint i=0; i < patches; ++i) statedef()->compdef(i)->reset();
+	for (uint i=0; i < patches; ++i) statedef()->patchdef(i)->reset();
 	statedef()->resetTime();
 	// recompute flags and counts vectors in Wmrk4 object
 	_refill();
@@ -293,7 +293,7 @@ double swmrk4::Wmrk4::_getCompAmount(uint cidx, uint sidx) const
 
 void swmrk4::Wmrk4::_setCompAmount(uint cidx, uint sidx, double a)
 {
-	assert(a > 0.0);
+	assert(a >= 0.0);
 	// convert amount in mols to number of molecules
 	double a2 = a * steps::math::AVOGADRO;
 	// the following method does all the necessary argument checking
