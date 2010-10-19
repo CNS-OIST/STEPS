@@ -48,6 +48,7 @@
 #include "diff.hpp"
 #include "comp.hpp"
 #include "patch.hpp"
+#include "diffboundary.hpp"
 #include "../math/constants.hpp"
 #include "../error.hpp"
 #include "../solver/statedef.hpp"
@@ -103,6 +104,7 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
 , pComps()
 , pCompMap()
 , pPatches()
+, pDiffBoundaries()
 , pTets()
 , pTris()
 , pA0(0.0)
@@ -162,6 +164,15 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
         uint patchdef_gidx = (*p)->gidx();
         uint patch_idx = _addPatch(*p);
         assert(patchdef_gidx == patch_idx);
+    }
+
+    // Create the diffusion boundaries
+    ssolver::DiffBoundarydefPVecCI db_end = statedef()->endDiffBoundary();
+    for (ssolver::DiffBoundaryDefPVecCI db = statedef()->bgnDiffBoundary(); db != db_end; ++db)
+    {
+    	uint diffboundary_gidx = (*db)->gidx();
+    	uint diffb_idx = _addDiffBoundary(*db);
+    	assert(diffboundary_gidx == diffb_idx);
     }
 
     uint ncomps = pComps.size();
@@ -237,6 +248,8 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
     // locally- now we can connect them locally
     // NOTE: currently if a tetrahedron's neighbour belongs to a different
     // comp they do not talk to each other (see stex::Tet::setNextTet())
+    // NOT TRUE ANY MORE. Later Diffusion Boundary objects can allow tets
+    // in different compartments to have diffusion between them
     //
 
     assert (ntets == pTets.size());
@@ -333,6 +346,108 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
 				}
     		}
     	}
+    }
+
+
+    // Now loop over the diffusion boundaries:
+    // 1) get all the triangles and get the two tetrahedrons
+    // 2) figure out which direction is the direction for a tetrahedron
+    // 3) add the tetrahedron and the direction to local object
+
+    // This is here because we need all tets to have been assigned correctly
+    // to compartments. Check every one and set the compA and compB for the db
+    uint ndiffbnds = pDiffBoundaries.size();
+    assert(ndiffbnds ==	mesh()->_countDiffBoundaries());
+
+    for (uint db = 0; db < ndiffbnds; ++db)
+    {
+    	steps::tetexact::DiffBoundary * localdiffb = pDiffBoundaries[db];
+        std::vector<uint> dbtrisvec = localdiffb->def()->tris();
+
+        uint compAidx = localdiffb->def()->compa();
+        uint compBidx = localdiffb->def()->compb();
+        steps::solver::Compdef * compAdef = statedef()->compdef(compAidx);
+        steps::solver::Compdef * compBdef = statedef()->compdef(compBidx);
+
+        std::vector<uint>::const_iterator dbtris_end = dbtrisvec.end();
+        for (std::vector<uint>::const_iterator dbtris = dbtrisvec.begin(); dbtris != dbtris_end; ++dbtris)
+        {
+    		steps::tetmesh::Tri * tri = new steps::tetmesh::Tri(mesh(), (*dbtris));
+
+    		uint tetAidx = tri->getTet0Idx();
+    		uint tetBidx = tri->getTet1Idx();
+    		assert (tetAidx >= 0 and tetBidx >= 0);
+
+    		delete tri;
+
+    		steps::tetexact::Tet * tetA = _tet(tetAidx);
+    		steps::tetexact::Tet * tetB = _tet(tetBidx);
+    		assert(tetA != 0 and tetB != 0);
+
+    		steps::solver::Compdef * tetA_cdef = tetA->compdef();
+    		steps::solver::Compdef * tetB_cdef = tetB->compdef();
+    		assert (tetA_cdef != 0);
+    		assert (tetB_cdef != 0);
+
+    		if (tetA_cdef != compAdef)
+    		{
+    			assert (tetB_cdef == compAdef);
+    			assert (tetA_cdef == compBdef);
+    		}
+    		assert (tetB_cdef == compBdef);
+    		assert (tetA_cdef == compAdef);
+
+    		// Ok, checks over, lets get down to business
+    		int direction_idx_a = -1;
+    		int direction_idx_b = -1;
+
+    		steps::tetmesh::Tet * tetA_mesh = new steps::tetmesh::Tet(mesh(), (tetAidx));
+    		steps::tetmesh::Tet * tetB_mesh = new steps::tetmesh::Tet(mesh(), (tetBidx));
+
+    		for (uint i = 0; i < 4; ++i)
+    		{
+    			if (tetA_mesh->getTriIdx(i) == (*dbtris))
+    			{
+    				assert(direction_idx_a == -1);
+    				direction_idx_a = i;
+    			}
+    			if (tetB_mesh->getTriIdx(i) == (*dbtris))
+    			{
+    				assert(direction_idx_b == -1);
+    				direction_idx_b = i;
+    			}
+    		}
+    		assert (direction_idx_a != -1);
+    		assert (direction_idx_b != -1);
+
+    		// Set the tetrahedron and direction to the Diff Boundary object
+    		localdiffb->setTetDirection(tetAidx, direction_idx_a);
+    		localdiffb->setTetDirection(tetBidx, direction_idx_b);
+
+    		delete tetA_mesh;
+    		delete tetB_mesh;
+        }
+
+        localdiffb->setComps(_comp(compAidx), _comp(compBidx));
+
+        // Before the kprocs are set up ( in _setup) the tetrahedrons need to know the diffusion
+        // boundary direction, so let's do it here  - the diff bounday has had all
+        // tetrahedrons added
+
+        // Might as well copy the vectors because we need to index through
+        std::vector<uint> tets = localdiffb->getTets();
+        std::vector<uint> tets_direction = localdiffb->getTetDirection();
+
+        ntets = tets.size();
+        assert (ntets <= pTets.size());
+        assert (tets_direction.size() == ntets);
+
+        for (uint t = 0; t < ntets; ++t)
+        {
+        	steps::tetexact::Tet * localtet = _tet(tets[t]);
+        	localtet->setDiffBndDirection(tets_direction[t]);
+        }
+
     }
 
     _setup();
@@ -469,6 +584,17 @@ uint stex::Tetexact::_addPatch(steps::solver::Patchdef * pdef)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+uint stex::Tetexact::_addDiffBoundary(steps::solver::DiffBoundarydef * dbdef)
+{
+	stex::DiffBoundary * diffb = new DiffBoundary(dbdef);
+	assert(diffb != 0);
+	uint dbidx = pDiffBoundaries.size();
+	pDiffBoundaries.push_back(diffb);
+	return dbidx;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void stex::Tetexact::_addTet(uint tetidx,
 							 steps::tetexact::Comp * comp, double vol,
 							 double a1, double a2, double a3, double a4,
@@ -476,7 +602,7 @@ void stex::Tetexact::_addTet(uint tetidx,
 							 int tet0, int tet1, int tet2, int tet3)
 {
 	steps::solver::Compdef * compdef  = comp->def();
-    stex::Tet * localtet = new stex::Tet(compdef, vol, a1, a2, a3, a4, d1, d2, d3, d4,
+    stex::Tet * localtet = new stex::Tet(tetidx, compdef, vol, a1, a2, a3, a4, d1, d2, d3, d4,
 									     tet0, tet1, tet2, tet3);
     assert(localtet != 0);
     assert(tetidx < pTets.size());
@@ -1262,6 +1388,120 @@ void stex::Tetexact::_setPatchSReacActive(uint pidx, uint ridx, bool a)
     }
     // It's cheaper to just recompute everything.
     _reset();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stex::Tetexact::_setDiffBoundaryDiffusionActive(uint dbidx, uint sidx, bool act)
+{
+	assert (dbidx < statedef()->countDiffBoundaries());
+	assert (sidx < statedef()->countSpecs());
+
+	// Need to do two things:
+	// 1) check if the species is defined in both compartments conencted
+	// by the diffusion boundary
+	// 2) loop over all tetrahedrons around the diff boundary and then the
+	// diffusion rules and activate diffusion if the diffusion rule
+	// relates to this species
+
+	stex::DiffBoundary * diffb = _diffboundary(dbidx);
+	stex::Comp * compA = diffb->compA();
+	stex::Comp * compB = diffb->compB();
+
+	/*
+	ssolver::Diffdef * diffdef = statedef()->diffdef(didx);
+	uint specgidx = diffdef->lig();
+	*/
+	uint lsidxA = compA->def()->specG2L(sidx);
+	uint lsidxB = compB->def()->specG2L(sidx);
+
+
+	if (lsidxA == ssolver::LIDX_UNDEFINED or lsidxB == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in compartments connected by diffusion boundary.\n";
+		throw steps::ArgErr(os.str());
+	}
+
+	std::vector<uint> bdtets = diffb->getTets();
+	std::vector<uint> bdtetsdir = diffb->getTetDirection();
+
+	// Have to use indices rather than iterator because need access to the
+	// tet direction
+	uint ntets = bdtets.size();
+
+	for (uint bdt = 0; bdt != ntets; ++bdt)
+	{
+		stex::Tet * tet = _tet(bdtets[bdt]);
+		uint direction = bdtetsdir[bdt];
+		assert(direction >= 0 and direction < 4);
+
+		// Each diff kproc then has access to the species through it's defined parent
+		uint ndiffs = tet->compdef()->countDiffs();
+		for (uint d = 0; d != ndiffs; ++d)
+		{
+			stex::Diff * diff = tet->diff(d);
+			// sidx is the global species index; so is the lig() return from diffdef
+			uint specgidx = diff->def()->lig();
+			if (specgidx == sidx)
+			{
+				diff->setDiffBndActive(direction, act);
+			}
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool stex::Tetexact::_getDiffBoundaryDiffusionActive(uint dbidx, uint sidx) const
+{
+	assert (dbidx < statedef()->countDiffBoundaries());
+	assert (sidx < statedef()->countSpecs());
+
+	stex::DiffBoundary * diffb = _diffboundary(dbidx);
+	stex::Comp * compA = diffb->compA();
+	stex::Comp * compB = diffb->compB();
+
+	uint lsidxA = compA->def()->specG2L(sidx);
+	uint lsidxB = compB->def()->specG2L(sidx);
+
+	if (lsidxA == ssolver::LIDX_UNDEFINED or lsidxB == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in compartments connected by diffusion boundary.\n";
+		throw steps::ArgErr(os.str());
+	}
+
+	std::vector<uint> bdtets = diffb->getTets();
+	std::vector<uint> bdtetsdir = diffb->getTetDirection();
+
+	// Have to use indices rather than iterator because need access to the
+	// tet direction
+
+	uint ntets = bdtets.size();
+
+	for (uint bdt = 0; bdt != ntets; ++bdt)
+	{
+		stex::Tet * tet = _tet(bdtets[bdt]);
+		uint direction = bdtetsdir[bdt];
+		assert(direction >= 0 and direction < 4);
+
+		// Each diff kproc then has access to the species through it's defined parent
+		uint ndiffs = tet->compdef()->countDiffs();
+		for (uint d = 0; d != ndiffs; ++d)
+		{
+			stex::Diff * diff = tet->diff(d);
+			// sidx is the global species index; so is the lig() return from diffdef
+			uint specgidx = diff->def()->lig();
+			if (specgidx == sidx)
+			{
+				// Just need to check the first one
+				if (diff->getDiffBndActive(direction)) return true;
+				else return false;
+			}
+		}
+	}
+	return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

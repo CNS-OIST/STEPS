@@ -27,7 +27,7 @@
  *  Last Changed Date: $Date$
  *  Last Changed By:   $Author$
  */
-
+/*
 
 // STL headers.
 #include <cassert>
@@ -392,3 +392,4 @@ void steps::tetmesh::saveASCII(string pathname, Tetmesh * m)
 ////////////////////////////////////////////////////////////////////////////////
 
 // END
+*/

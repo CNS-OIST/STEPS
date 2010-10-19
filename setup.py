@@ -79,7 +79,8 @@ def steps_ext():
         'cpp/math/linsolve.cpp','cpp/math/triangle.cpp',
         'cpp/geom/comp.cpp','cpp/geom/geom.cpp','cpp/geom/patch.cpp',
         'cpp/geom/tet.cpp', 'cpp/geom/tetmesh_rw.cpp',
-        'cpp/geom/tmcomp.cpp','cpp/geom/tmpatch.cpp','cpp/geom/tri.cpp',
+        'cpp/geom/tmcomp.cpp','cpp/geom/tmpatch.cpp', 'cpp/geom/diffboundary.cpp',
+        'cpp/geom/tri.cpp',
 
         
         'cpp/math/tools.cpp',
@@ -87,16 +88,18 @@ def steps_ext():
 
         'cpp/solver/api_comp.cpp','cpp/solver/api_main.cpp',
         'cpp/solver/api_patch.cpp','cpp/solver/api_tet.cpp',
-        'cpp/solver/api_tri.cpp','cpp/solver/compdef.cpp',
+        'cpp/solver/api_tri.cpp', 'cpp/solver/api_diffboundary.cpp',
+        'cpp/solver/compdef.cpp',
         'cpp/solver/diffdef.cpp','cpp/solver/patchdef.cpp',
         'cpp/solver/reacdef.cpp','cpp/solver/specdef.cpp',
-        'cpp/solver/sreacdef.cpp','cpp/solver/statedef.cpp',
+        'cpp/solver/sreacdef.cpp', 'cpp/solver/diffboundarydef.cpp',
+        'cpp/solver/statedef.cpp',
         
         'cpp/tetexact/comp.cpp','cpp/tetexact/diff.cpp',
         'cpp/tetexact/kproc.cpp','cpp/tetexact/patch.cpp',
         'cpp/tetexact/reac.cpp','cpp/tetexact/sreac.cpp',
         'cpp/tetexact/tet.cpp','cpp/tetexact/tetexact.cpp',
-        'cpp/tetexact/tri.cpp',
+        'cpp/tetexact/tri.cpp', 'cpp/tetexact/diffboundary.cpp',
         
         'cpp/wmdirect/comp.cpp','cpp/wmdirect/kproc.cpp',
         'cpp/wmdirect/patch.cpp','cpp/wmdirect/reac.cpp',

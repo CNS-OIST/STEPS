@@ -47,6 +47,43 @@ NAMESPACE_ALIAS(steps::tetmesh, stetmesh);
 
 ////////////////////////////////////////////////////////////////////////////////
 
+bool steps::tetmesh::isValidID(std::string const & id)
+{
+    int idlen = id.length();
+    if (idlen == 0) return false;
+    const char * s = id.c_str();
+    char s0 = s[0];
+    if (((s0 >= 'a') && (s0 <= 'z')) ||
+        ((s0 >= 'A') && (s0 <= 'Z')) ||
+        (s0 == '_')) goto l0;
+    return false;
+l0:
+    int i = 0;
+l1:
+    if (++i == idlen) return true;
+    char si = s[i];
+    if (((si >= 'a') && (si <= 'z')) ||
+        ((si >= 'A') && (si <= 'Z')) ||
+        ((si >= '0') && (si <= '9')) ||
+        (si == '_')) goto l1;
+    return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void steps::tetmesh::checkID(std::string const & id)
+{
+    bool r = steps::tetmesh::isValidID(id);
+    if (r == false)
+    {
+        std::ostringstream os;
+        os << "'" << id << "' is not a valid id";
+        throw steps::ArgErr(os.str());
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 stetmesh::Tetmesh::Tetmesh(uint nverts, uint ntets, uint ntris)
 : Geom()
 , pSetupDone(false)
@@ -58,6 +95,7 @@ stetmesh::Tetmesh::Tetmesh(uint nverts, uint ntets, uint ntris)
 , pTri_barycs(0)
 , pTri_norms(0)
 , pTri_patches(0)
+, pTri_diffboundaries(0)
 , pTri_tet_neighbours(0)
 , pTetsN(ntets)
 , pTets(0)
@@ -73,6 +111,8 @@ stetmesh::Tetmesh::Tetmesh(uint nverts, uint ntets, uint ntris)
 , pYmax(0.0)
 , pZmin(0.0)
 , pZmax(0.0)
+, pDiffBoundaries()
+
 {	/*
     assert(pVertsN > 0);
     assert(pTrisN > 0);
@@ -183,6 +223,8 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 , pYmax(0.0)
 , pZmin(0.0)
 , pZmax(0.0)
+, pDiffBoundaries()
+
 {
 	// check the vectors are of the expected size
 	if ((verts.size() % 3) != 0 || (tris.size() % 3) != 0
@@ -465,6 +507,10 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 	pTri_patches = new stetmesh::TmPatch*[pTrisN];
 	// Initialise patch pointers to zero (fill_n doesn't work for zero pointers)
 	for (uint i=0; i<pTrisN; ++i) pTri_patches[i] = 0;
+	pTri_diffboundaries = new stetmesh::DiffBoundary*[pTrisN];
+	for (uint i=0; i<pTrisN; ++i) pTri_diffboundaries[i] = 0;
+
+
 	pTri_tet_neighbours = new int[pTrisN * 2];
 	for (uint i=0; i < pTrisN*2; ++i) pTri_tet_neighbours[i] = tri_tet_neighbours_temp[i];
 
@@ -554,6 +600,7 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 , pTri_norms(0)
 , pTri_barycs(0)
 , pTri_patches(0)
+, pTri_diffboundaries(0)
 , pTri_tet_neighbours(0)
 , pTris_user(0) // not used by this contructor
 , pTetsN(0)
@@ -568,6 +615,8 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 , pYmax(0.0)
 , pZmin(0.0)
 , pZmax(0.0)
+, pDiffBoundaries()
+
 {
 	// Check all vectors are of expected size
    	if ((verts.size() % 3) != 0 )
@@ -665,6 +714,9 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 	pTri_patches = new stetmesh::TmPatch*[pTrisN];
 	// Initialise patch pointers to zero (fill_n doesn't appear to work for zero pointers)
 	for (uint i=0; i<pTrisN; ++i) pTri_patches[i] = 0;
+
+	pTri_diffboundaries = new stetmesh::DiffBoundary*[pTrisN];
+	for (uint i=0; i<pTrisN; ++i) pTri_diffboundaries[i] = 0;
 
 	// copy the supplied vertices information to pVerts member
 	for (uint i = 0; i < pVertsN*3; ++i) pVerts[i] = verts[i];
@@ -768,6 +820,7 @@ stetmesh::Tetmesh::~Tetmesh(void)
 	delete[] pTri_areas;
 	delete[] pTri_norms;
 	delete[] pTri_patches;
+	delete[] pTri_diffboundaries;
 	delete[] pTri_tet_neighbours;
 	delete[] pTets;
 	delete[] pTet_vols;
@@ -1493,6 +1546,32 @@ void stetmesh::Tetmesh::setTriPatch(uint tidx, stetmesh::TmPatch * patch)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void stetmesh::Tetmesh::setTriDiffBoundary(uint tidx, stetmesh::DiffBoundary * diffb)
+{
+	if (tidx >= pTrisN)
+	{
+		std::ostringstream os;
+		os << "Triangle index is out of range.";
+		throw steps::ArgErr(os.str());
+	}
+	pTri_diffboundaries[tidx] = diffb;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+stetmesh::DiffBoundary * stetmesh::Tetmesh::getTriDiffBoundary(uint tidx) const
+{
+	if (tidx >= pTrisN)
+	{
+		std::ostringstream os;
+		os << "Triangle index is out of range.";
+		throw steps::ArgErr(os.str());
+	}
+    return pTri_diffboundaries[tidx];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 std::vector<int> stetmesh::Tetmesh::getTriTetNeighb(uint tidx) const
 {
     assert(pSetupDone == true);
@@ -1511,7 +1590,7 @@ std::vector<int> stetmesh::Tetmesh::getTriTetNeighb(uint tidx) const
 ////////////////////////////////////////////////////////////////////////////////
 
 // Created by weiliang 2010.02.02
-std::vector<int> stetmesh::Tetmesh::getTriBoundary(void) const 
+std::vector<int> stetmesh::Tetmesh::getTriBoundary(void) const
 {
     assert(pSetupDone == true);
     std::vector<int> tribounds;
@@ -1831,6 +1910,62 @@ int * stetmesh::Tetmesh::_getTetTetNeighb(uint tidx) const
 double * stetmesh::Tetmesh::_getTriNorm(uint tidx) const
 {
 	return pTri_norms + (tidx * 3);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stetmesh::Tetmesh::_checkDiffBoundaryID(std::string const & id) const
+{
+    checkID(id);
+    if (pDiffBoundaries.find(id) != pDiffBoundaries.end())
+    {
+		std::ostringstream os;
+        os << "'" << id << "' is already in use";
+        throw steps::ArgErr(os.str());
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stetmesh::Tetmesh::_handleDiffBoundaryIDChange(std::string const & o, std::string const & n)
+{
+    DiffBoundaryPMapCI db_old = pDiffBoundaries.find(o);
+    assert(db_old != pDiffBoundaries.end());
+
+    if (o == n) return;
+    _checkDiffBoundaryID(n);
+
+    DiffBoundary * db = db_old->second;
+    assert(db != 0);
+    pDiffBoundaries.erase(db->getID());						// or s_old->first
+    pDiffBoundaries.insert(DiffBoundaryPMap::value_type(n, db));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stetmesh::Tetmesh::_handleDiffBoundaryAdd(stetmesh::DiffBoundary * diffb)
+{
+    assert(diffb->getTetmesh() == this);
+    _checkDiffBoundaryID(diffb->getID());
+    pDiffBoundaries.insert(DiffBoundaryPMap::value_type(diffb->getID(), diffb));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stetmesh::Tetmesh::_handleDiffBoundaryDel(stetmesh::DiffBoundary * diffb)
+{
+    assert(diffb->getTetmesh() == this);
+    pDiffBoundaries.erase(diffb->getID());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+steps::tetmesh::DiffBoundary * stetmesh::Tetmesh::_getDiffBoundary(uint gidx) const
+{
+	assert (gidx < pDiffBoundaries.size());
+	std::map<std::string, DiffBoundary *>::const_iterator db_it = pDiffBoundaries.begin();
+	for (uint i=0; i< gidx; ++i) ++db_it;
+	return db_it->second;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

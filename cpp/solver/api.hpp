@@ -115,9 +115,9 @@ public:
     ///
     /// \param dt Dt.
     virtual void setDT(double dt);
-    
+
     virtual void setNSteps(uint nsteps);
-    
+
     virtual void setTime(double time);
 
 
@@ -634,6 +634,24 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
+    //      DIFFUSION BOUNDARIES
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Activate or inactivate diffusion across a diffusion boundary for a species.
+    ///
+    /// \param db Name of the diffusion boundary.
+    /// \param s Name of the species.
+    /// \param act Bool to activate (true) or inactivate (false) diffusion.
+    void setDiffBoundaryDiffusionActive(std::string const & db, std::string const & s, bool act);
+
+    /// Returns whether diffusion is active across a diffusion boundary for a species.
+    ///
+    /// \param db Name of the diffusion boundary.
+    /// \param s Name of the species.
+    bool getDiffBoundaryDiffusionActive(std::string const & db, std::string const & s) const;
+
+    ////////////////////////////////////////////////////////////////////////
+    // SOLVER STATE ACCESS:
     //      TRIANGULAR SURFACE ELEMENTS
     ////////////////////////////////////////////////////////////////////////
 
@@ -856,6 +874,14 @@ protected:
 
     virtual uint _getPatchSReacExtent(uint pidx, uint ridx) const;
     virtual void _resetPatchSReacExtent(uint pidx, uint ridx);
+
+    ////////////////////////////////////////////////////////////////////////
+    // SOLVER STATE ACCESS:
+    //      DIFFUSION BOUNDARIES
+    ////////////////////////////////////////////////////////////////////////
+
+    virtual void _setDiffBoundaryDiffusionActive(uint dbidx, uint sidx, bool act);
+    virtual bool _getDiffBoundaryDiffusionActive(uint dbidx, uint sidx) const;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:

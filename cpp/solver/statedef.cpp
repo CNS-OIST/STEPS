@@ -1,4 +1,3 @@
-
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
 // Copyright (C) 2007-2010ÊOkinawa Institute of Science and Technology, Japan.
@@ -47,6 +46,7 @@
 #include "reacdef.hpp"
 #include "sreacdef.hpp"
 #include "diffdef.hpp"
+#include "diffboundarydef.hpp"
 
 NAMESPACE_ALIAS(steps::solver, ssolver);
 
@@ -64,6 +64,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
 , pReacdefs()
 , pSReacdefs()
 , pDiffdefs()
+, pDiffBoundarydefs()
 
 {
     assert(pModel != 0);
@@ -120,6 +121,17 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     	pPatchdefs.push_back(patchdef);
     }
 
+    if (steps::tetmesh::Tetmesh * tetmesh = dynamic_cast<steps::tetmesh::Tetmesh *>(pGeom))
+    {
+    	uint ndiffbs = tetmesh->_countDiffBoundaries();
+    	for (uint dbidx = 0; dbidx < ndiffbs; ++dbidx)
+    	{
+    		ssolver::DiffBoundarydef * diffboundarydef = new DiffBoundarydef(this, dbidx, tetmesh->_getDiffBoundary(dbidx));
+    		assert (diffboundarydef != 0);
+    		pDiffBoundarydefs.push_back(diffboundarydef);
+    	}
+    }
+
     // Now setup all the def objects. This can't be achieved purely with		/// check the order
     // the constructors, e.g.  a patch may need to add species from its
     // surface reactions to inner, outer comp
@@ -142,6 +154,10 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     	(*c)->setup_indices();
     for (PatchdefPVecI p = pPatchdefs.begin(); p != pPatchdefs.end(); ++p)
     	(*p)->setup_indices();
+
+    for (DiffBoundaryDefPVecI db = pDiffBoundarydefs.begin(); db != pDiffBoundarydefs.end(); ++db)
+    	(*db)->setup();
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -156,6 +172,9 @@ ssolver::Statedef::~Statedef()
 
 	PatchdefPVecCI p_end = pPatchdefs.end();
 	for (PatchdefPVecCI p = pPatchdefs.begin(); p != p_end; ++p) delete *p;
+
+	DiffBoundarydefPVecCI db_end = pDiffBoundarydefs.end();
+	for (DiffBoundarydefPVecCI db = pDiffBoundarydefs.begin(); db != db_end; ++db) delete *db;
 
 	ReacdefPVecCI r_end = pReacdefs.end();
 	for (ReacdefPVecCI r = pReacdefs.begin(); r != r_end; ++r) delete *r;
@@ -415,6 +434,65 @@ uint ssolver::Statedef::getDiffIdx(steps::model::Diff * diff) const
 	}
     // Argument should be valid so we should not get here
     assert(false);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+ssolver::DiffBoundarydef * ssolver::Statedef::diffboundarydef(uint gidx) const
+{
+	assert(gidx < pDiffBoundarydefs.size());
+	return pDiffBoundarydefs[gidx];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint ssolver::Statedef::getDiffBoundaryIdx(std::string const & d) const
+{
+	uint maxdidx = pDiffBoundarydefs.size();
+	if (steps::tetmesh::Tetmesh * tetmesh = dynamic_cast<steps::tetmesh::Tetmesh *>(pGeom))
+	{
+		assert (maxdidx == tetmesh->_countDiffBoundaries());
+		uint didx = 0;
+		while(didx < maxdidx)
+		{
+			if (d == tetmesh->_getDiffBoundary(didx)->getID()) return didx;
+			++didx;
+		}
+		std::ostringstream os;
+		os << "Geometry does not contain diff boundary with string identifier '" << d <<"'.";
+		throw steps::ArgErr(os.str());
+	}
+	else
+	{
+		std::ostringstream os;
+		os << "Diffusion boundary methods not available with well-mixed geometry";
+		throw steps::ArgErr(os.str());
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint ssolver::Statedef::getDiffBoundaryIdx(steps::tetmesh::DiffBoundary * diffb) const
+{
+	uint maxdidx = pDiffBoundarydefs.size();
+	if (steps::tetmesh::Tetmesh * tetmesh = dynamic_cast<steps::tetmesh::Tetmesh *>(pGeom))
+	{
+		assert (maxdidx == tetmesh->_countDiffBoundaries());
+		uint didx = 0;
+		while(didx < maxdidx)
+		{
+			if (diffb == tetmesh->_getDiffBoundary(didx)) return didx;
+			++didx;
+		}
+		// Argument should be valid so we should not get here
+		assert(false);
+	}
+	else
+	{
+		std::ostringstream os;
+		os << "Diffusion boundary methods not available with well-mixed geometry";
+		throw steps::ArgErr(os.str());
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////

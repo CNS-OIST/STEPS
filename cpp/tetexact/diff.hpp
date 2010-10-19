@@ -74,6 +74,9 @@ public:
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
+    inline steps::solver::Diffdef * def(void) const
+    { return pDiffdef; }
+
     inline double dcst(void) const
     { return pDcst; }
     void setDcst(double d);
@@ -89,8 +92,9 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    //inline steps::solver::Reacdef * defr(void) const
-    //{ return pReacdef; }
+    void setDiffBndActive(uint i, bool active);
+
+    bool getDiffBndActive(uint i) const;
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -107,6 +111,12 @@ private:
     double                              pDcst;
     /// Used in selecting which directory the molecule should go.
     double                              pCDFSelector[3];
+
+    // A flag to see if the species can move between compartments
+    bool 								pDiffBndActive[4];
+
+    // Flags to store if a direction is a diffusion boundary direction
+    bool 							    pDiffBndDirection[4];
 
     ////////////////////////////////////////////////////////////////////////
 

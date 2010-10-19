@@ -78,7 +78,7 @@ public:
 
     Tet
     (
-        steps::solver::Compdef * cdef, double vol,
+        uint idx, steps::solver::Compdef * cdef, double vol,
         double a0, double a1, double a2, double a3,
         double d0, double d1, double d2, double d3,
         int tet0, int tet1, int tet2, int tet3
@@ -88,6 +88,9 @@ public:
     ////////////////////////////////////////////////////////////////////////
     // SETUP
     ////////////////////////////////////////////////////////////////////////
+
+    inline uint idx(void) const
+    { return pIdx; }
 
     /// Set pointer to the next neighbouring tetrahedron.
     ///
@@ -171,6 +174,12 @@ public:
     inline int tet(uint t)
     { return pTets[t]; }
 
+    // Set whether a direction is a diffusion boundary
+    void setDiffBndDirection(uint i);
+
+    inline bool getDiffBndDirection(uint idx) const
+    { return pDiffBndDirection[idx]; }
+
     /*
     inline uint tri(uint t)
     { return pTris[t]; }
@@ -182,6 +191,7 @@ private:
 
     ////////////////////////////////////////////////////////////////////////
 
+	uint 								pIdx;
     /// Type of tetrahedron.
     steps::solver::Compdef            * pCompdef;
 
@@ -208,6 +218,9 @@ private:
 
     /// The kinetic processes.
     std::vector<stex::KProc *>          pKProcs;
+
+    /// Flag if a direction is a diffusion boundary direction
+    bool  								pDiffBndDirection[4];
 
     ////////////////////////////////////////////////////////////////////////
 

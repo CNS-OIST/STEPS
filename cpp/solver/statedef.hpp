@@ -43,6 +43,7 @@
 #include "../rng/rng.hpp"
 #include "api.hpp"
 #include "../geom/patch.hpp"
+#include "../geom/diffboundary.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -56,6 +57,7 @@ class Specdef;
 class Reacdef;
 class SReacdef;
 class Diffdef;
+class DiffBoundarydef;
 
 // Auxiliary declarations.
 
@@ -88,6 +90,11 @@ typedef Diffdef *                        DiffdefP;
 typedef std::vector<DiffdefP>            DiffdefPVec;
 typedef DiffdefPVec::iterator            DiffdefPVecI;
 typedef DiffdefPVec::const_iterator      DiffdefPVecCI;
+
+typedef DiffBoundarydef *                    DiffBoundarydefP;
+typedef std::vector<DiffBoundarydefP>        DiffBoundarydefPVec;
+typedef DiffBoundarydefPVec::iterator        DiffBoundarydefPVecI;
+typedef DiffBoundarydefPVec::const_iterator  DiffBoundarydefPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Defined State
@@ -287,6 +294,39 @@ public:
     uint getDiffIdx(steps::model::Diff * diff) const;
 
     ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: DIFFUSION BOUNDARY
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Return the total number of diffusion boundaries in the simulation state.
+    uint countDiffBoundaries(void) const
+    { return pDiffBoundarydefs.size(); }
+
+    /// Return pointer to DiffBoundarydef object specified by global index argument.
+    ///
+    /// \param gidx Global index of the diffusion boundary.
+    DiffBoundarydef * diffboundarydef(uint gidx) const;
+
+    /// Return the global index of diffusion boundary identified by string argument.
+    ///
+    /// \param d Name of the diffusion boundary.
+    /// \exception Throw exception if geometry does not contain diff boundary with this identifier.
+    uint getDiffBoundaryIdx(std::string const & d) const;
+
+    /// Return the global index of diffusion boundary identified by object argument.
+    ///
+    /// \param diff Pointer to the diffusion boundary object.
+    /// \exception Throw exception if geometry does not contain diff boundary with this identifier.
+    uint getDiffBoundaryIdx(steps::tetmesh::DiffBoundary * diffb) const;
+
+    /// Return the beginning iterator of the Diffusion Boundary objects.
+    std::vector<DiffBoundarydef *>::const_iterator bgnDiffBoundary(void) const
+    { return pDiffBoundarydefs.begin(); }
+
+    /// Return the end iterator of the Diffusion Boundary objects.
+    std::vector<DiffBoundarydef *>::const_iterator endDiffBoundary(void) const
+    { return pDiffBoundarydefs.end(); }
+
+    ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: STATE
     ////////////////////////////////////////////////////////////////////////
 
@@ -332,7 +372,7 @@ public:
     /// Return current simulation time step.
     inline uint nsteps(void) const
     { return pNSteps; }
-    
+
     inline void setNSteps(uint nsteps)
     { pNSteps = nsteps; }
 
@@ -354,6 +394,7 @@ private:
 	std::vector<Reacdef *>              pReacdefs;
 	std::vector<SReacdef *>             pSReacdefs;
 	std::vector<Diffdef *>              pDiffdefs;
+	std::vector<DiffBoundarydef *>      pDiffBoundarydefs;
 
 };
 

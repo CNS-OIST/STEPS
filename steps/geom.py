@@ -429,7 +429,44 @@ class TmPatch(steps_swig.TmPatch):
     tris = steps_swig._swig_property(_steps_swig.TmPatch_getAllTriIndices)
     """List of indices of triangles associated to the patch."""
     
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+class DiffBoundary(steps_swig.DiffBoundary):
+    """
+    Annotation of a group of triangles in a Tetmesh. The triangles form 
+    a boundary between two compartments, that may allow diffusion of some
+    specified species.
+    """    
+    def __init__(self, *args, **kwargs): 
+        """
+        Construction::
+        
+            diffb = steps.geom.DiffBoundary(id, container, tris)
+            
+        Construct a DiffBoundary object with identifier string id and assign container 
+        as the parent geometry container, described by group of triangles tris.
+            
+        Arguments: 
+            * string id
+            * steps.geom.Tetmesh container
+            * list<uint> tris
+        """
+        this = _steps_swig.new_DiffBoundary(*args, **kwargs)
+        try: self.this.append(this)
+        except: self.this = this
+        self.thisown = False
+        self.__swig_getmethods__["tris"] = _steps_swig.DiffBoundary_getAllTriIndices
+        self.__swig_setmethods__["id"] = _steps_swig.DiffBoundary_setID
+        self.__swig_getmethods__["id"] = _steps_swig.DiffBoundary_getID
+        self.__swig_getmethods__["container"] = _steps_swig.DiffBoundary_getContainer
+        
+    tris = steps_swig._swig_property(_steps_swig.DiffBoundary_getAllTriIndices)
+    """List of indices of triangles associated to the patch."""
+    id = steps_swig._swig_property(_steps_swig.DiffBoundary_getID, _steps_swig.DiffBoundary_setID)
+    """Identifier string of the diffusion boundary."""
+    container = steps_swig._swig_property(_steps_swig.DiffBoundary_getContainer)
+    """Reference to parent steps.tetmesh.Tetmesh container."""
+    
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 """

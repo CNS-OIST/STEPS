@@ -37,6 +37,8 @@
 #include "geom.hpp"
 #include "tmpatch.hpp"
 #include "tmcomp.hpp"
+#include "diffboundary.hpp"
+
 
 // STL headers
 #include <vector>
@@ -51,11 +53,34 @@ START_NAMESPACE(tetmesh)
 // Forward declarations
 class TmPatch;
 class TmComp;
+class DiffBoundary;
 
 ////////////////////////////////////////////////////////////////////////////////
 
 template <class T>
 bool array_srt_cmp(T ar1[], T ar2[], uint ar_size);
+
+/// Test whether id is a valid identifier for some named STEPS component.
+/// It returns a boolean value.
+///
+/// A valid id must be at least 1 character long and must start with an
+/// underscore or an alphabetical character (a to z, or A to Z). Following
+/// characters can be any alphanumerical character or again underscores.
+/// The id cannot contain spaces.
+///
+/// Examples of valid id's:
+///     a, _a, _a_, a000, adasf0, FSDaa9
+///
+STEPS_EXTERN bool isValidID(std::string const & id);
+
+/// Test whether id is a valid identifier for some named STEPS component.
+///
+/// This function calls steps::model::isValidID() for the test. But whereas
+/// isValidID() returns true or false, checkID() raises a steps::ArgErr
+/// exception if the id is not valid. This makes it useful for checking
+/// input arguments.
+///
+STEPS_EXTERN void checkID(std::string const & id);
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -134,7 +159,7 @@ public:
     /// Constructor
     ///
     /// \param verts
-    /// TODO: finsih this
+    /// TODO: finish this
     Tetmesh(std::vector<double> const & verts, std::vector<uint> const & tris,
     		std::vector<double> const & tri_areas,
     		std::vector<double> const & tri_norms,
@@ -238,25 +263,38 @@ public:
     std::vector<double> getTriNorm(uint tidx) const;
 
     //getTriBarycenter
+
     /// Return the patch which a triangle associated to.
     ///
     /// \param tidx Index of the triangle.
     /// \return Pointer to the patch.
-
     steps::tetmesh::TmPatch * getTriPatch(uint tidx) const;
+
     ///Set the patch which a triangle belongs to.
     ///
     /// \param tidx Index of the triangle.
     /// \param patch Pointer to the associated patch.
-
     void setTriPatch(uint tidx, steps::tetmesh::TmPatch * patch);
+
+    ///Set the diffusion boundary which a triangle belongs to.
+    ///
+    /// \param tidx Index of the triangle.
+    /// \param patch Pointer to the associated diffusion boundary.
+    void setTriDiffBoundary(uint tidx, steps::tetmesh::DiffBoundary * diffb);
+
+    /// Return the diffusion boundary which a triangle is associated to.
+    ///
+    /// \param tidx Index of the triangle.
+    /// \return Pointer to the diffusion boundary.
+    steps::tetmesh::DiffBoundary * getTriDiffBoundary(uint tidx) const;
+
+
     ///Return the tetrahedron neighbors of a triangle by its index.
     ///
     /// \param tidx Index of the triangle.
     /// \return Vector of the tetrahedron neighbors.
-
     std::vector<int> getTriTetNeighb(uint tidx) const;
-    
+
     /// Return the triangles which form the surface boundary of the mesh.
     /// \return Vector of the triangle boundary.
     // Weiliang 2010.02.02
@@ -414,6 +452,40 @@ public:
     /// \return Array of Coordinate of the normalised vertices form the triangle.
     double * _getTriNorm(uint tidx) const;
 
+
+    /// Check if a diffusion boundary id is occupied.
+    ///
+    /// \param id ID of the diffusion boundary.
+    void _checkDiffBoundaryID(std::string const & id) const;
+
+    /// Change the id of a diffusion boundary.
+    ///
+    /// \param o Old id of the diffusion boundary.
+    /// \param n New id of the diffusion boundary.
+    void _handleDiffBoundaryIDChange(std::string const & o, std::string const & n);
+
+    /// Add a diffusion boundary.
+    ///
+    /// \param patch Pointer to the diffusion boundary.
+    void _handleDiffBoundaryAdd(steps::tetmesh::DiffBoundary * diffb);
+
+    /// Delete a diffusion boundary.
+    ///
+    /// \param patch Pointer to the diffusion boundary.
+    void _handleDiffBoundaryDel(steps::tetmesh::DiffBoundary * diffb);
+
+    /// Count the diffusion boundaries in the tetmesh container.
+    ///
+    /// \return Number of diffusion boundaries.
+	inline uint _countDiffBoundaries(void) const
+	{ return pDiffBoundaries.size(); }
+
+    /// Return a diffusion boundary with index gidx.
+    ///
+    /// \param gidx Index of the diffusion boundary.
+    /// \return Pointer to the diffusion boundary.
+	steps::tetmesh::DiffBoundary * _getDiffBoundary(uint gidx) const;
+
     ////////////////////////////////////////////////////////////////////////
 
 private:
@@ -445,6 +517,10 @@ private:
     double                            * pTri_norms;
     /// The patch a triangle belongs to
     steps::tetmesh::TmPatch          ** pTri_patches;
+
+    /// The diffusion boundary a triangle belongs to
+    steps::tetmesh::DiffBoundary 	 ** pTri_diffboundaries;
+
     /// The tetrahedron neighbours of each triangle (by index)
     int                               * pTri_tet_neighbours;
 
@@ -465,6 +541,8 @@ private:
     /// The tetrahedron neighbours of each tetrahedron (by index)
     int                               * pTet_tet_neighbours;
 
+
+	std::map<std::string, steps::tetmesh::DiffBoundary *> pDiffBoundaries;
 
 
     ////////////////////////////////////////////////////////////////////////

@@ -51,6 +51,7 @@ START_NAMESPACE(wm)
 // Forward declarations.
 class Comp;
 class Patch;
+class DiffBoundary;
 
 // Auxiliary declarations.
 

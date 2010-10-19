@@ -48,6 +48,7 @@
 #include "../cpp/geom/tetmesh.hpp"
 #include "../cpp/geom/tri.hpp"
 #include "../cpp/error.hpp"
+#include "../cpp/geom/diffboundary.hpp"
 %}
 
 
@@ -86,6 +87,7 @@ class Tri;
 class Tet;
 class TmPatch;
 class TmComp;
+class DiffBoundary;
 
 }
 }
@@ -129,10 +131,10 @@ namespace wm
 {
 
 ////////////////////////////////////////////////////////////////////////////////
-
+/*
 bool isValidID(std::string const & id);
 void checkID(std::string const & id);
-
+*/
 ////////////////////////////////////////////////////////////////////////////////
 
 class Geom
@@ -892,6 +894,23 @@ Return:
     steps.geom.TmPatch
 ");
 	steps::tetmesh::TmPatch * getTriPatch(unsigned int tidx) const;
+
+    %feature("autodoc", 
+"
+Returns a reference to a step.geom.Diffboundary object: the diffusion boundary triangle 
+with index tidx belongs to. Returns None if triangle not assigned to a diffusion boundary.
+             
+Syntax::
+             
+    getTriDiffBoundary(tidx)
+             
+Arguments:
+    uint tidx
+             
+Return:
+    steps.geom.DiffBoundary
+");
+	steps::tetmesh::DiffBoundary * getTriDiffBoundary(unsigned int tidx) const;
     
     %feature("autodoc", 
 "
@@ -1388,8 +1407,119 @@ Return:
 	std::vector<bool> isTriInside(std::vector<unsigned int> tet) const;
 	
 };
-		
-		
+
+////////////////////////////////////////////////////////////////////////////////
+
+%feature("kwargs") DiffBoundary::DiffBoundary;
+
+class DiffBoundary
+{
+        
+public:
+        
+    DiffBoundary(std::string const & id, Tetmesh * container,
+                     std::vector<unsigned int> const & tris);
+    
+    virtual ~DiffBoundary(void);
+
+    %feature("autodoc", 
+"
+Get the identifier string of the diffusion boundary.
+
+Syntax::
+
+    getID()
+
+Arguments:
+    None
+             
+Return:
+    string
+");
+	std::string getID(void) const;
+    
+    %feature("autodoc", 
+"
+Set the identifier string of the diffusion boundary.
+
+Syntax::
+
+    setID(name)
+
+Arguments:
+    string name
+
+Return:
+    None
+");
+	void setID(std::string const & id);
+
+    %feature("autodoc", 
+"
+Returns a reference to the parent steps.tetmesh.Tetmesh container object.
+
+Syntax::
+
+    getContainer()
+
+Arguments:
+    None
+
+Return:
+    steps.tetmesh.Tetmesh
+");
+	steps::tetmesh::Tetmesh * getContainer(void) const;
+
+    %feature("autodoc", 
+"
+Returns a list of the two compartments this diffusion boundary connects.
+             
+Syntax::
+             
+    getComps()
+             
+Arguments:
+    None
+             
+Return:
+    list<steps::wm::Comp, length = 2>
+");
+    std::vector<steps::wm::Comp *>  getComps(void) const;
+
+    %feature("autodoc", 
+"
+Returns a list of Booleans describing if triangles tris are 
+assigned to the Diffusion Boundary.
+             
+Syntax::
+             
+    isTriInside(tris)
+             
+Arguments:
+    list<uint> tris
+             
+Return:
+    list<bool, length = length(tris)>
+");
+    std::vector<bool> isTriInside(std::vector<unsigned int> tri) const;
+        
+    %feature("autodoc", 
+"
+Returns a list of indices of all triangles assigned to the patch.
+             
+Syntax::
+             
+    getAllTriIndices()
+             
+Arguments:
+    None
+             
+Return:
+    list<uint>
+");
+    std::vector<unsigned int> getAllTriIndices(void) const;                
+};	
+
 ////////////////////////////////////////////////////////////////////////////////
 
 }	// end namespace tetmesh

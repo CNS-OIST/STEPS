@@ -48,6 +48,7 @@
 #include "kproc.hpp"
 #include "comp.hpp"
 #include "patch.hpp"
+#include "diffboundary.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -105,8 +106,8 @@ public:
     void run(double endtime);
     void advance(double adv);
     void step(void);
-    
-    
+
+
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
     //      GENERAL
@@ -118,16 +119,16 @@ public:
     { return pA0; }
 
     uint getNSteps(void) const;
-    
+
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
     //      ADVANCE
     //      Developer only
-    //////////////////////////////////////////////////////////////////////// 
-    
-    void setTime(double time);    
+    ////////////////////////////////////////////////////////////////////////
+
+    void setTime(double time);
     void setNSteps(uint nsteps);
-    
+
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
     //      COMPARTMENT
@@ -194,6 +195,14 @@ public:
 
     uint _getPatchSReacExtent(uint pidx, uint ridx) const;
     void _resetPatchSReacExtent(uint pidx, uint ridx);
+
+    ////////////////////////////////////////////////////////////////////////
+    // SOLVER STATE ACCESS:
+    //      DIFFUSION BOUNDARIES
+    ////////////////////////////////////////////////////////////////////////
+
+    void _setDiffBoundaryDiffusionActive(uint dbidx, uint sidx, bool act);
+    bool _getDiffBoundaryDiffusionActive(uint dbidx, uint sidx) const;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
@@ -286,6 +295,8 @@ private:
 
 	uint _addPatch(steps::solver::Patchdef * pdef);
 
+	uint _addDiffBoundary(steps::solver::DiffBoundarydef * dbdef);
+
 	void _addTet(uint tetidx, steps::tetexact::Comp * comp, double vol, double a1,
 			     double a2, double a3, double a4, double d1, double d2,
 			     double d3, double d4, int tet0, int tet1, int tet2, int tet3);
@@ -340,7 +351,13 @@ private:
     inline steps::tetexact::Patch * _patch(uint pidx) const
     { return pPatches[pidx]; }
 
+    std::vector<steps::tetexact::DiffBoundary *> pDiffBoundaries;
+    inline steps::tetexact::DiffBoundary * _diffboundary(uint dbidx) const
+    { return pDiffBoundaries[dbidx]; }
+
     std::vector<steps::tetexact::Tet *>        pTets;
+    inline steps::tetexact::Tet * _tet(uint tidx) const
+    { return pTets[tidx]; }
 
     std::vector<steps::tetexact::Tri *>        pTris;
 

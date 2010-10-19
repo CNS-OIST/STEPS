@@ -57,12 +57,13 @@ NAMESPACE_ALIAS(steps::solver, ssolver);
 
 stex::Tet::Tet
 (
-    solver::Compdef * cdef, double vol,
+    uint idx, solver::Compdef * cdef, double vol,
     double a0, double a1, double a2, double a3,
     double d0, double d1, double d2, double d3,
     int tet0, int tet1, int tet2, int tet3
 )
-: pCompdef(cdef)
+: pIdx(idx)
+, pCompdef(cdef)
 , pVol(vol)
 , pTets()
 //, pTris()
@@ -107,6 +108,7 @@ stex::Tet::Tet
     pPoolFlags = new uint[nspecs];
     std::fill_n(pPoolCount, nspecs, 0);
     std::fill_n(pPoolFlags, nspecs, 0);
+    std::fill_n(pDiffBndDirection, 4, false);
     pKProcs.resize(compdef()->countDiffs() + compdef()->countReacs());
 
 }
@@ -128,6 +130,7 @@ stex::Tet::~Tet(void)
 
 void stex::Tet::setNextTet(uint i, stex::Tet * t)
 {
+	/*
     if (t->compdef() != compdef())
     {
         pNextTet[i] = 0;
@@ -138,8 +141,24 @@ void stex::Tet::setNextTet(uint i, stex::Tet * t)
         if (pNextTri[i] != 0) std::cout << "WARNING: writing over nextTri index " << i;
         pNextTri[i] = 0;
     }
+    */
+
+	// Now adding all tets, even those from other compartments, due to the diffusion boundaries
+    pNextTet[i] = t;
+    if (pNextTri[i] != 0) std::cout << "WARNING: writing over nextTri index " << i;
+    pNextTri[i] = 0;
+
+
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+void stex::Tet::setDiffBndDirection(uint i)
+{
+	assert(i < 4);
+
+	pDiffBndDirection[i] = true;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

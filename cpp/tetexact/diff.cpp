@@ -68,6 +68,8 @@ stex::Diff::Diff(ssolver::Diffdef * ddef, stex::Tet * tet)
 		pTet->nextTet(3)
 	};
 
+    for (uint i = 0; i < 4; ++i) { pDiffBndDirection[i] = pTet->getDiffBndDirection(i);}
+
     // Precalculate part of the scaled diffusion constant.
 	uint ldidx = pTet->compdef()->diffG2L(pDiffdef->gidx());
 	double dcst = pTet->compdef()->dcst(ldidx);
@@ -78,11 +80,19 @@ stex::Diff::Diff(ssolver::Diffdef * ddef, stex::Tet * tet)
     {
         // Compute the scaled diffusion constant.
         double dist = pTet->dist(i);
-        if ((dist > 0.0) && (next[i] != 0))
+        if ((dist > 0.0))
             d[i] = (pTet->area(i) * dcst) / (pTet->vol() * dist);
     }
     // Compute scaled "diffusion constant".
-    pScaledDcst = d[0] + d[1] + d[2] + d[3];
+    for (uint i = 0; i < 4; ++i)
+    {
+		if (pDiffBndDirection[i] == true)
+		{
+			if (pDiffBndActive[i]) pScaledDcst += d[i];
+		}
+		else pScaledDcst += d[i];
+	}
+
     // Should not be negative!
     assert(pScaledDcst >= 0);
 
@@ -95,9 +105,26 @@ stex::Diff::Diff(ssolver::Diffdef * ddef, stex::Tet * tet)
     }
     else
     {
-        pCDFSelector[0] = d[0] / pScaledDcst;
-        pCDFSelector[1] = pCDFSelector[0] + (d[1] / pScaledDcst);
-        pCDFSelector[2] = pCDFSelector[1] + (d[2] / pScaledDcst);
+        if (pDiffBndDirection[0] == true)
+        {
+        	if (pDiffBndActive[0]) pCDFSelector[0] = d[0] / pScaledDcst;
+        	else pCDFSelector[0] = 0.0;
+        }
+        else pCDFSelector[0] = d[0] / pScaledDcst;
+
+        if (pDiffBndDirection[1] == true)
+        {
+        	if (pDiffBndActive[1]) pCDFSelector[1] = pCDFSelector[0] + (d[1] / pScaledDcst);
+        	else pCDFSelector[1] = 0.0;
+        }
+        else pCDFSelector[1] = pCDFSelector[0] + (d[1] / pScaledDcst);
+
+        if (pDiffBndDirection[2] == true)
+        {
+        	if (pDiffBndActive[2]) pCDFSelector[2] = pCDFSelector[1] + (d[2] / pScaledDcst);
+        	else pCDFSelector[2] = 0.0;
+        }
+        else pCDFSelector[2] = pCDFSelector[1] + (d[2] / pScaledDcst);
     }
 }
 
@@ -215,11 +242,44 @@ void stex::Diff::reset(void)
 {
     resetExtent();
 
+    // NOTE: These must become the dcst calculation for obvious reasons
+    pDiffBndActive[0] = false;
+    pDiffBndActive[1] = false;
+    pDiffBndActive[2] = false;
+    pDiffBndActive[3] = false;
+
     uint ldidx = pTet->compdef()->diffG2L(pDiffdef->gidx());
 	double dcst = pTet->compdef()->dcst(ldidx);
     setDcst(dcst);
 
     setActive(true);
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stex::Diff::setDiffBndActive(uint i, bool active)
+{
+	assert (i < 4);
+	assert(pDiffBndDirection[i] == true);
+
+	// Only need to update if the flags are changing
+	if (pDiffBndActive[i] != active)
+	{
+		pDiffBndActive[i] = active;
+		setDcst(pDcst);
+	}
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool stex::Diff::getDiffBndActive(uint i) const
+{
+	assert (i < 4);
+	assert(pDiffBndDirection[i] == true);
+
+	return pDiffBndActive[i];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -242,11 +302,21 @@ void stex::Diff::setDcst(double dcst)
     {
         // Compute the scaled diffusion constant.
         double dist = pTet->dist(i);
-        if ((dist > 0.0) && (next[i] != 0))
+        if ((dist > 0.0) )
             d[i] = (pTet->area(i) * dcst) / (pTet->vol() * dist);
     }
+
     // Compute scaled "diffusion constant".
-    pScaledDcst = d[0] + d[1] + d[2] + d[3];
+    pScaledDcst = 0.0;
+
+    for (uint i = 0; i < 4; ++i)
+    {
+		if (pDiffBndDirection[i] == true)
+		{
+			if (pDiffBndActive[i]) pScaledDcst += d[i];
+		}
+		else pScaledDcst += d[i];
+	}
     // Should not be negative!
     assert(pScaledDcst >= 0);
 
@@ -259,9 +329,26 @@ void stex::Diff::setDcst(double dcst)
     }
     else
     {
-        pCDFSelector[0] = d[0] / pScaledDcst;
-        pCDFSelector[1] = pCDFSelector[0] + (d[1] / pScaledDcst);
-        pCDFSelector[2] = pCDFSelector[1] + (d[2] / pScaledDcst);
+        if (pDiffBndDirection[0] == true)
+        {
+        	if (pDiffBndActive[0]) pCDFSelector[0] = d[0] / pScaledDcst;
+        	else pCDFSelector[0] = 0.0;
+        }
+        else pCDFSelector[0] = d[0] / pScaledDcst;
+
+        if (pDiffBndDirection[1] == true)
+        {
+        	if (pDiffBndActive[1]) pCDFSelector[1] = pCDFSelector[0] + (d[1] / pScaledDcst);
+        	else pCDFSelector[1] = 0.0;
+        }
+        else pCDFSelector[1] = pCDFSelector[0] + (d[1] / pScaledDcst);
+
+        if (pDiffBndDirection[2] == true)
+        {
+        	if (pDiffBndActive[2]) pCDFSelector[2] = pCDFSelector[1] + (d[2] / pScaledDcst);
+        	else pCDFSelector[2] = 0.0;
+        }
+        else pCDFSelector[2] = pCDFSelector[1] + (d[2] / pScaledDcst);
     }
 }
 

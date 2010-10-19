@@ -1661,25 +1661,61 @@ Return:
     None
 ");
     void resetPatchSReacExtent(std::string const & p, std::string const & r);
-
-    %feature("autodoc", 
+	
+    //void setTriArea(unsigned int tidx, double area);
+	
+    %feature("autodoc",
 "
-Returns the area (in m^2) of the triangular element with index idx.
+Activates or inactivates diffusion across a diffusion boundary for a species.
 
 Syntax::
-    
-    getTriArea(idx)
+        
+    setDiffBoundaryDiffusionActive(diffb, spec, act)
     
 Arguments:
-    * uint idx
+    * string diffb
+    * string spec
+    * bool act
+             
+Return:
+    None
+");
+    
+    void setDiffBoundaryDiffusionActive(std::string const & db, std::string const & s, bool act);
+ 
+    %feature("autodoc",
+"
+Returns whether diffusion is active across a diffusion boundary for a species.
+             
+Syntax::
+             
+    getDiffBoundaryDiffusionActive(diffb, spec)
+             
+Arguments:
+    * string diffb
+    * string spec
+             
+Return:
+    bool
+");
+    bool getDiffBoundaryDiffusionActive(std::string const & db, std::string const & s) const;
 
+%feature("autodoc", 
+"
+    Returns the area (in m^2) of the triangular element with index idx.
+             
+Syntax::
+             
+    getTriArea(idx)
+             
+Arguments:
+    * uint idx
+             
 Return:
     float
 ");
     double getTriArea(unsigned int tidx) const;
-	
-    //void setTriArea(unsigned int tidx, double area);
-	
+
     %feature("autodoc", 
 "
 Returns the number of molecules of species with identifier string spec 
