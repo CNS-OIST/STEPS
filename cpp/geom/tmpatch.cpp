@@ -97,6 +97,16 @@ stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
     		os << "triangle belongs to a different patch.";
     		throw steps::ArgErr(os.str());
     	}
+
+    	if (pTetmesh->getTriDiffBoundary(tris[i]) != 0)
+    	{
+    		std::ostringstream os;
+    		os << "Cannot add triangle with index " << tris[i] << "(#" << i;
+    		os << " in list) to patch; ";
+    		os << "triangle belongs to a diffusion boundary.";
+    		throw steps::ArgErr(os.str());
+    	}
+
     	// Check if the triangle neighbours belong to the correct compartments
     	// (bearing in mind their relative position might need to be 'flipped';
     	// add to 'flip list' if necessary
