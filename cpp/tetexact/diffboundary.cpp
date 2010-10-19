@@ -44,6 +44,7 @@ stex::DiffBoundary::DiffBoundary(steps::solver::DiffBoundarydef * dbdef)
 , pCompB(0)
 , pTets()
 , pTetDirection()
+, pSetComps(false)
 {
 	assert(dbdef != 0);
 }
@@ -66,6 +67,7 @@ void stex::DiffBoundary::setComps(stex::Comp * compa, stex::Comp * compb)
 
     pCompA = compa;
     pCompB = compb;
+    pSetComps = true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

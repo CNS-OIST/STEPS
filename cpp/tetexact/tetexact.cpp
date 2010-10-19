@@ -394,8 +394,11 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
     			assert (tetB_cdef == compAdef);
     			assert (tetA_cdef == compBdef);
     		}
-    		assert (tetB_cdef == compBdef);
-    		assert (tetA_cdef == compAdef);
+    		else
+    		{
+    			assert (tetB_cdef == compBdef);
+    			assert (tetA_cdef == compAdef);
+    		}
 
     		// Ok, checks over, lets get down to business
     		int direction_idx_a = -1;
