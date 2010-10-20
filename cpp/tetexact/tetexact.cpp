@@ -36,6 +36,7 @@
 #include <iostream>
 #include <sstream>
 #include <algorithm>
+#include <limits>
 
 // STEPS headers.
 #include "../common.h"
