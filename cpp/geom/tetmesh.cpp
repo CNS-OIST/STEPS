@@ -1945,7 +1945,7 @@ void stetmesh::Tetmesh::_handleDiffBoundaryIDChange(std::string const & o, std::
 
 void stetmesh::Tetmesh::_handleDiffBoundaryAdd(stetmesh::DiffBoundary * diffb)
 {
-    assert(diffb->getTetmesh() == this);
+    assert(diffb->getContainer() == this);
     _checkDiffBoundaryID(diffb->getID());
     pDiffBoundaries.insert(DiffBoundaryPMap::value_type(diffb->getID(), diffb));
 }
@@ -1954,7 +1954,7 @@ void stetmesh::Tetmesh::_handleDiffBoundaryAdd(stetmesh::DiffBoundary * diffb)
 
 void stetmesh::Tetmesh::_handleDiffBoundaryDel(stetmesh::DiffBoundary * diffb)
 {
-    assert(diffb->getTetmesh() == this);
+    assert(diffb->getContainer() == this);
     pDiffBoundaries.erase(diffb->getID());
 }
 

@@ -108,7 +108,8 @@ def steps_ext():
         'cpp/wmrk4/wmrk4.cpp',
         
         'swig/steps_wrap.cpp'],
-    
+        
+        undef_macros=['NDEBUG']
     )
         
         

@@ -809,6 +809,15 @@ void stex::Tetexact::_setCompCount(uint cidx, uint sidx, double n)
 	for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
 	{
 		Tet * tet = *t;
+
+		// New method (allowing ceiling) means we have to set the counts
+		// to zero for any tets after all molecules have been injected
+		if (nremoved == c)
+		{
+			tet->setCount(slidx, 0);
+			continue;
+		}
+
 		double fract = static_cast<double>(c) * (tet->vol() / totalvol);
 		uint n3 = static_cast<uint>(std::floor(fract));
 
@@ -831,8 +840,6 @@ void stex::Tetexact::_setCompCount(uint cidx, uint sidx, double n)
 		{
 			n3 -= (nremoved-c);
 			nremoved = c;
-			tet->setCount(slidx, n3);
-			break;
 		}
 
 		tet->setCount(slidx, n3);
@@ -1192,6 +1199,15 @@ void stex::Tetexact::_setPatchCount(uint pidx, uint sidx, double n)
 	for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
 	{
 		Tri * tri = *t;
+
+		// New method (allowing ceiling) means we have to set the counts
+		// to zero for any triangles after all molecules have been injected
+		if (nremoved == c)
+		{
+			tri->setCount(slidx, 0);
+			continue;
+		}
+
 		double fract = static_cast<double>(c) * (tri->area()/totalarea);
         uint n3 = static_cast<uint>(std::floor(fract));
 
@@ -1214,8 +1230,6 @@ void stex::Tetexact::_setPatchCount(uint pidx, uint sidx, double n)
         {
             n3 -= (nremoved-c);
             nremoved = c;
-            tri->setCount(slidx, n3);
-            break;
         }
 
         tri->setCount(slidx, n3);
