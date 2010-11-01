@@ -35,6 +35,7 @@
 #include <cassert>
 #include <iostream>
 #include <sstream>
+#include <fstream>
 
 // STEPS headers.
 #include "../common.h"
@@ -226,6 +227,116 @@ void swmrk4::Wmrk4::setDT(double dt)
 double swmrk4::Wmrk4::getTime(void) const
 {
 	return statedef()->time();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void swmrk4::Wmrk4::checkpoint(std::string const & file_name)
+{
+	std::fstream cp_file;
+
+    cp_file.open(file_name.c_str(), 
+                std::fstream::out | std::fstream::binary | std::fstream::trunc);
+    double state_buffer[5];
+    state_buffer[0] = static_cast<double>(pSpecs_tot);
+    state_buffer[1] = static_cast<double>(pReacs_tot);
+    state_buffer[2] = pDT;
+    state_buffer[3] = statedef()->time();
+    state_buffer[4] = statedef()->nsteps();
+
+    cp_file.write((char*)&state_buffer, sizeof(double) * 5);
+    
+    cp_file.write((char*)pReacMtx, sizeof(uint) * pReacs_tot * pSpecs_tot);
+
+    cp_file.write((char*)pUpdMtx, sizeof(int) * pReacs_tot * pSpecs_tot);
+    
+    cp_file.write((char*)pDyDxlhs, sizeof(double) * pSpecs_tot * pReacs_tot);
+
+    cp_file.write((char*)&pCcst.front(), sizeof(double) * pCcst.size());
+    
+    cp_file.write((char*)&pVals.front(), sizeof(double) * pVals.size());
+    
+    cp_file.write((char*)&pSFlags.front(), sizeof(uint) * pSFlags.size());
+    
+    cp_file.write((char*)&pRFlags.front(), sizeof(uint) * pRFlags.size());
+    
+    cp_file.write((char*)&pNewVals.front(), sizeof(double) * pNewVals.size());   
+
+    cp_file.write((char*)&pDyDx.front(), sizeof(double) * pDyDx.size()); 
+    
+    cp_file.write((char*)&yt.front(), sizeof(double) * yt.size());
+     
+    cp_file.write((char*)&dyt.front(), sizeof(double) * dyt.size()); 
+    
+    cp_file.write((char*)&dym.front(), sizeof(double) * dym.size()); 
+
+	uint comps = statedef()->countComps();
+	for (uint i=0; i < comps; ++i) statedef()->compdef(i)->checkpoint(cp_file);
+	uint patches = statedef()->countPatches();
+	for (uint i=0; i < patches; ++i) statedef()->patchdef(i)->checkpoint(cp_file);
+    
+    cp_file.close();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void swmrk4::Wmrk4::restore(std::string const & file_name)
+{
+	std::fstream cp_file;
+
+    cp_file.open(file_name.c_str(), 
+                std::fstream::in | std::fstream::binary);
+    
+    cp_file.seekg(0);
+    double state_buffer[5];
+    cp_file.read((char*)&state_buffer, sizeof(double) * 5);
+    
+    if (static_cast<uint>(state_buffer[0]) != pSpecs_tot) {
+        std::ostringstream os;
+        os << "checkpoint data mismatch with simulator parameters: pSpecs_tot.";
+        throw steps::ArgErr(os.str());
+    }
+    
+    if (static_cast<uint>(state_buffer[1]) != pReacs_tot) {
+        std::ostringstream os;
+        os << "checkpoint data mismatch with simulator parameters: pReacs_tot.";
+        throw steps::ArgErr(os.str());
+    }
+    
+    pDT = state_buffer[2];
+    statedef()->setTime(state_buffer[3]);
+    statedef()->setNSteps(state_buffer[4]);
+    
+    cp_file.read((char*)pReacMtx, sizeof(uint) * pReacs_tot * pSpecs_tot);
+
+    cp_file.read((char*)pUpdMtx, sizeof(int) * pReacs_tot * pSpecs_tot);
+    
+    cp_file.read((char*)pDyDxlhs, sizeof(double) * pSpecs_tot * pReacs_tot);
+
+    cp_file.read((char*)&pCcst.front(), sizeof(double) * pCcst.size());
+    
+    cp_file.read((char*)&pVals.front(), sizeof(double) * pVals.size());
+    
+    cp_file.read((char*)&pSFlags.front(), sizeof(uint) * pSFlags.size());
+    
+    cp_file.read((char*)&pRFlags.front(), sizeof(uint) * pRFlags.size());
+    
+    cp_file.read((char*)&pNewVals.front(), sizeof(double) * pNewVals.size());   
+
+    cp_file.read((char*)&pDyDx.front(), sizeof(double) * pDyDx.size()); 
+    
+    cp_file.read((char*)&yt.front(), sizeof(double) * yt.size());
+     
+    cp_file.read((char*)&dyt.front(), sizeof(double) * dyt.size()); 
+    
+    cp_file.read((char*)&dym.front(), sizeof(double) * dym.size());
+    
+	uint comps = statedef()->countComps();
+	for (uint i=0; i < comps; ++i) statedef()->compdef(i)->restore(cp_file);
+	uint patches = statedef()->countPatches();
+	for (uint i=0; i < patches; ++i) statedef()->patchdef(i)->restore(cp_file);
+    
+    cp_file.close();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -78,14 +78,14 @@ public:
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-	Tri(steps::solver::Patchdef * patchdef, double area,
+	Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
 		int tetinner, int tetouter);
 	~Tri(void);
 
     ////////////////////////////////////////////////////////////////////////
     // SETUP
     ////////////////////////////////////////////////////////////////////////
-
+    
     /// Set pointer to the 'inside' neighbouring tetrahedron.
     ///
     void setInnerTet(stex::Tet * t);
@@ -112,7 +112,9 @@ public:
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SHAPE & CONNECTIVITY
     ////////////////////////////////////////////////////////////////////////
-
+    inline uint idx(void) const
+    {return pIdx;}
+    
     inline double area(void) const
     { return pArea; }
 
@@ -155,7 +157,7 @@ public:
 private:
 
     ////////////////////////////////////////////////////////////////////////
-
+    uint                                pIdx;
     steps::solver::Patchdef           * pPatchdef;
 
     /// Pointers to neighbouring tetrahedra.

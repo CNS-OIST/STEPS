@@ -119,3 +119,21 @@ rk4sim.setCompConc('comp', 'molB', 22.3e-6)
 # Notice: No checkpointing for RK4 yet
 rk4sim.run(1e-3)
 print "Sim Time: %e" % rk4sim.getTime()
+
+print "checkpoint"
+rk4sim.checkpoint("rk4.cp")
+print "A count: ", rk4sim.getCompCount("comp", "molA")
+print "B count: ", rk4sim.getCompCount("comp", "molB")
+print "C count: ", rk4sim.getCompCount("comp", "molC")
+
+rk4sim.reset()
+print "reset"
+print "A count: ", rk4sim.getCompCount("comp", "molA")
+print "B count: ", rk4sim.getCompCount("comp", "molB")
+print "C count: ", rk4sim.getCompCount("comp", "molC")
+
+print "restore"
+rk4sim.restore("rk4.cp")
+print "A count: ", rk4sim.getCompCount("comp", "molA")
+print "B count: ", rk4sim.getCompCount("comp", "molB")
+print "C count: ", rk4sim.getCompCount("comp", "molC")

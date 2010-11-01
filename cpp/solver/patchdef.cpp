@@ -125,6 +125,26 @@ ssolver::Patchdef::~Patchdef(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void ssolver::Patchdef::checkpoint(std::fstream & cp_file)
+{
+    cp_file.write((char*)pPoolCount, sizeof(double) * pSpecsN_S);
+    cp_file.write((char*)pPoolFlags, sizeof(uint) * pSpecsN_S);
+    cp_file.write((char*)pSReacKcst, sizeof(double) * pSReacsN);
+    cp_file.write((char*)pSReacFlags, sizeof(uint) * pSReacsN);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void ssolver::Patchdef::restore(std::fstream & cp_file)
+{
+    cp_file.read((char*)pPoolCount, sizeof(double) * pSpecsN_S);
+    cp_file.read((char*)pPoolFlags, sizeof(uint) * pSpecsN_S);
+    cp_file.read((char*)pSReacKcst, sizeof(double) * pSReacsN);
+    cp_file.read((char*)pSReacFlags, sizeof(uint) * pSReacsN);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void ssolver::Patchdef::setup_references(void)
 {
 	assert(pSetupRefsdone == false);

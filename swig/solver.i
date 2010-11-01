@@ -190,6 +190,39 @@ Return:
     
     %feature("autodoc", 
 "
+Checkpoint the simulation state to a file.
+
+Syntax::
+    
+    checkpoint(file_name)
+    
+Arguments:
+    string file_name
+
+Return:
+    None
+");
+    virtual void checkpoint(std::string const & file_name);
+    
+    %feature("autodoc", 
+"
+Restore the simulation state from a file.
+
+Syntax::
+    
+    restore(file_name)
+    
+Arguments:
+    string file_name
+
+Return:
+    None
+");
+    virtual void restore(std::string const & file_name);
+    
+    
+    %feature("autodoc", 
+"
 Advance the simulation until endtime (given in seconds) is reached. 
 The endtime must be larger or equal to the current simulation time.
 

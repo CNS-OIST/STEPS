@@ -37,6 +37,7 @@
 #include <sstream>
 #include <algorithm>
 #include <limits>
+#include <queue>
 
 // STEPS headers.
 #include "../common.h"
@@ -509,7 +510,83 @@ std::string stex::Tetexact::getSolverEmail(void) const
 ////////////////////////////////////////////////////////////////////////////////
 
 void stex::Tetexact::_setup(void)
-{
+{   
+    // geometry based optimization
+    // nearby KProcs get picked first
+    // this is to minimize update branches
+    std::queue<uint> append_queue;
+
+    std::set<uint> tets_set;
+    std::set<uint> tris_set;
+    
+    std::set<uint>::iterator it;
+    
+    uint ntets = pTets.size();
+    uint ntris = pTris.size();
+    
+    for (uint t = 0; t < ntets; t++) {
+        if (pTets[t] != 0) tets_set.insert(t);
+    }
+    
+    for (uint t = 0; t < ntris; t++) {
+        if (pTris[t] != 0) tris_set.insert(t);
+    }
+    
+    
+    while (!tets_set.empty() || !tris_set.empty() || !append_queue.empty()) {
+        while (!append_queue.empty()) {
+            uint idx = append_queue.front();
+            append_queue.pop();
+            
+            // if it is a tri
+            if (idx >= ntets) {
+                pTris[idx - ntets]->setupKProcs(this);
+            }
+            // if it is a tet
+            else {
+                pTets[idx]->setupKProcs(this);
+                steps::tetexact::Tet * t = pTets[idx];
+                
+                for (uint i = 0; i < 4; i++) {
+                    steps::tetexact::Tri * neib_tri = t->nextTri(i);
+                    if (neib_tri == 0) continue;
+                    uint ntri_idx = neib_tri->idx();
+                    if (tris_set.find(ntri_idx) != tris_set.end()) {
+                        append_queue.push(ntri_idx + ntets);
+                        tris_set.erase(ntri_idx);
+                    }
+                    
+                    steps::tetexact::Tet * neib_tet = t->nextTet(i);
+                    if (neib_tet == 0) continue;
+                    uint ntet_idx = neib_tet->idx();
+                    if (tets_set.find(ntet_idx) != tets_set.end()) {
+                        append_queue.push(ntet_idx);
+                        tets_set.erase(ntet_idx);
+                    }
+                }
+            }
+        }
+        
+        
+        if (!tets_set.empty()) {
+            append_queue.push(*(tets_set.begin()));
+            tets_set.erase(tets_set.begin());
+        }
+        else if (!tris_set.empty()) {
+            append_queue.push(*(tets_set.begin()) + ntets);
+            tris_set.erase(tris_set.begin());
+        }
+    }
+    
+    assert(tets_set.empty() && tris_set.empty());
+    
+	// Resolve all dependencies
+    TetPVecCI tet_end = pTets.end();
+    TriPVecCI tri_end = pTris.end();
+    
+    /*  old version, insert KProcs without optimization
+    
+    
 	TetPVecCI tet_end = pTets.end();
 	for (TetPVecCI t = pTets.begin(); t != tet_end; ++t)
 	{
@@ -529,7 +606,10 @@ void stex::Tetexact::_setup(void)
 
 		(*t)->setupKProcs(this);
 	}
-	// Resolve all dependencies
+    
+    
+    */
+
 	for (TetPVecCI t = pTets.begin(); t != tet_end; ++t)
 	{
 		// DEBUG: vector holds all possible tetrahedrons,
@@ -621,7 +701,7 @@ void stex::Tetexact::_addTri(uint triidx, steps::tetexact::Patch * patch, double
 							 int tinner, int touter)
 {
     steps::solver::Patchdef * patchdef = patch->def();
-    stex::Tri * tri = new stex::Tri(patchdef, area, tinner, touter);
+    stex::Tri * tri = new stex::Tri(triidx, patchdef, area, tinner, touter);
     assert(tri != 0);
     assert (triidx < pTris.size());
     assert (pTris[triidx] == 0);

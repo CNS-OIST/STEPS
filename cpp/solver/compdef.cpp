@@ -121,6 +121,26 @@ ssolver::Compdef::~Compdef(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void ssolver::Compdef::checkpoint(std::fstream & cp_file)
+{
+    cp_file.write((char*)pPoolCount, sizeof(double) * pSpecsN);
+    cp_file.write((char*)pPoolFlags, sizeof(uint) * pSpecsN);
+    cp_file.write((char*)pReacKcst, sizeof(double) * pReacsN);
+    cp_file.write((char*)pReacFlags, sizeof(uint) * pReacsN);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void ssolver::Compdef::restore(std::fstream & cp_file)
+{
+    cp_file.read((char*)pPoolCount, sizeof(double) * pSpecsN);
+    cp_file.read((char*)pPoolFlags, sizeof(uint) * pSpecsN);
+    cp_file.read((char*)pReacKcst, sizeof(double) * pReacsN);
+    cp_file.read((char*)pReacFlags, sizeof(uint) * pReacsN);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void ssolver::Compdef::setup_references()
 {
 	assert (pSetupRefsdone == false);

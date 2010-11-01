@@ -52,9 +52,10 @@ NAMESPACE_ALIAS(steps::solver, ssolver);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Tri::Tri(steps::solver::Patchdef * patchdef, double area,
+stex::Tri::Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
 			   int tetinner, int tetouter)
-: pPatchdef(patchdef)
+: pIdx(idx)
+, pPatchdef(patchdef)
 , pArea(area)
 , pInnerTet(0)
 , pOuterTet(0)

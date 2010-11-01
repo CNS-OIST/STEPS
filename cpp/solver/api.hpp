@@ -128,6 +128,12 @@ public:
     virtual double getA0(void) const;
     /// Return the number of steps.
     virtual uint getNSteps(void) const;
+    
+    /// checkpoint simulator state to a file
+    virtual void checkpoint(std::string const & file_name);
+    
+    /// restore simulator state from a file
+    virtual void restore(std::string const & file_name);
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
