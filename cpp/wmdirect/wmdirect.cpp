@@ -141,6 +141,48 @@ swmd::Wmdirect::~Wmdirect(void)
     delete[] pRannum;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
+void swmd::Wmdirect::checkpoint(std::string const & file_name)
+{
+	std::fstream cp_file;
+
+    cp_file.open(file_name.c_str(), 
+                std::fstream::out | std::fstream::binary | std::fstream::trunc);
+
+    CompPVecCI comp_e = pComps.end();
+    for (CompPVecCI c = pComps.begin(); c != comp_e; ++c) (*c)->checkpoint(cp_file);
+    PatchPVecCI patch_e = pPatches.end();
+    for (PatchPVecCI p = pPatches.begin(); p != patch_e; ++p) (*p)->checkpoint(cp_file);
+
+	statedef()->checkpoint(cp_file);
+    
+    cp_file.close();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void swmd::Wmdirect::restore(std::string const & file_name)
+{
+	std::fstream cp_file;
+
+    cp_file.open(file_name.c_str(), 
+                std::fstream::in | std::fstream::binary);
+    
+    cp_file.seekg(0);
+
+    CompPVecCI comp_e = pComps.end();
+    for (CompPVecCI c = pComps.begin(); c != comp_e; ++c) (*c)->restore(cp_file);
+    PatchPVecCI patch_e = pPatches.end();
+    for (PatchPVecCI p = pPatches.begin(); p != patch_e; ++p) (*p)->restore(cp_file);
+        
+	statedef()->restore(cp_file);
+    
+    cp_file.close();
+    
+    _reset();
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 uint swmd::Wmdirect::_addComp(steps::solver::Compdef * cdef)

@@ -59,7 +59,7 @@ comp.setVol(1.6667e-21)
 r = srng.create('mt19937', 256)
 r.initialize(23412)
 
-'''
+
 ##############################
 # Well Mixed DirectSSA
 ##############################
@@ -81,20 +81,7 @@ print "Sim Steps: %e" % sim.getNSteps()
 ###################################
 # Run Simulation with checkpointing
 ###################################
-print "Run to 2e-3s, checkpoint for every 1e-4s"
 sim.run(2e-3, 1e-4)
-print "Sim Time: %e" % sim.getTime()
-print "Sim Steps: %e" % sim.getNSteps()
-
-# or advance
-print "advance 1e-3s checkpoint for every 1e-4s"
-sim.advance(1e-3, 5e-4)
-print "Sim Time: %e" % sim.getTime()
-print "Sim Steps: %e" % sim.getNSteps()
-
-# or step, without checkpointing
-print "Run 1 SSA step"
-sim.step()
 print "Sim Time: %e" % sim.getTime()
 print "Sim Steps: %e" % sim.getNSteps()
 
@@ -105,7 +92,7 @@ print "Restore from file"
 sim.restore("manual.checkpoint")
 print "Sim Time: %e" % sim.getTime()
 print "Sim Steps: %e" % sim.getNSteps()
-'''
+
 ###################################
 # RK4 solver
 ###################################
@@ -122,7 +109,7 @@ print "A count: ", rk4sim.getCompCount("comp", "molA")
 print "B count: ", rk4sim.getCompCount("comp", "molB")
 print "C count: ", rk4sim.getCompCount("comp", "molC")
 
-rk4sim.advance(1e-2, True)
+rk4sim.advance(1e-2, 1e-3)
 print "Sim Time: %e" % rk4sim.getTime()
 
 print "A count: ", rk4sim.getCompCount("comp", "molA")
@@ -130,7 +117,7 @@ print "B count: ", rk4sim.getCompCount("comp", "molB")
 print "C count: ", rk4sim.getCompCount("comp", "molC")
 
 print "restore"
-rk4sim.restore("rk4.cp")
+rk4sim.restore("1.000000e-02.wmrk4_cp")
 print "A count: ", rk4sim.getCompCount("comp", "molA")
 print "B count: ", rk4sim.getCompCount("comp", "molB")
 print "C count: ", rk4sim.getCompCount("comp", "molC")

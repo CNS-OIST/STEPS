@@ -90,41 +90,45 @@ class Wmrk4(steps_swig.Wmrk4) :
         """
         self.cp_prefix = prefix
         
-    def run(self, end_time, checkpoint = False):
+    def run(self, end_time, cp_interval = 0.0):
         """
         Run the simulation until end_time, 
-        set checkpoint true if automatic checkpoint is needed.
+        automatically checkpoint at each cp_interval.
         """
-        _steps_swig.API_run(self, end_time)
         
-        if checkpoint == True:
+        if cp_interval > 0:
+            while _steps_swig.API_getTime(self) + cp_interval < end_time:
+                _steps_swig.API_advance(self, cp_interval)
+                filename = "%s%e.wmrk4_cp" % (self.cp_prefix, _steps_swig.API_getTime(self))
+                print "Checkpointing -> ", filename
+                _steps_swig.API_checkpoint(self, filename)
+            _steps_swig.API_run(self, end_time)
             filename = "%s%e.wmrk4_cp" % (self.cp_prefix, _steps_swig.API_getTime(self))
             print "Checkpointing -> ", filename
             _steps_swig.API_checkpoint(self, filename)
-            
-    def advance(self, advance_time, checkpoint = False):
+        else:
+            _steps_swig.API_run(self, end_time)
+        
+    def advance(self, advance_time, cp_interval = 0.0):
         """
         Advance the simulation for advance_time, 
-        set checkpoint true if automatic checkpoint is needed.
+        automatically checkpoint at each cp_interval.
         """
-        _steps_swig.API_advance(self, advance_time)
         
-        if checkpoint == True:
+        end_time = _steps_swig.API_getTime(self) + advance_time
+        if cp_interval > 0:
+            while _steps_swig.API_getTime(self) + cp_interval < end_time:
+                _steps_swig.API_advance(self, cp_interval)
+                filename = "%s%e.wmrk4_cp" % (self.cp_prefix, _steps_swig.API_getTime(self))
+                print "Checkpointing -> ", filename
+                _steps_swig.API_checkpoint(self, filename)
+            _steps_swig.API_run(self, end_time)
             filename = "%s%e.wmrk4_cp" % (self.cp_prefix, _steps_swig.API_getTime(self))
             print "Checkpointing -> ", filename
             _steps_swig.API_checkpoint(self, filename)
+        else:
+            _steps_swig.API_run(self, end_time)
             
-    def step(self, checkpoint = False):
-        """
-        Run the simulation for a single DT step, 
-        set checkpoint true if automatic checkpoint is needed.
-        """
-        _steps_swig.API_step(self)
-        
-        if checkpoint == True:
-            filename = "%s%e.wmrk4_cp" % (self.cp_prefix, _steps_swig.API_getTime(self))
-            print "Checkpointing -> ", filename
-            _steps_swig.API_checkpoint(self, filename)
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Well-mixed Direct SSA
@@ -162,196 +166,43 @@ class Wmdirect(steps_swig.Wmdirect) :
         
     def run(self, end_time, cp_interval = 0.0):
         """
-        Run the simulation until end_time, automatic checkpoint for every cp_interval.
+        Run the simulation until end_time, 
+        automatically checkpoint at each cp_interval.
         """
-        if cp_interval > 0.0:
-            while (end_time - _steps_swig.API_getTime(self)) > cp_interval:
+        
+        if cp_interval > 0:
+            while _steps_swig.API_getTime(self) + cp_interval < end_time:
                 _steps_swig.API_advance(self, cp_interval)
-                self.checkpoint()
+                filename = "%s%e.wmrk4_cp" % (self.cp_prefix, _steps_swig.API_getTime(self))
+                print "Checkpointing -> ", filename
+                _steps_swig.API_checkpoint(self, filename)
             _steps_swig.API_run(self, end_time)
-            self.checkpoint()
+            filename = "%s%e.wmrk4_cp" % (self.cp_prefix, _steps_swig.API_getTime(self))
+            print "Checkpointing -> ", filename
+            _steps_swig.API_checkpoint(self, filename)
         else:
             _steps_swig.API_run(self, end_time)
-    
+        
     def advance(self, advance_time, cp_interval = 0.0):
         """
-        Avdance the simulation for advance_time, automatic checkpoint for every cp_interval.
+        Advance the simulation for advance_time, 
+        automatically checkpoint at each cp_interval.
         """
-        if cp_interval > 0.0:
-            remain = advance_time
-            while remain > cp_interval:
+        
+        end_time = _steps_swig.API_getTime(self) + advance_time
+        if cp_interval > 0:
+            while _steps_swig.API_getTime(self) + cp_interval < end_time:
                 _steps_swig.API_advance(self, cp_interval)
-                self.checkpoint()
-                remain -= cp_interval
-            _steps_swig.API_advance(self, remain)
-            self.checkpoint()
+                filename = "%s%e.wmdirect_cp" % (self.cp_prefix, _steps_swig.API_getTime(self))
+                print "Checkpointing -> ", filename
+                _steps_swig.API_checkpoint(self, filename)
+            _steps_swig.API_run(self, end_time)
+            filename = "%s%e.wmdirect_cp" % (self.cp_prefix, _steps_swig.API_getTime(self))
+            print "Checkpointing -> ", filename
+            _steps_swig.API_checkpoint(self, filename)
         else:
-            _steps_swig.API_advance(self, advance_time)        
-    
-    
-    def getFile(sim, name):
-        if name == None:
-            filename = "%s%e%s" % (self.cp_prefix, _steps_swig.API_getTime(self), ".checkpoint")
-            print "\ncheckpointing -> ", filename
-            output = file(filename, "wb")
-        else:
-            print "checkpointing -> ", name
-            output = file(name, "wb")
-        return output
-        
-    def checkpoint(self, filename = None):
-        """
-        Checkpoint state to filename.
-        """
-        output = self.getFile(filename)
-
-        specs = self.model.getAllSpecs()
-        
-        # checkpoint general info
-        info = {}
-        info["Solver"] = "Wmdirect"
-        info["SimTime"] = _steps_swig.API_getTime(self)
-        info["SimNSteps"] = _steps_swig.API_getNSteps(self)
-        spec_ids = []
-        for spec in specs:
-            spec_ids.append(spec.id)
-        info["Specs"] = spec_ids
-        
-        comp_ids = []
-        comps = self.geom.getAllComps()
-        for comp in comps:
-            comp_ids.append(comp.id)
-        info["Comps"] = comp_ids
-        
-        patch_ids = []
-        patches = self.geom.getAllPatches()
-        for patch in patches:
-            patch_ids.append(patch.id)
-        info["Patches"] = patch_ids
-        cPickle.dump(info,output)
-        
-        
-        # checkpoint comp info
-        for comp in comp_ids:
-            scan = {}
-            scan["DataType"] = "Comp"
-            scan["DataID"] = comp
-            scan["Volume"] = _steps_swig.API_getCompVol(self, comp)
-            specs_dist = {}
-            for spec in specs:
-                spec_count = _steps_swig.API_getCompCount(self, comp, spec.id)
-                specs_dist[spec.id] = spec_count
-            scan["SpecsDist"] = specs_dist
-            cPickle.dump(scan, output)
-        
-        # checkpoint patch info
-        for patch in patch_ids:
-            scan = {}
-            scan["DataType"] = "Patch"
-            scan["DataID"] = patch
-            scan["Area"] = _steps_swig.API_getPatchArea(self, patch)
-            specs_dist = {}
-            for spec in specs:
-                spec_count = _steps_swig.API_getPatchCount(self, patch, spec.id)
-                specs_dist[spec.id] = spec_count
-            scan["SpecsDist"] = specs_dist
-            cPickle.dump(scan, output)
+            _steps_swig.API_run(self, end_time)
             
-        print "Done."
-        
-    def restore(self, file):
-        """
-        Restore simulation state from checkpoint file
-        """
-        input = open(file, 'rb')
-        
-        if input == None:
-            print "Unable to load checkpoint file."
-            return
-        
-        print "\nRestoring data from %s:" %(file)
-        print "Checking general info..."
-        info = cPickle.load(input)
-        if info["Solver"] != "Wmdirect":
-            print "Solver mismatch: this checkpoint file requires a %s solver." % (info["Solver"])
-            return
-            
-        model_specs = self.model.getAllSpecs()
-        model_spec_ids = []
-        for spec in model_specs:
-            model_spec_ids.append(spec.id)
-        spec_diff = set(info["Specs"]) ^ set(model_spec_ids)
-        if len(spec_diff) != 0:
-            print "Model mismatch:"
-            print "Species in file:"
-            print info["Specs"]
-            print "Species in model:"
-            print model_spec_ids
-            return
-                    
-        geom_comps = self.geom.getAllComps()
-        geom_comp_ids = []
-        for comp in geom_comps:
-            geom_comp_ids.append(comp.id)
-        comp_diff = set(info["Comps"]) ^ set(geom_comp_ids)
-        if len(comp_diff) != 0:
-            print "Geom mismatch:"
-            print "Compartments in file:"
-            print info["Comps"]
-            print "Compartments in geom:"
-            print geom_comp_ids
-            return
-            
-        geom_patches = self.geom.getAllPatches()
-        geom_patch_ids = []
-        for patch in geom_patches:
-            geom_patch_ids.append(patch.id)
-        patch_diff = set(info["Patches"]) ^ set(geom_patch_ids)
-        if len(patch_diff) != 0:
-            print "Geom mismatch:"
-            print "Patches in file:"
-            print info["Patches"]
-            print "Patches in geom:"
-            print geom_patch_ids
-            return
-        
-            
-        print "Solver: %s, Sim Time: %e, Sim Steps: %i" % (info["Solver"], info["SimTime"],info["SimNSteps"])
-        
-        print "\nSpecies:"
-        print info["Specs"]
-        
-        print "\nCompartments:"
-        print info["Comps"]
-        
-        print "\nPatches:"
-        print info["Patches"]
-        
-        _steps_swig.API_setTime(self, info["SimTime"])
-        _steps_swig.API_setNSteps(self, info["SimNSteps"])
-        
-        print "\nRestoring Data..."
-        while(True):
-            try:
-                data = cPickle.load(input)
-                if data["DataType"] == "Comp":
-                    name = data["DataID"]
-                    specs_dist = data["SpecsDist"]
-                    vol = data["Volume"]
-                    _steps_swig.API_setCompVol(self, name, vol)
-                    for spec in specs_dist.keys():
-                        _steps_swig.API_setCompCount(self, name, spec, specs_dist[spec])
-                elif data["DataType"] == "Patch":
-                    name = data["DataID"]
-                    specs_dist = data["SpecsDist"]
-                    area = data["Area"]
-                    _steps_swig.API_setPatchArea(self, name, area)
-                    for spec in specs_dist.keys():
-                        _steps_swig.API_setPatchCount(self, name, spec, specs_dist[spec])
-            except EOFError:
-                break
-        
-        print "Done.\n"
         
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Tetrahedral Direct SSA

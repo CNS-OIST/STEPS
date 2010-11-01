@@ -35,6 +35,7 @@
 // STL headers.
 #include <cassert>
 #include <vector>
+#include <fstream>
 
 // STEPS headers.
 #include "../common.h"
@@ -78,6 +79,15 @@ public:
     Patch(steps::solver::Patchdef * patchdef, swmd::Comp * icomp, swmd::Comp * ocomp);
     ~Patch(void);
 
+    ////////////////////////////////////////////////////////////////////////
+    // CHECKPOINTING
+    ////////////////////////////////////////////////////////////////////////
+    /// checkpoint data
+    void checkpoint(std::fstream & cp_file);
+    
+    /// restore data
+    void restore(std::fstream & cp_file);
+    
     ////////////////////////////////////////////////////////////////////////
 
     void setupKProcs(Wmdirect * wmd);

@@ -237,14 +237,12 @@ void swmrk4::Wmrk4::checkpoint(std::string const & file_name)
 
     cp_file.open(file_name.c_str(), 
                 std::fstream::out | std::fstream::binary | std::fstream::trunc);
-    double state_buffer[5];
+    double state_buffer[3];
     state_buffer[0] = static_cast<double>(pSpecs_tot);
     state_buffer[1] = static_cast<double>(pReacs_tot);
     state_buffer[2] = pDT;
-    state_buffer[3] = statedef()->time();
-    state_buffer[4] = statedef()->nsteps();
 
-    cp_file.write((char*)&state_buffer, sizeof(double) * 5);
+    cp_file.write((char*)&state_buffer, sizeof(double) * 3);
     
     cp_file.write((char*)pReacMtx, sizeof(uint) * pReacs_tot * pSpecs_tot);
 
@@ -270,10 +268,7 @@ void swmrk4::Wmrk4::checkpoint(std::string const & file_name)
     
     cp_file.write((char*)&dym.front(), sizeof(double) * dym.size()); 
 
-	uint comps = statedef()->countComps();
-	for (uint i=0; i < comps; ++i) statedef()->compdef(i)->checkpoint(cp_file);
-	uint patches = statedef()->countPatches();
-	for (uint i=0; i < patches; ++i) statedef()->patchdef(i)->checkpoint(cp_file);
+	statedef()->checkpoint(cp_file);
     
     cp_file.close();
 }
@@ -288,8 +283,8 @@ void swmrk4::Wmrk4::restore(std::string const & file_name)
                 std::fstream::in | std::fstream::binary);
     
     cp_file.seekg(0);
-    double state_buffer[5];
-    cp_file.read((char*)&state_buffer, sizeof(double) * 5);
+    double state_buffer[3];
+    cp_file.read((char*)&state_buffer, sizeof(double) * 3);
     
     if (static_cast<uint>(state_buffer[0]) != pSpecs_tot) {
         std::ostringstream os;
@@ -304,8 +299,6 @@ void swmrk4::Wmrk4::restore(std::string const & file_name)
     }
     
     pDT = state_buffer[2];
-    statedef()->setTime(state_buffer[3]);
-    statedef()->setNSteps(state_buffer[4]);
     
     cp_file.read((char*)pReacMtx, sizeof(uint) * pReacs_tot * pSpecs_tot);
 
@@ -331,10 +324,7 @@ void swmrk4::Wmrk4::restore(std::string const & file_name)
     
     cp_file.read((char*)&dym.front(), sizeof(double) * dym.size());
     
-	uint comps = statedef()->countComps();
-	for (uint i=0; i < comps; ++i) statedef()->compdef(i)->restore(cp_file);
-	uint patches = statedef()->countPatches();
-	for (uint i=0; i < patches; ++i) statedef()->patchdef(i)->restore(cp_file);
+	statedef()->restore(cp_file);
     
     cp_file.close();
 }

@@ -35,6 +35,7 @@
 // STL headers.
 #include <cassert>
 #include <vector>
+#include <fstream>
 
 // STEPS headers.
 #include "../common.h"
@@ -74,6 +75,15 @@ public:
     Comp(steps::solver::Compdef * compdef);
     ~Comp(void);
 
+    ////////////////////////////////////////////////////////////////////////
+    // CHECKPOINTING
+    ////////////////////////////////////////////////////////////////////////
+    /// checkpoint data
+    void checkpoint(std::fstream & cp_file);
+    
+    /// restore data
+    void restore(std::fstream & cp_file);
+    
     ////////////////////////////////////////////////////////////////////////
 
     void setupKProcs(Wmdirect * wmd);

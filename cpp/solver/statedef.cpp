@@ -188,6 +188,92 @@ ssolver::Statedef::~Statedef()
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void ssolver::Statedef::checkpoint(std::fstream & cp_file)
+{
+    cp_file.write((char*)&pTime, sizeof(double));
+    cp_file.write((char*)&pNSteps, sizeof(uint));
+    
+	SpecdefPVecCI s_end = pSpecdefs.end();
+	for (SpecdefPVecCI s = pSpecdefs.begin(); s != s_end; ++s) {
+        (*s)->checkpoint(cp_file);
+    }
+
+	CompdefPVecCI c_end = pCompdefs.end();
+	for (CompdefPVecCI c = pCompdefs.begin(); c != c_end; ++c) {
+        (*c)->checkpoint(cp_file);
+    }
+
+	PatchdefPVecCI p_end = pPatchdefs.end();
+	for (PatchdefPVecCI p = pPatchdefs.begin(); p != p_end; ++p) {
+        (*p)->checkpoint(cp_file);
+    }
+
+	DiffBoundarydefPVecCI db_end = pDiffBoundarydefs.end();
+	for (DiffBoundarydefPVecCI db = pDiffBoundarydefs.begin(); db != db_end; ++db) {
+        (*db)->checkpoint(cp_file);
+    }
+
+	ReacdefPVecCI r_end = pReacdefs.end();
+	for (ReacdefPVecCI r = pReacdefs.begin(); r != r_end; ++r) {
+        (*r)->checkpoint(cp_file);
+    }
+
+	SReacdefPVecCI sr_end = pSReacdefs.end();
+	for (SReacdefPVecCI sr = pSReacdefs.begin(); sr != sr_end; ++sr) {
+        (*sr)->checkpoint(cp_file);
+    }
+
+	DiffdefPVecCI d_end = pDiffdefs.end();
+	for (DiffdefPVecCI d = pDiffdefs.begin(); d != d_end; ++d) {
+        (*d)->checkpoint(cp_file);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void ssolver::Statedef::restore(std::fstream & cp_file)
+{
+    cp_file.read((char*)&pTime, sizeof(double));
+    cp_file.read((char*)&pNSteps, sizeof(uint));
+    
+	SpecdefPVecCI s_end = pSpecdefs.end();
+	for (SpecdefPVecCI s = pSpecdefs.begin(); s != s_end; ++s) {
+        (*s)->restore(cp_file);
+    }
+
+	CompdefPVecCI c_end = pCompdefs.end();
+	for (CompdefPVecCI c = pCompdefs.begin(); c != c_end; ++c) {
+        (*c)->restore(cp_file);
+    }
+
+	PatchdefPVecCI p_end = pPatchdefs.end();
+	for (PatchdefPVecCI p = pPatchdefs.begin(); p != p_end; ++p) {
+        (*p)->restore(cp_file);
+    }
+
+	DiffBoundarydefPVecCI db_end = pDiffBoundarydefs.end();
+	for (DiffBoundarydefPVecCI db = pDiffBoundarydefs.begin(); db != db_end; ++db) {
+        (*db)->restore(cp_file);
+    }
+
+	ReacdefPVecCI r_end = pReacdefs.end();
+	for (ReacdefPVecCI r = pReacdefs.begin(); r != r_end; ++r) {
+        (*r)->restore(cp_file);
+    }
+
+	SReacdefPVecCI sr_end = pSReacdefs.end();
+	for (SReacdefPVecCI sr = pSReacdefs.begin(); sr != sr_end; ++sr) {
+        (*sr)->restore(cp_file);
+    }
+
+	DiffdefPVecCI d_end = pDiffdefs.end();
+	for (DiffdefPVecCI d = pDiffdefs.begin(); d != d_end; ++d) {
+        (*d)->restore(cp_file);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 ssolver::Compdef * ssolver::Statedef::compdef(uint gidx) const
 {
     assert(gidx < pCompdefs.size());

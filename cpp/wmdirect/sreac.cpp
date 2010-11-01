@@ -93,6 +93,20 @@ swmd::SReac::~SReac(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void swmd::SReac::checkpoint(std::fstream & cp_file)
+{
+    cp_file.write((char*)&pCcst, sizeof(double));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void swmd::SReac::restore(std::fstream & cp_file)
+{
+    cp_file.read((char*)&pCcst, sizeof(double));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 bool swmd::SReac::active(void) const
 {
 	uint lsridx = pPatch->def()->sreacG2L(defsr()->gidx());

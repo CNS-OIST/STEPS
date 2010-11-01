@@ -74,6 +74,27 @@ swmd::Patch::~Patch(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void swmd::Patch::checkpoint(std::fstream & cp_file)
+{
+    for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
+    {
+        (*k)->checkpoint(cp_file);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void swmd::Patch::restore(std::fstream & cp_file)
+{
+    for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
+    {
+        (*k)->restore(cp_file);
+    }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
 void swmd::Patch::setupKProcs(swmd::Wmdirect * wmd)
 {
     // Create surface reaction kproc's.

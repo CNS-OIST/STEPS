@@ -80,6 +80,20 @@ ssolver::Diffdef::~Diffdef(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void ssolver::Diffdef::checkpoint(std::fstream & cp_file)
+{
+    cp_file.write((char*)&pDcst, sizeof(double));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void ssolver::Diffdef::restore(std::fstream & cp_file)
+{
+    cp_file.read((char*)&pDcst, sizeof(double));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void ssolver::Diffdef::setup(void)
 {
 	assert (pSetupdone == false);

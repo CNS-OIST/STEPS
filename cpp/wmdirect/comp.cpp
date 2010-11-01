@@ -67,6 +67,27 @@ swmd::Comp::~Comp(void)
     }
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+void swmd::Comp::checkpoint(std::fstream & cp_file)
+{
+    for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
+    {
+        (*k)->checkpoint(cp_file);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void swmd::Comp::restore(std::fstream & cp_file)
+{
+    for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
+    {
+        (*k)->restore(cp_file);
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void swmd::Comp::reset(void)

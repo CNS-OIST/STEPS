@@ -37,6 +37,7 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <fstream>
 
 // STEPS headers.
 #include "../common.h"
@@ -84,6 +85,15 @@ public:
     Wmdirect(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r);
     ~Wmdirect(void);
 
+    ////////////////////////////////////////////////////////////////////////
+    // CHECKPOINTING
+    ////////////////////////////////////////////////////////////////////////
+    /// checkpoint data
+    void checkpoint(std::string const & file_name);
+    
+    /// restore data
+    void restore(std::string const & file_name);
+    
     ////////////////////////////////////////////////////////////////////////
     // SOLVER INFORMATION
     ////////////////////////////////////////////////////////////////////////

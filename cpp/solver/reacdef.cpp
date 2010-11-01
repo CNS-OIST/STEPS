@@ -99,6 +99,20 @@ ssolver::Reacdef::~Reacdef(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void ssolver::Reacdef::checkpoint(std::fstream & cp_file)
+{
+    cp_file.write((char*)&pKcst, sizeof(double));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void ssolver::Reacdef::restore(std::fstream & cp_file)
+{
+    cp_file.read((char*)&pKcst, sizeof(double));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void ssolver::Reacdef::setup(void)
 {
 	assert (pSetupdone == false);

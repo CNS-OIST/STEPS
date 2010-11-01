@@ -34,6 +34,7 @@
 
 // STL headers.
 #include <vector>
+#include <fstream>
 
 // STEPS headers.
 #include "../common.h"
@@ -71,6 +72,15 @@ public:
 
     KProc(void);
     virtual ~KProc(void);
+    
+    ////////////////////////////////////////////////////////////////////////
+    // CHECKPOINTING
+    ////////////////////////////////////////////////////////////////////////
+    /// checkpoint data
+    virtual void checkpoint(std::fstream & cp_file) = 0;
+    
+    /// restore data
+    virtual void restore(std::fstream & cp_file) = 0;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
