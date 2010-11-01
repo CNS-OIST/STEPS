@@ -59,6 +59,7 @@ comp.setVol(1.6667e-21)
 r = srng.create('mt19937', 256)
 r.initialize(23412)
 
+'''
 ##############################
 # Well Mixed DirectSSA
 ##############################
@@ -104,7 +105,7 @@ print "Restore from file"
 sim.restore("manual.checkpoint")
 print "Sim Time: %e" % sim.getTime()
 print "Sim Steps: %e" % sim.getNSteps()
-
+'''
 ###################################
 # RK4 solver
 ###################################
@@ -112,22 +113,18 @@ print "Well Mixed RK4"
 rk4sim = ssolver.Wmrk4(mdl, wmgeom, r)
 
 rk4sim.reset()
-rk4sim.setDT(1e-4)
+rk4sim.setDT(1e-5)
 rk4sim.setCompConc('comp', 'molA', 31.4e-6)
 rk4sim.setCompConc('comp', 'molB', 22.3e-6)
 
-# Notice: No checkpointing for RK4 yet
-rk4sim.run(1e-3)
-print "Sim Time: %e" % rk4sim.getTime()
-
-print "checkpoint"
 rk4sim.checkpoint("rk4.cp")
 print "A count: ", rk4sim.getCompCount("comp", "molA")
 print "B count: ", rk4sim.getCompCount("comp", "molB")
 print "C count: ", rk4sim.getCompCount("comp", "molC")
 
-rk4sim.reset()
-print "reset"
+rk4sim.advance(1e-2, True)
+print "Sim Time: %e" % rk4sim.getTime()
+
 print "A count: ", rk4sim.getCompCount("comp", "molA")
 print "B count: ", rk4sim.getCompCount("comp", "molB")
 print "C count: ", rk4sim.getCompCount("comp", "molC")

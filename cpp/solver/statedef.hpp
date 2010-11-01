@@ -35,6 +35,7 @@
 // STL headers.
 #include <string>
 #include <vector>
+#include <fstream>
 
 // STEPS headers.
 #include "../common.h"

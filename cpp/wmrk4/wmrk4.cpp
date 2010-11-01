@@ -1069,7 +1069,8 @@ void swmrk4::Wmrk4::_rksteps(double t1, double t2)
 		os << "dt is zero or negative. Call setDT() method.";
 		throw steps::ArgErr(os.str());
 	}
-	if (pDT >= (t2-t1))
+    // 2010_11_1 remove = to allow step() 
+	if (t1 + pDT > t2 )
 	{
 		std::ostringstream os;
 		os << "dt is larger than simulation step.";

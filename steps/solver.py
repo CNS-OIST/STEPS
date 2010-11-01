@@ -60,7 +60,7 @@ import cPickle
 # Well-mixed RK4
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 class Wmrk4(steps_swig.Wmrk4) :
-    def __init__(self, *args): 
+    def __init__(self, model, geom, rng): 
         """
         Construction::
         
@@ -73,10 +73,58 @@ class Wmrk4(steps_swig.Wmrk4) :
             * steps.geom.Geom geom
             * steps.rng.RNG rng
         """
-        this = _steps_swig.new_Wmrk4(*args)
+        this = _steps_swig.new_Wmrk4(model, geom, rng)
         try: self.this.append(this)
         except: self.this = this
         self.thisown = True
+        self.cp_prefix = ""
+        self.model = model
+        self.geom = geom
+        
+    def setCheckPointPrefix(self, prefix):
+        """
+        Setup checkpointing file prefix including path.
+        
+        Arguments:
+            string prefix path prefix for checkpoint files.
+        """
+        self.cp_prefix = prefix
+        
+    def run(self, end_time, checkpoint = False):
+        """
+        Run the simulation until end_time, 
+        set checkpoint true if automatic checkpoint is needed.
+        """
+        _steps_swig.API_run(self, end_time)
+        
+        if checkpoint == True:
+            filename = "%s%e.wmrk4_cp" % (self.cp_prefix, _steps_swig.API_getTime(self))
+            print "Checkpointing -> ", filename
+            _steps_swig.API_checkpoint(self, filename)
+            
+    def advance(self, advance_time, checkpoint = False):
+        """
+        Advance the simulation for advance_time, 
+        set checkpoint true if automatic checkpoint is needed.
+        """
+        _steps_swig.API_advance(self, advance_time)
+        
+        if checkpoint == True:
+            filename = "%s%e.wmrk4_cp" % (self.cp_prefix, _steps_swig.API_getTime(self))
+            print "Checkpointing -> ", filename
+            _steps_swig.API_checkpoint(self, filename)
+            
+    def step(self, checkpoint = False):
+        """
+        Run the simulation for a single DT step, 
+        set checkpoint true if automatic checkpoint is needed.
+        """
+        _steps_swig.API_step(self)
+        
+        if checkpoint == True:
+            filename = "%s%e.wmrk4_cp" % (self.cp_prefix, _steps_swig.API_getTime(self))
+            print "Checkpointing -> ", filename
+            _steps_swig.API_checkpoint(self, filename)
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Well-mixed Direct SSA
@@ -141,7 +189,7 @@ class Wmdirect(steps_swig.Wmdirect) :
             _steps_swig.API_advance(self, advance_time)        
     
     
-    def getFile(self, name):
+    def getFile(sim, name):
         if name == None:
             filename = "%s%e%s" % (self.cp_prefix, _steps_swig.API_getTime(self), ".checkpoint")
             print "\ncheckpointing -> ", filename
