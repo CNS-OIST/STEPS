@@ -107,7 +107,9 @@ public:
     void advance(double adv);
     void step(void);
 
-
+    void checkpoint(std::string const & file_name);
+    void restore(std::string const & file_name);
+    
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
     //      GENERAL

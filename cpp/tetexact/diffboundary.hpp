@@ -29,6 +29,7 @@
 // STL headers.
 #include <cassert>
 #include <vector>
+#include <fstream>s
 
 // STEPS headers.
 #include "../common.h"
@@ -72,6 +73,15 @@ public:
     DiffBoundary(steps::solver::DiffBoundarydef * dbdef);
     ~DiffBoundary(void);
 
+    ////////////////////////////////////////////////////////////////////////
+    // CHECKPOINTING
+    ////////////////////////////////////////////////////////////////////////
+    /// checkpoint data
+    void checkpoint(std::fstream & cp_file);
+    
+    /// restore data
+    void restore(std::fstream & cp_file);
+    
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////

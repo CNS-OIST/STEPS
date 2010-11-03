@@ -1234,26 +1234,4 @@ def loadMesh(pathname):
 
     
     return (mesh,comps_out,patches_out)
-#############################################################################################
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-#############################################################################################
-
-def intersecTris(mesh, comp1_tets, comp2_tets):
-
-    comp1_tris = set()
-    for i in comp1_tets:
-        tritemp = mesh.getTetTriNeighb(i)
-        for j in range(4): 
-            comp1_tris.add(tritemp[j])
-    print comp1_tris
-    comp2_tris = set()
-    for i in comp2_tets:
-        tritemp = mesh.getTetTriNeighb(i)
-        for j in range(4): 
-            comp2_tris.add(tritemp[j])
-
-    print comp2_tris
-    tris = comp1_tris.intersection(comp2_tris)
-    return list(tris)

@@ -36,6 +36,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <fstream>
 
 // STEPS headers.
 #include "../common.h"
@@ -68,6 +69,15 @@ public:
     Reac(steps::solver::Reacdef * rdef, steps::tetexact::Tet * tet);
     ~Reac(void);
 
+    ////////////////////////////////////////////////////////////////////////
+    // CHECKPOINTING
+    ////////////////////////////////////////////////////////////////////////
+    /// checkpoint data
+    void checkpoint(std::fstream & cp_file);
+    
+    /// restore data
+    void restore(std::fstream & cp_file);
+    
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////

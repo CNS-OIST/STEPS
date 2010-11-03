@@ -944,8 +944,29 @@ Arguments:
              
 Return:
     list<int>
+    
+Status: Obsolete. rename as getTriSurfs()
 ");
 	std::vector<int> getTriBoundary(void) const;
+    
+    // added by Weiliang
+    %feature("autodoc", 
+"
+Returns a list of triangles that form the mesh boundary.
+Support function for steps.utilities.visual.
+
+Syntax::
+
+    getSurfTris()
+
+Arguments:
+    None
+             
+Return:
+    list<unsigned int>
+");
+	std::vector<unsigned int> getSurfTris(void) const;
+    
 	//steps::tetmesh::TmComp * getTmComp(std::string const & id) const;
     
     %feature("autodoc", 

@@ -298,7 +298,10 @@ public:
     /// Return the triangles which form the surface boundary of the mesh.
     /// \return Vector of the triangle boundary.
     // Weiliang 2010.02.02
+    /// rename to getSurfTris
     std::vector<int> getTriBoundary(void) const;
+    
+    std::vector<uint> getSurfTris(void) const;
 
     /// Flip the triangle's inner and outer tetrahedron.
     ///

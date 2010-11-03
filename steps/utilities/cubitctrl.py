@@ -35,17 +35,60 @@ def getTetsInVolume(v_id, mesh, scale):
     ntets = mesh.ntets
     volume = cubit.volume(v_id)
     body = volume.bodies()[0]
-    tet_list = []
+    in_list = []
     for t in range(ntets):
         center = mesh.getTetBarycenter(t)
         cubit_center = [center[0]/scale, center[1]/scale, center[2]/scale]
         status = body.point_containment(cubit_center)
         if status == 1 or status == 2:
-            tet_list.append(t)
-    return tet_list
+            in_list.append(t)
+    return in_list
+    
+def getCompTetsInVolume(v_id, mesh, comp_id, scale):
+    comp_tets = mesh.getComp(comp_id).getAllTetIndices()
+    volume = cubit.volume(v_id)
+    body = volume.bodies()[0]
+    in_list = []
+    for t in comp_tets:
+        center = mesh.getTetBarycenter(t)
+        cubit_center = [center[0]/scale, center[1]/scale, center[2]/scale]
+        status = body.point_containment(cubit_center)
+        if status == 1 or status == 2:
+            in_list.append(t)
+    return in_list
         
+def getSurfTrisInVolume(v_id, mesh, scale):
+    surf_tris = mesh.getSurfTris()
+    volume = cubit.volume(v_id)
+    body = volume.bodies()[0]
+    in_list = []
+    for t in surf_tris:
+        center = mesh.getTriBarycenter(t)
+        cubit_center = [center[0]/scale, center[1]/scale, center[2]/scale]
+        status = body.point_containment(cubit_center)
+        if status == 1 or status == 2:
+            in_list.append(t)
+    return in_list
+    
+def getPatchTrisInVolume(v_id, mesh, patch_id, scale):
+    patch_tris = mesh.getPatch(patch_id).getAllTriIndices()
+    volume = cubit.volume(v_id)
+    body = volume.bodies()[0]
+    in_list = []
+    for t in patch_tris:
+        center = mesh.getTriBarycenter(t)
+        cubit_center = [center[0]/scale, center[1]/scale, center[2]/scale]
+        status = body.point_containment(cubit_center)
+        if status == 1 or status == 2:
+            in_list.append(t)
+    return in_list
+    
 def highlightTets(steps_tets, tet_proxy):
+    cubit.cmd("Graphics Clear Highlight")
+    cubit.cmd("Graphics Pause")
     cmd_str = "highlight tet "
     for st in steps_tets:
         cubit_id = tet_proxy.getImportID(st)
-        cubit.cmd("highlight tet %i" % (cubit_id))
+        cmd_str += "%i," % (cubit_id)
+    cubit.cmd(cmd_str)
+    cubit.cmd("Display")

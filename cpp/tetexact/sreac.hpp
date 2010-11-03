@@ -38,6 +38,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <fstream>
 
 // STEPS headers.
 #include "../common.h"
@@ -70,6 +71,15 @@ public:
     SReac(steps::solver::SReacdef * srdef, steps::tetexact::Tri * tet);
     ~SReac(void);
 
+    ////////////////////////////////////////////////////////////////////////
+    // CHECKPOINTING
+    ////////////////////////////////////////////////////////////////////////
+    /// checkpoint data
+    void checkpoint(std::fstream & cp_file);
+    
+    /// restore data
+    void restore(std::fstream & cp_file);
+    
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////

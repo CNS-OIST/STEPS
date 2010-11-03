@@ -38,6 +38,7 @@
 #include <algorithm>
 #include <limits>
 #include <queue>
+#include <fstream>
 
 // STEPS headers.
 #include "../common.h"
@@ -478,7 +479,60 @@ stex::Tetexact::~Tetexact(void)
     delete[] pRannum;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
+void stex::Tetexact::checkpoint(std::string const & file_name)
+{
+	std::fstream cp_file;
+
+    cp_file.open(file_name.c_str(), 
+                std::fstream::out | std::fstream::binary | std::fstream::trunc);
+
+    CompPVecCI comp_e = pComps.end();
+    for (CompPVecCI c = pComps.begin(); c != comp_e; ++c) (*c)->checkpoint(cp_file);
+    PatchPVecCI patch_e = pPatches.end();
+    for (PatchPVecCI p = pPatches.begin(); p != patch_e; ++p) (*p)->checkpoint(cp_file);
+
+    TetPVecCI tet_e = pTets.end();
+    for (TetPVecCI t = pTets.begin(); t != tet_e; ++t) (*t)->checkpoint(cp_file);
+    TriPVecCI tri_e = pTris.end();
+    for (TriPVecCI t = pTris.end(); t != tri_e; ++t) (*t)->checkpoint(cp_file);
+    
+	statedef()->checkpoint(cp_file);
+    
+    cp_file.close();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void stex::Tetexact::restore(std::string const & file_name)
+{
+	std::fstream cp_file;
+
+    cp_file.open(file_name.c_str(), 
+                std::fstream::in | std::fstream::binary);
+    
+    cp_file.seekg(0);
+
+    CompPVecCI comp_e = pComps.end();
+    for (CompPVecCI c = pComps.begin(); c != comp_e; ++c) (*c)->restore(cp_file);
+    PatchPVecCI patch_e = pPatches.end();
+    for (PatchPVecCI p = pPatches.begin(); p != patch_e; ++p) (*p)->restore(cp_file);
+        
+    TetPVecCI tet_e = pTets.end();
+    for (TetPVecCI t = pTets.begin(); t != tet_e; ++t) (*t)->restore(cp_file);
+    TriPVecCI tri_e = pTris.end();
+    for (TriPVecCI t = pTris.end(); t != tri_e; ++t) (*t)->restore(cp_file);
+    
+	statedef()->restore(cp_file);
+    
+    cp_file.close();
+    
+    _reset();
+}
+
 ////////////////////////////////////////////////////////////////////////////////
+
 
 std::string stex::Tetexact::getSolverName(void) const
 {

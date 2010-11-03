@@ -35,6 +35,7 @@
 // STL headers.
 #include <cassert>
 #include <vector>
+#include <fstream>
 
 // STEPS headers.
 #include "../common.h"
@@ -78,6 +79,15 @@ public:
     Comp(steps::solver::Compdef * compdef);
     ~Comp(void);
 
+    ////////////////////////////////////////////////////////////////////////
+    // CHECKPOINTING
+    ////////////////////////////////////////////////////////////////////////
+    /// checkpoint data
+    void checkpoint(std::fstream & cp_file);
+    
+    /// restore data
+    void restore(std::fstream & cp_file);
+    
     /// Checks whether the Tet's compdef() corresponds to this object's
     /// CompDef. There is no check whether the Tet object has already
     /// been added to this Comp object before (i.e. no duplicate checking).

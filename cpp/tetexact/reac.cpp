@@ -94,6 +94,22 @@ stex::Reac::~Reac(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void stex::Reac::checkpoint(std::fstream & cp_file)
+{
+    cp_file.write((char*)&pCcst, sizeof(double));
+    cp_file.write((char*)&pKcst, sizeof(double));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stex::Reac::restore(std::fstream & cp_file)
+{
+    cp_file.read((char*)&pCcst, sizeof(double));
+    cp_file.read((char*)&pKcst, sizeof(double));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void stex::Reac::reset(void)
 {
     resetExtent();

@@ -123,6 +123,28 @@ stex::Diff::~Diff(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void stex::Diff::checkpoint(std::fstream & cp_file)
+{
+    cp_file.write((char*)&pScaledDcst, sizeof(double));
+    cp_file.write((char*)&pDcst, sizeof(double));
+    cp_file.write((char*)pCDFSelector, sizeof(double) * 3);
+    cp_file.write((char*)pDiffBndActive, sizeof(bool) * 4);
+    cp_file.write((char*)pDiffBndDirection, sizeof(bool) * 4);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stex::Diff::restore(std::fstream & cp_file)
+{
+    cp_file.read((char*)&pScaledDcst, sizeof(double));
+    cp_file.read((char*)&pDcst, sizeof(double));
+    cp_file.read((char*)pCDFSelector, sizeof(double) * 3);
+    cp_file.read((char*)pDiffBndActive, sizeof(bool) * 4);
+    cp_file.read((char*)pDiffBndDirection, sizeof(bool) * 4);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void stex::Diff::setupDeps(void)
 {
     // We will check all KProcs of the following simulation elements:

@@ -105,6 +105,22 @@ stex::SReac::~SReac(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void stex::SReac::checkpoint(std::fstream & cp_file)
+{
+    cp_file.write((char*)&pCcst, sizeof(double));
+    cp_file.write((char*)&pKcst, sizeof(double));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stex::SReac::restore(std::fstream & cp_file)
+{
+    cp_file.read((char*)&pCcst, sizeof(double));
+    cp_file.read((char*)&pKcst, sizeof(double));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void stex::SReac::reset(void)
 {
     resetExtent();

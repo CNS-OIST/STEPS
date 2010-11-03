@@ -35,6 +35,7 @@
 // STL headers.
 #include <cassert>
 #include <vector>
+#include <fstream>
 
 // STEPS headers.
 #include "../common.h"
@@ -77,6 +78,15 @@ public:
     Patch(steps::solver::Patchdef * patchdef);
     ~Patch(void);
 
+    ////////////////////////////////////////////////////////////////////////
+    // CHECKPOINTING
+    ////////////////////////////////////////////////////////////////////////
+    /// checkpoint data
+    void checkpoint(std::fstream & cp_file);
+    
+    /// restore data
+    void restore(std::fstream & cp_file);
+    
     /// Checks whether Tri::patchdef() corresponds to this object's
     /// PatchDef. There is no check whether the Tri object has already
     /// been added to this Patch object before (i.e. no duplicate

@@ -34,6 +34,7 @@
 // STL headers.
 #include <cassert>
 #include <vector>
+#include <fstream>
 
 // STEPS headers.
 #include "../common.h"
@@ -81,7 +82,15 @@ public:
 	Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
 		int tetinner, int tetouter);
 	~Tri(void);
-
+    
+    ////////////////////////////////////////////////////////////////////////
+    // CHECKPOINTING
+    ////////////////////////////////////////////////////////////////////////
+    /// checkpoint data
+    void checkpoint(std::fstream & cp_file);
+    
+    /// restore data
+    void restore(std::fstream & cp_file);
     ////////////////////////////////////////////////////////////////////////
     // SETUP
     ////////////////////////////////////////////////////////////////////////

@@ -91,6 +91,30 @@ stex::Tri::~Tri(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void stex::Tri::checkpoint(std::fstream & cp_file)
+{
+    uint nspecs = patchdef()->countSpecs();
+    cp_file.write((char*)pPoolCount, sizeof(uint) * nspecs);
+    cp_file.write((char*)pPoolFlags, sizeof(uint) * nspecs);
+    
+    KProcPVecCI e = pKProcs.end();
+    for (KProcPVecCI i = pKProcs.begin(); i != e; ++i) (*i)->checkpoint(cp_file);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stex::Tri::restore(std::fstream & cp_file)
+{
+    uint nspecs = patchdef()->countSpecs();
+    cp_file.read((char*)pPoolCount, sizeof(uint) * nspecs);
+    cp_file.read((char*)pPoolFlags, sizeof(uint) * nspecs);
+    
+    KProcPVecCI e = pKProcs.end();
+    for (KProcPVecCI i = pKProcs.begin(); i != e; ++i) (*i)->restore(cp_file);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void stex::Tri::setInnerTet(stex::Tet * t)
 {
 	pInnerTet = t;

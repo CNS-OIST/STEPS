@@ -1592,10 +1592,19 @@ std::vector<int> stetmesh::Tetmesh::getTriTetNeighb(uint tidx) const
 // Created by weiliang 2010.02.02
 std::vector<int> stetmesh::Tetmesh::getTriBoundary(void) const
 {
+    std::ostringstream os;
+    os << "This method is renamed to getSurfTris().";
+    throw steps::ArgErr(os.str());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<uint> stetmesh::Tetmesh::getSurfTris(void) const
+{
     assert(pSetupDone == true);
-    std::vector<int> tribounds;
+    std::vector<uint> tribounds;
     for (int t = 0; t < pTrisN; t++) {
-        std::vector<int> trineighbor = getTriTetNeighb(t);
+        std::vector<uint> trineighbor = getTriTetNeighb(t);
         if (trineighbor[0] == -1 || trineighbor[1] == -1) {
             tribounds.push_back(t);
         }
