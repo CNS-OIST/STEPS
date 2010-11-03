@@ -1604,7 +1604,7 @@ std::vector<uint> stetmesh::Tetmesh::getSurfTris(void) const
     assert(pSetupDone == true);
     std::vector<uint> tribounds;
     for (int t = 0; t < pTrisN; t++) {
-        std::vector<uint> trineighbor = getTriTetNeighb(t);
+        std::vector<int> trineighbor = getTriTetNeighb(t);
         if (trineighbor[0] == -1 || trineighbor[1] == -1) {
             tribounds.push_back(t);
         }

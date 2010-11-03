@@ -35544,6 +35544,38 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_Tetmesh_getSurfTris(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::tetmesh::Tetmesh *arg1 = (steps::tetmesh::Tetmesh *) 0 ;
+  std::vector<unsigned int,std::allocator<unsigned int > > result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Tetmesh_getSurfTris",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__tetmesh__Tetmesh, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Tetmesh_getSurfTris" "', argument " "1"" of type '" "steps::tetmesh::Tetmesh const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::tetmesh::Tetmesh * >(argp1);
+  {
+    try {
+      result = ((steps::tetmesh::Tetmesh const *)arg1)->getSurfTris();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = swig::from(static_cast< std::vector<unsigned int,std::allocator<unsigned int > > >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_Tetmesh_getTet(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   steps::tetmesh::Tetmesh *arg1 = (steps::tetmesh::Tetmesh *) 0 ;
@@ -44327,6 +44359,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"Tetmesh_getTriDiffBoundary", _wrap_Tetmesh_getTriDiffBoundary, METH_VARARGS, NULL},
 	 { (char *)"Tetmesh_getTriTetNeighb", _wrap_Tetmesh_getTriTetNeighb, METH_VARARGS, NULL},
 	 { (char *)"Tetmesh_getTriBoundary", _wrap_Tetmesh_getTriBoundary, METH_VARARGS, NULL},
+	 { (char *)"Tetmesh_getSurfTris", _wrap_Tetmesh_getSurfTris, METH_VARARGS, NULL},
 	 { (char *)"Tetmesh_getTet", _wrap_Tetmesh_getTet, METH_VARARGS, NULL},
 	 { (char *)"Tetmesh_countTets", _wrap_Tetmesh_countTets, METH_VARARGS, NULL},
 	 { (char *)"Tetmesh_getTetVol", _wrap_Tetmesh_getTetVol, METH_VARARGS, NULL},

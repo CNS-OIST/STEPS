@@ -4426,9 +4426,29 @@ class Tetmesh(Geom):
                      
         Return:
             list<int>
+            
+        Status: Obsolete. rename as getTriSurfs()
 
         """
         return _steps_swig.Tetmesh_getTriBoundary(*args)
+
+    def getSurfTris(*args):
+        """
+        Returns a list of triangles that form the mesh boundary.
+        Support function for steps.utilities.visual.
+
+        Syntax::
+
+            getSurfTris()
+
+        Arguments:
+            None
+                     
+        Return:
+            list<unsigned int>
+
+        """
+        return _steps_swig.Tetmesh_getSurfTris(*args)
 
     def getTet(*args):
         """
