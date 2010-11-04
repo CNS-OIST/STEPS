@@ -53,15 +53,19 @@ static inline double comp_ccst(double kcst, double vol, uint order, double compv
 {
     double vscale = 1.0e3 * vol * smath::AVOGADRO;
     int o1 = static_cast<int>(order) - 1;
-    if (o1 < 0) o1 = 0;
+
+    // IMPORTANT: Now treating zero-order reaction units correctly, i.e. as
+    // M/s not /s
+    // if (o1 < 0) o1 = 0;
 
     // BUGFIX, IH 15/8/2010. Incorrect for zero-order reactions:
     // rate was the same for all tets, not a fraction of the total volume
     // return kcst * pow(vscale, static_cast<double>(-o1));
 
     double ccst = kcst * pow(vscale, static_cast<double>(-o1));
+
     // Special case for zero-order reactions right now:
-    if (order == 0) ccst *= (vol/compvol);
+    // if (order == 0) ccst *= (vol/compvol);
 
     return ccst;
 }

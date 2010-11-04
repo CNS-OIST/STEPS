@@ -52,7 +52,11 @@ static inline double comp_ccst(double kcst, double vol, uint order)
 {
     double vscale = 1.0e3 * vol * smath::AVOGADRO;
     int o1 = static_cast<int>(order) - 1;
-    if (o1 < 0) o1 = 0;
+
+    // IMPORTANT: Now treating zero-order reaction units correctly, i.e. as
+    // M/s not /s
+    // if (o1 < 0) o1 = 0;
+
     return kcst * pow(vscale, static_cast<double>(-o1));
 }
 
