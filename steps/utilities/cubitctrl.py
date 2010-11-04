@@ -168,10 +168,19 @@ class VSim(object):
             if patch != None:
                 self.patch_tris[patch.getID()].append(t)
                 
-    def run(self, end_time, update_interval):
+    def changeColor(self, spec_id, color_idx):
+        self.colors[spec] = color_idx
+    
+    def run(self, end_time, update_interval, record_file = None):
+        if record_file != None:
+            rc_file = open(record_file)
+            rc_file.seek(os.SEEK_END)
         while self.sim.getTime() < end_time:
             cubit.cmd("Graphics Pause")
             cubit.cmd("delete vertex all")
+            if record_file != None:
+                rc_file.write("Graphics Pause")
+                rc_file.write("delete vertex all")
             self.sim.advance(update_interval)
             for comp in self.comp_tets.values():
                 for t in comp:
@@ -184,6 +193,8 @@ class VSim(object):
                             cmd = "create vertex %f %f %f color id %i" % (scaled_center[0],
                             scaled_center[1], scaled_center[2], self.colors[spec])
                             cubit.cmd(cmd)
+                            if record_file != None:
+                                rc_file.write(cmd)
 
             for patch in self.patch_tris.values():
                 for t in patch:
@@ -196,7 +207,12 @@ class VSim(object):
                             cmd = "create vertex %f %f %f color id %i" % (scaled_center[0],
                             scaled_center[1], scaled_center[2], self.colors[spec])
                             cubit.cmd(cmd)
+                            if record_file != None:
+                                rc_file.write(cmd)
             cubit.cmd("display")
+            rc_file.write("display")
+    if record_file != None:
+        rc_file.close()
 ################################################################################
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 ################################################################################            
