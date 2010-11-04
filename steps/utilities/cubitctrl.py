@@ -32,6 +32,8 @@ except ImportError:
     print("Unable to find CUBIT module.")
     
 import random
+import os
+import sys
 
 ################################################################################
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
@@ -173,14 +175,14 @@ class VSim(object):
     
     def run(self, end_time, update_interval, record_file = None):
         if record_file != None:
-            rc_file = open(record_file)
+            rc_file = open(record_file, 'w')
             rc_file.seek(os.SEEK_END)
         while self.sim.getTime() < end_time:
             cubit.cmd("Graphics Pause")
             cubit.cmd("delete vertex all")
             if record_file != None:
-                rc_file.write("Graphics Pause")
-                rc_file.write("delete vertex all")
+                rc_file.write("Graphics Pause\n")
+                rc_file.write("delete vertex all\n")
             self.sim.advance(update_interval)
             for comp in self.comp_tets.values():
                 for t in comp:
@@ -194,7 +196,7 @@ class VSim(object):
                             scaled_center[1], scaled_center[2], self.colors[spec])
                             cubit.cmd(cmd)
                             if record_file != None:
-                                rc_file.write(cmd)
+                                rc_file.write(cmd + "\n")
 
             for patch in self.patch_tris.values():
                 for t in patch:
@@ -208,11 +210,11 @@ class VSim(object):
                             scaled_center[1], scaled_center[2], self.colors[spec])
                             cubit.cmd(cmd)
                             if record_file != None:
-                                rc_file.write(cmd)
+                                rc_file.write(cmd + "\n")
             cubit.cmd("display")
-            rc_file.write("display")
-    if record_file != None:
-        rc_file.close()
+            rc_file.write("display\n")
+        if record_file != None:
+            rc_file.close()
 ################################################################################
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 ################################################################################            
