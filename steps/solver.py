@@ -82,50 +82,42 @@ class Wmrk4(steps_swig.Wmrk4) :
         
     def run(self, end_time, cp_interval = 0.0, prefix = ""):
         """
-        Run the simulation until <end_time>, 
-        automatically checkpoint at each <cp_interval>.
-        Prefix can be added using prefix=<prefix_string>.
-        """
-        
-    def run(self, end_time, cp_interval = 0.0):
-        """
         Run the simulation until end_time, 
         automatically checkpoint at each cp_interval.
+        Prefix can be added using prefix=<prefix_string>.
         """
         
         if cp_interval > 0:
             while _steps_swig.API_getTime(self) + cp_interval < end_time:
                 _steps_swig.API_advance(self, cp_interval)
-                filename = "%s%e.wmrk4_cp" % (self.cp_prefix, _steps_swig.API_getTime(self))
+                filename = "%s%e.wmrk4_cp" % (prefix, _steps_swig.API_getTime(self))
                 print "Checkpointing -> ", filename
                 _steps_swig.API_checkpoint(self, filename)
             _steps_swig.API_run(self, end_time)
-            filename = "%s%e.wmrk4_cp" % (self.cp_prefix, _steps_swig.API_getTime(self))
+            filename = "%s%e.wmrk4_cp" % (prefix, _steps_swig.API_getTime(self))
             print "Checkpointing -> ", filename
             _steps_swig.API_checkpoint(self, filename)
         else:
             _steps_swig.API_run(self, end_time)
         
-    def advance(self, advance_time, cp_interval = 0.0):
+    def advance(self, advance_time, cp_interval = 0.0, prefix = ""):
         """
         Advance the simulation for advance_time, 
         automatically checkpoint at each cp_interval.
+        Prefix can be added using prefix=<prefix_string>.
         """
         
         end_time = _steps_swig.API_getTime(self) + advance_time
         if cp_interval > 0:
             while _steps_swig.API_getTime(self) + cp_interval < end_time:
                 _steps_swig.API_advance(self, cp_interval)
-                filename = "%s%e.wmrk4_cp" % (self.cp_prefix, _steps_swig.API_getTime(self))
+                filename = "%s%e.wmrk4_cp" % (prefix, _steps_swig.API_getTime(self))
                 print "Checkpointing -> ", filename
                 _steps_swig.API_checkpoint(self, filename)
             _steps_swig.API_run(self, end_time)
-            filename = "%s%e.wmrk4_cp" % (self.cp_prefix, _steps_swig.API_getTime(self))
+            filename = "%s%e.wmrk4_cp" % (prefix, _steps_swig.API_getTime(self))
             print "Checkpointing -> ", filename
             _steps_swig.API_checkpoint(self, filename)
-        else:
-            _steps_swig.API_run(self, end_time)
-            
         else:
             _steps_swig.API_run(self, end_time)
             
@@ -160,18 +152,15 @@ class Wmdirect(steps_swig.Wmdirect) :
         automatically checkpoint at each <cp_interval>.
         Prefix can be added using prefix=<prefix_string>.
         """
-        Run the simulation until end_time, 
-        automatically checkpoint at each cp_interval.
-        """
         
         if cp_interval > 0:
             while _steps_swig.API_getTime(self) + cp_interval < end_time:
                 _steps_swig.API_advance(self, cp_interval)
-                filename = "%s%e.wmrk4_cp" % (self.cp_prefix, _steps_swig.API_getTime(self))
+                filename = "%s%e.wmdirect_cp" % (prefix, _steps_swig.API_getTime(self))
                 print "Checkpointing -> ", filename
                 _steps_swig.API_checkpoint(self, filename)
             _steps_swig.API_run(self, end_time)
-            filename = "%s%e.wmrk4_cp" % (self.cp_prefix, _steps_swig.API_getTime(self))
+            filename = "%s%e.wmdirect_cp" % (prefix, _steps_swig.API_getTime(self))
             print "Checkpointing -> ", filename
             _steps_swig.API_checkpoint(self, filename)
         else:
@@ -181,17 +170,18 @@ class Wmdirect(steps_swig.Wmdirect) :
         """
         Advance the simulation for advance_time, 
         automatically checkpoint at each cp_interval.
+        Prefix can be added using prefix=<prefix_string>.
         """
         
         end_time = _steps_swig.API_getTime(self) + advance_time
         if cp_interval > 0:
             while _steps_swig.API_getTime(self) + cp_interval < end_time:
                 _steps_swig.API_advance(self, cp_interval)
-                filename = "%s%e.wmdirect_cp" % (self.cp_prefix, _steps_swig.API_getTime(self))
+                filename = "%s%e.wmdirect_cp" % (prefix, _steps_swig.API_getTime(self))
                 print "Checkpointing -> ", filename
                 _steps_swig.API_checkpoint(self, filename)
             _steps_swig.API_run(self, end_time)
-            filename = "%s%e.wmdirect_cp" % (self.cp_prefix, _steps_swig.API_getTime(self))
+            filename = "%s%e.wmdirect_cp" % (prefix, _steps_swig.API_getTime(self))
             print "Checkpointing -> ", filename
             _steps_swig.API_checkpoint(self, filename)
         else:
@@ -215,7 +205,8 @@ class Tetexact(steps_swig.Tetexact) :
             * steps.geom.Geom geom
             * steps.rng.RNG rng
         """
-        this = _steps_swig.new_Wmdirect(model, geom, rng)
+        print "make solver"
+        this = _steps_swig.new_Tetexact(model, geom, rng)
         try: self.this.append(this)
         except: self.this = this
         self.thisown = True
@@ -233,11 +224,11 @@ class Tetexact(steps_swig.Tetexact) :
         if cp_interval > 0:
             while _steps_swig.API_getTime(self) + cp_interval < end_time:
                 _steps_swig.API_advance(self, cp_interval)
-                filename = "%s%e.wmrk4_cp" % (prefix, _steps_swig.API_getTime(self))
+                filename = "%s%e.tetexact_cp" % (prefix, _steps_swig.API_getTime(self))
                 print "Checkpointing -> ", filename
                 _steps_swig.API_checkpoint(self, filename)
             _steps_swig.API_run(self, end_time)
-            filename = "%s%e.wmrk4_cp" % (prefix, _steps_swig.API_getTime(self))
+            filename = "%s%e.tetexact_cp" % (prefix, _steps_swig.API_getTime(self))
             print "Checkpointing -> ", filename
             _steps_swig.API_checkpoint(self, filename)
         else:
@@ -254,11 +245,11 @@ class Tetexact(steps_swig.Tetexact) :
         if cp_interval > 0:
             while _steps_swig.API_getTime(self) + cp_interval < end_time:
                 _steps_swig.API_advance(self, cp_interval)
-                filename = "%s%e.wmdirect_cp" % (prefix, _steps_swig.API_getTime(self))
+                filename = "%s%e.tetexact_cp" % (prefix, _steps_swig.API_getTime(self))
                 print "Checkpointing -> ", filename
                 _steps_swig.API_checkpoint(self, filename)
             _steps_swig.API_run(self, end_time)
-            filename = "%s%e.wmdirect_cp" % (prefix, _steps_swig.API_getTime(self))
+            filename = "%s%e.tetexact_cp" % (prefix, _steps_swig.API_getTime(self))
             print "Checkpointing -> ", filename
             _steps_swig.API_checkpoint(self, filename)
         else:

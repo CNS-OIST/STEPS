@@ -46,34 +46,32 @@ from math import *
 ################################################################################
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 ################################################################################
-def findOverlapTris(mesh, comp1_tets, comp2_tets):
+def findOverlapTris(mesh, tets1, tets2):
     """
     Find overlap triangles between two sets of tetrahedrons within a mesh.
     
     Arguements:
         * steps.geom.Tetmesh mesh
-        * list<uint> comp1_tets
-        * list<uint> comp2_tets
+        * list<uint> tets1
+        * list<uint> tets2
         
     Return:
         list<uint>
     """
     
-    comp1_tris = set()
-    for i in comp1_tets:
+    tris1 = set()
+    for i in tets1:
         tritemp = mesh.getTetTriNeighb(i)
         for j in range(4): 
-            comp1_tris.add(tritemp[j])
-    print comp1_tris
-    comp2_tris = set()
-    for i in comp2_tets:
+            tris1.add(tritemp[j])
+    tris2 = set()
+    for i in tets2:
         tritemp = mesh.getTetTriNeighb(i)
         for j in range(4): 
-            comp2_tris.add(tritemp[j])
+            tris2.add(tritemp[j])
 
-    print comp2_tris
-    tris = comp1_tris.intersection(comp2_tris)
-    return list(tris)
+    common_tris = tris1.intersection(tris2)
+    return list(common_tris)
     
 ################################################################################
 
@@ -127,6 +125,68 @@ def findOverlapSurfTris(mesh1, mesh2):
                 data.append(coupling)
     return data
                 
+################################################################################
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
+################################################################################
+
+def findSurfTrisInComp(mesh, comp_id):
+    """
+    Find surface triangles within a compartment.
+    Return a list of surface triangle indices.
+    
+    Arguements:
+        * steps.geom.Tetmesh mesh
+        * string comp_id
+        
+    Return:
+        list<uint>
+    """
+    
+    surf_tris = mesh.getSurfTris()
+    comp = mesh.getComp(comp_id)
+    comp_tets = comp.getAllTetIndices()
+    
+    out_surfs = []
+    for tet in  comp_tets:
+        nb_tris = mesh.getTriTetNeighb(tet)
+        for tri in nb_tris:
+            if tri in surf_tris:
+                out_surfs.append(tri)
+    
+    return out_surfs
+            
+################################################################################
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
+################################################################################
+
+def findSurfTrisInTets(mesh, tet_list):
+    """
+    Find surface triangles within a compartment.
+    Return a list of surface triangle indices.
+    
+    Arguements:
+        * steps.geom.Tetmesh mesh
+        * string comp_id
+        
+    Return:
+        list<uint>
+    """
+    
+    surf_tris = mesh.getSurfTris()
+
+    out_surfs = []
+    for tet in  tet_list:
+        nb_tris = mesh.getTriTetNeighb(tet)
+        for tri in nb_tris:
+            if tri in surf_tris:
+                out_surfs.append(tri)
+    
+    return out_surfs
+            
 ################################################################################
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 

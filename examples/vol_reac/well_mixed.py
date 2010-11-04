@@ -81,7 +81,7 @@ print "Sim Steps: %e" % sim.getNSteps()
 ###################################
 # Run Simulation with checkpointing
 ###################################
-sim.run(2e-3, 1e-4)
+sim.run(1e-2, 1e-3)
 print "Sim Time: %e" % sim.getTime()
 print "Sim Steps: %e" % sim.getNSteps()
 
@@ -117,7 +117,7 @@ print "B count: ", rk4sim.getCompCount("comp", "molB")
 print "C count: ", rk4sim.getCompCount("comp", "molC")
 
 print "restore"
-rk4sim.restore("1.000000e-02.wmrk4_cp")
+rk4sim.restore("rk4.cp")
 print "A count: ", rk4sim.getCompCount("comp", "molA")
 print "B count: ", rk4sim.getCompCount("comp", "molB")
 print "C count: ", rk4sim.getCompCount("comp", "molC")

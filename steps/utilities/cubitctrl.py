@@ -31,7 +31,13 @@ try:
 except ImportError:
     print("Unable to find CUBIT module.")
     
-def getTetsInVolume(v_id, mesh, scale):
+import random
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+################################################################################
+
+def getTetsInVolume(v_id, mesh, scale = 1e-6):
     ntets = mesh.ntets
     volume = cubit.volume(v_id)
     body = volume.bodies()[0]
@@ -43,8 +49,12 @@ def getTetsInVolume(v_id, mesh, scale):
         if status == 1 or status == 2:
             in_list.append(t)
     return in_list
-    
-def getCompTetsInVolume(v_id, mesh, comp_id, scale):
+ 
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+################################################################################
+
+def getCompTetsInVolume(v_id, mesh, comp_id, scale = 1e-6):
     comp_tets = mesh.getComp(comp_id).getAllTetIndices()
     volume = cubit.volume(v_id)
     body = volume.bodies()[0]
@@ -56,8 +66,12 @@ def getCompTetsInVolume(v_id, mesh, comp_id, scale):
         if status == 1 or status == 2:
             in_list.append(t)
     return in_list
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+################################################################################
         
-def getSurfTrisInVolume(v_id, mesh, scale):
+def getSurfTrisInVolume(v_id, mesh, scale = 1e-6):
     surf_tris = mesh.getSurfTris()
     volume = cubit.volume(v_id)
     body = volume.bodies()[0]
@@ -69,8 +83,12 @@ def getSurfTrisInVolume(v_id, mesh, scale):
         if status == 1 or status == 2:
             in_list.append(t)
     return in_list
-    
-def getPatchTrisInVolume(v_id, mesh, patch_id, scale):
+ 
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+################################################################################
+
+def getPatchTrisInVolume(v_id, mesh, patch_id, scale = 1e-6):
     patch_tris = mesh.getPatch(patch_id).getAllTriIndices()
     volume = cubit.volume(v_id)
     body = volume.bodies()[0]
@@ -82,6 +100,10 @@ def getPatchTrisInVolume(v_id, mesh, patch_id, scale):
         if status == 1 or status == 2:
             in_list.append(t)
     return in_list
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+################################################################################
     
 def highlightTets(steps_tets, tet_proxy):
     cubit.cmd("Graphics Clear Highlight")
@@ -92,3 +114,89 @@ def highlightTets(steps_tets, tet_proxy):
         cmd_str += "%i," % (cubit_id)
     cubit.cmd(cmd_str)
     cubit.cmd("Display")
+
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+################################################################################
+    
+class VSim(object):
+    def __init__(self, model, mesh, sim, scale = 1e-6,color_map = None,
+                cubit_file = None, visual_mode = "wireframe", with_mesh = False):
+        if cubit_file != None:
+            cubit.cmd('open "%s"' % (cubit_file))
+        
+        cubit.cmd(visual_mode)
+        if with_mesh:
+            cubit.cmd("mesh on")
+        else:
+            cubit.cmd("mesh off")
+        self.model = model
+        self.mesh = mesh
+        self.sim = sim
+        self.scale = scale
+
+        self.specs = []
+        spec_refs = model.getAllSpecs()
+        for spec in spec_refs:
+            self.specs.append(spec.getID())
+
+        colors = random.sample(range(86), len(self.specs))
+
+        self.colors = {}
+        for i in range(len(colors)):
+            self.colors[self.specs[i]] = colors[i]
+            
+        if color_map != None:
+            for s in color_map:
+                self.colors[s] = color_map[s]
+                
+        comp_refs = mesh.getAllComps()
+        self.comp_tets = {}
+        for c in comp_refs:
+            self.comp_tets[c.getID()] = []
+        for t in range(mesh.ntets):
+            comp = self.mesh.getTetComp(t)
+            if comp != None:
+                self.comp_tets[comp.getID()].append(t)
+                
+        patch_refs = mesh.getAllPatches()
+        self.patch_tris = {}
+        for p in patch_refs:
+            self.patch_tris[p.getID()] = []
+        for t in range(mesh.ntris):
+            patch = self.mesh.getTriPatch(t)
+            if patch != None:
+                self.patch_tris[patch.getID()].append(t)
+                
+    def run(self, end_time, update_interval):
+        while self.sim.getTime() < end_time:
+            cubit.cmd("Graphics Pause")
+            cubit.cmd("delete vertex all")
+            self.sim.advance(update_interval)
+            for comp in self.comp_tets.values():
+                for t in comp:
+                    for spec in self.specs:
+                        if(self.sim.getTetCount(t, spec) > 0):
+                            center = self.mesh.getTetBarycenter(t)
+                            scaled_center = [center[0]/self.scale, 
+                                            center[1]/self.scale, 
+                                            center[2]/self.scale]
+                            cmd = "create vertex %f %f %f color id %i" % (scaled_center[0],
+                            scaled_center[1], scaled_center[2], self.colors[spec])
+                            cubit.cmd(cmd)
+
+            for patch in self.patch_tris.values():
+                for t in patch:
+                    for spec in self.specs:
+                        if(self.sim.getTriCount(t, spec) > 0):
+                            center = self.mesh.getTriBarycenter(t)
+                            scaled_center = [center[0]/self.scale, 
+                                            center[1]/self.scale, 
+                                            center[2]/self.scale]
+                            cmd = "create vertex %f %f %f color id %i" % (scaled_center[0],
+                            scaled_center[1], scaled_center[2], self.colors[spec])
+                            cubit.cmd(cmd)
+            cubit.cmd("display")
+################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+################################################################################            

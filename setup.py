@@ -40,7 +40,7 @@ def name():
     return 'STEPS'
     
 def version():
-    return '1.1.2'
+    return '1.1.4'
     
 def author():
     return 'STEPS Development Team'
@@ -129,8 +129,8 @@ setup(name = name(),
       platforms = platforms(),
       license = license(),
       
-      packages = packages(),
-        
+      packages = packages(), 
+      
       ext_package = 'steps',
       
       ext_modules  = [ExtModule(ext) for ext in ext_modules()]

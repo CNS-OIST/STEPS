@@ -128,7 +128,6 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
 	uint ntris = mesh()->countTris();
 	pTets = std::vector<steps::tetexact::Tet *>(ntets, NULL);
 	pTris = std::vector<steps::tetexact::Tri *>(ntris, NULL);
-
 	/*
 	// Now check that every Tetrahedron has been added to a compartment.
 	// This is a requirement for the forseeable future
@@ -168,7 +167,6 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
         uint patch_idx = _addPatch(*p);
         assert(patchdef_gidx == patch_idx);
     }
-
     // Create the diffusion boundaries
     ssolver::DiffBoundarydefPVecCI db_end = statedef()->endDiffBoundary();
     for (ssolver::DiffBoundaryDefPVecCI db = statedef()->bgnDiffBoundary(); db != db_end; ++db)
@@ -177,7 +175,6 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
     	uint diffb_idx = _addDiffBoundary(*db);
     	assert(diffboundary_gidx == diffb_idx);
     }
-
     uint ncomps = pComps.size();
     assert (mesh()->_countComps() == ncomps);
     for (uint c = 0; c < ncomps; ++c)
@@ -215,7 +212,6 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
         	delete tet;
         }
     }
-
     uint npatches = pPatches.size();
     assert (mesh()->_countPatches() == npatches);
     for (uint p = 0; p < npatches; ++p)
@@ -254,7 +250,6 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
     // NOT TRUE ANY MORE. Later Diffusion Boundary objects can allow tets
     // in different compartments to have diffusion between them
     //
-
     assert (ntets == pTets.size());
     // pTets member size of all tets in geometry, but may not be filled with
     // local tets if they have not been added to a compartment
@@ -328,7 +323,6 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
     		pTets[tetinner]->setNextTri(i, pTris[t]);
     		break;
     	}
-
 
 
     	// DEBUG 18/03/09:
@@ -457,6 +451,7 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
     }
 
     _setup();
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
