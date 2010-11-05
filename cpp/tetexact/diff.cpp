@@ -57,6 +57,7 @@ stex::Diff::Diff(ssolver::Diffdef * ddef, stex::Tet * tet)
 , pScaledDcst(0.0)
 , pDcst(0.0)
 , pCDFSelector()
+, pNeighbCompLidx()
 {
 	assert(pDiffdef != 0);
 	assert(pTet != 0);
@@ -69,6 +70,20 @@ stex::Diff::Diff(ssolver::Diffdef * ddef, stex::Tet * tet)
 	};
 
     for (uint i = 0; i < 4; ++i) { pDiffBndDirection[i] = pTet->getDiffBndDirection(i);}
+
+    uint gidx = pDiffdef->lig();
+    for (uint i = 0; i < 4; ++i)
+    {
+        if (next[i] == 0)
+        {
+        	pNeighbCompLidx[i] = -1;
+        	continue;
+        }
+        else
+        {
+        	pNeighbCompLidx[i] = next[i]->compdef()->specG2L(gidx);
+        }
+    }
 
     // Precalculate part of the scaled diffusion constant.
 	uint ldidx = pTet->compdef()->diffG2L(pDiffdef->gidx());
@@ -130,6 +145,7 @@ void stex::Diff::checkpoint(std::fstream & cp_file)
     cp_file.write((char*)pCDFSelector, sizeof(double) * 3);
     cp_file.write((char*)pDiffBndActive, sizeof(bool) * 4);
     cp_file.write((char*)pDiffBndDirection, sizeof(bool) * 4);
+    cp_file.write((char*)pNeighbCompLidx, sizeof(int) * 4);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -141,6 +157,7 @@ void stex::Diff::restore(std::fstream & cp_file)
     cp_file.read((char*)pCDFSelector, sizeof(double) * 3);
     cp_file.read((char*)pDiffBndActive, sizeof(bool) * 4);
     cp_file.read((char*)pDiffBndDirection, sizeof(bool) * 4);
+    cp_file.read((char*)pNeighbCompLidx, sizeof(int) * 4);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -378,11 +395,11 @@ std::vector<uint> const & stex::Diff::apply(steps::rng::RNG * rng)
     // Fetch the ligand as global index.
     uint gidx = pDiffdef->lig();
     // As local index.
-    uint lidx = cdef->specG2L(gidx);
+    uint lidx_pTet = cdef->specG2L(gidx);
 
     // Apply local change.
-    uint * local = pTet->pools() + lidx;
-	bool clamped = pTet->clamped(lidx);
+    uint * local = pTet->pools() + lidx_pTet;
+	bool clamped = pTet->clamped(lidx_pTet);
 
     if (clamped == false)
     {
@@ -398,11 +415,13 @@ std::vector<uint> const & stex::Diff::apply(steps::rng::RNG * rng)
         // If there is no next tet 0, pCDFSelector[0] should be zero
         // So we can assert that nextet 0 does indeed exist
         assert (nexttet != 0);
-        if (nexttet->clamped(lidx) == false)
+        assert(pNeighbCompLidx[0] > -1);
+
+        if (nexttet->clamped(pNeighbCompLidx[0]) == false)
         {
-            nexttet->incCount(lidx,1);
+            nexttet->incCount(pNeighbCompLidx[0],1);
         }
-        if (clamped == false) {pTet->incCount(lidx, -1); }
+        if (clamped == false) {pTet->incCount(lidx_pTet, -1); }
 
         rExtent++;
         return pUpdVec[0];
@@ -414,11 +433,13 @@ std::vector<uint> const & stex::Diff::apply(steps::rng::RNG * rng)
         // If there is no next tet 1, pCDFSelector[1] should be zero
         // So we can assert that nextet 1 does indeed exist
         assert (nexttet != 0);
-        if (nexttet->clamped(lidx) == false)
+        assert(pNeighbCompLidx[1] > -1);
+
+        if (nexttet->clamped(pNeighbCompLidx[1]) == false)
         {
-            nexttet->incCount(lidx,1);
+            nexttet->incCount(pNeighbCompLidx[1],1);
         }
-        if (clamped == false) {pTet->incCount(lidx, -1); }
+        if (clamped == false) {pTet->incCount(lidx_pTet, -1); }
 
         rExtent++;
         return pUpdVec[1];
@@ -430,11 +451,13 @@ std::vector<uint> const & stex::Diff::apply(steps::rng::RNG * rng)
         // If there is no next tet 2, pCDFSelector[2] should be zero
         // So we can assert that nextet 2 does indeed exist
         assert (nexttet != 0);
-        if (nexttet->clamped(lidx) == false)
+        assert(pNeighbCompLidx[2] > -1);
+
+        if (nexttet->clamped(pNeighbCompLidx[2]) == false)
         {
-            nexttet->incCount(lidx,1);
+            nexttet->incCount(pNeighbCompLidx[2],1);
         }
-        if (clamped == false) {pTet->incCount(lidx, -1); }
+        if (clamped == false) {pTet->incCount(lidx_pTet, -1); }
 
         rExtent++;
         return pUpdVec[2];
@@ -446,11 +469,13 @@ std::vector<uint> const & stex::Diff::apply(steps::rng::RNG * rng)
         // If there is no next tet 3, pCDFSelector[3] should be zero
         // So we can assert that nextet 3 does indeed exist
         assert (nexttet != 0);
-        if (nexttet->clamped(lidx) == false)
+        assert(pNeighbCompLidx[3] > -1);
+
+        if (nexttet->clamped(pNeighbCompLidx[3]) == false)
         {
-            nexttet->incCount(lidx,1);
+            nexttet->incCount(pNeighbCompLidx[3],1);
         }
-        if (clamped == false) {pTet->incCount(lidx, -1); }
+        if (clamped == false) {pTet->incCount(lidx_pTet, -1); }
 
         rExtent++;
         return pUpdVec[3];

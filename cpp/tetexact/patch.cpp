@@ -107,8 +107,7 @@ stex::Tri * stex::Patch::pickTriByArea(double rand01) const
         if (selector <= accum) return *t;
     }
 
-    assert(false);
-    return 0;
+    return *(t_end-1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

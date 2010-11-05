@@ -76,10 +76,10 @@ public:
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
     void checkpoint(std::fstream & cp_file);
-    
+
     /// restore data
     void restore(std::fstream & cp_file);
-    
+
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
@@ -115,6 +115,12 @@ private:
     steps::solver::Diffdef            * pDiffdef;
     steps::tetexact::Tet              * pTet;
     std::vector<uint>                   pUpdVec[4];
+
+    // Storing the species local index for each neighbouring tet: Needed
+    // because neighbours may belong to different compartments
+    // and therefore have different spec indices
+    int 							    pNeighbCompLidx[4];
+
     /// Properly scaled diffusivity constant.
     double                              pScaledDcst;
     // Compartmental dcst. Stored for convenience
