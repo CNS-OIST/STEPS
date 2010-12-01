@@ -464,10 +464,17 @@ stex::Tetexact::~Tetexact(void)
     for (PatchPVecCI p = pPatches.begin(); p != patch_e; ++p) delete *p;
 
     TetPVecCI tet_e = pTets.end();
-    for (TetPVecCI t = pTets.begin(); t != tet_e; ++t) delete *t;
+    for (TetPVecCI t = pTets.begin(); t != tet_e; ++t)
+    {
+        if ((*t) != 0) delete (*t);
+    }
+    
     TriPVecCI tri_e = pTris.end();
-    for (TriPVecCI t = pTris.end(); t != tri_e; ++t) delete *t;
-
+    for (TriPVecCI t = pTris.end(); t != tri_e; ++t)
+    {
+        if ((*t) != 0) delete (*t);
+    }
+    
     std::for_each(pLevels.begin(), pLevels.end(), DeleteArray());
 
     delete[] pIndices;
@@ -482,16 +489,28 @@ void stex::Tetexact::checkpoint(std::string const & file_name)
 
     cp_file.open(file_name.c_str(), 
                 std::fstream::out | std::fstream::binary | std::fstream::trunc);
-
+    
     CompPVecCI comp_e = pComps.end();
     for (CompPVecCI c = pComps.begin(); c != comp_e; ++c) (*c)->checkpoint(cp_file);
+    
     PatchPVecCI patch_e = pPatches.end();
     for (PatchPVecCI p = pPatches.begin(); p != patch_e; ++p) (*p)->checkpoint(cp_file);
-
+    
     TetPVecCI tet_e = pTets.end();
-    for (TetPVecCI t = pTets.begin(); t != tet_e; ++t) (*t)->checkpoint(cp_file);
+    for (TetPVecCI t = pTets.begin(); t != tet_e; ++t) 
+    {
+        if ((*t) != 0) {
+        (*t)->checkpoint(cp_file);
+        }
+    }
+    
     TriPVecCI tri_e = pTris.end();
-    for (TriPVecCI t = pTris.end(); t != tri_e; ++t) (*t)->checkpoint(cp_file);
+    for (TriPVecCI t = pTris.end(); t != tri_e; ++t)
+    {
+        if ((*t) != 0) {
+            (*t)->checkpoint(cp_file);
+        }
+    }
     
 	statedef()->checkpoint(cp_file);
     
@@ -515,9 +534,19 @@ void stex::Tetexact::restore(std::string const & file_name)
     for (PatchPVecCI p = pPatches.begin(); p != patch_e; ++p) (*p)->restore(cp_file);
         
     TetPVecCI tet_e = pTets.end();
-    for (TetPVecCI t = pTets.begin(); t != tet_e; ++t) (*t)->restore(cp_file);
+    for (TetPVecCI t = pTets.begin(); t != tet_e; ++t)
+    {
+        if ((*t) != 0) {
+            (*t)->restore(cp_file);
+        }
+    }
     TriPVecCI tri_e = pTris.end();
-    for (TriPVecCI t = pTris.end(); t != tri_e; ++t) (*t)->restore(cp_file);
+    for (TriPVecCI t = pTris.end(); t != tri_e; ++t)
+    {
+        if ((*t) != 0) {
+            (*t)->restore(cp_file);
+        }
+    }
     
 	statedef()->restore(cp_file);
     

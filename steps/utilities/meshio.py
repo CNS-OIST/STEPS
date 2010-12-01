@@ -556,7 +556,7 @@ def importTetGen(pathroot):
 
 #############################################################################################
 
-def importAbaqus(filename, scale):
+def importAbaqus(filename, scale, ebs = None):
     """ 
     Read a ABAQUS-formated mesh file, return the created steps.geom.Tetmesh object, 
     the element mapping for nodes, tetraedrons and triangles.
@@ -566,6 +566,7 @@ def importAbaqus(filename, scale):
     * filename: the Abaqus filename (or path) including any suffix.
     * scale: LENGTH scale from the importing mesh to real geometry. e.g. a radius 
       of 10 in the importing file to a radius of 1 micron in STEPS, scale is 1e-7.
+    * ebs: specify the names of selected element blocks which are included in the mesh
     
     RETURNS:
     
@@ -598,6 +599,10 @@ def importAbaqus(filename, scale):
     # check we have the right kind of CUBIT output file here
     assert(line == '*HEADING\n')
     
+    if ebs == None:
+        include = True
+    else:
+        include = False
     currmap = None
     # read line one by one until the end
     while(line):
@@ -617,16 +622,20 @@ def importAbaqus(filename, scale):
         elif (line.find('*ELEMENT', 0, 8) == 0):
             if (currmap != None):
                 currmap.blockEnd()
-            print('Found *Element section, start reading elements.')
             lineset = line.split(',') 
             elementtype = lineset[1].split('=')[1]
             blockname = 'AllElements'
             if (len(lineset) == 3):
                 blockname = lineset[2].split('=')[1].strip('\n')
-            if (elementtype == 'C3D4'):
+            if (ebs == None) or (blockname in ebs):
+                include = True
+                print('Importing *Element section: %s.' % (blockname))
+            else:
+                include  = False
+            if (elementtype == 'C3D4') and include:
                 currmap = tetproxy
                 tetproxy.blockBegin(blockname)
-            elif (elementtype == 'STRI3'):
+            elif (elementtype == 'STRI3') and include:
                 currmap = triproxy
                 triproxy.blockBegin(blockname)
         elif (line.find('**', 0, 2) == -1 and line[0] == '*'):
@@ -644,7 +653,7 @@ def importAbaqus(filename, scale):
                 node[1] = float(linesec[2])*scale
                 node[2] = float(linesec[3])*scale 
                 currmap.insert(nodeid, node)
-            elif (currmap == tetproxy): 
+            elif (currmap == tetproxy) and include: 
                 linesec = line.replace(',', ' ')
                 linesec = linesec.split() 
                 nodeid = int(linesec[0])
@@ -655,7 +664,7 @@ def importAbaqus(filename, scale):
                 node[2] = nodeproxy.getSTEPSID(int(linesec[3])) 
                 node[3] = nodeproxy.getSTEPSID(int(linesec[4])) 
                 currmap.insert(nodeid, node)
-            elif (currmap == triproxy):
+            elif (currmap == triproxy) and include:
                 linesec = line.replace(',', ' ')
                 linesec = linesec.split() 
                 nodeid = int(linesec[0])
