@@ -64,6 +64,13 @@ stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
     throw steps::ArgErr(os.str());
     }
 
+    if (tris.size() ==0)
+    {
+    	std::ostringstream os;
+    	os << "No triangles provided to TmPatch initializer function";
+    	throw steps::ArgErr(os.str());
+    }
+
     // The maximum triangle index in tetrahedral mesh
     uint maxidx = (pTetmesh->countTris() -1);
     // vector to store all triangles to be 'flipped'

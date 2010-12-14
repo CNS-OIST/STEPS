@@ -59,9 +59,16 @@ stetmesh::TmComp::TmComp(std::string const & id, Tetmesh * container,
 {
     if (pTetmesh == 0)
     {
-    std::ostringstream os;
-    os << "No mesh provided to Comp initializer function";
-    throw steps::ArgErr(os.str());
+    	std::ostringstream os;
+    	os << "No mesh provided to TmComp initializer function";
+    	throw steps::ArgErr(os.str());
+    }
+
+    if (tets.size() == 0)
+    {
+    	std::ostringstream os;
+    	os << "No tetrahedrons provided to TmComp initializer function";
+    	throw steps::ArgErr(os.str());
     }
 
 	// The maximum tetrahedron index in tetrahedral mesh
