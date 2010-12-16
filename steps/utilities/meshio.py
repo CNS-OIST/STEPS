@@ -612,7 +612,7 @@ def importAbaqus(filename, scale, ebs = None):
         elif (line.find('*NODE', 0, 5) == 0):
             if (currmap != None):
                 currmap.blockEnd()
-            print('Found *NODE section, start reading nodes.')
+            #print('Found *NODE section, start reading nodes.')
             lineset = line.split('=') 
             if (len(lineset) == 1):
                 nodeproxy.blockBegin('AllNodes')
@@ -629,7 +629,7 @@ def importAbaqus(filename, scale, ebs = None):
                 blockname = lineset[2].split('=')[1].strip('\n')
             if (ebs == None) or (blockname in ebs):
                 include = True
-                print('Importing *Element section: %s.' % (blockname))
+                #print('Importing *Element section: %s.' % (blockname))
             else:
                 include  = False
             if (elementtype == 'C3D4') and include:

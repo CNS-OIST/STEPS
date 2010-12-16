@@ -25,7 +25,6 @@ class RNG(steps_swig.RNG):
         this = _steps_swig.new_RNG(*args)
         try: self.this.append(this)
         except: self.this = this
-        # set Geom object to do all the cleaning-up
         self.thisown = True
 
 def create(*args):
