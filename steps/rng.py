@@ -27,6 +27,8 @@ class RNG(steps_swig.RNG):
         except: self.this = this
         self.thisown = True
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
 def create(*args):
   """
     Creates and returns a reference to a steps.rng.RNG random number generator object, 
@@ -45,3 +47,25 @@ def create(*args):
 
     """
   return steps_swig.create(*args)
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
+def create_mt19937(*args):
+  """
+    Creates and returns a reference to a steps.rng.RNG random number generator object, 
+    which is specified by type and pre-allocates a buffer list with size of buffer_size.
+
+    Syntax::
+        
+        create_mt19937(buffer_size)
+
+    Arguments:
+        * uint buffer_size
+
+    Return:
+        steps.rng.RNG
+
+    """
+  return steps_swig.create_mt19937(*args)
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
