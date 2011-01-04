@@ -465,7 +465,7 @@ class DiffBoundary(steps_swig.DiffBoundary):
     id = steps_swig._swig_property(_steps_swig.DiffBoundary_getID, _steps_swig.DiffBoundary_setID)
     """Identifier string of the diffusion boundary."""
     container = steps_swig._swig_property(_steps_swig.DiffBoundary_getContainer)
-    """Reference to parent steps.tetmesh.Tetmesh container."""
+    """Reference to parent steps.geom.Tetmesh container."""
     
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 

@@ -1015,6 +1015,23 @@ class Model(_object):
         """
         return _steps_swig.Model_delVolsys(*args)
 
+    def getAllVolsyss(*args):
+        """
+        Returns a list of steps.model.Volsys object references of all volume systems in the model.
+                     
+        Syntax::
+                     
+            getAllVolsyss()
+                     
+        Arguments:
+            None
+                     
+        Return:
+            list<steps.model.Volsys>
+
+        """
+        return _steps_swig.Model_getAllVolsyss(*args)
+
     def getSurfsys(*args):
         """
         Returns a reference to the steps.model.Surfsys surface system object with 
@@ -1050,6 +1067,23 @@ class Model(_object):
 
         """
         return _steps_swig.Model_delSurfsys(*args)
+
+    def getAllSurfsyss(*args):
+        """
+        Returns a list of steps.model.Surfsys object references of all surface systems in the model.
+
+        ax::
+
+        getAllSurfsyss()
+
+        ments:
+        None
+
+        rn:
+        list<steps.model.Surfsys>
+
+        """
+        return _steps_swig.Model_getAllSurfsyss(*args)
 
 Model_swigregister = _steps_swig.Model_swigregister
 Model_swigregister(Model)
@@ -1369,10 +1403,9 @@ class Volsys(_object):
 
     def getAllReacs(*args):
         """
-        Returns a list of references to all steps.model.Spec objects in this volume 
-        system; that is all reactants, products or diffusing species in the reaction 
-        and diffusion rules belonging to this volume system. No duplicate member is 
-        included.
+        Returns a list of references to all steps.model.Reac objects in this volume 
+        system; that is all the reaction rules belonging to this volume system. 
+        No duplicate member is included.
 
         Syntax::
 

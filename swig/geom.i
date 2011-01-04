@@ -1477,7 +1477,7 @@ Return:
 
     %feature("autodoc", 
 "
-Returns a reference to the parent steps.tetmesh.Tetmesh container object.
+Returns a reference to the parent steps.geom.Tetmesh container object.
 
 Syntax::
 
@@ -1487,7 +1487,7 @@ Arguments:
     None
 
 Return:
-    steps.tetmesh.Tetmesh
+    steps.geom.Tetmesh
 ");
 	steps::tetmesh::Tetmesh * getContainer(void) const;
 

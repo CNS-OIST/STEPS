@@ -74,6 +74,8 @@ namespace std
 %template(vector_rec) vector<steps::model::Reac *>;
 %template(vector_src) vector<steps::model::SReac *>;
 %template(vector_dif) vector<steps::model::Diff *>;
+%template(vector_vsys) vector<steps::model::Volsys *>;
+%template(vector_ssys) vector<steps::model::Surfsys *>;
 
 }
 
@@ -203,7 +205,23 @@ Return:
     None
 ");
 	void delVolsys(std::string const & id);
-    
+
+    %feature("autodoc", 
+"
+Returns a list of steps.model.Volsys object references of all volume systems in the model.
+             
+Syntax::
+             
+    getAllVolsyss()
+             
+Arguments:
+    None
+             
+Return:
+    list<steps.model.Volsys>
+");
+	std::vector<Volsys *> getAllVolsyss(void) const;
+
     %feature("autodoc", 
 "
 Returns a reference to the steps.model.Surfsys surface system object with 
@@ -237,7 +255,23 @@ Return:
     None
 ");
 	void delSurfsys(std::string const & id);
-	
+
+    %feature("autodoc", 
+"
+    Returns a list of steps.model.Surfsys object references of all surface systems in the model.
+
+Syntax::
+
+    getAllSurfsyss()
+
+Arguments:
+    None
+
+Return:
+    list<steps.model.Surfsys>
+");
+	std::vector<Surfsys *> getAllSurfsyss(void) const;
+    
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -526,10 +560,9 @@ Return:
     
     %feature("autodoc", 
 "
-Returns a list of references to all steps.model.Spec objects in this volume 
-system; that is all reactants, products or diffusing species in the reaction 
-and diffusion rules belonging to this volume system. No duplicate member is 
-included.
+Returns a list of references to all steps.model.Reac objects in this volume 
+system; that is all the reaction rules belonging to this volume system. 
+No duplicate member is included.
 
 Syntax::
 

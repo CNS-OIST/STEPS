@@ -2536,50 +2536,52 @@ SWIG_Python_MustGetPtr(PyObject *obj, swig_type_info *ty, int argnum, int flags)
 #define SWIGTYPE_p_std__vectorT_steps__model__SReac_p_std__allocatorT_steps__model__SReac_p_t_t__allocator_type swig_types[29]
 #define SWIGTYPE_p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t swig_types[30]
 #define SWIGTYPE_p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__allocator_type swig_types[31]
-#define SWIGTYPE_p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t swig_types[32]
-#define SWIGTYPE_p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__allocator_type swig_types[33]
-#define SWIGTYPE_p_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t swig_types[34]
-#define SWIGTYPE_p_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t__allocator_type swig_types[35]
-#define SWIGTYPE_p_std__vectorT_unsigned_int_std__allocatorT_unsigned_int_t_t swig_types[36]
-#define SWIGTYPE_p_std__vectorT_unsigned_int_std__allocatorT_unsigned_int_t_t__allocator_type swig_types[37]
-#define SWIGTYPE_p_steps__ArgErr swig_types[38]
-#define SWIGTYPE_p_steps__Err swig_types[39]
-#define SWIGTYPE_p_steps__NotImplErr swig_types[40]
-#define SWIGTYPE_p_steps__model__Diff swig_types[41]
-#define SWIGTYPE_p_steps__model__Model swig_types[42]
-#define SWIGTYPE_p_steps__model__Reac swig_types[43]
-#define SWIGTYPE_p_steps__model__SReac swig_types[44]
-#define SWIGTYPE_p_steps__model__Spec swig_types[45]
-#define SWIGTYPE_p_steps__model__Surfsys swig_types[46]
-#define SWIGTYPE_p_steps__model__Volsys swig_types[47]
-#define SWIGTYPE_p_steps__rng__RNG swig_types[48]
-#define SWIGTYPE_p_steps__solver__API swig_types[49]
-#define SWIGTYPE_p_steps__tetexact__Tetexact swig_types[50]
-#define SWIGTYPE_p_steps__tetmesh__DiffBoundary swig_types[51]
-#define SWIGTYPE_p_steps__tetmesh__Tetmesh swig_types[52]
-#define SWIGTYPE_p_steps__tetmesh__TmComp swig_types[53]
-#define SWIGTYPE_p_steps__tetmesh__TmPatch swig_types[54]
-#define SWIGTYPE_p_steps__wm__Comp swig_types[55]
-#define SWIGTYPE_p_steps__wm__Geom swig_types[56]
-#define SWIGTYPE_p_steps__wm__Patch swig_types[57]
-#define SWIGTYPE_p_steps__wmdirect__Wmdirect swig_types[58]
-#define SWIGTYPE_p_steps__wmrk4__Wmrk4 swig_types[59]
-#define SWIGTYPE_p_swig__PySwigIterator swig_types[60]
-#define SWIGTYPE_p_unsigned_char swig_types[61]
-#define SWIGTYPE_p_unsigned_int swig_types[62]
-#define SWIGTYPE_p_unsigned_long swig_types[63]
-#define SWIGTYPE_p_unsigned_short swig_types[64]
-#define SWIGTYPE_p_value_type swig_types[65]
-#define SWIGTYPE_std__setT_steps__wm__Patch_p_std__lessT_steps__wm__Patch_p_t_std__allocatorT_steps__wm__Patch_p_t_t__key_type swig_types[66]
-#define SWIGTYPE_std__setT_steps__wm__Patch_p_std__lessT_steps__wm__Patch_p_t_std__allocatorT_steps__wm__Patch_p_t_t__value_type swig_types[67]
-#define SWIGTYPE_std__vectorT_steps__model__Diff_p_std__allocatorT_steps__model__Diff_p_t_t__value_type swig_types[68]
-#define SWIGTYPE_std__vectorT_steps__model__Reac_p_std__allocatorT_steps__model__Reac_p_t_t__value_type swig_types[69]
-#define SWIGTYPE_std__vectorT_steps__model__SReac_p_std__allocatorT_steps__model__SReac_p_t_t__value_type swig_types[70]
-#define SWIGTYPE_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__value_type swig_types[71]
-#define SWIGTYPE_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__value_type swig_types[72]
-#define SWIGTYPE_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t__value_type swig_types[73]
-static swig_type_info *swig_types[75];
-static swig_module_info swig_module = {swig_types, 74, 0, 0, 0, 0};
+#define SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t swig_types[32]
+#define SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t swig_types[33]
+#define SWIGTYPE_p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t swig_types[34]
+#define SWIGTYPE_p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__allocator_type swig_types[35]
+#define SWIGTYPE_p_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t swig_types[36]
+#define SWIGTYPE_p_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t__allocator_type swig_types[37]
+#define SWIGTYPE_p_std__vectorT_unsigned_int_std__allocatorT_unsigned_int_t_t swig_types[38]
+#define SWIGTYPE_p_std__vectorT_unsigned_int_std__allocatorT_unsigned_int_t_t__allocator_type swig_types[39]
+#define SWIGTYPE_p_steps__ArgErr swig_types[40]
+#define SWIGTYPE_p_steps__Err swig_types[41]
+#define SWIGTYPE_p_steps__NotImplErr swig_types[42]
+#define SWIGTYPE_p_steps__model__Diff swig_types[43]
+#define SWIGTYPE_p_steps__model__Model swig_types[44]
+#define SWIGTYPE_p_steps__model__Reac swig_types[45]
+#define SWIGTYPE_p_steps__model__SReac swig_types[46]
+#define SWIGTYPE_p_steps__model__Spec swig_types[47]
+#define SWIGTYPE_p_steps__model__Surfsys swig_types[48]
+#define SWIGTYPE_p_steps__model__Volsys swig_types[49]
+#define SWIGTYPE_p_steps__rng__RNG swig_types[50]
+#define SWIGTYPE_p_steps__solver__API swig_types[51]
+#define SWIGTYPE_p_steps__tetexact__Tetexact swig_types[52]
+#define SWIGTYPE_p_steps__tetmesh__DiffBoundary swig_types[53]
+#define SWIGTYPE_p_steps__tetmesh__Tetmesh swig_types[54]
+#define SWIGTYPE_p_steps__tetmesh__TmComp swig_types[55]
+#define SWIGTYPE_p_steps__tetmesh__TmPatch swig_types[56]
+#define SWIGTYPE_p_steps__wm__Comp swig_types[57]
+#define SWIGTYPE_p_steps__wm__Geom swig_types[58]
+#define SWIGTYPE_p_steps__wm__Patch swig_types[59]
+#define SWIGTYPE_p_steps__wmdirect__Wmdirect swig_types[60]
+#define SWIGTYPE_p_steps__wmrk4__Wmrk4 swig_types[61]
+#define SWIGTYPE_p_swig__PySwigIterator swig_types[62]
+#define SWIGTYPE_p_unsigned_char swig_types[63]
+#define SWIGTYPE_p_unsigned_int swig_types[64]
+#define SWIGTYPE_p_unsigned_long swig_types[65]
+#define SWIGTYPE_p_unsigned_short swig_types[66]
+#define SWIGTYPE_p_value_type swig_types[67]
+#define SWIGTYPE_std__setT_steps__wm__Patch_p_std__lessT_steps__wm__Patch_p_t_std__allocatorT_steps__wm__Patch_p_t_t__key_type swig_types[68]
+#define SWIGTYPE_std__setT_steps__wm__Patch_p_std__lessT_steps__wm__Patch_p_t_std__allocatorT_steps__wm__Patch_p_t_t__value_type swig_types[69]
+#define SWIGTYPE_std__vectorT_steps__model__Diff_p_std__allocatorT_steps__model__Diff_p_t_t__value_type swig_types[70]
+#define SWIGTYPE_std__vectorT_steps__model__Reac_p_std__allocatorT_steps__model__Reac_p_t_t__value_type swig_types[71]
+#define SWIGTYPE_std__vectorT_steps__model__SReac_p_std__allocatorT_steps__model__SReac_p_t_t__value_type swig_types[72]
+#define SWIGTYPE_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__value_type swig_types[73]
+#define SWIGTYPE_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__value_type swig_types[74]
+#define SWIGTYPE_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t__value_type swig_types[75]
+static swig_type_info *swig_types[77];
+static swig_module_info swig_module = {swig_types, 76, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -13718,6 +13720,38 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_Model_getAllVolsyss(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::model::Model *arg1 = (steps::model::Model *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  SwigValueWrapper< std::vector< steps::model::Volsys *,std::allocator< steps::model::Volsys * > > > result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Model_getAllVolsyss",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__model__Model, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Model_getAllVolsyss" "', argument " "1"" of type '" "steps::model::Model const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::model::Model * >(argp1);
+  {
+    try {
+      result = ((steps::model::Model const *)arg1)->getAllVolsyss();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_NewPointerObj((new std::vector< steps::model::Volsys *,std::allocator< steps::model::Volsys * > >(static_cast< const std::vector< steps::model::Volsys *,std::allocator< steps::model::Volsys * > >& >(result))), SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, SWIG_POINTER_OWN |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_Model_getSurfsys(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   steps::model::Model *arg1 = (steps::model::Model *) 0 ;
@@ -13809,6 +13843,38 @@ SWIGINTERN PyObject *_wrap_Model_delSurfsys(PyObject *SWIGUNUSEDPARM(self), PyOb
   return resultobj;
 fail:
   if (SWIG_IsNewObj(res2)) delete arg2;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_Model_getAllSurfsyss(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::model::Model *arg1 = (steps::model::Model *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  SwigValueWrapper< std::vector< steps::model::Surfsys *,std::allocator< steps::model::Surfsys * > > > result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:Model_getAllSurfsyss",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__model__Model, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Model_getAllSurfsyss" "', argument " "1"" of type '" "steps::model::Model const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::model::Model * >(argp1);
+  {
+    try {
+      result = ((steps::model::Model const *)arg1)->getAllSurfsyss();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_NewPointerObj((new std::vector< steps::model::Surfsys *,std::allocator< steps::model::Surfsys * > >(static_cast< const std::vector< steps::model::Surfsys *,std::allocator< steps::model::Surfsys * > >& >(result))), SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, SWIG_POINTER_OWN |  0 );
+  return resultobj;
+fail:
   return NULL;
 }
 
@@ -41103,6 +41169,20 @@ static PyMethodDef SwigMethods[] = {
 		"    None\n"
 		"\n"
 		""},
+	 { (char *)"Model_getAllVolsyss", _wrap_Model_getAllVolsyss, METH_VARARGS, (char *)"\n"
+		"Returns a list of steps.model.Volsys object references of all volume systems in the model.\n"
+		"             \n"
+		"Syntax::\n"
+		"             \n"
+		"    getAllVolsyss()\n"
+		"             \n"
+		"Arguments:\n"
+		"    None\n"
+		"             \n"
+		"Return:\n"
+		"    list<steps.model.Volsys>\n"
+		"\n"
+		""},
 	 { (char *)"Model_getSurfsys", _wrap_Model_getSurfsys, METH_VARARGS, (char *)"\n"
 		"Returns a reference to the steps.model.Surfsys surface system object with \n"
 		"identifier string ssys_id (if defined).\n"
@@ -41131,6 +41211,20 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"Return:\n"
 		"    None\n"
+		"\n"
+		""},
+	 { (char *)"Model_getAllSurfsyss", _wrap_Model_getAllSurfsyss, METH_VARARGS, (char *)"\n"
+		"Returns a list of steps.model.Surfsys object references of all surface systems in the model.\n"
+		"\n"
+		"ax::\n"
+		"\n"
+		"getAllSurfsyss()\n"
+		"\n"
+		"ments:\n"
+		"None\n"
+		"\n"
+		"rn:\n"
+		"list<steps.model.Surfsys>\n"
 		"\n"
 		""},
 	 { (char *)"Model_swigregister", Model_swigregister, METH_VARARGS, NULL},
@@ -41363,10 +41457,9 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		""},
 	 { (char *)"Volsys_getAllReacs", _wrap_Volsys_getAllReacs, METH_VARARGS, (char *)"\n"
-		"Returns a list of references to all steps.model.Spec objects in this volume \n"
-		"system; that is all reactants, products or diffusing species in the reaction \n"
-		"and diffusion rules belonging to this volume system. No duplicate member is \n"
-		"included.\n"
+		"Returns a list of references to all steps.model.Reac objects in this volume \n"
+		"system; that is all the reaction rules belonging to this volume system. \n"
+		"No duplicate member is included.\n"
 		"\n"
 		"Syntax::\n"
 		"\n"
@@ -45851,6 +45944,8 @@ static swig_type_info _swigt__p_std__vectorT_steps__model__SReac_p_std__allocato
 static swig_type_info _swigt__p_std__vectorT_steps__model__SReac_p_std__allocatorT_steps__model__SReac_p_t_t__allocator_type = {"_p_std__vectorT_steps__model__SReac_p_std__allocatorT_steps__model__SReac_p_t_t__allocator_type", "std::vector< steps::model::SReac * >::allocator_type *|std::allocator< steps::model::SReac * > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t = {"_p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t", "std::vector< steps::model::Spec * > *|std::vector< steps::model::Spec *,std::allocator< steps::model::Spec * > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__allocator_type = {"_p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__allocator_type", "std::vector< steps::model::Spec * >::allocator_type *|std::allocator< steps::model::Spec * > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t = {"_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t", "std::vector< steps::model::Surfsys *,std::allocator< steps::model::Surfsys * > > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t = {"_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t", "std::vector< steps::model::Volsys *,std::allocator< steps::model::Volsys * > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t = {"_p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t", "std::vector< steps::wm::Comp *,std::allocator< steps::wm::Comp * > > *|std::vector< steps::wm::Comp * > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__allocator_type = {"_p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__allocator_type", "std::vector< steps::wm::Comp * >::allocator_type *|std::allocator< steps::wm::Comp * > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t = {"_p_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t", "std::vector< steps::wm::Patch *,std::allocator< steps::wm::Patch * > > *|std::vector< steps::wm::Patch * > *", 0, 0, (void*)0, 0};
@@ -45927,6 +46022,8 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_std__vectorT_steps__model__SReac_p_std__allocatorT_steps__model__SReac_p_t_t__allocator_type,
   &_swigt__p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t,
   &_swigt__p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__allocator_type,
+  &_swigt__p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t,
+  &_swigt__p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t,
   &_swigt__p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t,
   &_swigt__p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__allocator_type,
   &_swigt__p_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t,
@@ -46003,6 +46100,8 @@ static swig_cast_info _swigc__p_std__vectorT_steps__model__SReac_p_std__allocato
 static swig_cast_info _swigc__p_std__vectorT_steps__model__SReac_p_std__allocatorT_steps__model__SReac_p_t_t__allocator_type[] = {  {&_swigt__p_std__vectorT_steps__model__SReac_p_std__allocatorT_steps__model__SReac_p_t_t__allocator_type, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t[] = {  {&_swigt__p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__allocator_type[] = {  {&_swigt__p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__allocator_type, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t[] = {  {&_swigt__p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t[] = {  {&_swigt__p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t[] = {  {&_swigt__p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__allocator_type[] = {  {&_swigt__p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__allocator_type, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t[] = {  {&_swigt__p_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -46079,6 +46178,8 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_std__vectorT_steps__model__SReac_p_std__allocatorT_steps__model__SReac_p_t_t__allocator_type,
   _swigc__p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t,
   _swigc__p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__allocator_type,
+  _swigc__p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t,
+  _swigc__p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t,
   _swigc__p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t,
   _swigc__p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__allocator_type,
   _swigc__p_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t,

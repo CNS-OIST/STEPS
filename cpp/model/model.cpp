@@ -153,6 +153,32 @@ std::vector<Spec *> Model::getAllSpecs(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
+std::vector<Volsys *> Model::getAllVolsyss(void) const
+{
+	VolsysPVec volsyss = VolsysPVec();
+	VolsysPMapCI vsys_end = pVolsys.end();
+	for (VolsysPMapCI vs = pVolsys.begin(); vs != vsys_end; ++vs)
+	{
+		volsyss.push_back(vs->second);
+	}
+	return volsyss;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<Surfsys *> Model::getAllSurfsyss(void) const
+{
+	SurfsysPVec surfsyss = SurfsysPVec();
+	SurfsysPMapCI ssys_end = pSurfsys.end();
+	for (SurfsysPMapCI ss = pSurfsys.begin(); ss != ssys_end; ++ss)
+	{
+		surfsyss.push_back(ss->second);
+	}
+	return surfsyss;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 Volsys * Model::getVolsys(string const & id) const
 {
     VolsysPMapCI volsys = pVolsys.find(id);

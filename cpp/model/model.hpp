@@ -64,12 +64,20 @@ typedef std::vector<SpecP>               SpecPVec;
 typedef SpecPVec::iterator               SpecPVecI;
 typedef SpecPVec::const_iterator         SpecPVecCI;
 
-typedef Volsys *                        VolsysP;
+typedef Volsys *                         VolsysP;
+typedef std::vector<VolsysP>  			 VolsysPVec;
+typedef VolsysPVec::iterator             VolsysPVecI;
+typedef VolsysPVec::const_iterator       VolsysPVecCI;
+
+typedef Surfsys *                        SurfsysP;
+typedef std::vector<SurfsysP>  			 SurfsysPVec;
+typedef SurfsysPVec::iterator            SurfsysPVecI;
+typedef SurfsysPVec::const_iterator      SurfsysPVecCI;
+
 typedef std::map<std::string, VolsysP>  VolsysPMap;
 typedef VolsysPMap::iterator            VolsysPMapI;
 typedef VolsysPMap::const_iterator      VolsysPMapCI;
 
-typedef Surfsys *                       SurfsysP;
 typedef std::map<std::string, SurfsysP> SurfsysPMap;
 typedef SurfsysPMap::iterator           SurfsysPMapI;
 typedef SurfsysPMap::const_iterator     SurfsysPMapCI;
@@ -163,6 +171,11 @@ public:
     /// \param id ID of the volume system.
 	void delVolsys(std::string const & id);
 
+    /// Return a list of all volume systems in the Model object.
+    ///
+    /// \return List of pointers to the volume systems in the Model object.
+	std::vector<Volsys *> getAllVolsyss(void) const;
+
 	////////////////////////////////////////////////////////////////////////
 	// OPERATIONS: SURFSYS (EXPOSED TO PYTHON)
 	////////////////////////////////////////////////////////////////////////
@@ -177,6 +190,11 @@ public:
     ///
     /// \param id ID of the surface system.
 	void delSurfsys(std::string const & id);
+
+    /// Return a list of all surface systems in the Model object.
+    ///
+    /// \return List of pointers to the surface systems in the Model object.
+	std::vector<Surfsys *> getAllSurfsyss(void) const;
 
 	////////////////////////////////////////////////////////////////////////
 	// INTERNAL (NON-EXPOSED): SOLVER HELPER METHODS
