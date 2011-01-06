@@ -89,6 +89,9 @@ public:
 
     void setDT(double dt);
 
+    void setRk4DT(double dt)
+    { setDT(dt); }
+
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
@@ -96,7 +99,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     double getTime(void) const;
-    
+
     void checkpoint(std::string const & file_name);
     void restore(std::string const & file_name);
     ////////////////////////////////////////////////////////////////////////

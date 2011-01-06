@@ -299,7 +299,7 @@ during the simulation with this method.
 
 Syntax::
     
-    setDT(dt)
+    setRk4DT(dt)
     
 Arguments:
     float dt
@@ -307,11 +307,45 @@ Arguments:
 Return:
     None
 ");
+    virtual void setRk4DT(double dt);
+
+    %feature("autodoc", 
+ "
+Set the stepsize for numerical solvers. Superceded by setRk4DT, but
+Included for backwards compatability.
+ 
+Syntax::
+ 
+    setDT(dt)
+ 
+Arguments:
+    float dt
+ 
+Return:
+    None
+");
     virtual void setDT(double dt);
-    
+
     %feature("autodoc", 
 "
 Returns the stepsize for numerical solvers.
+
+Syntax::
+
+    getRk4DT()
+
+Arguments:
+    None
+
+Return:
+    float
+");
+    virtual double getRk4DT(void) const;
+
+    %feature("autodoc", 
+"
+Returns the stepsize for numerical solvers.
+Superceded by getRk4DT, but included for backwards compatibility.
 
 Syntax::
     

@@ -904,6 +904,310 @@ class vector_dif(_object):
 vector_dif_swigregister = _steps_swig.vector_dif_swigregister
 vector_dif_swigregister(vector_dif)
 
+class vector_vsys(_object):
+    """Proxy of C++ vector_vsys class"""
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, vector_vsys, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, vector_vsys, name)
+    __repr__ = _swig_repr
+    def iterator(*args):
+        """iterator(self, PyObject PYTHON_SELF) -> PySwigIterator"""
+        return _steps_swig.vector_vsys_iterator(*args)
+
+    def __iter__(self): return self.iterator()
+    def __nonzero__(*args):
+        """__nonzero__(self) -> bool"""
+        return _steps_swig.vector_vsys___nonzero__(*args)
+
+    def __len__(*args):
+        """__len__(self) -> size_type"""
+        return _steps_swig.vector_vsys___len__(*args)
+
+    def pop(*args):
+        """pop(self) -> value_type"""
+        return _steps_swig.vector_vsys_pop(*args)
+
+    def __getslice__(*args):
+        """__getslice__(self, difference_type i, difference_type j) -> vector_vsys"""
+        return _steps_swig.vector_vsys___getslice__(*args)
+
+    def __setslice__(*args):
+        """__setslice__(self, difference_type i, difference_type j, vector_vsys v)"""
+        return _steps_swig.vector_vsys___setslice__(*args)
+
+    def __delslice__(*args):
+        """__delslice__(self, difference_type i, difference_type j)"""
+        return _steps_swig.vector_vsys___delslice__(*args)
+
+    def __delitem__(*args):
+        """__delitem__(self, difference_type i)"""
+        return _steps_swig.vector_vsys___delitem__(*args)
+
+    def __getitem__(*args):
+        """__getitem__(self, difference_type i) -> value_type"""
+        return _steps_swig.vector_vsys___getitem__(*args)
+
+    def __setitem__(*args):
+        """__setitem__(self, difference_type i, value_type x)"""
+        return _steps_swig.vector_vsys___setitem__(*args)
+
+    def append(*args):
+        """append(self, value_type x)"""
+        return _steps_swig.vector_vsys_append(*args)
+
+    def empty(*args):
+        """empty(self) -> bool"""
+        return _steps_swig.vector_vsys_empty(*args)
+
+    def size(*args):
+        """size(self) -> size_type"""
+        return _steps_swig.vector_vsys_size(*args)
+
+    def clear(*args):
+        """clear(self)"""
+        return _steps_swig.vector_vsys_clear(*args)
+
+    def swap(*args):
+        """swap(self, vector_vsys v)"""
+        return _steps_swig.vector_vsys_swap(*args)
+
+    def get_allocator(*args):
+        """get_allocator(self) -> allocator_type"""
+        return _steps_swig.vector_vsys_get_allocator(*args)
+
+    def begin(*args):
+        """begin(self) -> const_iterator"""
+        return _steps_swig.vector_vsys_begin(*args)
+
+    def end(*args):
+        """end(self) -> const_iterator"""
+        return _steps_swig.vector_vsys_end(*args)
+
+    def rbegin(*args):
+        """rbegin(self) -> const_reverse_iterator"""
+        return _steps_swig.vector_vsys_rbegin(*args)
+
+    def rend(*args):
+        """rend(self) -> const_reverse_iterator"""
+        return _steps_swig.vector_vsys_rend(*args)
+
+    def pop_back(*args):
+        """pop_back(self)"""
+        return _steps_swig.vector_vsys_pop_back(*args)
+
+    def erase(*args):
+        """
+        erase(self, iterator pos) -> iterator
+        erase(self, iterator first, iterator last) -> iterator
+        """
+        return _steps_swig.vector_vsys_erase(*args)
+
+    def __init__(self, *args): 
+        """
+        __init__(self) -> vector_vsys
+        __init__(self, vector_vsys ?) -> vector_vsys
+        __init__(self, size_type size) -> vector_vsys
+        __init__(self, size_type size, value_type value) -> vector_vsys
+        """
+        this = _steps_swig.new_vector_vsys(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    def push_back(*args):
+        """push_back(self, value_type x)"""
+        return _steps_swig.vector_vsys_push_back(*args)
+
+    def front(*args):
+        """front(self) -> value_type"""
+        return _steps_swig.vector_vsys_front(*args)
+
+    def back(*args):
+        """back(self) -> value_type"""
+        return _steps_swig.vector_vsys_back(*args)
+
+    def assign(*args):
+        """assign(self, size_type n, value_type x)"""
+        return _steps_swig.vector_vsys_assign(*args)
+
+    def resize(*args):
+        """
+        resize(self, size_type new_size)
+        resize(self, size_type new_size, value_type x)
+        """
+        return _steps_swig.vector_vsys_resize(*args)
+
+    def insert(*args):
+        """
+        insert(self, iterator pos, value_type x) -> iterator
+        insert(self, iterator pos, size_type n, value_type x)
+        """
+        return _steps_swig.vector_vsys_insert(*args)
+
+    def reserve(*args):
+        """reserve(self, size_type n)"""
+        return _steps_swig.vector_vsys_reserve(*args)
+
+    def capacity(*args):
+        """capacity(self) -> size_type"""
+        return _steps_swig.vector_vsys_capacity(*args)
+
+    __swig_destroy__ = _steps_swig.delete_vector_vsys
+    __del__ = lambda self : None;
+vector_vsys_swigregister = _steps_swig.vector_vsys_swigregister
+vector_vsys_swigregister(vector_vsys)
+
+class vector_ssys(_object):
+    """Proxy of C++ vector_ssys class"""
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, vector_ssys, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, vector_ssys, name)
+    __repr__ = _swig_repr
+    def iterator(*args):
+        """iterator(self, PyObject PYTHON_SELF) -> PySwigIterator"""
+        return _steps_swig.vector_ssys_iterator(*args)
+
+    def __iter__(self): return self.iterator()
+    def __nonzero__(*args):
+        """__nonzero__(self) -> bool"""
+        return _steps_swig.vector_ssys___nonzero__(*args)
+
+    def __len__(*args):
+        """__len__(self) -> size_type"""
+        return _steps_swig.vector_ssys___len__(*args)
+
+    def pop(*args):
+        """pop(self) -> value_type"""
+        return _steps_swig.vector_ssys_pop(*args)
+
+    def __getslice__(*args):
+        """__getslice__(self, difference_type i, difference_type j) -> vector_ssys"""
+        return _steps_swig.vector_ssys___getslice__(*args)
+
+    def __setslice__(*args):
+        """__setslice__(self, difference_type i, difference_type j, vector_ssys v)"""
+        return _steps_swig.vector_ssys___setslice__(*args)
+
+    def __delslice__(*args):
+        """__delslice__(self, difference_type i, difference_type j)"""
+        return _steps_swig.vector_ssys___delslice__(*args)
+
+    def __delitem__(*args):
+        """__delitem__(self, difference_type i)"""
+        return _steps_swig.vector_ssys___delitem__(*args)
+
+    def __getitem__(*args):
+        """__getitem__(self, difference_type i) -> value_type"""
+        return _steps_swig.vector_ssys___getitem__(*args)
+
+    def __setitem__(*args):
+        """__setitem__(self, difference_type i, value_type x)"""
+        return _steps_swig.vector_ssys___setitem__(*args)
+
+    def append(*args):
+        """append(self, value_type x)"""
+        return _steps_swig.vector_ssys_append(*args)
+
+    def empty(*args):
+        """empty(self) -> bool"""
+        return _steps_swig.vector_ssys_empty(*args)
+
+    def size(*args):
+        """size(self) -> size_type"""
+        return _steps_swig.vector_ssys_size(*args)
+
+    def clear(*args):
+        """clear(self)"""
+        return _steps_swig.vector_ssys_clear(*args)
+
+    def swap(*args):
+        """swap(self, vector_ssys v)"""
+        return _steps_swig.vector_ssys_swap(*args)
+
+    def get_allocator(*args):
+        """get_allocator(self) -> allocator_type"""
+        return _steps_swig.vector_ssys_get_allocator(*args)
+
+    def begin(*args):
+        """begin(self) -> const_iterator"""
+        return _steps_swig.vector_ssys_begin(*args)
+
+    def end(*args):
+        """end(self) -> const_iterator"""
+        return _steps_swig.vector_ssys_end(*args)
+
+    def rbegin(*args):
+        """rbegin(self) -> const_reverse_iterator"""
+        return _steps_swig.vector_ssys_rbegin(*args)
+
+    def rend(*args):
+        """rend(self) -> const_reverse_iterator"""
+        return _steps_swig.vector_ssys_rend(*args)
+
+    def pop_back(*args):
+        """pop_back(self)"""
+        return _steps_swig.vector_ssys_pop_back(*args)
+
+    def erase(*args):
+        """
+        erase(self, iterator pos) -> iterator
+        erase(self, iterator first, iterator last) -> iterator
+        """
+        return _steps_swig.vector_ssys_erase(*args)
+
+    def __init__(self, *args): 
+        """
+        __init__(self) -> vector_ssys
+        __init__(self, vector_ssys ?) -> vector_ssys
+        __init__(self, size_type size) -> vector_ssys
+        __init__(self, size_type size, value_type value) -> vector_ssys
+        """
+        this = _steps_swig.new_vector_ssys(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    def push_back(*args):
+        """push_back(self, value_type x)"""
+        return _steps_swig.vector_ssys_push_back(*args)
+
+    def front(*args):
+        """front(self) -> value_type"""
+        return _steps_swig.vector_ssys_front(*args)
+
+    def back(*args):
+        """back(self) -> value_type"""
+        return _steps_swig.vector_ssys_back(*args)
+
+    def assign(*args):
+        """assign(self, size_type n, value_type x)"""
+        return _steps_swig.vector_ssys_assign(*args)
+
+    def resize(*args):
+        """
+        resize(self, size_type new_size)
+        resize(self, size_type new_size, value_type x)
+        """
+        return _steps_swig.vector_ssys_resize(*args)
+
+    def insert(*args):
+        """
+        insert(self, iterator pos, value_type x) -> iterator
+        insert(self, iterator pos, size_type n, value_type x)
+        """
+        return _steps_swig.vector_ssys_insert(*args)
+
+    def reserve(*args):
+        """reserve(self, size_type n)"""
+        return _steps_swig.vector_ssys_reserve(*args)
+
+    def capacity(*args):
+        """capacity(self) -> size_type"""
+        return _steps_swig.vector_ssys_capacity(*args)
+
+    __swig_destroy__ = _steps_swig.delete_vector_ssys
+    __del__ = lambda self : None;
+vector_ssys_swigregister = _steps_swig.vector_ssys_swigregister
+vector_ssys_swigregister(vector_ssys)
+
 
 def isValidID(*args):
   """isValidID(string id) -> bool"""
@@ -4762,7 +5066,7 @@ class DiffBoundary(_object):
 
     def getContainer(*args):
         """
-        Returns a reference to the parent steps.tetmesh.Tetmesh container object.
+        Returns a reference to the parent steps.geom.Tetmesh container object.
 
         Syntax::
 
@@ -4772,7 +5076,7 @@ class DiffBoundary(_object):
             None
 
         Return:
-            steps.tetmesh.Tetmesh
+            steps.geom.Tetmesh
 
         """
         return _steps_swig.DiffBoundary_getContainer(*args)
@@ -5275,7 +5579,7 @@ class API(_object):
         """
         return _steps_swig.API_step(*args)
 
-    def setDT(*args):
+    def setRk4DT(*args):
         """
         Set the stepsize for numerical solvers. Must be called before running a 
         simulation with these solvers (currently Wmrk4) since there is no default 
@@ -5285,7 +5589,7 @@ class API(_object):
 
         Syntax::
             
-            setDT(dt)
+            setRk4DT(dt)
             
         Arguments:
             float dt
@@ -5294,11 +5598,47 @@ class API(_object):
             None
 
         """
+        return _steps_swig.API_setRk4DT(*args)
+
+    def setDT(*args):
+        """
+        Set the stepsize for numerical solvers. Superceded by setRk4DT, but
+        Included for backwards compatability.
+         
+        Syntax::
+         
+            setDT(dt)
+         
+        Arguments:
+            float dt
+         
+        Return:
+            None
+
+        """
         return _steps_swig.API_setDT(*args)
+
+    def getRk4DT(*args):
+        """
+        Returns the stepsize for numerical solvers.
+
+        Syntax::
+
+            getRk4DT()
+
+        Arguments:
+            None
+
+        Return:
+            float
+
+        """
+        return _steps_swig.API_getRk4DT(*args)
 
     def getDT(*args):
         """
         Returns the stepsize for numerical solvers.
+        Superceded by getRk4DT, but included for backwards compatibility.
 
         Syntax::
             

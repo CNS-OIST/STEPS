@@ -2537,51 +2537,55 @@ SWIG_Python_MustGetPtr(PyObject *obj, swig_type_info *ty, int argnum, int flags)
 #define SWIGTYPE_p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t swig_types[30]
 #define SWIGTYPE_p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__allocator_type swig_types[31]
 #define SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t swig_types[32]
-#define SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t swig_types[33]
-#define SWIGTYPE_p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t swig_types[34]
-#define SWIGTYPE_p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__allocator_type swig_types[35]
-#define SWIGTYPE_p_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t swig_types[36]
-#define SWIGTYPE_p_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t__allocator_type swig_types[37]
-#define SWIGTYPE_p_std__vectorT_unsigned_int_std__allocatorT_unsigned_int_t_t swig_types[38]
-#define SWIGTYPE_p_std__vectorT_unsigned_int_std__allocatorT_unsigned_int_t_t__allocator_type swig_types[39]
-#define SWIGTYPE_p_steps__ArgErr swig_types[40]
-#define SWIGTYPE_p_steps__Err swig_types[41]
-#define SWIGTYPE_p_steps__NotImplErr swig_types[42]
-#define SWIGTYPE_p_steps__model__Diff swig_types[43]
-#define SWIGTYPE_p_steps__model__Model swig_types[44]
-#define SWIGTYPE_p_steps__model__Reac swig_types[45]
-#define SWIGTYPE_p_steps__model__SReac swig_types[46]
-#define SWIGTYPE_p_steps__model__Spec swig_types[47]
-#define SWIGTYPE_p_steps__model__Surfsys swig_types[48]
-#define SWIGTYPE_p_steps__model__Volsys swig_types[49]
-#define SWIGTYPE_p_steps__rng__RNG swig_types[50]
-#define SWIGTYPE_p_steps__solver__API swig_types[51]
-#define SWIGTYPE_p_steps__tetexact__Tetexact swig_types[52]
-#define SWIGTYPE_p_steps__tetmesh__DiffBoundary swig_types[53]
-#define SWIGTYPE_p_steps__tetmesh__Tetmesh swig_types[54]
-#define SWIGTYPE_p_steps__tetmesh__TmComp swig_types[55]
-#define SWIGTYPE_p_steps__tetmesh__TmPatch swig_types[56]
-#define SWIGTYPE_p_steps__wm__Comp swig_types[57]
-#define SWIGTYPE_p_steps__wm__Geom swig_types[58]
-#define SWIGTYPE_p_steps__wm__Patch swig_types[59]
-#define SWIGTYPE_p_steps__wmdirect__Wmdirect swig_types[60]
-#define SWIGTYPE_p_steps__wmrk4__Wmrk4 swig_types[61]
-#define SWIGTYPE_p_swig__PySwigIterator swig_types[62]
-#define SWIGTYPE_p_unsigned_char swig_types[63]
-#define SWIGTYPE_p_unsigned_int swig_types[64]
-#define SWIGTYPE_p_unsigned_long swig_types[65]
-#define SWIGTYPE_p_unsigned_short swig_types[66]
-#define SWIGTYPE_p_value_type swig_types[67]
-#define SWIGTYPE_std__setT_steps__wm__Patch_p_std__lessT_steps__wm__Patch_p_t_std__allocatorT_steps__wm__Patch_p_t_t__key_type swig_types[68]
-#define SWIGTYPE_std__setT_steps__wm__Patch_p_std__lessT_steps__wm__Patch_p_t_std__allocatorT_steps__wm__Patch_p_t_t__value_type swig_types[69]
-#define SWIGTYPE_std__vectorT_steps__model__Diff_p_std__allocatorT_steps__model__Diff_p_t_t__value_type swig_types[70]
-#define SWIGTYPE_std__vectorT_steps__model__Reac_p_std__allocatorT_steps__model__Reac_p_t_t__value_type swig_types[71]
-#define SWIGTYPE_std__vectorT_steps__model__SReac_p_std__allocatorT_steps__model__SReac_p_t_t__value_type swig_types[72]
-#define SWIGTYPE_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__value_type swig_types[73]
-#define SWIGTYPE_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__value_type swig_types[74]
-#define SWIGTYPE_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t__value_type swig_types[75]
-static swig_type_info *swig_types[77];
-static swig_module_info swig_module = {swig_types, 76, 0, 0, 0, 0};
+#define SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__allocator_type swig_types[33]
+#define SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t swig_types[34]
+#define SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__allocator_type swig_types[35]
+#define SWIGTYPE_p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t swig_types[36]
+#define SWIGTYPE_p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__allocator_type swig_types[37]
+#define SWIGTYPE_p_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t swig_types[38]
+#define SWIGTYPE_p_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t__allocator_type swig_types[39]
+#define SWIGTYPE_p_std__vectorT_unsigned_int_std__allocatorT_unsigned_int_t_t swig_types[40]
+#define SWIGTYPE_p_std__vectorT_unsigned_int_std__allocatorT_unsigned_int_t_t__allocator_type swig_types[41]
+#define SWIGTYPE_p_steps__ArgErr swig_types[42]
+#define SWIGTYPE_p_steps__Err swig_types[43]
+#define SWIGTYPE_p_steps__NotImplErr swig_types[44]
+#define SWIGTYPE_p_steps__model__Diff swig_types[45]
+#define SWIGTYPE_p_steps__model__Model swig_types[46]
+#define SWIGTYPE_p_steps__model__Reac swig_types[47]
+#define SWIGTYPE_p_steps__model__SReac swig_types[48]
+#define SWIGTYPE_p_steps__model__Spec swig_types[49]
+#define SWIGTYPE_p_steps__model__Surfsys swig_types[50]
+#define SWIGTYPE_p_steps__model__Volsys swig_types[51]
+#define SWIGTYPE_p_steps__rng__RNG swig_types[52]
+#define SWIGTYPE_p_steps__solver__API swig_types[53]
+#define SWIGTYPE_p_steps__tetexact__Tetexact swig_types[54]
+#define SWIGTYPE_p_steps__tetmesh__DiffBoundary swig_types[55]
+#define SWIGTYPE_p_steps__tetmesh__Tetmesh swig_types[56]
+#define SWIGTYPE_p_steps__tetmesh__TmComp swig_types[57]
+#define SWIGTYPE_p_steps__tetmesh__TmPatch swig_types[58]
+#define SWIGTYPE_p_steps__wm__Comp swig_types[59]
+#define SWIGTYPE_p_steps__wm__Geom swig_types[60]
+#define SWIGTYPE_p_steps__wm__Patch swig_types[61]
+#define SWIGTYPE_p_steps__wmdirect__Wmdirect swig_types[62]
+#define SWIGTYPE_p_steps__wmrk4__Wmrk4 swig_types[63]
+#define SWIGTYPE_p_swig__PySwigIterator swig_types[64]
+#define SWIGTYPE_p_unsigned_char swig_types[65]
+#define SWIGTYPE_p_unsigned_int swig_types[66]
+#define SWIGTYPE_p_unsigned_long swig_types[67]
+#define SWIGTYPE_p_unsigned_short swig_types[68]
+#define SWIGTYPE_p_value_type swig_types[69]
+#define SWIGTYPE_std__setT_steps__wm__Patch_p_std__lessT_steps__wm__Patch_p_t_std__allocatorT_steps__wm__Patch_p_t_t__key_type swig_types[70]
+#define SWIGTYPE_std__setT_steps__wm__Patch_p_std__lessT_steps__wm__Patch_p_t_std__allocatorT_steps__wm__Patch_p_t_t__value_type swig_types[71]
+#define SWIGTYPE_std__vectorT_steps__model__Diff_p_std__allocatorT_steps__model__Diff_p_t_t__value_type swig_types[72]
+#define SWIGTYPE_std__vectorT_steps__model__Reac_p_std__allocatorT_steps__model__Reac_p_t_t__value_type swig_types[73]
+#define SWIGTYPE_std__vectorT_steps__model__SReac_p_std__allocatorT_steps__model__SReac_p_t_t__value_type swig_types[74]
+#define SWIGTYPE_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__value_type swig_types[75]
+#define SWIGTYPE_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type swig_types[76]
+#define SWIGTYPE_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type swig_types[77]
+#define SWIGTYPE_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__value_type swig_types[78]
+#define SWIGTYPE_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t__value_type swig_types[79]
+static swig_type_info *swig_types[81];
+static swig_module_info swig_module = {swig_types, 80, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -4462,6 +4466,116 @@ SWIGINTERN void std_vector_Sl_steps_model_Diff_Sm__Sg____setitem__(std::vector< 
       *(swig::getpos(self,i)) = x;
     }
 SWIGINTERN void std_vector_Sl_steps_model_Diff_Sm__Sg__append(std::vector< steps::model::Diff * > *self,std::vector< steps::model::Diff * >::value_type x){
+      self->push_back(x);
+    }
+
+  namespace swig {
+    template <>  struct traits<steps::model::Volsys > {
+      typedef pointer_category category;
+      static const char* type_name() { return"steps::model::Volsys"; }
+    };
+  }
+
+
+      namespace swig {
+	template <>  struct traits<std::vector<steps::model::Volsys*, std::allocator< steps::model::Volsys * > > > {
+	  typedef value_category category;
+	  static const char* type_name() {
+	    return "std::vector<" "steps::model::Volsys" " *," "std::allocator< steps::model::Volsys * >" " >";
+	  }
+	};
+      }
+    
+SWIGINTERN swig::PySwigIterator *std_vector_Sl_steps_model_Volsys_Sm__Sg__iterator(std::vector< steps::model::Volsys * > *self,PyObject **PYTHON_SELF){
+      return swig::make_output_iterator(self->begin(), self->begin(), self->end(), *PYTHON_SELF);
+    }
+SWIGINTERN bool std_vector_Sl_steps_model_Volsys_Sm__Sg____nonzero__(std::vector< steps::model::Volsys * > const *self){
+      return !(self->empty());
+    }
+SWIGINTERN std::vector< steps::model::Volsys * >::size_type std_vector_Sl_steps_model_Volsys_Sm__Sg____len__(std::vector< steps::model::Volsys * > const *self){
+      return self->size();
+    }
+SWIGINTERN std::vector< steps::model::Volsys * >::value_type std_vector_Sl_steps_model_Volsys_Sm__Sg__pop(std::vector< steps::model::Volsys * > *self){
+      if (self->size() == 0)
+	throw std::out_of_range("pop from empty container");
+      std::vector<steps::model::Volsys*,std::allocator< steps::model::Volsys * > >::value_type x = self->back();
+      self->pop_back();
+      return x;
+    }
+SWIGINTERN std::vector< steps::model::Volsys *,std::allocator< steps::model::Volsys * > > *std_vector_Sl_steps_model_Volsys_Sm__Sg____getslice__(std::vector< steps::model::Volsys * > *self,std::vector< steps::model::Volsys * >::difference_type i,std::vector< steps::model::Volsys * >::difference_type j){
+      return swig::getslice(self, i, j);
+    }
+SWIGINTERN void std_vector_Sl_steps_model_Volsys_Sm__Sg____setslice__(std::vector< steps::model::Volsys * > *self,std::vector< steps::model::Volsys * >::difference_type i,std::vector< steps::model::Volsys * >::difference_type j,std::vector< steps::model::Volsys *,std::allocator< steps::model::Volsys * > > const &v){
+      swig::setslice(self, i, j, v);
+    }
+SWIGINTERN void std_vector_Sl_steps_model_Volsys_Sm__Sg____delslice__(std::vector< steps::model::Volsys * > *self,std::vector< steps::model::Volsys * >::difference_type i,std::vector< steps::model::Volsys * >::difference_type j){
+      swig::delslice(self, i, j);
+    }
+SWIGINTERN void std_vector_Sl_steps_model_Volsys_Sm__Sg____delitem__(std::vector< steps::model::Volsys * > *self,std::vector< steps::model::Volsys * >::difference_type i){
+      self->erase(swig::getpos(self,i));
+    }
+SWIGINTERN std::vector< steps::model::Volsys * >::value_type std_vector_Sl_steps_model_Volsys_Sm__Sg____getitem__(std::vector< steps::model::Volsys * > *self,std::vector< steps::model::Volsys * >::difference_type i){
+      return *(swig::cgetpos(self, i));
+    }
+SWIGINTERN void std_vector_Sl_steps_model_Volsys_Sm__Sg____setitem__(std::vector< steps::model::Volsys * > *self,std::vector< steps::model::Volsys * >::difference_type i,std::vector< steps::model::Volsys * >::value_type x){
+      *(swig::getpos(self,i)) = x;
+    }
+SWIGINTERN void std_vector_Sl_steps_model_Volsys_Sm__Sg__append(std::vector< steps::model::Volsys * > *self,std::vector< steps::model::Volsys * >::value_type x){
+      self->push_back(x);
+    }
+
+  namespace swig {
+    template <>  struct traits<steps::model::Surfsys > {
+      typedef pointer_category category;
+      static const char* type_name() { return"steps::model::Surfsys"; }
+    };
+  }
+
+
+      namespace swig {
+	template <>  struct traits<std::vector<steps::model::Surfsys*, std::allocator< steps::model::Surfsys * > > > {
+	  typedef value_category category;
+	  static const char* type_name() {
+	    return "std::vector<" "steps::model::Surfsys" " *," "std::allocator< steps::model::Surfsys * >" " >";
+	  }
+	};
+      }
+    
+SWIGINTERN swig::PySwigIterator *std_vector_Sl_steps_model_Surfsys_Sm__Sg__iterator(std::vector< steps::model::Surfsys * > *self,PyObject **PYTHON_SELF){
+      return swig::make_output_iterator(self->begin(), self->begin(), self->end(), *PYTHON_SELF);
+    }
+SWIGINTERN bool std_vector_Sl_steps_model_Surfsys_Sm__Sg____nonzero__(std::vector< steps::model::Surfsys * > const *self){
+      return !(self->empty());
+    }
+SWIGINTERN std::vector< steps::model::Surfsys * >::size_type std_vector_Sl_steps_model_Surfsys_Sm__Sg____len__(std::vector< steps::model::Surfsys * > const *self){
+      return self->size();
+    }
+SWIGINTERN std::vector< steps::model::Surfsys * >::value_type std_vector_Sl_steps_model_Surfsys_Sm__Sg__pop(std::vector< steps::model::Surfsys * > *self){
+      if (self->size() == 0)
+	throw std::out_of_range("pop from empty container");
+      std::vector<steps::model::Surfsys*,std::allocator< steps::model::Surfsys * > >::value_type x = self->back();
+      self->pop_back();
+      return x;
+    }
+SWIGINTERN std::vector< steps::model::Surfsys *,std::allocator< steps::model::Surfsys * > > *std_vector_Sl_steps_model_Surfsys_Sm__Sg____getslice__(std::vector< steps::model::Surfsys * > *self,std::vector< steps::model::Surfsys * >::difference_type i,std::vector< steps::model::Surfsys * >::difference_type j){
+      return swig::getslice(self, i, j);
+    }
+SWIGINTERN void std_vector_Sl_steps_model_Surfsys_Sm__Sg____setslice__(std::vector< steps::model::Surfsys * > *self,std::vector< steps::model::Surfsys * >::difference_type i,std::vector< steps::model::Surfsys * >::difference_type j,std::vector< steps::model::Surfsys *,std::allocator< steps::model::Surfsys * > > const &v){
+      swig::setslice(self, i, j, v);
+    }
+SWIGINTERN void std_vector_Sl_steps_model_Surfsys_Sm__Sg____delslice__(std::vector< steps::model::Surfsys * > *self,std::vector< steps::model::Surfsys * >::difference_type i,std::vector< steps::model::Surfsys * >::difference_type j){
+      swig::delslice(self, i, j);
+    }
+SWIGINTERN void std_vector_Sl_steps_model_Surfsys_Sm__Sg____delitem__(std::vector< steps::model::Surfsys * > *self,std::vector< steps::model::Surfsys * >::difference_type i){
+      self->erase(swig::getpos(self,i));
+    }
+SWIGINTERN std::vector< steps::model::Surfsys * >::value_type std_vector_Sl_steps_model_Surfsys_Sm__Sg____getitem__(std::vector< steps::model::Surfsys * > *self,std::vector< steps::model::Surfsys * >::difference_type i){
+      return *(swig::cgetpos(self, i));
+    }
+SWIGINTERN void std_vector_Sl_steps_model_Surfsys_Sm__Sg____setitem__(std::vector< steps::model::Surfsys * > *self,std::vector< steps::model::Surfsys * >::difference_type i,std::vector< steps::model::Surfsys * >::value_type x){
+      *(swig::getpos(self,i)) = x;
+    }
+SWIGINTERN void std_vector_Sl_steps_model_Surfsys_Sm__Sg__append(std::vector< steps::model::Surfsys * > *self,std::vector< steps::model::Surfsys * >::value_type x){
       self->push_back(x);
     }
 
@@ -13367,6 +13481,2836 @@ SWIGINTERN PyObject *vector_dif_swigregister(PyObject *SWIGUNUSEDPARM(self), PyO
   return SWIG_Py_Void();
 }
 
+SWIGINTERN PyObject *_wrap_vector_vsys_iterator(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  PyObject **arg2 = (PyObject **) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  swig::PySwigIterator *result = 0 ;
+  
+  arg2 = &obj0;
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_vsys_iterator",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_iterator" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  result = (swig::PySwigIterator *)std_vector_Sl_steps_model_Volsys_Sm__Sg__iterator(arg1,arg2);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_swig__PySwigIterator, SWIG_POINTER_OWN |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys___nonzero__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  bool result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_vsys___nonzero__",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys___nonzero__" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  result = (bool)std_vector_Sl_steps_model_Volsys_Sm__Sg____nonzero__((std::vector< steps::model::Volsys * > const *)arg1);
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys___len__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Volsys * >::size_type result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_vsys___len__",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys___len__" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  result = std_vector_Sl_steps_model_Volsys_Sm__Sg____len__((std::vector< steps::model::Volsys * > const *)arg1);
+  resultobj = SWIG_From_size_t(static_cast< size_t >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_pop(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Volsys * >::value_type result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_vsys_pop",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_pop" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  try {
+    result = (std::vector< steps::model::Volsys * >::value_type)std_vector_Sl_steps_model_Volsys_Sm__Sg__pop(arg1);
+  }
+  catch(std::out_of_range &_e) {
+    SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+  }
+  
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys___getslice__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  std::vector< steps::model::Volsys * >::difference_type arg2 ;
+  std::vector< steps::model::Volsys * >::difference_type arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ptrdiff_t val2 ;
+  int ecode2 = 0 ;
+  ptrdiff_t val3 ;
+  int ecode3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  std::vector< steps::model::Volsys *,std::allocator< steps::model::Volsys * > > *result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:vector_vsys___getslice__",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys___getslice__" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  ecode2 = SWIG_AsVal_ptrdiff_t(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_vsys___getslice__" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * >::difference_type""'");
+  } 
+  arg2 = static_cast< std::vector< steps::model::Volsys * >::difference_type >(val2);
+  ecode3 = SWIG_AsVal_ptrdiff_t(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "vector_vsys___getslice__" "', argument " "3"" of type '" "std::vector< steps::model::Volsys * >::difference_type""'");
+  } 
+  arg3 = static_cast< std::vector< steps::model::Volsys * >::difference_type >(val3);
+  try {
+    result = (std::vector< steps::model::Volsys *,std::allocator< steps::model::Volsys * > > *)std_vector_Sl_steps_model_Volsys_Sm__Sg____getslice__(arg1,arg2,arg3);
+  }
+  catch(std::out_of_range &_e) {
+    SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+  }
+  
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, SWIG_POINTER_OWN |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys___setslice__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  std::vector< steps::model::Volsys * >::difference_type arg2 ;
+  std::vector< steps::model::Volsys * >::difference_type arg3 ;
+  std::vector< steps::model::Volsys *,std::allocator< steps::model::Volsys * > > *arg4 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ptrdiff_t val2 ;
+  int ecode2 = 0 ;
+  ptrdiff_t val3 ;
+  int ecode3 = 0 ;
+  int res4 = SWIG_OLDOBJ ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOO:vector_vsys___setslice__",&obj0,&obj1,&obj2,&obj3)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys___setslice__" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  ecode2 = SWIG_AsVal_ptrdiff_t(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_vsys___setslice__" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * >::difference_type""'");
+  } 
+  arg2 = static_cast< std::vector< steps::model::Volsys * >::difference_type >(val2);
+  ecode3 = SWIG_AsVal_ptrdiff_t(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "vector_vsys___setslice__" "', argument " "3"" of type '" "std::vector< steps::model::Volsys * >::difference_type""'");
+  } 
+  arg3 = static_cast< std::vector< steps::model::Volsys * >::difference_type >(val3);
+  {
+    std::vector<steps::model::Volsys*,std::allocator< steps::model::Volsys * > > *ptr = (std::vector<steps::model::Volsys*,std::allocator< steps::model::Volsys * > > *)0;
+    res4 = swig::asptr(obj3, &ptr);
+    if (!SWIG_IsOK(res4)) {
+      SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "vector_vsys___setslice__" "', argument " "4"" of type '" "std::vector< steps::model::Volsys *,std::allocator< steps::model::Volsys * > > const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "vector_vsys___setslice__" "', argument " "4"" of type '" "std::vector< steps::model::Volsys *,std::allocator< steps::model::Volsys * > > const &""'"); 
+    }
+    arg4 = ptr;
+  }
+  try {
+    std_vector_Sl_steps_model_Volsys_Sm__Sg____setslice__(arg1,arg2,arg3,(std::vector< steps::model::Volsys *,std::allocator< steps::model::Volsys * > > const &)*arg4);
+  }
+  catch(std::out_of_range &_e) {
+    SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+  }
+  catch(std::invalid_argument &_e) {
+    SWIG_exception_fail(SWIG_ValueError, (&_e)->what());
+  }
+  
+  resultobj = SWIG_Py_Void();
+  if (SWIG_IsNewObj(res4)) delete arg4;
+  return resultobj;
+fail:
+  if (SWIG_IsNewObj(res4)) delete arg4;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys___delslice__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  std::vector< steps::model::Volsys * >::difference_type arg2 ;
+  std::vector< steps::model::Volsys * >::difference_type arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ptrdiff_t val2 ;
+  int ecode2 = 0 ;
+  ptrdiff_t val3 ;
+  int ecode3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:vector_vsys___delslice__",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys___delslice__" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  ecode2 = SWIG_AsVal_ptrdiff_t(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_vsys___delslice__" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * >::difference_type""'");
+  } 
+  arg2 = static_cast< std::vector< steps::model::Volsys * >::difference_type >(val2);
+  ecode3 = SWIG_AsVal_ptrdiff_t(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "vector_vsys___delslice__" "', argument " "3"" of type '" "std::vector< steps::model::Volsys * >::difference_type""'");
+  } 
+  arg3 = static_cast< std::vector< steps::model::Volsys * >::difference_type >(val3);
+  try {
+    std_vector_Sl_steps_model_Volsys_Sm__Sg____delslice__(arg1,arg2,arg3);
+  }
+  catch(std::out_of_range &_e) {
+    SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+  }
+  
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys___delitem__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  std::vector< steps::model::Volsys * >::difference_type arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ptrdiff_t val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:vector_vsys___delitem__",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys___delitem__" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  ecode2 = SWIG_AsVal_ptrdiff_t(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_vsys___delitem__" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * >::difference_type""'");
+  } 
+  arg2 = static_cast< std::vector< steps::model::Volsys * >::difference_type >(val2);
+  try {
+    std_vector_Sl_steps_model_Volsys_Sm__Sg____delitem__(arg1,arg2);
+  }
+  catch(std::out_of_range &_e) {
+    SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+  }
+  
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys___getitem__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  std::vector< steps::model::Volsys * >::difference_type arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ptrdiff_t val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  std::vector< steps::model::Volsys * >::value_type result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:vector_vsys___getitem__",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys___getitem__" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  ecode2 = SWIG_AsVal_ptrdiff_t(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_vsys___getitem__" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * >::difference_type""'");
+  } 
+  arg2 = static_cast< std::vector< steps::model::Volsys * >::difference_type >(val2);
+  try {
+    result = (std::vector< steps::model::Volsys * >::value_type)std_vector_Sl_steps_model_Volsys_Sm__Sg____getitem__(arg1,arg2);
+  }
+  catch(std::out_of_range &_e) {
+    SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+  }
+  
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys___setitem__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  std::vector< steps::model::Volsys * >::difference_type arg2 ;
+  std::vector< steps::model::Volsys * >::value_type arg3 = (std::vector< steps::model::Volsys * >::value_type) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ptrdiff_t val2 ;
+  int ecode2 = 0 ;
+  void *argp3 = 0 ;
+  int res3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:vector_vsys___setitem__",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys___setitem__" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  ecode2 = SWIG_AsVal_ptrdiff_t(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_vsys___setitem__" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * >::difference_type""'");
+  } 
+  arg2 = static_cast< std::vector< steps::model::Volsys * >::difference_type >(val2);
+  res3 = SWIG_ConvertPtr(obj2, &argp3,SWIGTYPE_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type, 0 |  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "vector_vsys___setitem__" "', argument " "3"" of type '" "std::vector< steps::model::Volsys * >::value_type""'"); 
+  }
+  arg3 = reinterpret_cast< std::vector< steps::model::Volsys * >::value_type >(argp3);
+  try {
+    std_vector_Sl_steps_model_Volsys_Sm__Sg____setitem__(arg1,arg2,arg3);
+  }
+  catch(std::out_of_range &_e) {
+    SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+  }
+  
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_append(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  std::vector< steps::model::Volsys * >::value_type arg2 = (std::vector< steps::model::Volsys * >::value_type) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:vector_vsys_append",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_append" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "vector_vsys_append" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * >::value_type""'"); 
+  }
+  arg2 = reinterpret_cast< std::vector< steps::model::Volsys * >::value_type >(argp2);
+  std_vector_Sl_steps_model_Volsys_Sm__Sg__append(arg1,arg2);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_vector_vsys__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)":new_vector_vsys")) SWIG_fail;
+  result = (std::vector< steps::model::Volsys * > *)new std::vector< steps::model::Volsys * >();
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_vector_vsys__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = 0 ;
+  int res1 = SWIG_OLDOBJ ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Volsys * > *result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:new_vector_vsys",&obj0)) SWIG_fail;
+  {
+    std::vector<steps::model::Volsys*,std::allocator< steps::model::Volsys * > > *ptr = (std::vector<steps::model::Volsys*,std::allocator< steps::model::Volsys * > > *)0;
+    res1 = swig::asptr(obj0, &ptr);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_vector_vsys" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_vector_vsys" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > const &""'"); 
+    }
+    arg1 = ptr;
+  }
+  result = (std::vector< steps::model::Volsys * > *)new std::vector< steps::model::Volsys * >((std::vector< steps::model::Volsys * > const &)*arg1);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, SWIG_POINTER_NEW |  0 );
+  if (SWIG_IsNewObj(res1)) delete arg1;
+  return resultobj;
+fail:
+  if (SWIG_IsNewObj(res1)) delete arg1;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_empty(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  bool result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_vsys_empty",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_empty" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  result = (bool)((std::vector< steps::model::Volsys * > const *)arg1)->empty();
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_size(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Volsys * >::size_type result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_vsys_size",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_size" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  result = ((std::vector< steps::model::Volsys * > const *)arg1)->size();
+  resultobj = SWIG_From_size_t(static_cast< size_t >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_clear(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_vsys_clear",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_clear" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  (arg1)->clear();
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_swap(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  std::vector< steps::model::Volsys * > *arg2 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:vector_vsys_swap",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_swap" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t,  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "vector_vsys_swap" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * > &""'"); 
+  }
+  if (!argp2) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "vector_vsys_swap" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * > &""'"); 
+  }
+  arg2 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp2);
+  (arg1)->swap(*arg2);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_get_allocator(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  SwigValueWrapper< std::allocator< steps::model::Volsys * > > result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_vsys_get_allocator",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_get_allocator" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  result = ((std::vector< steps::model::Volsys * > const *)arg1)->get_allocator();
+  resultobj = SWIG_NewPointerObj((new std::vector< steps::model::Volsys * >::allocator_type(static_cast< const std::vector< steps::model::Volsys * >::allocator_type& >(result))), SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__allocator_type, SWIG_POINTER_OWN |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_begin(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Volsys * >::const_iterator result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_vsys_begin",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_begin" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  result = ((std::vector< steps::model::Volsys * > const *)arg1)->begin();
+  resultobj = SWIG_NewPointerObj(swig::make_output_iterator(static_cast< const std::vector< steps::model::Volsys * >::const_iterator & >(result)),
+    swig::PySwigIterator::descriptor(),SWIG_POINTER_OWN);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_end(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Volsys * >::const_iterator result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_vsys_end",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_end" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  result = ((std::vector< steps::model::Volsys * > const *)arg1)->end();
+  resultobj = SWIG_NewPointerObj(swig::make_output_iterator(static_cast< const std::vector< steps::model::Volsys * >::const_iterator & >(result)),
+    swig::PySwigIterator::descriptor(),SWIG_POINTER_OWN);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_rbegin(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Volsys * >::const_reverse_iterator result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_vsys_rbegin",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_rbegin" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  result = ((std::vector< steps::model::Volsys * > const *)arg1)->rbegin();
+  resultobj = SWIG_NewPointerObj(swig::make_output_iterator(static_cast< const std::vector< steps::model::Volsys * >::const_reverse_iterator & >(result)),
+    swig::PySwigIterator::descriptor(),SWIG_POINTER_OWN);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_rend(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Volsys * >::const_reverse_iterator result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_vsys_rend",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_rend" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  result = ((std::vector< steps::model::Volsys * > const *)arg1)->rend();
+  resultobj = SWIG_NewPointerObj(swig::make_output_iterator(static_cast< const std::vector< steps::model::Volsys * >::const_reverse_iterator & >(result)),
+    swig::PySwigIterator::descriptor(),SWIG_POINTER_OWN);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_vector_vsys__SWIG_2(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * >::size_type arg1 ;
+  size_t val1 ;
+  int ecode1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Volsys * > *result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:new_vector_vsys",&obj0)) SWIG_fail;
+  ecode1 = SWIG_AsVal_size_t(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_vector_vsys" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * >::size_type""'");
+  } 
+  arg1 = static_cast< std::vector< steps::model::Volsys * >::size_type >(val1);
+  result = (std::vector< steps::model::Volsys * > *)new std::vector< steps::model::Volsys * >(arg1);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_pop_back(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_vsys_pop_back",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_pop_back" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  (arg1)->pop_back();
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_resize__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  std::vector< steps::model::Volsys * >::size_type arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  size_t val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:vector_vsys_resize",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_resize" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  ecode2 = SWIG_AsVal_size_t(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_vsys_resize" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * >::size_type""'");
+  } 
+  arg2 = static_cast< std::vector< steps::model::Volsys * >::size_type >(val2);
+  (arg1)->resize(arg2);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_erase__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  std::vector< steps::model::Volsys * >::iterator arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  swig::PySwigIterator *iter2 = 0 ;
+  int res2 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  std::vector< steps::model::Volsys * >::iterator result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:vector_vsys_erase",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_erase" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, SWIG_as_voidptrptr(&iter2), swig::PySwigIterator::descriptor(), 0);
+  if (!SWIG_IsOK(res2) || !iter2) {
+    SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "vector_vsys_erase" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * >::iterator""'");
+  } else {
+    swig::PySwigIterator_T<std::vector< steps::model::Volsys * >::iterator > *iter_t = dynamic_cast<swig::PySwigIterator_T<std::vector< steps::model::Volsys * >::iterator > *>(iter2);
+    if (iter_t) {
+      arg2 = iter_t->get_current();
+    } else {
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "vector_vsys_erase" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * >::iterator""'");
+    }
+  }
+  result = (arg1)->erase(arg2);
+  resultobj = SWIG_NewPointerObj(swig::make_output_iterator(static_cast< const std::vector< steps::model::Volsys * >::iterator & >(result)),
+    swig::PySwigIterator::descriptor(),SWIG_POINTER_OWN);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_erase__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  std::vector< steps::model::Volsys * >::iterator arg2 ;
+  std::vector< steps::model::Volsys * >::iterator arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  swig::PySwigIterator *iter2 = 0 ;
+  int res2 ;
+  swig::PySwigIterator *iter3 = 0 ;
+  int res3 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  std::vector< steps::model::Volsys * >::iterator result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:vector_vsys_erase",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_erase" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, SWIG_as_voidptrptr(&iter2), swig::PySwigIterator::descriptor(), 0);
+  if (!SWIG_IsOK(res2) || !iter2) {
+    SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "vector_vsys_erase" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * >::iterator""'");
+  } else {
+    swig::PySwigIterator_T<std::vector< steps::model::Volsys * >::iterator > *iter_t = dynamic_cast<swig::PySwigIterator_T<std::vector< steps::model::Volsys * >::iterator > *>(iter2);
+    if (iter_t) {
+      arg2 = iter_t->get_current();
+    } else {
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "vector_vsys_erase" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * >::iterator""'");
+    }
+  }
+  res3 = SWIG_ConvertPtr(obj2, SWIG_as_voidptrptr(&iter3), swig::PySwigIterator::descriptor(), 0);
+  if (!SWIG_IsOK(res3) || !iter3) {
+    SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "vector_vsys_erase" "', argument " "3"" of type '" "std::vector< steps::model::Volsys * >::iterator""'");
+  } else {
+    swig::PySwigIterator_T<std::vector< steps::model::Volsys * >::iterator > *iter_t = dynamic_cast<swig::PySwigIterator_T<std::vector< steps::model::Volsys * >::iterator > *>(iter3);
+    if (iter_t) {
+      arg3 = iter_t->get_current();
+    } else {
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "vector_vsys_erase" "', argument " "3"" of type '" "std::vector< steps::model::Volsys * >::iterator""'");
+    }
+  }
+  result = (arg1)->erase(arg2,arg3);
+  resultobj = SWIG_NewPointerObj(swig::make_output_iterator(static_cast< const std::vector< steps::model::Volsys * >::iterator & >(result)),
+    swig::PySwigIterator::descriptor(),SWIG_POINTER_OWN);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_erase(PyObject *self, PyObject *args) {
+  int argc;
+  PyObject *argv[4];
+  int ii;
+  
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = (int)PyObject_Length(args);
+  for (ii = 0; (ii < argc) && (ii < 3); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 2) {
+    int _v;
+    int res = swig::asptr(argv[0], (std::vector<steps::model::Volsys*,std::allocator< steps::model::Volsys * > >**)(0));
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      swig::PySwigIterator *iter = 0;
+      int res = SWIG_ConvertPtr(argv[1], SWIG_as_voidptrptr(&iter), swig::PySwigIterator::descriptor(), 0);
+      _v = (SWIG_IsOK(res) && iter && (dynamic_cast<swig::PySwigIterator_T<std::vector< steps::model::Volsys * >::iterator > *>(iter) != 0));
+      if (_v) {
+        return _wrap_vector_vsys_erase__SWIG_0(self, args);
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    int res = swig::asptr(argv[0], (std::vector<steps::model::Volsys*,std::allocator< steps::model::Volsys * > >**)(0));
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      swig::PySwigIterator *iter = 0;
+      int res = SWIG_ConvertPtr(argv[1], SWIG_as_voidptrptr(&iter), swig::PySwigIterator::descriptor(), 0);
+      _v = (SWIG_IsOK(res) && iter && (dynamic_cast<swig::PySwigIterator_T<std::vector< steps::model::Volsys * >::iterator > *>(iter) != 0));
+      if (_v) {
+        swig::PySwigIterator *iter = 0;
+        int res = SWIG_ConvertPtr(argv[2], SWIG_as_voidptrptr(&iter), swig::PySwigIterator::descriptor(), 0);
+        _v = (SWIG_IsOK(res) && iter && (dynamic_cast<swig::PySwigIterator_T<std::vector< steps::model::Volsys * >::iterator > *>(iter) != 0));
+        if (_v) {
+          return _wrap_vector_vsys_erase__SWIG_1(self, args);
+        }
+      }
+    }
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'vector_vsys_erase'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    erase(std::vector< steps::model::Volsys * > *,std::vector< steps::model::Volsys * >::iterator)\n"
+    "    erase(std::vector< steps::model::Volsys * > *,std::vector< steps::model::Volsys * >::iterator,std::vector< steps::model::Volsys * >::iterator)\n");
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_vector_vsys__SWIG_3(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * >::size_type arg1 ;
+  std::vector< steps::model::Volsys * >::value_type arg2 = (std::vector< steps::model::Volsys * >::value_type) 0 ;
+  size_t val1 ;
+  int ecode1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  std::vector< steps::model::Volsys * > *result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:new_vector_vsys",&obj0,&obj1)) SWIG_fail;
+  ecode1 = SWIG_AsVal_size_t(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_vector_vsys" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * >::size_type""'");
+  } 
+  arg1 = static_cast< std::vector< steps::model::Volsys * >::size_type >(val1);
+  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "new_vector_vsys" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * >::value_type""'"); 
+  }
+  arg2 = reinterpret_cast< std::vector< steps::model::Volsys * >::value_type >(argp2);
+  result = (std::vector< steps::model::Volsys * > *)new std::vector< steps::model::Volsys * >(arg1,arg2);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_vector_vsys(PyObject *self, PyObject *args) {
+  int argc;
+  PyObject *argv[3];
+  int ii;
+  
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = (int)PyObject_Length(args);
+  for (ii = 0; (ii < argc) && (ii < 2); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 0) {
+    return _wrap_new_vector_vsys__SWIG_0(self, args);
+  }
+  if (argc == 1) {
+    int _v;
+    {
+      int res = SWIG_AsVal_size_t(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      return _wrap_new_vector_vsys__SWIG_2(self, args);
+    }
+  }
+  if (argc == 1) {
+    int _v;
+    int res = swig::asptr(argv[0], (std::vector<steps::model::Volsys*,std::allocator< steps::model::Volsys * > >**)(0));
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      return _wrap_new_vector_vsys__SWIG_1(self, args);
+    }
+  }
+  if (argc == 2) {
+    int _v;
+    {
+      int res = SWIG_AsVal_size_t(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      void *vptr = 0;
+      int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type, 0);
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        return _wrap_new_vector_vsys__SWIG_3(self, args);
+      }
+    }
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'new_vector_vsys'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    std::vector< steps::model::Volsys * >()\n"
+    "    std::vector< steps::model::Volsys * >(std::vector< steps::model::Volsys * > const &)\n"
+    "    std::vector< steps::model::Volsys * >(std::vector< steps::model::Volsys * >::size_type)\n"
+    "    std::vector< steps::model::Volsys * >(std::vector< steps::model::Volsys * >::size_type,std::vector< steps::model::Volsys * >::value_type)\n");
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_push_back(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  std::vector< steps::model::Volsys * >::value_type arg2 = (std::vector< steps::model::Volsys * >::value_type) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:vector_vsys_push_back",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_push_back" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "vector_vsys_push_back" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * >::value_type""'"); 
+  }
+  arg2 = reinterpret_cast< std::vector< steps::model::Volsys * >::value_type >(argp2);
+  (arg1)->push_back(arg2);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_front(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Volsys * >::value_type result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_vsys_front",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_front" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  result = (std::vector< steps::model::Volsys * >::value_type)((std::vector< steps::model::Volsys * > const *)arg1)->front();
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_back(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Volsys * >::value_type result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_vsys_back",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_back" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  result = (std::vector< steps::model::Volsys * >::value_type)((std::vector< steps::model::Volsys * > const *)arg1)->back();
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_assign(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  std::vector< steps::model::Volsys * >::size_type arg2 ;
+  std::vector< steps::model::Volsys * >::value_type arg3 = (std::vector< steps::model::Volsys * >::value_type) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  size_t val2 ;
+  int ecode2 = 0 ;
+  void *argp3 = 0 ;
+  int res3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:vector_vsys_assign",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_assign" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  ecode2 = SWIG_AsVal_size_t(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_vsys_assign" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * >::size_type""'");
+  } 
+  arg2 = static_cast< std::vector< steps::model::Volsys * >::size_type >(val2);
+  res3 = SWIG_ConvertPtr(obj2, &argp3,SWIGTYPE_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type, 0 |  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "vector_vsys_assign" "', argument " "3"" of type '" "std::vector< steps::model::Volsys * >::value_type""'"); 
+  }
+  arg3 = reinterpret_cast< std::vector< steps::model::Volsys * >::value_type >(argp3);
+  (arg1)->assign(arg2,arg3);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_resize__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  std::vector< steps::model::Volsys * >::size_type arg2 ;
+  std::vector< steps::model::Volsys * >::value_type arg3 = (std::vector< steps::model::Volsys * >::value_type) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  size_t val2 ;
+  int ecode2 = 0 ;
+  void *argp3 = 0 ;
+  int res3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:vector_vsys_resize",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_resize" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  ecode2 = SWIG_AsVal_size_t(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_vsys_resize" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * >::size_type""'");
+  } 
+  arg2 = static_cast< std::vector< steps::model::Volsys * >::size_type >(val2);
+  res3 = SWIG_ConvertPtr(obj2, &argp3,SWIGTYPE_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type, 0 |  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "vector_vsys_resize" "', argument " "3"" of type '" "std::vector< steps::model::Volsys * >::value_type""'"); 
+  }
+  arg3 = reinterpret_cast< std::vector< steps::model::Volsys * >::value_type >(argp3);
+  (arg1)->resize(arg2,arg3);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_resize(PyObject *self, PyObject *args) {
+  int argc;
+  PyObject *argv[4];
+  int ii;
+  
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = (int)PyObject_Length(args);
+  for (ii = 0; (ii < argc) && (ii < 3); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 2) {
+    int _v;
+    int res = swig::asptr(argv[0], (std::vector<steps::model::Volsys*,std::allocator< steps::model::Volsys * > >**)(0));
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      {
+        int res = SWIG_AsVal_size_t(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        return _wrap_vector_vsys_resize__SWIG_0(self, args);
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    int res = swig::asptr(argv[0], (std::vector<steps::model::Volsys*,std::allocator< steps::model::Volsys * > >**)(0));
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      {
+        int res = SWIG_AsVal_size_t(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[2], &vptr, SWIGTYPE_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+          return _wrap_vector_vsys_resize__SWIG_1(self, args);
+        }
+      }
+    }
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'vector_vsys_resize'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    resize(std::vector< steps::model::Volsys * > *,std::vector< steps::model::Volsys * >::size_type)\n"
+    "    resize(std::vector< steps::model::Volsys * > *,std::vector< steps::model::Volsys * >::size_type,std::vector< steps::model::Volsys * >::value_type)\n");
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_insert__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  std::vector< steps::model::Volsys * >::iterator arg2 ;
+  std::vector< steps::model::Volsys * >::value_type arg3 = (std::vector< steps::model::Volsys * >::value_type) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  swig::PySwigIterator *iter2 = 0 ;
+  int res2 ;
+  void *argp3 = 0 ;
+  int res3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  std::vector< steps::model::Volsys * >::iterator result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:vector_vsys_insert",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_insert" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, SWIG_as_voidptrptr(&iter2), swig::PySwigIterator::descriptor(), 0);
+  if (!SWIG_IsOK(res2) || !iter2) {
+    SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "vector_vsys_insert" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * >::iterator""'");
+  } else {
+    swig::PySwigIterator_T<std::vector< steps::model::Volsys * >::iterator > *iter_t = dynamic_cast<swig::PySwigIterator_T<std::vector< steps::model::Volsys * >::iterator > *>(iter2);
+    if (iter_t) {
+      arg2 = iter_t->get_current();
+    } else {
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "vector_vsys_insert" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * >::iterator""'");
+    }
+  }
+  res3 = SWIG_ConvertPtr(obj2, &argp3,SWIGTYPE_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type, 0 |  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "vector_vsys_insert" "', argument " "3"" of type '" "std::vector< steps::model::Volsys * >::value_type""'"); 
+  }
+  arg3 = reinterpret_cast< std::vector< steps::model::Volsys * >::value_type >(argp3);
+  result = (arg1)->insert(arg2,arg3);
+  resultobj = SWIG_NewPointerObj(swig::make_output_iterator(static_cast< const std::vector< steps::model::Volsys * >::iterator & >(result)),
+    swig::PySwigIterator::descriptor(),SWIG_POINTER_OWN);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_insert__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  std::vector< steps::model::Volsys * >::iterator arg2 ;
+  std::vector< steps::model::Volsys * >::size_type arg3 ;
+  std::vector< steps::model::Volsys * >::value_type arg4 = (std::vector< steps::model::Volsys * >::value_type) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  swig::PySwigIterator *iter2 = 0 ;
+  int res2 ;
+  size_t val3 ;
+  int ecode3 = 0 ;
+  void *argp4 = 0 ;
+  int res4 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOO:vector_vsys_insert",&obj0,&obj1,&obj2,&obj3)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_insert" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, SWIG_as_voidptrptr(&iter2), swig::PySwigIterator::descriptor(), 0);
+  if (!SWIG_IsOK(res2) || !iter2) {
+    SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "vector_vsys_insert" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * >::iterator""'");
+  } else {
+    swig::PySwigIterator_T<std::vector< steps::model::Volsys * >::iterator > *iter_t = dynamic_cast<swig::PySwigIterator_T<std::vector< steps::model::Volsys * >::iterator > *>(iter2);
+    if (iter_t) {
+      arg2 = iter_t->get_current();
+    } else {
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "vector_vsys_insert" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * >::iterator""'");
+    }
+  }
+  ecode3 = SWIG_AsVal_size_t(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "vector_vsys_insert" "', argument " "3"" of type '" "std::vector< steps::model::Volsys * >::size_type""'");
+  } 
+  arg3 = static_cast< std::vector< steps::model::Volsys * >::size_type >(val3);
+  res4 = SWIG_ConvertPtr(obj3, &argp4,SWIGTYPE_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type, 0 |  0 );
+  if (!SWIG_IsOK(res4)) {
+    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "vector_vsys_insert" "', argument " "4"" of type '" "std::vector< steps::model::Volsys * >::value_type""'"); 
+  }
+  arg4 = reinterpret_cast< std::vector< steps::model::Volsys * >::value_type >(argp4);
+  (arg1)->insert(arg2,arg3,arg4);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_insert(PyObject *self, PyObject *args) {
+  int argc;
+  PyObject *argv[5];
+  int ii;
+  
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = (int)PyObject_Length(args);
+  for (ii = 0; (ii < argc) && (ii < 4); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 3) {
+    int _v;
+    int res = swig::asptr(argv[0], (std::vector<steps::model::Volsys*,std::allocator< steps::model::Volsys * > >**)(0));
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      swig::PySwigIterator *iter = 0;
+      int res = SWIG_ConvertPtr(argv[1], SWIG_as_voidptrptr(&iter), swig::PySwigIterator::descriptor(), 0);
+      _v = (SWIG_IsOK(res) && iter && (dynamic_cast<swig::PySwigIterator_T<std::vector< steps::model::Volsys * >::iterator > *>(iter) != 0));
+      if (_v) {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[2], &vptr, SWIGTYPE_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+          return _wrap_vector_vsys_insert__SWIG_0(self, args);
+        }
+      }
+    }
+  }
+  if (argc == 4) {
+    int _v;
+    int res = swig::asptr(argv[0], (std::vector<steps::model::Volsys*,std::allocator< steps::model::Volsys * > >**)(0));
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      swig::PySwigIterator *iter = 0;
+      int res = SWIG_ConvertPtr(argv[1], SWIG_as_voidptrptr(&iter), swig::PySwigIterator::descriptor(), 0);
+      _v = (SWIG_IsOK(res) && iter && (dynamic_cast<swig::PySwigIterator_T<std::vector< steps::model::Volsys * >::iterator > *>(iter) != 0));
+      if (_v) {
+        {
+          int res = SWIG_AsVal_size_t(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          void *vptr = 0;
+          int res = SWIG_ConvertPtr(argv[3], &vptr, SWIGTYPE_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type, 0);
+          _v = SWIG_CheckState(res);
+          if (_v) {
+            return _wrap_vector_vsys_insert__SWIG_1(self, args);
+          }
+        }
+      }
+    }
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'vector_vsys_insert'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    insert(std::vector< steps::model::Volsys * > *,std::vector< steps::model::Volsys * >::iterator,std::vector< steps::model::Volsys * >::value_type)\n"
+    "    insert(std::vector< steps::model::Volsys * > *,std::vector< steps::model::Volsys * >::iterator,std::vector< steps::model::Volsys * >::size_type,std::vector< steps::model::Volsys * >::value_type)\n");
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_reserve(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  std::vector< steps::model::Volsys * >::size_type arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  size_t val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:vector_vsys_reserve",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_reserve" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  ecode2 = SWIG_AsVal_size_t(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_vsys_reserve" "', argument " "2"" of type '" "std::vector< steps::model::Volsys * >::size_type""'");
+  } 
+  arg2 = static_cast< std::vector< steps::model::Volsys * >::size_type >(val2);
+  (arg1)->reserve(arg2);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_vsys_capacity(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Volsys * >::size_type result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_vsys_capacity",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_vsys_capacity" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  result = ((std::vector< steps::model::Volsys * > const *)arg1)->capacity();
+  resultobj = SWIG_From_size_t(static_cast< size_t >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_delete_vector_vsys(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Volsys * > *arg1 = (std::vector< steps::model::Volsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:delete_vector_vsys",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_vector_vsys" "', argument " "1"" of type '" "std::vector< steps::model::Volsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Volsys * > * >(argp1);
+  {
+    try {
+      delete arg1;
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *vector_vsys_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *obj;
+  if (!PyArg_ParseTuple(args,(char*)"O:swigregister", &obj)) return NULL;
+  SWIG_TypeNewClientData(SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, SWIG_NewClientData(obj));
+  return SWIG_Py_Void();
+}
+
+SWIGINTERN PyObject *_wrap_vector_ssys_iterator(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  PyObject **arg2 = (PyObject **) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  swig::PySwigIterator *result = 0 ;
+  
+  arg2 = &obj0;
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_ssys_iterator",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_iterator" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  result = (swig::PySwigIterator *)std_vector_Sl_steps_model_Surfsys_Sm__Sg__iterator(arg1,arg2);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_swig__PySwigIterator, SWIG_POINTER_OWN |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys___nonzero__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  bool result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_ssys___nonzero__",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys___nonzero__" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  result = (bool)std_vector_Sl_steps_model_Surfsys_Sm__Sg____nonzero__((std::vector< steps::model::Surfsys * > const *)arg1);
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys___len__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Surfsys * >::size_type result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_ssys___len__",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys___len__" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  result = std_vector_Sl_steps_model_Surfsys_Sm__Sg____len__((std::vector< steps::model::Surfsys * > const *)arg1);
+  resultobj = SWIG_From_size_t(static_cast< size_t >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_pop(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Surfsys * >::value_type result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_ssys_pop",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_pop" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  try {
+    result = (std::vector< steps::model::Surfsys * >::value_type)std_vector_Sl_steps_model_Surfsys_Sm__Sg__pop(arg1);
+  }
+  catch(std::out_of_range &_e) {
+    SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+  }
+  
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys___getslice__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  std::vector< steps::model::Surfsys * >::difference_type arg2 ;
+  std::vector< steps::model::Surfsys * >::difference_type arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ptrdiff_t val2 ;
+  int ecode2 = 0 ;
+  ptrdiff_t val3 ;
+  int ecode3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  std::vector< steps::model::Surfsys *,std::allocator< steps::model::Surfsys * > > *result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:vector_ssys___getslice__",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys___getslice__" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  ecode2 = SWIG_AsVal_ptrdiff_t(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_ssys___getslice__" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * >::difference_type""'");
+  } 
+  arg2 = static_cast< std::vector< steps::model::Surfsys * >::difference_type >(val2);
+  ecode3 = SWIG_AsVal_ptrdiff_t(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "vector_ssys___getslice__" "', argument " "3"" of type '" "std::vector< steps::model::Surfsys * >::difference_type""'");
+  } 
+  arg3 = static_cast< std::vector< steps::model::Surfsys * >::difference_type >(val3);
+  try {
+    result = (std::vector< steps::model::Surfsys *,std::allocator< steps::model::Surfsys * > > *)std_vector_Sl_steps_model_Surfsys_Sm__Sg____getslice__(arg1,arg2,arg3);
+  }
+  catch(std::out_of_range &_e) {
+    SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+  }
+  
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, SWIG_POINTER_OWN |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys___setslice__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  std::vector< steps::model::Surfsys * >::difference_type arg2 ;
+  std::vector< steps::model::Surfsys * >::difference_type arg3 ;
+  std::vector< steps::model::Surfsys *,std::allocator< steps::model::Surfsys * > > *arg4 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ptrdiff_t val2 ;
+  int ecode2 = 0 ;
+  ptrdiff_t val3 ;
+  int ecode3 = 0 ;
+  int res4 = SWIG_OLDOBJ ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOO:vector_ssys___setslice__",&obj0,&obj1,&obj2,&obj3)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys___setslice__" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  ecode2 = SWIG_AsVal_ptrdiff_t(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_ssys___setslice__" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * >::difference_type""'");
+  } 
+  arg2 = static_cast< std::vector< steps::model::Surfsys * >::difference_type >(val2);
+  ecode3 = SWIG_AsVal_ptrdiff_t(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "vector_ssys___setslice__" "', argument " "3"" of type '" "std::vector< steps::model::Surfsys * >::difference_type""'");
+  } 
+  arg3 = static_cast< std::vector< steps::model::Surfsys * >::difference_type >(val3);
+  {
+    std::vector<steps::model::Surfsys*,std::allocator< steps::model::Surfsys * > > *ptr = (std::vector<steps::model::Surfsys*,std::allocator< steps::model::Surfsys * > > *)0;
+    res4 = swig::asptr(obj3, &ptr);
+    if (!SWIG_IsOK(res4)) {
+      SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "vector_ssys___setslice__" "', argument " "4"" of type '" "std::vector< steps::model::Surfsys *,std::allocator< steps::model::Surfsys * > > const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "vector_ssys___setslice__" "', argument " "4"" of type '" "std::vector< steps::model::Surfsys *,std::allocator< steps::model::Surfsys * > > const &""'"); 
+    }
+    arg4 = ptr;
+  }
+  try {
+    std_vector_Sl_steps_model_Surfsys_Sm__Sg____setslice__(arg1,arg2,arg3,(std::vector< steps::model::Surfsys *,std::allocator< steps::model::Surfsys * > > const &)*arg4);
+  }
+  catch(std::out_of_range &_e) {
+    SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+  }
+  catch(std::invalid_argument &_e) {
+    SWIG_exception_fail(SWIG_ValueError, (&_e)->what());
+  }
+  
+  resultobj = SWIG_Py_Void();
+  if (SWIG_IsNewObj(res4)) delete arg4;
+  return resultobj;
+fail:
+  if (SWIG_IsNewObj(res4)) delete arg4;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys___delslice__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  std::vector< steps::model::Surfsys * >::difference_type arg2 ;
+  std::vector< steps::model::Surfsys * >::difference_type arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ptrdiff_t val2 ;
+  int ecode2 = 0 ;
+  ptrdiff_t val3 ;
+  int ecode3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:vector_ssys___delslice__",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys___delslice__" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  ecode2 = SWIG_AsVal_ptrdiff_t(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_ssys___delslice__" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * >::difference_type""'");
+  } 
+  arg2 = static_cast< std::vector< steps::model::Surfsys * >::difference_type >(val2);
+  ecode3 = SWIG_AsVal_ptrdiff_t(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "vector_ssys___delslice__" "', argument " "3"" of type '" "std::vector< steps::model::Surfsys * >::difference_type""'");
+  } 
+  arg3 = static_cast< std::vector< steps::model::Surfsys * >::difference_type >(val3);
+  try {
+    std_vector_Sl_steps_model_Surfsys_Sm__Sg____delslice__(arg1,arg2,arg3);
+  }
+  catch(std::out_of_range &_e) {
+    SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+  }
+  
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys___delitem__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  std::vector< steps::model::Surfsys * >::difference_type arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ptrdiff_t val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:vector_ssys___delitem__",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys___delitem__" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  ecode2 = SWIG_AsVal_ptrdiff_t(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_ssys___delitem__" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * >::difference_type""'");
+  } 
+  arg2 = static_cast< std::vector< steps::model::Surfsys * >::difference_type >(val2);
+  try {
+    std_vector_Sl_steps_model_Surfsys_Sm__Sg____delitem__(arg1,arg2);
+  }
+  catch(std::out_of_range &_e) {
+    SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+  }
+  
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys___getitem__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  std::vector< steps::model::Surfsys * >::difference_type arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ptrdiff_t val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  std::vector< steps::model::Surfsys * >::value_type result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:vector_ssys___getitem__",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys___getitem__" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  ecode2 = SWIG_AsVal_ptrdiff_t(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_ssys___getitem__" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * >::difference_type""'");
+  } 
+  arg2 = static_cast< std::vector< steps::model::Surfsys * >::difference_type >(val2);
+  try {
+    result = (std::vector< steps::model::Surfsys * >::value_type)std_vector_Sl_steps_model_Surfsys_Sm__Sg____getitem__(arg1,arg2);
+  }
+  catch(std::out_of_range &_e) {
+    SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+  }
+  
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys___setitem__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  std::vector< steps::model::Surfsys * >::difference_type arg2 ;
+  std::vector< steps::model::Surfsys * >::value_type arg3 = (std::vector< steps::model::Surfsys * >::value_type) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ptrdiff_t val2 ;
+  int ecode2 = 0 ;
+  void *argp3 = 0 ;
+  int res3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:vector_ssys___setitem__",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys___setitem__" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  ecode2 = SWIG_AsVal_ptrdiff_t(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_ssys___setitem__" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * >::difference_type""'");
+  } 
+  arg2 = static_cast< std::vector< steps::model::Surfsys * >::difference_type >(val2);
+  res3 = SWIG_ConvertPtr(obj2, &argp3,SWIGTYPE_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type, 0 |  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "vector_ssys___setitem__" "', argument " "3"" of type '" "std::vector< steps::model::Surfsys * >::value_type""'"); 
+  }
+  arg3 = reinterpret_cast< std::vector< steps::model::Surfsys * >::value_type >(argp3);
+  try {
+    std_vector_Sl_steps_model_Surfsys_Sm__Sg____setitem__(arg1,arg2,arg3);
+  }
+  catch(std::out_of_range &_e) {
+    SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+  }
+  
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_append(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  std::vector< steps::model::Surfsys * >::value_type arg2 = (std::vector< steps::model::Surfsys * >::value_type) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:vector_ssys_append",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_append" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "vector_ssys_append" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * >::value_type""'"); 
+  }
+  arg2 = reinterpret_cast< std::vector< steps::model::Surfsys * >::value_type >(argp2);
+  std_vector_Sl_steps_model_Surfsys_Sm__Sg__append(arg1,arg2);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_vector_ssys__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)":new_vector_ssys")) SWIG_fail;
+  result = (std::vector< steps::model::Surfsys * > *)new std::vector< steps::model::Surfsys * >();
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_vector_ssys__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = 0 ;
+  int res1 = SWIG_OLDOBJ ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Surfsys * > *result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:new_vector_ssys",&obj0)) SWIG_fail;
+  {
+    std::vector<steps::model::Surfsys*,std::allocator< steps::model::Surfsys * > > *ptr = (std::vector<steps::model::Surfsys*,std::allocator< steps::model::Surfsys * > > *)0;
+    res1 = swig::asptr(obj0, &ptr);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_vector_ssys" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_vector_ssys" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > const &""'"); 
+    }
+    arg1 = ptr;
+  }
+  result = (std::vector< steps::model::Surfsys * > *)new std::vector< steps::model::Surfsys * >((std::vector< steps::model::Surfsys * > const &)*arg1);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, SWIG_POINTER_NEW |  0 );
+  if (SWIG_IsNewObj(res1)) delete arg1;
+  return resultobj;
+fail:
+  if (SWIG_IsNewObj(res1)) delete arg1;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_empty(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  bool result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_ssys_empty",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_empty" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  result = (bool)((std::vector< steps::model::Surfsys * > const *)arg1)->empty();
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_size(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Surfsys * >::size_type result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_ssys_size",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_size" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  result = ((std::vector< steps::model::Surfsys * > const *)arg1)->size();
+  resultobj = SWIG_From_size_t(static_cast< size_t >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_clear(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_ssys_clear",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_clear" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  (arg1)->clear();
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_swap(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  std::vector< steps::model::Surfsys * > *arg2 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:vector_ssys_swap",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_swap" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t,  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "vector_ssys_swap" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * > &""'"); 
+  }
+  if (!argp2) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "vector_ssys_swap" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * > &""'"); 
+  }
+  arg2 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp2);
+  (arg1)->swap(*arg2);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_get_allocator(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  SwigValueWrapper< std::allocator< steps::model::Surfsys * > > result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_ssys_get_allocator",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_get_allocator" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  result = ((std::vector< steps::model::Surfsys * > const *)arg1)->get_allocator();
+  resultobj = SWIG_NewPointerObj((new std::vector< steps::model::Surfsys * >::allocator_type(static_cast< const std::vector< steps::model::Surfsys * >::allocator_type& >(result))), SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__allocator_type, SWIG_POINTER_OWN |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_begin(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Surfsys * >::const_iterator result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_ssys_begin",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_begin" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  result = ((std::vector< steps::model::Surfsys * > const *)arg1)->begin();
+  resultobj = SWIG_NewPointerObj(swig::make_output_iterator(static_cast< const std::vector< steps::model::Surfsys * >::const_iterator & >(result)),
+    swig::PySwigIterator::descriptor(),SWIG_POINTER_OWN);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_end(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Surfsys * >::const_iterator result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_ssys_end",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_end" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  result = ((std::vector< steps::model::Surfsys * > const *)arg1)->end();
+  resultobj = SWIG_NewPointerObj(swig::make_output_iterator(static_cast< const std::vector< steps::model::Surfsys * >::const_iterator & >(result)),
+    swig::PySwigIterator::descriptor(),SWIG_POINTER_OWN);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_rbegin(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Surfsys * >::const_reverse_iterator result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_ssys_rbegin",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_rbegin" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  result = ((std::vector< steps::model::Surfsys * > const *)arg1)->rbegin();
+  resultobj = SWIG_NewPointerObj(swig::make_output_iterator(static_cast< const std::vector< steps::model::Surfsys * >::const_reverse_iterator & >(result)),
+    swig::PySwigIterator::descriptor(),SWIG_POINTER_OWN);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_rend(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Surfsys * >::const_reverse_iterator result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_ssys_rend",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_rend" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  result = ((std::vector< steps::model::Surfsys * > const *)arg1)->rend();
+  resultobj = SWIG_NewPointerObj(swig::make_output_iterator(static_cast< const std::vector< steps::model::Surfsys * >::const_reverse_iterator & >(result)),
+    swig::PySwigIterator::descriptor(),SWIG_POINTER_OWN);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_vector_ssys__SWIG_2(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * >::size_type arg1 ;
+  size_t val1 ;
+  int ecode1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Surfsys * > *result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:new_vector_ssys",&obj0)) SWIG_fail;
+  ecode1 = SWIG_AsVal_size_t(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_vector_ssys" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * >::size_type""'");
+  } 
+  arg1 = static_cast< std::vector< steps::model::Surfsys * >::size_type >(val1);
+  result = (std::vector< steps::model::Surfsys * > *)new std::vector< steps::model::Surfsys * >(arg1);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_pop_back(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_ssys_pop_back",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_pop_back" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  (arg1)->pop_back();
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_resize__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  std::vector< steps::model::Surfsys * >::size_type arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  size_t val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:vector_ssys_resize",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_resize" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  ecode2 = SWIG_AsVal_size_t(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_ssys_resize" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * >::size_type""'");
+  } 
+  arg2 = static_cast< std::vector< steps::model::Surfsys * >::size_type >(val2);
+  (arg1)->resize(arg2);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_erase__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  std::vector< steps::model::Surfsys * >::iterator arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  swig::PySwigIterator *iter2 = 0 ;
+  int res2 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  std::vector< steps::model::Surfsys * >::iterator result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:vector_ssys_erase",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_erase" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, SWIG_as_voidptrptr(&iter2), swig::PySwigIterator::descriptor(), 0);
+  if (!SWIG_IsOK(res2) || !iter2) {
+    SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "vector_ssys_erase" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * >::iterator""'");
+  } else {
+    swig::PySwigIterator_T<std::vector< steps::model::Surfsys * >::iterator > *iter_t = dynamic_cast<swig::PySwigIterator_T<std::vector< steps::model::Surfsys * >::iterator > *>(iter2);
+    if (iter_t) {
+      arg2 = iter_t->get_current();
+    } else {
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "vector_ssys_erase" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * >::iterator""'");
+    }
+  }
+  result = (arg1)->erase(arg2);
+  resultobj = SWIG_NewPointerObj(swig::make_output_iterator(static_cast< const std::vector< steps::model::Surfsys * >::iterator & >(result)),
+    swig::PySwigIterator::descriptor(),SWIG_POINTER_OWN);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_erase__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  std::vector< steps::model::Surfsys * >::iterator arg2 ;
+  std::vector< steps::model::Surfsys * >::iterator arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  swig::PySwigIterator *iter2 = 0 ;
+  int res2 ;
+  swig::PySwigIterator *iter3 = 0 ;
+  int res3 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  std::vector< steps::model::Surfsys * >::iterator result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:vector_ssys_erase",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_erase" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, SWIG_as_voidptrptr(&iter2), swig::PySwigIterator::descriptor(), 0);
+  if (!SWIG_IsOK(res2) || !iter2) {
+    SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "vector_ssys_erase" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * >::iterator""'");
+  } else {
+    swig::PySwigIterator_T<std::vector< steps::model::Surfsys * >::iterator > *iter_t = dynamic_cast<swig::PySwigIterator_T<std::vector< steps::model::Surfsys * >::iterator > *>(iter2);
+    if (iter_t) {
+      arg2 = iter_t->get_current();
+    } else {
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "vector_ssys_erase" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * >::iterator""'");
+    }
+  }
+  res3 = SWIG_ConvertPtr(obj2, SWIG_as_voidptrptr(&iter3), swig::PySwigIterator::descriptor(), 0);
+  if (!SWIG_IsOK(res3) || !iter3) {
+    SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "vector_ssys_erase" "', argument " "3"" of type '" "std::vector< steps::model::Surfsys * >::iterator""'");
+  } else {
+    swig::PySwigIterator_T<std::vector< steps::model::Surfsys * >::iterator > *iter_t = dynamic_cast<swig::PySwigIterator_T<std::vector< steps::model::Surfsys * >::iterator > *>(iter3);
+    if (iter_t) {
+      arg3 = iter_t->get_current();
+    } else {
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "vector_ssys_erase" "', argument " "3"" of type '" "std::vector< steps::model::Surfsys * >::iterator""'");
+    }
+  }
+  result = (arg1)->erase(arg2,arg3);
+  resultobj = SWIG_NewPointerObj(swig::make_output_iterator(static_cast< const std::vector< steps::model::Surfsys * >::iterator & >(result)),
+    swig::PySwigIterator::descriptor(),SWIG_POINTER_OWN);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_erase(PyObject *self, PyObject *args) {
+  int argc;
+  PyObject *argv[4];
+  int ii;
+  
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = (int)PyObject_Length(args);
+  for (ii = 0; (ii < argc) && (ii < 3); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 2) {
+    int _v;
+    int res = swig::asptr(argv[0], (std::vector<steps::model::Surfsys*,std::allocator< steps::model::Surfsys * > >**)(0));
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      swig::PySwigIterator *iter = 0;
+      int res = SWIG_ConvertPtr(argv[1], SWIG_as_voidptrptr(&iter), swig::PySwigIterator::descriptor(), 0);
+      _v = (SWIG_IsOK(res) && iter && (dynamic_cast<swig::PySwigIterator_T<std::vector< steps::model::Surfsys * >::iterator > *>(iter) != 0));
+      if (_v) {
+        return _wrap_vector_ssys_erase__SWIG_0(self, args);
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    int res = swig::asptr(argv[0], (std::vector<steps::model::Surfsys*,std::allocator< steps::model::Surfsys * > >**)(0));
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      swig::PySwigIterator *iter = 0;
+      int res = SWIG_ConvertPtr(argv[1], SWIG_as_voidptrptr(&iter), swig::PySwigIterator::descriptor(), 0);
+      _v = (SWIG_IsOK(res) && iter && (dynamic_cast<swig::PySwigIterator_T<std::vector< steps::model::Surfsys * >::iterator > *>(iter) != 0));
+      if (_v) {
+        swig::PySwigIterator *iter = 0;
+        int res = SWIG_ConvertPtr(argv[2], SWIG_as_voidptrptr(&iter), swig::PySwigIterator::descriptor(), 0);
+        _v = (SWIG_IsOK(res) && iter && (dynamic_cast<swig::PySwigIterator_T<std::vector< steps::model::Surfsys * >::iterator > *>(iter) != 0));
+        if (_v) {
+          return _wrap_vector_ssys_erase__SWIG_1(self, args);
+        }
+      }
+    }
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'vector_ssys_erase'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    erase(std::vector< steps::model::Surfsys * > *,std::vector< steps::model::Surfsys * >::iterator)\n"
+    "    erase(std::vector< steps::model::Surfsys * > *,std::vector< steps::model::Surfsys * >::iterator,std::vector< steps::model::Surfsys * >::iterator)\n");
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_vector_ssys__SWIG_3(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * >::size_type arg1 ;
+  std::vector< steps::model::Surfsys * >::value_type arg2 = (std::vector< steps::model::Surfsys * >::value_type) 0 ;
+  size_t val1 ;
+  int ecode1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  std::vector< steps::model::Surfsys * > *result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:new_vector_ssys",&obj0,&obj1)) SWIG_fail;
+  ecode1 = SWIG_AsVal_size_t(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_vector_ssys" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * >::size_type""'");
+  } 
+  arg1 = static_cast< std::vector< steps::model::Surfsys * >::size_type >(val1);
+  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "new_vector_ssys" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * >::value_type""'"); 
+  }
+  arg2 = reinterpret_cast< std::vector< steps::model::Surfsys * >::value_type >(argp2);
+  result = (std::vector< steps::model::Surfsys * > *)new std::vector< steps::model::Surfsys * >(arg1,arg2);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_vector_ssys(PyObject *self, PyObject *args) {
+  int argc;
+  PyObject *argv[3];
+  int ii;
+  
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = (int)PyObject_Length(args);
+  for (ii = 0; (ii < argc) && (ii < 2); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 0) {
+    return _wrap_new_vector_ssys__SWIG_0(self, args);
+  }
+  if (argc == 1) {
+    int _v;
+    {
+      int res = SWIG_AsVal_size_t(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      return _wrap_new_vector_ssys__SWIG_2(self, args);
+    }
+  }
+  if (argc == 1) {
+    int _v;
+    int res = swig::asptr(argv[0], (std::vector<steps::model::Surfsys*,std::allocator< steps::model::Surfsys * > >**)(0));
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      return _wrap_new_vector_ssys__SWIG_1(self, args);
+    }
+  }
+  if (argc == 2) {
+    int _v;
+    {
+      int res = SWIG_AsVal_size_t(argv[0], NULL);
+      _v = SWIG_CheckState(res);
+    }
+    if (_v) {
+      void *vptr = 0;
+      int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type, 0);
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        return _wrap_new_vector_ssys__SWIG_3(self, args);
+      }
+    }
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'new_vector_ssys'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    std::vector< steps::model::Surfsys * >()\n"
+    "    std::vector< steps::model::Surfsys * >(std::vector< steps::model::Surfsys * > const &)\n"
+    "    std::vector< steps::model::Surfsys * >(std::vector< steps::model::Surfsys * >::size_type)\n"
+    "    std::vector< steps::model::Surfsys * >(std::vector< steps::model::Surfsys * >::size_type,std::vector< steps::model::Surfsys * >::value_type)\n");
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_push_back(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  std::vector< steps::model::Surfsys * >::value_type arg2 = (std::vector< steps::model::Surfsys * >::value_type) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:vector_ssys_push_back",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_push_back" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "vector_ssys_push_back" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * >::value_type""'"); 
+  }
+  arg2 = reinterpret_cast< std::vector< steps::model::Surfsys * >::value_type >(argp2);
+  (arg1)->push_back(arg2);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_front(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Surfsys * >::value_type result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_ssys_front",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_front" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  result = (std::vector< steps::model::Surfsys * >::value_type)((std::vector< steps::model::Surfsys * > const *)arg1)->front();
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_back(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Surfsys * >::value_type result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_ssys_back",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_back" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  result = (std::vector< steps::model::Surfsys * >::value_type)((std::vector< steps::model::Surfsys * > const *)arg1)->back();
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_assign(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  std::vector< steps::model::Surfsys * >::size_type arg2 ;
+  std::vector< steps::model::Surfsys * >::value_type arg3 = (std::vector< steps::model::Surfsys * >::value_type) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  size_t val2 ;
+  int ecode2 = 0 ;
+  void *argp3 = 0 ;
+  int res3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:vector_ssys_assign",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_assign" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  ecode2 = SWIG_AsVal_size_t(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_ssys_assign" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * >::size_type""'");
+  } 
+  arg2 = static_cast< std::vector< steps::model::Surfsys * >::size_type >(val2);
+  res3 = SWIG_ConvertPtr(obj2, &argp3,SWIGTYPE_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type, 0 |  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "vector_ssys_assign" "', argument " "3"" of type '" "std::vector< steps::model::Surfsys * >::value_type""'"); 
+  }
+  arg3 = reinterpret_cast< std::vector< steps::model::Surfsys * >::value_type >(argp3);
+  (arg1)->assign(arg2,arg3);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_resize__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  std::vector< steps::model::Surfsys * >::size_type arg2 ;
+  std::vector< steps::model::Surfsys * >::value_type arg3 = (std::vector< steps::model::Surfsys * >::value_type) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  size_t val2 ;
+  int ecode2 = 0 ;
+  void *argp3 = 0 ;
+  int res3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:vector_ssys_resize",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_resize" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  ecode2 = SWIG_AsVal_size_t(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_ssys_resize" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * >::size_type""'");
+  } 
+  arg2 = static_cast< std::vector< steps::model::Surfsys * >::size_type >(val2);
+  res3 = SWIG_ConvertPtr(obj2, &argp3,SWIGTYPE_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type, 0 |  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "vector_ssys_resize" "', argument " "3"" of type '" "std::vector< steps::model::Surfsys * >::value_type""'"); 
+  }
+  arg3 = reinterpret_cast< std::vector< steps::model::Surfsys * >::value_type >(argp3);
+  (arg1)->resize(arg2,arg3);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_resize(PyObject *self, PyObject *args) {
+  int argc;
+  PyObject *argv[4];
+  int ii;
+  
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = (int)PyObject_Length(args);
+  for (ii = 0; (ii < argc) && (ii < 3); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 2) {
+    int _v;
+    int res = swig::asptr(argv[0], (std::vector<steps::model::Surfsys*,std::allocator< steps::model::Surfsys * > >**)(0));
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      {
+        int res = SWIG_AsVal_size_t(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        return _wrap_vector_ssys_resize__SWIG_0(self, args);
+      }
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    int res = swig::asptr(argv[0], (std::vector<steps::model::Surfsys*,std::allocator< steps::model::Surfsys * > >**)(0));
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      {
+        int res = SWIG_AsVal_size_t(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[2], &vptr, SWIGTYPE_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+          return _wrap_vector_ssys_resize__SWIG_1(self, args);
+        }
+      }
+    }
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'vector_ssys_resize'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    resize(std::vector< steps::model::Surfsys * > *,std::vector< steps::model::Surfsys * >::size_type)\n"
+    "    resize(std::vector< steps::model::Surfsys * > *,std::vector< steps::model::Surfsys * >::size_type,std::vector< steps::model::Surfsys * >::value_type)\n");
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_insert__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  std::vector< steps::model::Surfsys * >::iterator arg2 ;
+  std::vector< steps::model::Surfsys * >::value_type arg3 = (std::vector< steps::model::Surfsys * >::value_type) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  swig::PySwigIterator *iter2 = 0 ;
+  int res2 ;
+  void *argp3 = 0 ;
+  int res3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  std::vector< steps::model::Surfsys * >::iterator result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:vector_ssys_insert",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_insert" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, SWIG_as_voidptrptr(&iter2), swig::PySwigIterator::descriptor(), 0);
+  if (!SWIG_IsOK(res2) || !iter2) {
+    SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "vector_ssys_insert" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * >::iterator""'");
+  } else {
+    swig::PySwigIterator_T<std::vector< steps::model::Surfsys * >::iterator > *iter_t = dynamic_cast<swig::PySwigIterator_T<std::vector< steps::model::Surfsys * >::iterator > *>(iter2);
+    if (iter_t) {
+      arg2 = iter_t->get_current();
+    } else {
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "vector_ssys_insert" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * >::iterator""'");
+    }
+  }
+  res3 = SWIG_ConvertPtr(obj2, &argp3,SWIGTYPE_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type, 0 |  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "vector_ssys_insert" "', argument " "3"" of type '" "std::vector< steps::model::Surfsys * >::value_type""'"); 
+  }
+  arg3 = reinterpret_cast< std::vector< steps::model::Surfsys * >::value_type >(argp3);
+  result = (arg1)->insert(arg2,arg3);
+  resultobj = SWIG_NewPointerObj(swig::make_output_iterator(static_cast< const std::vector< steps::model::Surfsys * >::iterator & >(result)),
+    swig::PySwigIterator::descriptor(),SWIG_POINTER_OWN);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_insert__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  std::vector< steps::model::Surfsys * >::iterator arg2 ;
+  std::vector< steps::model::Surfsys * >::size_type arg3 ;
+  std::vector< steps::model::Surfsys * >::value_type arg4 = (std::vector< steps::model::Surfsys * >::value_type) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  swig::PySwigIterator *iter2 = 0 ;
+  int res2 ;
+  size_t val3 ;
+  int ecode3 = 0 ;
+  void *argp4 = 0 ;
+  int res4 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOO:vector_ssys_insert",&obj0,&obj1,&obj2,&obj3)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_insert" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, SWIG_as_voidptrptr(&iter2), swig::PySwigIterator::descriptor(), 0);
+  if (!SWIG_IsOK(res2) || !iter2) {
+    SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "vector_ssys_insert" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * >::iterator""'");
+  } else {
+    swig::PySwigIterator_T<std::vector< steps::model::Surfsys * >::iterator > *iter_t = dynamic_cast<swig::PySwigIterator_T<std::vector< steps::model::Surfsys * >::iterator > *>(iter2);
+    if (iter_t) {
+      arg2 = iter_t->get_current();
+    } else {
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "vector_ssys_insert" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * >::iterator""'");
+    }
+  }
+  ecode3 = SWIG_AsVal_size_t(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "vector_ssys_insert" "', argument " "3"" of type '" "std::vector< steps::model::Surfsys * >::size_type""'");
+  } 
+  arg3 = static_cast< std::vector< steps::model::Surfsys * >::size_type >(val3);
+  res4 = SWIG_ConvertPtr(obj3, &argp4,SWIGTYPE_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type, 0 |  0 );
+  if (!SWIG_IsOK(res4)) {
+    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "vector_ssys_insert" "', argument " "4"" of type '" "std::vector< steps::model::Surfsys * >::value_type""'"); 
+  }
+  arg4 = reinterpret_cast< std::vector< steps::model::Surfsys * >::value_type >(argp4);
+  (arg1)->insert(arg2,arg3,arg4);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_insert(PyObject *self, PyObject *args) {
+  int argc;
+  PyObject *argv[5];
+  int ii;
+  
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = (int)PyObject_Length(args);
+  for (ii = 0; (ii < argc) && (ii < 4); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 3) {
+    int _v;
+    int res = swig::asptr(argv[0], (std::vector<steps::model::Surfsys*,std::allocator< steps::model::Surfsys * > >**)(0));
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      swig::PySwigIterator *iter = 0;
+      int res = SWIG_ConvertPtr(argv[1], SWIG_as_voidptrptr(&iter), swig::PySwigIterator::descriptor(), 0);
+      _v = (SWIG_IsOK(res) && iter && (dynamic_cast<swig::PySwigIterator_T<std::vector< steps::model::Surfsys * >::iterator > *>(iter) != 0));
+      if (_v) {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[2], &vptr, SWIGTYPE_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+          return _wrap_vector_ssys_insert__SWIG_0(self, args);
+        }
+      }
+    }
+  }
+  if (argc == 4) {
+    int _v;
+    int res = swig::asptr(argv[0], (std::vector<steps::model::Surfsys*,std::allocator< steps::model::Surfsys * > >**)(0));
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      swig::PySwigIterator *iter = 0;
+      int res = SWIG_ConvertPtr(argv[1], SWIG_as_voidptrptr(&iter), swig::PySwigIterator::descriptor(), 0);
+      _v = (SWIG_IsOK(res) && iter && (dynamic_cast<swig::PySwigIterator_T<std::vector< steps::model::Surfsys * >::iterator > *>(iter) != 0));
+      if (_v) {
+        {
+          int res = SWIG_AsVal_size_t(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          void *vptr = 0;
+          int res = SWIG_ConvertPtr(argv[3], &vptr, SWIGTYPE_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type, 0);
+          _v = SWIG_CheckState(res);
+          if (_v) {
+            return _wrap_vector_ssys_insert__SWIG_1(self, args);
+          }
+        }
+      }
+    }
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'vector_ssys_insert'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    insert(std::vector< steps::model::Surfsys * > *,std::vector< steps::model::Surfsys * >::iterator,std::vector< steps::model::Surfsys * >::value_type)\n"
+    "    insert(std::vector< steps::model::Surfsys * > *,std::vector< steps::model::Surfsys * >::iterator,std::vector< steps::model::Surfsys * >::size_type,std::vector< steps::model::Surfsys * >::value_type)\n");
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_reserve(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  std::vector< steps::model::Surfsys * >::size_type arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  size_t val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:vector_ssys_reserve",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_reserve" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  ecode2 = SWIG_AsVal_size_t(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "vector_ssys_reserve" "', argument " "2"" of type '" "std::vector< steps::model::Surfsys * >::size_type""'");
+  } 
+  arg2 = static_cast< std::vector< steps::model::Surfsys * >::size_type >(val2);
+  (arg1)->reserve(arg2);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_vector_ssys_capacity(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  std::vector< steps::model::Surfsys * >::size_type result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:vector_ssys_capacity",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "vector_ssys_capacity" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  result = ((std::vector< steps::model::Surfsys * > const *)arg1)->capacity();
+  resultobj = SWIG_From_size_t(static_cast< size_t >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_delete_vector_ssys(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< steps::model::Surfsys * > *arg1 = (std::vector< steps::model::Surfsys * > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:delete_vector_ssys",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_vector_ssys" "', argument " "1"" of type '" "std::vector< steps::model::Surfsys * > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< steps::model::Surfsys * > * >(argp1);
+  {
+    try {
+      delete arg1;
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *vector_ssys_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *obj;
+  if (!PyArg_ParseTuple(args,(char*)"O:swigregister", &obj)) return NULL;
+  SWIG_TypeNewClientData(SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, SWIG_NewClientData(obj));
+  return SWIG_Py_Void();
+}
+
 SWIGINTERN PyObject *_wrap_isValidID(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   std::string *arg1 = 0 ;
@@ -13726,7 +16670,7 @@ SWIGINTERN PyObject *_wrap_Model_getAllVolsyss(PyObject *SWIGUNUSEDPARM(self), P
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject * obj0 = 0 ;
-  SwigValueWrapper< std::vector< steps::model::Volsys *,std::allocator< steps::model::Volsys * > > > result;
+  std::vector< steps::model::Volsys *,std::allocator< steps::model::Volsys * > > result;
   
   if (!PyArg_ParseTuple(args,(char *)"O:Model_getAllVolsyss",&obj0)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__model__Model, 0 |  0 );
@@ -13745,7 +16689,7 @@ SWIGINTERN PyObject *_wrap_Model_getAllVolsyss(PyObject *SWIGUNUSEDPARM(self), P
       return NULL;
     }
   }
-  resultobj = SWIG_NewPointerObj((new std::vector< steps::model::Volsys *,std::allocator< steps::model::Volsys * > >(static_cast< const std::vector< steps::model::Volsys *,std::allocator< steps::model::Volsys * > >& >(result))), SWIGTYPE_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, SWIG_POINTER_OWN |  0 );
+  resultobj = swig::from(static_cast< std::vector<steps::model::Volsys*,std::allocator< steps::model::Volsys * > > >(result));
   return resultobj;
 fail:
   return NULL;
@@ -13853,7 +16797,7 @@ SWIGINTERN PyObject *_wrap_Model_getAllSurfsyss(PyObject *SWIGUNUSEDPARM(self), 
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject * obj0 = 0 ;
-  SwigValueWrapper< std::vector< steps::model::Surfsys *,std::allocator< steps::model::Surfsys * > > > result;
+  std::vector< steps::model::Surfsys *,std::allocator< steps::model::Surfsys * > > result;
   
   if (!PyArg_ParseTuple(args,(char *)"O:Model_getAllSurfsyss",&obj0)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__model__Model, 0 |  0 );
@@ -13872,7 +16816,7 @@ SWIGINTERN PyObject *_wrap_Model_getAllSurfsyss(PyObject *SWIGUNUSEDPARM(self), 
       return NULL;
     }
   }
-  resultobj = SWIG_NewPointerObj((new std::vector< steps::model::Surfsys *,std::allocator< steps::model::Surfsys * > >(static_cast< const std::vector< steps::model::Surfsys *,std::allocator< steps::model::Surfsys * > >& >(result))), SWIGTYPE_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, SWIG_POINTER_OWN |  0 );
+  resultobj = swig::from(static_cast< std::vector<steps::model::Surfsys*,std::allocator< steps::model::Surfsys * > > >(result));
   return resultobj;
 fail:
   return NULL;
@@ -34807,6 +37751,46 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_API_setRk4DT(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::solver::API *arg1 = (steps::solver::API *) 0 ;
+  double arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  double val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:API_setRk4DT",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__solver__API, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "API_setRk4DT" "', argument " "1"" of type '" "steps::solver::API *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::solver::API * >(argp1);
+  ecode2 = SWIG_AsVal_double(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "API_setRk4DT" "', argument " "2"" of type '" "double""'");
+  } 
+  arg2 = static_cast< double >(val2);
+  {
+    try {
+      (arg1)->setRk4DT(arg2);
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_API_setDT(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   steps::solver::API *arg1 = (steps::solver::API *) 0 ;
@@ -34841,6 +37825,38 @@ SWIGINTERN PyObject *_wrap_API_setDT(PyObject *SWIGUNUSEDPARM(self), PyObject *a
     }
   }
   resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_API_getRk4DT(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::solver::API *arg1 = (steps::solver::API *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  double result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:API_getRk4DT",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__solver__API, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "API_getRk4DT" "', argument " "1"" of type '" "steps::solver::API const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::solver::API * >(argp1);
+  {
+    try {
+      result = (double)((steps::solver::API const *)arg1)->getRk4DT();
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_From_double(static_cast< double >(result));
   return resultobj;
 fail:
   return NULL;
@@ -41091,6 +44107,106 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"vector_dif_capacity", _wrap_vector_dif_capacity, METH_VARARGS, (char *)"vector_dif_capacity(vector_dif self) -> size_type"},
 	 { (char *)"delete_vector_dif", _wrap_delete_vector_dif, METH_VARARGS, (char *)"delete_vector_dif(vector_dif self)"},
 	 { (char *)"vector_dif_swigregister", vector_dif_swigregister, METH_VARARGS, NULL},
+	 { (char *)"vector_vsys_iterator", _wrap_vector_vsys_iterator, METH_VARARGS, (char *)"vector_vsys_iterator(vector_vsys self, PyObject PYTHON_SELF) -> PySwigIterator"},
+	 { (char *)"vector_vsys___nonzero__", _wrap_vector_vsys___nonzero__, METH_VARARGS, (char *)"vector_vsys___nonzero__(vector_vsys self) -> bool"},
+	 { (char *)"vector_vsys___len__", _wrap_vector_vsys___len__, METH_VARARGS, (char *)"vector_vsys___len__(vector_vsys self) -> size_type"},
+	 { (char *)"vector_vsys_pop", _wrap_vector_vsys_pop, METH_VARARGS, (char *)"vector_vsys_pop(vector_vsys self) -> value_type"},
+	 { (char *)"vector_vsys___getslice__", _wrap_vector_vsys___getslice__, METH_VARARGS, (char *)"vector_vsys___getslice__(vector_vsys self, difference_type i, difference_type j) -> vector_vsys"},
+	 { (char *)"vector_vsys___setslice__", _wrap_vector_vsys___setslice__, METH_VARARGS, (char *)"\n"
+		"vector_vsys___setslice__(vector_vsys self, difference_type i, difference_type j, \n"
+		"    vector_vsys v)\n"
+		""},
+	 { (char *)"vector_vsys___delslice__", _wrap_vector_vsys___delslice__, METH_VARARGS, (char *)"vector_vsys___delslice__(vector_vsys self, difference_type i, difference_type j)"},
+	 { (char *)"vector_vsys___delitem__", _wrap_vector_vsys___delitem__, METH_VARARGS, (char *)"vector_vsys___delitem__(vector_vsys self, difference_type i)"},
+	 { (char *)"vector_vsys___getitem__", _wrap_vector_vsys___getitem__, METH_VARARGS, (char *)"vector_vsys___getitem__(vector_vsys self, difference_type i) -> value_type"},
+	 { (char *)"vector_vsys___setitem__", _wrap_vector_vsys___setitem__, METH_VARARGS, (char *)"vector_vsys___setitem__(vector_vsys self, difference_type i, value_type x)"},
+	 { (char *)"vector_vsys_append", _wrap_vector_vsys_append, METH_VARARGS, (char *)"vector_vsys_append(vector_vsys self, value_type x)"},
+	 { (char *)"vector_vsys_empty", _wrap_vector_vsys_empty, METH_VARARGS, (char *)"vector_vsys_empty(vector_vsys self) -> bool"},
+	 { (char *)"vector_vsys_size", _wrap_vector_vsys_size, METH_VARARGS, (char *)"vector_vsys_size(vector_vsys self) -> size_type"},
+	 { (char *)"vector_vsys_clear", _wrap_vector_vsys_clear, METH_VARARGS, (char *)"vector_vsys_clear(vector_vsys self)"},
+	 { (char *)"vector_vsys_swap", _wrap_vector_vsys_swap, METH_VARARGS, (char *)"vector_vsys_swap(vector_vsys self, vector_vsys v)"},
+	 { (char *)"vector_vsys_get_allocator", _wrap_vector_vsys_get_allocator, METH_VARARGS, (char *)"vector_vsys_get_allocator(vector_vsys self) -> allocator_type"},
+	 { (char *)"vector_vsys_begin", _wrap_vector_vsys_begin, METH_VARARGS, (char *)"vector_vsys_begin(vector_vsys self) -> const_iterator"},
+	 { (char *)"vector_vsys_end", _wrap_vector_vsys_end, METH_VARARGS, (char *)"vector_vsys_end(vector_vsys self) -> const_iterator"},
+	 { (char *)"vector_vsys_rbegin", _wrap_vector_vsys_rbegin, METH_VARARGS, (char *)"vector_vsys_rbegin(vector_vsys self) -> const_reverse_iterator"},
+	 { (char *)"vector_vsys_rend", _wrap_vector_vsys_rend, METH_VARARGS, (char *)"vector_vsys_rend(vector_vsys self) -> const_reverse_iterator"},
+	 { (char *)"vector_vsys_pop_back", _wrap_vector_vsys_pop_back, METH_VARARGS, (char *)"vector_vsys_pop_back(vector_vsys self)"},
+	 { (char *)"vector_vsys_erase", _wrap_vector_vsys_erase, METH_VARARGS, (char *)"\n"
+		"erase(iterator pos) -> iterator\n"
+		"vector_vsys_erase(vector_vsys self, iterator first, iterator last) -> iterator\n"
+		""},
+	 { (char *)"new_vector_vsys", _wrap_new_vector_vsys, METH_VARARGS, (char *)"\n"
+		"vector_vsys()\n"
+		"vector_vsys(vector_vsys ?)\n"
+		"vector_vsys(size_type size)\n"
+		"new_vector_vsys(size_type size, value_type value) -> vector_vsys\n"
+		""},
+	 { (char *)"vector_vsys_push_back", _wrap_vector_vsys_push_back, METH_VARARGS, (char *)"vector_vsys_push_back(vector_vsys self, value_type x)"},
+	 { (char *)"vector_vsys_front", _wrap_vector_vsys_front, METH_VARARGS, (char *)"vector_vsys_front(vector_vsys self) -> value_type"},
+	 { (char *)"vector_vsys_back", _wrap_vector_vsys_back, METH_VARARGS, (char *)"vector_vsys_back(vector_vsys self) -> value_type"},
+	 { (char *)"vector_vsys_assign", _wrap_vector_vsys_assign, METH_VARARGS, (char *)"vector_vsys_assign(vector_vsys self, size_type n, value_type x)"},
+	 { (char *)"vector_vsys_resize", _wrap_vector_vsys_resize, METH_VARARGS, (char *)"\n"
+		"resize(size_type new_size)\n"
+		"vector_vsys_resize(vector_vsys self, size_type new_size, value_type x)\n"
+		""},
+	 { (char *)"vector_vsys_insert", _wrap_vector_vsys_insert, METH_VARARGS, (char *)"\n"
+		"insert(iterator pos, value_type x) -> iterator\n"
+		"vector_vsys_insert(vector_vsys self, iterator pos, size_type n, value_type x)\n"
+		""},
+	 { (char *)"vector_vsys_reserve", _wrap_vector_vsys_reserve, METH_VARARGS, (char *)"vector_vsys_reserve(vector_vsys self, size_type n)"},
+	 { (char *)"vector_vsys_capacity", _wrap_vector_vsys_capacity, METH_VARARGS, (char *)"vector_vsys_capacity(vector_vsys self) -> size_type"},
+	 { (char *)"delete_vector_vsys", _wrap_delete_vector_vsys, METH_VARARGS, (char *)"delete_vector_vsys(vector_vsys self)"},
+	 { (char *)"vector_vsys_swigregister", vector_vsys_swigregister, METH_VARARGS, NULL},
+	 { (char *)"vector_ssys_iterator", _wrap_vector_ssys_iterator, METH_VARARGS, (char *)"vector_ssys_iterator(vector_ssys self, PyObject PYTHON_SELF) -> PySwigIterator"},
+	 { (char *)"vector_ssys___nonzero__", _wrap_vector_ssys___nonzero__, METH_VARARGS, (char *)"vector_ssys___nonzero__(vector_ssys self) -> bool"},
+	 { (char *)"vector_ssys___len__", _wrap_vector_ssys___len__, METH_VARARGS, (char *)"vector_ssys___len__(vector_ssys self) -> size_type"},
+	 { (char *)"vector_ssys_pop", _wrap_vector_ssys_pop, METH_VARARGS, (char *)"vector_ssys_pop(vector_ssys self) -> value_type"},
+	 { (char *)"vector_ssys___getslice__", _wrap_vector_ssys___getslice__, METH_VARARGS, (char *)"vector_ssys___getslice__(vector_ssys self, difference_type i, difference_type j) -> vector_ssys"},
+	 { (char *)"vector_ssys___setslice__", _wrap_vector_ssys___setslice__, METH_VARARGS, (char *)"\n"
+		"vector_ssys___setslice__(vector_ssys self, difference_type i, difference_type j, \n"
+		"    vector_ssys v)\n"
+		""},
+	 { (char *)"vector_ssys___delslice__", _wrap_vector_ssys___delslice__, METH_VARARGS, (char *)"vector_ssys___delslice__(vector_ssys self, difference_type i, difference_type j)"},
+	 { (char *)"vector_ssys___delitem__", _wrap_vector_ssys___delitem__, METH_VARARGS, (char *)"vector_ssys___delitem__(vector_ssys self, difference_type i)"},
+	 { (char *)"vector_ssys___getitem__", _wrap_vector_ssys___getitem__, METH_VARARGS, (char *)"vector_ssys___getitem__(vector_ssys self, difference_type i) -> value_type"},
+	 { (char *)"vector_ssys___setitem__", _wrap_vector_ssys___setitem__, METH_VARARGS, (char *)"vector_ssys___setitem__(vector_ssys self, difference_type i, value_type x)"},
+	 { (char *)"vector_ssys_append", _wrap_vector_ssys_append, METH_VARARGS, (char *)"vector_ssys_append(vector_ssys self, value_type x)"},
+	 { (char *)"vector_ssys_empty", _wrap_vector_ssys_empty, METH_VARARGS, (char *)"vector_ssys_empty(vector_ssys self) -> bool"},
+	 { (char *)"vector_ssys_size", _wrap_vector_ssys_size, METH_VARARGS, (char *)"vector_ssys_size(vector_ssys self) -> size_type"},
+	 { (char *)"vector_ssys_clear", _wrap_vector_ssys_clear, METH_VARARGS, (char *)"vector_ssys_clear(vector_ssys self)"},
+	 { (char *)"vector_ssys_swap", _wrap_vector_ssys_swap, METH_VARARGS, (char *)"vector_ssys_swap(vector_ssys self, vector_ssys v)"},
+	 { (char *)"vector_ssys_get_allocator", _wrap_vector_ssys_get_allocator, METH_VARARGS, (char *)"vector_ssys_get_allocator(vector_ssys self) -> allocator_type"},
+	 { (char *)"vector_ssys_begin", _wrap_vector_ssys_begin, METH_VARARGS, (char *)"vector_ssys_begin(vector_ssys self) -> const_iterator"},
+	 { (char *)"vector_ssys_end", _wrap_vector_ssys_end, METH_VARARGS, (char *)"vector_ssys_end(vector_ssys self) -> const_iterator"},
+	 { (char *)"vector_ssys_rbegin", _wrap_vector_ssys_rbegin, METH_VARARGS, (char *)"vector_ssys_rbegin(vector_ssys self) -> const_reverse_iterator"},
+	 { (char *)"vector_ssys_rend", _wrap_vector_ssys_rend, METH_VARARGS, (char *)"vector_ssys_rend(vector_ssys self) -> const_reverse_iterator"},
+	 { (char *)"vector_ssys_pop_back", _wrap_vector_ssys_pop_back, METH_VARARGS, (char *)"vector_ssys_pop_back(vector_ssys self)"},
+	 { (char *)"vector_ssys_erase", _wrap_vector_ssys_erase, METH_VARARGS, (char *)"\n"
+		"erase(iterator pos) -> iterator\n"
+		"vector_ssys_erase(vector_ssys self, iterator first, iterator last) -> iterator\n"
+		""},
+	 { (char *)"new_vector_ssys", _wrap_new_vector_ssys, METH_VARARGS, (char *)"\n"
+		"vector_ssys()\n"
+		"vector_ssys(vector_ssys ?)\n"
+		"vector_ssys(size_type size)\n"
+		"new_vector_ssys(size_type size, value_type value) -> vector_ssys\n"
+		""},
+	 { (char *)"vector_ssys_push_back", _wrap_vector_ssys_push_back, METH_VARARGS, (char *)"vector_ssys_push_back(vector_ssys self, value_type x)"},
+	 { (char *)"vector_ssys_front", _wrap_vector_ssys_front, METH_VARARGS, (char *)"vector_ssys_front(vector_ssys self) -> value_type"},
+	 { (char *)"vector_ssys_back", _wrap_vector_ssys_back, METH_VARARGS, (char *)"vector_ssys_back(vector_ssys self) -> value_type"},
+	 { (char *)"vector_ssys_assign", _wrap_vector_ssys_assign, METH_VARARGS, (char *)"vector_ssys_assign(vector_ssys self, size_type n, value_type x)"},
+	 { (char *)"vector_ssys_resize", _wrap_vector_ssys_resize, METH_VARARGS, (char *)"\n"
+		"resize(size_type new_size)\n"
+		"vector_ssys_resize(vector_ssys self, size_type new_size, value_type x)\n"
+		""},
+	 { (char *)"vector_ssys_insert", _wrap_vector_ssys_insert, METH_VARARGS, (char *)"\n"
+		"insert(iterator pos, value_type x) -> iterator\n"
+		"vector_ssys_insert(vector_ssys self, iterator pos, size_type n, value_type x)\n"
+		""},
+	 { (char *)"vector_ssys_reserve", _wrap_vector_ssys_reserve, METH_VARARGS, (char *)"vector_ssys_reserve(vector_ssys self, size_type n)"},
+	 { (char *)"vector_ssys_capacity", _wrap_vector_ssys_capacity, METH_VARARGS, (char *)"vector_ssys_capacity(vector_ssys self) -> size_type"},
+	 { (char *)"delete_vector_ssys", _wrap_delete_vector_ssys, METH_VARARGS, (char *)"delete_vector_ssys(vector_ssys self)"},
+	 { (char *)"vector_ssys_swigregister", vector_ssys_swigregister, METH_VARARGS, NULL},
 	 { (char *)"isValidID", _wrap_isValidID, METH_VARARGS, (char *)"isValidID(string id) -> bool"},
 	 { (char *)"checkID", _wrap_checkID, METH_VARARGS, (char *)"checkID(string id)"},
 	 { (char *)"new_Model", _wrap_new_Model, METH_VARARGS, (char *)"new_Model() -> Model"},
@@ -43605,7 +46721,7 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		""},
 	 { (char *)"DiffBoundary_getContainer", _wrap_DiffBoundary_getContainer, METH_VARARGS, (char *)"\n"
-		"Returns a reference to the parent steps.tetmesh.Tetmesh container object.\n"
+		"Returns a reference to the parent steps.geom.Tetmesh container object.\n"
 		"\n"
 		"Syntax::\n"
 		"\n"
@@ -43615,7 +46731,7 @@ static PyMethodDef SwigMethods[] = {
 		"    None\n"
 		"\n"
 		"Return:\n"
-		"    steps.tetmesh.Tetmesh\n"
+		"    steps.geom.Tetmesh\n"
 		"\n"
 		""},
 	 { (char *)"DiffBoundary_getComps", _wrap_DiffBoundary_getComps, METH_VARARGS, (char *)"\n"
@@ -44012,7 +47128,7 @@ static PyMethodDef SwigMethods[] = {
 		"    None\n"
 		"\n"
 		""},
-	 { (char *)"API_setDT", _wrap_API_setDT, METH_VARARGS, (char *)"\n"
+	 { (char *)"API_setRk4DT", _wrap_API_setRk4DT, METH_VARARGS, (char *)"\n"
 		"Set the stepsize for numerical solvers. Must be called before running a \n"
 		"simulation with these solvers (currently Wmrk4) since there is no default \n"
 		"stepsize. The deterministic solver Wmrk4 implements a fixed stepsize \n"
@@ -44021,7 +47137,7 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"Syntax::\n"
 		"    \n"
-		"    setDT(dt)\n"
+		"    setRk4DT(dt)\n"
 		"    \n"
 		"Arguments:\n"
 		"    float dt\n"
@@ -44030,8 +47146,38 @@ static PyMethodDef SwigMethods[] = {
 		"    None\n"
 		"\n"
 		""},
+	 { (char *)"API_setDT", _wrap_API_setDT, METH_VARARGS, (char *)"\n"
+		"Set the stepsize for numerical solvers. Superceded by setRk4DT, but\n"
+		"Included for backwards compatability.\n"
+		" \n"
+		"Syntax::\n"
+		" \n"
+		"    setDT(dt)\n"
+		" \n"
+		"Arguments:\n"
+		"    float dt\n"
+		" \n"
+		"Return:\n"
+		"    None\n"
+		"\n"
+		""},
+	 { (char *)"API_getRk4DT", _wrap_API_getRk4DT, METH_VARARGS, (char *)"\n"
+		"Returns the stepsize for numerical solvers.\n"
+		"\n"
+		"Syntax::\n"
+		"\n"
+		"    getRk4DT()\n"
+		"\n"
+		"Arguments:\n"
+		"    None\n"
+		"\n"
+		"Return:\n"
+		"    float\n"
+		"\n"
+		""},
 	 { (char *)"API_getDT", _wrap_API_getDT, METH_VARARGS, (char *)"\n"
 		"Returns the stepsize for numerical solvers.\n"
+		"Superceded by getRk4DT, but included for backwards compatibility.\n"
 		"\n"
 		"Syntax::\n"
 		"    \n"
@@ -45944,8 +49090,10 @@ static swig_type_info _swigt__p_std__vectorT_steps__model__SReac_p_std__allocato
 static swig_type_info _swigt__p_std__vectorT_steps__model__SReac_p_std__allocatorT_steps__model__SReac_p_t_t__allocator_type = {"_p_std__vectorT_steps__model__SReac_p_std__allocatorT_steps__model__SReac_p_t_t__allocator_type", "std::vector< steps::model::SReac * >::allocator_type *|std::allocator< steps::model::SReac * > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t = {"_p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t", "std::vector< steps::model::Spec * > *|std::vector< steps::model::Spec *,std::allocator< steps::model::Spec * > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__allocator_type = {"_p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__allocator_type", "std::vector< steps::model::Spec * >::allocator_type *|std::allocator< steps::model::Spec * > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t = {"_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t", "std::vector< steps::model::Surfsys *,std::allocator< steps::model::Surfsys * > > *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t = {"_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t", "std::vector< steps::model::Volsys *,std::allocator< steps::model::Volsys * > > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t = {"_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t", "std::vector< steps::model::Surfsys *,std::allocator< steps::model::Surfsys * > > *|std::vector< steps::model::Surfsys * > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__allocator_type = {"_p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__allocator_type", "std::vector< steps::model::Surfsys * >::allocator_type *|std::allocator< steps::model::Surfsys * > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t = {"_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t", "std::vector< steps::model::Volsys * > *|std::vector< steps::model::Volsys *,std::allocator< steps::model::Volsys * > > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__allocator_type = {"_p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__allocator_type", "std::allocator< steps::model::Volsys * > *|std::vector< steps::model::Volsys * >::allocator_type *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t = {"_p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t", "std::vector< steps::wm::Comp *,std::allocator< steps::wm::Comp * > > *|std::vector< steps::wm::Comp * > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__allocator_type = {"_p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__allocator_type", "std::vector< steps::wm::Comp * >::allocator_type *|std::allocator< steps::wm::Comp * > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t = {"_p_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t", "std::vector< steps::wm::Patch *,std::allocator< steps::wm::Patch * > > *|std::vector< steps::wm::Patch * > *", 0, 0, (void*)0, 0};
@@ -45986,6 +49134,8 @@ static swig_type_info _swigt__std__vectorT_steps__model__Diff_p_std__allocatorT_
 static swig_type_info _swigt__std__vectorT_steps__model__Reac_p_std__allocatorT_steps__model__Reac_p_t_t__value_type = {"_std__vectorT_steps__model__Reac_p_std__allocatorT_steps__model__Reac_p_t_t__value_type", "steps::model::Reac *|std::vector< steps::model::Reac * >::value_type", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__std__vectorT_steps__model__SReac_p_std__allocatorT_steps__model__SReac_p_t_t__value_type = {"_std__vectorT_steps__model__SReac_p_std__allocatorT_steps__model__SReac_p_t_t__value_type", "std::vector< steps::model::SReac * >::value_type|steps::model::SReac *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__value_type = {"_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__value_type", "std::vector< steps::model::Spec * >::value_type|steps::model::Spec *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type = {"_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type", "steps::model::Surfsys *|std::vector< steps::model::Surfsys * >::value_type", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type = {"_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type", "std::vector< steps::model::Volsys * >::value_type|steps::model::Volsys *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__value_type = {"_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__value_type", "steps::wm::Comp *|std::vector< steps::wm::Comp * >::value_type", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t__value_type = {"_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t__value_type", "std::vector< steps::wm::Patch * >::value_type|steps::wm::Patch *", 0, 0, (void*)0, 0};
 
@@ -46023,7 +49173,9 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t,
   &_swigt__p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__allocator_type,
   &_swigt__p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t,
+  &_swigt__p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__allocator_type,
   &_swigt__p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t,
+  &_swigt__p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__allocator_type,
   &_swigt__p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t,
   &_swigt__p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__allocator_type,
   &_swigt__p_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t,
@@ -46064,6 +49216,8 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__std__vectorT_steps__model__Reac_p_std__allocatorT_steps__model__Reac_p_t_t__value_type,
   &_swigt__std__vectorT_steps__model__SReac_p_std__allocatorT_steps__model__SReac_p_t_t__value_type,
   &_swigt__std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__value_type,
+  &_swigt__std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type,
+  &_swigt__std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type,
   &_swigt__std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__value_type,
   &_swigt__std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t__value_type,
 };
@@ -46101,7 +49255,9 @@ static swig_cast_info _swigc__p_std__vectorT_steps__model__SReac_p_std__allocato
 static swig_cast_info _swigc__p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t[] = {  {&_swigt__p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__allocator_type[] = {  {&_swigt__p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__allocator_type, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t[] = {  {&_swigt__p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__allocator_type[] = {  {&_swigt__p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__allocator_type, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t[] = {  {&_swigt__p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__allocator_type[] = {  {&_swigt__p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__allocator_type, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t[] = {  {&_swigt__p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__allocator_type[] = {  {&_swigt__p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__allocator_type, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t[] = {  {&_swigt__p_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -46116,8 +49272,8 @@ static swig_cast_info _swigc__p_steps__model__Model[] = {  {&_swigt__p_steps__mo
 static swig_cast_info _swigc__p_steps__model__Reac[] = {  {&_swigt__p_steps__model__Reac, 0, 0, 0},  {&_swigt__std__vectorT_steps__model__Reac_p_std__allocatorT_steps__model__Reac_p_t_t__value_type, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_steps__model__SReac[] = {  {&_swigt__p_steps__model__SReac, 0, 0, 0},  {&_swigt__std__vectorT_steps__model__SReac_p_std__allocatorT_steps__model__SReac_p_t_t__value_type, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_steps__model__Spec[] = {  {&_swigt__std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__value_type, 0, 0, 0},  {&_swigt__p_steps__model__Spec, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_steps__model__Surfsys[] = {  {&_swigt__p_steps__model__Surfsys, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_steps__model__Volsys[] = {  {&_swigt__p_steps__model__Volsys, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_steps__model__Surfsys[] = {  {&_swigt__p_steps__model__Surfsys, 0, 0, 0},  {&_swigt__std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_steps__model__Volsys[] = {  {&_swigt__std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type, 0, 0, 0},  {&_swigt__p_steps__model__Volsys, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_steps__rng__RNG[] = {  {&_swigt__p_steps__rng__RNG, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_steps__solver__API[] = {  {&_swigt__p_steps__wmrk4__Wmrk4, _p_steps__wmrk4__Wmrk4To_p_steps__solver__API, 0, 0},  {&_swigt__p_steps__wmdirect__Wmdirect, _p_steps__wmdirect__WmdirectTo_p_steps__solver__API, 0, 0},  {&_swigt__p_steps__tetexact__Tetexact, _p_steps__tetexact__TetexactTo_p_steps__solver__API, 0, 0},  {&_swigt__p_steps__solver__API, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_steps__tetexact__Tetexact[] = {  {&_swigt__p_steps__tetexact__Tetexact, 0, 0, 0},{0, 0, 0, 0}};
@@ -46142,6 +49298,8 @@ static swig_cast_info _swigc__std__vectorT_steps__model__Diff_p_std__allocatorT_
 static swig_cast_info _swigc__std__vectorT_steps__model__Reac_p_std__allocatorT_steps__model__Reac_p_t_t__value_type[] = {  {&_swigt__p_steps__model__Reac, 0, 0, 0},  {&_swigt__std__vectorT_steps__model__Reac_p_std__allocatorT_steps__model__Reac_p_t_t__value_type, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__std__vectorT_steps__model__SReac_p_std__allocatorT_steps__model__SReac_p_t_t__value_type[] = {  {&_swigt__p_steps__model__SReac, 0, 0, 0},  {&_swigt__std__vectorT_steps__model__SReac_p_std__allocatorT_steps__model__SReac_p_t_t__value_type, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__value_type[] = {  {&_swigt__std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__value_type, 0, 0, 0},  {&_swigt__p_steps__model__Spec, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type[] = {  {&_swigt__p_steps__model__Surfsys, 0, 0, 0},  {&_swigt__std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type[] = {  {&_swigt__std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type, 0, 0, 0},  {&_swigt__p_steps__model__Volsys, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__value_type[] = {  {&_swigt__std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__value_type, 0, 0, 0},  {&_swigt__p_steps__wm__Comp, 0, 0, 0},  {&_swigt__p_steps__tetmesh__TmComp, _p_steps__tetmesh__TmCompTo_p_steps__wm__Comp, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t__value_type[] = {  {&_swigt__p_steps__tetmesh__TmPatch, _p_steps__tetmesh__TmPatchTo_p_steps__wm__Patch, 0, 0},  {&_swigt__std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t__value_type, 0, 0, 0},  {&_swigt__std__setT_steps__wm__Patch_p_std__lessT_steps__wm__Patch_p_t_std__allocatorT_steps__wm__Patch_p_t_t__value_type, 0, 0, 0},  {&_swigt__std__setT_steps__wm__Patch_p_std__lessT_steps__wm__Patch_p_t_std__allocatorT_steps__wm__Patch_p_t_t__key_type, 0, 0, 0},  {&_swigt__p_steps__wm__Patch, 0, 0, 0},{0, 0, 0, 0}};
 
@@ -46179,7 +49337,9 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t,
   _swigc__p_std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__allocator_type,
   _swigc__p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t,
+  _swigc__p_std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__allocator_type,
   _swigc__p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t,
+  _swigc__p_std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__allocator_type,
   _swigc__p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t,
   _swigc__p_std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__allocator_type,
   _swigc__p_std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t,
@@ -46220,6 +49380,8 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__std__vectorT_steps__model__Reac_p_std__allocatorT_steps__model__Reac_p_t_t__value_type,
   _swigc__std__vectorT_steps__model__SReac_p_std__allocatorT_steps__model__SReac_p_t_t__value_type,
   _swigc__std__vectorT_steps__model__Spec_p_std__allocatorT_steps__model__Spec_p_t_t__value_type,
+  _swigc__std__vectorT_steps__model__Surfsys_p_std__allocatorT_steps__model__Surfsys_p_t_t__value_type,
+  _swigc__std__vectorT_steps__model__Volsys_p_std__allocatorT_steps__model__Volsys_p_t_t__value_type,
   _swigc__std__vectorT_steps__wm__Comp_p_std__allocatorT_steps__wm__Comp_p_t_t__value_type,
   _swigc__std__vectorT_steps__wm__Patch_p_std__allocatorT_steps__wm__Patch_p_t_t__value_type,
 };

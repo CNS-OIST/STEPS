@@ -111,27 +111,36 @@ public:
     /// Run the solver for a step.
     virtual void step(void);
 
-    /// Set DT of the solver.
+    /// Set DT of the solver. Included for backwards compatibility but
+    /// replaced by setRk4DT
     ///
     /// \param dt Dt.
     virtual void setDT(double dt);
+
+    /// Set DT of the numerical solver.
+    ///
+    /// \param dt Dt.
+    virtual void setRk4DT(double dt);
 
     virtual void setNSteps(uint nsteps);
 
     virtual void setTime(double time);
 
+    /// Return the DT of the numerical solver
+    virtual double getRk4DT(void) const;
 
     /// Return the DT
-
+    /// Replaced by getRk4DT
     virtual double getDT(void) const;
+
     /// Return the A0
     virtual double getA0(void) const;
     /// Return the number of steps.
     virtual uint getNSteps(void) const;
-    
+
     /// checkpoint simulator state to a file
     virtual void checkpoint(std::string const & file_name);
-    
+
     /// restore simulator state from a file
     virtual void restore(std::string const & file_name);
 

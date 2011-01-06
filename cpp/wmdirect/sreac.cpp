@@ -48,12 +48,24 @@ NAMESPACE_ALIAS(steps::math, smath);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static inline double comp_ccst(double kcst, double vol, uint order)
+static inline double comp_ccst_vol(double kcst, double vol, uint order)
 {
     double vscale = 1.0e3 * vol * smath::AVOGADRO;
     int o1 = static_cast<int>(order) - 1;
-    if (o1 < 0) o1 = 0;
+    // I.H 5/1/2011 Removed this strange special behaviour for zero-order
+    // if (o1 < 0) o1 = 0;
     return kcst * pow(vscale, static_cast<double>(-o1));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+static inline double comp_ccst_area(double kcst, double area, uint order)
+{
+    double ascale = area * smath::AVOGADRO;
+    int o1 = static_cast<int>(order) - 1;
+    // I.H 5/1/2011 Removed this strange special behaviour for zero-order
+    // if (o1 < 0) o1 = 0;
+    return kcst * pow(ascale, static_cast<double>(-o1));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,21 +79,33 @@ swmd::SReac::SReac(ssolver::SReacdef * srdef, swmd::Patch * patch)
 {
 	assert (pSReacdef != 0);
 	assert (pPatch != 0);
-	double vol;
-	if (defsr()->inside() == true)
+
+	uint lsridx = pPatch->def()->sreacG2L(defsr()->gidx());
+	double kcst = pPatch->def()->kcst(lsridx);
+
+	if (defsr()->surf_surf() == false)
 	{
-		assert(pPatch->iComp() != 0);
-		vol = pPatch->iComp()->def()->vol();
+		double vol;
+		if (defsr()->inside() == true)
+		{
+			assert(pPatch->iComp() != 0);
+			vol = pPatch->iComp()->def()->vol();
+		}
+		else
+		{
+			assert (pPatch->oComp() != 0);
+			vol = pPatch->oComp()->def()->vol();
+		}
+
+		pCcst = comp_ccst_vol(kcst, vol, defsr()->order());
 	}
 	else
 	{
-		assert (pPatch->oComp() != 0);
-		vol = pPatch->oComp()->def()->vol();
+		double area;
+		area = pPatch->def()->area();
+		pCcst = comp_ccst_area(kcst, area, defsr()->order());
 	}
 
-	uint lsridx = pPatch->def()->sreacG2L(pSReacdef->gidx());
-	double kcst = pPatch->def()->kcst(lsridx);
-	pCcst = comp_ccst(kcst, vol, pSReacdef->order());
 	assert (pCcst >= 0);
 }
 
@@ -264,23 +288,33 @@ void swmd::SReac::reset(void)
 
 void swmd::SReac::resetCcst(void)
 {
-	double vol;
-	if (defsr()->inside() == true)
+	uint lsridx = pPatch->def()->sreacG2L(defsr()->gidx());
+	double kcst = pPatch->def()->kcst(lsridx);
+
+	if (defsr()->surf_surf() == false)
 	{
-		assert(pPatch->iComp() != 0);
-		vol = pPatch->iComp()->def()->vol();
+		double vol;
+		if (defsr()->inside() == true)
+		{
+			assert(pPatch->iComp() != 0);
+			vol = pPatch->iComp()->def()->vol();
+		}
+		else
+		{
+			assert (pPatch->oComp() != 0);
+			vol = pPatch->oComp()->def()->vol();
+		}
+
+		pCcst = comp_ccst_vol(kcst, vol, defsr()->order());
 	}
 	else
 	{
-		assert (pPatch->oComp() != 0);
-		vol = pPatch->oComp()->def()->vol();
+		double area;
+		area = pPatch->def()->area();
+		pCcst = comp_ccst_area(kcst, area, defsr()->order());
 	}
 
-	uint lsridx = pPatch->def()->sreacG2L(pSReacdef->gidx());
-	double kcst = pPatch->def()->kcst(lsridx);
-	pCcst = comp_ccst(kcst, vol, pSReacdef->order());
 	assert (pCcst >= 0);
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////

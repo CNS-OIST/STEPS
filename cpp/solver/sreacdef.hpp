@@ -82,10 +82,10 @@ public:
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
     void checkpoint(std::fstream & cp_file);
-    
+
     /// restore data
     void restore(std::fstream & cp_file);
-    
+
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SURFACE REACTION RULE
     ////////////////////////////////////////////////////////////////////////
@@ -157,6 +157,12 @@ public:
     /// It basically polls SReacDef::req_O for each possible species.
     ///
     bool reqOutside(void) const;
+
+    /// Return true if this reaction only involves surface species,
+    /// nothing in a volume at all. In that case the reaction constant
+    /// should be treated in 2D
+    inline bool surf_surf(void) const
+    { return pSurface_surface; }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: STOICHIOMETRY
@@ -244,6 +250,8 @@ private:
 
 	bool								pSetupdone;
 
+	// Store whether this surface reaction is 2D or not
+	bool 								pSurface_surface;
 
     /// Does the left-hand side of the stoichiometry involve molecules
     /// on the inside or on the outside?

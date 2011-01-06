@@ -49,19 +49,35 @@ NAMESPACE_ALIAS(steps::math, smath);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static inline double comp_ccst(double kcst, double vol, uint order, double area, double patcharea)
+static inline double comp_ccst_vol(double kcst, double vol, uint order)
 {
     double vscale = 1.0e3 * vol * smath::AVOGADRO;
     int o1 = static_cast<int>(order) - 1;
-    if (o1 < 0) o1 = 0;
+
+    // I.H 5/1/2011 Removed this strange special behaviour for zero-order
+    // if (o1 < 0) o1 = 0;
 
     // BUGFIX, IH 16/8/2010. Incorrect for zero-order reactions:
     // rate was the same for all tets, not a fraction of the total volume
     // return kcst * pow(vscale, static_cast<double>(-o1));
 
     double ccst = kcst * pow(vscale, static_cast<double>(-o1));
-    // Special case for zero-order reactions right now:
-    if (order == 0) ccst *= (area/patcharea);
+
+    // Special case for zero-order reactions right now: - removed, not necessary
+    // now units are correct
+    // if (order == 0) ccst *= (area/patcharea);
+
+    return ccst;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+static inline double comp_ccst_area(double kcst, double area, uint order)
+{
+    double ascale = area * smath::AVOGADRO;
+    int o1 = static_cast<int>(order) - 1;
+
+    double ccst = kcst * pow(ascale, static_cast<double>(-o1));
 
     return ccst;
 }
@@ -78,22 +94,34 @@ stex::SReac::SReac(ssolver::SReacdef * srdef, stex::Tri * tri)
 {
 	assert (pSReacdef != 0);
 	assert (pTri != 0);
-	double vol;
-	if (pSReacdef->inside() == true)
-	{
-		assert(pTri->iTet() != 0);
-		vol = pTri->iTet()->vol();
-	}
-	else
-	{
-		assert (pTri->oTet() != 0);
-		vol = pTri->oTet()->vol();
-	}
 
 	uint lsridx = pTri->patchdef()->sreacG2L(pSReacdef->gidx());
 	double kcst = pTri->patchdef()->kcst(lsridx);
 	pKcst = kcst;
-	pCcst = comp_ccst(kcst, vol, pSReacdef->order(), pTri->area(), pTri->patchdef()->area());
+
+	if (pSReacdef->surf_surf() == false)
+	{
+		double vol;
+		if (pSReacdef->inside() == true)
+		{
+			assert(pTri->iTet() != 0);
+			vol = pTri->iTet()->vol();
+		}
+		else
+		{
+			assert (pTri->oTet() != 0);
+			vol = pTri->oTet()->vol();
+		}
+
+		pCcst = comp_ccst_vol(kcst, vol, pSReacdef->order());
+	}
+	else
+	{
+		double area;
+		area = pTri->area();
+		pCcst = comp_ccst_area(kcst, area, pSReacdef->order());
+	}
+
 	assert (pCcst >= 0);
 }
 
@@ -132,21 +160,33 @@ void stex::SReac::reset(void)
 
 void stex::SReac::resetCcst(void)
 {
-	double vol;
-	if (pSReacdef->inside() == true)
-	{
-		assert(pTri->iTet() != 0);
-		vol = pTri->iTet()->vol();
-	}
-	else
-	{
-		assert (pTri->oTet() != 0);
-		vol = pTri->oTet()->vol();
-	}
 	uint lsridx = pTri->patchdef()->sreacG2L(pSReacdef->gidx());
 	double kcst = pTri->patchdef()->kcst(lsridx);
 	pKcst = kcst;
-	pCcst = comp_ccst(kcst, vol, pSReacdef->order(), pTri->area(), pTri->patchdef()->area());
+
+	if (pSReacdef->surf_surf() == false)
+	{
+		double vol;
+		if (pSReacdef->inside() == true)
+		{
+			assert(pTri->iTet() != 0);
+			vol = pTri->iTet()->vol();
+		}
+		else
+		{
+			assert (pTri->oTet() != 0);
+			vol = pTri->oTet()->vol();
+		}
+
+		pCcst = comp_ccst_vol(kcst, vol, pSReacdef->order());
+	}
+	else
+	{
+		double area;
+		area = pTri->area();
+		pCcst = comp_ccst_area(kcst, area, pSReacdef->order());
+	}
+
 	assert (pCcst >= 0);
 }
 
@@ -157,20 +197,30 @@ void stex::SReac::setKcst(double k)
 	assert (k >= 0.0);
 	pKcst = k;
 
-	double vol;
-	if (pSReacdef->inside() == true)
+	if (pSReacdef->surf_surf() == false)
 	{
-		assert(pTri->iTet() != 0);
-		vol = pTri->iTet()->vol();
+		double vol;
+		if (pSReacdef->inside() == true)
+		{
+			assert(pTri->iTet() != 0);
+			vol = pTri->iTet()->vol();
+		}
+		else
+		{
+			assert (pTri->oTet() != 0);
+			vol = pTri->oTet()->vol();
+		}
+
+		pCcst = comp_ccst_vol(k, vol, pSReacdef->order());
 	}
 	else
 	{
-		assert (pTri->oTet() != 0);
-		vol = pTri->oTet()->vol();
+		double area;
+		area = pTri->area();
+		pCcst = comp_ccst_area(k, area, pSReacdef->order());
 	}
 
-	pCcst = comp_ccst(k, vol, pSReacdef->order(), pTri->area(), pTri->patchdef()->area());
-	assert(pCcst >= 0.0);
+	assert (pCcst >= 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

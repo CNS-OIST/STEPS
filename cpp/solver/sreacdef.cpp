@@ -31,6 +31,7 @@
 // STL headers.
 #include <string>
 #include <cassert>
+#include <sstream>
 
 // STEPS headers.
 #include "../common.h"
@@ -60,6 +61,7 @@ ssolver::SReacdef::SReacdef(Statedef * sd, uint idx, steps::model::SReac * sr)
 , pOrhs()
 , pSrhs()
 , pSetupdone(false)
+, pSurface_surface(true)
 , pSpec_I_DEP(0)
 , pSpec_S_DEP(0)
 , pSpec_O_DEP(0)
@@ -82,6 +84,15 @@ ssolver::SReacdef::SReacdef(Statedef * sd, uint idx, steps::model::SReac * sr)
 
     pName = sr->getID();
     pOrder = sr->getOrder();
+
+    if (pOrder == 0)
+    {
+        std::ostringstream os;
+		os << "Model contains zero-order surface reaction, which are not permitted. ";
+		os << "Zero-order volume reaction may be used instead.\n";
+        throw steps::ArgErr(os.str());
+    }
+
     pKcst = sr->getKcst();
     pIlhs = sr->getILHS();
     pOlhs = sr->getOLHS();
@@ -197,6 +208,7 @@ void ssolver::SReacdef::setup(void)
 	smod::SpecPVecCI ol_end = pOlhs.end();
 	for (smod::SpecPVecCI ol = pOlhs.begin(); ol != ol_end; ++ol)
 	{
+		pSurface_surface = false;
 		uint sidx = pStatedef->getSpecIdx(*ol);
 		pSpec_O_LHS[sidx] += 1;
 	}
@@ -204,10 +216,10 @@ void ssolver::SReacdef::setup(void)
 	smod::SpecPVecCI il_end = pIlhs.end();
 	for (smod::SpecPVecCI il = pIlhs.begin(); il != il_end; ++il)
 	{
+		pSurface_surface = false;
 		uint sidx = pStatedef->getSpecIdx(*il);
 		pSpec_I_LHS[sidx] += 1;
 	}
-
 
 	smod::SpecPVecCI sl_end = pSlhs.end();
 	for (smod::SpecPVecCI sl = pSlhs.begin(); sl != sl_end; ++sl)
