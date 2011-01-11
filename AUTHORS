@@ -18,14 +18,15 @@ DUTIES
 STEPS project supervision: Erik De Schutter
 STEPS programming: Stefan Wils, Iain Hepburn, Weiliang Chen
 Debugging and Profiling: Iain Hepburn, Weiliang Chen
+Documentation: Iain Hepburn, Weiliang Chen
 Website adminstration: Weiliang Chen
 
 
 ACKNOWLEDGEMENT
 
 Ivan Raikov (OIST): Configuration of subversion archive and autotools.
+Michele Mattioni: Contributed towards the SBML importer.        
 Mika Holm: STEPS logo.
-        
 
 
 If you contributed to STEPS and you name is not included here, 
