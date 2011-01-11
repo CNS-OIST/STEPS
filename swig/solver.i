@@ -1728,9 +1728,7 @@ Return:
     None
 ");
     void resetPatchSReacExtent(std::string const & p, std::string const & r);
-	
-    //void setTriArea(unsigned int tidx, double area);
-	
+
     %feature("autodoc",
 "
 Activates or inactivates diffusion across a diffusion boundary for a species.
@@ -1747,21 +1745,20 @@ Arguments:
 Return:
     None
 ");
-    
     void setDiffBoundaryDiffusionActive(std::string const & db, std::string const & s, bool act);
- 
+
     %feature("autodoc",
 "
 Returns whether diffusion is active across a diffusion boundary for a species.
-             
+
 Syntax::
-             
+
     getDiffBoundaryDiffusionActive(diffb, spec)
-             
+
 Arguments:
     * string diffb
     * string spec
-             
+
 Return:
     bool
 ");
@@ -1857,7 +1854,7 @@ Return:
     None
 ");
     void setTriAmount(unsigned int tidx, std::string const & s, double m);
-    
+
     %feature("autodoc", 
 "
 Returns True if the species with identifier string spec in triangular element 

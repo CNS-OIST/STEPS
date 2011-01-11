@@ -7101,15 +7101,15 @@ class API(_object):
     def getDiffBoundaryDiffusionActive(*args):
         """
         Returns whether diffusion is active across a diffusion boundary for a species.
-                     
+
         Syntax::
-                     
+
             getDiffBoundaryDiffusionActive(diffb, spec)
-                     
+
         Arguments:
             * string diffb
             * string spec
-                     
+
         Return:
             bool
 

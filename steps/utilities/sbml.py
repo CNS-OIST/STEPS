@@ -408,6 +408,18 @@ class Interface(object):
     """
     
     def __init__(self, filename, defvolunits_litre = True):
+        """
+        Construction::
+        
+            iSbml = steps.utilities.sbml.Interface(sbmlFile, defvolunits_litre = True)
+            
+        Construct an SBML interface object, and optionally declare whether default volume units are
+        litres rather than cubic meters. 
+        
+        Arguments:
+            * string sbmlFile
+            * bool defvolunits_litre (default = True)
+        """
         self.__reader = libsbml.SBMLReader()
         self.__document = self.__reader.readSBML(filename)
         self.__model = self.__document.getModel()
@@ -417,7 +429,7 @@ class Interface(object):
                 raise IOError("Sbml File '%s' not found or unreadable in dir %s" %(filename, os.getcwd())) 
         
         # Sets 
-        # __globalParamters: a dictionaray with elements list len<2>; {'parameter_id': [value, factor]
+        # __globalParamters: a dictionary with elements list len<2>; {'parameter_id': [value, factor]
         #       Value is, as will be standard, in STEPS units
         #       Factor * SBML value => value in STEPS (s.i.) units ; STEPS value/factor converts to SBML units
         # __glob_params_order: a dictionary mapping: {'parameter_id': order}
@@ -1797,11 +1809,41 @@ class Interface(object):
     ################################################################################################
             
     def getModel(self):
+        """
+        Returns a reference to the steps.model.Model biocehmical model container object 
+        created during SBML import.
+        
+        Syntax::
+        
+            getModel()
+        
+        Arguments:
+            None
+        
+        Return:
+            steps.model.Model
+        
+        """
         return self.__mdl
 
     ################################################################################################
     
     def getGeom(self):
+        """
+        Returns a reference to the steps.geom.Geom geoemtry container object 
+        created during SBML import.
+        
+        Syntax::
+        
+            getGeom()
+        
+        Arguments:
+            None
+        
+        Return:
+            steps.geom.Geom
+        
+        """
         return self.__geom
         
     def _getEvents(self):
@@ -1811,7 +1853,21 @@ class Interface(object):
 
     def setupSim(self, sim):
         """
-        Setup the simulation. At present this function needs to be called by the user.
+        Setup the simulation, initialising molecule counts, compartment volumes and 
+        SBML 'boundary conditions" to those specified in the SBML file, 
+        which may differ from default values through mechanisms such as Initial Assignments.
+        This function is NOT called internally and must be called by the user.
+        
+        Syntax::
+        
+            setupSim(sim)
+        
+        Arguments:
+            steps.solver.API sim (steps.solver.Wmdirect or steps.solver.Wmrk4 solver object)
+        
+        Return 
+            None
+        
         """
         
         for comp in self.__comps:
@@ -1848,7 +1904,19 @@ class Interface(object):
 
     def updateSim(self, sim, simdt):
         """
-        Update simulation variables from Rules and Events.
+        Update the simulation solver state, which may impact any variables in the simulation that 
+        can be altered within Rules and Events. Time since last update given as argument dt in seconds. 
+        
+        Syntax:: 
+        
+            updateSim(sim, dt)
+        
+        Arguments:
+            * steps.solver.API  sim (steps.solver.Wmdirect or steps.solver.Wmrk4 solver object)
+            * float             dt
+            
+        Return 
+            None
         """
         
         # Update the spcies dictionary with the species concentrations. No need to update comp volumes

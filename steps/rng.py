@@ -9,18 +9,10 @@ import _steps_swig
 
 class RNG(steps_swig.RNG):
     """
-    
+        Base class for all random number generators in STEPS.
     """
     def __init__(self, *args): 
         """
-        Construction::
-        
-            g = steps.geom.Geom()
-            
-        Create a geometry container object.
-            
-        Arguments: 
-            None
         """
         this = _steps_swig.new_RNG(*args)
         try: self.this.append(this)
