@@ -1333,16 +1333,18 @@ class Interface(object):
                             bad_params.append(p_id)
                             break
                         if order != 1: 
-                            if not (gotMole and (gotLitre or gotMetre)): 
+                            if not (gotLitre or gotMetre): 
                                 print "WARNING: Local parameter '%s' does not have correct reaction " \
                                 "parameter units and will cause error if in rate expression."%p_id
                                 bad_params.append(p_id)                            
                                 break
                         # NOTE: AS this is specifically a reaction parameter we have already converted to STEPS (molar) units
-                        params.append([p_id, order, p_value, p_factor])
+                        if (gotMole): params.append([p_id, order, p_value, p_factor])
+                        else: params.append([p_id, order, p_value*math.pow(AVOGADRO, order-1), p_factor*math.pow(AVOGADRO, order-1)])
                         break
                     
-                else: # No units, assume default, whatever they are
+                else: 
+                    # No units, assume default, which are MODEL UNITS OF VOLUME, SUBSTANCE, TIME 
                     order = 'unknown'
                     params.append([p_id, order, p_value, 1]) 
             
@@ -1584,7 +1586,6 @@ class Interface(object):
                 order = -1
                 notreacunit = False
                 pfactor = 1
-                
                 unitdef = self.__model.getUnitDefinition(p_units) 
                 if (unitdef):
                     units = unitdef.getListOfUnits()  
@@ -1634,22 +1635,30 @@ class Interface(object):
                 if (gotSecond and order == -1): order =1
                 if (notreacunit): 
                     globPar[p_id] = [p_value, p_factor]
-                    globPar_order[p_id] = 'not reac'
+                    globPar_order[p_id] = 'not reac'                   
                 elif (order < 0 or gotSecond == False or p_value < 0): 
                     # Also not a reac unit
                     globPar[p_id] = [p_value, p_factor]
                     globPar_order[p_id] = 'not reac' 
-                elif (order != 1 and not (gotMole and (gotLitre or gotMetre))):
+                    """ # Following incorrect because substance units might be dimensionless (number) instead of Mole
+                    elif (order != 1 and not (gotMole and (gotLitre or gotMetre))):
                         # Also not a reac unit
+                        # NO: Substance units might be dimensionless (number) instead of Mole
                         globPar[p_id] = [p_value, p_factor]
                         globPar_order[p_id] = 'not reac'     
+                    """
+                elif (order != 1 and not (gotLitre or gotMetre)):
+                        # Also not a reac unit
+                        globPar[p_id] = [p_value, p_factor]
+                        globPar_order[p_id] = 'not reac'                  
                 else:
-                    # lets keep in metres
-                    globPar[p_id] = [p_value, p_factor]
+                    # lets keep in metres and moles
+                    if (gotMole): globPar[p_id] = [p_value, p_factor]
+                    else: globPar[p_id] = [p_value*math.pow(AVOGADRO, order-1), p_factor*math.pow(AVOGADRO, order-1)]
                     globPar_order[p_id] = order
             else: 
                 # No units, assume default, whatever they are 
-                print "WARNING: No units specified for parameter '%s'. Default units will be assumed (moles, seconds, meters, etc)."%p_id
+                print "No units specified for parameter '%s'. Model units of volume, substance and time will be assumed."%p_id
                 globPar[p_id] = [p_value, p_factor]
                 globPar_order[p_id] = 'unknown'
         
