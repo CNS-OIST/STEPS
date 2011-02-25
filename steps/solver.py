@@ -205,7 +205,6 @@ class Tetexact(steps_swig.Tetexact) :
             * steps.geom.Geom geom
             * steps.rng.RNG rng
         """
-        print "make solver"
         this = _steps_swig.new_Tetexact(model, geom, rng)
         try: self.this.append(this)
         except: self.this = this
