@@ -2,6 +2,7 @@ recursive-include cpp *.cpp *.hpp *.h
 recursive-include steps *.py
 recursive-include swig *.cpp *.i
 recursive-include examples *
+recursive-include test *
 recursive-include doc *
 include AUTHORS
 include README

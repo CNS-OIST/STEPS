@@ -235,7 +235,7 @@ void swmrk4::Wmrk4::checkpoint(std::string const & file_name)
 {
 	std::fstream cp_file;
 
-    cp_file.open(file_name.c_str(), 
+    cp_file.open(file_name.c_str(),
                 std::fstream::out | std::fstream::binary | std::fstream::trunc);
     double state_buffer[3];
     state_buffer[0] = static_cast<double>(pSpecs_tot);
@@ -243,33 +243,33 @@ void swmrk4::Wmrk4::checkpoint(std::string const & file_name)
     state_buffer[2] = pDT;
 
     cp_file.write((char*)&state_buffer, sizeof(double) * 3);
-    
+
     cp_file.write((char*)pReacMtx, sizeof(uint) * pReacs_tot * pSpecs_tot);
 
     cp_file.write((char*)pUpdMtx, sizeof(int) * pReacs_tot * pSpecs_tot);
-    
+
     cp_file.write((char*)pDyDxlhs, sizeof(double) * pSpecs_tot * pReacs_tot);
 
     cp_file.write((char*)&pCcst.front(), sizeof(double) * pCcst.size());
-    
-    cp_file.write((char*)&pVals.front(), sizeof(double) * pVals.size());
-    
-    cp_file.write((char*)&pSFlags.front(), sizeof(uint) * pSFlags.size());
-    
-    cp_file.write((char*)&pRFlags.front(), sizeof(uint) * pRFlags.size());
-    
-    cp_file.write((char*)&pNewVals.front(), sizeof(double) * pNewVals.size());   
 
-    cp_file.write((char*)&pDyDx.front(), sizeof(double) * pDyDx.size()); 
-    
+    cp_file.write((char*)&pVals.front(), sizeof(double) * pVals.size());
+
+    cp_file.write((char*)&pSFlags.front(), sizeof(uint) * pSFlags.size());
+
+    cp_file.write((char*)&pRFlags.front(), sizeof(uint) * pRFlags.size());
+
+    cp_file.write((char*)&pNewVals.front(), sizeof(double) * pNewVals.size());
+
+    cp_file.write((char*)&pDyDx.front(), sizeof(double) * pDyDx.size());
+
     cp_file.write((char*)&yt.front(), sizeof(double) * yt.size());
-     
-    cp_file.write((char*)&dyt.front(), sizeof(double) * dyt.size()); 
-    
-    cp_file.write((char*)&dym.front(), sizeof(double) * dym.size()); 
+
+    cp_file.write((char*)&dyt.front(), sizeof(double) * dyt.size());
+
+    cp_file.write((char*)&dym.front(), sizeof(double) * dym.size());
 
 	statedef()->checkpoint(cp_file);
-    
+
     cp_file.close();
 }
 
@@ -279,53 +279,53 @@ void swmrk4::Wmrk4::restore(std::string const & file_name)
 {
 	std::fstream cp_file;
 
-    cp_file.open(file_name.c_str(), 
+    cp_file.open(file_name.c_str(),
                 std::fstream::in | std::fstream::binary);
-    
+
     cp_file.seekg(0);
     double state_buffer[3];
     cp_file.read((char*)&state_buffer, sizeof(double) * 3);
-    
+
     if (static_cast<uint>(state_buffer[0]) != pSpecs_tot) {
         std::ostringstream os;
         os << "checkpoint data mismatch with simulator parameters: pSpecs_tot.";
         throw steps::ArgErr(os.str());
     }
-    
+
     if (static_cast<uint>(state_buffer[1]) != pReacs_tot) {
         std::ostringstream os;
         os << "checkpoint data mismatch with simulator parameters: pReacs_tot.";
         throw steps::ArgErr(os.str());
     }
-    
+
     pDT = state_buffer[2];
-    
+
     cp_file.read((char*)pReacMtx, sizeof(uint) * pReacs_tot * pSpecs_tot);
 
     cp_file.read((char*)pUpdMtx, sizeof(int) * pReacs_tot * pSpecs_tot);
-    
+
     cp_file.read((char*)pDyDxlhs, sizeof(double) * pSpecs_tot * pReacs_tot);
 
     cp_file.read((char*)&pCcst.front(), sizeof(double) * pCcst.size());
-    
-    cp_file.read((char*)&pVals.front(), sizeof(double) * pVals.size());
-    
-    cp_file.read((char*)&pSFlags.front(), sizeof(uint) * pSFlags.size());
-    
-    cp_file.read((char*)&pRFlags.front(), sizeof(uint) * pRFlags.size());
-    
-    cp_file.read((char*)&pNewVals.front(), sizeof(double) * pNewVals.size());   
 
-    cp_file.read((char*)&pDyDx.front(), sizeof(double) * pDyDx.size()); 
-    
+    cp_file.read((char*)&pVals.front(), sizeof(double) * pVals.size());
+
+    cp_file.read((char*)&pSFlags.front(), sizeof(uint) * pSFlags.size());
+
+    cp_file.read((char*)&pRFlags.front(), sizeof(uint) * pRFlags.size());
+
+    cp_file.read((char*)&pNewVals.front(), sizeof(double) * pNewVals.size());
+
+    cp_file.read((char*)&pDyDx.front(), sizeof(double) * pDyDx.size());
+
     cp_file.read((char*)&yt.front(), sizeof(double) * yt.size());
-     
-    cp_file.read((char*)&dyt.front(), sizeof(double) * dyt.size()); 
-    
+
+    cp_file.read((char*)&dyt.front(), sizeof(double) * dyt.size());
+
     cp_file.read((char*)&dym.front(), sizeof(double) * dym.size());
-    
+
 	statedef()->restore(cp_file);
-    
+
     cp_file.close();
 }
 
@@ -582,7 +582,7 @@ double swmrk4::Wmrk4::_getPatchAmount(uint pidx, uint sidx) const
 
 void swmrk4::Wmrk4::_setPatchAmount(uint pidx, uint sidx, double a)
 {
-	assert(a > 0.0);
+	assert(a >= 0.0);
 	// convert amount in mols to number of molecules
 	double a2 = a * steps::math::AVOGADRO;
 	// the following method does all the necessary argument checking
@@ -688,6 +688,18 @@ void swmrk4::Wmrk4::_setPatchSReacActive(uint pidx, uint ridx, bool a)
 double swmrk4::Wmrk4::_ccst(double kcst, double vol, uint order)
 {
     double vscale = 1.0e3 * vol * steps::math::AVOGADRO;
+    int o1 = static_cast<int>(order) - 1;
+    // IMPORTANT: Now treating zero-order reaction units correctly, i.e. as
+    // M/s not /s
+    // if (o1 < 0) o1 = 0;
+    return kcst * pow(vscale, static_cast<double>(-o1));
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+double swmrk4::Wmrk4::_ccst2D(double kcst, double area, uint order)
+{
+    double vscale = area * steps::math::AVOGADRO;
     int o1 = static_cast<int>(order) - 1;
     // IMPORTANT: Now treating zero-order reaction units correctly, i.e. as
     // M/s not /s
@@ -826,22 +838,33 @@ void swmrk4::Wmrk4::_setup(void)
 					pUpdMtx[rowp + j][mtx_ocompidx + k] = oupd;
 				}
 			}
-			/// set scaled reaction constant
-			/// depends on volume of lhs reaction compartment
-			double vol;
-			if (statedef()->patchdef(i)->sreacdef(j)->inside() == true)
-			{
-				assert(statedef()->patchdef(i)->icompdef() != 0);
-				vol = statedef()->patchdef(i)->icompdef()->vol();
+			if (statedef()->patchdef(i)->sreacdef(j)->surf_surf() == false)
+			{	/// set scaled reaction constant
+				/// depends on volume of lhs reaction compartment
+				double vol;
+				if (statedef()->patchdef(i)->sreacdef(j)->inside() == true)
+				{
+					assert(statedef()->patchdef(i)->icompdef() != 0);
+					vol = statedef()->patchdef(i)->icompdef()->vol();
+				}
+				else
+				{
+					assert(statedef()->patchdef(i)->ocompdef() != 0);
+					vol = statedef()->patchdef(i)->ocompdef()->vol();
+				}
+				double sreac_kcst = statedef()->patchdef(i)->kcst(j);
+				uint sreac_order = statedef()->patchdef(i)->sreacdef(j)->order();
+				pCcst.push_back(_ccst(sreac_kcst, vol, sreac_order));
 			}
 			else
 			{
-				assert(statedef()->patchdef(i)->ocompdef() != 0);
-				vol = statedef()->patchdef(i)->ocompdef()->vol();
+				/// 2D reaction
+				double area = statedef()->patchdef(i)->area();
+				double sreac_kcst = statedef()->patchdef(i)->kcst(j);
+				uint sreac_order = statedef()->patchdef(i)->sreacdef(j)->order();
+				pCcst.push_back(_ccst2D(sreac_kcst, area, sreac_order));
 			}
-			double sreac_kcst = statedef()->patchdef(i)->kcst(j);
-			uint sreac_order = statedef()->patchdef(i)->sreacdef(j)->order();
-			pCcst.push_back(_ccst(sreac_kcst, vol, sreac_order));
+
 		}
 		/// move markers to next point in matrix
 		rowp += patchReacs_N;
@@ -921,7 +944,7 @@ void swmrk4::Wmrk4::_refillCcst(void)
 	for (uint i=0; i< Comps_N; ++i)
 	{
 		uint compReacs_N = statedef()->compdef(i)->countReacs();
-		uint compSpecs_N = statedef()->compdef(i)->countSpecs();
+		// uint compSpecs_N = statedef()->compdef(i)->countSpecs();
 
         for(uint j=0; j< compReacs_N; ++j)
 		{
@@ -940,30 +963,41 @@ void swmrk4::Wmrk4::_refillCcst(void)
 	for(uint i=0; i< Patches_N; ++i)
 	{
 		uint patchReacs_N = statedef()->patchdef(i)->countSReacs();
-		uint patchSpecs_N_S = statedef()->patchdef(i)->countSpecs();
-	    uint patchSpecs_N_I = statedef()->patchdef(i)->countSpecs_I();
-		uint patchSpecs_N_O = statedef()->patchdef(i)->countSpecs_O();
+		// uint patchSpecs_N_S = statedef()->patchdef(i)->countSpecs();
+	    // uint patchSpecs_N_I = statedef()->patchdef(i)->countSpecs_I();
+		// uint patchSpecs_N_O = statedef()->patchdef(i)->countSpecs_O();
 
 		for (uint j=0; j< patchReacs_N; ++j)
 		{
-			/// set scaled reaction constant
-			/// depends on volume of lhs reaction compartment
-			double vol;
-			if (statedef()->patchdef(i)->sreacdef(j)->inside() == true)
+			if (statedef()->patchdef(i)->sreacdef(j)->surf_surf() == false)
 			{
-				assert(statedef()->patchdef(i)->icompdef() != 0);
-				vol = statedef()->patchdef(i)->icompdef()->vol();
-			}
+				/// set scaled reaction constant
+				/// depends on volume of lhs reaction compartment
+				double vol;
+				if (statedef()->patchdef(i)->sreacdef(j)->inside() == true)
+				{
+					assert(statedef()->patchdef(i)->icompdef() != 0);
+					vol = statedef()->patchdef(i)->icompdef()->vol();
+				}
+				else
+				{
+					assert(statedef()->patchdef(i)->ocompdef() != 0);
+					vol = statedef()->patchdef(i)->ocompdef()->vol();
+				}
+				// DEBUG 8/4/09: reaction constants were found from model level objects
+				// so didn't take into account sim-level changes
+				double sreac_kcst = statedef()->patchdef(i)->kcst(j);
+				uint sreac_order = statedef()->patchdef(i)->sreacdef(j)->order();
+				pCcst.push_back(_ccst(sreac_kcst, vol, sreac_order));
+				}
 			else
 			{
-				assert(statedef()->patchdef(i)->ocompdef() != 0);
-				vol = statedef()->patchdef(i)->ocompdef()->vol();
+				/// 2D reaction
+				double area = statedef()->patchdef(i)->area();
+				double sreac_kcst = statedef()->patchdef(i)->kcst(j);
+				uint sreac_order = statedef()->patchdef(i)->sreacdef(j)->order();
+				pCcst.push_back(_ccst2D(sreac_kcst, area, sreac_order));
 			}
-        	// DEBUG 8/4/09: reaction constants were found from model level objects
-        	// so didn't take into account sim-level changes
-			double sreac_kcst = statedef()->patchdef(i)->kcst(j);
-			uint sreac_order = statedef()->patchdef(i)->sreacdef(j)->order();
-			pCcst.push_back(_ccst(sreac_kcst, vol, sreac_order));
 		}
 	}
 
@@ -1061,7 +1095,7 @@ void swmrk4::Wmrk4::_rksteps(double t1, double t2)
 		os << "dt is zero or negative. Call setDT() method.";
 		throw steps::ArgErr(os.str());
 	}
-    // 2010_11_1 remove = to allow step() 
+    // 2010_11_1 remove = to allow step()
 	if (t1 + pDT > t2 )
 	{
 		std::ostringstream os;

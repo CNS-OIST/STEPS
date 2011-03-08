@@ -468,13 +468,13 @@ stex::Tetexact::~Tetexact(void)
     {
         if ((*t) != 0) delete (*t);
     }
-    
+
     TriPVecCI tri_e = pTris.end();
     for (TriPVecCI t = pTris.end(); t != tri_e; ++t)
     {
         if ((*t) != 0) delete (*t);
     }
-    
+
     std::for_each(pLevels.begin(), pLevels.end(), DeleteArray());
 
     delete[] pIndices;
@@ -487,23 +487,23 @@ void stex::Tetexact::checkpoint(std::string const & file_name)
 {
 	std::fstream cp_file;
 
-    cp_file.open(file_name.c_str(), 
+    cp_file.open(file_name.c_str(),
                 std::fstream::out | std::fstream::binary | std::fstream::trunc);
-    
+
     CompPVecCI comp_e = pComps.end();
     for (CompPVecCI c = pComps.begin(); c != comp_e; ++c) (*c)->checkpoint(cp_file);
-    
+
     PatchPVecCI patch_e = pPatches.end();
     for (PatchPVecCI p = pPatches.begin(); p != patch_e; ++p) (*p)->checkpoint(cp_file);
-    
+
     TetPVecCI tet_e = pTets.end();
-    for (TetPVecCI t = pTets.begin(); t != tet_e; ++t) 
+    for (TetPVecCI t = pTets.begin(); t != tet_e; ++t)
     {
         if ((*t) != 0) {
         (*t)->checkpoint(cp_file);
         }
     }
-    
+
     TriPVecCI tri_e = pTris.end();
     for (TriPVecCI t = pTris.end(); t != tri_e; ++t)
     {
@@ -511,9 +511,9 @@ void stex::Tetexact::checkpoint(std::string const & file_name)
             (*t)->checkpoint(cp_file);
         }
     }
-    
+
 	statedef()->checkpoint(cp_file);
-    
+
     cp_file.close();
 }
 
@@ -523,16 +523,16 @@ void stex::Tetexact::restore(std::string const & file_name)
 {
 	std::fstream cp_file;
 
-    cp_file.open(file_name.c_str(), 
+    cp_file.open(file_name.c_str(),
                 std::fstream::in | std::fstream::binary);
-    
+
     cp_file.seekg(0);
 
     CompPVecCI comp_e = pComps.end();
     for (CompPVecCI c = pComps.begin(); c != comp_e; ++c) (*c)->restore(cp_file);
     PatchPVecCI patch_e = pPatches.end();
     for (PatchPVecCI p = pPatches.begin(); p != patch_e; ++p) (*p)->restore(cp_file);
-        
+
     TetPVecCI tet_e = pTets.end();
     for (TetPVecCI t = pTets.begin(); t != tet_e; ++t)
     {
@@ -547,11 +547,11 @@ void stex::Tetexact::restore(std::string const & file_name)
             (*t)->restore(cp_file);
         }
     }
-    
+
 	statedef()->restore(cp_file);
-    
+
     cp_file.close();
-    
+
     _reset();
 }
 
@@ -588,7 +588,7 @@ std::string stex::Tetexact::getSolverEmail(void) const
 ////////////////////////////////////////////////////////////////////////////////
 
 void stex::Tetexact::_setup(void)
-{   
+{
     // geometry based optimization
     // nearby KProcs get picked first
     // this is to minimize update branches
@@ -596,26 +596,26 @@ void stex::Tetexact::_setup(void)
 
     std::set<uint> tets_set;
     std::set<uint> tris_set;
-    
+
     std::set<uint>::iterator it;
-    
+
     uint ntets = pTets.size();
     uint ntris = pTris.size();
-    
+
     for (uint t = 0; t < ntets; t++) {
         if (pTets[t] != 0) tets_set.insert(t);
     }
-    
+
     for (uint t = 0; t < ntris; t++) {
         if (pTris[t] != 0) tris_set.insert(t);
     }
-    
-    
+
+
     while (!tets_set.empty() || !tris_set.empty() || !append_queue.empty()) {
         while (!append_queue.empty()) {
             uint idx = append_queue.front();
             append_queue.pop();
-            
+
             // if it is a tri
             if (idx >= ntets) {
                 pTris[idx - ntets]->setupKProcs(this);
@@ -624,7 +624,7 @@ void stex::Tetexact::_setup(void)
             else {
                 pTets[idx]->setupKProcs(this);
                 steps::tetexact::Tet * t = pTets[idx];
-                
+
                 for (uint i = 0; i < 4; i++) {
                     steps::tetexact::Tri * neib_tri = t->nextTri(i);
                     if (neib_tri == 0) continue;
@@ -633,7 +633,7 @@ void stex::Tetexact::_setup(void)
                         append_queue.push(ntri_idx + ntets);
                         tris_set.erase(ntri_idx);
                     }
-                    
+
                     steps::tetexact::Tet * neib_tet = t->nextTet(i);
                     if (neib_tet == 0) continue;
                     uint ntet_idx = neib_tet->idx();
@@ -644,8 +644,8 @@ void stex::Tetexact::_setup(void)
                 }
             }
         }
-        
-        
+
+
         if (!tets_set.empty()) {
             append_queue.push(*(tets_set.begin()));
             tets_set.erase(tets_set.begin());
@@ -655,16 +655,16 @@ void stex::Tetexact::_setup(void)
             tris_set.erase(tris_set.begin());
         }
     }
-    
+
     assert(tets_set.empty() && tris_set.empty());
-    
+
 	// Resolve all dependencies
     TetPVecCI tet_end = pTets.end();
     TriPVecCI tri_end = pTris.end();
-    
+
     /*  old version, insert KProcs without optimization
-    
-    
+
+
 	TetPVecCI tet_end = pTets.end();
 	for (TetPVecCI t = pTets.begin(); t != tet_end; ++t)
 	{
@@ -684,8 +684,8 @@ void stex::Tetexact::_setup(void)
 
 		(*t)->setupKProcs(this);
 	}
-    
-    
+
+
     */
 
 	for (TetPVecCI t = pTets.begin(); t != tet_end; ++t)
@@ -1426,7 +1426,7 @@ double stex::Tetexact::_getPatchAmount(uint pidx, uint sidx) const
 
 void stex::Tetexact::_setPatchAmount(uint pidx, uint sidx, double a)
 {
-	assert(a > 0.0);
+	assert(a >= 0.0);
 	// convert amount in mols to number of molecules
 	double a2 = a * steps::math::AVOGADRO;
 	// the following method does all the necessary argument checking

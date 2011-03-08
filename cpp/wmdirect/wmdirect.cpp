@@ -147,7 +147,7 @@ void swmd::Wmdirect::checkpoint(std::string const & file_name)
 {
 	std::fstream cp_file;
 
-    cp_file.open(file_name.c_str(), 
+    cp_file.open(file_name.c_str(),
                 std::fstream::out | std::fstream::binary | std::fstream::trunc);
 
     CompPVecCI comp_e = pComps.end();
@@ -156,7 +156,7 @@ void swmd::Wmdirect::checkpoint(std::string const & file_name)
     for (PatchPVecCI p = pPatches.begin(); p != patch_e; ++p) (*p)->checkpoint(cp_file);
 
 	statedef()->checkpoint(cp_file);
-    
+
     cp_file.close();
 }
 
@@ -166,20 +166,20 @@ void swmd::Wmdirect::restore(std::string const & file_name)
 {
 	std::fstream cp_file;
 
-    cp_file.open(file_name.c_str(), 
+    cp_file.open(file_name.c_str(),
                 std::fstream::in | std::fstream::binary);
-    
+
     cp_file.seekg(0);
 
     CompPVecCI comp_e = pComps.end();
     for (CompPVecCI c = pComps.begin(); c != comp_e; ++c) (*c)->restore(cp_file);
     PatchPVecCI patch_e = pPatches.end();
     for (PatchPVecCI p = pPatches.begin(); p != patch_e; ++p) (*p)->restore(cp_file);
-        
+
 	statedef()->restore(cp_file);
-    
+
     cp_file.close();
-    
+
     _reset();
 }
 
@@ -766,7 +766,7 @@ double swmd::Wmdirect::_getPatchAmount(uint pidx, uint sidx) const
 
 void swmd::Wmdirect::_setPatchAmount(uint pidx, uint sidx, double a)
 {
-	assert(a > 0.0);
+	assert(a >= 0.0);
 	// convert amount in mols to number of molecules
 	double a2 = a * steps::math::AVOGADRO;
 	// the following method does all the necessary argument checking

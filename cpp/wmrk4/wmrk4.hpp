@@ -177,6 +177,10 @@ private:
 	///
 	double _ccst(double kcst, double vol, uint order);
 
+	/// returns properly scaled reaction constant for surface-surface case
+	///
+	double _ccst2D(double kcst, double area, uint order);
+
 	/// the Runge-Kutta algorithm
 	///
 	void _rk4(double pdt);
