@@ -1032,6 +1032,7 @@ void swmrk4::Wmrk4::_setderivs(dVec & vals, dVec & dydx)
 				double val = vals[i];
 				switch (pReacMtx[r][i])
 				{
+					case 4: dydx_lhs_temp *= val;
 					case 3: dydx_lhs_temp *= val;
 					case 2: dydx_lhs_temp *= val;
 					case 1: dydx_lhs_temp *= val;
