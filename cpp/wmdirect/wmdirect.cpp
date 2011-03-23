@@ -411,7 +411,13 @@ double swmd::Wmdirect::_getCompCount(uint cidx, uint sidx) const
 	ssolver::Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint slidx = comp->specG2L(sidx);
-	if (slidx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (slidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
+
 	return comp->pools()[slidx];
 }
 
@@ -424,7 +430,20 @@ void swmd::Wmdirect::_setCompCount(uint cidx, uint sidx, double n)
 	ssolver::Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint slidx = comp->specG2L(sidx);
-	if (slidx == ssolver::LIDX_UNDEFINED) return;
+	if (slidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
+
+	if (n > std::numeric_limits<unsigned int>::max( ))
+	{
+		std::ostringstream os;
+		os << "Can't set count greater than maximum unsigned integer (";
+		os << std::numeric_limits<unsigned int>::max( ) << ").\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	assert (n >= 0.0);
 	double n_int = std::floor(n);
@@ -494,7 +513,12 @@ bool swmd::Wmdirect::_getCompClamped(uint cidx, uint sidx) const
 	ssolver::Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lsidx = comp->specG2L(sidx);
-    if (lsidx == ssolver::LIDX_UNDEFINED) return false;
+    if (lsidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
     return comp->clamped(lsidx);
 }
@@ -508,7 +532,12 @@ void swmd::Wmdirect::_setCompClamped(uint cidx, uint sidx, bool b)
 	ssolver::Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lsidx = comp->specG2L(sidx);
-    if (lsidx == ssolver::LIDX_UNDEFINED) return;
+    if (lsidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
     comp->setClamped(lsidx, b);
 
@@ -523,7 +552,12 @@ double swmd::Wmdirect::_getCompReacK(uint cidx, uint ridx) const
 	ssolver::Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	return comp->kcst(lridx);
 }
@@ -538,7 +572,12 @@ void swmd::Wmdirect::_setCompReacK(uint cidx, uint ridx, double kf)
 	ssolver::Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	comp->setKcst(lridx, kf);
 
@@ -563,7 +602,12 @@ bool swmd::Wmdirect::_getCompReacActive(uint cidx, uint ridx) const
 	ssolver::Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return false;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	return (comp->active(lridx));
 }
@@ -577,7 +621,12 @@ void swmd::Wmdirect::_setCompReacActive(uint cidx, uint ridx, bool a)
 	ssolver::Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	comp->setActive(lridx, a);
 
@@ -594,7 +643,12 @@ double swmd::Wmdirect::_getCompReacC(uint cidx, uint ridx) const
 	ssolver::Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// The 'local' Comp object has same index as solver::Compdef object
 	swmd::Comp * lcomp = pComps[cidx];
@@ -616,7 +670,12 @@ double swmd::Wmdirect::_getCompReacH(uint cidx, uint ridx) const
 	ssolver::Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// The 'local' Comp object has same index as solver::Compdef object
 	swmd::Comp * lcomp = pComps[cidx];
@@ -638,7 +697,12 @@ double swmd::Wmdirect::_getCompReacA(uint cidx, uint ridx) const
 	ssolver::Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// The 'local' Comp object has same index as solver::Compdef object
 	swmd::Comp * lcomp = pComps[cidx];
@@ -660,7 +724,12 @@ uint swmd::Wmdirect::_getCompReacExtent(uint cidx, uint ridx) const
 	ssolver::Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return 0;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// The 'local' Comp object has same index as solver::Compdef object
 	swmd::Comp * lcomp = pComps[cidx];
@@ -682,7 +751,12 @@ void swmd::Wmdirect::_resetCompReacExtent(uint cidx, uint ridx)
 	ssolver::Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// The 'local' Comp object has same index as solver::Compdef object
 	swmd::Comp * lcomp = pComps[cidx];
@@ -724,7 +798,12 @@ double swmd::Wmdirect::_getPatchCount(uint pidx, uint sidx) const
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	assert(patch != 0);
 	uint slidx = patch->specG2L(sidx);
-	if (slidx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (slidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	return patch->pools()[slidx];
 }
@@ -738,7 +817,19 @@ void swmd::Wmdirect::_setPatchCount(uint pidx, uint sidx, double n)
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	assert(patch != 0);
 	uint slidx = patch->specG2L(sidx);
-	if (slidx == ssolver::LIDX_UNDEFINED) return;
+	if (slidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
+	if (n > std::numeric_limits<unsigned int>::max( ))
+	{
+		std::ostringstream os;
+		os << "Can't set count greater than maximum unsigned integer (";
+		os << std::numeric_limits<unsigned int>::max( ) << ").\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	double n_int = std::floor(n);
 	double n_frc = n-n_int;
@@ -782,7 +873,12 @@ bool swmd::Wmdirect::_getPatchClamped(uint pidx, uint sidx) const
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	assert(patch != 0);
 	uint lsidx = patch->specG2L(sidx);
-    if (lsidx == ssolver::LIDX_UNDEFINED) return false;
+    if (lsidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
     return patch->clamped(lsidx);
 }
@@ -796,7 +892,12 @@ void swmd::Wmdirect::_setPatchClamped(uint pidx, uint sidx, bool buf)
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	assert(patch != 0);
 	uint lsidx = patch->specG2L(sidx);
-    if (lsidx == ssolver::LIDX_UNDEFINED) return;
+    if (lsidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
     patch->setClamped(lsidx, buf);
 
@@ -811,7 +912,12 @@ double swmd::Wmdirect::_getPatchSReacK(uint pidx, uint ridx) const
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	assert(patch != 0);
 	uint lridx = patch->sreacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	return patch->kcst(lridx);
 }
@@ -826,7 +932,12 @@ void swmd::Wmdirect::_setPatchSReacK(uint pidx, uint ridx, double kf)
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	assert(patch != 0);
 	uint lridx = patch->sreacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	patch->setKcst(lridx, kf);
 
@@ -852,7 +963,12 @@ bool swmd::Wmdirect::_getPatchSReacActive(uint pidx, uint ridx) const
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	assert(patch != 0);
 	uint lridx = patch->sreacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return false;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	return (patch->active(lridx));
 }
@@ -866,7 +982,12 @@ void swmd::Wmdirect::_setPatchSReacActive(uint pidx, uint ridx, bool a)
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	assert(patch != 0);
 	uint lridx = patch->sreacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	patch->setActive(lridx, a);
 
@@ -884,7 +1005,12 @@ double swmd::Wmdirect::_getPatchSReacC(uint pidx, uint ridx) const
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	assert(patch != 0);
 	uint lridx = patch->sreacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// The 'local' Patch object has same index as solver::Patchdef object
 	swmd::Patch * lpatch = pPatches[pidx];
@@ -907,7 +1033,12 @@ double swmd::Wmdirect::_getPatchSReacH(uint pidx, uint ridx) const
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	assert(patch != 0);
 	uint lridx = patch->sreacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// The 'local' Patch object has same index as solver::Patchdef object
 	swmd::Patch * lpatch = pPatches[pidx];
@@ -930,7 +1061,12 @@ double swmd::Wmdirect::_getPatchSReacA(uint pidx, uint ridx) const
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	assert(patch != 0);
 	uint lridx = patch->sreacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// The 'local' Patch object has same index as solver::Patchdef object
 	swmd::Patch * lpatch = pPatches[pidx];
@@ -953,7 +1089,12 @@ uint swmd::Wmdirect::_getPatchSReacExtent(uint pidx, uint ridx) const
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	assert(patch != 0);
 	uint lridx = patch->sreacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return 0;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// The 'local' Patch object has same index as solver::Patchdef object
 	swmd::Patch * lpatch = pPatches[pidx];
@@ -976,7 +1117,12 @@ void swmd::Wmdirect::_resetPatchSReacExtent(uint pidx, uint ridx)
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	assert(patch != 0);
 	uint lridx = patch->sreacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// The 'local' Patch object has same index as solver::Patchdef object
 	swmd::Patch * lpatch = pPatches[pidx];
@@ -1277,5 +1423,4 @@ void swmd::Wmdirect::_executeStep(swmd::KProc * kp, double dt)
 ////////////////////////////////////////////////////////////////////////
 
 // END
-
 

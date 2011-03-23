@@ -915,7 +915,12 @@ double stex::Tetexact::_getCompCount(uint cidx, uint sidx) const
 	stex::Comp * comp = _comp(cidx);
 	assert(comp != 0);
 	uint slidx = comp->def()->specG2L(sidx);
-	if (slidx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (slidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	uint count = 0;
 	TetPVecCI t_end = comp->endTet();
@@ -1076,7 +1081,12 @@ bool stex::Tetexact::_getCompClamped(uint cidx, uint sidx) const
 	stex::Comp * comp = _comp(cidx);
 	assert(comp != 0);
 	uint lsidx = comp->def()->specG2L(sidx);
-    if (lsidx == ssolver::LIDX_UNDEFINED) return false;
+    if (lsidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
     TetPVecCI t_end = comp->endTet();
     for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
@@ -1096,7 +1106,12 @@ void stex::Tetexact::_setCompClamped(uint cidx, uint sidx, bool b)
 	stex::Comp * comp = _comp(cidx);
 	assert(comp != 0);
 	uint lsidx = comp->def()->specG2L(sidx);
-	if (lsidx == ssolver::LIDX_UNDEFINED) return;
+	if (lsidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// Set the flag in def object, though this may not be necessary
 	comp->def()->setClamped(lsidx, b);
@@ -1118,7 +1133,12 @@ double stex::Tetexact::_getCompReacK(uint cidx, uint ridx) const
 	stex::Comp * comp = _comp(cidx);
 	assert(comp != 0);
 	uint lridx = comp->def()->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// We're just returning the default value for this comp, individual
 	// tets may have different Kcsts set individually
@@ -1136,7 +1156,12 @@ void stex::Tetexact::_setCompReacK(uint cidx, uint ridx, double kf)
 	stex::Comp * comp = _comp(cidx);
 	assert(comp != 0);
 	uint lridx = comp->def()->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// First set the default value for the comp
 	comp->def()->setKcst(lridx, kf);
@@ -1162,7 +1187,12 @@ bool stex::Tetexact::_getCompReacActive(uint cidx, uint ridx) const
 	stex::Comp * comp = _comp(cidx);
 	assert(comp != 0);
 	uint lridx = comp->def()->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return false;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	TetPVecCI t_end = comp->endTet();
 	for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
@@ -1182,7 +1212,12 @@ void stex::Tetexact::_setCompReacActive(uint cidx, uint ridx, bool a)
 	stex::Comp * comp = _comp(cidx);
 	assert(comp != 0);
 	uint lridx = comp->def()->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// Set the default value for the comp, though this is not entirely
 	// necessary
@@ -1207,7 +1242,12 @@ double stex::Tetexact::_getCompDiffD(uint cidx, uint didx) const
 	stex::Comp * comp = _comp(cidx);
 	assert (comp != 0);
 	uint ldidx = comp->def()->diffG2L(didx);
-	if (ldidx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (ldidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Diffusion rule undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// We're just returning the default value for this comp, individual
 	// tets may have different Dcsts set individually
@@ -1226,7 +1266,12 @@ void stex::Tetexact::_setCompDiffD(uint cidx, uint didx, double dk)
 	stex::Comp * comp = _comp(cidx);
 	assert (comp != 0);
 	uint ldidx = comp->def()->diffG2L(didx);
-	if (ldidx == ssolver::LIDX_UNDEFINED) return;
+	if (ldidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Diffusion rule undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// First set the default value for the comp
 	comp->def()->setDcst(ldidx, dk);
@@ -1252,7 +1297,12 @@ bool stex::Tetexact::_getCompDiffActive(uint cidx, uint didx) const
 	stex::Comp * comp = _comp(cidx);
 	assert (comp != 0);
 	uint ldidx = comp->def()->diffG2L(didx);
-	if (ldidx == ssolver::LIDX_UNDEFINED) return false;
+	if (ldidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Diffusion rule undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	TetPVecCI t_end = comp->endTet();
 	for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
@@ -1272,7 +1322,12 @@ void stex::Tetexact::_setCompDiffActive(uint cidx, uint didx, bool act)
 	stex::Comp * comp = _comp(cidx);
 	assert (comp != 0);
 	uint ldidx = comp->def()->diffG2L(didx);
-	if (ldidx == ssolver::LIDX_UNDEFINED) return;
+	if (ldidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Diffusion rule undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	TetPVecCI t_end = comp->endTet();
 	for (TetPVecCI t = comp->bgnTet(); t != t_end; ++t)
@@ -1304,7 +1359,12 @@ double stex::Tetexact::_getPatchCount(uint pidx, uint sidx) const
 	stex::Patch * patch = _patch(pidx);
 	assert (patch != 0);
 	uint slidx = patch->def()->specG2L(sidx);
-	if (slidx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (slidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	uint count = 0;
 	TriPVecCI t_end = patch->endTri();
@@ -1443,7 +1503,12 @@ bool stex::Tetexact::_getPatchClamped(uint pidx, uint sidx) const
 	stex::Patch * patch = _patch(pidx);
 	assert(patch != 0);
 	uint lsidx = patch->def()->specG2L(sidx);
-    if (lsidx == ssolver::LIDX_UNDEFINED) return false;
+    if (lsidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
     TriPVecCI t_end = patch->endTri();
     for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
@@ -1463,7 +1528,12 @@ void stex::Tetexact::_setPatchClamped(uint pidx, uint sidx, bool buf)
 	stex::Patch * patch = _patch(pidx);
 	assert(patch != 0);
 	uint lsidx = patch->def()->specG2L(sidx);
-    if (lsidx == ssolver::LIDX_UNDEFINED) return;
+    if (lsidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
     // Set the flag in def object for consistency, though this is not
     // entirely necessary
@@ -1487,7 +1557,12 @@ double stex::Tetexact::_getPatchSReacK(uint pidx, uint ridx) const
 	stex::Patch * patch = _patch(pidx);
 	assert(patch != 0);
 	uint lsridx = patch->def()->sreacG2L(ridx);
-    if (lsridx == ssolver::LIDX_UNDEFINED) return 0.0;
+    if (lsridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
     // We're just returning the default value for this patch, individual
     // triangles may have different Kcsts set
@@ -1505,7 +1580,12 @@ void stex::Tetexact::_setPatchSReacK(uint pidx, uint ridx, double kf)
 	stex::Patch * patch = _patch(pidx);
 	assert(patch != 0);
 	uint lsridx = patch->def()->sreacG2L(ridx);
-    if (lsridx == ssolver::LIDX_UNDEFINED) return;
+    if (lsridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
     // First set the default values for this patch
     patch->def()->setKcst(lsridx, kf);
@@ -1531,7 +1611,12 @@ bool stex::Tetexact::_getPatchSReacActive(uint pidx, uint ridx) const
 	stex::Patch * patch = _patch(pidx);
 	assert(patch != 0);
 	uint lsridx = patch->def()->sreacG2L(ridx);
-    if (lsridx == ssolver::LIDX_UNDEFINED) return false;
+    if (lsridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
     TriPVecCI t_end = patch->endTri();
     for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
@@ -1551,7 +1636,12 @@ void stex::Tetexact::_setPatchSReacActive(uint pidx, uint ridx, bool a)
 	stex::Patch * patch = _patch(pidx);
 	assert(patch != 0);
 	uint lsridx = patch->def()->sreacG2L(ridx);
-    if (lsridx == ssolver::LIDX_UNDEFINED) return;
+    if (lsridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
     // First set the flags in def object for consistency, though this is
     // not entirely necessary for this solver
@@ -2072,7 +2162,12 @@ double stex::Tetexact::_getCompReacH(uint cidx, uint ridx) const
 	ssolver::Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// The 'local' Comp object has same index as solver::Compdef object
 	stex::Comp * lcomp = pComps[cidx];
@@ -2101,7 +2196,12 @@ double stex::Tetexact::_getCompReacC(uint cidx, uint ridx) const
 	ssolver::Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// The 'local' Comp object has same index as solver::Compdef object
 	stex::Comp * lcomp = pComps[cidx];
@@ -2132,7 +2232,12 @@ double stex::Tetexact::_getCompReacA(uint cidx, uint ridx) const
 	ssolver::Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// The 'local' Comp object has same index as solver::Compdef object
 	stex::Comp * lcomp = pComps[cidx];
@@ -2161,7 +2266,12 @@ uint stex::Tetexact::_getCompReacExtent(uint cidx, uint ridx) const
 	ssolver::Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// The 'local' Comp object has same index as solver::Compdef object
 	stex::Comp * lcomp = pComps[cidx];
@@ -2190,7 +2300,12 @@ void stex::Tetexact::_resetCompReacExtent(uint cidx, uint ridx)
 	ssolver::Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// The 'local' Comp object has same index as solver::Compdef object
 	stex::Comp * lcomp = pComps[cidx];
@@ -2215,7 +2330,12 @@ double stex::Tetexact::_getPatchSReacH(uint pidx, uint ridx) const
 	assert (ridx < statedef()->countSReacs());
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	uint lsridx = patch->sreacG2L(ridx);
-	if (lsridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lsridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// The 'local' Patch object has same index as solver::Patchdef object
 	stex::Patch * lpatch = pPatches[pidx];
@@ -2243,7 +2363,12 @@ double stex::Tetexact::_getPatchSReacC(uint pidx, uint ridx) const
 	assert (ridx < statedef()->countSReacs());
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	uint lsridx = patch->sreacG2L(ridx);
-	if (lsridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lsridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// The 'local' Patch object has same index as solver::Patchdef object
 	stex::Patch * lpatch = pPatches[pidx];
@@ -2274,7 +2399,12 @@ double stex::Tetexact::_getPatchSReacA(uint pidx, uint ridx) const
 	assert (ridx < statedef()->countSReacs());
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	uint lsridx = patch->sreacG2L(ridx);
-	if (lsridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lsridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// The 'local' Patch object has same index as solver::Patchdef object
 	stex::Patch * lpatch = pPatches[pidx];
@@ -2301,7 +2431,12 @@ uint stex::Tetexact::_getPatchSReacExtent(uint pidx, uint ridx) const
 	assert (ridx < statedef()->countSReacs());
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	uint lsridx = patch->sreacG2L(ridx);
-	if (lsridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lsridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// The 'local' Patch object has same index as solver::Patchdef object
 	stex::Patch * lpatch = pPatches[pidx];
@@ -2328,7 +2463,12 @@ void stex::Tetexact::_resetPatchSReacExtent(uint pidx, uint ridx)
 	assert (ridx < statedef()->countSReacs());
 	ssolver::Patchdef * patch = statedef()->patchdef(pidx);
 	uint lsridx = patch->sreacG2L(ridx);
-	if (lsridx == ssolver::LIDX_UNDEFINED) return;
+	if (lsridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	// The 'local' Patch object has same index as solver::Patchdef object
 	stex::Patch * lpatch = pPatches[pidx];
@@ -2382,7 +2522,13 @@ double stex::Tetexact::_getTetCount(uint tidx, uint sidx) const
 
 	stex::Tet * tet = pTets[tidx];
 	uint lsidx = tet->compdef()->specG2L(sidx);
-	if (lsidx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lsidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in tetrahedron.\n";
+		throw steps::ArgErr(os.str());
+	}
+
 	return tet->pools()[lsidx];
 }
 
@@ -2400,11 +2546,23 @@ void stex::Tetexact::_setTetCount(uint tidx, uint sidx, double n)
     	os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
     	throw steps::ArgErr(os.str());
 	}
+	if (n > std::numeric_limits<unsigned int>::max( ))
+	{
+		std::ostringstream os;
+		os << "Can't set count greater than maximum unsigned integer (";
+		os << std::numeric_limits<unsigned int>::max( ) << ").\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	stex::Tet * tet = pTets[tidx];
 
 	uint lsidx = tet->compdef()->specG2L(sidx);
-	if (lsidx == ssolver::LIDX_UNDEFINED) return;
+	if (lsidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in tetrahedron.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	double n_int = std::floor(n);
 	double n_frc = n - n_int;
@@ -2487,7 +2645,13 @@ bool stex::Tetexact::_getTetClamped(uint tidx, uint sidx) const
 	stex::Tet * tet = pTets[tidx];
 
 	uint lsidx = tet->compdef()->specG2L(sidx);
-	if (lsidx == ssolver::LIDX_UNDEFINED) return false;
+	if (lsidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in tetrahedron.\n";
+		throw steps::ArgErr(os.str());
+	}
+
 	return tet->clamped(lsidx);
 }
 
@@ -2508,7 +2672,12 @@ void stex::Tetexact::_setTetClamped(uint tidx, uint sidx, bool buf)
 	stex::Tet * tet = pTets[tidx];
 
 	uint lsidx = tet->compdef()->specG2L(sidx);
-	if (lsidx == ssolver::LIDX_UNDEFINED) return;
+	if (lsidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in tetrahedron.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	tet->setClamped(lsidx, buf);
 }
@@ -2530,7 +2699,12 @@ double stex::Tetexact::_getTetReacK(uint tidx, uint ridx) const
 	stex::Tet * tet = pTets[tidx];
 
 	uint lridx = tet->compdef()->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in tetrahedron.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	return (tet->reac(lridx)->kcst());
 }
@@ -2553,7 +2727,12 @@ void stex::Tetexact::_setTetReacK(uint tidx, uint ridx, double kf)
 	stex::Tet * tet = pTets[tidx];
 
 	uint lridx = tet->compdef()->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in tetrahedron.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	tet->reac(lridx)->setKcst(kf);
 
@@ -2580,7 +2759,12 @@ bool stex::Tetexact::_getTetReacActive(uint tidx, uint ridx) const
 	stex::Tet * tet = pTets[tidx];
 
 	uint lridx = tet->compdef()->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return false;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in tetrahedron.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	if (tet->reac(lridx)->inactive() == true) return false;
 	return true;
@@ -2603,7 +2787,12 @@ void stex::Tetexact::_setTetReacActive(uint tidx, uint ridx, bool act)
 	stex::Tet * tet = pTets[tidx];
 
 	uint lridx = tet->compdef()->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in tetrahedron.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	tet->reac(lridx)->setActive(act);
 
@@ -2629,7 +2818,12 @@ double stex::Tetexact::_getTetDiffD(uint tidx, uint didx) const
 	stex::Tet * tet = pTets[tidx];
 
 	uint ldidx = tet->compdef()->diffG2L(didx);
-	if (ldidx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (ldidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Diffusion rule undefined in tetrahedron.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	return (tet->diff(ldidx)->dcst());
 
@@ -2652,7 +2846,12 @@ void stex::Tetexact::_setTetDiffD(uint tidx, uint didx, double dk)
 	stex::Tet * tet = pTets[tidx];
 
 	uint ldidx = tet->compdef()->diffG2L(didx);
-	if (ldidx == ssolver::LIDX_UNDEFINED) return;
+	if (ldidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Diffusion rule undefined in tetrahedron.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	tet->diff(ldidx)->setDcst(dk);
 
@@ -2679,7 +2878,12 @@ bool stex::Tetexact::_getTetDiffActive(uint tidx, uint didx) const
 	stex::Tet * tet = pTets[tidx];
 
 	uint ldidx = tet->compdef()->diffG2L(didx);
-	if (ldidx == ssolver::LIDX_UNDEFINED) return false;
+	if (ldidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Diffusion rule undefined in tetrahedron.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	if (tet->diff(ldidx)->inactive() == true) return false;
 	return true;
@@ -2702,7 +2906,12 @@ void stex::Tetexact::_setTetDiffActive(uint tidx, uint didx, bool act)
 	stex::Tet * tet = pTets[tidx];
 
 	uint ldidx = tet->compdef()->diffG2L(didx);
-	if (ldidx == ssolver::LIDX_UNDEFINED) return;
+	if (ldidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Diffusion rule undefined in tetrahedron.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	tet->diff(ldidx)->setActive(act);
 
@@ -2728,7 +2937,12 @@ double stex::Tetexact::_getTetReacH(uint tidx, uint ridx) const
 	stex::Tet * tet = pTets[tidx];
 
 	uint lridx = tet->compdef()->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in tetrahedron.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	return tet->reac(lridx)->h();
 }
@@ -2750,7 +2964,12 @@ double stex::Tetexact::_getTetReacC(uint tidx, uint ridx) const
 	stex::Tet * tet = pTets[tidx];
 
 	uint lridx = tet->compdef()->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in tetrahedron.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	return tet->reac(lridx)->c();
 }
@@ -2772,7 +2991,12 @@ double stex::Tetexact::_getTetReacA(uint tidx, uint ridx) const
 	stex::Tet * tet = pTets[tidx];
 
 	uint lridx = tet->compdef()->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in tetrahedron.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	return tet->reac(lridx)->rate();
 }
@@ -2794,7 +3018,12 @@ double stex::Tetexact::_getTetDiffA(uint tidx, uint didx) const
 	stex::Tet * tet = pTets[tidx];
 
 	uint ldidx = tet->compdef()->diffG2L(didx);
-	if (ldidx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (ldidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Diffusion rule undefined in tetrahedron.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	return tet->diff(ldidx)->rate();
 }
@@ -2838,7 +3067,12 @@ double stex::Tetexact::_getTriCount(uint tidx, uint sidx) const
 
 	stex::Tri * tri = pTris[tidx];
 	uint lsidx = tri->patchdef()->specG2L(sidx);
-	if (lsidx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lsidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in triangle.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	return tri->pools()[lsidx];
 }
@@ -2857,10 +3091,22 @@ void stex::Tetexact::_setTriCount(uint tidx, uint sidx, double n)
     	os << "Triangle " << tidx << " has not been assigned to a patch.";
     	throw steps::ArgErr(os.str());
 	}
+	if (n > std::numeric_limits<unsigned int>::max( ))
+	{
+		std::ostringstream os;
+		os << "Can't set count greater than maximum unsigned integer (";
+		os << std::numeric_limits<unsigned int>::max( ) << ").\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	stex::Tri * tri = pTris[tidx];
 	uint lsidx = tri->patchdef()->specG2L(sidx);
-	if (lsidx == ssolver::LIDX_UNDEFINED) return;
+	if (lsidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in triangle.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	double n_int = std::floor(n);
 	double n_frc = n - n_int;
@@ -2913,7 +3159,12 @@ bool stex::Tetexact::_getTriClamped(uint tidx, uint sidx) const
 	stex::Tri * tri = pTris[tidx];
 
 	uint lsidx = tri->patchdef()->specG2L(sidx);
-	if (lsidx == ssolver::LIDX_UNDEFINED) return false;
+	if (lsidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in triangle.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	return tri->clamped(lsidx);
 }
@@ -2935,7 +3186,12 @@ void stex::Tetexact::_setTriClamped(uint tidx, uint sidx, bool buf)
 	stex::Tri * tri = pTris[tidx];
 
 	uint lsidx = tri->patchdef()->specG2L(sidx);
-	if (lsidx == ssolver::LIDX_UNDEFINED) return;
+	if (lsidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in triangle.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	tri->setClamped(lsidx, buf);
 }
@@ -2957,7 +3213,12 @@ double stex::Tetexact::_getTriSReacK(uint tidx, uint ridx) const
 	stex::Tri * tri = pTris[tidx];
 
 	uint lsridx = tri->patchdef()->sreacG2L(ridx);
-	if (lsridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lsridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in triangle.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	return (tri->sreac(lsridx)->kcst());
 }
@@ -2979,7 +3240,12 @@ void stex::Tetexact::_setTriSReacK(uint tidx, uint ridx, double kf)
 	stex::Tri * tri = pTris[tidx];
 
 	uint lsridx = tri->patchdef()->sreacG2L(ridx);
-	if (lsridx == ssolver::LIDX_UNDEFINED) return;
+	if (lsridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in triangle.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	tri->sreac(lsridx)->setKcst(kf);
 
@@ -3007,7 +3273,12 @@ bool stex::Tetexact::_getTriSReacActive(uint tidx, uint ridx) const
 	stex::Tri * tri = pTris[tidx];
 
 	uint lsridx = tri->patchdef()->sreacG2L(ridx);
-	if (lsridx == ssolver::LIDX_UNDEFINED) return false;
+	if (lsridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in triangle.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	if (tri->sreac(lsridx)->inactive() == true) return false;
 	return true;
@@ -3030,7 +3301,12 @@ void stex::Tetexact::_setTriSReacActive(uint tidx, uint ridx, bool act)
 	stex::Tri * tri = pTris[tidx];
 
 	uint lsridx = tri->patchdef()->sreacG2L(ridx);
-	if (lsridx == ssolver::LIDX_UNDEFINED) return;
+	if (lsridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in triangle.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	tri->sreac(lsridx)->setActive(act);
 
@@ -3056,7 +3332,12 @@ double stex::Tetexact::_getTriSReacH(uint tidx, uint ridx) const
 	stex::Tri * tri = pTris[tidx];
 
 	uint lsridx = tri->patchdef()->sreacG2L(ridx);
-	if (lsridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lsridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in triangle.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	return tri->sreac(lsridx)->h();
 }
@@ -3078,7 +3359,12 @@ double stex::Tetexact::_getTriSReacC(uint tidx, uint ridx) const
 	stex::Tri * tri = pTris[tidx];
 
 	uint lsridx = tri->patchdef()->sreacG2L(ridx);
-	if (lsridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lsridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in triangle.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	return tri->sreac(lsridx)->c();
 }
@@ -3100,7 +3386,12 @@ double stex::Tetexact::_getTriSReacA(uint tidx, uint ridx) const
 	stex::Tri * tri = pTris[tidx];
 
 	uint lsridx = tri->patchdef()->sreacG2L(ridx);
-	if (lsridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lsridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in triangle.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	return tri->sreac(lsridx)->rate();
 }

@@ -361,7 +361,12 @@ double swmrk4::Wmrk4::_getCompCount(uint cidx, uint sidx) const
 	Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint slidx = comp->specG2L(sidx);
-	if (slidx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (slidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 	return comp->pools()[slidx];
 }
 
@@ -375,7 +380,12 @@ void swmrk4::Wmrk4::_setCompCount(uint cidx, uint sidx, double n)
 	Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint slidx = comp->specG2L(sidx);
-	if (slidx == ssolver::LIDX_UNDEFINED) return;
+	if (slidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 	comp->setCount(slidx, n);
 	// easier to recompute all counts with _refill method
 	_refill();					/// may be a better way of doing this
@@ -435,8 +445,12 @@ bool swmrk4::Wmrk4::_getCompClamped(uint cidx, uint sidx) const
 	Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lsidx = comp->specG2L(sidx);
-    if (lsidx == ssolver::LIDX_UNDEFINED) return false;
-
+	if (lsidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
     return comp->clamped(lsidx);
 }
 
@@ -449,7 +463,12 @@ void swmrk4::Wmrk4::_setCompClamped(uint cidx, uint sidx, bool b)
 	Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lsidx = comp->specG2L(sidx);
-    if (lsidx == ssolver::LIDX_UNDEFINED) return;
+    if (lsidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
     comp->setClamped(lsidx, b);
 
@@ -466,7 +485,12 @@ double swmrk4::Wmrk4::_getCompReacK(uint cidx, uint ridx) const
 	Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	return comp->kcst(lridx);
 }
@@ -481,7 +505,12 @@ void swmrk4::Wmrk4::_setCompReacK(uint cidx, uint ridx, double kf)
 	Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	comp->setKcst(lridx, kf);
 
@@ -498,7 +527,12 @@ bool swmrk4::Wmrk4::_getCompReacActive(uint cidx, uint ridx) const
 	Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return false;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	return (comp->active(lridx));
 }
@@ -512,8 +546,12 @@ void swmrk4::Wmrk4::_setCompReacActive(uint cidx, uint ridx, bool a)
 	Compdef * comp = statedef()->compdef(cidx);
 	assert(comp != 0);
 	uint lridx = comp->reacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return;
-
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Reaction undefined in compartment.\n";
+		throw steps::ArgErr(os.str());
+	}
 	comp->setActive(lridx, a);
 
 	// copy flags to this solver
@@ -549,8 +587,12 @@ double swmrk4::Wmrk4::_getPatchCount(uint pidx, uint sidx) const
 	Patchdef * patch = statedef()->patchdef(pidx);
 	assert(patch != 0);
 	uint slidx = patch->specG2L(sidx);
-	if (slidx == ssolver::LIDX_UNDEFINED) return 0.0;
-
+	if (slidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 	return patch->pools()[slidx];
 }
 
@@ -563,7 +605,13 @@ void swmrk4::Wmrk4::_setPatchCount(uint pidx, uint sidx, double n)
 	Patchdef * patch = statedef()->patchdef(pidx);
 	assert(patch != 0);
 	uint slidx = patch->specG2L(sidx);
-	if (slidx == ssolver::LIDX_UNDEFINED) return;
+	if (slidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
+
 	patch->setCount(slidx, n);
 	// easier to recompute all counts with _refill method
 	_refill();
@@ -598,7 +646,12 @@ bool swmrk4::Wmrk4::_getPatchClamped(uint pidx, uint sidx) const
 	Patchdef * patch = statedef()->patchdef(pidx);
 	assert(patch != 0);
 	uint lsidx = patch->specG2L(sidx);
-    if (lsidx == ssolver::LIDX_UNDEFINED) return false;
+    if (lsidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
     return patch->clamped(lsidx);
 }
@@ -612,7 +665,12 @@ void swmrk4::Wmrk4::_setPatchClamped(uint pidx, uint sidx, bool buf)
 	Patchdef * patch = statedef()->patchdef(pidx);
 	assert(patch != 0);
 	uint lsidx = patch->specG2L(sidx);
-    if (lsidx == ssolver::LIDX_UNDEFINED) return;
+    if (lsidx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Species undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
     patch->setClamped(lsidx, buf);
 
@@ -629,8 +687,12 @@ double swmrk4::Wmrk4::_getPatchSReacK(uint pidx, uint ridx) const
 	Patchdef * patch = statedef()->patchdef(pidx);
 	assert(patch != 0);
 	uint lridx = patch->sreacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return 0.0;
-
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 	return patch->kcst(lridx);
 }
 
@@ -644,7 +706,12 @@ void swmrk4::Wmrk4::_setPatchSReacK(uint pidx, uint ridx, double kf)
 	Patchdef * patch = statedef()->patchdef(pidx);
 	assert(patch != 0);
 	uint lridx = patch->sreacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	patch->setKcst(lridx, kf);
 
@@ -661,7 +728,12 @@ bool swmrk4::Wmrk4::_getPatchSReacActive(uint pidx, uint ridx) const
 	Patchdef * patch = statedef()->patchdef(pidx);
 	assert(patch != 0);
 	uint lridx = patch->sreacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return false;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	return (patch->active(lridx));
 }
@@ -675,7 +747,12 @@ void swmrk4::Wmrk4::_setPatchSReacActive(uint pidx, uint ridx, bool a)
 	Patchdef * patch = statedef()->patchdef(pidx);
 	assert(patch != 0);
 	uint lridx = patch->sreacG2L(ridx);
-	if (lridx == ssolver::LIDX_UNDEFINED) return;
+	if (lridx == ssolver::LIDX_UNDEFINED)
+	{
+		std::ostringstream os;
+		os << "Surface reaction undefined in patch.\n";
+		throw steps::ArgErr(os.str());
+	}
 
 	patch->setActive(lridx, a);
 
@@ -1184,6 +1261,4 @@ void swmrk4::Wmrk4::_update(void)
 ////////////////////////////////////////////////////////////////////////////////
 
 // END
-
-
 
