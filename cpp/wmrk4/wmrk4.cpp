@@ -1226,7 +1226,9 @@ void swmrk4::Wmrk4::_update(void)
 		}
 		else
 		{
-			pVals[i] = pNewVals[i];
+			double newval = pNewVals[i];
+			if (newval < 0.0) newval = 0.0;
+			pVals[i] = newval;
 		}
 	}
 
@@ -1240,8 +1242,7 @@ void swmrk4::Wmrk4::_update(void)
 		uint comp_Specs_N = statedef()->compdef(i)->countSpecs();
 		for (uint j=0; j< comp_Specs_N; ++j)
 		{
-			double c = pVals[c_marker + j];
-		    statedef()->compdef(i)->setCount(j, c);
+		    statedef()->compdef(i)->setCount(j, pVals[c_marker + j]);
 		}
 		c_marker += comp_Specs_N;
 	}
@@ -1251,8 +1252,7 @@ void swmrk4::Wmrk4::_update(void)
 		uint patch_Specs_N = statedef()->patchdef(i)->countSpecs();
 		for (uint j=0; j< patch_Specs_N; ++j)
 		{
-			double c = pVals[c_marker + j];
-			statedef()->patchdef(i)->setCount(j, c);
+			statedef()->patchdef(i)->setCount(j, pVals[c_marker + j]);
 		}
 		c_marker += patch_Specs_N;
 	}
