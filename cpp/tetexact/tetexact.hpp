@@ -109,7 +109,7 @@ public:
 
     void checkpoint(std::string const & file_name);
     void restore(std::string const & file_name);
-    
+
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
     //      GENERAL
@@ -217,6 +217,8 @@ public:
     double _getTetCount(uint tidx, uint sidx) const;
     void _setTetCount(uint tidx, uint sidx, double n);
 
+    bool _getTetSpecDefined(uint tidx, uint sidx) const;
+
     double _getTetAmount(uint tidx, uint sidx) const;
     void _setTetAmount(uint tidx, uint sidx, double m);
 
@@ -253,6 +255,8 @@ public:
 
     double _getTriArea(uint tidx) const;
     void _setTriArea(uint tidx, double area);
+
+    bool _getTriSpecDefined(uint tidx, uint sidx) const;
 
     double _getTriCount(uint tidx, uint sidx) const;
     void _setTriCount(uint tidx, uint sidx, double n);

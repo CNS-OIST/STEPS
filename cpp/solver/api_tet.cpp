@@ -93,6 +93,31 @@ void API::setTetVol(uint tidx, double vol)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+bool API::getTetSpecDefined(uint tidx, string const & s) const
+{
+	if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+	{
+		if (tidx >= mesh->countTets())
+		{
+			std::ostringstream os;
+			os << "Tetrahedron index out of range.";
+			throw steps::ArgErr(os.str());
+		}
+		// the following may throw exception if string is unknown
+		uint sidx = pStatedef->getSpecIdx(s);
+
+		return _getTetSpecDefined(tidx, sidx);
+	}
+	else
+	{
+		std::ostringstream os;
+		os << "Method not available for this solver.";
+		throw steps::NotImplErr();
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 double API::getTetCount(uint tidx, string const & s) const
 {
 	if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
@@ -656,6 +681,13 @@ double API::_getTetVol(uint tidx) const
 void API::_setTetVol(uint tidx, double vol)
 {
     throw steps::NotImplErr();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool API::_getTetSpecDefined(uint tidx, uint sidx) const
+{
+	throw steps::NotImplErr();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

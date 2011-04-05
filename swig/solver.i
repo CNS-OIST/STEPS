@@ -967,6 +967,25 @@ Return:
 
     %feature("autodoc", 
 "
+Returns whether species with identifier string spec is defined
+in the tetrahedral element with index idx.
+
+Syntax::
+    
+    getTetSpecDefined(idx, spec)
+    
+Arguments:
+    * uint idx
+    * string spec
+
+Return:
+    bool
+");
+    bool getTetSpecDefined(unsigned int tidx, std::string const & s) const;
+
+
+    %feature("autodoc", 
+"
 Returns the number of molecules of species with identifier string spec 
 in the tetrahedral element with index idx.
 
@@ -1779,6 +1798,24 @@ Return:
     float
 ");
     double getTriArea(unsigned int tidx) const;
+
+    %feature("autodoc", 
+"
+Returns whether species with identifier string spec is defined
+in the triangle element with index idx.
+
+Syntax::
+    
+    getTriSpecDefined(idx, spec)
+    
+Arguments:
+    * uint idx
+    * string spec
+
+Return:
+    bool
+");
+    bool getTriSpecDefined(unsigned int tidx, std::string const & s) const;
 
     %feature("autodoc", 
 "

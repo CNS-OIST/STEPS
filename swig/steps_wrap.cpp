@@ -39591,6 +39591,63 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_API_getTetSpecDefined(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::solver::API *arg1 = (steps::solver::API *) 0 ;
+  unsigned int arg2 ;
+  std::string *arg3 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned int val2 ;
+  int ecode2 = 0 ;
+  int res3 = SWIG_OLDOBJ ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  bool result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:API_getTetSpecDefined",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__solver__API, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "API_getTetSpecDefined" "', argument " "1"" of type '" "steps::solver::API const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::solver::API * >(argp1);
+  ecode2 = SWIG_AsVal_unsigned_SS_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "API_getTetSpecDefined" "', argument " "2"" of type '" "unsigned int""'");
+  } 
+  arg2 = static_cast< unsigned int >(val2);
+  {
+    std::string *ptr = (std::string *)0;
+    res3 = SWIG_AsPtr_std_string(obj2, &ptr);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "API_getTetSpecDefined" "', argument " "3"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "API_getTetSpecDefined" "', argument " "3"" of type '" "std::string const &""'"); 
+    }
+    arg3 = ptr;
+  }
+  {
+    try {
+      result = (bool)((steps::solver::API const *)arg1)->getTetSpecDefined(arg2,(std::string const &)*arg3);
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  if (SWIG_IsNewObj(res3)) delete arg3;
+  return resultobj;
+fail:
+  if (SWIG_IsNewObj(res3)) delete arg3;
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_API_getTetCount(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   steps::solver::API *arg1 = (steps::solver::API *) 0 ;
@@ -42071,6 +42128,63 @@ SWIGINTERN PyObject *_wrap_API_getTriArea(PyObject *SWIGUNUSEDPARM(self), PyObje
   resultobj = SWIG_From_double(static_cast< double >(result));
   return resultobj;
 fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_API_getTriSpecDefined(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  steps::solver::API *arg1 = (steps::solver::API *) 0 ;
+  unsigned int arg2 ;
+  std::string *arg3 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned int val2 ;
+  int ecode2 = 0 ;
+  int res3 = SWIG_OLDOBJ ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  bool result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:API_getTriSpecDefined",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_steps__solver__API, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "API_getTriSpecDefined" "', argument " "1"" of type '" "steps::solver::API const *""'"); 
+  }
+  arg1 = reinterpret_cast< steps::solver::API * >(argp1);
+  ecode2 = SWIG_AsVal_unsigned_SS_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "API_getTriSpecDefined" "', argument " "2"" of type '" "unsigned int""'");
+  } 
+  arg2 = static_cast< unsigned int >(val2);
+  {
+    std::string *ptr = (std::string *)0;
+    res3 = SWIG_AsPtr_std_string(obj2, &ptr);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "API_getTriSpecDefined" "', argument " "3"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "API_getTriSpecDefined" "', argument " "3"" of type '" "std::string const &""'"); 
+    }
+    arg3 = ptr;
+  }
+  {
+    try {
+      result = (bool)((steps::solver::API const *)arg1)->getTriSpecDefined(arg2,(std::string const &)*arg3);
+    } catch (steps::ArgErr & ae) {
+      PyErr_SetString(PyExc_NameError, ae.getMsg());
+      return NULL;
+    } catch (steps::NotImplErr & nie) {
+      PyErr_SetString(PyExc_NotImplementedError, nie.getMsg());
+      return NULL;
+    }
+  }
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  if (SWIG_IsNewObj(res3)) delete arg3;
+  return resultobj;
+fail:
+  if (SWIG_IsNewObj(res3)) delete arg3;
   return NULL;
 }
 
@@ -47733,6 +47847,22 @@ static PyMethodDef SwigMethods[] = {
 		"    float\n"
 		"\n"
 		""},
+	 { (char *)"API_getTetSpecDefined", _wrap_API_getTetSpecDefined, METH_VARARGS, (char *)"\n"
+		"Returns whether species with identifier string spec is defined\n"
+		"in the tetrahedral element with index idx.\n"
+		"\n"
+		"Syntax::\n"
+		"    \n"
+		"    getTetSpecDefined(idx, spec)\n"
+		"    \n"
+		"Arguments:\n"
+		"    * uint idx\n"
+		"    * string spec\n"
+		"\n"
+		"Return:\n"
+		"    bool\n"
+		"\n"
+		""},
 	 { (char *)"API_getTetCount", _wrap_API_getTetCount, METH_VARARGS, (char *)"\n"
 		"Returns the number of molecules of species with identifier string spec \n"
 		"in the tetrahedral element with index idx.\n"
@@ -48464,6 +48594,22 @@ static PyMethodDef SwigMethods[] = {
 		"         \n"
 		"rn:\n"
 		"float\n"
+		"\n"
+		""},
+	 { (char *)"API_getTriSpecDefined", _wrap_API_getTriSpecDefined, METH_VARARGS, (char *)"\n"
+		"Returns whether species with identifier string spec is defined\n"
+		"in the triangle element with index idx.\n"
+		"\n"
+		"Syntax::\n"
+		"    \n"
+		"    getTriSpecDefined(idx, spec)\n"
+		"    \n"
+		"Arguments:\n"
+		"    * uint idx\n"
+		"    * string spec\n"
+		"\n"
+		"Return:\n"
+		"    bool\n"
 		"\n"
 		""},
 	 { (char *)"API_getTriCount", _wrap_API_getTriCount, METH_VARARGS, (char *)"\n"

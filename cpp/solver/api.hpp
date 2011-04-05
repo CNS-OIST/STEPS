@@ -355,16 +355,23 @@ public:
     /// \param vol Volume of the tetrahedron.
     void setTetVol(uint tidx, double vol);
 
+    /// Returns whether species s is defined in a tetrahedral volume
+    /// element (voxel).
+    ///
+    /// \param tidx Index of the tetrahedron.
+    /// \param s Name of the species.
+    bool getTetSpecDefined(uint tidx, std::string const & s) const;
+
     /// Returns the number of molecules of species s in a tetrahedral volume
     /// element (voxel).
     ///
-    /// \parem tidx Index of the tetrahedron.
+    /// \param tidx Index of the tetrahedron.
     /// \param s Name of the species.
     double getTetCount(uint tidx, std::string const & s) const;
 
     /// Sets the number of molecules of species s in a voxel.
     ///
-    /// \parem tidx Index of the tetrahedron.
+    /// \param tidx Index of the tetrahedron.
     /// \param s Name of the species.
     /// \param n Number of molecules of the species.
     void setTetCount(uint tidx, std::string const & s, double n);
@@ -681,6 +688,12 @@ public:
     /// \param area Area of teh triangle.
     void setTriArea(uint tidx, double area);
 
+    /// Returns whether species s is defined in a triangle
+    ///
+    /// \param tidx Index of the triangle.
+    /// \param s Name of the species.
+    bool getTriSpecDefined(uint tidx, std::string const & s) const;
+
     /// Returns the number of molecules of species s in a triangle.
     ///
     /// \param tidx Index of the triangle.
@@ -826,6 +839,8 @@ protected:
     virtual double _getTetVol(uint tidx) const;
     virtual void _setTetVol(uint tidx, double vol);
 
+    virtual bool _getTetSpecDefined(uint tidx, uint sidx) const;
+
     virtual double _getTetCount(uint tidx, uint sidx) const;
     virtual void _setTetCount(uint tidx, uint sidx, double n);
 
@@ -905,6 +920,8 @@ protected:
 
     virtual double _getTriArea(uint tidx) const;
     virtual void _setTriArea(uint tidx, double area);
+
+    virtual bool _getTriSpecDefined(uint tidx, uint sidx) const;
 
     virtual double _getTriCount(uint tidx, uint sidx) const;
     virtual void _setTriCount(uint tidx, uint sidx, double n);

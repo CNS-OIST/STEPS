@@ -2508,6 +2508,21 @@ void stex::Tetexact::_setTetVol(uint tidx, double vol)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+bool stex::Tetexact::_getTetSpecDefined(uint tidx, uint sidx) const
+{
+	assert (tidx < pTets.size());
+	assert (sidx < statedef()->countSpecs());
+
+	if (pTets[tidx] == 0) return false;
+
+	stex::Tet * tet = pTets[tidx];
+	uint lsidx = tet->compdef()->specG2L(sidx);
+	if (lsidx == ssolver::LIDX_UNDEFINED) return false;
+	else return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 double stex::Tetexact::_getTetCount(uint tidx, uint sidx) const
 {
 	assert (tidx < pTets.size());
@@ -3049,6 +3064,21 @@ double stex::Tetexact::_getTriArea(uint tidx) const
 void stex::Tetexact::_setTriArea(uint tidx, double area)
 {
 	throw steps::NotImplErr();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool stex::Tetexact::_getTriSpecDefined(uint tidx, uint sidx) const
+{
+	assert (tidx < pTris.size());
+	assert (sidx < statedef()->countSpecs());
+
+	if (pTris[tidx] == 0) return false;
+
+	stex::Tri * tri = pTris[tidx];
+	uint lsidx = tri->patchdef()->specG2L(sidx);
+	if (lsidx == ssolver::LIDX_UNDEFINED) return false;
+	else return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -6280,6 +6280,25 @@ class API(_object):
         """
         return _steps_swig.API_getTetVol(*args)
 
+    def getTetSpecDefined(*args):
+        """
+        Returns whether species with identifier string spec is defined
+        in the tetrahedral element with index idx.
+
+        Syntax::
+            
+            getTetSpecDefined(idx, spec)
+            
+        Arguments:
+            * uint idx
+            * string spec
+
+        Return:
+            bool
+
+        """
+        return _steps_swig.API_getTetSpecDefined(*args)
+
     def getTetCount(*args):
         """
         Returns the number of molecules of species with identifier string spec 
@@ -7132,6 +7151,25 @@ class API(_object):
 
         """
         return _steps_swig.API_getTriArea(*args)
+
+    def getTriSpecDefined(*args):
+        """
+        Returns whether species with identifier string spec is defined
+        in the triangle element with index idx.
+
+        Syntax::
+            
+            getTriSpecDefined(idx, spec)
+            
+        Arguments:
+            * uint idx
+            * string spec
+
+        Return:
+            bool
+
+        """
+        return _steps_swig.API_getTriSpecDefined(*args)
 
     def getTriCount(*args):
         """

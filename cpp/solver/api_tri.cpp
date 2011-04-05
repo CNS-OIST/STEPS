@@ -94,6 +94,31 @@ void API::setTriArea(uint tidx, double area)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+bool API::getTriSpecDefined(uint tidx, string const & s) const
+{
+	if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+	{
+		if (tidx >= mesh->countTris())
+		{
+			std::ostringstream os;
+			os << "Triangle index out of range.";
+			throw steps::ArgErr(os.str());
+		}
+		// the following may throw exception if string is unknown
+		uint sidx = pStatedef->getSpecIdx(s);
+
+		return _getTriSpecDefined(tidx, sidx);
+	}
+	else
+	{
+		std::ostringstream os;
+		os << "Method not available for this solver.";
+		throw steps::NotImplErr();
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 double API::getTriCount(uint tidx, string const & s) const
 {
 	if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
@@ -461,6 +486,13 @@ double API::_getTriArea(uint tidx) const
 void API::_setTriArea(uint tidx, double area)
 {
     throw steps::NotImplErr();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool API::_getTriSpecDefined(uint tidx, uint sidx) const
+{
+	throw steps::NotImplErr();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

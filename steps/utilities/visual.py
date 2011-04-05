@@ -280,17 +280,19 @@ class MeshCanvas(MyCanvasBase):
                 
         for t in range(self.ntets):
             for key in self.specs_data.keys():
-                if(self.solver.getTetCount(t, key) > 0):
-                    center = self.mesh.getTetBarycenter(t)
-                    scaled_center = [center[0]/self.scale, center[1]/self.scale, center[2]/self.scale]
-                    self.specs_data[key].extend(scaled_center)
+                if(self.solver.getTetSpecDefined(t, key)):
+                    if(self.solver.getTetCount(t, key) > 0):
+                        center = self.mesh.getTetBarycenter(t)
+                        scaled_center = [center[0]/self.scale, center[1]/self.scale, center[2]/self.scale]
+                        self.specs_data[key].extend(scaled_center)
         
         for t in self.patchtris:
             for key in self.specs_data.keys():
-                if(self.solver.getTriCount(t, key) > 0):
-                    center = self.mesh.getTriBarycenter(t)
-                    scaled_center = [center[0]/self.scale, center[1]/self.scale, center[2]/self.scale]
-                    self.specs_data[key].extend(scaled_center)
+                if(self.solver.getTriSpecDefined(t, key)):
+                    if(self.solver.getTriCount(t, key) > 0):
+                        center = self.mesh.getTriBarycenter(t)
+                        scaled_center = [center[0]/self.scale, center[1]/self.scale, center[2]/self.scale]
+                        self.specs_data[key].extend(scaled_center)
 #----------------------------------------------------------------------
 #
 #                           GUI Simulation Frontend
