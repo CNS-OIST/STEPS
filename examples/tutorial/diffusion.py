@@ -25,6 +25,7 @@
 # Example: Unbounded diffusion
 # http://steps.sourceforge.net/manual/diffusion.html
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 import math
 import numpy
