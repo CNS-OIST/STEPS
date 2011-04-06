@@ -1,7 +1,6 @@
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # STEPS - STochastic Engine for Pathway Simulation
-# Copyright (C) 2007-2009 Okinawa Institute of Science and Technology, Japan.
+# Copyright (C) 2007-2011 Okinawa Institute of Science and Technology, Japan.
 # Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #
 # See the file AUTHORS for details.
@@ -21,6 +20,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# Example: Surface-Volume reaction system (IP3 model)
+# http://steps.sourceforge.net/manual/ip3.html
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 import steps.model as smodel
@@ -60,6 +64,7 @@ R3Ca = smodel.Spec('R3Ca', mdl)
 R4Ca = smodel.Spec('R4Ca', mdl)
 #######################################################
 
+# Surface system
 surfsys = smodel.Surfsys('ssys', mdl)
 
 # The 'forward' binding reactions:
@@ -128,7 +133,7 @@ memb.setArea(0.4143e-12)
 
 print 'Inner compartment to memb is', memb.getIComp().getID()
 
-print 'Outer compartment to patch is', memb.getOComp().getID()
+print 'Outer compartment to memb is', memb.getOComp().getID()
 
 #########################
 # RNG setup
@@ -143,14 +148,49 @@ r.initialize(7233)
 import steps.solver as ssolver
 sim = ssolver.Wmdirect(mdl, wmgeom, r)
 
-sim.setCompConc('cyt', 'Ca', 3.30657e-8)
-sim.setCompCount('cyt', 'IP3', 6)
-sim.setCompConc('ER', 'Ca', 150e-6)
-sim.setCompClamped('ER', 'Ca', True)
-sim.setPatchCount('memb', 'R', 160)
+NITER = 100
+import pylab
+import numpy
+tpnt = numpy.arange(0.0, 0.201, 0.001)
+res = numpy.zeros([NITER, 201, 2])
+res_std = numpy.zeros([201, 2])
+res_std1 = numpy.zeros([201, 2])
+res_std2 = numpy.zeros([201, 2])
+
 
 #########################
 # Run simulation
 #########################
 
-sim.run(1e-3, 1e-4)
+for i in range (0, NITER):
+    sim.reset()
+    sim.setCompConc('cyt', 'Ca', 3.30657e-8)
+    sim.setCompCount('cyt', 'IP3', 6)
+    sim.setCompConc('ER', 'Ca', 150e-6)
+    sim.setCompClamped('ER', 'Ca', True)
+    sim.setPatchCount('memb', 'R', 160)
+    for t in range(0,201):
+        sim.run(tpnt[t])
+        res[i,t,0] = sim.getPatchCount('memb', 'Ropen')
+        res[i,t,1] = sim.getCompConc('cyt', 'Ca')
+    pylab.plot(tpnt, res[i,:,0], color = 'blue', linewidth = 0.1)
+
+res_mean = numpy.mean(res, 0)
+res_std = numpy.std(res, 0)
+res_std1 = res_mean[:,0] + res_std[:,0]
+res_std2 = res_mean[:,0]- res_std[:,0]
+
+pylab.plot(tpnt, res_mean[:,0], color = 'black', linewidth = 2.0, label = 'mean')
+pylab.plot(tpnt, res_std1, color = 'gray', linewidth = 1.0, label='std')
+pylab.plot(tpnt, res_std2,color = 'gray', linewidth = 1.0)
+
+pylab.xlabel('Time (sec)')
+pylab.ylabel('# IP3 receptors in open state')
+pylab.title('IP3 receptor model: %d iterations with Wmdirect'%NITER)
+pylab.ylim(0)
+pylab.legend()
+pylab.show()
+        
+        
+        
+        
