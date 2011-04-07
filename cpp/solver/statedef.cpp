@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2007-2010ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2007-2011ÊOkinawa Institute of Science and Technology, Japan.
 // Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
 //
 // See the file AUTHORS for details.
@@ -192,7 +192,7 @@ void ssolver::Statedef::checkpoint(std::fstream & cp_file)
 {
     cp_file.write((char*)&pTime, sizeof(double));
     cp_file.write((char*)&pNSteps, sizeof(uint));
-    
+
 	SpecdefPVecCI s_end = pSpecdefs.end();
 	for (SpecdefPVecCI s = pSpecdefs.begin(); s != s_end; ++s) {
         (*s)->checkpoint(cp_file);
@@ -235,7 +235,7 @@ void ssolver::Statedef::restore(std::fstream & cp_file)
 {
     cp_file.read((char*)&pTime, sizeof(double));
     cp_file.read((char*)&pNSteps, sizeof(uint));
-    
+
 	SpecdefPVecCI s_end = pSpecdefs.end();
 	for (SpecdefPVecCI s = pSpecdefs.begin(); s != s_end; ++s) {
         (*s)->restore(cp_file);

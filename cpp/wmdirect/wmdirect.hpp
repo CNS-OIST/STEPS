@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2007-2011ÊOkinawa Institute of Science and Technology, Japan.
 // Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
 //
 // See the file AUTHORS for details.
@@ -90,10 +90,10 @@ public:
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
     void checkpoint(std::string const & file_name);
-    
+
     /// restore data
     void restore(std::string const & file_name);
-    
+
     ////////////////////////////////////////////////////////////////////////
     // SOLVER INFORMATION
     ////////////////////////////////////////////////////////////////////////
@@ -117,7 +117,7 @@ public:
     // SOLVER STATE ACCESS:
     //      GENERAL
     ////////////////////////////////////////////////////////////////////////
-    
+
 
     double getTime(void) const;
 
@@ -130,11 +130,11 @@ public:
     // SOLVER STATE ACCESS:
     //      ADVANCE
     //      Developer only
-    //////////////////////////////////////////////////////////////////////// 
-    
-    void setTime(double time);    
+    ////////////////////////////////////////////////////////////////////////
+
+    void setTime(double time);
     void setNSteps(uint nsteps);
-    
+
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
     //      COMPARTMENT

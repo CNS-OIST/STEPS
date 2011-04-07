@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2007-2011ÊOkinawa Institute of Science and Technology, Japan.
 // Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
 //
 // See the file AUTHORS for details.
@@ -82,19 +82,19 @@ public:
 	Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
 		int tetinner, int tetouter);
 	~Tri(void);
-    
+
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
     void checkpoint(std::fstream & cp_file);
-    
+
     /// restore data
     void restore(std::fstream & cp_file);
     ////////////////////////////////////////////////////////////////////////
     // SETUP
     ////////////////////////////////////////////////////////////////////////
-    
+
     /// Set pointer to the 'inside' neighbouring tetrahedron.
     ///
     void setInnerTet(stex::Tet * t);
@@ -123,7 +123,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
     inline uint idx(void) const
     {return pIdx;}
-    
+
     inline double area(void) const
     { return pArea; }
 

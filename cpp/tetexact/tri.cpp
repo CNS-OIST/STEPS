@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2007-2011ÊOkinawa Institute of Science and Technology, Japan.
 // Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
 //
 // See the file AUTHORS for details.
@@ -96,7 +96,7 @@ void stex::Tri::checkpoint(std::fstream & cp_file)
     uint nspecs = patchdef()->countSpecs();
     cp_file.write((char*)pPoolCount, sizeof(uint) * nspecs);
     cp_file.write((char*)pPoolFlags, sizeof(uint) * nspecs);
-    
+
     KProcPVecCI e = pKProcs.end();
     for (KProcPVecCI i = pKProcs.begin(); i != e; ++i) (*i)->checkpoint(cp_file);
 }
@@ -108,7 +108,7 @@ void stex::Tri::restore(std::fstream & cp_file)
     uint nspecs = patchdef()->countSpecs();
     cp_file.read((char*)pPoolCount, sizeof(uint) * nspecs);
     cp_file.read((char*)pPoolFlags, sizeof(uint) * nspecs);
-    
+
     KProcPVecCI e = pKProcs.end();
     for (KProcPVecCI i = pKProcs.begin(); i != e; ++i) (*i)->restore(cp_file);
 }

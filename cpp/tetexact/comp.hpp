@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2007-2011ÊOkinawa Institute of Science and Technology, Japan.
 // Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
 //
 // See the file AUTHORS for details.
@@ -84,10 +84,10 @@ public:
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
     void checkpoint(std::fstream & cp_file);
-    
+
     /// restore data
     void restore(std::fstream & cp_file);
-    
+
     /// Checks whether the Tet's compdef() corresponds to this object's
     /// CompDef. There is no check whether the Tet object has already
     /// been added to this Comp object before (i.e. no duplicate checking).

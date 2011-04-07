@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2007-2011ÊOkinawa Institute of Science and Technology, Japan.
 // Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
 //
 // See the file AUTHORS for details.
@@ -300,7 +300,7 @@ public:
     // Weiliang 2010.02.02
     /// rename to getSurfTris
     std::vector<int> getTriBoundary(void) const;
-    
+
     std::vector<uint> getSurfTris(void) const;
 
     /// Flip the triangle's inner and outer tetrahedron.

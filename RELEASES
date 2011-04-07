@@ -32,4 +32,24 @@ Version 1.1.2 (2010-05-8)
 1. Solve crash problem of Tetexact solver in some Linux system.
 Binary packages of version 1.1.1 are not affected, 
 so only source package is released.
-    
+
+Version 1.2.0 (2011-04-)
+==========================
+1. SBML support in steps/utilities/sbml.py
+2. Addition of Diffusion Boundary object, which allows for optional 
+chemical diffusion between connected compartments.  
+3. Initial conditions improvement for Tetexact solver, resulting
+in a  uniform initial spatial concentration across the 
+compartment (or patch) regardless of tetrahedron volumes (or triangle 
+areas), important where tetrahedrons vary considerably in volume. 
+Thanks to Haroon Anwar for bringing this issue to our attention.
+4. Bugfix on Wmrk4 deterministic solver on the reset() function, 
+which previously did not reset counts in Patches. 
+5. Changed zero-order reaction constants to the conventional M/s. 
+Previously was /s.
+6. Bugifx on surface-reactions. Now reaction constants for reactions 
+that involve reactants only on a patch (nothing in a volume) are 
+correctly scaled in 2D, as opposed to previous 3D scaling. Thanks 
+to Gabriela Antunes for pointing out this one. 
+7. Additions to examples folder to include scripts that link to the 
+user documentation, found in examples/tutorial.

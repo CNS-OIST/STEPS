@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // STEPS - STochastic Engine for Pathway Simulation
-// Copyright (C) 2007-2009ÊOkinawa Institute of Science and Technology, Japan.
+// Copyright (C) 2007-2011ÊOkinawa Institute of Science and Technology, Japan.
 // Copyright (C) 2003-2006ÊUniversity of Antwerp, Belgium.
 //
 // See the file AUTHORS for details.
@@ -83,10 +83,10 @@ public:
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
     virtual void checkpoint(std::fstream & cp_file) = 0;
-    
+
     /// restore data
     virtual void restore(std::fstream & cp_file) = 0;
-    
+
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
