@@ -34,7 +34,7 @@ import numpy
 from pylab import *
 
 def runSBMLmod(sbmlFile, time_end, time_dt, iter_n = 1, solver = 'Wmdirect', specs_plot = {}, vol_units = 1.0e-3, vol_def = False):
-    iSbml = ssbml.Interface(sbmlFile, volunits_def = vol_units, volume_def = vol_def)
+    iSbml = ssbml.Interface(sbmlFile, volunits_def = vol_units, volume_def = vol_def )
     mdl = iSbml.getModel()
     mesh = iSbml.getGeom()
     comp_specs = {}
