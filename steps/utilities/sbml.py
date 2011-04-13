@@ -22,7 +22,9 @@
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-import libsbml
+try: import libsbml
+except: raise ImportError ("Cannot find Python API to libSBML. \nPlease see: http://steps.sourceforge.net/manual/getting_started.html#for-steps-advanced-modules ")
+
 import sys
 import os
 import math
