@@ -27,8 +27,6 @@
 #  Last Changed By:   $Author$
 
 try:
-    import ez_setup
-    ez_setup.use_setuptools()
     from setuptools import setup, Extension
     
 except ImportError:
@@ -40,7 +38,7 @@ def name():
     return 'STEPS'
     
 def version():
-    return '1.1.4'
+    return '1.2.0'
     
 def author():
     return 'STEPS Development Team'

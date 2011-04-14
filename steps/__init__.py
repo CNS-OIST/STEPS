@@ -24,7 +24,7 @@
 
 
 __name__      = 'STochastic Engine for Pathway Simulation'
-__version__   = '1.1.4'
+__version__   = '1.2.0'
 __author__    = 'STEPS Development Team'
 __url__       = 'steps.sourceforge.net'
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
