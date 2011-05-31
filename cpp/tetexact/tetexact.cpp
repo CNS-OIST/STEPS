@@ -318,9 +318,14 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
     		// may have more than 1 neighbouring tri
     		// NOTE: The order here will end up being different to the
     		// neighbour order at the Tetmesh level
-    		if (pTets[tetinner]->nextTet(i) != 0) continue;
-    		if (pTets[tetinner]->nextTri(i) != 0) continue;
-    		pTets[tetinner]->setNextTri(i, pTris[t]);
+
+			// Now with diffusion boundaries, meaning tets can have neighbours that
+			// are in different comps, we must check the compartment
+    		steps::tetexact::Tet * tet_in = pTets[tetinner];
+
+			if (tet_in->nextTet(i) != 0 && tet_in->compdef() == tet_in->nextTet(i)->compdef()) continue;
+			if (tet_in->nextTri(i) != 0) continue;
+			tet_in->setNextTri(i, pTris[t]);
     		break;
     	}
 
@@ -336,9 +341,14 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
     			for (uint i=0; i <= 4; ++i)
     			{
     				assert (i < 4);
-    				if (pTets[tetouter]->nextTet(i) != 0) continue;
-    				if (pTets[tetouter]->nextTri(i) != 0) continue;
-    				pTets[tetouter]->setNextTri(i, pTris[t]);
+
+    				// See above in that tets now store tets from different comps
+    				steps::tetexact::Tet * tet_out = pTets[tetouter];
+
+    				if (tet_out->nextTet(i) != 0 && tet_out->compdef() == tet_out->nextTet(i)->compdef()) continue;
+
+    				if (tet_out->nextTri(i) != 0) continue;
+    				tet_out->setNextTri(i, pTris[t]);
     				break;
 				}
     		}

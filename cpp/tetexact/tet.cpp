@@ -169,7 +169,7 @@ void stex::Tet::setNextTet(uint i, stex::Tet * t)
 
 	// Now adding all tets, even those from other compartments, due to the diffusion boundaries
     pNextTet[i] = t;
-    if (pNextTri[i] != 0) std::cout << "WARNING: writing over nextTri index " << i;
+    //if (pNextTri[i] != 0) std::cout << "WARNING: writing over nextTri index " << i;
     pNextTri[i] = 0;
 
 
@@ -188,7 +188,10 @@ void stex::Tet::setDiffBndDirection(uint i)
 
 void stex::Tet::setNextTri(uint i, stex::Tri * t)
 {
-	if (pNextTet[i] != 0) std::cout << "WARNING: writing over nextTet index " << i;
+	assert (i <= 3);
+
+    // This is too common now to include this message- for any internal patch this happens
+	//if (pNextTet[i] != 0) std::cout << "WARNING: writing over nextTet index " << i;
     pNextTet[i] = 0;
     pNextTri[i] = t;
 }
