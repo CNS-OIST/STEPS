@@ -33,7 +33,6 @@ import steps.utilities.meshio as meshio
 #from pylab import *
 import time
 import pylab
-import steps.utilities.visual as svisual
 
 from tol_funcs import *
 

@@ -116,6 +116,15 @@ stetmesh::DiffBoundary::DiffBoundary(std::string const & id, Tetmesh * container
     		throw steps::ArgErr(os.str());
     	}
 
+    	if (pTetmesh->getTriDiffBoundary(tris[i]) != 0)
+    	{
+    		std::ostringstream os;
+    		os << "Cannot add triangle with index " << tris[i] << "(#" << i;
+    		os << " in list) to diffusion boundary; ";
+    		os << "triangle belongs to a different diffusion boundary.";
+    		throw steps::ArgErr(os.str());
+    	}
+
     	if (pTetmesh->getTriPatch(tris[i]) != 0)
     	{
     		std::ostringstream os;

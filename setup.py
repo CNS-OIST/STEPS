@@ -38,7 +38,7 @@ def name():
     return 'STEPS'
     
 def version():
-    return '1.2.0'
+    return '1.2.1'
     
 def author():
     return 'STEPS Development Team'
