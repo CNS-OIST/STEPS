@@ -47,9 +47,15 @@ Thanks to Haroon Anwar for bringing this issue to our attention.
 which previously did not reset counts in Patches. 
 5. Changed zero-order reaction constants to the conventional M/s. 
 Previously was /s.
-6. Bugifx on surface-reactions. Now reaction constants for reactions 
+6. Bugfix on surface-reactions. Now reaction constants for reactions 
 that involve reactants only on a patch (nothing in a volume) are 
 correctly scaled in 2D, as opposed to previous 3D scaling. Thanks 
 to Gabriela Antunes for pointing out this one. 
 7. Additions to examples folder to include scripts that link to the 
 user documentation, found in examples/tutorial.
+
+Version 1.2.1 (2011-06-10)
+==========================
+1. Important bugfix in Tetexact to fix a problem that was causing 
+crashes during construction.
+

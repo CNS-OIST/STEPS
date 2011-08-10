@@ -1654,7 +1654,7 @@ class Interface(object):
             elif reac_comp2 and not reac_surf: reac_type = 'volume volume reaction'
             elif reac_surf and not reac_comp1: reac_type = '2D surface reaction'
             elif reac_comp1 and reac_surf: reac_type = 'surface reaction'
-            else: assert(false)
+            else: assert(False)
             
                                     
             if reac_type == 'volume reaction':
@@ -1878,9 +1878,10 @@ class Interface(object):
                     p_id = str(p.getId())
                     p_value = p.getValue()
                     p_units = p.getUnits()
+                    p_factor = 1.0
                     if (not p_value): 
                         if p_id in self.__globalParameters:
-                            p_value, p_factor  = self.__globalParameters[p_id]     
+                            p_value, p_factor = self.__globalParameters[p_id]     
                             p_order = self.__glob_params_order[p_id]
                             if (p_order == 'not reac'): 
                                 if (strict): raise NotImplementedError("Reaction '%s' parameter '%s' not the right units for a reaction parameter."%(reac.getId()), p_id)
@@ -2536,6 +2537,7 @@ class Interface(object):
                     p_id = str(p.getId())
                     p_value = p.getValue()
                     p_units = p.getUnits()
+                    p_factor=1.0
                     if (not p_value): 
                         if p_id in self.__globalParameters:
                             p_value, p_factor  = self.__globalParameters[p_id]     
