@@ -1,0 +1,14 @@
+test/
+doc/
+MolSim Functional Requirements/
+use_cases/
+examples/
+build/
+.noseids
+*.pyc
+*.DS_Store
+*.dropbox
+*.py~
+
+mass_replace
+
