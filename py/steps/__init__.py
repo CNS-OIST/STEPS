@@ -24,7 +24,7 @@
 
 __name__      = 'steps'
 __longname__  = 'STochastic Engine for Pathway Simulation'
-__version__   = '3.0.0'
+__version__   = '3.0.1'
 __internal_version__ = 'HBP_0.10.8'
 __author__    = 'STEPS Development Team'
 __url__       = 'steps.sourceforge.net'
