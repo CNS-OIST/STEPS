@@ -2,7 +2,12 @@
 
 find_program(SWIG_EXECUTABLE NAMES swig3.0 swig2.0 swig)
 
-if(SWIG_EXECUTABLE)
+if(NOT SWIG_EXECUTABLE)
+    if (SWIG3_FIND_REQUIRED)
+        message(FATAL_ERROR "Swig not found!")
+    endif()
+    set(SWIG_FOUND 0)
+else()
     execute_process(COMMAND ${SWIG_EXECUTABLE} -swiglib
         OUTPUT_VARIABLE SWIG_DIR RESULT_VARIABLE _RV ERROR_QUIET)
     if(_RV)
