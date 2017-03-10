@@ -35,11 +35,11 @@ Installation From Source code
 -----------------------------
 1. Clone the repository using the folowing command in terminal
 
-        git clone https://github.com/CNS-OIST/STEPS_Release.git
+        git clone https://github.com/CNS-OIST/STEPS.git
 
 2. run the following commands to compile the source code and install
 
-        cd STEPS_Release
+        cd STEPS
         mkdir build
         cd build
         cmake ..
