@@ -1,4 +1,8 @@
 Release Notes
+Version 3.0.1 (2017-2)
+==========================
+1. Bug fix for crash problem when providing fractional value to setCompCount()
+and setPatchCount() in tetexact
 
 Version 3.0.0 (2017-2)
 ==========================

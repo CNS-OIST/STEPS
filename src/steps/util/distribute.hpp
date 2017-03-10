@@ -36,6 +36,7 @@
 #include "steps/error.hpp"
 #include "steps/math/sample.hpp"
 
+
 namespace steps {
 namespace util {
 
@@ -90,7 +91,6 @@ void distribute_quantity(double x, FwdIter b, FwdIter e,
         Weight weight, SetCount set_count, IncCount inc_count, Rng &g, double total_weight=0)
 {
     static std::uniform_real_distribution<double> U;
-
     if (b==e) return;
 
     if (x<0) throw steps::ArgErr("negative quantity to distribute");
@@ -132,6 +132,8 @@ void distribute_quantity(double x, FwdIter b, FwdIter e,
     if (allocated>x)
         throw steps::ProgErr("internal error in count rounding");
     uint remainder = (uint)(x-allocated);
+
+    if (remainder == 0) return;
 
     // Use fractional parts as weights for sampling round.
     steps::math::adjusted_pareto_sampler<double> S(remainder,pi.begin(),pi.end());
