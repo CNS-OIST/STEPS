@@ -30,6 +30,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <stdexcept>
 #include <vector>
 #include <memory>
 
@@ -190,7 +191,7 @@ public:
 
 private:
     int pN;
-    SLU_NCMatrix pA;
+    matrix_type pA;
     std::vector<double> pb, px;
     vector_type pb_view, px_view;
 

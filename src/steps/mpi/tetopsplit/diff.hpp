@@ -95,7 +95,9 @@ public:
     bool depSpecTri(uint gidx, steps::mpi::tetopsplit::Tri * tri);
     void reset(void);
     double rate(steps::mpi::tetopsplit::TetOpSplitP * solver = 0);
-    double getScaledDcst(steps::mpi::tetopsplit::TetOpSplitP * solver = 0);
+    inline double getScaledDcst(steps::mpi::tetopsplit::TetOpSplitP * solver = 0) {
+        return pScaledDcst;
+    }
 
     int apply(steps::rng::RNG * rng);
     int apply(steps::rng::RNG * rng, uint nmolcs);

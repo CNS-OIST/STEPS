@@ -44,7 +44,6 @@
 #include "third_party/easylogging++.h"
 
 
-
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace stex = steps::tetexact;
@@ -61,7 +60,8 @@ stex::SDiff::SDiff(ssolver::Diffdef * sdef, stex::Tri * tri)
 , pScaledDcst(0.0)
 , pDcst(0.0)
 , pCDFSelector()
-
+, pSDiffBndActive()
+, pSDiffBndDirection()
 {
     assert(pSDiffdef != 0);
     assert(pTri != 0);
@@ -78,7 +78,7 @@ stex::SDiff::SDiff(ssolver::Diffdef * sdef, stex::Tri * tri)
 
     for (uint i = 0; i < 3; ++i)
     {
-        pDiffBndDirection[i] = pTri->getDiffBndDirection(i);
+        pSDiffBndDirection[i] = pTri->getSDiffBndDirection(i);
         if (next[i] == 0)
         {
             pNeighbPatchLidx[i] = -1;
@@ -103,9 +103,9 @@ stex::SDiff::SDiff(ssolver::Diffdef * sdef, stex::Tri * tri)
         double dist = pTri->dist(i);
         if ((dist > 0.0) && (next[i] != 0))
         {
-            if (pDiffBndDirection[i] == true)
+            if (pSDiffBndDirection[i] == true)
             {
-                if (pDiffBndActive[i])
+                if (pSDiffBndActive[i])
                     d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
                 else d[i] = 0.0;
             }
@@ -166,8 +166,8 @@ void stex::SDiff::checkpoint(std::fstream & cp_file)
     cp_file.write((char*)&pScaledDcst, sizeof(double));
     cp_file.write((char*)&pDcst, sizeof(double));
     cp_file.write((char*)pCDFSelector, sizeof(double) * 2);
-    cp_file.write((char*)pDiffBndActive, sizeof(bool) * 3);
-    cp_file.write((char*)pDiffBndDirection, sizeof(bool) * 3);
+    cp_file.write((char*)pSDiffBndActive, sizeof(bool) * 3);
+    cp_file.write((char*)pSDiffBndDirection, sizeof(bool) * 3);
     cp_file.write((char*)pNeighbPatchLidx, sizeof(int) * 3);
 
     cp_file.write((char*)&(crData.recorded), sizeof(bool));
@@ -200,8 +200,8 @@ void stex::SDiff::restore(std::fstream & cp_file)
     cp_file.read((char*)&pScaledDcst, sizeof(double));
     cp_file.read((char*)&pDcst, sizeof(double));
     cp_file.read((char*)pCDFSelector, sizeof(double) * 2);
-    cp_file.read((char*)pDiffBndActive, sizeof(bool) * 3);
-    cp_file.read((char*)pDiffBndDirection, sizeof(bool) * 3);
+    cp_file.read((char*)pSDiffBndActive, sizeof(bool) * 3);
+    cp_file.read((char*)pSDiffBndDirection, sizeof(bool) * 3);
     cp_file.read((char*)pNeighbPatchLidx, sizeof(int) * 3);
 
     cp_file.read((char*)&(crData.recorded), sizeof(bool));
@@ -317,9 +317,9 @@ void stex::SDiff::reset(void)
 {
     resetExtent();
 
-    pDiffBndActive[0] = false;
-    pDiffBndActive[1] = false;
-    pDiffBndActive[2] = false;
+    pSDiffBndActive[0] = false;
+    pSDiffBndActive[1] = false;
+    pSDiffBndActive[2] = false;
 
     uint ldidx = pTri->patchdef()->surfdiffG2L(pSDiffdef->gidx());
     double dcst = pTri->patchdef()->dcst(ldidx);
@@ -371,9 +371,9 @@ void stex::SDiff::setDcst(double dcst)
         double dist = pTri->dist(i);
         if ((dist > 0.0) && (next[i] != 0))
         {
-            if (pDiffBndDirection[i] == true)
+            if (pSDiffBndDirection[i] == true)
             {
-                if (pDiffBndActive[i])
+                if (pSDiffBndActive[i])
                     d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
                 else d[i] = 0;
             }
@@ -407,21 +407,26 @@ void stex::SDiff::setDcst(double dcst)
         pCDFSelector[0] = d[0] / pScaledDcst;
         pCDFSelector[1] = pCDFSelector[0] + (d[1] / pScaledDcst);
     }
+    
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void stex::SDiff::setDirectionDcst(int direction, double dcst)
 {
-    #ifdef DIRECTIONAL_DCST_DEBUG
-    CLOG(DEBUG, "steps_debug") << "Direction: " << direction << " dcst: " << dcst << "\n";
-    #endif
-    
     assert(direction < 3);
     assert(direction >= 0);
     assert(dcst >= 0.0);
     directionalDcsts[direction] = dcst;
     
+    // Automatically activate boundary diffusion if necessary
+    if (pSDiffBndDirection[direction] == true) {
+        #ifdef SDIFFBOUNDARY_DEBUG
+        CLOG(DEBUG, "steps_debug") << "activate direction " << direction << "\n";
+        #endif
+        pSDiffBndActive[direction] = true;
+    }
+
     stex::Tri * next[3] =
     {
         pTri->nextTri(0),
@@ -434,31 +439,80 @@ void stex::SDiff::setDirectionDcst(int direction, double dcst)
     
     for (uint i = 0; i < 3; ++i)
     {
+        #ifdef SDIFFBOUNDARY_DEBUG
+        CLOG(DEBUG, "steps_debug") << "computing dcst for direction " << i << "\n";
+        #endif
         // if directional diffusion dcst exists use directional dcst, else use the standard one
         double dist = pTri->dist(i);
-        if ((dist > 0.0) && (next[i] != 0))
+        #ifdef SDIFFBOUNDARY_DEBUG
+        CLOG(DEBUG, "steps_debug") << "distance: " << dist << "\n";
+        #endif
+        if ((dist > 0.0) && (next[i] != NULL))
         {
-            if (pDiffBndDirection[i] == true)
+            #ifdef SDIFFBOUNDARY_DEBUG
+            CLOG(DEBUG, "steps_debug") << "next " << next[i] << "\n";
+            #endif
+            if (pSDiffBndDirection[i] == true)
             {
-                if (pDiffBndActive[i])
+                #ifdef SDIFFBOUNDARY_DEBUG
+                CLOG(DEBUG, "steps_debug") << "sdiff boundary " << i << " exists\n";
+                #endif
+                if (pSDiffBndActive[i])
                 {
-                    if (directionalDcsts.find(i) != directionalDcsts.end())
+                    #ifdef SDIFFBOUNDARY_DEBUG
+                    CLOG(DEBUG, "steps_debug") << "sdiff boundary " << i << " is active\n";
+                    #endif
+                    if (directionalDcsts.find(i) != directionalDcsts.end()) {
+                        #ifdef SDIFFBOUNDARY_DEBUG
+                        CLOG(DEBUG, "steps_debug") << "Use directional dcst: " << directionalDcsts[i] <<  "\n";
+                        #endif
                         d[i] = (pTri->length(i) * directionalDcsts[i]) / (pTri->area() * dist);
-                    else
-                        d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
+                    }
+                    else {
+                        #ifdef SDIFFBOUNDARY_DEBUG
+                        CLOG(DEBUG, "steps_debug") << "Use default dcst " << pDcst << "\n";
+                        #endif
+                    	// This part must use the default pDcst, not the function argument dcst
+                        d[i] = (pTri->length(i) * pDcst) / (pTri->area() * dist);
+                    }
                 }
-                else d[i] = 0;
+                else {
+                    #ifdef SDIFFBOUNDARY_DEBUG
+                    CLOG(DEBUG, "steps_debug") << "sdiff boundary " << i << " is inactive, no diffusion allow\n";
+                    #endif
+                    d[i] = 0;
+                }
             }
             else
             {
+                #ifdef SDIFFBOUNDARY_DEBUG
+                CLOG(DEBUG, "steps_debug") << "sdiff boundary " << i << " does not exist\n";
+                #endif
                 if (next[i]->patchdef() == pTri->patchdef())
                 {
-                    if (directionalDcsts.find(i) != directionalDcsts.end())
+                    #ifdef SDIFFBOUNDARY_DEBUG
+                    CLOG(DEBUG, "steps_debug") << "both triangles in the same patch\n";
+                    #endif
+                    if (directionalDcsts.find(i) != directionalDcsts.end()) {
+                        #ifdef SDIFFBOUNDARY_DEBUG
+                        CLOG(DEBUG, "steps_debug") << "Use directional dcst for direction " << direction << " dcst: " << directionalDcsts[i] <<  "\n";
+                        #endif
                         d[i] = (pTri->length(i) * directionalDcsts[i]) / (pTri->area() * dist);
-                    else
-                        d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
+                    }
+                    else {
+                        #ifdef SDIFFBOUNDARY_DEBUG
+                        CLOG(DEBUG, "steps_debug")  << "Use default dcst " << pDcst << "\n";
+                        #endif
+                    	// This part must use the default pDcst, not the function argument dcst
+                        d[i] = (pTri->length(i) * pDcst) / (pTri->area() * dist);
+                    }
                 }
-                else d[i] = 0;
+                else {
+                    #ifdef SDIFFBOUNDARY_DEBUG
+                    CLOG(DEBUG, "steps_debug") << "triangles belong to different patches, set dcst to 0\n";
+                    #endif
+                    d[i] = 0;
+                }
             }
         }
     }
@@ -552,6 +606,36 @@ uint stex::SDiff::updVecSize(void) const
             maxsize = pUpdVec[i].size();
     }
     return maxsize;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void stex::SDiff::setSDiffBndActive(uint i, bool active)
+{
+    assert (i < 3);
+    assert(pSDiffBndDirection[i] == true);
+
+    // Only need to update if the flags are changing
+    if (pSDiffBndActive[i] != active)
+    {
+        #ifdef SDIFFBOUNDARY_DEBUG
+        CLOG(DEBUG, "steps_debug") << "set direction " << i << " activation: " << active << "\n";
+        #endif
+        pSDiffBndActive[i] = active;
+        setDcst(pDcst);
+    }
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool stex::SDiff::getSDiffBndActive(uint i) const
+{
+    assert (i < 3);
+    assert(pSDiffBndDirection[i] == true);
+
+    return pSDiffBndActive[i];
 }
 
 ////////////////////////////////////////////////////////////////////////////////

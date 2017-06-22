@@ -53,6 +53,7 @@ EF_NONE = steps_swig.EF_NONE
 EF_DEFAULT = steps_swig.EF_DEFAULT
 EF_DV_BDSYS = steps_swig.EF_DV_BDSYS
 EF_DV_SLUSYS = steps_swig.EF_DV_SLUSYS
+EF_DV_PETSC = steps_swig.EF_DV_PETSC
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Tetrahedral Direct SSA

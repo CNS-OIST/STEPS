@@ -171,10 +171,10 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     // Set whether a direction is a diffusion boundary
-    void setDiffBndDirection(uint i);
+    void setSDiffBndDirection(uint i);
 
-    inline bool getDiffBndDirection(uint idx) const
-    { return pDiffBndDirection[idx]; }
+    inline bool getSDiffBndDirection(uint idx) const
+    { return pSDiffBndDirection[idx]; }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: EFIELD
@@ -267,7 +267,7 @@ private:
     double                              pLengths[3];
     double                              pDist[3];
 
-    bool                                pDiffBndDirection[3];
+    bool                                pSDiffBndDirection[3];
 
     /// Numbers of molecules -- stored as machine word integers.
     uint                              * pPoolCount;

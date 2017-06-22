@@ -80,6 +80,8 @@ typedef KProcPSet::const_iterator       KProcPSetCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+enum TYPE {KP_REAC, KP_SREAC, KP_DIFF, KP_SDIFF, KP_GHK, KP_VDEPSREAC, KP_VDEPTRANS};
+
 class KProc
 
 {
@@ -124,6 +126,8 @@ public:
 
     void setSchedIDX(uint idx)
     { pSchedIDX = idx; }
+    
+    uint getType(void){return type;}
 
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
@@ -210,6 +214,8 @@ protected:
     uint                                pFlags;
 
     uint                                pSchedIDX;
+    
+    uint                                 type;
 
     ////////////////////////////////////////////////////////////////////////
 };

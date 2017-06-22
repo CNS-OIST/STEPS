@@ -63,6 +63,7 @@ smtos::GHKcurr::GHKcurr(ssolver::GHKcurrdef * ghkdef, smtos::Tri * tri)
 {
     assert (pGHKcurrdef != 0);
     assert (pTri != 0);
+    type = KP_GHK;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

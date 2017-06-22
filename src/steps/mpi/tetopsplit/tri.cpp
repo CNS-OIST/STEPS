@@ -134,7 +134,7 @@ smtos::Tri::Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
     pLastUpdate = new double[nspecs];
     std::fill_n(pLastUpdate, nspecs, 0.0);
 
-    std::fill_n(pDiffBndDirection, 3, false);
+    std::fill_n(pSDiffBndDirection, 3, false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -170,6 +170,8 @@ void smtos::Tri::checkpoint(std::fstream & cp_file)
     cp_file.write((char*)pOCchan_timeintg, sizeof(double) * nohmcurrs);
     cp_file.write((char*)pOCtime_upd, sizeof(double) * nohmcurrs);
 
+    cp_file.write((char*)pSDiffBndDirection, sizeof(bool) * 3);
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -187,6 +189,8 @@ void smtos::Tri::restore(std::fstream & cp_file)
     uint nohmcurrs = pPatchdef->countOhmicCurrs();
     cp_file.read((char*)pOCchan_timeintg, sizeof(double) * nohmcurrs);
     cp_file.read((char*)pOCtime_upd, sizeof(double) * nohmcurrs);
+
+    cp_file.read((char*)pSDiffBndDirection, sizeof(bool) * 3);
 
 }
 
@@ -206,11 +210,11 @@ void smtos::Tri::setOuterTet(smtos::WmVol * t)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Tri::setDiffBndDirection(uint i)
+void smtos::Tri::setSDiffBndDirection(uint i)
 {
     assert(i < 3);
 
-    pDiffBndDirection[i] = true;
+    pSDiffBndDirection[i] = true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -584,7 +588,7 @@ void smtos::Tri::setCount(uint lidx, uint count, double period)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Tri::incCount(uint lidx, int inc, double period)
+void smtos::Tri::incCount(uint lidx, int inc, double period, bool local_change)
 {
     // can change count locally or remotely, if change locally, check if the change require sync,
     // if change remotely, register the change in pSol, sync of remote change will be register when
@@ -592,7 +596,7 @@ void smtos::Tri::incCount(uint lidx, int inc, double period)
     assert (lidx < patchdef()->countSpecs());
     
 	// count changed by diffusion
-    if (hostRank != myRank)
+    if (hostRank != myRank && !local_change)
     {
         if (inc <= 0) {
             std::ostringstream os;
@@ -609,7 +613,7 @@ void smtos::Tri::incCount(uint lidx, int inc, double period)
 		assert(oldcount + inc >= 0.0);
 		pPoolCount[lidx] += inc;
     
-		if (period == 0.0) return;
+		if (period == 0.0 || local_change) return;
 		// Count has changed,
 		double lastupdate = pLastUpdate[lidx];
 		assert(period >= lastupdate);

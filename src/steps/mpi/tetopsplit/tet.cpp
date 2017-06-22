@@ -376,7 +376,7 @@ void smtos::Tet::setCount(uint lidx, uint count, double period)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Tet::incCount(uint lidx, int inc, double period)
+void smtos::Tet::incCount(uint lidx, int inc, double period, bool local_change)
 {
     #ifdef MPI_DEBUG
     //CLOG(DEBUG, "mpi_debug") << "Change spec (local id): " << lidx << " by " << inc << "\n";
@@ -385,7 +385,7 @@ void smtos::Tet::incCount(uint lidx, int inc, double period)
 	
     
     // remote change caused by diffusion
-    if (hostRank != myRank)
+    if (hostRank != myRank && !local_change)
     {
         if (inc <= 0) {
             std::ostringstream os;
@@ -407,7 +407,7 @@ void smtos::Tet::incCount(uint lidx, int inc, double period)
         //CLOG(DEBUG, "mpi_debug") << "local count: " << pPoolCount[lidx] << "\n";
         #endif
 		
-		if (period == 0.0) return;
+		if (period == 0.0 || local_change) return;
 		// Count has changed,
 		double lastupdate = pLastUpdate[lidx];
 		assert(period >= lastupdate);
@@ -421,12 +421,12 @@ void smtos::Tet::incCount(uint lidx, int inc, double period)
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::Tet::getPoolOccupancy(uint lidx)
-{
-	assert (lidx < compdef()->countSpecs());
-
-	return pPoolOccupancy[lidx];
-}
+//double const& smtos::Tet::getPoolOccupancy(uint lidx) const
+//{
+//	assert (lidx < compdef()->countSpecs());
+//
+//	return pPoolOccupancy[lidx];
+//}
 
 ////////////////////////////////////////////////////////////////////////////////
 

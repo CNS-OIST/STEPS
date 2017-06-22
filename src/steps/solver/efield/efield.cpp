@@ -39,6 +39,7 @@
 
 #include "third_party/easylogging++.h"
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace sefield = steps::solver::efield;
@@ -72,6 +73,8 @@ void sefield::EField::initMesh(uint nverts, double * verts,
     pNVerts = nverts;
     pNTris = ntris;
     pNTets = ntets;
+
+    
 
     // First, the mesh is constructed -- VertexElements are created
     // and triangle and tetrahedron arrays are copied
@@ -171,6 +174,21 @@ void sefield::EField::setMembCapac(uint midx, double cm)
     // specific capacitance in pF/um2.
     // Argument is in F/m^2: 1 F/m^2 = 1 pF / um^2 so no conversion needed!
     pMesh->applySurfaceCapacitance(cm);
+}
+
+void sefield::EField::setTriCapac(uint tidx, double cm)
+{
+    // tidx argument converted to local index in Tetexact
+    assert(tidx < pNTris);
+
+    assert (cm >= 0.0);
+
+    // Geometry is in microns, calculation uses pF, so we need to supply
+    // specific capacitance in pF/um2.
+    // Argument is in F/m^2: 1 F/m^2 = 1 pF / um^2 so no conversion needed!
+
+    pMesh->applyTriCapacitance(tidx, cm);
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
