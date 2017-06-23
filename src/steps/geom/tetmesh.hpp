@@ -37,11 +37,13 @@
 #include "steps/geom/tmcomp.hpp"
 #include "steps/geom/memb.hpp"
 #include "steps/geom/diffboundary.hpp"
+#include "steps/geom/sdiffboundary.hpp"
 
 // STL headers
 #include <vector>
 #include <map>
 #include <set>
+
 ////////////////////////////////////////////////////////////////////////////////
 
  namespace steps {
@@ -54,6 +56,7 @@ class TmPatch;
 class TmComp;
 class Memb;
 class DiffBoundary;
+class SDiffBoundary;
 
 enum ElementType {ELEM_VERTEX, ELEM_TRI, ELEM_TET, ELEM_UNDEFINED = 99};
 
@@ -182,6 +185,32 @@ public:
     inline uint countBars(void) const
     { return pBarsN; }
 
+    ///Set the surface diffusion boundary which a bar belongs to.
+    ///
+    /// \param tidx Index of the bar.
+    /// \param sdiffb Pointer to the associated surface diffusion boundary.
+    void setBarSDiffBoundary(uint tidx, steps::tetmesh::SDiffBoundary * sdiffb);
+
+    /// Return the surface diffusion boundary which a triangle is associated to.
+    ///
+    /// \param bidx Index of the bar.
+    /// \return Pointer to the surface diffusion boundary.
+    steps::tetmesh::SDiffBoundary * getBarSDiffBoundary(uint bidx) const;
+
+    ///Return all the triangle neighbors of a bar by its index.
+    ///NOTE: This differs from _getBarTriNeighb which returns the 2 triangles that a bar
+    ///separates if it is part of a surface diffusion boundary.
+    /// \param bidx Index of the bar.
+    /// \return Set of the triangle neighbors.
+    ///
+    std::set<uint> getBarTriNeighbs(uint bidx) const;
+
+    ///Set neighbouring tris to bar in context of surface diffusion boundary
+    /// NOTE: Making one unique list for each bar disallows any bar from
+    /// being part of more than one surface diffusion boundary.
+    void setBarTris(uint bidx, int itriidx, int otriidx);
+
+
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO PYTHON): TRIANGLES
     ////////////////////////////////////////////////////////////////////////
@@ -238,7 +267,7 @@ public:
     ///Set the diffusion boundary which a triangle belongs to.
     ///
     /// \param tidx Index of the triangle.
-    /// \param patch Pointer to the associated diffusion boundary.
+    /// \param diffb Pointer to the associated diffusion boundary.
     void setTriDiffBoundary(uint tidx, steps::tetmesh::DiffBoundary * diffb);
 
     /// Return the diffusion boundary which a triangle is associated to.
@@ -261,6 +290,16 @@ public:
     /// \return Vector of the triangle neighbors.
     ///
     std::vector<int> getTriTriNeighb(uint tidx, const TmPatch * tmpatch) const;
+
+    ///Return the 3 triangle neighbors of a triangle by its index.
+    ///
+    /// \param tidx Index of the triangle.
+    /// \return Vector of the triangle neighbors.
+    ///
+    /// This function differs from the one above as it doesn't exclude triangle neighbors
+    /// in other patches
+
+    std::vector<int> getTriTriNeighb(uint tidx) const;
 
     ///Return all the triangle neighbors of a triangle by its index.
     ///
@@ -584,6 +623,12 @@ public:
     /// \return Indices of the two vertices that form the bar.
     const uint *_getBar(uint bidx) const { return &pBars[bidx][0]; }
 
+    ///Return the triangle neighbors of a bar with index bidx.
+    ///
+    /// \param bidx Index of the bar.
+    /// \return Array of the triangle neighbors.
+    const int * _getBarTriNeighb(uint bidx) const { return &pBar_tri_neighbours[bidx][0]; }
+
     /// Return a triangle with index tidx.
     ///
     /// \param tidx Index of the triangle.
@@ -692,12 +737,12 @@ public:
 
     /// Add a diffusion boundary.
     ///
-    /// \param patch Pointer to the diffusion boundary.
+    /// \param diffb Pointer to the diffusion boundary.
     void _handleDiffBoundaryAdd(steps::tetmesh::DiffBoundary * diffb);
 
     /// Delete a diffusion boundary.
     ///
-    /// \param patch Pointer to the diffusion boundary.
+    /// \param diffb Pointer to the diffusion boundary.
     void _handleDiffBoundaryDel(steps::tetmesh::DiffBoundary * diffb);
 
     /// Count the diffusion boundaries in the tetmesh container.
@@ -712,12 +757,52 @@ public:
     /// \return Pointer to the diffusion boundary.
     steps::tetmesh::DiffBoundary * _getDiffBoundary(uint gidx) const;
 
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Check if a surface diffusion boundary id is occupied.
+    ///
+    /// \param id ID of the surface diffusion boundary.
+    void _checkSDiffBoundaryID(std::string const & id) const;
+
+    /// Change the id of a surface diffusion boundary.
+    ///
+    /// \param o Old id of the surface diffusion boundary.
+    /// \param n New id of the surface diffusion boundary.
+    void _handleSDiffBoundaryIDChange(std::string const & o, std::string const & n);
+
+    /// Add a surface diffusion boundary.
+    ///
+    /// \param sdiffb Pointer to the surface diffusion boundary.
+    void _handleSDiffBoundaryAdd(steps::tetmesh::SDiffBoundary * sdiffb);
+
+    /// Delete a diffusion boundary.
+    ///
+    /// \param sdiffb Pointer to the surface diffusion boundary.
+    void _handleSDiffBoundaryDel(steps::tetmesh::SDiffBoundary * sdiffb);
+
+    /// Count the surface diffusion boundaries in the tetmesh container.
+    ///
+    /// \return Number of surface diffusion boundaries.
+    inline uint _countSDiffBoundaries(void) const
+    { return pSDiffBoundaries.size(); }
+
+    /// Return a surface diffusion boundary with index gidx.
+    ///
+    /// \param gidx Index of the surface diffusion boundary.
+    /// \return Pointer to the surface diffusion boundary.
+    steps::tetmesh::SDiffBoundary * _getSDiffBoundary(uint gidx) const;
+
+    ////////////////////////////////////////////////////////////////////////
+
 private:
     typedef std::array<uint,2> bar_verts;
     typedef std::array<uint,3> tri_verts;
     typedef std::array<uint,4> tet_verts;
 
     typedef std::array<uint,3> tri_bars;
+
+    typedef std::array<int,2> bar_tris;
+
     typedef std::array<int,2>  tri_tets;
 
     typedef std::array<uint,4> tet_tris;
@@ -739,6 +824,13 @@ private:
     uint                                pBarsN;
     /// The bars by the two vertices index
     std::vector<bar_verts>              pBars;
+
+    /// The surface diffusion boundary a bar belongs to
+    std::vector<steps::tetmesh::SDiffBoundary *>  pBar_sdiffboundaries;
+
+    /// The 2 triangle neighbours of each bar (by index) in the context of
+    /// surface diffusion boundaries
+    std::vector<bar_tris>				pBar_tri_neighbours;
 
     ///////////////////////// DATA: TRIANGLES //////////////////////////////
     ///
@@ -791,6 +883,7 @@ private:
     // do not belong in a well-mixed geometry description
     std::map<std::string, steps::tetmesh::Memb *>       pMembs;
     std::map<std::string, steps::tetmesh::DiffBoundary *> pDiffBoundaries;
+    std::map<std::string, steps::tetmesh::SDiffBoundary *> pSDiffBoundaries;
     
     ////////////////////////// ROI Dataset /////////////////////////////////
     std::map<std::string, ROISet>                       mROI;

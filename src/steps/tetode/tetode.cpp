@@ -571,6 +571,13 @@ void stode::TetODE::_setup(void)
             throw steps::ArgErr("Well-mixed patches not supported in steps::solver::TetODE solver.");
 
         steps::tetode::Patch *localpatch = pPatches[p];
+        std::map<uint, std::vector<uint> > bar2tri;
+        for (uint tri: tmpatch->_getAllTriIndices()) 
+        {
+            const uint *bars = pMesh->_getTriBars(tri);
+            for (int i = 0; i < 3; ++i)
+                bar2tri[bars[i]].push_back(tri);
+        }
 
         for (uint tri: tmpatch->_getAllTriIndices()) 
         {
@@ -587,7 +594,18 @@ void stode::TetODE::_setup(void)
                 l[j] = distance(pMesh->_getVertex(v[0]), pMesh->_getVertex(v[1]));
             }
 
-            std::vector<int> tris = pMesh->getTriTriNeighb(tri, tmpatch);
+            std::vector<int> tris(3, -1);
+            for (int j = 0; j < 3; ++j)
+            {
+                std::vector<uint> neighb_tris = bar2tri[tri_bars[j]];
+                for (int k = 0; k < neighb_tris.size(); ++k)
+                {
+                    if (neighb_tris[k] == tri || pMesh->getTriPatch(neighb_tris[k]) != tmpatch)
+                        continue;
+                    tris[j] = neighb_tris[k];
+                    break;
+                }
+            }
             point3d baryc = pMesh->_getTriBarycenter(tri);
 
             double d[3] = {0, 0, 0};
@@ -1581,7 +1599,6 @@ void stode::TetODE::_setupEField(void)
 
     using namespace steps::solver::efield;
 
-    pEField = make_EField<dVSolverBanded>();
     pEField->initMesh(nefverts(), pEFVerts, neftris(), pEFTris, neftets(), pEFTets, memb->_getOpt_method(), memb->_getOpt_file_name(), memb->_getSearch_percent());
 }
 

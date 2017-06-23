@@ -56,6 +56,7 @@ fwd_api_enum(EF_NONE)
 fwd_api_enum(EF_DEFAULT)
 fwd_api_enum(EF_DV_BDSYS)
 fwd_api_enum(EF_DV_SLUSYS)
+fwd_api_enum(EF_DV_PETSC)
 
 namespace steps
 {
@@ -1365,6 +1366,8 @@ Return:
 
     %feature("autodoc", 
 "
+This function is outdated, use getTriSDiffD() instead.
+
 Returns the diffusion constant of diffusion rule with identifier string diff 
 in triangle element with index idx. If direction_tri is specified, return the diffusion constant towards that direction.
 
@@ -1384,6 +1387,27 @@ Return:
 
     %feature("autodoc", 
 "
+Returns the diffusion constant of diffusion rule with identifier string diff 
+in triangle element with index idx. If direction_tri is specified, return the diffusion constant towards that direction.
+
+Syntax::
+    
+    getTriSDiffD(idx, diff, direction_tri = UINT_MAX)
+    
+Arguments:
+    * uint idx
+    * string diff
+    * direction_tri
+    
+Return:
+    float
+");
+    double getTriSDiffD(unsigned int tidx, std::string const & d, uint direction_tri = std::numeric_limits<uint>::max()) const;
+    
+    %feature("autodoc", 
+"
+THis Function is outdated, use setTriSDiffD() instead.
+
 Sets the diffusion constant of diffusion rule with identifier string diff in 
 triangle element with index idx to dcst. Specify direction_tri to set the constant only towards a given triangle direction.
 Syntax::
@@ -1400,6 +1424,25 @@ Return:
     None
 ");
     void setTriDiffD(uint tidx, std::string const & d, double dk, uint direction_tri = std::numeric_limits<uint>::max());
+    
+    %feature("autodoc", 
+"
+Sets the diffusion constant of diffusion rule with identifier string diff in 
+triangle element with index idx to dcst. Specify direction_tri to set the constant only towards a given triangle direction.
+Syntax::
+    
+    setTriSDiffD(idx, diff, dcst, direction_tri = UINT_MAX)
+    
+Arguments:
+    * uint idx
+    * string diff
+    * dcst
+    * direction_tri
+
+Return:
+    None
+");
+    void setTriSDiffD(uint tidx, std::string const & d, double dk, uint direction_tri = std::numeric_limits<uint>::max());
 	
     %feature("autodoc", 
 "
@@ -2051,7 +2094,63 @@ Return:
     None
 ");
     void setDiffBoundaryDcst(std::string const & db, std::string const & s, double dcst, std::string const & direction_comp = "");
+
+
+    %feature("autodoc",
+"
+Activates or inactivates diffusion across a surface diffusion boundary for a species.
+             
+Syntax::
+             
+    setSDiffBoundaryDiffusionActive(sdiffb, spec, act)
+             
+Arguments:
+    * string sdiffb
+    * string spec
+    * bool act
+
+Return:
+    None
+");
     
+    void setSDiffBoundaryDiffusionActive(std::string const & sdb, std::string const & s, bool act);
+    
+    %feature("autodoc",
+"
+Returns whether diffusion is active across a surface diffusion boundary for a species.
+             
+Syntax::
+             
+    getSDiffBoundaryDiffusionActive(sdiffb, spec)
+             
+Arguments:
+    * string sdiffb
+    * string spec
+             
+Return:
+    bool
+");
+    bool getSDiffBoundaryDiffusionActive(std::string const & sdb, std::string const & s) const;
+
+    %feature("autodoc",
+"
+Set the diffusion constant of triangles across a surface diffusion boundary. If direction_patch is provided, only set dcsts of diffusion towards it (Directional dcsts of diffusions in triangles in the other patch of the surface diffusion boundary towards triangles in the direction patch).
+             
+Syntax::
+             
+    setSDiffBoundaryDcst(sdiffb, spec, dcst, direction_patch = '')
+             
+Arguments:
+    * string sdiffb
+    * string spec
+    * double dcst
+    * direction_patch
+             
+Return:
+    None
+");
+    void setSDiffBoundaryDcst(std::string const & sdb, std::string const & s, double dcst, std::string const & direction_patch = "");
+
     %feature("autodoc", 
 "
 Returns the area (in m^2) of the triangular element with index idx.
@@ -2509,6 +2608,24 @@ Returns:
 ");			
     void setTriIClamp(unsigned int tidx, double i);
 
+	%feature("autodoc", 
+"
+Sets the specific membrane capacitance (in farad / m^2) of triangle element with index idx .
+			 
+Syntax::
+			 
+    setTriCapac(idx, cm)
+			 
+Arguments:
+    * uint idx
+    * double cm
+			 
+Returns:
+    None
+"
+);
+    void setTriCapac(unsigned int tidx, double cm);	
+    
     %feature("autodoc", 
 "
 Returns whether voltage-dependent surface reaction with identifier string vsreac in triangular 
@@ -2980,7 +3097,6 @@ Return:
 Get the counts of a species s in tetrehedrons of a ROI.
 
 Syntax::
-
     getROITetCountsNP(ROI_id, s, counts)
 
 Arguments:
@@ -2998,7 +3114,6 @@ Return:
 Get the counts of a species s in triangles of a ROI.
 
 Syntax::
-
     getROITriCountsNP(ROI_id, s, counts)
 
 Arguments:
@@ -3017,7 +3132,6 @@ Return:
 Get the volume of a ROI.
 
 Syntax::
-
     getROIVol(ROI_id)
 
 Arguments:
@@ -3034,7 +3148,6 @@ Return:
 Get the area of a ROI.
 
 Syntax::
-
     getROIArea(ROI_id)
 
 Arguments:
@@ -3051,7 +3164,6 @@ Return:
 Get the count of a species in a ROI.
 
 Syntax::
-
     getROICount(ROI_id, s)
 
 Arguments:
@@ -3069,7 +3181,6 @@ Return:
 Set the count of a species in a ROI.
 
 Syntax::
-
     setROICount(ROI_id, s, count)
 
 Arguments:
@@ -3088,7 +3199,6 @@ Return:
 Get the amount of a species in a ROI.
 
 Syntax::
-
     getROIAmount(ROI_id, s, count)
 
 Arguments:
@@ -3106,7 +3216,6 @@ Return:
 Get the concentration of a species in a ROI.
 
 Syntax::
-
     getROIConc(ROI_id, s, count)
 
 Arguments:
@@ -3124,7 +3233,6 @@ Return:
 Set the concentration of a species in a ROI.
 
 Syntax::
-
     setROIConc(ROI_id, s, conc)
 
 Arguments:
@@ -3144,7 +3252,6 @@ Set a species in a ROI to be clamped or not. The count of species s in the ROI i
 b is True, not clamped if b is False.
 
 Syntax::
-
     setROIClamped(ROI_id, s, b)
 
 Arguments:
@@ -3168,7 +3275,6 @@ Note: The default value still comes from the steps.model description, so
 calling reset() will return the reaction constant to that value.
 
 Syntax::
-
     setROIReacK(ROI_id, r, kf)
 
 Arguments:
@@ -3192,7 +3298,6 @@ Note: The default value still comes from the steps.model description, so
 calling reset() will return the reaction constant to that value.
 
 Syntax::
-
     setROISReacK(ROI_id, sr, kf)
 
 Arguments:
@@ -3215,7 +3320,6 @@ Note: The default value still comes from the steps.model description, so
 calling reset() will return the diffusion constant to that value.
 
 Syntax::
-
     setROIDiffD(ROI_id, d, dk)
 
 Arguments:
@@ -3234,7 +3338,6 @@ Return:
 Set reaction r in a ROI to be active or not.
 
 Syntax::
-
     setROIReacActive(ROI_id, r, a)
 
 Arguments:
@@ -3253,7 +3356,6 @@ Return:
 Set surface reaction sr in a ROI to be active or not.
 
 Syntax::
-
     setROISReacActive(ROI_id, sr, a)
 
 Arguments:
@@ -3272,7 +3374,6 @@ Return:
 Set diffusion d in a ROI to be active or not.
 
 Syntax::
-
     setROIDiffActive(ROI_id, sr, a)
 
 Arguments:
@@ -3291,7 +3392,6 @@ Return:
 Set voltage dependent surface reaction vsr in a ROI to be active or not.
 
 Syntax::
-
     setROIVDepSReacActive(ROI_id, vsr, a)
 
 Arguments:
@@ -3312,7 +3412,6 @@ identifier string ROI_id, that is the number of times the reaction has occurred 
 to the current simulation time.
 
 Syntax::
-
     getROIReacExtent(ROI_id, r)
 
 Arguments:
@@ -3333,7 +3432,6 @@ identifier string ROI_id, that is the number of times the reaction has occurred 
 to the current simulation time, to 0.
 
 Syntax::
-
     resetROIReacExtent(ROI_id, r)
 
 Arguments:
@@ -3353,7 +3451,6 @@ identifier string ROI_id, that is the number of times the reaction has occurred 
 to the current simulation time.
 
 Syntax::
-
     getROISReacExtent(ROI_id, sr)
 
 Arguments:
@@ -3373,7 +3470,6 @@ identifier string ROI_id, that is the number of times the reaction has occurred 
 to the current simulation time, to 0.
 
 Syntax::
-
     resetROISReacExtent(ROI_id, r)
 
 Arguments:
@@ -3393,7 +3489,6 @@ identifier string ROI_id, that is the number of times the diffusion has occurred
 to the current simulation time.
 
 Syntax::
-
     getROIDiffExtent(ROI_id, d)
 
 Arguments:
@@ -3413,7 +3508,6 @@ identifier string ROI_id, that is the number of times the diffusion has occurred
 to the current simulation time, to 0.
 
 Syntax::
-
     resetROIDiffExtent(ROI_id, d)
 
 Arguments:

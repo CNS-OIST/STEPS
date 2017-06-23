@@ -58,7 +58,7 @@ smtos::VDepSReac::VDepSReac(ssolver::VDepSReacdef * vdsrdef, smtos::Tri * tri)
 {
     assert (pVDepSReacdef != 0);
     assert (pTri != 0);
-
+    type = KP_VDEPSREAC;
     if (pVDepSReacdef->surf_surf() == false)
     {
         double vol;

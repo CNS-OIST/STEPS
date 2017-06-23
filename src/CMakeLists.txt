@@ -29,57 +29,35 @@ set(cvode   "third_party/cvode-2.6.0/src")
 set(nr      "third_party/nr")
 set(superlu "third_party/superlu_dist-4.1/src")
 
+
 set(superlu_sources
     "${superlu}/GetDiagU.c"
     "${superlu}/comm.c"
 #    "${superlu}/cublas_utils.c"
-    "${superlu}/ddistribute.c"
-    "${superlu}/dgsequ.c"
-    "${superlu}/dlamch.c"
-    "${superlu}/dlangs.c"
-    "${superlu}/dlaqgs.c"
-    "${superlu}/dldperm_dist.c"
-    "${superlu}/dmemory.c"
-    "${superlu}/dmyblas2.c"
-    "${superlu}/dsp_blas2.c"
-    "${superlu}/dsp_blas3.c"
-    "${superlu}/dutil.c"
-    "${superlu}/etree.c"
-    "${superlu}/get_perm_c.c"
-    "${superlu}/get_perm_c_parmetis.c"
-    "${superlu}/lsame.c"
-    "${superlu}/mc64ad_dist.c"
-    "${superlu}/memory.c"
-    "${superlu}/mmd.c"
-    "${superlu}/pddistribute.c"
-    "${superlu}/pdgsequ.c"
-    "${superlu}/pdgsmv.c"
-    "${superlu}/pdgsmv_AXglobal.c"
-    "${superlu}/pdgsrfs.c"
-    "${superlu}/pdgsrfs_ABXglobal.c"
-    "${superlu}/pdgssvx.c"
-    "${superlu}/pdgssvx_ABglobal.c"
-    "${superlu}/pdgstrf.c"
-    "${superlu}/pdgstrf2.c"
-    "${superlu}/pdgstrs.c"
-    "${superlu}/pdgstrs1.c"
+    "${superlu}/ddistribute.c"    "${superlu}/dgsequ.c"
+    "${superlu}/dlamch.c"         "${superlu}/dlangs.c"
+    "${superlu}/dlaqgs.c"         "${superlu}/dldperm_dist.c"
+    "${superlu}/dmemory.c"        "${superlu}/dmyblas2.c"
+    "${superlu}/dsp_blas2.c"      "${superlu}/dsp_blas3.c"
+    "${superlu}/dutil.c"          "${superlu}/etree.c"
+    "${superlu}/get_perm_c.c"     "${superlu}/get_perm_c_parmetis.c"
+    "${superlu}/lsame.c"          "${superlu}/mc64ad_dist.c"
+    "${superlu}/memory.c"         "${superlu}/mmd.c"
+    "${superlu}/pddistribute.c"   "${superlu}/pdgsequ.c"
+    "${superlu}/pdgsmv.c"         "${superlu}/pdgsmv_AXglobal.c"
+    "${superlu}/pdgsrfs.c"        "${superlu}/pdgsrfs_ABXglobal.c"
+    "${superlu}/pdgssvx.c"        "${superlu}/pdgssvx_ABglobal.c"
+    "${superlu}/pdgstrf.c"        "${superlu}/pdgstrf2.c"
+    "${superlu}/pdgstrs.c"        "${superlu}/pdgstrs1.c"
     "${superlu}/pdgstrs_Bglobal.c"
-    "${superlu}/pdgstrs_lsum.c"
-    "${superlu}/pdlangs.c"
-    "${superlu}/pdlaqgs.c"
-    "${superlu}/pdsymbfact_distdata.c"
-    "${superlu}/pdutil.c"
-    "${superlu}/psymbfact.c"
-    "${superlu}/psymbfact_util.c"
-    "${superlu}/pxerbla.c"
-    "${superlu}/slamch.c"
-    "${superlu}/sp_colorder.c"
-    "${superlu}/sp_ienv.c"
-    "${superlu}/static_schedule.c"
-    "${superlu}/superlu_grid.c"
-    "${superlu}/superlu_timer.c"
-    "${superlu}/symbfact.c"
-    "${superlu}/util.c"
+    "${superlu}/pdgstrs_lsum.c"   "${superlu}/pdlangs.c"
+    "${superlu}/pdlaqgs.c"        "${superlu}/pdsymbfact_distdata.c"
+    "${superlu}/pdutil.c"         "${superlu}/psymbfact.c"
+    "${superlu}/psymbfact_util.c" "${superlu}/pxerbla.c"
+    "${superlu}/slamch.c"         "${superlu}/sp_colorder.c"
+    "${superlu}/sp_ienv.c"        "${superlu}/static_schedule.c"
+    "${superlu}/superlu_grid.c"   "${superlu}/superlu_timer.c"
+    "${superlu}/symbfact.c"       "${superlu}/util.c"
     "${superlu}/xerbla.c"
 )
 
@@ -89,7 +67,7 @@ set(lib_sources
     "steps/geom/tetmesh.cpp"                   "steps/geom/comp.cpp"
     "steps/geom/geom.cpp"                      "steps/geom/patch.cpp"
                                                "steps/geom/tmcomp.cpp"
-    "steps/geom/tmpatch.cpp"
+    "steps/geom/tmpatch.cpp"                   "steps/geom/sdiffboundary.cpp"
     "steps/geom/memb.cpp"                      "steps/geom/diffboundary.cpp"
     "steps/model/model.cpp"                    "steps/model/diff.cpp"
     "steps/model/chan.cpp"                     "steps/model/reac.cpp"
@@ -109,15 +87,15 @@ set(lib_sources
     "steps/solver/api_diffboundary.cpp"        "steps/solver/api_recording.cpp"
     "steps/solver/api_batchdata.cpp"           "steps/solver/api_roidata.cpp"
     "steps/solver/compdef.cpp"                 "steps/solver/diffdef.cpp"
-    "steps/solver/patchdef.cpp"
+    "steps/solver/patchdef.cpp"                "steps/solver/api_sdiffboundary.cpp"
     "steps/solver/reacdef.cpp"                 "steps/solver/specdef.cpp"
     "steps/solver/sreacdef.cpp"                "steps/solver/statedef.cpp"
     "steps/solver/chandef.cpp"                 "steps/solver/ghkcurrdef.cpp"
     "steps/solver/diffboundarydef.cpp"         "steps/solver/ohmiccurrdef.cpp"
     "steps/solver/vdeptransdef.cpp"            "steps/solver/vdepsreacdef.cpp"
+    "steps/solver/sdiffboundarydef.cpp"
     "steps/solver/efield/dVsolver.cpp"
     "steps/solver/efield/bdsystem.cpp"
-    "steps/solver/efield/bdsystem_lapack.cpp"
     "steps/solver/efield/dVsolver.cpp"
     "steps/solver/efield/efield.cpp"           "steps/solver/efield/matrix.cpp"
     "steps/solver/efield/tetcoupler.cpp"       "steps/solver/efield/tetmesh.cpp"
@@ -129,7 +107,7 @@ set(lib_sources
     "steps/tetexact/tetexact.cpp"              "steps/tetexact/tri.cpp"
     "steps/tetexact/ghkcurr.cpp"               "steps/tetexact/vdeptrans.cpp"
     "steps/tetexact/vdepsreac.cpp"             "steps/tetexact/diffboundary.cpp"
-    "steps/tetexact/wmvol.cpp"
+    "steps/tetexact/wmvol.cpp"                 "steps/tetexact/sdiffboundary.cpp"
     "steps/wmdirect/comp.cpp"
     "steps/wmdirect/kproc.cpp"                 "steps/wmdirect/patch.cpp"
     "steps/wmdirect/reac.cpp"                  "steps/wmdirect/sreac.cpp"
@@ -165,7 +143,7 @@ set(lib_public_headers
     #
     "steps/geom/comp.hpp"                      "steps/geom/diffboundary.hpp"
     "steps/geom/geom.hpp"                      "steps/geom/memb.hpp"
-    "steps/geom/patch.hpp"
+    "steps/geom/patch.hpp"                     "steps/geom/sdiffboundary.hpp"
     "steps/geom/tetmesh.hpp"                   "steps/geom/tetmesh_rw.hpp"
     "steps/geom/tmcomp.hpp"                    "steps/geom/tmpatch.hpp"
     #
@@ -192,16 +170,18 @@ set(lib_public_headers
     "steps/solver/api.hpp"                     "steps/solver/chandef.hpp"
     "steps/solver/compdef.hpp"
     "steps/solver/diffboundarydef.hpp"         "steps/solver/diffdef.hpp"
-    "steps/solver/efield/bdsystem_lapack.hpp"        "steps/solver/efield/bdsystem.hpp"
-    "steps/solver/efield/dVsolver.hpp"        "steps/solver/efield/efield.hpp"
-    "steps/solver/efield/efieldsolver.hpp"           "steps/solver/efield/linsystem.hpp"
-    "steps/solver/efield/matrix.hpp"       "steps/solver/efield/tetcoupler.hpp"
-    "steps/solver/efield/tetmesh.hpp" "steps/solver/efield/vertexconnection.hpp"
+    "steps/solver/sdiffboundarydef.hpp"
+    "steps/solver/efield/bdsystem_lapack.hpp"  "steps/solver/efield/bdsystem.hpp"
+    "steps/solver/efield/dVsolver.hpp"         "steps/solver/efield/efield.hpp"
+    "steps/solver/efield/dVsolver_slu.hpp"
+    "steps/solver/efield/efieldsolver.hpp"     "steps/solver/efield/linsystem.hpp"
+    "steps/solver/efield/matrix.hpp"           "steps/solver/efield/tetcoupler.hpp"
+    "steps/solver/efield/tetmesh.hpp"          "steps/solver/efield/vertexconnection.hpp"
     "steps/solver/efield/vertexelement.hpp"
     "steps/solver/ghkcurrdef.hpp"              "steps/solver/ohmiccurrdef.hpp"
     "steps/solver/patchdef.hpp"                "steps/solver/reacdef.hpp"
     "steps/solver/specdef.hpp"                 "steps/solver/sreacdef.hpp"
-    "steps/solver/statedef.hpp"                
+    "steps/solver/statedef.hpp"
     "steps/solver/types.hpp"                   "steps/solver/vdepsreacdef.hpp"
     "steps/solver/vdeptransdef.hpp"
     #
@@ -213,6 +193,7 @@ set(lib_public_headers
     "steps/tetexact/tet.hpp"                   "steps/tetexact/tetexact.hpp"
     "steps/tetexact/tri.hpp"                   "steps/tetexact/vdepsreac.hpp"
     "steps/tetexact/vdeptrans.hpp"             "steps/tetexact/wmvol.hpp"
+    "steps/tetexact/sdiffboundary.hpp"
     #
     "steps/tetode/comp.hpp"                    "steps/tetode/patch.hpp"
     "steps/tetode/tet.hpp"                     "steps/tetode/tetode.hpp"
@@ -252,7 +233,7 @@ if(MPI_FOUND)
     "steps/mpi/tetopsplit/tetopsplit.cpp"       "steps/mpi/tetopsplit/tri.cpp"
     "steps/mpi/tetopsplit/ghkcurr.cpp"          "steps/mpi/tetopsplit/vdeptrans.cpp"
     "steps/mpi/tetopsplit/vdepsreac.cpp"        "steps/mpi/tetopsplit/diffboundary.cpp"
-    "steps/mpi/tetopsplit/wmvol.cpp"
+    "steps/mpi/tetopsplit/wmvol.cpp"			"steps/mpi/tetopsplit/sdiffboundary.cpp"
     #
     ${superlu_sources}
     )
@@ -270,6 +251,7 @@ if(MPI_FOUND)
     "steps/mpi/tetopsplit/tet.hpp"              "steps/mpi/tetopsplit/tetopsplit.hpp"
     "steps/mpi/tetopsplit/tri.hpp"              "steps/mpi/tetopsplit/vdepsreac.hpp"
     "steps/mpi/tetopsplit/vdeptrans.hpp"        "steps/mpi/tetopsplit/wmvol.hpp"
+    "steps/mpi/tetopsplit/sdiffboundary.hpp"
     )
 
     include_directories("." ${MPI_C_INCLUDE_PATH})
@@ -277,33 +259,47 @@ if(MPI_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
 endif()
 
+
+if (PETSC_FOUND)
+    include_directories(${PETSC_INCLUDE_DIRS})
+    list(APPEND lib_sources "steps/solver/efield/dVsolver_petsc.cpp")
+    list(APPEND lib_public_headers "steps/solver/efield/dVsolver_petsc.hpp")
+endif()
+
 add_definitions(-D_ELPP_NO_DEFAULT_LOG_FILE=1 -D_ELPP_STL_LOGGING=1 -D_ELPP_DISABLE_DEFAULT_CRASH_HANDLING=1)
 
 # enable below to turn on MPI profiling
-#add_definitions(-DMPI_PROFILING=1)
+add_definitions(-DMPI_PROFILING=1)
 
-#add_definitions( -UNDEBUG -D_DEBUG=1 -DSERIAL_EFIELD_DEBUG=1)
-#add_definitions(-D_ELPP_STL_LOGGING=1 -D_ELPP_STACKTRACE_ON_CRASH=1)
+# enable debug file
+#add_definitions(-UNDEBUG -D_DEBUG=1)
+
+# enable surface diffusion boundary debug
+#add_definitions(-DSDIFFBOUNDARY_DEBUG=1)
+
+# only enable if you know what you are doing :)
 #add_definitions(-DMPI_DEBUG=1 -UNDEBUG)
- 
+#add_definitions(-DSERIAL_EFIELD_DEBUG=1)
+#add_definitions(-D_ELPP_STL_LOGGING=1 -D_ELPP_STACKTRACE_ON_CRASH=1)
+
 add_library(libsteps-obj OBJECT ${lib_sources})
 set_target_properties(libsteps-obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
+add_library(libsteps_static STATIC $<TARGET_OBJECTS:libsteps-obj>)
+set_target_properties(libsteps_static PROPERTIES OUTPUT_NAME steps)
+
 add_library(libsteps SHARED $<TARGET_OBJECTS:libsteps-obj>)
+target_link_libraries(libsteps ${libsteps_link_libraries})
 set_target_properties(libsteps PROPERTIES VERSION "${lib_version}" SOVERSION "${lib_soversion}")
 set_target_properties(libsteps PROPERTIES OUTPUT_NAME steps)
 
-set(libsteps_link_libraries ${BLAS_LIBRARIES})
 
-if(MPI_FOUND)
-    set(libsteps_link_libraries ${libsteps_link_libraries} ${MPI_CXX_LIBRARIES} ${MPI_C_LIBRARIES})
-endif()
-if(LAPACK_FOUND)
-    set(libsteps_link_libraries ${libsteps_link_libraries} ${LAPACK_LIBRARIES})
-endif()
+# ==========================================================================
+# Installation of the headers and shared lib
+#
+option(INSTALL_DEV_LIBS "Install steps lib and headers which are required for development only" OFF)
 
-target_link_libraries(libsteps ${libsteps_link_libraries})
-
+if(INSTALL_DEV_LIBS)
 install(TARGETS libsteps
     RUNTIME DESTINATION bin COMPONENT lib
     ARCHIVE DESTINATION lib COMPONENT lib
@@ -313,4 +309,4 @@ foreach(header ${lib_public_headers})
     get_filename_component(inc_subdir ${header} DIRECTORY)
     install(FILES ${header} DESTINATION include/${inc_subdir})
 endforeach()
-
+endif()

@@ -31,12 +31,14 @@
 #include "steps/mpi/mpi_init.hpp"
 #include "third_party/easylogging++.h"
 
+
+
 void steps::mpi::mpiInit(void) {
     /* Initialize MPI */
     MPI_Init(NULL, NULL);
 
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    int rank; MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
     // MPI DEBUG Logger
     el::Configurations mpi_debug_conf;
     mpi_debug_conf.set(el::Level::Debug, el::ConfigurationType::Format, "[%datetime][%func][%loc]: %msg");

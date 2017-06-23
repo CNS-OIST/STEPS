@@ -32,7 +32,6 @@
 
 // STEPS headers.
 #include "steps/common.h"
-#include "steps/geom/diffboundary.hpp"
 #include "steps/geom/tetmesh.hpp"
 #include "steps/model/surfsys.hpp"
 #include "steps/geom/tmcomp.hpp"
@@ -82,7 +81,7 @@ public:
     /// \param container Pointer to the Tetmesh container.
     /// \param tris A sequence of triangles (by index) as a vector
     ///             of unsigned integers which is represented as
-    ///             a sequence of positive integer values) in Python.
+    ///             a sequence of positive integer values in Python.
 
     ///
     /// This is the constructor for the tetmesh (tetrahedron mesh) namespace.
@@ -113,13 +112,13 @@ public:
     steps::tetmesh::Tetmesh * getContainer(void) const
     { return pTetmesh; }
 
-    /// Return whether triangles (specified by index) are inside this patch.
+    /// Return whether triangles (specified by index) are inside this diffusion boundary.
     ///
     /// \param tri List of indices of triangles.
-    /// \return Results of whether the triangles are inside the patch.
+    /// \return Results of whether the triangles are inside the diffusion boundary.
     std::vector<bool> isTriInside(const std::vector<uint> &tri) const;
 
-    /// Return all triangles (by index) in the patch.
+    /// Return all triangles (by index) in the diffusion boundary.
     ///
     /// \return List of indices of triangles.
     inline std::vector<uint> getAllTriIndices(void) const
@@ -135,7 +134,7 @@ public:
     // DATA ACCESS (EXPOSED TO C++)
     ////////////////////////////////////////////////////////////////////////
 
-    /// Return all triangles (by index) in the patch.
+    /// Return all triangles (by index) in the diffusion boundary.
     ///
     /// \return List of indices of triangles.
     inline std::vector<uint> const & _getAllTriIndices(void) const

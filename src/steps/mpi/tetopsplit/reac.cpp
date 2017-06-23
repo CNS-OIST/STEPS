@@ -78,7 +78,7 @@ smtos::Reac::Reac(ssolver::Reacdef * rdef, smtos::WmVol * tet)
 {
     assert (pReacdef != 0);
     assert (pTet != 0);
-
+    type = KP_REAC;
     uint lridx = pTet->compdef()->reacG2L(pReacdef->gidx());
     double kcst = pTet->compdef()->kcst(lridx);
     pKcst = kcst;
@@ -249,36 +249,12 @@ double smtos::Reac::rate(smtos::TetOpSplitP * solver)
         uint lhs = lhs_vec[pool];
         if (lhs == 0) continue;
         uint cnt = cnt_vec[pool];
-        if (lhs > cnt)
-        {
+        if (lhs > cnt) {
             h_mu = 0.0;
             break;
         }
-        switch (lhs)
-        {
-            case 4:
-            {
-                h_mu *= static_cast<double>(cnt - 3);
-            }
-            case 3:
-            {
-                h_mu *= static_cast<double>(cnt - 2);
-            }
-            case 2:
-            {
-                h_mu *= static_cast<double>(cnt - 1);
-            }
-            case 1:
-            {
-                h_mu *= static_cast<double>(cnt);
-                break;
-            }
-            default:
-            {
-                assert(0);
-                return 0.0;
-            }
-        }
+        assert(lhs >= 4);
+        h_mu *= (cnt - lhs + 1);
     }
 #ifdef MPI_DEBUG
     //CLOG(DEBUG, "mpi_debug") << "new rate: " << h_mu * pCcst <<"\n";

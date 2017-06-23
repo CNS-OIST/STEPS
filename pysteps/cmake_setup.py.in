@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+
+"""A setuptools based setup module."""
+import os.path
+from distutils.core import setup
+
+def find_packages(where="."):
+    """Short version of setuptools.find_packages"""
+    all_pkgs=[]
+    for root, dirs, files in os.walk(where, followlinks=True):
+        # Copy dirs to iterate over it, then empty dirs.
+        all_dirs = dirs[:]; dirs[:] = []
+
+        for cdir in all_dirs:
+            full_path = os.path.join(root, cdir)
+            package   = os.path.relpath(full_path, where).replace(os.path.sep, '.')
+
+            if '.' not in cdir and os.path.isfile(os.path.join(full_path, '__init__.py')):
+                all_pkgs.append(package)
+                dirs.append(cdir)  # Search package subdirectories
+    return all_pkgs
+
+setup_opts = {
+    'name'         : 'steps',
+    'version'      : '${STEPS_VERSION}',
+    'author'       : 'STEPS Development Team',
+    'author_email' : 'steps.dev@gmail.com',
+    'url'          : 'http://steps.sourceforge.net',
+    'description'  : 'STochastic Engine for Pathway Simulation',
+    'download_url' : 'http://sourceforge.net/projects/steps/files/src',
+    'platforms'    : ['Mac OS X', 'Linux', 'Unix'],
+    'license'      : 'GNU General Public License Version 3.0',
+
+    'packages'     : find_packages(),
+    ## Extensions are compiled by parent the makefile
+    ## Not handled by setup.py, but directly by cmake. We use setup.py for the pure python files only
+    # 'package_data' : {'steps':['*.so']}
+    ## this setup shall be run directly from the pysteps dir. No package_dir required
+    # 'package_dir'  : {'':'pysteps'},
+}
+
+if __name__ == '__main__':
+    setup( **setup_opts )

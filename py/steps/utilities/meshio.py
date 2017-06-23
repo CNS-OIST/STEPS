@@ -22,14 +22,14 @@
 #################################################################################   
 ###
 
-""" 
+"""
 .. Note::
 
     This module is preliminary, means some of the functions are still under development.
     Code modification / debugging is wellcomed.
     Please email steps.dev@gmail.com if you would like to share you changes with others.
 
-Mesh Import and Export Utilities 
+Mesh Import and Export Utilities
 
 The MeshIO utilities are designed for importing geometry data from outside mesh-generators,
 as well as creating STEPS mesh object and exporting it using STEPS' own format.
@@ -38,25 +38,25 @@ Current importing support includes:
 
 * Abaqus data format (http://www.simulia.com)
 
-  Abaqus format is supported by CUBIT (http://cubit.sandia.gov/) 
+  Abaqus format is supported by CUBIT (http://cubit.sandia.gov/)
   and Netgen (http://sourceforge.net/projects/netgen-mesher/)
-  
+
 * Tengen's data formats (http://tetgen.berlios.de/)
 
-  Currently, only the .node, .ele and .face files are supported, 
+  Currently, only the .node, .ele and .face files are supported,
   other Tetgen files is not used in STEPS.
 
-Each import function (either importTetgen or importAbaqus) will read and import data 
-from given data file(s), returns a Tetmesh object for STEPS simulation, and three 
-ElementProxy objects where geometry data and id mapping are stored. 
+Each import function (either importTetgen or importAbaqus) will read and import data
+from given data file(s), returns a Tetmesh object for STEPS simulation, and three
+ElementProxy objects where geometry data and id mapping are stored.
 
-Once a Tetmesh object has been created the data can be saved to two separate files 
-by the saveTetmesh() function: 
+Once a Tetmesh object has been created the data can be saved to two separate files
+by the saveTetmesh() function:
 
 * An xml annotated file containing the nodes, triangles and tetrahedra.
 
-* A text file containing further information needed by STEPS solvers found 
-  in Tetmesh object constructor. 
+* A text file containing further information needed by STEPS solvers found
+  in Tetmesh object constructor.
 
 These files can later be loaded by the loadTetmesh() method and reconstruct
 the Tetmesh object. This is intened to drastically reduce mesh-loading time
@@ -91,22 +91,22 @@ class ElementProxy:
     could be used for data tracing and compartment/patch creactions::
 
         ElementProxy(type, unitlength)
-    
+
     Construct an empty ElementProxy object.
-    
+
     Parameters:
-    
+
     * type (string): The type of the elements stored in this object.
-    
+
     * unitlength (int): The length of vector units required for each element data.
       e.g. A node with 3 coordinates requires unitlength of 3,
       a tetrahedron with 4 nodes requires unitlength of 4.
       A triangle requires unitlength of 3.
-    
+
     Example::
-    
+
         nodeproxy = ElementProxy('node', 3)
-    
+
     """
 
     def __init__(self, type, unitlength):
@@ -126,15 +126,15 @@ class ElementProxy:
         Insert an element to the Element Map object, a STEPS id will be assigned automatically.
 
         Parameters:
-        
+
         * import_id (int): The id of the element given by the importing file.
-        * import_data (list): a list of data belongs to the element, 
+        * import_data (list): a list of data belongs to the element,
           e.g. for a node, a 3 units list of its coordinates.
 
         Example:
-        
+
         nodeproxy.insert(1, [0.1, 0.2, 0.4])
-        
+
         Insert a node with import id 1 and coordinates x = 0.1, y = 0.2, z = 0.4 to nodeproxy.
         type nodeproxy.getSTEPSID(1) will return the STEPS id of this element.
 
@@ -143,7 +143,7 @@ class ElementProxy:
         self.importid.append(import_id)
         self.stepsid[import_id] = self.idcounter
         self.idcounter += 1
-     
+
     def getType(self):
         """
         Return the type of elements stored in this Element Map object.
@@ -157,39 +157,39 @@ class ElementProxy:
 
         """
         return self.idcounter
-        
+
     def getDataFromSTEPSID(self, steps_id):
         """
         Return the data of element with STEPS id steps_id.
 
         Parameters:
-        
+
         * steps_id (int): The STEPS id of the element, this id is automatically allocated when
           inserting the element to the Element Map (see insert() method).
 
-        """              
+        """
         return self.data[steps_id * self.unitlength : (steps_id + 1) * self.unitlength]
-    
+
     def getDataFromImportID(self, import_id):
         """
         Return the data of element with import id import_id.
 
         Parameters:
-        
-        import_id (int): 
+
+        import_id (int):
         The import id of the element, this id is given by outside generator
         and contained in the imported file.
 
-        """   
+        """
         return self.getDataFromSTEPSID(self.stepsid[import_id])
 
     def getAllData(self):
         """
-        Return all data as an one dimentional list. 
+        Return all data as an one dimentional list.
         This list can be used to construct the Tetmesh.
 
         Example::
-        
+
             nodedata = nodeproxy.getAllData()
             tetdata = tetproxy.getAllData()
             mesh = steps.geom.Tetmesh(nodedata, tetdata)
@@ -202,7 +202,7 @@ class ElementProxy:
         Return the STEPS id of a element from its import id.
 
         Parameters:
-        
+
         * import_id (int): The import id of the element.
 
         """
@@ -213,7 +213,7 @@ class ElementProxy:
         Return the import id of a element from its STEPS id.
 
         Parameters:
-        
+
         * steps_id (int): The STEPS id of the element.
 
         """
@@ -234,16 +234,16 @@ class ElementProxy:
 
         Groups can be used to construct compartments and patches in STEPS, please refer to the
         user manual for examples about using groups and blocks.
-        
+
         Parameters:
-        
+
         * group_name (string): Name of the element group.
         * group_ids (list): A list of ids of elements belong to the group.
 
         """
 
         self.groups[group_name] = group_ids
-        
+
     def addToGroup(self, group_name, id):
         if (group_name in self.groups):
             self.groups[group_name].append(id)
@@ -255,9 +255,9 @@ class ElementProxy:
         Return all groups stored in the Element Map object.
 
         Example:
-        
+
         The following group dictionary contains two groups::
-            
+
             "Group1" contains element ids 1,2,6,4,8
             "Group2" contains element ids 3,1,2,1
 
@@ -268,31 +268,31 @@ class ElementProxy:
         """
 
         return self.groups
-        
+
     def blockBegin(self, block_name):
         """
         Notify the Element Map object that a new block with name block_name begins from
         the next element.
 
         A block is a special type of group whose element's STEPS ids is continual,
-        i.e. can be represented by a begin id and an end id. An unique name should be 
+        i.e. can be represented by a begin id and an end id. An unique name should be
         given to each block, which can be used to access associated block information
         (i.e. a two unit list contains the block begin id and block end id).
-        
+
         If another block was initialized before calling the blockEnd() method,
         this method will also end the previous block and the its data will be stored.
 
-        A dictionary of blocks can be converted to a dictionary of group via the 
+        A dictionary of blocks can be converted to a dictionary of group via the
         blocksToGroups() method.
 
         Notice:
-        
+
         Although a block will be finished and stored when a new block is notified without
         calling the blockEnd() method, user is recommanded to call blockEnd() in the usual
         case.
 
         Parameters:
-        
+
         * block_name (string): Name of the element block.
 
         """
@@ -309,7 +309,7 @@ class ElementProxy:
         be added to the ElementProxy object.
 
         Notice:
-        
+
         If the blockEnd() method is called before any block begins, or a block has been
         ended and there is no new block started, no information will be added to the block
         dictionary.
@@ -327,14 +327,14 @@ class ElementProxy:
         end ids as values.
 
         Example:
-        
+
         The following block dictionary contains two blocks: "Block1" starts from element with
         id of 0 and end at element 100, "Block2" starts from element 101 and ends at element 110::
 
             blocks = { "Block1":[0, 100], "Block2":[100, 110] }
 
         To access individual blocks, for example "Block1", type::
-            
+
             block1 = blocks["Block1"]
 
         User is recommanded to check Python's manual for the usage of dictionary.
@@ -349,11 +349,11 @@ class ElementProxy:
         Convert the block dictionary to a group dictionary.
 
         Return:
-        
+
         A dictionary of groups.
 
         """
-        
+
         it = iter(self.blocks)
         converted_groups = {}
         for key in it:
@@ -368,45 +368,45 @@ class ElementProxy:
 def importTetGen(pathroot, scale):
     """
     Read a TetGen-generated or refined mesh from a set of files.
-    
-    The TetGen file format for describing a mesh actually consists of 
+
+    The TetGen file format for describing a mesh actually consists of
     multiple files with varying suffixes. Currently, this routine only
     reads meshes consisting of three files:
-    
+
     * <input>.node: describing the tetrahedral mesh node points.
     * <input>.ele: describing tetrahedral elements, each of which
       consists of 4 pointers into the <input>.node file. (TetGen
-      also supports 10-node elements; these 6 extra nodes are obviously 
-      not read by STEPS.) 
-    * <input>.face: describing triangular faces, each of which 
+      also supports 10-node elements; these 6 extra nodes are obviously
+      not read by STEPS.)
+    * <input>.face: describing triangular faces, each of which
       consists of 3 pointers into the <input>.node file. This file is optional.
-    
+
     Other files are .vol (list of maximum volumes), .var (variant constraints)
     .neigh (list of neighbours), .smesh (simple PLC descriptions) and .edge
     (list of boundary edges) files. None of these seem relevant for our
     use cases, so we don't load them even when they are there. In particular,
     the .neigh file is computed by STEPS itself.
-    
+
     Please refer to the TetGen manual (pages 31-40 in the last edition)
     for more information on these file formats
-    
+
     tetgen.berlios.de/files/tetgen-manual.pdf
-    
-    (See the documentation for steps.geom.tetmesh for details about the mesh object.) 
-    
+
+    (See the documentation for steps.geom.tetmesh for details about the mesh object.)
+
     PARAMETERS:
-    
+
     * pathroot
       The root of the path name. E.g. mesh/torus would make this
-      routine try to read files mesh/torus.node, mesh/torus.ele 
+      routine try to read files mesh/torus.node, mesh/torus.ele
       and optionally for mesh/torus.face
-      
+
       * scale: LENGTH scale from the importing mesh to real geometry. e.g. a radius
       of 10 in the importing file to a radius of 1 micron in STEPS, scale is 1e-7.
-    
+
     RETURNS:
-    
-    mesh, nodeproxy, tetproxy, triproxy 
+
+    mesh, nodeproxy, tetproxy, triproxy
 
     mesh: The STEPS TetMesh object
     nodeproxy: Element Map for nodes
@@ -414,7 +414,7 @@ def importTetGen(pathroot, scale):
     triproxy: Element Map for triangles
 
    IMPORTANT NOTICE:
-   
+
    User is recommanded to save the tetmesh objects using the saveTetmesh() method
    and recreate the objects from the saved files, instead of creating the objects
    via the importing functions each time, if the tetmesh objects are intented to
@@ -428,7 +428,7 @@ def importTetGen(pathroot, scale):
 
     nodeproxy = ElementProxy('node', 3)
     tetproxy = ElementProxy('tet', 4)
-    triproxy = ElementProxy('tri', 3) 
+    triproxy = ElementProxy('tri', 3)
 
     # Is there a .node file?
     if not opath.isfile(nodefname):
@@ -439,7 +439,7 @@ def importTetGen(pathroot, scale):
         return None
     if not opath.isfile(facefname):
         facefname = ''
-    
+
     # Try to read the node file.
     nodefile = open(nodefname, 'r')
     # First line is:  <x> <y> <z> [att<# of points> <dimension (3)> <# of attributes>
@@ -460,10 +460,10 @@ def importTetGen(pathroot, scale):
         commentstart = line.find('#')
         if commentstart != -1:
             line = line[0:commentstart]
-        # Remaing lines: <point #>ributes] 
+        # Remaing lines: <point #>ributes]
         #                [boundary marker]
         tokens = line.split()
-        if len(tokens) == 0: 
+        if len(tokens) == 0:
             continue
         nodeid = int(tokens[0])
         node = [0.0, 0.0, 0.0]
@@ -491,10 +491,10 @@ def importTetGen(pathroot, scale):
         commentstart = line.find('#')
         if commentstart != -1:
             line = line[0:commentstart]
-        # Remaing lines: <point #>ributes] 
+        # Remaing lines: <point #>ributes]
         #                [boundary marker]
         tokens = line.split()
-        if len(tokens) == 0: 
+        if len(tokens) == 0:
             continue
         tetid = int(tokens[0])
         tet = [0, 0, 0, 0]
@@ -523,10 +523,10 @@ def importTetGen(pathroot, scale):
             commentstart = line.find('#')
             if commentstart != -1:
                 line = line[0:commentstart]
-            # Remaing lines: <point #>ributes] 
+            # Remaing lines: <point #>ributes]
             #                [boundary marker]
             tokens = line.split()
-            if len(tokens) == 0: 
+            if len(tokens) == 0:
                 continue
             triid = int(tokens[0])
             tri = [0, 0, 0]
@@ -539,17 +539,17 @@ def importTetGen(pathroot, scale):
     # Close the file.
     facefile.close()
 
-    print("Read TetGen files succesfully")    
-    
+    print("Read TetGen files succesfully")
+
     nodedata = nodeproxy.getAllData()
-    tetdata = tetproxy.getAllData() 
-    tridata = triproxy.getAllData() 
+    tetdata = tetproxy.getAllData()
+    tridata = triproxy.getAllData()
 
     print("creating Tetmesh object in STEPS...")
     mesh = stetmesh.Tetmesh(nodedata, tetdata, tridata)
     print("Tetmesh object created.")
     return mesh, nodeproxy, tetproxy, triproxy
-    
+
 
 #############################################################################################
 
@@ -590,21 +590,21 @@ def parseAbaqusLine(line):
 #############################################################################################
 
 def importAbaqus(filename, scale, ebs = None, shadow_mesh = None):
-    """ 
-    Read a ABAQUS-formated mesh file, return the created steps.geom.Tetmesh object, 
+    """
+    Read a ABAQUS-formated mesh file, return the created steps.geom.Tetmesh object,
     the element mapping for nodes, tetraedrons and triangles.
-    
+
     PARAMETERS:
-    
+
     * filename: the Abaqus filename (or path) including any suffix.
-    * scale: LENGTH scale from the importing mesh to real geometry. e.g. a radius 
+    * scale: LENGTH scale from the importing mesh to real geometry. e.g. a radius
       of 10 in the importing file to a radius of 1 micron in STEPS, scale is 1e-7.
     * ebs: specify the names of selected element blocks which are included in the mesh.
     * shadow_mesh: name of the ShadowMesh file exported using the STEPS-CUBIT supporting toolkit, can also be the ShadowMesh object itself.
-    
+
     RETURNS:
-    
-    mesh, nodeproxy, tetproxy, triproxy 
+
+    mesh, nodeproxy, tetproxy, triproxy
 
     * mesh: The STEPS TetMesh object
     * nodeproxy: Element Map for nodes
@@ -612,7 +612,7 @@ def importAbaqus(filename, scale, ebs = None, shadow_mesh = None):
     * triproxy: Element Map for triangles
 
    IMPORTANT NOTICE:
-   
+
    User is recommanded to save the tetmesh objects using the saveTetmesh() method
    and recreate the objects from the saved files, instead of creating the objects
    via the importing functions each time, if the tetmesh objects are intented to
@@ -622,9 +622,9 @@ def importAbaqus(filename, scale, ebs = None, shadow_mesh = None):
     """
     print("Reading Abaqus file...")
     btime = time.time()
-    
+
     abaqusfile = open(filename, 'r')
-    
+
     nodeproxy = ElementProxy('node', 3)
     tetproxy = ElementProxy('tet', 4)
     triproxy = ElementProxy('tri', 3)
@@ -632,7 +632,7 @@ def importAbaqus(filename, scale, ebs = None, shadow_mesh = None):
     line = abaqusfile.readline()
     # check we have the right kind of CUBIT output file here
     #assert(line.find('*HEADING'))
-    
+
     if ebs == None:
         include = True
     else:
@@ -641,7 +641,7 @@ def importAbaqus(filename, scale, ebs = None, shadow_mesh = None):
 
     # add tri data record for remove duplicated triangles
     recorded_tris = {}
-    
+
     # read line one by one until the end
     while(line):
         type, result = parseAbaqusLine(line)
@@ -714,11 +714,11 @@ def importAbaqus(filename, scale, ebs = None, shadow_mesh = None):
         currmap.blockEnd()
 
     abaqusfile.close()
-    
+
     nodedata = nodeproxy.getAllData()
-    tetdata = tetproxy.getAllData() 
+    tetdata = tetproxy.getAllData()
     tridata = triproxy.getAllData()
-    
+
     print "Number of nodes imported: ", nodeproxy.getSize()
     print "Number of tetrahedrons imported: ", tetproxy.getSize()
     print "Number of triangles imported: ", triproxy.getSize()
@@ -730,7 +730,7 @@ def importAbaqus(filename, scale, ebs = None, shadow_mesh = None):
     if shadow_mesh != None:
         if isinstance(shadow_mesh, str):
             shadow_mesh = ShadowMesh.importFrom(shadow_mesh)
-        
+
         print "Importing data from shadow mesh."
         for c in shadow_mesh.comps.values():
             print "Import compartment ", c.name
@@ -761,48 +761,48 @@ def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None):
     """
         Read two ABAQUS-formated mesh files, one with tetrahedron data and the other with triangle data, return the created steps.geom.Tetmesh object,
         the element mapping for nodes, tetraedrons and triangles.
-        
+
         PARAMETERS:
-        
+
         * tetfilename: the Abaqus filename for tetrahedron data including any suffix.
         * trifilename: the Abaqus filename for triangle data including any suffix.
         * scale: LENGTH scale from the importing mesh to real geometry. e.g. a radius
         of 10 in the importing file to a radius of 1 micron in STEPS, scale is 1e-7.
         * shadow_mesh: name of the ShadowMesh file exported using the STEPS-CUBIT supporting toolkit, can also be the ShadowMesh object itself.
-        
+
         RETURNS:
-        
+
         mesh, nodeproxy, tetproxy, triproxy
-        
+
         * mesh: The STEPS TetMesh object
         * nodeproxy: Element Map for nodes
         * tetproxy: Element Map for tetrahedrons
         * triproxy: Element Map for triangles
-        
+
         IMPORTANT NOTICE:
-        
+
         User is recommanded to save the tetmesh objects using the saveTetmesh() method
         and recreate the objects from the saved files, instead of creating the objects
         via the importing functions each time, if the tetmesh objects are intented to
         be used in multiple simulations. Since the importing functions require a massive
         amount of time to create the Tetmesh object, comparing to the loadTetmesh() method.
-        
+
     """
     print("Reading Abaqus file...")
     btime = time.time()
-    
+
     tetfile = open(tetfilename, 'r')
 
     nodeproxy = ElementProxy('node', 3)
     tetproxy = ElementProxy('tet', 4)
     triproxy = ElementProxy('tri', 3)
-    
+
     vert_idxs = {}
-    
+
     line = tetfile.readline()
     # check we have the right kind of CUBIT output file here
     #assert(line.find('*HEADING'))
-    
+
     currmap = None
     # read line one by one until the end
     while(line):
@@ -848,7 +848,7 @@ def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None):
                 node[2] = float(result["data"][3])*scale
                 currmap.insert(nodeid, node)
                 vert_idxs[tuple(node)] = currmap.getSize() - 1
-            
+
             elif (currmap == tetproxy):
                 nodeid = int(result["data"][0])
                 node = [0,0,0,0]
@@ -858,12 +858,12 @@ def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None):
                 node[2] = nodeproxy.getSTEPSID(int(result["data"][3]))
                 node[3] = nodeproxy.getSTEPSID(int(result["data"][4]))
                 currmap.insert(nodeid, node)
-        
+
         line = tetfile.readline()
-    
+
     if (currmap != None):
         currmap.blockEnd()
-    
+
     tetfile.close()
 
     trifile = open(trifilename, 'r')
@@ -927,7 +927,7 @@ def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None):
                 else:
                     currmap.insert(nodeid, node)
                     recorded_tris[(node[0], node[1], node[2])] = nodeid
-        
+
         line = trifile.readline()
 
     if (currmap != None):
@@ -951,7 +951,7 @@ def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None):
     if shadow_mesh != None:
         if isinstance(shadow_mesh, str):
             shadow_mesh = ShadowMesh.importFrom(shadow_mesh)
-        
+
         print "Importing data from shadow mesh."
         temp_comps = {}
         for c in shadow_mesh.comps.values():
@@ -996,19 +996,19 @@ def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None):
 #############################################################################################
 
 def importGmsh(filename, scale):
-    """ 
-    Read a Gmsh-formated mesh file, return the created steps.geom.Tetmesh object, 
+    """
+    Read a Gmsh-formated mesh file, return the created steps.geom.Tetmesh object,
     the element mapping for nodes, tetraedrons and triangles.
-    
+
     PARAMETERS:
-    
+
     * filename: the Abaqus filename (or path) including any suffix.
-    * scale: LENGTH scale from the importing mesh to real geometry. e.g. a radius 
+    * scale: LENGTH scale from the importing mesh to real geometry. e.g. a radius
       of 10 in the importing file to a radius of 1 micron in STEPS, scale is 1e-7.
-    
+
     RETURNS:
-    
-    mesh, nodeproxy, tetproxy, triproxy 
+
+    mesh, nodeproxy, tetproxy, triproxy
 
     * mesh: The STEPS TetMesh object
     * nodeproxy: Element Map for nodes
@@ -1016,7 +1016,7 @@ def importGmsh(filename, scale):
     * triproxy: Element Map for triangles
 
    IMPORTANT NOTICE:
-   
+
    User is recommanded to save the tetmesh objects using the saveTetmesh() method
    and recreate the objects from the saved files, instead of creating the objects
    via the importing functions each time, if the tetmesh objects are intented to
@@ -1026,9 +1026,9 @@ def importGmsh(filename, scale):
     """
     print("Reading Gmsh file...")
     btime = time.time()
-    
+
     meshfile = open(filename, 'r')
-    
+
     nodeproxy = ElementProxy('node', 3)
     tetproxy = ElementProxy('tet', 4)
     triproxy = ElementProxy('tri', 3)
@@ -1053,11 +1053,11 @@ def importGmsh(filename, scale):
         node[2] = float(linesec[3])*scale
         nodeproxy.insert(id, node)
     line = meshfile.readline()
-    assert(line == '$EndNodes\n')   
-    
+    assert(line == '$EndNodes\n')
+
     line = meshfile.readline()
     assert(line == '$Elements\n')
-    
+
     line = meshfile.readline()
     n_elems = int(line)
     # read elem
@@ -1069,29 +1069,29 @@ def importGmsh(filename, scale):
         # triangle
         if type == 2:
             node = [0,0,0]
-            node[0] = nodeproxy.getSTEPSID(int(linesec[6]))
-            node[1] = nodeproxy.getSTEPSID(int(linesec[7]))
-            node[2] = nodeproxy.getSTEPSID(int(linesec[8])) 
+            node[0] = nodeproxy.getSTEPSID(int(linesec[-3]))
+            node[1] = nodeproxy.getSTEPSID(int(linesec[-2]))
+            node[2] = nodeproxy.getSTEPSID(int(linesec[-1]))
             triproxy.insert(id, node)
         # tet
         if type == 4:
             group_id = linesec[4]
             node = [0,0,0,0]
-            node[0] = nodeproxy.getSTEPSID(int(linesec[6]))
-            node[1] = nodeproxy.getSTEPSID(int(linesec[7]))
-            node[2] = nodeproxy.getSTEPSID(int(linesec[8])) 
-            node[3] = nodeproxy.getSTEPSID(int(linesec[9])) 
+            node[0] = nodeproxy.getSTEPSID(int(linesec[-4]))
+            node[1] = nodeproxy.getSTEPSID(int(linesec[-3]))
+            node[2] = nodeproxy.getSTEPSID(int(linesec[-2]))
+            node[3] = nodeproxy.getSTEPSID(int(linesec[-1]))
             tetproxy.insert(id, node)
             tetproxy.addToGroup(group_id, tetproxy.getSTEPSID(id))
-            
+
     line = meshfile.readline()
     assert(line == '$EndElements\n')
     meshfile.close()
-    print("Read Msh file succesfully")    
-    
+    print("Read Msh file succesfully")
+
     nodedata = nodeproxy.getAllData()
-    tetdata = tetproxy.getAllData() 
-    tridata = triproxy.getAllData() 
+    tetdata = tetproxy.getAllData()
+    tridata = triproxy.getAllData()
 
     print "Number of nodes imported: ", nodeproxy.getSize()
     print "Number of tetrahedrons imported: ", tetproxy.getSize()
@@ -1100,7 +1100,7 @@ def importGmsh(filename, scale):
     print("creating Tetmesh object in STEPS...")
     mesh = stetmesh.Tetmesh(nodedata, tetdata, tridata)
     print("Tetmesh object created.")
-    
+
     return mesh, nodeproxy, tetproxy,triproxy
 
 
@@ -1112,10 +1112,10 @@ def importGmsh(filename, scale):
 #############################################################################################
 
 def saveMesh(pathname, tetmesh):
-    
-    """ 
+
+    """
     Save a STEPS Tetmesh in an XML file
-    
+
    This file stores the basic information about the mesh which tends to be
    common information for any software that supports tetrahedral meshes.
 
@@ -1123,110 +1123,110 @@ def saveMesh(pathname, tetmesh):
    * TRIANGLES are stored by the indices of their 3 nodes.
    * TETRAHEDRONS are stored by the indices of their 4 nodes.
 
-   The XML file also stores infomation about any compartments or 
+   The XML file also stores infomation about any compartments or
    patches created in STEPS (class steps.geom.TmComp steps.geom.TmPatch
-   respectively). 
-  
-   * COMPARTMENT(S) are stored by: 
-   
+   respectively).
+
+   * COMPARTMENT(S) are stored by:
+
      * their string identification.
      * a list of any volume systems added to the compartment at time of saving.
      * a list of tetrahedrons belonging to the compartment
-    
+
    * PATCH(ES) are stored by:
-   
+
      * their string identification.
      * a list of any surface systems added to the patch at time of saving.
      * the inner compartment id.
      * the outer compartment id (if it exists).
      * a list of trianlges belonging to this patch.
-        
+
     PARAMETERS:
-    
-    * pathname: 
-      
-      the root of the path to store the files. 
-      
+
+    * pathname:
+
+      the root of the path to store the files.
+
       e.g. 'meshes/spine1' will save data in /meshes/spine1.xml
-      
+
     * tetmesh:
-    
-      A valid STEPS Tetmesh object (of class steps.geom.Tetmesh). 
+
+      A valid STEPS Tetmesh object (of class steps.geom.Tetmesh).
       This mesh can be made in a variety of ways, e.g. to save a mesh loaded from tetgen::
-      
+
           >>> import meshio
           >>> ### Use cubit script to create steps.geom.Tetmesh object from tetgen output file ###
           >>> mymesh = meshio.readTetgen(tetgenfilename)
           >>> ### Save this mesh in XML (and ASCII) format for quick-loading in future ###
           >>> meshio.saveMesh('/meshes/spine1', mymesh[0])
-        
+
     """
-    
+
     # Performa a basic test on the object itself
     if (tetmesh.__str__()[1:19] != 'steps.geom.Tetmesh'):
         print("2nd parameter not a valid steps.geom.Tetmesh object.")
         return 0
-    
+
     # Following will raise IOError if pathname not a valid directory
     xmlfile = open(pathname+'.xml', 'w')
-    
+
     xmlfile.write('<?xml version="1.0" encoding="ISO-8859-1"?>\n')
     xmlfile.write('<tetmesh>\n')
-    
-    
-    ### Write the node information  
-    
+
+
+    ### Write the node information
+
     nverts = tetmesh.countVertices()
-    
+
     xmlfile.write('\t<nodes size="'+str(nverts)+'">\n')
-    
+
     for node in range(nverts):
         # Write indices and coordinates to xml file
         xmlfile.write('\t\t<node idx = "' + str(node) + '">\n')
-        coords = str(tetmesh.getVertex(node)).strip(')').strip('(')
+        coords = str(tetmesh.getVertex(node))[1:-1]
         xmlfile.write('\t\t\t<coords>'+ coords + '</coords>\n')
         xmlfile.write('\t\t</node>\n')
     xmlfile.write('\t</nodes>\n')
-    
-    
+
+
     ### Write the triangle information
-    
+
     ntris = tetmesh.countTris()
     xmlfile.write('\t<triangles size="' +str(ntris)+'">\n')
-    
+
     for tri in range(ntris):
         # Write indices and nodes to xml file
         xmlfile.write('\t\t<tri idx="' + str(tri) + '">\n')
-        nodes = str(tetmesh.getTri(tri)).strip(')').strip('(')
+        nodes = str(tetmesh.getTri(tri))[1:-1]
         xmlfile.write('\t\t\t<nodes>' + nodes + '</nodes>\n')
         xmlfile.write('\t\t</tri>\n')
     xmlfile.write('\t</triangles>\n')
-    
-    
+
+
     ### Write the tetrahedron information
-    
+
     ntets = tetmesh.countTets()
     xmlfile.write('\t<tetrahedrons size="' +str(ntets)+'">\n')
-    
+
     for tet in range(ntets):
         # Write indices and nodes to xml file
         xmlfile.write ('\t\t<tet idx="' + str(tet) + '">\n')
-        nodes = str(tetmesh.getTet(tet)).strip(')').strip('(')
+        nodes = str(tetmesh.getTet(tet))[1:-1]
         xmlfile.write('\t\t\t<nodes>' + nodes + '</nodes>\n')
         xmlfile.write('\t\t</tet>\n')
         # Write the volume, barycenter, trineighbours, tetneighbours to xml file
     xmlfile.write('\t</tetrahedrons>\n')
-    
-    
-    ### Write the comp and patch information. 
+
+
+    ### Write the comp and patch information.
     # TODO: Changes need to be made to steps code to make it easier to get the tet
-    # and tri members. Currently the mesh returns base pointer (Comp or Patch) 
-    # which cannot be used to find the indices. 
-    
+    # and tri members. Currently the mesh returns base pointer (Comp or Patch)
+    # which cannot be used to find the indices.
+
     comps = tetmesh.getAllComps()
     ncomps = comps.__len__()
     xmlfile.write('\t<compartments size="' + str(ncomps) + '">\n')
-    
+
     if (ncomps > 0) :
         ids = []
         vsys=[]
@@ -1261,11 +1261,11 @@ def saveMesh(pathname, tetmesh):
             xmlfile.write('</tets>\n')
             xmlfile.write('\t\t</comp>\n')
     xmlfile.write('\t</compartments>\n')
-    
+
     patches = tetmesh.getAllPatches()
     npatches = patches.__len__()
     xmlfile.write('\t<patches size="' + str(npatches) + '">\n')
-    
+
     if (npatches > 0) :
         ids = []
         ssys = []
@@ -1280,7 +1280,7 @@ def saveMesh(pathname, tetmesh):
             else : ocomp.append(patches[p].getOComp().getID())
             tris.append([])
         assert(ids.__len__() == ssys.__len__() == icomp.__len__() == ocomp.__len__() == tris.__len__() == npatches)
-        
+
         for tri in range(ntris):
             patchtemp = tetmesh.getTriPatch(tri)
             if not patchtemp: continue
@@ -1323,32 +1323,32 @@ def saveMesh(pathname, tetmesh):
         xmlfile.write('\t\t</ROI>\n')
     xmlfile.write('\t</ROI_records>\n')
     xmlfile.write('</tetmesh>')
-    
+
     xmlfile.close()
 
 #############################################################################################
 
 def loadMesh(pathname, scale=1, strict=False):
-    """ 
+    """
     Load a mesh in STEPS from the XML file.
-     
+
     PARAMETERS:
-    
-    * pathname: the root of the path where the file(s) are stored. 
-      e.g. with 'meshes/spine1' this function will look for the file /meshes/spine1.xml 
+
+    * pathname: the root of the path where the file(s) are stored.
+      e.g. with 'meshes/spine1' this function will look for the file /meshes/spine1.xml
 
     * scale: optionally rescale the mesh on loading by given factor.
-    
+
     * strict: apply strict(-er) checking to the input XML.
 
     RETURNS: A tuple (mesh, comps, patches)
-    
-    * mesh 
+
+    * mesh
       The STEPS Tetmesh object (steps.geom.Tetmesh)
     * comps
-      A list of any compartment objects (steps.geom.TmComp) from XML file 
+      A list of any compartment objects (steps.geom.TmComp) from XML file
     * patches
-      A list of any patches objects (steps.geom.TmPatch) from XML file 
+      A list of any patches objects (steps.geom.TmPatch) from XML file
     """
 
     # More robust/relaxed attribute parsing:
@@ -1370,15 +1370,15 @@ def loadMesh(pathname, scale=1, strict=False):
     if(xmlfile.readline().rstrip() != '<tetmesh>'):
         print('XML file is not a recognised STEPS mesh file')
         return
-    
+
     # Collect basic node information and perform some checks on the data read from XML file
     nodeinfo = xmlfile.readline().strip()
     (tag,attrs) = parse_xml_element(nodeinfo)
     assert(tag == 'nodes')
     assert(attrs.has_key('size'))
     nnodes = int(attrs['size'])
-    
-    nodes_out = [0.0]*(nnodes*3)    
+
+    nodes_out = [0.0]*(nnodes*3)
     for i in range(nnodes):
         idxtemp = xmlfile.readline().strip()
         assert(int(idxtemp[13:-2]) == i)
@@ -1387,9 +1387,9 @@ def loadMesh(pathname, scale=1, strict=False):
         coordtemp = coordtemp[8:-9].split(', ')
         nodes_out[i*3], nodes_out[(i*3)+1], nodes_out[(i*3)+2] = float(coordtemp[0]), float(coordtemp[1]), float(coordtemp[2])
         assert(xmlfile.readline().strip() == '</node>')
-    
+
     assert(xmlfile.readline().strip() == '</nodes>')
-    
+
     # Now read triangle information from xml file and text file if we have it
     triinfo = xmlfile.readline().strip()
     (tag,attrs) = parse_xml_element(triinfo)
@@ -1398,8 +1398,8 @@ def loadMesh(pathname, scale=1, strict=False):
     ntris = int(attrs['size'])
 
     tris_out = [0]*(ntris*3) # numpy.zeros(ntris*3, dtype = 'int')
-    
-    for i in range(ntris): 
+
+    for i in range(ntris):
         idxtemp = xmlfile.readline().strip()
         if strict:
             (tag,attrs) = parse_xml_element(idxtemp)
@@ -1414,16 +1414,16 @@ def loadMesh(pathname, scale=1, strict=False):
         # Now read the text file, if it exists, and get the extra information
 
     assert(xmlfile.readline().strip() == '</triangles>')
-    
+
     # Now read tet information from xml file and text file if we have it
     tetinfo = xmlfile.readline().strip()
     (tag,attrs) = parse_xml_element(tetinfo)
     assert(tag == 'tetrahedrons')
     assert(attrs.has_key('size'))
     ntets = int(attrs['size'])
-    
+
     tets_out = [0]*(ntets*4)	# numpy.zeros(ntets*4, dtype = 'int')
-    for i in range(ntets): 
+    for i in range(ntets):
         idxtemp = xmlfile.readline().strip()
         if strict:
             (tag,attrs) = parse_xml_element(idxtemp)
@@ -1431,7 +1431,7 @@ def loadMesh(pathname, scale=1, strict=False):
             assert(int(attrs['idx']) == i)
 
         nodetemp = xmlfile.readline().strip()
-        assert (nodetemp[:7] == '<nodes>' and nodetemp[-8:] == '</nodes>')      
+        assert (nodetemp[:7] == '<nodes>' and nodetemp[-8:] == '</nodes>')
         nodetemp = nodetemp[7:-8].split(', ')
         tets_out[i*4], tets_out[(i*4)+1], tets_out[(i*4)+2], tets_out[(i*4)+3] = int(nodetemp[0]), int(nodetemp[1]), int(nodetemp[2]), int(nodetemp[3])
         assert(xmlfile.readline().strip() == '</tet>')
@@ -1445,7 +1445,7 @@ def loadMesh(pathname, scale=1, strict=False):
 
     # We have all the information now. Time to make the Tetmesh object.
     mesh = stetmesh.Tetmesh(nodes_out, tets_out, tris_out)
-    
+
     # Now fetch any comp and patch information from XML file
     compinfo = xmlfile.readline().strip()
     (tag,attrs) = parse_xml_element(compinfo)
@@ -1475,10 +1475,10 @@ def loadMesh(pathname, scale=1, strict=False):
         for ct in range(nctets): ctets[ct] = int(tettemp[ct])
         c_out = stetmesh.TmComp(idtemp, mesh, ctets)
         for v in volsystemp: c_out.addVolsys(v)
-        comps_out.append(c_out) 
+        comps_out.append(c_out)
         assert(xmlfile.readline().strip() == '</comp>')
     assert(xmlfile.readline().strip() == '</compartments>')
-    
+
     # Retrieve patch info
     patchinfo = xmlfile.readline().strip()
     (tag,attrs) = parse_xml_element(patchinfo)
@@ -1505,9 +1505,9 @@ def loadMesh(pathname, scale=1, strict=False):
         icomptemp = icomptemp[7:-8]
         ocomptemp = xmlfile.readline().strip()
         assert(ocomptemp[:7] == '<ocomp>' and ocomptemp[-8:] == '</ocomp>')
-        ocomptemp = ocomptemp[7:-8]     
+        ocomptemp = ocomptemp[7:-8]
         tritemp = xmlfile.readline().strip()
-        assert(tritemp[:6] == '<tris>' and tritemp[-7:] == '</tris>')       
+        assert(tritemp[:6] == '<tris>' and tritemp[-7:] == '</tris>')
         tritemp = tritemp[6:-7].split(',')
         nptris = tritemp.__len__()
         ptris = [0]*nptris		# numpy.zeros(nptris, dtype='int')
@@ -1526,7 +1526,7 @@ def loadMesh(pathname, scale=1, strict=False):
         ROIinfo = info
         assert(attrs.has_key('size'))
         nROI = int(attrs['size'])
-        
+
         for r in range(nROI):
             ROItemp = xmlfile.readline().strip()
             (tag,attrs) = parse_xml_element(ROItemp)
