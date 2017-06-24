@@ -32,12 +32,25 @@
 
 #include "third_party/easylogging++.h"
 
+#ifdef USE_PETSC
+#include "petscsys.h"
+#endif
+
 void steps::mpi::mpiFinish(void) {
+#ifdef USE_PETSC
+    PetscBool PETSc_used = PETSC_FALSE;
+    PetscInitialized(&PETSc_used);
+
+    if (!PETSc_used) {
+#endif
     int status = MPI_Finalize();
-    #ifdef MPI_DEBUG
-    CLOG(DEBUG, "mpi_debug") << "######## SIMULATION END ############";
-    CLOG(DEBUG, "mpi_debug") << "Status: " << status << "\n";
-    #endif
+#ifdef MPI_DEBUG
+        CLOG(DEBUG, "mpi_debug") << "######## SIMULATION END ############";
+        CLOG(DEBUG, "mpi_debug") << "Status: " << status << "\n";
+#endif
+#ifdef USE_PETSC
+    }
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////

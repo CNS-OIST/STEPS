@@ -70,6 +70,7 @@ public:
         EF_DEFAULT = 1, // must be one for API compatibility
         EF_DV_BDSYS,
         EF_DV_SLUSYS,
+        EF_DV_PETSC,
     };
 
     /// Constructor
@@ -755,6 +756,32 @@ public:
     void setDiffBoundaryDcst(std::string const & db, std::string const & s, double dcst, std::string const & direction_comp = "");
 
     ////////////////////////////////////////////////////////////////////////
+    // SOLVER STATE ACCESS:
+    //      SURFACE DIFFUSION BOUNDARIES
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Activate or inactivate diffusion across a surface diffusion boundary for a species.
+    ///
+    /// \param sdb Name of the surface diffusion boundary.
+    /// \param s Name of the species.
+    /// \param act Bool to activate (true) or inactivate (false) diffusion.
+    void setSDiffBoundaryDiffusionActive(std::string const & sdb, std::string const & s, bool act);
+
+    /// Returns whether diffusion is active across a surface diffusion boundary for a species.
+    ///
+    /// \param sdb Name of the surface diffusion boundary.
+    /// \param s Name of the species.
+    bool getSDiffBoundaryDiffusionActive(std::string const & sdb, std::string const & s) const;
+
+    /// Set the diffusion constant across a surface diffusion boundary.
+    ///
+    /// \param sdb Name of the surface diffusion boundary.
+    /// \param s Name of the species.
+    /// \param dcst diffusion constant.
+    /// \param direction_patch ID of the patch which the diffusion is towards to.
+    void setSDiffBoundaryDcst(std::string const & sdb, std::string const & s, double dcst, std::string const & direction_patch = "");
+
+    ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROLS:
     //      TRIANGULAR SURFACE ELEMENTS
     ////////////////////////////////////////////////////////////////////////
@@ -868,12 +895,20 @@ public:
     /// \param r name of the reaction.
     double getTriSReacA(uint tidx, std::string const & r) const;
 
+    /// outdate function
+    double getTriDiffD(uint tidx, std::string const & d, uint direction_tri = std::numeric_limits<uint>::max()) const;
+
     /// Returns the diffusion constant of diffusion rule d in a triangle.
     ///
     /// \param tidx Index of the triangle.
-    /// \param d Name of the deffusion.
+    /// \param d Name of the diffusion.
     /// \param direction_tet Triangle index which specifies diffusion direction.
-    double getTriDiffD(uint tidx, std::string const & d, uint direction_tri = std::numeric_limits<uint>::max()) const;
+    double getTriSDiffD(uint tidx, std::string const & d, uint direction_tri = std::numeric_limits<uint>::max()) const;
+    
+    /// outdated function
+    void setTriDiffD(uint tidx, std::string const & d, double dk,
+                      uint direction_tri = std::numeric_limits<uint>::max());
+    
     
     /// Sets the diffusion constant of diffusion rule d on a triangle.
     ///
@@ -881,7 +916,7 @@ public:
     /// \param d Name of the diffusion.
     /// \param dk Rate constant of the diffusion.
     /// \param direction_tri Triangle index which the diffusion towards
-    void setTriDiffD(uint tidx, std::string const & d, double dk,
+    void setTriSDiffD(uint tidx, std::string const & d, double dk,
                      uint direction_tri = std::numeric_limits<uint>::max());
     ////////////////////////////////////////////////////////////////////////
 
@@ -954,6 +989,12 @@ public:
     /// \param vsr name of the voltage-dependent surface reaction.
     /// \param act Flag to activate / deactivate the reaction.
     void setTriVDepSReacActive(uint tidx, std::string const & vsr, bool act);
+
+    /// Set the specific capacitance of a triangle surface element.
+    ///
+    /// \param tidx Index of the triangle surface element
+    /// \param cm Specific membrane capacitance (farad / m^2)
+    void setTriCapac(uint tidx, double cm);
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROL:
@@ -1245,6 +1286,16 @@ protected:
     virtual void _setDiffBoundaryDiffusionActive(uint dbidx, uint sidx, bool act);
     virtual bool _getDiffBoundaryDiffusionActive(uint dbidx, uint sidx) const;
     virtual void _setDiffBoundaryDcst(uint dbidx, uint sidx, double dcst, uint direction_comp = std::numeric_limits<uint>::max());
+
+    ////////////////////////////////////////////////////////////////////////
+    // SOLVER STATE ACCESS:
+    //      SURFACE DIFFUSION BOUNDARIES
+    ////////////////////////////////////////////////////////////////////////
+
+    virtual void _setSDiffBoundaryDiffusionActive(uint sdbidx, uint sidx, bool act);
+    virtual bool _getSDiffBoundaryDiffusionActive(uint sdbidx, uint sidx) const;
+    virtual void _setSDiffBoundaryDcst(uint sdbidx, uint sidx, double dcst, uint direction_patch = std::numeric_limits<uint>::max());
+
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROL:
     //      TRIANGULAR SURFACE ELEMENTS
@@ -1267,9 +1318,9 @@ protected:
     virtual double _getTriSReacK(uint tidx, uint ridx) const;
     virtual void _setTriSReacK(uint tidx, uint ridx, double kf);
 
-    virtual double _getTriDiffD(uint tidx, uint didx, uint direction_tri = std::numeric_limits<uint>::max()) const;
+    virtual double _getTriSDiffD(uint tidx, uint didx, uint direction_tri = std::numeric_limits<uint>::max()) const;
     
-    virtual void _setTriDiffD(uint tidx, uint didx, double dk, uint direction_tri = std::numeric_limits<uint>::max());
+    virtual void _setTriSDiffD(uint tidx, uint didx, double dk, uint direction_tri = std::numeric_limits<uint>::max());
     
     virtual bool _getTriSReacActive(uint tidx, uint ridx) const;
     virtual void _setTriSReacActive(uint tidx, uint ridx, bool act);
@@ -1296,6 +1347,9 @@ protected:
 
     virtual bool _getTriVDepSReacActive(uint tidx, uint vsridx) const;
     virtual void _setTriVDepSReacActive(uint tidx, uint vsridx, bool act);
+
+    virtual void _setTriCapac(uint tidx, double cm);
+
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROL:

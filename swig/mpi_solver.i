@@ -163,7 +163,7 @@ Return:
 
     %feature("autodoc", 
 "
-Checkpoint data to a file. Not yet implemented.
+Checkpoint data to a file.
     
 Syntax::
     
@@ -182,7 +182,7 @@ Return:
     
     %feature("autodoc", 
 "
-Restore data from a file. Not yet implemented.
+Restore data from a file.
     
 Syntax::
     
@@ -472,7 +472,7 @@ Return the accumulated computation time of the process.
 To use the funtion, it is necessary to enable the add_definitions(-DMPI_PROFILING=1)
 line in the src/CmakeLists.txt file. This function is always called and return result locally.
 
-See (Chen et al, 2017) for more detail.
+See (Chen, 2017) for more detail.
 
 Syntax::
     
@@ -494,7 +494,7 @@ Return the accumulated synchronization time of the process.
 To use the funtion, it is necessary to enable the add_definitions(-DMPI_PROFILING=1)
 line in the src/CmakeLists.txt file. This function is always called and return result locally.
 
-See (Chen et al, 2017) for more detail.
+See (Chen, 2017) for more detail.
 
 Syntax::
     
@@ -516,7 +516,7 @@ Return the accumulated idle time of the process.
 To use the funtion, it is necessary to enable the add_definitions(-DMPI_PROFILING=1)
 line in the src/CmakeLists.txt file. This function is always called and return result locally.
 
-See (Chen et al, 2017) for more detail.
+See (Chen, 2017) for more detail.
 
 Syntax::
     
@@ -529,7 +529,67 @@ Return:
     float
 ");
     double getIdleTime(void);
+
+/////////////------------------------------------------------------////////////////
+    %feature("autodoc", 
+"
+Return the accumulated EField run time of the process.
+
+To use the funtion, it is necessary to enable the add_definitions(-DMPI_PROFILING=1)
+line in the src/CmakeLists.txt file. This function is always called and return result locally.
+
+
+Syntax::
     
+    getEFieldTime()
+    
+Arguments:
+    None
+    
+Return:
+    float
+");
+    double getEFieldTime(void);
+
+/////////////------------------------------------------------------////////////////
+    %feature("autodoc", 
+"
+Return the accumulated reaction-diffusion run time of the process.
+
+To use the funtion, it is necessary to enable the add_definitions(-DMPI_PROFILING=1)
+line in the src/CmakeLists.txt file. This function is always called and return result locally.
+
+Syntax::
+    
+    getRDTime()
+    
+Arguments:
+    None
+    
+Return:
+    float
+");
+    double getRDTime(void);
+
+/////////////------------------------------------------------------////////////////
+    %feature("autodoc", 
+"
+Return the accumulated data exchanging time between RD and EField solvers of the process.
+
+To use the funtion, it is necessary to enable the add_definitions(-DMPI_PROFILING=1)
+line in the src/CmakeLists.txt file. This function is always called and return result locally.
+
+Syntax::
+    
+    getDataExchangeTime()
+    
+Arguments:
+    None
+    
+Return:
+    float
+");
+    double getDataExchangeTime(void);
 /////////////------------------------------------------------------////////////////
 };
     

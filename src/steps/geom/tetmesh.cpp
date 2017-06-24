@@ -70,6 +70,7 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 , pTetsN(0)
 , pMembs()
 , pDiffBoundaries()
+, pBar_tri_neighbours()
 {
     using steps::math::small_sort;
     using std::to_string;
@@ -200,6 +201,7 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 
     // create tri->bar adjacency
     buildBarData();
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -225,6 +227,13 @@ void stetmesh::Tetmesh::buildBarData() {
     }
     pBars.shrink_to_fit();
     pBarsN = pBars.size();
+
+    // Include surface diffusion boundary stuff here
+    pBar_sdiffboundaries.assign(pBarsN,nullptr);
+
+    pBar_tri_neighbours.resize(pBarsN);
+    pBar_tri_neighbours.assign(pBarsN,bar_tris{-1,-1});
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -263,7 +272,7 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
     if (tri_areas.size() != pTrisN)         throw ArgErr("Inconsistent tri_areas size");
     if (tri_norms.size() != pTrisN*3)       throw ArgErr("Inconsistent tri_norms size");
     if (tri_tet_neighbs.size() != pTrisN*2) throw ArgErr("Inconsistent tri_tet_neighbrs size");
-    if (tet_vols.size() != pTetsN)          throw ArgErr("Inconsisyent tet_vols size");
+    if (tet_vols.size() != pTetsN)          throw ArgErr("Inconsistent tet_vols size");
     if (tet_barycs.size() != pTetsN*3)      throw ArgErr("Inconsistent tet_barycs size");
     if (tet_tri_neighbs.size() != pTetsN*4) throw ArgErr("Inconsistent tet_tri_neighbs size");
     if (tet_tet_neighbs.size() != pTetsN*4) throw ArgErr("Inconsistent tet_tet_neighbs size");
@@ -417,6 +426,22 @@ stetmesh::DiffBoundary * stetmesh::Tetmesh::getTriDiffBoundary(uint tidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void stetmesh::Tetmesh::setBarSDiffBoundary(uint bidx, stetmesh::SDiffBoundary * sdiffb)
+{
+    if (bidx >= pBarsN) throw steps::ArgErr("Bar index is out of range.");
+    pBar_sdiffboundaries[bidx] = sdiffb;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+stetmesh::SDiffBoundary * stetmesh::Tetmesh::getBarSDiffBoundary(uint bidx) const
+{
+    if (bidx >= pBarsN) throw steps::ArgErr("Bar index is out of range.");
+    return pBar_sdiffboundaries[bidx];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 std::vector<uint> stetmesh::Tetmesh::getTriBars(uint tidx) const
 {
     if (tidx >= pTrisN) throw steps::ArgErr("Triangle index is out of range.");
@@ -438,7 +463,6 @@ std::vector<int> stetmesh::Tetmesh::getTriTriNeighb(uint tidx, const stetmesh::T
     if (tidx >= pTrisN) throw steps::ArgErr("Triangle index is out of range.");
 
     // Triangles are neighbours if they share a bar
-
     std::vector<int> neighbours(3,-1);
     tri_bars bars = pTri_bars[tidx];
 
@@ -446,6 +470,7 @@ std::vector<int> stetmesh::Tetmesh::getTriTriNeighb(uint tidx, const stetmesh::T
         if (tri == tidx || pTri_patches[tri] != tmpatch) continue;
 
         tri_bars neighbtribars = pTri_bars[tri];
+        int next = 0;
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
                 if (neighbtribars[j] != bars[i]) continue;
@@ -458,14 +483,49 @@ std::vector<int> stetmesh::Tetmesh::getTriTriNeighb(uint tidx, const stetmesh::T
                 }
 
                 neighbours[i] = tri;
-                goto next_tri;
+                next = 1;
+                break;
             }
+            if (next) break;
         }
-next_tri: ;
     }
-
     return neighbours;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+std::vector<int> stetmesh::Tetmesh::getTriTriNeighb(uint tidx) const
+{
+    if (tidx >= pTrisN) throw steps::ArgErr("Triangle index is out of range.");
+
+    // Triangles are neighbours if they share a bar
+    std::vector<int> neighbours(3,-1);
+    tri_bars bars = pTri_bars[tidx];
+
+    for (uint tri = 0; tri < pTrisN; ++tri) {
+        if (tri == tidx || pTri_patches[tri] == nullptr) continue;
+
+        tri_bars neighbtribars = pTri_bars[tri];
+        int next = 0;
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                if (neighbtribars[j] != bars[i]) continue;
+
+                if (neighbours[i] != -1) {
+                    std::ostringstream os;
+                    os << "Error: Triangle idx " << tidx << " found to have more than 3 neighbours.";
+                    throw steps::ArgErr(os.str());
+                }
+
+                neighbours[i] = tri;
+                next = 1;
+                break;
+            }
+            if (next) break;
+        }
+    }
+    return neighbours;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 std::set<uint> stetmesh::Tetmesh::getTriTriNeighbs(uint tidx) const
@@ -497,6 +557,49 @@ next_tri: ;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+std::set<uint> stetmesh::Tetmesh::getBarTriNeighbs(uint bidx) const
+{
+    if (bidx >= pBarsN) throw steps::ArgErr("Bar index is out of range.");
+
+    std::set<uint> neighbours;
+
+    for (uint tri = 0; tri < pTrisN; ++tri) {
+        tri_bars neighbtribars = pTri_bars[tri];
+        for (int i = 0; i < 3; ++i) {
+            if (neighbtribars[i] != bidx) continue;
+
+            neighbours.insert(tri);
+            goto next_tri;
+        }
+next_tri: ;
+    }
+
+    return neighbours;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stetmesh::Tetmesh::setBarTris(uint bidx, int itriidx, int otriidx)
+{
+    if (bidx >= pBarsN) throw steps::ArgErr("Bar index is out of range.");
+    if (itriidx < 0 or otriidx < 0 or itriidx >= pTrisN or otriidx >= pTrisN)
+    {
+    	throw steps::ArgErr("Invalid triangle index.");
+   	}
+    if (pBar_tri_neighbours[bidx][0] >= 0 or pBar_tri_neighbours[bidx][1] >= 0)
+    {
+    	std::ostringstream os;
+    	os << "Bar " << bidx << " is part of more than one surface diffusion boundary.";
+    	throw steps::ArgErr(os.str());
+    }
+
+    pBar_tri_neighbours[bidx][0] = itriidx;
+    pBar_tri_neighbours[bidx][1] = otriidx;
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void stetmesh::Tetmesh::_flipTriTetNeighb(uint tidx)
 {
     assert(tidx < pTrisN);
@@ -504,6 +607,8 @@ void stetmesh::Tetmesh::_flipTriTetNeighb(uint tidx)
     tri_tets &tt = pTri_tet_neighbours[tidx];
     std::swap(tt[0],tt[1]);
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 void stetmesh::Tetmesh::_flipTriVerts(uint tidx)
 {
@@ -721,6 +826,58 @@ void stetmesh::Tetmesh::_handleDiffBoundaryDel(stetmesh::DiffBoundary * diffb)
 {
     assert(diffb->getContainer() == this);
     pDiffBoundaries.erase(diffb->getID());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stetmesh::Tetmesh::_checkSDiffBoundaryID(std::string const & id) const
+{
+    checkID(id);
+    if (pSDiffBoundaries.find(id) != pSDiffBoundaries.end())
+        throw steps::ArgErr("'" + id + "' is already in use.");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stetmesh::Tetmesh::_handleSDiffBoundaryIDChange(std::string const & o, std::string const & n)
+{
+    SDiffBoundaryPMapCI db_old = pSDiffBoundaries.find(o);
+    assert(db_old != pSDiffBoundaries.end());
+
+    if (o == n) return;
+    _checkSDiffBoundaryID(n);
+
+    SDiffBoundary * db = db_old->second;
+    assert(db != 0);
+    pSDiffBoundaries.erase(db->getID());                        // or s_old->first
+    pSDiffBoundaries.insert(SDiffBoundaryPMap::value_type(n, db));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stetmesh::Tetmesh::_handleSDiffBoundaryAdd(stetmesh::SDiffBoundary * sdiffb)
+{
+    assert(sdiffb->getContainer() == this);
+    _checkSDiffBoundaryID(sdiffb->getID());
+    pSDiffBoundaries.insert(SDiffBoundaryPMap::value_type(sdiffb->getID(), sdiffb));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stetmesh::Tetmesh::_handleSDiffBoundaryDel(stetmesh::SDiffBoundary * sdiffb)
+{
+    assert(sdiffb->getContainer() == this);
+    pSDiffBoundaries.erase(sdiffb->getID());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+steps::tetmesh::SDiffBoundary * stetmesh::Tetmesh::_getSDiffBoundary(uint gidx) const
+{
+    assert (gidx < pSDiffBoundaries.size());
+    std::map<std::string, SDiffBoundary *>::const_iterator db_it = pSDiffBoundaries.begin();
+    for (uint i=0; i< gidx; ++i) ++db_it;
+    return db_it->second;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

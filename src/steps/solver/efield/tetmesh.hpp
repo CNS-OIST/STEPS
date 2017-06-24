@@ -285,6 +285,9 @@ public:
     ///
     void applySurfaceCapacitance(double);
 
+    void applyTriCapacitance(uint tidx, double cm);
+
+
     /// Originally from Mesh.
     ///
     void applyConductance(double);

@@ -475,6 +475,13 @@ double API::getTriSReacA(uint tidx, string const & r) const
 
 double API::getTriDiffD(uint tidx, string const & d, uint direction_tri) const
 {
+    return getTriSDiffD(tidx, d, direction_tri);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::getTriSDiffD(uint tidx, string const & d, uint direction_tri) const
+{
     if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
@@ -486,7 +493,7 @@ double API::getTriDiffD(uint tidx, string const & d, uint direction_tri) const
         // the following may throw exception if string is unknown
         uint didx = pStatedef->getSurfDiffIdx(d);
         
-        return _getTriDiffD(tidx, didx, direction_tri);
+        return _getTriSDiffD(tidx, didx, direction_tri);
     }
     
     else
@@ -500,7 +507,13 @@ double API::getTriDiffD(uint tidx, string const & d, uint direction_tri) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriDiffD(uint tidx, string const & d, double dk, uint direction_tri)
+void API::setTriDiffD(uint tidx, string const & d, double dk, uint direction_tri) {
+    setTriSDiffD(tidx, d, dk, direction_tri);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void API::setTriSDiffD(uint tidx, string const & d, double dk, uint direction_tri)
 {
     if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -525,7 +538,7 @@ void API::setTriDiffD(uint tidx, string const & d, double dk, uint direction_tri
         // the following may throw exception if string is unknown
         uint didx = pStatedef->getSurfDiffIdx(d);
         
-        _setTriDiffD(tidx, didx, dk, direction_tri);
+        _setTriSDiffD(tidx, didx, dk, direction_tri);
     }
     
     else
@@ -780,6 +793,30 @@ void API::setTriIClamp(uint tidx, double i)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void API::setTriCapac(uint tidx, double cm)
+{
+    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    {
+        if (tidx >= mesh->countTris())
+        {
+            std::ostringstream os;
+            os << "Triangle index out of range.";
+            throw steps::ArgErr(os.str());
+        }
+
+        _setTriCapac(tidx, cm);
+    }
+
+    else
+    {
+        std::ostringstream os;
+        os << "Method not available for this solver.";
+        throw steps::NotImplErr();
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 bool API::getTriVDepSReacActive(uint tidx, string const & vsr) const
 {
     if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
@@ -924,14 +961,14 @@ void API::_setTriSReacActive(uint tidx, uint ridx, bool act)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriDiffD(uint tidx, uint didx, uint direction_tri) const
+double API::_getTriSDiffD(uint tidx, uint didx, uint direction_tri) const
 {
     throw steps::NotImplErr();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTriDiffD(uint tidx, uint didx, double dk, uint direction_tri)
+void API::_setTriSDiffD(uint tidx, uint didx, double dk, uint direction_tri)
 {
     throw steps::NotImplErr();
 }
@@ -1023,6 +1060,13 @@ double API::_getTriI(uint tidx) const
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTriIClamp(uint tidx, double i)
+{
+    throw steps::NotImplErr();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void API::_setTriCapac(uint tidx, double cm)
 {
     throw steps::NotImplErr();
 }

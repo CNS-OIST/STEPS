@@ -40,7 +40,7 @@ if (CXX_COMPAT_GCC)
   else (APPLE)
 	find_program (OBJCOPY
 	  objcopy
-	  ${CYGWIN_INSTALL_PATH}/bin /usr/bin /usr/local/bin
+	  ${CYGWIN_INSTALL_PATH}/bin /var/empty/bin /var/empty/local/bin
 	  )
   endif (APPLE)
   mark_as_advanced (OBJCOPY)

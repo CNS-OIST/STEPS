@@ -121,7 +121,7 @@ stex::Tri::Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
     pOCtime_upd = new double[nohmcurrs];
     std::fill_n(pOCtime_upd, nohmcurrs, 0.0);
 
-    std::fill_n(pDiffBndDirection, 3, false);
+    std::fill_n(pSDiffBndDirection, 3, false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -155,6 +155,8 @@ void stex::Tri::checkpoint(std::fstream & cp_file)
     cp_file.write((char*)pOCchan_timeintg, sizeof(double) * nohmcurrs);
     cp_file.write((char*)pOCtime_upd, sizeof(double) * nohmcurrs);
 
+    cp_file.write((char*)pSDiffBndDirection, sizeof(bool) * 3);
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -172,6 +174,8 @@ void stex::Tri::restore(std::fstream & cp_file)
     uint nohmcurrs = pPatchdef->countOhmicCurrs();
     cp_file.read((char*)pOCchan_timeintg, sizeof(double) * nohmcurrs);
     cp_file.read((char*)pOCtime_upd, sizeof(double) * nohmcurrs);
+
+    cp_file.read((char*)pSDiffBndDirection, sizeof(bool) * 3);
 
 }
 
@@ -191,11 +195,11 @@ void stex::Tri::setOuterTet(stex::WmVol * t)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tri::setDiffBndDirection(uint i)
+void stex::Tri::setSDiffBndDirection(uint i)
 {
     assert(i < 3);
 
-    pDiffBndDirection[i] = true;
+    pSDiffBndDirection[i] = true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

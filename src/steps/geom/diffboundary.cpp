@@ -50,6 +50,7 @@ stetmesh::DiffBoundary::DiffBoundary(std::string const & id, Tetmesh * container
 , pIComp(nullptr)
 , pOComp(nullptr)
 , pTrisN(0)
+, pTri_indices()
 {
     if (pTetmesh == 0)
         throw steps::ArgErr("No mesh provided to Diffusion Boundary initializer function.");

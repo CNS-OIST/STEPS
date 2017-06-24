@@ -170,11 +170,11 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    // Set whether a direction is a diffusion boundary
-    void setDiffBndDirection(uint i);
+    // Set whether a direction is a surface diffusion boundary
+    void setSDiffBndDirection(uint i);
 
-    inline bool getDiffBndDirection(uint idx) const
-    { return pDiffBndDirection[idx]; }
+    inline bool getSDiffBndDirection(uint idx) const
+    { return pSDiffBndDirection[idx]; }
 
     /////////////////////////// Dependency ////////////////////////////////
     inline uint getStartKProcIdx(void)
@@ -217,7 +217,7 @@ public:
     inline uint * pools(void) const
     { return pPoolCount; }
     void setCount(uint lidx, uint count, double period = 0.0);
-    void incCount(uint lidx, int inc, double period = 0.0);
+    void incCount(uint lidx, int inc, double period = 0.0, bool local_change = false);
 
 
     static const uint CLAMPED = 1;
@@ -304,7 +304,7 @@ private:
     double                              pLengths[3];
     double                              pDist[3];
 
-    bool                                pDiffBndDirection[3];
+    bool                                pSDiffBndDirection[3];
 
     /// Numbers of molecules -- stored as machine word integers.
     uint                              * pPoolCount;

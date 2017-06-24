@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
@@ -507,107 +508,59 @@ class DiffBoundary(steps_swig.DiffBoundary):
         self.__swig_setmethods__["id"] = _steps_swig.DiffBoundary_setID
         self.__swig_getmethods__["id"] = _steps_swig.DiffBoundary_getID
         self.__swig_getmethods__["container"] = _steps_swig.DiffBoundary_getContainer
-        
+        self.__swig_getmethods__["comps"] = _steps_swig.DiffBoundary_getComps
+    
     tris = steps_swig._swig_property(_steps_swig.DiffBoundary_getAllTriIndices)
-    """List of indices of triangles associated to the patch."""
+    """List of indices of triangles associated to the diffusion boundary."""
     id = steps_swig._swig_property(_steps_swig.DiffBoundary_getID, _steps_swig.DiffBoundary_setID)
     """Identifier string of the diffusion boundary."""
     container = steps_swig._swig_property(_steps_swig.DiffBoundary_getContainer)
     """Reference to parent steps.tetmesh.Tetmesh container."""
-    
+    comps = steps_swig._swig_property(_steps_swig.DiffBoundary_getComps)
+    """Reference to two steps.tetmesh.Comp compartments connected by this diffusion boundary."""
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-"""
-loadASCII.__doc__ = 
-Reads a tetrahedral mesh from a simple ASCII format. Please refer to 
-the documentation of steps.geom.saveASCII for more information on this
-file format.  
+class SDiffBoundary(steps_swig.SDiffBoundary):
+    """
+    Annotation of a group of bars in a Tetmesh. The bars form
+    a boundary between two patches, that may allow diffusion of some
+    specified species.
+    """    
+    def __init__(self, *args, **kwargs): 
+        """
+        Construction::
+        
+            sdiffb = steps.geom.SDiffBoundary(id, container, bars, patches)
+            
+        Construct a SDiffBoundary object with identifier string id and assign container
+        as the parent geometry container, described by group of bars. Specify the patches to be
+        connected by this surface diffusion boundary to avoid potential ambiguity.
+            
+        Arguments: 
+            * string id
+            * steps.geom.Tetmesh container
+            * list<uint> bars
+            * list<steps.geom.TmPatch> (length 2) patches
+        """
+        this = _steps_swig.new_SDiffBoundary(*args, **kwargs)
+        try: self.this.append(this)
+        except: self.this = this
+        self.thisown = 0
+        self.__swig_getmethods__["tris"] = _steps_swig.SDiffBoundary_getAllBarIndices
+        self.__swig_setmethods__["id"] = _steps_swig.SDiffBoundary_setID
+        self.__swig_getmethods__["id"] = _steps_swig.SDiffBoundary_getID
+        self.__swig_getmethods__["container"] = _steps_swig.SDiffBoundary_getContainer
+        self.__swig_getmethods__["patches"] = _steps_swig.SDiffBoundary_getPatches
 
-PARAMETERS
-    pathname
-        The name of the file and its location.
-
-RETURNS
-    A steps.geom.Tetmesh object.
-
-EXCEPTIONS
-    steps.ArgErr
-        Something is wrong with the pathname.
-    steps.IOErr
-        Cannot open the file or the file is badly formatted.
-
-SEE ALSO
-    steps.geom.saveASCII
-
-
-saveASCII.__doc__ = 
-saveASCII() saves a tetmesh to a very simple STEPS-centered ASCII 
-(i.e. text based) format. The format is straightforward and consists 
-of five parts, following the five parts of the tetmesh itself.
-
-1/ A list of vertices: first the number of vertices is given. Then
-   for each vertex there is a line with its x, y and z coordinates
-   in scientific notation.
-
-2/ A list of triangles. First the total number of triangles is given.  
-   After this, we have 1 line per triangle giving its three corner 
-   points as indices into the vertex list.
-
-3/ A list of tetrahedrons. On a first line, the number of tets is 
-   specified. After this, for each tet, follows a line with its four
-   corner points, given as indices into the vertex list.
-
-4/ The compartments in the mesh. First the number of compartments is
-   given on a single line. Then each of these compartments is 
-   specified using the following structure:
-   
-    a. Its name (ID string) on a single line.
-    b. The number of volume systems that have been added to the
-       compartment.
-    c. For each volume system, its name (ID string) is given on a 
-       separate line.
-    d. The number of tetrahedrons associated with the compartment.
-    e. The indices of these tetrahedrons (8 per line).
-
-5/ A similar approach is taken to list all patches in the meshes. 
-   first, we specify the number of patches attached to the mesh.
-   Then, for each patch, we describe like this:
- 
-    a. The patch's name on a single line.
-    b. If the patch has NO inner compartment, we print a "0"
-       on a single line. Otherwise the line will start with a "1",
-       followed by the name (ID string) of this inner compartment.
-    c. The same for the outer compartment.
-    d. The number of surface systems that have been added to the
-       patch.
-    e. For each of these surface systems, we specify its name on
-       a separate line.
-    f. The number of triangles in the patch.
-    g. The indices of these triangles (8 per line).
-
-All indices start from zero in this format, as they do in 
-STEPS (and C++) internally.
-
-PARAMETERS
-    pathname
-        The file and optionally the location that the mesh 
-        will be written to.
-    m
-        A reference to a steps.geom.Tetmesh object.
-
-RETURNS
-    /
-
-EXCEPTIONS
-    steps.ArgErr
-        The pathname is malformed or no mesh was specified.
-    steps.IOErr
-        Error while writing the mesh file (disk full; unable to 
-        open file).
-
-SEE ALSO
-    steps.geom.loadASCII
-"""
+    bars = steps_swig._swig_property(_steps_swig.SDiffBoundary_getAllBarIndices)
+    """List of indices of bars associated to the surface diffusion boundary."""
+    id = steps_swig._swig_property(_steps_swig.SDiffBoundary_getID, _steps_swig.SDiffBoundary_setID)
+    """Identifier string of the surface diffusion boundary."""
+    container = steps_swig._swig_property(_steps_swig.SDiffBoundary_getContainer)
+    """Reference to parent steps.tetmesh.Tetmesh container."""
+    patches = steps_swig._swig_property(_steps_swig.SDiffBoundary_getPatches)
+    """Reference to two steps.tetmesh.Patch patches connected by this surface diffusion boundary."""
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 

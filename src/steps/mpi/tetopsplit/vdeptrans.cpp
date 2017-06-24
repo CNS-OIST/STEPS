@@ -56,6 +56,7 @@ smtos::VDepTrans::VDepTrans(ssolver::VDepTransdef * vdtdef, smtos::Tri * tri)
 {
     assert (pVDepTransdef != 0);
     assert (pTri != 0);
+    type = KP_VDEPTRANS;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

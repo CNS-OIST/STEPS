@@ -73,6 +73,7 @@ smtos::Diff::Diff(ssolver::Diffdef * ddef, smtos::Tet * tet)
 {
     assert(pDiffdef != 0);
     assert(pTet != 0);
+    type = KP_DIFF;
     smtos::Tet * next[4] =
     {
         pTet->nextTet(0),
@@ -581,6 +582,9 @@ void smtos::Diff::setDirectionDcst(int direction, double dcst)
     assert(dcst >= 0.0);
     directionalDcsts[direction] = dcst;
     
+    // Automatically activate boundary diffusion if necessary
+    if (pDiffBndDirection[direction] == true) pDiffBndActive[direction] = true;
+
     smtos::Tet * next[4] =
     {
         pTet->nextTet(0),
@@ -588,7 +592,7 @@ void smtos::Diff::setDirectionDcst(int direction, double dcst)
         pTet->nextTet(2),
         pTet->nextTet(3)
     };
-    
+
     double d[4] = { 0.0, 0.0, 0.0, 0.0 };
     
     for (uint i = 0; i < 4; ++i)
@@ -719,10 +723,10 @@ double smtos::Diff::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::Diff::getScaledDcst(steps::mpi::tetopsplit::TetOpSplitP * solver)
-{
-    return pScaledDcst;
-}
+//double smtos::Diff::getScaledDcst(steps::mpi::tetopsplit::TetOpSplitP * solver)
+//{
+//    return pScaledDcst;
+//}
 
 
 
