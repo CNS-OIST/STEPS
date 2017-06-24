@@ -82,7 +82,7 @@ public:
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Diffdef * sdef(void) const
+    inline steps::solver::Diffdef * def(void) const
     { return pSDiffdef; }
 
     double dcst(int direction = -1);
@@ -114,17 +114,20 @@ public:
     }
     ////////////////////////////////////////////////////////////////////////
 
-    //inline steps::solver::Reacdef * defr(void) const
-    //{ return pReacdef; }
+    void setSDiffBndActive(uint i, bool active);
+
+    bool getSDiffBndActive(uint i) const;
 
     ////////////////////////////////////////////////////////////////////////
-
 
     inline uint getLigLidx(void) {return lidxTri;}
 
     ////////////////////////////////////////////////////////////////////////
 
     inline steps::mpi::tetopsplit::Tri* getTri(void) {return pTri;}
+
+    ////////////////////////////////////////////////////////////////////////
+
 private:
 
     ////////////////////////////////////////////////////////////////////////
@@ -145,14 +148,11 @@ private:
     std::vector<KProc*>					pEmptyvec;
     std::vector<uint>					idxEmptyvec;
 
-    /*
-    // Storing the species local index for each neighbouring tri: Needed
-    // because neighbours may belong to different patches if we ever
-    // implement diffusion boundary for surfaces
-    // and therefore have different spec indices
-    int                                   pNeighbPatchLidx[3];
 
-     */
+    // Storing the species local index for each neighbouring tri: Needed
+    // because neighbours may belong to different patches for
+    // diffusion boundary for surfaces
+    int                                 pNeighbPatchLidx[3];
 
 
     /// Properly scaled diffusivity constant.
@@ -166,10 +166,10 @@ private:
     uint				 				pNdirections;
 
     // A flag to see if the species can move between compartments
-    bool                                 pDiffBndActive[3];
+    bool                                pSDiffBndActive[3];
 
     // Flags to store if a direction is a diffusion boundary direction
-    bool                                 pDiffBndDirection[3];
+    bool                                pSDiffBndDirection[3];
 
     ////////////////////////////////////////////////////////////////////////
 

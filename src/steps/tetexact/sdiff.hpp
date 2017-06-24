@@ -80,7 +80,7 @@ public:
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Diffdef * sdef(void) const
+    inline steps::solver::Diffdef * def(void) const
     { return pSDiffdef; }
 
     double dcst(int direction = -1);
@@ -99,11 +99,11 @@ public:
 
     uint updVecSize(void) const;
 
-
     ////////////////////////////////////////////////////////////////////////
 
-    //inline steps::solver::Reacdef * defr(void) const
-    //{ return pReacdef; }
+    void setSDiffBndActive(uint i, bool active);
+
+    bool getSDiffBndActive(uint i) const;
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -133,10 +133,10 @@ private:
     double                              pCDFSelector[2];
 
     // A flag to see if the species can move between compartments
-    bool                                 pDiffBndActive[3];
+    bool                                pSDiffBndActive[3];
 
     // Flags to store if a direction is a diffusion boundary direction
-    bool                                 pDiffBndDirection[3];
+    bool                                pSDiffBndDirection[3];
 
     ////////////////////////////////////////////////////////////////////////
 

@@ -95,7 +95,9 @@ smtos::SReac::SReac(ssolver::SReacdef * srdef, smtos::Tri * tri)
 {
     assert (pSReacdef != 0);
     assert (pTri != 0);
-
+    
+    type = KP_SREAC;
+    
     uint lsridx = pTri->patchdef()->sreacG2L(pSReacdef->gidx());
     double kcst = pTri->patchdef()->kcst(lsridx);
     pKcst = kcst;

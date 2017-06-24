@@ -34,6 +34,10 @@
 #include <algorithm>
 #include <iostream>
 
+#ifndef GNU_FORCE_INLINE
+#define GNU_FORCE_INLINE
+#endif 
+
 namespace steps {
 namespace math {
 
@@ -43,7 +47,7 @@ namespace impl {
     template <int m,int n>
     struct S {
         template <typename A>
-        [[gnu::always_inline]] static void run(A &a) {
+        GNU_FORCE_INLINE static void run(A &a) {
             if (a[m]>a[n]) std::swap(a[m],a[n]);
         }
     };
@@ -52,7 +56,7 @@ namespace impl {
 
     template <int n,typename A>
     struct small_sort_inplace {
-        [[gnu::always_inline]] static void run(A &a) {
+        GNU_FORCE_INLINE static void run(A &a) {
             std::sort(std::begin(a),std::end(a));
         }
     };
@@ -69,12 +73,12 @@ namespace impl {
 
     template <typename A>
     struct small_sort_inplace<2,A> {
-        [[gnu::always_inline]] static void run(A &a) { S<0,1>::run(a); }
+        GNU_FORCE_INLINE static void run(A &a) { S<0,1>::run(a); }
     };
 
     template <typename A>
     struct small_sort_inplace<3,A> {
-        [[gnu::always_inline]] static void run(A &a) {
+        GNU_FORCE_INLINE static void run(A &a) {
             S<0,1>::run(a);
             S<1,2>::run(a);
             S<0,1>::run(a);
@@ -83,7 +87,7 @@ namespace impl {
 
     template <typename A>
     struct small_sort_inplace<4,A> {
-        [[gnu::always_inline]] static void run(A &a) {
+        GNU_FORCE_INLINE static void run(A &a) {
             S<0,1>::run(a);
             S<2,3>::run(a);
             S<0,2>::run(a);
@@ -94,7 +98,7 @@ namespace impl {
 
     template <typename A>
     struct small_sort_inplace<5,A> {
-        [[gnu::always_inline]] static void run(A &a) {
+        GNU_FORCE_INLINE static void run(A &a) {
             S<0,1>::run(a);
             S<2,4>::run(a);
             S<0,3>::run(a);
@@ -109,7 +113,7 @@ namespace impl {
 
     template <typename A>
     struct small_sort_inplace<6,A> {
-        [[gnu::always_inline]] static void run(A &a) {
+        GNU_FORCE_INLINE static void run(A &a) {
             S<0,1>::run(a);
             S<2,3>::run(a);
             S<4,5>::run(a);
@@ -128,12 +132,12 @@ namespace impl {
 } // namespace impl
 
 template <int n,typename A>
-[[gnu::always_inline]] inline void small_sort_inplace(A &a) {
+GNU_FORCE_INLINE inline void small_sort_inplace(A &a) {
     impl::small_sort_inplace<n,A>::run(a);
 }
 
 template <int n,typename A>
-[[gnu::always_inline]] inline A small_sort(A a) {
+GNU_FORCE_INLINE inline A small_sort(A a) {
     impl::small_sort_inplace<n,A>::run(a);
     return a;
 }

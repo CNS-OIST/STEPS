@@ -24,6 +24,13 @@
 
  */
 
+
+/*
+ *  Last Changed Rev:  $Rev$
+ *  Last Changed Date: $Date$
+ *  Last Changed By:   $Author$
+ */
+
 // STL headers.
 #include <string>
 #include <sstream>
@@ -49,6 +56,7 @@
 #include "steps/solver/ohmiccurrdef.hpp"
 #include "steps/solver/ghkcurrdef.hpp"
 #include "steps/solver/diffboundarydef.hpp"
+#include "steps/solver/sdiffboundarydef.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -74,6 +82,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
 , pOhmicCurrdefs()
 , pGHKcurrdefs()
 , pDiffBoundarydefs()
+, pSDiffBoundarydefs()
 
 {
     assert(pModel != 0);
@@ -193,6 +202,14 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
             assert (diffboundarydef != 0);
             pDiffBoundarydefs.push_back(diffboundarydef);
         }
+
+        uint nsdiffbs = tetmesh->_countSDiffBoundaries();
+        for (uint sdbidx = 0; sdbidx < nsdiffbs; ++sdbidx)
+        {
+            ssolver::SDiffBoundarydef * sdiffboundarydef = new SDiffBoundarydef(this, sdbidx, tetmesh->_getSDiffBoundary(sdbidx));
+            assert (sdiffboundarydef != 0);
+            pSDiffBoundarydefs.push_back(sdiffboundarydef);
+        }
     }
 
     // Now setup all the def objects. This can't be achieved purely with
@@ -236,6 +253,8 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
 
     for (DiffBoundaryDefPVecI db = pDiffBoundarydefs.begin(); db != pDiffBoundarydefs.end(); ++db)
         (*db)->setup();
+    for (SDiffBoundaryDefPVecI sdb = pSDiffBoundarydefs.begin(); sdb != pSDiffBoundarydefs.end(); ++sdb)
+        (*sdb)->setup();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -250,6 +269,9 @@ ssolver::Statedef::~Statedef()
 
     DiffBoundarydefPVecCI db_end = pDiffBoundarydefs.end();
     for (DiffBoundarydefPVecCI db = pDiffBoundarydefs.begin(); db != db_end; ++db) delete *db;
+
+    SDiffBoundarydefPVecCI sdb_end = pSDiffBoundarydefs.end();
+    for (SDiffBoundarydefPVecCI sdb = pSDiffBoundarydefs.begin(); sdb != sdb_end; ++sdb) delete *sdb;
 
     ReacdefPVecCI r_end = pReacdefs.end();
     for (ReacdefPVecCI r = pReacdefs.begin(); r != r_end; ++r) delete *r;
@@ -333,6 +355,11 @@ void ssolver::Statedef::checkpoint(std::fstream & cp_file)
         (*db)->checkpoint(cp_file);
     }
 
+    SDiffBoundarydefPVecCI sdb_end = pSDiffBoundarydefs.end();
+    for (SDiffBoundarydefPVecCI sdb = pSDiffBoundarydefs.begin(); sdb != sdb_end; ++sdb) {
+        (*sdb)->checkpoint(cp_file);
+    }
+
     VDepTransdefPVecCI vdeptrans_end = pVDepTransdefs.end();
     for (VDepTransdefPVecCI vdt = pVDepTransdefs.begin(); vdt != vdeptrans_end; ++vdt) {
         (*vdt)->checkpoint(cp_file);
@@ -404,6 +431,11 @@ void ssolver::Statedef::restore(std::fstream & cp_file)
     DiffBoundarydefPVecCI db_end = pDiffBoundarydefs.end();
     for (DiffBoundarydefPVecCI db = pDiffBoundarydefs.begin(); db != db_end; ++db) {
         (*db)->restore(cp_file);
+    }
+
+    SDiffBoundarydefPVecCI sdb_end = pSDiffBoundarydefs.end();
+    for (SDiffBoundarydefPVecCI sdb = pSDiffBoundarydefs.begin(); sdb != sdb_end; ++sdb) {
+        (*sdb)->restore(cp_file);
     }
 
     VDepTransdefPVecCI vdeptrans_end = pVDepTransdefs.end();
@@ -978,6 +1010,65 @@ uint ssolver::Statedef::getDiffBoundaryIdx(steps::tetmesh::DiffBoundary * diffb)
     {
         std::ostringstream os;
         os << "Diffusion boundary methods not available with well-mixed geometry";
+        throw steps::ArgErr(os.str());
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+ssolver::SDiffBoundarydef * ssolver::Statedef::sdiffboundarydef(uint gidx) const
+{
+    assert(gidx < pSDiffBoundarydefs.size());
+    return pSDiffBoundarydefs[gidx];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint ssolver::Statedef::getSDiffBoundaryIdx(std::string const & sd) const
+{
+    uint maxsdidx = pSDiffBoundarydefs.size();
+    if (steps::tetmesh::Tetmesh * tetmesh = dynamic_cast<steps::tetmesh::Tetmesh *>(pGeom))
+    {
+        assert (maxsdidx == tetmesh->_countSDiffBoundaries());
+        uint sdidx = 0;
+        while(sdidx < maxsdidx)
+        {
+            if (sd == tetmesh->_getSDiffBoundary(sdidx)->getID()) return sdidx;
+            ++sdidx;
+        }
+        std::ostringstream os;
+        os << "Geometry does not contain surface diffusion boundary with string identifier '" << sd <<"'.";
+        throw steps::ArgErr(os.str());
+    }
+    else
+    {
+        std::ostringstream os;
+        os << "Surface Diffusion Boundary methods not available with well-mixed geometry";
+        throw steps::ArgErr(os.str());
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint ssolver::Statedef::getSDiffBoundaryIdx(steps::tetmesh::SDiffBoundary * sdiffb) const
+{
+    uint maxsdidx = pSDiffBoundarydefs.size();
+    if (steps::tetmesh::Tetmesh * tetmesh = dynamic_cast<steps::tetmesh::Tetmesh *>(pGeom))
+    {
+        assert (maxsdidx == tetmesh->_countSDiffBoundaries());
+        uint sdidx = 0;
+        while(sdidx < maxsdidx)
+        {
+            if (sdiffb == tetmesh->_getSDiffBoundary(sdidx)) return sdidx;
+            ++sdidx;
+        }
+        // Argument should be valid so we should not get here
+        assert(false);
+    }
+    else
+    {
+        std::ostringstream os;
+        os << "Surface Diffusion Boundary methods not available with well-mixed geometry";
         throw steps::ArgErr(os.str());
     }
 }

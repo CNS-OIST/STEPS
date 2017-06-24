@@ -145,6 +145,7 @@ def findSurfTrisInComp(mesh, comp):
     
     out_surfs = []
     for tet in  comp_tets:
+        if not -1 in mesh.getTetTetNeighb(tet): continue
         nb_tris = mesh.getTetTriNeighb(tet)
         for tri in nb_tris:
             if tri in surf_tris:
@@ -175,6 +176,7 @@ def findSurfTrisInTets(mesh, tet_list):
 
     out_surfs = []
     for tet in  tet_list:
+        if not -1 in mesh.getTetTetNeighb(tet): continue
         nb_tris = mesh.getTetTriNeighb(tet)
         for tri in nb_tris:
             if tri in surf_tris:

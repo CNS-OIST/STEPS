@@ -58,14 +58,13 @@ set(SWIG_MODULE_${swig_module}_EXTRA_DEPS ${swig_included_sources})
 
 swig_add_module(${swig_module} python ${swig_sources} $<TARGET_OBJECTS:libsteps-obj>)
 
-set(SWIG_STEPS_LIBRARIES ${PYTHON_LIBRARIES})
-if(MPI_FOUND)
-    set(SWIG_STEPS_LIBRARIES ${SWIG_STEPS_LIBRARIES} ${MPI_C_LIBRARIES} ${MPI_CXX_LIBRARIES})
+set(_swig_link_libs ${libsteps_link_libraries})
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # Linker flag to Skip unresolved symbols
+    list(APPEND _swig_link_libs "-Wl,-undefined,dynamic_lookup")
 endif()
-if(LAPACK_FOUND)
-    set(SWIG_STEPS_LIBRARIES ${SWIG_STEPS_LIBRARIES} ${LAPACK_LIBRARIES})
-endif()
-swig_link_libraries(${swig_module} ${SWIG_STEPS_LIBRARIES})
+swig_link_libraries(${swig_module} ${_swig_link_libs})
+
 
 # set steps_swig_target and steps_swig_pymodules for use by py/CMakeLists.txt
 
@@ -73,7 +72,7 @@ set(steps_swig_target ${SWIG_MODULE_${swig_module}_REAL_NAME} PARENT_SCOPE)
 
 set(pymodules)
 foreach(ifile IN LISTS swig_sources)
-    string(REGEX REPLACE  "\\.i$" ".py" pyfile ${ifile}) 
+    string(REGEX REPLACE  "\\.i$" ".py" pyfile ${ifile})
     list(APPEND pymodules "${CMAKE_CURRENT_BINARY_DIR}/${pyfile}")
 endforeach()
 

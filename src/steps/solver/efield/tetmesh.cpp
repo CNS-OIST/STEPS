@@ -414,6 +414,18 @@ void sefield::TetMesh::applySurfaceCapacitance(double d)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void sefield::TetMesh::applyTriCapacitance(uint tidx, double cm)
+{
+	assert(tidx < pNTri);
+
+    pElements[getTriangleVertex(tidx, 0)]->applySurfaceCapacitance(cm);
+    pElements[getTriangleVertex(tidx, 1)]->applySurfaceCapacitance(cm);
+    pElements[getTriangleVertex(tidx, 2)]->applySurfaceCapacitance(cm);
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void sefield::TetMesh::applyConductance(double d)
 {
     for (unsigned i = 0; i < pElements.size(); i++)
