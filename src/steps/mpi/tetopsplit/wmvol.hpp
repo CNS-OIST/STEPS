@@ -136,7 +136,7 @@ public:
     inline uint * pools(void) const
     { return pPoolCount; }
     virtual void setCount(uint lidx, uint count, double period = 0.0);
-    virtual void incCount(uint lidx, int inc, double period = 0.0);
+    virtual void incCount(uint lidx, int inc, double period = 0.0, bool local_change = false);
 
     // The concentration of species global index gidx in MOL PER l
     double conc(uint gidx) const;

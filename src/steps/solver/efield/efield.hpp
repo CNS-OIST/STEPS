@@ -200,6 +200,11 @@ public:
     ///     of current across triangles
     // void    setTriI(double * cur);
 
+    /// Set the specific capacitance of a triangle surface element.
+    /// \param tidx Index of the triangle surface element
+    /// \param cm Specific membrane capacitance (farad / m^2)
+    void setTriCapac(uint tidx, double cm);
+
     ////////////////////////////////////////////////////////////////////////
 
     /// Return electric potential for internal tetrahedral elements (volts).

@@ -33,6 +33,10 @@
 #include <string>
 #include <cassert>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/solver/efield/matrix.hpp"
@@ -65,9 +69,11 @@ sefield::TetCoupler::~TetCoupler(void)
 
 void sefield::TetCoupler::coupleMesh(void)
 {
+
     typedef vector<double*> doublePVec;
     typedef doublePVec::iterator doublePVecI;
     typedef doublePVec::const_iterator doublePVecCI;
+
 
     // For each vertex allocate space to accumulate coupling coefficients
     // to neighbors.
@@ -75,15 +81,17 @@ void sefield::TetCoupler::coupleMesh(void)
     doublePVec vccs(nvertices);
     doublePVecI vccs_bgn = vccs.begin();
     doublePVecI vccs_end = vccs.end();
+#pragma omp parallel for
     for (uint i = 0; i < nvertices; ++i)
     {
         VertexElement * vertex = pMesh->getVertex(i);
         assert(vertex->getIDX() == i);
         uint ncons = vertex->getNCon();
-        double * new_vccs = new double[ncons];
+        //double * new_vccs = new double[ncons]();
         // initialize the array.
-        fill_n(new_vccs, ncons, 0.0);
-        vccs[i] = new_vccs;
+        // std::fill_n(new_vccs, ncons, 0.0);
+        //vccs[i] = new_vccs;
+        vccs[i] = new double[ncons]();
     }
 
     // Loop over all vertices in the mesh. For each vertex:
@@ -99,9 +107,10 @@ void sefield::TetCoupler::coupleMesh(void)
     //       * Compute flux coefficients and distribute them over the
     //         'neighbouring' vertex nodes.
     //
+#pragma omp parallel for
     for (uint ivert = 0; ivert < nvertices; ++ivert)
     {
-        VertexElement * ve = pMesh->getVertex(ivert);
+        VertexElement* ve = pMesh->getVertex(ivert);
 
         // Now we need the following information about vertex ve:
         // a list of tetrahedrons of which ve is a part. This list
@@ -128,10 +137,10 @@ void sefield::TetCoupler::coupleMesh(void)
             }
             // Compute the flux into the polyhedron around the vertex in
             // terms of the potential difference to each of the corners.
-            double facs[3];
-            facs[0]=0.0;
-            facs[1]=0.0;
-            facs[2]=0.0;
+            double facs[3] = {0., 0., 0.};
+            //facs[0]=0.0;
+            //facs[1]=0.0;
+            //facs[2]=0.0;
 
 
             fluxCoeficients(ve, ves, facs);
@@ -167,6 +176,7 @@ void sefield::TetCoupler::coupleMesh(void)
     uint ntot = 0;
     uint ndif = 0;
 
+#pragma omp parallel for
     for (uint icon = 0; icon < pMesh->ncon(); ++icon)
     {
         VertexConnection * vc = pMesh->getConnection(icon);
@@ -200,26 +210,33 @@ void sefield::TetCoupler::coupleMesh(void)
 
         if (dblsDiffer(wab, wba))
         {
+#pragma omp atomic
             ndif += 1;
-            CLOG_N_TIMES(100, DEBUG, "steps_debug") << "symmetry miscount " << wab << " " << wba;
-        }
+#ifdef _OPENMP            
+            auto tid = omp_get_thread_num();
+            if (!tid) CLOG_N_TIMES(100, DEBUG, "steps_debug") << "symmetry miscount " << wab << " " << wba; 
+#endif 
+}
         else
         {
             vc->setGeomCouplingConstant(wab);
         }
-        ntot += 1;
+#pragma omp atomic
+         ntot += 1;
     }
 
     // should ndif > 0 throw an exception?
     CLOG_IF(ndif > 0, DEBUG, "steps_debug")
-        << ndif << " out of " << ntot << " failed sym test. Nvert=" << pMesh->countVertices();
+        << ndif << " out of " << ntot << " failed sym test. Nvert=" << pMesh->countVertices(); 
 
     // Deallocate vccs.
-
-    for (doublePVecI vccs_i = vccs_bgn; vccs_i != vccs_end; ++vccs_i)
-    {
-        delete[] (*vccs_i);
-    }
+#pragma omp parallel for
+    for (int i=0; i<vccs.size(); ++i)
+        delete[] vccs[i];
+    //for (doublePVecI vccs_i = vccs_bgn; vccs_i != vccs_end; ++vccs_i)
+    //{
+    //    delete[] (*vccs_i);
+    //}
 }
 
 ////////////////////////////////////////////////////////////////////////////////

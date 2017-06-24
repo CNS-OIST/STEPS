@@ -51,6 +51,7 @@
 #include "steps/mpi/tetopsplit/comp.hpp"
 #include "steps/mpi/tetopsplit/patch.hpp"
 #include "steps/mpi/tetopsplit/diffboundary.hpp"
+#include "steps/mpi/tetopsplit/sdiffboundary.hpp"
 #include "steps/mpi/tetopsplit/crstruct.hpp"
 
 
@@ -239,6 +240,15 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
+    //      SURFACE DIFFUSION BOUNDARIES
+    ////////////////////////////////////////////////////////////////////////
+
+    void _setSDiffBoundaryDiffusionActive(uint sdbidx, uint didx, bool act);
+    bool _getSDiffBoundaryDiffusionActive(uint sdbidx, uint didx) const;
+    void _setSDiffBoundaryDcst(uint sdbidx, uint sidx, double dcst, uint direction_patch = std::numeric_limits<uint>::max());
+
+    ////////////////////////////////////////////////////////////////////////
+    // SOLVER STATE ACCESS:
     //      TETRAHEDRAL VOLUME ELEMENTS
     ////////////////////////////////////////////////////////////////////////
 
@@ -306,15 +316,15 @@ public:
     bool _getTriClamped(uint tidx, uint sidx) const;
     void _setTriClamped(uint tidx, uint sidx, bool buf);
 
-    double _getTriSReacK(uint tidx, uint ridx);
+    double _getTriSReacK(uint tidx, uint ridx) ;
     void _setTriSReacK(uint tidx, uint ridx, double kf);
 
     bool _getTriSReacActive(uint tidx, uint ridx) ;
     void _setTriSReacActive(uint tidx, uint ridx, bool act);
     
-    double _getTriDiffD(uint tidx, uint didx, uint direction_tri = std::numeric_limits<uint>::max()) ;
+    double _getTriSDiffD(uint tidx, uint didx, uint direction_tri = std::numeric_limits<uint>::max()) ;
     
-    void _setTriDiffD(uint tidx, uint didx, double dk,
+    void _setTriSDiffD(uint tidx, uint didx, double dk,
                       uint direction_tri = std::numeric_limits<uint>::max());
 
     ////////////////////////////////////////////////////////////////////////
@@ -343,6 +353,8 @@ public:
     bool _getTriVDepSReacActive(uint tidx, uint vsridx) ;
     void _setTriVDepSReacActive(uint tidx, uint vsridx, bool act);
 
+    void _setTriCapac(uint tidx, double cap);
+
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROL:
     //      VERTICES ELEMENTS
@@ -369,6 +381,7 @@ public:
     // Called from local Comp or Patch objects. Add KProc to this object
     uint addKProc(steps::mpi::tetopsplit::KProc * kp, int host);
     //void addLocalKProc(steps::mpi::tetopsplit::KProc * kp);
+
     void addDiff(Diff* diff);
     void addSDiff(SDiff* sdiff);
     inline uint countKProcs(void) const
@@ -380,19 +393,39 @@ public:
     { return pMesh; }
 
     inline steps::mpi::tetopsplit::Comp * _comp(uint cidx) const
-    { return pComps[cidx]; }
+    {
+        assert(cidx < statedef()->countComps());
+        assert(statedef()->countComps() == pComps.size());
+        return pComps[cidx];
+    }
 
     inline std::vector<steps::mpi::tetopsplit::Patch *>  patches(void) const
     { return pPatches; }
 
     inline steps::mpi::tetopsplit::Patch * _patch(uint pidx) const
-    { return pPatches[pidx]; }
+    {
+        assert(pidx < statedef()->countPatches());
+        assert(statedef()->countPatches() == pPatches.size());
+        return pPatches[pidx];
+    }
 
     inline steps::mpi::tetopsplit::DiffBoundary * _diffboundary(uint dbidx) const
-    { return pDiffBoundaries[dbidx]; }
+    {
+        assert(dbidx < statedef()->countDiffBoundaries());
+        return pDiffBoundaries[dbidx];
+    }
+
+    inline steps::mpi::tetopsplit::SDiffBoundary * _sdiffboundary(uint sdbidx) const
+    {
+        assert(sdbidx < statedef()->countSDiffBoundaries());
+        return pSDiffBoundaries[sdbidx];
+    }
 
     inline steps::mpi::tetopsplit::Tet * _tet(uint tidx) const
     { return pTets[tidx]; }
+
+    inline steps::mpi::tetopsplit::Tri * _tri(uint tidx) const
+    { return pTris[tidx]; }
 
     inline double a0(void) const
     { return pA0; }
@@ -409,6 +442,8 @@ public:
     uint _addPatch(steps::solver::Patchdef * pdef);
 
     uint _addDiffBoundary(steps::solver::DiffBoundarydef * dbdef);
+
+    uint _addSDiffBoundary(steps::solver::SDiffBoundarydef * sdbdef);
 
     void _addTet(uint tetidx, steps::mpi::tetopsplit::Comp * comp, double vol, double a1,
                  double a2, double a3, double a4, double d1, double d2,
@@ -562,6 +597,9 @@ public:
     double getCompTime(void);
     double getSyncTime(void);
     double getIdleTime(void);
+    double getEFieldTime(void);
+    double getRDTime(void);
+    double getDataExchangeTime(void);
     
 private:
 
@@ -579,6 +617,8 @@ private:
     std::vector<steps::mpi::tetopsplit::Patch *>      pPatches;
 
     std::vector<steps::mpi::tetopsplit::DiffBoundary *> pDiffBoundaries;
+
+    std::vector<steps::mpi::tetopsplit::SDiffBoundary *> pSDiffBoundaries;
 
     // These objects are used to describe a mesh compartment that is
     // being treated as a well-mixed volume.
@@ -740,6 +780,9 @@ private:
     double                                      compTime;
     double                                      syncTime;
     double                                      idleTime;
+    double                                      efieldTime;
+    double                                      rdTime;
+    double                                      dataExchangeTime;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

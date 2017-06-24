@@ -28,6 +28,7 @@
 // Standard library & STL headers.
 #include <cmath>
 #include <vector>
+#include <map>
 #include <cassert>
 #include <iostream>
 #include <sstream>
@@ -55,6 +56,7 @@
 #include "steps/tetexact/vdeptrans.hpp"
 #include "steps/tetexact/vdepsreac.hpp"
 #include "steps/tetexact/diffboundary.hpp"
+#include "steps/tetexact/sdiffboundary.hpp"
 #include "steps/math/constants.hpp"
 #include "steps/math/point.hpp"
 #include "steps/error.hpp"
@@ -64,6 +66,8 @@
 #include "steps/solver/reacdef.hpp"
 #include "steps/solver/sreacdef.hpp"
 #include "steps/solver/diffdef.hpp"
+#include "steps/solver/diffboundarydef.hpp"
+#include "steps/solver/sdiffboundarydef.hpp"
 #include "steps/solver/chandef.hpp"
 #include "steps/solver/ghkcurrdef.hpp"
 #include "steps/solver/ohmiccurrdef.hpp"
@@ -105,6 +109,7 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
 , pCompMap()
 , pPatches()
 , pDiffBoundaries()
+, pSDiffBoundaries()
 , pTets()
 , pTris()
 , pWmVols()
@@ -191,6 +196,11 @@ void stex::Tetexact::checkpoint(std::string const & file_name)
         (*db)->checkpoint(cp_file);
     }
 
+    SDiffBoundaryPVecCI sdb_e = pSDiffBoundaries.end();
+    for (SDiffBoundaryPVecCI sdb = pSDiffBoundaries.begin(); sdb != sdb_e; ++sdb) {
+        (*sdb)->checkpoint(cp_file);
+    }
+
     WmVolPVecCI wmv_e = pWmVols.end();
     for (WmVolPVecCI wmv = pWmVols.begin(); wmv != wmv_e; ++wmv)
     {
@@ -198,7 +208,6 @@ void stex::Tetexact::checkpoint(std::string const & file_name)
             (*wmv)->checkpoint(cp_file);
         }
     }
-
 
     TetPVecCI tet_e = pTets.end();
     for (TetPVecCI t = pTets.begin(); t != tet_e; ++t)
@@ -273,7 +282,6 @@ void stex::Tetexact::checkpoint(std::string const & file_name)
 
 void stex::Tetexact::restore(std::string const & file_name)
 {
-    std::cout << "Restore from " << file_name << "...";
     std::fstream cp_file;
 
     cp_file.open(file_name.c_str(),
@@ -292,6 +300,11 @@ void stex::Tetexact::restore(std::string const & file_name)
     DiffBoundaryPVecCI db_e = pDiffBoundaries.end();
     for (DiffBoundaryPVecCI db = pDiffBoundaries.begin(); db != db_e; ++db) {
         (*db)->restore(cp_file);
+    }
+
+    SDiffBoundaryPVecCI sdb_e = pSDiffBoundaries.end();
+    for (SDiffBoundaryPVecCI sdb = pSDiffBoundaries.begin(); sdb != sdb_e; ++sdb) {
+        (*sdb)->restore(cp_file);
     }
 
     WmVolPVecCI wmv_e = pWmVols.end();
@@ -399,7 +412,6 @@ void stex::Tetexact::restore(std::string const & file_name)
 
     cp_file.close();
 
-    std::cout << "complete.\n";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -477,6 +489,15 @@ void stex::Tetexact::_setup(void)
         assert(diffboundary_gidx == diffb_idx);
     }
 
+    // Create the surface diffusion boundaries
+    ssolver::SDiffBoundarydefPVecCI sdb_end = statedef()->endSDiffBoundary();
+    for (ssolver::SDiffBoundaryDefPVecCI sdb = statedef()->bgnSDiffBoundary(); sdb != sdb_end; ++sdb)
+    {
+        uint sdiffboundary_gidx = (*sdb)->gidx();
+        uint sdiffb_idx = _addSDiffBoundary(*sdb);
+        assert(sdiffboundary_gidx == sdiffb_idx);
+    }
+
     uint npatches = pPatches.size();
     assert (pMesh->_countPatches() == npatches);
     for (uint p = 0; p < npatches; ++p)
@@ -490,6 +511,23 @@ void stex::Tetexact::_setup(void)
         if (!tmpatch)
             throw steps::ArgErr("Well-mixed patches not supported in steps::solver::Tetexact solver.");
         steps::tetexact::Patch *localpatch = pPatches[p];
+        std::map<uint, std::vector<uint> > bar2tri;
+
+        // We need to go through all patches to record bar2tri mapping
+        // for all connected triangle neighbors even they are in different
+        // patches, because their information is needed for surface diffusion boundary
+
+        for (uint bar_p = 0; bar_p < npatches; ++bar_p) {
+
+            steps::tetmesh::TmPatch *bar_patch = dynamic_cast<steps::tetmesh::TmPatch*>(pMesh->_getPatch(bar_p));
+
+            for (uint tri: bar_patch->_getAllTriIndices())
+            {
+                const uint *bars = pMesh->_getTriBars(tri);
+                for (int i = 0; i < 3; ++i)
+                    bar2tri[bars[i]].push_back(tri);
+            }
+        }
 
         for (uint tri: tmpatch->_getAllTriIndices()) 
         {
@@ -506,7 +544,31 @@ void stex::Tetexact::_setup(void)
                 l[j] = distance(pMesh->_getVertex(v[0]), pMesh->_getVertex(v[1]));
             }
 
-            std::vector<int> tris = pMesh->getTriTriNeighb(tri, tmpatch);
+
+            // We need to get triangle neighbors in other patches as well
+            // for surface diffution boundary
+
+            // slow version as it loops over all triangles evern if they are not in a patch
+            // std::vector<int> tris = pMesh->getTriTriNeighb(tri);
+
+
+            std::vector<int> tris(3, -1);
+            for (int j = 0; j < 3; ++j)
+            {
+                std::vector<uint> neighb_tris = bar2tri[tri_bars[j]];
+                for (int k = 0; k < neighb_tris.size(); ++k)
+                {
+                    if (neighb_tris[k] == tri || pMesh->getTriPatch(neighb_tris[k]) == nullptr)
+                        continue;
+                    tris[j] = neighb_tris[k];
+                    break;
+                }
+            }
+
+            #ifdef SDIFFBOUNDARY_DEBUG
+            CLOG(DEBUG, "steps_debug") << "neighbor tris " <<tris;
+            #endif
+
             point3d baryc = pMesh->_getTriBarycenter(tri);
 
             double d[3] = {0, 0, 0};
@@ -613,7 +675,6 @@ void stex::Tetexact::_setup(void)
             }
         }
     }
-
 
     // All tets and tris that belong to some comp or patch have been created
     // locally- now we can connect them locally
@@ -758,6 +819,7 @@ void stex::Tetexact::_setup(void)
 
             int tetAidx = tri_tets[0];
             int tetBidx = tri_tets[1];
+
             assert(tetAidx >= 0 && tetBidx >= 0);
 
             steps::tetexact::Tet * tetA = _tet(tetAidx);
@@ -826,6 +888,98 @@ void stex::Tetexact::_setup(void)
             _tet(tets[t])->setDiffBndDirection(tets_direction[t]);
     }
 
+
+    // Now loop over the surface diffusion boundaries:
+    // 1) get all the bars and get the two triangles
+    // 2) figure out which direction is the direction for a triangle
+    // 3) add the triangle and the direction to local object
+
+    // This is here because we need all tris to have been assigned correctly
+    // to patches. Check every one and set the patchA and patchB for the db
+    uint nsdiffbnds = pSDiffBoundaries.size();
+    assert(nsdiffbnds == pMesh->_countSDiffBoundaries());
+
+    for (uint sdb = 0; sdb < nsdiffbnds; ++sdb)
+    {
+        steps::tetexact::SDiffBoundary * localsdiffb = pSDiffBoundaries[sdb];
+
+        uint patchAidx = localsdiffb->def()->patcha();
+        uint patchBidx = localsdiffb->def()->patchb();
+        steps::solver::Patchdef * patchAdef = statedef()->patchdef(patchAidx);
+        steps::solver::Patchdef * patchBdef = statedef()->patchdef(patchBidx);
+
+        for (uint sdbbar: localsdiffb->def()->bars())
+        {
+            const int *bar_tris = pMesh->_getBarTriNeighb(sdbbar);
+
+            int triAidx = bar_tris[0];
+            int triBidx = bar_tris[1];
+            assert(triAidx >= 0 && triBidx >= 0);
+
+            steps::tetexact::Tri * triA = _tri(triAidx);
+            steps::tetexact::Tri * triB = _tri(triBidx);
+            assert(triA != 0 && triB != 0);
+
+            steps::solver::Patchdef *triA_pdef = triA->patchdef();
+            steps::solver::Patchdef *triB_pdef = triB->patchdef();
+            assert(triA_pdef != 0);
+            assert(triB_pdef != 0);
+
+            if (triA_pdef != patchAdef)
+            {
+                assert(triB_pdef == patchAdef);
+                assert(triA_pdef == patchBdef);
+            }
+            else
+            {
+                assert(triB_pdef == patchBdef);
+                assert(triA_pdef == patchAdef);
+            }
+
+            // Ok, checks over, lets get down to business
+            int direction_idx_a = -1;
+            int direction_idx_b = -1;
+
+            const uint *triA_bars = pMesh->_getTriBars(triAidx);
+            const uint *triB_bars = pMesh->_getTriBars(triBidx);
+
+            for (uint i = 0; i < 3; ++i)
+            {
+                if (triA_bars[i] == sdbbar)
+                {
+                    assert(direction_idx_a == -1);
+                    direction_idx_a = i;
+                }
+                if (triB_bars[i] == sdbbar)
+                {
+                    assert(direction_idx_b == -1);
+                    direction_idx_b = i;
+                }
+            }
+            assert (direction_idx_a != -1);
+            assert (direction_idx_b != -1);
+
+            // Set the tetrahedron and direction to the Diff Boundary object
+            localsdiffb->setTriDirection(triAidx, direction_idx_a);
+            localsdiffb->setTriDirection(triBidx, direction_idx_b);
+        }
+
+        localsdiffb->setPatches(_patch(patchAidx), _patch(patchBidx));
+
+
+        // Might as well copy the vectors because we need to index through
+        std::vector<uint> tris = localsdiffb->getTris();
+        std::vector<uint> tris_direction = localsdiffb->getTriDirection();
+
+        ntris = tris.size();
+        assert (ntris <= pTris.size());
+        assert (tris_direction.size() == ntris);
+
+        for (uint t = 0; t < ntris; ++t)
+            _tri(tris[t])->setSDiffBndDirection(tris_direction[t]);
+    }
+
+
     for (auto t: pTets)
         if (t) t->setupKProcs(this);
 
@@ -869,6 +1023,8 @@ void stex::Tetexact::_setupEField(void)
 {
     using steps::math::point3d;
     using namespace steps::solver::efield;
+    
+    std::cout << "setupEfield" << std::endl;
 
     //// Note to self: for now roughly following flow from original code in sim/controller.py.
     //// code for setting up a mesh was in func_tetmesh constructor and called functions.
@@ -1011,6 +1167,12 @@ void stex::Tetexact::_setupEField(void)
         pEFTris_vec[eft] = pTris[triidx];
     }
 
+    std::cout << "Initting mesh with:" << std::endl;
+    std::cout << "Number of EF verts:" << nefverts() << std::endl
+              << "Number of EF tris:" << neftris() << std::endl
+              << "Number of EF tets:" << neftets() << std::endl;
+
+    
     pEField->initMesh(nefverts(), pEFVerts, neftris(), pEFTris, neftets(), pEFTets, memb->_getOpt_method(), memb->_getOpt_file_name(), memb->_getSearch_percent());
 }
 
@@ -1150,6 +1312,16 @@ uint stex::Tetexact::_addDiffBoundary(steps::solver::DiffBoundarydef * dbdef)
     return dbidx;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+uint stex::Tetexact::_addSDiffBoundary(steps::solver::SDiffBoundarydef * sdbdef)
+{
+    stex::SDiffBoundary * sdiffb = new SDiffBoundary(sdbdef);
+    assert(sdiffb != 0);
+    uint sdbidx = pSDiffBoundaries.size();
+    pSDiffBoundaries.push_back(sdiffb);
+    return sdbidx;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1939,13 +2111,165 @@ void stex::Tetexact::_setDiffBoundaryDcst(uint dbidx, uint sidx, double dcst, ui
                 CLOG(DEBUG, "steps_debug") << "direction: " << direction << " dcst: " << dcst << "\n";
                 #endif
                 
-                diff->setDiffBndActive(direction, true);
+                // The following function will automatically activate diffusion
+                // in this direction if necessary
                 diff->setDirectionDcst(direction, dcst);
                 _updateElement(diff);
             }
         }
     }
     
+    _updateSum();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stex::Tetexact::_setSDiffBoundaryDiffusionActive(uint sdbidx, uint sidx, bool act)
+{
+    // Need to do two things:
+    // 1) check if the species is defined in both patches connected
+    // by the surface diffusion boundary
+    // 2) loop over all triangles around the sdiff boundary and then the
+    // diffusion rules and activate diffusion if the diffusion rule
+    // relates to this species
+
+    stex::SDiffBoundary * sdiffb = _sdiffboundary(sdbidx);
+    stex::Patch * patchA = sdiffb->patchA();
+    stex::Patch * patchB = sdiffb->patchB();
+
+    uint lsidxA = specG2L_or_throw(patchA, sidx);
+    uint lsidxB = specG2L_or_throw(patchB, sidx);
+
+    std::vector<uint> sbdtris = sdiffb->getTris();
+    std::vector<uint> sbdtrisdir = sdiffb->getTriDirection();
+
+    // Have to use indices rather than iterator because need access to the
+    // tri direction
+    uint ntris = sbdtris.size();
+
+    for (uint sbdt = 0; sbdt != ntris; ++sbdt)
+    {
+        stex::Tri * tri = _tri(sbdtris[sbdt]);
+        uint direction = sbdtrisdir[sbdt];
+        assert(direction >= 0 and direction < 3);
+
+        // Each sdiff kproc then has access to the species through its defined parent
+        uint nsdiffs = tri->patchdef()->countSurfDiffs();
+        for (uint sd = 0; sd != nsdiffs; ++sd)
+        {
+            stex::SDiff * sdiff = tri->sdiff(sd);
+            // sidx is the global species index; so is the lig() return from diffdef
+            uint specgidx = sdiff->def()->lig();
+            if (specgidx == sidx)
+            {
+                #ifdef SDIFFBOUNDARY_DEBUG
+                CLOG(DEBUG, "steps_debug") << "set sdiff boundary " << direction << " activation: " << act << "\n";
+                #endif
+
+                sdiff->setSDiffBndActive(direction, act);
+            }
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool stex::Tetexact::_getSDiffBoundaryDiffusionActive(uint sdbidx, uint sidx) const
+{
+    stex::SDiffBoundary * sdiffb = _sdiffboundary(sdbidx);
+    stex::Patch * patchA = sdiffb->patchA();
+    stex::Patch * patchB = sdiffb->patchB();
+
+    uint lsidxA = specG2L_or_throw(patchA,sidx);
+    uint lsidxB = specG2L_or_throw(patchB,sidx);
+
+    std::vector<uint> sbdtris = sdiffb->getTris();
+    std::vector<uint> sbdtrisdir = sdiffb->getTriDirection();
+
+    // Have to use indices rather than iterator because need access to the
+    // tet direction
+
+    uint ntris = sbdtris.size();
+
+    for (uint sbdt = 0; sbdt != ntris; ++sbdt)
+    {
+        stex::Tri * tri = _tri(sbdtris[sbdt]);
+        uint direction = sbdtrisdir[sbdt];
+        assert(direction >= 0 and direction < 3);
+
+        // Each sdiff kproc then has access to the species through its defined parent
+        uint nsdiffs = tri->patchdef()->countSurfDiffs();
+        for (uint sd = 0; sd != nsdiffs; ++sd)
+        {
+            stex::SDiff * sdiff = tri->sdiff(sd);
+            // sidx is the global species index; so is the lig() return from diffdef
+            uint specgidx = sdiff->def()->lig();
+            if (specgidx == sidx)
+            {
+                // Just need to check the first one
+                if (sdiff->getSDiffBndActive(direction)) return true;
+                else return false;
+            }
+        }
+    }
+
+    return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stex::Tetexact::_setSDiffBoundaryDcst(uint sdbidx, uint sidx, double dcst, uint direction_patch)
+{
+    stex::SDiffBoundary * sdiffb = _sdiffboundary(sdbidx);
+    stex::Patch * patchA = sdiffb->patchA();
+    stex::Patch * patchB = sdiffb->patchB();
+
+    uint lsidxA = specG2L_or_throw(patchA,sidx);
+    uint lsidxB = specG2L_or_throw(patchB,sidx);
+
+    steps::solver::Patchdef * dirp_patchdef = NULL;
+    if (direction_patch != std::numeric_limits<uint>::max()) {
+    	dirp_patchdef = _patch(direction_patch)->def();
+    }
+
+    std::vector<uint> sbdtris = sdiffb->getTris();
+    std::vector<uint> sbdtrisdir = sdiffb->getTriDirection();
+
+    uint ntris = sbdtris.size();
+
+    for (uint sbdt = 0; sbdt != ntris; ++sbdt)
+    {
+        stex::Tri * tri = _tri(sbdtris[sbdt]);
+
+        if (dirp_patchdef == tri->patchdef()) {
+            continue;
+        }
+        uint direction = sbdtrisdir[sbdt];
+        assert(direction >= 0 and direction < 3);
+
+        // Each diff kproc then has access to the species through its defined parent
+        uint nsdiffs = tri->patchdef()->countSurfDiffs();
+        for (uint sd = 0; sd != nsdiffs; ++sd)
+        {
+            stex::SDiff * sdiff = tri->sdiff(sd);
+            // sidx is the global species index; so is the lig() return from diffdef
+            uint specgidx = sdiff->def()->lig();
+            if (specgidx == sidx)
+            {
+                #ifdef SDIFFBOUNDARY_DEBUG
+                CLOG(DEBUG, "steps_debug") << "direction: " << direction << " dcst: " << dcst << "\n";
+                #endif
+
+                // The following function will automatically activate diffusion
+                // in this direction if necessary
+                sdiff->setDirectionDcst(direction, dcst);
+                _updateElement(sdiff);
+            }
+        }
+    }
+
     _updateSum();
 }
 
@@ -3206,7 +3530,7 @@ void stex::Tetexact::_setTriSReacActive(uint tidx, uint ridx, bool act)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stex::Tetexact::_getTriDiffD(uint tidx, uint didx, uint direction_tri) const
+double stex::Tetexact::_getTriSDiffD(uint tidx, uint didx, uint direction_tri) const
 {
 
     assert (tidx < pTris.size());
@@ -3248,7 +3572,7 @@ double stex::Tetexact::_getTriDiffD(uint tidx, uint didx, uint direction_tri) co
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tetexact::_setTriDiffD(uint tidx, uint didx, double dk, uint direction_tri)
+void stex::Tetexact::_setTriSDiffD(uint tidx, uint didx, double dk, uint direction_tri)
 {
     #ifdef DIRECTIONAL_DCST_DEBUG
     CLOG_IF(direction_tri !=  std::numeric_limits<uint>::max(), DEBUG, "steps_debug") << "tidx: " << tidx << " didx: " << didx << " dk: " << dk << " direction tri: " << direction_tri << "\n";

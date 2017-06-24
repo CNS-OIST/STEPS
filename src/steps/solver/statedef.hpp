@@ -24,6 +24,13 @@
 
  */
 
+
+/*
+ *  Last Changed Rev:  $Rev$
+ *  Last Changed Date: $Date$
+ *  Last Changed By:   $Author$
+ */
+
 #ifndef STEPS_SOLVER_STATEDEF_HPP
 #define STEPS_SOLVER_STATEDEF_HPP 1
 
@@ -41,6 +48,7 @@
 #include "steps/solver/api.hpp"
 #include "steps/geom/patch.hpp"
 #include "steps/geom/diffboundary.hpp"
+#include "steps/geom/sdiffboundary.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -62,6 +70,7 @@ class VDepSReacdef;
 class OhmicCurrdef;
 class GHKcurrdef;
 class DiffBoundarydef;
+class SDiffBoundarydef;
 
 // Auxiliary declarations.
 
@@ -129,6 +138,11 @@ typedef DiffBoundarydef *                    DiffBoundarydefP;
 typedef std::vector<DiffBoundarydefP>        DiffBoundarydefPVec;
 typedef DiffBoundarydefPVec::iterator        DiffBoundarydefPVecI;
 typedef DiffBoundarydefPVec::const_iterator  DiffBoundarydefPVecCI;
+
+typedef SDiffBoundarydef *                    SDiffBoundarydefP;
+typedef std::vector<SDiffBoundarydefP>        SDiffBoundarydefPVec;
+typedef SDiffBoundarydefPVec::iterator        SDiffBoundarydefPVecI;
+typedef SDiffBoundarydefPVec::const_iterator  SDiffBoundarydefPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -490,6 +504,39 @@ public:
     { return pDiffBoundarydefs.end(); }
 
     ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: SURFACE DIFFUSION BOUNDARY
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Return the total number of surface diffusion boundaries in the simulation state.
+    uint countSDiffBoundaries(void) const
+    { return pSDiffBoundarydefs.size(); }
+
+    /// Return pointer to SDiffBoundarydef object specified by global index argument.
+    ///
+    /// \param gidx Global index of the surface diffusion boundary.
+    SDiffBoundarydef * sdiffboundarydef(uint gidx) const;
+
+    /// Return the global index of surface diffusion boundary identified by string argument.
+    ///
+    /// \param d Name of the surface diffusion boundary.
+    /// \exception Throw exception if geometry does not contain sdiff boundary with this identifier.
+    uint getSDiffBoundaryIdx(std::string const & d) const;
+
+    /// Return the global index of surface diffusion boundary identified by object argument.
+    ///
+    /// \param sdiff Pointer to the surface diffusion boundary object.
+    /// \exception Throw exception if geometry does not contain sdiff boundary with this identifier.
+    uint getSDiffBoundaryIdx(steps::tetmesh::SDiffBoundary * sdiffb) const;
+
+    /// Return the beginning iterator of the Surface Diffusion Boundary objects.
+    std::vector<SDiffBoundarydef *>::const_iterator bgnSDiffBoundary(void) const
+    { return pSDiffBoundarydefs.begin(); }
+
+    /// Return the end iterator of the Surface Diffusion Boundary objects.
+    std::vector<SDiffBoundarydef *>::const_iterator endSDiffBoundary(void) const
+    { return pSDiffBoundarydefs.end(); }
+
+    ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: STATE
     ////////////////////////////////////////////////////////////////////////
 
@@ -552,7 +599,7 @@ private:
     uint                                pNSteps;
 
     std::vector<Specdef *>              pSpecdefs;
-    std::vector<Chandef *>                pChandefs;
+    std::vector<Chandef *>              pChandefs;
     std::vector<Compdef *>              pCompdefs;
     std::vector<Patchdef *>             pPatchdefs;
     std::vector<Reacdef *>              pReacdefs;
@@ -562,11 +609,11 @@ private:
     std::vector<Diffdef *>              pSurfDiffdefs;
 
     std::vector<DiffBoundarydef *>      pDiffBoundarydefs;
+    std::vector<SDiffBoundarydef *>      pSDiffBoundarydefs;
     std::vector<VDepTransdef *>         pVDepTransdefs;
     std::vector<VDepSReacdef *>         pVDepSReacdefs;
     std::vector<OhmicCurrdef *>         pOhmicCurrdefs;
-    std::vector<GHKcurrdef *>             pGHKcurrdefs;
-
+    std::vector<GHKcurrdef *>           pGHKcurrdefs;
 
 };
 

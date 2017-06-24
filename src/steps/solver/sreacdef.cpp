@@ -25,6 +25,12 @@
  */
 
 
+/*
+ *  Last Changed Rev:  $Rev$
+ *  Last Changed Date: $Date$
+ *  Last Changed By:   $Author$
+ */
+
 // STL headers.
 #include <string>
 #include <cassert>

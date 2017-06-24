@@ -21,9 +21,8 @@ add_custom_target(steps_package_rebuild_check ALL DEPENDS ${steps_package_timest
 add_custom_command(OUTPUT ${steps_package_timestamp}
     COMMAND ${CMAKE_COMMAND} -E copy ${steps_swig_pymodules} steps
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${steps_swig_target}> steps
-    COMMAND ${PYTHON_EXECUTABLE} cmake_setup.py install_lib "--install-dir" "${lib_dir}" "--force"
+    COMMAND ${PYTHON_EXECUTABLE} cmake_setup.py install_lib "--install-dir" "${lib_dir}" "--force" "--no-compile"
     COMMAND ${CMAKE_COMMAND} -E touch ${steps_package_timestamp}
     DEPENDS ${steps_swig_target} ${steps_package_sources})
 
-install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} cmake_setup.py install --prefix ${CMAKE_INSTALL_PREFIX} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
-
+install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} cmake_setup.py install --install-lib=${PYTHON_INSTALL_PREFIX} --force WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")

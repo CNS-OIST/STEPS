@@ -217,7 +217,7 @@ void smtos::WmVol::setCount(uint lidx, uint count, double period)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::WmVol::incCount(uint lidx, int inc, double period)
+void smtos::WmVol::incCount(uint lidx, int inc, double period, bool local_change)
 {
     #ifdef MPI_DEBUG
     //CLOG(DEBUG, "mpi_debug") << "Change spec (local id): " << lidx << " by " << inc << "\n";
@@ -227,7 +227,7 @@ void smtos::WmVol::incCount(uint lidx, int inc, double period)
     
     
     // remote change
-    if (hostRank != myRank)
+    if (hostRank != myRank && ! local_change)
     {
         std::ostringstream os;
         os << "Remote WmVol update is not implemented.\n";

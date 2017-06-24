@@ -97,6 +97,9 @@ stetmesh::Memb::Memb(std::string const & id, Tetmesh * container,
     pTetsN = pTet_indices.size();
     pTrisN = pTri_indices.size();
     
+    if (pTrisN == 0)
+        throw ArgErr("Membrane contains no triangles.");
+
     if (verify) verifyMemb();
 
     // Create sorted set of unique vertex indices

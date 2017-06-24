@@ -36,6 +36,7 @@
 #include "steps/common.h"
 #include "steps/math/tools.hpp"
 #include "steps/rng/rng.hpp"
+#include "steps/rng/small_binomial.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -460,6 +461,13 @@ double RNG::getExp(double lambda)
 
 uint RNG::getBinom(uint t, double p)
 {
+    uint t_small = 20;
+
+    if (t<=t_small) { // for small numbers of trials, small_binomial is faster
+	small_binomial_distribution<uint> d(t,p);
+        return d(*this);
+    }
+
     std::binomial_distribution<uint> distribution(t, p);
     return distribution(*this);
 }
