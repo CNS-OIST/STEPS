@@ -56,7 +56,7 @@ endif()
 
 # Requirements
 # -------------------------------------------------------------------
-find_package(PythonInterpLibs REQUIRED)
+find_package(PythonInterpLibs)
 find_package (Threads REQUIRED)
 
 
