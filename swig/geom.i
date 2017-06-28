@@ -71,6 +71,7 @@ UNCHECKED_STL_SEQ_CONVERT(std::set<unsigned int>,insert,PyInt_AsUnsignedLongMask
 #include "steps/model/reac.hpp"
 #include "steps/model/diff.hpp"
 #include "steps/geom/diffboundary.hpp"
+#include "steps/geom/sdiffboundary.hpp"
 %}
 
 namespace std
@@ -81,6 +82,7 @@ namespace std
     %template(vector_cmp)  vector<steps::wm::Comp *>;
     %template(vector_tmp)  vector<steps::tetmesh::TmPatch *>;
     %template(vector_db)   vector<steps::tetmesh::DiffBoundary *>;
+    %template(vector_db)   vector<steps::tetmesh::SDiffBoundary *>;
     %template(vector_str)  vector<std::string>;
     %template(vector_int)  vector<int>;
     %template(vector_dbl)  vector<double>;
@@ -122,6 +124,7 @@ class TmPatch;
 class TmComp;
 class Memb;
 class DiffBoundary;
+class SDiffBoundary;
 
 enum ElementType {ELEM_VERTEX, ELEM_TRI, ELEM_TET, ELEM_UNDEFINED = 99};
 
@@ -2771,7 +2774,7 @@ Return:
         %feature("autodoc", 
 "
 Returns a list of Booleans describing if triangles tris are 
-assigned to the Diffusion Boundary.
+assigned to the diffusion boundary.
 
 Syntax::
 
@@ -2787,7 +2790,7 @@ Return:
         
     %feature("autodoc", 
 "
-Returns a list of indices of all triangles assigned to the patch.
+Returns a list of indices of all triangles assigned to the diffusion boundary.
 
 Syntax::
 
@@ -2800,6 +2803,119 @@ Return:
     list<uint>
 ");
         std::vector<unsigned int> getAllTriIndices(void) const;                
+};	
+
+////////////////////////////////////////////////////////////////////////////////
+
+%feature("kwargs") SDiffBoundary::SDiffBoundary;
+    
+class SDiffBoundary
+{
+        
+public:
+        
+    SDiffBoundary(std::string const & id, Tetmesh * container,
+                std::vector<unsigned int> const & bars, 
+                std::vector<steps::tetmesh::TmPatch *> const & patches);
+        
+    virtual ~SDiffBoundary(void);
+        
+%feature("autodoc", 
+"
+Get the identifier string of the surface diffusion boundary.
+
+Syntax::
+
+    getID()
+
+Arguments:
+    None
+
+Return:
+    string
+");
+    std::string getID(void) const;
+        
+%feature("autodoc", 
+"
+Set the identifier string of the surface diffusion boundary.
+
+Syntax::
+
+    setID(name)
+
+Arguments:
+    string name
+
+Return:
+    None
+");
+    void setID(std::string const & id);
+        
+%feature("autodoc", 
+"
+Returns a reference to the parent steps.tetmesh.Tetmesh container object.
+
+Syntax::
+
+    getContainer()
+
+Arguments:
+    None
+
+Return:
+    steps.tetmesh.Tetmesh
+");
+    steps::tetmesh::Tetmesh * getContainer(void) const;
+        
+%feature("autodoc", 
+"
+Returns a list of the two patches this surface diffusion boundary connects.
+
+Syntax::
+
+    getPatches()
+
+Arguments:
+    None
+
+Return:
+    list<steps::wm::Patch, length = 2>
+");
+        std::vector<steps::wm::Patch *>  getPatches(void) const;
+        
+        %feature("autodoc", 
+"
+Returns a list of Booleans describing if bars bars are 
+assigned to the surface diffusion boundary.
+
+Syntax::
+
+    isBarInside(bars)
+
+Arguments:
+    list<uint> bars
+
+Return:
+    list<bool, length = length(bars)>
+");
+    std::vector<bool> isBarInside(std::vector<unsigned int> bar) const;
+        
+    %feature("autodoc", 
+"
+Returns a list of indices of all bars assigned to the surface diffusion boundary.
+
+Syntax::
+
+    getAllBarIndices()
+
+Arguments:
+    None
+
+Return:
+    list<uint>
+");
+        std::vector<unsigned int> getAllBarIndices(void) const;                
 };	
 
 ////////////////////////////////////////////////////////////////////////////////

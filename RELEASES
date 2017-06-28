@@ -1,4 +1,18 @@
 Release Notes
+
+Version 3.1.0 (2017-6)
+==========================
+1. Optimization on solver constructors,which significantly speedup the initialization time for simulations with large meshes.
+2. Cython binding for user interface
+3. Parallel EField solver using PETSc library
+4. Surface Diffusion Boundary for Tetexact and TetOpSplit
+5. Further improve CMake compilation system
+6. Restructure validation and test packages
+
+Version 3.0.2 (2017-2)
+==========================
+1. Bug fix: abort CMake if SWIG is REQUIRED but not found
+
 Version 3.0.1 (2017-2)
 ==========================
 1. Bug fix for crash problem when providing fractional value to setCompCount()
@@ -41,6 +55,10 @@ library for solutions.
 diffusive flux between triangles that form part of a patch surface, analogous to
 volume diffusion between tetrahedral elements in a compartment.
 4. Several other smaller additions and fixes.
+
+Version 1.3.0 (2011-12)
+==========================
+1. SSA engine changes from Direct SSA to Composition & Rejection SSA for Tetexact solver.
 
 Version 1.2.1 (2011-06-10)
 ==========================

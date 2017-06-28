@@ -28,6 +28,7 @@
 // Standard library headers.
 #include <cmath>
 #include <vector>
+#include <map>
 #include <cassert>
 #include <iostream>
 #include <fstream>
@@ -41,6 +42,10 @@
 #include <numeric>
 
 #include <mpi.h>
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 // STEPS headers.
 #include "steps/common.h"
@@ -60,6 +65,7 @@
 #include "steps/mpi/tetopsplit/vdeptrans.hpp"
 #include "steps/mpi/tetopsplit/vdepsreac.hpp"
 #include "steps/mpi/tetopsplit/diffboundary.hpp"
+#include "steps/mpi/tetopsplit/sdiffboundary.hpp"
 #include "steps/math/constants.hpp"
 #include "steps/math/point.hpp"
 #include "steps/error.hpp"
@@ -75,11 +81,17 @@
 #include "steps/solver/vdeptransdef.hpp"
 #include "steps/solver/vdepsreacdef.hpp"
 #include "steps/solver/types.hpp"
+#include "steps/solver/diffboundarydef.hpp"
+#include "steps/solver/sdiffboundarydef.hpp"
 #include "steps/geom/tetmesh.hpp"
 
 #include "steps/solver/efield/efield.hpp"
 #include "steps/solver/efield/dVsolver.hpp"
 #include "steps/solver/efield/dVsolver_slu.hpp"
+#ifdef USE_PETSC
+#include "steps/solver/efield/dVsolver_petsc.hpp"
+#endif
+#include "steps/util/distribute.hpp"
 
 #include "third_party/easylogging++.h"
 
@@ -111,6 +123,7 @@ smtos::TetOpSplitP::TetOpSplitP(steps::model::Model * m, steps::wm::Geom * g, st
 , pCompMap()
 , pPatches()
 , pDiffBoundaries()
+, pSDiffBoundaries()
 , pTets()
 , pTris()
 , pWmVols()
@@ -143,6 +156,9 @@ smtos::TetOpSplitP::TetOpSplitP(steps::model::Model * m, steps::wm::Geom * g, st
 , compTime(0.0)
 , syncTime(0.0)
 , idleTime(0.0)
+, efieldTime(0.0)
+, rdTime(0.0)
+, dataExchangeTime(0.0)
 {
     if (rng() == 0)
     {
@@ -154,6 +170,7 @@ smtos::TetOpSplitP::TetOpSplitP(steps::model::Model * m, steps::wm::Geom * g, st
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
     
     MPI_Comm_size(MPI_COMM_WORLD, &nHosts);
+    
     
     // All initialization code now in _setup() to allow EField solver to be
     // derived and create EField local objects within the constructor
@@ -197,6 +214,8 @@ void smtos::TetOpSplitP::checkpoint(std::string const & file_name)
     std::ostringstream os;
     os << "This function has not been implemented!";
     throw steps::NotImplErr(os.str());
+
+    /*
     
     std::cout << "Checkpoint to " << file_name  << "...";
     std::fstream cp_file;
@@ -215,6 +234,11 @@ void smtos::TetOpSplitP::checkpoint(std::string const & file_name)
     DiffBoundaryPVecCI db_e = pDiffBoundaries.end();
     for (DiffBoundaryPVecCI db = pDiffBoundaries.begin(); db != db_e; ++db) {
         (*db)->checkpoint(cp_file);
+    }
+
+    SDiffBoundaryPVecCI sdb_e = pSDiffBoundaries.end();
+    for (SDiffBoundaryPVecCI sdb = pSDiffBoundaries.begin(); sdb != sdb_e; ++sdb) {
+        (*sdb)->checkpoint(cp_file);
     }
 
     WmVolPVecCI wmv_e = pWmVols.end();
@@ -293,6 +317,8 @@ void smtos::TetOpSplitP::checkpoint(std::string const & file_name)
 
     cp_file.close();
     //std::cout << "complete.\n";
+
+    */
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -303,6 +329,7 @@ void smtos::TetOpSplitP::restore(std::string const & file_name)
     os << "This function has not been implemented!";
     throw steps::NotImplErr(os.str());
     
+    /*
     std::cout << "Restore from " << file_name << "...";
     std::fstream cp_file;
 
@@ -322,6 +349,11 @@ void smtos::TetOpSplitP::restore(std::string const & file_name)
     DiffBoundaryPVecCI db_e = pDiffBoundaries.end();
     for (DiffBoundaryPVecCI db = pDiffBoundaries.begin(); db != db_e; ++db) {
         (*db)->restore(cp_file);
+    }
+
+    SDiffBoundaryPVecCI sdb_e = pSDiffBoundaries.end();
+    for (SDiffBoundaryPVecCI sdb = pSDiffBoundaries.begin(); sdb != sdb_e; ++sdb) {
+        (*sdb)->restore(cp_file);
     }
 
     WmVolPVecCI wmv_e = pWmVols.end();
@@ -430,6 +462,8 @@ void smtos::TetOpSplitP::restore(std::string const & file_name)
     cp_file.close();
 
     //std::cout << "complete.\n";
+
+    */
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -482,7 +516,6 @@ void smtos::TetOpSplitP::_setup(void)
     pWmVols.assign(ncomps, NULL);
     diffSep = 0;
     sdiffSep = 0;
-
     // Now create the actual compartments.
     ssolver::CompDefPVecCI c_end = statedef()->endComp();
     for (ssolver::CompDefPVecCI c = statedef()->bgnComp(); c != c_end; ++c)
@@ -509,8 +542,19 @@ void smtos::TetOpSplitP::_setup(void)
         assert(diffboundary_gidx == diffb_idx);
     }
 
+    // Create the surface diffusion boundaries
+    ssolver::SDiffBoundarydefPVecCI sdb_end = statedef()->endSDiffBoundary();
+    for (ssolver::SDiffBoundaryDefPVecCI sdb = statedef()->bgnSDiffBoundary(); sdb != sdb_end; ++sdb)
+    {
+        uint sdiffboundary_gidx = (*sdb)->gidx();
+        uint sdiffb_idx = _addSDiffBoundary(*sdb);
+        assert(sdiffboundary_gidx == sdiffb_idx);
+    }
+
     uint npatches = pPatches.size();
     assert (mesh()->_countPatches() == npatches);
+    int rk; MPI_Comm_rank(MPI_COMM_WORLD, &rk);
+
     for (uint p = 0; p < npatches; ++p)
     {
         // Add the tris for this patch
@@ -524,8 +568,45 @@ void smtos::TetOpSplitP::_setup(void)
 
         steps::mpi::tetopsplit::Patch *localpatch = pPatches[p];
 
+        /*** Previous impl
+        // Create a map between edges and adjacent tris in this patch
+        std::map<uint, std::vector<uint> > bar2tri;
         for (uint tri: tmpatch->_getAllTriIndices()) 
         {
+            const uint *bars = pMesh->_getTriBars(tri);
+            for (int i = 0; i < 3; ++i)
+                bar2tri[bars[i]].push_back(tri);
+        }
+
+        for (uint tri: tmpatch->_getAllTriIndices()) 
+        ***/
+
+        // Create a map between edges and adjacent tris in this patch
+        std::map<uint, std::vector<uint> > bar2tri;
+
+        // We need to go through all patches to record bar2tri mapping
+        // for all connected triangle neighbors even they are in different
+        // patches, because their information is needed for surface diffusion boundary
+
+        for (uint bar_p = 0; bar_p < npatches; ++bar_p) {
+
+            steps::tetmesh::TmPatch *bar_patch = dynamic_cast<steps::tetmesh::TmPatch*>(pMesh->_getPatch(bar_p));
+
+            for (uint tri: bar_patch->_getAllTriIndices())
+            {
+                const uint *bars = pMesh->_getTriBars(tri);
+                for (int i = 0; i < 3; ++i)
+                    bar2tri[bars[i]].push_back(tri);
+            }
+        }
+
+        auto tri_idxs = tmpatch->_getAllTriIndices();
+
+#pragma omp parallel for
+        for (int i = 0; i< tri_idxs.size(); ++i) 
+        //*** end of new impl
+        {
+            auto tri = tri_idxs[i];
             assert (pMesh->getTriPatch(tri) == tmpatch);
 
             double area = pMesh->getTriArea(tri);
@@ -539,7 +620,21 @@ void smtos::TetOpSplitP::_setup(void)
                 l[j] = distance(pMesh->_getVertex(v[0]), pMesh->_getVertex(v[1]));
             }
 
-            std::vector<int> tris = pMesh->getTriTriNeighb(tri, tmpatch);
+            // Get neighboring tris
+            std::vector<int> tris(3, -1);
+            for (int j = 0; j < 3; ++j)
+            {
+                std::vector<uint> neighb_tris = bar2tri[tri_bars[j]];
+                for (int k = 0; k < neighb_tris.size(); ++k)
+                {
+                    if (neighb_tris[k] == tri || pMesh->getTriPatch(neighb_tris[k])  == nullptr)
+                        continue;
+
+                    tris[j] = neighb_tris[k];
+                    break;
+                }
+            }
+
             point3d baryc = pMesh->_getTriBarycenter(tri);
 
             double d[3] = {0, 0, 0};
@@ -549,7 +644,8 @@ void smtos::TetOpSplitP::_setup(void)
             }
 
             const int *tri_tets = pMesh->_getTriTetNeighb(tri);
-            _addTri(tri, localpatch, area, l[0], l[1], l[2], d[0], d[1], d[2], tri_tets[0], tri_tets[1], tris[0], tris[1], tris[2]);
+#pragma omp critical
+                _addTri(tri, localpatch, area, l[0], l[1], l[2], d[0], d[1], d[2], tri_tets[0], tri_tets[1], tris[0], tris[1], tris[2]);
         }
     }
 
@@ -733,8 +829,6 @@ void smtos::TetOpSplitP::_setup(void)
                     tet_in->setNextTri(i, pTris[t]);
                     break;
                 }
-				
-
             }
         }
 
@@ -763,8 +857,6 @@ void smtos::TetOpSplitP::_setup(void)
                     tet_out->setNextTri(i, pTris[t]);
                     break;
                 }
-				
-	
             }
         }
     }
@@ -861,6 +953,96 @@ void smtos::TetOpSplitP::_setup(void)
             _tet(tets[t])->setDiffBndDirection(tets_direction[t]);
     }
 
+
+    // Now loop over the surface diffusion boundaries:
+    // 1) get all the bars and get the two triangles
+    // 2) figure out which direction is the direction for a triangle
+    // 3) add the triangle and the direction to local object
+
+    // This is here because we need all tris to have been assigned correctly
+    // to patches. Check every one and set the patchA and patchB for the db
+    uint nsdiffbnds = pSDiffBoundaries.size();
+    assert(nsdiffbnds == mesh()->_countSDiffBoundaries());
+
+    for (uint sdb = 0; sdb < nsdiffbnds; ++sdb)
+    {
+        steps::mpi::tetopsplit::SDiffBoundary * localsdiffb = pSDiffBoundaries[sdb];
+
+        uint patchAidx = localsdiffb->def()->patcha();
+        uint patchBidx = localsdiffb->def()->patchb();
+        steps::solver::Patchdef * patchAdef = statedef()->patchdef(patchAidx);
+        steps::solver::Patchdef * patchBdef = statedef()->patchdef(patchBidx);
+
+        for (uint sdbbar: localsdiffb->def()->bars())
+        {
+            const int *bar_tris = pMesh->_getBarTriNeighb(sdbbar);
+
+            int triAidx = bar_tris[0];
+            int triBidx = bar_tris[1];
+            assert(triAidx >= 0 && triBidx >= 0);
+
+            steps::mpi::tetopsplit::Tri * triA = _tri(triAidx);
+            steps::mpi::tetopsplit::Tri * triB = _tri(triBidx);
+            assert(triA != 0 && triB != 0);
+
+            steps::solver::Patchdef *triA_pdef = triA->patchdef();
+            steps::solver::Patchdef *triB_pdef = triB->patchdef();
+            assert(triA_pdef != 0);
+            assert(triB_pdef != 0);
+
+            if (triA_pdef != patchAdef)
+            {
+                assert(triB_pdef == patchAdef);
+                assert(triA_pdef == patchBdef);
+            }
+            else
+            {
+                assert(triB_pdef == patchBdef);
+                assert(triA_pdef == patchAdef);
+            }
+
+            // Ok, checks over, lets get down to business
+            int direction_idx_a = -1;
+            int direction_idx_b = -1;
+
+            const uint *triA_bars = pMesh->_getTriBars(triAidx);
+            const uint *triB_bars = pMesh->_getTriBars(triBidx);
+
+            for (uint i = 0; i < 3; ++i)
+            {
+                if (triA_bars[i] == sdbbar)
+                {
+                    assert(direction_idx_a == -1);
+                    direction_idx_a = i;
+                }
+                if (triB_bars[i] == sdbbar)
+                {
+                    assert(direction_idx_b == -1);
+                    direction_idx_b = i;
+                }
+            }
+            assert (direction_idx_a != -1);
+            assert (direction_idx_b != -1);
+
+            // Set the tetrahedron and direction to the Diff Boundary object
+            localsdiffb->setTriDirection(triAidx, direction_idx_a);
+            localsdiffb->setTriDirection(triBidx, direction_idx_b);
+        }
+        localsdiffb->setPatches(_patch(patchAidx), _patch(patchBidx));
+
+
+        // Might as well copy the vectors because we need to index through
+        std::vector<uint> tris = localsdiffb->getTris();
+        std::vector<uint> tris_direction = localsdiffb->getTriDirection();
+
+        ntris = tris.size();
+        assert (ntris <= pTris.size());
+        assert (tris_direction.size() == ntris);
+
+        for (uint t = 0; t < ntris; ++t)
+            _tri(tris[t])->setSDiffBndDirection(tris_direction[t]);
+    }
+
     for (auto t: pTets)
         if (t) t->setupKProcs(this);
 
@@ -889,7 +1071,7 @@ void smtos::TetOpSplitP::_setup(void)
 
     // Create EField structures if EField is to be calculated
     if (efflag() == true) _setupEField();
-    
+
     for (auto tet : boundaryTets) {
         tet->setupBufferLocations();
     }
@@ -933,6 +1115,11 @@ void smtos::TetOpSplitP::_setupEField(void)
     case EF_DV_SLUSYS:
         pEField = make_EField<dVSolverSLU>(MPI_COMM_WORLD);
         break;
+#ifdef USE_PETSC 
+    case EF_DV_PETSC:
+        pEField = make_EField<dVSolverPETSC>();
+        break;
+#endif
     default:
         throw steps::ArgErr("Unsupported E-Field solver.");
     }
@@ -1081,7 +1268,7 @@ void smtos::TetOpSplitP::_setupEField(void)
 
     MPI_Allgatherv(&local_eftri_indices[0], (int)local_eftri_indices.size(), MPI_INT,
             &EFTrisI_idx[0], &EFTrisI_count[0], &EFTrisI_offset[0], MPI_INT, MPI_COMM_WORLD);
-
+    
     pEField->initMesh(pEFNVerts, &(pEFVerts.front()), pEFNTris, &(pEFTris.front()), pEFNTets, &(pEFTets.front()), memb->_getOpt_method(), memb->_getOpt_file_name(), memb->_getSearch_percent());
 }
 
@@ -1141,6 +1328,16 @@ uint smtos::TetOpSplitP::_addDiffBoundary(steps::solver::DiffBoundarydef * dbdef
     return dbidx;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+uint smtos::TetOpSplitP::_addSDiffBoundary(steps::solver::SDiffBoundarydef * sdbdef)
+{
+	smtos::SDiffBoundary * sdiffb = new SDiffBoundary(sdbdef);
+    assert(sdiffb != 0);
+    uint sdbidx = pSDiffBoundaries.size();
+    pSDiffBoundaries.push_back(sdiffb);
+    return sdbidx;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1257,6 +1454,10 @@ void smtos::TetOpSplitP::reset(void)
     compTime = 0.0;
     syncTime = 0.0;
     idleTime = 0.0;
+
+    efieldTime = 0.0;
+    rdTime = 0.0;
+    dataExchangeTime = 0.0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1411,13 +1612,10 @@ void smtos::TetOpSplitP::_runWithoutEField(double sim_endtime)
             // The number of molecules available for diffusion for this diffusion rule
             double population = rate/scaleddcst;
 
-            // Mean diffusion time for one molecule
-            double singlemolcjtime = 1.0/scaleddcst;
-
             // t1, AKA 'X', is a fractional number between 0 and 1: the update period divided
             // by the local mean single-molecule dwellperiod. This fraction gives the mean
             // proportion of molecules to diffuse.
-            double t1 = update_period/singlemolcjtime;
+            double t1 = update_period * scaleddcst;
             
             
             if (t1>=1.0) {
@@ -1491,13 +1689,10 @@ void smtos::TetOpSplitP::_runWithoutEField(double sim_endtime)
             // The number of molecules available for diffusion for this diffusion rule
             double population = rate/scaleddcst;
 
-            // Mean diffusion time for one molecule
-            double singlemolcjtime = 1.0/scaleddcst;
-
             // t1, AKA 'X', is a fractional number between 0 and 1: the update period divided
             // by the local mean single-molecule dwellperiod. This fraction gives the mean
             // proportion of molecules to diffuse.
-            double t1 = update_period/singlemolcjtime;
+            double t1 = update_period * scaleddcst;
             
             if (t1>=1.0)
             {
@@ -1608,13 +1803,35 @@ void smtos::TetOpSplitP::_runWithEField(double endtime)
     #ifdef MPI_DEBUG
     CLOG(DEBUG, "mpi_debug") << "EField computation\n";
     #endif
-    
+
+    #ifdef MPI_PROFILING
+    double timing_start = MPI_Wtime();
+    #endif
+
     if (pEFTrisVStale) _refreshEFTrisV();
 
+    #ifdef MPI_PROFILING
+    double timing_end = MPI_Wtime();
+    efieldTime += (timing_end - timing_start);
+    #endif
+
     while (statedef()->time() < endtime) {
+
+        #ifdef MPI_PROFILING
+        timing_start = MPI_Wtime();
+        #endif
+
         double t0 = statedef()->time();
         _runWithoutEField( std::min(t0+pEFDT, endtime));
-        
+
+        #ifdef MPI_PROFILING
+        timing_end = MPI_Wtime();
+        rdTime += (timing_end - timing_start);
+        #endif
+
+        #ifdef MPI_PROFILING
+        timing_start = MPI_Wtime();
+        #endif
         // update host-local currents
         int i_begin = EFTrisI_offset[myRank];
         int i_end = i_begin + EFTrisI_count[myRank];
@@ -1625,27 +1842,48 @@ void smtos::TetOpSplitP::_runWithEField(double endtime)
             EFTrisI_permuted[i] = pEFTris_vec[tlidx]->computeI(EFTrisV[tlidx], sttime-t0, sttime);
         }
 
+        #ifdef MPI_PROFILING
+        timing_end = MPI_Wtime();
+        efieldTime += (timing_end - timing_start);
+        #endif
+
+        #ifdef MPI_PROFILING
+        timing_start = MPI_Wtime();
+        #endif
         MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
                 &EFTrisI_permuted[0], &EFTrisI_count[0], &EFTrisI_offset[0], MPI_DOUBLE, MPI_COMM_WORLD);
 
-        if (myRank == 0) {
-            #ifdef SERIAL_EFIELD_DEBUG
-            CLOG(DEBUG, "steps_debug") << "Received currents: \n";
-            #endif
-            for (uint i = 0; i < pEFNTris; i++) {
-                #ifdef SERIAL_EFIELD_DEBUG
-                CLOG(DEBUG, "steps_debug") << "lid: " << EFTrisI_idx[i] << " cur: " << EFTrisI_permuted[i];
-                #endif
-            }
-        }
+        #ifdef MPI_PROFILING
+        timing_end = MPI_Wtime();
+        dataExchangeTime += (timing_end - timing_start);
+        #endif
+
+        #ifdef MPI_PROFILING
+        timing_start = MPI_Wtime();
+        #endif
 
         for (uint i = 0; i < pEFNTris; i++)
                 pEField->setTriI(EFTrisI_idx[i], EFTrisI_permuted[i]);
 
         pEField->advance(sttime-t0);
         _refreshEFTrisV();
+
+        #ifdef MPI_PROFILING
+        timing_end = MPI_Wtime();
+        efieldTime += (timing_end - timing_start);
+        #endif
         // TODO: Replace this with something that only resets voltage-dependent things
+
+        #ifdef MPI_PROFILING
+        timing_start = MPI_Wtime();
+        #endif
+
         _updateLocal();
+
+        #ifdef MPI_PROFILING
+        timing_end = MPI_Wtime();
+        rdTime += (timing_end - timing_start);
+        #endif
     }
     MPI_Barrier(MPI_COMM_WORLD);
 }
@@ -1769,6 +2007,7 @@ void smtos::TetOpSplitP::_setCompCount(uint cidx, uint sidx, double n)
     assert (statedef()->countComps() == pComps.size());
     smtos::Comp * comp = _comp(cidx);
     uint slidx = comp->def()->specG2L(sidx);
+
     if (slidx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
@@ -1783,84 +2022,30 @@ void smtos::TetOpSplitP::_setCompCount(uint cidx, uint sidx, double n)
         throw steps::ArgErr(os.str());
     }
 
-    uint ncomptets = comp->countTets();
+    // only do the distribution in rank 0
+    // then bcast to other ranks
     
+    if (myRank == 0) {
+        // functions for distribution:
+        auto set_count = [slidx](WmVol *tet, uint c) { tet->setCount(slidx, c); };
+        auto inc_count = [slidx](WmVol *tet, int c) { tet->incCount(slidx, c, 0.0, true); };
+        auto weight = [](WmVol *tet) { return tet->vol(); };
+
+        steps::util::distribute_quantity(n, comp->bgnTet(), comp->endTet(), weight, set_count, inc_count, *rng(), comp->def()->vol());
+
+    }
+    
+    uint ncomptets = comp->countTets();
     std::vector<uint> counts(ncomptets);
+    
     WmVolPVecCI t_end = comp->endTet();
     if (myRank == 0) {
-        double totalvol = comp->def()->vol();
-
-        double n_int = std::floor(n);
-        double n_frc = n - n_int;
-        uint c = static_cast<uint>(n_int);
-        if (n_frc > 0.0)
-        {
-            double rand01 = rng()->getUnfIE();
-            if (rand01 < n_frc) c++;
-        }
-
-        uint nremoved = 0;
-        for (WmVolPVecCI t = comp->bgnTet(); t != t_end; ++t)
-        {
-            WmVol * tet = *t;
-            if (n == 0.0) {
-                tet->setCount(slidx, 0);
-                continue;
-            }
-
-            // New method (allowing ceiling) means we have to set the counts
-            // to zero for any tets after all molecules have been injected
-            if (nremoved == c)
-            {
-                tet->setCount(slidx, 0);
-                continue;
-            }
-
-            double fract = static_cast<double>(c) * (tet->vol() / totalvol);
-            uint n3 = static_cast<uint>(std::floor(fract));
-
-            // BUGFIX 29/09/2010 IH. By not allowing the ceiling here
-            // concentration gradients could appear in the injection.
-            double n3_frac = fract - static_cast<double>(n3);
-            if (n3_frac > 0.0)
-            {
-                double rand01 = rng()->getUnfIE();
-                if (rand01 < n3_frac) n3++;
-            }
-
-            ///
-            // BUGFIX 18/11/09 IH. By reducing c here we were not giving all
-            // tets an equal share. Tets with low index would have a
-            // greater share than those with higher index.
-            //c -= n3;
-            nremoved += n3;
-
-            if (nremoved >= c)
-            {
-                n3 -= (nremoved-c);
-                nremoved = c;
-            }
-
-            tet->setCount(slidx, n3);
-        }
-        assert(nremoved <= c);
-        c -= nremoved;
-        while (c != 0)
-        {
-            WmVol * tet = comp->pickTetByVol(rng()->getUnfIE());
-
-            assert (tet != 0);
-            tet->setCount(slidx, (tet->pools()[slidx] + 1.0));
-            c--;
-        }
-        
         uint curr_pos = 0;
         for (WmVolPVecCI t = comp->bgnTet(); t != t_end; ++t)
         {
             counts[curr_pos] =(*t)->pools()[slidx];
             curr_pos++;
         }
-        
     }
 
     MPI_Bcast(&(counts.front()), ncomptets, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
@@ -1954,7 +2139,7 @@ bool smtos::TetOpSplitP::_getCompClamped(uint cidx, uint sidx) const
     
     bool global_clamped = false;
     
-    MPI_Allreduce(&local_clamped, &global_clamped, 1, MPI::BOOL, MPI_LAND, MPI_COMM_WORLD);
+    MPI_Allreduce(&local_clamped, &global_clamped, 1, MPI_UNSIGNED_SHORT, MPI_LAND, MPI_COMM_WORLD);
     
     return global_clamped;
 }
@@ -2070,7 +2255,7 @@ bool smtos::TetOpSplitP::_getCompReacActive(uint cidx, uint ridx) const
     
     bool global_active = false;
     
-    MPI_Allreduce(&local_active, &global_active, 1, MPI::BOOL, MPI_LAND, MPI_COMM_WORLD);
+    MPI_Allreduce(&local_active, &global_active, 1, MPI_UNSIGNED_SHORT, MPI_LAND, MPI_COMM_WORLD);
     return global_active;
 }
 
@@ -2206,7 +2391,7 @@ bool smtos::TetOpSplitP::_getCompDiffActive(uint cidx, uint didx) const
 		}
 	}
     bool global_active = false;
-    MPI_Allreduce(&local_active, &global_active, 1, MPI::BOOL, MPI_LAND, MPI_COMM_WORLD);
+    MPI_Allreduce(&local_active, &global_active, 1, MPI_UNSIGNED_SHORT, MPI_LAND, MPI_COMM_WORLD);
 	return global_active;
 }
 
@@ -2317,84 +2502,29 @@ void smtos::TetOpSplitP::_setPatchCount(uint pidx, uint sidx, double n)
 		throw steps::ArgErr(os.str());
 	}
 
+    // only do the distribution in rank 0
+    // then bcast to other ranks
+    
+    if (myRank == 0) {
+        // functions for distribution:
+        auto set_count = [slidx](Tri *tri, uint c) { tri->setCount(slidx, c); };
+        auto inc_count = [slidx](Tri *tri, int c) { tri->incCount(slidx, c, 0.0, true); };
+        auto weight = [](Tri *tri) { return tri->area(); };
+
+        steps::util::distribute_quantity(n, patch->bgnTri(), patch->endTri(), weight, set_count, inc_count, *rng(), patch->def()->area());
+    }
     uint npatchtris = patch->countTris();
     std::vector<uint> counts(npatchtris);
     TriPVecCI t_end = patch->endTri();
     if (myRank == 0) {
-        double totalarea = patch->def()->area();
-
-
-        double n_int = std::floor(n);
-        double n_frc = n - n_int;
-        uint c = static_cast<uint>(n_int);
-        if (n_frc > 0.0)
-        {
-            double rand01 = rng()->getUnfIE();
-            if (rand01 < n_frc) c++;
-        }
-
-        uint nremoved = 0;
-        for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
-        {
-            Tri * tri = *t;
-
-            if (n == 0.0) {
-                tri->setCount(slidx, 0);
-                continue;
-            }
-            // New method (allowing ceiling) means we have to set the counts
-            // to zero for any triangles after all molecules have been injected
-            if (nremoved == c)
-            {
-                tri->setCount(slidx, 0);
-                continue;
-            }
-
-            double fract = static_cast<double>(c) * (tri->area()/totalarea);
-            uint n3 = static_cast<uint>(std::floor(fract));
-
-            // BUGFIX 29/09/2010 IH. By not allowing the ceiling here
-            // concentration gradients could appear in the injection.
-            double n3_frac = fract - static_cast<double>(n3);
-            if (n3_frac > 0.0)
-            {
-                double rand01 = rng()->getUnfIE();
-                if (rand01 < n3_frac) n3++;
-            }
-
-            // BUGFIX 18/11/09 IH. By reducing c here we were not giving all
-            // triangles an equal share. Triangles with low index would have a
-            // greater share than those with higher index.
-            // c -= n3;
-            nremoved += n3;
-
-            if (nremoved >= c)
-            {
-                n3 -= (nremoved-c);
-                nremoved = c;
-            }
-
-            tri->setCount(slidx, n3);
-
-        }
-        assert(nremoved <= c);
-        c -= nremoved;
-
-        while(c != 0)
-        {
-            Tri * tri = patch->pickTriByArea(rng()->getUnfIE());
-            assert (tri != 0);
-            tri->setCount(slidx, (tri->pools()[slidx] + 1.0));
-            c--;
-        }
-        
         uint curr_pos = 0;
+
         for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
         {
             counts[curr_pos] =(*t)->pools()[slidx];
             curr_pos++;
         }
-        
+
     }
     
     MPI_Bcast(&(counts.front()), npatchtris, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
@@ -2415,7 +2545,6 @@ void smtos::TetOpSplitP::_setPatchCount(uint pidx, uint sidx, double n)
     }
     _updateSum();
     MPI_Barrier(MPI_COMM_WORLD);
-    // Rates have changed
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2465,7 +2594,7 @@ bool smtos::TetOpSplitP::_getPatchClamped(uint pidx, uint sidx) const
     }
     bool global_clamped = false;
     
-    MPI_Allreduce(&local_clamped, &global_clamped, 1, MPI::BOOL, MPI_LAND, MPI_COMM_WORLD);
+    MPI_Allreduce(&local_clamped, &global_clamped, 1, MPI_UNSIGNED_SHORT, MPI_LAND, MPI_COMM_WORLD);
     
     return global_clamped;
 }
@@ -2578,7 +2707,7 @@ bool smtos::TetOpSplitP::_getPatchSReacActive(uint pidx, uint ridx) const
         if ((*t)->sreac(lsridx)->inactive() == true) local_active = false;
     }
     bool global_active = false;
-    MPI_Allreduce(&local_active, &global_active, 1, MPI::BOOL, MPI_LAND, MPI_COMM_WORLD);
+    MPI_Allreduce(&local_active, &global_active, 1, MPI_UNSIGNED_SHORT, MPI_LAND, MPI_COMM_WORLD);
     return global_active;
 }
 
@@ -2699,7 +2828,7 @@ bool smtos::TetOpSplitP::_getDiffBoundaryDiffusionActive(uint dbidx, uint sidx) 
         }
     }
     bool global_active = false;
-    MPI_Allreduce(&local_active, &global_active, 1, MPI::BOOL, MPI_LAND, MPI_COMM_WORLD);
+    MPI_Allreduce(&local_active, &global_active, 1, MPI_UNSIGNED_SHORT, MPI_LAND, MPI_COMM_WORLD);
     return global_active;
 }
 
@@ -2724,6 +2853,7 @@ void smtos::TetOpSplitP::_setDiffBoundaryDcst(uint dbidx, uint sidx, double dcst
         throw steps::ArgErr(os.str());
     }
     recomputeUpdPeriod = true;
+    
     steps::solver::Compdef * dirc_compdef = NULL;
     if (direction_comp != std::numeric_limits<uint>::max()) {
         dirc_compdef = _comp(direction_comp)->def();
@@ -2761,7 +2891,8 @@ void smtos::TetOpSplitP::_setDiffBoundaryDcst(uint dbidx, uint sidx, double dcst
                 CLOG(DEBUG, "steps_debug") << "direction: " << direction << " dcst: " << dcst << "\n";
                 #endif
                 
-                diff->setDiffBndActive(direction, true);
+                // The following function will automatically activate diffusion
+                // in this direction if necessary
                 diff->setDirectionDcst(direction, dcst);
                 _updateElement(diff);
             }
@@ -2828,7 +2959,7 @@ bool smtos::TetOpSplitP::_getPatchVDepSReacActive(uint pidx, uint vsridx) const
         if ((*t)->vdepsreac(lvsridx)->inactive() == true)  local_active = false;
     }
     bool global_active = false;
-    MPI_Allreduce(&local_active, &global_active, 1, MPI::BOOL, MPI_LAND, MPI_COMM_WORLD);
+    MPI_Allreduce(&local_active, &global_active, 1, MPI_UNSIGNED_SHORT, MPI_LAND, MPI_COMM_WORLD);
     return global_active;
 }
 
@@ -2860,6 +2991,184 @@ void smtos::TetOpSplitP::_setPatchVDepSReacActive(uint pidx, uint vsridx, bool a
     // It's cheaper to just recompute everything.
     _updateLocal();
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+// WEILIANG: check the following 3 surface diffusion functions please!
+void smtos::TetOpSplitP::_setSDiffBoundaryDiffusionActive(uint sdbidx, uint sidx, bool act)
+{
+    // Need to do two things:
+    // 1) check if the species is defined in both patches connected
+    // by the surface diffusion boundary
+    // 2) loop over all triangles around the sdiff boundary and then the
+    // diffusion rules and activate diffusion if the diffusion rule
+    // relates to this species
+
+	smtos::SDiffBoundary * sdiffb = _sdiffboundary(sdbidx);
+	smtos::Patch * patchA = sdiffb->patchA();
+	smtos::Patch * patchB = sdiffb->patchB();
+
+    uint lsidxA = patchA->def()->specG2L(sidx);
+    uint lsidxB = patchB->def()->specG2L(sidx);
+
+    if (lsidxA == ssolver::LIDX_UNDEFINED or lsidxB == ssolver::LIDX_UNDEFINED)
+    {
+        std::ostringstream os;
+        os << "Species undefined in patches connected by surface diffusion boundary.\n";
+        throw steps::ArgErr(os.str());
+    }
+
+    std::vector<uint> sbdtris = sdiffb->getTris();
+    std::vector<uint> sbdtrisdir = sdiffb->getTriDirection();
+
+    // Have to use indices rather than iterator because need access to the
+    // tri direction
+    uint ntris = sbdtris.size();
+
+    for (uint sbdt = 0; sbdt != ntris; ++sbdt)
+    {
+    	smtos::Tri * tri = _tri(sbdtris[sbdt]);
+        if (!tri->getInHost()) continue;
+        uint direction = sbdtrisdir[sbdt];
+        assert(direction >= 0 and direction < 3);
+
+        // Each sdiff kproc then has access to the species through its defined parent
+        uint nsdiffs = tri->patchdef()->countSurfDiffs();
+        for (uint sd = 0; sd != nsdiffs; ++sd)
+        {
+        	smtos::SDiff * sdiff = tri->sdiff(sd);
+            // sidx is the global species index; so is the lig() return from diffdef
+            uint specgidx = sdiff->def()->lig();
+            if (specgidx == sidx)
+            {
+                sdiff->setSDiffBndActive(direction, act);
+            }
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool smtos::TetOpSplitP::_getSDiffBoundaryDiffusionActive(uint sdbidx, uint sidx) const
+{
+	smtos::SDiffBoundary * sdiffb = _sdiffboundary(sdbidx);
+	smtos::Patch * patchA = sdiffb->patchA();
+	smtos::Patch * patchB = sdiffb->patchB();
+
+    uint lsidxA = patchA->def()->specG2L(sidx);
+    uint lsidxB = patchB->def()->specG2L(sidx);
+
+    if (lsidxA == ssolver::LIDX_UNDEFINED or lsidxB == ssolver::LIDX_UNDEFINED)
+    {
+        std::ostringstream os;
+        os << "Species undefined in patches connected by surface diffusion boundary.\n";
+        throw steps::ArgErr(os.str());
+    }
+
+    std::vector<uint> sbdtris = sdiffb->getTris();
+    std::vector<uint> sbdtrisdir = sdiffb->getTriDirection();
+
+    // Have to use indices rather than iterator because need access to the
+    // tet direction
+
+    short local_active = 1; // true
+
+    uint ntris = sbdtris.size();
+
+    for (uint sbdt = 0; sbdt != ntris; ++sbdt)
+    {
+    	smtos::Tri * tri = _tri(sbdtris[sbdt]);
+        if (!tri->getInHost()) continue;
+        uint direction = sbdtrisdir[sbdt];
+        assert(direction >= 0 and direction < 3);
+
+        // Each sdiff kproc then has access to the species through its defined parent
+        uint nsdiffs = tri->patchdef()->countSurfDiffs();
+        for (uint sd = 0; sd != nsdiffs; ++sd)
+        {
+        	smtos::SDiff * sdiff = tri->sdiff(sd);
+            // sidx is the global species index; so is the lig() return from diffdef
+            uint specgidx = sdiff->def()->lig();
+            if (specgidx == sidx)
+            {
+                // Just need to check the first one
+                if (sdiff->getSDiffBndActive(direction)) local_active = 1;
+                else local_active = 0;
+                break;
+            }
+        }
+    }
+    short global_active = 0;
+    MPI_Allreduce(&local_active, &global_active, 1, MPI_SHORT, MPI_LAND, MPI_COMM_WORLD);
+    return global_active;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void smtos::TetOpSplitP::_setSDiffBoundaryDcst(uint sdbidx, uint sidx, double dcst, uint direction_patch)
+{
+	smtos::SDiffBoundary * sdiffb = _sdiffboundary(sdbidx);
+	smtos::Patch * patchA = sdiffb->patchA();
+	smtos::Patch * patchB = sdiffb->patchB();
+
+    uint lsidxA = patchA->def()->specG2L(sidx);
+    uint lsidxB = patchB->def()->specG2L(sidx);
+
+    if (lsidxA == ssolver::LIDX_UNDEFINED or lsidxB == ssolver::LIDX_UNDEFINED)
+    {
+        std::ostringstream os;
+        os << "Species undefined in patches connected by surface diffusion boundary.\n";
+        throw steps::ArgErr(os.str());
+    }
+
+    recomputeUpdPeriod = true;
+
+    steps::solver::Patchdef * dirp_patchdef = NULL;
+    if (direction_patch != std::numeric_limits<uint>::max()) {
+    	dirp_patchdef = _patch(direction_patch)->def();
+    }
+
+    std::vector<uint> sbdtris = sdiffb->getTris();
+    std::vector<uint> sbdtrisdir = sdiffb->getTriDirection();
+
+    uint ntris = sbdtris.size();
+
+    for (uint sbdt = 0; sbdt != ntris; ++sbdt)
+    {
+    	smtos::Tri * tri = _tri(sbdtris[sbdt]);
+
+        if (!tri->getInHost()) continue;
+
+        if (dirp_patchdef == tri->patchdef()) {
+            continue;
+        }
+        uint direction = sbdtrisdir[sbdt];
+        assert(direction >= 0 and direction < 3);
+
+        // Each diff kproc then has access to the species through its defined parent
+        uint nsdiffs = tri->patchdef()->countSurfDiffs();
+        for (uint sd = 0; sd != nsdiffs; ++sd)
+        {
+        	smtos::SDiff * sdiff = tri->sdiff(sd);
+            // sidx is the global species index; so is the lig() return from diffdef
+            uint specgidx = sdiff->def()->lig();
+            if (specgidx == sidx)
+            {
+                #ifdef DIRECTIONAL_DCST_DEBUG
+                CLOG(DEBUG, "steps_debug") << "direction: " << direction << " dcst: " << dcst << "\n";
+                #endif
+
+                // The following function will automatically activate diffusion
+                // in this direction if necessary
+                sdiff->setDirectionDcst(direction, dcst);
+                _updateElement(sdiff);
+            }
+        }
+    }
+
+    _updateSum();
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 uint smtos::TetOpSplitP::addKProc(steps::mpi::tetopsplit::KProc * kp, int host)
@@ -3771,7 +4080,7 @@ bool smtos::TetOpSplitP::_getTetReacActive(uint tidx, uint ridx) const
         if (tet->reac(lridx)->inactive() == true) active = false;
         else active = true;
     }
-    MPI_Bcast(&active, 1, MPI::BOOL, host, MPI_COMM_WORLD);
+    MPI_Bcast(&active, 1, MPI_UNSIGNED_SHORT, host, MPI_COMM_WORLD);
     return active;
 }
 
@@ -3929,7 +4238,7 @@ bool smtos::TetOpSplitP::_getTetDiffActive(uint tidx, uint didx) const
         if (tet->diff(ldidx)->inactive() == true) active = false;
         else active = true;
     }
-    MPI_Bcast(&active, 1, MPI::BOOL, host, MPI_COMM_WORLD);
+    MPI_Bcast(&active, 1, MPI_UNSIGNED_SHORT, host, MPI_COMM_WORLD);
     return active;
 }
 
@@ -4386,7 +4695,7 @@ bool smtos::TetOpSplitP::_getTriSReacActive(uint tidx, uint ridx)
         if (tri->sreac(lsridx)->inactive() == true)  active = false;
         else  active = true;
     }
-    MPI_Bcast(&active, 1, MPI::BOOL, host, MPI_COMM_WORLD);
+    MPI_Bcast(&active, 1, MPI_UNSIGNED_SHORT, host, MPI_COMM_WORLD);
     return active;
 }
 
@@ -4421,7 +4730,7 @@ void smtos::TetOpSplitP::_setTriSReacActive(uint tidx, uint ridx, bool act)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::TetOpSplitP::_getTriDiffD(uint tidx, uint didx, uint direction_tri)
+double smtos::TetOpSplitP::_getTriSDiffD(uint tidx, uint didx, uint direction_tri)
 {
     assert (tidx < pTris.size());
     assert (didx < statedef()->countSurfDiffs());
@@ -4465,7 +4774,7 @@ double smtos::TetOpSplitP::_getTriDiffD(uint tidx, uint didx, uint direction_tri
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::TetOpSplitP::_setTriDiffD(uint tidx, uint didx, double dk, uint direction_tri)
+void smtos::TetOpSplitP::_setTriSDiffD(uint tidx, uint didx, double dk, uint direction_tri)
 {
     #ifdef DIRECTIONAL_DCST_DEBUG
     CLOG_IF(direction_tri !=  std::numeric_limits<uint>::max(), DEBUG, "steps_debug") << "tidx: " << tidx << " didx: " << didx << " dk: " << dk << " direction tri: " << direction_tri << "\n";
@@ -4545,7 +4854,7 @@ bool smtos::TetOpSplitP::_getTriVDepSReacActive(uint tidx, uint vsridx)
         if (tri->vdepsreac(lvsridx)->inactive() == true)  active = false;
         else  active = true;
     }
-    MPI_Bcast(&active, 1, MPI::BOOL, host, MPI_COMM_WORLD);
+    MPI_Bcast(&active, 1, MPI_UNSIGNED_SHORT, host, MPI_COMM_WORLD);
     return active;
 }
 
@@ -4639,7 +4948,7 @@ double smtos::TetOpSplitP::_getTriSReacC(uint tidx, uint ridx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::TetOpSplitP::_getTriSReacA(uint tidx, uint ridx) 
+double smtos::TetOpSplitP::_getTriSReacA(uint tidx, uint ridx)
 {
     assert (tidx < pTris.size());
     assert (ridx < statedef()->countSReacs());
@@ -5043,6 +5352,28 @@ void smtos::TetOpSplitP::_setTriIClamp(uint tidx, double cur)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void smtos::TetOpSplitP::_setTriCapac(uint tidx, double cap)
+{
+    if (efflag() != true)
+    {
+        std::ostringstream os;
+        os << "Method not available: EField calculation not included in simulation.";
+        throw steps::ArgErr(os.str());
+    }
+    int loctidx = pEFTri_GtoL[tidx];
+    if (loctidx == -1)
+    {
+        std::ostringstream os;
+        os << "Triangle index " << tidx << " not assigned to a membrane.";
+        throw steps::ArgErr(os.str());
+    }
+
+    // EField object should convert to required units
+    pEField->setTriCapac(loctidx, cap);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 double smtos::TetOpSplitP::_getVertV(uint vidx) const
 {
     if (efflag() != true)
@@ -5362,21 +5693,8 @@ void smtos::TetOpSplitP::_updateSum(void) {
 void smtos::TetOpSplitP::_updateElement(KProc* kp)
 {
     
-    Diff* diff_upcast = dynamic_cast<Diff*>(kp);
-    if (diff_upcast != NULL) {
-        #ifdef MPI_DEBUG
-        //CLOG(DEBUG, "mpi_debug") << "Update Diff " << kp->schedIDX() << ".\n";
-        #endif
-        _updateDiff(diff_upcast);
-        return;
-    }
-    
-    SDiff* sdiff_upcast = dynamic_cast<SDiff*>(kp);
-    if (sdiff_upcast != NULL) {
-        #ifdef MPI_DEBUG
-        //CLOG(DEBUG, "mpi_debug") << "Update SDiff " << kp->schedIDX() << ".\n";
-        #endif
-        _updateSDiff(sdiff_upcast);
+    if (kp->getType() == KP_DIFF || kp->getType() == KP_SDIFF) {
+        kp->crData.rate = kp->rate(this);;
         return;
     }
   
@@ -6194,8 +6512,10 @@ double smtos::TetOpSplitP::getROICount(std::string ROI_id, std::string const & s
 
 ////////////////////////////////////////////////////////////////////////////////
 
+// WEILIANG: Can we apply Sam's set count method (as in e.g. setCompCount) here?
 void smtos::TetOpSplitP::setROICount(std::string ROI_id, std::string const & s, double count)
 {
+    MPI_Barrier(MPI_COMM_WORLD);
     if (count > std::numeric_limits<unsigned int>::max( ))
     {
         std::ostringstream os;
@@ -6454,10 +6774,10 @@ void smtos::TetOpSplitP::setROICount(std::string ROI_id, std::string const & s, 
         os << "Error: Cannot find suitable ROI for the function call getROICount.\n";
         throw steps::ArgErr(os.str());
     }
+    MPI_Barrier(MPI_COMM_WORLD);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
 
 double smtos::TetOpSplitP::getROIAmount(std::string ROI_id, std::string const & s) const
 {
@@ -6466,7 +6786,7 @@ double smtos::TetOpSplitP::getROIAmount(std::string ROI_id, std::string const & 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
+// WEILIANG: Can we apply Sam's set count method (as in e.g. setCompCount) here?
 void smtos::TetOpSplitP::setROIConc(std::string ROI_id, std::string const & s, double conc)
 {
     if (conc > std::numeric_limits<unsigned int>::max( ))
@@ -7483,32 +7803,7 @@ void smtos::TetOpSplitP::addDiff(Diff* diff)
 void smtos::TetOpSplitP::_updateDiff(Diff* diff)
 {
     double new_rate = diff->rate(this);
-    /*
-    if (new_rate == 0.0  && diff->crData.rate != 0.0) {
-        diffSep --;
-        Diff* temp = pDiffs[diffSep];
-        uint swap_pos = diff->crData.pos;
-        diff->crData.pos = diffSep;
-        pDiffs[diffSep] = diff;
-        pDiffs[swap_pos] = temp;
-        temp->crData.pos = swap_pos;
-        #ifdef MPI_DEBUG
-        //CLOG(DEBUG, "mpi_debug") << "move diff " << diff->schedIDX() << " with rate " << new_rate << " from " << swap_pos << " backward to " << diffSep << "\n";
-        #endif
-    }
-    else if (new_rate != 0.0  && diff->crData.rate == 0.0) {
-        Diff* temp = pDiffs[diffSep];
-        uint swap_pos = diff->crData.pos;
-        #ifdef MPI_DEBUG
-        //CLOG(DEBUG, "mpi_debug") << "move diff " << diff->schedIDX() << " with rate " << new_rate <<  " from " << swap_pos << " forward to " << diffSep << "\n";
-        #endif
-        diff->crData.pos = diffSep;
-        pDiffs[diffSep] = diff;
-        pDiffs[swap_pos] = temp;
-        temp->crData.pos = swap_pos;
-        diffSep++;
-    }
-    */
+
     diff->crData.rate = new_rate;
 }
 
@@ -7525,32 +7820,7 @@ void smtos::TetOpSplitP::addSDiff(SDiff* sdiff)
 void smtos::TetOpSplitP::_updateSDiff(SDiff* sdiff)
 {
     double new_rate = sdiff->rate(this);
-    /*
-    if (new_rate == 0.0  && sdiff->crData.rate != 0.0) {
-        sdiffSep --;
-        SDiff* temp = pSDiffs[sdiffSep];
-        uint swap_pos = sdiff->crData.pos;
-        sdiff->crData.pos = sdiffSep;
-        pSDiffs[sdiffSep] = sdiff;
-        pSDiffs[swap_pos] = temp;
-        temp->crData.pos = swap_pos;
-#ifdef MPI_DEBUG
-        //CLOG(DEBUG, "mpi_debug") << "move sdiff " << sdiff->schedIDX() << " with rate " << new_rate << " from " << swap_pos << " backward to " << sdiffSep << "\n";
-#endif
-    }
-    else if (new_rate != 0.0  && sdiff->crData.rate == 0.0) {
-        SDiff* temp = pSDiffs[sdiffSep];
-        uint swap_pos = sdiff->crData.pos;
-#ifdef MPI_DEBUG
-        //CLOG(DEBUG, "mpi_debug") << "move sdiff " << sdiff->schedIDX() << " with rate " << new_rate <<  " from " << swap_pos << " forward to " << sdiffSep << "\n";
-#endif
-        sdiff->crData.pos = sdiffSep;
-        pSDiffs[sdiffSep] = sdiff;
-        pSDiffs[swap_pos] = temp;
-        temp->crData.pos = swap_pos;
-        sdiffSep++;
-    }
-    */
+
     sdiff->crData.rate = new_rate;
 }
 
@@ -8008,6 +8278,24 @@ double smtos::TetOpSplitP::getIdleTime(void)
     return idleTime;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+double smtos::TetOpSplitP::getEFieldTime(void)
+{
+    return efieldTime;
+}
+////////////////////////////////////////////////////////////////////////////////
+
+double smtos::TetOpSplitP::getRDTime(void)
+{
+    return rdTime;
+}
+////////////////////////////////////////////////////////////////////////////////
+
+double smtos::TetOpSplitP::getDataExchangeTime(void)
+{
+    return dataExchangeTime;
+}
 ////////////////////////////////////////////////////////////////////////////////
 // END
 

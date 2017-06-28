@@ -1,14 +1,33 @@
-test/
-doc/
-MolSim Functional Requirements/
-use_cases/
-examples/
-build/
+test/.logs/*
+test/unit_test/.logs/*
+test/validation/.logs/*
 .noseids
+*.orig
+.gitignore~
+
+pysteps/steps/cysteps_mpi.so
+
+.logs/*
+.project
+examples/tutorial/.logs
+test/validation/validation_efield/.logs/
+test/validation/validation_mpi/.logs/
+doc/documentation/.logs/
+test/validation/validation_cp/cp*
+
+STEPS.egg-info/PKG-INFO
 *.pyc
 *.DS_Store
 *.dropbox
+.logs
+
 *.py~
 
-mass_replace
+doc/user_manual/.logs
+doc/user_manual/build
+build/
 
+README
+
+*.so
+pysteps/steps/cysteps_mpi.cpp

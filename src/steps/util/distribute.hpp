@@ -36,7 +36,6 @@
 #include "steps/error.hpp"
 #include "steps/math/sample.hpp"
 
-
 namespace steps {
 namespace util {
 
@@ -91,6 +90,7 @@ void distribute_quantity(double x, FwdIter b, FwdIter e,
         Weight weight, SetCount set_count, IncCount inc_count, Rng &g, double total_weight=0)
 {
     static std::uniform_real_distribution<double> U;
+
     if (b==e) return;
 
     if (x<0) throw steps::ArgErr("negative quantity to distribute");

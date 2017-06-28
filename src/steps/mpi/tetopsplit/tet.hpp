@@ -175,10 +175,13 @@ public:
     ///////////////////////////////////////////////////////////////////
 
     void setCount(uint lidx, uint count, double period = 0.0);
-	void incCount(uint lidx, int inc, double period = 0.0);
+	void incCount(uint lidx, int inc, double period = 0.0, bool local_change = false);
 
-	double getPoolOccupancy(uint lidx);
-	double getLastUpdate(uint lidx);
+	inline double getPoolOccupancy(uint lidx) {
+	    assert (lidx < compdef()->countSpecs());
+	    return pPoolOccupancy[lidx];
+	}
+    double getLastUpdate(uint lidx);
 	void resetPoolOccupancy(void);
     
     std::vector<smtos::KProc*> const & getSpecUpdKProcs(uint slidx);

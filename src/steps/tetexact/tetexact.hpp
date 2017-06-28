@@ -48,6 +48,7 @@
 #include "steps/tetexact/comp.hpp"
 #include "steps/tetexact/patch.hpp"
 #include "steps/tetexact/diffboundary.hpp"
+#include "steps/tetexact/sdiffboundary.hpp"
 #include "steps/tetexact/crstruct.hpp"
 #include "steps/solver/efield/efield.hpp"
 
@@ -229,6 +230,15 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
+    //      SURFACE DIFFUSION BOUNDARIES
+    ////////////////////////////////////////////////////////////////////////
+
+    void _setSDiffBoundaryDiffusionActive(uint sdbidx, uint didx, bool act);
+    bool _getSDiffBoundaryDiffusionActive(uint sdbidx, uint didx) const;
+    void _setSDiffBoundaryDcst(uint sdbidx, uint sidx, double dcst, uint direction_patch = std::numeric_limits<uint>::max());
+
+    ////////////////////////////////////////////////////////////////////////
+    // SOLVER STATE ACCESS:
     //      TETRAHEDRAL VOLUME ELEMENTS
     ////////////////////////////////////////////////////////////////////////
 
@@ -302,9 +312,9 @@ public:
     bool _getTriSReacActive(uint tidx, uint ridx) const;
     void _setTriSReacActive(uint tidx, uint ridx, bool act);
     
-    double _getTriDiffD(uint tidx, uint didx, uint direction_tri = std::numeric_limits<uint>::max()) const;
+    double _getTriSDiffD(uint tidx, uint didx, uint direction_tri = std::numeric_limits<uint>::max()) const;
     
-    void _setTriDiffD(uint tidx, uint didx, double dk,
+    void _setTriSDiffD(uint tidx, uint didx, double dk,
                       uint direction_tri = std::numeric_limits<uint>::max());
 
     ////////////////////////////////////////////////////////////////////////
@@ -395,8 +405,16 @@ public:
         return pDiffBoundaries[dbidx];
     }
 
+    inline steps::tetexact::SDiffBoundary * _sdiffboundary(uint sdbidx) const {
+        assert(sdbidx < statedef()->countSDiffBoundaries());
+        return pSDiffBoundaries[sdbidx];
+    }
+
     inline steps::tetexact::Tet * _tet(uint tidx) const
     { return pTets[tidx]; }
+
+    inline steps::tetexact::Tri * _tri(uint tidx) const
+    { return pTris[tidx]; }
 
     inline double a0(void) const
     { return pA0; }
@@ -424,6 +442,9 @@ public:
     uint _addPatch(steps::solver::Patchdef * pdef);
 
     uint _addDiffBoundary(steps::solver::DiffBoundarydef * dbdef);
+
+    uint _addSDiffBoundary(steps::solver::SDiffBoundarydef * sdbdef);
+
 
     void _addTet(uint tetidx, steps::tetexact::Comp * comp, double vol, double a1,
                  double a2, double a3, double a4, double d1, double d2,
@@ -473,7 +494,7 @@ public:
     ////////////////////////// ADDED FOR EFIELD ////////////////////////////
 
     /// Check the EField flag
-    inline bool efflag() const
+    inline bool efflag(void) const
     { return pEFoption != EF_NONE; }
 
     void _setupEField(void);
@@ -562,6 +583,8 @@ private:
     std::vector<steps::tetexact::Patch *>      pPatches;
 
     std::vector<steps::tetexact::DiffBoundary *> pDiffBoundaries;
+
+    std::vector<steps::tetexact::SDiffBoundary *> pSDiffBoundaries;
 
     // These objects are used to describe a mesh compartment that is
     // being treated as a well-mixed volume.

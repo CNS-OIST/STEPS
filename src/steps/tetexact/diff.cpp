@@ -456,6 +456,9 @@ void stex::Diff::setDirectionDcst(int direction, double dcst)
     assert(direction >= 0);
     assert(dcst >= 0.0);
     directionalDcsts[direction] = dcst;
+
+    // Automatically activate boundary diffusion if necessary
+    if (pDiffBndDirection[direction] == true) pDiffBndActive[direction] = true;
     
     stex::Tet * next[4] =
     {
@@ -464,7 +467,7 @@ void stex::Diff::setDirectionDcst(int direction, double dcst)
         pTet->nextTet(2),
         pTet->nextTet(3)
     };
-    
+
     double d[4] = { 0.0, 0.0, 0.0, 0.0 };
     
     for (uint i = 0; i < 4; ++i)
