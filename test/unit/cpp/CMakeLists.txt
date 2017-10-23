@@ -29,7 +29,7 @@ add_custom_target(tests)
 foreach(test_name IN LISTS tests)
     set(test_target "test_${test_name}")
 
-    target_link_libraries("${test_target}" ${CMAKE_THREAD_LIBS_INIT}  ${libs})
+    target_link_libraries("${test_target}" ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS} ${libs})
 
     add_test(NAME "${test_name}" COMMAND "${test_target}")
     add_dependencies(tests "${test_target}")

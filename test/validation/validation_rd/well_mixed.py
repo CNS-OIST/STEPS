@@ -21,7 +21,7 @@ import numpy
 import math
 import time
 
-from tol_funcs import *
+from . import tol_funcs
 
 ########################################################################
 
@@ -269,8 +269,8 @@ def test_foi():
         if i == 0: continue
         analy = N_foi*math.exp(-KCST_foi*tpnts[i])
         std = math.pow((N_foi*(math.exp(-KCST_foi*tpnts[i]))*(1-(math.exp(-KCST_foi*tpnts[i])))), 0.5)
-        assert tolerable(analy, mean_res_foi[i], tolerance_foi)
-        assert tolerable(std, std_res_foi[i], tolerance_foi)
+        assert tol_funcs.tolerable(analy, mean_res_foi[i], tolerance_foi)
+        assert tol_funcs.tolerable(std, std_res_foi[i], tolerance_foi)
 
 ####################### First order reversible #########################
 
@@ -284,8 +284,8 @@ def test_for():
     Beq = (COUNT_for/(VOL*6.0221415e26))*1e6 -Aeq
     for i in range(ntpnts):
         if i < 7: continue
-        assert tolerable(mean_res_for[i,0], Aeq, tolerance_for)
-        assert tolerable(mean_res_for[i,1], Beq, tolerance_for)
+        assert tol_funcs.tolerable(mean_res_for[i,0], Aeq, tolerance_for)
+        assert tol_funcs.tolerable(mean_res_for[i,1], Beq, tolerance_for)
 
 ####################### Second order irreversible AA ###################
 
@@ -305,8 +305,8 @@ def test_soAA():
         lineA[i] = (1.0/CONCA_soAA +((tpnts[i]*KCST_soAA)))
         lineB[i] = (1.0/CONCB_soAA + ((tpnts[i]*KCST_soAA)))
         
-        assert tolerable(invA[i], lineA[i], tolerance_soAA)
-        assert tolerable(invB[i], lineB[i], tolerance_soAA)
+        assert tol_funcs.tolerable(invA[i], lineA[i], tolerance_soAA)
+        assert tol_funcs.tolerable(invB[i], lineB[i], tolerance_soAA)
 
 ####################### Second order irreversible AB ###################
 
@@ -325,7 +325,7 @@ def test_soAB():
         lnBA_soAB[i] = math.log(B_soAB/A_soAB)
         lineAB_soAB[i] = math.log(CONCB_soAB/CONCA_soAB) -C_soAB*KCST_soAB*tpnts[i]
         
-        assert tolerable(lnBA_soAB[i], lineAB_soAB[i], tolerance_soAB)
+        assert tol_funcs.tolerable(lnBA_soAB[i], lineAB_soAB[i], tolerance_soAB)
 
 ########################################################################
 
@@ -345,7 +345,7 @@ def test_so2d():
         B_so2d = mean_res_so2d[i][1]
         lnBA_so2d[i] = math.log(B_so2d/A_so2d)
         lineAB_so2d[i] = math.log(COUNTB_so2d/COUNTA_so2d) -C_so2d*CCST_so2d*tpnts[i]
-        assert tolerable(lnBA_so2d[i], lineAB_so2d[i], tolerance_so2d)
+        assert tol_funcs.tolerable(lnBA_so2d[i], lineAB_so2d[i], tolerance_so2d)
 
 ########################################################################
 

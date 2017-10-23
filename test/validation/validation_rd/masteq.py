@@ -32,7 +32,7 @@ import steps.geom as sgeom
 import steps.rng as srng
 import steps.solver as ssolv
 
-from tol_funcs import *
+from . import tol_funcs
 
 ########################################################################
 
@@ -104,7 +104,7 @@ def test_masteq():
     # Compare 5 to 15
     for m in range(5, 16):
         analy = (1.0/fact(m))*math.pow((k2/k1), m)*math.exp(-(k2/k1))
-        assert tolerable(steps_n_res[m], analy, tolerance)
+        assert tol_funcs.tolerable(steps_n_res[m], analy, tolerance)
 
 ########################################################################
 # END

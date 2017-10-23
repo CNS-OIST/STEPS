@@ -1,39 +1,54 @@
-# - Find python libraries
-#  This module finds the Site-packages, Include dir and shared lib of the Python interpreter
+# Finds Python libs and paths
+# ---------------------------
+#  This module finds the Site-packages, Include dir and shared lib of the Python interpreter.
+#  It also provides PYTHON_ADD_MODULE function to define Python extension modules
 #
-#  PYTHON_SITE_PACKAGES             = path to the python modules dir
-#  PYTHON_LIBRARIES                 = path to the python library
-#  PYTHON_INCLUDE_DIRS              = path to where Python.h is found
+#  PYTHON_SITE_PACKAGES    = path to the python modules dir
+#  PYTHON_LIBRARIES        = path to the python library
+#  PYTHON_INCLUDE_DIRS     = path to where Python.h is found
 # --
 find_package(PythonInterp REQUIRED)
 
-# Python PREFIX
+## Python PREFIX
 execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "from distutils.sysconfig import EXEC_PREFIX; print(EXEC_PREFIX)"
                 OUTPUT_VARIABLE PYTHON_PREFIX
                 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-# Site-packages
+## Site-packages
 execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(True))"
                 OUTPUT_VARIABLE PYTHON_SITE_PACKAGES
                 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-# Include dir
-execute_process(COMMAND
-    ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print(sysconfig.get_python_inc())"
-    OUTPUT_VARIABLE PYTHON_INCLUDE_DIRS OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+## Include dir
+execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print(sysconfig.get_python_inc())"
+                OUTPUT_VARIABLE PYTHON_INCLUDE_DIRS 
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-# Find lib in a way that is compatible with every python installation using shared lib
-set(_lib_name "python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}")
+## Lib and devel dirs
+execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; \
+                        print('%s;%s' % (sysconfig.get_config_var('LIBDIR'), sysconfig.get_config_var('LIBPL')))"
+                OUTPUT_VARIABLE PYTHON_LIBDIRS
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+## Find lib name
+execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; \
+                        print('%s;%s' % (sysconfig.get_config_var('LDLIBRARY'), sysconfig.get_config_var('LIBRARY')))"
+                OUTPUT_VARIABLE PYTHON_LIB_NAMES
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
+                
+
 find_library(PYTHON_LIBRARY
-    NAMES ${_lib_name} ${_lib_name}mu ${_lib_name}m ${_lib_name}u
-    HINTS "${PYTHON_PREFIX}/lib" "${PYTHON_PREFIX}/lib/${_lib_name}/config"
+    #NAMES ${_lib_name} ${_lib_name}mu ${_lib_name}m ${_lib_name}u
+    NAMES ${PYTHON_LIB_NAMES}
+    PATHS ${PYTHON_LIBDIRS}
     NO_DEFAULT_PATH)
+    
 if(PYTHON_LIBRARY MATCHES ".a$")
     message(WARNING "Python only found as a static library")
 endif()
 
-# Setting cached vars
+
+## Setting cached vars
 set(PYTHON_SITE_PACKAGES ${PYTHON_SITE_PACKAGES}
     CACHE PATH "path to the python modules dir")
 
@@ -50,6 +65,20 @@ mark_as_advanced(PYTHON_INCLUDE_DIRS)
 # Handle Options
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(PythonInterpLibs DEFAULT_MSG PYTHON_LIBRARIES PYTHON_INCLUDE_DIRS)
+
+
+# Make default destination for Python packages
+set(_default_prefixes "/usr/local" "/usr")
+list(FIND _default_prefixes ${CMAKE_INSTALL_PREFIX} _index)
+if(${_index} GREATER -1)
+    # Default installations install Python to default site-packages
+    set(_py_install_prefix ${PYTHON_SITE_PACKAGES})
+else()
+    set(_py_install_prefix ${CMAKE_INSTALL_PREFIX})
+endif()
+
+set(PYTHON_INSTALL_PREFIX ${_py_install_prefix} CACHE PATH "Target install prefix for Python modules")
+mark_as_advanced(PYTHON_INSTALL_PREFIX)
 
 
 # function taken from the official FindPythonLibs.cmake (https://github.com/Kitware)

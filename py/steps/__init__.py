@@ -24,7 +24,7 @@
 
 __name__      = 'steps'
 __longname__  = 'STochastic Engine for Pathway Simulation'
-__version__   = '3.1.0'
+__version__   = '3.2.0'
 __author__    = 'STEPS Development Team'
 __url__       = 'steps.sourceforge.net'
 __license__   = 'GPL2.0'
@@ -57,13 +57,13 @@ else:
 def _greet():
     global _suppress_greet
     if not _suppress_greet:
-        print ""
-        print __longname__
-        print "Version: ", __version__
-        print "License: ", __license__
-        print "Website: ", __url__
-        print "CXX Binding:", __binding__
-
+        print("")
+        print(__longname__)
+        print("Version: ", __version__)
+        print("License: ", __license__)
+        print("Website: ", __url__)
+        print("CXX Binding:", __binding__)
+        print("Warning: SWIG binding will be removed in STEPS 3.3, please switch to Cython binding.")
     _suppress_greet = True
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 

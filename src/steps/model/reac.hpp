@@ -56,7 +56,7 @@ class Model;
 class Spec;
 
 // Auxiliary declarations.
-typedef Reac *                             ReacP;
+typedef Reac *                           ReacP;
 typedef std::map<std::string, ReacP>     ReacPMap;
 typedef ReacPMap::iterator               ReacPMapI;
 typedef ReacPMap::const_iterator         ReacPMapCI;

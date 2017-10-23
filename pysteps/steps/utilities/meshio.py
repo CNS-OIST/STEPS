@@ -21,6 +21,7 @@
 #
 #################################################################################   
 ###
+from __future__ import print_function
 
 """
 .. Note::
@@ -703,7 +704,7 @@ def importAbaqus(filename, scale, ebs = None, shadow_mesh = None):
                 node[1] = nodeproxy.getSTEPSID(int(result["data"][2]))
                 node[2] = nodeproxy.getSTEPSID(int(result["data"][3]))
                 if (node[0], node[1], node[2]) in recorded_tris:
-                    print "Triangle: ", (node[0], node[1], node[2]), " with index ", recorded_tris[(node[0], node[1], node[2])], " has been imported, ignore duplicated triangle ", nodeid
+                    print("Triangle: ", (node[0], node[1], node[2]), " with index ", recorded_tris[(node[0], node[1], node[2])], " has been imported, ignore duplicated triangle ", nodeid)
                 else:
                     currmap.insert(nodeid, node)
                     recorded_tris[(node[0], node[1], node[2])] = nodeid
@@ -719,9 +720,9 @@ def importAbaqus(filename, scale, ebs = None, shadow_mesh = None):
     tetdata = tetproxy.getAllData()
     tridata = triproxy.getAllData()
 
-    print "Number of nodes imported: ", nodeproxy.getSize()
-    print "Number of tetrahedrons imported: ", tetproxy.getSize()
-    print "Number of triangles imported: ", triproxy.getSize()
+    print("Number of nodes imported: ", nodeproxy.getSize())
+    print("Number of tetrahedrons imported: ", tetproxy.getSize())
+    print("Number of triangles imported: ", triproxy.getSize())
 
     print("creating Tetmesh object in STEPS...")
     mesh = stetmesh.Tetmesh(nodedata, tetdata, tridata)
@@ -731,26 +732,26 @@ def importAbaqus(filename, scale, ebs = None, shadow_mesh = None):
         if isinstance(shadow_mesh, str):
             shadow_mesh = ShadowMesh.importFrom(shadow_mesh)
 
-        print "Importing data from shadow mesh."
+        print("Importing data from shadow mesh.")
         for c in shadow_mesh.comps.values():
-            print "Import compartment ", c.name
+            print("Import compartment ", c.name)
             steps_indices = [tetproxy.getSTEPSID(i) for i in c.indices]
             comp = stetmesh.TmComp(c.name, mesh, steps_indices)
             for v in c.vsyss:
                 comp.addVolsys(v)
         if len(shadow_mesh.patches.keys()) != 0:
-            print "ImportAbaqus does not support patch importing, use ImportAbaqus2 instead."
+            print("ImportAbaqus does not support patch importing, use ImportAbaqus2 instead.")
         for roi in shadow_mesh.rois.items():
             roi_name = roi[0]
             roi_type = roi[1]["Type"]
             roi_import_indices = roi[1]["Indices"]
-            print "Import ROI data ", roi[0]
+            print("Import ROI data ", roi[0])
             if roi_type == ELEM_VERTEX:
                 steps_indices = [nodeproxy.getSTEPSID(i) for i in roi_import_indices]
             elif roi_type == ELEM_TET:
                 steps_indices = [tetproxy.getSTEPSID(i) for i in roi_import_indices]
             elif roi_type == ELEM_TRI:
-                print "ImportAbaqus does not support triangle ROI importing, use ImportAbaqus2 instead."
+                print("ImportAbaqus does not support triangle ROI importing, use ImportAbaqus2 instead.")
             else:
                 steps_indices = roi_import_indices
             mesh.addROI(roi_name, roi_type, steps_indices)
@@ -830,7 +831,7 @@ def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None):
                 currmap = tetproxy
                 tetproxy.blockBegin(blockname)
             elif result["TYPE"] == 'STRI3':
-                print "This importing function is not designed for file with both tetrahedrons and triangles, try importAbaqus instead."
+                print("This importing function is not designed for file with both tetrahedrons and triangles, try importAbaqus instead.")
                 return
             elif currmap != None:
                 currmap.blockEnd()
@@ -913,7 +914,7 @@ def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None):
                 node[1] = float(result["data"][2])*scale
                 node[2] = float(result["data"][3])*scale
                 if tuple(node) not in vert_idxs.keys():
-                    print "coordinates ", node, " is not in the tet file, abort function."
+                    print("coordinates ", node, " is not in the tet file, abort function.")
                     raise
             elif (currmap == triproxy):
                 nodeid = int(result["data"][0])
@@ -923,7 +924,7 @@ def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None):
                 node[1] = nodeproxy.getSTEPSID(int(result["data"][2]))
                 node[2] = nodeproxy.getSTEPSID(int(result["data"][3]))
                 if (node[0], node[1], node[2]) in recorded_tris:
-                    print "Triangle: ", (node[0], node[1], node[2]), " with index ", recorded_tris[(node[0], node[1], node[2])], " has been imported, ignore duplicated triangle ", nodeid
+                    print("Triangle: ", (node[0], node[1], node[2]), " with index ", recorded_tris[(node[0], node[1], node[2])], " has been imported, ignore duplicated triangle ", nodeid)
                 else:
                     currmap.insert(nodeid, node)
                     recorded_tris[(node[0], node[1], node[2])] = nodeid
@@ -940,9 +941,9 @@ def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None):
     tetdata = tetproxy.getAllData()
     tridata = triproxy.getAllData()
 
-    print "Number of nodes imported: ", nodeproxy.getSize()
-    print "Number of tetrahedrons imported: ", tetproxy.getSize()
-    print "Number of triangles imported: ", triproxy.getSize()
+    print("Number of nodes imported: ", nodeproxy.getSize())
+    print("Number of tetrahedrons imported: ", tetproxy.getSize())
+    print("Number of triangles imported: ", triproxy.getSize())
 
     print("creating Tetmesh object in STEPS...")
     mesh = stetmesh.Tetmesh(nodedata, tetdata, tridata)
@@ -952,17 +953,17 @@ def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None):
         if isinstance(shadow_mesh, str):
             shadow_mesh = ShadowMesh.importFrom(shadow_mesh)
 
-        print "Importing data from shadow mesh."
+        print("Importing data from shadow mesh.")
         temp_comps = {}
         for c in shadow_mesh.comps.values():
-            print "Import compartment ", c.name
+            print("Import compartment ", c.name)
             steps_indices = [tetproxy.getSTEPSID(i) for i in c.indices]
             comp = stetmesh.TmComp(c.name, mesh, steps_indices)
             temp_comps[c] = comp
             for v in c.vsyss:
                 comp.addVolsys(v)
         for p in shadow_mesh.patches.values():
-            print "Import patch ", p.name
+            print("Import patch ", p.name)
             steps_indices = [triproxy.getSTEPSID(i) for i in p.indices]
             icomp = temp_comps[p.icomp]
             ocomp = None
@@ -975,7 +976,7 @@ def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None):
             roi_name = roi[0]
             roi_type = roi[1]["Type"]
             roi_import_indices = roi[1]["Indices"]
-            print "Import ROI data ", roi[0]
+            print("Import ROI data ", roi[0])
             if roi_type == ELEM_VERTEX:
                 steps_indices = [nodeproxy.getSTEPSID(i) for i in roi_import_indices]
             elif roi_type == ELEM_TET:
@@ -1093,9 +1094,9 @@ def importGmsh(filename, scale):
     tetdata = tetproxy.getAllData()
     tridata = triproxy.getAllData()
 
-    print "Number of nodes imported: ", nodeproxy.getSize()
-    print "Number of tetrahedrons imported: ", tetproxy.getSize()
-    print "Number of triangles imported: ", triproxy.getSize()
+    print("Number of nodes imported: ", nodeproxy.getSize())
+    print("Number of tetrahedrons imported: ", tetproxy.getSize())
+    print("Number of triangles imported: ", triproxy.getSize())
 
     print("creating Tetmesh object in STEPS...")
     mesh = stetmesh.Tetmesh(nodedata, tetdata, tridata)
@@ -1375,7 +1376,7 @@ def loadMesh(pathname, scale=1, strict=False):
     nodeinfo = xmlfile.readline().strip()
     (tag,attrs) = parse_xml_element(nodeinfo)
     assert(tag == 'nodes')
-    assert(attrs.has_key('size'))
+    assert('size' in attrs)
     nnodes = int(attrs['size'])
 
     nodes_out = [0.0]*(nnodes*3)
@@ -1394,7 +1395,7 @@ def loadMesh(pathname, scale=1, strict=False):
     triinfo = xmlfile.readline().strip()
     (tag,attrs) = parse_xml_element(triinfo)
     assert(tag == 'triangles')
-    assert(attrs.has_key('size'))
+    assert('size' in attrs)
     ntris = int(attrs['size'])
 
     tris_out = [0]*(ntris*3) # numpy.zeros(ntris*3, dtype = 'int')
@@ -1419,7 +1420,7 @@ def loadMesh(pathname, scale=1, strict=False):
     tetinfo = xmlfile.readline().strip()
     (tag,attrs) = parse_xml_element(tetinfo)
     assert(tag == 'tetrahedrons')
-    assert(attrs.has_key('size'))
+    assert('size' in attrs)
     ntets = int(attrs['size'])
 
     tets_out = [0]*(ntets*4)	# numpy.zeros(ntets*4, dtype = 'int')
@@ -1440,7 +1441,7 @@ def loadMesh(pathname, scale=1, strict=False):
 
     # Rescale coordinates if requested.
     if scale!=1:
-        for i in xrange(len(nodes_out)):
+        for i in range(len(nodes_out)):
             nodes_out[i] *= scale
 
     # We have all the information now. Time to make the Tetmesh object.
@@ -1450,7 +1451,7 @@ def loadMesh(pathname, scale=1, strict=False):
     compinfo = xmlfile.readline().strip()
     (tag,attrs) = parse_xml_element(compinfo)
     assert(tag == 'compartments')
-    assert(attrs.has_key('size'))
+    assert('size' in attrs)
     ncomps = int(attrs['size'])
     comps_out = []
     for i in range(ncomps):
@@ -1483,7 +1484,7 @@ def loadMesh(pathname, scale=1, strict=False):
     patchinfo = xmlfile.readline().strip()
     (tag,attrs) = parse_xml_element(patchinfo)
     assert(tag == 'patches')
-    assert(attrs.has_key('size'))
+    assert('size' in attrs)
     npatches = int(attrs['size'])
     patches_out = []
     for i in range(npatches):
@@ -1524,15 +1525,15 @@ def loadMesh(pathname, scale=1, strict=False):
     (tag,attrs) = parse_xml_element(info)
     if tag == 'ROI_records':
         ROIinfo = info
-        assert(attrs.has_key('size'))
+        assert('size' in attrs)
         nROI = int(attrs['size'])
 
         for r in range(nROI):
             ROItemp = xmlfile.readline().strip()
             (tag,attrs) = parse_xml_element(ROItemp)
             assert(tag == 'ROI')
-            assert(attrs.has_key('id'))
-            assert(attrs.has_key('type'))
+            assert('id' in attrs)
+            assert('type' in attrs)
             id = attrs['id']
             type = int(attrs['type'])
 

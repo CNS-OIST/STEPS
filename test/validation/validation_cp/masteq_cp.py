@@ -18,7 +18,7 @@ import steps.geom as sgeom
 import steps.rng as srng
 import steps.solver as ssolv
 
-from tol_funcs import *
+from . import tol_funcs
 
 ########################################################################
 

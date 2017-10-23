@@ -1,5 +1,9 @@
-Instructions
-============
+Install using Docker
+====================
+If you don't want to do the compilation yourself and just want to quickly try STEPS, we provide a prebuilt Docker image for you. Please check https://github.com/CNS-OIST/STEPS_Docker and follow the instructions.
+
+Install from source code
+========================
 
 To facilitate new requirements from the parallel TetOpSplit solver,
 STEPS 3.0 and above uses CMake system to replace the Python distutil system
@@ -8,10 +12,10 @@ in previous releases. Please follow the instructions below.
 Minimum Prerequisites
 ---------------------
 1. C++ compiler supporting c++11 (e.g. gcc 4.8, clang 3.3) 
-2. Python2 (2.7.x recommended)
+2. Python2/3 (2.7.x / 3.3.x or above)
 3. NumPy (http://www.numpy.org/)
 4. CMake (https://cmake.org/)
-5. Either Cython (http://www.cython.org/) or SWIG (http://www.swig.org/) 
+5. Cython (http://www.cython.org/) 
 6. BLAS/OpenBLAS ( http://www.openblas.net/ )
 
 See install Dependencies sections
@@ -76,13 +80,6 @@ wants to manually choose to build STEPS with / without them it can set
 ```
 cmake -DUSE_MPI=[True|False] -DUSE_PETSC=[True|False] ..
 ```        
-
-By default, Cython binding is used to generate the user interface, you can
-switch to SWIG binding by 
-
-```
-cmake -DPYTHON_BINDINGS_CYTHON=OFF ..
-```
 
 Please refer to [CMAKE documentation](https://cmake.org/documentation/) for customizing your installation
 

@@ -12,10 +12,10 @@ cimport std
 cdef extern from "steps/rng/create.hpp" namespace "steps::rng":
 # ----------------------------------------------------------------------------------------------------------------------
     # Create a random number generator with name rng_name and return as RNG object.
-    RNG * create(std.string rng_name, unsigned int bufsize);
+    RNG * create(std.string rng_name, unsigned int bufsize) except +
 
     # Create a MT19937 random number generator and return as RNG object.
-    RNG * create_mt19937(unsigned int bufsize);
+    RNG * create_mt19937(unsigned int bufsize) except +
 
 
 # ======================================================================================================================
@@ -24,7 +24,7 @@ cdef extern from "steps/rng/r123.hpp" namespace "steps::rng":
 
     ###### Cybinding for R123 ######
     cdef cppclass R123:
-        R123(unsigned int)
+        R123(unsigned int) except +
 
 # ======================================================================================================================
 cdef extern from "steps/rng/rng.hpp" namespace "steps::rng":
@@ -32,7 +32,7 @@ cdef extern from "steps/rng/rng.hpp" namespace "steps::rng":
 
     ###### Cybinding for RNG ######
     cdef cppclass RNG:
-        RNG(unsigned int)
+        RNG(unsigned int) except +
         void initialize(unsigned long)
         unsigned int min()
         unsigned int max()
@@ -54,4 +54,4 @@ cdef extern from "steps/rng/mt19937.hpp" namespace "steps::rng":
 
     ###### Cybinding for MT19937 ######
     cdef cppclass MT19937:
-        MT19937(unsigned int)
+        MT19937(unsigned int) except +

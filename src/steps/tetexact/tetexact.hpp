@@ -118,6 +118,9 @@ public:
     inline double efdt(void) const
     { return pEFDT; }
 
+    inline double getEfieldDT(void) const
+    { return pEFDT; }
+
     void setTemp(double t);
 
     inline double getTemp(void) const
@@ -148,6 +151,64 @@ public:
 
     void setTime(double time);
     void setNSteps(uint nsteps);
+
+    ////////////////////////////////////////////////////////////////////////
+     // Batch Data Access
+     ////////////////////////////////////////////////////////////////////////
+
+     std::vector<double> getBatchTetCounts(std::vector<uint> const & tets, std::string const & s) const;
+
+     std::vector<double> getBatchTriCounts(std::vector<uint> const & tris, std::string const & s) const;
+
+     void getBatchTetCountsNP(unsigned int* indices, int input_size, std::string const & s, double* counts, int output_size) const;
+
+     void getBatchTriCountsNP(unsigned int* indices, int input_size, std::string const & s, double* counts, int output_size) const;
+
+     ////////////////////////////////////////////////////////////////////////
+     // ROI Data Access
+     ////////////////////////////////////////////////////////////////////////
+
+     /// Get species counts of a list of tetrahedrons
+     std::vector<double> getROITetCounts(std::string ROI_id, std::string const & s) const;
+
+     /// Get species counts of a list of triangles
+     std::vector<double> getROITriCounts(std::string ROI_id, std::string const & s) const;
+
+     /// Get species counts of a list of tetrahedrons
+     void getROITetCountsNP(std::string ROI_id, std::string const & s, double* counts, int output_size) const;
+
+     /// Get species counts of a list of triangles
+     void getROITriCountsNP(std::string ROI_id, std::string const & s, double* counts, int output_size) const;
+
+     double getROIVol(std::string ROI_id) const;
+     double getROIArea(std::string ROI_id) const;
+
+     double getROICount(std::string ROI_id, std::string const & s) const;
+     void setROICount(std::string ROI_id, std::string const & s, double count);
+
+     double getROIAmount(std::string ROI_id, std::string const & s) const;
+     double getROIConc(std::string ROI_id, std::string const & s) const;
+     void setROIConc(std::string ROI_id, std::string const & s, double conc);
+
+     void setROIClamped(std::string ROI_id, std::string const & s, bool b);
+
+     void setROIReacK(std::string ROI_id, std::string const & r, double kf);
+     void setROISReacK(std::string ROI_id, std::string const & sr, double kf);
+     void setROIDiffD(std::string ROI_id, std::string const & d, double dk);
+
+     void setROIReacActive(std::string ROI_id, std::string const & r, bool a);
+     void setROISReacActive(std::string ROI_id, std::string const & sr, bool a);
+     void setROIDiffActive(std::string ROI_id, std::string const & d, bool a);
+     void setROIVDepSReacActive(std::string ROI_id, std::string const & vsr, bool a);
+
+     uint getROIReacExtent(std::string ROI_id, std::string const & r) const;
+     void resetROIReacExtent(std::string ROI_id, std::string const & r);
+
+     uint getROISReacExtent(std::string ROI_id, std::string const & sr) const;
+     void resetROISReacExtent(std::string ROI_id, std::string const & sr);
+
+     uint getROIDiffExtent(std::string ROI_id, std::string const & d) const;
+     void resetROIDiffExtent(std::string ROI_id, std::string const & d);
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
@@ -508,63 +569,6 @@ public:
     inline uint nefverts(void) const
     { return pEFNVerts; }
 
-    ////////////////////////////////////////////////////////////////////////
-    // Batch Data Access
-    ////////////////////////////////////////////////////////////////////////
-    
-    std::vector<double> getBatchTetCounts(std::vector<uint> const & tets, std::string const & s) const;
-    
-    std::vector<double> getBatchTriCounts(std::vector<uint> const & tris, std::string const & s) const;
-
-    void getBatchTetCountsNP(unsigned int* indices, int input_size, std::string const & s, double* counts, int output_size) const;
-    
-    void getBatchTriCountsNP(unsigned int* indices, int input_size, std::string const & s, double* counts, int output_size) const;
-    
-    ////////////////////////////////////////////////////////////////////////
-    // ROI Data Access
-    ////////////////////////////////////////////////////////////////////////
-    
-    /// Get species counts of a list of tetrahedrons
-    std::vector<double> getROITetCounts(std::string ROI_id, std::string const & s) const;
-    
-    /// Get species counts of a list of triangles
-    std::vector<double> getROITriCounts(std::string ROI_id, std::string const & s) const;
-    
-    /// Get species counts of a list of tetrahedrons
-    void getROITetCountsNP(std::string ROI_id, std::string const & s, double* counts, int output_size) const;
-    
-    /// Get species counts of a list of triangles
-    void getROITriCountsNP(std::string ROI_id, std::string const & s, double* counts, int output_size) const;
-
-     double getROIVol(std::string ROI_id) const;
-    double getROIArea(std::string ROI_id) const;
-    
-     double getROICount(std::string ROI_id, std::string const & s) const;
-    void setROICount(std::string ROI_id, std::string const & s, double count);
-    
-     double getROIAmount(std::string ROI_id, std::string const & s) const;
-    double getROIConc(std::string ROI_id, std::string const & s) const;
-    void setROIConc(std::string ROI_id, std::string const & s, double conc);
-    
-    void setROIClamped(std::string ROI_id, std::string const & s, bool b);
-    
-    void setROIReacK(std::string ROI_id, std::string const & r, double kf);
-      void setROISReacK(std::string ROI_id, std::string const & sr, double kf);
-    void setROIDiffD(std::string ROI_id, std::string const & d, double dk);
-    
-    void setROIReacActive(std::string ROI_id, std::string const & r, bool a);
-     void setROISReacActive(std::string ROI_id, std::string const & sr, bool a);
-    void setROIDiffActive(std::string ROI_id, std::string const & d, bool a);
-    void setROIVDepSReacActive(std::string ROI_id, std::string const & vsr, bool a);
-    
-    uint getROIReacExtent(std::string ROI_id, std::string const & r) const;
-    void resetROIReacExtent(std::string ROI_id, std::string const & r);
-    
-    uint getROISReacExtent(std::string ROI_id, std::string const & sr) const;
-    void resetROISReacExtent(std::string ROI_id, std::string const & sr);
-    
-    uint getROIDiffExtent(std::string ROI_id, std::string const & d) const;
-    void resetROIDiffExtent(std::string ROI_id, std::string const & d);
         
     ////////////////////////////////////////////////////////////////////////
 private:

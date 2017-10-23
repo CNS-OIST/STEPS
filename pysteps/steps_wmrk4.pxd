@@ -6,6 +6,7 @@
 __copyright__ = "Copyright 2016 EPFL BBP-project"
 # =====================================================================================================================
 from cython.operator cimport dereference as deref
+from libcpp cimport bool
 cimport std
 cimport steps_rng
 cimport steps_wm
@@ -21,18 +22,46 @@ cdef extern from "steps/wmrk4/wmrk4.hpp" namespace "steps::wmrk4":
 
     ###### Cybinding for Wmrk4 ######
     cdef cppclass Wmrk4:
-        Wmrk4(steps_model.Model*, steps_wm.Geom*, steps_rng.RNG*)
-        std.string getSolverName()
-        std.string getSolverDesc()
-        std.string getSolverAuthors()
-        std.string getSolverEmail()
-        void reset()
-        void run(double)
-        void advance(double)
-        void step()
-        void setDT(double)
-        void setRk4DT(double)
-        double getTime()
-        void checkpoint(std.string)
-        void restore(std.string)
-        Wmrk4()
+        # Modified by Iain
+        Wmrk4(steps_model.Model*, steps_wm.Geom*, steps_rng.RNG*) except +
+        std.string getSolverName() except +
+        std.string getSolverDesc() except +
+        std.string getSolverAuthors() except +
+        std.string getSolverEmail() except +
+        void reset() except +
+        void run(double) except +
+        void advance(double) except +
+        void step() except +
+        void setDT(double) except +
+        void setRk4DT(double) except +
+        double getTime() except +
+        void checkpoint(std.string) except +
+        void restore(std.string) except +
+        double getCompVol(std.string) except +
+        void setCompVol(std.string, double) except +
+        double getCompCount(std.string, std.string) except +
+        void setCompCount(std.string, std.string, double) except +
+        double getCompAmount(std.string, std.string) except +
+        void setCompAmount(std.string, std.string, double) except +
+        double getCompConc(std.string, std.string) except +
+        void setCompConc(std.string, std.string, double) except +
+        bool getCompClamped(std.string, std.string) except +
+        void setCompClamped(std.string, std.string, bool) except +
+        double getCompReacK(std.string, std.string) except +
+        void setCompReacK(std.string, std.string, double) except +
+        bool getCompReacActive(std.string, std.string) except +
+        void setCompReacActive(std.string, std.string, bool) except +
+        double getPatchArea(std.string) except +
+        void setPatchArea(std.string, double) except +
+        double getPatchCount(std.string, std.string) except +
+        void setPatchCount(std.string, std.string, double) except +
+        double getPatchAmount(std.string, std.string) except +
+        void setPatchAmount(std.string, std.string, double) except +
+        bool getPatchClamped(std.string, std.string) except +
+        void setPatchClamped(std.string, std.string, bool) except +
+        double getPatchSReacK(std.string, std.string) except +
+        void setPatchSReacK(std.string, std.string, double) except +
+        bool getPatchSReacActive(std.string, std.string) except +
+        void setPatchSReacActive(std.string, std.string, bool) except +
+
+        

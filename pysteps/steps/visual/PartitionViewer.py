@@ -21,6 +21,7 @@
 #
 #################################################################################   
 ###
+from __future__ import print_function
 
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui, QtOpenGL
@@ -57,7 +58,7 @@ def createColorMap(partitions):
                     color_map[part] = [random.random(), random.random(), random.random(), 0.3]
         return color_map
 
-    print "Unknown partitioning data, no color map is generated."
+    print("Unknown partitioning data, no color map is generated.")
     return None
 
 class TetPartitionDisplay(QtGui.QMainWindow):
@@ -145,7 +146,7 @@ class TetPartitionDisplay(QtGui.QMainWindow):
             for sec in morph_sections.values():
                 c = None
                 if sec["name"] not in self.color_map:
-                    print "Section ", sec["name"], " does not have defined color, generate random one instead."
+                    print("Section ", sec["name"], " does not have defined color, generate random one instead.")
                     c = [random.random(), random.random(), random.random(), 0.3]
                     self.color_map[sec["name"]] = c
                 else:
@@ -174,7 +175,7 @@ class TetPartitionDisplay(QtGui.QMainWindow):
             w.hide()
         for sec in section_list:
             if sec not in self.widget_mapping:
-                print "Section ", sec, " does not have visualization compoment."
+                print("Section ", sec, " does not have visualization compoment.")
                 continue
             for w in self.widget_mapping[sec]:
                 w.show()
@@ -336,7 +337,7 @@ class TriPartitionDisplay(QtGui.QMainWindow):
             for sec in morph_sections.values():
                 c = None
                 if sec["name"] not in self.color_map:
-                    print "Section ", sec["name"], " does not have defined color, generate random one instead."
+                    print("Section ", sec["name"], " does not have defined color, generate random one instead.")
                     c = [random.random(), random.random(), random.random(), 0.3]
                     self.color_map[sec["name"]] = c
                 else:
@@ -365,7 +366,7 @@ class TriPartitionDisplay(QtGui.QMainWindow):
             w.hide()
         for sec in section_list:
             if sec not in self.widget_mapping:
-                print "Section ", sec, " does not have visualization compoment."
+                print("Section ", sec, " does not have visualization compoment.")
                 continue
             for w in self.widget_mapping[sec]:
                 w.show()

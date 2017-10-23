@@ -106,23 +106,23 @@ class Spec(steps_swig.Spec) :
 class Chan(steps_swig.Chan):
     
     """
-        A channel object which groups a set of channel states. Whilst not involved 
-        directly in reactions, currents, transitions etc it provides necessary 
-        grouping for channel states.
-        """
+    A channel object which groups a set of channel states. Whilst not involved 
+    directly in reactions, currents, transitions etc it provides necessary 
+    grouping for channel states.
+    """
     def __init__(self, *args): 
         """
-            Construction:
-            
+        Construction:
+        
             chan = steps.model.Chan(id, mdl)
-            
-            Create a channel object with identifier string id and assign the object
-            mdl as its parent model.
-            
-            Arguments: 
+        
+        Create a channel object with identifier string id and assign the object
+        mdl as its parent model.
+        
+        Arguments: 
             * string id
             * steps.model.Model mdl        
-            """
+        """
         this = _steps_swig.new_Chan(*args)
         try: self.this.append(this)
         except: self.this = this
@@ -140,25 +140,25 @@ class Chan(steps_swig.Chan):
 class ChanState(steps_swig.ChanState):
     
     """
-        A channel state object which may be involved in channel events such as 
-        currents, voltage-dependent transitions and any other steps.model.Spec events,
-        such as surface reactions and diffusion.
-        """
+    A channel state object which may be involved in channel events such as 
+    currents, voltage-dependent transitions and any other steps.model.Spec events,
+    such as surface reactions and diffusion.
+    """
     def __init__(self, *args): 
         """
-            Construction:
-            
+        Construction:
+        
             chanstate = steps.model.ChanState(id, mdl, chan)
-            
-            Create a channel state object with identifier string id, assign the object
-            mdl as its parent model. This object describes one of the possible states
-            of channel object chan.
-            
-            Arguments: 
+        
+        Create a channel state object with identifier string id, assign the object
+        mdl as its parent model. This object describes one of the possible states
+        of channel object chan.
+        
+        Arguments: 
             * string id
             * steps.model.Model mdl       
             * steps.model.Chan chan
-            """
+        """
         this = _steps_swig.new_ChanState(*args)
         try: self.this.append(this)
         except: self.this = this
@@ -236,8 +236,8 @@ class Diff(steps_swig.Diff) :
     A diffusion rule for a chemical species in a volume or on a surface.
     
     A diffusion rule is described by:
-    * Species to which the diffusion rule applies (lig).
-    * Diffusion constant (dcst) specified in s.i. units.
+        * Species to which the diffusion rule applies (lig).
+        * Diffusion constant (dcst) specified in s.i. units.
     """
     def __init__(self, *args, **kwargs): 
         """
@@ -314,10 +314,11 @@ class Reac(steps_swig.Reac) :
         
             reac = steps.model.Reac(id, volsys, lhs = [ ], rhs = [ ], kcst = 0.0)
             
-        Construct a reaction rule object with identifier string id and assign 
-        volsys as the parent volume system. A list of left hand side reactants 
-        may be assigned with lhs, whilst a list of right hand side products may 
-        be assigned with rhs, the kinetic reaction rate constant is set by kcst.
+        Construct a reaction rule object with identifier string id and assign
+        volsys as the parent volume system. A list of left hand side reactants
+        may be assigned with lhs, whilst a list of right hand side products may
+        be assigned with rhs, the kinetic reaction rate constant is set by
+        kcst.
         
         Arguments: 
             * string id
@@ -383,12 +384,12 @@ class SReac(steps_swig.SReac) :
                                     irhs = [ ], orhs = [ ], srhs = [ ],
                                     kcst = 0.0)
             
-        Construct a surface reaction rule object with identifier string 
-        id and assign surfsys as the parent surface system. A list of 
-        left hand reactants are assigned with ilhs, olhs and slhs 
-        (default for each is an empty list). A list of right hand side 
-        products are assigned with irhs, orhs and srhs (default for each 
-        is an empty list). The kinetic reaction rate constant is set with kcst.
+        Construct a surface reaction rule object with identifier string id and
+        assign surfsys as the parent surface system. A list of left hand
+        reactants are assigned with ilhs, olhs and slhs (default for each is an
+        empty list). A list of right hand side products are assigned with irhs,
+        orhs and srhs (default for each is an empty list). The kinetic reaction
+        rate constant is set with kcst.
         
         
         Arguments: 
@@ -457,40 +458,40 @@ class SReac(steps_swig.SReac) :
 class VDepTrans(steps_swig.VDepTrans) :
     
     """
-        A voltage-dependent transition involving channel states embedded in a surface. 
-        
-        A voltage-dependent transition is a first-order Markov transition from one
-        channel state to another. Thus two channel states descibe a voltage-dependent
-        transition:
-        The 'source' channel. This is the left-hand side of the reaction- the reactant.
-        The 'destination' channel. This is the righ-hand side of the reaction- the product.
-        
-        A function object must be passed to the constructor returning the transition
-        rate as a function of voltage. This function is used to fill a table of 
-        transition rates at hard-coded voltage values (currently -150mV to 100mV, 
-        in steps of 0.1mV) (These hard-coded values may be altered in the surface system
-        in the future).
-        """
+    A voltage-dependent transition involving channel states embedded in a surface. 
+    
+    A voltage-dependent transition is a first-order Markov transition from one
+    channel state to another. Thus two channel states descibe a voltage-dependent
+    transition:
+    The 'source' channel. This is the left-hand side of the reaction- the reactant.
+    The 'destination' channel. This is the righ-hand side of the reaction- the product.
+    
+    A function object must be passed to the constructor returning the transition
+    rate as a function of voltage. This function is used to fill a table of 
+    transition rates at hard-coded voltage values (currently -150mV to 100mV, 
+    in steps of 0.1mV) (These hard-coded values may be altered in the surface system
+    in the future).
+    """
     
     def __init__(self, *args, **kwargs): 
         """
-            Construction::
-            
+        Construction::
+        
             vdeptrans = steps.model.VDepTrans(id, surfsys, src, dst, rate = <function>) 
-            
-            Construct a voltage-dependent transition object with identifier string id
-            and assign surfsys as the parent surface system. The 'source' 
-            channel state is assigned with src and the 'destination' channel state
-            is assigned with dst. A function that returns the transition rate in /s at 
-            any voltage (in volts) is supplied with rate.
-            
-            Arguments: 
+        
+        Construct a voltage-dependent transition object with identifier string
+        id and assign surfsys as the parent surface system. The 'source'
+        channel state is assigned with src and the 'destination' channel state
+        is assigned with dst. A function that returns the transition rate in /s
+        at any voltage (in volts) is supplied with rate.
+        
+        Arguments: 
             * string id
             * steps.model.Surfsys surfsys
             * steps.model.ChanState src
             * steps.model.ChanState dst
             * function rate
-            """
+        """
         ### Create 'ratelist' from input function
         if kwargs.has_key('vrange'):
             minv = kwargs['vrange'][0]
@@ -555,41 +556,41 @@ class VDepTrans(steps_swig.VDepTrans) :
 class VDepSReac(steps_swig.VDepSReac) :
     
     """
-        A voltage-dependent reaction involving any species or channel state. 
-        
-        A voltage-dependent reaction is similar to a surface reaction, except the 
-        reaction parameter is voltage-dependent. 
-        
-        A function object must be passed to the constructor returning the reaction
-        'constant' as a function of voltage. This function is used to fill a table of 
-        reaction 'constants' at a range of voltage values (default: -150mV to 100mV, 
-        in steps of 0.1mV) These default values may be altered with optional argument
-        'vrange'.
-        """
+    A voltage-dependent reaction involving any species or channel state. 
+    
+    A voltage-dependent reaction is similar to a surface reaction, except the 
+    reaction parameter is voltage-dependent. 
+    
+    A function object must be passed to the constructor returning the reaction
+    'constant' as a function of voltage. This function is used to fill a table of 
+    reaction 'constants' at a range of voltage values (default: -150mV to 100mV, 
+    in steps of 0.1mV) These default values may be altered with optional argument
+    'vrange'.
+    """
     
     def __init__(self, *args, **kwargs): 
         """
-            Construction::
-            
+        Construction::
+        
             vdepsreac = steps.model.VDepSReac(id, surfsys, 
             ilhs = [ ], olhs = [ ], slhs = [ ],
             irhs = [ ], orhs = [ ], srhs = [ ],
             k = <function>, 
             vrange = [-150.0e-3, 100.0e-3, 1.0e-4] ) 
-            
-            Construct a voltage-dependent reaction object with identifier string id
-            and assign surfsys as the parent surface system. A list of 
-            left hand reactants are assigned with ilhs, olhs and slhs 
-            (default for each is an empty list). A list of right hand side 
-            products are assigned with irhs, orhs and srhs (default for each 
-            is an empty list). 
-            A function that returns the kinetic reaction 'constant' in ordinary, Molar 
-            units at any voltage (in volts) is supplied with argument k.
-            A 'voltage range' over which to calculate the reaction rate is
-            optionally provided by the argument vrange (in Volts) as a list:
-            [minimum voltage, maximum voltage, voltage step]
-            
-            Arguments: 
+        
+        Construct a voltage-dependent reaction object with identifier string id
+        and assign surfsys as the parent surface system. A list of 
+        left hand reactants are assigned with ilhs, olhs and slhs 
+        (default for each is an empty list). A list of right hand side 
+        products are assigned with irhs, orhs and srhs (default for each 
+        is an empty list). 
+        A function that returns the kinetic reaction 'constant' in ordinary, Molar 
+        units at any voltage (in volts) is supplied with argument k.
+        A 'voltage range' over which to calculate the reaction rate is
+        optionally provided by the argument vrange (in Volts) as a list:
+        [minimum voltage, maximum voltage, voltage step]
+        
+        Arguments: 
             * string id
             * steps.model.Surfsys surfsys
             * list(steps.model.Spec) ilhs (default = [ ]) 
@@ -600,7 +601,7 @@ class VDepSReac(steps_swig.VDepSReac) :
             * list(steps.model.Spec) srhs (default = [ ])
             * function k
             * list vrange (default = [-150.0e-3, 100.0e-3, 1.0e-4])
-            """
+        """
         ### Create 'ratelist' from input function
         if kwargs.has_key('vrange'):
             minv = kwargs['vrange'][0]
@@ -684,34 +685,34 @@ class VDepSReac(steps_swig.VDepSReac) :
 class OhmicCurr(steps_swig.OhmicCurr) :
     
     """
-        An ohmic current object that describes an ohmic current through a channel in 
-        a particular conducting state. 
-        
-        An ohmic current object is a simple current based on a single, fixed value
-        for single-channel conductance and a constant reversal potential. An ohmic current
-        does not result in movement of ions between compartments, but simply 
-        contributes a continous current to the EField solver for every conducting channel
-        on a membrane surface that contains the ohmic current.
-        """
+    An ohmic current object that describes an ohmic current through a channel in 
+    a particular conducting state. 
+    
+    An ohmic current object is a simple current based on a single, fixed value
+    for single-channel conductance and a constant reversal potential. An ohmic current
+    does not result in movement of ions between compartments, but simply 
+    contributes a continous current to the EField solver for every conducting channel
+    on a membrane surface that contains the ohmic current.
+    """
     def __init__(self, *args, **kwargs): 
         """
-            Construction::
-            
+        Construction::
+        
             ohmiccurr = steps.model.OhmicCurr(id, surfsys, chanstate, erev, g) 
-            
-            Construct an ohmic curernt object with identifier string id
-            and assign surfsys as the parent surface system. Assign to channel state
-            chanstate, set the reversal potential to erev (in volts) and the single-channel
-            conductance to g (in Siemens).
-            
-            Arguments: 
+        
+        Construct an ohmic curernt object with identifier string id
+        and assign surfsys as the parent surface system. Assign to channel state
+        chanstate, set the reversal potential to erev (in volts) and the single-channel
+        conductance to g (in Siemens).
+        
+        Arguments: 
             * string id
             * steps.model.Surfsys surfsys
             * steps.model.ChanState chanstate
             * double erev
             * double g
-            
-            """
+        
+        """
         this = _steps_swig.new_OhmicCurr(*args, **kwargs)
         try: self.this.append(this)
         except: self.this = this
@@ -743,49 +744,49 @@ class OhmicCurr(steps_swig.OhmicCurr) :
 class GHKcurr(steps_swig.GHKcurr) :
     
     """
-        A current object based on the Goldman-Hodgkin-Katz flux equation, 
-        that describes a current through a channel in a particular permeable state. 
-        
-        Each GHK current in the simulation is solved within the SSA with a rate determined 
-        from the simulation state, i.e. membrane potential, 'outer' and 'inner' 
-        concentration of the ion and temperature (which is fixed), and constant parameters 
-        ion valence and permeability. 
-        For a permeabilty to be found the user must supply
-        information from a channel measurement:
+    A current object based on the Goldman-Hodgkin-Katz flux equation, 
+    that describes a current through a channel in a particular permeable state. 
+    
+    Each GHK current in the simulation is solved within the SSA with a rate determined 
+    from the simulation state, i.e. membrane potential, 'outer' and 'inner' 
+    concentration of the ion and temperature (which is fixed), and constant parameters 
+    ion valence and permeability. 
+    For a permeabilty to be found the user must supply
+    information from a channel measurement:
         * the single-channel conductance
         * the potential
         * the temparature (this may be different from the STEPS simulation temperature)
         * the 'outer' concentration of the ion
         * the 'inner' concentration of the ion
-    	
-        This information must be set with the member function setPInfo() 
-        
-        A GHK current involves, optionally, a real transfer of ions between comparments 
-        separated by a membrane in the STEPS simulation. It is important that 
-        these ions implement diffusion if compartments are not well-mixed.
-        """
+    
+    This information must be set with the member function setPInfo() 
+    
+    A GHK current involves, optionally, a real transfer of ions between comparments 
+    separated by a membrane in the STEPS simulation. It is important that 
+    these ions implement diffusion if compartments are not well-mixed.
+    """
     def __init__(self, *args, **kwargs): 
         """
-            Construction::
-            
+        Construction::
+        
             ghkcurr = steps.model.GHKcurr(id, surfsys, chanstate, ion, computeflux=True) 
-            
-            Construct a ghk current object with identifier string id
-            and assign surfsys as the parent surface system. Assign to channel state
-            chanstate, set the species that describes the current with ion- this
-            species object must have a valence specified. If computeflux flag is 
-            set to True then the current will result in movement of ions between compartments, 
-            if False the current will be calculated but will not correspond to a real ion flux.
-            
-            Arguments: 
+        
+        Construct a ghk current object with identifier string id
+        and assign surfsys as the parent surface system. Assign to channel state
+        chanstate, set the species that describes the current with ion- this
+        species object must have a valence specified. If computeflux flag is 
+        set to True then the current will result in movement of ions between compartments, 
+        if False the current will be calculated but will not correspond to a real ion flux.
+        
+        Arguments: 
             * string id
             * steps.model.Surfsys surfsys
             * steps.model.ChanState chanstate
             * steps.model.Spec ion
             * bool computeflux
-            
-            NOTE: function setP or setPInfo must be called on the object before creating simulation object.
-            """
+        
+        NOTE: function setP or setPInfo must be called on the object before creating simulation object.
+        """
         this = _steps_swig.new_GHKcurr(*args, **kwargs)
         try: self.this.append(this)
         except: self.this = this

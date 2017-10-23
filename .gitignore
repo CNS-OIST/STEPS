@@ -31,3 +31,11 @@ README
 
 *.so
 pysteps/steps/cysteps_mpi.cpp
+
+.idea
+
+.python-version
+
+.ipynb_checkpoints
+test/validation/validation_cp/.logs/debug_log
+test/validation/validation_rd/.logs/debug_log

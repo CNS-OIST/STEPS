@@ -1,4 +1,10 @@
 Release Notes
+Version 3.2.0 (2017-10)
+==========================
+1. Extensive rework on Cython binding and documentation with Jupyter notebook.
+2. Extend support for Python 3.3~.
+3. several bug fixs.
+Note: SWIG Binding will be removed in 3.3 release.
 
 Version 3.1.0 (2017-6)
 ==========================

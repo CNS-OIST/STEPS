@@ -9,6 +9,7 @@
   
 ########################################################################
 
+from __future__ import print_function, absolute_import
 import steps.model as smod
 import steps.geom as sgeom
 import steps.rng as srng
@@ -18,10 +19,10 @@ import math
 import time 
 import numpy
 
-from tol_funcs import *
+from . import tol_funcs
 
-print "Reaction - Second order, irreversible, A0!=B0:"
-import second_order_irev_AB_cp
+print("Reaction - Second order, irreversible, A0!=B0:")
+from . import second_order_irev_AB_cp
 
 ########################################################################
 
@@ -92,5 +93,5 @@ def test_soirevAB():
         lnBA[i] = math.log(B/A)
         lineAB[i] = math.log(CONCB/CONCA) -C*KCST*tpnts[i]
         
-        assert(tolerable(lnBA[i], lineAB[i], tolerance))
+        assert(tol_funcs.tolerable(lnBA[i], lineAB[i], tolerance))
 

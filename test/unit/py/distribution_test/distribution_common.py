@@ -6,6 +6,8 @@ import steps.quiet
 import steps.geom
 import steps.model
 
+import numpy as np
+
 # Approximate erf and inverf from Winitzki (2008), "A handy approximation
 # for the error function and its inverse".
 # <URL: https://sites.google.com/site/winitzki/sergei-winitzkis-files/erf-approx.pdf>
@@ -13,10 +15,10 @@ import steps.model
 def approx_inverf(x):
     c1 = 6.80272108844  # 1/a, a=0.147
     c2 = 4.3307467508   # 2/π·c₁
-    log_omx2 = math.log(1-x*x)
+    log_omx2 = np.log(1-x*x)
     t1 = c1*log_omx2
     t2 = c2+0.5*log_omx2
-    r=math.sqrt(math.sqrt(t2*t2-t1)-t2)
+    r = np.sqrt(np.sqrt(t2*t2-t1)-t2)
     if x<0:
         return -r
     else:
@@ -27,7 +29,7 @@ def approx_erf(x):
     c3 = 1.27323954474 # 4/π
 
     x2 = x*x
-    r = math.sqrt(1-math.exp(-x2*(c3+a*x2)/(1+a*x2)))
+    r = np.sqrt(1-np.exp(-x2*(c3+a*x2)/(1+a*x2)))
     if x<0:
         return -r
     else:
@@ -99,7 +101,7 @@ def prism_mesh_by_z(zlevels = [0,1], scale = 1):
     verts = [(x,y,z) for z in zlevels for y in range(0,2) for x in range(0,2-y)]
                 
     # shear and scale ...
-    sqrt3o2 = math.sqrt(3.0)/2
+    sqrt3o2 = np.sqrt(3.0)/2
     verts = [(x*scale+0.5*y*scale, sqrt3o2*scale*y, scale*z) for (x,y,z) in verts]
    
     # vertex at (x,y,z), x+y <= 1.
@@ -130,21 +132,21 @@ def prism_mesh_by_z(zlevels = [0,1], scale = 1):
 # segments. Segments in between have volume as specified by distribution.
 
 def make_prism_mesh(n, total_volume, distribution, ratio = 1):
-    n /= 3
+    n //= 3
 
     if distribution=='constant':
         zstep = [1]*n
     elif distribution=='linear':
         a = 2.0/(n-1)*(ratio-1.0)/(ratio+1.0)
-        zstep = [1+a*(j-(n-1)/2.0) for j in xrange(0,n)]
+        zstep = [1+a*(j-(n-1)/2.0) for j in range(0,n)]
     elif distribution=='geometric':
-        a = math.pow(ratio,1/(n-1.0))
-        zstep = [math.pow(a,j) for j in xrange(0,n)]
+        a = np.power(ratio,1/(n-1.0))
+        zstep = [np.power(a,j) for j in range(0,n)]
     else:
         raise ValueError('unrecognized volume distribution scheme')
 
     zlevels = [0] + [z for z in partial_sums(zstep)]
-    scale = math.pow(4*total_volume/(zlevels[-1]*math.sqrt(3)), 1/3.0)
+    scale = np.power(4*total_volume/(zlevels[-1]*np.sqrt(3)), 1/3.0)
     (vx,tetx) = prism_mesh_by_z(zlevels, scale)
 
     return steps.geom.Tetmesh(flatten(vx), flatten(tetx), [])
@@ -191,7 +193,7 @@ def run_stats(x, mu, T, sample_type):
     else:
         r = sum(mu) - sum([int(y) for y in mu])
 
-    expected_sd = [math.sqrt(r*psi*(1-psi)/T) for y in mu for psi in [y-int(y)]]
+    expected_sd = [np.sqrt(r*psi*(1-psi)/T) for y in mu for psi in [y-int(y)]]
 
     # use min of {µ} and 1-{µ} in mask test to avoid 
     pmask = [T*psi > 5 and T*(1-psi) > 5 for y in mu for psi in [y-int(y)]]
@@ -199,7 +201,7 @@ def run_stats(x, mu, T, sample_type):
 
     z = [0]*n
     p = [0]*n
-    for i in xrange(n):
+    for i in range(n):
         deviation = abs(x[i]-mu[i])
         z[i] = deviation/expected_sd[i]
         p[i] = p_twotailed(z[i]) if pmask[i] else None

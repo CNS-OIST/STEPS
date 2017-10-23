@@ -37,7 +37,7 @@ import time
 import math
 import numpy
 
-from tol_funcs import *
+from . import tol_funcs
 
 ########################################################################
 
@@ -186,7 +186,7 @@ def test_unbdiff2D_ode():
                 rad = r_tris_binned[i]*1.0e-6
                 det_conc = 1.0e-12*(NINJECT/(4*math.pi*DCST*tpnts[t]))*(math.exp((-1.0*(rad*rad))/(4*DCST*tpnts[t])))
                 steps_conc = bin_concs[i]
-                assert tolerable(det_conc, steps_conc, tolerance)
+                assert tol_funcs.tolerable(det_conc, steps_conc, tolerance)
 
 ########################################################################
 # END

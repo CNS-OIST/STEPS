@@ -23,6 +23,7 @@
 #
 #################################################################################   
 ###
+from __future__ import print_function
 
 try:
     from .. import cysteps_mpi as stepslib
@@ -38,9 +39,9 @@ nhosts = stepslib.getNHosts()
 
 import steps
 if not steps._quiet and rank == 0:
-    print "-----------------------------------------------------------------"
-    print "STEPS is running in parallel mode with ", nhosts, " processes"
-    print "-----------------------------------------------------------------"
+    print("-----------------------------------------------------------------")
+    print("STEPS is running in parallel mode with ", nhosts, " processes")
+    print("-----------------------------------------------------------------")
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # END

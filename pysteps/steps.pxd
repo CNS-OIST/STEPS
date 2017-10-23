@@ -32,14 +32,10 @@ cdef extern from "steps/error.hpp" namespace "steps":
         Err(std.string)
         char* getMsg()
         char* what()
-
+        
     ###### Cybinding for NotImplErr ######
     cdef cppclass NotImplErr(Err):
-        NotImplErr(std.string)
-
-    ###### Cybinding for ArgErr ######
-    cdef cppclass ArgErr(Err):
-        ArgErr(std.string)
+        NotImplErr(std.string)    
 
     ###### Cybinding for ProgErr ######
     cdef cppclass ProgErr(Err):
@@ -52,3 +48,12 @@ cdef extern from "steps/error.hpp" namespace "steps":
     ###### Cybinding for IOErr ######
     cdef cppclass IOErr(Err):
         IOErr(std.string)
+        
+# ======================================================================================================================
+cdef extern from "steps/util/checkid.hpp" namespace "steps::util":
+# ----------------------------------------------------------------------------------------------------------------------
+
+        void checkID(char *) except +
+        void checkID(std.string) except +
+        
+        

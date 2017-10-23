@@ -86,8 +86,7 @@ struct boxed_reference {
  */
 
 template <typename FwdIter, typename Weight, typename SetCount, typename IncCount, typename Rng>
-void distribute_quantity(double x, FwdIter b, FwdIter e,
-        Weight weight, SetCount set_count, IncCount inc_count, Rng &g, double total_weight=0)
+void distribute_quantity(double x, FwdIter b, FwdIter e, Weight weight, SetCount set_count, IncCount inc_count, Rng &g, double total_weight=0)
 {
     static std::uniform_real_distribution<double> U;
 

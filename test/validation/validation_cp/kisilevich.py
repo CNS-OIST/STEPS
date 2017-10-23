@@ -9,6 +9,7 @@
   
 ########################################################################
 
+from __future__ import print_function, absolute_import
 import steps.model as smod
 import steps.geom as sgeom
 import steps.rng as srng
@@ -19,10 +20,10 @@ import time
 import numpy
 import steps.utilities.meshio as meshio
 
-from tol_funcs import *
+from . import tol_funcs
 
-print "Reaction-diffusion - Degradation-diffusion:"
-import kisilevich_cp
+print("Reaction-diffusion - Degradation-diffusion:")
+from . import kisilevich_cp
 
 ########################################################################
 
@@ -245,14 +246,14 @@ def test_kis():
                 # compare A
                 det_conc = getdetc(tpnts[tidx], rad)
                 steps_conc = bin_concsA[i]
-                if not tolerable(det_conc, steps_conc, tolerance): passed = False
+                if not tol_funcs.tolerable(det_conc, steps_conc, tolerance): passed = False
                 if (abs(2*(det_conc-steps_conc)/(det_conc+steps_conc)) > max_err): max_err = abs(2*(det_conc-steps_conc)/(det_conc+steps_conc))
-            #print "Error:",abs(2*(det_conc-steps_conc)/(det_conc+steps_conc))*100.0, "%"    
-            #print ""    
+            #print("Error:",abs(2*(det_conc-steps_conc)/(det_conc+steps_conc))*100.0, "%")
+            #print("")
             elif (tetradsbinned[i] > 5):
                 # compare B
                 det_conc = getdetc(tpnts[tidx], rad)
                 steps_conc = bin_concsB[i]
-                assert(tolerable(det_conc, steps_conc, tolerance))
+                assert(tol_funcs.tolerable(det_conc, steps_conc, tolerance))
 
 

@@ -100,7 +100,7 @@ public:
     ///
     GHKcurr(std::string const & id, Surfsys * surfsys,
             ChanState * chanstate, Spec * ion, bool computeflux = true,
-            double virtual_oconc = -1, double vshift = 0.0);
+            double virtual_oconc = -1.0, double vshift = 0.0);
 
     /// Destructor
     ~GHKcurr(void);

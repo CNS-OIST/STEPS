@@ -9,6 +9,7 @@
   
 ########################################################################
 
+from __future__ import print_function, absolute_import
 import steps.model as smod
 import steps.geom as sgeom
 import steps.rng as srng
@@ -17,10 +18,10 @@ import steps.solver as ssolv
 import time 
 import numpy
 
-from tol_funcs import *
+from . import tol_funcs
 
-print "Reaction - First order, reversible:"
-import first_order_rev_cp
+print("Reaction - First order, reversible:")
+from . import first_order_rev_cp
 
 ########################################################################
 
@@ -82,7 +83,7 @@ def test_forev():
     passed = True
     for i in range(ntpnts):
         if i < 7: continue
-        assert(tolerable(mean_res[i,0], Aeq, tolerance))
-        assert(tolerable(mean_res[i,1], Beq, tolerance))
+        assert(tol_funcs.tolerable(mean_res[i,0], Aeq, tolerance))
+        assert(tol_funcs.tolerable(mean_res[i,1], Beq, tolerance))
 
         

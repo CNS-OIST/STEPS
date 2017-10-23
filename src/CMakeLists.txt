@@ -26,7 +26,6 @@ set(lib_soversion "${VERSION_MAJOR}.${VERSION_MINOR}")
 set(lib_version "${lib_soversion}.${VERSION_PATCH}")
 
 set(cvode   "third_party/cvode-2.6.0/src")
-set(nr      "third_party/nr")
 set(superlu "third_party/superlu_dist-4.1/src")
 
 
@@ -130,7 +129,6 @@ set(lib_sources
     "${cvode}/sundials/sundials_spbcgs.cpp"    "${cvode}/sundials/sundials_spgmr.cpp"
     "${cvode}/sundials/sundials_sptfqmr.cpp"
     #
-    "${nr}/gamma.cpp"                           "${nr}/incgammabeta.cpp"
 )
 
 set_source_files_properties(${superlu_sources} PROPERTIES COMPILE_FLAGS "-std=c99 -DSUPERLU_NO_METIS")

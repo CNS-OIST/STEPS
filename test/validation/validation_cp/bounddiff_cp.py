@@ -20,7 +20,7 @@ import steps.rng as srng
 import time
 import numpy
 
-from tol_funcs import *
+from . import tol_funcs
 
 rng = srng.create('mt19937', 512) 
 rng.initialize(int(time.time()%4294967295)) # The max unsigned long

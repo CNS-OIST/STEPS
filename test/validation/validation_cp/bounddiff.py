@@ -10,6 +10,7 @@
   
 ########################################################################
 
+from __future__ import print_function, absolute_import
 import os
 import datetime
 import steps.model as smodel
@@ -21,14 +22,14 @@ import steps.rng as srng
 import time
 import numpy
 
-from tol_funcs import *
+from . import tol_funcs
     
 new_dir = './validation_cp/cp/'
 if not os.path.exists(new_dir):
     os.makedirs(new_dir)
 
-print "Diffusion - Bounded:"
-import bounddiff_cp
+print("Diffusion - Bounded:")
+from . import bounddiff_cp
 
 rng = srng.create('mt19937', 512) 
 rng.initialize(int(time.time()%4294967295)) # The max unsigned long
@@ -166,7 +167,7 @@ def test_bdiff():
 
     new_dir = './validation_cp/cp/'
     if not os.path.exists(new_dir):
-        print "ok, then I create it !!!!!!!!"
+        print("ok, then I create it !!!!!!!!")
         os.makedirs(new_dir)
     for j in range(NITER):
         sim.restore('./validation_cp/cp/boundiff')
@@ -174,7 +175,7 @@ def test_bdiff():
             sim.run(tpnts[i])
             for k in range(SAMPLE):
                 res[j, i, k] = sim.getTetCount(int(tetidxs[k]), 'X')
-    #print '%d / %d' % (j + 1, NITER)
+    #print('%d / %d' % (j + 1, NITER))
 
     itermeans = numpy.mean(res, axis = 0)
 
@@ -188,7 +189,7 @@ def test_bdiff():
     N = int((1.0*NINJECT)/nztets)*nztets
     def getprob(x,t):
         if(x>a): 
-            print 'x out of bounds'
+            print('x out of bounds')
             return
         p=0.0
         for n in range(nmax):
@@ -248,6 +249,6 @@ def test_bdiff():
                 rad = tetradsbinned[i]*1.0e-6
                 det_conc = (getprob(rad, tpnts[t])/area)*(1.0/6.022e20)
                 steps_conc = bin_concs[i]
-                assert(tolerable(det_conc, steps_conc, tolerance))
+                assert(tol_funcs.tolerable(det_conc, steps_conc, tolerance))
 
 
