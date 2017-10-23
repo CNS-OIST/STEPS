@@ -21,15 +21,18 @@
 #
 #################################################################################   
 ###
+from __future__ import print_function
 
 try:
     import libsbml
 except:
-    print "Unable to import SBML"
+    print("Unable to import SBML")
+
 import sys
 import os
 import math
 import random
+from numbers import Number
 
 import steps.model as smodel
 import steps.geom as sgeom
@@ -49,7 +52,7 @@ def is_num(n):
     """
     Returns whether argument is a number or not
     """
-    return isinstance(n, (float, int, long, complex))
+    return isinstance(n, Number)
 
 def _float_approx_equal(x, y, tol=1e-32, rel=1e-7):
     """
@@ -664,7 +667,7 @@ class Interface(object):
                 else:
                     raise NotImplementedError("Time base units are not seconds!")
             else:
-                print "WARNING: Failed to read model unit for time. Model time unit set to default (%s seconds)"%str(self.__timeunits_def)
+                print("WARNING: Failed to read model unit for time. Model time unit set to default (%s seconds)"%str(self.__timeunits_def))
                 ret_time['time'] = [0.0, 1.0]
                 ret_time['t'] = [0.0, 1.0]
                 ret_time['s'] = [0.0, 1.0]
@@ -672,7 +675,7 @@ class Interface(object):
                 ret_time_units = self.__timeunits_def
                 
         else:
-            print "WARNING: Failed to read model unit for time. Model time unit set to default (%s seconds)"%str(self.__timeunits_def)
+            print("WARNING: Failed to read model unit for time. Model time unit set to default (%s seconds)"%str(self.__timeunits_def))
             ret_time['time'] = [0.0, 1.0]
             ret_time['t'] = [0.0, 1.0]
             ret_time['s'] = [0.0, 1.0]
@@ -698,10 +701,10 @@ class Interface(object):
                     ret_vol_units = unitsDef_to_STEPS(multiplier, scale, expo)
                 else: raise NotImplementedError("Volume units in model are not volume units!")
             else:
-                print "WARNING: Failed to read model unit for volume. Model volume unit set to default (%s m^3)"%str(self.__volunits_def)
+                print("WARNING: Failed to read model unit for volume. Model volume unit set to default (%s m^3)"%str(self.__volunits_def))
                 ret_vol_units =  self.__volunits_def
         else:
-            print "WARNING: Failed to read model unit for volume. Model volume unit set to default (%s m^3)"%str(self.__volunits_def)
+            print("WARNING: Failed to read model unit for volume. Model volume unit set to default (%s m^3)"%str(self.__volunits_def))
             ret_vol_units =  self.__volunits_def
         
         ret_area_units = 0
@@ -721,11 +724,11 @@ class Interface(object):
                 else: raise NotImplementedError("Area units in model are not area units!")
             else:
                 # On second thoughts, don't think a warning is necessary here
-                #print "WARNING: Failed to read model unit for area. Default unit will be based on model volume units."
+                #print("WARNING: Failed to read model unit for area. Default unit will be based on model volume units.")
                 ret_area_units =  math.pow(ret_vol_units, 2.0/3.0)
         else:
             # On second thoughts, don't think a warning is necessary here
-            # print "WARNING: Failed to read model unit for area. Default unit will be based on model volume units."
+            # print("WARNING: Failed to read model unit for area. Default unit will be based on model volume units.")
             ret_area_units =  math.pow(ret_vol_units, 2.0/3.0)
 
         ret_length_units = 0
@@ -745,11 +748,11 @@ class Interface(object):
                 else: raise NotImplementedError("Length units in model are not length units!")
             else:
                 # On second thoughts, don't think a warning is necessary here
-                #print "WARNING: Failed to read model unit for length. Default unit will be based on model volume units."
+                #print("WARNING: Failed to read model unit for length. Default unit will be based on model volume units.")
                 ret_length_units =  math.pow(ret_vol_units, 1.0/3.0)                    
         else:
             # On second thoughts, don't think a warning is necessary here
-            #print "WARNING: Failed to read model unit for length. Default unit will be based on model volume units."
+            #print("WARNING: Failed to read model unit for length. Default unit will be based on model volume units.")
             ret_length_units =  math.pow(ret_vol_units, 1.0/3.0)  
         
         ret_subs_units = 0
@@ -769,10 +772,10 @@ class Interface(object):
                     ret_subs_units = unitsDef_to_STEPS(multiplier, scale, expo)/AVOGADRO
                 else: raise NotImplementedError("Substance units in model are not supported units.")
             else:
-                print "WARNING: Failed to read model unit for substance. Model substance unit set to default (%s mole)"%str(self.__subsunits_def)
+                print("WARNING: Failed to read model unit for substance. Model substance unit set to default (%s mole)"%str(self.__subsunits_def))
                 ret_subs_units =  self.__subsunits_def
         else:
-            print "WARNING: Failed to read model unit for substance. Model substance unit set to default (%s mole)"%str(self.__subsunits_def)
+            print("WARNING: Failed to read model unit for substance. Model substance unit set to default (%s mole)"%str(self.__subsunits_def))
             ret_subs_units =  self.__subsunits_def
         
         return ret_time, ret_time_units, ret_vol_units, ret_subs_units, ret_area_units, ret_length_units
@@ -848,8 +851,8 @@ class Interface(object):
                             dim = 3
                             units = unitdef.getListOfUnits()
                             if (len(units) != 1):
-                                print "WARNING: Failed to read units for compartment '%s'. " \
-                                "Model volume units will be assumed."%idComp
+                                print("WARNING: Failed to read units for compartment '%s'. " \
+                                "Model volume units will be assumed."%idComp)
                                 break
                             unit = units[0]
                             if (unit.isMetre()):
@@ -875,8 +878,8 @@ class Interface(object):
                                 added = True
                                 break
                             else: 
-                                print "WARNING: Failed to read units for compartment '%s'. " \
-                                "Model volume units will be assumed."%idComp
+                                print("WARNING: Failed to read units for compartment '%s'. " \
+                                "Model volume units will be assumed."%idComp)
                                 break
                             break
                         elif(unitdef.isVariantOfArea()):
@@ -895,8 +898,8 @@ class Interface(object):
                                 added = True
                                 break
                             else: 
-                                print "WARNING: Failed to read units for patch '%s'. " \
-                                "Model area units will be assumed."%idComp
+                                print("WARNING: Failed to read units for patch '%s'. " \
+                                "Model area units will be assumed."%idComp)
                                 break
                             break
                         else:
@@ -905,15 +908,15 @@ class Interface(object):
                     # If we got here we breaked. 
             else:
                 if dim == 3:
-                    print "WARNING: No volume specified for compartment '%s'. " \
-                        "Volume set to default value (%sm^3)."%(idComp, str(volume_default*self.__volume_units))
+                    print("WARNING: No volume specified for compartment '%s'. " \
+                        "Volume set to default value (%sm^3)."%(idComp, str(volume_default*self.__volume_units)))
                     sizeComp = volume_default
                     comps[idComp] = [sizeComp, 1.0]
                     added = True
                     continue
                 elif dim == 2:
-                    print "WARNING: No area specified for patch '%s'. " \
-                            "Area set to default value (%m^2s)."%(idComp, str(area_default*self.__area_units))
+                    print("WARNING: No area specified for patch '%s'. " \
+                            "Area set to default value (%m^2s)."%(idComp, str(area_default*self.__area_units)))
                     sizeComp = area_default
                     patches[idComp] = [sizeComp, 1.0]
                     added = True
@@ -926,8 +929,8 @@ class Interface(object):
             if dim != 2:        
                 # Special case if size == 1 without units, a common occurunce in SBML
                 if (comp.getSize() == 1.0 and not comp.getUnits()):
-                    print "WARNING: Compartment '%s' size = 1.0 wih no units. " \
-                        "Volume set to default value (%sm^3)."%(idComp, str(volume_default*self.__volume_units))
+                    print("WARNING: Compartment '%s' size = 1.0 wih no units. " \
+                        "Volume set to default value (%sm^3)."%(idComp, str(volume_default*self.__volume_units)))
                     sizeComp = volume_default
                     
                     comps[idComp] = [sizeComp , 1.0]
@@ -936,8 +939,8 @@ class Interface(object):
                 
                 # Special case if size == 1 without default units (litre), also a common occurance
                 if (comp.getSize() == 1.0 and idComp not in comps):
-                    print "WARNING: Compartment '%s' size = 1.0 wih default units. " \
-                        "Volume set to default value (%sm^3)."%(idComp, str(volume_default*self.__volume_units))
+                    print("WARNING: Compartment '%s' size = 1.0 wih default units. " \
+                        "Volume set to default value (%sm^3)."%(idComp, str(volume_default*self.__volume_units)))
                     sizeComp = volume_default
                     comps[idComp] = [sizeComp , 1.0]
                     added = True
@@ -953,8 +956,8 @@ class Interface(object):
             else:    
                 # Special case if size == 1 without units, a common occurunce in SBML
                 if (comp.getSize() == 1.0 and not comp.getUnits()):
-                    print "WARNING: Patch '%s' size = 1.0 wih no units. " \
-                            "Area set to default value (%m^2s)."%(idComp, str(area_default*self.__area_units))
+                    print("WARNING: Patch '%s' size = 1.0 wih no units. " \
+                            "Area set to default value (%m^2s)."%(idComp, str(area_default*self.__area_units)))
                     sizeComp = area_default                    
                     patches[idComp] = [sizeComp , 1.0]
                     added = True
@@ -962,8 +965,8 @@ class Interface(object):
                 
                 # Special case if size == 1 without default units (litre), also a common occurance
                 if (comp.getSize() == 1.0 and idComp not in patches):
-                    print "WARNING: Patch '%s' size = 1.0 wih default units. " \
-                            "Area set to default value (%m^2s)."%(idComp, str(area_default*self.__area_units))
+                    print("WARNING: Patch '%s' size = 1.0 wih default units. " \
+                            "Area set to default value (%m^2s)."%(idComp, str(area_default*self.__area_units)))
                     sizeComp = area_default                    
                     patches[idComp] = [sizeComp , 1.0]
                     added = True
@@ -1351,23 +1354,23 @@ class Interface(object):
                 for j in [0]:
                     unitdef = self.__model.getUnitDefinition(unitsSpec) 
                     if not (unitdef):
-                        #print "WARNING: Failed to read units of substance " \
-                        #"for Species '%s'. Default units (mole) will be assumed."%specie.getId()
+                        #print("WARNING: Failed to read units of substance " \
+                        #"for Species '%s'. Default units (mole) will be assumed."%specie.getId())
                         break
                     # Note: All units here should be of substance, i.e. dimensionless
                     # Units for the volume (if concentration) are taken from 
                     # the units for volume of the compartment
                     units = unitdef.getListOfUnits()
                     if (len(units) != 1):
-                        print "WARNING: Failed to read units of substance " \
-                        "for Species '%s'. Model substance unit will be assumed."%specie.getId()
+                        print("WARNING: Failed to read units of substance " \
+                        "for Species '%s'. Model substance unit will be assumed."%specie.getId())
                         break
                     unit = units[0]
                     if not (unit.isItem() or unit.isDimensionless() or unit.isMole()):
                         raise NotImplementedError("Species '%s' substance units are not supported units."%specie.getId())
                     if (unit.getExponent() != 1):
-                        print "WARNING: Failed to read units of substance " \
-                        "for Species '%s'. Model substance unit will be assumed."%specie.getId()
+                        print("WARNING: Failed to read units of substance " \
+                        "for Species '%s'. Model substance unit will be assumed."%specie.getId())
                         break                                
                     multiplier = unit.getMultiplier()
                     scale = unit.getScale()
@@ -1381,8 +1384,8 @@ class Interface(object):
                         factor /= AVOGADRO
                     break
             else: 
-                print "WARNING: Failed to read units of substance " \
-                    "for Species '%s'. Model substance unit will be assumed."%specie.getId()
+                print("WARNING: Failed to read units of substance " \
+                    "for Species '%s'. Model substance unit will be assumed."%specie.getId())
             
             # Confusing, but value could still be an amount or conc, but the amount part is converted to 
             # model substance units. If a conc we still need to convert the volume part. 
@@ -1551,7 +1554,7 @@ class Interface(object):
                 if (sto % 1 ) : 
                     raise NotImplementedError("Partial stoichiometry (%f) in reaction '%s'."%(sto, reac.getId()))
                 sto = int(round(sto))
-                for j in xrange(sto):
+                for j in range(sto):
                     if(product.getSpecies() != "Empty"):
                         prods_f.append(product.getSpecies())
                         if (reversible): reacts_b.append(product.getSpecies())
@@ -1600,7 +1603,7 @@ class Interface(object):
                         if not conv_factor_space : conv_factor_space = self.__comps[reac_comp][1]
                         reac_comp1[reac_comp] = [r]
                         reac_comp1_id = reac_comp
-                    elif reac_comp1.has_key(reac_comp): 
+                    elif reac_comp in reac_comp1: 
                         if not conv_factor_space : conv_factor_space = self.__comps[reac_comp][1]
                         reac_comp1[reac_comp].append(r)
                     else: raise NotImplementedError("Reaction '%s': reactants appear in different volumes."%reac.getId())
@@ -1610,7 +1613,7 @@ class Interface(object):
                         if not conv_factor_space : conv_factor_space = self.__patches[reac_comp][1]
                         reac_surf[reac_comp] = [r]
                         reac_surf_id = reac_comp
-                    elif reac_surf.has_key(reac_comp): 
+                    elif reac_comp in reac_surf: 
                         if not conv_factor_space : conv_factor_space = self.__patches[reac_comp][1]
                         reac_surf[reac_comp].append(r)
                     else: raise NotImplementedError("Reaction '%s': reactants and products appear in more than 1 surface."%reac.getId())
@@ -1627,14 +1630,14 @@ class Interface(object):
                         if not conv_factor_space : conv_factor_space = self.__comps[reac_comp][1]
                         reac_comp1[reac_comp] = [r]
                         reac_comp1_id = reac_comp
-                    elif reac_comp1.has_key(reac_comp):
+                    elif reac_comp in reac_comp1:
                         if not conv_factor_space : conv_factor_space = self.__comps[reac_comp][1]
                         reac_comp1[reac_comp].append(r)
                     elif not reac_comp2: 
                         if not conv_factor_space : conv_factor_space = self.__comps[reac_comp][1]
                         reac_comp2[reac_comp] = [r] 
                         reac_comp2_id = reac_comp
-                    elif reac_comp2.has_key(reac_comp): 
+                    elif reac_comp in reac_comp2: 
                         if not conv_factor_space : conv_factor_space = self.__comps[reac_comp][1]
                         reac_comp2[reac_comp].append(r)
                     else: raise NotImplementedError("Reaction '%s': reactants and products appear in more than 2 volumes."%reac.getId())
@@ -1644,7 +1647,7 @@ class Interface(object):
                         if not conv_factor_space : conv_factor_space = self.__patches[reac_comp][1]
                         reac_surf[reac_comp] = [r]
                         reac_surf_id = reac_comp
-                    elif reac_surf.has_key(reac_comp): 
+                    elif reac_comp in reac_surf: 
                         if not conv_factor_space : conv_factor_space = self.__patches[reac_comp][1]
                         reac_surf[reac_comp].append(r)
                     else: raise NotImplementedError("Reaction '%s': reactants and products appear in more than 1 surface."%reac.getId())
@@ -1857,8 +1860,8 @@ class Interface(object):
                 params = {}
                 kLaw = reac.getKineticLaw()
                 if not kLaw: 
-                    print "WARNING: Reaction '%s' has undefined kinetic law " \
-                    "and will be ignored."%reac.getId()
+                    print("WARNING: Reaction '%s' has undefined kinetic law " \
+                    "and will be ignored."%reac.getId())
                     continue
                 parameters = kLaw.getListOfParameters()
                 
@@ -1903,8 +1906,8 @@ class Interface(object):
                             unitdef = self.__model.getUnitDefinition(p_units) 
                             if not (unitdef):
                                 if strict: 
-                                    print "WARNING: Local parameter '%s' has unknown unit definition " \
-                                    "and model units will be assumed."%p_id
+                                    print("WARNING: Local parameter '%s' has unknown unit definition " \
+                                    "and model units will be assumed."%p_id)
                                     break
                                 else:
                                     # This seems to happen with dimensionless units now
@@ -1985,22 +1988,22 @@ class Interface(object):
                                     badunit = True
                                 # Breaking here means the local parameter is not a reaction parameter and will not be added to params
                                 if(badunit): 
-                                    if strict: print "WARNING: Local parameter '%s' does not have correct reaction " \
-                                    "parameter units and will cause error if in rate expression."%p_id
+                                    if strict: print("WARNING: Local parameter '%s' does not have correct reaction " \
+                                    "parameter units and will cause error if in rate expression."%p_id)
                                     bad_params.append([p_id, order, p_value, p_factor])    
                                     break
                             # Set first order if so
                             if (gotSecond and order == -1): order = 1    
-                            # Some sanity checks: break if true and don't add param to params (print warning??)
+                            # Some sanity checks: break if true and don't add param to params (print(warning??))
                             if (badunit or order < 0 or gotSecond == False or p_value < 0): 
-                                if strict: print "WARNING: Local parameter '%s' does not have correct reaction " \
-                                "parameter units and will cause error if in rate expression."%p_id
+                                if strict: print("WARNING: Local parameter '%s' does not have correct reaction " \
+                                "parameter units and will cause error if in rate expression."%p_id)
                                 bad_params.append([p_id, order, p_value, p_factor])
                                 break
                             if order != 1: 
                                 if not (gotLitre or gotMetre): 
-                                    if strict: print "WARNING: Local parameter '%s' does not have correct reaction " \
-                                    "parameter units and will cause error if in rate expression."%p_id
+                                    if strict: print("WARNING: Local parameter '%s' does not have correct reaction " \
+                                    "parameter units and will cause error if in rate expression."%p_id)
                                     bad_params.append([p_id, order, p_value, p_factor])                            
                                     break
                             # We may still have say (for second order reaction): m^3/s but substance units are molar. Need to convert in this case:
@@ -2451,18 +2454,18 @@ class Interface(object):
                 srhsList_f = []
                 
                 for rct_f in reacts_f:
-                    if (reac_comp1.values() and rct_f in reac_comp1.values()[0]): ilhsList_f.append(self.__mdl.getSpec(rct_f))
-                    elif (reac_comp2.values() and rct_f in reac_comp2.values()[0]): olhsList_f.append(self.__mdl.getSpec(rct_f))
-                    elif (reac_surf.values() and rct_f in reac_surf.values()[0]): slhsList_f.append(self.__mdl.getSpec(rct_f))
+                    if (reac_comp1.values() and rct_f in list(reac_comp1.values())[0]): ilhsList_f.append(self.__mdl.getSpec(rct_f))
+                    elif (reac_comp2.values() and rct_f in list(reac_comp2.values())[0]): olhsList_f.append(self.__mdl.getSpec(rct_f))
+                    elif (reac_surf.values() and rct_f in list(reac_surf.values())[0]): slhsList_f.append(self.__mdl.getSpec(rct_f))
                     else: assert(False)
                 for pro_f in prods_f:
-                    if (reac_comp1.values() and pro_f in reac_comp1.values()[0]): irhsList_f.append(self.__mdl.getSpec(pro_f))
-                    elif (reac_comp2.values() and pro_f in reac_comp2.values()[0]): orhsList_f.append(self.__mdl.getSpec(pro_f))
-                    elif (reac_surf.values() and pro_f in reac_surf.values()[0]): srhsList_f.append(self.__mdl.getSpec(pro_f))
+                    if (reac_comp1.values() and pro_f in list(reac_comp1.values())[0]): irhsList_f.append(self.__mdl.getSpec(pro_f))
+                    elif (reac_comp2.values() and pro_f in list(reac_comp2.values())[0]): orhsList_f.append(self.__mdl.getSpec(pro_f))
+                    elif (reac_surf.values() and pro_f in list(reac_surf.values())[0]): srhsList_f.append(self.__mdl.getSpec(pro_f))
                     else: assert(False)
                 
                 if  reacts_f == prods_f: 
-                    print "WARNING: Reaction '%s' will do nothing and will be ignored (does it involve all boundary species?)."%(reac.getId()) 
+                    print("WARNING: Reaction '%s' will do nothing and will be ignored (does it involve all boundary species?)."%(reac.getId()))
                     continue
                 
                 if (reversible):
@@ -2475,14 +2478,14 @@ class Interface(object):
                     srhsList_b = []
 
                     for rct_b in reacts_b:
-                        if (reac_comp1.values() and rct_b in reac_comp1.values()[0]): ilhsList_b.append(self.__mdl.getSpec(rct_b))
-                        elif (reac_comp2.values() and rct_b in reac_comp2.values()[0]): olhsList_b.append(self.__mdl.getSpec(rct_b))
-                        elif (reac_surf.values() and rct_b in reac_surf.values()[0]): slhsList_b.append(self.__mdl.getSpec(rct_b))
+                        if (reac_comp1.values() and rct_b in list(reac_comp1.values())[0]): ilhsList_b.append(self.__mdl.getSpec(rct_b))
+                        elif (reac_comp2.values() and rct_b in list(reac_comp2.values)()[0]): olhsList_b.append(self.__mdl.getSpec(rct_b))
+                        elif (reac_surf.values() and rct_b in list(reac_surf.values())[0]): slhsList_b.append(self.__mdl.getSpec(rct_b))
                         else: assert(False)
                     for pro_b in prods_b:
-                        if (reac_comp1.values() and pro_b in reac_comp1.values()[0]): irhsList_b.append(self.__mdl.getSpec(pro_b))
-                        elif (reac_comp2.values() and pro_b in reac_comp2.values()[0]): orhsList_b.append(self.__mdl.getSpec(pro_b))
-                        elif (reac_surf.values() and pro_b in reac_surf.values()[0]): srhsList_b.append(self.__mdl.getSpec(pro_b))
+                        if (reac_comp1.values() and pro_b in list(reac_comp1.values())[0]): irhsList_b.append(self.__mdl.getSpec(pro_b))
+                        elif (reac_comp2.values() and pro_b in list(reac_comp2.values())[0]): orhsList_b.append(self.__mdl.getSpec(pro_b))
+                        elif (reac_surf.values() and pro_b in list(reac_surf.values())[0]): srhsList_b.append(self.__mdl.getSpec(pro_b))
                         else: assert(False)
                 
                 r_f.setReacts(reacts_f)
@@ -2515,8 +2518,8 @@ class Interface(object):
                 params = {}
                 kLaw = reac.getKineticLaw()
                 if not kLaw: 
-                    print "WARNING: Reaction '%s' has undefined kinetic law " \
-                    "and will be ignored."%reac.getId()
+                    print("WARNING: Reaction '%s' has undefined kinetic law " \
+                    "and will be ignored."%reac.getId())
                     continue
                 parameters = kLaw.getListOfParameters()
                 
@@ -2561,8 +2564,8 @@ class Interface(object):
                             unitdef = self.__model.getUnitDefinition(p_units) 
                             if not (unitdef):
                                 if strict: 
-                                    print "WARNING: Local parameter '%s' has unknown unit definition " \
-                                "and will cause error if used in rate expression."%p_id
+                                    print("WARNING: Local parameter '%s' has unknown unit definition " \
+                                "and will cause error if used in rate expression."%p_id)
                                     break
                                 else:
                                     # This seems to happen with dimensionless units now
@@ -2641,22 +2644,22 @@ class Interface(object):
                                         badunit = True
                                     # Breaking here means the local parameter is not a reaction parameter and will not be added to params
                                     if(badunit): 
-                                        if strict: print "WARNING: Local parameter '%s' does not have correct reaction " \
-                                        "parameter units and will cause error if in rate expression."%p_id
+                                        if strict: print("WARNING: Local parameter '%s' does not have correct reaction " \
+                                        "parameter units and will cause error if in rate expression."%p_id)
                                         bad_params.append([p_id, order, p_value, p_factor])    
                                         break
                                 # Set first order if so
                                 if (gotSecond and order == -1): order = 1    
-                                # Some sanity checks: break if true and don't add param to params (print warning??)
+                                # Some sanity checks: break if true and don't add param to params (print(warning??))
                                 if (badunit or order < 0 or gotSecond == False or p_value < 0): 
-                                    if strict: print "WARNING: Local parameter '%s' does not have correct reaction " \
-                                    "parameter units and will cause error if in rate expression."%p_id
+                                    if strict: print("WARNING: Local parameter '%s' does not have correct reaction " \
+                                    "parameter units and will cause error if in rate expression."%p_id)
                                     bad_params.append([p_id, order, p_value, p_factor])
                                     break
                                 if order != 1: 
                                     if not (gotLitre or gotMetre): 
-                                        if strict: print "WARNING: Local parameter '%s' does not have correct reaction " \
-                                        "parameter units and will cause error if in rate expression."%p_id
+                                        if strict: print("WARNING: Local parameter '%s' does not have correct reaction " \
+                                        "parameter units and will cause error if in rate expression."%p_id)
                                         bad_params.append([p_id, order, p_value, p_factor])                            
                                         break
                                 
@@ -2724,22 +2727,22 @@ class Interface(object):
                                         badunit = True
                                     # Breaking here means the local parameter is not a reaction parameter and will not be added to params
                                     if(badunit): 
-                                        if strict: print "WARNING: Local parameter '%s' does not have correct reaction " \
-                                        "parameter units and will cause error if in rate expression."%p_id
+                                        if strict: print("WARNING: Local parameter '%s' does not have correct reaction " \
+                                        "parameter units and will cause error if in rate expression."%p_id)
                                         bad_params.append([p_id, order, p_value, p_factor])    
                                         break
                                 # Set first order if so
                                 if (gotSecond and order == -1): order = 1    
-                                # Some sanity checks: break if true and don't add param to params (print warning??)
+                                # Some sanity checks: break if true and don't add param to params (print(warning??))
                                 if (badunit or order < 0 or gotSecond == False or p_value < 0): 
-                                    if strict: print "WARNING: Local parameter '%s' does not have correct reaction " \
-                                    "parameter units and will cause error if in rate expression."%p_id
+                                    if strict: print("WARNING: Local parameter '%s' does not have correct reaction " \
+                                    "parameter units and will cause error if in rate expression."%p_id)
                                     bad_params.append([p_id, order, p_value, p_factor])
                                     break
                                 if order != 1: 
                                     if not gotMetre: 
-                                        if strict: print "WARNING: Local parameter '%s' does not have correct reaction " \
-                                        "parameter units and will cause error if in rate expression."%p_id
+                                        if strict: print("WARNING: Local parameter '%s' does not have correct reaction " \
+                                        "parameter units and will cause error if in rate expression."%p_id)
                                         bad_params.append([p_id, order, p_value, p_factor])                            
                                         break
                                 
@@ -3189,7 +3192,7 @@ class Interface(object):
                 # No units, assume default, whatever they are 
                 globPar[p_id] = [p_value, 1.0]
                 globPar_order[p_id] = 'unknown'
-                print "WARNING: Parameter '%s' units are undefined and will be assumed to be model units."%p_id
+                print("WARNING: Parameter '%s' units are undefined and will be assumed to be model units."%p_id)
         
         return globPar, globPar_order
     
@@ -3347,12 +3350,12 @@ class Interface(object):
                         if (self.__species_amount_flag[specie] == True and self.__species_subst_units[specie] == False):
                             # We have an intended injected amount, but stored as conc, and volume has changed
                             # Don't do anything if already changed by initial assignment
-                            if (update_specs.has_key(specie)): continue
+                            if specie in update_specs: continue
                             update_specs[specie]=self.__species[specie][0]*(self.__comps[var][0]/value)
                         if (self.__species_amount_flag[specie] == False and self.__species_subst_units[specie] == True):
                             # We have an intended injected conc, but stored as amount, and volume has changed
                             # Don't do anything if already changed by initial assignment
-                            if (update_specs.has_key(specie)): continue
+                            if (specie in update_specs): continue
                             update_specs[specie]=self.__species[specie][0]*(value/self.__comps[var][0])
             elif var in self.__patches:
                 value*=self.__patches[var][1]
@@ -3362,12 +3365,12 @@ class Interface(object):
                         if (self.__species_amount_flag[specie] == True and self.__species_subst_units[specie] == False):
                             # We have an intended injected amount, but stored as conc, and area has changed
                             # Don't do anything if already changed by initial assignment
-                            if (update_specs.has_key(specie)): continue
+                            if specie in update_specs: continue
                             update_specs[specie]=self.__species[specie][0]*(self.__patches[var][0]/value)
                         if (self.__species_amount_flag[specie] == False and self.__species_subst_units[specie] == True):
                             # We have an intended injected conc, but stored as amount, and volume has changed
                             # Don't do anything if already changed by initial assignment
-                            if (update_specs.has_key(specie)): continue
+                            if specie in update_specs: continue
                             update_specs[specie]=self.__species[specie][0]*(value/self.__patches[var][0]) 
             elif (var in self.__species):
                 # Convert to SBML units
@@ -3958,7 +3961,7 @@ class Interface(object):
                 if (self.__evnts_flip[ev_trig] == False):
                     self.__evnts_flip[ev_trig] = True
                     # Store the time the event 'kicked-in', only if it's not already in the queue
-                    if not (self.__evnts_fire.has_key(ev_trig)): 
+                    if ev_trig not in self.__evnts_fire: 
                         self.__evnts_fire[ev_trig] = self.__time['time'][0]
                         self.__evnts_dl[ev_trig][1] = MLfunc(self.__evnts_dl[ev_trig][0], variables)*self.__time_units
                         # It might be necessary to evaluate the values at trigger time

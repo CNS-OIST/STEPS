@@ -21,6 +21,7 @@
 #
 #################################################################################   
 ###
+from __future__ import print_function
 
 from numpy import *
 import math
@@ -140,7 +141,7 @@ def partitionTris(mesh, tet_partitions, tri_list):
     for tri in tri_list:
         neigh_tets = mesh.getTriTetNeighb(tri)
         if neigh_tets[0] == -1 and neigh_tets[0] == -1:
-            print "Triangle ", tri, " has no attatched tetrahedron, which is unlikely. Please check your mesh.\n"
+            print("Triangle ", tri, " has no attatched tetrahedron, which is unlikely. Please check your mesh.\n")
             continue
         if neigh_tets[0] == -1:
             tri_partitions[tri] = tet_partitions[neigh_tets[1]]
@@ -151,7 +152,7 @@ def partitionTris(mesh, tet_partitions, tri_list):
         if tet_partitions[neigh_tets[0]] == tet_partitions[neigh_tets[1]]:
             tri_partitions[tri] = tet_partitions[neigh_tets[0]]
             continue
-        print "Neighbor tetrahedrons of triangle ", tri, " are assigned to different hosts, try to rearrange hosts for them.\n"
+        print("Neighbor tetrahedrons of triangle ", tri, " are assigned to different hosts, try to rearrange hosts for them.\n")
         tri_partitions[tri] = tet_partitions[neigh_tets[0]]
         tet_partitions[neigh_tets[1]] = tet_partitions[neigh_tets[0]]
 
@@ -216,7 +217,7 @@ def validatePartition(mesh, tet_partitions, tri_partitions = {}):
     Return:
         None
     """
-    print "Validation starts."
+    print("Validation starts.")
     tet_part_table = {}
     for tet in range(len(tet_partitions)):
         if tet_partitions[tet] not in tet_part_table.keys():
@@ -248,7 +249,7 @@ def validatePartition(mesh, tet_partitions, tri_partitions = {}):
             if neigh_tet == -1: continue
             if tet_partitions[neigh_tet] != tri_partitions[tri]:
                 raise Exception("Patch triangle %i and its compartment tet are assigned to different processes." % (tri))
-    print "Validation completed."
+    print("Validation completed.")
 
 ################################################################################
 
@@ -257,7 +258,7 @@ def validatePartition(mesh, tet_partitions, tri_partitions = {}):
 ################################################################################
 
 def printHostDistStat(tet_partitions = [], tri_partitions = {}, wmvol_partitions = []):
-    print "Warnning: This function has been renamed to printPartitionStat(tet_partitions, tri_partitions, wmvol_partitions)."
+    print("Warnning: This function has been renamed to printPartitionStat(tet_partitions, tri_partitions, wmvol_partitions).")
 
     printPartitionStat(tet_partitions, tri_partitions, wmvol_partitions)
 
@@ -287,15 +288,15 @@ def printPartitionStat(tet_partitions = [], tri_partitions = {}, wmvol_partition
             tet_stats.extend([0] * (host - len(tet_stats) + 1))
         tet_stats[host] += 1
 
-    print "Total number of assigned tets: ", len(tet_partitions)
+    print("Total number of assigned tets: ", len(tet_partitions))
     if tet_stats != []:
-        print "Distribution: ",
+        print("Distribution: ",)
         sum = 0
         for h in tet_stats:
-            print h,
+            print(h,)
             sum += h
-        print ""
-        print "Sum: ", sum
+        print("")
+        print("Sum: ", sum)
 
     tri_stats = []
     for tri_id in tri_partitions.keys():
@@ -304,15 +305,15 @@ def printPartitionStat(tet_partitions = [], tri_partitions = {}, wmvol_partition
             tri_stats.extend([0] * (host - len(tri_stats) + 1))
         tri_stats[host] += 1
 
-    print "Total number of assigned tris: ", len(tri_partitions)
+    print("Total number of assigned tris: ", len(tri_partitions))
     if tri_stats != []:
-        print "Distribution: ",
+        print("Distribution: ",)
         sum = 0
         for h in tri_stats:
             sum += h
-            print h,
-        print ""
-        print "Sum: ", sum
+            print(h,)
+        print("")
+        print("Sum: ", sum)
 
     wm_stats = []
     for host in wmvol_partitions:
@@ -320,15 +321,15 @@ def printPartitionStat(tet_partitions = [], tri_partitions = {}, wmvol_partition
             wmvol_partitions.extend([0] * (host - len(wmvol_partitions) + 1))
         wmvol_partitions[host] += 1
 
-    print "Total number of assigned well-mixed volumes: ", len(wmvol_partitions)
+    print("Total number of assigned well-mixed volumes: ", len(wmvol_partitions))
     if wm_stats != []:
-        print "WMVol Distribution: ",
+        print("WMVol Distribution: ",)
         sum = 0
         for h in wm_stats:
             sum += h
-            print h,
-        print ""
-        print "Sum: ", sum
+            print(h,)
+        print("")
+        print("Sum: ", sum)
 
     if mesh is not None:
         partition_neighbors = {}
@@ -346,11 +347,11 @@ def printPartitionStat(tet_partitions = [], tri_partitions = {}, wmvol_partition
         host_degrees = []
         for neighbs in partition_neighbors.values():
             host_degrees.append(len(neighbs))
-        print "Number of partitions: ", len(tet_stats)
-        print "Min Tet Partition Degree: ", min(host_degrees)
-        print "Max Tet Partition Degree: ", max(host_degrees)
-        print "Mean Tet Partition Degree: ", mean(host_degrees)
-        print ""
+        print("Number of partitions: ", len(tet_stats))
+        print("Min Tet Partition Degree: ", min(host_degrees))
+        print("Max Tet Partition Degree: ", max(host_degrees))
+        print("Mean Tet Partition Degree: ", mean(host_degrees))
+        print("")
         return tet_stats, tri_stats, wm_stats, len(tet_stats), min(host_degrees), max(host_degrees), mean(host_degrees)
 
 
@@ -402,18 +403,18 @@ def isPointInCylinder(cyl_p0, cyl_p1, test_pnt, scale):
     
     dot = pdx * dx + pdy * dy + pdz * dz
     
-    #print "dot: ", dot, " lengthsq: ", cyl_lengthsq
+    #print("dot: ", dot, " lengthsq: ", cyl_lengthsq)
     if dot < 0.0 or dot > cyl_lengthsq:
         return -1
     else:
         dsq = (pdx * pdx + pdy * pdy + pdz * pdz) - dot * dot / cyl_lengthsq
         radiussq = (cyl_p0[3] / 2.0 * scale) ** 2
         
-        #print "dsq: ", dsq, " radiussq: ", radiussq
+        #print("dsq: ", dsq, " radiussq: ", radiussq)
         if dsq > radiussq:
             return -1
         else:
-            #print "dsq: ", dsq, " dsq_p0: ", dsq_p0, " dsq_p1: ", dsq_p1
+            #print("dsq: ", dsq, " dsq_p0: ", dsq_p0, " dsq_p1: ", dsq_p1)
             return min(dsq, dsq_p0, dsq_p1)
             #return dsq
 

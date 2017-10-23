@@ -16,8 +16,8 @@ cdef extern from "steps/geom/tmpatch.hpp" namespace "steps::tetmesh":
 
     ###### Cybinding for TmPatch ######
     cdef cppclass TmPatch:
-        TmPatch(std.string, Tetmesh*, std.vector[unsigned int], steps_wm.Comp*, steps_wm.Comp*)
-        std.vector[bool] isTriInside(std.vector[unsigned int])
+        TmPatch(std.string, Tetmesh*, std.vector[unsigned int], steps_wm.Comp*, steps_wm.Comp*) except +
+        std.vector[bool] isTriInside(std.vector[unsigned int]) except +
         std.vector[unsigned int] getAllTriIndices()
         std.vector[double] getBoundMin()
         std.vector[double] getBoundMax()
@@ -35,10 +35,10 @@ cdef extern from "steps/geom/memb.hpp" namespace "steps::tetmesh":
 
     ###### Cybinding for Memb ######
     cdef cppclass Memb:
-        Memb(std.string, Tetmesh*, std.vector[TmPatch*], bool, unsigned int, double, std.string)
+        Memb(std.string, Tetmesh*, std.vector[TmPatch*], bool, unsigned int, double, std.string) except +
         Tetmesh* getContainer()
         std.string getID()
-        std.vector[bool] isTriInside(std.vector[unsigned int])
+        std.vector[bool] isTriInside(std.vector[unsigned int]) except +
         std.vector[unsigned int] getAllTriIndices()
         unsigned int countTris()
         std.vector[unsigned int] getAllVolTetIndices()
@@ -48,6 +48,7 @@ cdef extern from "steps/geom/memb.hpp" namespace "steps::tetmesh":
         std.vector[unsigned int] getAllVertIndices()
         unsigned int countVerts()
         bool open()
+        
 
 # ======================================================================================================================
 cdef extern from "steps/geom/tmcomp.hpp" namespace "steps::tetmesh":
@@ -55,11 +56,11 @@ cdef extern from "steps/geom/tmcomp.hpp" namespace "steps::tetmesh":
 
     ###### Cybinding for TmComp ######
     cdef cppclass TmComp:
-        TmComp(std.string, Tetmesh*, std.vector[unsigned int])
-        void setVol(double)
+        TmComp(std.string, Tetmesh*, std.vector[unsigned int]) except +
+        void setVol(double vol) except +
         std.vector[unsigned int] getAllTetIndices()
         unsigned int countTets()
-        std.vector[bool] isTetInside(std.vector[unsigned int])
+        std.vector[bool] isTetInside(std.vector[unsigned int]) except +
         std.vector[double] getBoundMin()
         std.vector[double] getBoundMax()
 
@@ -76,11 +77,11 @@ cdef extern from "steps/geom/diffboundary.hpp" namespace "steps::tetmesh":
 
     ###### Cybinding for DiffBoundary ######
     cdef cppclass DiffBoundary:
-        DiffBoundary(std.string, Tetmesh*, std.vector[unsigned int])
+        DiffBoundary(std.string, Tetmesh*, std.vector[unsigned int]) except +
         std.string getID()
-        void setID(std.string)
+        void setID(std.string) except +
         Tetmesh* getContainer()
-        std.vector[bool] isTriInside(std.vector[unsigned int])
+        std.vector[bool] isTriInside(std.vector[unsigned int]) except +
         std.vector[unsigned int] getAllTriIndices()
         std.vector[steps_wm.Comp*] getComps()
 
@@ -90,11 +91,11 @@ cdef extern from "steps/geom/sdiffboundary.hpp" namespace "steps::tetmesh":
 
     ###### Cybinding for SDiffBoundary ######
     cdef cppclass SDiffBoundary:
-        SDiffBoundary(std.string, Tetmesh*, std.vector[unsigned int], std.vector[TmPatch*])
+        SDiffBoundary(std.string, Tetmesh*, std.vector[unsigned int], std.vector[TmPatch*]) except +
         std.string getID()
-        void setID(std.string)
+        void setID(std.string) except +
         Tetmesh* getContainer()
-        std.vector[bool] isBarInside(std.vector[unsigned int])
+        std.vector[bool] isBarInside(std.vector[unsigned int]) except +
         std.vector[unsigned int] getAllBarIndices()
         std.vector[steps_wm.Patch*] getPatches()
 
@@ -116,90 +117,98 @@ cdef extern from "steps/geom/tetmesh.hpp" namespace "steps::tetmesh":
 
     ###### Cybinding for Tetmesh ######
     cdef cppclass Tetmesh:
-        Tetmesh(std.vector[double], std.vector[unsigned int], std.vector[unsigned int])
-        Tetmesh(std.vector[double], std.vector[unsigned int], std.vector[double], std.vector[double], std.vector[int], std.vector[unsigned int], std.vector[double], std.vector[double], std.vector[unsigned int], std.vector[int])
-        std.vector[double] getVertex(unsigned int)
-        unsigned int countVertices()
-        std.vector[unsigned int] getBar(unsigned int)
+        # All but a few functions can throw excepts- implement for all but the countXXXs functions	
+        Tetmesh(std.vector[double], std.vector[unsigned int], std.vector[unsigned int]) except +
+        Tetmesh(std.vector[double], std.vector[unsigned int], std.vector[double], std.vector[double], std.vector[int], std.vector[unsigned int], std.vector[double], std.vector[double], std.vector[unsigned int], std.vector[int]) except +
+        std.vector[double] getVertex(unsigned int) except +
+        unsigned int countVertices() 
+        std.vector[unsigned int] getBar(unsigned int) except +
         unsigned int countBars()
-        std.vector[unsigned int] getTri(unsigned int)
+        std.vector[unsigned int] getTri(unsigned int) except +
         unsigned int countTris()
-        double getTriArea(unsigned int)
-        std.vector[unsigned int] getTriBars(unsigned int)
-        std.vector[double] getTriBarycenter(unsigned int)
-        std.vector[double] getTriNorm(unsigned int)
-        TmPatch* getTriPatch(unsigned int)
-        void setTriPatch(unsigned int, TmPatch*)
-        void setTriDiffBoundary(unsigned int, DiffBoundary*)
-        DiffBoundary* getTriDiffBoundary(unsigned int)
-        std.vector[int] getTriTetNeighb(unsigned int)
-        std.vector[int] getTriTriNeighb(unsigned int, TmPatch*)
-        std.set[unsigned int] getTriTriNeighbs(unsigned int)
-        std.vector[unsigned int] getTet(unsigned int)
-        unsigned int countTets()
-        double getTetVol(unsigned int)
-        double getTetQualityRER(unsigned int)
-        std.vector[double] getTetBarycenter(unsigned int)
-        TmComp* getTetComp(unsigned int)
-        void setTetComp(unsigned int, TmComp*)
-        std.vector[unsigned int] getTetTriNeighb(unsigned int)
-        std.vector[int] getTetTetNeighb(unsigned int)
-        int findTetByPoint(std.vector[double])
-        std.vector[double] getBoundMin()
-        std.vector[double] getBoundMax()
-        double getMeshVolume()
-        std.vector[int] getSurfTris()
-        std.vector[double] getBatchTetBarycentres(std.vector[unsigned int])
-        void getBatchTetBarycentresNP(unsigned int*, int, double*, int)
-        std.vector[double] getBatchTriBarycentres(std.vector[unsigned int])
-        void getBatchTriBarycentresNP(unsigned int*, int, double*, int)
-        std.vector[double] getBatchVertices(std.vector[unsigned int])
-        void getBatchVerticesNP(unsigned int*, int, double*, int)
-        std.vector[unsigned int] getBatchTris(std.vector[unsigned int])
-        void getBatchTrisNP(unsigned int*, int, unsigned int*, int)
-        std.vector[unsigned int] getBatchTets(std.vector[unsigned int])
-        void getBatchTetsNP(unsigned int*, int, unsigned int*, int)
-        unsigned int getTriVerticesSetSizeNP(unsigned int*, int)
-        unsigned int getTetVerticesSetSizeNP(unsigned int*, int)
-        void getTriVerticesMappingSetNP(unsigned int*, int, unsigned int*, int, unsigned int*, int)
-        void getTetVerticesMappingSetNP(unsigned int*, int, unsigned int*, int, unsigned int*, int)
-        void genPointsInTet(unsigned int, unsigned int, double*, int)
-        void genPointsInTri(unsigned int, unsigned int, double*, int)
-        void genTetVisualPointsNP(unsigned int*, int, unsigned int*, int, double*, int)
-        void genTriVisualPointsNP(unsigned int*, int, unsigned int*, int, double*, int)
-        void getBatchTetVolsNP(unsigned int*, int, double*, int)
-        void getBatchTriAreasNP(unsigned int*, int, double*, int)
-        void reduceBatchTetPointCountsNP(unsigned int*, int, unsigned int*, int, double)
-        void reduceBatchTriPointCountsNP(unsigned int*, int, unsigned int*, int, double)
-        void addROI(std.string, ElementType, std.set[unsigned int])
-        void removeROI(std.string)
-        void replaceROI(std.string, ElementType, std.set[unsigned int])
-        ElementType getROIType(std.string)
-        std.vector[unsigned int] getROIData(std.string)
-        unsigned int getROIDataSize(std.string)
-        unsigned int getNROIs()
-        ROISet getROI(std.string)
-        std.vector[std.string] getAllROINames()
-        bool checkROI(std.string, ElementType, unsigned int, bool)
-        std.vector[double] getROITetBarycentres(std.string)
-        void getROITetBarycentresNP(std.string, double*, int)
-        std.vector[double] getROITriBarycentres(std.string)
-        void getROITriBarycentresNP(std.string, double*, int)
-        std.vector[double] getROIVertices(std.string)
-        void getROIVerticesNP(std.string, double*, int)
-        std.vector[unsigned int] getROITris(std.string)
-        void getROITrisNP(std.string, unsigned int*, int)
-        std.vector[unsigned int] getROITets(std.string)
-        void getROITetsNP(std.string, unsigned int*, int)
-        unsigned int getROITriVerticesSetSizeNP(std.string)
-        unsigned int getROITetVerticesSetSizeNP(std.string)
-        void getROITriVerticesMappingSetNP(std.string, unsigned int*, int, unsigned int*, int)
-        void getROITetVerticesMappingSetNP(std.string, unsigned int*, int, unsigned int*, int)
-        void genROITetVisualPointsNP(std.string, unsigned int*, int, double*, int)
-        void genROITriVisualPointsNP(std.string, unsigned int*, int, double*, int)
-        void getROITetVolsNP(std.string, double*, int)
-        void getROITriAreasNP(std.string, double*, int)
-        double getROIVol(std.string)
-        double getROIArea(std.string)
-        void reduceROITetPointCountsNP(std.string, unsigned int*, int, double)
-        void reduceROITriPointCountsNP(std.string, unsigned int*, int, double)
+        double getTriArea(unsigned int) except +
+        std.vector[unsigned int] getTriBars(unsigned int) except +
+        std.vector[double] getTriBarycenter(unsigned int) except +
+        std.vector[double] getTriNorm(unsigned int) except +
+        TmPatch* getTriPatch(unsigned int) except +
+        void setTriPatch(unsigned int, TmPatch*) except +
+        void setTriDiffBoundary(unsigned int, DiffBoundary*) except +
+        DiffBoundary* getTriDiffBoundary(unsigned int) except +
+        SDiffBoundary * getBarSDiffBoundary(unsigned int bidx) except +
+        std.vector[int] getTriTetNeighb(unsigned int) except +
+        std.vector[int] getTriTriNeighb(unsigned int, TmPatch*) except +
+        std.set[unsigned int] getTriTriNeighbs(unsigned int) except +
+        std.vector[unsigned int] getTet(unsigned int) except +
+        unsigned int countTets() 
+        double getTetVol(unsigned int) except +
+        double getTetQualityRER(unsigned int) except +
+        std.vector[double] getTetBarycenter(unsigned int) except +
+        TmComp* getTetComp(unsigned int) except +
+        void setTetComp(unsigned int, TmComp*) except +
+        std.vector[unsigned int] getTetTriNeighb(unsigned int) except +
+        std.vector[int] getTetTetNeighb(unsigned int) except +
+        int findTetByPoint(std.vector[double]) except +
+        std.vector[double] getBoundMin() except +
+        std.vector[double] getBoundMax() except +
+        double getMeshVolume() except +
+        std.vector[int] getSurfTris() except +
+        std.vector[double] getBatchTetBarycentres(std.vector[unsigned int]) except +
+        void getBatchTetBarycentresNP(unsigned int*, int, double*, int) except +
+        std.vector[double] getBatchTriBarycentres(std.vector[unsigned int]) except +
+        void getBatchTriBarycentresNP(unsigned int*, int, double*, int) except +
+        std.vector[double] getBatchVertices(std.vector[unsigned int]) except +
+        void getBatchVerticesNP(unsigned int*, int, double*, int) except +
+        std.vector[unsigned int] getBatchTris(std.vector[unsigned int]) except +
+        void getBatchTrisNP(unsigned int*, int, unsigned int*, int) except +
+        std.vector[unsigned int] getBatchTets(std.vector[unsigned int]) except +
+        void getBatchTetsNP(unsigned int*, int, unsigned int*, int) except +
+        unsigned int getTriVerticesSetSizeNP(unsigned int*, int) except +
+        unsigned int getTetVerticesSetSizeNP(unsigned int*, int) except +
+        void getTriVerticesMappingSetNP(unsigned int*, int, unsigned int*, int, unsigned int*, int) except +
+        void getTetVerticesMappingSetNP(unsigned int*, int, unsigned int*, int, unsigned int*, int) except +
+        void genPointsInTet(unsigned int, unsigned int, double*, int) except +
+        void genPointsInTri(unsigned int, unsigned int, double*, int) except +
+        void genTetVisualPointsNP(unsigned int*, int, unsigned int*, int, double*, int) except +
+        void genTriVisualPointsNP(unsigned int*, int, unsigned int*, int, double*, int) except +
+        void getBatchTetVolsNP(unsigned int*, int, double*, int) except +
+        void getBatchTriAreasNP(unsigned int*, int, double*, int) except +
+        void reduceBatchTetPointCountsNP(unsigned int*, int, unsigned int*, int, double) except +
+        void reduceBatchTriPointCountsNP(unsigned int*, int, unsigned int*, int, double) except +
+        void addROI(std.string, ElementType, std.set[unsigned int]) except +
+        void removeROI(std.string) except +
+        void replaceROI(std.string, ElementType, std.set[unsigned int]) except +
+        ElementType getROIType(std.string) except +
+        std.vector[unsigned int] getROIData(std.string) except +
+        unsigned int getROIDataSize(std.string) except +
+        unsigned int getNROIs() except +
+        ROISet getROI(std.string) except +
+        std.vector[std.string] getAllROINames() except +
+        bool checkROI(std.string, ElementType, unsigned int, bool) except +
+        std.vector[double] getROITetBarycentres(std.string) except +
+        void getROITetBarycentresNP(std.string, double*, int) except +
+        std.vector[double] getROITriBarycentres(std.string) except +
+        void getROITriBarycentresNP(std.string, double*, int) except +
+        std.vector[double] getROIVertices(std.string) except +
+        void getROIVerticesNP(std.string, double*, int) except +
+        std.vector[unsigned int] getROITris(std.string) except +
+        void getROITrisNP(std.string, unsigned int*, int) except +
+        std.vector[unsigned int] getROITets(std.string) except +
+        void getROITetsNP(std.string, unsigned int*, int) except +
+        unsigned int getROITriVerticesSetSizeNP(std.string) except +
+        unsigned int getROITetVerticesSetSizeNP(std.string) except +
+        void getROITriVerticesMappingSetNP(std.string, unsigned int*, int, unsigned int*, int) except +
+        void getROITetVerticesMappingSetNP(std.string, unsigned int*, int, unsigned int*, int) except +
+        void genROITetVisualPointsNP(std.string, unsigned int*, int, double*, int) except +
+        void genROITriVisualPointsNP(std.string, unsigned int*, int, double*, int) except +
+        void getROITetVolsNP(std.string, double*, int) except +
+        void getROITriAreasNP(std.string, double*, int) except +
+        double getROIVol(std.string) except +
+        double getROIArea(std.string) except +
+        void reduceROITetPointCountsNP(std.string, unsigned int*, int, double) except +
+        void reduceROITriPointCountsNP(std.string, unsigned int*, int, double) except +
+        void setBarSDiffBoundary(unsigned int bidx, SDiffBoundary * sdiffb) except +
+        std.set[unsigned int] getBarTriNeighbs(unsigned int bidx) except +
+        void setBarTris(unsigned int bidx, int itriidx, int otriidx) except +
+
+
+        

@@ -607,188 +607,210 @@ cdef extern from "steps/solver/api.hpp" namespace "steps::solver::API":
         EF_DV_BDSYS
         EF_DV_SLUSYS
         EF_DV_PETSC
-
-# ======================================================================================================================
+        # ======================================================================================================================
 cdef extern from "steps/solver/api.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
-
+#
     cdef cppclass API:
     ###### Cybinding for API ######
+    ##### THis is now just placeholding- actually contains ALL solver functions, including
+    ### Those not in the API
         API(steps_model.Model*, steps_wm.Geom*, steps_rng.RNG*)
-        std.string getSolverName()
-        std.string getSolverDesc()
-        std.string getSolverAuthors()
-        std.string getSolverEmail()
-        void checkpoint(std.string)
-        void restore(std.string)
-        void reset()
-        void run(double)
-        void advance(double)
-        void step()
-        void setRk4DT(double)
-        void setDT(double)
-        void setEfieldDT(double)
-        void setNSteps(unsigned int)
-        void setTime(double)
-        void setTemp(double)
-        double getTime()
-        double getRk4DT()
-        double getDT()
-        double getEfieldDT()
-        double getTemp()
-        double getA0()
-        unsigned int getNSteps()
-        double getCompVol(std.string)
-        void setCompVol(std.string, double)
-        double getCompCount(std.string, std.string)
-        void setCompCount(std.string, std.string, double)
-        double getCompAmount(std.string, std.string)
-        void setCompAmount(std.string, std.string, double)
-        double getCompConc(std.string, std.string)
-        void setCompConc(std.string, std.string, double)
-        bool getCompClamped(std.string, std.string)
-        void setCompClamped(std.string, std.string, bool)
-        double getCompReacK(std.string, std.string)
-        void setCompReacK(std.string, std.string, double)
-        bool getCompReacActive(std.string, std.string)
-        void setCompReacActive(std.string, std.string, bool)
-        double getCompDiffD(std.string, std.string)
-        void setCompDiffD(std.string, std.string, double)
-        bool getCompDiffActive(std.string, std.string)
-        void setCompDiffActive(std.string, std.string, bool)
-        double getCompReacC(std.string, std.string)
-        double getCompReacH(std.string, std.string)
-        double getCompReacA(std.string, std.string)
-        unsigned int getCompReacExtent(std.string, std.string)
-        void resetCompReacExtent(std.string, std.string)
-        double getTetVol(unsigned int)
-        void setTetVol(unsigned int, double)
-        bool getTetSpecDefined(unsigned int, std.string)
-        double getTetCount(unsigned int, std.string)
-        void setTetCount(unsigned int, std.string, double)
-        double getTetAmount(unsigned int, std.string)
-        void setTetAmount(unsigned int, std.string, double)
-        double getTetConc(unsigned int, std.string)
-        void setTetConc(unsigned int, std.string, double)
-        bool getTetClamped(unsigned int, std.string)
-        void setTetClamped(unsigned int, std.string, bool)
-        double getTetReacK(unsigned int, std.string)
-        void setTetReacK(unsigned int, std.string, double)
-        bool getTetReacActive(unsigned int, std.string)
-        void setTetReacActive(unsigned int, std.string, bool)
-        double getTetDiffD(unsigned int, std.string, unsigned int)
-        void setTetDiffD(unsigned int, std.string, double, unsigned int)
-        bool getTetDiffActive(unsigned int, std.string)
-        void setTetDiffActive(unsigned int, std.string, bool)
-        double getTetReacC(unsigned int, std.string)
-        double getTetReacH(unsigned int, std.string)
-        double getTetReacA(unsigned int, std.string)
-        double getTetDiffA(unsigned int, std.string)
-        double getTetV(unsigned int)
-        void setTetV(unsigned int, double)
-        bool getTetVClamped(unsigned int)
-        void setTetVClamped(unsigned int, bool)
-        double getPatchArea(std.string)
-        void setPatchArea(std.string, double)
-        double getPatchCount(std.string, std.string)
-        void setPatchCount(std.string, std.string, double)
-        double getPatchAmount(std.string, std.string)
-        void setPatchAmount(std.string, std.string, double)
-        bool getPatchClamped(std.string, std.string)
-        void setPatchClamped(std.string, std.string, bool)
-        double getPatchSReacK(std.string, std.string)
-        void setPatchSReacK(std.string, std.string, double)
-        bool getPatchSReacActive(std.string, std.string)
-        void setPatchSReacActive(std.string, std.string, bool)
-        double getPatchSReacC(std.string, std.string)
-        double getPatchSReacH(std.string, std.string)
-        double getPatchSReacA(std.string, std.string)
-        unsigned int getPatchSReacExtent(std.string, std.string)
-        void resetPatchSReacExtent(std.string, std.string)
-        bool getPatchVDepSReacActive(std.string, std.string)
-        void setPatchVDepSReacActive(std.string, std.string, bool)
-        void setDiffBoundaryDiffusionActive(std.string, std.string, bool)
-        bool getDiffBoundaryDiffusionActive(std.string, std.string)
-        void setDiffBoundaryDcst(std.string, std.string, double, std.string)
-        void setSDiffBoundaryDiffusionActive(std.string, std.string, bool)
-        bool getSDiffBoundaryDiffusionActive(std.string, std.string)
-        void setSDiffBoundaryDcst(std.string, std.string, double, std.string)
-        double getTriArea(unsigned int)
-        void setTriArea(unsigned int, double)
-        bool getTriSpecDefined(unsigned int, std.string)
-        double getTriCount(unsigned int, std.string)
-        void setTriCount(unsigned int, std.string, double)
-        double getTriAmount(unsigned int, std.string)
-        void setTriAmount(unsigned int, std.string, double)
-        bool getTriClamped(unsigned int, std.string)
-        void setTriClamped(unsigned int, std.string, bool)
-        double getTriSReacK(unsigned int, std.string)
-        void setTriSReacK(unsigned int, std.string, double)
-        bool getTriSReacActive(unsigned int, std.string)
-        void setTriSReacActive(unsigned int, std.string, bool)
-        double getTriSReacC(unsigned int, std.string)
-        double getTriSReacH(unsigned int, std.string)
-        double getTriSReacA(unsigned int, std.string)
-        double getTriDiffD(unsigned int, std.string, unsigned int)
-        double getTriSDiffD(unsigned int, std.string, unsigned int)
-        void setTriDiffD(unsigned int, std.string, double, unsigned int)
-        void setTriSDiffD(unsigned int, std.string, double, unsigned int)
-        double getTriV(unsigned int)
-        void setTriV(unsigned int, double)
-        bool getTriVClamped(unsigned int)
-        void setTriVClamped(unsigned int, bool)
-        double getTriOhmicI(unsigned int)
-        double getTriOhmicI(unsigned int, std.string)
-        double getTriGHKI(unsigned int)
-        double getTriGHKI(unsigned int, std.string)
-        double getTriI(unsigned int)
-        void setTriIClamp(unsigned int, double)
-        bool getTriVDepSReacActive(unsigned int, std.string)
-        void setTriVDepSReacActive(unsigned int, std.string, bool)
-        void setTriCapac(unsigned int, double)
-        double getVertV(unsigned int)
-        void setVertV(unsigned int, double)
-        bool getVertVClamped(unsigned int)
-        void setVertVClamped(unsigned int, bool)
-        void setVertIClamp(unsigned int, double)
-        void setMembPotential(std.string, double)
-        void setMembCapac(std.string, double)
-        void setMembVolRes(std.string, double)
-        void setMembRes(std.string, double, double)
-        unsigned int getNComps()
-        unsigned int getNPatches()
-        std.string getCompName(unsigned int)
-        std.string getPatchName(unsigned int)
-        unsigned int getNCompSpecs(unsigned int)
-        unsigned int getNPatchSpecs(unsigned int)
-        std.string getCompSpecName(unsigned int, unsigned int)
-        std.string getPatchSpecName(unsigned int, unsigned int)
-        std.vector[double] getBatchTetCounts(std.vector[unsigned int], std.string)
-        std.vector[double] getBatchTriCounts(std.vector[unsigned int], std.string)
-        void getBatchTetCountsNP(unsigned int*, int, std.string, double*, int)
-        void getBatchTriCountsNP(unsigned int*, int, std.string, double*, int)
-        std.vector[double] getROITetCounts(std.string, std.string)
-        std.vector[double] getROITriCounts(std.string, std.string)
-        void getROITetCountsNP(std.string, std.string, double*, int)
-        void getROITriCountsNP(std.string, std.string, double*, int)
-        double getROIVol(std.string)
-        double getROIArea(std.string)
-        double getROICount(std.string, std.string)
-        void setROICount(std.string, std.string, double)
-        double getROIAmount(std.string, std.string)
-        double getROIConc(std.string, std.string)
-        void setROIConc(std.string, std.string, double)
-        void setROIClamped(std.string, std.string, bool)
-        void setROIReacK(std.string, std.string, double)
-        void setROISReacK(std.string, std.string, double)
-        void setROIDiffD(std.string, std.string, double)
-        void setROIReacActive(std.string, std.string, bool)
-        void setROISReacActive(std.string, std.string, bool)
-        void setROIDiffActive(std.string, std.string, bool)
-        void setROIVDepSReacActive(std.string, std.string, bool)
-        unsigned int getROIReacExtent(std.string, std.string)
-        void resetROIReacExtent(std.string, std.string)
-        unsigned int getROISReacExtent(std.string, std.string)
-        void resetROISReacExtent(std.string, std.string)
-        unsigned int getROIDiffExtent(std.string, std.string)
-        void resetROIDiffExtent(std.string, std.string)
+        # Only functions that are in pyx API
+        #std.string getSolverName() except +
+        #std.string getSolverDesc() except +
+        #std.string getSolverAuthors() except +
+        #std.string getSolverEmail() except +
+        #void checkpoint(std.string) except +
+        #void restore(std.string) except +
+        #void reset() except +
+        #void run(double) except +
+        #void advance(double) except +
+        #void step() except +
+        #void setRk4DT(double) except +
+        #void setDT(double) except +
+        #void setEfieldDT(double) except +
+        #void setNSteps(unsigned int) except +
+        #void setTime(double) except +
+        #void setTemp(double) except +
+        #double getTime() except +
+        #double getRk4DT() except +
+        #double getDT() except +
+        #double getEfieldDT() except +
+        #double getTemp() except +
+        #double getA0() except +
+        #unsigned int getNSteps() except +
+        double getCompVol(std.string) except +
+        void setCompVol(std.string, double) except +
+        double getCompCount(std.string, std.string) except +
+        void setCompCount(std.string, std.string, double) except +
+        double getCompAmount(std.string, std.string) except +
+        void setCompAmount(std.string, std.string, double) except +
+        double getCompConc(std.string, std.string) except +
+        void setCompConc(std.string, std.string, double) except +
+        bool getCompClamped(std.string, std.string) except +
+        void setCompClamped(std.string, std.string, bool) except +
+        double getCompReacK(std.string, std.string) except +
+        void setCompReacK(std.string, std.string, double) except +
+        bool getCompReacActive(std.string, std.string) except +
+        void setCompReacActive(std.string, std.string, bool) except +
+        double getCompDiffD(std.string, std.string) except +
+        void setCompDiffD(std.string, std.string, double) except +
+        bool getCompDiffActive(std.string, std.string) except +
+        void setCompDiffActive(std.string, std.string, bool) except +
+        double getCompReacC(std.string, std.string) except +
+        double getCompReacH(std.string, std.string) except +
+        double getCompReacA(std.string, std.string) except +
+        unsigned int getCompReacExtent(std.string, std.string) except +
+        void resetCompReacExtent(std.string, std.string) except +
+        double getTetVol(unsigned int) except +
+        void setTetVol(unsigned int, double) except +
+        bool getTetSpecDefined(unsigned int, std.string) except +
+        double getTetCount(unsigned int, std.string) except +
+        void setTetCount(unsigned int, std.string, double) except +
+        double getTetAmount(unsigned int, std.string) except +
+        void setTetAmount(unsigned int, std.string, double) except +
+        double getTetConc(unsigned int, std.string) except +
+        void setTetConc(unsigned int, std.string, double) except +
+        bool getTetClamped(unsigned int, std.string) except +
+        void setTetClamped(unsigned int, std.string, bool) except +
+        double getTetReacK(unsigned int, std.string) except +
+        void setTetReacK(unsigned int, std.string, double) except +
+        bool getTetReacActive(unsigned int, std.string) except +
+        void setTetReacActive(unsigned int, std.string, bool) except +
+        double getTetDiffD(unsigned int, std.string, unsigned int) except +
+        void setTetDiffD(unsigned int, std.string, double, unsigned int) except +
+        bool getTetDiffActive(unsigned int, std.string) except +
+        void setTetDiffActive(unsigned int, std.string, bool) except +
+        double getTetReacC(unsigned int, std.string) except +
+        double getTetReacH(unsigned int, std.string) except +
+        double getTetReacA(unsigned int, std.string) except +
+        double getTetDiffA(unsigned int, std.string) except +
+        double getTetV(unsigned int) except +
+        void setTetV(unsigned int, double) except +
+        bool getTetVClamped(unsigned int) except +
+        void setTetVClamped(unsigned int, bool) except +
+        double getPatchArea(std.string) except +
+        void setPatchArea(std.string, double) except +
+        double getPatchCount(std.string, std.string) except +
+        void setPatchCount(std.string, std.string, double) except +
+        double getPatchAmount(std.string, std.string) except +
+        void setPatchAmount(std.string, std.string, double) except +
+        bool getPatchClamped(std.string, std.string) except +
+        void setPatchClamped(std.string, std.string, bool) except +
+        double getPatchSReacK(std.string, std.string) except +
+        void setPatchSReacK(std.string, std.string, double) except +
+        bool getPatchSReacActive(std.string, std.string) except +
+        void setPatchSReacActive(std.string, std.string, bool) except +
+        double getPatchSReacC(std.string, std.string) except +
+        double getPatchSReacH(std.string, std.string) except +
+        double getPatchSReacA(std.string, std.string) except +
+        unsigned int getPatchSReacExtent(std.string, std.string) except +
+        void resetPatchSReacExtent(std.string, std.string) except +
+        bool getPatchVDepSReacActive(std.string, std.string) except +
+        void setPatchVDepSReacActive(std.string, std.string, bool) except +
+        void setDiffBoundaryDiffusionActive(std.string, std.string, bool) except +
+        bool getDiffBoundaryDiffusionActive(std.string, std.string) except +
+        void setDiffBoundaryDcst(std.string, std.string, double, std.string) except +
+        void setSDiffBoundaryDiffusionActive(std.string, std.string, bool) except +
+        bool getSDiffBoundaryDiffusionActive(std.string, std.string) except +
+        void setSDiffBoundaryDcst(std.string, std.string, double, std.string) except +
+        double getTriArea(unsigned int) except +
+        void setTriArea(unsigned int, double) except +
+        bool getTriSpecDefined(unsigned int, std.string) except +
+        double getTriCount(unsigned int, std.string) except +
+        void setTriCount(unsigned int, std.string, double) except +
+        double getTriAmount(unsigned int, std.string) except +
+        void setTriAmount(unsigned int, std.string, double) except +
+        bool getTriClamped(unsigned int, std.string) except +
+        void setTriClamped(unsigned int, std.string, bool) except +
+        double getTriSReacK(unsigned int, std.string) except +
+        void setTriSReacK(unsigned int, std.string, double) except +
+        bool getTriSReacActive(unsigned int, std.string) except +
+        void setTriSReacActive(unsigned int, std.string, bool) except +
+        double getTriSReacC(unsigned int, std.string) except +
+        double getTriSReacH(unsigned int, std.string) except +
+        double getTriSReacA(unsigned int, std.string) except +
+        double getTriDiffD(unsigned int, std.string, unsigned int) except +
+        double getTriSDiffD(unsigned int, std.string, unsigned int) except +
+        void setTriDiffD(unsigned int, std.string, double, unsigned int) except +
+        void setTriSDiffD(unsigned int, std.string, double, unsigned int) except +
+        double getTriV(unsigned int) except +
+        void setTriV(unsigned int, double) except +
+        bool getTriVClamped(unsigned int) except +
+        void setTriVClamped(unsigned int, bool) except +
+        double getTriOhmicI(unsigned int) except +
+        double getTriOhmicI(unsigned int, std.string) except +
+        double getTriGHKI(unsigned int) except +
+        double getTriGHKI(unsigned int, std.string) except +
+        double getTriI(unsigned int) except +
+        void setTriIClamp(unsigned int, double) except +
+        bool getTriVDepSReacActive(unsigned int, std.string) except +
+        void setTriVDepSReacActive(unsigned int, std.string, bool) except +
+        void setTriCapac(unsigned int, double) except +
+        double getVertV(unsigned int) except +
+        void setVertV(unsigned int, double) except +
+        bool getVertVClamped(unsigned int) except +
+        void setVertVClamped(unsigned int, bool) except +
+        void setVertIClamp(unsigned int, double) except +
+        void setMembPotential(std.string, double) except +
+        void setMembCapac(std.string, double) except +
+        void setMembVolRes(std.string, double) except +
+        void setMembRes(std.string, double, double) except +
+        unsigned int getNComps() except +
+        unsigned int getNPatches() except +
+        std.string getCompName(unsigned int) except +
+        std.string getPatchName(unsigned int) except +
+        unsigned int getNCompSpecs(unsigned int) except +
+        unsigned int getNPatchSpecs(unsigned int) except +
+        std.string getCompSpecName(unsigned int, unsigned int) except +
+        std.string getPatchSpecName(unsigned int, unsigned int) except +
+        #std.vector[double] getBatchTetCounts(std.vector[unsigned int], std.string) except +
+        #std.vector[double] getBatchTriCounts(std.vector[unsigned int], std.string) except +
+        #void getBatchTetCountsNP(unsigned int*, int, std.string, double*, int) except +
+        #void getBatchTriCountsNP(unsigned int*, int, std.string, double*, int) except +
+        #std.vector[double] getROITetCounts(std.string, std.string) except +
+        #std.vector[double] getROITriCounts(std.string, std.string) except +
+        #void getROITetCountsNP(std.string, std.string, double*, int) except +
+        #void getROITriCountsNP(std.string, std.string, double*, int) except +
+        #double getROIVol(std.string) except +
+        #double getROIArea(std.string) except +
+        #double getROICount(std.string, std.string) except +
+        #void setROICount(std.string, std.string, double) except +
+        #double getROIAmount(std.string, std.string) except +
+        #double getROIConc(std.string, std.string) except +
+        #void setROIConc(std.string, std.string, double) except +
+        #void setROIClamped(std.string, std.string, bool) except +
+        #void setROIReacK(std.string, std.string, double) except +
+        #void setROISReacK(std.string, std.string, double) except +
+        #void setROIDiffD(std.string, std.string, double) except +
+        #void setROIReacActive(std.string, std.string, bool) except +
+        #void setROISReacActive(std.string, std.string, bool) except +
+        #void setROIDiffActive(std.string, std.string, bool) except +
+        #void setROIVDepSReacActive(std.string, std.string, bool) except +
+        #unsigned int getROIReacExtent(std.string, std.string) except +
+        #void resetROIReacExtent(std.string, std.string) except +
+        #unsigned int getROISReacExtent(std.string, std.string) except +
+        #void resetROISReacExtent(std.string, std.string) except +
+        #unsigned int getROIDiffExtent(std.string, std.string) except +
+        #void resetROIDiffExtent(std.string, std.string) except +
+        #void saveMembOpt(std.string) except +
+        double sumBatchTetCountsNP(unsigned int*, int, std.string) except +
+        double sumBatchTriCountsNP(unsigned int*, int, std.string) except +
+        double sumBatchTriGHKIsNP(unsigned int*, int, std.string) except +
+        double sumBatchTriOhmicIsNP(unsigned int*, int, std.string) except +
+        void setDiffApplyThreshold(int) except +
+        double getReacExtent(bool) except +
+        double getDiffExtent(bool) except +
+        double getNIteration() except +
+        double getCompTime() except +
+        double getSyncTime() except +
+        double getIdleTime() except +
+        double getUpdPeriod() except +
+        double getEFieldTime() except +
+        double getRDTime() except +
+        double getDataExchangeTime() except +
+        void repartitionAndReset(std.vector[unsigned int],std.map[unsigned int, unsigned int], std.vector[unsigned int]) except +
+ 
+        
+

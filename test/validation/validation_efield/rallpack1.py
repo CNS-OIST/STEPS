@@ -6,6 +6,7 @@
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+
 import steps.quiet
 import steps.model as smodel
 import steps.geom as sgeom
@@ -15,8 +16,6 @@ import steps.solver as ssolver
 
 import numpy as np
 import numpy.linalg as la
-import math
-import operator
 import sys
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -86,10 +85,10 @@ def radial_extrema(geom, vset):
     for v in vset:
         x = geom.getVertex(v)
         s = x[0]*x[0] + x[1]*x[1]
-        if r2min > s or r2min == None:
+        if  r2min == None or r2min > s:
             r2min = s
             vmin = v
-        if r2max < s or r2max == None:
+        if  r2max == None or r2max < s:
             r2max = s
             vmax = v
 
@@ -131,7 +130,7 @@ def build_model(mesh, param):
     Leak = smodel.ChanState('Leak', mdl, L)
 
     # membrane conductance
-    area_cylinder = math.pi * param['diameter'] * param['length']
+    area_cylinder = np.pi * param['diameter'] * param['length']
     L_G_tot = area_cylinder / param['R_M']
     g_leak_sc = L_G_tot / len(memb.tris)
     OC_L = smodel.OhmicCurr('OC_L', ssys, chanstate = Leak, erev = param['E_M'], g = g_leak_sc)
@@ -161,7 +160,7 @@ def init_sim(model, mesh, seed, param):
     print('Running Rallpack1 test with ' + param['SSA_solver'])
 
     # Correction factor for deviation between mesh and model cylinder:
-    area_cylinder = math.pi * param['diameter'] * param['length']
+    area_cylinder = np.pi * param['diameter'] * param['length']
     area_mesh_factor = sim.getPatchArea('memb') / area_cylinder
 
     # Set initial conditions
@@ -181,11 +180,11 @@ def init_sim(model, mesh, seed, param):
 
 # Run simulation and sample potential every dt until t_end
 def run_sim(sim, dt, t_end, vertices, verbose=False):
-    N = int(math.ceil(t_end/dt))+1
+    N = int(np.ceil(t_end/dt))+1
     result = np.zeros((N, len(vertices)))
     nvert = len(vertices)
 
-    for l in xrange(N):
+    for l in range(N):
         if verbose and not l%100:  print(str(l)+" out of "+str(N))    
         sim.run(l*dt)
         result[l,:] = [sim.getVertV(v) for v in vertices]
@@ -234,10 +233,10 @@ def run_comparison(seed, mesh_file, v0_datafile, v1_datafile, verbose=False):
 
     # rms difference
     err_0um = data[2,:] - data[1,:] 
-    rms_err_0um = la.norm(err_0um)/math.sqrt(npt)
+    rms_err_0um = la.norm(err_0um)/np.sqrt(npt)
 
     err_1000um = data[4,:] - data[3,:]
-    rms_err_1000um = la.norm(err_1000um)/math.sqrt(npt)
+    rms_err_1000um = la.norm(err_1000um)/np.sqrt(npt)
 
     return data, rms_err_0um, rms_err_1000um
 

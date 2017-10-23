@@ -1,6 +1,6 @@
 
 import os.path as path
-import rallpack1
+from . import rallpack1
 
 def setup_module():
     global C

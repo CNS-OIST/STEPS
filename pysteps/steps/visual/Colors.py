@@ -21,6 +21,7 @@
 #
 #################################################################################   
 ###
+from __future__ import print_function
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -42,7 +43,7 @@ def pickColorF():
 
 def printColorF():
     """
-    Pick a color and print out the list
+    Pick a color and print(out the list)
         
     Parameters:
         None
@@ -50,4 +51,4 @@ def printColorF():
     Return:
         None
     """
-    print pickColorF()
+    print(pickColorF())

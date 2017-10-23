@@ -253,7 +253,7 @@ double smtos::Reac::rate(smtos::TetOpSplitP * solver)
             h_mu = 0.0;
             break;
         }
-        assert(lhs >= 4);
+        assert((lhs <= 4) && (lhs >0));
         h_mu *= (cnt - lhs + 1);
     }
 #ifdef MPI_DEBUG

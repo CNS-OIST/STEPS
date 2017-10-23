@@ -24,12 +24,12 @@
 
 import unittest2
 
-import model
-import spec
-import chan
-import volsys
-import surfsys
-import tetmesh
+from . import model
+from . import spec
+from . import chan
+from . import volsys
+from . import surfsys
+from . import tetmesh
 def suite():
     all_tests = []
     all_tests.append(model.suite())

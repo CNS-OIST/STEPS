@@ -7,21 +7,20 @@ import steps.model as smodel
 import steps.solver as ssolver
 import steps.rng as srng
 import numpy as np
-import math
 import re
 
 def make_tri_prism(k,m,scale):
     # Generate triangular prism with k line segments along each triangular
     # edge and m along vertical extrusion axis. Each line segment is length scale.
 
-    nvert_per_slice = ((k+1)*(k+2))/2
+    nvert_per_slice = ((k+1)*(k+2))//2
     ntri_per_slice = k*k
 
     # make vertices
     verts = [(x,y,z) for z in range(0,m+1) for y in range(0,k+1) for x in range(0,k+1-y)]
                 
     # shear and scale ...
-    sqrt3o2 = math.sqrt(3.0)/2
+    sqrt3o2 = np.sqrt(3.0)/2
     verts = [(x*scale+0.5*y*scale,sqrt3o2*scale*y,scale*z) for (x,y,z) in verts]
    
     # vertex at (x,y,z), x+y <= k.
@@ -29,7 +28,7 @@ def make_tri_prism(k,m,scale):
         return z*nvert_per_slice + x + y*k + (y*(3-y))/2
 
     def vidx_to_xyz(v):
-        z = v/nvert_per_slice
+        z = v//nvert_per_slice
         x = v%nvert_per_slice
         y = 0
         mx = k+1
@@ -43,7 +42,7 @@ def make_tri_prism(k,m,scale):
     # ith triangle vertex indices in slice z
     def tri_verts(i,z):
         r = i%k
-        s = i/k
+        s = i//k
         if r+s<k:
             return [xyz_to_vidx(x,y,z) for (x,y) in [(r,s),(r+1,s),(r,s+1)]]
         else:
@@ -72,7 +71,7 @@ def make_tri_prism(k,m,scale):
 
     # mark faces as ROI
     rois = { 'bottom': [], 'top': [], 'face1': [], 'face2': [], 'face3': []}
-    for t in xrange(0,mesh.ntris):
+    for t in range(0,mesh.ntris):
         xyzs = [vidx_to_xyz(v) for v in mesh.getTri(t)]
 
         if all([z==0 for (x,y,z) in xyzs]): rois['bottom'].append(t)
@@ -81,7 +80,7 @@ def make_tri_prism(k,m,scale):
         if all([y==0 for (x,y,z) in xyzs]): rois['face2'].append(t)
         if all([x+y==k for (x,y,z) in xyzs]): rois['face3'].append(t)
 
-    for (roi,roi_tris) in rois.iteritems():
+    for (roi,roi_tris) in rois.items():
         mesh.addROI(roi,sgeom.ELEM_TRI,roi_tris)
 
     # mark horizontal slices of vertices as ROI too.
@@ -134,13 +133,12 @@ def test_efield_vc():
 
     # get means across all horizontal slices
     slices = dict((int(mo.group(1)),mesh.getROIData(s)) for s in mesh.getAllROINames() for mo in [re.search('slice(\d+)',s)] if mo)
-    slice_keys = slices.keys()
+    slice_keys = list(slices.keys())
     slice_keys.sort()
-
     N = 10 
     result = np.zeros((N,1+len(slice_keys)))
 
-    for k in xrange(N):
+    for k in range(N):
        result[k,0] = k
        sim.advance(EF_dt);
        j = 1

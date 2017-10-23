@@ -6,16 +6,17 @@ Erik De Schutter (OIST, UA, since 2006)
 * Project conception and supervision
 
 Iain Hepburn (OIST, UA, since 2008)
-* Development of STEPS versions 1.0.0-3.0.0: Well-mixed and spatial stochastic and deterministic solver implementation 
-* EField implementation
-* Initial TetOpSplit development
+* Development of STEPS since version 1.0.0: Well-mixed and spatial stochastic and deterministic solver implementation 
+* Voltage calculation on tetrahedral mesh (EField) implementation
+* Serial TetOpSplit development
 * SBML support
 * Meshio utilities
-* Surface Diffusion Boundary for Tetexact and TetOpSplit (3.1.0)
+* Diffusion Boundaries for Tetexact and TetOpSplit
+* Contribution to Swig and Cython bindings
 * Validation design, testing, and documentation 
 
 Weiliang Chen (OIST, since 2009)
-* Development of STEPS versions 1.0.0-3.0.0: Well-mixed and spatial stochastic solver development
+* Development of STEPS since version 1.0.0: Well-mixed and spatial stochastic solver development
 * Parallel TetOpSplit implementation
 * Implementation of visualization toolkit
 * Meshio utilities
@@ -33,16 +34,14 @@ From École polytechnique fédérale de Lausanne, Switzerland (Since STEPS versi
 Fabien Delalondre
 * Technical lead and coordination for Blue Brain team contribution
 
-Sam Yates
-* Compilation support with CMake
-* Unit testing suite implementation 
-* First implementation of parallel EField solver using direct solvers
-* R123 random number generator
-* Other code fixes and optimizations
-    
+Tristan Carel
+* Docker image (https://github.com/CNS-OIST/STEPS_Docker)
+
 Francesco Casalegno
 * R123 random number generator
 * parallel PETSc EField solver
+* python 2/3 compatibility
+* new version of manual as jupyter notebooks (https://github.com/CNS-OIST/STEPS_Example/tree/master/user_manual)
     
 Aleksandr Ovcharenko
 * R123 random number generator
@@ -52,6 +51,13 @@ Fernando Pereira
 * Cython bindings
 * Compilation with CMake
 
+Sam Yates
+* Compilation support with CMake
+* Unit testing suite implementation 
+* First implementation of parallel EField solver using direct solvers
+* R123 random number generator
+* Other code fixes and optimizations
+    
 
 ACKNOWLEDGEMENT
 
@@ -64,3 +70,4 @@ Mika Holm: STEPS logo.
 
 If you contributed to STEPS and you name is not included here, 
 please don't hesitate to contact us.
+

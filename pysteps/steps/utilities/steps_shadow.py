@@ -21,11 +21,12 @@
 #
 #################################################################################   
 ###
+from __future__ import print_function
 
 try:
     import cPickle as Pickle
 except ImportError:
-    import Pickle
+    import pickle as Pickle
 
 try:
     import steps
@@ -393,7 +394,7 @@ class ShadowMesh:
         else:
             temp_comps = {}
             for c in self.comps.values():
-                print "Write compartment ", c.name, " to Tetmesh."
+                print("Write compartment ", c.name, " to Tetmesh.")
                 steps_indices = [tetproxy.getSTEPSID(i) for i in c.indices]
                 comp = sgeom.TmComp(c.name, tetmesh, steps_indices)
                 temp_comps[c.name] = comp
@@ -401,10 +402,10 @@ class ShadowMesh:
                     comp.addVolsys(v)
             if len(self.patches) != 0:
                 if tri_proxy.getSize() == 0:
-                    print "ImportAbaqus does not support triangle index mapping, use ImportAbaqus2 instead."
+                    print("ImportAbaqus does not support triangle index mapping, use ImportAbaqus2 instead.")
                 else:
                     for p in self.patches.values():
-                        print "Write patch ", p.name, " to Tetmesh."
+                        print("Write patch ", p.name, " to Tetmesh.")
                         steps_indices = [triproxy.getSTEPSID(i) for i in c.indices]
                         icomp = temp_comps[p.icomp]
                         ocomp = None
@@ -417,14 +418,14 @@ class ShadowMesh:
                 roi_name = roi[0]
                 roi_type = roi[1]["Type"]
                 roi_import_indices = roi[1]["Indices"]
-                print "Write ROI data ", roi[0], " to Tetmesh."
+                print("Write ROI data ", roi[0], " to Tetmesh.")
                 if roi_type == ELEM_VERTEX:
                     steps_indices = [nodeproxy.getSTEPSID(i) for i in roi_import_indices]
                 elif roi_type == ELEM_TET:
                     steps_indices = [tetproxy.getSTEPSID(i) for i in roi_import_indices]
                 elif roi_type == ELEM_TRI:
                     if tri_proxy.getSize() == 0:
-                        print "ImportAbaqus does not support triangle index mapping, use ImportAbaqus2 instead."
+                        print("ImportAbaqus does not support triangle index mapping, use ImportAbaqus2 instead.")
                     else:
                         steps_indices = [triproxy.getSTEPSID(i) for i in roi_import_indices]
                 else:

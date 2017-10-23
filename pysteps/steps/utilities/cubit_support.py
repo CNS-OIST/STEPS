@@ -21,13 +21,14 @@
 #
 #################################################################################   
 ###
+from __future__ import print_function
 
 try:
     import cubit
 except ImportError:
     print("Unable to find CUBIT module.")
 
-print "This is the obsolescent version of STEPS CUBIT supporting toolkit, try use the independent toolkit instead."
+print("This is the obsolescent version of STEPS CUBIT supporting toolkit, try use the independent toolkit instead.")
 
 import random
 import os

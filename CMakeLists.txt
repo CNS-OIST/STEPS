@@ -9,7 +9,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMake)
 project(STEPS)
 
 set(VERSION_MAJOR 3)
-set(VERSION_MINOR 1)
+set(VERSION_MINOR 2)
 set(VERSION_PATCH 0)
 set(STEPS_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
@@ -57,7 +57,7 @@ endif()
 # Requirements
 # -------------------------------------------------------------------
 find_package(PythonInterpLibs)
-find_package (Threads REQUIRED)
+find_package(Threads REQUIRED)
 
 
 # if USE_MPI is
@@ -149,7 +149,7 @@ message(STATUS "PYTHON packages being installed to ${PYTHON_INSTALL_PREFIX}. To 
 if (NOT PYTHON_BINDINGS_CYTHON)
     # Previous SWIG Python Bindings
     # (Use modified CMake FindSWIG module to prefentially use SWIG3.0)
-    message("-- Building with SWIG: If CYTHON is preferred, run cmake with -DPYTHON_BINDINGS_CYTHON=ON")
+    message("-- Warning: SWIG binding will be removed from STEPS 3.3, please try the Cython binding and report any issue encountered.")
     find_package(SWIG3 REQUIRED)
     find_package(NumPy)
     # Makes _steps_swig_numpy.so or _steps_swig.so
@@ -158,7 +158,7 @@ if (NOT PYTHON_BINDINGS_CYTHON)
     add_subdirectory(py)
 else()
     # Makes steps Python bindings based on Cython
-    message("-- Building with CYTHON: If SWIG is preferred, run cmake with -DPYTHON_BINDINGS_CYTHON=OFF")
+    # message("-- Building with CYTHON: If SWIG is preferred, run cmake with -DPYTHON_BINDINGS_CYTHON=OFF")
     find_package(Cython 0.25.1 REQUIRED)
     add_subdirectory(pysteps)
 endif()

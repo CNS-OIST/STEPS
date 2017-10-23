@@ -128,6 +128,9 @@ public:
     inline double efdt(void) const
     { return pEFDT; }
 
+    inline double getEfieldDT(void) const
+    { return pEFDT; }
+
     void setTemp(double t);
 
     inline double getTemp(void) const
@@ -571,19 +574,11 @@ public:
 
     
     //////////////////////////// MPI STUFFS ////////////////////////////
+    
+    // Exposed to Python:
+    
     void setDiffApplyThreshold(int threshold);
-    
-    uint getTetHostRank(uint tidx);
-    uint getTriHostRank(uint tidx);
-    uint getWMVolHostRank(uint idx);
-	//void registerSyncWmVol(steps::mpi::tetopsplit::WmVol * wmvol);
-    //void registerSyncTet(steps::mpi::tetopsplit::Tet * tet);
-    //void registerSyncTri(steps::mpi::tetopsplit::Tri * tri);
-    void addNeighHost(int host);
-    void registerBoundaryTet(steps::mpi::tetopsplit::Tet *tet);
-    void registerBoundaryTri(steps::mpi::tetopsplit::Tri *tri);
-    uint registerRemoteMoleculeChange(int svol_host, uint loc, SubVolType svol_type, uint idx, uint slidx, uint change);
-    
+
     double getReacExtent(bool local = false);
     double getDiffExtent(bool local = false);
     double getNIteration(void);
@@ -601,6 +596,18 @@ public:
     double getRDTime(void);
     double getDataExchangeTime(void);
     
+    // Not currently exposed to Python:
+     uint getTetHostRank(uint tidx);
+     uint getTriHostRank(uint tidx);
+     uint getWMVolHostRank(uint idx);
+ 	//void registerSyncWmVol(steps::mpi::tetopsplit::WmVol * wmvol);
+     //void registerSyncTet(steps::mpi::tetopsplit::Tet * tet);
+     //void registerSyncTri(steps::mpi::tetopsplit::Tri * tri);
+     void addNeighHost(int host);
+     void registerBoundaryTet(steps::mpi::tetopsplit::Tet *tet);
+     void registerBoundaryTri(steps::mpi::tetopsplit::Tri *tri);
+     uint registerRemoteMoleculeChange(int svol_host, uint loc, SubVolType svol_type, uint idx, uint slidx, uint change);
+
 private:
 
     ////////////////////////////////////////////////////////////////////////

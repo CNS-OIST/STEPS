@@ -5694,7 +5694,7 @@ void smtos::TetOpSplitP::_updateElement(KProc* kp)
 {
     
     if (kp->getType() == KP_DIFF || kp->getType() == KP_SDIFF) {
-        kp->crData.rate = kp->rate(this);;
+        kp->crData.rate = kp->rate(this);
         return;
     }
   
@@ -8050,9 +8050,7 @@ void smtos::TetOpSplitP:: _remoteSyncAndUpdate(void* requests, std::vector<KProc
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::TetOpSplitP::repartitionAndReset(std::vector<uint> const &tet_hosts,
-                 std::map<uint, uint> const &tri_hosts,
-                 std::vector<uint> const &wm_hosts)
+void smtos::TetOpSplitP::repartitionAndReset(std::vector<uint> const &tet_hosts, std::map<uint, uint> const &tri_hosts,  std::vector<uint> const &wm_hosts)
 {
     pKProcs.clear();
     pDiffs.clear();

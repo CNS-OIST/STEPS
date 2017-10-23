@@ -21,6 +21,7 @@
 #
 #################################################################################   
 ###
+from __future__ import print_function
 
 from steps import stepslib
 
@@ -48,12 +49,12 @@ class _Base_Solver(object):
             while self.getTime() + cp_interval < end_time:
                 self.advance(cp_interval)
                 filename = "%s%e.%s_cp" % (prefix, self.getTime(), method_name)
-                print "Checkpointing -> ", filename
+                print("Checkpointing -> ", filename)
                 self.checkpoint(filename)
 
             parent.run(end_time)
             filename = "%s%e.%s_cp" % (prefix, self.getTime(), method_name)
-            print "Checkpointing -> ", filename
+            print("Checkpointing -> ", filename)
             self.checkpoint(filename)
         else:
             parent.run(end_time)
@@ -83,48 +84,159 @@ class _Base_Solver(object):
 
 
 class Wmrk4(stepslib._py_Wmrk4, _Base_Solver):
+    """
+    Construction::
+        
+        sim = steps.solver.Wmrk4(model, geom, rng)
+        
+    Create a non-spatial deterministic solver based on the Runge-Kutta fourth order method.
+        
+    Arguments:
+    steps.model.Model model
+    steps.geom.Geom geom
+    steps.rng.RNG rng
+    """
+    
     def run(self, end_time, cp_interval = 0.0, prefix = ""):
+        """
+        Run the simulation until end_time,
+        automatically checkpoint at each cp_interval.
+        Prefix can be added using prefix=<prefix_string>.
+        """
         self._advance_checkpoint_run(end_time, cp_interval, prefix, 'wmrk4')
 
     def advance(self, advance_time, cp_interval = 0.0, prefix = ""):
+        """
+        Advance the simulation for advance_time,
+        automatically checkpoint at each cp_interval.
+        Prefix can be added using prefix=<prefix_string>.
+        """
         end_time = self.getTime() + advance_time
         self._advance_checkpoint_run(end_time, cp_interval, prefix, 'wmrk4')
         
     def getIndexMapping(self):
+        """
+        Get a mapping between compartments/patches/species
+        and their indices in the solver.
+        """
         return self._getIndexMapping(self)
 
 
 class Wmdirect(stepslib._py_Wmdirect, _Base_Solver):
+    """
+    Construction::
+    
+        sim = steps.solver.Wmdirect(model, geom, rng)
+    
+    Create a non-spatial stochastic solver based on Gillespie's SSA.
+    
+    Arguments:
+    steps.model.Model model
+    steps.geom.Geom geom
+    steps.rng.RNG rng
+    """
     def run(self, end_time, cp_interval = 0.0, prefix = ""):
+        """
+        Run the simulation until <end_time>,
+        automatically checkpoint at each <cp_interval>.
+        Prefix can be added using prefix=<prefix_string>.
+        """
         self._advance_checkpoint_run(end_time, cp_interval, prefix, 'wmdirect')
         
     def advance(self, advance_time, cp_interval = 0.0, prefix = ""):
+        """
+        Advance the simulation for advance_time,
+        automatically checkpoint at each cp_interval.
+        Prefix can be added using prefix=<prefix_string>.
+        """
         end_time = self.getTime() + advance_time
         self._advance_checkpoint_run(end_time, cp_interval, prefix, 'wmdirect')
         
     def getIndexMapping(self):
+        """
+        Get a mapping between compartments/patches/species
+        and their indices in the solver.
+        """
         return self._getIndexMapping()
         
         
 class Tetexact(stepslib._py_Tetexact, _Base_Solver):
+    """
+    Construction::
+    
+        sim = steps.solver.Tetexact(model, geom, rng, calcMembPot = 0)
+    
+    Create a spatial stochastic solver based on Gillespie's SSA, extended with diffusion across elements in a tetrahedral mesh.
+    If voltage is to be simulated, argument calcMemPot=1 will set to the default solver. calcMembPot=0 means voltage will not be simulated. 
+    
+    Arguments:
+    steps.model.Model model
+    steps.geom.Geom geom
+    steps.rng.RNG rng
+    int calcMemPot (default=0)
+    
+    """
     def run(self, end_time, cp_interval = 0.0, prefix = ""):
+        """
+        Run the simulation until <end_time>,
+        automatically checkpoint at each <cp_interval>.
+        Prefix can be added using prefix=<prefix_string>.
+        """
         self._advance_checkpoint_run(end_time, cp_interval, prefix, 'tetexact')
         
     def advance(self, advance_time, cp_interval = 0.0, prefix = ""):
+        """
+        Advance the simulation for <advance_time>,
+        automatically checkpoint at each <cp_interval>.
+        Prefix can be added using prefix=<prefix_string>.
+        """
         end_time = self.getTime() + advance_time
         self._advance_checkpoint_run(end_time, cp_interval, prefix, 'tetexact')
         
     def getIndexMapping(self):
+        """
+        Get a mapping between compartments/patches/species
+        and their indices in the solver.
+        """
         return self._getIndexMapping()
 
 
 class TetODE(stepslib._py_TetODE, _Base_Solver):
+    """
+    Construction::
+    
+        sim = steps.solver.TetODE(model, geom, rng=None, calcMembPot = 0)
+    
+    Create a spatial determinstic solver based on the CVODE library.
+    If voltage is to be simulated, argument calcMemPot=1 will set to the default solver. calcMembPot=0 means voltage will not be simulated. 
+    
+    Arguments:
+    steps.model.Model model
+    steps.geom.Geom geom
+    steps.rng.RNG rng (default=None)
+    int calcMemPot (default=0)
+    
+    """
     def run(self, end_time, cp_interval = 0.0, prefix = ""):
+        """
+        Run the simulation until <end_time>,
+        automatically checkpoint at each <cp_interval>.
+        Prefix can be added using prefix=<prefix_string>.
+        """
         self._advance_checkpoint_run(end_time, cp_interval, prefix, 'tetode')
         
     def advance(self, advance_time, cp_interval = 0.0, prefix = ""):
+        """
+        Advance the simulation for <advance_time>,
+        automatically checkpoint at each <cp_interval>.
+        Prefix can be added using prefix=<prefix_string>.
+        """
         end_time = self.getTime() + advance_time
         self._advance_checkpoint_run(end_time, cp_interval, prefix, 'tetode')
     
     def getIndexMapping(self):
+        """
+        Get a mapping between compartments/patches/species
+        and their indices in the solver.
+        """
         return self._getIndexMapping()

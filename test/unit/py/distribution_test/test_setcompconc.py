@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+
 import nose
 import steps.quiet
 import steps.geom
@@ -49,14 +50,14 @@ class TestSetConc:
         n = mesh.countTets()
 
         # expected means
-        mu = [ count*mesh.getTetVol(i)/total_vol for i in xrange(n)]
+        mu = [ count*mesh.getTetVol(i)/total_vol for i in range(n)]
 
         # empirical means
         x = [0]*n
         
-        for s in xrange(T):
+        for s in range(T):
             solver.setCompConc('interior', 'A', molarity)
-            for t in xrange(n):
+            for t in range(n):
                 x[t] += (solver.getTetCount(t,'A')-x[t])/(1+s)
 
         return x, mu

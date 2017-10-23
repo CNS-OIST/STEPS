@@ -15,7 +15,7 @@ cimport steps_wm
 cimport steps_rng
 
 # ======================================================================================================================
-cdef extern from "steps/tetode/patch.hpp" namespace "steps::tetode":
+#cdef extern from "steps/tetode/patch.hpp" namespace "steps::tetode":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef Patch* PatchP
     # ctypedef std.vector[Patch*] PatchPVec
@@ -23,18 +23,18 @@ cdef extern from "steps/tetode/patch.hpp" namespace "steps::tetode":
     # ctypedef std.vector[Patch*].const_iterator PatchPVecCI
 
     ###### Cybinding for Patch ######
-    cdef cppclass TOPatch "steps::tetode::Patch":
-        TOPatch(steps_solver.Patchdef*)
-        void checkpoint(std.fstream)
-        void restore(std.fstream)
-        void addTri(TOTri*)
-        double area()
-        unsigned int getTri_GtoL(unsigned int)
-        TOTri* getTri(unsigned int)
-        steps_solver.Patchdef* def_()
-        unsigned int countTris()
-        std.vector[TOTri*].const_iterator bgnTri()
-        std.vector[TOTri*].const_iterator endTri()
+#    cdef cppclass TOPatch "steps::tetode::Patch":
+#        TOPatch(steps_solver.Patchdef*)
+#        void checkpoint(std.fstream)
+#        void restore(std.fstream)
+#        void addTri(TOTri*)
+#        double area()
+#        unsigned int getTri_GtoL(unsigned int)
+#        TOTri* getTri(unsigned int)
+#        steps_solver.Patchdef* def_()
+#        unsigned int countTris()
+#        std.vector[TOTri*].const_iterator bgnTri()
+#        std.vector[TOTri*].const_iterator endTri()
 
 # ======================================================================================================================
 cdef extern from "steps/tetode/tetode.hpp" namespace "steps::tetode":
@@ -55,29 +55,84 @@ cdef extern from "steps/tetode/tetode.hpp" namespace "steps::tetode":
     
     ###### Cybinding for TetODE ######
     cdef cppclass TetODE:
-        TetODE(steps_model.Model*, steps_wm.Geom*, steps_rng.RNG*, int)
-        std.string getSolverName()
-        std.string getSolverDesc()
-        std.string getSolverAuthors()
-        std.string getSolverEmail()
-        void checkpoint(std.string)
-        void restore(std.string)
-        double getTime()
-        double getTemp()
-        void setTemp(double)
-        void reset()
-        void run(double)
-        void advance(double)
-        steps_tetmesh.Tetmesh* mesh()
-        void setTolerances(double, double)
-        void setMaxNumSteps(unsigned int)
-        bool efflag()
-        unsigned int neftets()
-        unsigned int neftris()
-        unsigned int nefverts()
+    	# Heavily modified by Iain
+        TetODE(steps_model.Model*, steps_wm.Geom*, steps_rng.RNG*, int) except +
+        std.string getSolverName() except +
+        std.string getSolverDesc() except +
+        std.string getSolverAuthors() except +
+        std.string getSolverEmail() except +
+        void checkpoint(std.string) except +
+        void restore(std.string) except +
+        void reset() except +
+        void run(double) except +
+        void advance(double) except +
+        void setTemp(double) except +
+        double getTime() except +
+        double getTemp() except +
+        double getCompVol(std.string) except +
+        double getCompCount(std.string, std.string) except +
+        void setCompCount(std.string, std.string, double) except +
+        double getCompAmount(std.string, std.string) except +
+        void setCompAmount(std.string, std.string, double) except +
+        double getCompConc(std.string, std.string) except +
+        void setCompConc(std.string, std.string, double) except +
+        bool getCompClamped(std.string, std.string) except +
+        void setCompClamped(std.string, std.string, bool) except +
+        double getCompReacK(std.string, std.string) except +
+        void setCompReacK(std.string, std.string, double) except +
+        bool getCompReacActive(std.string, std.string) except +
+        void setCompReacActive(std.string, std.string, bool) except +
+        double getTetVol(unsigned int) except +
+        double getTetCount(unsigned int, std.string) except +
+        void setTetCount(unsigned int, std.string, double) except +
+        double getTetAmount(unsigned int, std.string) except +
+        void setTetAmount(unsigned int, std.string, double) except +
+        double getTetConc(unsigned int, std.string) except +
+        void setTetConc(unsigned int, std.string, double) except +
+        double getTetReacK(unsigned int, std.string) except +
+        void setTetReacK(unsigned int, std.string, double) except +
+        double getTetV(unsigned int) except +
+        void setTetV(unsigned int, double) except +
+        bool getTetVClamped(unsigned int) except +
+        void setTetVClamped(unsigned int, bool) except +
+        double getPatchArea(std.string) except +
+        double getPatchCount(std.string, std.string) except +
+        void setPatchCount(std.string, std.string, double) except +
+        double getPatchAmount(std.string, std.string) except +
+        void setPatchAmount(std.string, std.string, double) except +
+        bool getPatchClamped(std.string, std.string) except +
+        void setPatchClamped(std.string, std.string, bool) except +
+        double getPatchSReacK(std.string, std.string) except +
+        void setPatchSReacK(std.string, std.string, double) except +
+        bool getPatchSReacActive(std.string, std.string) except +
+        void setPatchSReacActive(std.string, std.string, bool) except +
+        double getTriArea(unsigned int) except +
+        double getTriCount(unsigned int, std.string) except +
+        void setTriCount(unsigned int, std.string, double) except +
+        double getTriAmount(unsigned int, std.string) except +
+        void setTriAmount(unsigned int, std.string, double) except +
+        double getTriSReacK(unsigned int, std.string) except +
+        void setTriSReacK(unsigned int, std.string, double) except +
+        double getTriV(unsigned int) except +
+        void setTriV(unsigned int, double) except +
+        bool getTriVClamped(unsigned int) except +
+        void setTriVClamped(unsigned int, bool) except +
+        double getTriI(unsigned int) except +
+        void setTriIClamp(unsigned int, double) except +
+        double getVertV(unsigned int) except +
+        void setVertV(unsigned int, double) except +
+        bool getVertVClamped(unsigned int) except +
+        void setVertVClamped(unsigned int, bool) except +
+        void setVertIClamp(unsigned int, double) except +
+        void setMembPotential(std.string, double) except +
+        void setMembCapac(std.string, double) except +
+        void setMembVolRes(std.string, double) except +
+        void setMembRes(std.string, double, double) except +
+        void setTolerances(double, double) except +
+        void setMaxNumSteps(unsigned int) except +
 
 # ======================================================================================================================
-cdef extern from "steps/tetode/tet.hpp" namespace "steps::tetode":
+#cdef extern from "steps/tetode/tet.hpp" namespace "steps::tetode":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef Tet* TetP
     # ctypedef std.vector[Tet*] TetPVec
@@ -85,23 +140,23 @@ cdef extern from "steps/tetode/tet.hpp" namespace "steps::tetode":
     # ctypedef std.vector[Tet*].const_iterator TetPVecCI
 
     ###### Cybinding for Tet ######
-    cdef cppclass TOTet "steps::tetode::Tet":
-        TOTet(unsigned int, steps_solver.Compdef*, double, double, double, double, double, double, double, double, double, int, int, int, int)
-        steps_solver.Compdef* compdef()
-        void setNextTet(unsigned int, TOTet*)
-        void setNextTri(unsigned int, TOTri*)
-        void checkpoint(std.fstream)
-        void restore(std.fstream)
-        double vol()
-        unsigned int idx()
-        TOTri* nextTri(unsigned int)
-        TOTet* nextTet(unsigned int)
-        double area(unsigned int)
-        double dist(unsigned int)
-        int tet(unsigned int)
+#    cdef cppclass TOTet "steps::tetode::Tet":
+#        TOTet(unsigned int, steps_solver.Compdef*, double, double, double, double, double, double, double, double, double, int, int, int, int)
+#        steps_solver.Compdef* compdef()
+#        void setNextTet(unsigned int, TOTet*)
+#        void setNextTri(unsigned int, TOTri*)
+#        void checkpoint(std.fstream)
+#        void restore(std.fstream)
+#        double vol()
+#        unsigned int idx()
+#        TOTri* nextTri(unsigned int)
+#        TOTet* nextTet(unsigned int)
+#        double area(unsigned int)
+#        double dist(unsigned int)
+#        int tet(unsigned int)
 
 # ======================================================================================================================
-cdef extern from "steps/tetode/comp.hpp" namespace "steps::tetode":
+#cdef extern from "steps/tetode/comp.hpp" namespace "steps::tetode":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef Comp* CompP
     # ctypedef std.vector[Comp*] CompPVec
@@ -109,21 +164,21 @@ cdef extern from "steps/tetode/comp.hpp" namespace "steps::tetode":
     # ctypedef std.vector[Comp*].const_iterator CompPVecCI
 
     ###### Cybinding for Comp ######
-    cdef cppclass TOComp "steps::tetode::Comp":
-        TOComp(steps_solver.Compdef*)
-        void checkpoint(std.fstream)
-        void restore(std.fstream)
-        void addTet(TOTet*)
-        steps_solver.Compdef* def_()
-        unsigned int getTet_GtoL(unsigned int)
-        TOTet* getTet(unsigned int)
-        double vol()
-        unsigned int countTets()
-        std.vector[TOTet*].const_iterator bgnTet()
-        std.vector[TOTet*].const_iterator endTet()
+#    cdef cppclass TOComp "steps::tetode::Comp":
+#        TOComp(steps_solver.Compdef*)
+#        void checkpoint(std.fstream)
+#        void restore(std.fstream)
+#        void addTet(TOTet*)
+#        steps_solver.Compdef* def_()
+#        unsigned int getTet_GtoL(unsigned int)
+#        TOTet* getTet(unsigned int)
+#        double vol()
+#        unsigned int countTets()
+#        std.vector[TOTet*].const_iterator bgnTet()
+#        std.vector[TOTet*].const_iterator endTet()
 
 # ======================================================================================================================
-cdef extern from "steps/tetode/tri.hpp" namespace "steps::tetode":
+#cdef extern from "steps/tetode/tri.hpp" namespace "steps::tetode":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef Tri* TriP
     # ctypedef std.vector[Tri*] TriPVec
@@ -131,22 +186,22 @@ cdef extern from "steps/tetode/tri.hpp" namespace "steps::tetode":
     # ctypedef std.vector[Tri*].const_iterator TriPVecCI
 
     ###### Cybinding for Tri ######
-    cdef cppclass TOTri "steps::tetode::Tri":
-        TOTri(unsigned int, steps_solver.Patchdef*, double, double, double, double, double, double, double, int, int, int, int, int)
-        void setInnerTet(TOTet*)
-        void setOuterTet(TOTet*)
-        void setNextTri(unsigned int, TOTri*)
-        void checkpoint(std.fstream)
-        void restore(std.fstream)
-        steps_solver.Patchdef* patchdef()
-        unsigned int idx()
-        double area()
-        TOTet* iTet()
-        TOTet* oTet()
-        TOTri* nextTri(unsigned int)
-        int tri(unsigned int)
-        double length(unsigned int)
-        double dist(unsigned int)
-        int tet(unsigned int)
-        double getOhmicI(double, TetODE*)
-        double getGHKI(double, double, TetODE*)
+#    cdef cppclass TOTri "steps::tetode::Tri":
+#        TOTri(unsigned int, steps_solver.Patchdef*, double, double, double, double, double, double, double, int, int, int, int, int)
+#        void setInnerTet(TOTet*)
+#        void setOuterTet(TOTet*)
+#        void setNextTri(unsigned int, TOTri*)
+#        void checkpoint(std.fstream)
+#        void restore(std.fstream)
+#        steps_solver.Patchdef* patchdef()
+#        unsigned int idx()
+#        double area()
+#        TOTet* iTet()
+#        TOTet* oTet()
+#        TOTri* nextTri(unsigned int)
+#        int tri(unsigned int)
+#        double length(unsigned int)
+#        double dist(unsigned int)
+#        int tet(unsigned int)
+#        double getOhmicI(double, TetODE*)
+#        double getGHKI(double, double, TetODE*)

@@ -24,6 +24,7 @@
 
 """ Unit tests for directional dcst."""
 
+from __future__ import print_function
 import unittest2
 import random
 import steps.model as smodel
@@ -71,60 +72,60 @@ class TetDirectionalDcstTestCase(unittest2.TestCase):
         self.solver = None
     
     def testTetZeroDirectionDiffRate(self):
-        print "Testing tet zero directional diffusion rate from v1 to v2..."
+        print("Testing tet zero directional diffusion rate from v1 to v2...")
         for tri in self.pairing.keys():
             self.solver.setTetDiffD(self.pairing[tri][0], "D_a", 0, self.pairing[tri][1])
             self.assertEqual(self.solver.getTetDiffD(self.pairing[tri][0], "D_a", self.pairing[tri][1]), 0)
             self.solver.setTetCount(self.pairing[tri][0], "A", 10)
-        print "V1 Count: ", self.solver.getROICount("v1_tets", "A")
-        print "V2 Count: ", self.solver.getROICount("v2_tets", "A")
+        print("V1 Count: ", self.solver.getROICount("v1_tets", "A"))
+        print("V2 Count: ", self.solver.getROICount("v2_tets", "A"))
         self.solver.run(1)
-        print "V1 Count: ", self.solver.getROICount("v1_tets", "A")
-        print "V2 Count: ", self.solver.getROICount("v2_tets", "A")
+        print("V1 Count: ", self.solver.getROICount("v1_tets", "A"))
+        print("V2 Count: ", self.solver.getROICount("v2_tets", "A"))
 
     def testTetNonZeroDirectionDiffRate(self):
-        print "Testing tet non-zero directional diffusion rate from v1 to v2..."
+        print("Testing tet non-zero directional diffusion rate from v1 to v2...")
         for tri in self.pairing.keys():
             self.solver.setTetDiffD(self.pairing[tri][0], "D_a", self.DCST / 10, self.pairing[tri][1])
             self.assertEqual(self.solver.getTetDiffD(self.pairing[tri][0], "D_a", self.pairing[tri][1]), self.DCST / 10)
             self.solver.setTetCount(self.pairing[tri][0], "A", 10)
-        print "V1 Count: ", self.solver.getROICount("v1_tets", "A")
-        print "V2 Count: ", self.solver.getROICount("v2_tets", "A")
+        print("V1 Count: ", self.solver.getROICount("v1_tets", "A"))
+        print("V2 Count: ", self.solver.getROICount("v2_tets", "A"))
         self.solver.run(1)
-        print "V1 Count: ", self.solver.getROICount("v1_tets", "A")
-        print "V2 Count: ", self.solver.getROICount("v2_tets", "A")
+        print("V1 Count: ", self.solver.getROICount("v1_tets", "A"))
+        print("V2 Count: ", self.solver.getROICount("v2_tets", "A"))
 
     def testTetDirectionalDcstCheckpoint(self):
-        print "Testing checkpoint for tet directional dcst..."
+        print("Testing checkpoint for tet directional dcst...")
         for tri in self.pairing.keys():
             self.solver.setTetDiffD(self.pairing[tri][0], "D_a", self.DCST / 10, self.pairing[tri][1])
             self.assertEqual(self.solver.getTetDiffD(self.pairing[tri][0], "D_a", self.pairing[tri][1]), self.DCST / 10)
             self.solver.setTetCount(self.pairing[tri][0], "A", 10)
         v1_count = self.solver.getROICount("v1_tets", "A")
         v2_count = self.solver.getROICount("v2_tets", "A")
-        print "V1 Count: ", v1_count
-        print "V2 Count: ", v2_count
+        print("V1 Count: ", v1_count)
+        print("V2 Count: ", v2_count)
         self.solver.checkpoint("tet_dir_dcst.cp")
         self.solver.run(1)
-        print "V1 Count: ", self.solver.getROICount("v1_tets", "A")
-        print "V2 Count: ", self.solver.getROICount("v2_tets", "A")
+        print("V1 Count: ", self.solver.getROICount("v1_tets", "A"))
+        print("V2 Count: ", self.solver.getROICount("v2_tets", "A"))
         self.solver.restore("tet_dir_dcst.cp")
-        print "V1 Count: ", self.solver.getROICount("v1_tets", "A")
-        print "V2 Count: ", self.solver.getROICount("v2_tets", "A")
+        print("V1 Count: ", self.solver.getROICount("v1_tets", "A"))
+        print("V2 Count: ", self.solver.getROICount("v2_tets", "A"))
         self.assertEqual(self.solver.getROICount("v1_tets", "A"), v1_count)
         self.assertEqual(self.solver.getROICount("v2_tets", "A"), v2_count)
 
     def testTetNonDirectionDiffRate(self):
-        print "Testing tet non directional diffusion rate..."
+        print("Testing tet non directional diffusion rate...")
         for tri in self.pairing.keys():
             self.solver.setTetDiffD(self.pairing[tri][0], "D_a", self.DCST)
             self.assertEqual(self.solver.getTetDiffD(self.pairing[tri][0], "D_a"), self.DCST)
             self.solver.setTetCount(self.pairing[tri][0], "A", 10)
-        print "V1 Count: ", self.solver.getROICount("v1_tets", "A")
-        print "V2 Count: ", self.solver.getROICount("v2_tets", "A")
+        print("V1 Count: ", self.solver.getROICount("v1_tets", "A"))
+        print("V2 Count: ", self.solver.getROICount("v2_tets", "A"))
         self.solver.run(1)
-        print "V1 Count: ", self.solver.getROICount("v1_tets", "A")
-        print "V2 Count: ", self.solver.getROICount("v2_tets", "A")
+        print("V1 Count: ", self.solver.getROICount("v1_tets", "A"))
+        print("V2 Count: ", self.solver.getROICount("v2_tets", "A"))
 
 class TriDirectionalDcstTestCase(unittest2.TestCase):
     """ Tests for triangular directional dcst. """
@@ -161,57 +162,57 @@ class TriDirectionalDcstTestCase(unittest2.TestCase):
         self.solver = None
     
     def testTriZeroDirectionDiffRate(self):
-        print "Testing tri zero directional diffusion rate..."
+        print("Testing tri zero directional diffusion rate...")
         for tri in self.neigh_tris:
-            self.solver.setTriDiffD(self.focus_tri, "D_a", 0, tri)
-            self.assertEqual(self.solver.getTriDiffD(self.focus_tri, "D_a", tri), 0)
+            self.solver.setTriSDiffD(self.focus_tri, "D_a", 0, tri)
+            self.assertEqual(self.solver.getTriSDiffD(self.focus_tri, "D_a", tri), 0)
         self.solver.setTriCount(self.focus_tri, "A", 10)
-        print "Patch Count: ", self.solver.getPatchCount("patch", "A")
-        print "tri Count: ", self.solver.getTriCount(self.focus_tri, "A")
+        print("Patch Count: ", self.solver.getPatchCount("patch", "A"))
+        print("tri Count: ", self.solver.getTriCount(self.focus_tri, "A"))
         self.solver.run(1)
-        print "Patch Count: ", self.solver.getPatchCount("patch", "A")
-        print "tri Count: ", self.solver.getTriCount(self.focus_tri, "A")
+        print("Patch Count: ", self.solver.getPatchCount("patch", "A"))
+        print("tri Count: ", self.solver.getTriCount(self.focus_tri, "A"))
     
     def testTriNonZeroDirectionDiffRate(self):
-        print "Testing tri non-zero directional diffusion rate..."
+        print("Testing tri non-zero directional diffusion rate...")
         for tri in self.neigh_tris:
-            self.solver.setTriDiffD(self.focus_tri, "D_a", self.DCST / 10, tri)
-            self.assertEqual(self.solver.getTriDiffD(self.focus_tri, "D_a", tri), self.DCST / 10)
+            self.solver.setTriSDiffD(self.focus_tri, "D_a", self.DCST / 10, tri)
+            self.assertEqual(self.solver.getTriSDiffD(self.focus_tri, "D_a", tri), self.DCST / 10)
         self.solver.setTriCount(self.focus_tri, "A", 10)
-        print "Patch Count: ", self.solver.getPatchCount("patch", "A")
-        print "tri Count: ", self.solver.getTriCount(self.focus_tri, "A")
+        print("Patch Count: ", self.solver.getPatchCount("patch", "A"))
+        print("tri Count: ", self.solver.getTriCount(self.focus_tri, "A"))
         self.solver.run(1)
-        print "Patch Count: ", self.solver.getPatchCount("patch", "A")
-        print "tri Count: ", self.solver.getTriCount(self.focus_tri, "A")
+        print("Patch Count: ", self.solver.getPatchCount("patch", "A"))
+        print("tri Count: ", self.solver.getTriCount(self.focus_tri, "A"))
     
     def testTriDirectionalDcstCheckpoint(self):
-        print "Testing checkpoint for tri directional dcst..."
+        print("Testing checkpoint for tri directional dcst...")
         for tri in self.neigh_tris:
-            self.solver.setTriDiffD(self.focus_tri, "D_a", self.DCST / 10, tri)
-            self.assertEqual(self.solver.getTriDiffD(self.focus_tri, "D_a", tri), self.DCST / 10)
+            self.solver.setTriSDiffD(self.focus_tri, "D_a", self.DCST / 10, tri)
+            self.assertEqual(self.solver.getTriSDiffD(self.focus_tri, "D_a", tri), self.DCST / 10)
         self.solver.setTriCount(self.focus_tri, "A", 10)
-        print "Patch Count: ", self.solver.getPatchCount("patch", "A")
-        print "tri Count: ", self.solver.getTriCount(self.focus_tri, "A")
+        print("Patch Count: ", self.solver.getPatchCount("patch", "A"))
+        print("tri Count: ", self.solver.getTriCount(self.focus_tri, "A"))
         self.solver.checkpoint("tri_dir_dcst.cp")
         self.solver.run(1)
-        print "Patch Count: ", self.solver.getPatchCount("patch", "A")
-        print "tri Count: ", self.solver.getTriCount(self.focus_tri, "A")
+        print("Patch Count: ", self.solver.getPatchCount("patch", "A"))
+        print("tri Count: ", self.solver.getTriCount(self.focus_tri, "A"))
         self.solver.restore("tri_dir_dcst.cp")
-        print "Patch Count: ", self.solver.getPatchCount("patch", "A")
-        print "tri Count: ", self.solver.getTriCount(self.focus_tri, "A")
+        print("Patch Count: ", self.solver.getPatchCount("patch", "A"))
+        print("tri Count: ", self.solver.getTriCount(self.focus_tri, "A"))
         self.assertEqual(self.solver.getPatchCount("patch", "A"), 10)
         self.assertEqual(self.solver.getTriCount(self.focus_tri, "A"), 10)
 
     def testTriNonDirectionDiffRate(self):
-        print "Testing tri non-directional dcst..."
-        self.solver.setTriDiffD(self.focus_tri, "D_a", self.DCST)
-        self.assertEqual(self.solver.getTriDiffD(self.focus_tri, "D_a"), self.DCST)
+        print("Testing tri non-directional dcst...")
+        self.solver.setTriSDiffD(self.focus_tri, "D_a", self.DCST)
+        self.assertEqual(self.solver.getTriSDiffD(self.focus_tri, "D_a"), self.DCST)
         self.solver.setTriCount(self.focus_tri, "A", 10)
-        print "Patch Count: ", self.solver.getPatchCount("patch", "A")
-        print "tri Count: ", self.solver.getTriCount(self.focus_tri, "A")
+        print("Patch Count: ", self.solver.getPatchCount("patch", "A"))
+        print("tri Count: ", self.solver.getTriCount(self.focus_tri, "A"))
         self.solver.run(1)
-        print "Patch Count: ", self.solver.getPatchCount("patch", "A")
-        print "tri Count: ", self.solver.getTriCount(self.focus_tri, "A")
+        print("Patch Count: ", self.solver.getPatchCount("patch", "A"))
+        print("tri Count: ", self.solver.getTriCount(self.focus_tri, "A"))
 
 class DiffBndDirectionalDcstTestCase(unittest2.TestCase):
     """ Tests for directional dcst in diffusion boundary. """
@@ -249,47 +250,47 @@ class DiffBndDirectionalDcstTestCase(unittest2.TestCase):
         self.solver = None
     
     def testDBZeroDirectionDiffRate(self):
-        print "Testing diff bnd zero directional diffusion rate..."
+        print("Testing diff bnd zero directional diffusion rate...")
         self.solver.setCompCount("comp1", "A", 100)
         self.solver.setDiffBoundaryDcst("boundary", "A", 0.0)
-        print "V1 Count: ", self.solver.getCompCount("comp1", "A")
-        print "V2 Count: ", self.solver.getCompCount("comp2", "A")
+        print("V1 Count: ", self.solver.getCompCount("comp1", "A"))
+        print("V2 Count: ", self.solver.getCompCount("comp2", "A"))
         self.solver.run(1)
-        print "V1 Count: ", self.solver.getCompCount("comp1", "A")
-        print "V2 Count: ", self.solver.getCompCount("comp2", "A")
+        print("V1 Count: ", self.solver.getCompCount("comp1", "A"))
+        print("V2 Count: ", self.solver.getCompCount("comp2", "A"))
     
     def testBDNonZeroDirectionDiffRate(self):
-        print "Testing diff bnd non-zero directional diffusion rate"
+        print("Testing diff bnd non-zero directional diffusion rate")
         self.solver.setCompCount("comp1", "A", 100)
         self.solver.setDiffBoundaryDcst("boundary", "A", self.DCST / 10, "comp2")
         self.solver.setDiffBoundaryDcst("boundary", "A", 0.0, "comp1")
-        print "V1 Count: ", self.solver.getCompCount("comp1", "A")
-        print "V2 Count: ", self.solver.getCompCount("comp2", "A")
+        print("V1 Count: ", self.solver.getCompCount("comp1", "A"))
+        print("V2 Count: ", self.solver.getCompCount("comp2", "A"))
         self.solver.run(1)
-        print "V1 Count: ", self.solver.getCompCount("comp1", "A")
-        print "V2 Count: ", self.solver.getCompCount("comp2", "A")
+        print("V1 Count: ", self.solver.getCompCount("comp1", "A"))
+        print("V2 Count: ", self.solver.getCompCount("comp2", "A"))
     
     def testDBSingleDirectionDiffRate(self):
-        print "Testing diff bnd nonzero single direction diffusion rate..."
+        print("Testing diff bnd nonzero single direction diffusion rate...")
         self.solver.setCompCount("comp1", "A", 100)
         self.solver.setDiffBoundaryDcst("boundary", "A", self.DCST, "comp2" )
         self.solver.setDiffBoundaryDcst("boundary", "A" , 0.0, "comp1")
-        print "V1 Count: ", self.solver.getCompCount("comp1", "A")
-        print "V2 Count: ", self.solver.getCompCount("comp2", "A")
+        print("V1 Count: ", self.solver.getCompCount("comp1", "A"))
+        print("V2 Count: ", self.solver.getCompCount("comp2", "A"))
         self.solver.run(1)
-        print "V1 Count: ", self.solver.getCompCount("comp1", "A")
-        print "V2 Count: ", self.solver.getCompCount("comp2", "A")
+        print("V1 Count: ", self.solver.getCompCount("comp1", "A"))
+        print("V2 Count: ", self.solver.getCompCount("comp2", "A"))
 
     def testNonzeroBidirectionDiffRate(self):
-        print "Testing diff bnd nonzero bidirection diffusion rate..."
+        print("Testing diff bnd nonzero bidirection diffusion rate...")
         self.solver.setCompCount("comp1", "A", 100)
         self.solver.setCompCount("comp2", "A", 10)
         self.solver.setDiffBoundaryDcst("boundary", "A", self.DCST / 10)
-        print "V1 Count: ", self.solver.getCompCount("comp1", "A")
-        print "V2 Count: ", self.solver.getCompCount("comp2", "A")
+        print("V1 Count: ", self.solver.getCompCount("comp1", "A"))
+        print("V2 Count: ", self.solver.getCompCount("comp2", "A"))
         self.solver.run(1)
-        print "V1 Count: ", self.solver.getCompCount("comp1", "A")
-        print "V2 Count: ", self.solver.getCompCount("comp2", "A")
+        print("V1 Count: ", self.solver.getCompCount("comp1", "A"))
+        print("V2 Count: ", self.solver.getCompCount("comp2", "A"))
 
 def suite():
     all_tests = []

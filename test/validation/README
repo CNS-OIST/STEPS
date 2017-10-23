@@ -1,0 +1,21 @@
+Run the STEPS validations. 4 folders are currently included:
+
+validation_rd - Reaction-diffusion validation. Validated reaction and reaction-diffusion in solvers Wmdirect, Tetexact, and TetODE. See individual model files for more details. 
+
+validation_efield - Validates the EField calculation in 3 tests, Rallpack 1 and 3 and a voltage-clamp test. Rallpack 3 is run with the determinsitic solver TetODE due to significant noise in the stochastic system. 
+
+validation_mpi - not currently included in tests
+validation_cp - Validation of checkpointing, also not currently included in tests. 
+
+
+Serial validations are run in terminal by executing
+
+    python run_validation_tests.py
+
+within the current directory (test/validation). Execution should take ~ 15 minutes for all current tests (those under validation_rd and validation_efield)
+
+Parallel validations are run in terminal by executing
+
+   mpirun -n [np] python run_parallel_validation_tests.py
+
+within the current directory (test/validation), where [np] is the number of parallel processes for the simulations.

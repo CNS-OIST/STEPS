@@ -21,11 +21,12 @@
 #
 #################################################################################   
 ###
+from __future__ import print_function
 
 try:
     import cubit
 except ImportError:
-    print "Unable to import CUBIT module."
+    print("Unable to import CUBIT module.")
 
 from steps.utilities.steps_shadow import *
 

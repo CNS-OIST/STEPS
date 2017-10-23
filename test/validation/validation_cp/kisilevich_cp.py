@@ -19,7 +19,7 @@ import time
 import numpy
 import steps.utilities.meshio as meshio
 
-from tol_funcs import *
+from . import tol_funcs
 
 ########################################################################
 

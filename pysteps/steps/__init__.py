@@ -23,7 +23,7 @@
 #
 #################################################################################   
 ###
-
+from __future__ import print_function, absolute_import
 
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -33,7 +33,7 @@ import os.path
 
 __name__      = 'steps'
 __longname__  = 'STochastic Engine for Pathway Simulation'
-__version__   = '3.1.0'
+__version__   = '3.2.0'
 __author__    = 'STEPS Development Team'
 __url__       = 'steps.sourceforge.net'
 __license__   = 'GPL2.0'
@@ -41,11 +41,11 @@ __binding__   = 'Cython'
 
 #Try importing mpi version if file exists. Avoids catching exception for the wrong reason
 if glob.glob(os.path.join(os.path.dirname(__file__),'cysteps_mpi.*')):
-    import cysteps_mpi
-    import cysteps_mpi as stepslib
+    from . import cysteps_mpi
+    from . import cysteps_mpi as stepslib
 elif glob.glob(os.path.join(os.path.dirname(__file__),'cysteps.*')):
-    import cysteps
-    import cysteps as stepslib
+    from . import cysteps
+    from . import cysteps as stepslib
 else:
     raise Exception("STEPS library not found [cysteps*]")
 
@@ -58,12 +58,12 @@ _quiet = False
 def _greet():
     global _suppress_greet
     if not _suppress_greet:
-        print ""
-        print __longname__
-        print "Version: ", __version__
-        print "License: ", __license__
-        print "Website: ", __url__
-        print "CXX Binding:", __binding__
+        print("")
+        print(__longname__)
+        print("Version: ", __version__)
+        print("License: ", __license__)
+        print("Website: ", __url__)
+        print("CXX Binding:", __binding__)
 
     _suppress_greet = True
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

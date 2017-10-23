@@ -21,6 +21,7 @@
 #
 #################################################################################   
 ###
+from __future__ import print_function
 
 # Supporting Module for generating STEPS morph sectioning file using NEURON
 
@@ -139,14 +140,14 @@ def mapMorphTetmesh(morph_sections, mesh, morph2mesh_scale = 1e-6):
             center = getCenter(p0, p1, morph2mesh_scale)
             intet = mesh.findTetByPoint(center)
             if intet == -1:
-                print "Tracking point ", center, " of ", sec["name"], " is not in the mesh."
-                print "Try to track end points instead."
+                print("Tracking point ", center, " of ", sec["name"], " is not in the mesh.")
+                print("Try to track end points instead.")
                 intet = mesh.findTetByPoint([p0[0] * morph2mesh_scale, p0[1] * morph2mesh_scale, p0[2] * morph2mesh_scale])
                 if intet == -1:
-                    print "First end point is not in the mesh, try second end point."
+                    print("First end point is not in the mesh, try second end point.")
                     intet = mesh.findTetByPoint([p1[0] * morph2mesh_scale, p1[1] * morph2mesh_scale, p1[2] * morph2mesh_scale])
                     if intet == -1:
-                        print "Second end point not in the mesh, will skip this cylinder."
+                        print("Second end point not in the mesh, will skip this cylinder.")
                         continue
 
             mapped_list[intet] = sec["name"]
@@ -227,6 +228,6 @@ def mapMorphTetmesh(morph_sections, mesh, morph2mesh_scale = 1e-6):
                 print("Tetrahedron %i has no neighbor in its partition. Try to reassign." % (tet))
                 found_neighbor_parts = list(found_neighbor_parts)
                 if len(found_neighbor_parts) > 1:
-                    print "Multiple reassignment options: ", found_neighbor_parts, " choose the first one by default."
+                    print("Multiple reassignment options: ", found_neighbor_parts, " choose the first one by default.")
                 mapped_list[tet] = found_neighbor_parts[0]
     return mapped_list

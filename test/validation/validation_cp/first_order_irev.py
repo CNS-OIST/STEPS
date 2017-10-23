@@ -9,6 +9,7 @@
   
 ########################################################################
 
+from __future__ import print_function, absolute_import
 import steps.model as smod
 import steps.geom as sgeom
 import steps.rng as srng
@@ -17,10 +18,10 @@ import steps.solver as ssolv
 import numpy as np
 import time
 
-from tol_funcs import *
+from . import tol_funcs
 
-print "Reaction - First order, irreversible:"
-import first_order_irev_cp
+print("Reaction - First order, irreversible:")
+from . import first_order_irev_cp
 
 ########################################################################
 
@@ -81,8 +82,8 @@ def test_foirev():
         if i == 0: continue
         analy = N*np.exp(-KCST*tpnts[i])
         std = np.power((N*(np.exp(-KCST*tpnts[i]))*(1-(np.exp(-KCST*tpnts[i])))), 0.5)
-        if not tolerable(analy, mean_res[i], tolerance):
+        if not tol_funcs.tolerable(analy, mean_res[i], tolerance):
             passed = False
-        assert(tolerable(std, std_res[i], tolerance))
+        assert(tol_funcs.tolerable(std, std_res[i], tolerance))
 
 

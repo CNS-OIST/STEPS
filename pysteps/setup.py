@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 """A setuptools based setup module."""
 from setuptools import setup, find_packages, Extension
@@ -24,7 +25,7 @@ def distutils_dir_name():
 # ----------------------------------------------
 # Just get build-dir
 if '--print-build-dir' in sys.argv:
-    print distutils_dir_name()
+    print(distutils_dir_name())
     exit(0)
 
 # LD Libraries - No spaces please
@@ -68,5 +69,5 @@ setup_opts = {
 }
 
 if __name__ == '__main__':
-    print 'Lib Path:', lib_dirs
+    print('Lib Path:', lib_dirs)
     setup( **setup_opts )

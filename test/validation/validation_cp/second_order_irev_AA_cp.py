@@ -18,7 +18,7 @@ import math
 import time 
 import numpy
 
-from tol_funcs import *
+from . import tol_funcs
 
 ########################################################################
 

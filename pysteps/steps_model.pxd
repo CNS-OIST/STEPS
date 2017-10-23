@@ -19,18 +19,17 @@ cdef extern from "steps/model/volsys.hpp" namespace "steps::model":
 
     ###### Cybinding for Volsys ######
     cdef cppclass Volsys:
-        Volsys(std.string, Model*)
+        Volsys(std.string, Model*) except +
         std.string getID()
-        void setID(const std.string &) except +
+        void setID(std.string) except +
         Model* getModel()
         Reac* getReac(std.string) except +
-        void delReac(std.string)
-        std.vector[Reac*] getAllReacs()
+        void delReac(std.string) except +
+        std.vector[Reac*] getAllReacs() 
         Diff* getDiff(std.string) except +
-        void delDiff(std.string)
+        void delDiff(std.string) except +
         std.vector[Diff*] getAllDiffs()
         std.vector[Spec*] getAllSpecs()
-
 
 # ======================================================================================================================
 cdef extern from "steps/model/chanstate.hpp" namespace "steps::model":
@@ -45,9 +44,9 @@ cdef extern from "steps/model/chanstate.hpp" namespace "steps::model":
 
     ###### Cybinding for ChanState ######
     cdef cppclass ChanState:
-        ChanState(std.string, Model*, Chan*)
+        ChanState(std.string, Model*, Chan*) except +
         Chan* getChan()
-        void setID(std.string)
+        void setID(std.string) except +
 
 # ======================================================================================================================
 cdef extern from "steps/model/ghkcurr.hpp" namespace "steps::model":
@@ -63,17 +62,18 @@ cdef extern from "steps/model/ghkcurr.hpp" namespace "steps::model":
 
     ###### Cybinding for GHKcurr ######
     cdef cppclass GHKcurr:
-        GHKcurr(std.string, Surfsys*, ChanState*, Spec*, bool, double, double)
+        GHKcurr(std.string, Surfsys*, ChanState*, Spec*, bool, double, double) except +
         std.string getID()
-        void setID(std.string)
+        void setID(std.string) except +
         Surfsys* getSurfsys()
         Model* getModel()
         ChanState* getChanState()
-        void setChanState(ChanState*)
+        void setChanState(ChanState*) except +
         Spec* getIon()
-        void setIon(Spec*)
-        void setPInfo(double, double, double, double, double)
-        void setP(double)
+        # Below modified/added by Iain
+        void setIon(Spec * ion) except +
+        void setP(double p) except +
+        void setPInfo(double g, double V, double T, double oconc, double iconc) except +
 
 
 # ======================================================================================================================
@@ -89,18 +89,18 @@ cdef extern from "steps/model/diff.hpp" namespace "steps::model":
 
     ###### Cybinding for Diff ######
     cdef cppclass Diff:
-        Diff(std.string, Volsys*, Spec*, double)
-        Diff(std.string, Surfsys*, Spec*, double)
+        Diff(std.string, Volsys*, Spec*, double) except +
+        Diff(std.string, Surfsys*, Spec*, double) except +
         std.string getID()
-        void setID(std.string)
+        void setID(std.string) except +
         Volsys* getVolsys()
         Surfsys* getSurfsys()
         Model* getModel()
         Spec* getLig()
-        void setLig(Spec*)
+        void setLig(Spec*) except +
         double getDcst()
-        void setDcst(double)
         std.vector[Spec*] getAllSpecs()
+        void setDcst(double) except +
 
 
 # ======================================================================================================================
@@ -116,17 +116,17 @@ cdef extern from "steps/model/vdeptrans.hpp" namespace "steps::model":
 
     ###### Cybinding for VDepTrans ######
     cdef cppclass VDepTrans:
-        VDepTrans(std.string, Surfsys*, ChanState*, ChanState*, std.vector[double], double, double, double, unsigned int)
+        VDepTrans(std.string, Surfsys*, ChanState*, ChanState*, std.vector[double], double, double, double, unsigned int) except +
         std.string getID()
-        void setID(std.string)
+        void setID(std.string) except +
         Surfsys* getSurfsys()
         Model* getModel()
         Chan* getChan()
         ChanState* getSrc()
-        void setSrc(ChanState*)
         ChanState* getDst()
-        void setDst(ChanState*)
         std.vector[double] getRate()
+        void setSrc(ChanState * src) except +
+        void setDst(ChanState * dst) except +
 
 # ======================================================================================================================
 cdef extern from "steps/model/vdepsreac.hpp" namespace "steps::model":
@@ -141,25 +141,25 @@ cdef extern from "steps/model/vdepsreac.hpp" namespace "steps::model":
 
     ###### Cybinding for VDepSReac ######
     cdef cppclass VDepSReac:
-        VDepSReac(std.string, Surfsys*, std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[double], double, double, double, unsigned int)
+        VDepSReac(std.string, Surfsys*, std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[double], double, double, double, unsigned int) except +
         std.string getID()
-        void setID(std.string)
+        void setID(std.string) except +
         Surfsys* getSurfsys()
         Model* getModel()
         bool getInner()
         bool getOuter()
         std.vector[Spec*] getOLHS()
-        void setOLHS(std.vector[Spec*])
+        void setOLHS(std.vector[Spec*]) except +
         std.vector[Spec*] getILHS()
-        void setILHS(std.vector[Spec*])
+        void setILHS(std.vector[Spec*]) except +
         std.vector[Spec*] getSLHS()
-        void setSLHS(std.vector[Spec*])
+        void setSLHS(std.vector[Spec*]) except +
         std.vector[Spec*] getIRHS()
-        void setIRHS(std.vector[Spec*])
+        void setIRHS(std.vector[Spec*]) except +
         std.vector[Spec*] getSRHS()
-        void setSRHS(std.vector[Spec*])
+        void setSRHS(std.vector[Spec*]) except +
         std.vector[Spec*] getORHS()
-        void setORHS(std.vector[Spec*])
+        void setORHS(std.vector[Spec*]) except +
         unsigned int getOrder()
         std.vector[double] getK()
         std.vector[Spec*] getAllSpecs()
@@ -177,19 +177,19 @@ cdef extern from "steps/model/reac.hpp" namespace "steps::model":
 
     ###### Cybinding for Reac ######
     cdef cppclass Reac:
-        Reac(std.string, Volsys*, std.vector[Spec*], std.vector[Spec*], double)
+        Reac(std.string, Volsys*, std.vector[Spec*], std.vector[Spec*], double) except +
         std.string getID()
-        void setID(std.string)
+        void setID(std.string) except +
         Volsys* getVolsys()
         Model* getModel()
         std.vector[Spec*] getLHS()
-        void setLHS(std.vector[Spec*])
+        void setLHS(std.vector[Spec*]) except +
         std.vector[Spec*] getRHS()
-        void setRHS(std.vector[Spec*])
+        void setRHS(std.vector[Spec*]) except +
         std.vector[Spec*] getAllSpecs()
         unsigned int getOrder()
         double getKcst()
-        void setKcst(double)
+        void setKcst(double) except +
         
 
 
@@ -206,29 +206,29 @@ cdef extern from "steps/model/sreac.hpp" namespace "steps::model":
 
     ###### Cybinding for SReac ######
     cdef cppclass SReac:
-        SReac(std.string, Surfsys*, std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], double)
+        SReac(std.string, Surfsys*, std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], double) except +
         std.string getID()
-        void setID(std.string)
+        void setID(std.string) except +
         Surfsys* getSurfsys()
         Model* getModel()
         bool getInner()
         bool getOuter()
         std.vector[Spec*] getOLHS()
-        void setOLHS(std.vector[Spec*])
+        void setOLHS(std.vector[Spec*]) except +
         std.vector[Spec*] getILHS()
-        void setILHS(std.vector[Spec*])
+        void setILHS(std.vector[Spec*]) except +
         std.vector[Spec*] getSLHS()
-        void setSLHS(std.vector[Spec*])
+        void setSLHS(std.vector[Spec*]) except +
         std.vector[Spec*] getIRHS()
-        void setIRHS(std.vector[Spec*])
+        void setIRHS(std.vector[Spec*]) except +
         std.vector[Spec*] getSRHS()
-        void setSRHS(std.vector[Spec*])
+        void setSRHS(std.vector[Spec*]) except +
         std.vector[Spec*] getORHS()
-        void setORHS(std.vector[Spec*])
+        void setORHS(std.vector[Spec*]) except +
         unsigned int getOrder()
         double getKcst()
-        void setKcst(double)
         std.vector[Spec*] getAllSpecs()
+        void setKcst(double kcst) except +
 
 # ======================================================================================================================
 cdef extern from "steps/model/chan.hpp" namespace "steps::model":
@@ -243,11 +243,11 @@ cdef extern from "steps/model/chan.hpp" namespace "steps::model":
 
     ###### Cybinding for Chan ######
     cdef cppclass Chan:
-        Chan(std.string, Model*)
+        Chan(std.string, Model*) except +
         std.string getID()
-        void setID(std.string)
+        void setID(std.string) except +
         Model* getModel()
-        ChanState* getChanState(std.string)
+        ChanState* getChanState(std.string) except +
         std.vector[ChanState*] getAllChanStates()
 
 # ======================================================================================================================
@@ -263,17 +263,17 @@ cdef extern from "steps/model/ohmiccurr.hpp" namespace "steps::model":
 
     ###### Cybinding for OhmicCurr ######
     cdef cppclass OhmicCurr:
-        OhmicCurr(std.string, Surfsys*, ChanState*, double, double)
+        OhmicCurr(std.string, Surfsys*, ChanState*, double, double) except +
         std.string getID()
-        void setID(std.string)
+        void setID(std.string) except +
         Surfsys* getSurfsys()
         Model* getModel()
         ChanState* getChanState()
-        void setChanState(ChanState*)
+        void setChanState(ChanState*) except +
         double getERev()
-        void setERev(double)
+        void setERev(double) except +
         double getG()
-        void setG(double)
+        void setG(double g) except +
 
 # ======================================================================================================================
 cdef extern from "steps/model/spec.hpp" namespace "steps::model":
@@ -288,11 +288,11 @@ cdef extern from "steps/model/spec.hpp" namespace "steps::model":
 
     ###### Cybinding for Spec ######
     cdef cppclass Spec:
-        Spec(std.string, Model*, int)
+        Spec(std.string, Model*, int) except +
         std.string getID()
-        void setID(std.string)
+        void setID(std.string) except +
         Model* getModel()
-        void setValence(int)
+        void setValence(int) except +
         int getValence()
 
 
@@ -307,31 +307,29 @@ cdef extern from "steps/model/surfsys.hpp" namespace "steps::model":
 
     ###### Cybinding for Surfsys ######
     cdef cppclass Surfsys:
-        Surfsys(std.string, Model*)
+        Surfsys(std.string, Model*) except +
         std.string getID()
-        void setID(std.string)
+        void setID(std.string) except +
         Model* getModel()
         SReac* getSReac(std.string) except +
-        void delSReac(std.string)
+        void delSReac(std.string) except +
         std.vector[SReac*] getAllSReacs()
         Diff* getDiff(std.string) except +
-        void delDiff(std.string)
+        void delDiff(std.string) except +
         std.vector[Diff*] getAllDiffs()
         VDepTrans* getVDepTrans(std.string) except +
-        void delVDepTrans(std.string)
+        void delVDepTrans(std.string) except +
         std.vector[VDepTrans*] getAllVDepTrans()
         VDepSReac* getVDepSReac(std.string) except +
-        void delVDepSReac(std.string)
+        void delVDepSReac(std.string) except +
         std.vector[VDepSReac*] getAllVDepSReacs()
         OhmicCurr* getOhmicCurr(std.string) except +
-        void delOhmicCurr(std.string)
+        void delOhmicCurr(std.string) except +
         std.vector[OhmicCurr*] getAllOhmicCurrs()
         GHKcurr* getGHKcurr(std.string) except +
-        void delGHKcurr(std.string)
+        void delGHKcurr(std.string) except +
         std.vector[GHKcurr*] getAllGHKcurrs()
         std.vector[Spec*] getAllSpecs()
-
-
 
 
 # ======================================================================================================================
@@ -366,7 +364,7 @@ cdef extern from "steps/model/model.hpp" namespace "steps::model":
         Spec* getSpec(std.string) except +
         void delSpec(std.string) except +
         std.vector[Spec*] getAllSpecs()
-        Chan* getChan(std.string)
+        Chan* getChan(std.string) except +
         std.vector[Chan*] getAllChans()
         Volsys* getVolsys(std.string) except +
         void delVolsys(std.string) except +

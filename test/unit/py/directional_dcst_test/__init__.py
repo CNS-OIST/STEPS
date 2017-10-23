@@ -24,7 +24,7 @@
 
 import unittest2
 
-import directional_dcst
+from . import directional_dcst
 
 def suite():
     all_tests = []
