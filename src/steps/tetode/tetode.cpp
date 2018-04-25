@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -38,6 +38,7 @@
 #include "steps/tetode/patch.hpp"
 
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/math/constants.hpp"
 #include "steps/math/point.hpp"
 
@@ -60,6 +61,9 @@
 
 #include "steps/solver/efield/efield.hpp"
 #include "steps/solver/efield/dVsolver.hpp"
+
+// logging
+#include "easylogging++.h"
 
 // CVODE definitions
 #define Ith(v,i)    NV_Ith_S(v,i)
@@ -126,7 +130,7 @@ void check_flag(void *flagvalue, const char *funcname, int opt)
     {
         std::ostringstream os;
         os << "\nSUNDIALS_ERROR: %s() failed - returned NULL pointer\n\n",  funcname;
-        throw steps::SysErr(os.str());
+        SysErrLog(os.str());
     }
 
     /* Check if flag < 0 */
@@ -137,7 +141,7 @@ void check_flag(void *flagvalue, const char *funcname, int opt)
         {
             std::ostringstream os;
             os << "\nSUNDIALS_ERROR: %s() failed with flag = %d\n\n", funcname, *errflag;
-            throw steps::SysErr(os.str());
+            SysErrLog(os.str());
         }
      }
 }
@@ -264,7 +268,7 @@ void stode::CVodeState::setTolerances(double atol, double rtol) {
         std::ostringstream os;
         os << "Neither absolute tolerance nor relative tolerance should ";
         os << "be negative.\n";
-        throw(steps::ArgErr(os.str()));
+        ArgErrLog(os.str());
     }
 
     reltol_cvode = rtol;
@@ -499,7 +503,7 @@ void stode::TetODE::reset(void)
 {
     std::ostringstream os;
     os << "reset() not implemented for steps::solver::TetODE solver";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -523,7 +527,7 @@ void stode::TetODE::_setup(void)
     // Perform upcast.
     pMesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom());
     if (!pMesh)
-        throw steps::ArgErr("Geometry description to steps::solver::TetODE solver "
+        ArgErrLog("Geometry description to steps::solver::TetODE solver "
                 "constructor is not a valid steps::tetmesh::Tetmesh object.");
 
     uint ntets = pMesh->countTets();
@@ -531,8 +535,8 @@ void stode::TetODE::_setup(void)
     uint ncomps = pMesh->_countComps();
     uint npatches = pMesh->_countPatches();
 
-    assert(npatches == statedef()->countPatches());
-    assert(ncomps == statedef()->countComps());
+    AssertLog(npatches == statedef()->countPatches());
+    AssertLog(ncomps == statedef()->countComps());
 
     // Now create the actual compartments.
     ssolver::CompDefPVecCI c_end = statedef()->endComp();
@@ -540,7 +544,7 @@ void stode::TetODE::_setup(void)
     {
         uint compdef_gidx = (*c)->gidx();
         uint comp_idx = _addComp(*c);
-        assert(compdef_gidx == comp_idx);
+        AssertLog(compdef_gidx == comp_idx);
     }
     // Create the actual patches.
     ssolver::PatchDefPVecCI p_end = statedef()->endPatch();
@@ -548,11 +552,11 @@ void stode::TetODE::_setup(void)
     {
         uint patchdef_gidx = (*p)->gidx();
         uint patch_idx = _addPatch(*p);
-        assert(patchdef_gidx == patch_idx);
+        AssertLog(patchdef_gidx == patch_idx);
     }
 
-    assert(pPatches.size() == npatches);
-    assert(pComps.size() == ncomps);
+    AssertLog(pPatches.size() == npatches);
+    AssertLog(pComps.size() == ncomps);
 
     pTets.assign(ntets, nullptr);
     pTris.assign(ntris, nullptr);
@@ -563,12 +567,12 @@ void stode::TetODE::_setup(void)
         steps::wm::Patch * wmpatch = pMesh->_getPatch(p);
 
         // sanity check
-        assert (statedef()->getPatchIdx(wmpatch) == p );
+        AssertLog(statedef()->getPatchIdx(wmpatch) == p );
 
         // Perform upcast
         steps::tetmesh::TmPatch *tmpatch = dynamic_cast<steps::tetmesh::TmPatch*>(wmpatch);
         if (!tmpatch)
-            throw steps::ArgErr("Well-mixed patches not supported in steps::solver::TetODE solver.");
+            ArgErrLog("Well-mixed patches not supported in steps::solver::TetODE solver.");
 
         steps::tetode::Patch *localpatch = pPatches[p];
         std::map<uint, std::vector<uint> > bar2tri;
@@ -581,7 +585,7 @@ void stode::TetODE::_setup(void)
 
         for (uint tri: tmpatch->_getAllTriIndices()) 
         {
-            assert (pMesh->getTriPatch(tri) == tmpatch);
+            AssertLog(pMesh->getTriPatch(tri) == tmpatch);
 
             double area = pMesh->getTriArea(tri);
 
@@ -625,17 +629,17 @@ void stode::TetODE::_setup(void)
         steps::wm::Comp * wmcomp = pMesh->_getComp(c);
 
         // sanity check
-        assert(statedef()->getCompIdx(wmcomp) == c);
+        AssertLog(statedef()->getCompIdx(wmcomp) == c);
 
         // Perform upcast
         steps::tetmesh::TmComp *tmcomp = dynamic_cast<steps::tetmesh::TmComp*>(wmcomp);
         if (!tmcomp)
-            throw steps::ArgErr("Well-mixed compartments not supported in steps::solver::TetODE solver.");
+            ArgErrLog("Well-mixed compartments not supported in steps::solver::TetODE solver.");
         
         steps::tetode::Comp *localcomp = pComps[c];
         for (uint tet: tmcomp->_getAllTetIndices())
         {
-            assert (pMesh->getTetComp(tet) == tmcomp);
+            AssertLog(pMesh->getTetComp(tet) == tmcomp);
 
             double vol = pMesh->getTetVol(tet);
 
@@ -667,7 +671,7 @@ void stode::TetODE::_setup(void)
     // comp they do not talk to each other (see stex::Tet::setNextTet())
     //
 
-    assert (ntets == pTets.size());
+    AssertLog(ntets == pTets.size());
     // pTets member size of all tets in geometry, but may not be filled with
     // local tets if they have not been added to a compartment
     for (uint t = 0; t < ntets; ++t)
@@ -681,7 +685,7 @@ void stode::TetODE::_setup(void)
         // Not setting Tet triangles at this point- only want to set
         // for surface triangles
     }
-    assert (ntris == pTris.size());
+    AssertLog(ntris == pTris.size());
 
     for (uint t = 0; t < ntris; ++t)
     {
@@ -702,15 +706,15 @@ void stode::TetODE::_setup(void)
         int tetouter = pTris[t]->tet(1);
 
         // Now correct check, previously didn't allow for tet index == 0
-        assert(tetinner >= 0);
-        assert(pTets[tetinner] != 0 );
+        AssertLog(tetinner >= 0);
+        AssertLog(pTets[tetinner] != 0 );
 
 
         if (pTets[tetinner] != 0)
         {
             // A triangle may already have an inner tet defined as a well-mixed
             // volume, but that should not be the case here:
-            assert (pTris[t]->iTet() == 0);
+            AssertLog(pTris[t]->iTet() == 0);
 
             pTris[t]->setInnerTet(pTets[tetinner]);
             // Now add this triangle to inner tet's list of neighbours
@@ -718,7 +722,7 @@ void stode::TetODE::_setup(void)
             {
                 // include assert for debugging purposes and remove
                 // once this is tested
-                assert (i < 4);                                                        //////////
+                AssertLog(i < 4);                                                        //////////
                 // check if there is already a neighbouring tet or tri
                 // In theory if there is a tri to add, the tet should
                 // have less than 4 neighbouring tets added because
@@ -744,13 +748,13 @@ void stode::TetODE::_setup(void)
             {
                 // A triangle may already have an inner tet defined as a well-mixed
                 // volume, but that should not be the case here:
-                assert (pTris[t]->oTet() == 0);
+                AssertLog(pTris[t]->oTet() == 0);
 
                 pTris[t]->setOuterTet(pTets[tetouter]);
                 // Add this triangle to outer tet's list of neighbours
                 for (uint i=0; i <= 4; ++i)
                 {
-                    assert (i < 4);
+                    AssertLog(i < 4);
 
                     // See above in that tets now store tets from different comps
                     stode::Tet * tet_out = pTets[tetouter];
@@ -886,7 +890,7 @@ void stode::TetODE::_setup(void)
                     if (cdef->diff_dep(j, k))
                     {
                         Tet * tet_base = comp->getTet(t);
-                        assert(tet_base != 0);
+                        AssertLog(tet_base != 0);
 
                         // The tricky part is to get the correct locations in the
                         // (imaginary) matrix
@@ -977,16 +981,16 @@ void stode::TetODE::_setup(void)
                     double vol=0.0;
                     if (pdef->sreacdef(j)->inside() == true)
                     {
-                        assert(pdef->icompdef() != 0);
+                        AssertLog(pdef->icompdef() != 0);
                         Tet * itet = tri->iTet();
-                        assert(itet!=0);
+                        AssertLog(itet!=0);
                         vol = itet->vol();
                     }
                     else
                     {
-                        assert(pdef->ocompdef() != 0);
+                        AssertLog(pdef->ocompdef() != 0);
                         Tet * otet = tri->oTet();
-                        assert(otet != 0);
+                        AssertLog(otet != 0);
                         vol = otet->vol();
                     }
                     uint sreac_order = pdef->sreacdef(j)->order();
@@ -1026,7 +1030,7 @@ void stode::TetODE::_setup(void)
                 if (icompdef != 0)
                 {
                     // Sanity check
-                    assert(icompdef == tri->iTet()->compdef());
+                    AssertLog(icompdef == tri->iTet()->compdef());
                     uint icompidx = icompdef->gidx();
                     Comp * localicomp = pComps[icompidx];
                     // marker for correct position of inner tetrahedron in matrix
@@ -1057,7 +1061,7 @@ void stode::TetODE::_setup(void)
                 if (ocompdef != 0)
                 {
                     // Sanity check
-                    assert(ocompdef == tri->oTet()->compdef());
+                    AssertLog(ocompdef == tri->oTet()->compdef());
                     uint ocompidx = ocompdef->gidx();
                     Comp * localocomp = pComps[ocompidx];
                     // marker for correct position of inner tetrahedron in matrix
@@ -1201,7 +1205,7 @@ void stode::TetODE::_setup(void)
                 if (icompdef != 0)
                 {
                     // Sanity check
-                    assert(icompdef == tri->iTet()->compdef());
+                    AssertLog(icompdef == tri->iTet()->compdef());
                     uint icompidx = icompdef->gidx();
                     Comp * localicomp = pComps[icompidx];
                     // marker for correct position of inner tetrahedron in matrix
@@ -1232,7 +1236,7 @@ void stode::TetODE::_setup(void)
                 if (ocompdef != 0)
                 {
                     // Sanity check
-                    assert(ocompdef == tri->oTet()->compdef());
+                    AssertLog(ocompdef == tri->oTet()->compdef());
                     uint ocompidx = ocompdef->gidx();
                     Comp * localocomp = pComps[ocompidx];
                     // marker for correct position of inner tetrahedron in matrix
@@ -1358,7 +1362,7 @@ void stode::TetODE::_setup(void)
                     if (pdef->surfdiff_dep(j,k))
                     {
                         Tri * tri_base = patch->getTri(t);
-                        assert(tri_base != 0);
+                        AssertLog(tri_base != 0);
 
                         // Find the correct location in the 'matrix'
                         for (uint l = 0; l < 3; ++l)
@@ -1423,8 +1427,8 @@ void stode::TetODE::_setup(void)
     }// end of loop over patches
 
     // make sure we added what we expected to
-    assert(spec_gidx == pSpecs_tot);
-    assert(reac_gidx == pReacs_tot);
+    AssertLog(spec_gidx == pSpecs_tot);
+    AssertLog(reac_gidx == pReacs_tot);
 
     ////////// Now to setup the cvode structures ///////////
 
@@ -1443,9 +1447,9 @@ void stode::TetODE::setTemp(double t)
         std::ostringstream os;
         os << "\nWARNING: Temperature set in simulation without membrane ";
         os << "potential calculation will be ignored.\n";
-        std::cout << os.str() << std::endl;
+        CLOG(INFO, "general_log") << os.str() << std::endl;
     }
-    assert(t >= 0.0);
+    AssertLog(t >= 0.0);
     pTemp = t;
 }
 
@@ -1459,7 +1463,7 @@ void stode::TetODE::_setupEField(void)
     //// Note to self: for now roughly following flow from original code in sim/controller.py.
     //// code for setting up a mesh was in func_tetmesh constructor and called functions.
 
-    assert(efflag() == true);
+    AssertLog(efflag() == true);
 
     switch (pEFoption) {
     case EF_DEFAULT:
@@ -1467,7 +1471,7 @@ void stode::TetODE::_setupEField(void)
         pEField = make_EField<dVSolverBanded>();
         break;
     default:
-        throw steps::ArgErr("Unsupported E-Field solver.");
+        ArgErrLog("Unsupported E-Field solver.");
     }
 
     // Give temperature a default value of 20c
@@ -1480,11 +1484,11 @@ void stode::TetODE::_setupEField(void)
         std::ostringstream os;
         os << "Membrane potential solver currently supports only one ";
         os << "membrane description object.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     steps::tetmesh::Memb * memb = mesh()->_getMemb(0);
-    assert(memb != 0);
+    AssertLog(memb != 0);
 
     // TODO: Decide what checks are needed for the membrane and implement them here
 
@@ -1493,15 +1497,15 @@ void stode::TetODE::_setupEField(void)
     pEFNVerts = memb->countVerts();
 
     pEFTets = new uint[neftets() * 4];
-    assert(pEFTets != 0);
+    AssertLog(pEFTets != 0);
 
     // All the triangles we will count here are the real membrane triangles,
     // virtual triangles will not require a capacitance.
     pEFTris = new uint[neftris() * 3];
-    assert(pEFTris != 0);
+    AssertLog(pEFTris != 0);
 
     pEFVerts = new double[nefverts() * 3];
-    assert(pEFVerts != 0);
+    AssertLog(pEFVerts != 0);
 
     uint nverts = mesh()->countVertices();
     uint ntris = mesh()->countTris();
@@ -1519,7 +1523,7 @@ void stode::TetODE::_setupEField(void)
     // Copy the data to local structures.
 
     std::vector<uint> membverts = memb->_getAllVertIndices();
-    assert(membverts.size() == nefverts());
+    AssertLog(membverts.size() == nefverts());
     for (uint efv = 0; efv < nefverts(); ++efv)
     {
         uint vertidx = membverts[efv];
@@ -1536,7 +1540,7 @@ void stode::TetODE::_setupEField(void)
     }
 
     std::vector<uint> membtets = memb->_getAllVolTetIndices();
-    assert(membtets.size() == neftets());
+    AssertLog(membtets.size() == neftets());
     for (uint eft=0; eft < neftets(); ++eft)
     {
         uint tetidx = membtets[eft];
@@ -1552,7 +1556,7 @@ void stode::TetODE::_setupEField(void)
         {
             std::ostringstream os;
             os << "Failed to create EField structures.";
-            throw steps::ProgErr(os.str());
+            ProgErrLog(os.str());
         }
 
         pEFTets[eft2] = tv0;
@@ -1564,7 +1568,7 @@ void stode::TetODE::_setupEField(void)
     }
 
     std::vector<uint> membtris = memb->_getAllTriIndices();
-    assert(membtris.size() == neftris());
+    AssertLog(membtris.size() == neftris());
 
     pEFTris_vec.resize(neftris());
 
@@ -1582,7 +1586,7 @@ void stode::TetODE::_setupEField(void)
         {
             std::ostringstream os;
             os << "Failed to create EField structures.";
-            throw steps::ProgErr(os.str());
+            ProgErrLog(os.str());
         }
 
         pEFTris[eft2] = tv0;
@@ -1621,9 +1625,9 @@ void stode::TetODE::_addTet(uint tetidx,
     steps::solver::Compdef * compdef  = comp->def();
     stode::Tet * localtet = new stode::Tet(tetidx, compdef, vol, a1, a2, a3, a4, d1, d2, d3, d4,
                                          tet0, tet1, tet2, tet3);
-    assert(localtet != 0);
-    assert(tetidx < pTets.size());
-    assert(pTets[tetidx] == 0);
+    AssertLog(localtet != 0);
+    AssertLog(tetidx < pTets.size());
+    AssertLog(pTets[tetidx] == 0);
     pTets[tetidx] = localtet;
     comp->addTet(localtet);
 }
@@ -1636,9 +1640,9 @@ void stode::TetODE::_addTri(uint triidx, steps::tetode::Patch * patch, double ar
 {
     steps::solver::Patchdef * patchdef = patch->def();
     stode::Tri * tri = new stode::Tri(triidx, patchdef, area, l0, l1, l2, d0, d1, d2,  tinner, touter, tri0, tri1, tri2);
-    assert(tri != 0);
-    assert (triidx < pTris.size());
-    assert (pTris[triidx] == 0);
+    AssertLog(tri != 0);
+    AssertLog(triidx < pTris.size());
+    AssertLog(pTris[triidx] == 0);
     pTris[triidx] = tri;
     patch->addTri(tri);
 }
@@ -1648,7 +1652,7 @@ void stode::TetODE::_addTri(uint triidx, steps::tetode::Patch * patch, double ar
 uint stode::TetODE::_addComp(steps::solver::Compdef * cdef)
 {
     stode::Comp * comp = new Comp(cdef);
-    assert(comp != 0);
+    AssertLog(comp != 0);
     uint compidx = pComps.size();
     pComps.push_back(comp);
     return compidx;
@@ -1664,7 +1668,7 @@ uint stode::TetODE::_addPatch(steps::solver::Patchdef * pdef)
      if (pdef->ocompdef()) ocomp = pCompMap[pdef->ocompdef()];
      */
     stode::Patch * patch = new Patch(pdef);
-    assert(patch != 0);
+    AssertLog(patch != 0);
     uint patchidx = pPatches.size();
     pPatches.push_back(patch);
     return patchidx;
@@ -1700,7 +1704,7 @@ double stode::TetODE::_ccst2D(double kcst, double area, uint order)
 void stode::TetODE::advance(double adv)
 {
     if (adv < 0.0)
-        throw steps::ArgErr("Time to advance cannot be negative.");
+        ArgErrLog("Time to advance cannot be negative.");
 
     double endtime = statedef()->time() + adv;
     run(endtime);
@@ -1711,7 +1715,7 @@ void stode::TetODE::advance(double adv)
 void stode::TetODE::run(double endtime)
 {
     if (endtime < statedef()->time())
-        throw steps::ArgErr("Endtime is before current simulation time.");
+        ArgErrLog("Endtime is before current simulation time.");
 
     if (endtime == 0.0) return;
 
@@ -1721,8 +1725,8 @@ void stode::TetODE::run(double endtime)
     {
         if (not pTolsset)
         {
-            std::cout << "Warning: tolerances have not been set and will ";
-            std::cout << "retain default values\n";
+            CLOG(INFO, "general_log") << "Warning: tolerances have not been set and will ";
+            CLOG(INFO, "general_log") << "retain default values\n";
         }
 
         flag = pCVodeState->initialise();
@@ -1768,16 +1772,16 @@ void stode::TetODE::run(double endtime)
                         double vol=0.0;
                         if (pdef->vdepsreacdef(vlidx)->inside() == true)
                         {
-                            assert(pdef->icompdef() != 0);
+                            AssertLog(pdef->icompdef() != 0);
                             Tet * itet = tri->iTet();
-                            assert(itet!=0);
+                            AssertLog(itet!=0);
                             vol = itet->vol();
                         }
                         else
                         {
-                            assert(pdef->ocompdef() != 0);
+                            AssertLog(pdef->ocompdef() != 0);
                             Tet * otet = tri->oTet();
-                            assert(otet != 0);
+                            AssertLog(otet != 0);
                             vol = otet->vol();
                         }
                         uint sreac_order = pdef->vdepsreacdef(vlidx)->order();
@@ -1852,7 +1856,7 @@ void stode::TetODE::run(double endtime)
                     if (pdef->vdepsreacdef(vlidx)->reqInside())
                     {
                         Tet * itet = tri->iTet();
-                        assert(itet != 0);
+                        AssertLog(itet != 0);
 
                         // Fetch the global index of the comp
                         uint icidx = itet->compdef()->gidx();
@@ -1866,7 +1870,7 @@ void stode::TetODE::run(double endtime)
                             spec_idx_i += (statedef()->compdef(i)->countSpecs())*(pComps[i]->countTets());
                         }
                         uint icompSpecs_N = statedef()->compdef(icidx)->countSpecs();
-                        assert(icompSpecs_N == pdef->countSpecs_I());
+                        AssertLog(icompSpecs_N == pdef->countSpecs_I());
 
                         // Fetch the comps-local index for the tet
                         uint tlidx = pComps[icidx]->getTet_GtoL(itet->idx());
@@ -1886,7 +1890,7 @@ void stode::TetODE::run(double endtime)
                     if (pdef->vdepsreacdef(vlidx)->reqOutside())
                     {
                         Tet * otet = tri->oTet();
-                        assert(otet != 0);
+                        AssertLog(otet != 0);
 
                         // Fetch the global index of the comp
                         uint ocidx = otet->compdef()->gidx();
@@ -1900,7 +1904,7 @@ void stode::TetODE::run(double endtime)
                             spec_idx_o += (statedef()->compdef(i)->countSpecs())*(pComps[i]->countTets());
                         }
                         uint ocompSpecs_N = statedef()->compdef(ocidx)->countSpecs();
-                        assert(ocompSpecs_N == pdef->countSpecs_O());
+                        AssertLog(ocompSpecs_N == pdef->countSpecs_O());
 
                         // Fetch the comps-local index for the tet
                         uint tlidx = pComps[ocidx]->getTet_GtoL(otet->idx());
@@ -1932,7 +1936,7 @@ void stode::TetODE::run(double endtime)
     {
           std::ostringstream os;
           os << "\nCVODE iteration failed\n\n";
-          throw steps::SysErr(os.str());
+          SysErrLog(os.str());
     }
 
     if (efflag() == true)
@@ -1969,10 +1973,10 @@ void stode::TetODE::run(double endtime)
 
 double stode::TetODE::_getCompVol(uint cidx) const
 {
-    assert(cidx < statedef()->countComps());
-    assert (statedef()->countComps() == pComps.size());
+    AssertLog(cidx < statedef()->countComps());
+    AssertLog(statedef()->countComps() == pComps.size());
     stode::Comp * comp = pComps[cidx];
-    assert(comp != 0);
+    AssertLog(comp != 0);
     return comp->vol();
 }
 
@@ -2025,7 +2029,7 @@ bool stode::TetODE::_getCompClamped(uint cidx, uint sidx) const
 {
     std::ostringstream os;
     os << "getCompClamped not implemented for steps::solver::TetODE solver";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
 
     return false;
 }
@@ -2036,7 +2040,7 @@ void stode::TetODE::_setCompClamped(uint cidx, uint sidx, bool b)
 {
     std::ostringstream os;
     os << "setCompClamped not implemented for steps::solver::TetODE solver";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2045,7 +2049,7 @@ double stode::TetODE::_getCompReacK(uint cidx, uint ridx) const
 {
     std::ostringstream os;
     os << "getCompReacK not implemented for steps::solver::TetODE solver";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
 
     return 0.0;
 }
@@ -2054,10 +2058,10 @@ double stode::TetODE::_getCompReacK(uint cidx, uint ridx) const
 
 void stode::TetODE::_setCompReacK(uint cidx, uint ridx, double kf)
 {
-    assert(cidx < statedef()->countComps());
-    assert (statedef()->countComps() == pComps.size());
+    AssertLog(cidx < statedef()->countComps());
+    AssertLog(statedef()->countComps() == pComps.size());
     stode::Comp * comp = pComps[cidx];
-    assert(comp != 0);
+    AssertLog(comp != 0);
 
     TetPVecCI tet_end = comp->endTet();
     for (TetPVecCI tet = comp->bgnTet(); tet != tet_end; ++tet)
@@ -2080,17 +2084,17 @@ void stode::TetODE::_setCompReacActive(uint cidx, uint ridx, bool a)
 {
     std::ostringstream os;
     os << "setCompReacActive not implemented for steps::solver::TetODE solver";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double stode::TetODE::_getPatchArea(uint pidx) const
 {
-    assert(pidx < statedef()->countPatches());
-    assert (statedef()->countPatches() == pPatches.size());
+    AssertLog(pidx < statedef()->countPatches());
+    AssertLog(statedef()->countPatches() == pPatches.size());
     stode::Patch * patch = pPatches[pidx];
-    assert(patch != 0);
+    AssertLog(patch != 0);
     return patch->area();
 }
 
@@ -2107,7 +2111,7 @@ double stode::TetODE::_getPatchAmount(uint pidx, uint sidx) const
 
 void stode::TetODE::_setPatchAmount(uint pidx, uint sidx, double a)
 {
-    assert(a >= 0.0);
+    AssertLog(a >= 0.0);
     // convert amount in mols to number of molecules
     double a2 = a * steps::math::AVOGADRO;
     // the following method does all the necessary argument checking
@@ -2120,7 +2124,7 @@ bool stode::TetODE::_getPatchClamped(uint pidx, uint sidx) const
 {
     std::ostringstream os;
     os << "getPatchClamped not implemented for steps::solver::TetODE solver";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
 
     return false;
 }
@@ -2131,7 +2135,7 @@ void stode::TetODE::_setPatchClamped(uint pidx, uint sidx, bool buf)
 {
     std::ostringstream os;
     os << "setPatchClamped not implemented for steps::solver::TetODE solver";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2140,7 +2144,7 @@ double stode::TetODE::_getPatchSReacK(uint pidx, uint ridx) const
 {
     std::ostringstream os;
     os << "getPatchSReacK not implemented for steps::solver::TetODE solver";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
     return 0.0;
 }
 
@@ -2148,10 +2152,10 @@ double stode::TetODE::_getPatchSReacK(uint pidx, uint ridx) const
 
 void stode::TetODE::_setPatchSReacK(uint pidx, uint ridx, double kf)
 {
-    assert(pidx < statedef()->countPatches());
-    assert (statedef()->countPatches() == pPatches.size());
+    AssertLog(pidx < statedef()->countPatches());
+    AssertLog(statedef()->countPatches() == pPatches.size());
     stode::Patch * patch = pPatches[pidx];
-    assert(patch != 0);
+    AssertLog(patch != 0);
 
     TriPVecCI tri_end = patch->endTri();
     for (TriPVecCI tri = patch->bgnTri(); tri != tri_end; ++tri)
@@ -2167,7 +2171,7 @@ bool stode::TetODE::_getPatchSReacActive(uint pidx, uint ridx) const
 {
     std::ostringstream os;
     os << "getPatchSReacActive not implemented for steps::solver::TetODE solver";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
     return true;
 }
 
@@ -2177,23 +2181,23 @@ void stode::TetODE::_setPatchSReacActive(uint pidx, uint ridx, bool a)
 {
     std::ostringstream os;
     os << "setPatchSReacActive not implemented for steps::solver::TetODE solver";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double stode::TetODE::_getCompCount(uint cidx, uint sidx) const
 {
-    assert(cidx < statedef()->countComps());
-    assert(sidx < statedef()->countSpecs());
+    AssertLog(cidx < statedef()->countComps());
+    AssertLog(sidx < statedef()->countSpecs());
     Compdef * comp = statedef()->compdef(cidx);
-    assert(comp != 0);
+    AssertLog(comp != 0);
     uint slidx = comp->specG2L(sidx);
     if (slidx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Species undefined in compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     uint idx = 0;
@@ -2208,7 +2212,7 @@ double stode::TetODE::_getCompCount(uint cidx, uint sidx) const
 
     double count = 0.0;
 
-    assert((idx+(((ntets-1)*comp_nspecs)+slidx)) < pSpecs_tot);
+    AssertLog((idx+(((ntets-1)*comp_nspecs)+slidx)) < pSpecs_tot);
     for (uint i=0; i< ntets; ++i)
     {
         count += Ith(pCVodeState->y_cvode, idx+((i*comp_nspecs)+slidx));
@@ -2222,16 +2226,16 @@ double stode::TetODE::_getCompCount(uint cidx, uint sidx) const
 void stode::TetODE::_setCompCount(uint cidx, uint sidx, double n)
 {
 
-    assert(cidx < statedef()->countComps());
-    assert(sidx < statedef()->countSpecs());
+    AssertLog(cidx < statedef()->countComps());
+    AssertLog(sidx < statedef()->countSpecs());
     Compdef * comp = statedef()->compdef(cidx);
-    assert(comp != 0);
+    AssertLog(comp != 0);
     uint slidx = comp->specG2L(sidx);
     if (slidx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Species undefined in compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     uint idx = 0;
@@ -2247,7 +2251,7 @@ void stode::TetODE::_setCompCount(uint cidx, uint sidx, double n)
 
     double comp_vol = localcomp->vol();
 
-    assert((idx+(((ntets-1)*comp_nspecs)+slidx)) < pSpecs_tot);
+    AssertLog((idx+(((ntets-1)*comp_nspecs)+slidx)) < pSpecs_tot);
 
     for (uint i=0; i< ntets; ++i)
     {
@@ -2262,17 +2266,17 @@ void stode::TetODE::_setCompCount(uint cidx, uint sidx, double n)
 
 double stode::TetODE::_getPatchCount(uint pidx, uint sidx) const
 {
-    assert(pidx < statedef()->countPatches());
-    assert(sidx < statedef()->countSpecs());
+    AssertLog(pidx < statedef()->countPatches());
+    AssertLog(sidx < statedef()->countSpecs());
     Patchdef * patch = statedef()->patchdef(pidx);
-    assert(patch != 0);
+    AssertLog(patch != 0);
 
     uint slidx = patch->specG2L(sidx);
     if (slidx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Species undefined in patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     uint idx = 0;
@@ -2282,7 +2286,7 @@ double stode::TetODE::_getPatchCount(uint pidx, uint sidx) const
         idx += (statedef()->compdef(i)->countSpecs())*(pComps[i]->countTets());
     }
     // quick sanity check
-    assert(idx < pSpecs_tot);
+    AssertLog(idx < pSpecs_tot);
 
     // Now step up to the correct species index
     for (uint i=0; i< pidx; ++i)
@@ -2294,7 +2298,7 @@ double stode::TetODE::_getPatchCount(uint pidx, uint sidx) const
     uint patch_nspecs = patch->countSpecs();
     uint ntris = localpatch->countTris();
 
-    assert(idx+((ntris-1)*patch_nspecs)+slidx < pSpecs_tot);
+    AssertLog(idx+((ntris-1)*patch_nspecs)+slidx < pSpecs_tot);
 
     double count = 0.0;
     for (uint i = 0; i < ntris; ++i)
@@ -2310,17 +2314,17 @@ double stode::TetODE::_getPatchCount(uint pidx, uint sidx) const
 void stode::TetODE::_setPatchCount(uint pidx, uint sidx, double n)
 {
 
-    assert(pidx < statedef()->countPatches());
-    assert(sidx < statedef()->countSpecs());
+    AssertLog(pidx < statedef()->countPatches());
+    AssertLog(sidx < statedef()->countSpecs());
     Patchdef * patch = statedef()->patchdef(pidx);
-    assert(patch != 0);
+    AssertLog(patch != 0);
 
     uint slidx = patch->specG2L(sidx);
     if (slidx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Species undefined in patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     uint idx = 0;
@@ -2330,7 +2334,7 @@ void stode::TetODE::_setPatchCount(uint pidx, uint sidx, double n)
         idx += (statedef()->compdef(i)->countSpecs())*(pComps[i]->countTets());
     }
     // quick sanity check
-    assert(idx < pSpecs_tot);
+    AssertLog(idx < pSpecs_tot);
 
     // Now step up to the correct species index
     for (uint i=0; i< pidx; ++i)
@@ -2342,7 +2346,7 @@ void stode::TetODE::_setPatchCount(uint pidx, uint sidx, double n)
     uint patch_nspecs = patch->countSpecs();
     uint ntris = localpatch->countTris();
 
-    assert((idx+((ntris-1)*patch_nspecs+slidx)) < pSpecs_tot);
+    AssertLog((idx+((ntris-1)*patch_nspecs+slidx)) < pSpecs_tot);
 
     double patch_area = localpatch->area();
 
@@ -2361,14 +2365,14 @@ void stode::TetODE::_setPatchCount(uint pidx, uint sidx, double n)
 
 double stode::TetODE::_getTetCount(uint tidx, uint sidx) const
 {
-    assert (sidx < statedef()->countSpecs());
-    assert (tidx < pTets.size());
+    AssertLog(sidx < statedef()->countSpecs());
+    AssertLog(tidx < pTets.size());
 
     if (pTets[tidx] == 0)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     Tet * tet = pTets[tidx];
@@ -2381,7 +2385,7 @@ double stode::TetODE::_getTetCount(uint tidx, uint sidx) const
     {
         std::ostringstream os;
         os << "Species undefined in tetrahedron.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     Comp * localcomp = pComps[cidx];
@@ -2394,7 +2398,7 @@ double stode::TetODE::_getTetCount(uint tidx, uint sidx) const
         idx += (statedef()->compdef(i)->countSpecs())*(pComps[i]->countTets());
     }
 
-    assert((idx + (comp->countSpecs()*tet_lcidx) + lsidx) < pSpecs_tot);
+    AssertLog((idx + (comp->countSpecs()*tet_lcidx) + lsidx) < pSpecs_tot);
 
     return Ith(pCVodeState->y_cvode, idx + (comp->countSpecs()*tet_lcidx) + lsidx);
 }
@@ -2416,14 +2420,14 @@ double stode::TetODE::_getTetConc(uint tidx, uint sidx) const
 void stode::TetODE::_setTetCount(uint tidx, uint sidx, double n)
 {
 
-    assert (sidx < statedef()->countSpecs());
-    assert (tidx < pTets.size());
+    AssertLog(sidx < statedef()->countSpecs());
+    AssertLog(tidx < pTets.size());
 
     if (pTets[tidx] == 0)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     Tet * tet = pTets[tidx];
@@ -2436,7 +2440,7 @@ void stode::TetODE::_setTetCount(uint tidx, uint sidx, double n)
     {
         std::ostringstream os;
         os << "Species undefined in tetrahedron.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     Comp * localcomp = pComps[cidx];
@@ -2449,7 +2453,7 @@ void stode::TetODE::_setTetCount(uint tidx, uint sidx, double n)
         idx += (statedef()->compdef(i)->countSpecs())*(pComps[i]->countTets());
     }
 
-    assert((idx + (comp->countSpecs()*tet_lcidx) + lsidx) < pSpecs_tot);
+    AssertLog((idx + (comp->countSpecs()*tet_lcidx) + lsidx) < pSpecs_tot);
 
     Ith(pCVodeState->y_cvode, idx + (comp->countSpecs()*tet_lcidx) + lsidx) = n;
 
@@ -2463,7 +2467,7 @@ double stode::TetODE::_getTetReacK(uint tidx, uint ridx) const
 {
     std::ostringstream os;
     os << "getTetReacK not implemented for steps::solver::TetODE solver";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
     return 0.0;
 }
 
@@ -2471,14 +2475,14 @@ double stode::TetODE::_getTetReacK(uint tidx, uint ridx) const
 
 void stode::TetODE::_setTetReacK(uint tidx, uint ridx, double kf)
 {
-    assert (tidx < pTets.size());
-    assert (ridx < statedef()->countReacs());
+    AssertLog(tidx < pTets.size());
+    AssertLog(ridx < statedef()->countReacs());
 
     if (pTets[tidx] == 0)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     stode::Tet * tet = pTets[tidx];
@@ -2489,7 +2493,7 @@ void stode::TetODE::_setTetReacK(uint tidx, uint ridx, double kf)
     {
         std::ostringstream os;
         os << "Reaction undefined in tetrahedron.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // Fetch the global index of the comp
@@ -2543,12 +2547,12 @@ void stode::TetODE::_setTetReacK(uint tidx, uint ridx, double kf)
 
 void stode::TetODE::_setTetConc(uint tidx, uint sidx, double c)
 {
-    assert (tidx < pTets.size());
+    AssertLog(tidx < pTets.size());
     if (pTets[tidx] == 0)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     double vol = pTets[tidx]->vol();
@@ -2582,14 +2586,14 @@ void stode::TetODE::_setTetAmount(uint tidx, uint sidx, double a)
 
 double stode::TetODE::_getTriCount(uint tidx, uint sidx) const
 {
-    assert(sidx < statedef()->countSpecs());
-    assert(tidx < pTris.size());
+    AssertLog(sidx < statedef()->countSpecs());
+    AssertLog(tidx < pTris.size());
 
     if (pTris[tidx] == 0)
     {
         std::ostringstream os;
         os << "Triangle " << tidx << " has not been assigned to a patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     Tri * tri = pTris[tidx];
@@ -2602,7 +2606,7 @@ double stode::TetODE::_getTriCount(uint tidx, uint sidx) const
     {
         std::ostringstream os;
         os << "Species undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     Patch * localpatch = pPatches[pidx];
@@ -2620,7 +2624,7 @@ double stode::TetODE::_getTriCount(uint tidx, uint sidx) const
         idx += (statedef()->patchdef(i)->countSpecs())*(pPatches[i]->countTris());
     }
 
-    assert((idx + (patch->countSpecs()*tri_lpidx) + lsidx) < pSpecs_tot);
+    AssertLog((idx + (patch->countSpecs()*tri_lpidx) + lsidx) < pSpecs_tot);
 
     return Ith(pCVodeState->y_cvode, idx + (patch->countSpecs()*tri_lpidx) + lsidx);
 
@@ -2630,14 +2634,14 @@ double stode::TetODE::_getTriCount(uint tidx, uint sidx) const
 
 void stode::TetODE::_setTriCount(uint tidx, uint sidx, double n)
 {
-    assert(sidx < statedef()->countSpecs());
-    assert(tidx < pTris.size());
+    AssertLog(sidx < statedef()->countSpecs());
+    AssertLog(tidx < pTris.size());
 
     if (pTris[tidx] == 0)
     {
         std::ostringstream os;
         os << "Triangle " << tidx << " has not been assigned to a patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     Tri * tri = pTris[tidx];
@@ -2650,7 +2654,7 @@ void stode::TetODE::_setTriCount(uint tidx, uint sidx, double n)
     {
         std::ostringstream os;
         os << "Species undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     Patch * localpatch = pPatches[pidx];
@@ -2670,7 +2674,7 @@ void stode::TetODE::_setTriCount(uint tidx, uint sidx, double n)
         idx += (statedef()->patchdef(i)->countSpecs())*(pPatches[i]->countTris());
     }
 
-    assert((idx + (patch->countSpecs()*tri_lpidx) + lsidx) < pSpecs_tot);
+    AssertLog((idx + (patch->countSpecs()*tri_lpidx) + lsidx) < pSpecs_tot);
 
     Ith(pCVodeState->y_cvode, idx + (patch->countSpecs()*tri_lpidx) + lsidx) = n;
 
@@ -2691,7 +2695,7 @@ double stode::TetODE::_getTriAmount(uint tidx, uint sidx) const
 
 void stode::TetODE::_setTriAmount(uint tidx, uint sidx, double a)
 {
-    assert(a >= 0.0);
+    AssertLog(a >= 0.0);
     // convert amount in mols to number of molecules
     double a2 = a * steps::math::AVOGADRO;
     // the following method does all the necessary argument checking
@@ -2704,7 +2708,7 @@ double stode::TetODE::_getTriSReacK(uint tidx, uint ridx) const
 {
     std::ostringstream os;
     os << "getTriSReacK not implemented for steps::solver::TetODE solver";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
     return 0.0;
 }
 
@@ -2712,14 +2716,14 @@ double stode::TetODE::_getTriSReacK(uint tidx, uint ridx) const
 
 void stode::TetODE::_setTriSReacK(uint tidx, uint ridx, double kf)
 {
-    assert(ridx < statedef()->countSReacs());
-    assert(tidx < pTris.size());
+    AssertLog(ridx < statedef()->countSReacs());
+    AssertLog(tidx < pTris.size());
 
     if (pTris[tidx] == 0)
     {
         std::ostringstream os;
         os << "Triangle " << tidx << " has not been assigned to a patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     Tri * tri = pTris[tidx];
@@ -2735,7 +2739,7 @@ void stode::TetODE::_setTriSReacK(uint tidx, uint ridx, double kf)
     {
         std::ostringstream os;
         os << "Surface Reaction undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // Calculate the reaction constant
@@ -2745,16 +2749,16 @@ void stode::TetODE::_setTriSReacK(uint tidx, uint ridx, double kf)
         double vol=0.0;
         if (patch->sreacdef(lsridx)->inside() == true)
         {
-            assert(patch->icompdef() != 0);
+            AssertLog(patch->icompdef() != 0);
             Tet * itet = tri->iTet();
-            assert(itet!=0);
+            AssertLog(itet!=0);
             vol = itet->vol();
         }
         else
         {
-            assert(patch->ocompdef() != 0);
+            AssertLog(patch->ocompdef() != 0);
             Tet * otet = tri->oTet();
-            assert(otet != 0);
+            AssertLog(otet != 0);
             vol = otet->vol();
         }
         uint sreac_order = patch->sreacdef(lsridx)->order();
@@ -2826,7 +2830,7 @@ void stode::TetODE::_setTriSReacK(uint tidx, uint ridx, double kf)
     if (patch->sreacdef(lsridx)->reqInside())
     {
         Tet * itet = tri->iTet();
-        assert(itet != 0);
+        AssertLog(itet != 0);
 
         // Fetch the global index of the comp
         uint icidx = itet->compdef()->gidx();
@@ -2840,7 +2844,7 @@ void stode::TetODE::_setTriSReacK(uint tidx, uint ridx, double kf)
             spec_idx += (statedef()->compdef(i)->countSpecs())*(pComps[i]->countTets());
         }
         uint icompSpecs_N = statedef()->compdef(icidx)->countSpecs();
-        assert(icompSpecs_N == patch->countSpecs_I());
+        AssertLog(icompSpecs_N == patch->countSpecs_I());
 
         // Fetch the comps-local index for the tet
         uint tlidx = pComps[icidx]->getTet_GtoL(itet->idx());
@@ -2860,7 +2864,7 @@ void stode::TetODE::_setTriSReacK(uint tidx, uint ridx, double kf)
     if (patch->sreacdef(lsridx)->reqOutside())
     {
         Tet * otet = tri->oTet();
-        assert(otet != 0);
+        AssertLog(otet != 0);
 
         // Fetch the global index of the comp
         uint ocidx = otet->compdef()->gidx();
@@ -2874,7 +2878,7 @@ void stode::TetODE::_setTriSReacK(uint tidx, uint ridx, double kf)
             spec_idx += (statedef()->compdef(i)->countSpecs())*(pComps[i]->countTets());
         }
         uint ocompSpecs_N = statedef()->compdef(ocidx)->countSpecs();
-        assert(ocompSpecs_N == patch->countSpecs_O());
+        AssertLog(ocompSpecs_N == patch->countSpecs_O());
 
         // Fetch the comps-local index for the tet
         uint tlidx = pComps[ocidx]->getTet_GtoL(otet->idx());
@@ -2897,13 +2901,13 @@ void stode::TetODE::_setTriSReacK(uint tidx, uint ridx, double kf)
 
 double stode::TetODE::_getTriArea(uint tidx) const
 {
-    assert (tidx < pTris.size());
+    AssertLog(tidx < pTris.size());
 
     if (pTris[tidx] == 0)
     {
         std::ostringstream os;
         os << "Triangle " << tidx << " has not been assigned to a patch.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     return pTris[tidx]->area();
@@ -2912,12 +2916,12 @@ double stode::TetODE::_getTriArea(uint tidx) const
 
 double stode::TetODE::_getTetVol(uint tidx) const
 {
-    assert (tidx < pTets.size());
+    AssertLog(tidx < pTets.size());
     if (pTets[tidx] == 0)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     return pTets[tidx]->vol();
 }
@@ -2931,14 +2935,14 @@ double stode::TetODE::_getTetV(uint tidx) const
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int loctidx = pEFTet_GtoL[tidx];
     if (loctidx == -1)
     {
         std::ostringstream os;
         os << "Tetrahedron index " << tidx << " not assigned to a conduction volume.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // EField object should convert value to base s.i. units
@@ -2954,14 +2958,14 @@ void stode::TetODE::_setTetV(uint tidx, double v)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int loctidx = pEFTet_GtoL[tidx];
     if (loctidx == -1)
     {
         std::ostringstream os;
         os << "Tetrahedron index " << tidx << " not assigned to a conduction volume.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // EField object should convert to millivolts
@@ -2976,14 +2980,14 @@ bool stode::TetODE::_getTetVClamped(uint tidx) const
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int loctidx = pEFTet_GtoL[tidx];
     if (loctidx == -1)
     {
         std::ostringstream os;
         os << "Tetrahedron index " << tidx << " not assigned to a conduction volume.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     return pEField->getTetVClamped(loctidx);
@@ -2997,14 +3001,14 @@ void stode::TetODE::_setTetVClamped(uint tidx, bool cl)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int loctidx = pEFTet_GtoL[tidx];
     if (loctidx == -1)
     {
         std::ostringstream os;
         os << "Tetrahedron index " << tidx << " not assigned to a conduction volume.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     pEField->setTetVClamped(loctidx, cl);
@@ -3018,14 +3022,14 @@ double stode::TetODE::_getTriV(uint tidx) const
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int loctidx = pEFTri_GtoL[tidx];
     if (loctidx == -1)
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // EField object should convert value to base s.i. units
     return pEField->getTriV(loctidx);
@@ -3039,14 +3043,14 @@ void stode::TetODE::_setTriV(uint tidx, double v)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int loctidx = pEFTri_GtoL[tidx];
     if (loctidx == -1)
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // EField object should convert to millivolts
@@ -3061,14 +3065,14 @@ bool stode::TetODE::_getTriVClamped(uint tidx) const
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int loctidx = pEFTri_GtoL[tidx];
     if (loctidx == -1)
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     return pEField->getTriVClamped(loctidx);
@@ -3082,14 +3086,14 @@ void stode::TetODE::_setTriVClamped(uint tidx, bool cl)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int loctidx = pEFTri_GtoL[tidx];
     if (loctidx == -1)
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     pEField->setTriVClamped(loctidx, cl);
@@ -3103,7 +3107,7 @@ double stode::TetODE::_getTriOhmicI(uint tidx) const
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     stex::Tri * tri = pTris[tidx];
@@ -3113,7 +3117,7 @@ double stode::TetODE::_getTriOhmicI(uint tidx) const
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     return tri->getOhmicI(pEField->getTriV(loctidx), efdt());
@@ -3123,15 +3127,15 @@ double stode::TetODE::_getTriOhmicI(uint tidx) const
 
 double stode::TetODE::_getTriOhmicI(uint tidx, uint ocidx) const
 {
-    assert (tidx < pTris.size());
-    assert (ocidx < statedef()->countOhmicCurrs());
+    AssertLog(tidx < pTris.size());
+    AssertLog(ocidx < statedef()->countOhmicCurrs());
 
     int loctidx = pEFTri_GtoL[tidx];
     if (loctidx == -1)
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     stex::Tri * tri = pTris[tidx];
@@ -3141,7 +3145,7 @@ double stode::TetODE::_getTriOhmicI(uint tidx, uint ocidx) const
     {
         std::ostringstream os;
         os << "Ohmic current undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     return tri->getOhmicI(locidx, pEField->getTriV(loctidx), efdt());
@@ -3155,7 +3159,7 @@ double stode::TetODE::_getTriGHKI(uint tidx) const
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     stex::Tri * tri = pTris[tidx];
@@ -3171,7 +3175,7 @@ double stode::TetODE::_getTriGHKI(uint tidx, uint ghkidx) const
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     stex::Tri * tri = pTris[tidx];
@@ -3181,7 +3185,7 @@ double stode::TetODE::_getTriGHKI(uint tidx, uint ghkidx) const
     {
         std::ostringstream os;
         os << "GHK current undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     return tri->getGHKI(locidx, efdt());
@@ -3195,7 +3199,7 @@ double stode::TetODE::_getTriI(uint tidx) const
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     int loctidx = pEFTri_GtoL[tidx];
@@ -3203,7 +3207,7 @@ double stode::TetODE::_getTriI(uint tidx) const
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // EField object should convert to required units
@@ -3218,14 +3222,14 @@ void stode::TetODE::_setVertIClamp(uint vidx, double cur)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int locvidx = pEFVert_GtoL[vidx];
     if (locvidx == -1)
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // EField object should convert to required units
@@ -3240,14 +3244,14 @@ void stode::TetODE::_setTriIClamp(uint tidx, double cur)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int loctidx = pEFTri_GtoL[tidx];
     if (loctidx == -1)
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // EField object should convert to required units
@@ -3262,14 +3266,14 @@ double stode::TetODE::_getVertV(uint vidx) const
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int locvidx = pEFVert_GtoL[vidx];
     if (locvidx == -1)
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // EField object should convert value to base s.i. units
     return pEField->getVertV(locvidx);
@@ -3283,14 +3287,14 @@ void stode::TetODE::_setVertV(uint vidx, double v)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int locvidx = pEFVert_GtoL[vidx];
     if (locvidx == -1)
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // EField object should convert to millivolts
     pEField->setVertV(locvidx, v);
@@ -3304,14 +3308,14 @@ bool stode::TetODE::_getVertVClamped(uint vidx) const
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int locvidx = pEFVert_GtoL[vidx];
     if (locvidx == -1)
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     return pEField->getVertVClamped(locvidx);
@@ -3325,14 +3329,14 @@ void stode::TetODE::_setVertVClamped(uint vidx, bool cl)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int locvidx = pEFVert_GtoL[vidx];
     if (locvidx == -1)
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // EField object should convert to millivolts
     pEField->setVertVClamped(locvidx, cl);
@@ -3346,16 +3350,16 @@ void stode::TetODE::_setMembRes(uint midx, double ro, double vrev)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (ro <= 0.0)
     {
         std::ostringstream os;
         os << "Resistivity must be greater than zero.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // EField object should convert to required units
-    assert (midx == 0);
+    AssertLog(midx == 0);
     pEField->setSurfaceResistivity(midx, ro, vrev);
 }
 
@@ -3367,10 +3371,10 @@ void stode::TetODE::_setMembPotential(uint midx, double v)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // EField object should convert to millivolts
-    assert (midx == 0);
+    AssertLog(midx == 0);
     pEField->setMembPotential(midx, v);
 }
 
@@ -3382,18 +3386,18 @@ void stode::TetODE::_setMembCapac(uint midx, double cm)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (cm < 0.0)
     {
         std::ostringstream os;
         os << "Capacitance must be greater than or equal to zero.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
 
     // EField object should convert to required units
-    assert (midx == 0);
+    AssertLog(midx == 0);
     pEField->setMembCapac(midx, cm);
 }
 
@@ -3405,16 +3409,16 @@ void stode::TetODE::_setMembVolRes(uint midx, double ro)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (ro < 0.0)
     {
         std::ostringstream os;
         os << "Resistivity must be greater than or equal to zero.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // EField object should convert to required units
-    assert (midx == 0);
+    AssertLog(midx == 0);
     pEField->setMembVolRes(midx, ro);
 }
 

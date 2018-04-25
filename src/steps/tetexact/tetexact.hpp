@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -51,6 +51,9 @@
 #include "steps/tetexact/sdiffboundary.hpp"
 #include "steps/tetexact/crstruct.hpp"
 #include "steps/solver/efield/efield.hpp"
+
+// logging
+#include "third_party/easyloggingpp/src/easylogging++.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -440,11 +443,11 @@ public:
 
     inline steps::tetexact::Comp * _comp(uint cidx) const {
         // Moved assertions to this access routine to cut code duplication.
-        assert(cidx < statedef()->countComps());
-        assert(statedef()->countComps() == pComps.size());
+        AssertLog(cidx < statedef()->countComps());
+        AssertLog(statedef()->countComps() == pComps.size());
 
         auto c = pComps[cidx];
-        assert(c !=0);
+        //AssertLog(c !=0);
         return c;
     }
 
@@ -453,21 +456,21 @@ public:
 
     inline steps::tetexact::Patch * _patch(uint pidx) const {
         // Moved assertions to this access routine to cut code duplication.
-        assert(pidx < statedef()->countPatches());
-        assert(statedef()->countPatches() == pPatches.size());
+        AssertLog(pidx < statedef()->countPatches());
+        AssertLog(statedef()->countPatches() == pPatches.size());
 
         auto p = pPatches[pidx];
-        assert(p !=0);
+        AssertLog(p !=0);
         return p;
     }
 
     inline steps::tetexact::DiffBoundary * _diffboundary(uint dbidx) const {
-        assert(dbidx < statedef()->countDiffBoundaries());
+        AssertLog(dbidx < statedef()->countDiffBoundaries());
         return pDiffBoundaries[dbidx];
     }
 
     inline steps::tetexact::SDiffBoundary * _sdiffboundary(uint sdbidx) const {
-        assert(sdbidx < statedef()->countSDiffBoundaries());
+        AssertLog(sdbidx < statedef()->countSDiffBoundaries());
         return pSDiffBoundaries[sdbidx];
     }
 
@@ -630,23 +633,23 @@ private:
 
     inline CRGroup* _getGroup(int pow) {
         #ifdef SSA_DEBUG
-        std::cout << "SSA: get group with power " << pow << "\n";
+        CLOG(INFO, "general_log") << "SSA: get group with power " << pow << "\n";
         #endif
 
         if (pow >= 0) {
             #ifdef SSA_DEBUG
-            std::cout << "positive group" << pow << "\n";
+            CLOG(INFO, "general_log") << "positive group" << pow << "\n";
             #endif
             return pGroups[pow];
         }
         else {
             #ifdef SSA_DEBUG
-            std::cout << "negative group" << -pow << "\n";
+            CLOG(INFO, "general_log") << "negative group" << -pow << "\n";
             #endif
             return nGroups[-pow];
         }
         #ifdef SSA_DEBUG
-        std::cout << "--------------------------------------------------------\n";
+        CLOG(INFO, "general_log") << "--------------------------------------------------------\n";
         #endif
     }
 
@@ -656,9 +659,9 @@ private:
         uint curr_size = pGroups.size();
 
         #ifdef SSA_DEBUG
-        std::cout << "SSA: extending positive group size to " << new_size;
-        std::cout << " from " << curr_size << ".\n";
-        std::cout << "--------------------------------------------------------\n";
+        CLOG(INFO, "general_log") << "SSA: extending positive group size to " << new_size;
+        CLOG(INFO, "general_log") << " from " << curr_size << ".\n";
+        CLOG(INFO, "general_log") << "--------------------------------------------------------\n";
         #endif
 
         while (curr_size < new_size) {
@@ -674,9 +677,9 @@ private:
         uint curr_size = nGroups.size();
 
         #ifdef SSA_DEBUG
-        std::cout << "SSA: extending negative group size to " << new_size;
-        std::cout << " from " << curr_size << ".\n";
-        std::cout << "--------------------------------------------------------\n";
+        CLOG(INFO, "general_log") << "SSA: extending negative group size to " << new_size;
+        CLOG(INFO, "general_log") << " from " << curr_size << ".\n";
+        CLOG(INFO, "general_log") << "--------------------------------------------------------\n";
         #endif
 
         while (curr_size < new_size) {
@@ -690,20 +693,19 @@ private:
 
     inline void _extendGroup(CRGroup* group, uint size = 1024) {
         #ifdef SSA_DEBUG
-        std::cout << "SSA: extending group storage\n";
-        std::cout << "current capacity: " << group->capacity << "\n";
+        CLOG(INFO, "general_log") << "SSA: extending group storage\n";
+        CLOG(INFO, "general_log") << "current capacity: " << group->capacity << "\n";
         #endif
 
         group->capacity += size;
         group->indices = (KProc**)realloc(group->indices,
                                           sizeof(KProc*) * group->capacity);
         if (group->indices == NULL) {
-            std::cerr << "DirectCR: unable to allocate memory for SSA group.\n";
-            throw;
+            SysErrLog("DirectCR: unable to allocate memory for SSA group.");
         }
         #ifdef SSA_DEBUG
-        std::cout << "capacity after extending: " << group->capacity << "\n";
-        std::cout << "--------------------------------------------------------\n";
+        CLOG(INFO, "general_log") << "capacity after extending: " << group->capacity << "\n";
+        CLOG(INFO, "general_log") << "--------------------------------------------------------\n";
         #endif
     }
 
@@ -713,7 +715,7 @@ private:
 
     inline void _updateSum(void) {
         #ifdef SSA_DEBUG
-        std::cout << "update A0 from " << pA0 << " to ";
+        CLOG(INFO, "general_log") << "update A0 from " << pA0 << " to ";
         #endif
 
         pA0 = 0.0;
@@ -730,7 +732,7 @@ private:
         }
 
         #ifdef SSA_DEBUG
-        std::cout << pA0 << "\n";
+        CLOG(INFO, "general_log") << pA0 << "\n";
         #endif
     }
 

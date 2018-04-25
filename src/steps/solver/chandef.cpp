@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -38,6 +38,8 @@
 #include "steps/model/chan.hpp"
 #include "steps/model/chanstate.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace ssolver = steps::solver;
@@ -53,8 +55,8 @@ ssolver::Chandef::Chandef(Statedef * sd, uint idx, steps::model::Chan * c)
 , pChanStatesVec()
 , pSetupdone(false)
 {
-    assert(pStatedef != 0);
-    assert(c != 0);
+    AssertLog(pStatedef != 0);
+    AssertLog(c != 0);
     pName = c->getID();
 
     pChanStatesVec = c->getAllChanStates();
@@ -105,8 +107,8 @@ std::string const ssolver::Chandef::name(void) const
 void ssolver::Chandef::setup(void)
 {
 
-    assert(pSetupdone == false);
-    assert(pChanStatesVec.size() == nchanstates());
+    AssertLog(pSetupdone == false);
+    AssertLog(pChanStatesVec.size() == nchanstates());
     for (uint i = 0; i < nchanstates(); ++i)
     {
         uint gidx = pStatedef->getSpecIdx(pChanStatesVec[i]);

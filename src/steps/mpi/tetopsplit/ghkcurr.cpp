@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -45,6 +45,8 @@
 #include "steps/mpi/tetopsplit/kproc.hpp"
 #include "steps/mpi/tetopsplit/tetopsplit.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace smtos = steps::mpi::tetopsplit;
@@ -61,8 +63,8 @@ smtos::GHKcurr::GHKcurr(ssolver::GHKcurrdef * ghkdef, smtos::Tri * tri)
 , remoteUpdVec()
 , pEffFlux(true)
 {
-    assert (pGHKcurrdef != 0);
-    assert (pTri != 0);
+    AssertLog(pGHKcurrdef != 0);
+    AssertLog(pTri != 0);
     type = KP_GHK;
 }
 
@@ -117,7 +119,7 @@ void smtos::GHKcurr::reset(void)
 
 void smtos::GHKcurr::setupDeps(void)
 {
-    assert(pTri->getInHost());
+    AssertLog(pTri->getInHost());
     std::set<smtos::KProc*> local;
 
     // The only concentration changes for a GHK current event are in the outer
@@ -126,12 +128,12 @@ void smtos::GHKcurr::setupDeps(void)
 
     WmVol * itet = pTri->iTet();
     WmVol * otet = pTri->oTet();
-    assert (itet != 0);
+    AssertLog(itet != 0);
     
     if (itet->getHost() != pTri->getHost()) {
         std::ostringstream os;
         os << "Patch triangle " << pTri->idx() << " and its compartment tetrahedron " << itet->idx()  << " belong to different hosts.\n";
-        throw steps::NotImplErr(os.str());
+        NotImplErrLog(os.str());
     }
     
     // The global species of the ion
@@ -157,7 +159,7 @@ void smtos::GHKcurr::setupDeps(void)
         if (itet->getHost() != (*tri)->getHost()) {
             std::ostringstream os;
             os << "Patch triangle " << (*tri)->idx() << " and its compartment tetrahedron " << itet->idx()  << " belong to different hosts.\n";
-            throw steps::NotImplErr(os.str());
+            NotImplErrLog(os.str());
         }
 
         nkprocs = (*tri)->countKProcs();
@@ -174,7 +176,7 @@ void smtos::GHKcurr::setupDeps(void)
         if (otet->getHost() != pTri->getHost()) {
             std::ostringstream os;
             os << "Patch triangle " << pTri->idx() << " and its compartment tetrahedron " << otet->idx()  << " belong to different hosts.\n";
-            throw steps::NotImplErr(os.str());
+            NotImplErrLog(os.str());
         }
         
         // Now check KProcs in the outer tetrahedron
@@ -195,7 +197,7 @@ void smtos::GHKcurr::setupDeps(void)
             if (otet->getHost() != (*tri)->getHost()) {
                 std::ostringstream os;
                 os << "Patch triangle " << (*tri)->idx() << " and its compartment tetrahedron " << otet->idx()  << " belong to different hosts.\n";
-                throw steps::NotImplErr(os.str());
+                NotImplErrLog(os.str());
             }
             nkprocs = (*tri)->countKProcs();
             startKProcIdx = (*tri)->getStartKProcIdx();;
@@ -339,7 +341,7 @@ void smtos::GHKcurr::apply(steps::rng::RNG * rng, double dt, double simtime, dou
     ssolver::Patchdef * pdef = pTri->patchdef();
     const uint ghklidx = pdef->ghkcurrG2L(pGHKcurrdef->gidx());
 
-    assert (valence != 0);        // TODO: get rid of this when tested
+    AssertLog(valence != 0);        // TODO: get rid of this when tested
 
     const bool realflux = pGHKcurrdef->realflux();
     double voconc = pGHKcurrdef->voconc();

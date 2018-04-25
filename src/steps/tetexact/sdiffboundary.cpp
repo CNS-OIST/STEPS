@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -29,10 +29,14 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/solver/sdiffboundarydef.hpp"
 #include "steps/tetexact/sdiffboundary.hpp"
 #include "steps/tetexact/patch.hpp"
 
+
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace stex = steps::tetexact;
@@ -48,7 +52,7 @@ stex::SDiffBoundary::SDiffBoundary(steps::solver::SDiffBoundarydef * sdbdef)
 , pTris()
 , pTriDirection()
 {
-    assert(sdbdef != 0);
+    AssertLog(sdbdef != 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -76,10 +80,10 @@ void stex::SDiffBoundary::restore(std::fstream & cp_file)
 
 void stex::SDiffBoundary::setPatches(stex::Patch * patcha, stex::Patch * patchb)
 {
-    assert (pSetPatches == false);
-    assert(patcha != 0);
-    assert(patchb != 0);
-    assert(patcha != patchb);
+    AssertLog(pSetPatches == false);
+    AssertLog(patcha != 0);
+    AssertLog(patchb != 0);
+    AssertLog(patcha != patchb);
 
     pPatchA = patcha;
     pPatchB = patchb;
@@ -90,7 +94,7 @@ void stex::SDiffBoundary::setPatches(stex::Patch * patcha, stex::Patch * patchb)
 
 stex::Patch * stex::SDiffBoundary::patchA(void)
 {
-    assert(pSetPatches == true);
+    AssertLog(pSetPatches == true);
     return pPatchA;
 }
 
@@ -98,7 +102,7 @@ stex::Patch * stex::SDiffBoundary::patchA(void)
 
 stex::Patch * stex::SDiffBoundary::patchB(void)
 {
-    assert(pSetPatches == true);
+    AssertLog(pSetPatches == true);
     return pPatchB;
 }
 
@@ -106,7 +110,7 @@ stex::Patch * stex::SDiffBoundary::patchB(void)
 
 void stex::SDiffBoundary::setTriDirection(uint tri, uint direction)
 {
-    assert(direction < 3);
+    AssertLog(direction < 3);
 
     pTris.push_back(tri);
     pTriDirection.push_back(direction);

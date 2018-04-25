@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -27,7 +27,11 @@ set(lib_version "${lib_soversion}.${VERSION_PATCH}")
 
 set(cvode   "third_party/cvode-2.6.0/src")
 set(superlu "third_party/superlu_dist-4.1/src")
+set(easyloggingpp "${CMAKE_CURRENT_SOURCE_DIR}/third_party/easyloggingpp/src")
 
+if(NOT EXISTS "${easyloggingpp}/easylogging++.cc")
+message(FATAL_ERROR "Submodule easyloggingpp does not seem to be initialized \n Please run 'git submodule update --init --recursive'")
+endif()
 
 set(superlu_sources
     "${superlu}/GetDiagU.c"
@@ -112,6 +116,10 @@ set(lib_sources
     "steps/wmdirect/reac.cpp"                  "steps/wmdirect/sreac.cpp"
     "steps/wmdirect/wmdirect.cpp"              "steps/wmrk4/wmrk4.cpp"
     "steps/rng/rng.cpp"                        "steps/rng/mt19937.cpp"
+    "steps/wmrssa/comp.cpp"
+    "steps/wmrssa/kproc.cpp"                   "steps/wmrssa/patch.cpp"
+    "steps/wmrssa/reac.cpp"                    "steps/wmrssa/sreac.cpp"
+    "steps/wmrssa/wmrssa.cpp"
     "steps/rng/r123.cpp"
     "steps/rng/create.cpp"
     "steps/util/checkid.cpp"
@@ -129,6 +137,8 @@ set(lib_sources
     "${cvode}/sundials/sundials_spbcgs.cpp"    "${cvode}/sundials/sundials_spgmr.cpp"
     "${cvode}/sundials/sundials_sptfqmr.cpp"
     #
+
+    "${easyloggingpp}/easylogging++.cc"
 )
 
 set_source_files_properties(${superlu_sources} PROPERTIES COMPILE_FLAGS "-std=c99 -DSUPERLU_NO_METIS")
@@ -201,7 +211,12 @@ set(lib_public_headers
     "steps/wmdirect/patch.hpp"                 "steps/wmdirect/reac.hpp"
     "steps/wmdirect/sreac.hpp"                 "steps/wmdirect/wmdirect.hpp"
     #
+    "steps/wmrssa/comp.hpp"                  "steps/wmrssa/kproc.hpp"
+    "steps/wmrssa/patch.hpp"                 "steps/wmrssa/reac.hpp"
+    "steps/wmrssa/sreac.hpp"                 "steps/wmrssa/wmrssa.hpp"
+    #
     "steps/wmrk4/wmrk4.hpp"
+
 )
 
 if(LAPACK_FOUND)
@@ -219,6 +234,7 @@ endif()
 #endif()
 
 include_directories(".")
+include_directories(${easyloggingpp})
 
 if(MPI_FOUND)
     list(APPEND lib_sources
@@ -264,21 +280,19 @@ if (PETSC_FOUND)
     list(APPEND lib_public_headers "steps/solver/efield/dVsolver_petsc.hpp")
 endif()
 
-add_definitions(-D_ELPP_NO_DEFAULT_LOG_FILE=1 -D_ELPP_STL_LOGGING=1 -D_ELPP_DISABLE_DEFAULT_CRASH_HANDLING=1)
+# =================================== LOGGING ===========================================================
+add_definitions(-DELPP_NO_DEFAULT_LOG_FILE=1 -DELPP_STL_LOGGING=1 -DELPP_DISABLE_DEFAULT_CRASH_HANDLING=1)
+
+# enable assertion log
+add_definitions(-DENABLE_ASSERTLOG=1)
+
+# =================================== MPI Profiling ===========================================================
 
 # enable below to turn on MPI profiling
 add_definitions(-DMPI_PROFILING=1)
 
-# enable debug file
-#add_definitions(-UNDEBUG -D_DEBUG=1)
+# ============================================================================================================
 
-# enable surface diffusion boundary debug
-#add_definitions(-DSDIFFBOUNDARY_DEBUG=1)
-
-# only enable if you know what you are doing :)
-#add_definitions(-DMPI_DEBUG=1 -UNDEBUG)
-#add_definitions(-DSERIAL_EFIELD_DEBUG=1)
-#add_definitions(-D_ELPP_STL_LOGGING=1 -D_ELPP_STACKTRACE_ON_CRASH=1)
 
 add_library(libsteps-obj OBJECT ${lib_sources})
 set_target_properties(libsteps-obj PROPERTIES POSITION_INDEPENDENT_CODE ON)

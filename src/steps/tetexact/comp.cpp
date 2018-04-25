@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -31,12 +31,16 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/solver/compdef.hpp"
 #include "steps/tetexact/comp.hpp"
 #include "steps/tetexact/kproc.hpp"
 #include "steps/tetexact/reac.hpp"
 #include "steps/tetexact/tet.hpp"
 #include "steps/tetexact/wmvol.hpp"
+
+// logging
+#include "easylogging++.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -50,7 +54,7 @@ stex::Comp::Comp(steps::solver::Compdef * compdef)
 , pVol(0.0)
 , pTets()
 {
-    assert(pCompdef != 0);
+    AssertLog(pCompdef != 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -77,7 +81,7 @@ void stex::Comp::restore(std::fstream & cp_file)
 
 void stex::Comp::addTet(stex::WmVol * tet)
 {
-    assert (tet->compdef() == def());
+    AssertLog(tet->compdef() == def());
     pTets.push_back(tet);
     pVol += tet->vol();
 }
@@ -86,9 +90,9 @@ void stex::Comp::addTet(stex::WmVol * tet)
 
 void stex::Comp::modCount(uint slidx, double count)
 {
-    assert (slidx < def()->countSpecs());
+    AssertLog(slidx < def()->countSpecs());
     double newcount = (def()->pools()[slidx] + count);
-    assert (newcount >= 0.0);
+    AssertLog(newcount >= 0.0);
     def()->setCount(slidx, newcount);
 }
 
@@ -107,7 +111,7 @@ stex::WmVol * stex::Comp::pickTetByVol(double rand01) const
         accum += (*t)->vol();
         if (selector < accum) return (*t);
     }
-    assert(false);
+    AssertLog(false);
     return 0;
 }
 

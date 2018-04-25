@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -36,7 +36,8 @@
 #include "steps/solver/api.hpp"
 #include "steps/solver/statedef.hpp"
 #include "steps/geom/tetmesh.hpp"
-
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 USING(std, string);
@@ -52,7 +53,7 @@ double API::getTetVol(uint tidx) const
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
         return _getTetVol(tidx);
@@ -61,7 +62,7 @@ double API::getTetVol(uint tidx) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -75,7 +76,7 @@ void API::setTetVol(uint tidx, double vol)
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // NOTE: the following method may never be implemented
         _setTetVol(tidx, vol);
@@ -84,7 +85,7 @@ void API::setTetVol(uint tidx, double vol)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -98,7 +99,7 @@ bool API::getTetSpecDefined(uint tidx, string const & s) const
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint sidx = pStatedef->getSpecIdx(s);
@@ -109,7 +110,7 @@ bool API::getTetSpecDefined(uint tidx, string const & s) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -124,7 +125,7 @@ double API::getTetCount(uint tidx, string const & s) const
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint sidx = pStatedef->getSpecIdx(s);
@@ -135,7 +136,7 @@ double API::getTetCount(uint tidx, string const & s) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -149,13 +150,13 @@ void API::setTetCount(uint tidx, string const & s, double n)
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         if (n < 0.0)
         {
             std::ostringstream os;
             os << "Number of molecules cannot be negative.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
     // the following may throw exception if string is unknown
@@ -168,7 +169,7 @@ void API::setTetCount(uint tidx, string const & s, double n)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -182,7 +183,7 @@ double API::getTetAmount(uint tidx, string const & s) const
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint sidx = pStatedef->getSpecIdx(s);
@@ -194,7 +195,7 @@ double API::getTetAmount(uint tidx, string const & s) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -208,13 +209,13 @@ void API::setTetAmount(uint tidx, string const & s, double m)
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         if (m < 0.0)
         {
             std::ostringstream os;
             os << "Amount of mols cannot be negative.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint sidx = pStatedef->getSpecIdx(s);
@@ -226,7 +227,7 @@ void API::setTetAmount(uint tidx, string const & s, double m)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -240,7 +241,7 @@ double API::getTetConc(uint tidx, string const & s) const
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint sidx = pStatedef->getSpecIdx(s);
@@ -252,7 +253,7 @@ double API::getTetConc(uint tidx, string const & s) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -266,13 +267,13 @@ void API::setTetConc(uint tidx, string const & s, double c)
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         if (c < 0.0)
         {
             std::ostringstream os;
             os << "Concentration cannot be negative.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint sidx = pStatedef->getSpecIdx(s);
@@ -284,7 +285,7 @@ void API::setTetConc(uint tidx, string const & s, double c)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -298,7 +299,7 @@ bool API::getTetClamped(uint tidx, string const & s) const
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint sidx = pStatedef->getSpecIdx(s);
@@ -310,7 +311,7 @@ bool API::getTetClamped(uint tidx, string const & s) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -324,7 +325,7 @@ void API::setTetClamped(uint tidx, string const & s, bool buf)
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint sidx = pStatedef->getSpecIdx(s);
@@ -336,7 +337,7 @@ void API::setTetClamped(uint tidx, string const & s, bool buf)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -350,7 +351,7 @@ double API::getTetReacK(uint tidx, string const & r) const
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint ridx = pStatedef->getReacIdx(r);
@@ -362,7 +363,7 @@ double API::getTetReacK(uint tidx, string const & r) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -376,13 +377,13 @@ void API::setTetReacK(uint tidx, string const & r, double kf)
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         if (kf < 0.0)
         {
             std::ostringstream os;
             os << "Reaction constant cannot be negative.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint ridx = pStatedef->getReacIdx(r);
@@ -394,7 +395,7 @@ void API::setTetReacK(uint tidx, string const & r, double kf)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -408,7 +409,7 @@ bool API::getTetReacActive(uint tidx, string const & r) const
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint ridx = pStatedef->getReacIdx(r);
@@ -420,7 +421,7 @@ bool API::getTetReacActive(uint tidx, string const & r) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -434,7 +435,7 @@ void API::setTetReacActive(uint tidx, string const & r, bool act)
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint ridx = pStatedef->getReacIdx(r);
@@ -446,7 +447,7 @@ void API::setTetReacActive(uint tidx, string const & r, bool act)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -460,7 +461,7 @@ double API::getTetDiffD(uint tidx, string const & d, uint direction_tet) const
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint didx = pStatedef->getDiffIdx(d);
@@ -472,7 +473,7 @@ double API::getTetDiffD(uint tidx, string const & d, uint direction_tet) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -486,19 +487,19 @@ void API::setTetDiffD(uint tidx, string const & d, double dk, uint direction_tet
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         if (direction_tet != std::numeric_limits<uint>::max() &&direction_tet >= mesh->countTets())
         {
             std::ostringstream os;
             os << "Direction tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         if (dk < 0.0)
         {
             std::ostringstream os;
             os << "Diffusion constant cannot be negative.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint didx = pStatedef->getDiffIdx(d);
@@ -510,7 +511,7 @@ void API::setTetDiffD(uint tidx, string const & d, double dk, uint direction_tet
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -524,7 +525,7 @@ bool API::getTetDiffActive(uint tidx, string const & d) const
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint didx = pStatedef->getDiffIdx(d);
@@ -536,7 +537,7 @@ bool API::getTetDiffActive(uint tidx, string const & d) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -551,7 +552,7 @@ void API::setTetDiffActive(uint tidx, string const & d, bool act)
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint didx = pStatedef->getDiffIdx(d);
@@ -563,7 +564,7 @@ void API::setTetDiffActive(uint tidx, string const & d, bool act)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -578,7 +579,7 @@ double API::getTetReacH(uint tidx, string const & r) const
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint ridx = pStatedef->getReacIdx(r);
@@ -590,7 +591,7 @@ double API::getTetReacH(uint tidx, string const & r) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -604,7 +605,7 @@ double API::getTetReacC(uint tidx, string const & r) const
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint ridx = pStatedef->getReacIdx(r);
@@ -616,7 +617,7 @@ double API::getTetReacC(uint tidx, string const & r) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -631,7 +632,7 @@ double API::getTetReacA(uint tidx, string const & r) const
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint ridx = pStatedef->getReacIdx(r);
@@ -643,7 +644,7 @@ double API::getTetReacA(uint tidx, string const & r) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -657,7 +658,7 @@ double API::getTetDiffA(uint tidx, string const & d) const
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint didx = pStatedef->getDiffIdx(d);
@@ -669,7 +670,7 @@ double API::getTetDiffA(uint tidx, string const & d) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -683,7 +684,7 @@ double API::getTetV(uint tidx) const
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
         return _getTetV(tidx);
@@ -692,7 +693,7 @@ double API::getTetV(uint tidx) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -706,7 +707,7 @@ void API::setTetV(uint tidx, double v)
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
         _setTetV(tidx, v);
@@ -715,7 +716,7 @@ void API::setTetV(uint tidx, double v)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -729,7 +730,7 @@ bool API::getTetVClamped(uint tidx) const
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
         return _getTetVClamped(tidx);
@@ -739,7 +740,7 @@ bool API::getTetVClamped(uint tidx) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -753,7 +754,7 @@ void API::setTetVClamped(uint tidx, bool cl)
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
         _setTetVClamped(tidx, cl);
@@ -763,7 +764,7 @@ void API::setTetVClamped(uint tidx, bool cl)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -771,189 +772,189 @@ void API::setTetVClamped(uint tidx, bool cl)
 
 double API::_getTetVol(uint tidx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTetVol(uint tidx, double vol)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool API::_getTetSpecDefined(uint tidx, uint sidx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTetCount(uint tidx, uint sidx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTetCount(uint tidx, uint sidx, double n)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTetAmount(uint tidx, uint sidx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTetAmount(uint tidx, uint sidx, double m)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTetConc(uint tidx, uint sidx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTetConc(uint tidx, uint sidx, double c)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool API::_getTetClamped(uint tidx, uint sidx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTetClamped(uint tidx, uint sidx, bool buf)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTetReacK(uint tidx, uint ridx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTetReacK(uint tidx, uint ridx, double kf)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool API::_getTetReacActive(uint tidx, uint ridx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTetReacActive(uint tidx, uint ridx, bool act)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTetDiffD(uint tidx, uint didx, uint direction_tet) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTetDiffD(uint tidx, uint didx, double dk, uint direction_tet)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool API::_getTetDiffActive(uint tidx, uint didx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTetDiffActive(uint tidx, uint didx, bool act)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTetReacH(uint tidx, uint ridx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTetReacC(uint tidx, uint ridx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTetReacA(uint tidx, uint ridx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTetDiffA(uint tidx, uint didx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTetV(uint tidx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTetV(uint tidx, double v)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool API::_getTetVClamped(uint tidx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTetVClamped(uint tidx, bool cl)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////

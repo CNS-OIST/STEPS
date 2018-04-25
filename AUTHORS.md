@@ -19,9 +19,13 @@ Weiliang Chen (OIST, since 2009)
 * Development of STEPS since version 1.0.0: Well-mixed and spatial stochastic solver development
 * Parallel TetOpSplit implementation
 * Implementation of visualization toolkit
+* Assertion and Exception logging overhaul
 * Meshio utilities
 * Utilities supports for third-party software (CUBIT/Trelis, Metis, mesh mapping for swc/hoc morphology)
 * Testing and documentation
+
+Guido Klingbeil  (OIST, since 2015)
+* Matlab Simbiology support utility
 
 Stefan Wils (OIST, UA, 2006 - 2009)
 * Early version implementation (1.0.0): Well-mixed and spatial stochastic solver development
@@ -42,6 +46,9 @@ Francesco Casalegno
 * parallel PETSc EField solver
 * python 2/3 compatibility
 * new version of manual as jupyter notebooks (https://github.com/CNS-OIST/STEPS_Example/tree/master/user_manual)
+
+Samuel Melchior
+* Rejection-based SSA for well mixed solver
     
 Aleksandr Ovcharenko
 * R123 random number generator

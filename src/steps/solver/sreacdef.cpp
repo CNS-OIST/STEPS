@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -46,6 +46,9 @@
 #include "steps/geom/patch.hpp"
 #include "steps/model/spec.hpp"
 
+// logging
+#include "easylogging++.h"
+
 namespace ssolver = steps::solver;
 namespace smod = steps::model;
 
@@ -82,8 +85,8 @@ ssolver::SReacdef::SReacdef(Statedef * sd, uint idx, steps::model::SReac * sr)
 , pSpec_O_UPD_Coll()
 {
 
-    assert (pStatedef != 0);
-    assert (sr != 0);
+    AssertLog(pStatedef != 0);
+    AssertLog(sr != 0);
 
     pName = sr->getID();
     pOrder = sr->getOrder();
@@ -93,7 +96,7 @@ ssolver::SReacdef::SReacdef(Statedef * sd, uint idx, steps::model::SReac * sr)
         std::ostringstream os;
         os << "Model contains zero-order surface reaction, which are not permitted. ";
         os << " Zero-order volume reaction may be used instead.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     pKcst = sr->getKcst();
@@ -210,12 +213,12 @@ double ssolver::SReacdef::kcst(void) const
 
 void ssolver::SReacdef::setup(void)
 {
-    assert(pSetupdone == false);
+    AssertLog(pSetupdone == false);
 
 
-    if (outside()) { assert (pIlhs.size() == 0); }
-    else if (inside()) { assert (pOlhs.size() == 0); }
-    else assert (false);
+    if (outside()) { AssertLog(pIlhs.size() == 0); }
+    else if (inside()) { AssertLog(pOlhs.size() == 0); }
+    else AssertLog(false);
 
     smod::SpecPVecCI ol_end = pOlhs.end();
     for (smod::SpecPVecCI ol = pOlhs.begin(); ol != ol_end; ++ol)
@@ -300,7 +303,7 @@ void ssolver::SReacdef::setup(void)
 
 bool ssolver::SReacdef::reqInside(void) const
 {
-    assert (pSetupdone == true);
+    AssertLog(pSetupdone == true);
 
     // This can be checked by seeing if DEP_I or RHS_I is non-zero
     // for any species.
@@ -313,7 +316,7 @@ bool ssolver::SReacdef::reqInside(void) const
 
 bool ssolver::SReacdef::reqOutside(void) const
 {
-    assert (pSetupdone == true);
+    AssertLog(pSetupdone == true);
 
     // This can be checked by seeing if DEP_O or RHS_O is non-zero
     // for any species.
@@ -328,7 +331,7 @@ bool ssolver::SReacdef::reqOutside(void) const
 uint ssolver::SReacdef::lhs_I(uint gidx) const
 {
     if (outside()) return 0;
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_I_LHS[gidx];
 }
 
@@ -336,7 +339,7 @@ uint ssolver::SReacdef::lhs_I(uint gidx) const
 
 uint ssolver::SReacdef::lhs_S(uint gidx) const
 {
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_S_LHS[gidx];
 }
 
@@ -345,7 +348,7 @@ uint ssolver::SReacdef::lhs_S(uint gidx) const
 uint ssolver::SReacdef::lhs_O(uint gidx) const
 {
     if (inside()) return 0;
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_O_LHS[gidx];
 }
 
@@ -353,8 +356,8 @@ uint ssolver::SReacdef::lhs_O(uint gidx) const
 
 int ssolver::SReacdef::dep_I(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     if (outside()) return DEP_NONE;
     return pSpec_I_DEP[gidx];
 }
@@ -363,8 +366,8 @@ int ssolver::SReacdef::dep_I(uint gidx) const
 
 int ssolver::SReacdef::dep_S(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_S_DEP[gidx];
 }
 
@@ -372,8 +375,8 @@ int ssolver::SReacdef::dep_S(uint gidx) const
 
 int ssolver::SReacdef::dep_O(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     if (inside()) return DEP_NONE;
     return pSpec_O_DEP[gidx];
 }
@@ -382,7 +385,7 @@ int ssolver::SReacdef::dep_O(uint gidx) const
 
 uint ssolver::SReacdef::rhs_I(uint gidx) const
 {
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_I_RHS[gidx];
 }
 
@@ -390,7 +393,7 @@ uint ssolver::SReacdef::rhs_I(uint gidx) const
 
 uint ssolver::SReacdef::rhs_S(uint gidx) const
 {
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_S_RHS[gidx];
 }
 
@@ -398,7 +401,7 @@ uint ssolver::SReacdef::rhs_S(uint gidx) const
 
 uint ssolver::SReacdef::rhs_O(uint gidx) const
 {
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_O_RHS[gidx];
 }
 
@@ -406,8 +409,8 @@ uint ssolver::SReacdef::rhs_O(uint gidx) const
 
 int ssolver::SReacdef::upd_I(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_I_UPD[gidx];
 }
 
@@ -415,8 +418,8 @@ int ssolver::SReacdef::upd_I(uint gidx) const
 
 int ssolver::SReacdef::upd_S(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_S_UPD[gidx];
 }
 
@@ -424,8 +427,8 @@ int ssolver::SReacdef::upd_S(uint gidx) const
 
 int ssolver::SReacdef::upd_O(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_O_UPD[gidx];
 }
 
@@ -433,8 +436,8 @@ int ssolver::SReacdef::upd_O(uint gidx) const
 
 bool ssolver::SReacdef::reqspec_I(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     if (inside())
         if (pSpec_I_DEP[gidx] != DEP_NONE) return true;
     if (pSpec_I_RHS[gidx] != 0) return true;
@@ -445,8 +448,8 @@ bool ssolver::SReacdef::reqspec_I(uint gidx) const
 
 bool ssolver::SReacdef::reqspec_S(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     if (pSpec_S_DEP[gidx] != DEP_NONE) return true;
     if (pSpec_S_RHS[gidx] != 0) return true;
     return false;
@@ -456,8 +459,8 @@ bool ssolver::SReacdef::reqspec_S(uint gidx) const
 
 bool ssolver::SReacdef::reqspec_O(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     if (outside())
         if (pSpec_O_DEP[gidx] != DEP_NONE) return true;
     if (pSpec_O_RHS[gidx] != 0) return true;

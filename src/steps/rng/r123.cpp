@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -37,6 +37,8 @@
 #include "steps/rng/r123.hpp"
 #include "steps/error.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 // STEPS library.
@@ -80,7 +82,7 @@ void R123::concreteFillBuffer(void)
         return;
     }
 
-    assert(b+4 > rEnd);
+    AssertLog(b+4 > rEnd);
     r123_type::ctr_type rn = r(ctr, key);
     ctr_increment(ctr);
     for (int i = 0; b < rEnd; ++b, ++i) {

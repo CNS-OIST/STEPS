@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,12 +30,14 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/math/constants.hpp"
 #include "steps/wmdirect/sreac.hpp"
 #include "steps/wmdirect/patch.hpp"
 #include "steps/wmdirect/comp.hpp"
 #include "steps/wmdirect/wmdirect.hpp"
-
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace swmd = steps::wmdirect;
@@ -73,8 +75,8 @@ swmd::SReac::SReac(ssolver::SReacdef * srdef, swmd::Patch * patch)
 , pUpdVec()
 , pCcst()
 {
-    assert (pSReacdef != 0);
-    assert (pPatch != 0);
+    AssertLog(pSReacdef != 0);
+    AssertLog(pPatch != 0);
 
     uint lsridx = pPatch->def()->sreacG2L(defsr()->gidx());
     double kcst = pPatch->def()->kcst(lsridx);
@@ -84,12 +86,12 @@ swmd::SReac::SReac(ssolver::SReacdef * srdef, swmd::Patch * patch)
         double vol;
         if (defsr()->inside() == true)
         {
-            assert(pPatch->iComp() != 0);
+            AssertLog(pPatch->iComp() != 0);
             vol = pPatch->iComp()->def()->vol();
         }
         else
         {
-            assert (pPatch->oComp() != 0);
+            AssertLog(pPatch->oComp() != 0);
             vol = pPatch->oComp()->def()->vol();
         }
 
@@ -102,7 +104,7 @@ swmd::SReac::SReac(ssolver::SReacdef * srdef, swmd::Patch * patch)
         pCcst = comp_ccst_area(kcst, area, defsr()->order());
     }
 
-    assert (pCcst >= 0);
+    AssertLog(pCcst >= 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -293,12 +295,12 @@ void swmd::SReac::resetCcst(void)
         double vol;
         if (defsr()->inside() == true)
         {
-            assert(pPatch->iComp() != 0);
+            AssertLog(pPatch->iComp() != 0);
             vol = pPatch->iComp()->def()->vol();
         }
         else
         {
-            assert (pPatch->oComp() != 0);
+            AssertLog(pPatch->oComp() != 0);
             vol = pPatch->oComp()->def()->vol();
         }
 
@@ -311,7 +313,7 @@ void swmd::SReac::resetCcst(void)
         pCcst = comp_ccst_area(kcst, area, defsr()->order());
     }
 
-    assert (pCcst >= 0);
+    AssertLog(pCcst >= 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -364,7 +366,7 @@ double swmd::SReac::rate(void) const
             }
             default:
             {
-                assert(0);
+                AssertLog(0);
                 return 0.0;
             }
         }
@@ -405,7 +407,7 @@ double swmd::SReac::rate(void) const
                 }
                 default:
                 {
-                    assert(0);
+                    AssertLog(0);
                     return 0.0;
                 }
             }
@@ -446,7 +448,7 @@ double swmd::SReac::rate(void) const
                 }
                 default:
                 {
-                    assert(0);
+                    AssertLog(0);
                     return 0.0;
                 }
             }
@@ -474,7 +476,7 @@ std::vector<uint> const & swmd::SReac::apply(void)
         int upd = upd_s_vec[s];
         if (upd == 0) continue;
         int nc = static_cast<int>(cnt_s_vec[s]) + upd;
-        assert(nc >= 0);
+        AssertLog(nc >= 0);
         pdef->setCount(s, static_cast<double>(nc));
     }
 
@@ -491,7 +493,7 @@ std::vector<uint> const & swmd::SReac::apply(void)
             int upd = upd_i_vec[s];
             if (upd == 0) continue;
             int nc = static_cast<int>(cnt_i_vec[s]) + upd;
-            assert(nc >= 0);
+            AssertLog(nc >= 0);
             icomp->def()->setCount(s, static_cast<double>(nc));
         }
     }
@@ -509,7 +511,7 @@ std::vector<uint> const & swmd::SReac::apply(void)
             int upd = upd_o_vec[s];
             if (upd == 0) continue;
             int nc = static_cast<int>(cnt_o_vec[s]) + upd;
-            assert(nc >= 0);
+            AssertLog(nc >= 0);
             ocomp->def()->setCount(s, static_cast<double>(nc));
         }
     }

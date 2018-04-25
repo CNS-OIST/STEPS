@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -31,8 +31,10 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/tetexact/kproc.hpp"
 
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace stex = steps::tetexact;
@@ -79,7 +81,7 @@ void stex::KProc::resetExtent(void)
 void stex::KProc::resetCcst(void) const
 {
     // This should never get called on base object
-    assert (false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -87,7 +89,7 @@ void stex::KProc::resetCcst(void) const
 double stex::KProc::c(void) const
 {
     // Should never get called on base object
-    assert (false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -95,7 +97,7 @@ double stex::KProc::c(void) const
 double stex::KProc::h(void)
 {
     // Should never get called on base object
-    assert (false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

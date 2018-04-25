@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -44,6 +44,8 @@
 #include "steps/model/reac.hpp"
 #include "steps/model/spec.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
@@ -65,17 +67,17 @@ Reac::Reac(string const & id, Volsys * volsys, vector<Spec *> const & lhs,
     {
         ostringstream os;
         os << "No volsys provided to Reac initializer function";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (pKcst < 0.0)
     {
         ostringstream os;
         os << "Reaction constant can't be negative";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     pModel = pVolsys->getModel();
-    assert (pModel != 0);
+    AssertLog(pModel != 0);
 
     setLHS(lhs);
     setRHS(rhs);
@@ -108,7 +110,7 @@ void Reac::_handleSelfDelete(void)
 
 void Reac::setID(string const & id)
 {
-    assert(pVolsys != 0);
+    AssertLog(pVolsys != 0);
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
     // it pass by into the Python layer.
@@ -122,13 +124,13 @@ void Reac::setID(string const & id)
 
 void Reac::setLHS(vector<Spec *> const & lhs)
 {
-    assert(pVolsys != 0);
+    AssertLog(pVolsys != 0);
     pLHS.clear();
 
     SpecPVecCI l_end = lhs.end();
     for (SpecPVecCI l = lhs.begin(); l != l_end; ++l)
     {
-        assert ((*l)->getModel() == pModel);
+        AssertLog((*l)->getModel() == pModel);
         pLHS.push_back(*l);
     }
     pOrder = pLHS.size();
@@ -138,13 +140,13 @@ void Reac::setLHS(vector<Spec *> const & lhs)
 
 void Reac::setRHS(vector<Spec *> const & rhs)
 {
-    assert (pVolsys != 0);
+    AssertLog(pVolsys != 0);
     pRHS.clear();
 
     SpecPVecCI r_end = rhs.end();
     for (SpecPVecCI r = rhs.begin(); r != r_end; ++r)
     {
-        assert ((*r)->getModel() == pModel);
+        AssertLog((*r)->getModel() == pModel);
         pRHS.push_back(*r);
     }
 }
@@ -153,12 +155,12 @@ void Reac::setRHS(vector<Spec *> const & rhs)
 
 void Reac::setKcst(double kcst)
 {
-    assert(pVolsys != 0);
+    AssertLog(pVolsys != 0);
     if (kcst < 0.0)
     {
         ostringstream os;
         os << "Reaction constant can't be negative";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     pKcst = kcst;
 }

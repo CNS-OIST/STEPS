@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -46,6 +46,9 @@
 #include "steps/geom/comp.hpp"
 #include "steps/model/spec.hpp"
 
+// logging
+#include "easylogging++.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace ssolver = steps::solver;
@@ -68,8 +71,8 @@ ssolver::Reacdef::Reacdef(Statedef * sd, uint idx, steps::model::Reac * r)
 , pSpec_UPD(0)
 , pSpec_UPD_Coll()
 {
-    assert(pStatedef != 0);
-    assert(r != 0);
+    AssertLog(pStatedef != 0);
+    AssertLog(r != 0);
 
     pName = r->getID();
     pOrder = r->getOrder();
@@ -121,7 +124,7 @@ void ssolver::Reacdef::restore(std::fstream & cp_file)
 
 void ssolver::Reacdef::setup(void)
 {
-    assert (pSetupdone == false);
+    AssertLog(pSetupdone == false);
 
     // first copy the information about the reaction stoichiometry from Reac object
     smod::SpecPVecCI l_end = pLhs.end();
@@ -176,7 +179,7 @@ double ssolver::Reacdef::kcst(void) const
 
 uint ssolver::Reacdef::lhs(uint gidx) const
 {
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_LHS[gidx];
 }
 
@@ -184,8 +187,8 @@ uint ssolver::Reacdef::lhs(uint gidx) const
 
 int ssolver::Reacdef::dep(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_DEP[gidx];
 }
 
@@ -193,7 +196,7 @@ int ssolver::Reacdef::dep(uint gidx) const
 
 uint ssolver::Reacdef::rhs(uint gidx) const
 {
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_RHS[gidx];
 }
 
@@ -201,8 +204,8 @@ uint ssolver::Reacdef::rhs(uint gidx) const
 
 int ssolver::Reacdef::upd(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_UPD[gidx];
 }
 
@@ -210,8 +213,8 @@ int ssolver::Reacdef::upd(uint gidx) const
 
 bool ssolver::Reacdef::reqspec(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     if (pSpec_DEP[gidx] != DEP_NONE) return true;
     if (pSpec_RHS[gidx] != 0) return true;
     return false;

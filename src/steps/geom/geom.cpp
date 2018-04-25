@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -36,6 +36,9 @@
 #include "steps/geom/comp.hpp"
 #include "steps/geom/patch.hpp"
 #include "steps/util/checkid.hpp"
+
+// logging
+#include "easylogging++.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -77,9 +80,9 @@ swm::Comp * swm::Geom::getComp(string const & id) const
     {
         ostringstream os;
         os << "Container does not contain compartment with name '" << id << "'\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
-    assert(comp->second != 0);
+    AssertLog(comp->second != 0);
     return comp->second;
 }
 
@@ -109,13 +112,14 @@ std::vector<swm::Comp *> swm::Geom::getAllComps(void) const
 swm::Patch * swm::Geom::getPatch(string const & id) const
 {
     PatchPMapCI patch = pPatches.find(id);
+    
     if (patch == pPatches.end())
     {
         ostringstream os;
         os << "Container does not contain patch with name '" << id << "'\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
-    assert(patch->second != 0);
+    AssertLog(patch->second != 0);
     return patch->second;
 }
 
@@ -149,7 +153,7 @@ void swm::Geom::_checkCompID(string const & id) const
     {
         ostringstream os;
         os << "'" << id << "' is already in use.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 }
 
@@ -158,13 +162,13 @@ void swm::Geom::_checkCompID(string const & id) const
 void swm::Geom::_handleCompIDChange(string const & o, string const & n)
 {
     CompPMapCI c_old = pComps.find(o);
-    assert(c_old != pComps.end());
+    AssertLog(c_old != pComps.end());
 
     if (o == n) return;
     _checkCompID(n);
 
     swm::Comp * c = c_old->second;
-    assert(c != 0);
+    AssertLog(c != 0);
     pComps.erase(c->getID());                        // or s_old->first
     pComps.insert(CompPMap::value_type(n, c));
 }
@@ -173,7 +177,7 @@ void swm::Geom::_handleCompIDChange(string const & o, string const & n)
 
 void swm::Geom::_handleCompAdd(swm::Comp * comp)
 {
-    assert(comp->getContainer() == this);
+    AssertLog(comp->getContainer() == this);
     _checkCompID(comp->getID());
     pComps.insert(CompPMap::value_type(comp->getID(), comp));
 }
@@ -182,7 +186,7 @@ void swm::Geom::_handleCompAdd(swm::Comp * comp)
 
 void swm::Geom::_handleCompDel(swm::Comp * comp)
 {
-    assert(comp->getContainer() == this);
+    AssertLog(comp->getContainer() == this);
     pComps.erase(comp->getID());
 }
 
@@ -195,7 +199,7 @@ void swm::Geom::_checkPatchID(string const & id) const
     {
         ostringstream os;
         os << "'" << id << "' is already in use.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 }
 
@@ -204,13 +208,13 @@ void swm::Geom::_checkPatchID(string const & id) const
 void swm::Geom::_handlePatchIDChange(string const & o, string const & n)
 {
     PatchPMapCI p_old = pPatches.find(o);
-    assert(p_old != pPatches.end());
+    AssertLog(p_old != pPatches.end());
 
     if (o == n) return;
     _checkPatchID(n);
 
     swm::Patch * p = p_old->second;
-    assert(p != 0);
+    AssertLog(p != 0);
     pPatches.erase(p->getID());                        // or s_old->first
     pPatches.insert(PatchPMap::value_type(n, p));
 }
@@ -219,7 +223,7 @@ void swm::Geom::_handlePatchIDChange(string const & o, string const & n)
 
 void swm::Geom::_handlePatchAdd(swm::Patch * patch)
 {
-    assert(patch->getContainer() == this);
+    AssertLog(patch->getContainer() == this);
     _checkPatchID(patch->getID());
     pPatches.insert(PatchPMap::value_type(patch->getID(), patch));
 }
@@ -228,7 +232,7 @@ void swm::Geom::_handlePatchAdd(swm::Patch * patch)
 
 void swm::Geom::_handlePatchDel(swm::Patch * patch)
 {
-    assert(patch->getContainer() == this);
+    AssertLog(patch->getContainer() == this);
     pPatches.erase(patch->getID());
 }
 
@@ -236,7 +240,7 @@ void swm::Geom::_handlePatchDel(swm::Patch * patch)
 
 steps::wm::Comp * swm::Geom::_getComp(uint gidx) const
 {
-    assert (gidx < pComps.size());
+    AssertLog(gidx < pComps.size());
     std::map<std::string, Comp *>::const_iterator cp_it = pComps.begin();
     for (uint i=0; i< gidx; ++i) ++cp_it;
     return cp_it->second;
@@ -246,7 +250,7 @@ steps::wm::Comp * swm::Geom::_getComp(uint gidx) const
 
 steps::wm::Patch * swm::Geom::_getPatch(uint gidx) const
 {
-    assert(gidx < pPatches.size());
+    AssertLog(gidx < pPatches.size());
     std::map<std::string, Patch *>::const_iterator pt_it = pPatches.begin();
     for (uint i=0; i< gidx; ++i) ++pt_it;
     return pt_it->second;

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -35,6 +35,7 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/solver/patchdef.hpp"
 #include "steps/solver/ohmiccurrdef.hpp"
 #include "steps/solver/ghkcurrdef.hpp"
@@ -45,6 +46,9 @@
 #include "steps/tetode/tri.hpp"
 #include "steps/math/constants.hpp"
 #include "steps/math/ghk.hpp"
+
+// logging
+#include "easylogging++.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -67,11 +71,11 @@ stode::Tri::Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
 , pTets()
 , pNextTri()
 {
-    assert(pPatchdef != 0);
-    assert(pArea > 0.0);
+    AssertLog(pPatchdef != 0);
+    AssertLog(pArea > 0.0);
 
-    assert (l0 > 0.0 && l1 > 0.0 && l2 > 0.0);
-    assert (d0 >= 0.0 && d1 >= 0.0 && d2 >= 0.0);
+    AssertLog(l0 > 0.0 && l1 > 0.0 && l2 > 0.0);
+    AssertLog(d0 >= 0.0 && d1 >= 0.0 && d2 >= 0.0);
 
     pTets[0] = tetinner;
     pTets[1] = tetouter;
@@ -119,7 +123,7 @@ void stode::Tri::setOuterTet(stode::Tet * t)
 
 void stode::Tri::setNextTri(uint i, stode::Tri * t)
 {
-    assert (i <= 2);
+    AssertLog(i <= 2);
 
     pNextTri[i]= t;
 }
@@ -146,19 +150,19 @@ double stode::Tri::getOhmicI(double v, steps::tetode::TetODE * solver) const
     {
         ssolver::OhmicCurrdef * ocdef = patchdef()->ohmiccurrdef(i);
         // The next is ok because Patchdef returns local index
-        //if (idx() %1000 == 0) std::cout << "\nOhmic current: " << patchdef()->ohmiccurrdef(i)->name();
+        //if (idx() %1000 == 0) CLOG(INFO, "general_log") << "\nOhmic current: " << patchdef()->ohmiccurrdef(i)->name();
 
         // Now need to get the states from TetODE object, and remember to convert local indices to the global ones it needs
         uint spec_gidx = patchdef()->specL2G(patchdef()->ohmiccurr_chanstate(i));
         uint patch_gidx = patchdef()->gidx();
 
         double n = solver->_getTriCount(pIdx, spec_gidx);
-        //if (idx() %1000 == 0) std::cout << "\nN# " << i << ": " << n;
+        //if (idx() %1000 == 0) CLOG(INFO, "general_log") << "\nN# " << i << ": " << n;
 
         current += (n*ocdef->getG())*(v-ocdef->getERev());
-        //if (idx() %1000 == 0) std::cout << "\nCurrent# " << i << ": " << (n*ocdef->getG())*(v-ocdef->getERev());
+        //if (idx() %1000 == 0) CLOG(INFO, "general_log") << "\nCurrent# " << i << ": " << (n*ocdef->getG())*(v-ocdef->getERev());
     }
-    //if (idx() %1000 == 0) std::cout << "\n";
+    //if (idx() %1000 == 0) CLOG(INFO, "general_log") << "\n";
 
     return current;
 }

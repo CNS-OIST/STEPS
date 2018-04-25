@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,7 +30,7 @@
 #include "steps/mpi/mpi_finish.hpp"
 #include "steps/mpi/mpi_common.hpp"
 
-#include "third_party/easylogging++.h"
+#include "easylogging++.h"
 
 #ifdef USE_PETSC
 #include "petscsys.h"
@@ -42,13 +42,7 @@ void steps::mpi::mpiFinish(void) {
     PetscInitialized(&PETSc_used);
 
     if (!PETSc_used) {
-#endif
     int status = MPI_Finalize();
-#ifdef MPI_DEBUG
-        CLOG(DEBUG, "mpi_debug") << "######## SIMULATION END ############";
-        CLOG(DEBUG, "mpi_debug") << "Status: " << status << "\n";
-#endif
-#ifdef USE_PETSC
     }
 #endif
 }

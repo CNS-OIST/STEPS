@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -39,7 +39,8 @@
 #include "steps/solver/compdef.hpp"
 #include "steps/mpi/tetopsplit/kproc.hpp"
 #include "steps/solver/types.hpp"
-
+// logging
+#include "third_party/easyloggingpp/src/easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
  namespace steps {
@@ -173,7 +174,7 @@ public:
     inline KProc * getKProc(uint lidx)
     {
         if (hostRank != myRank) return NULL;
-        assert(lidx < pKProcs.size());
+        AssertLog(lidx < pKProcs.size());
         return pKProcs[lidx];
     }
 

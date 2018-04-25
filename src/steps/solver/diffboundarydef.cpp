@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -37,6 +37,8 @@
 #include "steps/solver/diffboundarydef.hpp"
 #include "steps/geom/comp.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace ssolver = steps::solver;
@@ -55,16 +57,16 @@ ssolver::DiffBoundarydef::DiffBoundarydef(Statedef * sd, uint idx, stetmesh::Dif
 , pCompB(0)
 , pSetupdone(false)
 {
-    assert(pStatedef != 0);
-    assert(db != 0);
+    AssertLog(pStatedef != 0);
+    AssertLog(db != 0);
 
     pName = db->getID();
     pTris = db->_getAllTriIndices();
     std::vector<steps::wm::Comp *> comps = db->getComps();
     pCompA_temp = comps[0];
     pCompB_temp = comps[1];
-    assert (pCompA_temp != 0);
-    assert (pCompB_temp != 0);
+    AssertLog(pCompA_temp != 0);
+    AssertLog(pCompB_temp != 0);
 
 }
 
@@ -92,12 +94,12 @@ void ssolver::DiffBoundarydef::restore(std::fstream & cp_file)
 
 void ssolver::DiffBoundarydef::setup(void)
 {
-    assert (pSetupdone == false);
+    AssertLog(pSetupdone == false);
 
     pCompA = pStatedef->getCompIdx(pCompA_temp);
     pCompB = pStatedef->getCompIdx(pCompB_temp);
-    assert(pCompA >= 0);
-    assert(pCompB >= 0);
+    AssertLog(pCompA >= 0);
+    AssertLog(pCompB >= 0);
     pSetupdone = true;
 
 }

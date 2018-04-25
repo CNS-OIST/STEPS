@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -40,6 +40,9 @@
 #include "steps/model/chanstate.hpp"
 #include "steps/model/ohmiccurr.hpp"
 
+// logging
+#include "easylogging++.h"
+
 namespace ssolver = steps::solver;
 namespace smod = steps::model;
 
@@ -56,8 +59,8 @@ ssolver::OhmicCurrdef::OhmicCurrdef(Statedef * sd, uint gidx, smod::OhmicCurr * 
 , pSpec_DEP(0)
 , pSpec_CHANSTATE(GIDX_UNDEFINED)
 {
-    assert(pStatedef != 0);
-    assert(oc != 0);
+    AssertLog(pStatedef != 0);
+    AssertLog(oc != 0);
 
     uint nspecs = pStatedef->countSpecs();
     if (nspecs == 0) return; // Would be weird, but okay.
@@ -67,7 +70,7 @@ ssolver::OhmicCurrdef::OhmicCurrdef(Statedef * sd, uint gidx, smod::OhmicCurr * 
     pName = oc->getID();
     pChanState = oc->getChanState()->getID();
     pG = oc->getG();
-    assert (pG >= 0.0);
+    AssertLog(pG >= 0.0);
     pERev = oc->getERev();
 }
 
@@ -98,7 +101,7 @@ void ssolver::OhmicCurrdef::restore(std::fstream & cp_file)
 
 void ssolver::OhmicCurrdef::setup(void)
 {
-    assert(pSetupdone == false);
+    AssertLog(pSetupdone == false);
 
     uint chidx = pStatedef->getSpecIdx(pChanState);
 
@@ -112,7 +115,7 @@ void ssolver::OhmicCurrdef::setup(void)
 
 uint ssolver::OhmicCurrdef::chanstate(void) const
 {
-    assert(pSetupdone == true);
+    AssertLog(pSetupdone == true);
     return pSpec_CHANSTATE;
 }
 
@@ -120,8 +123,8 @@ uint ssolver::OhmicCurrdef::chanstate(void) const
 
 int ssolver::OhmicCurrdef::dep(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_DEP[gidx];
 }
 
@@ -129,8 +132,8 @@ int ssolver::OhmicCurrdef::dep(uint gidx) const
 
 bool ssolver::OhmicCurrdef::req(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     if (pSpec_DEP[gidx] != DEP_NONE) return true;
     return false;
 }

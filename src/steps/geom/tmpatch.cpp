@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -39,7 +39,8 @@
 #include "steps/geom/tmcomp.hpp"
 #include "steps/math/point.hpp"
 #include "steps/util/collections.hpp"
-
+// logging
+#include "easylogging++.h"
 namespace stetmesh = steps::tetmesh;
 
 using steps::math::point3d;
@@ -54,9 +55,11 @@ stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
 , pTrisN(0)
 {
     if (pTetmesh == 0)
-        throw steps::ArgErr("No mesh provided to Patch initializer function.");
+        ArgErrLog("No mesh provided to Patch initializer function.");
 
     // upcast the compartment pointers for this overloaded constructor
+
+    // Note that for well-mixed compartment this will return nullptr
     stetmesh::TmComp *icomp = dynamic_cast<stetmesh::TmComp *>(wmicomp);
     stetmesh::TmComp *ocomp = dynamic_cast<stetmesh::TmComp *>(wmocomp);
 
@@ -72,43 +75,88 @@ stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
         visited_tris.insert(tri);
 
         if (tri > maxidx)
-            throw steps::ArgErr("Invalid triangle index "+std::to_string(tri)+".");
+            ArgErrLog("Invalid triangle index "+std::to_string(tri)+".");
 
         if (pTetmesh->getTriPatch(tri) != nullptr)
-            throw steps::ArgErr("Triangle with index "+std::to_string(tri)+" already belongs to a patch.");
+            ArgErrLog("Triangle with index "+std::to_string(tri)+" already belongs to a patch.");
 
         if (pTetmesh->getTriDiffBoundary(tri) != nullptr)
-            throw steps::ArgErr("Triangle with index "+std::to_string(tri)+" belongs to a diffusion boundary.");
+            ArgErrLog("Triangle with index "+std::to_string(tri)+" belongs to a diffusion boundary.");
 
         // Add triangle if compartments match those of patch, flipping
         // triangle neighbours if required.
 
         const int *tri_tets = pTetmesh->_getTriTetNeighb(tri);
 
-        const stetmesh::TmComp *tri_comps[2] = {
-            tri_tets[0]==-1? nullptr: pTetmesh->getTetComp(tri_tets[0]),
-            tri_tets[1]==-1? nullptr: pTetmesh->getTetComp(tri_tets[1]),
-        };
+        // Weiliang: bug fix for trianglar patch with pure well-mixed compartments
 
-        if (tri_comps[1] == icomp && tri_comps[0] == ocomp) {
-            pTetmesh->_flipTriTetNeighb(tri);
-            pTri_indices.push_back(tri);
+        // this implementation guarantee the following:
+        // 1. if a tri's tet neighbor is in inner comp, its id is in tri_tet[0]
+        // 2. if a tri's tet neighbor is in outer comp, its id is in tri_tet[1]
+
+        // note that if the tet neighbor is not in either comp (well-mixed compartment),
+        // there is no guarantee that tri_tets[0] != -1
+
+        // if tri_tet[0] doesn't exist but tri_tet[1] exists
+        if (tri_tets[0] == -1 && tri_tets[1] != -1 ) {
+            stetmesh::TmComp * tri_comp = pTetmesh->getTetComp(tri_tets[1]);
+            // if tri_comp is inner
+            // we flip it so that tri_tets[0] is now in inner comp
+            if (tri_comp != nullptr && tri_comp == icomp) {
+                pTetmesh->_flipTriTetNeighb(tri);
+            }
         }
-        else if (tri_comps[0] == icomp && tri_comps[1] == ocomp) {
-            pTri_indices.push_back(tri);
+        else if (tri_tets[0] != -1 && tri_tets[1] == -1 ) {
+            stetmesh::TmComp * tri_comp = pTetmesh->getTetComp(tri_tets[0]);
+            // if it is outcomp or nullptr
+            // we flip it so that now tri_tets[1] is outer comp
+            if (tri_comp != nullptr && tri_comp == ocomp) {
+                pTetmesh->_flipTriTetNeighb(tri);
+            }
         }
-        else throw steps::ArgErr("Triangle with index "+std::to_string(tri)
-                +" has incompatible compartments for patch.");
+        // both sides have tetrahedrons
+        else if (tri_tets[0] != -1 && tri_tets[1] != -1 ) {
+            stetmesh::TmComp * tri_comp0 = pTetmesh->getTetComp(tri_tets[0]);
+            stetmesh::TmComp * tri_comp1 = pTetmesh->getTetComp(tri_tets[1]);
+            // if tri_comp0 is not nullptr (no well-mixed) and is outcomp,
+            // we flip so that tri_tets[1] is now ocomp
+            if (tri_comp0 != nullptr && tri_comp0 == ocomp) {
+                pTetmesh->_flipTriTetNeighb(tri);
+            }
+            // if tri_comp1 is not nullptr (no well-mixed) and is innercomp,
+            // we flip so that tri_tets[0] is now icomp
+            else if (tri_comp1 != nullptr &&  tri_comp1 == icomp) {
+                pTetmesh->_flipTriTetNeighb(tri);
+            }
+            // in other cases (including both comps are well-mixed), we don't need to flip
 
-        // If triangle normal does not point towards inner (first neighbour)
-        // tetrahedron, flip triangle.
+        }
+        // both sides have no tet, this shouldn't happen
+        else {
+            ArgErrLog("Triangle with index "+std::to_string(tri)
+                                +" has no neighboring tetrahedron.");
+        }
 
-        // (sgy: Is it safe to assume inner tet is not -1? i.e. icomp never null?)
-        assert(tri_tets[0] >= 0);
+        pTri_indices.push_back(tri);
 
-        point3d b_to_b = pTetmesh->_getTriBarycenter(tri) - pTetmesh->_getTetBarycenter(tri_tets[0]);
-        if (dot(b_to_b, pTetmesh->_getTriNorm(tri)) < 0)
-            pTetmesh->_flipTriVerts(tri);
+        // from above we are sure that if updated_tri_tets are used in the simulation,
+        // updated_tri_tets[0] will be inner tet, updated_tri_tets[1] will be outer tet.
+        // note that they may not be used in the simulation, in which case flipping or not doesn't matter
+
+        const int *updated_tri_tets = pTetmesh->_getTriTetNeighb(tri);
+        
+        // tri_tets[0] exists
+        if (updated_tri_tets[0] >= 0) {
+            point3d b_to_b = pTetmesh->_getTriBarycenter(tri) - pTetmesh->_getTetBarycenter(updated_tri_tets[0]);
+            if (dot(b_to_b, pTetmesh->_getTriNorm(tri)) < 0)
+                pTetmesh->_flipTriVerts(tri);
+        }
+        // tri_tets[1] exists
+        else if (updated_tri_tets[1] >= 0) {
+            point3d b_to_b = pTetmesh->_getTriBarycenter(tri) - pTetmesh->_getTetBarycenter(updated_tri_tets[1]);
+            if (dot(b_to_b, pTetmesh->_getTriNorm(tri)) >= 0)
+                pTetmesh->_flipTriVerts(tri);
+        }
 
         // Update area, patch, bounding box.
         area += pTetmesh->getTriArea(tri);

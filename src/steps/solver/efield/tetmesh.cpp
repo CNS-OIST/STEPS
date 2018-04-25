@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -47,7 +47,8 @@
 #include "steps/solver/efield/vertexconnection.hpp"
 #include "steps/solver/efield/vertexelement.hpp"
 
-
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace sefield = steps::solver::efield;
@@ -130,12 +131,12 @@ sefield::TetMesh::TetMesh
     }
 
     // Copy triangles.
-    assert(pNTri > 0);
+    AssertLog(pNTri > 0);
     pTriangles = new uint[pNTri * 3];
     memcpy(pTriangles, trivi, 3 * pNTri * sizeof(uint));
 
     // Copy tetrahedrons.
-    assert(pNTet > 0);
+    AssertLog(pNTet > 0);
     pTetrahedrons = new uint[pNTet * 4];
     memcpy(pTetrahedrons, tetvi, 4 * pNTet * sizeof(uint));
 
@@ -144,7 +145,7 @@ sefield::TetMesh::TetMesh
     {
         TetStub t(pTetrahedrons + (i * 4));
         // We don't look kindly on duplicate tetrahedrons.
-        assert(pTetLUT.find(t) == pTetLUT.end());
+        AssertLog(pTetLUT.find(t) == pTetLUT.end());
         pTetLUT.insert(t);
     }
 
@@ -218,7 +219,7 @@ void sefield::TetMesh::restore(std::fstream & cp_file)
         std::ostringstream os;
         os << "checkpoint data mismatch with simulator parameters: sefield::Tetmesh::nelems, ";
         os << nelems << ":" << pElements.size();
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     for (uint e = 0; e < nelems; e++) {
         pElements[e]->restore(cp_file);
@@ -230,7 +231,7 @@ void sefield::TetMesh::restore(std::fstream & cp_file)
         std::ostringstream os;
         os << "checkpoint data mismatch with simulator parameters: sefield::Tetmesh::nconns.";
         os << nconns << ":" << pConnections.size();
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     for (uint c = 0; c < nconns; c++) {
         pConnections[c]->restore(cp_file);
@@ -261,7 +262,7 @@ void sefield::TetMesh::extractConnections(void)
             // and I think vertices not belonging to same tetrahedron were being connected
             for (uint k = j+1; k < 4; ++k)
             {
-                assert (k != j);
+                AssertLog(k != j);
                 VertexElement * vj = getVertex(pTetrahedrons[(itet * 4) + j]);
                 VertexElement * vk = getVertex(pTetrahedrons[(itet * 4) + k]);
                 conns.insert(ConnStub(vj, vk));
@@ -296,18 +297,8 @@ void sefield::TetMesh::extractConnections(void)
 
 void sefield::TetMesh::allocateSurface(void)
 {
-    assert(pTriangles != 0);
-    /*
-    double * areas = new double[pElements.size()];
+    AssertLog(pTriangles != 0);
 
-    std::cout << "\nbefore...\n[";
-    for (uint i=0; i< pElements.size(); ++i)
-    {
-        std::cout << areas[i] << ",";
-    }
-    std::cout << "]";
-    std::cin.get();
-    */
     uint * itr = pTriangles;
     for (uint iitr = 0; iitr < pNTri; ++iitr, itr += 3)
     {
@@ -333,22 +324,9 @@ void sefield::TetMesh::allocateSurface(void)
         v0->incrementSurfaceArea(area3);
         v1->incrementSurfaceArea(area3);
         v2->incrementSurfaceArea(area3);
-        /*
-        areas[v0->getIDX()]+=area3;
-        areas[v1->getIDX()]+=area3;
-        areas[v2->getIDX()]+=area3;
-         */
+ 
     }
-    /*
-    std::cout << "\nafter...\n[";
-    for (uint i=0; i< pElements.size(); ++i)
-    {
-        std::cout << areas[i] << ",";
-    }
-    std::cout << "]";
-    std::cin.get();
-     delete[] areas;
-     */
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -368,7 +346,7 @@ void sefield::TetMesh::reindexElements(void)
 vector<vector<uint> > sefield::TetMesh::getNeighboringTetrahedra(VertexElement * ve)
 {
     // Check input.
-    assert(ve != 0);
+    AssertLog(ve != 0);
 
     uint v0x = ve->getIDX();
     uint nn = ve->getNCon();
@@ -416,7 +394,7 @@ void sefield::TetMesh::applySurfaceCapacitance(double d)
 
 void sefield::TetMesh::applyTriCapacitance(uint tidx, double cm)
 {
-	assert(tidx < pNTri);
+	AssertLog(tidx < pNTri);
 
     pElements[getTriangleVertex(tidx, 0)]->applySurfaceCapacitance(cm);
     pElements[getTriangleVertex(tidx, 1)]->applySurfaceCapacitance(cm);
@@ -503,7 +481,7 @@ void sefield::TetMesh::axisOrderElements(uint opt_method, std::string const & op
             std::ostringstream os;
             os << "optimal data mismatch with simulator parameters: sefield::Tetmesh::nelems, ";
             os << nelems << ":" << pElements.size();
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         opt_file.read((char*)pVertexPerm, sizeof(uint) * nelems);
 
@@ -513,7 +491,7 @@ void sefield::TetMesh::axisOrderElements(uint opt_method, std::string const & op
         {
             VertexElementP vep = elements_temp[vidx];
             // sanity check
-            assert(vep->getIDX() == vidx);
+            AssertLog(vep->getIDX() == vidx);
             uint new_idx = pVertexPerm[vidx];
             pElements[new_idx] = vep;
         }
@@ -541,7 +519,7 @@ void sefield::TetMesh::axisOrderElements(uint opt_method, std::string const & op
 
         stringstream ss;
         ss << "\n\n-- " << search_percent << "%  Samples of breadth first search --" << std::endl;
-        cout << ss.str() << endl;
+        CLOG(INFO, "general_log") << ss.str() << endl;
 
         //time_t btime;
         //time_t etime;
@@ -599,7 +577,6 @@ void sefield::TetMesh::axisOrderElements(uint opt_method, std::string const & op
             {
                 bestone = vidx;
                 bestwidth = maxdi;
-                //cout << "\nOriginal vertex "<< vidx << " gives banded matrix half-width " << maxdi;
             }
         }
 
@@ -630,8 +607,6 @@ void sefield::TetMesh::axisOrderElements(uint opt_method, std::string const & op
             ielt++;
         }
 
-        //time(&etime);
-        //std::cout << "\nTime taken: "<< difftime(etime, btime) << std::endl;
     }
     // / / / / / / / / / / / /  / / / / / / / / / / / / / / / / / / / / / / //
 
@@ -677,7 +652,7 @@ void sefield::TetMesh::axisOrderElements(uint opt_method, std::string const & op
         mainEvec(3, m, &iret, &gamma, evec);
         if (iret != 1)
         {
-            cout << "\nWarning - eigenvalue faliure " << endl;
+            CLOG(INFO, "general_log") << "\nWarning - eigenvalue faliure " << endl;
         }
 
         for (uint i = 0; i < 3; i++)
@@ -692,9 +667,7 @@ void sefield::TetMesh::axisOrderElements(uint opt_method, std::string const & op
         vx += 1.e-8;
         vy += 1.e-9;
         vz += 1.e-10;
-        stringstream ss;
-        ss << "aligning to axis " << vx << " " << vy << " " << vz << endl;
-        //cout << ss.str();
+
 
         map<double, VertexElement*> hm;
         //vector<double> da;
@@ -724,14 +697,12 @@ void sefield::TetMesh::axisOrderElements(uint opt_method, std::string const & op
             pVertexPerm[hm[d]->getIDX()] = ielt;
             ielt++;
         }
-        //time(&etime);
-        //std::cout << "\nTime taken: "<< difftime(etime, btime) << std::endl;
     }
     else
     {
         std::ostringstream os;
         os << "Unknown optimization method.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
 

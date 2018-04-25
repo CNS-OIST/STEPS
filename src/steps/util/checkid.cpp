@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -28,7 +28,8 @@
 
 #include "steps/error.hpp"
 #include "steps/util/checkid.hpp"
-
+// logging
+#include "easylogging++.h"
 namespace steps {
 namespace util {
 
@@ -52,11 +53,11 @@ bool isValidID(const std::string &s) {
 }
 
 void checkID(const char *s) {
-    if (!isValidID(s)) throw steps::ArgErr("'"+std::string(s)+"' is not a valid id.");
+    if (!isValidID(s)) {ArgErrLog("'"+std::string(s)+"' is not a valid id.");}
 }
 
 void checkID(const std::string &s) {
-    if (!isValidID(s)) throw steps::ArgErr("'"+s+"' is not a valid id.");
+    if (!isValidID(s)) {ArgErrLog("'"+s+"' is not a valid id.");}
 }
 
 }} // namespace steps::util

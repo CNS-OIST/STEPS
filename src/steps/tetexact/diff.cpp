@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -27,10 +27,10 @@
 
 // Standard library & STL headers.
 #include <vector>
-
+#include <iostream>
 // STEPS headers.
 #include "steps/common.h"
-
+#include "steps/error.hpp"
 #include "steps/math/constants.hpp"
 #include "steps/solver/diffdef.hpp"
 #include "steps/solver/compdef.hpp"
@@ -38,10 +38,9 @@
 #include "steps/tetexact/tet.hpp"
 #include "steps/tetexact/kproc.hpp"
 #include "steps/tetexact/tetexact.hpp"
-#include "third_party/easylogging++.h"
 
-#include <iostream>
-
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace stex = steps::tetexact;
@@ -60,8 +59,8 @@ stex::Diff::Diff(ssolver::Diffdef * ddef, stex::Tet * tet)
 , pCDFSelector()
 , pNeighbCompLidx()
 {
-    assert(pDiffdef != 0);
-    assert(pTet != 0);
+    AssertLog(pDiffdef != 0);
+    AssertLog(pTet != 0);
     stex::Tet * next[4] =
     {
         pTet->nextTet(0),
@@ -124,7 +123,7 @@ stex::Diff::Diff(ssolver::Diffdef * ddef, stex::Tet * tet)
     }
 
     // Should not be negative!
-    assert(pScaledDcst >= 0);
+    AssertLog(pScaledDcst >= 0);
 
     // Setup the selector distribution.
     if (pScaledDcst == 0.0)
@@ -160,10 +159,6 @@ void stex::Diff::checkpoint(std::fstream & cp_file)
         cp_file.write((char*)&(item.first), sizeof(uint));
         cp_file.write((char*)&(item.second), sizeof(double));
     }
-    #ifdef DIRECTIONAL_DCST_DEBUG
-    CLOG_IF(n_direct_dcsts != 0, DEBUG, "steps_debug") << "Stored Directional Dcst mapping: " << directionalDcsts << "\n";
-    #endif
-    
     cp_file.write((char*)&pScaledDcst, sizeof(double));
     cp_file.write((char*)&pDcst, sizeof(double));
     cp_file.write((char*)pCDFSelector, sizeof(double) * 3);
@@ -193,10 +188,7 @@ void stex::Diff::restore(std::fstream & cp_file)
         cp_file.read((char*)&value, sizeof(double));
         directionalDcsts[id] = value;
     }
-    
-    #ifdef DIRECTIONAL_DCST_DEBUG
-    CLOG_IF(n_direct_dcsts != 0, DEBUG, "steps_debug") << "Restored Directional Dcst mapping: " << directionalDcsts << "\n";
-    #endif
+
 
     cp_file.read((char*)&pScaledDcst, sizeof(double));
     cp_file.read((char*)&pDcst, sizeof(double));
@@ -347,8 +339,8 @@ void stex::Diff::reset(void)
 
 void stex::Diff::setDiffBndActive(uint i, bool active)
 {
-    assert (i < 4);
-    assert(pDiffBndDirection[i] == true);
+    AssertLog(i < 4);
+    AssertLog(pDiffBndDirection[i] == true);
 
     // Only need to update if the flags are changing
     if (pDiffBndActive[i] != active)
@@ -363,8 +355,8 @@ void stex::Diff::setDiffBndActive(uint i, bool active)
 
 bool stex::Diff::getDiffBndActive(uint i) const
 {
-    assert (i < 4);
-    assert(pDiffBndDirection[i] == true);
+    AssertLog(i < 4);
+    AssertLog(pDiffBndDirection[i] == true);
 
     return pDiffBndActive[i];
 }
@@ -385,7 +377,7 @@ double stex::Diff::dcst(int direction)
 
 void stex::Diff::setDcst(double dcst)
 {
-    assert(dcst >= 0.0);
+    AssertLog(dcst >= 0.0);
     pDcst = dcst;
     directionalDcsts.clear();
     
@@ -431,7 +423,7 @@ void stex::Diff::setDcst(double dcst)
         pScaledDcst += d[i];
     }
     // Should not be negative!
-    assert(pScaledDcst >= 0);
+    AssertLog(pScaledDcst >= 0);
 
     // Setup the selector distribution.
     if (pScaledDcst == 0.0)
@@ -452,9 +444,9 @@ void stex::Diff::setDcst(double dcst)
 
 void stex::Diff::setDirectionDcst(int direction, double dcst)
 {
-    assert(direction < 4);
-    assert(direction >= 0);
-    assert(dcst >= 0.0);
+    AssertLog(direction < 4);
+    AssertLog(direction >= 0);
+    AssertLog(dcst >= 0.0);
     directionalDcsts[direction] = dcst;
 
     // Automatically activate boundary diffusion if necessary
@@ -512,7 +504,7 @@ void stex::Diff::setDirectionDcst(int direction, double dcst)
         pScaledDcst += d[i];
     }
     // Should not be negative!
-    assert(pScaledDcst >= 0);
+    AssertLog(pScaledDcst >= 0);
     
     // Setup the selector distribution.
     if (pScaledDcst == 0.0)
@@ -537,7 +529,7 @@ double stex::Diff::rate(steps::tetexact::Tetexact * solver)
 
     // Compute the rate.
     double rate = (pScaledDcst) * static_cast<double>(pTet->pools()[lidxTet]);
-    assert(std::isnan(rate) == false);
+    AssertLog(std::isnan(rate) == false);
 
     // Return.
     return rate;
@@ -557,7 +549,7 @@ std::vector<stex::KProc*> const & stex::Diff::apply(steps::rng::RNG * rng, doubl
 
     if (clamped == false)
     {
-        assert(*local > 0);
+        AssertLog(*local > 0);
     }
 
     // Apply change in next voxel: select a direction.
@@ -572,8 +564,8 @@ std::vector<stex::KProc*> const & stex::Diff::apply(steps::rng::RNG * rng, doubl
     stex::Tet * nexttet = pTet->nextTet(iSel);
     // If there is no next tet 0, pCDFSelector[0] should be zero
     // So we can assert that nextet 0 does indeed exist
-    assert (nexttet != 0);
-    assert(pNeighbCompLidx[iSel] > -1);
+    AssertLog(nexttet != 0);
+    AssertLog(pNeighbCompLidx[iSel] > -1);
 
     if (nexttet->clamped(pNeighbCompLidx[iSel]) == false)
         nexttet->incCount(pNeighbCompLidx[iSel],1);

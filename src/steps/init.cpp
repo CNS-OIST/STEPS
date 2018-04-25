@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,34 +24,59 @@
 
  */
 
-#include "third_party/easylogging++.h"
+#include "easylogging++.h"
 #include "steps/init.hpp"
 
-_INITIALIZE_EASYLOGGINGPP
+/*
+HOWTO: Logging, Assertion and Exception
+
+1. To enable assertion logging, make sure ENABLE_ASSERTLOG is defined in src/CMakeLists.txt
+2. Make sure "third_party/easy_loggingpp/src/easylogging++.h" and "steps/error.hpp" are included as header files
+3. Use AssertLog(condition) to add assertion, for example
+            int a = -1;
+            AssertLog(a > 0);
+4. Use ErrLog(msg), NotImplErrLog(msg), ArgErrLog(msg), ProgErrLog(msg), SysErrLog(msg) and IOErrLog(msg)
+   to log and throw associated exception, for example
+            NotImplErrLog("This function is not implemented in this solver.");
+5. Use CLOG(WARNING, "general_log") to log warning message, for example
+            CLOG(WARNING, "general_log") << "This is a warning message.";
+6. Use CLOG(INFO, "general_log") to log information message, for example
+            CLOG(INFO, "general_log") << "This is a general info message.";
+
+NOTE: WARNING and INFO mesages do not terminate the simulation.
+      INFO messages are not displayed in terminal under parallel mode.
+*/
+
+
+INITIALIZE_EASYLOGGINGPP
 
 void steps::init(void) {
 
     // easylogging initialization
     el::Loggers::addFlag(el::LoggingFlag::ImmediateFlush);
     el::Loggers::addFlag(el::LoggingFlag::CreateLoggerAutomatically);
-    
-    // STEPS DEBUG Logger
-    el::Configurations debug_conf;
-    debug_conf.set(el::Level::Debug, el::ConfigurationType::Format, "[%datetime][%logger][%loc]: %msg");
-    debug_conf.set(el::Level::Debug,
+    el::Loggers::addFlag(el::LoggingFlag::AutoSpacing);
+    el::Loggers::addFlag(el::LoggingFlag::LogDetailedCrashReason);
+
+    // This is the default log for serial simulation
+    // This configuration will be rewritten if steps.mpi module is imported in parallel simulation
+    el::Configurations serial_conf;
+
+    serial_conf.set(el::Level::Global, el::ConfigurationType::Format, "[%datetime][%level][%loc][%func]: %msg");
+    serial_conf.set(el::Level::Global,
              el::ConfigurationType::ToStandardOutput, "false");
-    
-    // DEBUG level logging only applies if NDEBUG not defined, so
-    // create log file only if NDEBUG not defined (or for Windows, _DEBUG is defined)
+    serial_conf.set(el::Level::Global,
+                    el::ConfigurationType::ToFile, "true");
+    serial_conf.set(el::Level::Global,
+         el::ConfigurationType::Filename, ".logs/general_log_0.txt");
+    serial_conf.set(el::Level::Global,
+                    el::ConfigurationType::MaxLogFileSize, "2097152");
 
-#if !defined(NDEBUG) || defined(_DEBUG)
-    debug_conf.set(el::Level::Debug,
-             el::ConfigurationType::ToFile, "true");
-    debug_conf.set(el::Level::Debug,
-                   el::ConfigurationType::Filename, ".logs/debug_log");
-#endif
-    
-    el::Loggers::getLogger("steps_debug");
-    el::Loggers::reconfigureLogger("steps_debug", debug_conf);
+    serial_conf.set(el::Level::Fatal, el::ConfigurationType::ToStandardOutput, "true");
+    serial_conf.set(el::Level::Error, el::ConfigurationType::ToStandardOutput, "true");
+    serial_conf.set(el::Level::Warning, el::ConfigurationType::ToStandardOutput, "true");
+    serial_conf.set(el::Level::Info, el::ConfigurationType::ToStandardOutput, "true");
+
+    el::Loggers::getLogger("general_log");
+    el::Loggers::reconfigureLogger("general_log", serial_conf);
 }
-

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -42,6 +42,10 @@
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/solver/efield/linsystem.hpp"
+
+
+// logging
+#include "third_party/easyloggingpp/src/easylogging++.h"
 
 namespace steps {
 namespace solver {
@@ -89,8 +93,9 @@ struct SLU_NCMatrix: public AMatrix {
 
             int next_offset = offset + scol.size();
             std::sort(ridx+offset, ridx+next_offset);
+            
             if (ridx[offset]<0 || ridx[next_offset-1]>=pN)
-                throw steps::ProgErr("out of range element in sparsity matrix");
+                ProgErrLog("out of range element in sparsity matrix");
 
             // handle duplicates gracefully
             const int *adj = std::unique(ridx+offset, ridx+next_offset);
@@ -125,7 +130,7 @@ struct SLU_NCMatrix: public AMatrix {
 
     void set(size_t row, size_t col, double value) override final {
         int i=get_offset((int)row, (int)col);
-        if (i<0) throw std::invalid_argument("index not in sparse template");
+        if (i<0) ArgErrLog("index not in sparse template");
 
         pValues[i]=value;
     }

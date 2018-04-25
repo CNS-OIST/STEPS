@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -82,7 +82,7 @@ Tetmesh * steps::tetmesh::loadASCII(string pathname)
     {
         ostringstream os;
         os << "Cannot open file \"" << pathname << "\"";
-        throw steps::IOErr(os.str());
+        IOErrLog(os.str());
     }
 
     // Read vertices.
@@ -233,7 +233,7 @@ void steps::tetmesh::saveASCII(string pathname, Tetmesh * m)
     {
         ostringstream os;
         os << "No model specified";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     ofstream mf(pathname.c_str());
@@ -241,7 +241,7 @@ void steps::tetmesh::saveASCII(string pathname, Tetmesh * m)
     {
         ostringstream os;
         os << "Cannot open file \"" << pathname << "\"";
-        throw steps::IOErr(os.str());
+        IOErrLog(os.str());
     }
 
     // Increase digit precision a bit to accurately store doubles

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -37,12 +37,15 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/solver/compdef.hpp"
 #include "steps/mpi/tetopsplit/patch.hpp"
 #include "steps/mpi/tetopsplit/kproc.hpp"
 #include "steps/mpi/tetopsplit/reac.hpp"
 #include "steps/mpi/tetopsplit/tri.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace smtos = steps::mpi::tetopsplit;
@@ -55,7 +58,7 @@ smtos::Patch::Patch(ssolver::Patchdef * patchdef)
 , pTris()
 , pArea(0.0)
 {
-    assert(pPatchdef != 0);
+    AssertLog(pPatchdef != 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -82,7 +85,7 @@ void smtos::Patch::restore(std::fstream & cp_file)
 
 void smtos::Patch::addTri(smtos::Tri * tri)
 {
-    assert(tri->patchdef() == def());
+    AssertLog(tri->patchdef() == def());
     pTris.push_back(tri);
     pArea += tri->area();
 }
@@ -91,9 +94,9 @@ void smtos::Patch::addTri(smtos::Tri * tri)
 
 void smtos::Patch::modCount(uint slidx, double count)
 {
-    assert (slidx < def()->countSpecs());
+    AssertLog(slidx < def()->countSpecs());
     double newcount = (def()->pools()[slidx] + count);
-    assert (newcount >= 0.0);
+    AssertLog(newcount >= 0.0);
     def()->setCount(slidx, newcount);
 }
 
@@ -120,7 +123,7 @@ smtos::Tri * smtos::Patch::pickTriByArea(double rand01) const
 /*
 void smtos::Patch::setArea(double a)
 {
-    assert(a > 0.0);
+    AssertLog(a > 0.0);
     pArea = a;
 }
 */

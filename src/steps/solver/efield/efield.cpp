@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -27,7 +27,6 @@
 
 // STL headers.
 #include <iostream>
-#include <cassert>
 #include <sstream>
 
 // STEPS headers.
@@ -37,7 +36,8 @@
 #include "steps/solver/efield/tetmesh.hpp"
 #include "steps/solver/efield/tetcoupler.hpp"
 
-#include "third_party/easylogging++.h"
+// logging
+#include "easylogging++.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -80,7 +80,7 @@ void sefield::EField::initMesh(uint nverts, double * verts,
     // and triangle and tetrahedron arrays are copied
     // TODO: (copying tris and tets is maybe not necessary?).
     pMesh = new sefield::TetMesh(pNVerts, verts, pNTris, tris, pNTets, tets);
-    assert(pMesh != 0);
+    AssertLog(pMesh != 0);
 
     // Extract all unique connections, by looping over vertices and
     // analyzing their edges.
@@ -112,7 +112,7 @@ void sefield::EField::initMesh(uint nverts, double * verts,
 
     // Default value for the membrane potential is -65mV but may be changed with
     // solver method setPotential
-    assert(static_cast<bool>(pVProp));
+    AssertLog(static_cast<bool>(pVProp));
     pVProp->initMesh(pMesh);
     pVProp->setPotential(-65);
 
@@ -167,9 +167,9 @@ void sefield::EField::restore(std::fstream & cp_file)
 void sefield::EField::setMembCapac(uint midx, double cm)
 {
     // Currently midx should be zero until multiple membranes are supported
-    assert (midx == 0);
+    AssertLog(midx == 0);
 
-    assert (cm >= 0.0);
+    AssertLog(cm >= 0.0);
     // Geometry is in microns, calculation uses pF, so we need to supply
     // specific capacitance in pF/um2.
     // Argument is in F/m^2: 1 F/m^2 = 1 pF / um^2 so no conversion needed!
@@ -179,9 +179,9 @@ void sefield::EField::setMembCapac(uint midx, double cm)
 void sefield::EField::setTriCapac(uint tidx, double cm)
 {
     // tidx argument converted to local index in Tetexact
-    assert(tidx < pNTris);
+    AssertLog(tidx < pNTris);
 
-    assert (cm >= 0.0);
+    AssertLog(cm >= 0.0);
 
     // Geometry is in microns, calculation uses pF, so we need to supply
     // specific capacitance in pF/um2.
@@ -196,7 +196,7 @@ void sefield::EField::setTriCapac(uint tidx, double cm)
 void sefield::EField::setMembPotential(uint midx, double v)
 {
     // Currently midx should be zero until multiple membranes are supported
-    assert (midx == 0);
+    AssertLog(midx == 0);
 
     // We require mV
     pVProp->setPotential(v*1.0e3);
@@ -206,7 +206,7 @@ void sefield::EField::setMembPotential(uint midx, double v)
 
 void sefield::EField::setMembVolRes(uint midx, double ro)
 {
-    assert(ro >= 0.0);
+    AssertLog(ro >= 0.0);
     pMesh->applyConductance(1.0/(ro*1.0e-3));
 }
 
@@ -228,7 +228,7 @@ void sefield::EField::setSurfaceResistivity(uint midx,double rspec, double vrev)
 void sefield::EField::setVertIClamp(uint vidx, double cur)
 {
     // vidx argument converted to local index in Tetexact.
-    assert(vidx < pNVerts);
+    AssertLog(vidx < pNVerts);
 
     //Convert the index to one that makes sense to vprop
     vidx = pCPerm[vidx];
@@ -243,7 +243,7 @@ void sefield::EField::setVertIClamp(uint vidx, double cur)
 
 void sefield::EField::advance(double dt)
 {
-    assert(dt >= 0.0);
+    AssertLog(dt >= 0.0);
 
     //Convert to ms
     pVProp->advance(dt*1.0e3);
@@ -254,7 +254,7 @@ void sefield::EField::advance(double dt)
 double sefield::EField::getVertV(uint vidx)
 {
     // vidx argument converted to local index in Tetexact.
-    assert(vidx < pNVerts);
+    AssertLog(vidx < pNVerts);
     // let VProp do any further necessary argument checking (should be less than numer of vertices)
 
     //Convert the index to one that makes sense to vprop
@@ -269,7 +269,7 @@ double sefield::EField::getVertV(uint vidx)
 void sefield::EField::setVertV(uint vidx, double v)
 {
     // vidx argument converted to local index in Tetexact.
-    assert(vidx < pNVerts);
+    AssertLog(vidx < pNVerts);
 
     //Convert the index to one that makes sense to vprop
     vidx = pCPerm[vidx];
@@ -283,7 +283,7 @@ void sefield::EField::setVertV(uint vidx, double v)
 bool sefield::EField::getVertVClamped(uint vidx)
 {
     // vidx argument converted to local index in Tetexact.
-    assert(vidx < pNVerts);
+    AssertLog(vidx < pNVerts);
 
     //Convert the index to one that makes sense to vprop
     vidx = pCPerm[vidx];
@@ -296,7 +296,7 @@ bool sefield::EField::getVertVClamped(uint vidx)
 void sefield::EField::setVertVClamped(uint vidx, bool cl)
 {
     // vidx argument converted to local index in Tetexact.
-    assert(vidx < pNVerts);
+    AssertLog(vidx < pNVerts);
 
     //Convert the index to one that makes sense to vprop
     vidx = pCPerm[vidx];
@@ -309,7 +309,7 @@ void sefield::EField::setVertVClamped(uint vidx, bool cl)
 double  sefield::EField::getTriV(uint tidx)
 {
     // tidx argument converted to local index in Tetexact
-    assert(tidx < pNTris);
+    AssertLog(tidx < pNTris);
 
     double pot = 0.0;
 
@@ -326,7 +326,7 @@ double  sefield::EField::getTriV(uint tidx)
 void sefield::EField::setTriV(uint tidx, double v)
 {
     // tidx argument converted to local index in Tetexact
-    assert(tidx < pNTris);
+    AssertLog(tidx < pNTris);
 
     // Lets convert to millivolts
     v *= 1.0e3;
@@ -342,7 +342,7 @@ void sefield::EField::setTriV(uint tidx, double v)
 bool sefield::EField::getTriVClamped(uint tidx)
 {
     // tidx argument converted to local index in Tetexact
-    assert(tidx < pNTris);
+    AssertLog(tidx < pNTris);
 
     // Directly use VProp since we'll use mesh indices
     if (pVProp->getClamped(pMesh->getTriangleVertex(tidx, 0)) == false) return false;
@@ -356,7 +356,7 @@ bool sefield::EField::getTriVClamped(uint tidx)
 void sefield::EField::setTriVClamped(uint tidx, bool cl)
 {
     // tidx argument converted to local index in Tetexact
-    assert(tidx < pNTris);
+    AssertLog(tidx < pNTris);
 
     // Directly use VProp since we'll use mesh indices
     pVProp->setClamped(pMesh->getTriangleVertex(tidx, 0), cl);
@@ -368,7 +368,7 @@ void sefield::EField::setTriVClamped(uint tidx, bool cl)
 double sefield::EField::getTriI(uint tidx)
 {
     // tidx argument converted to local index in Tetexact
-    assert(tidx < pNTris);
+    AssertLog(tidx < pNTris);
 
     // convert from picoamp to amp
     return (pVProp->getTriI(tidx)*1.0e-12);
@@ -379,7 +379,7 @@ double sefield::EField::getTriI(uint tidx)
 void    sefield::EField::setTriI(uint tidx, double cur)
 {
     // tidx argument converted to local index in Tetexact
-    assert(tidx < pNTris);
+    AssertLog(tidx < pNTris);
 
     pVProp->setTriI(tidx, cur*1.0e12);
 }
@@ -389,7 +389,7 @@ void    sefield::EField::setTriI(uint tidx, double cur)
 void sefield::EField::setTriIClamp(uint tidx, double cur)
 {
     // tidx argument converted to local index in Tetexact
-    assert(tidx < pNTris);
+    AssertLog(tidx < pNTris);
     // maintain convention that positive applied current is depolarising
     pVProp->setTriIClamp(tidx, -cur*1.0e12);
 }
@@ -412,7 +412,7 @@ double    sefield::EField::getTetV(uint tidx)
     // TODO: improve on this function, just returning the mean of the vertices at the moment
 
     // tidx argument converted to local index in Tetexact
-    assert(tidx < pNTets);
+    AssertLog(tidx < pNTets);
 
     double pot = 0.0;
 
@@ -436,7 +436,7 @@ double    sefield::EField::getTetV(uint tidx)
 void     sefield::EField::setTetV(uint tidx, double v)
 {
     // tidx argument converted to local index in Tetexact
-    assert(tidx < pNTets);
+    AssertLog(tidx < pNTets);
 
     // Lets convert to millivolts here
     v *= 1.0e3;
@@ -453,7 +453,7 @@ void     sefield::EField::setTetV(uint tidx, double v)
 bool    sefield::EField::getTetVClamped(uint tidx)
 {
     // tidx argument converted to local index in Tetexact
-    assert(tidx < pNTets);
+    AssertLog(tidx < pNTets);
 
     // Directly use VProp since we'll use mesh indices
     if (pVProp->getClamped(pMesh->getTetrahedronVertex(tidx, 0)) == false) return false;
@@ -469,7 +469,7 @@ bool    sefield::EField::getTetVClamped(uint tidx)
 void    sefield::EField::setTetVClamped(uint tidx, bool cl)
 {
     // tidx argument converted to local index in Tetexact
-    assert(tidx < pNTets);
+    AssertLog(tidx < pNTets);
 
     pVProp->setClamped(pMesh->getTetrahedronVertex(tidx, 0), cl);
     pVProp->setClamped(pMesh->getTetrahedronVertex(tidx, 1), cl);

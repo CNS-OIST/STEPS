@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,10 +30,14 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/solver/diffboundarydef.hpp"
 #include "steps/tetexact/diffboundary.hpp"
 #include "steps/tetexact/comp.hpp"
 
+
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace stex = steps::tetexact;
@@ -49,7 +53,7 @@ stex::DiffBoundary::DiffBoundary(steps::solver::DiffBoundarydef * dbdef)
 , pTetDirection()
 , pSetComps(false)
 {
-    assert(dbdef != 0);
+    AssertLog(dbdef != 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -77,10 +81,10 @@ void stex::DiffBoundary::restore(std::fstream & cp_file)
 
 void stex::DiffBoundary::setComps(stex::Comp * compa, stex::Comp * compb)
 {
-    assert (pSetComps == false);
-    assert(compa != 0);
-    assert(compb != 0);
-    assert(compa != compb);
+    AssertLog(pSetComps == false);
+    AssertLog(compa != 0);
+    AssertLog(compb != 0);
+    AssertLog(compa != compb);
 
     pCompA = compa;
     pCompB = compb;
@@ -91,7 +95,7 @@ void stex::DiffBoundary::setComps(stex::Comp * compa, stex::Comp * compb)
 
 stex::Comp * stex::DiffBoundary::compA(void)
 {
-    assert(pSetComps == true);
+    AssertLog(pSetComps == true);
     return pCompA;
 }
 
@@ -99,7 +103,7 @@ stex::Comp * stex::DiffBoundary::compA(void)
 
 stex::Comp * stex::DiffBoundary::compB(void)
 {
-    assert(pSetComps == true);
+    AssertLog(pSetComps == true);
     return pCompB;
 }
 
@@ -107,7 +111,7 @@ stex::Comp * stex::DiffBoundary::compB(void)
 
 void stex::DiffBoundary::setTetDirection(uint tet, uint direction)
 {
-    assert(direction < 4);
+    AssertLog(direction < 4);
 
     pTets.push_back(tet);
     pTetDirection.push_back(direction);

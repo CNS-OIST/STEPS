@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -38,7 +38,8 @@
 #include "steps/geom/tmcomp.hpp"
 #include "steps/error.hpp"
 #include "steps/util/collections.hpp"
-
+// logging
+#include "easylogging++.h"
 namespace stetmesh = steps::tetmesh;
 
 using steps::math::point3d;
@@ -53,10 +54,10 @@ stetmesh::TmComp::TmComp(std::string const & id, Tetmesh * container,
 , pTet_indices(0)
 {
     if (pTetmesh == 0)
-        throw steps::ArgErr("No mesh provided to TmComp initializer function.");
+        ArgErrLog("No mesh provided to TmComp initializer function.");
 
     if (tets.size() == 0)
-        throw steps::ArgErr("No tetrahedrons provided to TmComp initializer function.");
+        ArgErrLog("No tetrahedrons provided to TmComp initializer function.");
 
     // The maximum tetrahedron index in tetrahedral mesh
     uint maxidx = (pTetmesh-> countTets())-1;
@@ -67,10 +68,10 @@ stetmesh::TmComp::TmComp(std::string const & id, Tetmesh * container,
         visited_tets.insert(tet);
 
         if (tet > maxidx)
-            throw steps::ArgErr("Invalid tetrahedron index "+std::to_string(tet)+".");
+            ArgErrLog("Invalid tetrahedron index "+std::to_string(tet)+".");
 
         if (pTetmesh->getTetComp(tet) != nullptr)
-            throw steps::ArgErr("Tetrahedron with index "+std::to_string(tet)+" already belongs to a compartment.");
+            ArgErrLog("Tetrahedron with index "+std::to_string(tet)+" already belongs to a compartment.");
 
         // Add the tetrahedron to this compartment.
         pTet_indices.push_back(tet);
@@ -93,7 +94,7 @@ stetmesh::TmComp::TmComp(std::string const & id, Tetmesh * container,
 
 void stetmesh::TmComp::setVol(double vol)
 {
-    throw steps::NotImplErr("Cannot set volume of Tetmesh comp object; vol calculated internally.");
+    NotImplErrLog("""Cannot set volume of Tetmesh comp object; vol calculated internally.");
 }
 
 ////////////////////////////////////////////////////////////////////////////////

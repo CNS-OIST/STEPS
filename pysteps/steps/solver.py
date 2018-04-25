@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -87,14 +87,13 @@ class Wmrk4(stepslib._py_Wmrk4, _Base_Solver):
     """
     Construction::
         
-        sim = steps.solver.Wmrk4(model, geom, rng)
+        sim = steps.solver.Wmrk4(model, geom)
         
     Create a non-spatial deterministic solver based on the Runge-Kutta fourth order method.
         
     Arguments:
     steps.model.Model model
     steps.geom.Geom geom
-    steps.rng.RNG rng
     """
     
     def run(self, end_time, cp_interval = 0.0, prefix = ""):
@@ -151,6 +150,44 @@ class Wmdirect(stepslib._py_Wmdirect, _Base_Solver):
         """
         end_time = self.getTime() + advance_time
         self._advance_checkpoint_run(end_time, cp_interval, prefix, 'wmdirect')
+        
+    def getIndexMapping(self):
+        """
+        Get a mapping between compartments/patches/species
+        and their indices in the solver.
+        """
+        return self._getIndexMapping()
+
+
+class Wmrssa(stepslib._py_Wmrssa, _Base_Solver):
+    """
+    Construction::
+    
+        sim = steps.solver.Wmrssa(model, geom, rng)
+    
+    Create a non-spatial stochastic solver based on Gillespie's SSA.
+    
+    Arguments:
+    steps.model.Model model
+    steps.geom.Geom geom
+    steps.rng.RNG rng
+    """
+    def run(self, end_time, cp_interval = 0.0, prefix = ""):
+        """
+        Run the simulation until <end_time>,
+        automatically checkpoint at each <cp_interval>.
+        Prefix can be added using prefix=<prefix_string>.
+        """
+        self._advance_checkpoint_run(end_time, cp_interval, prefix, 'wmrssa')
+        
+    def advance(self, advance_time, cp_interval = 0.0, prefix = ""):
+        """
+        Advance the simulation for advance_time,
+        automatically checkpoint at each cp_interval.
+        Prefix can be added using prefix=<prefix_string>.
+        """
+        end_time = self.getTime() + advance_time
+        self._advance_checkpoint_run(end_time, cp_interval, prefix, 'wmrssa')
         
     def getIndexMapping(self):
         """

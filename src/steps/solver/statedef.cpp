@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -58,6 +58,9 @@
 #include "steps/solver/diffboundarydef.hpp"
 #include "steps/solver/sdiffboundarydef.hpp"
 
+// logging
+#include "easylogging++.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace ssolver = steps::solver;
@@ -85,8 +88,8 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
 , pSDiffBoundarydefs()
 
 {
-    assert(pModel != 0);
-    assert(pGeom != 0);
+    AssertLog(pModel != 0);
+    AssertLog(pGeom != 0);
 
 
     // Create the def objects.
@@ -96,11 +99,11 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     // Compdef MUST COME BEFORE Patchef, etc.
     //
     uint nspecs = pModel->_countSpecs();
-    assert (nspecs > 0);
+    AssertLog(nspecs > 0);
     for (uint sidx = 0; sidx < nspecs; ++sidx)
     {
         ssolver::Specdef * specdef = new Specdef(this, sidx,  pModel->_getSpec(sidx));
-        assert (specdef != 0);
+        AssertLog(specdef != 0);
         pSpecdefs.push_back(specdef);
     }
 
@@ -108,7 +111,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     for (uint chidx = 0; chidx < nchans; ++chidx)
     {
         ssolver::Chandef * chandef = new Chandef(this, chidx, pModel->_getChan(chidx));
-        assert(chandef != 0);
+        AssertLog(chandef != 0);
         pChandefs.push_back(chandef);
     }
 
@@ -116,7 +119,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     for (uint ridx = 0; ridx < nreacs; ++ridx)
     {
         ssolver::Reacdef * reacdef = new Reacdef(this, ridx, pModel->_getReac(ridx));
-        assert (reacdef != 0);
+        AssertLog(reacdef != 0);
         pReacdefs.push_back(reacdef);
     }
 
@@ -124,7 +127,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     for (uint didx = 0; didx < nvdiffs; ++didx)
     {
            ssolver::Diffdef * diffdef = new Diffdef(this, didx, pModel->_getVDiff(didx));
-           assert (diffdef != 0);
+           AssertLog(diffdef != 0);
            pDiffdefs.push_back(diffdef);
     }
 
@@ -132,7 +135,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     for (uint didx = 0; didx < nsdiffs; ++didx)
     {
            ssolver::Diffdef * surfdiffdef = new Diffdef(this, didx, pModel->_getSDiff(didx));
-           assert (surfdiffdef != 0);
+           AssertLog(surfdiffdef != 0);
            pSurfDiffdefs.push_back(surfdiffdef);
     }
 
@@ -140,7 +143,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     for (uint sridx = 0; sridx < nsreacs; ++sridx)
     {
           ssolver::SReacdef * sreacdef = new SReacdef(this, sridx, pModel->_getSReac(sridx));
-           assert (sreacdef != 0);
+           AssertLog(sreacdef != 0);
            pSReacdefs.push_back(sreacdef);
     }
 
@@ -148,7 +151,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     for (uint vdtidx = 0; vdtidx < nvdtrans; ++vdtidx)
     {
         ssolver::VDepTransdef * vdtdef = new VDepTransdef(this, vdtidx, pModel->_getVDepTrans(vdtidx));
-        assert(vdtdef != 0);
+        AssertLog(vdtdef != 0);
         pVDepTransdefs.push_back(vdtdef);
     }
 
@@ -156,7 +159,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     for (uint vdsridx = 0; vdsridx < nvdsreacs; ++vdsridx)
     {
         ssolver::VDepSReacdef * vdsrdef = new VDepSReacdef(this, vdsridx, pModel->_getVDepSReac(vdsridx));
-        assert(vdsrdef != 0);
+        AssertLog(vdsrdef != 0);
         pVDepSReacdefs.push_back(vdsrdef);
     }
 
@@ -164,7 +167,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     for (uint ocidx = 0; ocidx < nohmiccurrs; ++ocidx)
     {
         ssolver::OhmicCurrdef * ocdef = new OhmicCurrdef(this, ocidx, pModel->_getOhmicCurr(ocidx));
-        assert(ocdef != 0);
+        AssertLog(ocdef != 0);
         pOhmicCurrdefs.push_back(ocdef);
     }
 
@@ -172,16 +175,16 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     for (uint ghkidx = 0; ghkidx < nghkcurrs; ++ghkidx)
     {
         ssolver::GHKcurrdef * ghkdef = new GHKcurrdef(this, ghkidx, pModel->_getGHKcurr(ghkidx));
-        assert(ghkdef != 0);
+        AssertLog(ghkdef != 0);
         pGHKcurrdefs.push_back(ghkdef);
     }
 
     uint ncomps = pGeom->_countComps();
-    assert(ncomps >0);
+    AssertLog(ncomps >0);
     for (uint cidx = 0; cidx < ncomps; ++cidx)
     {
         ssolver::Compdef * compdef = new Compdef(this, cidx, pGeom->_getComp(cidx));
-        assert (compdef != 0);
+        AssertLog(compdef != 0);
         pCompdefs.push_back(compdef);
     }
 
@@ -189,7 +192,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     for (uint pidx = 0; pidx < npatches; ++pidx)
     {
         ssolver::Patchdef * patchdef = new Patchdef(this, pidx, pGeom->_getPatch(pidx));
-        assert (patchdef != 0);
+        AssertLog(patchdef != 0);
         pPatchdefs.push_back(patchdef);
     }
 
@@ -199,7 +202,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
         for (uint dbidx = 0; dbidx < ndiffbs; ++dbidx)
         {
             ssolver::DiffBoundarydef * diffboundarydef = new DiffBoundarydef(this, dbidx, tetmesh->_getDiffBoundary(dbidx));
-            assert (diffboundarydef != 0);
+            AssertLog(diffboundarydef != 0);
             pDiffBoundarydefs.push_back(diffboundarydef);
         }
 
@@ -207,7 +210,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
         for (uint sdbidx = 0; sdbidx < nsdiffbs; ++sdbidx)
         {
             ssolver::SDiffBoundarydef * sdiffboundarydef = new SDiffBoundarydef(this, sdbidx, tetmesh->_getSDiffBoundary(sdbidx));
-            assert (sdiffboundarydef != 0);
+            AssertLog(sdiffboundarydef != 0);
             pSDiffBoundarydefs.push_back(sdiffboundarydef);
         }
     }
@@ -466,7 +469,7 @@ void ssolver::Statedef::restore(std::fstream & cp_file)
 
 ssolver::Compdef * ssolver::Statedef::compdef(uint gidx) const
 {
-    assert(gidx < pCompdefs.size());
+    AssertLog(gidx < pCompdefs.size());
     return pCompdefs[gidx];
 }
 
@@ -475,8 +478,8 @@ ssolver::Compdef * ssolver::Statedef::compdef(uint gidx) const
 uint ssolver::Statedef::getCompIdx(std::string const & c) const
 {
     uint maxcidx = pCompdefs.size();
-    assert (maxcidx > 0);
-    assert (maxcidx == pGeom->_countComps());
+    AssertLog(maxcidx > 0);
+    AssertLog(maxcidx == pGeom->_countComps());
     uint cidx = 0;
     while(cidx < maxcidx)
     {
@@ -485,7 +488,7 @@ uint ssolver::Statedef::getCompIdx(std::string const & c) const
     }
     std::ostringstream os;
     os << "Geometry does not contain comp with string identifier '" << c << "'.";
-    throw steps::ArgErr(os.str());
+    ArgErrLog(os.str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -493,8 +496,8 @@ uint ssolver::Statedef::getCompIdx(std::string const & c) const
 uint ssolver::Statedef::getCompIdx(steps::wm::Comp * comp) const
 {
     uint maxcidx = pCompdefs.size();
-    assert (maxcidx > 0);
-    assert (maxcidx == pGeom->_countComps());
+    AssertLog(maxcidx > 0);
+    AssertLog(maxcidx == pGeom->_countComps());
     uint cidx = 0;
     while(cidx < maxcidx)
     {
@@ -502,14 +505,14 @@ uint ssolver::Statedef::getCompIdx(steps::wm::Comp * comp) const
         ++cidx;
     }
     // Argument should be valid so we should not get here
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 ssolver::Patchdef * ssolver::Statedef::patchdef(uint gidx) const
 {
-    assert(gidx < pPatchdefs.size());
+    AssertLog(gidx < pPatchdefs.size());
     return pPatchdefs[gidx];
 }
 
@@ -518,7 +521,7 @@ ssolver::Patchdef * ssolver::Statedef::patchdef(uint gidx) const
 uint ssolver::Statedef::getPatchIdx(std::string const & p) const
 {
     uint maxpidx = pPatchdefs.size();
-    assert (maxpidx == pGeom->_countPatches());
+    AssertLog(maxpidx == pGeom->_countPatches());
     uint pidx = 0;
     while(pidx < maxpidx)
     {
@@ -527,7 +530,7 @@ uint ssolver::Statedef::getPatchIdx(std::string const & p) const
     }
     std::ostringstream os;
     os << "Geometry does not contain patch with string identifier '" << p << "'.";
-    throw steps::ArgErr(os.str());
+    ArgErrLog(os.str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -535,7 +538,7 @@ uint ssolver::Statedef::getPatchIdx(std::string const & p) const
 uint ssolver::Statedef::getPatchIdx(steps::wm::Patch * patch) const
 {
     uint maxpidx = pPatchdefs.size();
-    assert (maxpidx == pGeom->_countPatches());
+    AssertLog(maxpidx == pGeom->_countPatches());
     uint pidx = 0;
     while(pidx < maxpidx)
     {
@@ -543,14 +546,14 @@ uint ssolver::Statedef::getPatchIdx(steps::wm::Patch * patch) const
         ++pidx;
     }
     // Argument should be valid so we should not get here
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 ssolver::Specdef * ssolver::Statedef::specdef(uint gidx) const
 {
-    assert(gidx < pSpecdefs.size());
+    AssertLog(gidx < pSpecdefs.size());
     return pSpecdefs[gidx];
 }
 
@@ -559,8 +562,8 @@ ssolver::Specdef * ssolver::Statedef::specdef(uint gidx) const
 uint ssolver::Statedef::getSpecIdx(std::string const & s) const
 {
     uint maxsidx = pSpecdefs.size();
-    assert (maxsidx > 0);
-    assert(maxsidx == pModel->_countSpecs());
+    AssertLog(maxsidx > 0);
+    AssertLog(maxsidx == pModel->_countSpecs());
     uint sidx = 0;
     while(sidx < maxsidx)
     {
@@ -569,7 +572,7 @@ uint ssolver::Statedef::getSpecIdx(std::string const & s) const
     }
     std::ostringstream os;
     os << "Model does not contain species with string identifier '" << s << "'.";
-    throw steps::ArgErr(os.str());
+    ArgErrLog(os.str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -577,8 +580,8 @@ uint ssolver::Statedef::getSpecIdx(std::string const & s) const
 uint ssolver::Statedef::getSpecIdx(steps::model::Spec * spec) const
 {
     uint maxsidx = pSpecdefs.size();
-    assert (maxsidx > 0);
-    assert(maxsidx == pModel->_countSpecs());
+    AssertLog(maxsidx > 0);
+    AssertLog(maxsidx == pModel->_countSpecs());
     uint sidx = 0;
     while(sidx < maxsidx)
     {
@@ -586,14 +589,14 @@ uint ssolver::Statedef::getSpecIdx(steps::model::Spec * spec) const
         ++sidx;
     }
     // Argument should be valid so we should not get here
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 ssolver::Reacdef * ssolver::Statedef::reacdef(uint gidx) const
 {
-    assert(gidx < pReacdefs.size());
+    AssertLog(gidx < pReacdefs.size());
     return pReacdefs[gidx];
 }
 
@@ -602,7 +605,7 @@ ssolver::Reacdef * ssolver::Statedef::reacdef(uint gidx) const
 uint ssolver::Statedef::getReacIdx(std::string const & r) const
 {
     uint maxridx = pReacdefs.size();
-    assert (maxridx == pModel->_countReacs());
+    AssertLog(maxridx == pModel->_countReacs());
     uint ridx = 0;
     while(ridx < maxridx)
     {
@@ -611,7 +614,7 @@ uint ssolver::Statedef::getReacIdx(std::string const & r) const
     }
     std::ostringstream os;
     os << "Model does not contain reac with string identifier '" << r <<"'.";
-    throw steps::ArgErr(os.str());
+    ArgErrLog(os.str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -619,7 +622,7 @@ uint ssolver::Statedef::getReacIdx(std::string const & r) const
 uint ssolver::Statedef::getReacIdx(steps::model::Reac * reac) const
 {
     uint maxridx = pReacdefs.size();
-    assert (maxridx == pModel->_countReacs());
+    AssertLog(maxridx == pModel->_countReacs());
     uint ridx = 0;
     while(ridx < maxridx)
     {
@@ -627,14 +630,14 @@ uint ssolver::Statedef::getReacIdx(steps::model::Reac * reac) const
         ++ridx;
     }
     // Argument should be valid so we should not get here
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 ssolver::SReacdef * ssolver::Statedef::sreacdef(uint gidx) const
 {
-    assert(gidx < pSReacdefs.size());
+    AssertLog(gidx < pSReacdefs.size());
     return pSReacdefs[gidx];
 }
 
@@ -643,7 +646,7 @@ ssolver::SReacdef * ssolver::Statedef::sreacdef(uint gidx) const
 uint ssolver::Statedef::getSReacIdx(std::string const & sr) const
 {
     uint maxsridx = pSReacdefs.size();
-    assert (maxsridx == pModel->_countSReacs());
+    AssertLog(maxsridx == pModel->_countSReacs());
     uint sridx = 0;
     while(sridx < maxsridx)
     {
@@ -652,7 +655,7 @@ uint ssolver::Statedef::getSReacIdx(std::string const & sr) const
     }
     std::ostringstream os;
     os << "Model does not contain sreac with string identifier '" << sr <<"'.";
-    throw steps::ArgErr(os.str());
+    ArgErrLog(os.str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -660,7 +663,7 @@ uint ssolver::Statedef::getSReacIdx(std::string const & sr) const
 uint ssolver::Statedef::getSReacIdx(steps::model::SReac * sreac) const
 {
     uint maxsridx = pSReacdefs.size();
-    assert (maxsridx == pModel->_countSReacs());
+    AssertLog(maxsridx == pModel->_countSReacs());
     uint sridx = 0;
     while(sridx < maxsridx)
     {
@@ -668,14 +671,14 @@ uint ssolver::Statedef::getSReacIdx(steps::model::SReac * sreac) const
         ++sridx;
     }
     // Argument should be valid so we should not get here
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 ssolver::Diffdef * ssolver::Statedef::diffdef(uint gidx) const
 {
-    assert(gidx < pDiffdefs.size());
+    AssertLog(gidx < pDiffdefs.size());
     return pDiffdefs[gidx];
 }
 
@@ -684,7 +687,7 @@ ssolver::Diffdef * ssolver::Statedef::diffdef(uint gidx) const
 uint ssolver::Statedef::getDiffIdx(std::string const & d) const
 {
     uint maxdidx = pDiffdefs.size();
-    assert (maxdidx == pModel->_countVDiffs());
+    AssertLog(maxdidx == pModel->_countVDiffs());
     uint didx = 0;
     while(didx < maxdidx)
     {
@@ -693,7 +696,7 @@ uint ssolver::Statedef::getDiffIdx(std::string const & d) const
     }
     std::ostringstream os;
     os << "Model does not contain diff with string identifier '" << d <<"'.";
-    throw steps::ArgErr(os.str());
+    ArgErrLog(os.str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -701,7 +704,7 @@ uint ssolver::Statedef::getDiffIdx(std::string const & d) const
 uint ssolver::Statedef::getDiffIdx(steps::model::Diff * diff) const
 {
     uint maxdidx = pDiffdefs.size();
-    assert (maxdidx == pModel->_countVDiffs());
+    AssertLog(maxdidx == pModel->_countVDiffs());
     uint didx = 0;
     while(didx < maxdidx)
     {
@@ -709,14 +712,14 @@ uint ssolver::Statedef::getDiffIdx(steps::model::Diff * diff) const
         ++didx;
     }
     // Argument should be valid so we should not get here
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 ssolver::Diffdef * ssolver::Statedef::surfdiffdef(uint gidx) const
 {
-    assert(gidx < pSurfDiffdefs.size());
+    AssertLog(gidx < pSurfDiffdefs.size());
     return pSurfDiffdefs[gidx];
 }
 
@@ -725,7 +728,7 @@ ssolver::Diffdef * ssolver::Statedef::surfdiffdef(uint gidx) const
 uint ssolver::Statedef::getSurfDiffIdx(std::string const & d) const
 {
     uint maxdidx = pSurfDiffdefs.size();
-    assert (maxdidx == pModel->_countSDiffs());
+    AssertLog(maxdidx == pModel->_countSDiffs());
     uint didx = 0;
     while(didx < maxdidx)
     {
@@ -734,7 +737,7 @@ uint ssolver::Statedef::getSurfDiffIdx(std::string const & d) const
     }
     std::ostringstream os;
     os << "Model does not contain diff with string identifier '" << d <<"'.";
-    throw steps::ArgErr(os.str());
+    ArgErrLog(os.str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -742,7 +745,7 @@ uint ssolver::Statedef::getSurfDiffIdx(std::string const & d) const
 uint ssolver::Statedef::getSurfDiffIdx(steps::model::Diff * diff) const
 {
     uint maxdidx = pSurfDiffdefs.size();
-    assert (maxdidx == pModel->_countSDiffs());
+    AssertLog(maxdidx == pModel->_countSDiffs());
     uint didx = 0;
     while(didx < maxdidx)
     {
@@ -750,14 +753,14 @@ uint ssolver::Statedef::getSurfDiffIdx(steps::model::Diff * diff) const
         ++didx;
     }
     // Argument should be valid so we should not get here
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 ssolver::OhmicCurrdef * ssolver::Statedef::ohmiccurrdef(uint gidx) const
 {
-    assert(gidx < pOhmicCurrdefs.size());
+    AssertLog(gidx < pOhmicCurrdefs.size());
     return pOhmicCurrdefs[gidx];
 }
 
@@ -766,7 +769,7 @@ ssolver::OhmicCurrdef * ssolver::Statedef::ohmiccurrdef(uint gidx) const
 uint ssolver::Statedef::getOhmicCurrIdx(std::string const & oc) const
 {
     uint maxocidx = pOhmicCurrdefs.size();
-    assert (maxocidx == pModel->_countOhmicCurrs());
+    AssertLog(maxocidx == pModel->_countOhmicCurrs());
     uint ocidx = 0;
     while(ocidx < maxocidx)
     {
@@ -775,7 +778,7 @@ uint ssolver::Statedef::getOhmicCurrIdx(std::string const & oc) const
     }
     std::ostringstream os;
     os << "Model does not contain ohmic current with string identifier '" << oc <<"'.";
-    throw steps::ArgErr(os.str());
+    ArgErrLog(os.str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -783,7 +786,7 @@ uint ssolver::Statedef::getOhmicCurrIdx(std::string const & oc) const
 uint ssolver::Statedef::getOhmicCurrIdx(steps::model::OhmicCurr * ohmiccurr) const
 {
     uint maxocidx = pOhmicCurrdefs.size();
-    assert (maxocidx == pModel->_countOhmicCurrs());
+    AssertLog(maxocidx == pModel->_countOhmicCurrs());
     uint ocidx = 0;
     while(ocidx < maxocidx)
     {
@@ -791,14 +794,14 @@ uint ssolver::Statedef::getOhmicCurrIdx(steps::model::OhmicCurr * ohmiccurr) con
         ++ocidx;
     }
     // Argument should be valid so we should not get here
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 ssolver::VDepTransdef * ssolver::Statedef::vdeptransdef(uint gidx) const
 {
-    assert(gidx < pVDepTransdefs.size());
+    AssertLog(gidx < pVDepTransdefs.size());
     return pVDepTransdefs[gidx];
 }
 
@@ -807,7 +810,7 @@ ssolver::VDepTransdef * ssolver::Statedef::vdeptransdef(uint gidx) const
 uint ssolver::Statedef::getVDepTransIdx(std::string const & vdt) const
 {
     uint maxvdtidx = pVDepTransdefs.size();
-    assert (maxvdtidx == pModel->_countVDepTrans());
+    AssertLog(maxvdtidx == pModel->_countVDepTrans());
     uint vdtidx = 0;
     while(vdtidx < maxvdtidx)
     {
@@ -816,7 +819,7 @@ uint ssolver::Statedef::getVDepTransIdx(std::string const & vdt) const
     }
     std::ostringstream os;
     os << "Model does not contain voltage-dependent transition with string identifier '" << vdt <<"'.";
-    throw steps::ArgErr(os.str());
+    ArgErrLog(os.str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -824,7 +827,7 @@ uint ssolver::Statedef::getVDepTransIdx(std::string const & vdt) const
 uint ssolver::Statedef::getVDepTransIdx(steps::model::VDepTrans * vdeptrans) const
 {
     uint maxvdtidx = pVDepTransdefs.size();
-    assert (maxvdtidx == pModel->_countVDepTrans());
+    AssertLog(maxvdtidx == pModel->_countVDepTrans());
     uint vdtidx = 0;
     while(vdtidx < maxvdtidx)
     {
@@ -832,14 +835,14 @@ uint ssolver::Statedef::getVDepTransIdx(steps::model::VDepTrans * vdeptrans) con
         ++vdtidx;
     }
     // Argument should be valid so we should not get here
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 ssolver::VDepSReacdef * ssolver::Statedef::vdepsreacdef(uint gidx) const
 {
-    assert(gidx < pVDepSReacdefs.size());
+    AssertLog(gidx < pVDepSReacdefs.size());
     return pVDepSReacdefs[gidx];
 }
 
@@ -848,7 +851,7 @@ ssolver::VDepSReacdef * ssolver::Statedef::vdepsreacdef(uint gidx) const
 uint ssolver::Statedef::getVDepSReacIdx(std::string const & vdsr) const
 {
     uint maxvdsridx = pVDepSReacdefs.size();
-    assert (maxvdsridx == pModel->_countVDepSReacs());
+    AssertLog(maxvdsridx == pModel->_countVDepSReacs());
     uint vdsridx = 0;
     while(vdsridx < maxvdsridx)
     {
@@ -857,7 +860,7 @@ uint ssolver::Statedef::getVDepSReacIdx(std::string const & vdsr) const
     }
     std::ostringstream os;
     os << "Model does not contain voltage-dependent reaction with string identifier '" << vdsr <<"'.";
-    throw steps::ArgErr(os.str());
+    ArgErrLog(os.str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -865,7 +868,7 @@ uint ssolver::Statedef::getVDepSReacIdx(std::string const & vdsr) const
 uint ssolver::Statedef::getVDepSReacIdx(steps::model::VDepSReac * vdepsreac) const
 {
     uint maxvdsridx = pVDepSReacdefs.size();
-    assert (maxvdsridx == pModel->_countVDepSReacs());
+    AssertLog(maxvdsridx == pModel->_countVDepSReacs());
     uint vdsridx = 0;
     while(vdsridx < maxvdsridx)
     {
@@ -873,14 +876,14 @@ uint ssolver::Statedef::getVDepSReacIdx(steps::model::VDepSReac * vdepsreac) con
         ++vdsridx;
     }
     // Argument should be valid so we should not get here
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 \
 ssolver::GHKcurrdef * ssolver::Statedef::ghkcurrdef(uint gidx) const
 {
-    assert(gidx < pGHKcurrdefs.size());
+    AssertLog(gidx < pGHKcurrdefs.size());
     return pGHKcurrdefs[gidx];
 }
 
@@ -889,7 +892,7 @@ ssolver::GHKcurrdef * ssolver::Statedef::ghkcurrdef(uint gidx) const
 uint ssolver::Statedef::getGHKcurrIdx(std::string const & ghk) const
 {
     uint maxghkidx = pGHKcurrdefs.size();
-    assert (maxghkidx == pModel->_countGHKcurrs());
+    AssertLog(maxghkidx == pModel->_countGHKcurrs());
     uint ghkidx = 0;
     while(ghkidx < maxghkidx)
     {
@@ -898,7 +901,7 @@ uint ssolver::Statedef::getGHKcurrIdx(std::string const & ghk) const
     }
     std::ostringstream os;
     os << "Model does not contain ghk current with string identifier '" << ghk <<"'.";
-    throw steps::ArgErr(os.str());
+    ArgErrLog(os.str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -906,7 +909,7 @@ uint ssolver::Statedef::getGHKcurrIdx(std::string const & ghk) const
 uint ssolver::Statedef::getGHKcurrIdx(steps::model::GHKcurr * ghkcurr) const
 {
     uint maxghkidx = pGHKcurrdefs.size();
-    assert (maxghkidx == pModel->_countGHKcurrs());
+    AssertLog(maxghkidx == pModel->_countGHKcurrs());
     uint ghkidx = 0;
     while(ghkidx < maxghkidx)
     {
@@ -914,7 +917,7 @@ uint ssolver::Statedef::getGHKcurrIdx(steps::model::GHKcurr * ghkcurr) const
         ++ghkidx;
     }
     // Argument should be valid so we should not get here
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -930,7 +933,7 @@ uint ssolver::Statedef::getMembIdx(std::string const & m) const
         {
             std::ostringstream os;
             os << "Only one Membrane may exist in simulation";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         */
         steps::tetmesh::Memb * membrane = tetmesh->_getMemb(0);
@@ -942,7 +945,7 @@ uint ssolver::Statedef::getMembIdx(std::string const & m) const
         {
             std::ostringstream os;
             os << "Geometry does not contain membrane with string identifier '" <<  m <<"'.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
     }
@@ -950,7 +953,7 @@ uint ssolver::Statedef::getMembIdx(std::string const & m) const
     {
         std::ostringstream os;
         os << "Membrane methods not available with well-mixed geometry";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
 }
@@ -959,7 +962,7 @@ uint ssolver::Statedef::getMembIdx(std::string const & m) const
 
 ssolver::DiffBoundarydef * ssolver::Statedef::diffboundarydef(uint gidx) const
 {
-    assert(gidx < pDiffBoundarydefs.size());
+    AssertLog(gidx < pDiffBoundarydefs.size());
     return pDiffBoundarydefs[gidx];
 }
 
@@ -970,7 +973,7 @@ uint ssolver::Statedef::getDiffBoundaryIdx(std::string const & d) const
     uint maxdidx = pDiffBoundarydefs.size();
     if (steps::tetmesh::Tetmesh * tetmesh = dynamic_cast<steps::tetmesh::Tetmesh *>(pGeom))
     {
-        assert (maxdidx == tetmesh->_countDiffBoundaries());
+        AssertLog(maxdidx == tetmesh->_countDiffBoundaries());
         uint didx = 0;
         while(didx < maxdidx)
         {
@@ -979,13 +982,13 @@ uint ssolver::Statedef::getDiffBoundaryIdx(std::string const & d) const
         }
         std::ostringstream os;
         os << "Geometry does not contain diff boundary with string identifier '" << d <<"'.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     else
     {
         std::ostringstream os;
         os << "Diffusion boundary methods not available with well-mixed geometry";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 }
 
@@ -996,7 +999,7 @@ uint ssolver::Statedef::getDiffBoundaryIdx(steps::tetmesh::DiffBoundary * diffb)
     uint maxdidx = pDiffBoundarydefs.size();
     if (steps::tetmesh::Tetmesh * tetmesh = dynamic_cast<steps::tetmesh::Tetmesh *>(pGeom))
     {
-        assert (maxdidx == tetmesh->_countDiffBoundaries());
+        AssertLog(maxdidx == tetmesh->_countDiffBoundaries());
         uint didx = 0;
         while(didx < maxdidx)
         {
@@ -1004,13 +1007,13 @@ uint ssolver::Statedef::getDiffBoundaryIdx(steps::tetmesh::DiffBoundary * diffb)
             ++didx;
         }
         // Argument should be valid so we should not get here
-        assert(false);
+        AssertLog(false);
     }
     else
     {
         std::ostringstream os;
         os << "Diffusion boundary methods not available with well-mixed geometry";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 }
 
@@ -1018,7 +1021,7 @@ uint ssolver::Statedef::getDiffBoundaryIdx(steps::tetmesh::DiffBoundary * diffb)
 
 ssolver::SDiffBoundarydef * ssolver::Statedef::sdiffboundarydef(uint gidx) const
 {
-    assert(gidx < pSDiffBoundarydefs.size());
+    AssertLog(gidx < pSDiffBoundarydefs.size());
     return pSDiffBoundarydefs[gidx];
 }
 
@@ -1029,7 +1032,7 @@ uint ssolver::Statedef::getSDiffBoundaryIdx(std::string const & sd) const
     uint maxsdidx = pSDiffBoundarydefs.size();
     if (steps::tetmesh::Tetmesh * tetmesh = dynamic_cast<steps::tetmesh::Tetmesh *>(pGeom))
     {
-        assert (maxsdidx == tetmesh->_countSDiffBoundaries());
+        AssertLog(maxsdidx == tetmesh->_countSDiffBoundaries());
         uint sdidx = 0;
         while(sdidx < maxsdidx)
         {
@@ -1038,13 +1041,13 @@ uint ssolver::Statedef::getSDiffBoundaryIdx(std::string const & sd) const
         }
         std::ostringstream os;
         os << "Geometry does not contain surface diffusion boundary with string identifier '" << sd <<"'.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     else
     {
         std::ostringstream os;
         os << "Surface Diffusion Boundary methods not available with well-mixed geometry";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 }
 
@@ -1055,7 +1058,7 @@ uint ssolver::Statedef::getSDiffBoundaryIdx(steps::tetmesh::SDiffBoundary * sdif
     uint maxsdidx = pSDiffBoundarydefs.size();
     if (steps::tetmesh::Tetmesh * tetmesh = dynamic_cast<steps::tetmesh::Tetmesh *>(pGeom))
     {
-        assert (maxsdidx == tetmesh->_countSDiffBoundaries());
+        AssertLog(maxsdidx == tetmesh->_countSDiffBoundaries());
         uint sdidx = 0;
         while(sdidx < maxsdidx)
         {
@@ -1063,13 +1066,13 @@ uint ssolver::Statedef::getSDiffBoundaryIdx(steps::tetmesh::SDiffBoundary * sdif
             ++sdidx;
         }
         // Argument should be valid so we should not get here
-        assert(false);
+        AssertLog(false);
     }
     else
     {
         std::ostringstream os;
         os << "Surface Diffusion Boundary methods not available with well-mixed geometry";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 }
 
@@ -1077,7 +1080,7 @@ uint ssolver::Statedef::getSDiffBoundaryIdx(steps::tetmesh::SDiffBoundary * sdif
 
 void ssolver::Statedef::setTime(double t)
 {
-    assert (t >= 0.0);
+    AssertLog(t >= 0.0);
     pTime = t;
 }
 
@@ -1085,7 +1088,7 @@ void ssolver::Statedef::setTime(double t)
 
 void ssolver::Statedef::incTime(double dt)
 {
-    assert (dt >= 0.0);
+    AssertLog(dt >= 0.0);
     pTime += dt;
 }
 
@@ -1093,7 +1096,7 @@ void ssolver::Statedef::incTime(double dt)
 
 void ssolver::Statedef::incNSteps(uint i)
 {
-    assert (i != 0);
+    AssertLog(i != 0);
     pNSteps += i;
 }
 

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -31,13 +31,14 @@
 #include <mpi.h>
 
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/solver/efield/slusystem.hpp"
 
 extern "C" {
 #include "third_party/superlu_dist-4.1/src/superlu_ddefs.h"
 }
 
-#include "third_party/easylogging++.h"
+#include "easylogging++.h"
 
 namespace steps {
 namespace solver {
@@ -130,8 +131,12 @@ void SLUSystem::solve() {
         &slu->grid, &slu->lu, &pBerr, &slu->stat, &info);
 
     if (info>0) {
-        if (info<=pN) throw std::domain_error("Singular U in LU decomposition");
-        else throw std::runtime_error("SuperLU memory allocation failure");
+        if (info<=pN) {
+            ProgErrLog("Singular U in LU decomposition");
+        }
+        else {
+            SysErrLog("SuperLU memory allocation failure");
+        }
     }
 
     slu->factored = true;

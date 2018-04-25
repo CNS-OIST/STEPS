@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,6 +30,7 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/math/constants.hpp"
 #include "steps/tetexact/vdeptrans.hpp"
 #include "steps/tetexact/tri.hpp"
@@ -37,6 +38,8 @@
 #include "steps/tetexact/kproc.hpp"
 #include "steps/tetexact/tetexact.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace stex = steps::tetexact;
@@ -50,8 +53,8 @@ stex::VDepTrans::VDepTrans(ssolver::VDepTransdef * vdtdef, stex::Tri * tri)
 , pTri(tri)
 , pUpdVec()
 {
-    assert (pVDepTransdef != 0);
-    assert (pTri != 0);
+    AssertLog(pVDepTransdef != 0);
+    AssertLog(pTri != 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -178,13 +181,13 @@ std::vector<stex::KProc*> const & stex::VDepTrans::apply(steps::rng::RNG * rng, 
     if (pTri->clamped(src) == false)
     {
         uint nc = pTri->pools()[src];
-        assert(nc >= 1);
+        AssertLog(nc >= 1);
         pTri->setCount(src,  (nc-1));
     }
     if (pTri->clamped(dst) == false)
     {
         uint nc = pTri->pools()[dst];
-        assert(nc >= 0);
+        AssertLog(nc >= 0);
         pTri->setCount(dst,  (nc+1));
     }
 

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -32,7 +32,8 @@
 
 #include "steps/error.hpp"
 #include "steps/mpi/tetopsplit/kproc.hpp"
-
+// logging
+#include "third_party/easyloggingpp/src/easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
  namespace steps {
@@ -49,14 +50,14 @@ struct CRGroup {
         size = 0;
         indices = (KProc**)malloc(sizeof(KProc*) * init_size);
         if (indices == NULL)
-            throw steps::SysErr("DirectCR: unable to allocate memory for SSA group.");
+            SysErrLog("DirectCR: unable to allocate memory for SSA group.");
 
         #ifdef SSA_DEBUG
-        std::cout << "SSA: CRGroup Created\n";
-        std::cout << "power: " << power << "\n";
-        std::cout << "max: " << max << "\n";
-        std::cout << "capacity: " << capacity << "\n";
-        std::cout << "--------------------------------------------------------\n";
+        CLOG(INFO, "general_log") << "SSA: CRGroup Created\n";
+        CLOG(INFO, "general_log") << "power: " << power << "\n";
+        CLOG(INFO, "general_log") << "max: " << max << "\n";
+        CLOG(INFO, "general_log") << "capacity: " << capacity << "\n";
+        CLOG(INFO, "general_log") << "--------------------------------------------------------\n";
         #endif
     }
 

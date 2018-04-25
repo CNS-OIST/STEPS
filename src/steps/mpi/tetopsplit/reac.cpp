@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -42,7 +42,8 @@
 #include "steps/mpi/tetopsplit/kproc.hpp"
 #include "steps/mpi/tetopsplit/tetopsplit.hpp"
 
-#include "third_party/easylogging++.h"
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace smtos = steps::mpi::tetopsplit;
@@ -76,14 +77,14 @@ smtos::Reac::Reac(ssolver::Reacdef * rdef, smtos::WmVol * tet)
 , pCcst(0.0)
 , pKcst(0.0)
 {
-    assert (pReacdef != 0);
-    assert (pTet != 0);
+    AssertLog(pReacdef != 0);
+    AssertLog(pTet != 0);
     type = KP_REAC;
     uint lridx = pTet->compdef()->reacG2L(pReacdef->gidx());
     double kcst = pTet->compdef()->kcst(lridx);
     pKcst = kcst;
     pCcst = comp_ccst(kcst, pTet->vol(), pReacdef->order(), pTet->compdef()->vol());
-    assert (pCcst >= 0.0);
+    AssertLog(pCcst >= 0.0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -147,24 +148,24 @@ void smtos::Reac::resetCcst(void)
     // Also reset kcst
     pKcst = kcst;
     pCcst = comp_ccst(kcst, pTet->vol(), pReacdef->order(), pTet->compdef()->vol());
-    assert (pCcst >= 0.0);
+    AssertLog(pCcst >= 0.0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void smtos::Reac::setKcst(double k)
 {
-    assert (k >= 0.0);
+    AssertLog(k >= 0.0);
     pKcst = k;
     pCcst = comp_ccst(k, pTet->vol(), pReacdef->order(), pTet->compdef()->vol());
-    assert (pCcst >= 0.0);
+    AssertLog(pCcst >= 0.0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void smtos::Reac::setupDeps(void)
 {
-    assert(pTet->getInHost());
+    AssertLog(pTet->getInHost());
     std::set<smtos::KProc*> updset;
     ssolver::gidxTVecCI sbgn = pReacdef->bgnUpdColl();
     ssolver::gidxTVecCI send = pReacdef->endUpdColl();
@@ -192,7 +193,7 @@ void smtos::Reac::setupDeps(void)
         if (pTet->getHost() != (*tri)->getHost()) {
             std::ostringstream os;
             os << "Patch triangle " << (*tri)->idx() << " and its compartment tetrahedron " << pTet->idx()  << " belong to different hosts.\n";
-            throw steps::NotImplErr(os.str());
+            NotImplErrLog(os.str());
         }
         nkprocs = (*tri)->countKProcs();
         startKProcIdx = (*tri)->getStartKProcIdx();
@@ -232,9 +233,6 @@ double smtos::Reac::rate(smtos::TetOpSplitP * solver)
 {
 
     if (inactive()) return 0.0;
-#ifdef MPI_DEBUG
-    //CLOG(DEBUG, "mpi_debug") << "update rate: \n";
-#endif
 
     // Prefetch some variables.
     ssolver::Compdef * cdef = pTet->compdef();
@@ -253,12 +251,10 @@ double smtos::Reac::rate(smtos::TetOpSplitP * solver)
             h_mu = 0.0;
             break;
         }
-        assert((lhs <= 4) && (lhs >0));
+        AssertLog((lhs <= 4) && (lhs >0));
         h_mu *= (cnt - lhs + 1);
     }
-#ifdef MPI_DEBUG
-    //CLOG(DEBUG, "mpi_debug") << "new rate: " << h_mu * pCcst <<"\n";
-#endif
+
     // Multiply with scaled reaction constant.
     return h_mu * pCcst;
 }
@@ -277,7 +273,7 @@ void smtos::Reac::apply(steps::rng::RNG * rng, double dt, double simtime, double
         if (pTet->clamped(i) == true) continue;
         int j = upd_vec[i];
         int nc = static_cast<int>(local[i]) + j;
-        assert(nc >= 0);
+        AssertLog(nc >= 0);
         pTet->setCount(i, static_cast<uint>(nc), period);
     }
 

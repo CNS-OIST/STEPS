@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -38,6 +38,8 @@
 #include "steps/solver/diffdef.hpp"
 #include "steps/model/spec.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace ssolver = steps::solver;
@@ -54,8 +56,8 @@ ssolver::Diffdef::Diffdef(Statedef * sd, uint idx, steps::model::Diff * d)
 , pSetupdone(false)
 , pSpec_DEP(0)
 {
-    assert(pStatedef != 0);
-    assert(d != 0);
+    AssertLog(pStatedef != 0);
+    AssertLog(d != 0);
 
     pName = d->getID();
     pDcst = d->getDcst();
@@ -93,7 +95,7 @@ void ssolver::Diffdef::restore(std::fstream & cp_file)
 
 void ssolver::Diffdef::setup(void)
 {
-    assert (pSetupdone == false);
+    AssertLog(pSetupdone == false);
 
     pSpec_DEP[lig()] = DEP_STOICH;
 
@@ -119,7 +121,7 @@ double ssolver::Diffdef::dcst(void) const
 
 void ssolver::Diffdef::setDcst(double d)
 {
-    assert (d >= 0.0);
+    AssertLog(d >= 0.0);
     pDcst = d;
 }
 
@@ -127,7 +129,7 @@ void ssolver::Diffdef::setDcst(double d)
 
 uint ssolver::Diffdef::lig(void) const
 {
-    assert (pStatedef != 0);
+    AssertLog(pStatedef != 0);
     return pStatedef->getSpecIdx(pLig);
 }
 
@@ -135,7 +137,7 @@ uint ssolver::Diffdef::lig(void) const
 /*
 void ssolver::Diffdef::setLig(uint gidx)
 {
-    assert (gidx < pStatedef->countSpecs());
+    AssertLog(gidx < pStatedef->countSpecs());
     ssolver::Specdef * spec = pStatedef->specdef(gidx);
     pLig = spec->name();
 }
@@ -144,8 +146,8 @@ void ssolver::Diffdef::setLig(uint gidx)
 
 int ssolver::Diffdef::dep(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_DEP[gidx];
 }
 
@@ -153,8 +155,8 @@ int ssolver::Diffdef::dep(uint gidx) const
 
 bool ssolver::Diffdef::reqspec(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     if (pSpec_DEP[gidx] != DEP_NONE) return true;
     return false;
 }

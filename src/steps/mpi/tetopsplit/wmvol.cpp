@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -36,6 +36,7 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/math/constants.hpp"
 #include "steps/solver/compdef.hpp"
 #include "steps/solver/diffdef.hpp"
@@ -49,7 +50,8 @@
 #include "steps/mpi/tetopsplit/tetopsplit.hpp"
 #include "steps/mpi/tetopsplit/wmvol.hpp"
 
-#include "third_party/easylogging++.h"
+// logging
+#include "easylogging++.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -72,8 +74,8 @@ smtos::WmVol::WmVol
 , myRank(rank)
 , hostRank(host_rank)
 {
-    assert(pCompdef != 0);
-    assert (pVol > 0.0);
+    AssertLog(pCompdef != 0);
+    AssertLog(pVol > 0.0);
 
     // Based on compartment definition, build other structures.
     uint nspecs = compdef()->countSpecs();
@@ -206,11 +208,7 @@ double smtos::WmVol::conc(uint gidx) const
 
 void smtos::WmVol::setCount(uint lidx, uint count, double period)
 {
-    #ifdef MPI_DEBUG
-    //CLOG(DEBUG, "mpi_debug") << "Set spec (local id): " << lidx << " to " << count << "\n";
-    #endif
-
-    assert (lidx < compdef()->countSpecs());
+    AssertLog(lidx < compdef()->countSpecs());
     pPoolCount[lidx] = count;
 
 }
@@ -219,11 +217,7 @@ void smtos::WmVol::setCount(uint lidx, uint count, double period)
 
 void smtos::WmVol::incCount(uint lidx, int inc, double period, bool local_change)
 {
-    #ifdef MPI_DEBUG
-    //CLOG(DEBUG, "mpi_debug") << "Change spec (local id): " << lidx << " by " << inc << "\n";
-    #endif
-
-    assert (lidx < compdef()->countSpecs());
+    AssertLog(lidx < compdef()->countSpecs());
     
     
     // remote change
@@ -231,17 +225,14 @@ void smtos::WmVol::incCount(uint lidx, int inc, double period, bool local_change
     {
         std::ostringstream os;
         os << "Remote WmVol update is not implemented.\n";
-        throw steps::NotImplErr(os.str());
+        NotImplErrLog(os.str());
     }
     // local change
     else {
         double oldcount = pPoolCount[lidx];
-		assert(oldcount + inc >= 0.0);
+		AssertLog(oldcount + inc >= 0.0);
 		pPoolCount[lidx] += inc;
-		
-		#ifdef MPI_DEBUG
-        //CLOG(DEBUG, "mpi_debug") << "local count: " << pPoolCount[lidx] << "\n";
-        #endif
+
     }
 }
 
@@ -257,7 +248,7 @@ void smtos::WmVol::setClamped(uint lidx, bool clamp)
 
 smtos::Reac * smtos::WmVol::reac(uint lidx) const
 {
-    assert(lidx < compdef()->countReacs());
+    AssertLog(lidx < compdef()->countReacs());
     return dynamic_cast<smtos::Reac*>(pKProcs[lidx]);
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -274,17 +265,6 @@ void smtos::WmVol::setHost(int host, int rank)
     myRank = rank;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/*
-void smtos::WmVol::addSyncHost(int host)
-{
-    #ifdef MPI_DEBUG
-    CLOG(DEBUG, "mpi_debug") << "add sync host " << host << ".\n";
-    #endif
-    syncHosts.insert(host);
-}
-
-*/
 ////////////////////////////////////////////////////////////////////////////////
 
 void smtos::WmVol::setSolver(steps::mpi::tetopsplit::TetOpSplitP* solver)
@@ -303,21 +283,21 @@ smtos::TetOpSplitP* smtos::WmVol::solver(void)
 
 double smtos::WmVol::getPoolOccupancy(uint lidx)
 {
-    assert (false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double smtos::WmVol::getLastUpdate(uint lidx)
 {
-    assert (false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void smtos::WmVol::resetPoolOccupancy(void)
 {
-    assert (false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -335,51 +315,6 @@ void smtos::WmVol::repartition(smtos::TetOpSplitP * tex, int rank, int host_rank
     setupKProcs(tex);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/*
-void smtos::WmVol::sendSyncPools(void)
-{
-    uint nspecs = pCompdef->countSpecs();
-    smtos::Tet* upcast = dynamic_cast<smtos::Tet*> (this);
-    uint info[2];
-    info[0] = smtos::SUB_WM;
-    if (upcast != NULL) info[0] = smtos::SUB_TET;
-    info[1] = pIdx;
-    for (auto & host : syncHosts) {
-        #ifdef MPI_DEBUG
-        CLOG(DEBUG, "mpi_debug") << "Send pool " << pIdx << " to " << host << ".\n";
-		std::vector<uint> temp;
-	    for(uint s = 0; s < nspecs; s++) {
-	        temp.push_back(pPoolCount[s]);
-	    }
-        CLOG(DEBUG, "mpi_debug") << temp << ".\n";
-        #endif
-        MPI_Send(info, 2, MPI_UNSIGNED, host, OPSPLIT_COUNT_SYNC_INFO, MPI_COMM_WORLD);
-        MPI_Send(pPoolCount, nspecs, MPI_UNSIGNED, host, OPSPLIT_COUNT_SYNC_DATA, MPI_COMM_WORLD);
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void smtos::WmVol::recvSyncPools(int source)
-{
-    #ifdef MPI_DEBUG
-    CLOG(DEBUG, "mpi_debug") << "Recv pool " << pIdx << " from " << source << ".\n";
-    #endif
-    uint nspecs = pCompdef->countSpecs();
-    MPI_Recv(pPoolCount, nspecs, MPI_UNSIGNED, source, OPSPLIT_COUNT_SYNC_DATA, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    #ifdef MPI_DEBUG
-    std::vector<uint> temp;
-	for(uint s = 0; s < nspecs; s++) {
-	    temp.push_back(pPoolCount[s]);
-	}
-    CLOG(DEBUG, "mpi_debug") << temp << ".\n";
-    #endif
-}
-*/
-
-/////
-// MPISTEPS
 ////////////////////////////////////////////////////////////////////////////////
 
 // END

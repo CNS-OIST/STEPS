@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -34,6 +34,7 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/solver/compdef.hpp"
 #include "steps/solver/diffdef.hpp"
 #include "steps/solver/reacdef.hpp"
@@ -45,6 +46,8 @@
 #include "steps/tetexact/tetexact.hpp"
 #include "steps/tetexact/wmvol.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace stex = steps::tetexact;
@@ -66,8 +69,8 @@ stex::Tet::Tet
 , pAreas()
 , pDist()
 {
-    assert (a0 > 0.0 && a1 > 0.0 && a2 > 0.0 && a3 > 0.0);
-    assert (d0 >= 0.0 && d1 >= 0.0 && d2 >= 0.0 && d3 >= 0.0);
+    AssertLog(a0 > 0.0 && a1 > 0.0 && a2 > 0.0 && a3 > 0.0);
+    AssertLog(d0 >= 0.0 && d1 >= 0.0 && d2 >= 0.0 && d3 >= 0.0);
 
     pNextTris.resize(4);
 
@@ -129,7 +132,7 @@ void stex::Tet::setNextTet(uint i, stex::Tet * t)
     // Now adding all tets, even those from other compartments, due to the diffusion boundaries
     pNextTet[i] = t;
 
-    //if (pNextTris[i] != 0) std::cout << "WARNING: writing over nextTri index " << i;
+    //if (pNextTris[i] != 0) CLOG(INFO, "general_log") << "WARNING: writing over nextTri index " << i;
     pNextTris[i] = 0;
 
 }
@@ -138,7 +141,7 @@ void stex::Tet::setNextTet(uint i, stex::Tet * t)
 
 void stex::Tet::setDiffBndDirection(uint i)
 {
-    assert(i < 4);
+    AssertLog(i < 4);
 
     pDiffBndDirection[i] = true;
 }
@@ -147,15 +150,15 @@ void stex::Tet::setDiffBndDirection(uint i)
 
 void stex::Tet::setNextTri(stex::Tri *t)
 {
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void stex::Tet::setNextTri(uint i, stex::Tri * t)
 {
-    assert (pNextTris.size() == 4);
-    assert (i <= 3);
+    AssertLog(pNextTris.size() == 4);
+    AssertLog(i <= 3);
 
     pNextTet[i] = 0;
     pNextTris[i]= t;
@@ -195,7 +198,7 @@ void stex::Tet::setupKProcs(stex::Tetexact * tex)
 
 stex::Diff * stex::Tet::diff(uint lidx) const
 {
-    assert(lidx < compdef()->countDiffs());
+    AssertLog(lidx < compdef()->countDiffs());
     return dynamic_cast<stex::Diff*>(pKProcs[compdef()->countReacs() + lidx]);
 }
 

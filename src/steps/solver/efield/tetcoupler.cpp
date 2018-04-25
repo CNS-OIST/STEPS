@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -45,7 +45,8 @@
 #include "steps/solver/efield/vertexconnection.hpp"
 #include "steps/solver/efield/vertexelement.hpp"
 
-#include "third_party/easylogging++.h"
+// logging
+#include "easylogging++.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -85,7 +86,7 @@ void sefield::TetCoupler::coupleMesh(void)
     for (uint i = 0; i < nvertices; ++i)
     {
         VertexElement * vertex = pMesh->getVertex(i);
-        assert(vertex->getIDX() == i);
+        AssertLog(vertex->getIDX() == i);
         uint ncons = vertex->getNCon();
         //double * new_vccs = new double[ncons]();
         // initialize the array.
@@ -150,7 +151,7 @@ void sefield::TetCoupler::coupleMesh(void)
             // Accumulate coefficients for neighbours in vccs.
             for (uint i = 0; i < 3; ++i)
             {
-                //assert(facs[i] > 0.0);
+                //AssertLog(facs[i] > 0.0);
                 vccs[ivert][tetinds[i]] += facs[i];
             }
 
@@ -214,7 +215,7 @@ void sefield::TetCoupler::coupleMesh(void)
             ndif += 1;
 #ifdef _OPENMP            
             auto tid = omp_get_thread_num();
-            if (!tid) CLOG_N_TIMES(100, DEBUG, "steps_debug") << "symmetry miscount " << wab << " " << wba; 
+            if (!tid) CLOG_N_TIMES(100, DEBUG, "general_log") << "symmetry miscount " << wab << " " << wba; 
 #endif 
 }
         else
@@ -226,8 +227,11 @@ void sefield::TetCoupler::coupleMesh(void)
     }
 
     // should ndif > 0 throw an exception?
-    CLOG_IF(ndif > 0, DEBUG, "steps_debug")
-        << ndif << " out of " << ntot << " failed sym test. Nvert=" << pMesh->countVertices(); 
+    if (ndif > 0) {
+        std::ostringstream os;
+        os << ndif << " out of " << ntot << " failed sym test. Nvert=" << pMesh->countVertices();
+        ProgErrLog(os.str());
+    }
 
     // Deallocate vccs.
 #pragma omp parallel for
@@ -272,7 +276,6 @@ bool sefield::TetCoupler::dblsDiffer(double a, double b)
     else if (fabs((a - b) / (a + b)) > 1.e-7)
     {
         ret = true;
-        //cout << "\nFailed doubles same test with " << a << " and " << b;
     }
     return ret;
 }

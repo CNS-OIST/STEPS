@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -34,10 +34,12 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/tetode/tetode.hpp"
 #include "steps/tetode/tet.hpp"
 #include "steps/tetode/tri.hpp"
-
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace stode = steps::tetode;
@@ -62,8 +64,8 @@ stode::Tet::Tet
 , pAreas()
 , pDist()
 {
-    assert (a0 > 0.0 && a1 > 0.0 && a2 > 0.0 && a3 > 0.0);
-    assert (d0 >= 0.0 && d1 >= 0.0 && d2 >= 0.0 && d3 >= 0.0);
+    AssertLog(a0 > 0.0 && a1 > 0.0 && a2 > 0.0 && a3 > 0.0);
+    AssertLog(d0 >= 0.0 && d1 >= 0.0 && d2 >= 0.0 && d3 >= 0.0);
 
 
     // At this point we don't have neighbouring tet pointers,
@@ -110,7 +112,7 @@ void stode::Tet::setNextTet(uint i, stode::Tet * t)
     else
     {
         pNextTet[i] = t;
-        if (pNextTri[i] != 0) std::cout << "WARNING: writing over nextTri index " << i;
+        if (pNextTri[i] != 0) CLOG(INFO, "general_log") << "WARNING: writing over nextTri index " << i;
         pNextTri[i] = 0;
     }
 
@@ -131,7 +133,7 @@ void stode::Tet::setNextTri(uint i, stode::Tri * t)
 
 
     // This is too common now to include this message- for any internal patch this happens
-    //if (pNextTet[i] != 0) std::cout << "WARNING: writing over nextTet index " << i;
+    //if (pNextTet[i] != 0) CLOG(INFO, "general_log") << "WARNING: writing over nextTet index " << i;
 
     pNextTet[i] = 0;
     pNextTri[i]= t;

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -31,6 +31,7 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/wmdirect/patch.hpp"
 #include "steps/wmdirect/comp.hpp"
 #include "steps/wmdirect/kproc.hpp"
@@ -39,7 +40,8 @@
 #include "steps/solver/statedef.hpp"
 #include "steps/solver/patchdef.hpp"
 #include "steps/solver/types.hpp"
-
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace swmd = steps::wmdirect;
@@ -53,7 +55,7 @@ swmd::Patch::Patch(steps::solver::Patchdef * patchdef, swmd::Comp * icomp, swmd:
 , pIComp(icomp)
 , pOComp(ocomp)
 {
-    assert(pPatchdef != 0);
+    AssertLog(pPatchdef != 0);
     if (iComp() != 0) iComp()->addIPatch(this);
     if (oComp() != 0) oComp()->addOPatch(this);
 }
@@ -116,7 +118,7 @@ void swmd::Patch::setupDeps(void)
 
 swmd::KProc * swmd::Patch::sreac(uint lsridx) const
 {
-    assert (lsridx < pKProcs.size());
+    AssertLog(lsridx < pKProcs.size());
     return pKProcs[lsridx];
 }
 

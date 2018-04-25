@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -39,6 +39,9 @@
 #include "steps/util/collections.hpp"
 #include "steps/error.hpp"
 
+// logging
+#include "easylogging++.h"
+
 namespace stetmesh = steps::tetmesh;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -53,13 +56,13 @@ stetmesh::SDiffBoundary::SDiffBoundary(std::string const & id, Tetmesh * contain
 , pBar_indices()
 {
     if (pTetmesh == 0)
-        throw steps::ArgErr("No mesh provided to Surface Diffusion Boundary initializer function.");
+        ArgErrLog("No mesh provided to Surface Diffusion Boundary initializer function.");
 
     if (bars.empty())
-    	throw steps::ArgErr("No triangles provided to Surface Diffusion Boundary initializer function.");
+    	ArgErrLog("No triangles provided to Surface Diffusion Boundary initializer function.");
 
     if (patches.size() != 2)
-        throw steps::ArgErr("The number of patches provided to Surface Diffusion initializer function must be length 2.");
+        ArgErrLog("The number of patches provided to Surface Diffusion initializer function must be length 2.");
 
     // The maximum triangle index in tetrahedral mesh
     uint maxidx = (pTetmesh->countBars() -1);
@@ -70,10 +73,10 @@ stetmesh::SDiffBoundary::SDiffBoundary(std::string const & id, Tetmesh * contain
         visited_bars.insert(bar);
 
         if (bar > maxidx)
-            throw steps::ArgErr("Invalid bar index "+std::to_string(bar)+".");
+            ArgErrLog("Invalid bar index "+std::to_string(bar)+".");
 
         if (pTetmesh->getBarSDiffBoundary(bar) != nullptr)
-            throw steps::ArgErr("Bar with index "+std::to_string(bar)+" already belongs to a surface diffusion boundary.");
+            ArgErrLog("Bar with index "+std::to_string(bar)+" already belongs to a surface diffusion boundary.");
 
         // Need to find one triangle from inner patch and one from outer in this lot:
         std::set<uint> bartris = pTetmesh->getBarTriNeighbs(bar);
@@ -89,17 +92,17 @@ stetmesh::SDiffBoundary::SDiffBoundary(std::string const & id, Tetmesh * contain
         	if (tri_patch == patches[0])
         	{
         		if (innertriidx == -1) innertriidx = *tri;
-        		else throw steps::ArgErr("Duplicate copy of patch" + patches[0]->getID() + " in connected triangles to bar " + std::to_string(bar));
+        		else ArgErrLog("Duplicate copy of patch" + patches[0]->getID() + " in connected triangles to bar " + std::to_string(bar));
         	}
         	else if (tri_patch == patches[1])
         	{
         		if (outertriidx == -1) outertriidx = *tri;
-        		else throw steps::ArgErr("Duplicate copy of patch" + patches[1]->getID() + " in connected triangles to bar " + std::to_string(bar));
+        		else ArgErrLog("Duplicate copy of patch" + patches[1]->getID() + " in connected triangles to bar " + std::to_string(bar));
         	}
         }
 
-        if (innertriidx == -1) throw steps::ArgErr("Patch" + patches[0]->getID() + " is not connected to bar " + std::to_string(bar));
-        if (outertriidx == -1) throw steps::ArgErr("Patch" + patches[1]->getID() + " is not connected to bar " + std::to_string(bar));
+        if (innertriidx == -1) ArgErrLog("Patch" + patches[0]->getID() + " is not connected to bar " + std::to_string(bar));
+        if (outertriidx == -1) ArgErrLog("Patch" + patches[1]->getID() + " is not connected to bar " + std::to_string(bar));
 
         pBar_indices.push_back(bar);
         pTetmesh->setBarSDiffBoundary(bar, this);
@@ -122,7 +125,7 @@ stetmesh::SDiffBoundary::SDiffBoundary(std::string const & id, Tetmesh * contain
 
 void stetmesh::SDiffBoundary::setID(std::string const & id)
 {
-    assert(pTetmesh != 0);
+    AssertLog(pTetmesh != 0);
     if (id == pID) return;
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let

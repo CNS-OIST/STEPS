@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -39,6 +39,8 @@
 #include "steps/model/chanstate.hpp"
 #include "steps/util/checkid.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
@@ -57,7 +59,7 @@ Chan::Chan(string const & id, Model * model)
     {
         ostringstream os;
         os << "No model provided to Channel initializer function.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     pModel->_handleChanAdd(this);
 }
@@ -90,7 +92,7 @@ void Chan::_handleSelfDelete(void)
 
 void Chan::setID(string const & id)
 {
-    assert(pModel != 0);
+    AssertLog(pModel != 0);
     if (id == pID) return;
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
@@ -110,9 +112,9 @@ ChanState * Chan::getChanState(string const & id) const
     {
         ostringstream os;
         os << "Model does not contain channel state with name '" << id << "'";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
-    assert(cstate->second != 0);
+    AssertLog(cstate->second != 0);
     return cstate->second;
 }
 
@@ -138,7 +140,7 @@ void Chan::_checkChanStateID(string const & id) const
     {
         ostringstream os;
         os << "'" << id << "' is already in use";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 }
 
@@ -147,13 +149,13 @@ void Chan::_checkChanStateID(string const & id) const
 void Chan::_handleChanStateIDChange(string const & o, string const & n)
 {
     ChanStatePMapCI cs_old = pChanStates.find(o);
-    assert(cs_old != pChanStates.end());
+    AssertLog(cs_old != pChanStates.end());
 
     if(o==n) return;
     _checkChanStateID(n);
 
     ChanState * cs = cs_old->second;
-    assert(cs != 0);
+    AssertLog(cs != 0);
     pChanStates.erase(cs->getID());
     pChanStates.insert(ChanStatePMap::value_type(n,cs));
 }
@@ -162,7 +164,7 @@ void Chan::_handleChanStateIDChange(string const & o, string const & n)
 
 void Chan::_handleChanStateAdd(ChanState * cstate)
 {
-    assert(cstate->getChan() == this);
+    AssertLog(cstate->getChan() == this);
     _checkChanStateID(cstate->getID());
     pChanStates.insert(ChanStatePMap::value_type(cstate->getID(), cstate));
 }
@@ -171,7 +173,7 @@ void Chan::_handleChanStateAdd(ChanState * cstate)
 
 void Chan::_handleChanStateDel(ChanState * cstate)
 {
-    assert(cstate->getChan() == this);
+    AssertLog(cstate->getChan() == this);
     pChanStates.erase(cstate->getID());
 }
 
