@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -31,6 +31,7 @@
 #include <iostream>
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/math/constants.hpp"
 #include "steps/solver/reacdef.hpp"
 #include "steps/tetexact/reac.hpp"
@@ -38,6 +39,9 @@
 #include "steps/tetexact/wmvol.hpp"
 #include "steps/tetexact/kproc.hpp"
 #include "steps/tetexact/tetexact.hpp"
+
+// logging
+#include "easylogging++.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -71,14 +75,14 @@ stex::Reac::Reac(ssolver::Reacdef * rdef, stex::WmVol * tet)
 , pCcst(0.0)
 , pKcst(0.0)
 {
-    assert (pReacdef != 0);
-    assert (pTet != 0);
+    AssertLog(pReacdef != 0);
+    AssertLog(pTet != 0);
 
     uint lridx = pTet->compdef()->reacG2L(pReacdef->gidx());
     double kcst = pTet->compdef()->kcst(lridx);
     pKcst = kcst;
     pCcst = comp_ccst(kcst, pTet->vol(), pReacdef->order(), pTet->compdef()->vol());
-    assert (pCcst >= 0.0);
+    AssertLog(pCcst >= 0.0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -142,17 +146,17 @@ void stex::Reac::resetCcst(void)
     // Also reset kcst
     pKcst = kcst;
     pCcst = comp_ccst(kcst, pTet->vol(), pReacdef->order(), pTet->compdef()->vol());
-    assert (pCcst >= 0.0);
+    AssertLog(pCcst >= 0.0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void stex::Reac::setKcst(double k)
 {
-    assert (k >= 0.0);
+    AssertLog(k >= 0.0);
     pKcst = k;
     pCcst = comp_ccst(k, pTet->vol(), pReacdef->order(), pTet->compdef()->vol());
-    assert (pCcst >= 0.0);
+    AssertLog(pCcst >= 0.0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -259,7 +263,7 @@ double stex::Reac::rate(steps::tetexact::Tetexact * solver)
             }
             default:
             {
-                assert(0);
+                AssertLog(0);
                 return 0.0;
             }
         }

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,8 +30,10 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/wmdirect/kproc.hpp"
-
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace swmd = steps::wmdirect;
@@ -72,7 +74,7 @@ void swmd::KProc::resetExtent(void)
 steps::solver::Reacdef * swmd::KProc::defr(void) const
 {
     // Should only be called on derived object
-    assert (false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -80,7 +82,7 @@ steps::solver::Reacdef * swmd::KProc::defr(void) const
 steps::solver::SReacdef * swmd::KProc::defsr(void) const
 {
     // Should olny be called on derived object
-    assert (false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

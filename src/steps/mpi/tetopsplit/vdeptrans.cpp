@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -40,6 +40,9 @@
 #include "steps/mpi/tetopsplit/kproc.hpp"
 #include "steps/mpi/tetopsplit/tetopsplit.hpp"
 
+// logging
+#include "easylogging++.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace smtos = steps::mpi::tetopsplit;
@@ -54,8 +57,8 @@ smtos::VDepTrans::VDepTrans(ssolver::VDepTransdef * vdtdef, smtos::Tri * tri)
 , localUpdVec()
 , remoteUpdVec()
 {
-    assert (pVDepTransdef != 0);
-    assert (pTri != 0);
+    AssertLog(pVDepTransdef != 0);
+    AssertLog(pTri != 0);
     type = KP_VDEPTRANS;
 }
 
@@ -107,7 +110,7 @@ void smtos::VDepTrans::reset(void)
 
 void smtos::VDepTrans::setupDeps(void)
 {
-    assert(pTri->getInHost());
+    AssertLog(pTri->getInHost());
     std::set<smtos::KProc*> updset;
 
     uint nkprocs = pTri->countKProcs();
@@ -187,13 +190,13 @@ void smtos::VDepTrans::apply(steps::rng::RNG * rng, double dt, double simtime, d
 	if (pTri->clamped(src) == false)
 	{
 		uint nc = pTri->pools()[src];
-		assert(nc >= 1);
+		AssertLog(nc >= 1);
 		pTri->setCount(src,  (nc-1), period);
 	}
 	if (pTri->clamped(dst) == false)
 	{
 		uint nc = pTri->pools()[dst];
-		assert(nc >= 0);
+		AssertLog(nc >= 0);
 		pTri->setCount(dst,  (nc+1), period);
 	}
 

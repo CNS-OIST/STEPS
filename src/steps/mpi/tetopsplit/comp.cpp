@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,6 +30,7 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/solver/compdef.hpp"
 #include "steps/mpi/tetopsplit/comp.hpp"
 #include "steps/mpi/tetopsplit/kproc.hpp"
@@ -37,6 +38,8 @@
 #include "steps/mpi/tetopsplit/tet.hpp"
 #include "steps/mpi/tetopsplit/wmvol.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace smtos = steps::mpi::tetopsplit;
@@ -49,7 +52,7 @@ smtos::Comp::Comp(steps::solver::Compdef * compdef)
 , pVol(0.0)
 , pTets()
 {
-    assert(pCompdef != 0);
+    AssertLog(pCompdef != 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -76,7 +79,7 @@ void smtos::Comp::restore(std::fstream & cp_file)
 
 void smtos::Comp::addTet(smtos::WmVol * tet)
 {
-    assert (tet->compdef() == def());
+    AssertLog(tet->compdef() == def());
     pTets.push_back(tet);
     pVol += tet->vol();
 }
@@ -85,9 +88,9 @@ void smtos::Comp::addTet(smtos::WmVol * tet)
 
 void smtos::Comp::modCount(uint slidx, double count)
 {
-    assert (slidx < def()->countSpecs());
+    AssertLog(slidx < def()->countSpecs());
     double newcount = (def()->pools()[slidx] + count);
-    assert (newcount >= 0.0);
+    AssertLog(newcount >= 0.0);
     def()->setCount(slidx, newcount);
 }
 
@@ -106,7 +109,7 @@ smtos::WmVol * smtos::Comp::pickTetByVol(double rand01) const
         accum += (*t)->vol();
         if (selector < accum) return (*t);
     }
-    assert(false);
+    AssertLog(false);
     return 0;
 }
 

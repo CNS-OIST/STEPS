@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -38,6 +38,8 @@
 
 #include "steps/model/model.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace swm = steps::wm;
@@ -54,16 +56,12 @@ swm::Comp::Comp(std::string const & id, swm::Geom * container, double vol)
 {
     if (pContainer == 0)
     {
-        std::ostringstream os;
-        os << "No container provided to Comp initializer function\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog("No container provided to Comp initializer function.");
     }
 
     if (pVol < 0.0)
     {
-        std::ostringstream os;
-        os << "Compartment volume can't be negative\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog("Compartment volume can't be negative.");
     }
     pContainer->_handleCompAdd(this);
 }
@@ -80,7 +78,7 @@ swm::Comp::~Comp(void)
 
 void swm::Comp::setID(std::string const & id)
 {
-    assert(pContainer != 0);
+    AssertLog(pContainer != 0);
     if (id == pID) return;
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
@@ -95,12 +93,10 @@ void swm::Comp::setID(std::string const & id)
 
 void swm::Comp::setVol(double vol)
 {
-    assert(pContainer != 0);
+    AssertLog(pContainer != 0);
     if (vol < 0.0)
     {
-        std::ostringstream os;
-        os << "Compartment volume can't be negative\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog("Compartment volume can't be negative.");
     }
     pVol = vol;
 }
@@ -174,7 +170,7 @@ std::vector<steps::model::Diff*> swm::Comp::getAllDiffs(steps::model::Model* mod
 
 void swm::Comp::_addIPatch(swm::Patch * patch)
 {
-    assert (patch->getOComp() == this);
+    AssertLog(patch->getOComp() == this);
     // patch pointer is only added to set if it is not already included
     pIPatches.insert(patch);
 }
@@ -183,14 +179,14 @@ void swm::Comp::_addIPatch(swm::Patch * patch)
 
 void swm::Comp::_delIPatch(swm::Patch * patch)
 {
-    assert (patch->getOComp() == this);
+    AssertLog(patch->getOComp() == this);
     pIPatches.erase(patch);
 }
 ////////////////////////////////////////////////////////////////////////////////
 
 void swm::Comp::_addOPatch(swm::Patch * patch)
 {
-    assert (patch->getIComp() == this);
+    AssertLog(patch->getIComp() == this);
     // patch pointer is only added to set if it is not already included
     pOPatches.insert(patch);
 }
@@ -199,7 +195,7 @@ void swm::Comp::_addOPatch(swm::Patch * patch)
 
 void swm::Comp::_delOPatch(swm::Patch * patch)
 {
-    assert (patch->getIComp() == this);
+    AssertLog(patch->getIComp() == this);
     pOPatches.erase(patch);
 }
 
@@ -219,7 +215,7 @@ void swm::Comp::_handleSelfDelete(void)
 
 steps::wm::Patch * swm::Comp::_getIPatch(uint lidx) const
 {
-    assert(lidx < pIPatches.size());
+    AssertLog(lidx < pIPatches.size());
     std::set<steps::wm::Patch *>::const_iterator pit = pIPatches.begin();
     for (uint i=0; i < lidx; ++i) ++pit;
     return (*pit);
@@ -229,7 +225,7 @@ steps::wm::Patch * swm::Comp::_getIPatch(uint lidx) const
 
 steps::wm::Patch * swm::Comp::_getOPatch(uint lidx) const
 {
-    assert(lidx < pOPatches.size());
+    AssertLog(lidx < pOPatches.size());
     std::set<steps::wm::Patch *>::const_iterator pit = pOPatches.begin();
     for (uint i=0; i < lidx; ++i) ++pit;
     return (*pit);

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -35,7 +35,8 @@
 #include "steps/solver/api.hpp"
 #include "steps/solver/statedef.hpp"
 #include "steps/geom/tetmesh.hpp"
-
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 USING(std, string);
@@ -51,7 +52,7 @@ double API::getVertV(uint vidx) const
         {
             std::ostringstream os;
             os << "Vertex index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         return _getVertV(vidx);
     }
@@ -60,7 +61,7 @@ double API::getVertV(uint vidx) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -74,7 +75,7 @@ void API::setVertV(uint vidx, double v)
         {
             std::ostringstream os;
             os << "Vertex index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         _setVertV(vidx, v);
     }
@@ -83,7 +84,7 @@ void API::setVertV(uint vidx, double v)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -97,7 +98,7 @@ bool API::getVertVClamped(uint vidx) const
         {
             std::ostringstream os;
             os << "Vertex index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         _getVertVClamped(vidx);
     }
@@ -106,7 +107,7 @@ bool API::getVertVClamped(uint vidx) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -120,7 +121,7 @@ void API::setVertVClamped(uint vidx, bool cl)
         {
             std::ostringstream os;
             os << "Vertex index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         _setVertVClamped(vidx, cl);
     }
@@ -129,7 +130,7 @@ void API::setVertVClamped(uint vidx, bool cl)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -143,7 +144,7 @@ void API::setVertIClamp(uint vidx, double i)
         {
             std::ostringstream os;
             os << "Vertex index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         _setVertIClamp(vidx, i);
     }
@@ -152,7 +153,7 @@ void API::setVertIClamp(uint vidx, double i)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -160,35 +161,35 @@ void API::setVertIClamp(uint vidx, double i)
 
 double API::_getVertV(uint vidx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setVertV(uint vidx, double v)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool API::_getVertVClamped(uint vidx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setVertVClamped(uint vidx, bool cl)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setVertIClamp(uint vidx, double i)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////

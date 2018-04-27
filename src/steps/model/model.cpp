@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -50,6 +50,8 @@
 
 #include "steps/util/checkid.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
@@ -105,9 +107,9 @@ Spec * Model::getSpec(string const & id) const
     {
         ostringstream os;
         os << "Model does not contain species with name '" << id << "'";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
-    assert(spec->second != 0);
+    AssertLog(spec->second != 0);
     return spec->second;
 }
 
@@ -167,9 +169,9 @@ Chan * Model::getChan(string const & id) const
     {
         ostringstream os;
         os << "Model does not contain channel with name '" << id << "'";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
-    assert(chan->second != 0);
+    AssertLog(chan->second != 0);
     return chan->second;
 }
 
@@ -195,9 +197,9 @@ Volsys * Model::getVolsys(string const & id) const
     {
         ostringstream os;
         os << "Model does not contain volume system with name '" << id << "'";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
-    assert(volsys->second != 0);
+    AssertLog(volsys->second != 0);
     return volsys->second;
 }
 
@@ -219,9 +221,9 @@ Surfsys * Model::getSurfsys(string const & id) const
     {
         ostringstream os;
         os << "Model does not contain surface system with name '" << id << "'";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
-    assert(surfsys->second != 0);
+    AssertLog(surfsys->second != 0);
     return surfsys->second;
 }
 
@@ -242,7 +244,7 @@ void Model::_checkSpecID(string const & id) const
     {
         ostringstream os;
         os << "'" << id << "' is already in use";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 }
 
@@ -251,13 +253,13 @@ void Model::_checkSpecID(string const & id) const
 void Model::_handleSpecIDChange(string const & o, string const & n)
 {
     SpecPMapCI s_old = pSpecs.find(o);
-    assert(s_old != pSpecs.end());
+    AssertLog(s_old != pSpecs.end());
 
     if (o == n) return;
     _checkSpecID(n);
 
     Spec * s = s_old->second;
-    assert(s != 0);
+    AssertLog(s != 0);
     pSpecs.erase(s->getID());                        // or s_old->first
     pSpecs.insert(SpecPMap::value_type(n, s));
 }
@@ -266,7 +268,7 @@ void Model::_handleSpecIDChange(string const & o, string const & n)
 
 void Model::_handleSpecAdd(Spec * spec)
 {
-    assert(spec->getModel() == this);
+    AssertLog(spec->getModel() == this);
     _checkSpecID(spec->getID());
     pSpecs.insert(SpecPMap::value_type(spec->getID(), spec));
 }
@@ -312,7 +314,7 @@ void Model::_checkChanID(string const & id) const
     {
         ostringstream os;
         os << "'" << id << "' is already in use";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 }
 
@@ -321,13 +323,13 @@ void Model::_checkChanID(string const & id) const
 void Model::_handleChanIDChange(string const & o, string const & n)
 {
     ChanPMapCI c_old = pChans.find(o);
-    assert(c_old != pChans.end());
+    AssertLog(c_old != pChans.end());
 
     if (o == n) return;
     _checkChanID(n);
 
     Chan * c = c_old->second;
-    assert(c != 0);
+    AssertLog(c != 0);
     pChans.erase(c->getID());                        // or c_old->first
     pChans.insert(ChanPMap::value_type(n, c));
 }
@@ -336,7 +338,7 @@ void Model::_handleChanIDChange(string const & o, string const & n)
 
 void Model::_handleChanAdd(Chan * chan)
 {
-    assert(chan->getModel() == this);
+    AssertLog(chan->getModel() == this);
     _checkChanID(chan->getID());
     pChans.insert(ChanPMap::value_type(chan->getID(), chan));
 }
@@ -350,7 +352,7 @@ void Model::_checkVolsysID(string const & id) const
     {
         ostringstream os;
         os << "'" << id << "' is already in use";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 }
 
@@ -359,13 +361,13 @@ void Model::_checkVolsysID(string const & id) const
 void Model::_handleVolsysIDChange(string const & o, string const & n)
 {
     VolsysPMapCI v_old = pVolsys.find(o);
-    assert(v_old != pVolsys.end());
+    AssertLog(v_old != pVolsys.end());
 
     if (o == n) return;
     _checkVolsysID(n);
 
     Volsys * v = v_old->second;
-    assert(v != 0);
+    AssertLog(v != 0);
     pVolsys.erase(v->getID());                        // or v_old->first
     pVolsys.insert(VolsysPMap::value_type(n, v));
 }
@@ -374,7 +376,7 @@ void Model::_handleVolsysIDChange(string const & o, string const & n)
 
 void Model::_handleVolsysAdd(Volsys * volsys)
 {
-    assert(volsys->getModel() == this);
+    AssertLog(volsys->getModel() == this);
     _checkVolsysID(volsys->getID());
     pVolsys.insert(VolsysPMap::value_type(volsys->getID(), volsys));
 }
@@ -383,7 +385,7 @@ void Model::_handleVolsysAdd(Volsys * volsys)
 
 void Model::_handleVolsysDel(Volsys * volsys)
 {
-    assert (volsys->getModel() == this);
+    AssertLog(volsys->getModel() == this);
     pVolsys.erase(volsys->getID());
 }
 
@@ -396,7 +398,7 @@ void Model::_checkSurfsysID(string const & id) const
     {
         ostringstream os;
         os << "'" << id << "' is already in use";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 }
 
@@ -405,13 +407,13 @@ void Model::_checkSurfsysID(string const & id) const
 void Model::_handleSurfsysIDChange(string const & o, string const & n)
 {
     SurfsysPMapCI s_old = pSurfsys.find(o);
-    assert(s_old != pSurfsys.end());
+    AssertLog(s_old != pSurfsys.end());
 
     if (o==n) return;
     _checkSurfsysID(n);
 
     Surfsys * s = s_old->second;
-    assert(s != 0);
+    AssertLog(s != 0);
     pSurfsys.erase(s->getID());
     pSurfsys.insert(SurfsysPMap::value_type(n, s));
 }
@@ -420,7 +422,7 @@ void Model::_handleSurfsysIDChange(string const & o, string const & n)
 
 void Model::_handleSurfsysAdd(Surfsys * surfsys)
 {
-    assert(surfsys->getModel() == this);
+    AssertLog(surfsys->getModel() == this);
     _checkSurfsysID(surfsys->getID());
     pSurfsys.insert(SurfsysPMap::value_type(surfsys->getID(), surfsys));
 }
@@ -429,7 +431,7 @@ void Model::_handleSurfsysAdd(Surfsys * surfsys)
 
 void Model::_handleSurfsysDel(Surfsys * surfsys)
 {
-    assert (surfsys->getModel() == this);
+    AssertLog(surfsys->getModel() == this);
     pSurfsys.erase(surfsys->getID());
 }
 
@@ -549,7 +551,7 @@ uint Model::_countGHKcurrs(void) const
 
 Spec * Model::_getSpec(uint gidx) const
 {
-    assert (gidx < pSpecs.size());
+    AssertLog(gidx < pSpecs.size());
     std::map<std::string, Spec *>::const_iterator sp_it = pSpecs.begin();
     for (uint i=0; i< gidx; ++i) ++sp_it;
     return sp_it->second;
@@ -559,7 +561,7 @@ Spec * Model::_getSpec(uint gidx) const
 
 Chan * Model::_getChan(uint gidx) const
 {
-    assert (gidx < pChans.size());
+    AssertLog(gidx < pChans.size());
     std::map<std::string, Chan *>::const_iterator ch_it = pChans.begin();
     for (uint i=0; i< gidx; ++i) ++ch_it;
     return ch_it->second;
@@ -580,7 +582,7 @@ Reac * Model::_getReac(uint gidx) const
     }
 
     // we shouldn't have gotten here
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -598,7 +600,7 @@ SReac * Model::_getSReac(uint gidx) const
     }
 
     // we shouldn't have gotten here
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -615,7 +617,7 @@ Diff * Model::_getVDiff(uint gidx) const
         lidx -=diffs_tot;
     }
     // we shouldn't have gotten to the end
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -632,7 +634,7 @@ Diff * Model::_getSDiff(uint gidx) const
         lidx -=diffs_tot;
     }
     // we shouldn't have gotten to the end
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -650,7 +652,7 @@ VDepTrans * Model::_getVDepTrans(uint gidx) const
     }
 
     // we shouldn't have gotten here
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -668,7 +670,7 @@ VDepSReac * Model::_getVDepSReac(uint gidx) const
     }
 
     // we shouldn't have gotten here
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -686,7 +688,7 @@ OhmicCurr * Model::_getOhmicCurr(uint gidx) const
     }
 
     // we shouldn't have gotten here
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -704,7 +706,7 @@ GHKcurr * Model::_getGHKcurr(uint gidx) const
     }
 
     // we shouldn't have gotten here
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -44,7 +44,8 @@
 #include "steps/model/spec.hpp"
 #include "steps/model/chanstate.hpp"
 
-
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
@@ -75,19 +76,19 @@ GHKcurr::GHKcurr(string const & id, Surfsys * surfsys, ChanState * chanstate,
     {
         ostringstream os;
         os << "No surfsys provided to GHKcurr initializer function";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (pChanState == 0)
     {
         ostringstream os;
         os << "No channel state provided to GHKcurr initializer function";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (pIon == 0)
     {
         ostringstream os;
         os << "No ion provided to GHKcurr initializer function";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     pValence = pIon->getValence();
@@ -95,7 +96,7 @@ GHKcurr::GHKcurr(string const & id, Surfsys * surfsys, ChanState * chanstate,
     {
         ostringstream os;
         os << "Ion provided to GHKcurr initializer function has valence zero";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     /*
@@ -106,7 +107,7 @@ GHKcurr::GHKcurr(string const & id, Surfsys * surfsys, ChanState * chanstate,
         ostringstream os;
         os << "Channel conductance provided to GHKcurr initializer";
         os << " function can't be negative";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // Scan the conductance info and if there are no errors, fill pGInfo
@@ -125,13 +126,13 @@ GHKcurr::GHKcurr(string const & id, Surfsys * surfsys, ChanState * chanstate,
             os << "Unknown key: '" << gi->first << "' in conductance";
             os << " measurement information in GHKcurr initialiser function.";
             os << "\nAccepted keys are: 'temp', 'V', 'iconc' and 'oconc'.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
     }
     */
 
     pModel = pSurfsys->getModel();
-    assert (pModel != 0);
+    AssertLog(pModel != 0);
 
     pSurfsys->_handleGHKcurrAdd(this);
 
@@ -149,7 +150,7 @@ GHKcurr::~GHKcurr(void)
 
 void GHKcurr::setID(string const & id)
 {
-    assert(pSurfsys != 0);
+    AssertLog(pSurfsys != 0);
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
     // it pass by into the Python layer.
@@ -163,7 +164,7 @@ void GHKcurr::setID(string const & id)
 
 void GHKcurr::setChanState(ChanState * chanstate)
 {
-    assert(chanstate != 0);
+    AssertLog(chanstate != 0);
     pChanState = chanstate;
 }
 
@@ -171,13 +172,13 @@ void GHKcurr::setChanState(ChanState * chanstate)
 
 void GHKcurr::setIon(Spec * ion)
 {
-    assert (pSurfsys != 0);
+    AssertLog(pSurfsys != 0);
 
     if (ion->getValence() == 0)
     {
         ostringstream os;
         os << "Ion provided to GHK::setIon function has valence zero";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     pValence = pIon->getValence();
@@ -188,12 +189,12 @@ void GHKcurr::setIon(Spec * ion)
 
 void GHKcurr::setP(double p)
 {
-    assert(pSurfsys != 0);
+    AssertLog(pSurfsys != 0);
     if (p <= 0.0)
     {
         ostringstream os;
         os << "Permeability provided to GHKcurr::setP function can't be negative or zero";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     if (pG != 0.0)
@@ -216,7 +217,7 @@ void GHKcurr::setP(double p)
 
 void GHKcurr::setPInfo(double g, double V, double T, double oconc, double iconc)
 {
-    assert(pSurfsys != 0);
+    AssertLog(pSurfsys != 0);
 
     if (pP != 0.0)
     {
@@ -229,7 +230,7 @@ void GHKcurr::setPInfo(double g, double V, double T, double oconc, double iconc)
     {
         ostringstream os;
         os << "Conductance provided to GHKcurr::setPInfo function can't be negative or zero";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     pG = g;
 
@@ -237,7 +238,7 @@ void GHKcurr::setPInfo(double g, double V, double T, double oconc, double iconc)
     {
         ostringstream os;
         os << "Potential provided to GHKcurr::setPInfo function can't be zero.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     pV = V;
 
@@ -247,7 +248,7 @@ void GHKcurr::setPInfo(double g, double V, double T, double oconc, double iconc)
         ostringstream os;
         os << "Temperature provided to GHKcurr::setPInfo function can't be negative. ";
         os << "Temperature is required in Kelvin.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     pTemp = T;
 
@@ -255,7 +256,7 @@ void GHKcurr::setPInfo(double g, double V, double T, double oconc, double iconc)
     {
         ostringstream os;
         os << "Outer concentration provided to GHKcurr::setPInfo function can't be negative";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     pOuterConc = oconc;
@@ -264,7 +265,7 @@ void GHKcurr::setPInfo(double g, double V, double T, double oconc, double iconc)
     {
         ostringstream os;
         os << "Inner concentration provided to GHKcurr::setPInfo function can't be negative";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     pInnerConc = iconc;
 
@@ -275,7 +276,7 @@ void GHKcurr::setPInfo(double g, double V, double T, double oconc, double iconc)
 
 double GHKcurr::_G(void) const
 {
-    assert (_infosupplied() == true);
+    AssertLog(_infosupplied() == true);
     return pG;
 }
 
@@ -283,7 +284,7 @@ double GHKcurr::_G(void) const
 
 double GHKcurr::_P(void) const
 {
-    assert (_infosupplied() == true);
+    AssertLog(_infosupplied() == true);
     return pP;
 }
 
@@ -291,7 +292,7 @@ double GHKcurr::_P(void) const
 
 int GHKcurr::_valence(void) const
 {
-    assert (_infosupplied() == true);
+    AssertLog(_infosupplied() == true);
     return pValence;
 }
 
@@ -299,7 +300,7 @@ int GHKcurr::_valence(void) const
 
 double GHKcurr::_V(void) const
 {
-    assert (_infosupplied() == true);
+    AssertLog(_infosupplied() == true);
     return pV;;
 }
 
@@ -307,7 +308,7 @@ double GHKcurr::_V(void) const
 
 double GHKcurr::_temp(void) const
 {
-    assert (_infosupplied() == true);
+    AssertLog(_infosupplied() == true);
     return pTemp;
 }
 
@@ -315,7 +316,7 @@ double GHKcurr::_temp(void) const
 
 double GHKcurr::_oconc(void) const
 {
-    assert (_infosupplied() == true);
+    AssertLog(_infosupplied() == true);
     return pOuterConc;
 }
 
@@ -323,7 +324,7 @@ double GHKcurr::_oconc(void) const
 
 double GHKcurr::_iconc(void) const
 {
-    assert (_infosupplied() == true);
+    AssertLog(_infosupplied() == true);
     return pInnerConc;
 }
 
@@ -331,13 +332,13 @@ double GHKcurr::_iconc(void) const
 /*
 void GHKcurr::setGInfo(double g)
 {
-    assert (pSurfsys != 0);
+    AssertLog(pSurfsys != 0);
 
     if(g < 0.0)
     {
         ostringstream os;
         os << "Conductance provided to GHKcurr::setG function can't be negative";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     pG = g;
 }
@@ -346,7 +347,7 @@ void GHKcurr::setGInfo(double g)
 
 void GHKcurr::setGMeasInfo(std::map<std::string, double> const & ginfo)
 {
-    assert (pSurfsys != 0);
+    AssertLog(pSurfsys != 0);
 
     // Keeping any values that are not overwritten, allowing
     // partial information to be provided with this function.
@@ -365,7 +366,7 @@ void GHKcurr::setGMeasInfo(std::map<std::string, double> const & ginfo)
             os << "Unknown key: '" << gi->first << "' in conductance";
             os << " measurement information in GHKcurr::setGMeasInfo function.";
             os << "\nAccepted keys are: 'temp', 'V', 'iconc' and 'oconc'.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
     }
 }

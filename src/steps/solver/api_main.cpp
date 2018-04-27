@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -38,6 +38,8 @@
 #include "steps/solver/api.hpp"
 #include "steps/solver/statedef.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 USING(std, string);
@@ -55,13 +57,13 @@ API::API(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r)
     {
         std::ostringstream os;
         os << "No model provided to solver initializer function";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (pGeom == 0)
     {
         std::ostringstream os;
         os << "No geometry provided to solver initializer function";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // r is allowed to be null pointer for deterministic solvers
@@ -72,7 +74,7 @@ API::API(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r)
         os << "Cannot create solver object with this ";
         os << "steps.model.Model description object. ";
         os << "Model must contain at least one chemical Species.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     if (g->_countComps() == 0)
@@ -81,7 +83,7 @@ API::API(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r)
         os << "Cannot create solver object with this ";
         os << "steps.geom.Geom geometry description object. ";
         os << "Geometry must contain at least one Compartment.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
 
     }
 
@@ -95,14 +97,14 @@ API::API(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r)
             os << "Cannot create solver object with this ";
             os << "steps.geom.Geom geometry description object. ";
             os << "All Compartments must have non-zero volume.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
     }
 
     // create state object, which will in turn create compdef, specdef etc
     //objects and initialise
     pStatedef = new Statedef(m, g, r);
-    assert (pStatedef != 0);
+    AssertLog(pStatedef != 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -117,97 +119,97 @@ API::~API(void)
 
 void API::step(void)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::advance(double adv)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void  API::setRk4DT(double dt)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::getRk4DT(void) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void  API::setDT(double dt)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::getDT(void) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::setEfieldDT(double efdt)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::getEfieldDT(void) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::setTemp(double temp)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::getTemp(void) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::getA0(void) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint API::getNSteps(void) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::setTime(double time)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::setNSteps(uint nsteps)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////

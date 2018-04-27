@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -43,6 +43,8 @@
 #include "steps/model/sreac.hpp"
 #include "steps/model/spec.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
@@ -72,13 +74,13 @@ SReac::SReac(string const & id, Surfsys * surfsys,
     {
         ostringstream os;
         os << "No surfsys provided to SReac initializer function";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (pKcst < 0.0)
     {
         ostringstream os;
         os << "Surface reaction constant can't be negative";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // Can't have species on the lhs in the inner and outer compartment
@@ -87,11 +89,11 @@ SReac::SReac(string const & id, Surfsys * surfsys,
         ostringstream os;
         os << "Volume lhs species must belong to either inner or outer ";
         os << "compartment, not both.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     pModel = pSurfsys->getModel();
-    assert (pModel != 0);
+    AssertLog(pModel != 0);
 
     if (olhs.size() > 0) setOLHS(olhs);
     if (ilhs.size() > 0) setILHS(ilhs);
@@ -132,7 +134,7 @@ void SReac::_handleSelfDelete(void)
 
 void SReac::setID(string const & id)
 {
-    assert(pSurfsys != 0);
+    AssertLog(pSurfsys != 0);
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
     // it pass by into the Python layer.
@@ -146,7 +148,7 @@ void SReac::setID(string const & id)
 
 void SReac::setOLHS(vector<Spec *> const & olhs)
 {
-    assert (pSurfsys != 0);
+    AssertLog(pSurfsys != 0);
 
     if (pILHS.size() != 0)
     {
@@ -158,7 +160,7 @@ void SReac::setOLHS(vector<Spec *> const & olhs)
     SpecPVecCI ol_end = olhs.end();
     for (SpecPVecCI ol = olhs.begin(); ol != ol_end; ++ol)
     {
-        assert ((*ol)->getModel() == pModel);
+        AssertLog((*ol)->getModel() == pModel);
         pOLHS.push_back(*ol);
     }
     pOuter = true;
@@ -169,7 +171,7 @@ void SReac::setOLHS(vector<Spec *> const & olhs)
 
 void SReac::setILHS(vector<Spec *> const & ilhs)
 {
-    assert (pSurfsys != 0);
+    AssertLog(pSurfsys != 0);
 
     if (pOLHS.size() != 0)
     {
@@ -181,7 +183,7 @@ void SReac::setILHS(vector<Spec *> const & ilhs)
     SpecPVecCI il_end = ilhs.end();
     for (SpecPVecCI il = ilhs.begin(); il != il_end; ++il)
     {
-        assert ((*il)->getModel() == pModel);
+        AssertLog((*il)->getModel() == pModel);
         pILHS.push_back(*il);
     }
     pOuter = false;
@@ -192,12 +194,12 @@ void SReac::setILHS(vector<Spec *> const & ilhs)
 
 void SReac::setSLHS(vector<Spec *> const & slhs)
 {
-    assert (pSurfsys != 0);
+    AssertLog(pSurfsys != 0);
     pSLHS.clear();
     SpecPVecCI sl_end = slhs.end();
     for (SpecPVecCI sl = slhs.begin(); sl != sl_end; ++sl)
     {
-        assert ((*sl)->getModel() == pModel);
+        AssertLog((*sl)->getModel() == pModel);
         pSLHS.push_back(*sl);
     }
 
@@ -209,12 +211,12 @@ void SReac::setSLHS(vector<Spec *> const & slhs)
 
 void SReac::setIRHS(vector<Spec *> const & irhs)
 {
-    assert (pSurfsys != 0);
+    AssertLog(pSurfsys != 0);
     pIRHS.clear();
     SpecPVecCI ir_end = irhs.end();
     for (SpecPVecCI ir = irhs.begin(); ir != ir_end; ++ir)
     {
-        assert ((*ir)->getModel() == pModel);
+        AssertLog((*ir)->getModel() == pModel);
         pIRHS.push_back(*ir);
     }
 }
@@ -223,12 +225,12 @@ void SReac::setIRHS(vector<Spec *> const & irhs)
 
 void SReac::setSRHS(vector<Spec *> const & srhs)
 {
-    assert (pSurfsys != 0);
+    AssertLog(pSurfsys != 0);
     pSRHS.clear();
     SpecPVecCI sr_end = srhs.end();
     for (SpecPVecCI sr = srhs.begin(); sr != sr_end; ++sr)
     {
-        assert ((*sr)->getModel() == pModel);
+        AssertLog((*sr)->getModel() == pModel);
         pSRHS.push_back(*sr);
     }
 }
@@ -237,12 +239,12 @@ void SReac::setSRHS(vector<Spec *> const & srhs)
 
 void SReac::setORHS(vector<Spec *> const & orhs)
 {
-    assert (pSurfsys != 0);
+    AssertLog(pSurfsys != 0);
     pORHS.clear();
     SpecPVecCI or_end = orhs.end();
     for (SpecPVecCI ors = orhs.begin(); ors != or_end; ++ors)
     {
-        assert ((*ors)->getModel() == pModel);
+        AssertLog((*ors)->getModel() == pModel);
         pORHS.push_back(*ors);
     }
 }
@@ -251,12 +253,12 @@ void SReac::setORHS(vector<Spec *> const & orhs)
 
 void SReac::setKcst(double kcst)
 {
-    assert (pSurfsys != 0);
+    AssertLog(pSurfsys != 0);
     if(kcst < 0.0)
     {
         ostringstream os;
         os << "Surface reaction constant can't be negative";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     pKcst = kcst;
 }
@@ -267,7 +269,7 @@ vector<Spec *> SReac::getAllSpecs(void) const
 {
     SpecPVec specs = SpecPVec();
     bool first_occ = true;
-    assert(pOLHS.size() == 0 || pILHS.size() == 0);
+    AssertLog(pOLHS.size() == 0 || pILHS.size() == 0);
 
     SpecPVec olhs = getOLHS();
     SpecPVecCI ol_end = olhs.end();

@@ -32,7 +32,10 @@ cdef extern from "steps/error.hpp" namespace "steps":
         Err(std.string)
         char* getMsg()
         char* what()
-        
+
+    cdef cppclass AssertErr(Err):
+        AssertErr(std.string)
+
     ###### Cybinding for NotImplErr ######
     cdef cppclass NotImplErr(Err):
         NotImplErr(std.string)    

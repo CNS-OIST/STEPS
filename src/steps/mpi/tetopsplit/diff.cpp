@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -43,11 +43,12 @@
 #include "steps/mpi/tetopsplit/tet.hpp"
 #include "steps/mpi/tetopsplit/kproc.hpp"
 #include "steps/mpi/tetopsplit/tetopsplit.hpp"
-#include "third_party/easylogging++.h"
 
 #include <iostream>
 #include <mpi.h>
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace smtos = steps::mpi::tetopsplit;
@@ -71,8 +72,8 @@ smtos::Diff::Diff(ssolver::Diffdef * ddef, smtos::Tet * tet)
 , pDirections()
 , pNdirections(0)
 {
-    assert(pDiffdef != 0);
-    assert(pTet != 0);
+    AssertLog(pDiffdef != 0);
+    AssertLog(pTet != 0);
     type = KP_DIFF;
     smtos::Tet * next[4] =
     {
@@ -136,7 +137,7 @@ smtos::Diff::Diff(ssolver::Diffdef * ddef, smtos::Tet * tet)
     }
 
     // Should not be negative!
-    assert(pScaledDcst >= 0);
+    AssertLog(pScaledDcst >= 0);
 
     // Setup the selector distribution.
     if (pScaledDcst == 0.0)
@@ -204,10 +205,7 @@ void smtos::Diff::checkpoint(std::fstream & cp_file)
         cp_file.write((char*)&(item.first), sizeof(uint));
         cp_file.write((char*)&(item.second), sizeof(double));
     }
-    
-    #ifdef DIRECTIONAL_DCST_DEBUG
-    CLOG_IF(n_direct_dcsts != 0, DEBUG, "steps_debug") << "Stored Directional Dcst mapping: " << directionalDcsts << "\n";
-    #endif
+
     
     cp_file.write((char*)&pScaledDcst, sizeof(double));
     cp_file.write((char*)&pDcst, sizeof(double));
@@ -237,10 +235,6 @@ void smtos::Diff::restore(std::fstream & cp_file)
         cp_file.read((char*)&value, sizeof(double));
         directionalDcsts[id] = value;
     }
-    
-    #ifdef DIRECTIONAL_DCST_DEBUG
-    CLOG_IF(n_direct_dcsts != 0, DEBUG, "steps_debug") << "Restored Directional Dcst mapping: " << directionalDcsts << "\n";
-    #endif
 
     cp_file.read((char*)&pScaledDcst, sizeof(double));
     cp_file.read((char*)&pDcst, sizeof(double));
@@ -273,7 +267,7 @@ void smtos::Diff::setupDeps(void)
     // kprocs.
 
     // Search for dependencies in the 'source' tetrahedron.
-    assert(pTet->getInHost());
+    AssertLog(pTet->getInHost());
     std::set<uint> remote;
     std::set<uint> remote_all;
     
@@ -300,7 +294,7 @@ void smtos::Diff::setupDeps(void)
         if (next->getHost() != pTet->getHost()) {
             std::ostringstream os;
             os << "Patch triangle " << next->idx() << " and its compartment tetrahedron " << pTet->idx()  << " belong to different hosts.\n";
-            throw steps::NotImplErr(os.str());
+            NotImplErrLog(os.str());
         }
     
         nkprocs = next->countKProcs();
@@ -360,7 +354,7 @@ void smtos::Diff::setupDeps(void)
             if (next2->getHost() != next->getHost()) {
                 std::ostringstream os;
                 os << "Patch triangle " << next2->idx() << " and its compartment tetrahedron " << next->idx()  << " belong to different hosts.\n";
-                throw steps::NotImplErr(os.str());
+                NotImplErrLog(os.str());
             }
             
             // Find deps.
@@ -438,8 +432,8 @@ void smtos::Diff::reset(void)
 
 void smtos::Diff::setDiffBndActive(uint i, bool active)
 {
-    assert (i < 4);
-    assert(pDiffBndDirection[i] == true);
+    AssertLog(i < 4);
+    AssertLog(pDiffBndDirection[i] == true);
 
     // Only need to update if the flags are changing
     if (pDiffBndActive[i] != active)
@@ -454,8 +448,8 @@ void smtos::Diff::setDiffBndActive(uint i, bool active)
 
 bool smtos::Diff::getDiffBndActive(uint i) const
 {
-    assert (i < 4);
-    assert(pDiffBndDirection[i] == true);
+    AssertLog(i < 4);
+    AssertLog(pDiffBndDirection[i] == true);
 
     return pDiffBndActive[i];
 }
@@ -476,7 +470,7 @@ double smtos::Diff::dcst(int direction)
 
 void smtos::Diff::setDcst(double dcst)
 {
-    assert(dcst >= 0.0);
+    AssertLog(dcst >= 0.0);
     pDcst = dcst;
     directionalDcsts.clear();
     
@@ -524,7 +518,7 @@ void smtos::Diff::setDcst(double dcst)
         pScaledDcst += d[i];
     }
     // Should not be negative!
-    assert(pScaledDcst >= 0);
+    AssertLog(pScaledDcst >= 0);
 
     // Setup the selector distribution.
     if (pScaledDcst == 0.0)
@@ -573,13 +567,10 @@ void smtos::Diff::setDcst(double dcst)
 
 void smtos::Diff::setDirectionDcst(int direction, double dcst)
 {
-    #ifdef DIRECTIONAL_DCST_DEBUG
-    CLOG(DEBUG, "steps_debug") << "Direction: " << direction << " dcst: " << dcst << "\n";
-    #endif
-    
-    assert(direction < 4);
-    assert(direction >= 0);
-    assert(dcst >= 0.0);
+
+    AssertLog(direction < 4);
+    AssertLog(direction >= 0);
+    AssertLog(dcst >= 0.0);
     directionalDcsts[direction] = dcst;
     
     // Automatically activate boundary diffusion if necessary
@@ -604,26 +595,13 @@ void smtos::Diff::setDirectionDcst(int direction, double dcst)
         {
             if (pDiffBndDirection[i] == true)
             {
-                #ifdef DIRECTIONAL_DCST_DEBUG
-                CLOG(DEBUG, "steps_debug") << "enable boundary\n";
-                CLOG(DEBUG, "steps_debug") << "activation: " << pDiffBndActive[i] << "\n";
-                #endif
-                
+
                 if (pDiffBndActive[i]) {
                     if (directionalDcsts.find(i) != directionalDcsts.end()) {
-                    
-                        #ifdef DIRECTIONAL_DCST_DEBUG
-                        CLOG(DEBUG, "steps_debug") << "enable boundary, use stored directional dcst: " << directionalDcsts[i] << " to compute d[" << i << "]\n";
-                        #endif
-                        
                         d[i] = (pTet->area(i) * directionalDcsts[i]) / (pTet->vol() * dist);
                     }
                     else
                     {
-                        #ifdef DIRECTIONAL_DCST_DEBUG
-                        CLOG(DEBUG, "steps_debug") << "enable boundary, use default dcst: " << pDcst << " to compute d[" << i << "]\n";
-                        #endif
-                        
                         d[i] = (pTet->area(i) * pDcst) / (pTet->vol() * dist);
                     }
                 }
@@ -635,19 +613,9 @@ void smtos::Diff::setDirectionDcst(int direction, double dcst)
                 // NOT separated by a patch were allowing diffusion, even without diffusion boundary
                 if (next[i]->compdef() == pTet->compdef())    {
                     if (directionalDcsts.find(i) != directionalDcsts.end()) {
-                    
-                        #ifdef DIRECTIONAL_DCST_DEBUG
-                        CLOG(DEBUG, "steps_debug")  << "no boundary, use stored directional dcst: " << directionalDcsts[i] << " to compute d[" << i << "]\n";
-                        #endif
-                        
                         d[i] = (pTet->area(i) * directionalDcsts[i]) / (pTet->vol() * dist);
                     }
                     else {
-                    
-                        #ifdef DIRECTIONAL_DCST_DEBUG
-                        CLOG(DEBUG, "steps_debug") << "no boundary, use default dcst: " << pDcst << " to compute d[" << i << "]\n";
-                        #endif
-                        
                         d[i] = (pTet->area(i) * pDcst) / (pTet->vol() * dist);
                     }
                 }
@@ -664,7 +632,7 @@ void smtos::Diff::setDirectionDcst(int direction, double dcst)
         pScaledDcst += d[i];
     }
     // Should not be negative!
-    assert(pScaledDcst >= 0);
+    AssertLog(pScaledDcst >= 0);
     // Reset this stuff- may have been created before, may not have been (if original dcst was 0)
     pNdirections=0;
     pDirections.clear();
@@ -715,7 +683,7 @@ double smtos::Diff::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
 
     // Compute the rate.
     double rate = (pScaledDcst) * static_cast<double>(pTet->pools()[lidxTet]);
-    assert(std::isnan(rate) == false);
+    AssertLog(std::isnan(rate) == false);
 
     // Return.
     return rate;
@@ -741,7 +709,7 @@ int smtos::Diff::apply(steps::rng::RNG * rng)
 
 	if (clamped == false)
 	{
-		//assert(*local > 0);
+		//AssertLog(*local > 0);
 		if (*local == 0)
 		{
 			return -2;
@@ -758,8 +726,8 @@ int smtos::Diff::apply(steps::rng::RNG * rng)
 		smtos::Tet * nexttet = pTet->nextTet(0);
 		// If there is no next tet 0, pCDFSelector[0] should be zero
 		// So we can assert that nextet 0 does indeed exist
-		assert (nexttet != 0);
-		assert(pNeighbCompLidx[0] > -1);
+		AssertLog(nexttet != 0);
+		AssertLog(pNeighbCompLidx[0] > -1);
 
 		if (nexttet->clamped(pNeighbCompLidx[0]) == false)
 		{
@@ -778,8 +746,8 @@ int smtos::Diff::apply(steps::rng::RNG * rng)
 		smtos::Tet * nexttet = pTet->nextTet(1);
 		// If there is no next tet 1, pCDFSelector[1] should be zero
 		// So we can assert that nextet 1 does indeed exist
-		assert (nexttet != 0);
-		assert(pNeighbCompLidx[1] > -1);
+		AssertLog(nexttet != 0);
+		AssertLog(pNeighbCompLidx[1] > -1);
 
 		if (nexttet->clamped(pNeighbCompLidx[1]) == false)
 		{
@@ -799,8 +767,8 @@ int smtos::Diff::apply(steps::rng::RNG * rng)
 		smtos::Tet * nexttet = pTet->nextTet(2);
 		// If there is no next tet 2, pCDFSelector[2] should be zero
 		// So we can assert that nextet 2 does indeed exist
-		assert (nexttet != 0);
-		assert(pNeighbCompLidx[2] > -1);
+		AssertLog(nexttet != 0);
+		AssertLog(pNeighbCompLidx[2] > -1);
 		if (nexttet->clamped(pNeighbCompLidx[2]) == false)
 		{
 			nexttet->incCount(pNeighbCompLidx[2],1);
@@ -818,8 +786,8 @@ int smtos::Diff::apply(steps::rng::RNG * rng)
 		smtos::Tet * nexttet = pTet->nextTet(3);
 		// If there is no next tet 3, pCDFSelector[3] should be zero
 		// So we can assert that nextet 3 does indeed exist
-		assert (nexttet != 0);
-		assert(pNeighbCompLidx[3] > -1);
+		AssertLog(nexttet != 0);
+		AssertLog(pNeighbCompLidx[3] > -1);
 
 		if (nexttet->clamped(pNeighbCompLidx[3]) == false)
 		{
@@ -834,9 +802,7 @@ int smtos::Diff::apply(steps::rng::RNG * rng)
 	}
 
 	// This should never happen!
-	std::cerr << "Cannot find a suitable direction for diffusion!\n";
-	throw;
-	return -1;
+	ProgErrLog("Cannot find a suitable direction for diffusion!");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -849,14 +815,14 @@ int smtos::Diff::apply(steps::rng::RNG * rng, uint nmolcs)
 
 	if (clamped == false)
 	{
-		//assert(*local > 0);
+		//AssertLog(*local > 0);
         if (*local == 0)
         {
             return -2;
         }
     }
 
-	assert(pNdirections >= 1);
+	AssertLog(pNdirections >= 1);
 
     // Multinomial by stl
 	uint molcs_moved = 0;
@@ -882,8 +848,8 @@ int smtos::Diff::apply(steps::rng::RNG * rng, uint nmolcs)
         {
         	smtos::Tet * nexttet = pTet->nextTet(direction);
 
-        	assert (nexttet != 0);
-        	assert(pNeighbCompLidx[direction] > -1);
+        	AssertLog(nexttet != 0);
+        	AssertLog(pNeighbCompLidx[direction] > -1);
 
         	if (nexttet->clamped(pNeighbCompLidx[direction]) == false)
         	{
@@ -902,8 +868,8 @@ int smtos::Diff::apply(steps::rng::RNG * rng, uint nmolcs)
     {
         	smtos::Tet * nexttet = pTet->nextTet(direction);
 
-        	assert (nexttet != 0);
-        	assert(pNeighbCompLidx[direction] > -1);
+        	AssertLog(nexttet != 0);
+        	AssertLog(pNeighbCompLidx[direction] > -1);
 
         	if (nexttet->clamped(pNeighbCompLidx[direction]) == false)
         	{
@@ -913,7 +879,7 @@ int smtos::Diff::apply(steps::rng::RNG * rng, uint nmolcs)
         	molcs_moved+=molcsthisdir;
     }
 
-	assert(molcs_moved == nmolcs);
+	AssertLog(molcs_moved == nmolcs);
 
 	if (clamped == false) {pTet->incCount(lidxTet, -nmolcs); }
 

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -31,10 +31,12 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/solver/compdef.hpp"
 #include "steps/tetode/comp.hpp"
 #include "steps/tetode/tet.hpp"
-
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace stode = steps::tetode;
@@ -48,7 +50,7 @@ stode::Comp::Comp(steps::solver::Compdef * compdef)
 , pVol(0.0)
 , pTets_GtoL()
 {
-    assert(pCompdef != 0);
+    AssertLog(pCompdef != 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -75,7 +77,7 @@ void stode::Comp::restore(std::fstream & cp_file)
 
 void stode::Comp::addTet(stode::Tet * tet)
 {
-    assert (tet->compdef() == def());
+    AssertLog(tet->compdef() == def());
     uint lidx = pTets.size();
     pTets.push_back(tet);
     pTets_GtoL.insert(std::pair<uint, uint>(tet->idx(), lidx));
@@ -87,7 +89,7 @@ void stode::Comp::addTet(stode::Tet * tet)
 
 stode::Tet * stode::Comp::getTet(uint lidx)
 {
-    assert(lidx < pTets.size());
+    AssertLog(lidx < pTets.size());
     return pTets[lidx];
 }
 
@@ -97,7 +99,7 @@ stode::Tet * stode::Comp::getTet(uint lidx)
 uint stode::Comp::getTet_GtoL(uint gidx)
 {
     std::map<uint, uint>::const_iterator lidx_it = pTets_GtoL.find(gidx);
-    assert(lidx_it != pTets_GtoL.end());
+    AssertLog(lidx_it != pTets_GtoL.end());
     return lidx_it->second;
 }
 

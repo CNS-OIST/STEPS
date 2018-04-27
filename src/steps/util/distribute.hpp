@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -35,7 +35,8 @@
 
 #include "steps/error.hpp"
 #include "steps/math/sample.hpp"
-
+// logging
+#include "third_party/easyloggingpp/src/easylogging++.h"
 namespace steps {
 namespace util {
 
@@ -92,7 +93,7 @@ void distribute_quantity(double x, FwdIter b, FwdIter e, Weight weight, SetCount
 
     if (b==e) return;
 
-    if (x<0) throw steps::ArgErr("negative quantity to distribute");
+    if (x<0) ArgErrLog("negative quantity to distribute");
     if (x==0) {
         // Everybody gets zero!
         for (auto i=b; i!=e; ++i) set_count(*i,0);
@@ -103,7 +104,7 @@ void distribute_quantity(double x, FwdIter b, FwdIter e, Weight weight, SetCount
         for (auto i=b; i!=e; ++i) total_weight += weight(*i);
 
     if (total_weight<=0)
-        throw steps::ArgErr("non-positive total weight for distribution");
+        ArgErrLog("non-positive total weight for distribution");
 
     // Allocate rounded-down fractions and determine weights for sampling.
     if (U(g) < x-std::floor(x))
@@ -121,7 +122,7 @@ void distribute_quantity(double x, FwdIter b, FwdIter e, Weight weight, SetCount
         pi.push_back(xi-xi_floor);
 
         if (xi_floor-1>std::numeric_limits<uint>::max())
-            throw steps::ArgErr("quantity too large to distribute (integer limit)");
+            ArgErrLog("quantity too large to distribute (integer limit)");
 
         uint ni = (uint)xi_floor;
         set_count(*i, ni);
@@ -129,7 +130,7 @@ void distribute_quantity(double x, FwdIter b, FwdIter e, Weight weight, SetCount
     }
     
     if (allocated>x)
-        throw steps::ProgErr("internal error in count rounding");
+        ProgErrLog("internal error in count rounding");
     uint remainder = (uint)(x-allocated);
 
     if (remainder == 0) return;

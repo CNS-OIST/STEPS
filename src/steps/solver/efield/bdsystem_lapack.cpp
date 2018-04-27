@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -31,7 +31,7 @@
 #include "steps/common.h"
 #include "steps/solver/efield/bdsystem_lapack.hpp"
 
-#include "third_party/easylogging++.h"
+#include "easylogging++.h"
 
 namespace steps {
 namespace solver {

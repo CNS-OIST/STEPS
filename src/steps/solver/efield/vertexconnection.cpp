@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -32,9 +32,12 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/solver/efield/vertexconnection.hpp"
 #include "steps/solver/efield/vertexelement.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace sefield = steps::solver::efield;
@@ -47,8 +50,8 @@ sefield::VertexConnection::VertexConnection(sefield::VertexElement * v1, sefield
 , pVert2(v2)
 , pGeomCC(0.0)
 {
-    assert(v1 != 0);
-    assert(v2 != 0);
+    AssertLog(v1 != 0);
+    AssertLog(v2 != 0);
     pVert1->addConnection(this);
     pVert2->addConnection(this);
 }
@@ -88,7 +91,7 @@ sefield::VertexElement * sefield::VertexConnection::getOther(sefield::VertexElem
     }
     else
     {
-        assert(0);
+        AssertLog(0);
         ret = 0;
     }
     return ret;

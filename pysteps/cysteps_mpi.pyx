@@ -62,6 +62,12 @@ cdef class _py_TetOpSplitP(_py_API):
         for key, elem in tri_hosts.items():
             _tri_hosts[key] = elem
         # We constructed a map. Now call constructor
+        if model == None:
+            raise TypeError('The Model object is empty.')
+        if geom == None:
+            raise TypeError('The Geom object is empty.')
+        if rng == None:
+            raise TypeError('The RNG object is empty.')
         self._ptr = new TetOpSplitP(model.ptr(), geom.ptr(), rng.ptr(), calcMembPot, tet_hosts, _tri_hosts, wm_hosts)
 
     def getSolverName(self, ):

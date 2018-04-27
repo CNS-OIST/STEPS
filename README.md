@@ -12,7 +12,7 @@ in previous releases. Please follow the instructions below.
 Minimum Prerequisites
 ---------------------
 1. C++ compiler supporting c++11 (e.g. gcc 4.8, clang 3.3) 
-2. Python2/3 (2.7.x / 3.4.x or above)
+2. Python2/3 (2.7.x / 3.3.x or above)
 3. NumPy (http://www.numpy.org/)
 4. CMake (https://cmake.org/)
 5. Cython (http://www.cython.org/) 
@@ -136,6 +136,9 @@ Linux Debian based:
 
 OSX:
  `brew install openblas mpich`
+ 
+If you use Anaconda:
+`conda install scipy numpy matplotlib cmake cython openblas openmpi`
  
 Validation and Examples
 -----------------------

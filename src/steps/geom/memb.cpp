@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -43,6 +43,9 @@
 #include "steps/geom/tmcomp.hpp"
 #include "steps/util/collections.hpp"
 
+// logging
+#include "easylogging++.h"
+
 namespace stetmesh = steps::tetmesh;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -65,19 +68,19 @@ stetmesh::Memb::Memb(std::string const & id, Tetmesh * container,
     using steps::ArgErr;
 
     if (pTetmesh == 0)
-        throw ArgErr("No mesh provided to Membrane initializer function.");
+        ArgErrLog("No mesh provided to Membrane initializer function.");
 
     if (patches.size() == 0)
-        throw ArgErr("No Patches provided to Membrane initializer function.");
+        ArgErrLog("No Patches provided to Membrane initializer function.");
 
     if (pOpt_method != 1 && pOpt_method != 2)
-        throw ArgErr("Unknown optimization method. Choices are 1 or 2.");
+        ArgErrLog("Unknown optimization method. Choices are 1 or 2.");
 
     if (pSearch_percent > 100.0)
-        throw ArgErr("Search percentage is greater than 100.");
+        ArgErrLog("Search percentage is greater than 100.");
 
     if (pSearch_percent <= 0.0)
-        throw ArgErr("Search percentage must be greater than 0.");
+        ArgErrLog("Search percentage must be greater than 0.");
 
     std::set<uint> tets_set;
     for (const TmPatch *p: patches) {
@@ -86,7 +89,7 @@ stetmesh::Memb::Memb(std::string const & id, Tetmesh * container,
         
         stetmesh::TmComp *comp = dynamic_cast<stetmesh::TmComp *>(p->getIComp());
         if (comp == nullptr)
-            throw steps::ArgErr("Conduction volume (inner compartment(s) to "
+            ArgErrLog("Conduction volume (inner compartment(s) to "
                     "membrane patch(es) must be tetrahedral and not well-mixed.");
 
         const auto &comp_tets = comp->_getAllTetIndices();
@@ -98,7 +101,7 @@ stetmesh::Memb::Memb(std::string const & id, Tetmesh * container,
     pTrisN = pTri_indices.size();
     
     if (pTrisN == 0)
-        throw ArgErr("Membrane contains no triangles.");
+        ArgErrLog("Membrane contains no triangles.");
 
     if (verify) verifyMemb();
 
@@ -125,7 +128,7 @@ std::vector<bool> stetmesh::Memb::isTriInside(const std::vector<uint> &tri) cons
 ////////////////////////////////////////////////////////////////////////////////
 
 void stetmesh::Memb::verifyMemb() {
-    std::cout << "Verifying membrane. This can take some time...\n";
+    CLOG(INFO, "general_log") << "Verifying membrane. This can take some time...\n";
     // Now perform some checks on the triangle and print warning if surface is open, or has more than 3 neighbours
     std::vector<uint>::const_iterator tri_end = pTri_indices.end();
     for (std::vector<uint>::const_iterator tri = pTri_indices.begin(); tri != tri_end; ++tri)
@@ -148,10 +151,10 @@ void stetmesh::Memb::verifyMemb() {
         // IF A TRIANGLE IS ON A SHARP EDGE IT CAN HAVE 5 OR EVEN 7 NEIGHBOURS
         if ((!open()) && neighbours < 3)
         {
-            std::cout << "WARNING: Triangular surface provided to Membrane initializer function";
-            std::cout << " is thought to be an open surface.\n";
+            CLOG(INFO, "general_log") << "WARNING: Triangular surface provided to Membrane initializer function";
+            CLOG(INFO, "general_log") << " is thought to be an open surface.\n";
             pOpen = true;
-            // throw steps::ArgErr(os.str());
+            // ArgErrLog(os.str());
         }
         // What can we say if tri has more than 3 neighbours? Probably a bad surface, though with particularly
         // 'pointed' regions neighbours can be 5, 7, or even higher even number and still
@@ -161,7 +164,7 @@ void stetmesh::Memb::verifyMemb() {
         // test later to catch that.
         if (neighbours > 3)
         {
-            std::cout << "WARNING: Triangle " << (*tri) << " has " << neighbours << " neighbours.\n";
+            CLOG(INFO, "general_log") << "WARNING: Triangle " << (*tri) << " has " << neighbours << " neighbours.\n";
         }
     }
 
@@ -200,7 +203,7 @@ void stetmesh::Memb::verifyMemb() {
     }
 
     if (tri_set.size() != pTri_indices.size())
-        throw steps::ArgErr("Triangular surface provided to Membrane initializer function is a multiple surface.");
+        ArgErrLog("Triangular surface provided to Membrane initializer function is a multiple surface.");
 
     // Loop over all triangles and test that all triangles have one tetrahedron
     // neighbour in the volume.
@@ -218,11 +221,11 @@ void stetmesh::Memb::verifyMemb() {
         }
 
         if (tetneighbours < 1)
-            throw steps::ArgErr("Conduction volume provided to Membrane initializer function "
+            ArgErrLog("Conduction volume provided to Membrane initializer function "
                   " is not connected to membrane triangle # " + std::to_string(*tri) + ".");
 
         if (tetneighbours > 1)
-            throw steps::ArgErr("Conduction volume provided to Membrane initializer function "
+            ArgErrLog("Conduction volume provided to Membrane initializer function "
                   " is connected twice to membrane triangle # " + std::to_string(*tri) + ".");
     }
 
@@ -270,7 +273,7 @@ void stetmesh::Memb::verifyMemb() {
         std::ostringstream os;
         os << "Conduction volume provided to Membrane initializer function";
         os << " is a multiple volume.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
 
@@ -299,7 +302,7 @@ void stetmesh::Memb::verifyMemb() {
                 {
                     if (tettetneighbs[i] == (*tettemp))
                     {
-                        assert(gotneighb[i] == false);
+                        AssertLog(gotneighb[i] == false);
                         gotneighb[i] = true;
                         break;
                     }

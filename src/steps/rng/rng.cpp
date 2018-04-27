@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -34,10 +34,13 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/math/tools.hpp"
 #include "steps/rng/rng.hpp"
 #include "steps/rng/small_binomial.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 // Standard library.
@@ -70,7 +73,7 @@ RNG::~RNG(void)
 
 void RNG::initialize(ulong const & seed)
 {
-    assert(rBuffer != 0);
+    AssertLog(rBuffer != 0);
     concreteInitialize(seed);
     pInitialized = true;
     concreteFillBuffer();
@@ -268,8 +271,8 @@ S120:
     // JJV added argument checker here.
     if(mu >= 0.0) goto S125;
     // NO EXIT!
-    std::cerr << "MU < 0 in IGNPOI: MU:" << mu << std::endl;
-    std::cerr << "Abort\n";
+    CLOG(WARNING, "general_log") << "MU < 0 in IGNPOI: MU:" << mu << std::endl;
+    CLOG(WARNING, "general_log") << "Abort\n";
     exit(1);
 
 S125:

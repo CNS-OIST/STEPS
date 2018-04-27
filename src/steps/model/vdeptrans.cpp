@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -38,6 +38,8 @@
 #include "steps/model/chanstate.hpp"
 #include "steps/model/chan.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
@@ -65,28 +67,28 @@ VDepTrans::VDepTrans(std::string const & id, Surfsys * surfsys,
     {
         ostringstream os;
         os << "No surfsys provided to VDepTrans initializer function";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (pSrc->getChan() != pDst->getChan())
     {
         ostringstream os;
         os << "Source channel state and destination channel state do not ";
         os << "belong to the same channel";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     if (rate.size() != pTablesize)
     {
         ostringstream os;
         os << "Table of transition rates is not of expected size";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     pModel = pSurfsys->getModel();
-    assert (pModel != 0);
+    AssertLog(pModel != 0);
 
     pChan = pSrc->getChan();
 
-    assert(pDV > 0.0);
+    AssertLog(pDV > 0.0);
 
     // Copy the rate information to local array
     pRate = new double[pTablesize];
@@ -120,7 +122,7 @@ void VDepTrans::_handleSelfDelete(void)
 
 void VDepTrans::setID(string const & id)
 {
-    assert(pSurfsys != 0);
+    AssertLog(pSurfsys != 0);
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
     // it pass by into the Python layer.
@@ -134,14 +136,14 @@ void VDepTrans::setID(string const & id)
 
 void VDepTrans::setSrc(ChanState * src)
 {
-    assert(src !=0);
+    AssertLog(src !=0);
 
     if (src->getChan() != pDst->getChan())
     {
         ostringstream os;
         os << "Source channel state and destination channel state do not ";
         os << "belong to the same channel";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     pSrc = src;
@@ -151,14 +153,14 @@ void VDepTrans::setSrc(ChanState * src)
 
 void VDepTrans::setDst(ChanState * dst)
 {
-    assert(dst !=0);
+    AssertLog(dst !=0);
 
     if (dst->getChan() != pSrc->getChan())
     {
         ostringstream os;
         os << "Source channel state and destination channel state do not ";
         os << "belong to the same channel";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     pDst = dst;

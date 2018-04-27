@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -34,7 +34,8 @@
 #include "steps/error.hpp"
 #include "steps/solver/api.hpp"
 #include "steps/solver/statedef.hpp"
-
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 USING(std, string);
@@ -58,7 +59,7 @@ void API::setPatchArea(string const & p, double area)
     {
         std::ostringstream os;
         os << "Area cannot be negative or zero.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // the following may raise an exception if string is unused
     uint pidx = pStatedef->getPatchIdx(p);
@@ -85,7 +86,7 @@ void API::setPatchCount(string const & p, string const & s, double n)
     {
         std::ostringstream os;
         os << "Number of molecules cannot be negative.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // the following may raise exceptions if strings are unused
     uint pidx = pStatedef->getPatchIdx(p);
@@ -113,7 +114,7 @@ void API::setPatchAmount(string const & p, string const & s, double a)
     {
         std::ostringstream os;
         os << "Amount of mols cannot be negative.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // the following may raise exceptions if strings are unused
     uint pidx = pStatedef->getPatchIdx(p);
@@ -163,7 +164,7 @@ void API::setPatchSReacK(string const & p, string const & sr, double kf)
     {
         std::ostringstream os;
         os << "Reaction constant cannot be negative.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // the following may raise exceptions if strings are unused
     uint pidx = pStatedef->getPatchIdx(p);
@@ -275,56 +276,56 @@ void API::resetPatchSReacExtent(string const & p, string const & sr)
 
 void API::_setPatchArea(uint pidx, double area)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getPatchSReacH(uint pidx, uint ridx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getPatchSReacC(uint pidx, uint ridx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getPatchSReacA(uint pidx, uint ridx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint API::_getPatchSReacExtent(uint pidx, uint ridx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_resetPatchSReacExtent(uint pidx, uint ridx)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool API::_getPatchVDepSReacActive(uint pidx, uint vsridx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setPatchVDepSReacActive(uint pidx, uint vsridx, bool a)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////

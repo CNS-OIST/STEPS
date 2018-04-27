@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -34,7 +34,8 @@
 #include "steps/error.hpp"
 #include "steps/solver/api.hpp"
 #include "steps/solver/statedef.hpp"
-
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 USING(std, string);
@@ -84,28 +85,28 @@ void API::setMembRes(std::string const & m, double ro, double vrev)
 
 void API::_setMembPotential(uint midx, double v)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setMembCapac(uint midx, double cm)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setMembVolRes(uint midx, double ro)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setMembRes(uint midx, double ro, double vrev)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -56,7 +56,8 @@
 
 
 #include "steps/solver/efield/efield.hpp"
-
+// logging
+#include "third_party/easyloggingpp/src/easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace steps{
@@ -397,8 +398,8 @@ public:
 
     inline steps::mpi::tetopsplit::Comp * _comp(uint cidx) const
     {
-        assert(cidx < statedef()->countComps());
-        assert(statedef()->countComps() == pComps.size());
+        AssertLog(cidx < statedef()->countComps());
+        AssertLog(statedef()->countComps() == pComps.size());
         return pComps[cidx];
     }
 
@@ -407,20 +408,20 @@ public:
 
     inline steps::mpi::tetopsplit::Patch * _patch(uint pidx) const
     {
-        assert(pidx < statedef()->countPatches());
-        assert(statedef()->countPatches() == pPatches.size());
+        AssertLog(pidx < statedef()->countPatches());
+        AssertLog(statedef()->countPatches() == pPatches.size());
         return pPatches[pidx];
     }
 
     inline steps::mpi::tetopsplit::DiffBoundary * _diffboundary(uint dbidx) const
     {
-        assert(dbidx < statedef()->countDiffBoundaries());
+        AssertLog(dbidx < statedef()->countDiffBoundaries());
         return pDiffBoundaries[dbidx];
     }
 
     inline steps::mpi::tetopsplit::SDiffBoundary * _sdiffboundary(uint sdbidx) const
     {
-        assert(sdbidx < statedef()->countSDiffBoundaries());
+        AssertLog(sdbidx < statedef()->countSDiffBoundaries());
         return pSDiffBoundaries[sdbidx];
     }
 

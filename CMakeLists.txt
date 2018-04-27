@@ -9,7 +9,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMake)
 project(STEPS)
 
 set(VERSION_MAJOR 3)
-set(VERSION_MINOR 2)
+set(VERSION_MINOR 3)
 set(VERSION_PATCH 0)
 set(STEPS_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
@@ -107,10 +107,11 @@ endif()
 
 # OpenMP
 find_package(OpenMP)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-set(CMAKE_FLAGS "${CMAKE_FLAGS} ${OpenMP_FLAGS}")
-
+if (OPENMP_FOUND)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_FLAGS "${CMAKE_FLAGS} ${OpenMP_FLAGS}")
+endif()
 
 # Linking Libs - required in src and pysteps
 list(APPEND libsteps_link_libraries ${BLAS_LIBRARIES})
@@ -146,22 +147,9 @@ message(STATUS "PYTHON packages being installed to ${PYTHON_INSTALL_PREFIX}. To 
 
 
 # Python bindings tech
-if (NOT PYTHON_BINDINGS_CYTHON)
-    # Previous SWIG Python Bindings
-    # (Use modified CMake FindSWIG module to prefentially use SWIG3.0)
-    message("-- Warning: SWIG binding will be removed from STEPS 3.3, please try the Cython binding and report any issue encountered.")
-    find_package(SWIG3 REQUIRED)
-    find_package(NumPy)
-    # Makes _steps_swig_numpy.so or _steps_swig.so
-    add_subdirectory(swig)
-    # Makes steps python package including swig-generated code
-    add_subdirectory(py)
-else()
-    # Makes steps Python bindings based on Cython
-    # message("-- Building with CYTHON: If SWIG is preferred, run cmake with -DPYTHON_BINDINGS_CYTHON=OFF")
-    find_package(Cython 0.25.1 REQUIRED)
-    add_subdirectory(pysteps)
-endif()
+# Makes steps Python bindings based on Cython
+find_package(Cython 0.25.1 REQUIRED)
+add_subdirectory(pysteps)
 
 # Makes libsteps-obj, libsteps.so
 add_subdirectory(src)

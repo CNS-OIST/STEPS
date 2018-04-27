@@ -2,7 +2,7 @@
 #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -34,7 +34,45 @@
 // STEPS headers.
 #include "steps/common.h"
 
- namespace steps {
+#ifdef ENABLE_ASSERTLOG
+#define AssertLog(condition) if (! (condition)) \
+CLOG(ERROR, "general_log") << "Assertion failed, please send the log files under .logs/ to developer.", \
+throw steps::AssertErr("Assertion failed, please send the log files under .logs/ to developer.")
+#else
+#define AssertLog(condition) 
+#endif
+
+#define ErrLog(msg) \
+CLOG(ERROR, "general_log") << std::string("GeneralErr: ") + (msg), \
+throw steps::ErrLog(std::string("GeneralErr: ") + (msg))
+
+
+#define NotImplErrLog(msg) \
+CLOG(ERROR, "general_log") << std::string("NotImplErr: ") + (msg), \
+throw steps::NotImplErr(std::string("NotImplErr: ") + (msg))
+
+
+#define ArgErrLog(msg) \
+CLOG(ERROR, "general_log") << std::string("ArgErr: ") + (msg), \
+throw steps::ArgErr( std::string("ArgErr: ") + (msg))
+
+
+#define ProgErrLog(msg) \
+CLOG(ERROR, "general_log") << std::string("ProgErr: ") + (msg), \
+throw steps::ProgErr(std::string("ProgErr: ") + (msg))
+
+
+#define SysErrLog(msg) \
+CLOG(ERROR, "general_log") << std::string("SysErr: ") + (msg), \
+throw steps::SysErr(std::string("SysErr: ") + (msg))
+
+
+#define IOErrLog(msg) \
+CLOG(ERROR, "general_log") << std::string("IOErr: ") + (msg), \
+throw steps::IOErr(std::string("IOErr: ") + (msg))
+
+
+namespace steps {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -49,6 +87,13 @@ struct Err: public std::exception
 
 private:
     std::string                 pMessage;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+struct AssertErr: public Err
+{
+    AssertErr(std::string const & msg = ""): Err(msg) { }
 };
 
 ////////////////////////////////////////////////////////////////////////////////

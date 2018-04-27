@@ -3,7 +3,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -34,8 +34,11 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/solver/efield/matrix.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace sefield = steps::solver::efield;
@@ -51,7 +54,7 @@ sefield::Matrix::Matrix(uint n0)
 , pSign(0)
 {
     // Check size argument.
-    assert(pN != 0);
+    AssertLog(pN != 0);
 
     pA = new double*[pN];
     for (uint i = 0; i < pN; ++i)
@@ -72,8 +75,8 @@ sefield::Matrix::Matrix(uint nn, double ** da)
 , pSign(0)
 {
     // Check input arguments.
-    assert(pN != 0);
-    assert(da != 0);
+    AssertLog(pN != 0);
+    AssertLog(da != 0);
 
     pA = new double*[pN];
     for (uint i = 0; i < pN; ++i)
@@ -279,7 +282,6 @@ sefield::Matrix * sefield::Matrix::inverse(void)
             r->pA[i][j] = c[i];
         }
     }
-    //std::cout << "\nDeleting copies in Matrix::inverse";
     delete t;
     delete[] c;
 

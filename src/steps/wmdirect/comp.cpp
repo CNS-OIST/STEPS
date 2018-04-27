@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -31,12 +31,14 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/solver/compdef.hpp"
 #include "steps/wmdirect/comp.hpp"
 #include "steps/wmdirect/kproc.hpp"
 #include "steps/wmdirect/reac.hpp"
 #include "steps/wmdirect/wmdirect.hpp"
-
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace swmd = steps::wmdirect;
@@ -50,7 +52,7 @@ swmd::Comp::Comp(steps::solver::Compdef * compdef)
 , pIPatches()
 , pOPatches()
 {
-    assert (pCompdef != 0);
+    AssertLog(pCompdef != 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -110,7 +112,7 @@ void swmd::Comp::setupKProcs(swmd::Wmdirect * wmd)
 
 steps::wmdirect::KProc * swmd::Comp::reac(uint lridx) const
 {
-    assert (lridx < pKProcs.size());
+    AssertLog(lridx < pKProcs.size());
     return pKProcs[lridx];
 }
 
@@ -127,7 +129,7 @@ void swmd::Comp::setupDeps(void)
 
 void swmd::Comp::addIPatch(swmd::Patch * p)
 {
-    assert(std::find(pIPatches.begin(), pIPatches.end(), p) == pIPatches.end());
+    AssertLog(std::find(pIPatches.begin(), pIPatches.end(), p) == pIPatches.end());
     pIPatches.push_back(p);
 }
 
@@ -135,7 +137,7 @@ void swmd::Comp::addIPatch(swmd::Patch * p)
 
 void swmd::Comp::addOPatch(swmd::Patch * p)
 {
-    assert(std::find(pOPatches.begin(), pOPatches.end(), p) == pOPatches.end());
+    AssertLog(std::find(pOPatches.begin(), pOPatches.end(), p) == pOPatches.end());
     pOPatches.push_back(p);
 }
 ////////////////////////////////////////////////////////////////////////////////

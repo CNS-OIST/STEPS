@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -38,6 +38,9 @@
 #include "steps/model/ohmiccurr.hpp"
 #include "steps/model/chanstate.hpp"
 
+// logging
+#include "easylogging++.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
@@ -58,23 +61,23 @@ OhmicCurr::OhmicCurr(string const & id, Surfsys * surfsys,
     {
         ostringstream os;
         os << "No surfsys provided to OhmicCurr initializer function";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (pChanState == 0)
     {
         ostringstream os;
         os << "No channel state provided to OhmicCurr initializer function";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (pG < 0.0)
     {
         ostringstream os;
         os << "Channel conductance can't be negative";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     pModel = pSurfsys->getModel();
-    assert (pModel != 0);
+    AssertLog(pModel != 0);
 
     pSurfsys->_handleOhmicCurrAdd(this);
 }
@@ -91,7 +94,7 @@ OhmicCurr::~OhmicCurr(void)
 
 void OhmicCurr::setID(string const & id)
 {
-    assert(pSurfsys != 0);
+    AssertLog(pSurfsys != 0);
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
     // it pass by into the Python layer.
@@ -105,7 +108,7 @@ void OhmicCurr::setID(string const & id)
 
 void OhmicCurr::setChanState(ChanState * chanstate)
 {
-    assert(chanstate != 0);
+    AssertLog(chanstate != 0);
     pChanState = chanstate;
 }
 
@@ -113,7 +116,7 @@ void OhmicCurr::setChanState(ChanState * chanstate)
 
 void OhmicCurr::setERev(double erev)
 {
-    assert (pSurfsys != 0);
+    AssertLog(pSurfsys != 0);
     pERev = erev;
 }
 
@@ -121,12 +124,12 @@ void OhmicCurr::setERev(double erev)
 
 void OhmicCurr::setG(double g)
 {
-    assert (pSurfsys != 0);
+    AssertLog(pSurfsys != 0);
     if(g < 0.0)
     {
         ostringstream os;
         os << "Conductance provided to OhmicCurr::setG function can't be negative";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     pG = g;
 }

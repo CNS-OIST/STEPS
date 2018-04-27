@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,6 +30,7 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/math/constants.hpp"
 #include "steps/tetexact/vdepsreac.hpp"
 #include "steps/tetexact/tri.hpp"
@@ -37,6 +38,8 @@
 #include "steps/tetexact/kproc.hpp"
 #include "steps/tetexact/tetexact.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace stex = steps::tetexact;
@@ -52,20 +55,20 @@ stex::VDepSReac::VDepSReac(ssolver::VDepSReacdef * vdsrdef, stex::Tri * tri)
 , pUpdVec()
 , pScaleFactor(0.0)
 {
-    assert (pVDepSReacdef != 0);
-    assert (pTri != 0);
+    AssertLog(pVDepSReacdef != 0);
+    AssertLog(pTri != 0);
 
     if (pVDepSReacdef->surf_surf() == false)
     {
         double vol;
         if (pVDepSReacdef->inside() == true)
         {
-            assert(pTri->iTet() != 0);
+            AssertLog(pTri->iTet() != 0);
             vol = pTri->iTet()->vol();
         }
         else
         {
-            assert (pTri->oTet() != 0);
+            AssertLog(pTri->oTet() != 0);
             vol = pTri->oTet()->vol();
         }
         double vscale = 1.0e3 * vol * smath::AVOGADRO;
@@ -83,7 +86,7 @@ stex::VDepSReac::VDepSReac(ssolver::VDepSReacdef * vdsrdef, stex::Tri * tri)
         pScaleFactor = pow(ascale, -o1);
     }
 
-    assert(pScaleFactor > 0.0);
+    AssertLog(pScaleFactor > 0.0);
 
 }
 
@@ -327,7 +330,7 @@ double stex::VDepSReac::rate(steps::tetexact::Tetexact * solver)
                 }
                 default:
                 {
-                    assert(0);
+                    AssertLog(0);
                     return 0.0;
                 }
             }
@@ -368,7 +371,7 @@ double stex::VDepSReac::rate(steps::tetexact::Tetexact * solver)
                     }
                     default:
                     {
-                        assert(0);
+                        AssertLog(0);
                         return 0.0;
                     }
                 }
@@ -409,7 +412,7 @@ double stex::VDepSReac::rate(steps::tetexact::Tetexact * solver)
                     }
                     default:
                     {
-                        assert(0);
+                        AssertLog(0);
                         return 0.0;
                     }
                 }
@@ -461,7 +464,7 @@ std::vector<stex::KProc*> const & stex::VDepSReac::apply(steps::rng::RNG * rng, 
         int upd = upd_s_vec[s];
         if (upd == 0) continue;
         int nc = static_cast<int>(cnt_s_vec[s]) + upd;
-        assert(nc >= 0);
+        AssertLog(nc >= 0);
         pTri->setCount(s, static_cast<uint>(nc));
     }
 
@@ -478,7 +481,7 @@ std::vector<stex::KProc*> const & stex::VDepSReac::apply(steps::rng::RNG * rng, 
             int upd = upd_i_vec[s];
             if (upd == 0) continue;
             int nc = static_cast<int>(cnt_i_vec[s]) + upd;
-            assert(nc >= 0);
+            AssertLog(nc >= 0);
             itet->setCount(s, static_cast<uint>(nc));
         }
     }
@@ -496,7 +499,7 @@ std::vector<stex::KProc*> const & stex::VDepSReac::apply(steps::rng::RNG * rng, 
             int upd = upd_o_vec[s];
             if (upd == 0) continue;
             int nc = static_cast<int>(cnt_o_vec[s]) + upd;
-            assert(nc >= 0);
+            AssertLog(nc >= 0);
             otet->setCount(s, static_cast<uint>(nc));
         }
     }

@@ -1,4 +1,11 @@
 Release Notes
+Version 3.3.0 (2018-04)
+==========================
+1. Implemented Rejection-based SSA (Thanh V, Zunino R, Priami C (n.d.) On the rejection-based algorithm for simulation and analysis of large-scale reaction networks. The Journal of Chemical Physics 142:244106) as a faster alternative to Wmdirect
+2. Assertion and Exception logging overhaul
+3. Remove SWIG interface
+4. Matlab Simbiology support utility
+
 Version 3.2.0 (2017-10)
 ==========================
 1. Extensive rework on Cython binding and documentation with Jupyter notebook.

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -46,6 +46,9 @@
 
 #include "steps/model/surfsys.hpp"
 
+// logging
+#include "easylogging++.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
@@ -66,16 +69,16 @@ Diff::Diff(string const & id, Volsys * volsys, Spec * lig, double dcst)
     {
         ostringstream os;
         os << "No volsys provided to Diff initializer function.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if(pDcst < 0.0)
     {
         ostringstream os;
         os << "Diffusion constant can't be negative";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     pModel = pVolsys->getModel();
-    assert (pModel != 0);
+    AssertLog(pModel != 0);
 
     pVolsys->_handleDiffAdd(this);
 }
@@ -95,16 +98,16 @@ Diff::Diff(string const & id, Surfsys * surfsys, Spec * lig, double dcst)
     {
         ostringstream os;
         os << "No surfsys provided to Diff initializer function.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if(pDcst < 0.0)
     {
         ostringstream os;
         os << "Diffusion constant can't be negative";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     pModel = pSurfsys->getModel();
-    assert (pModel != 0);
+    AssertLog(pModel != 0);
 
     pSurfsys->_handleDiffAdd(this);
 }
@@ -149,7 +152,7 @@ void Diff::setID(string const & id)
 {
     if (pIsvolume)
     {
-        assert(pVolsys != 0);
+        AssertLog(pVolsys != 0);
         // The following might raise an exception, e.g. if the new ID is not
         // valid or not unique. If this happens, we don't catch but simply let
         // it pass by into the Python layer.
@@ -157,7 +160,7 @@ void Diff::setID(string const & id)
     }
     else
     {
-        assert(pSurfsys != 0);
+        AssertLog(pSurfsys != 0);
         // The following might raise an exception, e.g. if the new ID is not
         // valid or not unique. If this happens, we don't catch but simply let
         // it pass by into the Python layer.
@@ -174,17 +177,17 @@ void Diff::setDcst(double dcst)
 {
     if (pIsvolume)
     {
-        assert(pVolsys != 0);
+        AssertLog(pVolsys != 0);
     }
     else
     {
-        assert(pSurfsys != 0);
+        AssertLog(pSurfsys != 0);
     }
     if(dcst < 0.0)
     {
         ostringstream os;
         os << "Diffusion constant can't be negative";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     pDcst = dcst;
 }
@@ -193,7 +196,7 @@ void Diff::setDcst(double dcst)
 
 void Diff::setLig(Spec * lig)
 {
-    assert(lig !=0);
+    AssertLog(lig !=0);
     pLig = lig;
 }
 

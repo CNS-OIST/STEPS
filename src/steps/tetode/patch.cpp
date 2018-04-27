@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,10 +30,12 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/solver/compdef.hpp"
 #include "steps/tetode/patch.hpp"
 #include "steps/tetode/tri.hpp"
-
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace stode = steps::tetode;
@@ -48,7 +50,7 @@ stode::Patch::Patch(ssolver::Patchdef * patchdef)
 , pTris_GtoL()
 
 {
-    assert(pPatchdef != 0);
+    AssertLog(pPatchdef != 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -76,7 +78,7 @@ void stode::Patch::restore(std::fstream & cp_file)
 
 void stode::Patch::addTri(stode::Tri * tri)
 {
-    assert(tri->patchdef() == def());
+    AssertLog(tri->patchdef() == def());
     uint lidx = pTris.size();
     pTris.push_back(tri);
     pTris_GtoL.insert(std::pair<uint, uint>(tri->idx(), lidx));
@@ -89,7 +91,7 @@ void stode::Patch::addTri(stode::Tri * tri)
 
 stode::Tri * stode::Patch::getTri(uint lidx)
 {
-    assert(lidx < pTris.size());
+    AssertLog(lidx < pTris.size());
     return pTris[lidx];
 }
 
@@ -98,7 +100,7 @@ stode::Tri * stode::Patch::getTri(uint lidx)
 uint stode::Patch::getTri_GtoL(uint gidx)
 {
     std::map<uint, uint>::const_iterator lidx_it = pTris_GtoL.find(gidx);
-    assert(lidx_it != pTris_GtoL.end());
+    AssertLog(lidx_it != pTris_GtoL.end());
     return lidx_it->second;
 }
 ////////////////////////////////////////////////////////////////////////////////

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -53,6 +53,9 @@
 #include "steps/model/diff.hpp"
 #include "steps/util/checkid.hpp"
 
+// logging
+#include "easylogging++.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
@@ -75,7 +78,7 @@ Surfsys::Surfsys(string const & id, Model * model)
     {
         ostringstream os;
         os << "No model provided to Surfsys initializer function";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     pModel->_handleSurfsysAdd(this);
 }
@@ -92,7 +95,7 @@ Surfsys::~Surfsys(void)
 
 void Surfsys::setID(string const & id)
 {
-    assert(pModel != 0);
+    AssertLog(pModel != 0);
     if (id == pID) return;
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
@@ -172,9 +175,9 @@ SReac * Surfsys::getSReac(string const & id) const
         ostringstream os;
         os << "Model does not contain surface "
         "reaction with name '" << id << "'";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
-    assert(sreac->second != 0);
+    AssertLog(sreac->second != 0);
     return sreac->second;
 }
 
@@ -208,9 +211,9 @@ Diff * Surfsys::getDiff(string const & id) const
     {
         ostringstream os;
         os << "Model does not contain diffusion with name '" << id << "'";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
-    assert(diff->second != 0);
+    AssertLog(diff->second != 0);
     return diff->second;
 }
 
@@ -366,7 +369,7 @@ std::vector<Spec *> Surfsys::getAllSpecs(void) const
 
     return specs;
 
-    //std::cout << "\nSurfsys::getAllSpecs() called. Need to add stuff for channel states??";
+    //CLOG(INFO, "general_log") << "\nSurfsys::getAllSpecs() called. Need to add stuff for channel states??";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -378,7 +381,7 @@ void Surfsys::_checkSReacID(string const & id) const
     {
         ostringstream os;
         os << "'" << id << "' is already in use";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 }
 
@@ -387,13 +390,13 @@ void Surfsys::_checkSReacID(string const & id) const
 void Surfsys::_handleSReacIDChange(string const & o, string const & n)
 {
     SReacPMapCI sr_old = pSReacs.find(o);
-    assert(sr_old != pSReacs.end());
+    AssertLog(sr_old != pSReacs.end());
 
     if(o==n) return;
     _checkSReacID(n);
 
     SReac * sr = sr_old->second;
-    assert(sr != 0);
+    AssertLog(sr != 0);
     pSReacs.erase(sr->getID());
     pSReacs.insert(SReacPMap::value_type(n,sr));
 }
@@ -402,7 +405,7 @@ void Surfsys::_handleSReacIDChange(string const & o, string const & n)
 
 void Surfsys::_handleSReacAdd(SReac * sreac)
 {
-    assert(sreac->getSurfsys() == this);
+    AssertLog(sreac->getSurfsys() == this);
     _checkSReacID(sreac->getID());
     pSReacs.insert(SReacPMap::value_type(sreac->getID(), sreac));
 }
@@ -411,7 +414,7 @@ void Surfsys::_handleSReacAdd(SReac * sreac)
 
 void Surfsys::_handleSReacDel(SReac * sreac)
 {
-    assert (sreac->getSurfsys() == this);
+    AssertLog(sreac->getSurfsys() == this);
     pSReacs.erase(sreac->getID());
 }
 
@@ -424,7 +427,7 @@ void Surfsys::_checkDiffID(string const & id) const
     {
         ostringstream os;
         os << "'" << id << "' is already in use";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 }
 
@@ -433,13 +436,13 @@ void Surfsys::_checkDiffID(string const & id) const
 void Surfsys::_handleDiffIDChange(string const & o, string const & n)
 {
     DiffPMapCI d_old = pDiffs.find(o);
-    assert(d_old != pDiffs.end());
+    AssertLog(d_old != pDiffs.end());
 
     if (o==n) return;
     _checkDiffID(n);
 
     Diff * d = d_old->second;
-    assert(d != 0);
+    AssertLog(d != 0);
     pDiffs.erase(d->getID());
     pDiffs.insert(DiffPMap::value_type(n,d));
 }
@@ -448,7 +451,7 @@ void Surfsys::_handleDiffIDChange(string const & o, string const & n)
 
 void Surfsys::_handleDiffAdd(Diff * diff)
 {
-    assert(diff->getSurfsys() == this);
+    AssertLog(diff->getSurfsys() == this);
     _checkDiffID(diff->getID());
     pDiffs.insert(DiffPMap::value_type(diff->getID(), diff));
 }
@@ -457,7 +460,7 @@ void Surfsys::_handleDiffAdd(Diff * diff)
 
 void Surfsys::_handleDiffDel(Diff * diff)
 {
-    assert (diff->getSurfsys() == this);
+    AssertLog(diff->getSurfsys() == this);
     pDiffs.erase(diff->getID());
 }
 
@@ -661,9 +664,9 @@ VDepTrans * Surfsys::getVDepTrans(std::string const & id) const
         ostringstream os;
         os << "Model does not contain voltage-dependent "
         "transition with name '" << id << "'";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
-    assert(vdeptrans->second != 0);
+    AssertLog(vdeptrans->second != 0);
     return vdeptrans->second;
 }
 
@@ -693,13 +696,13 @@ std::vector<VDepTrans *> Surfsys::getAllVDepTrans(void) const
 void Surfsys::_handleVDepTransIDChange(string const & o, string const & n)
 {
     VDepTransPMapCI vd_old = pVDepTrans.find(o);
-    assert(vd_old != pVDepTrans.end());
+    AssertLog(vd_old != pVDepTrans.end());
 
     if (o==n) return;
     _checkVDepTransID(n);
 
     VDepTrans * vd = vd_old->second;
-    assert(vd != 0);
+    AssertLog(vd != 0);
     pVDepTrans.erase(vd->getID());
     pVDepTrans.insert(VDepTransPMap::value_type(n,vd));
 }
@@ -713,7 +716,7 @@ void Surfsys::_checkVDepTransID(string const & id) const
     {
         ostringstream os;
         os << "'" << id << "' is already in use";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 }
 
@@ -721,7 +724,7 @@ void Surfsys::_checkVDepTransID(string const & id) const
 
 void Surfsys::_handleVDepTransAdd(VDepTrans * vdeptrans)
 {
-    assert(vdeptrans->getSurfsys() == this);
+    AssertLog(vdeptrans->getSurfsys() == this);
     _checkVDepTransID(vdeptrans->getID());
     pVDepTrans.insert(VDepTransPMap::value_type(vdeptrans->getID(), vdeptrans));
 
@@ -731,7 +734,7 @@ void Surfsys::_handleVDepTransAdd(VDepTrans * vdeptrans)
 
 void Surfsys::_handleVDepTransDel(VDepTrans * vdeptrans)
 {
-    assert(vdeptrans->getSurfsys() == this);
+    AssertLog(vdeptrans->getSurfsys() == this);
     pVDepTrans.erase(vdeptrans->getID());
 }
 
@@ -745,9 +748,9 @@ VDepSReac * Surfsys::getVDepSReac(std::string const & id) const
         ostringstream os;
         os << "Model does not contain voltage-dependent "
         "surface reaction with name '" << id << "'";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
-    assert(vdepsreac->second != 0);
+    AssertLog(vdepsreac->second != 0);
     return vdepsreac->second;
 }
 
@@ -777,13 +780,13 @@ std::vector<VDepSReac *> Surfsys::getAllVDepSReacs(void) const
 void Surfsys::_handleVDepSReacIDChange(string const & o, string const & n)
 {
     VDepSReacPMapCI vd_old = pVDepSReacs.find(o);
-    assert(vd_old != pVDepSReacs.end());
+    AssertLog(vd_old != pVDepSReacs.end());
 
     if (o==n) return;
     _checkVDepSReacID(n);
 
     VDepSReac * vd = vd_old->second;
-    assert(vd != 0);
+    AssertLog(vd != 0);
     pVDepSReacs.erase(vd->getID());
     pVDepSReacs.insert(VDepSReacPMap::value_type(n,vd));
 }
@@ -797,7 +800,7 @@ void Surfsys::_checkVDepSReacID(string const & id) const
     {
         ostringstream os;
         os << "'" << id << "' is already in use";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 }
 
@@ -805,7 +808,7 @@ void Surfsys::_checkVDepSReacID(string const & id) const
 
 void Surfsys::_handleVDepSReacAdd(VDepSReac * vdepsreac)
 {
-    assert(vdepsreac->getSurfsys() == this);
+    AssertLog(vdepsreac->getSurfsys() == this);
     _checkVDepSReacID(vdepsreac->getID());
     pVDepSReacs.insert(VDepSReacPMap::value_type(vdepsreac->getID(), vdepsreac));
 
@@ -815,7 +818,7 @@ void Surfsys::_handleVDepSReacAdd(VDepSReac * vdepsreac)
 
 void Surfsys::_handleVDepSReacDel(VDepSReac * vdepsreac)
 {
-    assert(vdepsreac->getSurfsys() == this);
+    AssertLog(vdepsreac->getSurfsys() == this);
     pVDepSReacs.erase(vdepsreac->getID());
 }
 
@@ -828,9 +831,9 @@ OhmicCurr * Surfsys::getOhmicCurr(std::string const & id) const
     {
         ostringstream os;
         os << "Model does not contain ohmic current with name '" << id << "'";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
-    assert(ohmiccurr->second != 0);
+    AssertLog(ohmiccurr->second != 0);
     return ohmiccurr->second;
 }
 
@@ -860,13 +863,13 @@ std::vector<OhmicCurr *> Surfsys::getAllOhmicCurrs(void) const
 void Surfsys::_handleOhmicCurrIDChange(string const & o, string const & n)
 {
     OhmicCurrPMapCI oc_old = pOhmicCurrs.find(o);
-    assert(oc_old != pOhmicCurrs.end());
+    AssertLog(oc_old != pOhmicCurrs.end());
 
     if (o==n) return;
     _checkOhmicCurrID(n);
 
     OhmicCurr * oc = oc_old->second;
-    assert(oc != 0);
+    AssertLog(oc != 0);
     pOhmicCurrs.erase(oc->getID());
     pOhmicCurrs.insert(OhmicCurrPMap::value_type(n,oc));
 }
@@ -880,7 +883,7 @@ void Surfsys::_checkOhmicCurrID(string const & id) const
     {
         ostringstream os;
         os << "'" << id << "' is already in use";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 }
 
@@ -888,7 +891,7 @@ void Surfsys::_checkOhmicCurrID(string const & id) const
 
 void Surfsys::_handleOhmicCurrAdd(OhmicCurr * ohmiccurr)
 {
-    assert(ohmiccurr->getSurfsys() == this);
+    AssertLog(ohmiccurr->getSurfsys() == this);
     _checkOhmicCurrID(ohmiccurr->getID());
     pOhmicCurrs.insert(OhmicCurrPMap::value_type(ohmiccurr->getID(), ohmiccurr));
 }
@@ -897,7 +900,7 @@ void Surfsys::_handleOhmicCurrAdd(OhmicCurr * ohmiccurr)
 
 void Surfsys::_handleOhmicCurrDel(OhmicCurr * ohmiccurr)
 {
-    assert(ohmiccurr->getSurfsys() == this);
+    AssertLog(ohmiccurr->getSurfsys() == this);
     pOhmicCurrs.erase(ohmiccurr->getID());
 }
 
@@ -910,9 +913,9 @@ GHKcurr * Surfsys::getGHKcurr(std::string const & id) const
     {
         ostringstream os;
         os << "Model does not contain ghk current with name '" << id << "'";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
-    assert(ghkcurr->second != 0);
+    AssertLog(ghkcurr->second != 0);
     return ghkcurr->second;
 }
 
@@ -942,13 +945,13 @@ std::vector<GHKcurr *> Surfsys::getAllGHKcurrs(void) const
 void Surfsys::_handleGHKcurrIDChange(string const & o, string const & n)
 {
     GHKcurrPMapCI ghk_old = pGHKcurrs.find(o);
-    assert(ghk_old != pGHKcurrs.end());
+    AssertLog(ghk_old != pGHKcurrs.end());
 
     if (o==n) return;
     _checkGHKcurrID(n);
 
     GHKcurr * ghk = ghk_old->second;
-    assert(ghk != 0);
+    AssertLog(ghk != 0);
     pGHKcurrs.erase(ghk->getID());
     pGHKcurrs.insert(GHKcurrPMap::value_type(n,ghk));
 }
@@ -962,7 +965,7 @@ void Surfsys::_checkGHKcurrID(string const & id) const
     {
         ostringstream os;
         os << "'" << id << "' is already in use";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 }
 
@@ -970,7 +973,7 @@ void Surfsys::_checkGHKcurrID(string const & id) const
 
 void Surfsys::_handleGHKcurrAdd(GHKcurr * ghkcurr)
 {
-    assert(ghkcurr->getSurfsys() == this);
+    AssertLog(ghkcurr->getSurfsys() == this);
     _checkGHKcurrID(ghkcurr->getID());
     pGHKcurrs.insert(GHKcurrPMap::value_type(ghkcurr->getID(), ghkcurr));
 }
@@ -979,7 +982,7 @@ void Surfsys::_handleGHKcurrAdd(GHKcurr * ghkcurr)
 
 void Surfsys::_handleGHKcurrDel(GHKcurr * ghkcurr)
 {
-    assert(ghkcurr->getSurfsys() == this);
+    AssertLog(ghkcurr->getSurfsys() == this);
     pGHKcurrs.erase(ghkcurr->getID());
 }
 
@@ -987,7 +990,7 @@ void Surfsys::_handleGHKcurrDel(GHKcurr * ghkcurr)
 
 SReac * Surfsys::_getSReac(uint lidx) const
 {
-    assert (lidx < pSReacs.size());
+    AssertLog(lidx < pSReacs.size());
     std::map<std::string, SReac *>::const_iterator sr_it = pSReacs.begin();
     for (uint i=0; i< lidx; ++i) ++sr_it;
     return sr_it->second;
@@ -997,7 +1000,7 @@ SReac * Surfsys::_getSReac(uint lidx) const
 
 VDepTrans * Surfsys::_getVDepTrans(uint lidx) const
 {
-    assert (lidx < pVDepTrans.size());
+    AssertLog(lidx < pVDepTrans.size());
     std::map<std::string, VDepTrans *>::const_iterator vd_it = pVDepTrans.begin();
     for (uint i=0; i< lidx; ++i) ++vd_it;
     return vd_it->second;
@@ -1007,7 +1010,7 @@ VDepTrans * Surfsys::_getVDepTrans(uint lidx) const
 
 VDepSReac * Surfsys::_getVDepSReac(uint lidx) const
 {
-    assert (lidx < pVDepSReacs.size());
+    AssertLog(lidx < pVDepSReacs.size());
     std::map<std::string, VDepSReac *>::const_iterator vd_it = pVDepSReacs.begin();
     for (uint i=0; i< lidx; ++i) ++vd_it;
     return vd_it->second;
@@ -1017,7 +1020,7 @@ VDepSReac * Surfsys::_getVDepSReac(uint lidx) const
 
 OhmicCurr * Surfsys::_getOhmicCurr(uint lidx) const
 {
-    assert (lidx < pOhmicCurrs.size());
+    AssertLog(lidx < pOhmicCurrs.size());
     std::map<std::string, OhmicCurr *>::const_iterator oc_it = pOhmicCurrs.begin();
     for (uint i=0; i< lidx; ++i) ++oc_it;
     return oc_it->second;
@@ -1027,7 +1030,7 @@ OhmicCurr * Surfsys::_getOhmicCurr(uint lidx) const
 
 GHKcurr * Surfsys::_getGHKcurr(uint lidx) const
 {
-    assert (lidx < pGHKcurrs.size());
+    AssertLog(lidx < pGHKcurrs.size());
     std::map<std::string, GHKcurr *>::const_iterator ghk_it = pGHKcurrs.begin();
     for (uint i=0; i< lidx; ++i) ++ghk_it;
     return ghk_it->second;
@@ -1037,7 +1040,7 @@ GHKcurr * Surfsys::_getGHKcurr(uint lidx) const
 
 Diff * Surfsys::_getDiff(uint lidx) const
 {
-    assert (lidx < pDiffs.size());
+    AssertLog(lidx < pDiffs.size());
     std::map<std::string, Diff *>::const_iterator df_it = pDiffs.begin();
     for (uint i=0; i< lidx; ++i) ++df_it;
     return df_it->second;

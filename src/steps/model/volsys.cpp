@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -51,6 +51,8 @@
 #include "steps/model/diff.hpp"
 #include "steps/util/checkid.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
@@ -70,7 +72,7 @@ Volsys::Volsys(string const & id, Model * model)
     {
         ostringstream os;
         os << "No model provided to Volsys initializer function";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     pModel->_handleVolsysAdd(this);
 }
@@ -110,7 +112,7 @@ void Volsys::_handleSelfDelete(void)
 
 void Volsys::setID(string const & id)
 {
-    assert(pModel != 0);
+    AssertLog(pModel != 0);
     if (id == pID) return;
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
@@ -130,9 +132,9 @@ Reac * Volsys::getReac(string const & id) const
     {
         ostringstream os;
         os << "Model does not contain reaction with name '" << id << "'";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
-    assert(reac->second != 0);
+    AssertLog(reac->second != 0);
     return reac->second;
 }
 
@@ -167,9 +169,9 @@ Diff * Volsys::getDiff(string const & id) const
     {
         ostringstream os;
         os << "Model does not contain diffusion with name '" << id << "'";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
-    assert(diff->second != 0);
+    AssertLog(diff->second != 0);
     return diff->second;
 }
 
@@ -262,7 +264,7 @@ void Volsys::_checkReacID(string const & id) const
     {
         ostringstream os;
         os << "'" << id << "' is already in use";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 }
 
@@ -271,13 +273,13 @@ void Volsys::_checkReacID(string const & id) const
 void Volsys::_handleReacIDChange(string const & o, string const & n)
 {
     ReacPMapCI r_old = pReacs.find(o);
-    assert(r_old != pReacs.end());
+    AssertLog(r_old != pReacs.end());
 
     if(o==n) return;
     _checkReacID(n);
 
     Reac * r = r_old->second;
-    assert(r != 0);
+    AssertLog(r != 0);
     pReacs.erase(r->getID());
     pReacs.insert(ReacPMap::value_type(n,r));
 }
@@ -286,7 +288,7 @@ void Volsys::_handleReacIDChange(string const & o, string const & n)
 
 void Volsys::_handleReacAdd(Reac * reac)
 {
-    assert(reac->getVolsys() == this);
+    AssertLog(reac->getVolsys() == this);
     _checkReacID(reac->getID());
     pReacs.insert(ReacPMap::value_type(reac->getID(), reac));
 }
@@ -295,7 +297,7 @@ void Volsys::_handleReacAdd(Reac * reac)
 
 void Volsys::_handleReacDel(Reac * reac)
 {
-    assert(reac->getVolsys() == this);
+    AssertLog(reac->getVolsys() == this);
     pReacs.erase(reac->getID());
 }
 
@@ -308,7 +310,7 @@ void Volsys::_checkDiffID(string const & id) const
     {
         ostringstream os;
         os << "'" << id << "' is already in use";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 }
 
@@ -317,13 +319,13 @@ void Volsys::_checkDiffID(string const & id) const
 void Volsys::_handleDiffIDChange(string const & o, string const & n)
 {
     DiffPMapCI d_old = pDiffs.find(o);
-    assert(d_old != pDiffs.end());
+    AssertLog(d_old != pDiffs.end());
 
     if (o==n) return;
     _checkDiffID(n);
 
     Diff * d = d_old->second;
-    assert(d != 0);
+    AssertLog(d != 0);
     pDiffs.erase(d->getID());
     pDiffs.insert(DiffPMap::value_type(n,d));
 }
@@ -332,7 +334,7 @@ void Volsys::_handleDiffIDChange(string const & o, string const & n)
 
 void Volsys::_handleDiffAdd(Diff * diff)
 {
-    assert(diff->getVolsys() == this);
+    AssertLog(diff->getVolsys() == this);
     _checkDiffID(diff->getID());
     pDiffs.insert(DiffPMap::value_type(diff->getID(), diff));
 }
@@ -341,7 +343,7 @@ void Volsys::_handleDiffAdd(Diff * diff)
 
 void Volsys::_handleDiffDel(Diff * diff)
 {
-    assert (diff->getVolsys() == this);
+    AssertLog(diff->getVolsys() == this);
     pDiffs.erase(diff->getID());
 }
 
@@ -402,7 +404,7 @@ void Volsys::_handleSpecDelete(Spec * spec)
 
 Reac * Volsys::_getReac(uint lidx) const
 {
-    assert (lidx < pReacs.size());
+    AssertLog(lidx < pReacs.size());
     std::map<std::string, Reac *>::const_iterator rc_it = pReacs.begin();
     for (uint i=0; i< lidx; ++i) ++rc_it;
     return rc_it->second;
@@ -412,7 +414,7 @@ Reac * Volsys::_getReac(uint lidx) const
 
 Diff * Volsys::_getDiff(uint lidx) const
 {
-    assert (lidx < pDiffs.size());
+    AssertLog(lidx < pDiffs.size());
     std::map<std::string, Diff *>::const_iterator df_it = pDiffs.begin();
     for (uint i=0; i< lidx; ++i) ++df_it;
     return df_it->second;

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -41,6 +41,8 @@
 #include "steps/mpi/tetopsplit/kproc.hpp"
 #include "steps/mpi/tetopsplit/tetopsplit.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace smtos = steps::mpi::tetopsplit;
@@ -93,8 +95,8 @@ smtos::SReac::SReac(ssolver::SReacdef * srdef, smtos::Tri * tri)
 , pCcst(0.0)
 , pKcst(0.0)
 {
-    assert (pSReacdef != 0);
-    assert (pTri != 0);
+    AssertLog(pSReacdef != 0);
+    AssertLog(pTri != 0);
     
     type = KP_SREAC;
     
@@ -107,12 +109,12 @@ smtos::SReac::SReac(ssolver::SReacdef * srdef, smtos::Tri * tri)
         double vol;
         if (pSReacdef->inside() == true)
         {
-            assert(pTri->iTet() != 0);
+            AssertLog(pTri->iTet() != 0);
             vol = pTri->iTet()->vol();
         }
         else
         {
-            assert (pTri->oTet() != 0);
+            AssertLog(pTri->oTet() != 0);
             vol = pTri->oTet()->vol();
         }
 
@@ -125,7 +127,7 @@ smtos::SReac::SReac(ssolver::SReacdef * srdef, smtos::Tri * tri)
         pCcst = comp_ccst_area(kcst, area, pSReacdef->order());
     }
 
-    assert (pCcst >= 0);
+    AssertLog(pCcst >= 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -194,12 +196,12 @@ void smtos::SReac::resetCcst(void)
         double vol;
         if (pSReacdef->inside() == true)
         {
-            assert(pTri->iTet() != 0);
+            AssertLog(pTri->iTet() != 0);
             vol = pTri->iTet()->vol();
         }
         else
         {
-            assert (pTri->oTet() != 0);
+            AssertLog(pTri->oTet() != 0);
             vol = pTri->oTet()->vol();
         }
 
@@ -212,14 +214,14 @@ void smtos::SReac::resetCcst(void)
         pCcst = comp_ccst_area(kcst, area, pSReacdef->order());
     }
 
-    assert (pCcst >= 0);
+    AssertLog(pCcst >= 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void smtos::SReac::setKcst(double k)
 {
-    assert (k >= 0.0);
+    AssertLog(k >= 0.0);
     pKcst = k;
 
     if (pSReacdef->surf_surf() == false)
@@ -227,12 +229,12 @@ void smtos::SReac::setKcst(double k)
         double vol;
         if (pSReacdef->inside() == true)
         {
-            assert(pTri->iTet() != 0);
+            AssertLog(pTri->iTet() != 0);
             vol = pTri->iTet()->vol();
         }
         else
         {
-            assert (pTri->oTet() != 0);
+            AssertLog(pTri->oTet() != 0);
             vol = pTri->oTet()->vol();
         }
 
@@ -245,7 +247,7 @@ void smtos::SReac::setKcst(double k)
         pCcst = comp_ccst_area(k, area, pSReacdef->order());
     }
 
-    assert (pCcst >= 0);
+    AssertLog(pCcst >= 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -270,7 +272,7 @@ void smtos::SReac::setupDeps(void)
     // All dependencies are first collected into a std::set, to sort them
     // and to eliminate duplicates. At the end of the routine, they are
     // copied into the vector that will be returned during execution.
-    assert(pTri->getInHost());
+    AssertLog(pTri->getInHost());
     WmVol * itet = pTri->iTet();
     WmVol * otet = pTri->oTet();
 
@@ -301,7 +303,7 @@ void smtos::SReac::setupDeps(void)
         if (pTri->getHost() != itet->getHost()) {
             std::ostringstream os;
             os << "Patch triangle " << pTri->idx() << " and its compartment tetrahedron " << itet->idx()  << " belong to different hosts.\n";
-            throw steps::NotImplErr(os.str());
+            NotImplErrLog(os.str());
         }
         
         nkprocs = itet->countKProcs();
@@ -325,7 +327,7 @@ void smtos::SReac::setupDeps(void)
             if ((*tri)->getHost() != itet->getHost()) {
                 std::ostringstream os;
                 os << "Patch triangle " << (*tri)->idx() << " and its compartment tetrahedron " << itet->idx()  << " belong to different hosts.\n";
-                throw steps::NotImplErr(os.str());
+                NotImplErrLog(os.str());
             }
             nkprocs = (*tri)->countKProcs();
             startKProcIdx = (*tri)->getStartKProcIdx();
@@ -347,7 +349,7 @@ void smtos::SReac::setupDeps(void)
         if (pTri->getHost() != otet->getHost()) {
             std::ostringstream os;
             os << "Patch triangle " << pTri->idx() << " and its compartment tetrahedron " << otet->idx()  << " belong to different hosts.\n";
-            throw steps::NotImplErr(os.str());
+            NotImplErrLog(os.str());
         }
         
         // check if sk KProc in pTri depends on spec in otet
@@ -373,7 +375,7 @@ void smtos::SReac::setupDeps(void)
             if ((*tri)->getHost() != otet->getHost()) {
                 std::ostringstream os;
                 os << "Patch triangle " << (*tri)->idx() << " and its compartment tetrahedron " << otet->idx()  << " belong to different hosts.\n";
-                throw steps::NotImplErr(os.str());
+                NotImplErrLog(os.str());
             }
             nkprocs = (*tri)->countKProcs();
             startKProcIdx = (*tri)->getStartKProcIdx();
@@ -472,7 +474,7 @@ double smtos::SReac::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
                 }
                 default:
                 {
-                    assert(0);
+                    AssertLog(0);
                     return 0.0;
                 }
             }
@@ -513,7 +515,7 @@ double smtos::SReac::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
                     }
                     default:
                     {
-                        assert(0);
+                        AssertLog(0);
                         return 0.0;
                     }
                 }
@@ -554,7 +556,7 @@ double smtos::SReac::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
                     }
                     default:
                     {
-                        assert(0);
+                        AssertLog(0);
                         return 0.0;
                     }
                 }
@@ -599,7 +601,7 @@ void smtos::SReac::apply(steps::rng::RNG * rng, double dt, double simtime, doubl
         if (pTri->clamped(s) == true) continue;
         int upd = upd_s_vec[s];
         int nc = static_cast<int>(cnt_s_vec[s]) + upd;
-        assert(nc >= 0);
+        AssertLog(nc >= 0);
         pTri->setCount(s, static_cast<uint>(nc), period);
     }
 
@@ -615,7 +617,7 @@ void smtos::SReac::apply(steps::rng::RNG * rng, double dt, double simtime, doubl
             if (itet->clamped(s) == true) continue;
             int upd = upd_i_vec[s];
             int nc = static_cast<int>(cnt_i_vec[s]) + upd;
-            assert(nc >= 0);
+            AssertLog(nc >= 0);
             itet->setCount(s, static_cast<uint>(nc), period);
         }
     }
@@ -632,7 +634,7 @@ void smtos::SReac::apply(steps::rng::RNG * rng, double dt, double simtime, doubl
             if (otet->clamped(s) == true) continue;
             int upd = upd_o_vec[s];
             int nc = static_cast<int>(cnt_o_vec[s]) + upd;
-            assert(nc >= 0);
+            AssertLog(nc >= 0);
             otet->setCount(s, static_cast<uint>(nc), period);
         }
     }

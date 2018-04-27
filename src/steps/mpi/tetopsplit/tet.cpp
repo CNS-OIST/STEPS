@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -38,6 +38,7 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/solver/compdef.hpp"
 #include "steps/solver/diffdef.hpp"
 #include "steps/solver/reacdef.hpp"
@@ -49,7 +50,8 @@
 #include "steps/mpi/tetopsplit/tetopsplit.hpp"
 #include "steps/mpi/tetopsplit/wmvol.hpp"
 
-#include "third_party/easylogging++.h"
+// logging
+#include "easylogging++.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -74,8 +76,8 @@ smtos::Tet::Tet
 , pPoolOccupancy(0)
 , pLastUpdate(0)
 {
-    assert (a0 > 0.0 && a1 > 0.0 && a2 > 0.0 && a3 > 0.0);
-    assert (d0 >= 0.0 && d1 >= 0.0 && d2 >= 0.0 && d3 >= 0.0);
+    AssertLog(a0 > 0.0 && a1 > 0.0 && a2 > 0.0 && a3 > 0.0);
+    AssertLog(d0 >= 0.0 && d1 >= 0.0 && d2 >= 0.0 && d3 >= 0.0);
 
     pNextTris.resize(4);
 
@@ -141,7 +143,7 @@ void smtos::Tet::setNextTet(uint i, smtos::Tet * t)
     // Now adding all tets, even those from other compartments, due to the diffusion boundaries
     pNextTet[i] = t;
 
-    //if (pNextTris[i] != 0) std::cout << "WARNING: writing over nextTri index " << i;
+    //if (pNextTris[i] != 0) CLOG(INFO, "general_log") << "WARNING: writing over nextTri index " << i;
     pNextTris[i] = 0;
 
 }
@@ -150,7 +152,7 @@ void smtos::Tet::setNextTet(uint i, smtos::Tet * t)
 
 void smtos::Tet::setDiffBndDirection(uint i)
 {
-    assert(i < 4);
+    AssertLog(i < 4);
 
     pDiffBndDirection[i] = true;
 }
@@ -159,18 +161,18 @@ void smtos::Tet::setDiffBndDirection(uint i)
 
 void smtos::Tet::setNextTri(smtos::Tri *t)
 {
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void smtos::Tet::setNextTri(uint i, smtos::Tri * t)
 {
-    assert (pNextTris.size() == 4);
-    assert (i <= 3);
+    AssertLog(pNextTris.size() == 4);
+    AssertLog(i <= 3);
 
     // This is too common now to include this message- for any internal patch this happens
-    //if (pNextTet[i] != 0) std::cout << "WARNING: writing over nextTet index " << i;
+    //if (pNextTet[i] != 0) CLOG(INFO, "general_log") << "WARNING: writing over nextTet index " << i;
 
     pNextTet[i] = 0;
     pNextTris[i]= t;
@@ -279,7 +281,7 @@ void smtos::Tet::setupDeps(void)
             if (next->getHost() != getHost()) {
                 std::ostringstream os;
                 os << "Patch triangle " << next->idx() << " and its compartment tetrahedron " << idx()  << " belong to different hosts.\n";
-                throw steps::NotImplErr(os.str());
+                NotImplErrLog(os.str());
             }
             
             nkprocs = next->countKProcs();
@@ -307,7 +309,7 @@ bool smtos::Tet::KProcDepSpecTet(uint kp_lidx, smtos::WmVol* kp_container,  uint
         return rdef->dep(spec_gidx);
     }
     remain -= compdef()->countReacs();
-    assert(remain < compdef()->countDiffs());
+    AssertLog(remain < compdef()->countDiffs());
     // if kp is  diff
     if (remain < compdef()->countDiffs()) {
         if (kp_container != this) return false;
@@ -315,7 +317,7 @@ bool smtos::Tet::KProcDepSpecTet(uint kp_lidx, smtos::WmVol* kp_container,  uint
         return true;
     }
     
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -330,7 +332,7 @@ bool smtos::Tet::KProcDepSpecTri(uint kp_lidx, smtos::Tri* kp_container, uint sp
 
 smtos::Diff * smtos::Tet::diff(uint lidx) const
 {
-    assert(lidx < compdef()->countDiffs());
+    AssertLog(lidx < compdef()->countDiffs());
     return dynamic_cast<smtos::Diff*>(pKProcs[compdef()->countReacs() + lidx]);
 }
 
@@ -352,14 +354,11 @@ void smtos::Tet::setCount(uint lidx, uint count, double period)
 {
 	// Count has changed, need to correct pool factor
 	
-	
-    #ifdef MPI_DEBUG
-    //CLOG(DEBUG, "mpi_debug") << "Set spec (local id): " << lidx << " to " << count << "\n";
-    #endif
+
     // This function only apply global molecule change, i.e., called by sim.setTetCount,
 	// thus skips _applyRemoteMoleculeChanges routing,
     // and only register itself if it requires sync to sreac tris.
-    assert (lidx < compdef()->countSpecs());
+    AssertLog(lidx < compdef()->countSpecs());
     uint oldcount = pPoolCount[lidx];
 	pPoolCount[lidx] = count;
 	
@@ -367,7 +366,7 @@ void smtos::Tet::setCount(uint lidx, uint count, double period)
 	
 	// Count has changed,
 	double lastupdate = pLastUpdate[lidx];
-	assert(period >= lastupdate);
+	AssertLog(period >= lastupdate);
 	pPoolOccupancy[lidx] += oldcount*(period-lastupdate);
 
 	pLastUpdate[lidx] = period;
@@ -378,10 +377,7 @@ void smtos::Tet::setCount(uint lidx, uint count, double period)
 
 void smtos::Tet::incCount(uint lidx, int inc, double period, bool local_change)
 {
-    #ifdef MPI_DEBUG
-    //CLOG(DEBUG, "mpi_debug") << "Change spec (local id): " << lidx << " by " << inc << "\n";
-    #endif
-    assert (lidx < compdef()->countSpecs());
+    AssertLog(lidx < compdef()->countSpecs());
 	
     
     // remote change caused by diffusion
@@ -391,7 +387,7 @@ void smtos::Tet::incCount(uint lidx, int inc, double period, bool local_change)
             std::ostringstream os;
             os << "Try to change molecule " << lidx << " by " << inc << "\n";
             os << "Fail because molecule change of receiving end should always be non-negative.\n";
-            throw steps::ProgErr(os.str());
+            ProgErrLog(os.str());
         }
         
         bufferLocations[lidx] = pSol->registerRemoteMoleculeChange(hostRank, bufferLocations[lidx], SUB_TET, pIdx, lidx, inc);
@@ -400,17 +396,14 @@ void smtos::Tet::incCount(uint lidx, int inc, double period, bool local_change)
     // local change
     else {
         double oldcount = pPoolCount[lidx];
-		assert(oldcount + inc >= 0.0);
+		AssertLog(oldcount + inc >= 0.0);
 		pPoolCount[lidx] += inc;
 		
-    	#ifdef MPI_DEBUG
-        //CLOG(DEBUG, "mpi_debug") << "local count: " << pPoolCount[lidx] << "\n";
-        #endif
 		
 		if (period == 0.0 || local_change) return;
 		// Count has changed,
 		double lastupdate = pLastUpdate[lidx];
-		assert(period >= lastupdate);
+		AssertLog(period >= lastupdate);
 		pPoolOccupancy[lidx] += oldcount*(period-lastupdate);
 
 		pLastUpdate[lidx] = period;
@@ -423,7 +416,7 @@ void smtos::Tet::incCount(uint lidx, int inc, double period, bool local_change)
 
 //double const& smtos::Tet::getPoolOccupancy(uint lidx) const
 //{
-//	assert (lidx < compdef()->countSpecs());
+//	AssertLog(lidx < compdef()->countSpecs());
 //
 //	return pPoolOccupancy[lidx];
 //}
@@ -432,7 +425,7 @@ void smtos::Tet::incCount(uint lidx, int inc, double period, bool local_change)
 
 double smtos::Tet::getLastUpdate(uint lidx)
 {
-	assert (lidx < compdef()->countSpecs());
+	AssertLog(lidx < compdef()->countSpecs());
 
 	return pLastUpdate[lidx];
 

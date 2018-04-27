@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -39,6 +39,9 @@
 #include "steps/solver/vdepsreacdef.hpp"
 #include "steps/model/vdepsreac.hpp"
 #include "steps/model/spec.hpp"
+
+// logging
+#include "easylogging++.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -82,8 +85,8 @@ ssolver::VDepSReacdef::VDepSReacdef(Statedef * sd, uint idx, smod::VDepSReac * v
 , pReqInside(false)
 , pReqOutside(false)
 {
-    assert (pStatedef != 0);
-    assert (vdsr != 0);
+    AssertLog(pStatedef != 0);
+    AssertLog(vdsr != 0);
 
     pName = vdsr->getID();
     pOrder = vdsr->getOrder();
@@ -92,7 +95,7 @@ ssolver::VDepSReacdef::VDepSReacdef(Statedef * sd, uint idx, smod::VDepSReac * v
     {
         std::ostringstream os;
         os << "Model contains zero-order voltage-dependent surface reaction, which are not permitted. ";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // Copy rate information from model object
@@ -100,7 +103,7 @@ ssolver::VDepSReacdef::VDepSReacdef(Statedef * sd, uint idx, smod::VDepSReac * v
     pVMax = vdsr->_getVMax();
     pDV = vdsr->_getDV();
     uint tablesize = vdsr->_getTablesize();
-    assert(tablesize == static_cast<uint>(std::floor((pVMax - pVMin) / pDV)) + 1);
+    AssertLog(tablesize == static_cast<uint>(std::floor((pVMax - pVMin) / pDV)) + 1);
 
     pVKTab = new double[tablesize];
     // Just temporarily store the pointer:
@@ -211,11 +214,11 @@ void ssolver::VDepSReacdef::restore(std::fstream & cp_file)
 
 void ssolver::VDepSReacdef::setup(void)
 {
-    assert(pSetupdone == false);
+    AssertLog(pSetupdone == false);
 
-    if (outside()) { assert (pIlhs.size() == 0); }
-    else if (inside()) { assert (pOlhs.size() == 0); }
-    else assert (false);
+    if (outside()) { AssertLog(pIlhs.size() == 0); }
+    else if (inside()) { AssertLog(pOlhs.size() == 0); }
+    else AssertLog(false);
 
     smod::SpecPVecCI ol_end = pOlhs.end();
     for (smod::SpecPVecCI ol = pOlhs.begin(); ol != ol_end; ++ol)
@@ -308,21 +311,21 @@ void ssolver::VDepSReacdef::setup(void)
 
 double ssolver::VDepSReacdef::getVDepK(double v) const
 {
-    assert(pSetupdone == true);
-    assert(pVKTab != 0);
+    AssertLog(pSetupdone == true);
+    AssertLog(pVKTab != 0);
     if (v > pVMax)
     {
         std::ostringstream os;
         os << "Voltage to VDepSReac::getVDepRate higher than maximum: ";
         os << v << " > " << pVMax;
-        throw steps::ProgErr(os.str());
+        ProgErrLog(os.str());
     }
     if (v < pVMin)
     {
         std::ostringstream os;
         os << "Voltage to VDepSReac::getVDepRate lower than minimum: ";
         os << v << " < " << pVMin;
-        throw steps::ProgErr(os.str());
+        ProgErrLog(os.str());
     }
 
     double v2 = ((v - pVMin) / pDV);
@@ -339,7 +342,7 @@ double ssolver::VDepSReacdef::getVDepK(double v) const
 /*
 bool ssolver::VDepSReacdef::reqInside(void) const
 {
-    assert (pSetupdone == true);
+    AssertLog(pSetupdone == true);
 
     // This can be checked by seeing if DEP_I or RHS_I is non-zero
     // for any species.
@@ -352,7 +355,7 @@ bool ssolver::VDepSReacdef::reqInside(void) const
 
 bool ssolver::VDepSReacdef::reqOutside(void) const
 {
-    assert (pSetupdone == true);
+    AssertLog(pSetupdone == true);
 
     // This can be checked by seeing if DEP_O or RHS_O is non-zero
     // for any species.
@@ -367,7 +370,7 @@ bool ssolver::VDepSReacdef::reqOutside(void) const
 uint ssolver::VDepSReacdef::lhs_I(uint gidx) const
 {
     if (outside()) return 0;
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_I_LHS[gidx];
 }
 
@@ -375,7 +378,7 @@ uint ssolver::VDepSReacdef::lhs_I(uint gidx) const
 
 uint ssolver::VDepSReacdef::lhs_S(uint gidx) const
 {
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_S_LHS[gidx];
 }
 
@@ -384,7 +387,7 @@ uint ssolver::VDepSReacdef::lhs_S(uint gidx) const
 uint ssolver::VDepSReacdef::lhs_O(uint gidx) const
 {
     if (inside()) return 0;
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_O_LHS[gidx];
 }
 
@@ -392,8 +395,8 @@ uint ssolver::VDepSReacdef::lhs_O(uint gidx) const
 
 int ssolver::VDepSReacdef::dep_I(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     if (outside()) return DEP_NONE;
     return pSpec_I_DEP[gidx];
 }
@@ -402,8 +405,8 @@ int ssolver::VDepSReacdef::dep_I(uint gidx) const
 
 int ssolver::VDepSReacdef::dep_S(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_S_DEP[gidx];
 }
 
@@ -411,8 +414,8 @@ int ssolver::VDepSReacdef::dep_S(uint gidx) const
 
 int ssolver::VDepSReacdef::dep_O(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     if (inside()) return DEP_NONE;
     return pSpec_O_DEP[gidx];
 }
@@ -421,7 +424,7 @@ int ssolver::VDepSReacdef::dep_O(uint gidx) const
 
 uint ssolver::VDepSReacdef::rhs_I(uint gidx) const
 {
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_I_RHS[gidx];
 }
 
@@ -429,7 +432,7 @@ uint ssolver::VDepSReacdef::rhs_I(uint gidx) const
 
 uint ssolver::VDepSReacdef::rhs_S(uint gidx) const
 {
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_S_RHS[gidx];
 }
 
@@ -437,7 +440,7 @@ uint ssolver::VDepSReacdef::rhs_S(uint gidx) const
 
 uint ssolver::VDepSReacdef::rhs_O(uint gidx) const
 {
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_O_RHS[gidx];
 }
 
@@ -445,8 +448,8 @@ uint ssolver::VDepSReacdef::rhs_O(uint gidx) const
 
 int ssolver::VDepSReacdef::upd_I(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_I_UPD[gidx];
 }
 
@@ -454,8 +457,8 @@ int ssolver::VDepSReacdef::upd_I(uint gidx) const
 
 int ssolver::VDepSReacdef::upd_S(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_S_UPD[gidx];
 }
 
@@ -463,8 +466,8 @@ int ssolver::VDepSReacdef::upd_S(uint gidx) const
 
 int ssolver::VDepSReacdef::upd_O(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_O_UPD[gidx];
 }
 
@@ -472,8 +475,8 @@ int ssolver::VDepSReacdef::upd_O(uint gidx) const
 
 bool ssolver::VDepSReacdef::reqspec_I(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     if (inside())
         if (pSpec_I_DEP[gidx] != DEP_NONE) return true;
     if (pSpec_I_RHS[gidx] != 0) return true;
@@ -484,8 +487,8 @@ bool ssolver::VDepSReacdef::reqspec_I(uint gidx) const
 
 bool ssolver::VDepSReacdef::reqspec_S(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     if (pSpec_S_DEP[gidx] != DEP_NONE) return true;
     if (pSpec_S_RHS[gidx] != 0) return true;
     return false;
@@ -495,8 +498,8 @@ bool ssolver::VDepSReacdef::reqspec_S(uint gidx) const
 
 bool ssolver::VDepSReacdef::reqspec_O(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     if (outside())
         if (pSpec_O_DEP[gidx] != DEP_NONE) return true;
     if (pSpec_O_RHS[gidx] != 0) return true;

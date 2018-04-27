@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -29,7 +29,7 @@
 #include <mpi.h>
 
 #include "steps/mpi/mpi_init.hpp"
-#include "third_party/easylogging++.h"
+#include "easylogging++.h"
 
 
 
@@ -39,25 +39,31 @@ void steps::mpi::mpiInit(void) {
 
     int rank; MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    // MPI DEBUG Logger
-    el::Configurations mpi_debug_conf;
-    mpi_debug_conf.set(el::Level::Debug, el::ConfigurationType::Format, "[%datetime][%func][%loc]: %msg");
-    mpi_debug_conf.set(el::Level::Debug,
-                   el::ConfigurationType::ToFile, "true");
-    mpi_debug_conf.set(el::Level::Debug,
-                   el::ConfigurationType::ToStandardOutput, "false");
-    std::string file = ".logs/mpi_debug_log_";
-    file += std::to_string(rank);
-    mpi_debug_conf.set(el::Level::Debug,
-                   el::ConfigurationType::Filename, file);
-    
-    el::Loggers::getLogger("mpi_debug");
-    el::Loggers::reconfigureLogger("mpi_debug", mpi_debug_conf);
+    // This will replace the general log setup in serial init()
+    // parallel Logger
+    el::Configurations parallel_conf;
 
+    // Global conf for the logger
+    parallel_conf.set(el::Level::Global, el::ConfigurationType::Format, "[%datetime][%level][%loc][%func]: %msg");
+    parallel_conf.set(el::Level::Global,
+                    el::ConfigurationType::ToStandardOutput, "false");
+    parallel_conf.set(el::Level::Global,
+                    el::ConfigurationType::ToFile, "true");
+    std::string file = ".logs/general_log_";
+    file += std::to_string(rank);
+    file += ".txt";
+    parallel_conf.set(el::Level::Global,
+                    el::ConfigurationType::Filename, file);
+    parallel_conf.set(el::Level::Global,
+                    el::ConfigurationType::MaxLogFileSize, "2097152");
+
+    parallel_conf.set(el::Level::Fatal, el::ConfigurationType::ToStandardOutput, "true");
+    parallel_conf.set(el::Level::Error, el::ConfigurationType::ToStandardOutput, "true");
+    parallel_conf.set(el::Level::Warning, el::ConfigurationType::ToStandardOutput, "true");
+
+    el::Loggers::getLogger("general_log");
+    el::Loggers::reconfigureLogger("general_log", parallel_conf);
     
-    #ifdef MPI_DEBUG
-    CLOG(DEBUG, "mpi_debug") << "######## SIMULATION START ############\n";
-    #endif
     MPI_Barrier(MPI_COMM_WORLD);
 }
 

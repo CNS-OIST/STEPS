@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,12 +30,14 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/math/constants.hpp"
 #include "steps/wmdirect/reac.hpp"
 #include "steps/wmdirect/comp.hpp"
 #include "steps/wmdirect/kproc.hpp"
 #include "steps/wmdirect/wmdirect.hpp"
-
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace swmd = steps::wmdirect;
@@ -65,12 +67,12 @@ swmd::Reac::Reac(ssolver::Reacdef * rdef, swmd::Comp * comp)
 , pUpdVec()
 , pCcst(0.0)
 {
-    assert (pReacdef != 0);
-    assert (pComp != 0);
+    AssertLog(pReacdef != 0);
+    AssertLog(pComp != 0);
     uint lridx = pComp->def()->reacG2L(pReacdef->gidx());
     double kcst = pComp->def()->kcst(lridx);
     pCcst = comp_ccst(kcst, pComp->def()->vol(), pReacdef->order());
-    assert (pCcst >= 0.0);
+    AssertLog(pCcst >= 0.0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -118,7 +120,7 @@ void swmd::Reac::resetCcst(void)
     uint lridx = pComp->def()->reacG2L(pReacdef->gidx());
     double kcst = pComp->def()->kcst(lridx);
     pCcst = comp_ccst(kcst, pComp->def()->vol(), pReacdef->order());
-    assert (pCcst >= 0);
+    AssertLog(pCcst >= 0);
 
 }
 
@@ -230,7 +232,7 @@ double swmd::Reac::rate(void) const
                 }
                 default:
                 {
-                    assert(0);
+                    AssertLog(0);
                     return 0.0;
                 }
             }

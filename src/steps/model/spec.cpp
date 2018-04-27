@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -41,6 +41,9 @@
 #include "steps/model/model.hpp"
 #include "steps/model/spec.hpp"
 
+// logging
+#include "easylogging++.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
@@ -57,7 +60,7 @@ Spec::Spec(string const & id, Model * model, int valence)
     {
         ostringstream os;
         os << "No model provided to Spec initializer function";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     pModel->_handleSpecAdd(this);
 }
@@ -82,7 +85,7 @@ void Spec::_handleSelfDelete(void)
 
 void Spec::setID(string const & id)
 {
-    assert(pModel != 0);
+    AssertLog(pModel != 0);
     if (id == pID) return;
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
@@ -97,7 +100,7 @@ void Spec::setID(string const & id)
 
 void Spec::setValence(int valence)
 {
-    assert(pModel != 0);
+    AssertLog(pModel != 0);
     pValence = valence;
 }
 

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -39,6 +39,7 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/solver/patchdef.hpp"
 #include "steps/solver/sreacdef.hpp"
 #include "steps/solver/ohmiccurrdef.hpp"
@@ -54,6 +55,8 @@
 #include "steps/mpi/tetopsplit/tetopsplit.hpp"
 #include "steps/math/constants.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace smtos = steps::mpi::tetopsplit;
@@ -85,11 +88,11 @@ smtos::Tri::Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
 , myRank(rank)
 , hostRank(host_rank)
 {
-    assert(pPatchdef != 0);
-    assert (pArea > 0.0);
+    AssertLog(pPatchdef != 0);
+    AssertLog(pArea > 0.0);
 
-    assert (l0 > 0.0 && l1 > 0.0 && l2 > 0.0);
-    assert (d0 >= 0.0 && d1 >= 0.0 && d2 >= 0.0);
+    AssertLog(l0 > 0.0 && l1 > 0.0 && l2 > 0.0);
+    AssertLog(d0 >= 0.0 && d1 >= 0.0 && d2 >= 0.0);
 
     pTets[0] = tetinner;
     pTets[1] = tetouter;
@@ -212,7 +215,7 @@ void smtos::Tri::setOuterTet(smtos::WmVol * t)
 
 void smtos::Tri::setSDiffBndDirection(uint i)
 {
-    assert(i < 3);
+    AssertLog(i < 3);
 
     pSDiffBndDirection[i] = true;
 }
@@ -221,7 +224,7 @@ void smtos::Tri::setSDiffBndDirection(uint i)
 
 void smtos::Tri::setNextTri(uint i, smtos::Tri * t)
 {
-    assert (i <= 2);
+    AssertLog(i <= 2);
 
     pNextTri[i]= t;
 }
@@ -248,7 +251,7 @@ void smtos::Tri::setupKProcs(smtos::TetOpSplitP * tex, bool efield)
         {
             ssolver::SReacdef * srdef = patchdef()->sreacdef(i);
             smtos::SReac * sr = new SReac(srdef, this);
-            assert(sr != 0);
+            AssertLog(sr != 0);
             pKProcs[j++] = sr;
             uint idx = tex->addKProc(sr, hostRank);
             sr->setSchedIDX(idx);
@@ -259,7 +262,7 @@ void smtos::Tri::setupKProcs(smtos::TetOpSplitP * tex, bool efield)
         {
             ssolver::Diffdef * sddef = patchdef()->surfdiffdef(i);
             smtos::SDiff * sd = new SDiff(sddef, this);
-            assert(sd != 0);
+            AssertLog(sd != 0);
             pKProcs[j++] = sd;
             uint idx = tex->addKProc(sd, hostRank);
             sd->setSchedIDX(idx);
@@ -274,7 +277,7 @@ void smtos::Tri::setupKProcs(smtos::TetOpSplitP * tex, bool efield)
             {
                 ssolver::VDepTransdef * vdtdef = patchdef()->vdeptransdef(i);
                 smtos::VDepTrans * vdt = new VDepTrans(vdtdef, this);
-                assert(vdt != 0);
+                AssertLog(vdt != 0);
                 pKProcs[j++] = vdt;
                 uint idx = tex->addKProc(vdt, hostRank);
                 vdt->setSchedIDX(idx);
@@ -285,7 +288,7 @@ void smtos::Tri::setupKProcs(smtos::TetOpSplitP * tex, bool efield)
             {
                 ssolver::VDepSReacdef * vdsrdef = patchdef()->vdepsreacdef(i);
                 smtos::VDepSReac * vdsr = new VDepSReac(vdsrdef, this);
-                assert(vdsr != 0);
+                AssertLog(vdsr != 0);
                 pKProcs[j++] = vdsr;
                 uint idx = tex->addKProc(vdsr, hostRank);
                 vdsr->setSchedIDX(idx);
@@ -296,7 +299,7 @@ void smtos::Tri::setupKProcs(smtos::TetOpSplitP * tex, bool efield)
             {
                 ssolver::GHKcurrdef * ghkdef = patchdef()->ghkcurrdef(i);
                 smtos::GHKcurr * ghk = new GHKcurr(ghkdef, this);
-                assert(ghk != 0);
+                AssertLog(ghk != 0);
                 pKProcs[j++] = ghk;
                 uint idx = tex->addKProc(ghk, hostRank);
                 ghk->setSchedIDX(idx);
@@ -356,7 +359,7 @@ void smtos::Tri::setupDeps(void)
             if (getHost() != itet->getHost()) {
                 std::ostringstream os;
                 os << "Patch triangle " << idx() << " and its compartment tetrahedron " << itet->idx()  << " belong to different hosts.\n";
-                throw steps::NotImplErr(os.str());
+                NotImplErrLog(os.str());
             }
             nkprocs = itet->countKProcs();
             for (uint k = 0; k < nkprocs; k++)
@@ -373,7 +376,7 @@ void smtos::Tri::setupDeps(void)
             if (getHost() != otet->getHost()) {
                 std::ostringstream os;
                 os << "Patch triangle " << idx() << " and its compartment tetrahedron " << otet->idx()  << " belong to different hosts.\n";
-                throw steps::NotImplErr(os.str());
+                NotImplErrLog(os.str());
             }
             nkprocs = otet->countKProcs();
             for (uint k = 0; k < nkprocs; k++)
@@ -459,7 +462,7 @@ bool smtos::Tri::KProcDepSpecTet(uint kp_lidx, smtos::WmVol* kp_container,  uint
         }
     }
     
-    assert(false);
+    AssertLog(false);
 }
 
 
@@ -513,7 +516,7 @@ bool smtos::Tri::KProcDepSpecTri(uint kp_lidx, smtos::Tri* kp_container, uint sp
         }
     }
     
-    assert(false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -564,7 +567,7 @@ void smtos::Tri::resetOCintegrals(void)
 void smtos::Tri::incECharge(uint lidx, int charge)
 {
     uint nghkcurrs = pPatchdef->countGHKcurrs();
-    assert(lidx < nghkcurrs);
+    AssertLog(lidx < nghkcurrs);
     pECharge[lidx]+=charge;
 }
 
@@ -573,14 +576,14 @@ void smtos::Tri::incECharge(uint lidx, int charge)
 void smtos::Tri::setCount(uint lidx, uint count, double period)
 {
     // tri count doesn't care about global
-    assert (lidx < patchdef()->countSpecs());
+    AssertLog(lidx < patchdef()->countSpecs());
 	double oldcount = pPoolCount[lidx];
 	double c = static_cast<double>(count);
 	pPoolCount[lidx] = c;
 	if (period == 0.0) return;
 	// Count has changed,
 	double lastupdate = pLastUpdate[lidx];
-	assert(period >= lastupdate);
+	AssertLog(period >= lastupdate);
 	pPoolOccupancy[lidx] += oldcount*(period-lastupdate);
 
 	pLastUpdate[lidx] = period;
@@ -593,7 +596,7 @@ void smtos::Tri::incCount(uint lidx, int inc, double period, bool local_change)
     // can change count locally or remotely, if change locally, check if the change require sync,
     // if change remotely, register the change in pSol, sync of remote change will be register when
     // the change is applied in remote host via this function
-    assert (lidx < patchdef()->countSpecs());
+    AssertLog(lidx < patchdef()->countSpecs());
     
 	// count changed by diffusion
     if (hostRank != myRank && !local_change)
@@ -602,7 +605,7 @@ void smtos::Tri::incCount(uint lidx, int inc, double period, bool local_change)
             std::ostringstream os;
             os << "Try to change molecule " << lidx << " by " << inc << "\n";
             os << "Fail because molecule change of receiving end should always be non-negative.\n";
-            throw steps::ProgErr(os.str());
+            ProgErrLog(os.str());
         }
         bufferLocations[lidx] = pSol->registerRemoteMoleculeChange(hostRank, bufferLocations[lidx], SUB_TRI, pIdx, lidx, inc);
     }
@@ -610,13 +613,13 @@ void smtos::Tri::incCount(uint lidx, int inc, double period, bool local_change)
     else {
         // need to check if the change costs negative molecule count
 		double oldcount = pPoolCount[lidx];
-		assert(oldcount + inc >= 0.0);
+		AssertLog(oldcount + inc >= 0.0);
 		pPoolCount[lidx] += inc;
     
 		if (period == 0.0 || local_change) return;
 		// Count has changed,
 		double lastupdate = pLastUpdate[lidx];
-		assert(period >= lastupdate);
+		AssertLog(period >= lastupdate);
 		pPoolOccupancy[lidx] += oldcount*(period-lastupdate);
 
 		pLastUpdate[lidx] = period;
@@ -630,17 +633,17 @@ void smtos::Tri::setOCchange(uint oclidx, uint slidx, double dt, double simtime)
 {
     // NOTE: simtime is BEFORE the update has taken place
 
-    assert(oclidx < patchdef()->countOhmicCurrs());
-    assert(slidx < patchdef()->countSpecs());
+    AssertLog(oclidx < patchdef()->countOhmicCurrs());
+    AssertLog(slidx < patchdef()->countSpecs());
 
     // A channel state relating to an ohmic current has changed it's
     // number.
     double integral = pPoolCount[slidx]*((simtime+dt) - pOCtime_upd[oclidx]);
     //if (integral < 0.0) {
-    //    std::cout << "setOCchange, OCtime upd: " << pOCtime_upd[oclidx] << " sim time: " << simtime << " dt: " << dt << " integral: " << integral << "\n";
+    //    CLOG(INFO, "general_log") << "setOCchange, OCtime upd: " << pOCtime_upd[oclidx] << " sim time: " << simtime << " dt: " << dt << " integral: " << integral << "\n";
     //}
     
-    assert(integral >= 0.0);
+    AssertLog(integral >= 0.0);
 
     pOCchan_timeintg[oclidx] += integral;
     pOCtime_upd[oclidx] = simtime+dt;
@@ -658,7 +661,7 @@ void smtos::Tri::setClamped(uint lidx, bool clamp)
 
 smtos::SReac * smtos::Tri::sreac(uint lidx) const
 {
-    assert(lidx < patchdef()->countSReacs());
+    AssertLog(lidx < patchdef()->countSReacs());
     return dynamic_cast<smtos::SReac*>(pKProcs[lidx]);
 }
 
@@ -677,7 +680,7 @@ int smtos::Tri::getTriDirection(uint tidx)
 
 smtos::SDiff * smtos::Tri::sdiff(uint lidx) const
 {
-    assert(lidx < patchdef()->countSurfDiffs());
+    AssertLog(lidx < patchdef()->countSurfDiffs());
     return dynamic_cast<smtos::SDiff*>(pKProcs[patchdef()->countSReacs() + lidx]);
 }
 
@@ -685,7 +688,7 @@ smtos::SDiff * smtos::Tri::sdiff(uint lidx) const
 
 smtos::VDepTrans * smtos::Tri::vdeptrans(uint lidx) const
 {
-    assert(lidx < patchdef()->countVDepTrans());
+    AssertLog(lidx < patchdef()->countVDepTrans());
     return dynamic_cast<smtos::VDepTrans*>(pKProcs[patchdef()->countSReacs() + patchdef()->countSurfDiffs() + lidx]);
 }
 
@@ -693,7 +696,7 @@ smtos::VDepTrans * smtos::Tri::vdeptrans(uint lidx) const
 
 smtos::VDepSReac * smtos::Tri::vdepsreac(uint lidx) const
 {
-    assert(lidx < patchdef()->countVDepSReacs());
+    AssertLog(lidx < patchdef()->countVDepSReacs());
     return dynamic_cast<smtos::VDepSReac*>(pKProcs[patchdef()->countSReacs() + patchdef()->countSurfDiffs() + patchdef()->countVDepTrans() + lidx]);
 
 }
@@ -702,7 +705,7 @@ smtos::VDepSReac * smtos::Tri::vdepsreac(uint lidx) const
 
 smtos::GHKcurr * smtos::Tri::ghkcurr(uint lidx) const
 {
-    assert(lidx < patchdef()->countGHKcurrs());
+    AssertLog(lidx < patchdef()->countGHKcurrs());
     return dynamic_cast<smtos::GHKcurr*>(pKProcs[patchdef()->countSReacs() + patchdef()->countSurfDiffs() + patchdef()->countVDepTrans() + patchdef()->countVDepSReacs() + lidx]);
 
 }
@@ -712,7 +715,7 @@ smtos::GHKcurr * smtos::Tri::ghkcurr(uint lidx) const
 double smtos::Tri::getGHKI(uint lidx, double dt) const
 {
     uint nghkcurrs = pPatchdef->countGHKcurrs();
-    assert(lidx < nghkcurrs);
+    AssertLog(lidx < nghkcurrs);
 
     int efcharge = pECharge_last[lidx];
     double efcharged = static_cast<double>(efcharge);
@@ -759,7 +762,7 @@ double smtos::Tri::computeI(double v, double dt, double simtime)
         ssolver::OhmicCurrdef * ocdef = patchdef()->ohmiccurrdef(i);
         // First calculate the last little bit up to the simtime
         double integral = pPoolCount[patchdef()->ohmiccurr_chanstate(i)]*(simtime - pOCtime_upd[i]);
-        assert(integral >= 0.0);
+        AssertLog(integral >= 0.0);
         pOCchan_timeintg[i] += integral;
         pOCtime_upd[i] = simtime;
 
@@ -807,7 +810,7 @@ double smtos::Tri::getOhmicI(double v,double dt) const
 
 double smtos::Tri::getOhmicI(uint lidx, double v,double dt) const
 {
-    assert(lidx < patchdef()->countOhmicCurrs());
+    AssertLog(lidx < patchdef()->countOhmicCurrs());
     ssolver::OhmicCurrdef * ocdef = patchdef()->ohmiccurrdef(lidx);
     uint n = pPoolCount[patchdef()->ohmiccurr_chanstate(lidx)];
 
@@ -843,7 +846,7 @@ smtos::TetOpSplitP* smtos::Tri::solver(void)
 ////////////////////////////////////////////////////////////////////////////////
 double smtos::Tri::getPoolOccupancy(uint lidx)
 {
-	assert (lidx < patchdef()->countSpecs());
+	AssertLog(lidx < patchdef()->countSpecs());
 
 	return pPoolOccupancy[lidx];
 }
@@ -852,7 +855,7 @@ double smtos::Tri::getPoolOccupancy(uint lidx)
 
 double smtos::Tri::getLastUpdate(uint lidx)
 {
-	assert (lidx < patchdef()->countSpecs());
+	AssertLog(lidx < patchdef()->countSpecs());
 
 	return pLastUpdate[lidx];
 }

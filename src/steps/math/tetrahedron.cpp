@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,14 +24,17 @@
 
  */
 
-#include <cassert>
 #include <cmath>
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/math/point.hpp"
 #include "steps/math/linsolve.hpp"
 #include "steps/math/tetrahedron.hpp"
+
+// logging
+#include "easylogging++.h"
 
 namespace steps {
 namespace math {
@@ -65,7 +68,7 @@ static std::array<double,4> tet_barycentric(const point3d &p0, point3d p1,
     // Solve this system.
     int info = steps::math::linsolve(3, 1, a);
     if (info != 0)
-        assert(0);
+        AssertLog(0);
 
     double b1 = a[ 9];
     double b2 = a[10];
@@ -166,7 +169,7 @@ double tet_circumrad2(const point3d &p0, const point3d &p1,
 
     int info = steps::math::linsolve(3, 1, a);
     if (info != 0)
-        assert(0);
+        AssertLog(0);
 
     point3d d{a[9], a[10], a[11]};
     return 0.25 * dot(d, d);

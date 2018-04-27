@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -36,6 +36,9 @@
 
 #include "steps/model/model.hpp"
 
+// logging
+#include "easylogging++.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
@@ -56,7 +59,7 @@ swm::Patch::Patch(std::string const & id, swm::Geom * container, swm::Comp* icom
     {
         ostringstream os;
         os << "No container provided to Patch initializer function.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     _setIComp(icomp);
@@ -66,7 +69,7 @@ swm::Patch::Patch(std::string const & id, swm::Geom * container, swm::Comp* icom
     {
         ostringstream os;
         os << "Patch area can't be negative.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     pContainer->_handlePatchAdd(this);
 }
@@ -83,7 +86,7 @@ swm::Patch::~Patch(void)
 
 void swm::Patch::setID(std::string const & id)
 {
-    assert(pContainer != 0);
+    AssertLog(pContainer != 0);
     if (id == pID) return;
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
@@ -98,12 +101,12 @@ void swm::Patch::setID(std::string const & id)
 
 void swm::Patch::setArea(double area)
 {
-    assert(pContainer != 0);
+    AssertLog(pContainer != 0);
     if (area < 0.0)
     {
         ostringstream os;
         os << "Patch area can't be negative.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     pArea = area;
 }
@@ -164,14 +167,14 @@ void swm::Patch::_setIComp(swm::Comp* icomp)
     {
         ostringstream os;
         os << "Compartment does not belong to same container as patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     std::set<swm::Patch *> ipatches  = icomp->getIPatches();
     if (ipatches.find(this) != ipatches.end())
     {
         ostringstream os;
         os << "Patch is already on inside of compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // remove the patch if it was already on the outside of some
     // other compartment
@@ -195,14 +198,14 @@ void swm::Patch::_setOComp(swm::Comp* ocomp)
     {
         ostringstream os;
            os << "Compartment does not belong to same container as patch.\n";
-           throw steps::ArgErr(os.str());
+           ArgErrLog(os.str());
     }
     std::set<swm::Patch *> opatches  = ocomp->getOPatches();
     if (opatches.find(this) != opatches.end())
     {
            ostringstream os;
           os << "Patch is already on outside of compartment.\n";
-           throw steps::ArgErr(os.str());
+           ArgErrLog(os.str());
     }
     // remove the patch if it was already on the inside of some
     // other compartment

@@ -2,6 +2,7 @@
 
 from steps_wmrk4 cimport *
 from steps_wmdirect cimport *
+from steps_wmrssa cimport *
 from steps_tetexact cimport *
 from steps_tetode cimport *
 from steps_solver cimport *
@@ -18,21 +19,25 @@ cdef class _py_Wmrk4(_py_API):
     cdef Wmrk4 *ptrx(self):
         return <Wmrk4*> self._ptr
 
-    def __init__(self, _py_Model m, _py_Geom g, _py_RNG r):
+    def __init__(self, _py_Model m, _py_Geom g, _py_RNG r = None):
         """        
         Construction::
         
-            sim = steps.solver.Wmrk4(model, geom, rng)
+            sim = steps.solver.Wmrk4(model, geom)
         
         Create a non-spatial deterministic solver based on the Runge-Kutta fourth order method.
         
         Arguments:
         steps.model.Model model
         steps.geom.Geom geom
-        steps.rng.RNG rng
         """
-        
-        self._ptr = new Wmrk4(m.ptr(), g.ptr(), r.ptr() )
+
+        if m == None:
+            raise TypeError('The Model object is empty.')
+        if g == None:
+            raise TypeError('The Geom object is empty.')
+
+        self._ptr = new Wmrk4(m.ptr(), g.ptr(), r.ptr() if r else NULL)
         _py_API.__init__(self, m, g, r)
 
     def getSolverName(self, ):
@@ -310,7 +315,14 @@ cdef class _py_Wmdirect(_py_API):
         steps.geom.Geom geom
         steps.rng.RNG rng
         """
-        
+
+        if m == None:
+            raise TypeError('The Model object is empty.')
+        if g == None:
+            raise TypeError('The Geom object is empty.')
+        if r == None:
+            raise TypeError('The RNG object is empty.')
+
         self._ptr = new Wmdirect( m.ptr(), g.ptr(), r.ptr() )
         #super(self.__class__, self).__init__(m,g,r)
         _py_API.__init__(self, m, g, r)
@@ -605,6 +617,330 @@ cdef class _py_Wmdirect(_py_API):
 
 
 # ======================================================================================================================
+# Python bindings to namespace steps::wmrssa
+# ======================================================================================================================
+
+# ----------------------------------------------------------------------------------------------------------------------
+cdef class _py_Wmrssa(_py_API):
+    "Python wrapper class for Wmrssa"
+# ----------------------------------------------------------------------------------------------------------------------
+    #cdef unique_ptr[Wmrssa] _autodealoc
+    cdef Wmrssa *ptrd(self):
+        return <Wmrssa*> self._ptr
+
+    def __init__(self, _py_Model m, _py_Geom g, _py_RNG r):
+        """        
+        Construction::
+        
+            sim = steps.solver.Wmrssa(model, geom, rng)
+        
+        Create a non-spatial stochastic solver based on Gillespie's SSA.
+        
+        Arguments:
+        steps.model.Model model
+        steps.geom.Geom geom
+        steps.rng.RNG rng
+        """
+        if m == None:
+            raise TypeError('The Model object is empty.')
+        if g == None:
+            raise TypeError('The Geom object is empty.')
+        if r == None:
+            raise TypeError('The RNG object is empty.')
+        self._ptr = new Wmrssa( m.ptr(), g.ptr(), r.ptr() )
+        #super(self.__class__, self).__init__(m,g,r)
+        _py_API.__init__(self, m, g, r)
+
+    def checkpoint(self, str file_name):
+        """
+        Checkpoint data to a file.
+
+        Syntax::
+
+        	checkpoint(file_name)
+
+        Arguments:
+        string file_name
+
+        Return:
+        None
+
+        """
+        self.ptrd().checkpoint(to_std_string(file_name))
+
+    def restore(self, str file_name):
+        """
+        Restore data from a file.
+            
+        Syntax::
+            
+            restore(file_name)
+            
+        Arguments:
+        string file_name
+            
+        Return:
+        None
+
+        """
+        self.ptrd().restore(to_std_string(file_name))
+
+    def getSolverName(self, ):
+        """
+        Returns a string of the solver's name.
+
+        Syntax::
+            
+            getSolverName()
+            
+        Arguments:
+        None
+
+        Return:
+        string
+
+        """
+        return self.ptrd().getSolverName()
+
+    def getSolverDesc(self, ):
+        """
+        Returns a string giving a short description of the solver.
+
+        Syntax::
+            
+            getSolverDesc()
+            
+        Arguments:
+        None
+
+        Return:
+        string
+
+        """
+        return self.ptrd().getSolverDesc()
+
+    def getSolverAuthors(self, ):
+        """
+        Returns a string of the solver authors names.
+
+        Syntax::
+            
+            getSolverAuthors()
+            
+        Arguments:
+        None
+
+        Return:
+        string
+
+        """
+        return self.ptrd().getSolverAuthors()
+
+    def getSolverEmail(self, ):
+        """
+        Returns a string giving the author's email address.
+
+        Syntax::
+            
+            getSolverEmail()
+            
+        Arguments:
+        None
+
+        Return:
+        string
+
+        """
+        return self.ptrd().getSolverEmail()
+
+    def reset(self, ):
+        """
+        Reset the simulation to the state the solver was initialised to. 
+        Typically, this resets all concentrations of all chemical species in 
+        all elements (whether compartments and patches in a well-mixed solver 
+        or tetrahedrons and triangles in a mesh-based solver) to zero, 
+        resets the simulation time to zero and resets reaction (and diffusion) 
+        rates to the default values described in the steps.model objects. 
+        All reaction (and diffusion) rules are reset to active and all 
+        compartment volumes and patch areas are reset to default values 
+        described in steps.geom objects (for well-mixed solvers). 
+        Usually, this method should be called before starting each simulation iteration.
+
+        Syntax::
+            
+            reset()
+            
+        Arguments:
+        None
+
+        Return:
+        None
+
+        """
+        self.ptrd().reset()
+
+    def run(self, double endtime):
+        """
+        Advance the simulation until endtime (given in seconds) is reached. 
+        The endtime must be larger or equal to the current simulation time.
+
+        Syntax::
+            
+            run(endtime)
+            
+        Arguments:
+        float endtime
+
+        Return:
+        None
+
+        """
+        self.ptrd().run(endtime)
+
+    def advance(self, double adv):
+        """
+        Advance the simulation for secs seconds. 
+
+        Syntax::
+            
+            advance(adv)
+            
+        Arguments:
+        float adv
+
+        Return:
+        None
+
+        """
+        self.ptrd().advance(adv)
+
+    def step(self, ):
+        """
+        Advance the simulation for one 'step'. In stochastic solvers this is one 
+        'realization' of the Gillespie SSA (one reaction 'event'). 
+        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        stepsize defined with the setDT method.
+
+        Syntax::
+            
+            step()
+            
+        Arguments:
+        None
+
+        Return:
+        None
+
+        """
+        self.ptrd().step()
+
+    def getTime(self, ):
+        """
+        Returns the current simulation time in seconds.
+
+        Syntax::
+            
+            getTime()
+            
+        Arguments:
+        None
+
+        Return:
+        float
+
+        """
+        return self.ptrd().getTime()
+
+    def getA0(self, ):
+        """
+        Returns the total propensity of the current simulation state 
+        (the total propensity multiplied by an infinitesimally small 
+        time dt gives the probability that a reaction will occur in that dt). 
+        For Tetexact this includes the propensity from the extension of the SSA 
+        for diffusive flux between tetrahedral elements in the mesh.
+
+        Syntax::
+            
+            getA0()
+            
+        Arguments:
+        None
+
+        Return:
+        float
+
+        """
+        return self.ptrd().getA0()
+
+    def getNSteps(self, ):
+        """
+        Return the number of 'realizations' of the SSA, the number of reaction 
+        (and diffusion) events in stochastic solvers.
+
+        Syntax::
+            
+            getNSteps()
+            
+        Arguments:
+        None
+
+        Return:
+        int
+
+        """
+        return self.ptrd().getNSteps()
+
+    def setTime(self, double time):
+        """
+        Set the current simulation time.
+
+        Syntax::
+            
+            setTime(time)
+            
+        Arguments:
+        float time
+
+        Return:
+        None
+
+        """
+        self.ptrd().setTime(time)
+
+    def setNSteps(self, unsigned int nsteps):
+        """
+        Set the number of 'realizations' of the SSA, the number of reaction 
+        (and diffusion) events in stochastic solvers.
+
+        Syntax::
+            
+            setNSteps(nsteps)
+            
+        Arguments:
+        int nsteps
+
+        Return:
+        None
+
+        """
+        self.ptrd().setNSteps(nsteps)
+
+    # def addKProc(self, steps.Wmrssa.KProc* kp):
+    #     return _py_void.from_ref(self.ptr().addKProc(kp.ptr()))
+
+
+    @staticmethod
+    cdef _py_Wmrssa from_ptr(Wmrssa *ptr):
+        cdef _py_Wmrssa obj = _py_Wmrssa.__new__(_py_Wmrssa)
+        obj._ptr = ptr
+        return obj
+
+    @staticmethod
+    cdef _py_Wmrssa from_ref(const Wmrssa &ref):
+        return _py_Wmrssa.from_ptr(<Wmrssa*>&ref)
+
+
+# ======================================================================================================================
 # Python bindings to namespace steps::tetexact
 # ======================================================================================================================
 
@@ -646,6 +982,12 @@ cdef class _py_Tetexact(_py_API):
         int calcMemPot (default=0)
         
         """
+        if m == None:
+            raise TypeError('The Model object is empty.')
+        if g == None:
+            raise TypeError('The Geom object is empty.')
+        if r == None:
+            raise TypeError('The RNG object is empty.')
         self._ptr = new Tetexact(m.ptr(), g.ptr(), r.ptr(), calcMembPot)
         _py_API.__init__(self, m, g, r)
 
@@ -1590,6 +1932,10 @@ cdef class _py_TetODE(_py_API):
         int calcMemPot (default=0)
         
         """
+        if m == None:
+            raise TypeError('The Model object is empty.')
+        if g == None:
+            raise TypeError('The Geom object is empty.')
 
         self._ptr = new TetODE(m.ptr(), g.ptr(), r.ptr() if r else NULL, calcMembPot)
         _py_API.__init__(self, m, g, r)

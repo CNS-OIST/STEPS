@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -31,11 +31,14 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/rng/rng.hpp"
 #include "steps/rng/r123.hpp"
 #include "steps/rng/mt19937.hpp"
 #include "steps/rng/create.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace steps {
@@ -46,7 +49,7 @@ RNG* create(std::string rng_name, uint bufsize) {
     else if (rng_name == "r123") return new R123(bufsize);
     else
     {
-        throw steps::ArgErr("Random number generator " + rng_name + " currently not included in STEPS.");
+        ArgErrLog("Random number generator " + rng_name + " currently not included in STEPS.");
     }
 }
 

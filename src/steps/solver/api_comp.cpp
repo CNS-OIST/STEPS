@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -35,6 +35,8 @@
 #include "steps/solver/api.hpp"
 #include "steps/solver/statedef.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 USING(std, string);
@@ -58,7 +60,7 @@ void API::setCompVol(string const & c, double vol)
     {
         std::ostringstream os;
         os << "Volume cannot be negative or zero.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // the following may throw an exception if string is unknown
     uint cidx = pStatedef->getCompIdx(c);
@@ -85,7 +87,7 @@ void API::setCompCount(string const & c, string const & s, double n)
     {
         std::ostringstream os;
         os << "Number of molecules cannot be negative.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // the following may throw exceptions if strings are unknown
     uint cidx = pStatedef->getCompIdx(c);
@@ -113,7 +115,7 @@ void API::setCompAmount(string const & c, string const & s, double a)
     {
         std::ostringstream os;
         os << "Amount of mols cannot be negative.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // the following may throw exceptions if strings are unknown
     uint cidx = pStatedef->getCompIdx(c);
@@ -141,7 +143,7 @@ void API::setCompConc(string const & c, string const & s, double conc)
     {
         std::ostringstream os;
         os << "Concentration cannot be negative.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // the following may throw exceptions if strings are unknown
     uint cidx = pStatedef->getCompIdx(c);
@@ -191,7 +193,7 @@ void API::setCompReacK(string const & c, string const & r, double kf)
     {
         std::ostringstream os;
         os << "Reaction constant cannot be negative.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // the following may throw exceptions if strings are unknown
     uint cidx = pStatedef->getCompIdx(c);
@@ -241,7 +243,7 @@ void API::setCompDiffD(string const & c, string const & d, double dcst)
     {
         std::ostringstream os;
         os << "Diffusion constant cannot be negative.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // the following may throw exceptions if strings are unknown
     uint cidx = pStatedef->getCompIdx(c);
@@ -331,70 +333,70 @@ void API::resetCompReacExtent(string const & c, string const & r)
 
 void API::_setCompVol(uint cidx, double vol)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getCompDiffD(uint cidx, uint didx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setCompDiffD(uint cidx, uint didx, double dcst)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool API::_getCompDiffActive(uint cidx, uint didx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setCompDiffActive(uint cidx, uint didx, bool act)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getCompReacH(uint cidx, uint ridx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getCompReacC(uint cidx, uint ridx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getCompReacA(uint cidx, uint ridx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint API::_getCompReacExtent(uint cidx, uint ridx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_resetCompReacExtent(uint cidx, uint ridx)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////

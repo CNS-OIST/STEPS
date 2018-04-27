@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -36,7 +36,8 @@
 #include "steps/solver/api.hpp"
 #include "steps/solver/statedef.hpp"
 #include "steps/geom/tetmesh.hpp"
-
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 USING(std, string);
@@ -52,7 +53,7 @@ double API::getTriArea(uint tidx) const
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         return _getTriArea(tidx);
     }
@@ -61,7 +62,7 @@ double API::getTriArea(uint tidx) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -75,7 +76,7 @@ void API::setTriArea(uint tidx, double area)
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // NOTE: the following method may never be implemented
         _setTriArea(tidx, area);
@@ -85,7 +86,7 @@ void API::setTriArea(uint tidx, double area)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -99,7 +100,7 @@ double API::getTriCount(uint tidx, string const & s) const
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may raise exceptions if strings are unused
         uint sidx = pStatedef->getSpecIdx(s);
@@ -111,7 +112,7 @@ double API::getTriCount(uint tidx, string const & s) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -125,7 +126,7 @@ bool API::getTriSpecDefined(uint tidx, string const & s) const
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint sidx = pStatedef->getSpecIdx(s);
@@ -136,7 +137,7 @@ bool API::getTriSpecDefined(uint tidx, string const & s) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -150,13 +151,13 @@ void API::setTriCount(uint tidx, string const & s, double n)
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         if (n < 0.0)
         {
             std::ostringstream os;
             os << "Number of molecules cannot be negative.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may raise exception if string is uknown
         uint sidx = pStatedef->getSpecIdx(s);
@@ -168,7 +169,7 @@ void API::setTriCount(uint tidx, string const & s, double n)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -182,7 +183,7 @@ double API::getTriAmount(uint tidx, string const & s) const
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint sidx = pStatedef->getSpecIdx(s);
@@ -194,7 +195,7 @@ double API::getTriAmount(uint tidx, string const & s) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -208,13 +209,13 @@ void API::setTriAmount(uint tidx, string const & s, double m)
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         if (m < 0.0)
         {
             std::ostringstream os;
             os << "Amount of mols cannot be negative.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint sidx = pStatedef->getSpecIdx(s);
@@ -226,7 +227,7 @@ void API::setTriAmount(uint tidx, string const & s, double m)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -240,7 +241,7 @@ bool API::getTriClamped(uint tidx, string const & s) const
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may raise exception if string is unknown
         uint sidx = pStatedef->getSpecIdx(s);
@@ -252,7 +253,7 @@ bool API::getTriClamped(uint tidx, string const & s) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -266,7 +267,7 @@ void API::setTriClamped(uint tidx, string const & s, bool buf)
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may raise exception if string is unknown
         uint sidx = pStatedef->getSpecIdx(s);
@@ -278,7 +279,7 @@ void API::setTriClamped(uint tidx, string const & s, bool buf)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -292,7 +293,7 @@ double API::getTriSReacK(uint tidx, string const & r) const
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may raise exception if string is unknown
         uint sridx = pStatedef->getSReacIdx(r);
@@ -304,7 +305,7 @@ double API::getTriSReacK(uint tidx, string const & r) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -318,13 +319,13 @@ void API::setTriSReacK(uint tidx, string const & r, double kf)
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         if (kf < 0.0)
         {
             std::ostringstream os;
             os << "Reaction constant cannot be negative.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may raise exception if string is unknown
         uint sridx = pStatedef->getSReacIdx(r);
@@ -336,7 +337,7 @@ void API::setTriSReacK(uint tidx, string const & r, double kf)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -350,7 +351,7 @@ bool API::getTriSReacActive(uint tidx, string const & r) const
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may raise exception if string is unknown
         uint sridx = pStatedef->getSReacIdx(r);
@@ -362,7 +363,7 @@ bool API::getTriSReacActive(uint tidx, string const & r) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -376,7 +377,7 @@ void API::setTriSReacActive(uint tidx, string const & r, bool act)
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
         // the following may raise exception if string is unknown
@@ -389,7 +390,7 @@ void API::setTriSReacActive(uint tidx, string const & r, bool act)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -403,7 +404,7 @@ double API::getTriSReacH(uint tidx, string const & r) const
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may raise exception if string is unknown
         uint sridx = pStatedef->getSReacIdx(r);
@@ -415,7 +416,7 @@ double API::getTriSReacH(uint tidx, string const & r) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -429,7 +430,7 @@ double API::getTriSReacC(uint tidx, string const & r) const
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may raise exception if string is unknown
         uint sridx = pStatedef->getSReacIdx(r);
@@ -441,7 +442,7 @@ double API::getTriSReacC(uint tidx, string const & r) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -455,7 +456,7 @@ double API::getTriSReacA(uint tidx, string const & r) const
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may raise exception if string is unknown
         uint sridx = pStatedef->getSReacIdx(r);
@@ -467,7 +468,7 @@ double API::getTriSReacA(uint tidx, string const & r) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -488,7 +489,7 @@ double API::getTriSDiffD(uint tidx, string const & d, uint direction_tri) const
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint didx = pStatedef->getSurfDiffIdx(d);
@@ -500,7 +501,7 @@ double API::getTriSDiffD(uint tidx, string const & d, uint direction_tri) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -521,19 +522,19 @@ void API::setTriSDiffD(uint tidx, string const & d, double dk, uint direction_tr
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         if (direction_tri != std::numeric_limits<uint>::max() &&direction_tri >= mesh->countTris())
         {
             std::ostringstream os;
             os << "Direction tetrahedron index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         if (dk < 0.0)
         {
             std::ostringstream os;
             os << "Diffusion constant cannot be negative.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may throw exception if string is unknown
         uint didx = pStatedef->getSurfDiffIdx(d);
@@ -545,7 +546,7 @@ void API::setTriSDiffD(uint tidx, string const & d, double dk, uint direction_tr
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -558,7 +559,7 @@ double API::getTriV(uint tidx) const
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
         return _getTriV(tidx);
@@ -568,7 +569,7 @@ double API::getTriV(uint tidx) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -582,7 +583,7 @@ void API::setTriV(uint tidx, double v)
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
         _setTriV(tidx, v);
@@ -592,7 +593,7 @@ void API::setTriV(uint tidx, double v)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -606,7 +607,7 @@ bool API::getTriVClamped(uint tidx) const
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
         return _getTriVClamped(tidx);
@@ -616,7 +617,7 @@ bool API::getTriVClamped(uint tidx) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -630,7 +631,7 @@ void API::setTriVClamped(uint tidx, bool cl)
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
         _setTriVClamped(tidx, cl);
@@ -640,7 +641,7 @@ void API::setTriVClamped(uint tidx, bool cl)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -654,7 +655,7 @@ double API::getTriOhmicI(uint tidx)
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
         return _getTriOhmicI(tidx);
@@ -664,7 +665,7 @@ double API::getTriOhmicI(uint tidx)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -678,7 +679,7 @@ double API::getTriOhmicI(uint tidx, string const & oc)
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may raise exception if string is unknown
         uint ocidx = pStatedef->getOhmicCurrIdx(oc);
@@ -690,7 +691,7 @@ double API::getTriOhmicI(uint tidx, string const & oc)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -704,7 +705,7 @@ double API::getTriGHKI(uint tidx)
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
         return _getTriGHKI(tidx);
@@ -714,7 +715,7 @@ double API::getTriGHKI(uint tidx)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -728,7 +729,7 @@ double API::getTriGHKI(uint tidx, string const & ghk)
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may raise exception if string is unknown
         uint ghkidx = pStatedef->getGHKcurrIdx(ghk);
@@ -740,7 +741,7 @@ double API::getTriGHKI(uint tidx, string const & ghk)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -753,7 +754,7 @@ double API::getTriI(uint tidx) const
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
         return _getTriI(tidx);
@@ -763,7 +764,7 @@ double API::getTriI(uint tidx) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -777,7 +778,7 @@ void API::setTriIClamp(uint tidx, double i)
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
         _setTriIClamp(tidx, i);
@@ -787,7 +788,7 @@ void API::setTriIClamp(uint tidx, double i)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -801,7 +802,7 @@ void API::setTriCapac(uint tidx, double cm)
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
         _setTriCapac(tidx, cm);
@@ -811,7 +812,7 @@ void API::setTriCapac(uint tidx, double cm)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -825,7 +826,7 @@ bool API::getTriVDepSReacActive(uint tidx, string const & vsr) const
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // the following may raise exception if string is unknown
         uint vsridx = pStatedef->getVDepSReacIdx(vsr);
@@ -837,7 +838,7 @@ bool API::getTriVDepSReacActive(uint tidx, string const & vsr) const
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -851,7 +852,7 @@ void API::setTriVDepSReacActive(uint tidx, string const & vsr, bool act)
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
         // the following may raise exception if string is unknown
@@ -864,7 +865,7 @@ void API::setTriVDepSReacActive(uint tidx, string const & vsr, bool act)
     {
         std::ostringstream os;
         os << "Method not available for this solver.";
-        throw steps::NotImplErr();
+        NotImplErrLog("");
     }
 }
 
@@ -872,217 +873,217 @@ void API::setTriVDepSReacActive(uint tidx, string const & vsr, bool act)
 
 double API::_getTriArea(uint tidx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTriArea(uint tidx, double area)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool API::_getTriSpecDefined(uint tidx, uint sidx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTriCount(uint tidx, uint sidx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTriCount(uint tidx, uint sidx, double n)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTriAmount(uint tidx, uint sidx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTriAmount(uint tidx, uint sidx, double m)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool API::_getTriClamped(uint tidx, uint sidx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTriClamped(uint tidx, uint sidx, bool buf)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTriSReacK(uint tidx, uint ridx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTriSReacK(uint tidx, uint ridx, double kf)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool API::_getTriSReacActive(uint tidx, uint ridx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTriSReacActive(uint tidx, uint ridx, bool act)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTriSDiffD(uint tidx, uint didx, uint direction_tri) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTriSDiffD(uint tidx, uint didx, double dk, uint direction_tri)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTriSReacH(uint tidx, uint ridx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTriSReacC(uint tidx, uint ridx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTriSReacA(uint tidx, uint ridx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTriV(uint tidx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTriV(uint tidx, double v)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool API::_getTriVClamped(uint tidx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTriVClamped(uint tidx, bool cl)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTriOhmicI(uint tidx)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTriOhmicI(uint tidx, uint ocidx)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTriGHKI(uint tidx)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTriGHKI(uint tidx, uint ghkidx)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTriI(uint tidx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTriIClamp(uint tidx, double i)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTriCapac(uint tidx, double cm)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool API::_getTriVDepSReacActive(uint tidx, uint vsridx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTriVDepSReacActive(uint tidx, uint vsridx, bool act)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////

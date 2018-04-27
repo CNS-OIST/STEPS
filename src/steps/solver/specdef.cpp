@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -43,6 +43,9 @@
 #include "steps/solver/specdef.hpp"
 #include "steps/model/spec.hpp"
 
+// logging
+#include "easylogging++.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace ssolver = steps::solver;
@@ -55,8 +58,8 @@ ssolver::Specdef::Specdef(Statedef * sd, uint idx, steps::model::Spec * s)
 , pName()
 , pSetupdone(false)
 {
-    assert(pStatedef != 0);
-    assert(s != 0);
+    AssertLog(pStatedef != 0);
+    AssertLog(s != 0);
     pName = s->getID();
 
 }

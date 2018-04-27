@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -26,13 +26,15 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/math/ghk.hpp"
 #include "steps/math/constants.hpp"
 
 // STL headers.
 #include <cassert>
 #include <cmath>
-
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 /*
 // The below may be applicable to chord conductance, but we assume a slope conductance
@@ -41,11 +43,11 @@ double steps::math::permeability
     double G, double V, int z, double T, double iconc, double oconc
 )
 {
-    assert (G >= 0.0);
-    assert (z != 0);
-    assert (T >= 0.0);
-    assert (iconc >= 0.0);
-    assert (oconc >= 0.0);
+    AssertLog(G >= 0.0);
+    AssertLog(z != 0);
+    AssertLog(T >= 0.0);
+    AssertLog(iconc >= 0.0);
+    AssertLog(oconc >= 0.0);
 
     double numerator = G * GAS_CONSTANT * T * (1-exp(((0-z)*V*FARADAY)/(GAS_CONSTANT*T)));
     double denominator = pow(z, 2.0) * pow(FARADAY, 2.0) * (iconc - (oconc*exp(((0-z)*V*FARADAY)/(GAS_CONSTANT*T))));
@@ -59,11 +61,11 @@ double steps::math::permeability
     double G, double V, int z, double T, double iconc, double oconc
 )
 {
-    assert (G >= 0.0);
-    assert (z != 0);
-    assert (T >= 0.0);
-    assert (iconc >= 0.0);
-    assert (oconc >= 0.0);
+    AssertLog(G >= 0.0);
+    AssertLog(z != 0);
+    AssertLog(T >= 0.0);
+    AssertLog(iconc >= 0.0);
+    AssertLog(oconc >= 0.0);
 
     double B = iconc;
     double C = oconc;
@@ -87,10 +89,10 @@ double steps::math::GHKcurrent
     double P, double V, int z, double T, double iconc, double oconc
 )
 {
-    assert (z != 0);
-    assert (T >= 0.0);
-    assert (iconc >= 0.0);
-    assert (oconc >= 0.0);
+    AssertLog(z != 0);
+    AssertLog(T >= 0.0);
+    AssertLog(iconc >= 0.0);
+    AssertLog(oconc >= 0.0);
 
     double numerator = (P * pow(z, 2.0) * V * pow(FARADAY, 2.0))/(GAS_CONSTANT*T) * (iconc - (oconc*exp(((0-z)*V*FARADAY)/(GAS_CONSTANT*T))));
     double denominator = (1-exp(((0-z)*V*FARADAY)/(GAS_CONSTANT*T)));

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -34,7 +34,8 @@
 #include "steps/error.hpp"
 #include "steps/solver/api.hpp"
 #include "steps/solver/statedef.hpp"
-
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 USING(std, string);
@@ -79,21 +80,21 @@ void API::setSDiffBoundaryDcst(std::string const & sdb, std::string const & s, d
 
 void API::_setSDiffBoundaryDiffusionActive(uint sdbidx, uint sidx, bool act)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool API::_getSDiffBoundaryDiffusionActive(uint sdbidx, uint sidx) const
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setSDiffBoundaryDcst(uint sdbidx, uint sidx, double dcst, uint direction_patch)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////

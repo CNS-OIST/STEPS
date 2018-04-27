@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -34,6 +34,7 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/math/constants.hpp"
 #include "steps/solver/compdef.hpp"
 #include "steps/solver/diffdef.hpp"
@@ -45,6 +46,9 @@
 #include "steps/tetexact/kproc.hpp"
 #include "steps/tetexact/tetexact.hpp"
 #include "steps/tetexact/wmvol.hpp"
+
+// logging
+#include "easylogging++.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -65,8 +69,8 @@ stex::WmVol::WmVol
 , pKProcs()
 , pNextTris()
 {
-    assert(pCompdef != 0);
-    assert (pVol > 0.0);
+    AssertLog(pCompdef != 0);
+    AssertLog(pVol > 0.0);
 
     // Based on compartment definition, build other structures.
     uint nspecs = compdef()->countSpecs();
@@ -161,7 +165,7 @@ double stex::WmVol::conc(uint gidx) const
 
 void stex::WmVol::setCount(uint lidx, uint count)
 {
-    assert(lidx < compdef()->countSpecs());
+    AssertLog(lidx < compdef()->countSpecs());
     pPoolCount[lidx] = count;
 }
 
@@ -169,7 +173,7 @@ void stex::WmVol::setCount(uint lidx, uint count)
 
 void stex::WmVol::incCount(uint lidx, int inc)
 {
-    assert (lidx < compdef()->countSpecs());
+    AssertLog(lidx < compdef()->countSpecs());
 #ifndef NDEBUG
     uint old_count = pPoolCount[lidx];
 #endif
@@ -178,7 +182,7 @@ void stex::WmVol::incCount(uint lidx, int inc)
 
 #ifndef NDEBUG
     uint new_count = pPoolCount[lidx];
-    assert(inc>=0 && new_count>=old_count || inc<0 && new_count < old_count);
+    AssertLog(inc>=0 && new_count>=old_count || inc<0 && new_count < old_count);
 #endif
 }
 
@@ -194,7 +198,7 @@ void stex::WmVol::setClamped(uint lidx, bool clamp)
 
 stex::Reac * stex::WmVol::reac(uint lidx) const
 {
-    assert(lidx < compdef()->countReacs());
+    AssertLog(lidx < compdef()->countReacs());
     return dynamic_cast<stex::Reac*>(pKProcs[lidx]);
 }
 

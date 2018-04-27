@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -93,7 +93,8 @@
 #endif
 #include "steps/util/distribute.hpp"
 
-#include "third_party/easylogging++.h"
+// logging
+#include "easylogging++.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -164,7 +165,7 @@ smtos::TetOpSplitP::TetOpSplitP(steps::model::Model * m, steps::wm::Geom * g, st
     {
         std::ostringstream os;
         os << "No RNG provided to solver initializer function";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
@@ -213,11 +214,11 @@ void smtos::TetOpSplitP::checkpoint(std::string const & file_name)
 {
     std::ostringstream os;
     os << "This function has not been implemented!";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
 
     /*
     
-    std::cout << "Checkpoint to " << file_name  << "...";
+    CLOG(INFO, "general_log") << "Checkpoint to " << file_name  << "...";
     std::fstream cp_file;
 
     cp_file.open(file_name.c_str(),
@@ -316,7 +317,7 @@ void smtos::TetOpSplitP::checkpoint(std::string const & file_name)
     }
 
     cp_file.close();
-    //std::cout << "complete.\n";
+    //CLOG(INFO, "general_log") << "complete.\n";
 
     */
 }
@@ -327,10 +328,10 @@ void smtos::TetOpSplitP::restore(std::string const & file_name)
 {
     std::ostringstream os;
     os << "This function has not been implemented!";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
     
     /*
-    std::cout << "Restore from " << file_name << "...";
+    CLOG(INFO, "general_log") << "Restore from " << file_name << "...";
     std::fstream cp_file;
 
     cp_file.open(file_name.c_str(),
@@ -396,7 +397,7 @@ void smtos::TetOpSplitP::restore(std::string const & file_name)
     if (stored_entries != nEntries) {
         std::ostringstream os;
         os << "Unknown Restore Error!";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // restore CR SSA
@@ -461,7 +462,7 @@ void smtos::TetOpSplitP::restore(std::string const & file_name)
 
     cp_file.close();
 
-    //std::cout << "complete.\n";
+    //CLOG(INFO, "general_log") << "complete.\n";
 
     */
 }
@@ -502,7 +503,7 @@ void smtos::TetOpSplitP::_setup(void)
     // Perform upcast.
     pMesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom());
     if (!pMesh)
-        throw steps::ArgErr("Geometry description to steps::solver::Tetexact solver "
+        ArgErrLog("Geometry description to steps::solver::Tetexact solver "
                 "constructor is not a valid steps::tetmesh::Tetmesh object.");
 
     // First initialise the pTets, pTris vector, because
@@ -522,7 +523,7 @@ void smtos::TetOpSplitP::_setup(void)
     {
         uint compdef_gidx = (*c)->gidx();
         uint comp_idx = _addComp(*c);
-        assert(compdef_gidx == comp_idx);
+        AssertLog(compdef_gidx == comp_idx);
     }
     // Create the actual patches.
     ssolver::PatchDefPVecCI p_end = statedef()->endPatch();
@@ -530,7 +531,7 @@ void smtos::TetOpSplitP::_setup(void)
     {
         uint patchdef_gidx = (*p)->gidx();
         uint patch_idx = _addPatch(*p);
-        assert(patchdef_gidx == patch_idx);
+        AssertLog(patchdef_gidx == patch_idx);
     }
 
     // Create the diffusion boundaries
@@ -539,7 +540,7 @@ void smtos::TetOpSplitP::_setup(void)
     {
         uint diffboundary_gidx = (*db)->gidx();
         uint diffb_idx = _addDiffBoundary(*db);
-        assert(diffboundary_gidx == diffb_idx);
+        AssertLog(diffboundary_gidx == diffb_idx);
     }
 
     // Create the surface diffusion boundaries
@@ -548,11 +549,11 @@ void smtos::TetOpSplitP::_setup(void)
     {
         uint sdiffboundary_gidx = (*sdb)->gidx();
         uint sdiffb_idx = _addSDiffBoundary(*sdb);
-        assert(sdiffboundary_gidx == sdiffb_idx);
+        AssertLog(sdiffboundary_gidx == sdiffb_idx);
     }
 
     uint npatches = pPatches.size();
-    assert (mesh()->_countPatches() == npatches);
+    AssertLog(mesh()->_countPatches() == npatches);
     int rk; MPI_Comm_rank(MPI_COMM_WORLD, &rk);
 
     for (uint p = 0; p < npatches; ++p)
@@ -564,7 +565,7 @@ void smtos::TetOpSplitP::_setup(void)
         // Perform upcast
         steps::tetmesh::TmPatch *tmpatch = dynamic_cast<steps::tetmesh::TmPatch*>(wmpatch);
         if (!tmpatch)
-            throw steps::ArgErr("Well-mixed patches not supported in steps::solver::TetOpSplitP solver.");
+            ArgErrLog("Well-mixed patches not supported in steps::solver::TetOpSplitP solver.");
 
         steps::mpi::tetopsplit::Patch *localpatch = pPatches[p];
 
@@ -607,7 +608,7 @@ void smtos::TetOpSplitP::_setup(void)
         //*** end of new impl
         {
             auto tri = tri_idxs[i];
-            assert (pMesh->getTriPatch(tri) == tmpatch);
+            AssertLog(pMesh->getTriPatch(tri) == tmpatch);
 
             double area = pMesh->getTriArea(tri);
 
@@ -650,7 +651,7 @@ void smtos::TetOpSplitP::_setup(void)
     }
 
     ncomps = pComps.size();
-    assert (mesh()->_countComps() == ncomps);
+    AssertLog(mesh()->_countComps() == ncomps);
 
     for (uint c = 0; c < ncomps; ++c)
     {
@@ -664,7 +665,7 @@ void smtos::TetOpSplitP::_setup(void)
 
              for (uint tet: tmcomp->_getAllTetIndices())
              {
-                 assert (pMesh->getTetComp(tet) == tmcomp);
+                 AssertLog(pMesh->getTetComp(tet) == tmcomp);
 
                  double vol = pMesh->getTetVol(tet);
 
@@ -697,7 +698,7 @@ void smtos::TetOpSplitP::_setup(void)
             steps::mpi::tetopsplit::Comp * localcomp = pComps[c];
             uint cidx = c;
             _addWmVol(cidx, localcomp, localcomp->def()->vol());
-            assert(pWmVols[c] != 0);
+            AssertLog(pWmVols[c] != 0);
 
             // Now find all the triangles that reference this well-mixed volume
             // and set the inner or outer tetrahedron index accordingly.
@@ -711,7 +712,7 @@ void smtos::TetOpSplitP::_setup(void)
 
                 steps::tetmesh::TmPatch *comp_opatch = dynamic_cast<steps::tetmesh::TmPatch*>(op);
                 if (!comp_opatch)
-                    throw steps::ProgErr("Compartment outer patch is not a TmPatch.");
+                    ProgErrLog("Compartment outer patch is not a TmPatch.");
 
                 for (uint tri: comp_opatch->_getAllTriIndices())
                 {
@@ -730,7 +731,7 @@ void smtos::TetOpSplitP::_setup(void)
 
                 steps::tetmesh::TmPatch *comp_ipatch = dynamic_cast<steps::tetmesh::TmPatch*>(ip);
                 if (!comp_ipatch)
-                    throw steps::ProgErr("Compartment inner patch is not a TmPatch.");
+                    ProgErrLog("Compartment inner patch is not a TmPatch.");
 
                 for (uint tri: comp_ipatch->_getAllTriIndices())
                 {
@@ -748,7 +749,7 @@ void smtos::TetOpSplitP::_setup(void)
     // comp they do not talk to each other (see smtos::Tet::setNextTet())
     //
 
-    assert (ntets == pTets.size());
+    AssertLog(ntets == pTets.size());
     // pTets member size of all tets in geometry, but may not be filled with
     // local tets if they have not been added to a compartment
     for (uint t = 0; t < ntets; ++t)
@@ -762,7 +763,7 @@ void smtos::TetOpSplitP::_setup(void)
         // Not setting Tet triangles at this point- only want to set
         // for surface triangles
     }
-    assert (ntris == pTris.size());
+    AssertLog(ntris == pTris.size());
 
     for (uint t = 0; t < ntris; ++t)
     {
@@ -798,7 +799,7 @@ void smtos::TetOpSplitP::_setup(void)
             {
                 // A triangle may already have an inner tet defined as a well-mixed
                 // volume, but that should not be the case here:
-                assert (pTris[t]->iTet() == 0);
+                AssertLog(pTris[t]->iTet() == 0);
 
                 pTris[t]->setInnerTet(pTets[tetinner]);
                 // Now add this triangle to inner tet's list of neighbours
@@ -806,7 +807,7 @@ void smtos::TetOpSplitP::_setup(void)
                 {
                     // include assert for debugging purposes and remove
                     // once this is tested
-                    assert (i < 4);                                                        //////////
+                    AssertLog(i < 4);                                                        //////////
                     // check if there is already a neighbouring tet or tri
                     // In theory if there is a tri to add, the tet should
                     // have less than 4 neighbouring tets added because
@@ -840,13 +841,13 @@ void smtos::TetOpSplitP::_setup(void)
             {
                 // A triangle may already have an inner tet defined as a well-mixed
                 // volume, but that should not be the case here:
-                assert (pTris[t]->oTet() == 0);
+                AssertLog(pTris[t]->oTet() == 0);
 
                 pTris[t]->setOuterTet(pTets[tetouter]);
                 // Add this triangle to outer tet's list of neighbours
                 for (uint i=0; i <= 4; ++i)
                 {
-                    assert (i < 4);
+                    AssertLog(i < 4);
 
                     // See above in that tets now store tets from different comps
                     steps::mpi::tetopsplit::Tet * tet_out = pTets[tetouter];
@@ -869,7 +870,7 @@ void smtos::TetOpSplitP::_setup(void)
     // This is here because we need all tets to have been assigned correctly
     // to compartments. Check every one and set the compA and compB for the db
     uint ndiffbnds = pDiffBoundaries.size();
-    assert(ndiffbnds ==    mesh()->_countDiffBoundaries());
+    AssertLog(ndiffbnds ==    mesh()->_countDiffBoundaries());
 
     for (uint db = 0; db < ndiffbnds; ++db)
     {
@@ -886,26 +887,26 @@ void smtos::TetOpSplitP::_setup(void)
 
             int tetAidx = tri_tets[0];
             int tetBidx = tri_tets[1];
-            assert(tetAidx >= 0 && tetBidx >= 0);
+            AssertLog(tetAidx >= 0 && tetBidx >= 0);
 
             steps::mpi::tetopsplit::Tet * tetA = _tet(tetAidx);
             steps::mpi::tetopsplit::Tet * tetB = _tet(tetBidx);
-            assert(tetA != 0 && tetB != 0);
+            AssertLog(tetA != 0 && tetB != 0);
 
             steps::solver::Compdef *tetA_cdef = tetA->compdef();
             steps::solver::Compdef *tetB_cdef = tetB->compdef();
-            assert(tetA_cdef != 0);
-            assert(tetB_cdef != 0);
+            AssertLog(tetA_cdef != 0);
+            AssertLog(tetB_cdef != 0);
 
             if (tetA_cdef != compAdef)
             {
-                assert(tetB_cdef == compAdef);
-                assert(tetA_cdef == compBdef);
+                AssertLog(tetB_cdef == compAdef);
+                AssertLog(tetA_cdef == compBdef);
             }
             else
             {
-                assert(tetB_cdef == compBdef);
-                assert(tetA_cdef == compAdef);
+                AssertLog(tetB_cdef == compBdef);
+                AssertLog(tetA_cdef == compAdef);
             }
 
             // Ok, checks over, lets get down to business
@@ -919,17 +920,17 @@ void smtos::TetOpSplitP::_setup(void)
             {
                 if (tetA_tris[i] == dbtri)
                 {
-                    assert(direction_idx_a == -1);
+                    AssertLog(direction_idx_a == -1);
                     direction_idx_a = i;
                 }
                 if (tetB_tris[i] == dbtri)
                 {
-                    assert(direction_idx_b == -1);
+                    AssertLog(direction_idx_b == -1);
                     direction_idx_b = i;
                 }
             }
-            assert (direction_idx_a != -1);
-            assert (direction_idx_b != -1);
+            AssertLog(direction_idx_a != -1);
+            AssertLog(direction_idx_b != -1);
 
             // Set the tetrahedron and direction to the Diff Boundary object
             localdiffb->setTetDirection(tetAidx, direction_idx_a);
@@ -946,8 +947,8 @@ void smtos::TetOpSplitP::_setup(void)
         std::vector<uint> tets_direction = localdiffb->getTetDirection();
 
         ntets = tets.size();
-        assert (ntets <= pTets.size());
-        assert (tets_direction.size() == ntets);
+        AssertLog(ntets <= pTets.size());
+        AssertLog(tets_direction.size() == ntets);
 
         for (uint t = 0; t < ntets; ++t)
             _tet(tets[t])->setDiffBndDirection(tets_direction[t]);
@@ -962,7 +963,7 @@ void smtos::TetOpSplitP::_setup(void)
     // This is here because we need all tris to have been assigned correctly
     // to patches. Check every one and set the patchA and patchB for the db
     uint nsdiffbnds = pSDiffBoundaries.size();
-    assert(nsdiffbnds == mesh()->_countSDiffBoundaries());
+    AssertLog(nsdiffbnds == mesh()->_countSDiffBoundaries());
 
     for (uint sdb = 0; sdb < nsdiffbnds; ++sdb)
     {
@@ -979,26 +980,26 @@ void smtos::TetOpSplitP::_setup(void)
 
             int triAidx = bar_tris[0];
             int triBidx = bar_tris[1];
-            assert(triAidx >= 0 && triBidx >= 0);
+            AssertLog(triAidx >= 0 && triBidx >= 0);
 
             steps::mpi::tetopsplit::Tri * triA = _tri(triAidx);
             steps::mpi::tetopsplit::Tri * triB = _tri(triBidx);
-            assert(triA != 0 && triB != 0);
+            AssertLog(triA != 0 && triB != 0);
 
             steps::solver::Patchdef *triA_pdef = triA->patchdef();
             steps::solver::Patchdef *triB_pdef = triB->patchdef();
-            assert(triA_pdef != 0);
-            assert(triB_pdef != 0);
+            AssertLog(triA_pdef != 0);
+            AssertLog(triB_pdef != 0);
 
             if (triA_pdef != patchAdef)
             {
-                assert(triB_pdef == patchAdef);
-                assert(triA_pdef == patchBdef);
+                AssertLog(triB_pdef == patchAdef);
+                AssertLog(triA_pdef == patchBdef);
             }
             else
             {
-                assert(triB_pdef == patchBdef);
-                assert(triA_pdef == patchAdef);
+                AssertLog(triB_pdef == patchBdef);
+                AssertLog(triA_pdef == patchAdef);
             }
 
             // Ok, checks over, lets get down to business
@@ -1012,17 +1013,17 @@ void smtos::TetOpSplitP::_setup(void)
             {
                 if (triA_bars[i] == sdbbar)
                 {
-                    assert(direction_idx_a == -1);
+                    AssertLog(direction_idx_a == -1);
                     direction_idx_a = i;
                 }
                 if (triB_bars[i] == sdbbar)
                 {
-                    assert(direction_idx_b == -1);
+                    AssertLog(direction_idx_b == -1);
                     direction_idx_b = i;
                 }
             }
-            assert (direction_idx_a != -1);
-            assert (direction_idx_b != -1);
+            AssertLog(direction_idx_a != -1);
+            AssertLog(direction_idx_b != -1);
 
             // Set the tetrahedron and direction to the Diff Boundary object
             localsdiffb->setTriDirection(triAidx, direction_idx_a);
@@ -1036,8 +1037,8 @@ void smtos::TetOpSplitP::_setup(void)
         std::vector<uint> tris_direction = localsdiffb->getTriDirection();
 
         ntris = tris.size();
-        assert (ntris <= pTris.size());
-        assert (tris_direction.size() == ntris);
+        AssertLog(ntris <= pTris.size());
+        AssertLog(tris_direction.size() == ntris);
 
         for (uint t = 0; t < ntris; ++t)
             _tri(tris[t])->setSDiffBndDirection(tris_direction[t]);
@@ -1105,7 +1106,7 @@ void smtos::TetOpSplitP::_setupEField(void)
     //// Note to self: for now roughly following flow from original code in sim/controller.py.
     //// code for setting up a mesh was in func_tetmesh constructor and called functions.
 
-    assert(efflag() == true);
+    AssertLog(efflag() == true);
 
     switch (pEFoption) {
     case EF_DEFAULT:
@@ -1121,7 +1122,7 @@ void smtos::TetOpSplitP::_setupEField(void)
         break;
 #endif
     default:
-        throw steps::ArgErr("Unsupported E-Field solver.");
+        ArgErrLog("Unsupported E-Field solver.");
     }
 
     // Give temperature a default value of 20c
@@ -1134,11 +1135,11 @@ void smtos::TetOpSplitP::_setupEField(void)
         std::ostringstream os;
         os << "Membrane potential solver currently supports only one ";
         os << "membrane description object.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     steps::tetmesh::Memb * memb = mesh()->_getMemb(0);
-    assert(memb != 0);
+    AssertLog(memb != 0);
 
     // TODO: Decide what checks are needed for the membrane and implement them here
 
@@ -1170,7 +1171,7 @@ void smtos::TetOpSplitP::_setupEField(void)
     // Copy the data to local structures.
 
     std::vector<uint> membverts = memb->_getAllVertIndices();
-    assert(membverts.size() == nefverts());
+    AssertLog(membverts.size() == nefverts());
     for (uint efv = 0; efv < nefverts(); ++efv)
     {
         uint vertidx = membverts[efv];
@@ -1187,7 +1188,7 @@ void smtos::TetOpSplitP::_setupEField(void)
     }
 
     std::vector<uint> membtets = memb->_getAllVolTetIndices();
-    assert(membtets.size() == neftets());
+    AssertLog(membtets.size() == neftets());
     for (uint eft=0; eft < neftets(); ++eft)
     {
         uint tetidx = membtets[eft];
@@ -1203,7 +1204,7 @@ void smtos::TetOpSplitP::_setupEField(void)
         {
             std::ostringstream os;
             os << "Failed to create EField structures.";
-            throw steps::ProgErr(os.str());
+            ProgErrLog(os.str());
         }
 
         pEFTets[eft2] = tv0;
@@ -1215,7 +1216,7 @@ void smtos::TetOpSplitP::_setupEField(void)
     }
 
     std::vector<uint> membtris = memb->_getAllTriIndices();
-    assert(membtris.size() == neftris());
+    AssertLog(membtris.size() == neftris());
 
     pEFTris_vec.resize(pEFNTris);
     EFTrisV.resize(pEFNTris);
@@ -1241,7 +1242,7 @@ void smtos::TetOpSplitP::_setupEField(void)
         {
             std::ostringstream os;
             os << "Failed to create EField structures.";
-            throw steps::ProgErr(os.str());
+            ProgErrLog(os.str());
         }
 
         pEFTris[eft2] = tv0;
@@ -1264,7 +1265,7 @@ void smtos::TetOpSplitP::_setupEField(void)
     const int *count_begin=&EFTrisI_count[0];
     std::partial_sum(count_begin, count_begin+(nHosts-1), 1+&EFTrisI_offset[0]);
 
-    assert(local_eftri_indices.size()==EFTrisI_count[myRank]);
+    AssertLog(local_eftri_indices.size()==EFTrisI_count[myRank]);
 
     MPI_Allgatherv(&local_eftri_indices[0], (int)local_eftri_indices.size(), MPI_INT,
             &EFTrisI_idx[0], &EFTrisI_count[0], &EFTrisI_offset[0], MPI_INT, MPI_COMM_WORLD);
@@ -1282,7 +1283,7 @@ void smtos::TetOpSplitP::saveMembOpt(std::string const & opt_file_name)
     {
         std::ostringstream os;
         os << "saveMembOpt method only available if running EField ";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     pEField->saveOptimal(opt_file_name);
@@ -1294,7 +1295,7 @@ void smtos::TetOpSplitP::saveMembOpt(std::string const & opt_file_name)
 uint smtos::TetOpSplitP::_addComp(steps::solver::Compdef * cdef)
 {
     smtos::Comp * comp = new Comp(cdef);
-    assert(comp != 0);
+    AssertLog(comp != 0);
     uint compidx = pComps.size();
     pComps.push_back(comp);
     pCompMap[cdef] = comp;
@@ -1311,7 +1312,7 @@ uint smtos::TetOpSplitP::_addPatch(steps::solver::Patchdef * pdef)
      if (pdef->ocompdef()) ocomp = pCompMap[pdef->ocompdef()];
      */
     smtos::Patch * patch = new Patch(pdef);
-    assert(patch != 0);
+    AssertLog(patch != 0);
     uint patchidx = pPatches.size();
     pPatches.push_back(patch);
     return patchidx;
@@ -1322,7 +1323,7 @@ uint smtos::TetOpSplitP::_addPatch(steps::solver::Patchdef * pdef)
 uint smtos::TetOpSplitP::_addDiffBoundary(steps::solver::DiffBoundarydef * dbdef)
 {
     smtos::DiffBoundary * diffb = new DiffBoundary(dbdef);
-    assert(diffb != 0);
+    AssertLog(diffb != 0);
     uint dbidx = pDiffBoundaries.size();
     pDiffBoundaries.push_back(diffb);
     return dbidx;
@@ -1333,7 +1334,7 @@ uint smtos::TetOpSplitP::_addDiffBoundary(steps::solver::DiffBoundarydef * dbdef
 uint smtos::TetOpSplitP::_addSDiffBoundary(steps::solver::SDiffBoundarydef * sdbdef)
 {
 	smtos::SDiffBoundary * sdiffb = new SDiffBoundary(sdbdef);
-    assert(sdiffb != 0);
+    AssertLog(sdiffb != 0);
     uint sdbidx = pSDiffBoundaries.size();
     pSDiffBoundaries.push_back(sdiffb);
     return sdbidx;
@@ -1350,9 +1351,9 @@ void smtos::TetOpSplitP::_addTet(uint tetidx,
     steps::solver::Compdef * compdef  = comp->def();
     smtos::Tet * localtet = new smtos::Tet(tetidx, compdef, vol, a1, a2, a3, a4, d1, d2, d3, d4,
                                          tet0, tet1, tet2, tet3, myRank, tetHosts[tetidx]);
-    assert(localtet != 0);
-    assert(tetidx < pTets.size());
-    assert(pTets[tetidx] == 0);
+    AssertLog(localtet != 0);
+    AssertLog(tetidx < pTets.size());
+    AssertLog(pTets[tetidx] == 0);
     pTets[tetidx] = localtet;
     comp->addTet(localtet);
 
@@ -1367,8 +1368,8 @@ void smtos::TetOpSplitP::_addWmVol(uint cidx, steps::mpi::tetopsplit::Comp * com
 {
     steps::solver::Compdef * compdef  = comp->def();
     smtos::WmVol * localtet = new smtos::WmVol(cidx, compdef, vol, myRank, wmHosts[cidx]);
-    assert(localtet != 0);
-    assert(cidx < pWmVols.size());
+    AssertLog(localtet != 0);
+    AssertLog(cidx < pWmVols.size());
     pWmVols[cidx] = localtet;
     comp->addTet(localtet);
     
@@ -1384,9 +1385,9 @@ void smtos::TetOpSplitP::_addTri(uint triidx, steps::mpi::tetopsplit::Patch * pa
 {
     steps::solver::Patchdef * patchdef = patch->def();
     smtos::Tri * tri = new smtos::Tri(triidx, patchdef, area, l0, l1, l2, d0, d1, d2,  tinner, touter, tri0, tri1, tri2, myRank, triHosts[triidx]);
-    assert(tri != 0);
-    assert (triidx < pTris.size());
-    assert (pTris[triidx] == 0);
+    AssertLog(tri != 0);
+    AssertLog(triidx < pTris.size());
+    AssertLog(pTris[triidx] == 0);
     pTris[triidx] = tri;
     patch->addTri(tri);
 
@@ -1468,7 +1469,7 @@ void smtos::TetOpSplitP::run(double endtime)
     {
         std::ostringstream os;
         os << "Endtime is before current simulation time";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     
     if (recomputeUpdPeriod) _computeUpdPeriod();
@@ -1499,10 +1500,6 @@ void smtos::TetOpSplitP::_runWithoutEField(double sim_endtime)
     
     // here we assume that all molecule counts have been updated so the rates are accurate
     while (statedef()->time() < sim_endtime and not aligned) {
-        #ifdef MPI_DEBUG
-        CLOG(DEBUG, "mpi_debug") << "Current Sim Time: " << statedef()->time() << "\n";
-        #endif
-        
         #ifdef MPI_PROFILING
         double starttime = MPI_Wtime();
         #endif
@@ -1513,11 +1510,6 @@ void smtos::TetOpSplitP::_runWithoutEField(double sim_endtime)
             update_period = sim_endtime - pre_ssa_time;
             aligned=true;
         }
-        
-        #ifdef MPI_DEBUG
-        CLOG(DEBUG, "mpi_debug") << "Global update period: " << update_period << "\n";
-        #endif
-
 
         // *********************** Operator Split: SSA *********************************
         
@@ -1554,10 +1546,6 @@ void smtos::TetOpSplitP::_runWithoutEField(double sim_endtime)
         // *********************** Operator Split: Diffusion ***************************
 
         // Apply diffusion after the update period
-
-        #ifdef MPI_DEBUG
-        CLOG(DEBUG, "mpi_debug") << "OP Split: Diffusion\n";
-        #endif
         
         #ifdef MPI_PROFILING
         double endtime = MPI_Wtime();
@@ -1573,12 +1561,6 @@ void smtos::TetOpSplitP::_runWithoutEField(double sim_endtime)
         
         // create new requests for this loop
         requests = new MPI_Request[nNeighbHosts];
-#ifdef MPI_DEBUG
-        for (uint i = 0; i < nNeighbHosts; i++) {
-            CLOG(DEBUG, "mpi_debug") << "request address" << &(requests[i]) << "\n";
-        }
-        
-#endif
         
         for (auto neighbor : neighbHosts) {
             remoteChanges[neighbor].clear();
@@ -1597,9 +1579,6 @@ void smtos::TetOpSplitP::_runWithoutEField(double sim_endtime)
         // to reduce memory cost we use directions to retrieve the update list in upd process
         std::vector<KProc*> applied_diffs;
         std::vector<int> directions;
-        #ifdef MPI_DEBUG
-        CLOG(DEBUG, "mpi_debug") << "Diffusion for period: " << update_period << "\n";
-        #endif
         
         for (uint pos = 0; pos < diffSep; pos++)
         {
@@ -1770,10 +1749,7 @@ void smtos::TetOpSplitP::_runWithoutEField(double sim_endtime)
         
         statedef()->setTime(pre_ssa_time + update_period);
         if (nsteps > 0) statedef()->incNSteps(nsteps);
-        
-        #ifdef MPI_DEBUG
-        CLOG(DEBUG, "mpi_debug") << "OP Split: End of Iteration" << nIteration << "\n";
-        #endif
+
         nIteration += 1;
         
         #ifdef MPI_PROFILING
@@ -1800,10 +1776,6 @@ void smtos::TetOpSplitP::_refreshEFTrisV() {
 
 void smtos::TetOpSplitP::_runWithEField(double endtime)
 {
-    #ifdef MPI_DEBUG
-    CLOG(DEBUG, "mpi_debug") << "EField computation\n";
-    #endif
-
     #ifdef MPI_PROFILING
     double timing_start = MPI_Wtime();
     #endif
@@ -1896,7 +1868,7 @@ void smtos::TetOpSplitP::advance(double adv)
     {
         std::ostringstream os;
         os << "Time to advance cannot be negative";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     double endtime = statedef()->time() + adv;
@@ -1909,7 +1881,7 @@ void smtos::TetOpSplitP::step(void)
 {
     std::ostringstream os;
     os << "This function is not available for this solver!";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1950,9 +1922,9 @@ void smtos::TetOpSplitP::setTemp(double t)
         std::ostringstream os;
         os << "\nWARNING: Temperature set in simulation without membrane ";
         os << "potential calculation will be ignored.\n";
-        //std::cout << os << std::endl;
+        //CLOG(INFO, "general_log") << os << std::endl;
     }
-    assert(t >= 0.0);
+    AssertLog(t >= 0.0);
     pTemp = t;
 }
 
@@ -1960,10 +1932,10 @@ void smtos::TetOpSplitP::setTemp(double t)
 
 double smtos::TetOpSplitP::_getCompVol(uint cidx) const
 {
-    assert(cidx < statedef()->countComps());
-    assert (statedef()->countComps() == pComps.size());
+    AssertLog(cidx < statedef()->countComps());
+    AssertLog(statedef()->countComps() == pComps.size());
     smtos::Comp * comp = _comp(cidx);
-    assert(comp != 0);
+    AssertLog(comp != 0);
     return comp->vol();
 }
 
@@ -1971,17 +1943,17 @@ double smtos::TetOpSplitP::_getCompVol(uint cidx) const
 
 double smtos::TetOpSplitP::_getCompCount(uint cidx, uint sidx) const
 {
-    assert(cidx < statedef()->countComps());
-    assert(sidx < statedef()->countSpecs());
-    assert (statedef()->countComps() == pComps.size());
+    AssertLog(cidx < statedef()->countComps());
+    AssertLog(sidx < statedef()->countSpecs());
+    AssertLog(statedef()->countComps() == pComps.size());
     smtos::Comp * comp = _comp(cidx);
-    assert(comp != 0);
+    AssertLog(comp != 0);
     uint slidx = comp->def()->specG2L(sidx);
     if (slidx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Species undefined in compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     uint total_count = 0;
@@ -2001,10 +1973,10 @@ double smtos::TetOpSplitP::_getCompCount(uint cidx, uint sidx) const
 void smtos::TetOpSplitP::_setCompCount(uint cidx, uint sidx, double n)
 {
     MPI_Barrier(MPI_COMM_WORLD);
-    assert(cidx < statedef()->countComps());
-    assert(sidx < statedef()->countSpecs());
-    assert (n >= 0.0);
-    assert (statedef()->countComps() == pComps.size());
+    AssertLog(cidx < statedef()->countComps());
+    AssertLog(sidx < statedef()->countSpecs());
+    AssertLog(n >= 0.0);
+    AssertLog(statedef()->countComps() == pComps.size());
     smtos::Comp * comp = _comp(cidx);
     uint slidx = comp->def()->specG2L(sidx);
 
@@ -2012,14 +1984,14 @@ void smtos::TetOpSplitP::_setCompCount(uint cidx, uint sidx, double n)
     {
         std::ostringstream os;
         os << "Species undefined in compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (n > std::numeric_limits<unsigned int>::max( ))
     {
         std::ostringstream os;
         os << "Can't set count greater than maximum unsigned integer (";
         os << std::numeric_limits<unsigned int>::max( ) << ").\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // only do the distribution in rank 0
@@ -2049,10 +2021,6 @@ void smtos::TetOpSplitP::_setCompCount(uint cidx, uint sidx, double n)
     }
 
     MPI_Bcast(&(counts.front()), ncomptets, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-    
-    #ifdef MPI_DEBUG
-    CLOG(DEBUG, "mpi_debug") << "distribute comp counts" << counts << "\n";
-    #endif
 
     uint curr_pos = 0;
     for (WmVolPVecCI t = comp->bgnTet(); t != t_end; ++t)
@@ -2093,7 +2061,7 @@ double smtos::TetOpSplitP::_getCompConc(uint cidx, uint sidx) const
     // the following method does all the necessary argument checking
     double count = _getCompCount(cidx, sidx);
     ssolver::Compdef * comp = statedef()->compdef(cidx);
-    assert(comp != 0);
+    AssertLog(comp != 0);
     double vol = comp->vol();
     return count/ (1.0e3 * vol * steps::math::AVOGADRO);
 }
@@ -2102,10 +2070,10 @@ double smtos::TetOpSplitP::_getCompConc(uint cidx, uint sidx) const
 
 void smtos::TetOpSplitP::_setCompConc(uint cidx, uint sidx, double c)
 {
-    assert(c >= 0.0);
-    assert (cidx < statedef()->countComps());
+    AssertLog(c >= 0.0);
+    AssertLog(cidx < statedef()->countComps());
     ssolver::Compdef * comp = statedef()->compdef(cidx);
-    assert(comp != 0);
+    AssertLog(comp != 0);
     double count = c * (1.0e3 * comp->vol() * steps::math::AVOGADRO);
     // the following method does all the necessary argument checking
     _setCompCount(cidx, sidx, count);
@@ -2115,17 +2083,17 @@ void smtos::TetOpSplitP::_setCompConc(uint cidx, uint sidx, double c)
 
 bool smtos::TetOpSplitP::_getCompClamped(uint cidx, uint sidx) const
 {
-    assert(cidx < statedef()->countComps());
-    assert(sidx < statedef()->countSpecs());
-    assert(statedef()->countComps() == pComps.size());
+    AssertLog(cidx < statedef()->countComps());
+    AssertLog(sidx < statedef()->countSpecs());
+    AssertLog(statedef()->countComps() == pComps.size());
     smtos::Comp * comp = _comp(cidx);
-    assert(comp != 0);
+    AssertLog(comp != 0);
     uint lsidx = comp->def()->specG2L(sidx);
     if (lsidx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Species undefined in compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     WmVolPVecCI t_end = comp->endTet();
@@ -2148,17 +2116,17 @@ bool smtos::TetOpSplitP::_getCompClamped(uint cidx, uint sidx) const
 
 void smtos::TetOpSplitP::_setCompClamped(uint cidx, uint sidx, bool b)
 {
-    assert(cidx < statedef()->countComps());
-    assert(sidx < statedef()->countSpecs());
-    assert(statedef()->countComps() == pComps.size());
+    AssertLog(cidx < statedef()->countComps());
+    AssertLog(sidx < statedef()->countSpecs());
+    AssertLog(statedef()->countComps() == pComps.size());
     smtos::Comp * comp = _comp(cidx);
-    assert(comp != 0);
+    AssertLog(comp != 0);
     uint lsidx = comp->def()->specG2L(sidx);
     if (lsidx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Species undefined in compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // Set the flag in def object, though this may not be necessary
@@ -2176,17 +2144,17 @@ void smtos::TetOpSplitP::_setCompClamped(uint cidx, uint sidx, bool b)
 
 double smtos::TetOpSplitP::_getCompReacK(uint cidx, uint ridx) const
 {
-    assert(cidx < statedef()->countComps());
-    assert(ridx < statedef()->countReacs());
-    assert(statedef()->countComps() == pComps.size());
+    AssertLog(cidx < statedef()->countComps());
+    AssertLog(ridx < statedef()->countReacs());
+    AssertLog(statedef()->countComps() == pComps.size());
     smtos::Comp * comp = _comp(cidx);
-    assert(comp != 0);
+    AssertLog(comp != 0);
     uint lridx = comp->def()->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Reaction undefined in compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // We're just returning the default value for this comp, individual
@@ -2198,18 +2166,18 @@ double smtos::TetOpSplitP::_getCompReacK(uint cidx, uint ridx) const
 
 void smtos::TetOpSplitP::_setCompReacK(uint cidx, uint ridx, double kf)
 {
-    assert(cidx < statedef()->countComps());
-    assert(ridx < statedef()->countReacs());
-    assert(statedef()->countComps() == pComps.size());
-    assert(kf >= 0.0);
+    AssertLog(cidx < statedef()->countComps());
+    AssertLog(ridx < statedef()->countReacs());
+    AssertLog(statedef()->countComps() == pComps.size());
+    AssertLog(kf >= 0.0);
     smtos::Comp * comp = _comp(cidx);
-    assert(comp != 0);
+    AssertLog(comp != 0);
     uint lridx = comp->def()->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Reaction undefined in compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // First set the default value for the comp
@@ -2231,17 +2199,17 @@ void smtos::TetOpSplitP::_setCompReacK(uint cidx, uint ridx, double kf)
 
 bool smtos::TetOpSplitP::_getCompReacActive(uint cidx, uint ridx) const
 {
-    assert(cidx < statedef()->countComps());
-    assert(ridx < statedef()->countReacs());
-    assert(statedef()->countComps() == pComps.size());
+    AssertLog(cidx < statedef()->countComps());
+    AssertLog(ridx < statedef()->countReacs());
+    AssertLog(statedef()->countComps() == pComps.size());
     smtos::Comp * comp = _comp(cidx);
-    assert(comp != 0);
+    AssertLog(comp != 0);
     uint lridx = comp->def()->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Reaction undefined in compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     bool local_active = true;
@@ -2263,17 +2231,17 @@ bool smtos::TetOpSplitP::_getCompReacActive(uint cidx, uint ridx) const
 
 void smtos::TetOpSplitP::_setCompReacActive(uint cidx, uint ridx, bool a)
 {
-    assert(cidx < statedef()->countComps());
-    assert(ridx < statedef()->countReacs());
-    assert(statedef()->countComps() == pComps.size());
+    AssertLog(cidx < statedef()->countComps());
+    AssertLog(ridx < statedef()->countReacs());
+    AssertLog(statedef()->countComps() == pComps.size());
     smtos::Comp * comp = _comp(cidx);
-    assert(comp != 0);
+    AssertLog(comp != 0);
     uint lridx = comp->def()->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Reaction undefined in compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // Set the default value for the comp, though this is not entirely
@@ -2294,17 +2262,17 @@ void smtos::TetOpSplitP::_setCompReacActive(uint cidx, uint ridx, bool a)
 
 double smtos::TetOpSplitP::_getCompDiffD(uint cidx, uint didx) const
 {
-    assert (cidx < statedef()->countComps());
-    assert (didx < statedef()->countDiffs());
-    assert (statedef()->countComps() == pComps.size());
+    AssertLog(cidx < statedef()->countComps());
+    AssertLog(didx < statedef()->countDiffs());
+    AssertLog(statedef()->countComps() == pComps.size());
     smtos::Comp * comp = _comp(cidx);
-    assert (comp != 0);
+    AssertLog(comp != 0);
     uint ldidx = comp->def()->diffG2L(didx);
     if (ldidx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Diffusion rule undefined in compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // We're just returning the default value for this comp, individual
@@ -2317,18 +2285,18 @@ double smtos::TetOpSplitP::_getCompDiffD(uint cidx, uint didx) const
 
 void smtos::TetOpSplitP::_setCompDiffD(uint cidx, uint didx, double dk)
 {
-    assert (cidx < statedef()->countComps());
-    assert (didx < statedef()->countDiffs());
-    assert (statedef()->countComps() == pComps.size());
-    assert(dk >= 0.0);
+    AssertLog(cidx < statedef()->countComps());
+    AssertLog(didx < statedef()->countDiffs());
+    AssertLog(statedef()->countComps() == pComps.size());
+    AssertLog(dk >= 0.0);
     smtos::Comp * comp = _comp(cidx);
-    assert (comp != 0);
+    AssertLog(comp != 0);
     uint ldidx = comp->def()->diffG2L(didx);
     if (ldidx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Diffusion rule undefined in compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     recomputeUpdPeriod = true;
     // First set the default value for the comp
@@ -2347,7 +2315,7 @@ void smtos::TetOpSplitP::_setCompDiffD(uint cidx, uint didx, double dk)
         {
             std::ostringstream os;
             os << "Cannot change diffusion constant in well-mixed compartment.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
     }
 
@@ -2359,17 +2327,17 @@ void smtos::TetOpSplitP::_setCompDiffD(uint cidx, uint didx, double dk)
 
 bool smtos::TetOpSplitP::_getCompDiffActive(uint cidx, uint didx) const
 {
-	assert (cidx < statedef()->countComps());
-	assert (didx < statedef()->countDiffs());
-	assert (statedef()->countComps() == pComps.size());
+	AssertLog(cidx < statedef()->countComps());
+	AssertLog(didx < statedef()->countDiffs());
+	AssertLog(statedef()->countComps() == pComps.size());
 	smtos::Comp * comp = _comp(cidx);
-	assert (comp != 0);
+	AssertLog(comp != 0);
 	uint ldidx = comp->def()->diffG2L(didx);
 	if (ldidx == ssolver::LIDX_UNDEFINED)
 	{
 		std::ostringstream os;
 		os << "Diffusion rule undefined in compartment.\n";
-		throw steps::ArgErr(os.str());
+		ArgErrLog(os.str());
 	}
 
     bool local_active = true;
@@ -2387,7 +2355,7 @@ bool smtos::TetOpSplitP::_getCompDiffActive(uint cidx, uint didx) const
 		{
 			std::ostringstream os;
 			os << "Diffusion activation not defined in well-mixed compartment.\n";
-			throw steps::ArgErr(os.str());
+			ArgErrLog(os.str());
 		}
 	}
     bool global_active = false;
@@ -2399,17 +2367,17 @@ bool smtos::TetOpSplitP::_getCompDiffActive(uint cidx, uint didx) const
 
 void smtos::TetOpSplitP::_setCompDiffActive(uint cidx, uint didx, bool act)
 {
-    assert (cidx < statedef()->countComps());
-    assert (didx < statedef()->countDiffs());
-    assert (statedef()->countComps() == pComps.size());
+    AssertLog(cidx < statedef()->countComps());
+    AssertLog(didx < statedef()->countDiffs());
+    AssertLog(statedef()->countComps() == pComps.size());
     smtos::Comp * comp = _comp(cidx);
-    assert (comp != 0);
+    AssertLog(comp != 0);
     uint ldidx = comp->def()->diffG2L(didx);
     if (ldidx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Diffusion rule undefined in compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     WmVolPVecCI t_end = comp->endTet();
@@ -2425,7 +2393,7 @@ void smtos::TetOpSplitP::_setCompDiffActive(uint cidx, uint didx, bool act)
         {
             std::ostringstream os;
             os << "Cannot change diffusion constant in well-mixed compartment.\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
     }
     
@@ -2439,10 +2407,10 @@ void smtos::TetOpSplitP::_setCompDiffActive(uint cidx, uint didx, bool act)
 
 double smtos::TetOpSplitP::_getPatchArea(uint pidx) const
 {
-    assert (pidx < statedef()->countPatches());
-    assert (statedef()->countPatches() == pPatches.size());
+    AssertLog(pidx < statedef()->countPatches());
+    AssertLog(statedef()->countPatches() == pPatches.size());
     smtos::Patch * patch = _patch(pidx);
-    assert (patch != 0);
+    AssertLog(patch != 0);
     return patch->area();
 }
 
@@ -2450,17 +2418,17 @@ double smtos::TetOpSplitP::_getPatchArea(uint pidx) const
 
 double smtos::TetOpSplitP::_getPatchCount(uint pidx, uint sidx) const
 {
-    assert (pidx < statedef()->countPatches());
-    assert (sidx < statedef()->countSpecs());
-    assert (statedef()->countPatches() == pPatches.size());
+    AssertLog(pidx < statedef()->countPatches());
+    AssertLog(sidx < statedef()->countSpecs());
+    AssertLog(statedef()->countPatches() == pPatches.size());
     smtos::Patch * patch = _patch(pidx);
-    assert (patch != 0);
+    AssertLog(patch != 0);
     uint slidx = patch->def()->specG2L(sidx);
     if (slidx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Species undefined in patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     uint total_count = 0;
@@ -2480,26 +2448,26 @@ double smtos::TetOpSplitP::_getPatchCount(uint pidx, uint sidx) const
 void smtos::TetOpSplitP::_setPatchCount(uint pidx, uint sidx, double n)
 {
     MPI_Barrier(MPI_COMM_WORLD);
-    assert (pidx < statedef()->countPatches());
-	assert (sidx < statedef()->countSpecs());
-	assert (statedef()->countPatches() == pPatches.size());
-	assert (n >= 0.0);
+    AssertLog(pidx < statedef()->countPatches());
+	AssertLog(sidx < statedef()->countSpecs());
+	AssertLog(statedef()->countPatches() == pPatches.size());
+	AssertLog(n >= 0.0);
 	smtos::Patch * patch = _patch(pidx);
-	assert (patch != 0);
+	AssertLog(patch != 0);
 	uint slidx = patch->def()->specG2L(sidx);
     
     if (slidx == ssolver::LIDX_UNDEFINED)
 	{
 		std::ostringstream os;
 		os << "Species undefined in patch.\n";
-		throw steps::ArgErr(os.str());
+		ArgErrLog(os.str());
 	}
 	if (n > std::numeric_limits<unsigned int>::max( ))
 	{
 		std::ostringstream os;
 		os << "Can't set count greater than maximum unsigned integer (";
 		os << std::numeric_limits<unsigned int>::max( ) << ").\n";
-		throw steps::ArgErr(os.str());
+		ArgErrLog(os.str());
 	}
 
     // only do the distribution in rank 0
@@ -2529,10 +2497,6 @@ void smtos::TetOpSplitP::_setPatchCount(uint pidx, uint sidx, double n)
     
     MPI_Bcast(&(counts.front()), npatchtris, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
     
-    #ifdef MPI_DEBUG
-    CLOG(DEBUG, "mpi_debug") << "distribute patch counts " << counts << "\n";
-    #endif
-    
     uint curr_pos = 0;
     for (TriPVecCI t = patch->bgnTri(); t != t_end; ++t)
     {
@@ -2560,7 +2524,7 @@ double smtos::TetOpSplitP::_getPatchAmount(uint pidx, uint sidx) const
 
 void smtos::TetOpSplitP::_setPatchAmount(uint pidx, uint sidx, double a)
 {
-    assert(a >= 0.0);
+    AssertLog(a >= 0.0);
     // convert amount in mols to number of molecules
     double a2 = a * steps::math::AVOGADRO;
     // the following method does all the necessary argument checking
@@ -2571,17 +2535,17 @@ void smtos::TetOpSplitP::_setPatchAmount(uint pidx, uint sidx, double a)
 
 bool smtos::TetOpSplitP::_getPatchClamped(uint pidx, uint sidx) const
 {
-    assert (pidx < statedef()->countPatches());
-    assert (sidx < statedef()->countSpecs());
-    assert(statedef()->countPatches() == pPatches.size());
+    AssertLog(pidx < statedef()->countPatches());
+    AssertLog(sidx < statedef()->countSpecs());
+    AssertLog(statedef()->countPatches() == pPatches.size());
     smtos::Patch * patch = _patch(pidx);
-    assert(patch != 0);
+    AssertLog(patch != 0);
     uint lsidx = patch->def()->specG2L(sidx);
     if (lsidx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Species undefined in patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     bool local_clamped = true;
@@ -2603,17 +2567,17 @@ bool smtos::TetOpSplitP::_getPatchClamped(uint pidx, uint sidx) const
 
 void smtos::TetOpSplitP::_setPatchClamped(uint pidx, uint sidx, bool buf)
 {
-    assert (pidx < statedef()->countPatches());
-    assert (sidx < statedef()->countSpecs());
-    assert(statedef()->countPatches() == pPatches.size());
+    AssertLog(pidx < statedef()->countPatches());
+    AssertLog(sidx < statedef()->countSpecs());
+    AssertLog(statedef()->countPatches() == pPatches.size());
     smtos::Patch * patch = _patch(pidx);
-    assert(patch != 0);
+    AssertLog(patch != 0);
     uint lsidx = patch->def()->specG2L(sidx);
     if (lsidx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Species undefined in patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // Set the flag in def object for consistency, though this is not
@@ -2632,17 +2596,17 @@ void smtos::TetOpSplitP::_setPatchClamped(uint pidx, uint sidx, bool buf)
 
 double smtos::TetOpSplitP::_getPatchSReacK(uint pidx, uint ridx) const
 {
-    assert (pidx < statedef()->countPatches());
-    assert (ridx < statedef()->countSReacs());
-    assert(statedef()->countPatches() == pPatches.size());
+    AssertLog(pidx < statedef()->countPatches());
+    AssertLog(ridx < statedef()->countSReacs());
+    AssertLog(statedef()->countPatches() == pPatches.size());
     smtos::Patch * patch = _patch(pidx);
-    assert(patch != 0);
+    AssertLog(patch != 0);
     uint lsridx = patch->def()->sreacG2L(ridx);
     if (lsridx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Surface reaction undefined in patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // We're just returning the default value for this patch, individual
@@ -2654,18 +2618,18 @@ double smtos::TetOpSplitP::_getPatchSReacK(uint pidx, uint ridx) const
 
 void smtos::TetOpSplitP::_setPatchSReacK(uint pidx, uint ridx, double kf)
 {
-    assert (pidx < statedef()->countPatches());
-    assert (ridx < statedef()->countSReacs());
-    assert(statedef()->countPatches() == pPatches.size());
-    assert(kf >= 0.0);
+    AssertLog(pidx < statedef()->countPatches());
+    AssertLog(ridx < statedef()->countSReacs());
+    AssertLog(statedef()->countPatches() == pPatches.size());
+    AssertLog(kf >= 0.0);
     smtos::Patch * patch = _patch(pidx);
-    assert(patch != 0);
+    AssertLog(patch != 0);
     uint lsridx = patch->def()->sreacG2L(ridx);
     if (lsridx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Surface reaction undefined in patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // First set the default values for this patch
@@ -2687,17 +2651,17 @@ void smtos::TetOpSplitP::_setPatchSReacK(uint pidx, uint ridx, double kf)
 
 bool smtos::TetOpSplitP::_getPatchSReacActive(uint pidx, uint ridx) const
 {
-    assert (pidx < statedef()->countPatches());
-    assert (ridx < statedef()->countSReacs());
-    assert(statedef()->countPatches() == pPatches.size());
+    AssertLog(pidx < statedef()->countPatches());
+    AssertLog(ridx < statedef()->countSReacs());
+    AssertLog(statedef()->countPatches() == pPatches.size());
     smtos::Patch * patch = _patch(pidx);
-    assert(patch != 0);
+    AssertLog(patch != 0);
     uint lsridx = patch->def()->sreacG2L(ridx);
     if (lsridx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Surface reaction undefined in patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     bool local_active = true;
     TriPVecCI t_end = patch->endTri();
@@ -2715,8 +2679,8 @@ bool smtos::TetOpSplitP::_getPatchSReacActive(uint pidx, uint ridx) const
 
 void smtos::TetOpSplitP::_setDiffBoundaryDiffusionActive(uint dbidx, uint sidx, bool act)
 {
-    assert (dbidx < statedef()->countDiffBoundaries());
-    assert (sidx < statedef()->countSpecs());
+    AssertLog(dbidx < statedef()->countDiffBoundaries());
+    AssertLog(sidx < statedef()->countSpecs());
 
     // Need to do two things:
     // 1) check if the species is defined in both compartments conencted
@@ -2741,7 +2705,7 @@ void smtos::TetOpSplitP::_setDiffBoundaryDiffusionActive(uint dbidx, uint sidx, 
     {
         std::ostringstream os;
         os << "Species undefined in compartments connected by diffusion boundary.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     std::vector<uint> bdtets = diffb->getTets();
@@ -2756,7 +2720,7 @@ void smtos::TetOpSplitP::_setDiffBoundaryDiffusionActive(uint dbidx, uint sidx, 
         smtos::Tet * tet = _tet(bdtets[bdt]);
         if (!tet->getInHost()) continue;
         uint direction = bdtetsdir[bdt];
-        assert(direction >= 0 and direction < 4);
+        AssertLog(direction >= 0 and direction < 4);
 
         // Each diff kproc then has access to the species through it's defined parent
         uint ndiffs = tet->compdef()->countDiffs();
@@ -2777,8 +2741,8 @@ void smtos::TetOpSplitP::_setDiffBoundaryDiffusionActive(uint dbidx, uint sidx, 
 
 bool smtos::TetOpSplitP::_getDiffBoundaryDiffusionActive(uint dbidx, uint sidx) const
 {
-    assert (dbidx < statedef()->countDiffBoundaries());
-    assert (sidx < statedef()->countSpecs());
+    AssertLog(dbidx < statedef()->countDiffBoundaries());
+    AssertLog(sidx < statedef()->countSpecs());
 
     smtos::DiffBoundary * diffb = _diffboundary(dbidx);
     smtos::Comp * compA = diffb->compA();
@@ -2791,7 +2755,7 @@ bool smtos::TetOpSplitP::_getDiffBoundaryDiffusionActive(uint dbidx, uint sidx) 
     {
         std::ostringstream os;
         os << "Species undefined in compartments connected by diffusion boundary.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     std::vector<uint> bdtets = diffb->getTets();
@@ -2809,7 +2773,7 @@ bool smtos::TetOpSplitP::_getDiffBoundaryDiffusionActive(uint dbidx, uint sidx) 
         smtos::Tet * tet = _tet(bdtets[bdt]);
         if (!tet->getInHost()) continue;
         uint direction = bdtetsdir[bdt];
-        assert(direction >= 0 and direction < 4);
+        AssertLog(direction >= 0 and direction < 4);
 
         // Each diff kproc then has access to the species through it's defined parent
         uint ndiffs = tet->compdef()->countDiffs();
@@ -2836,8 +2800,8 @@ bool smtos::TetOpSplitP::_getDiffBoundaryDiffusionActive(uint dbidx, uint sidx) 
 
 void smtos::TetOpSplitP::_setDiffBoundaryDcst(uint dbidx, uint sidx, double dcst, uint direction_comp)
 {
-    assert (dbidx < statedef()->countDiffBoundaries());
-    assert (sidx < statedef()->countSpecs());
+    AssertLog(dbidx < statedef()->countDiffBoundaries());
+    AssertLog(sidx < statedef()->countSpecs());
 
     smtos::DiffBoundary * diffb = _diffboundary(dbidx);
     smtos::Comp * compA = diffb->compA();
@@ -2850,7 +2814,7 @@ void smtos::TetOpSplitP::_setDiffBoundaryDcst(uint dbidx, uint sidx, double dcst
     {
         std::ostringstream os;
         os << "Species undefined in compartments connected by diffusion boundary.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     recomputeUpdPeriod = true;
     
@@ -2876,7 +2840,7 @@ void smtos::TetOpSplitP::_setDiffBoundaryDcst(uint dbidx, uint sidx, double dcst
             continue;
         }
         uint direction = bdtetsdir[bdt];
-        assert(direction >= 0 and direction < 4);
+        AssertLog(direction >= 0 and direction < 4);
         
         // Each diff kproc then has access to the species through it's defined parent
         uint ndiffs = tet->compdef()->countDiffs();
@@ -2887,10 +2851,6 @@ void smtos::TetOpSplitP::_setDiffBoundaryDcst(uint dbidx, uint sidx, double dcst
             uint specgidx = diff->def()->lig();
             if (specgidx == sidx)
             {
-                #ifdef DIRECTIONAL_DCST_DEBUG
-                CLOG(DEBUG, "steps_debug") << "direction: " << direction << " dcst: " << dcst << "\n";
-                #endif
-                
                 // The following function will automatically activate diffusion
                 // in this direction if necessary
                 diff->setDirectionDcst(direction, dcst);
@@ -2906,17 +2866,17 @@ void smtos::TetOpSplitP::_setDiffBoundaryDcst(uint dbidx, uint sidx, double dcst
 
 void smtos::TetOpSplitP::_setPatchSReacActive(uint pidx, uint ridx, bool a)
 {
-    assert (pidx < statedef()->countPatches());
-    assert (ridx < statedef()->countSReacs());
-    assert(statedef()->countPatches() == pPatches.size());
+    AssertLog(pidx < statedef()->countPatches());
+    AssertLog(ridx < statedef()->countSReacs());
+    AssertLog(statedef()->countPatches() == pPatches.size());
     smtos::Patch * patch = _patch(pidx);
-    assert(patch != 0);
+    AssertLog(patch != 0);
     uint lsridx = patch->def()->sreacG2L(ridx);
     if (lsridx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Surface reaction undefined in patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // First set the flags in def object for consistency, though this is
@@ -2937,17 +2897,17 @@ void smtos::TetOpSplitP::_setPatchSReacActive(uint pidx, uint ridx, bool a)
 
 bool smtos::TetOpSplitP::_getPatchVDepSReacActive(uint pidx, uint vsridx) const
 {
-    assert (pidx < statedef()->countPatches());
-    assert (vsridx < statedef()->countVDepSReacs());
-    assert(statedef()->countPatches() == pPatches.size());
+    AssertLog(pidx < statedef()->countPatches());
+    AssertLog(vsridx < statedef()->countVDepSReacs());
+    AssertLog(statedef()->countPatches() == pPatches.size());
     smtos::Patch * patch = _patch(pidx);
-    assert(patch != 0);
+    AssertLog(patch != 0);
     uint lvsridx = patch->def()->vdepsreacG2L(vsridx);
     if (lvsridx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Voltage-dependent surface reaction undefined in patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     
     bool local_active = true;
@@ -2967,17 +2927,17 @@ bool smtos::TetOpSplitP::_getPatchVDepSReacActive(uint pidx, uint vsridx) const
 
 void smtos::TetOpSplitP::_setPatchVDepSReacActive(uint pidx, uint vsridx, bool a)
 {
-    assert (pidx < statedef()->countPatches());
-    assert (vsridx < statedef()->countVDepSReacs());
-    assert(statedef()->countPatches() == pPatches.size());
+    AssertLog(pidx < statedef()->countPatches());
+    AssertLog(vsridx < statedef()->countVDepSReacs());
+    AssertLog(statedef()->countPatches() == pPatches.size());
     smtos::Patch * patch = _patch(pidx);
-    assert(patch != 0);
+    AssertLog(patch != 0);
     uint lvsridx = patch->def()->vdepsreacG2L(vsridx);
     if (lvsridx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Voltage-dependent surface reaction undefined in patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // Not necessary and not possible to set the flags in def object
@@ -3015,7 +2975,7 @@ void smtos::TetOpSplitP::_setSDiffBoundaryDiffusionActive(uint sdbidx, uint sidx
     {
         std::ostringstream os;
         os << "Species undefined in patches connected by surface diffusion boundary.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     std::vector<uint> sbdtris = sdiffb->getTris();
@@ -3030,7 +2990,7 @@ void smtos::TetOpSplitP::_setSDiffBoundaryDiffusionActive(uint sdbidx, uint sidx
     	smtos::Tri * tri = _tri(sbdtris[sbdt]);
         if (!tri->getInHost()) continue;
         uint direction = sbdtrisdir[sbdt];
-        assert(direction >= 0 and direction < 3);
+        AssertLog(direction >= 0 and direction < 3);
 
         // Each sdiff kproc then has access to the species through its defined parent
         uint nsdiffs = tri->patchdef()->countSurfDiffs();
@@ -3062,7 +3022,7 @@ bool smtos::TetOpSplitP::_getSDiffBoundaryDiffusionActive(uint sdbidx, uint sidx
     {
         std::ostringstream os;
         os << "Species undefined in patches connected by surface diffusion boundary.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     std::vector<uint> sbdtris = sdiffb->getTris();
@@ -3080,7 +3040,7 @@ bool smtos::TetOpSplitP::_getSDiffBoundaryDiffusionActive(uint sdbidx, uint sidx
     	smtos::Tri * tri = _tri(sbdtris[sbdt]);
         if (!tri->getInHost()) continue;
         uint direction = sbdtrisdir[sbdt];
-        assert(direction >= 0 and direction < 3);
+        AssertLog(direction >= 0 and direction < 3);
 
         // Each sdiff kproc then has access to the species through its defined parent
         uint nsdiffs = tri->patchdef()->countSurfDiffs();
@@ -3118,7 +3078,7 @@ void smtos::TetOpSplitP::_setSDiffBoundaryDcst(uint sdbidx, uint sidx, double dc
     {
         std::ostringstream os;
         os << "Species undefined in patches connected by surface diffusion boundary.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     recomputeUpdPeriod = true;
@@ -3143,7 +3103,7 @@ void smtos::TetOpSplitP::_setSDiffBoundaryDcst(uint sdbidx, uint sidx, double dc
             continue;
         }
         uint direction = sbdtrisdir[sbdt];
-        assert(direction >= 0 and direction < 3);
+        AssertLog(direction >= 0 and direction < 3);
 
         // Each diff kproc then has access to the species through its defined parent
         uint nsdiffs = tri->patchdef()->countSurfDiffs();
@@ -3154,10 +3114,6 @@ void smtos::TetOpSplitP::_setSDiffBoundaryDcst(uint sdbidx, uint sidx, double dc
             uint specgidx = sdiff->def()->lig();
             if (specgidx == sidx)
             {
-                #ifdef DIRECTIONAL_DCST_DEBUG
-                CLOG(DEBUG, "steps_debug") << "direction: " << direction << " dcst: " << dcst << "\n";
-                #endif
-
                 // The following function will automatically activate diffusion
                 // in this direction if necessary
                 sdiff->setDirectionDcst(direction, dcst);
@@ -3183,7 +3139,7 @@ uint smtos::TetOpSplitP::addKProc(steps::mpi::tetopsplit::KProc * kp, int host)
 steps::mpi::tetopsplit::KProc * smtos::TetOpSplitP::_getNext(void) const
 {
 
-    assert(pA0 >= 0.0);
+    AssertLog(pA0 >= 0.0);
     // Quick check to see whether nothing is there.
     if (pA0 == 0.0) return NULL;
 
@@ -3290,23 +3246,24 @@ steps::mpi::tetopsplit::KProc * smtos::TetOpSplitP::_getNext(void) const
 
     // Precision rounding error force clean up - Complete
 
-    std::cerr << "Cannot find any suitable entry.\n";
-    std::cerr << "A0: " << std::setprecision (15) << pA0 << "\n";
-    std::cerr << "Selector: " << std::setprecision (15) << selector << "\n";
-    std::cerr << "Current Partial Sum: " << std::setprecision (15) << partial_sum << "\n";
+    std::ostringstream os;
 
-    std::cerr << "Distribution of group sums\n";
-    std::cerr << "Negative groups\n";
+    os << "Cannot find any suitable entry.\n";
+    os << "A0: " << std::setprecision (15) << pA0 << "\n";
+    os << "Selector: " << std::setprecision (15) << selector << "\n";
+    os << "Current Partial Sum: " << std::setprecision (15) << partial_sum << "\n";
+
+    os << "Distribution of group sums\n";
+    os << "Negative groups\n";
 
     for (uint i = 0; i < n_neg_groups; i++) {
-        std::cerr << i << ": " << std::setprecision (15) << nGroups[i]->sum << "\n";
+        os <<  i << ": " << std::setprecision (15) << nGroups[i]->sum << "\n";
     }
-    std::cerr << "Positive groups\n";
+    os << "Positive groups\n";
     for (uint i = 0; i < n_pos_groups; i++) {
-        std::cerr << i << ": " << std::setprecision (15) << pGroups[i]->sum << "\n";
+        os << i << ": " << std::setprecision (15) << pGroups[i]->sum << "\n";
     }
-
-    throw;
+    ProgErrLog(os.str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3329,10 +3286,7 @@ void smtos::TetOpSplitP::_executeStep(steps::mpi::tetopsplit::KProc * kp, double
 void smtos::TetOpSplitP::_updateSpec(steps::mpi::tetopsplit::WmVol * tet, uint spec_gidx)
 {
     // NOTE: this function does not update the Sum of popensity, _updateSum() is required after calling it.
-    
-    #ifdef MPI_DEBUG
-    //CLOG(DEBUG, "mpi_debug") << "Update kps related to species " << spec_gidx << " of subvolume " << tet->idx() <<".\n";
-    #endif
+
     if (!tet->getInHost()) return;
     
     std::set<smtos::KProc*> updset;
@@ -3358,9 +3312,6 @@ void smtos::TetOpSplitP::_updateSpec(steps::mpi::tetopsplit::WmVol * tet, uint s
         }
     }
 
-    #ifdef MPI_DEBUG
-    //CLOG(DEBUG, "mpi_debug") << "length of update kp " << updvec.size() <<".\n";
-    #endif
     for (auto & kp : updset) {
         _updateElement(kp);
     }
@@ -3371,10 +3322,7 @@ void smtos::TetOpSplitP::_updateSpec(steps::mpi::tetopsplit::WmVol * tet, uint s
 void smtos::TetOpSplitP::_updateSpec(steps::mpi::tetopsplit::Tri * tri, uint spec_gidx)
 {
     // NOTE: this function does not update the Sum of popensity, _updateSum() is required after calling it.
-    
-    #ifdef MPI_DEBUG
-    //CLOG(DEBUG, "mpi_debug") << "Update kps related to species " << spec_gidx << " of tri " << tri->idx() << ".\n";
-    #endif
+
     if (!tri->getInHost()) return;
     std::set<smtos::KProc*> updset;
 
@@ -3395,21 +3343,21 @@ void smtos::TetOpSplitP::_updateSpec(steps::mpi::tetopsplit::Tri * tri, uint spe
 
 double smtos::TetOpSplitP::_getCompReacH(uint cidx, uint ridx) const
 {
-    assert(cidx < statedef()->countComps());
-    assert(ridx < statedef()->countReacs());
+    AssertLog(cidx < statedef()->countComps());
+    AssertLog(ridx < statedef()->countReacs());
     ssolver::Compdef * comp = statedef()->compdef(cidx);
-    assert(comp != 0);
+    AssertLog(comp != 0);
     uint lridx = comp->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Reaction undefined in compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // The 'local' Comp object has same index as solver::Compdef object
     smtos::Comp * lcomp = pComps[cidx];
-    assert (lcomp->def() == comp);
+    AssertLog(lcomp->def() == comp);
 
     WmVolPVecCI t_bgn = lcomp->bgnTet();
     WmVolPVecCI t_end = lcomp->endTet();
@@ -3431,21 +3379,21 @@ double smtos::TetOpSplitP::_getCompReacH(uint cidx, uint ridx) const
 
 double smtos::TetOpSplitP::_getCompReacC(uint cidx, uint ridx) const
 {
-    assert(cidx < statedef()->countComps());
-    assert(ridx < statedef()->countReacs());
+    AssertLog(cidx < statedef()->countComps());
+    AssertLog(ridx < statedef()->countReacs());
     ssolver::Compdef * comp = statedef()->compdef(cidx);
-    assert(comp != 0);
+    AssertLog(comp != 0);
     uint lridx = comp->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Reaction undefined in compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // The 'local' Comp object has same index as solver::Compdef object
     smtos::Comp * lcomp = pComps[cidx];
-    assert (lcomp->def() == comp);
+    AssertLog(lcomp->def() == comp);
 
     WmVolPVecCI t_bgn = lcomp->bgnTet();
     WmVolPVecCI t_end = lcomp->endTet();
@@ -3471,21 +3419,21 @@ double smtos::TetOpSplitP::_getCompReacC(uint cidx, uint ridx) const
 
 double smtos::TetOpSplitP::_getCompReacA(uint cidx, uint ridx) const
 {
-    assert(cidx < statedef()->countComps());
-    assert(ridx < statedef()->countReacs());
+    AssertLog(cidx < statedef()->countComps());
+    AssertLog(ridx < statedef()->countReacs());
     ssolver::Compdef * comp = statedef()->compdef(cidx);
-    assert(comp != 0);
+    AssertLog(comp != 0);
     uint lridx = comp->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Reaction undefined in compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // The 'local' Comp object has same index as solver::Compdef object
     smtos::Comp * lcomp = pComps[cidx];
-    assert (lcomp->def() == comp);
+    AssertLog(lcomp->def() == comp);
 
     WmVolPVecCI t_bgn = lcomp->bgnTet();
     WmVolPVecCI t_end = lcomp->endTet();
@@ -3507,21 +3455,21 @@ double smtos::TetOpSplitP::_getCompReacA(uint cidx, uint ridx) const
 
 uint smtos::TetOpSplitP::_getCompReacExtent(uint cidx, uint ridx) const
 {
-    assert(cidx < statedef()->countComps());
-    assert(ridx < statedef()->countReacs());
+    AssertLog(cidx < statedef()->countComps());
+    AssertLog(ridx < statedef()->countReacs());
     ssolver::Compdef * comp = statedef()->compdef(cidx);
-    assert(comp != 0);
+    AssertLog(comp != 0);
     uint lridx = comp->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Reaction undefined in compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // The 'local' Comp object has same index as solver::Compdef object
     smtos::Comp * lcomp = pComps[cidx];
-    assert (lcomp->def() == comp);
+    AssertLog(lcomp->def() == comp);
 
     WmVolPVecCI t_bgn = lcomp->bgnTet();
     WmVolPVecCI t_end = lcomp->endTet();
@@ -3544,21 +3492,21 @@ uint smtos::TetOpSplitP::_getCompReacExtent(uint cidx, uint ridx) const
 
 void smtos::TetOpSplitP::_resetCompReacExtent(uint cidx, uint ridx)
 {
-    assert(cidx < statedef()->countComps());
-    assert(ridx < statedef()->countReacs());
+    AssertLog(cidx < statedef()->countComps());
+    AssertLog(ridx < statedef()->countReacs());
     ssolver::Compdef * comp = statedef()->compdef(cidx);
-    assert(comp != 0);
+    AssertLog(comp != 0);
     uint lridx = comp->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Reaction undefined in compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // The 'local' Comp object has same index as solver::Compdef object
     smtos::Comp * lcomp = pComps[cidx];
-    assert (lcomp->def() == comp);
+    AssertLog(lcomp->def() == comp);
 
     WmVolPVecCI t_bgn = lcomp->bgnTet();
     WmVolPVecCI t_end = lcomp->endTet();
@@ -3576,20 +3524,20 @@ void smtos::TetOpSplitP::_resetCompReacExtent(uint cidx, uint ridx)
 
 double smtos::TetOpSplitP::_getPatchSReacH(uint pidx, uint ridx) const
 {
-    assert (pidx < statedef()->countPatches());
-    assert (ridx < statedef()->countSReacs());
+    AssertLog(pidx < statedef()->countPatches());
+    AssertLog(ridx < statedef()->countSReacs());
     ssolver::Patchdef * patch = statedef()->patchdef(pidx);
     uint lsridx = patch->sreacG2L(ridx);
     if (lsridx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Surface reaction undefined in patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // The 'local' Patch object has same index as solver::Patchdef object
     smtos::Patch * lpatch = pPatches[pidx];
-    assert (lpatch->def() == patch);
+    AssertLog(lpatch->def() == patch);
 
     TriPVecCI t_bgn = lpatch->bgnTri();
     TriPVecCI t_end = lpatch->endTri();
@@ -3612,20 +3560,20 @@ double smtos::TetOpSplitP::_getPatchSReacH(uint pidx, uint ridx) const
 
 double smtos::TetOpSplitP::_getPatchSReacC(uint pidx, uint ridx) const
 {
-    assert (pidx < statedef()->countPatches());
-    assert (ridx < statedef()->countSReacs());
+    AssertLog(pidx < statedef()->countPatches());
+    AssertLog(ridx < statedef()->countSReacs());
     ssolver::Patchdef * patch = statedef()->patchdef(pidx);
     uint lsridx = patch->sreacG2L(ridx);
     if (lsridx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Surface reaction undefined in patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // The 'local' Patch object has same index as solver::Patchdef object
     smtos::Patch * lpatch = pPatches[pidx];
-    assert (lpatch->def() == patch);
+    AssertLog(lpatch->def() == patch);
 
     TriPVecCI t_bgn = lpatch->bgnTri();
     TriPVecCI t_end = lpatch->endTri();
@@ -3652,20 +3600,20 @@ double smtos::TetOpSplitP::_getPatchSReacC(uint pidx, uint ridx) const
 
 double smtos::TetOpSplitP::_getPatchSReacA(uint pidx, uint ridx) const
 {
-    assert (pidx < statedef()->countPatches());
-    assert (ridx < statedef()->countSReacs());
+    AssertLog(pidx < statedef()->countPatches());
+    AssertLog(ridx < statedef()->countSReacs());
     ssolver::Patchdef * patch = statedef()->patchdef(pidx);
     uint lsridx = patch->sreacG2L(ridx);
     if (lsridx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Surface reaction undefined in patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // The 'local' Patch object has same index as solver::Patchdef object
     smtos::Patch * lpatch = pPatches[pidx];
-    assert (lpatch->def() == patch);
+    AssertLog(lpatch->def() == patch);
 
     TriPVecCI t_bgn = lpatch->bgnTri();
     TriPVecCI t_end = lpatch->endTri();
@@ -3687,20 +3635,20 @@ double smtos::TetOpSplitP::_getPatchSReacA(uint pidx, uint ridx) const
 
 uint smtos::TetOpSplitP::_getPatchSReacExtent(uint pidx, uint ridx) const
 {
-    assert (pidx < statedef()->countPatches());
-    assert (ridx < statedef()->countSReacs());
+    AssertLog(pidx < statedef()->countPatches());
+    AssertLog(ridx < statedef()->countSReacs());
     ssolver::Patchdef * patch = statedef()->patchdef(pidx);
     uint lsridx = patch->sreacG2L(ridx);
     if (lsridx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Surface reaction undefined in patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // The 'local' Patch object has same index as solver::Patchdef object
     smtos::Patch * lpatch = pPatches[pidx];
-    assert (lpatch->def() == patch);
+    AssertLog(lpatch->def() == patch);
 
     TriPVecCI t_bgn = lpatch->bgnTri();
     TriPVecCI t_end = lpatch->endTri();
@@ -3722,20 +3670,20 @@ uint smtos::TetOpSplitP::_getPatchSReacExtent(uint pidx, uint ridx) const
 
 void smtos::TetOpSplitP::_resetPatchSReacExtent(uint pidx, uint ridx)
 {
-    assert (pidx < statedef()->countPatches());
-    assert (ridx < statedef()->countSReacs());
+    AssertLog(pidx < statedef()->countPatches());
+    AssertLog(ridx < statedef()->countSReacs());
     ssolver::Patchdef * patch = statedef()->patchdef(pidx);
     uint lsridx = patch->sreacG2L(ridx);
     if (lsridx == ssolver::LIDX_UNDEFINED)
     {
         std::ostringstream os;
         os << "Surface reaction undefined in patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // The 'local' Patch object has same index as solver::Patchdef object
     smtos::Patch * lpatch = pPatches[pidx];
-    assert (lpatch->def() == patch);
+    AssertLog(lpatch->def() == patch);
 
     TriPVecCI t_bgn = lpatch->bgnTri();
     TriPVecCI t_end = lpatch->endTri();
@@ -3753,12 +3701,12 @@ void smtos::TetOpSplitP::_resetPatchSReacExtent(uint pidx, uint ridx)
 
 double smtos::TetOpSplitP::_getTetVol(uint tidx) const
 {
-    assert (tidx < pTets.size());
+    AssertLog(tidx < pTets.size());
     if (pTets[tidx] == 0)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     return pTets[tidx]->vol();
 }
@@ -3769,15 +3717,15 @@ void smtos::TetOpSplitP::_setTetVol(uint tidx, double vol)
 {
     std::ostringstream os;
     os << "Can not change tetrahedron volume in a mesh based solver.\n";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool smtos::TetOpSplitP::_getTetSpecDefined(uint tidx, uint sidx) const
 {
-    assert (tidx < pTets.size());
-    assert (sidx < statedef()->countSpecs());
+    AssertLog(tidx < pTets.size());
+    AssertLog(sidx < statedef()->countSpecs());
 
     if (pTets[tidx] == 0) return false;
 
@@ -3792,17 +3740,14 @@ bool smtos::TetOpSplitP::_getTetSpecDefined(uint tidx, uint sidx) const
 double smtos::TetOpSplitP::_getTetCount(uint tidx, uint sidx) const
 {
     MPI_Barrier(MPI_COMM_WORLD);
-    #ifdef MPI_DEBUG
-    //CLOG(DEBUG, "mpi_debug") << "Get Tet " << tidx << " count of spec " << sidx << "\n";
-    #endif
-    assert (tidx < pTets.size());
-    assert (sidx < statedef()->countSpecs());
+    AssertLog(tidx < pTets.size());
+    AssertLog(sidx < statedef()->countSpecs());
 
     if (pTets[tidx] == 0)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     smtos::Tet * tet = pTets[tidx];
@@ -3811,14 +3756,11 @@ double smtos::TetOpSplitP::_getTetCount(uint tidx, uint sidx) const
     {
         std::ostringstream os;
         os << "Species undefined in tetrahedron.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     uint count = tet->pools()[lsidx];
     MPI_Bcast(&count, 1, MPI_UNSIGNED, tetHosts[tidx], MPI_COMM_WORLD);
-    #ifdef MPI_DEBUG
-    //CLOG(DEBUG, "mpi_debug") << "count: " << count << "\n";
-    #endif
 	MPI_Barrier(MPI_COMM_WORLD);
     return count;
 }
@@ -3827,26 +3769,22 @@ double smtos::TetOpSplitP::_getTetCount(uint tidx, uint sidx) const
 
 void smtos::TetOpSplitP::_setTetCount(uint tidx, uint sidx, double n)
 {
-    #ifdef MPI_DEBUG
-    //CLOG(DEBUG, "mpi_debug") << "Set Tet " << tidx << " count of spec " << sidx << ": " << n << "\n";
-    #endif
-    
     MPI_Barrier(MPI_COMM_WORLD);
-    assert (tidx < pTets.size());
-    assert (sidx < statedef()->countSpecs());
-    assert (n >= 0.0);
+    AssertLog(tidx < pTets.size());
+    AssertLog(sidx < statedef()->countSpecs());
+    AssertLog(n >= 0.0);
     if (pTets[tidx] == 0)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (n > std::numeric_limits<unsigned int>::max( ))
     {
         std::ostringstream os;
         os << "Can't set count greater than maximum unsigned integer (";
         os << std::numeric_limits<unsigned int>::max( ) << ").\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     
     smtos::Tet * tet = pTets[tidx];
@@ -3856,7 +3794,7 @@ void smtos::TetOpSplitP::_setTetCount(uint tidx, uint sidx, double n)
     {
         std::ostringstream os;
         os << "Species undefined in tetrahedron.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     uint count = 0;
@@ -3917,14 +3855,14 @@ double smtos::TetOpSplitP::_getTetConc(uint tidx, uint sidx) const
 
 void smtos::TetOpSplitP::_setTetConc(uint tidx, uint sidx, double c)
 {
-    assert (c >= 0.0);
-    assert (tidx < pTets.size());
+    AssertLog(c >= 0.0);
+    AssertLog(tidx < pTets.size());
 
     if (pTets[tidx] == 0)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     smtos::Tet * tet = pTets[tidx];
@@ -3937,14 +3875,14 @@ void smtos::TetOpSplitP::_setTetConc(uint tidx, uint sidx, double c)
 
 bool smtos::TetOpSplitP::_getTetClamped(uint tidx, uint sidx) const
 {
-    assert (tidx < pTets.size());
-    assert (sidx < statedef()->countSpecs());
+    AssertLog(tidx < pTets.size());
+    AssertLog(sidx < statedef()->countSpecs());
 
     if (pTets[tidx] == 0)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     smtos::Tet * tet = pTets[tidx];
@@ -3954,7 +3892,7 @@ bool smtos::TetOpSplitP::_getTetClamped(uint tidx, uint sidx) const
     {
         std::ostringstream os;
         os << "Species undefined in tetrahedron.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     return tet->clamped(lsidx);
@@ -3964,14 +3902,14 @@ bool smtos::TetOpSplitP::_getTetClamped(uint tidx, uint sidx) const
 
 void smtos::TetOpSplitP::_setTetClamped(uint tidx, uint sidx, bool buf)
 {
-    assert (tidx < pTets.size());
-    assert (sidx < statedef()->countSpecs());
+    AssertLog(tidx < pTets.size());
+    AssertLog(sidx < statedef()->countSpecs());
 
     if (pTets[tidx] == 0)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     smtos::Tet * tet = pTets[tidx];
@@ -3981,7 +3919,7 @@ void smtos::TetOpSplitP::_setTetClamped(uint tidx, uint sidx, bool buf)
     {
         std::ostringstream os;
         os << "Species undefined in tetrahedron.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     tet->setClamped(lsidx, buf);
@@ -3991,14 +3929,14 @@ void smtos::TetOpSplitP::_setTetClamped(uint tidx, uint sidx, bool buf)
 
 double smtos::TetOpSplitP::_getTetReacK(uint tidx, uint ridx) const
 {
-    assert (tidx < pTets.size());
-    assert (ridx < statedef()->countReacs());
+    AssertLog(tidx < pTets.size());
+    AssertLog(ridx < statedef()->countReacs());
 
     if (pTets[tidx] == 0 && tetHosts[tidx] == -1)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     
     int host = tetHosts[tidx];
@@ -4010,7 +3948,7 @@ double smtos::TetOpSplitP::_getTetReacK(uint tidx, uint ridx) const
     {
         std::ostringstream os;
         os << "Reaction undefined in tetrahedron.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     double kcst = 0;
     if (tet->getInHost()) {
@@ -4024,15 +3962,15 @@ double smtos::TetOpSplitP::_getTetReacK(uint tidx, uint ridx) const
 
 void smtos::TetOpSplitP::_setTetReacK(uint tidx, uint ridx, double kf)
 {
-    assert (tidx < pTets.size());
-    assert (ridx < statedef()->countReacs());
-    assert (kf >= 0.0);
+    AssertLog(tidx < pTets.size());
+    AssertLog(ridx < statedef()->countReacs());
+    AssertLog(kf >= 0.0);
 
     if (pTets[tidx] == 0  && tetHosts[tidx] == -1)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     
     smtos::Tet * tet = pTets[tidx];
@@ -4042,7 +3980,7 @@ void smtos::TetOpSplitP::_setTetReacK(uint tidx, uint ridx, double kf)
     {
         std::ostringstream os;
         os << "\nReaction undefined in tetrahedron.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     if (!tet->getInHost()) return;
@@ -4055,14 +3993,14 @@ void smtos::TetOpSplitP::_setTetReacK(uint tidx, uint ridx, double kf)
 
 bool smtos::TetOpSplitP::_getTetReacActive(uint tidx, uint ridx) const
 {
-    assert (tidx < pTets.size());
-    assert (ridx < statedef()->countReacs());
+    AssertLog(tidx < pTets.size());
+    AssertLog(ridx < statedef()->countReacs());
 
     if (pTets[tidx] == 0 && tetHosts[tidx] == -1)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int host = tetHosts[tidx];
     smtos::Tet * tet = pTets[tidx];
@@ -4072,7 +4010,7 @@ bool smtos::TetOpSplitP::_getTetReacActive(uint tidx, uint ridx) const
     {
         std::ostringstream os;
         os << "Reaction undefined in tetrahedron.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     
     bool active = false;
@@ -4088,14 +4026,14 @@ bool smtos::TetOpSplitP::_getTetReacActive(uint tidx, uint ridx) const
 
 void smtos::TetOpSplitP::_setTetReacActive(uint tidx, uint ridx, bool act)
 {
-    assert (tidx < pTets.size());
-    assert (ridx < statedef()->countReacs());
+    AssertLog(tidx < pTets.size());
+    AssertLog(ridx < statedef()->countReacs());
 
     if (pTets[tidx] == 0 && tetHosts[tidx] == -1)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     smtos::Tet * tet = pTets[tidx];
@@ -4105,7 +4043,7 @@ void smtos::TetOpSplitP::_setTetReacActive(uint tidx, uint ridx, bool act)
     {
         std::ostringstream os;
         os << "Reaction undefined in tetrahedron.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (!tet->getInHost()) return;
     tet->reac(lridx)->setActive(act);
@@ -4117,14 +4055,14 @@ void smtos::TetOpSplitP::_setTetReacActive(uint tidx, uint ridx, bool act)
 
 double smtos::TetOpSplitP::_getTetDiffD(uint tidx, uint didx, uint direction_tet) const
 {
-    assert (tidx < pTets.size());
-    assert (didx < statedef()->countDiffs());
+    AssertLog(tidx < pTets.size());
+    AssertLog(didx < statedef()->countDiffs());
     
     if (pTets[tidx] == 0 && tetHosts[tidx] == -1)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int host = tetHosts[tidx];
     smtos::Tet * tet = pTets[tidx];
@@ -4134,7 +4072,7 @@ double smtos::TetOpSplitP::_getTetDiffD(uint tidx, uint didx, uint direction_tet
     {
         std::ostringstream os;
         os << "Diffusion rule undefined in tetrahedron.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     double dcst = 0.0;
     if (tet->getInHost()) {
@@ -4146,7 +4084,7 @@ double smtos::TetOpSplitP::_getTetDiffD(uint tidx, uint didx, uint direction_tet
             if (direction == -1) {
                 std::ostringstream os;
                 os << "Tetrahedron " << direction_tet << " is not a neighbor of tetrahedron " << tidx << ".\n";
-                throw steps::ArgErr(os.str());
+                ArgErrLog(os.str());
             }
 
             dcst = tet->diff(ldidx)->dcst(direction);
@@ -4160,20 +4098,15 @@ double smtos::TetOpSplitP::_getTetDiffD(uint tidx, uint didx, uint direction_tet
 
 void smtos::TetOpSplitP::_setTetDiffD(uint tidx, uint didx, double dk, uint direction_tet)
 {
-    #ifdef DIRECTIONAL_DCST_DEBUG
-    CLOG_IF(direction_tet !=  std::numeric_limits<uint>::max(), DEBUG, "steps_debug") << "tidx: " << tidx << " didx: " << didx << " dk: " << dk << " direction tet: " << direction_tet << "\n";
     
-    CLOG_IF(direction_tet ==  std::numeric_limits<uint>::max(), DEBUG, "steps_debug") << "tidx: " << tidx << " didx: " << didx << " dk: " << dk << " for all directions.\n";
-    #endif
-    
-    assert (tidx < pTets.size());
-    assert (didx < statedef()->countDiffs());
+    AssertLog(tidx < pTets.size());
+    AssertLog(didx < statedef()->countDiffs());
 
     if (pTets[tidx] == 0 && tetHosts[tidx] == -1)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     recomputeUpdPeriod = true;
     smtos::Tet * tet = pTets[tidx];
@@ -4183,7 +4116,7 @@ void smtos::TetOpSplitP::_setTetDiffD(uint tidx, uint didx, double dk, uint dire
     {
         std::ostringstream os;
         os << "Diffusion rule undefined in tetrahedron.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     
     if (!tet->getInHost()) return;
@@ -4196,12 +4129,9 @@ void smtos::TetOpSplitP::_setTetDiffD(uint tidx, uint didx, double dk, uint dire
         if (direction == -1) {
             std::ostringstream os;
             os << "Tetrahedron " << direction_tet << " is not a neighbor of tetrahedron " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
-        
-        #ifdef DIRECTIONAL_DCST_DEBUG
-        CLOG(DEBUG, "steps_debug") << "use tet " << direction_tet << " to set direction " << direction << ".\n";
-        #endif
+
         
         tet->diff(ldidx)->setDirectionDcst(direction, dk);
     }
@@ -4214,14 +4144,14 @@ void smtos::TetOpSplitP::_setTetDiffD(uint tidx, uint didx, double dk, uint dire
 
 bool smtos::TetOpSplitP::_getTetDiffActive(uint tidx, uint didx) const
 {
-    assert (tidx < pTets.size());
-    assert (didx < statedef()->countDiffs());
+    AssertLog(tidx < pTets.size());
+    AssertLog(didx < statedef()->countDiffs());
 
     if (pTets[tidx] == 0 && tetHosts[tidx] == -1)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int host = tetHosts[tidx];
     smtos::Tet * tet = pTets[tidx];
@@ -4231,7 +4161,7 @@ bool smtos::TetOpSplitP::_getTetDiffActive(uint tidx, uint didx) const
     {
         std::ostringstream os;
         os << "Diffusion rule undefined in tetrahedron.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     bool active = false;
     if (tet->getInHost()) {
@@ -4246,14 +4176,14 @@ bool smtos::TetOpSplitP::_getTetDiffActive(uint tidx, uint didx) const
 
 void smtos::TetOpSplitP::_setTetDiffActive(uint tidx, uint didx, bool act)
 {
-    assert (tidx < pTets.size());
-    assert (didx < statedef()->countDiffs());
+    AssertLog(tidx < pTets.size());
+    AssertLog(didx < statedef()->countDiffs());
 
     if (pTets[tidx] == 0 && tetHosts[tidx] == -1)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     smtos::Tet * tet = pTets[tidx];
@@ -4263,7 +4193,7 @@ void smtos::TetOpSplitP::_setTetDiffActive(uint tidx, uint didx, bool act)
     {
         std::ostringstream os;
         os << "Diffusion rule undefined in tetrahedron.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (!tet->getInHost()) return;
     tet->diff(ldidx)->setActive(act);
@@ -4278,14 +4208,14 @@ void smtos::TetOpSplitP::_setTetDiffActive(uint tidx, uint didx, bool act)
 
 double smtos::TetOpSplitP::_getTetReacH(uint tidx, uint ridx) const
 {
-    assert (tidx < pTets.size());
-    assert (ridx < statedef()->countReacs());
+    AssertLog(tidx < pTets.size());
+    AssertLog(ridx < statedef()->countReacs());
 
     if (pTets[tidx] == 0 && tetHosts[tidx] == -1)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int host = tetHosts[tidx];
     smtos::Tet * tet = pTets[tidx];
@@ -4295,7 +4225,7 @@ double smtos::TetOpSplitP::_getTetReacH(uint tidx, uint ridx) const
     {
         std::ostringstream os;
         os << "Reaction undefined in tetrahedron.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     double h = 0;
     if (tet->getInHost()) {
@@ -4309,14 +4239,14 @@ double smtos::TetOpSplitP::_getTetReacH(uint tidx, uint ridx) const
 
 double smtos::TetOpSplitP::_getTetReacC(uint tidx, uint ridx) const
 {
-    assert (tidx < pTets.size());
-    assert (ridx < statedef()->countReacs());
+    AssertLog(tidx < pTets.size());
+    AssertLog(ridx < statedef()->countReacs());
 
     if (pTets[tidx] == 0 && tetHosts[tidx] == -1)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int host = tetHosts[tidx];
     smtos::Tet * tet = pTets[tidx];
@@ -4326,7 +4256,7 @@ double smtos::TetOpSplitP::_getTetReacC(uint tidx, uint ridx) const
     {
         std::ostringstream os;
         os << "Reaction undefined in tetrahedron.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     double c = 0;
@@ -4341,14 +4271,14 @@ double smtos::TetOpSplitP::_getTetReacC(uint tidx, uint ridx) const
 
 double smtos::TetOpSplitP::_getTetReacA(uint tidx, uint ridx) const
 {
-    assert (tidx < pTets.size());
-    assert (ridx < statedef()->countReacs());
+    AssertLog(tidx < pTets.size());
+    AssertLog(ridx < statedef()->countReacs());
 
     if (pTets[tidx] == 0 && tetHosts[tidx] == -1)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int host = tetHosts[tidx];
     smtos::Tet * tet = pTets[tidx];
@@ -4358,7 +4288,7 @@ double smtos::TetOpSplitP::_getTetReacA(uint tidx, uint ridx) const
     {
         std::ostringstream os;
         os << "Reaction undefined in tetrahedron.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     double a = 0;
     if (tet->getInHost()) {
@@ -4372,14 +4302,14 @@ double smtos::TetOpSplitP::_getTetReacA(uint tidx, uint ridx) const
 
 double smtos::TetOpSplitP::_getTetDiffA(uint tidx, uint didx) const
 {
-    assert (tidx < pTets.size());
-    assert (didx < statedef()->countDiffs());
+    AssertLog(tidx < pTets.size());
+    AssertLog(didx < statedef()->countDiffs());
 
     if (pTets[tidx] == 0 && tetHosts[tidx] == -1)
     {
         std::ostringstream os;
         os << "Tetrahedron " << tidx << " has not been assigned to a compartment.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int host = tetHosts[tidx];
     smtos::Tet * tet = pTets[tidx];
@@ -4389,7 +4319,7 @@ double smtos::TetOpSplitP::_getTetDiffA(uint tidx, uint didx) const
     {
         std::ostringstream os;
         os << "Diffusion rule undefined in tetrahedron.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     double a = 0;
     if (tet->getInHost()) {
@@ -4403,13 +4333,13 @@ double smtos::TetOpSplitP::_getTetDiffA(uint tidx, uint didx) const
 
 double smtos::TetOpSplitP::_getTriArea(uint tidx) const
 {
-    assert (tidx < pTris.size());
+    AssertLog(tidx < pTris.size());
 
     if (pTris[tidx] == 0)
     {
         std::ostringstream os;
         os << "Triangle " << tidx << " has not been assigned to a patch.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     return pTris[tidx]->area();
@@ -4419,15 +4349,15 @@ double smtos::TetOpSplitP::_getTriArea(uint tidx) const
 
 void smtos::TetOpSplitP::_setTriArea(uint tidx, double area)
 {
-    throw steps::NotImplErr();
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 bool smtos::TetOpSplitP::_getTriSpecDefined(uint tidx, uint sidx) const
 {
-    assert (tidx < pTris.size());
-    assert (sidx < statedef()->countSpecs());
+    AssertLog(tidx < pTris.size());
+    AssertLog(sidx < statedef()->countSpecs());
 
     if (pTris[tidx] == 0) return false;
 
@@ -4443,14 +4373,14 @@ bool smtos::TetOpSplitP::_getTriSpecDefined(uint tidx, uint sidx) const
 double smtos::TetOpSplitP::_getTriCount(uint tidx, uint sidx) const
 {
     MPI_Barrier(MPI_COMM_WORLD);
-    assert (tidx < pTris.size());
-    assert (sidx < statedef()->countSpecs());
+    AssertLog(tidx < pTris.size());
+    AssertLog(sidx < statedef()->countSpecs());
 
-    if (pTris[tidx] <= 0)
+    if (pTris[tidx] == 0)
     {
         std::ostringstream os;
         os << "Triangle " << tidx << " has not been assigned to a patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     smtos::Tri * tri = pTris[tidx];
@@ -4459,7 +4389,7 @@ double smtos::TetOpSplitP::_getTriCount(uint tidx, uint sidx) const
     {
         std::ostringstream os;
         os << "Species undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     uint count = tri->pools()[lsidx];
@@ -4467,7 +4397,7 @@ double smtos::TetOpSplitP::_getTriCount(uint tidx, uint sidx) const
     if (it == triHosts.end()) {
         std::ostringstream os;
         os << "Triangle " << tidx << " has not been assigned to a host.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     
     MPI_Bcast(&count, 1, MPI_UNSIGNED, it->second, MPI_COMM_WORLD);
@@ -4479,26 +4409,23 @@ double smtos::TetOpSplitP::_getTriCount(uint tidx, uint sidx) const
 
 void smtos::TetOpSplitP::_setTriCount(uint tidx, uint sidx, double n)
 {
-    #ifdef MPI_DEBUG
-    //CLOG(DEBUG, "mpi_debug") << "Set Tri " << tidx << " count of spec " << sidx << ": " << n << "\n";
-    #endif
     MPI_Barrier(MPI_COMM_WORLD);
-    assert (tidx < pTris.size());
-    assert (sidx < statedef()->countSpecs());
-    assert (n >= 0.0);
+    AssertLog(tidx < pTris.size());
+    AssertLog(sidx < statedef()->countSpecs());
+    AssertLog(n >= 0.0);
 
     if (pTris[tidx] == 0)
     {
         std::ostringstream os;
         os << "Triangle " << tidx << " has not been assigned to a patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (n > std::numeric_limits<unsigned int>::max( ))
     {
         std::ostringstream os;
         os << "Can't set count greater than maximum unsigned integer (";
         os << std::numeric_limits<unsigned int>::max( ) << ").\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     smtos::Tri * tri = pTris[tidx];
@@ -4507,7 +4434,7 @@ void smtos::TetOpSplitP::_setTriCount(uint tidx, uint sidx, double n)
     {
         std::ostringstream os;
         os << "Species undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     uint count = 0;
@@ -4556,14 +4483,14 @@ void smtos::TetOpSplitP::_setTriAmount(uint tidx, uint sidx, double m)
 
 bool smtos::TetOpSplitP::_getTriClamped(uint tidx, uint sidx) const
 {
-    assert (tidx < pTris.size());
-    assert (sidx < statedef()->countSpecs());
+    AssertLog(tidx < pTris.size());
+    AssertLog(sidx < statedef()->countSpecs());
 
     if (pTris[tidx] == 0)
     {
         std::ostringstream os;
         os << "Triangle " << tidx << " has not been assigned to a patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     smtos::Tri * tri = pTris[tidx];
@@ -4573,7 +4500,7 @@ bool smtos::TetOpSplitP::_getTriClamped(uint tidx, uint sidx) const
     {
         std::ostringstream os;
         os << "Species undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     return tri->clamped(lsidx);
@@ -4583,14 +4510,14 @@ bool smtos::TetOpSplitP::_getTriClamped(uint tidx, uint sidx) const
 
 void smtos::TetOpSplitP::_setTriClamped(uint tidx, uint sidx, bool buf)
 {
-    assert (tidx < pTris.size());
-    assert (sidx < statedef()->countSpecs());
+    AssertLog(tidx < pTris.size());
+    AssertLog(sidx < statedef()->countSpecs());
 
     if (pTris[tidx] == 0)
     {
         std::ostringstream os;
         os << "Triangle " << tidx << " has not been assigned to a patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     smtos::Tri * tri = pTris[tidx];
@@ -4600,7 +4527,7 @@ void smtos::TetOpSplitP::_setTriClamped(uint tidx, uint sidx, bool buf)
     {
         std::ostringstream os;
         os << "Species undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     tri->setClamped(lsidx, buf);
@@ -4610,14 +4537,14 @@ void smtos::TetOpSplitP::_setTriClamped(uint tidx, uint sidx, bool buf)
 
 double smtos::TetOpSplitP::_getTriSReacK(uint tidx, uint ridx)
 {
-    assert (tidx < pTris.size());
-    assert (ridx < statedef()->countSReacs());
+    AssertLog(tidx < pTris.size());
+    AssertLog(ridx < statedef()->countSReacs());
 
     if (pTris[tidx] == 0 && triHosts.find(tidx) == triHosts.end())
     {
         std::ostringstream os;
         os << "Triangle " << tidx << " has not been assigned to a patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     uint host = triHosts[tidx];
     smtos::Tri * tri = pTris[tidx];
@@ -4627,7 +4554,7 @@ double smtos::TetOpSplitP::_getTriSReacK(uint tidx, uint ridx)
     {
         std::ostringstream os;
         os << "Surface reaction undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     double kcst = 0;
     if (tri->getInHost()) {
@@ -4641,14 +4568,14 @@ double smtos::TetOpSplitP::_getTriSReacK(uint tidx, uint ridx)
 
 void smtos::TetOpSplitP::_setTriSReacK(uint tidx, uint ridx, double kf)
 {
-    assert (tidx < pTris.size());
-    assert (ridx < statedef()->countSReacs());
+    AssertLog(tidx < pTris.size());
+    AssertLog(ridx < statedef()->countSReacs());
 
     if (pTris[tidx] == 0 && triHosts.find(tidx) == triHosts.end())
     {
         std::ostringstream os;
         os << "Triangle " << tidx << " has not been assigned to a patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     smtos::Tri * tri = pTris[tidx];
 
@@ -4657,7 +4584,7 @@ void smtos::TetOpSplitP::_setTriSReacK(uint tidx, uint ridx, double kf)
     {
         std::ostringstream os;
         os << "Surface reaction undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (!tri->getInHost()) return;
     
@@ -4671,14 +4598,14 @@ void smtos::TetOpSplitP::_setTriSReacK(uint tidx, uint ridx, double kf)
 
 bool smtos::TetOpSplitP::_getTriSReacActive(uint tidx, uint ridx)
 {
-    assert (tidx < pTris.size());
-    assert (ridx < statedef()->countSReacs());
+    AssertLog(tidx < pTris.size());
+    AssertLog(ridx < statedef()->countSReacs());
 
     if (pTris[tidx] == 0 && triHosts.find(tidx) == triHosts.end())
     {
         std::ostringstream os;
         os << "Triangle " << tidx << " has not been assigned to a patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     uint host = triHosts[tidx];
     smtos::Tri * tri = pTris[tidx];
@@ -4688,7 +4615,7 @@ bool smtos::TetOpSplitP::_getTriSReacActive(uint tidx, uint ridx)
     {
         std::ostringstream os;
         os << "Surface reaction undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     bool active = false;
     if (tri->getInHost()) {
@@ -4703,14 +4630,14 @@ bool smtos::TetOpSplitP::_getTriSReacActive(uint tidx, uint ridx)
 
 void smtos::TetOpSplitP::_setTriSReacActive(uint tidx, uint ridx, bool act)
 {
-    assert (tidx < pTris.size());
-    assert (ridx < statedef()->countSReacs());
+    AssertLog(tidx < pTris.size());
+    AssertLog(ridx < statedef()->countSReacs());
 
     if (pTris[tidx] == 0 && tetHosts[tidx] == -1)
     {
         std::ostringstream os;
         os << "Triangle " << tidx << " has not been assigned to a patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     smtos::Tri * tri = pTris[tidx];
@@ -4720,7 +4647,7 @@ void smtos::TetOpSplitP::_setTriSReacActive(uint tidx, uint ridx, bool act)
     {
         std::ostringstream os;
         os << "Surface reaction undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (!tri->getInHost()) return;
     tri->sreac(lsridx)->setActive(act);
@@ -4732,14 +4659,14 @@ void smtos::TetOpSplitP::_setTriSReacActive(uint tidx, uint ridx, bool act)
 
 double smtos::TetOpSplitP::_getTriSDiffD(uint tidx, uint didx, uint direction_tri)
 {
-    assert (tidx < pTris.size());
-    assert (didx < statedef()->countSurfDiffs());
+    AssertLog(tidx < pTris.size());
+    AssertLog(didx < statedef()->countSurfDiffs());
     
     if (pTris[tidx] == 0 && triHosts.find(tidx) == triHosts.end())
     {
         std::ostringstream os;
         os << "Triangle " << tidx << " has not been assigned to a patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     uint host = triHosts[tidx];
     smtos::Tri * tri = pTris[tidx];
@@ -4749,7 +4676,7 @@ double smtos::TetOpSplitP::_getTriSDiffD(uint tidx, uint didx, uint direction_tr
     {
         std::ostringstream os;
         os << "Diffusion rule undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     double dcst = 0.0;
     if (tri->getInHost()) {
@@ -4762,7 +4689,7 @@ double smtos::TetOpSplitP::_getTriSDiffD(uint tidx, uint didx, uint direction_tr
             if (direction == -1) {
                 std::ostringstream os;
                 os << "Triangle " << direction_tri << " is not a neighbor of triangle " << tidx << ".\n";
-                throw steps::ArgErr(os.str());
+                ArgErrLog(os.str());
             }
             
             dcst = tri->sdiff(ldidx)->dcst(direction);
@@ -4776,20 +4703,14 @@ double smtos::TetOpSplitP::_getTriSDiffD(uint tidx, uint didx, uint direction_tr
 
 void smtos::TetOpSplitP::_setTriSDiffD(uint tidx, uint didx, double dk, uint direction_tri)
 {
-    #ifdef DIRECTIONAL_DCST_DEBUG
-    CLOG_IF(direction_tri !=  std::numeric_limits<uint>::max(), DEBUG, "steps_debug") << "tidx: " << tidx << " didx: " << didx << " dk: " << dk << " direction tri: " << direction_tri << "\n";
-    
-    CLOG_IF(direction_tri ==  std::numeric_limits<uint>::max(), DEBUG, "steps_debug") << "tidx: " << tidx << " didx: " << didx << " dk: " << dk << " for all directions.\n";
-    #endif
-    
-    assert (tidx < pTris.size());
-    assert (didx < statedef()->countSurfDiffs());
+    AssertLog(tidx < pTris.size());
+    AssertLog(didx < statedef()->countSurfDiffs());
 
     if (pTris[tidx] == 0 && triHosts.find(tidx) == triHosts.end())
     {
         std::ostringstream os;
         os << "Triangle " << tidx << " has not been assigned to a patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     smtos::Tri * tri = pTris[tidx];
@@ -4799,7 +4720,7 @@ void smtos::TetOpSplitP::_setTriSDiffD(uint tidx, uint didx, double dk, uint dir
     {
         std::ostringstream os;
         os << "Diffusion rule undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     recomputeUpdPeriod = true;
     if (!tri->getInHost()) return;
@@ -4813,13 +4734,9 @@ void smtos::TetOpSplitP::_setTriSDiffD(uint tidx, uint didx, double dk, uint dir
         if (direction == -1) {
             std::ostringstream os;
             os << "Triangle " << direction_tri << " is not a neighbor of triangle " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
+
         }
-        
-        #ifdef DIRECTIONAL_DCST_DEBUG
-        CLOG(DEBUG, "steps_debug") << "use tri " << direction_tri << " to set direction " << direction << ".\n";
-        #endif
-        
         tri->sdiff(ldidx)->setDirectionDcst(direction, dk);
     }
     _updateElement(tri->sdiff(ldidx));
@@ -4830,14 +4747,14 @@ void smtos::TetOpSplitP::_setTriSDiffD(uint tidx, uint didx, double dk, uint dir
 
 bool smtos::TetOpSplitP::_getTriVDepSReacActive(uint tidx, uint vsridx)
 {
-    assert (tidx < pTris.size());
-    assert (vsridx < statedef()->countVDepSReacs());
+    AssertLog(tidx < pTris.size());
+    AssertLog(vsridx < statedef()->countVDepSReacs());
 
     if (pTris[tidx] == 0 && triHosts.find(tidx) == triHosts.end())
     {
         std::ostringstream os;
         os << "Triangle " << tidx << " has not been assigned to a patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     uint host = triHosts[tidx];
     smtos::Tri * tri = pTris[tidx];
@@ -4847,7 +4764,7 @@ bool smtos::TetOpSplitP::_getTriVDepSReacActive(uint tidx, uint vsridx)
     {
         std::ostringstream os;
         os << "Voltage-dependent surface reaction undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     bool active = false;
     if (tri->getInHost()) {
@@ -4862,14 +4779,14 @@ bool smtos::TetOpSplitP::_getTriVDepSReacActive(uint tidx, uint vsridx)
 
 void smtos::TetOpSplitP::_setTriVDepSReacActive(uint tidx, uint vsridx, bool act)
 {
-    assert (tidx < pTris.size());
-    assert (vsridx < statedef()->countVDepSReacs());
+    AssertLog(tidx < pTris.size());
+    AssertLog(vsridx < statedef()->countVDepSReacs());
 
     if (pTris[tidx] == 0 && triHosts.find(tidx) == triHosts.end())
     {
         std::ostringstream os;
         os << "Triangle " << tidx << " has not been assigned to a patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     uint host = triHosts[tidx];
     smtos::Tri * tri = pTris[tidx];
@@ -4879,7 +4796,7 @@ void smtos::TetOpSplitP::_setTriVDepSReacActive(uint tidx, uint vsridx, bool act
     {
         std::ostringstream os;
         os << "Voltage-dependent surface reaction undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (!tri->getInHost()) return;
     tri->vdepsreac(lvsridx)->setActive(act);
@@ -4891,14 +4808,14 @@ void smtos::TetOpSplitP::_setTriVDepSReacActive(uint tidx, uint vsridx, bool act
 
 double smtos::TetOpSplitP::_getTriSReacH(uint tidx, uint ridx)
 {
-    assert (tidx < pTris.size());
-    assert (ridx < statedef()->countSReacs());
+    AssertLog(tidx < pTris.size());
+    AssertLog(ridx < statedef()->countSReacs());
 
     if (pTris[tidx] == 0 && triHosts.find(tidx) == triHosts.end())
     {
         std::ostringstream os;
         os << "Triangle " << tidx << " has not been assigned to a patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     uint host = triHosts[tidx];
     smtos::Tri * tri = pTris[tidx];
@@ -4908,7 +4825,7 @@ double smtos::TetOpSplitP::_getTriSReacH(uint tidx, uint ridx)
     {
         std::ostringstream os;
         os << "Surface reaction undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     double h = 0;
     if (tri->getInHost()) h = tri->sreac(lsridx)->h();
@@ -4920,14 +4837,14 @@ double smtos::TetOpSplitP::_getTriSReacH(uint tidx, uint ridx)
 
 double smtos::TetOpSplitP::_getTriSReacC(uint tidx, uint ridx)
 {
-    assert (tidx < pTris.size());
-    assert (ridx < statedef()->countSReacs());
+    AssertLog(tidx < pTris.size());
+    AssertLog(ridx < statedef()->countSReacs());
 
     if (pTris[tidx] == 0 && triHosts.find(tidx) == triHosts.end())
     {
         std::ostringstream os;
         os << "Triangle " << tidx << " has not been assigned to a patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     uint host = triHosts[tidx];
     smtos::Tri * tri = pTris[tidx];
@@ -4937,7 +4854,7 @@ double smtos::TetOpSplitP::_getTriSReacC(uint tidx, uint ridx)
     {
         std::ostringstream os;
         os << "Surface reaction undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     double c = 0;
@@ -4950,14 +4867,14 @@ double smtos::TetOpSplitP::_getTriSReacC(uint tidx, uint ridx)
 
 double smtos::TetOpSplitP::_getTriSReacA(uint tidx, uint ridx)
 {
-    assert (tidx < pTris.size());
-    assert (ridx < statedef()->countSReacs());
+    AssertLog(tidx < pTris.size());
+    AssertLog(ridx < statedef()->countSReacs());
 
     if (pTris[tidx] == 0 && triHosts.find(tidx) == triHosts.end())
     {
         std::ostringstream os;
         os << "Triangle " << tidx << " has not been assigned to a patch.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     uint host = triHosts[tidx];
     smtos::Tri * tri = pTris[tidx];
@@ -4967,7 +4884,7 @@ double smtos::TetOpSplitP::_getTriSReacA(uint tidx, uint ridx)
     {
         std::ostringstream os;
         os << "Surface reaction undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     double a = 0;
@@ -4984,13 +4901,13 @@ void smtos::TetOpSplitP::setEfieldDT(double efdt)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (efdt <= 0.0)
     {
         std::ostringstream os;
         os << "EField dt must be graeter than zero.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     pEFDT = efdt;
 }
@@ -5003,14 +4920,14 @@ double smtos::TetOpSplitP::_getTetV(uint tidx) const
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int loctidx = pEFTet_GtoL[tidx];
     if (loctidx == -1)
     {
         std::ostringstream os;
         os << "Tetrahedron index " << tidx << " not assigned to a conduction volume.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // EField object should convert value to base s.i. units
@@ -5026,14 +4943,14 @@ void smtos::TetOpSplitP::_setTetV(uint tidx, double v)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int loctidx = pEFTet_GtoL[tidx];
     if (loctidx == -1)
     {
         std::ostringstream os;
         os << "Tetrahedron index " << tidx << " not assigned to a conduction volume.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // EField object should convert to millivolts
@@ -5048,14 +4965,14 @@ bool smtos::TetOpSplitP::_getTetVClamped(uint tidx) const
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int loctidx = pEFTet_GtoL[tidx];
     if (loctidx == -1)
     {
         std::ostringstream os;
         os << "Tetrahedron index " << tidx << " not assigned to a conduction volume.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     
     return pEField->getTetVClamped(loctidx);
@@ -5069,14 +4986,14 @@ void smtos::TetOpSplitP::_setTetVClamped(uint tidx, bool cl)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int loctidx = pEFTet_GtoL[tidx];
     if (loctidx == -1)
     {
         std::ostringstream os;
         os << "Tetrahedron index " << tidx << " not assigned to a conduction volume.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     pEField->setTetVClamped(loctidx, cl);
@@ -5090,14 +5007,14 @@ double smtos::TetOpSplitP::_getTriV(uint tidx) const
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int loctidx = pEFTri_GtoL[tidx];
     if (loctidx == -1)
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // EField object should convert value to base s.i. units
     return EFTrisV[loctidx];
@@ -5111,14 +5028,14 @@ void smtos::TetOpSplitP::_setTriV(uint tidx, double v)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int loctidx = pEFTri_GtoL[tidx];
     if (loctidx == -1)
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // EField object should convert to millivolts
@@ -5134,14 +5051,14 @@ bool smtos::TetOpSplitP::_getTriVClamped(uint tidx) const
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int loctidx = pEFTri_GtoL[tidx];
     if (loctidx == -1)
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     return pEField->getTriVClamped(loctidx);
@@ -5155,14 +5072,14 @@ void smtos::TetOpSplitP::_setTriVClamped(uint tidx, bool cl)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int loctidx = pEFTri_GtoL[tidx];
     if (loctidx == -1)
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     pEField->setTriVClamped(loctidx, cl);
@@ -5176,7 +5093,7 @@ double smtos::TetOpSplitP::_getTriOhmicI(uint tidx)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     smtos::Tri * tri = pTris[tidx];
@@ -5186,7 +5103,7 @@ double smtos::TetOpSplitP::_getTriOhmicI(uint tidx)
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int tri_host = triHosts[tidx];
     double cur = 0.0;
@@ -5201,15 +5118,15 @@ double smtos::TetOpSplitP::_getTriOhmicI(uint tidx)
 
 double smtos::TetOpSplitP::_getTriOhmicI(uint tidx, uint ocidx)
 {
-    assert (tidx < pTris.size());
-    assert (ocidx < statedef()->countOhmicCurrs());
+    AssertLog(tidx < pTris.size());
+    AssertLog(ocidx < statedef()->countOhmicCurrs());
 
     int loctidx = pEFTri_GtoL[tidx];
     if (loctidx == -1)
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     smtos::Tri * tri = pTris[tidx];
@@ -5219,7 +5136,7 @@ double smtos::TetOpSplitP::_getTriOhmicI(uint tidx, uint ocidx)
     {
         std::ostringstream os;
         os << "Ohmic current undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int tri_host = triHosts[tidx];
     double cur = 0.0;
@@ -5238,7 +5155,7 @@ double smtos::TetOpSplitP::_getTriGHKI(uint tidx)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     smtos::Tri * tri = pTris[tidx];
@@ -5260,7 +5177,7 @@ double smtos::TetOpSplitP::_getTriGHKI(uint tidx, uint ghkidx)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     smtos::Tri * tri = pTris[tidx];
@@ -5270,7 +5187,7 @@ double smtos::TetOpSplitP::_getTriGHKI(uint tidx, uint ghkidx)
     {
         std::ostringstream os;
         os << "GHK current undefined in triangle.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     int tri_host = triHosts[tidx];
@@ -5290,7 +5207,7 @@ double smtos::TetOpSplitP::_getTriI(uint tidx) const
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     int loctidx = pEFTri_GtoL[tidx];
@@ -5298,7 +5215,7 @@ double smtos::TetOpSplitP::_getTriI(uint tidx) const
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // EField object should convert to required units
@@ -5313,14 +5230,14 @@ void smtos::TetOpSplitP::_setVertIClamp(uint vidx, double cur)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int locvidx = pEFVert_GtoL[vidx];
     if (locvidx == -1)
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // EField object should convert to required units
@@ -5336,14 +5253,14 @@ void smtos::TetOpSplitP::_setTriIClamp(uint tidx, double cur)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int loctidx = pEFTri_GtoL[tidx];
     if (loctidx == -1)
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // EField object should convert to required units
@@ -5358,14 +5275,14 @@ void smtos::TetOpSplitP::_setTriCapac(uint tidx, double cap)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int loctidx = pEFTri_GtoL[tidx];
     if (loctidx == -1)
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // EField object should convert to required units
@@ -5380,14 +5297,14 @@ double smtos::TetOpSplitP::_getVertV(uint vidx) const
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int locvidx = pEFVert_GtoL[vidx];
     if (locvidx == -1)
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     return pEField->getVertV(locvidx);
 }
@@ -5400,14 +5317,14 @@ void smtos::TetOpSplitP::_setVertV(uint vidx, double v)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int locvidx = pEFVert_GtoL[vidx];
     if (locvidx == -1)
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // EField object should convert to millivolts
     pEField->setVertV(locvidx, v);
@@ -5421,14 +5338,14 @@ bool smtos::TetOpSplitP::_getVertVClamped(uint vidx) const
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int locvidx = pEFVert_GtoL[vidx];
     if (locvidx == -1)
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     return pEField->getVertVClamped(locvidx);
@@ -5442,14 +5359,14 @@ void smtos::TetOpSplitP::_setVertVClamped(uint vidx, bool cl)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     int locvidx = pEFVert_GtoL[vidx];
     if (locvidx == -1)
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     // EField object should convert to millivolts
@@ -5464,16 +5381,16 @@ void smtos::TetOpSplitP::_setMembRes(uint midx, double ro, double vrev)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (ro <= 0.0)
     {
         std::ostringstream os;
         os << "Resistivity must be greater than zero.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // EField object should convert to required units
-    assert (midx == 0);
+    AssertLog(midx == 0);
     pEField->setSurfaceResistivity(midx, ro, vrev);
 }
 
@@ -5485,10 +5402,10 @@ void smtos::TetOpSplitP::_setMembPotential(uint midx, double v)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // EField object should convert to millivolts
-    assert (midx == 0);
+    AssertLog(midx == 0);
     pEField->setMembPotential(midx, v);
 }
 
@@ -5500,18 +5417,18 @@ void smtos::TetOpSplitP::_setMembCapac(uint midx, double cm)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (cm < 0.0)
     {
         std::ostringstream os;
         os << "Capacitance must be greater than or equal to zero.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
 
     // EField object should convert to required units
-    assert (midx == 0);
+    AssertLog(midx == 0);
     pEField->setMembCapac(midx, cm);
 }
 
@@ -5523,16 +5440,16 @@ void smtos::TetOpSplitP::_setMembVolRes(uint midx, double ro)
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (ro < 0.0)
     {
         std::ostringstream os;
         os << "Resistivity must be greater than or equal to zero.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // EField object should convert to required units
-    assert (midx == 0);
+    AssertLog(midx == 0);
     pEField->setMembVolRes(midx, ro);
 }
 
@@ -5565,7 +5482,7 @@ void smtos::TetOpSplitP::_computeUpdPeriod(void)
     {
         std::ostringstream os;
         os << "Maximum scaled diffusion constant is " << global_max_rate << ". This should not happen in this solver.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     updPeriod = 1.0 / global_max_rate;
     recomputeUpdPeriod = false;
@@ -5575,7 +5492,7 @@ void smtos::TetOpSplitP::_computeUpdPeriod(void)
 
 void smtos::TetOpSplitP::_updateLocal(std::set<KProc*> const & upd_entries) {
     for (auto kp : upd_entries) {
-        assert(kp != NULL);
+        AssertLog(kp != NULL);
         _updateElement(kp);
     }
     
@@ -5586,7 +5503,7 @@ void smtos::TetOpSplitP::_updateLocal(std::set<KProc*> const & upd_entries) {
 
 void smtos::TetOpSplitP::_updateLocal(std::vector<KProc*> const & upd_entries) {
     for (auto kp : upd_entries) {
-        assert(kp != NULL);
+        AssertLog(kp != NULL);
         _updateElement(kp);
     }
     
@@ -5662,8 +5579,7 @@ void smtos::TetOpSplitP::_extendGroup(CRGroup* group, uint size) {
     group->indices = (KProc**)realloc(group->indices,
                                       sizeof(KProc*) * group->capacity);
     if (group->indices == NULL) {
-        std::cerr << "DirectCR: unable to allocate memory for SSA group.\n";
-        throw;
+        SysErrLog("DirectCR: unable to allocate memory for SSA group.");
     }
 }
 
@@ -5682,9 +5598,6 @@ void smtos::TetOpSplitP::_updateSum(void) {
     for (uint i = 0; i < n_pos_groups; i++) {
         pA0 += pGroups[i]->sum;
     }
-    #ifdef MPI_DEBUG
-    //CLOG(DEBUG, "mpi_debug") << "New A0 " << pA0 << ".\n";
-    #endif
 }
 
 
@@ -5697,17 +5610,6 @@ void smtos::TetOpSplitP::_updateElement(KProc* kp)
         kp->crData.rate = kp->rate(this);
         return;
     }
-  
-    #ifdef MPI_DEBUG
-    //Reac* reac_upcast = dynamic_cast<Reac*>(kp);
-    //if (reac_upcast != NULL) {
-    //    CLOG(DEBUG, "mpi_debug") << "Update Reac " << kp->schedIDX() << ".\n";
-    //}
-    //SReac* sreac_upcast = dynamic_cast<SReac*>(kp);
-    //if (sreac_upcast != NULL) {
-    //    CLOG(DEBUG, "mpi_debug") << "Update SReac " << kp->schedIDX() << ".\n";
-    //}
-    #endif
 
     double new_rate = kp->rate(this);
 
@@ -5715,10 +5617,6 @@ void smtos::TetOpSplitP::_updateElement(KProc* kp)
     double old_rate = data.rate;
 
     data.rate = new_rate;
-
-    #ifdef MPI_DEBUG
-    //CLOG(DEBUG, "mpi_debug") << "Old rate: " << old_rate << "new rate: " << new_rate <<".\n";
-    #endif
 
     if (old_rate == new_rate)  return;
 
@@ -5763,7 +5661,7 @@ void smtos::TetOpSplitP::_updateElement(KProc* kp)
 
             CRGroup* new_group = pGroups[new_pow];
 
-            assert(new_group != NULL);
+            AssertLog(new_group != NULL);
             if (new_group->size == new_group->capacity) _extendGroup(new_group);
             uint pos = new_group->size;
             new_group->indices[pos] = kp;
@@ -5872,7 +5770,7 @@ std::vector<double> smtos::TetOpSplitP::getBatchTetCounts(std::vector<uint> cons
         {
             std::ostringstream os;
             os << "Error (Index Overbound): There is no tetrahedron with index " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
         if (pTets[tidx] == 0)
@@ -5897,13 +5795,13 @@ std::vector<double> smtos::TetOpSplitP::getBatchTetCounts(std::vector<uint> cons
     }
 
     if (has_tet_warning) {
-        std::cerr << "Warning: The following tetrahedrons have not been assigned to a compartment, fill in zeros at target positions:\n";
-        std::cerr << tet_not_assign.str() << "\n";
+        CLOG(WARNING, "general_log") << "The following tetrahedrons have not been assigned to a compartment, fill in zeros at target positions:\n";
+        CLOG(WARNING, "general_log") << tet_not_assign.str() << "\n";
     }
 
     if (has_spec_warning) {
-        std::cerr << "Warning: Species " << s << " has not been defined in the following tetrahedrons, fill in zeros at target positions:\n";
-        std::cerr << spec_undefined.str() << "\n";
+        CLOG(WARNING, "general_log") << "Species " << s << " has not been defined in the following tetrahedrons, fill in zeros at target positions:\n";
+        CLOG(WARNING, "general_log") << spec_undefined.str() << "\n";
     }
     MPI_Allreduce(&local_counts.front(), &global_counts.front(), ntets, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     return global_counts;
@@ -5930,7 +5828,7 @@ std::vector<double> smtos::TetOpSplitP::getBatchTriCounts(std::vector<uint> cons
         {
             std::ostringstream os;
             os << "Error (Index Overbound): There is no triangle with index " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
         if (pTris[tidx] == 0)
@@ -5955,13 +5853,13 @@ std::vector<double> smtos::TetOpSplitP::getBatchTriCounts(std::vector<uint> cons
     }
 
     if (has_tri_warning) {
-        std::cerr << "Warning: The following triangles have not been assigned to a patch, fill in zeros at target positions:\n";
-        std::cerr << tri_not_assign.str() << "\n";
+        CLOG(WARNING, "general_log") << "The following triangles have not been assigned to a patch, fill in zeros at target positions:\n";
+        CLOG(WARNING, "general_log") << tri_not_assign.str() << "\n";
     }
 
     if (has_spec_warning) {
-        std::cerr << "Warning: Species " << s << " has not been defined in the following triangles, fill in zeros at target positions:\n";
-        std::cerr << spec_undefined.str() << "\n";
+        CLOG(WARNING, "general_log") << "Species " << s << " has not been defined in the following triangles, fill in zeros at target positions:\n";
+        CLOG(WARNING, "general_log") << spec_undefined.str() << "\n";
     }
     
     MPI_Allreduce(&local_counts.front(), &global_counts.front(), ntris, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
@@ -5976,7 +5874,7 @@ void smtos::TetOpSplitP::getBatchTetCountsNP(unsigned int* indices, int input_si
     {
         std::ostringstream os;
         os << "Error: output array (counts) size should be the same as input array (indices) size.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     bool has_tet_warning = false;
@@ -5994,7 +5892,7 @@ void smtos::TetOpSplitP::getBatchTetCountsNP(unsigned int* indices, int input_si
         {
             std::ostringstream os;
             os << "Error (Index Overbound): There is no tetrahedron with index " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
         if (pTets[tidx] == 0)
@@ -6020,13 +5918,13 @@ void smtos::TetOpSplitP::getBatchTetCountsNP(unsigned int* indices, int input_si
     }
 
     if (has_tet_warning) {
-        std::cerr << "Warning: The following tetrahedrons have not been assigned to a compartment, fill in zeros at target positions:\n";
-        std::cerr << tet_not_assign.str() << "\n";
+        CLOG(WARNING, "general_log") << "The following tetrahedrons have not been assigned to a compartment, fill in zeros at target positions:\n";
+        CLOG(WARNING, "general_log") << tet_not_assign.str() << "\n";
     }
 
     if (has_spec_warning) {
-        std::cerr << "Warning: Species " << s << " has not been defined in the following tetrahedrons, fill in zeros at target positions:\n";
-        std::cerr << spec_undefined.str() << "\n";
+        CLOG(WARNING, "general_log") << "Species " << s << " has not been defined in the following tetrahedrons, fill in zeros at target positions:\n";
+        CLOG(WARNING, "general_log") << spec_undefined.str() << "\n";
     }
     MPI_Allreduce(&local_counts.front(), counts, input_size, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 }
@@ -6039,7 +5937,7 @@ void smtos::TetOpSplitP::getBatchTriCountsNP(unsigned int* indices, int input_si
     {
         std::ostringstream os;
         os << "Error: output array (counts) size should be the same as input array (indices) size.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     bool has_tri_warning = false;
@@ -6057,7 +5955,7 @@ void smtos::TetOpSplitP::getBatchTriCountsNP(unsigned int* indices, int input_si
         {
             std::ostringstream os;
             os << "Error (Index Overbound): There is no triangle with index " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
 
         if (pTris[tidx] == 0)
@@ -6082,13 +5980,13 @@ void smtos::TetOpSplitP::getBatchTriCountsNP(unsigned int* indices, int input_si
     }
 
     if (has_tri_warning) {
-        std::cerr << "Warning: The following triangles have not been assigned to a patch, fill in zeros at target positions:\n";
-        std::cerr << tri_not_assign.str() << "\n";
+        CLOG(WARNING, "general_log") << "The following triangles have not been assigned to a patch, fill in zeros at target positions:\n";
+        CLOG(WARNING, "general_log") << tri_not_assign.str() << "\n";
     }
 
     if (has_spec_warning) {
-        std::cerr << "Warning: Species " << s << " has not been defined in the following triangles, fill in zeros at target positions:\n";
-        std::cerr << spec_undefined.str() << "\n";
+        CLOG(WARNING, "general_log") << "Species " << s << " has not been defined in the following triangles, fill in zeros at target positions:\n";
+        CLOG(WARNING, "general_log") << spec_undefined.str() << "\n";
     }
 }
 
@@ -6110,7 +6008,7 @@ double smtos::TetOpSplitP::sumBatchTetCountsNP(unsigned int* indices, int input_
         {
             std::ostringstream os;
             os << "Error (Index Overbound): There is no tetrahedron with index " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         
         if (pTets[tidx] == 0)
@@ -6135,13 +6033,13 @@ double smtos::TetOpSplitP::sumBatchTetCountsNP(unsigned int* indices, int input_
     }
     
     if (has_tet_warning) {
-        std::cerr << "Warning: The following tetrahedrons have not been assigned to a compartment, fill in zeros at target positions:\n";
-        std::cerr << tet_not_assign.str() << "\n";
+        CLOG(WARNING, "general_log") << "The following tetrahedrons have not been assigned to a compartment, fill in zeros at target positions:\n";
+        CLOG(WARNING, "general_log") << tet_not_assign.str() << "\n";
     }
     
     if (has_spec_warning) {
-        std::cerr << "Warning: Species " << s << " has not been defined in the following tetrahedrons, fill in zeros at target positions:\n";
-        std::cerr << spec_undefined.str() << "\n";
+        CLOG(WARNING, "general_log") << "Species " << s << " has not been defined in the following tetrahedrons, fill in zeros at target positions:\n";
+        CLOG(WARNING, "general_log") << spec_undefined.str() << "\n";
     }
     double global_sum = 0.0;
     MPI_Allreduce(&partial_sum, &global_sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -6167,7 +6065,7 @@ double smtos::TetOpSplitP::sumBatchTriCountsNP(unsigned int* indices, int input_
         {
             std::ostringstream os;
             os << "Error (Index Overbound): There is no triangle with index " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         
         if (pTris[tidx] == 0)
@@ -6191,13 +6089,13 @@ double smtos::TetOpSplitP::sumBatchTriCountsNP(unsigned int* indices, int input_
     }
     
     if (has_tri_warning) {
-        std::cerr << "Warning: The following triangles have not been assigned to a patch, fill in zeros at target positions:\n";
-        std::cerr << tri_not_assign.str() << "\n";
+        CLOG(WARNING, "general_log") << "The following triangles have not been assigned to a patch, fill in zeros at target positions:\n";
+        CLOG(WARNING, "general_log") << tri_not_assign.str() << "\n";
     }
     
     if (has_spec_warning) {
-        std::cerr << "Warning: Species " << s << " has not been defined in the following triangles, fill in zeros at target positions:\n";
-        std::cerr << spec_undefined.str() << "\n";
+        CLOG(WARNING, "general_log") << "Species " << s << " has not been defined in the following triangles, fill in zeros at target positions:\n";
+        CLOG(WARNING, "general_log") << spec_undefined.str() << "\n";
     }
     
     double global_sum = 0.0;
@@ -6213,7 +6111,7 @@ double smtos::TetOpSplitP::sumBatchTriGHKIsNP(unsigned int* indices, int input_s
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     // the following may raise exception if string is unknown
     uint ghkidx = statedef()->getGHKcurrIdx(ghk);
@@ -6228,7 +6126,7 @@ double smtos::TetOpSplitP::sumBatchTriGHKIsNP(unsigned int* indices, int input_s
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         
         smtos::Tri * tri = pTris[tidx];
@@ -6238,7 +6136,7 @@ double smtos::TetOpSplitP::sumBatchTriGHKIsNP(unsigned int* indices, int input_s
         {
             std::ostringstream os;
             os << "GHK current undefined in triangle.\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         
         if (tri->getInHost()) {
@@ -6258,7 +6156,7 @@ double smtos::TetOpSplitP::sumBatchTriOhmicIsNP(unsigned int* indices, int input
     {
         std::ostringstream os;
         os << "Method not available: EField calculation not included in simulation.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     
     // the following may raise exception if string is unknown
@@ -6274,7 +6172,7 @@ double smtos::TetOpSplitP::sumBatchTriOhmicIsNP(unsigned int* indices, int input
         {
             std::ostringstream os;
             os << "Triangle index out of range.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         
         smtos::Tri * tri = pTris[tidx];
@@ -6284,7 +6182,7 @@ double smtos::TetOpSplitP::sumBatchTriOhmicIsNP(unsigned int* indices, int input
         {
             std::ostringstream os;
             os << "Ohmic current undefined in triangle.\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         
         if (tri->getInHost()) {
@@ -6306,7 +6204,7 @@ double smtos::TetOpSplitP::sumBatchTriOhmicIsNP(unsigned int* indices, int input
 
 std::vector<double> smtos::TetOpSplitP::getROITetCounts(std::string ROI_id, std::string const & s) const
 {
-    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) throw steps::ArgErr();
+    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
     
     uint *indices = mesh()->_getROIData(ROI_id);
     int inputsize = mesh()->getROIDataSize(ROI_id);
@@ -6320,7 +6218,7 @@ std::vector<double> smtos::TetOpSplitP::getROITetCounts(std::string ROI_id, std:
 
 std::vector<double> smtos::TetOpSplitP::getROITriCounts(std::string ROI_id, std::string const & s) const
 {
-    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) throw steps::ArgErr();
+    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
     
     uint *indices = mesh()->_getROIData(ROI_id);
     int inputsize = mesh()->getROIDataSize(ROI_id);
@@ -6334,7 +6232,7 @@ std::vector<double> smtos::TetOpSplitP::getROITriCounts(std::string ROI_id, std:
 
 void smtos::TetOpSplitP::getROITetCountsNP(std::string ROI_id, std::string const & s, double* counts, int output_size) const
 {
-    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) throw steps::ArgErr();
+    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
     
     uint *indices = mesh()->_getROIData(ROI_id);
     int inputsize = mesh()->getROIDataSize(ROI_id);
@@ -6346,7 +6244,7 @@ void smtos::TetOpSplitP::getROITetCountsNP(std::string ROI_id, std::string const
 
 void smtos::TetOpSplitP::getROITriCountsNP(std::string ROI_id, std::string const & s, double* counts, int output_size) const
 {
-    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) throw steps::ArgErr();
+    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
     
     uint *indices = mesh()->_getROIData(ROI_id);
     int inputsize = mesh()->getROIDataSize(ROI_id);
@@ -6358,7 +6256,7 @@ void smtos::TetOpSplitP::getROITriCountsNP(std::string ROI_id, std::string const
 
 double smtos::TetOpSplitP::getROIVol(std::string ROI_id) const
 {
-    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) throw steps::ArgErr();
+    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
     
     uint *indices = mesh()->_getROIData(ROI_id);
     int datasize = mesh()->getROIDataSize(ROI_id);
@@ -6374,7 +6272,7 @@ double smtos::TetOpSplitP::getROIVol(std::string ROI_id) const
 
 double smtos::TetOpSplitP::getROIArea(std::string ROI_id) const
 {
-    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) throw steps::ArgErr();
+    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
     
     uint *indices = mesh()->_getROIData(ROI_id);
     int datasize = mesh()->getROIDataSize(ROI_id);
@@ -6412,7 +6310,7 @@ double smtos::TetOpSplitP::getROICount(std::string ROI_id, std::string const & s
             {
                 std::ostringstream os;
                 os << "Error (Index Overbound): There is no triangle with index " << tidx << ".\n";
-                throw steps::ArgErr(os.str());
+                ArgErrLog(os.str());
             }
             
             if (pTris[tidx] == 0)
@@ -6440,13 +6338,13 @@ double smtos::TetOpSplitP::getROICount(std::string ROI_id, std::string const & s
                       MPI_COMM_WORLD);
         
         if (has_tri_warning) {
-            std::cerr << "Warning: The following triangles have not been assigned to a patch, fill in zeros at target positions:\n";
-            std::cerr << tri_not_assign.str() << "\n";
+            CLOG(WARNING, "general_log") << "The following triangles have not been assigned to a patch, fill in zeros at target positions:\n";
+            CLOG(WARNING, "general_log") << tri_not_assign.str() << "\n";
         }
         
         if (has_spec_warning) {
-            std::cerr << "Warning: Species " << s << " has not been defined in the following triangles, fill in zeros at target positions:\n";
-            std::cerr << spec_undefined.str() << "\n";
+            CLOG(WARNING, "general_log") << "Species " << s << " has not been defined in the following triangles, fill in zeros at target positions:\n";
+            CLOG(WARNING, "general_log") << spec_undefined.str() << "\n";
         }
     }
     else if (type == steps::tetmesh::ELEM_TET) {
@@ -6464,7 +6362,7 @@ double smtos::TetOpSplitP::getROICount(std::string ROI_id, std::string const & s
             {
                 std::ostringstream os;
                 os << "Error (Index Overbound): There is no tetrahedron with index " << tidx << ".\n";
-                throw steps::ArgErr(os.str());
+                ArgErrLog(os.str());
             }
             
             if (pTets[tidx] == 0)
@@ -6492,19 +6390,19 @@ double smtos::TetOpSplitP::getROICount(std::string ROI_id, std::string const & s
                       MPI_COMM_WORLD);
         
         if (has_tet_warning) {
-            std::cerr << "Warning: The following tetrahedrons have not been assigned to a compartment, fill in zeros at target positions:\n";
-            std::cerr << tet_not_assign.str() << "\n";
+            CLOG(WARNING, "general_log") << "The following tetrahedrons have not been assigned to a compartment, fill in zeros at target positions:\n";
+            CLOG(WARNING, "general_log") << tet_not_assign.str() << "\n";
         }
         
         if (has_spec_warning) {
-            std::cerr << "Warning: Species " << s << " has not been defined in the following tetrahedrons, fill in zeros at target positions:\n";
-            std::cerr << spec_undefined.str() << "\n";
+            CLOG(WARNING, "general_log") << "Species " << s << " has not been defined in the following tetrahedrons, fill in zeros at target positions:\n";
+            CLOG(WARNING, "general_log") << spec_undefined.str() << "\n";
         }
     }
     else {
         std::ostringstream os;
         os << "Error: Cannot find suitable ROI for the function call getROICount.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     
     return global_sum;
@@ -6521,7 +6419,7 @@ void smtos::TetOpSplitP::setROICount(std::string ROI_id, std::string const & s, 
         std::ostringstream os;
         os << "Can't set count greater than maximum unsigned integer (";
         os << std::numeric_limits<unsigned int>::max( ) << ").\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     steps::tetmesh::ElementType type = mesh()->getROIType(ROI_id);
@@ -6547,7 +6445,7 @@ void smtos::TetOpSplitP::setROICount(std::string ROI_id, std::string const & s, 
             {
                 std::ostringstream os;
                 os << "Error (Index Overbound): There is no triangle with index " << tidx << ".\n";
-                throw steps::ArgErr(os.str());
+                ArgErrLog(os.str());
             }
             
             if (pTris[tidx] == 0)
@@ -6571,13 +6469,13 @@ void smtos::TetOpSplitP::setROICount(std::string ROI_id, std::string const & s, 
         }
         
         if (has_tri_warning) {
-            std::cerr << "Warning: The following triangles have not been assigned to a patch, fill in zeros at target positions:\n";
-            std::cerr << tri_not_assign.str() << "\n";
+            CLOG(WARNING, "general_log") << "The following triangles have not been assigned to a patch, fill in zeros at target positions:\n";
+            CLOG(WARNING, "general_log") << tri_not_assign.str() << "\n";
         }
         
         if (has_spec_warning) {
-            std::cerr << "Warning: Species " << s << " has not been defined in the following triangles, fill in zeros at target positions:\n";
-            std::cerr << spec_undefined.str() << "\n";
+            CLOG(WARNING, "general_log") << "Species " << s << " has not been defined in the following triangles, fill in zeros at target positions:\n";
+            CLOG(WARNING, "general_log") << spec_undefined.str() << "\n";
         }
 
         uint ind_size = apply_indices.size();
@@ -6616,7 +6514,7 @@ void smtos::TetOpSplitP::setROICount(std::string ROI_id, std::string const & s, 
                 
                 apply_count[t] = n3;
             }
-            assert(nremoved <= c);
+            AssertLog(nremoved <= c);
             c -= nremoved;
             while (c != 0)
             {
@@ -6666,7 +6564,7 @@ void smtos::TetOpSplitP::setROICount(std::string ROI_id, std::string const & s, 
             {
                 std::ostringstream os;
                 os << "Error (Index Overbound): There is no tetrahedron with index " << tidx << ".\n";
-                throw steps::ArgErr(os.str());
+                ArgErrLog(os.str());
             }
             
             if (pTets[tidx] == 0)
@@ -6690,13 +6588,13 @@ void smtos::TetOpSplitP::setROICount(std::string ROI_id, std::string const & s, 
         }
         
         if (has_tet_warning) {
-            std::cerr << "Warning: The following tetrahedrons have not been assigned to a compartment, fill in zeros at target positions:\n";
-            std::cerr << tet_not_assign.str() << "\n";
+            CLOG(WARNING, "general_log") << "The following tetrahedrons have not been assigned to a compartment, fill in zeros at target positions:\n";
+            CLOG(WARNING, "general_log") << tet_not_assign.str() << "\n";
         }
         
         if (has_spec_warning) {
-            std::cerr << "Warning: Species " << s << " has not been defined in the following tetrahedrons, fill in zeros at target positions:\n";
-            std::cerr << spec_undefined.str() << "\n";
+            CLOG(WARNING, "general_log") << "Species " << s << " has not been defined in the following tetrahedrons, fill in zeros at target positions:\n";
+            CLOG(WARNING, "general_log") << spec_undefined.str() << "\n";
         }
 
         uint ind_size = apply_indices.size();
@@ -6735,7 +6633,7 @@ void smtos::TetOpSplitP::setROICount(std::string ROI_id, std::string const & s, 
                 
                 apply_count[t] = n3;
             }
-            assert(nremoved <= c);
+            AssertLog(nremoved <= c);
             c -= nremoved;
             while (c != 0)
             {
@@ -6772,7 +6670,7 @@ void smtos::TetOpSplitP::setROICount(std::string ROI_id, std::string const & s, 
     else {
         std::ostringstream os;
         os << "Error: Cannot find suitable ROI for the function call getROICount.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     MPI_Barrier(MPI_COMM_WORLD);
 }
@@ -6794,9 +6692,9 @@ void smtos::TetOpSplitP::setROIConc(std::string ROI_id, std::string const & s, d
         std::ostringstream os;
         os << "Can't set count greater than maximum unsigned integer (";
         os << std::numeric_limits<unsigned int>::max( ) << ").\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
-    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) throw steps::ArgErr();
+    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
     
     uint *indices = mesh()->_getROIData(ROI_id);
     int datasize = mesh()->getROIDataSize(ROI_id);
@@ -6818,7 +6716,7 @@ void smtos::TetOpSplitP::setROIConc(std::string ROI_id, std::string const & s, d
         {
             std::ostringstream os;
             os << "Error (Index Overbound): There is no tetrahedron with index " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         
         if (pTets[tidx] == 0)
@@ -6842,13 +6740,13 @@ void smtos::TetOpSplitP::setROIConc(std::string ROI_id, std::string const & s, d
     }
     
     if (has_tet_warning) {
-        std::cerr << "Warning: The following tetrahedrons have not been assigned to a compartment, fill in zeros at target positions:\n";
-        std::cerr << tet_not_assign.str() << "\n";
+        CLOG(WARNING, "general_log") << "The following tetrahedrons have not been assigned to a compartment, fill in zeros at target positions:\n";
+        CLOG(WARNING, "general_log") << tet_not_assign.str() << "\n";
     }
     
     if (has_spec_warning) {
-        std::cerr << "Warning: Species " << s << " has not been defined in the following tetrahedrons, fill in zeros at target positions:\n";
-        std::cerr << spec_undefined.str() << "\n";
+        CLOG(WARNING, "general_log") << "Species " << s << " has not been defined in the following tetrahedrons, fill in zeros at target positions:\n";
+        CLOG(WARNING, "general_log") << spec_undefined.str() << "\n";
     }
     
     int count = conc * (1.0e3 * totalvol * steps::math::AVOGADRO);
@@ -6860,7 +6758,7 @@ void smtos::TetOpSplitP::setROIConc(std::string ROI_id, std::string const & s, d
 
 double smtos::TetOpSplitP::getROIConc(std::string ROI_id, std::string const & s) const
 {
-    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) throw steps::ArgErr();
+    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
     double count = getROICount(ROI_id, s);
     double vol = getROIVol(ROI_id);
     return count/ (1.0e3 * vol * steps::math::AVOGADRO);
@@ -6890,7 +6788,7 @@ void smtos::TetOpSplitP::setROIClamped(std::string ROI_id, std::string const & s
             {
                 std::ostringstream os;
                 os << "Error (Index Overbound): There is no triangle with index " << tidx << ".\n";
-                throw steps::ArgErr(os.str());
+                ArgErrLog(os.str());
             }
             
             if (pTris[tidx] == 0)
@@ -6912,13 +6810,13 @@ void smtos::TetOpSplitP::setROIClamped(std::string ROI_id, std::string const & s
         }
         
         if (has_tri_warning) {
-            std::cerr << "Warning: The following triangles have not been assigned to a patch, fill in zeros at target positions:\n";
-            std::cerr << tri_not_assign.str() << "\n";
+            CLOG(WARNING, "general_log") << "The following triangles have not been assigned to a patch, fill in zeros at target positions:\n";
+            CLOG(WARNING, "general_log") << tri_not_assign.str() << "\n";
         }
         
         if (has_spec_warning) {
-            std::cerr << "Warning: Species " << s << " has not been defined in the following triangles, fill in zeros at target positions:\n";
-            std::cerr << spec_undefined.str() << "\n";
+            CLOG(WARNING, "general_log") << "Species " << s << " has not been defined in the following triangles, fill in zeros at target positions:\n";
+            CLOG(WARNING, "general_log") << spec_undefined.str() << "\n";
         }
     }
     else if (type == steps::tetmesh::ELEM_TET) {
@@ -6936,7 +6834,7 @@ void smtos::TetOpSplitP::setROIClamped(std::string ROI_id, std::string const & s
             {
                 std::ostringstream os;
                 os << "Error (Index Overbound): There is no tetrahedron with index " << tidx << ".\n";
-                throw steps::ArgErr(os.str());
+                ArgErrLog(os.str());
             }
             
             if (pTets[tidx] == 0)
@@ -6959,19 +6857,19 @@ void smtos::TetOpSplitP::setROIClamped(std::string ROI_id, std::string const & s
         }
         
         if (has_tet_warning) {
-            std::cerr << "Warning: The following tetrahedrons have not been assigned to a compartment, fill in zeros at target positions:\n";
-            std::cerr << tet_not_assign.str() << "\n";
+            CLOG(WARNING, "general_log") << "The following tetrahedrons have not been assigned to a compartment, fill in zeros at target positions:\n";
+            CLOG(WARNING, "general_log") << tet_not_assign.str() << "\n";
         }
         
         if (has_spec_warning) {
-            std::cerr << "Warning: Species " << s << " has not been defined in the following tetrahedrons, fill in zeros at target positions:\n";
-            std::cerr << spec_undefined.str() << "\n";
+            CLOG(WARNING, "general_log") << "Species " << s << " has not been defined in the following tetrahedrons, fill in zeros at target positions:\n";
+            CLOG(WARNING, "general_log") << spec_undefined.str() << "\n";
         }
     }
     else {
         std::ostringstream os;
         os << "Error: Cannot find suitable ROI for the function call getROICount.\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 }
 
@@ -6979,7 +6877,7 @@ void smtos::TetOpSplitP::setROIClamped(std::string ROI_id, std::string const & s
 
 void smtos::TetOpSplitP::setROIReacK(std::string ROI_id, std::string const & r, double kf)
 {
-    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) throw steps::ArgErr();
+    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
     
     uint *indices = mesh()->_getROIData(ROI_id);
     int datasize = mesh()->getROIDataSize(ROI_id);
@@ -6998,7 +6896,7 @@ void smtos::TetOpSplitP::setROIReacK(std::string ROI_id, std::string const & r, 
         {
             std::ostringstream os;
             os << "Error (Index Overbound): There is no tetrahedron with index " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         
         if (pTets[tidx] == 0)
@@ -7021,13 +6919,13 @@ void smtos::TetOpSplitP::setROIReacK(std::string ROI_id, std::string const & r, 
     }
     
     if (has_tet_warning) {
-        std::cerr << "Warning: The following tetrahedrons have not been assigned to a compartment, no change is applied to them:\n";
-        std::cerr << tet_not_assign.str() << "\n";
+        CLOG(WARNING, "general_log") << "The following tetrahedrons have not been assigned to a compartment, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << tet_not_assign.str() << "\n";
     }
     
     if (has_reac_warning) {
-        std::cerr << "Warning: Reac " << r << " has not been defined in the following tetrahedrons, no change is applied to them:\n";
-        std::cerr << reac_undefined.str() << "\n";
+        CLOG(WARNING, "general_log") << "Reac " << r << " has not been defined in the following tetrahedrons, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << reac_undefined.str() << "\n";
     }
     
     _updateLocal();
@@ -7037,7 +6935,7 @@ void smtos::TetOpSplitP::setROIReacK(std::string ROI_id, std::string const & r, 
 
 void smtos::TetOpSplitP::setROISReacK(std::string ROI_id, std::string const & sr, double kf)
 {
-    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) throw steps::ArgErr();
+    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
     
     uint *indices = mesh()->_getROIData(ROI_id);
     int datasize = mesh()->getROIDataSize(ROI_id);
@@ -7056,7 +6954,7 @@ void smtos::TetOpSplitP::setROISReacK(std::string ROI_id, std::string const & sr
         {
             std::ostringstream os;
             os << "Error (Index Overbound): There is no triangle with index " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         
         if (pTris[tidx] == 0)
@@ -7079,13 +6977,13 @@ void smtos::TetOpSplitP::setROISReacK(std::string ROI_id, std::string const & sr
     }
     
     if (has_tri_warning) {
-        std::cerr << "Warning: The following triangles have not been assigned to a patch, no change is applied to them:\n";
-        std::cerr << tri_not_assign.str() << "\n";
+        CLOG(WARNING, "general_log") << "The following triangles have not been assigned to a patch, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << tri_not_assign.str() << "\n";
     }
     
     if (has_sreac_warning) {
-        std::cerr << "Warning: SReac " << sr << " has not been defined in the following patch, no change is applied to them:\n";
-        std::cerr << sreac_undefined.str() << "\n";
+        CLOG(WARNING, "general_log") << "SReac " << sr << " has not been defined in the following patch, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << sreac_undefined.str() << "\n";
     }
     
     _updateLocal();
@@ -7095,7 +6993,7 @@ void smtos::TetOpSplitP::setROISReacK(std::string ROI_id, std::string const & sr
 
 void smtos::TetOpSplitP::setROIDiffD(std::string ROI_id, std::string const & d, double dk)
 {
-    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) throw steps::ArgErr();
+    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
     
     uint *indices = mesh()->_getROIData(ROI_id);
     int datasize = mesh()->getROIDataSize(ROI_id);
@@ -7114,7 +7012,7 @@ void smtos::TetOpSplitP::setROIDiffD(std::string ROI_id, std::string const & d, 
         {
             std::ostringstream os;
             os << "Error (Index Overbound): There is no tetrahedron with index " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         
         if (pTets[tidx] == 0)
@@ -7137,13 +7035,13 @@ void smtos::TetOpSplitP::setROIDiffD(std::string ROI_id, std::string const & d, 
     }
     
     if (has_tet_warning) {
-        std::cerr << "Warning: The following tetrahedrons have not been assigned to a compartment, no change is applied to them:\n";
-        std::cerr << tet_not_assign.str() << "\n";
+        CLOG(WARNING, "general_log") << "The following tetrahedrons have not been assigned to a compartment, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << tet_not_assign.str() << "\n";
     }
     
     if (has_diff_warning) {
-        std::cerr << "Warning: Diff " << d << " has not been defined in the following tetrahedrons, no change is applied to them:\n";
-        std::cerr << diff_undefined.str() << "\n";
+        CLOG(WARNING, "general_log") << "Diff " << d << " has not been defined in the following tetrahedrons, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << diff_undefined.str() << "\n";
     }
 
     recomputeUpdPeriod = true;
@@ -7155,7 +7053,7 @@ void smtos::TetOpSplitP::setROIDiffD(std::string ROI_id, std::string const & d, 
 
 void smtos::TetOpSplitP::setROIReacActive(std::string ROI_id, std::string const & r, bool a)
 {
-    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) throw steps::ArgErr();
+    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
     
     uint *indices = mesh()->_getROIData(ROI_id);
     int datasize = mesh()->getROIDataSize(ROI_id);
@@ -7174,7 +7072,7 @@ void smtos::TetOpSplitP::setROIReacActive(std::string ROI_id, std::string const 
         {
             std::ostringstream os;
             os << "Error (Index Overbound): There is no tetrahedron with index " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         
         if (pTets[tidx] == 0)
@@ -7197,13 +7095,13 @@ void smtos::TetOpSplitP::setROIReacActive(std::string ROI_id, std::string const 
     }
     
     if (has_tet_warning) {
-        std::cerr << "Warning: The following tetrahedrons have not been assigned to a compartment, no change is applied to them:\n";
-        std::cerr << tet_not_assign.str() << "\n";
+        CLOG(WARNING, "general_log") << "The following tetrahedrons have not been assigned to a compartment, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << tet_not_assign.str() << "\n";
     }
     
     if (has_reac_warning) {
-        std::cerr << "Warning: Reac " << r << " has not been defined in the following tetrahedrons, no change is applied to them:\n";
-        std::cerr << reac_undefined.str() << "\n";
+        CLOG(WARNING, "general_log") << "Reac " << r << " has not been defined in the following tetrahedrons, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << reac_undefined.str() << "\n";
     }
     
     _updateLocal();
@@ -7213,7 +7111,7 @@ void smtos::TetOpSplitP::setROIReacActive(std::string ROI_id, std::string const 
 
 void smtos::TetOpSplitP::setROISReacActive(std::string ROI_id, std::string const & sr, bool a)
 {
-    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) throw steps::ArgErr();
+    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
     
     uint *indices = mesh()->_getROIData(ROI_id);
     int datasize = mesh()->getROIDataSize(ROI_id);
@@ -7232,7 +7130,7 @@ void smtos::TetOpSplitP::setROISReacActive(std::string ROI_id, std::string const
         {
             std::ostringstream os;
             os << "Error (Index Overbound): There is no triangle with index " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         
         if (pTris[tidx] == 0)
@@ -7255,13 +7153,13 @@ void smtos::TetOpSplitP::setROISReacActive(std::string ROI_id, std::string const
     }
     
     if (has_tri_warning) {
-        std::cerr << "Warning: The following triangles have not been assigned to a patch, no change is applied to them:\n";
-        std::cerr << tri_not_assign.str() << "\n";
+        CLOG(WARNING, "general_log") << "The following triangles have not been assigned to a patch, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << tri_not_assign.str() << "\n";
     }
     
     if (has_sreac_warning) {
-        std::cerr << "Warning: SReac " << sr << " has not been defined in the following patch, no change is applied to them:\n";
-        std::cerr << sreac_undefined.str() << "\n";
+        CLOG(WARNING, "general_log") << "SReac " << sr << " has not been defined in the following patch, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << sreac_undefined.str() << "\n";
     }
     
     _updateLocal();
@@ -7271,7 +7169,7 @@ void smtos::TetOpSplitP::setROISReacActive(std::string ROI_id, std::string const
 
 void smtos::TetOpSplitP::setROIDiffActive(std::string ROI_id, std::string const & d, bool a)
 {
-    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) throw steps::ArgErr();
+    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
     
     uint *indices = mesh()->_getROIData(ROI_id);
     int datasize = mesh()->getROIDataSize(ROI_id);
@@ -7290,7 +7188,7 @@ void smtos::TetOpSplitP::setROIDiffActive(std::string ROI_id, std::string const 
         {
             std::ostringstream os;
             os << "Error (Index Overbound): There is no tetrahedron with index " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         
         if (pTets[tidx] == 0)
@@ -7313,13 +7211,13 @@ void smtos::TetOpSplitP::setROIDiffActive(std::string ROI_id, std::string const 
     }
     
     if (has_tet_warning) {
-        std::cerr << "Warning: The following tetrahedrons have not been assigned to a compartment, no change is applied to them:\n";
-        std::cerr << tet_not_assign.str() << "\n";
+        CLOG(WARNING, "general_log") << "The following tetrahedrons have not been assigned to a compartment, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << tet_not_assign.str() << "\n";
     }
     
     if (has_diff_warning) {
-        std::cerr << "Warning: Diff " << d << " has not been defined in the following tetrahedrons, no change is applied to them:\n";
-        std::cerr << diff_undefined.str() << "\n";
+        CLOG(WARNING, "general_log") << "Diff " << d << " has not been defined in the following tetrahedrons, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << diff_undefined.str() << "\n";
     }
     
     recomputeUpdPeriod = true;
@@ -7331,7 +7229,7 @@ void smtos::TetOpSplitP::setROIDiffActive(std::string ROI_id, std::string const 
 
 void smtos::TetOpSplitP::setROIVDepSReacActive(std::string ROI_id, std::string const & vsr, bool a)
 {
-    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) throw steps::ArgErr();
+    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
     
     uint *indices = mesh()->_getROIData(ROI_id);
     int datasize = mesh()->getROIDataSize(ROI_id);
@@ -7350,7 +7248,7 @@ void smtos::TetOpSplitP::setROIVDepSReacActive(std::string ROI_id, std::string c
         {
             std::ostringstream os;
             os << "Error (Index Overbound): There is no triangle with index " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         
         if (pTris[tidx] == 0)
@@ -7373,13 +7271,13 @@ void smtos::TetOpSplitP::setROIVDepSReacActive(std::string ROI_id, std::string c
     }
     
     if (has_tri_warning) {
-        std::cerr << "Warning: The following triangles have not been assigned to a patch, no change is applied to them:\n";
-        std::cerr << tri_not_assign.str() << "\n";
+        CLOG(WARNING, "general_log") << "The following triangles have not been assigned to a patch, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << tri_not_assign.str() << "\n";
     }
     
     if (has_vsreac_warning) {
-        std::cerr << "Warning: VDepSReac " << vsr << " has not been defined in the following patch, no change is applied to them:\n";
-        std::cerr << vsreac_undefined.str() << "\n";
+        CLOG(WARNING, "general_log") << "VDepSReac " << vsr << " has not been defined in the following patch, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << vsreac_undefined.str() << "\n";
     }
     _updateLocal();
 }
@@ -7390,9 +7288,9 @@ uint smtos::TetOpSplitP::getROIReacExtent(std::string ROI_id, std::string const 
 {
     std::ostringstream os;
     os << "This function has not been implemented!";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
     
-    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) throw steps::ArgErr();
+    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
     
     uint *indices = mesh()->_getROIData(ROI_id);
     int datasize = mesh()->getROIDataSize(ROI_id);
@@ -7413,7 +7311,7 @@ uint smtos::TetOpSplitP::getROIReacExtent(std::string ROI_id, std::string const 
         {
             std::ostringstream os;
             os << "Error (Index Overbound): There is no tetrahedron with index " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         
         if (pTets[tidx] == 0)
@@ -7436,13 +7334,13 @@ uint smtos::TetOpSplitP::getROIReacExtent(std::string ROI_id, std::string const 
     }
     
     if (has_tet_warning) {
-        std::cerr << "Warning: The following tetrahedrons have not been assigned to a compartment, no change is applied to them:\n";
-        std::cerr << tet_not_assign.str() << "\n";
+        CLOG(WARNING, "general_log") << "The following tetrahedrons have not been assigned to a compartment, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << tet_not_assign.str() << "\n";
     }
     
     if (has_reac_warning) {
-        std::cerr << "Warning: Reac " << r << " has not been defined in the following tetrahedrons, no change is applied to them:\n";
-        std::cerr << reac_undefined.str() << "\n";
+        CLOG(WARNING, "general_log") << "Reac " << r << " has not been defined in the following tetrahedrons, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << reac_undefined.str() << "\n";
     }
     
     return sum;
@@ -7454,9 +7352,9 @@ void smtos::TetOpSplitP::resetROIReacExtent(std::string ROI_id, std::string cons
 {
     std::ostringstream os;
     os << "This function has not been implemented!";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
     
-    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) throw steps::ArgErr();
+    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
     
     uint *indices = mesh()->_getROIData(ROI_id);
     int datasize = mesh()->getROIDataSize(ROI_id);
@@ -7475,7 +7373,7 @@ void smtos::TetOpSplitP::resetROIReacExtent(std::string ROI_id, std::string cons
         {
             std::ostringstream os;
             os << "Error (Index Overbound): There is no tetrahedron with index " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         
         if (pTets[tidx] == 0)
@@ -7498,13 +7396,13 @@ void smtos::TetOpSplitP::resetROIReacExtent(std::string ROI_id, std::string cons
     }
     
     if (has_tet_warning) {
-        std::cerr << "Warning: The following tetrahedrons have not been assigned to a compartment, no change is applied to them:\n";
-        std::cerr << tet_not_assign.str() << "\n";
+        CLOG(WARNING, "general_log") << "The following tetrahedrons have not been assigned to a compartment, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << tet_not_assign.str() << "\n";
     }
     
     if (has_reac_warning) {
-        std::cerr << "Warning: Reac " << r << " has not been defined in the following tetrahedrons, no change is applied to them:\n";
-        std::cerr << reac_undefined.str() << "\n";
+        CLOG(WARNING, "general_log") << "Reac " << r << " has not been defined in the following tetrahedrons, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << reac_undefined.str() << "\n";
     }
 }
 
@@ -7514,9 +7412,9 @@ uint smtos::TetOpSplitP::getROISReacExtent(std::string ROI_id, std::string const
 {
     std::ostringstream os;
     os << "This function has not been implemented!";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
     
-    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) throw steps::ArgErr();
+    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
     
     uint *indices = mesh()->_getROIData(ROI_id);
     int datasize = mesh()->getROIDataSize(ROI_id);
@@ -7537,7 +7435,7 @@ uint smtos::TetOpSplitP::getROISReacExtent(std::string ROI_id, std::string const
         {
             std::ostringstream os;
             os << "Error (Index Overbound): There is no triangle with index " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         
         if (pTris[tidx] == 0)
@@ -7560,13 +7458,13 @@ uint smtos::TetOpSplitP::getROISReacExtent(std::string ROI_id, std::string const
     }
     
     if (has_tri_warning) {
-        std::cerr << "Warning: The following triangles have not been assigned to a patch, no change is applied to them:\n";
-        std::cerr << tri_not_assign.str() << "\n";
+        CLOG(WARNING, "general_log") << "The following triangles have not been assigned to a patch, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << tri_not_assign.str() << "\n";
     }
     
     if (has_sreac_warning) {
-        std::cerr << "Warning: SReac " << sr << " has not been defined in the following patch, no change is applied to them:\n";
-        std::cerr << sreac_undefined.str() << "\n";
+        CLOG(WARNING, "general_log") << "SReac " << sr << " has not been defined in the following patch, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << sreac_undefined.str() << "\n";
     }
     
     return sum;
@@ -7578,9 +7476,9 @@ void smtos::TetOpSplitP::resetROISReacExtent(std::string ROI_id, std::string con
 {
     std::ostringstream os;
     os << "This function has not been implemented!";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
     
-    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) throw steps::ArgErr();
+    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
     
     uint *indices = mesh()->_getROIData(ROI_id);
     int datasize = mesh()->getROIDataSize(ROI_id);
@@ -7599,7 +7497,7 @@ void smtos::TetOpSplitP::resetROISReacExtent(std::string ROI_id, std::string con
         {
             std::ostringstream os;
             os << "Error (Index Overbound): There is no triangle with index " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         
         if (pTris[tidx] == 0)
@@ -7622,13 +7520,13 @@ void smtos::TetOpSplitP::resetROISReacExtent(std::string ROI_id, std::string con
     }
     
     if (has_tri_warning) {
-        std::cerr << "Warning: The following triangles have not been assigned to a patch, no change is applied to them:\n";
-        std::cerr << tri_not_assign.str() << "\n";
+        CLOG(WARNING, "general_log") << "The following triangles have not been assigned to a patch, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << tri_not_assign.str() << "\n";
     }
     
     if (has_sreac_warning) {
-        std::cerr << "Warning: SReac " << sr << " has not been defined in the following patch, no change is applied to them:\n";
-        std::cerr << sreac_undefined.str() << "\n";
+        CLOG(WARNING, "general_log") << "SReac " << sr << " has not been defined in the following patch, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << sreac_undefined.str() << "\n";
     }
 }
 
@@ -7638,9 +7536,9 @@ uint smtos::TetOpSplitP::getROIDiffExtent(std::string ROI_id, std::string const 
 {
     std::ostringstream os;
     os << "This function has not been implemented!";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
     
-    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) throw steps::ArgErr();
+    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
     
     uint *indices = mesh()->_getROIData(ROI_id);
     int datasize = mesh()->getROIDataSize(ROI_id);
@@ -7661,7 +7559,7 @@ uint smtos::TetOpSplitP::getROIDiffExtent(std::string ROI_id, std::string const 
         {
             std::ostringstream os;
             os << "Error (Index Overbound): There is no tetrahedron with index " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         
         if (pTets[tidx] == 0)
@@ -7684,13 +7582,13 @@ uint smtos::TetOpSplitP::getROIDiffExtent(std::string ROI_id, std::string const 
     }
     
     if (has_tet_warning) {
-        std::cerr << "Warning: The following tetrahedrons have not been assigned to a compartment, no change is applied to them:\n";
-        std::cerr << tet_not_assign.str() << "\n";
+        CLOG(WARNING, "general_log") << "The following tetrahedrons have not been assigned to a compartment, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << tet_not_assign.str() << "\n";
     }
     
     if (has_diff_warning) {
-        std::cerr << "Warning: Diff " << d << " has not been defined in the following tetrahedrons, no change is applied to them:\n";
-        std::cerr << diff_undefined.str() << "\n";
+        CLOG(WARNING, "general_log") << "Diff " << d << " has not been defined in the following tetrahedrons, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << diff_undefined.str() << "\n";
     }
     
     return sum;
@@ -7702,9 +7600,9 @@ void smtos::TetOpSplitP::resetROIDiffExtent(std::string ROI_id, std::string cons
 {
     std::ostringstream os;
     os << "This function has not been implemented!";
-    throw steps::NotImplErr(os.str());
+    NotImplErrLog(os.str());
     
-    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) throw steps::ArgErr();
+    if (!mesh()->checkROI(ROI_id, steps::tetmesh::ELEM_TET)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
     
     uint *indices = mesh()->_getROIData(ROI_id);
     int datasize = mesh()->getROIDataSize(ROI_id);
@@ -7723,7 +7621,7 @@ void smtos::TetOpSplitP::resetROIDiffExtent(std::string ROI_id, std::string cons
         {
             std::ostringstream os;
             os << "Error (Index Overbound): There is no tetrahedron with index " << tidx << ".\n";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         
         if (pTets[tidx] == 0)
@@ -7746,13 +7644,13 @@ void smtos::TetOpSplitP::resetROIDiffExtent(std::string ROI_id, std::string cons
     }
     
     if (has_tet_warning) {
-        std::cerr << "Warning: The following tetrahedrons have not been assigned to a compartment, no change is applied to them:\n";
-        std::cerr << tet_not_assign.str() << "\n";
+        CLOG(WARNING, "general_log") << "The following tetrahedrons have not been assigned to a compartment, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << tet_not_assign.str() << "\n";
     }
     
     if (has_diff_warning) {
-        std::cerr << "Warning: Diff " << d << " has not been defined in the following tetrahedrons, no change is applied to them:\n";
-        std::cerr << diff_undefined.str() << "\n";
+        CLOG(WARNING, "general_log") << "Diff " << d << " has not been defined in the following tetrahedrons, no change is applied to them:\n";
+        CLOG(WARNING, "general_log") << diff_undefined.str() << "\n";
     }
 }
 
@@ -7877,60 +7775,19 @@ uint smtos::TetOpSplitP::registerRemoteMoleculeChange(int svol_host, uint loc, S
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-/*
-void smtos::TetOpSplitP::registerSyncWmVol(smtos::WmVol * wmvol)
-{
-    #ifdef MPI_DEBUG
-    //CLOG(DEBUG, "mpi_debug") << "register sync tet " << wmvol->idx()<< "\n";
-    #endif
-    syncWmVols.insert(wmvol);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void smtos::TetOpSplitP::registerSyncTet(smtos::Tet * tet)
-{
-    #ifdef MPI_DEBUG
-    //CLOG(DEBUG, "mpi_debug") << "register sync tet " << tet->idx()<< "\n";
-    #endif
-    syncTets.insert(tet);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void smtos::TetOpSplitP::registerSyncTri(smtos::Tri * tri)
-{
-    #ifdef MPI_DEBUG
-    //CLOG(DEBUG, "mpi_debug") << "register sync tri " << tri->idx()<< "\n";
-    #endif
-    syncTris.insert(tri);
-}
-*/
-
-
-////////////////////////////////////////////////////////////////////////////////
 
 void smtos::TetOpSplitP:: _remoteSyncAndUpdate(void* requests, std::vector<KProc*> & applied_diffs, std::vector<int> & directions)
 {
-    #ifdef MPI_DEBUG
-    CLOG(DEBUG, "mpi_debug") << "Start applying molecule changes.\n";
-    #endif
-    
+
     #ifdef MPI_PROFILING
     double starttime = MPI_Wtime();
     #endif
-    
-    #ifdef MPI_DEBUG
-    CLOG(DEBUG, "mpi_debug") << "change buffer:" << remoteChanges;
-    #endif
-    
+
     MPI_Request* requestsPtr = static_cast<MPI_Request*>(requests);
     
     uint request_count = 0;
     for (auto dest : neighbHosts) {
-#ifdef MPI_DEBUG
-        CLOG(DEBUG, "mpi_debug") << "request pointer:" << &(requestsPtr[request_count]);
-#endif
+
         MPI_Isend(&remoteChanges[dest].front(), remoteChanges[dest].size(), MPI_UNSIGNED, dest, OPSPLIT_MOLECULE_CHANGE, MPI_COMM_WORLD, &(requestsPtr[request_count]));
         request_count ++;
     }
@@ -7974,9 +7831,6 @@ void smtos::TetOpSplitP:: _remoteSyncAndUpdate(void* requests, std::vector<KProc
         std::vector<uint> changes(change_size);
         MPI_Recv(&changes.front(), change_size, MPI_UNSIGNED, status.MPI_SOURCE, OPSPLIT_MOLECULE_CHANGE, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-        #ifdef MPI_DEBUG
-        CLOG(DEBUG, "mpi_debug") << "Recving change "<< changes << " from " << status.MPI_SOURCE << ".\n";
-        #endif
         
         // apply changes
         uint nchanges = change_size / 4;
@@ -7985,10 +7839,7 @@ void smtos::TetOpSplitP:: _remoteSyncAndUpdate(void* requests, std::vector<KProc
             uint idx = changes[c * 4 + 1];
             uint slidx = changes[c * 4 + 2];
             uint value = changes[c * 4 + 3];
-            
-            #ifdef MPI_DEBUG
-            CLOG(DEBUG, "mpi_debug") << "unpack: idx "<< idx << " slidx " << slidx << " value " << value << ".\n";
-            #endif
+
             
             if (type == SUB_WM) {
                 pWmVols[idx]->incCount(slidx, value);
@@ -8016,10 +7867,7 @@ void smtos::TetOpSplitP:: _remoteSyncAndUpdate(void* requests, std::vector<KProc
     starttime = MPI_Wtime();
     #endif
     
-    #ifdef MPI_DEBUG
-    CLOG(DEBUG, "mpi_debug") << "Molecule changes have been applied.\n";
-    #endif
-    
+
     uint napply = applied_diffs.size();
     for (uint i = 0; i < napply; i++) {
         KProc* kp = applied_diffs[i];
@@ -8037,10 +7885,6 @@ void smtos::TetOpSplitP:: _remoteSyncAndUpdate(void* requests, std::vector<KProc
         _updateElement(upd_kp);
     }
     _updateSum();
-    
-    #ifdef MPI_DEBUG
-    CLOG(DEBUG, "mpi_debug") << "Remote update completed.\n";
-    #endif
 
     #ifdef MPI_PROFILING
     endtime = MPI_Wtime();
@@ -8118,7 +7962,7 @@ void smtos::TetOpSplitP::repartitionAndReset(std::vector<uint> const &tet_hosts,
     if (efflag() == true) {
         std::ostringstream os;
         os << "Repartition of EField is not implemented:\n";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     
     neighbHosts.erase(myRank);
@@ -8137,84 +7981,6 @@ void smtos::TetOpSplitP::repartitionAndReset(std::vector<uint> const &tet_hosts,
     MPI_Barrier(MPI_COMM_WORLD);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/*
-void smtos::TetOpSplitP::_updateKProcRates(std::vector<KProc*> & applylist, std::vector<int> & directions, std::vector<MPI_Request> & requests)
-{
-    remoteUpdateKProcs.clear();
-    uint napply = applylist.size();
-    for (uint i = 0; i < napply; i++) {
-        KProc* kp = applylist[i];
-        int direction = directions[i];
-        #ifdef MPI_DEBUG
-        CLOG(DEBUG, "mpi_debug") << "direction: " << direction;
-        #endif
-        std::vector<smtos::KProc*> const & local_upd = kp->getLocalUpdVec(direction);
-        #ifdef MPI_DEBUG
-        CLOG(DEBUG, "mpi_debug") << "local upd: " << local_upd;
-        #endif
-        std::vector<uint> const & remote_upd = kp->getRemoteUpdVec(direction);
-        #ifdef MPI_DEBUG
-        CLOG(DEBUG, "mpi_debug") << "remote upd: " << remote_upd;
-        #endif
-        for (auto & upd_kp : local_upd) {
-#ifdef MPI_DEBUG
-            CLOG(DEBUG, "mpi_debug") << "local upd: " << upd_kp->schedIDX();
-#endif
-            _updateElement(upd_kp);
-        }
-        remoteUpdateKProcs.insert(remote_upd.begin(), remote_upd.end());
-    }
-    
-    _updateRemoteKProcRates(requests);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void smtos::TetOpSplitP::_updateRemoteKProcRates(std::vector<MPI_Request> & requests)
-{
-    #ifdef MPI_DEBUG
-    CLOG(DEBUG, "mpi_debug") << "Recvive remote update\n";
-    #endif
-
-    std::vector<uint> remote_upd_kps(remoteUpdateKProcs.begin(), remoteUpdateKProcs.end());
-    
-    uint request_count = nNeighbHosts * 2;
-    
-    for (int dest : neighbHosts) {
-        MPI_Isend(&remote_upd_kps.front(), remote_upd_kps.size(), MPI_UNSIGNED, dest, OPSPLIT_KPROC_UPD, MPI_COMM_WORLD, &(requests[request_count]));
-        request_count++;
-    }
-    
-    // wait for either remote changes or a complete confirm
-    uint remain_comfirm = nNeighbHosts;
-    MPI_Status status;
-    while (remain_comfirm != 0) {
-        MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-        if (status.MPI_TAG == OPSPLIT_KPROC_UPD) {
-            // receive data
-            int data_size = 0;
-            MPI_Get_count(&status, MPI_UNSIGNED, &data_size);
-            std::vector<uint> data(data_size);
-            MPI_Recv(&data.front(), data_size, MPI_UNSIGNED, status.MPI_SOURCE, OPSPLIT_KPROC_UPD, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            
-            // apply changes
-            for (auto & kpidx : data) {
-                smtos::KProc* kp = pKProcs[kpidx];
-                if (kp != NULL) _updateElement(kp);
-            }
-            remain_comfirm --;
-        }
-        else {
-        #ifdef MPI_DEBUG
-            CLOG(DEBUG, "mpi_debug") << "Recvive Unknown signal: " << status.MPI_TAG << "\n";
-        #endif
-            throw;
-        }
-    }
-    remoteUpdateKProcs.clear();
-}
-*/
 ////////////////////////////////////////////////////////////////////////////////
 
 void smtos::TetOpSplitP::setDiffApplyThreshold(int threshold)

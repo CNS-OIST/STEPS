@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -36,6 +36,9 @@
 #include "steps/solver/sdiffboundarydef.hpp"
 #include "steps/geom/patch.hpp"
 
+// logging
+#include "easylogging++.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace ssolver = steps::solver;
@@ -54,16 +57,16 @@ ssolver::SDiffBoundarydef::SDiffBoundarydef(Statedef * sd, uint idx, stetmesh::S
 , pPatchB(0)
 , pSetupdone(false)
 {
-    assert(pStatedef != 0);
-    assert(sdb != 0);
+    AssertLog(pStatedef != 0);
+    AssertLog(sdb != 0);
 
     pName = sdb->getID();
     pBars = sdb->_getAllBarIndices();
     std::vector<steps::wm::Patch *> patches = sdb->getPatches();
     pPatchA_temp = patches[0];
     pPatchB_temp = patches[1];
-    assert (pPatchA_temp != 0);
-    assert (pPatchB_temp != 0);
+    AssertLog(pPatchA_temp != 0);
+    AssertLog(pPatchB_temp != 0);
 
 }
 
@@ -91,12 +94,12 @@ void ssolver::SDiffBoundarydef::restore(std::fstream & cp_file)
 
 void ssolver::SDiffBoundarydef::setup(void)
 {
-    assert (pSetupdone == false);
+    AssertLog(pSetupdone == false);
 
     pPatchA = pStatedef->getPatchIdx(pPatchA_temp);
     pPatchB = pStatedef->getPatchIdx(pPatchB_temp);
-    assert(pPatchA >= 0);
-    assert(pPatchB >= 0);
+    AssertLog(pPatchA >= 0);
+    AssertLog(pPatchB >= 0);
     pSetupdone = true;
 
 }

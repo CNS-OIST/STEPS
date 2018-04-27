@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -41,6 +41,9 @@
 #include "steps/model/chanstate.hpp"
 #include "steps/model/spec.hpp"
 
+// logging
+#include "easylogging++.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
@@ -56,13 +59,13 @@ ChanState::ChanState(string const & id, Model * model, Chan * chan)
     {
         ostringstream os;
         os << "No channel provided to ChanState initializer function";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
     if (model != chan->getModel())
     {
         ostringstream os;
         os << "Channel is unknown in this model.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     pChan->_handleChanStateAdd(this);
@@ -91,7 +94,7 @@ void ChanState::_handleSelfDelete(void)
 
 void ChanState::setID(string const & id)
 {
-    assert(pChan != 0);
+    AssertLog(pChan != 0);
     if (id == getID()) return;
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let

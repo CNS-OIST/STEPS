@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -40,6 +40,8 @@
 #include "steps/model/chanstate.hpp"
 #include "steps/model/vdeptrans.hpp"
 
+// logging
+#include "easylogging++.h"
 
 namespace ssolver = steps::solver;
 namespace smod = steps::model;
@@ -61,8 +63,8 @@ ssolver::VDepTransdef::VDepTransdef(Statedef * sd, uint idx, smod::VDepTrans * v
 , pSpec_SRCCHAN(GIDX_UNDEFINED)
 , pSpec_DSTCHAN(GIDX_UNDEFINED)
 {
-    assert (pStatedef != 0);
-    assert (vdt != 0);
+    AssertLog(pStatedef != 0);
+    AssertLog(vdt != 0);
 
     pName = vdt->getID();
 
@@ -74,7 +76,7 @@ ssolver::VDepTransdef::VDepTransdef(Statedef * sd, uint idx, smod::VDepTrans * v
     pVMax = vdt->_getVMax();
     pDV = vdt->_getDV();
     uint tablesize = vdt->_getTablesize();
-    assert(tablesize == static_cast<uint>(std::floor((pVMax - pVMin) / pDV)) + 1);
+    AssertLog(tablesize == static_cast<uint>(std::floor((pVMax - pVMin) / pDV)) + 1);
 
     pVRateTab = new double[tablesize];
     // Just temporarily store the pointer:
@@ -126,7 +128,7 @@ void ssolver::VDepTransdef::restore(std::fstream & cp_file)
 
 void ssolver::VDepTransdef::setup(void)
 {
-    assert(pSetupdone == false);
+    AssertLog(pSetupdone == false);
 
     uint sidx = pStatedef->getSpecIdx(pSrc);
     uint didx = pStatedef->getSpecIdx(pDst);
@@ -143,7 +145,7 @@ void ssolver::VDepTransdef::setup(void)
 
 uint ssolver::VDepTransdef::srcchanstate(void) const
 {
-    assert(pSetupdone == true);
+    AssertLog(pSetupdone == true);
     return pSpec_SRCCHAN;
 }
 
@@ -151,7 +153,7 @@ uint ssolver::VDepTransdef::srcchanstate(void) const
 
 uint ssolver::VDepTransdef::dstchanstate(void) const
 {
-    assert(pSetupdone == true);
+    AssertLog(pSetupdone == true);
     return pSpec_DSTCHAN;
 }
 
@@ -159,21 +161,21 @@ uint ssolver::VDepTransdef::dstchanstate(void) const
 
 double ssolver::VDepTransdef::getVDepRate(double v) const
 {
-    assert(pSetupdone == true);
-    assert(pVRateTab != 0);
+    AssertLog(pSetupdone == true);
+    AssertLog(pVRateTab != 0);
     if (v > pVMax)
     {
         std::ostringstream os;
         os << "Voltage is higher than maximum for VDepTrans, " << name() << ": ";
         os << v << " > " << pVMax;
-        throw steps::ProgErr(os.str());
+        ProgErrLog(os.str());
     }
     if (v < pVMin)
     {
         std::ostringstream os;
         os << "Voltage is lower than maximum for VDepTrans, " << name() << ": ";
         os << v << " < " << pVMin;
-        throw steps::ProgErr(os.str());
+        ProgErrLog(os.str());
     }
 
     double v2 = ((v - pVMin) / pDV);
@@ -190,8 +192,8 @@ double ssolver::VDepTransdef::getVDepRate(double v) const
 
 int ssolver::VDepTransdef::dep(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_DEP[gidx];
 }
 
@@ -199,8 +201,8 @@ int ssolver::VDepTransdef::dep(uint gidx) const
 
 bool ssolver::VDepTransdef::req(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     if (pSpec_DEP[gidx] != DEP_NONE) return true;
     return false;
 }

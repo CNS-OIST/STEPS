@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -29,10 +29,13 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/solver/diffboundarydef.hpp"
 #include "steps/mpi/tetopsplit/diffboundary.hpp"
 #include "steps/mpi/tetopsplit/comp.hpp"
 
+// logging
+#include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace smtos = steps::mpi::tetopsplit;
@@ -48,7 +51,7 @@ smtos::DiffBoundary::DiffBoundary(steps::solver::DiffBoundarydef * dbdef)
 , pTetDirection()
 , pSetComps(false)
 {
-    assert(dbdef != 0);
+    AssertLog(dbdef != 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -76,10 +79,10 @@ void smtos::DiffBoundary::restore(std::fstream & cp_file)
 
 void smtos::DiffBoundary::setComps(smtos::Comp * compa, smtos::Comp * compb)
 {
-    assert (pSetComps == false);
-    assert(compa != 0);
-    assert(compb != 0);
-    assert(compa != compb);
+    AssertLog(pSetComps == false);
+    AssertLog(compa != 0);
+    AssertLog(compb != 0);
+    AssertLog(compa != compb);
 
     pCompA = compa;
     pCompB = compb;
@@ -90,7 +93,7 @@ void smtos::DiffBoundary::setComps(smtos::Comp * compa, smtos::Comp * compb)
 
 smtos::Comp * smtos::DiffBoundary::compA(void)
 {
-    assert(pSetComps == true);
+    AssertLog(pSetComps == true);
     return pCompA;
 }
 
@@ -98,7 +101,7 @@ smtos::Comp * smtos::DiffBoundary::compA(void)
 
 smtos::Comp * smtos::DiffBoundary::compB(void)
 {
-    assert(pSetComps == true);
+    AssertLog(pSetComps == true);
     return pCompB;
 }
 
@@ -106,7 +109,7 @@ smtos::Comp * smtos::DiffBoundary::compB(void)
 
 void smtos::DiffBoundary::setTetDirection(uint tet, uint direction)
 {
-    assert(direction < 4);
+    AssertLog(direction < 4);
 
     pTets.push_back(tet);
     pTetDirection.push_back(direction);

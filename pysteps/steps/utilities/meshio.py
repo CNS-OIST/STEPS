@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -1104,7 +1104,98 @@ def importGmsh(filename, scale):
 
     return mesh, nodeproxy, tetproxy,triproxy
 
+#############################################################################################
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+#############################################################################################
+
+def importVTK(filename, scale):
+    """
+    Read a VTK-formated mesh file, return the created steps.geom.Tetmesh object,
+    the element mapping for nodes, tetraedrons and triangles.
+
+    PARAMETERS:
+
+    * filename: the VTK filename (or path) including any suffix.
+    * scale: LENGTH scale from the importing mesh to real geometry. e.g. a radius
+      of 10 in the importing file to a radius of 1 micron in STEPS, scale is 1e-7.
+
+    RETURNS:
+
+    mesh, nodeproxy, tetproxy, triproxy
+
+    * mesh: The STEPS TetMesh object
+    * nodeproxy: Element Map for nodes
+    * tetproxy: Element Map for tetrahedrons
+    * triproxy: Element Map for triangles
+
+   IMPORTANT NOTICE:
+
+   User is recommanded to save the tetmesh objects using the saveTetmesh() method
+   and recreate the objects from the saved files, instead of creating the objects
+   via the importing functions each time, if the tetmesh objects are intented to
+   be used in multiple simulations. Since the importing functions require a massive
+   amount of time to create the Tetmesh object, comparing to the loadTetmesh() method.
+
+    """
+    print("Reading VTK file...")
+    #btime = time.time()
+
+    vtkfile = open(filename, 'r')
+
+    nodeproxy = ElementProxy('node', 3)
+    tetproxy = ElementProxy('tet', 4)
+    triproxy = ElementProxy('tri', 3)
+    elements = []
+
+    warningPrinted = False
+
+    line = vtkfile.readline()
+
+    file_it = iter(vtkfile)
+    for line in file_it:
+        if line.strip() == "":
+            continue
+        tokens = line.split()
+        if tokens[0] == "DATASET" and tokens[1] != "UNSTRUCTURED_GRID":
+            print("Error: not an unstructured grid!")
+            break
+        elif tokens[0] == "POINTS":
+            i = 0
+            n_points = int(tokens[1])
+            while i < n_points:
+                line = next(file_it)
+                tokens = line.split()
+                for j in range(len(tokens) // 3):
+                    nodeproxy.insert(i, [float(tokens[j])*scale, float(tokens[j + 1])*scale, float(tokens[j + 2])*scale])
+                    i += 1
+        elif tokens[0] == "CELLS":
+            for i in range(int(tokens[1])):
+                line = next(file_it)
+                tokens = line.split()
+                elements.append(tokens)
+        elif tokens[0] == "CELL_TYPES":
+            for i in range(int(tokens[1])):
+                line = next(file_it)
+                element = elements[i]
+                if int(line) == 5 and int(element[0]) == 3:
+                    triproxy.insert(i, [int(element[1]), int(element[2]), int(element[3])])
+                elif int(line) == 10 and int(element[0]) == 4:
+                    tetproxy.insert(i, [int(element[1]), int(element[2]), int(element[3]), int(element[4])])
+                elif not warningPrinted:
+                    print("Warning: at least one element is neither a triangle nor a tetrahedron")
+                    warningPrinted = True                 
+            break
+    vtkfile.close()
+    nodedata = nodeproxy.getAllData()
+    tetdata = tetproxy.getAllData()
+    tridata = triproxy.getAllData()
+
+    print("creating Tetmesh object in STEPS...")
+    mesh = stetmesh.Tetmesh(nodedata, tetdata, tridata)
+    print("Tetmesh object created.")
+    return mesh, nodeproxy, tetproxy, triproxy
 
 #############################################################################################
 

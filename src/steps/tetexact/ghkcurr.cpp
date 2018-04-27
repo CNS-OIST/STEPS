@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -33,6 +33,7 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/math/constants.hpp"
 #include "steps/math/ghk.hpp"
 #include "steps/tetexact/ghkcurr.hpp"
@@ -42,7 +43,7 @@
 #include "steps/tetexact/kproc.hpp"
 #include "steps/tetexact/tetexact.hpp"
 
-#include "third_party/easylogging++.h"
+#include "easylogging++.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -59,8 +60,8 @@ stex::GHKcurr::GHKcurr(ssolver::GHKcurrdef * ghkdef, stex::Tri * tri)
 , pUpdVec()
 , pEffFlux(true)
 {
-    assert (pGHKcurrdef != 0);
-    assert (pTri != 0);
+    AssertLog(pGHKcurrdef != 0);
+    AssertLog(pTri != 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -122,7 +123,7 @@ void stex::GHKcurr::setupDeps(void)
 
     WmVol * itet = pTri->iTet();
     WmVol * otet = pTri->oTet();
-    assert (itet != 0);
+    AssertLog(itet != 0);
     // The global species of the ion
     const uint gidxion = pGHKcurrdef->ion();
 
@@ -273,7 +274,7 @@ std::vector<stex::KProc*> const & stex::GHKcurr::apply(steps::rng::RNG * rng, do
     ssolver::Patchdef * pdef = pTri->patchdef();
     const uint ghklidx = pdef->ghkcurrG2L(pGHKcurrdef->gidx());
 
-    assert (valence != 0);        // TODO: get rid of this when tested
+    AssertLog(valence != 0);        // TODO: get rid of this when tested
 
     const bool realflux = pGHKcurrdef->realflux();
     double voconc = pGHKcurrdef->voconc();

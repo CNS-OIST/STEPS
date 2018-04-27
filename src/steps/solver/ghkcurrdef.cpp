@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2017 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -48,6 +48,9 @@
 #include "steps/model/spec.hpp"
 #include "steps/model/ghkcurr.hpp"
 
+// logging
+#include "easylogging++.h"
+
 namespace ssolver = steps::solver;
 namespace smod = steps::model;
 
@@ -69,8 +72,8 @@ ssolver::GHKcurrdef::GHKcurrdef(Statedef * sd, uint gidx, smod::GHKcurr * ghk)
 , pSpec_ION(GIDX_UNDEFINED)
 , pSpec_VOL_DEP(0)
 {
-    assert(pStatedef != 0);
-    assert(ghk != 0);
+    AssertLog(pStatedef != 0);
+    AssertLog(ghk != 0);
 
     pName = ghk->getID();
     pChanState = ghk->getChanState()->getID();
@@ -83,11 +86,11 @@ ssolver::GHKcurrdef::GHKcurrdef(Statedef * sd, uint gidx, smod::GHKcurr * ghk)
     {
         std::ostringstream os;
         os << "\nPermeability not defined for GHK current object.";
-        throw steps::ArgErr(os.str());
+        ArgErrLog(os.str());
     }
 
     pValence = ghk->_valence();
-    assert(pValence != 0);
+    AssertLog(pValence != 0);
 
     // Fetch the conductance measurement information from the GHKcurr object
     // in order to calculate the permeability.
@@ -96,11 +99,11 @@ ssolver::GHKcurrdef::GHKcurrdef(Statedef * sd, uint gidx, smod::GHKcurr * ghk)
     {
         double V = ghk->_V();
         double temp = ghk->_temp();
-        assert(temp >=0.0);
+        AssertLog(temp >=0.0);
         double oconc = ghk->_oconc();
-        assert(oconc >= 0.0);
+        AssertLog(oconc >= 0.0);
         double iconc = ghk->_iconc();
-        assert (iconc >= 0.0);
+        AssertLog(iconc >= 0.0);
 
         // Convert concentrations in Molar input to units for GHK equation, namely mol/m^3 or mmol/l
         oconc *= 1000.0;
@@ -112,14 +115,14 @@ ssolver::GHKcurrdef::GHKcurrdef(Statedef * sd, uint gidx, smod::GHKcurr * ghk)
         {
             std::ostringstream os;
             os << "\nFailed to find permeability for GHK current object, check parameters.";
-            throw steps::ArgErr(os.str());
+            ArgErrLog(os.str());
         }
         // TODO: some check here that the permeability isn't ridiculous.
     }
     else
     {
         double perm = ghk->_P();
-        assert(perm>0.0);
+        AssertLog(perm>0.0);
         pPerm = perm;
     }
 
@@ -169,7 +172,7 @@ void ssolver::GHKcurrdef::restore(std::fstream & cp_file)
 
 void ssolver::GHKcurrdef::setup(void)
 {
-    assert(pSetupdone == false);
+    AssertLog(pSetupdone == false);
 
     uint chidx = pStatedef->getSpecIdx(pChanState);
     uint ionidx = pStatedef->getSpecIdx(pIon);
@@ -199,7 +202,7 @@ void ssolver::GHKcurrdef::setup(void)
 
 uint ssolver::GHKcurrdef::chanstate(void) const
 {
-    assert(pSetupdone == true);
+    AssertLog(pSetupdone == true);
     return pSpec_CHANSTATE;
 }
 
@@ -207,15 +210,15 @@ uint ssolver::GHKcurrdef::chanstate(void) const
 
 uint ssolver::GHKcurrdef::ion(void) const
 {
-    assert(pSetupdone == true);
+    AssertLog(pSetupdone == true);
     return pSpec_ION;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
 int ssolver::GHKcurrdef::dep(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_DEP[gidx];
 }
 
@@ -223,16 +226,16 @@ int ssolver::GHKcurrdef::dep(uint gidx) const
 
 int ssolver::GHKcurrdef::dep_v(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_VOL_DEP[gidx];
 }
 ////////////////////////////////////////////////////////////////////////////////
 
 bool ssolver::GHKcurrdef::req(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     if (pSpec_DEP[gidx] != DEP_NONE) return true;
     return false;
 }
@@ -241,8 +244,8 @@ bool ssolver::GHKcurrdef::req(uint gidx) const
 
 bool ssolver::GHKcurrdef::req_v(uint gidx) const
 {
-    assert(pSetupdone == true);
-    assert(gidx < pStatedef->countSpecs());
+    AssertLog(pSetupdone == true);
+    AssertLog(gidx < pStatedef->countSpecs());
     if (pSpec_VOL_DEP[gidx] != DEP_NONE) return true;
     return false;
 }
