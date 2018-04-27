@@ -59,3 +59,6 @@ install(TARGETS cysteps
 
 # Install python package, from cmake_setup.py
 install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${setup_py} build --build-base=${CMAKE_BINARY_DIR} install --install-lib=${PYTHON_INSTALL_PREFIX} --force WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})")
+
+# install matlab .m file
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/steps/utilities/matlab_support/run_steps.m" DESTINATION "${PYTHON_INSTALL_PREFIX}/steps/utilities/matlab_support/")
