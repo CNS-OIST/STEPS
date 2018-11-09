@@ -41,33 +41,34 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-using namespace std;
 namespace swm = steps::wm;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swm::Patch::Patch(std::string const & id, swm::Geom * container, swm::Comp* icomp,
+swm::Patch::Patch(std::string id, swm::Geom * container, swm::Comp* icomp,
         swm::Comp* ocomp, double area)
-: pID(id)
+: pID(std::move(id))
 , pContainer(container)
 , pIComp()
 , pOComp()
 , pSurfsys()
 , pArea(area)
 {
-    if (pContainer == 0)
+    if (pContainer == nullptr)
     {
-        ostringstream os;
+        std::ostringstream os;
         os << "No container provided to Patch initializer function.\n";
         ArgErrLog(os.str());
     }
 
     _setIComp(icomp);
-    if (ocomp != 0) _setOComp(ocomp);
+    if (ocomp != nullptr) {
+        _setOComp(ocomp);
+    }
 
     if (pArea < 0.0)
     {
-        ostringstream os;
+        std::ostringstream os;
         os << "Patch area can't be negative.\n";
         ArgErrLog(os.str());
     }
@@ -76,9 +77,11 @@ swm::Patch::Patch(std::string const & id, swm::Geom * container, swm::Comp* icom
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swm::Patch::~Patch(void)
+swm::Patch::~Patch()
 {
-    if (pContainer == 0) return;
+    if (pContainer == nullptr) {
+        return;
+    }
     _handleSelfDelete();
 }
 
@@ -86,8 +89,10 @@ swm::Patch::~Patch(void)
 
 void swm::Patch::setID(std::string const & id)
 {
-    AssertLog(pContainer != 0);
-    if (id == pID) return;
+    AssertLog(pContainer != nullptr);
+    if (id == pID) {
+        return;
+    }
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
     // it pass by into the Python layer.
@@ -101,10 +106,10 @@ void swm::Patch::setID(std::string const & id)
 
 void swm::Patch::setArea(double area)
 {
-    AssertLog(pContainer != 0);
+    AssertLog(pContainer != nullptr);
     if (area < 0.0)
     {
-        ostringstream os;
+        std::ostringstream os;
         os << "Patch area can't be negative.\n";
         ArgErrLog(os.str());
     }
@@ -132,9 +137,8 @@ void swm::Patch::delSurfsys(std::string const & id)
 std::vector<steps::model::Spec*> swm::Patch::getAllSpecs(steps::model::Model* model)
 {
     std::set<steps::model::Spec*> pSpecs;
-    std::set<std::string>::iterator it;
-    for (it = pSurfsys.begin(); it != pSurfsys.end(); it++) {
-        steps::model::Surfsys* surfsys = model->getSurfsys(*it);
+    for (const auto& id : pSurfsys) {
+        steps::model::Surfsys* surfsys = model->getSurfsys(id);
         std::vector<steps::model::Spec*> specs = surfsys->getAllSpecs();
         pSpecs.insert(specs.begin(), specs.end());
     }
@@ -148,9 +152,8 @@ std::vector<steps::model::Spec*> swm::Patch::getAllSpecs(steps::model::Model* mo
 std::vector<steps::model::SReac*> swm::Patch::getAllSReacs(steps::model::Model* model)
 {
     std::set<steps::model::SReac*> pSReacs;
-    std::set<std::string>::iterator it;
-    for (it = pSurfsys.begin(); it != pSurfsys.end(); it++) {
-        steps::model::Surfsys* surfsys = model->getSurfsys(*it);
+    for (const auto& id : pSurfsys) {
+        steps::model::Surfsys* surfsys = model->getSurfsys(id);
         std::vector<steps::model::SReac*> sreacs = surfsys->getAllSReacs();
         pSReacs.insert(sreacs.begin(), sreacs.end());
     }
@@ -165,20 +168,20 @@ void swm::Patch::_setIComp(swm::Comp* icomp)
 {
     if (icomp->getContainer() != pContainer)
     {
-        ostringstream os;
+        std::ostringstream os;
         os << "Compartment does not belong to same container as patch.\n";
         ArgErrLog(os.str());
     }
     std::set<swm::Patch *> ipatches  = icomp->getIPatches();
     if (ipatches.find(this) != ipatches.end())
     {
-        ostringstream os;
+        std::ostringstream os;
         os << "Patch is already on inside of compartment.\n";
         ArgErrLog(os.str());
     }
     // remove the patch if it was already on the outside of some
     // other compartment
-    if (pIComp != 0)
+    if (pIComp != nullptr)
     {
         pIComp->_delOPatch(this);
     }
@@ -192,24 +195,26 @@ void swm::Patch::_setIComp(swm::Comp* icomp)
 
 void swm::Patch::_setOComp(swm::Comp* ocomp)
 {
-    if (ocomp == 0) return;
+    if (ocomp == nullptr) {
+        return;
+    }
 
     if (ocomp->getContainer() != pContainer)
     {
-        ostringstream os;
+        std::ostringstream os;
            os << "Compartment does not belong to same container as patch.\n";
            ArgErrLog(os.str());
     }
     std::set<swm::Patch *> opatches  = ocomp->getOPatches();
     if (opatches.find(this) != opatches.end())
     {
-           ostringstream os;
+          std::ostringstream os;
           os << "Patch is already on outside of compartment.\n";
            ArgErrLog(os.str());
     }
     // remove the patch if it was already on the inside of some
     // other compartment
-    if (pOComp != 0)
+    if (pOComp != nullptr)
     {
         pOComp->_delIPatch(this);
     }
@@ -220,14 +225,14 @@ void swm::Patch::_setOComp(swm::Comp* ocomp)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Patch::_handleSelfDelete(void)
+void swm::Patch::_handleSelfDelete()
 {
     pContainer->_handlePatchDel(this);
     pArea = 0.0;
     pSurfsys.clear();
-    pIComp = 0;
-    pOComp = 0;
-    pContainer = 0;
+    pIComp = nullptr;
+    pOComp = nullptr;
+    pContainer = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

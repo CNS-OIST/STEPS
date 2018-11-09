@@ -88,7 +88,7 @@ public:
           ChanState * chanstate, double erev, double g);
 
     /// Destructor
-    ~OhmicCurr(void);
+    ~OhmicCurr();
 
     ////////////////////////////////////////////////////////////////////////
     // OHMIC CURRENT PROPERTIES
@@ -97,7 +97,7 @@ public:
     /// Return the ohmic current ID.
     ///
     /// \return ID of the ohmic current.
-    std::string getID(void) const
+    std::string getID() const
     { return pID; }
 
     /// Set or change the ohmic current ID.
@@ -108,19 +108,19 @@ public:
     /// Return a pointer to the parent surface system.
     ///
     /// \return Pointer to the surface system.
-    Surfsys * getSurfsys(void) const
+    Surfsys * getSurfsys() const
     { return pSurfsys; }
 
     /// Return a pointer to the parent model.
     ///
     /// \return Pointer to the parent model.
-    Model * getModel(void) const
+    Model * getModel() const
     { return pModel; }
 
     /// Return a pointer to the associated channel state.
     ///
     /// \return Pointer to the channel state.
-    ChanState * getChanState(void) const
+    ChanState * getChanState() const
     { return pChanState; }
 
     /// Change the channel state.
@@ -131,7 +131,7 @@ public:
     /// Return the reversal potential (in volts).
     ///
     /// \return Reversal potential of the ohmic current.
-    double getERev(void) const
+    double getERev() const
     { return pERev; }
 
     /// Change the reversal potential.
@@ -142,7 +142,7 @@ public:
     /// Return the channel conductance (in siemens).
     ///
     /// \return Channel conductance associated with ohmic current.
-    double getG(void) const
+    double getG() const
     { return pG; }
 
     /// Change the channel conductance.
@@ -157,7 +157,7 @@ public:
     ///
     /// Called if Python object deleted, or from del method in parent object.
     /// Will only be called once
-    void _handleSelfDelete(void);
+    void _handleSelfDelete();
 
     ////////////////////////////////////////////////////////////////////////
 

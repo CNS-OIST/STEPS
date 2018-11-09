@@ -26,17 +26,17 @@
 
 
 // STL headers.
-#include <string>
 #include <sstream>
+#include <string>
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/solver/api.hpp"
-#include "steps/solver/statedef.hpp"
 #include "steps/solver/compdef.hpp"
 #include "steps/solver/patchdef.hpp"
 #include "steps/solver/specdef.hpp"
+#include "steps/solver/statedef.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -45,14 +45,14 @@ using namespace steps::solver;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint API::getNComps(void) const
+uint API::getNComps() const
 {
     return pStatedef->countComps();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint API::getNPatches(void) const
+uint API::getNPatches() const
 {
     return pStatedef->countPatches();
 }

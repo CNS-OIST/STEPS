@@ -28,17 +28,17 @@
 
 // STL headers.
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <map>
-#include <string>
-#include <sstream>
-#include <vector>
-#include <cassert>
 #include <queue>
-#include <fstream>
+#include <sstream>
+#include <string>
 #include <time.h>       /* time_t, struct tm, difftime, time, mktime */
+#include <vector>
 
 // STEPS headers.
 #include "steps/common.h"
@@ -80,13 +80,20 @@ sefield::TetStub::TetStub(uint * v)
 
 bool sefield::TetStub::operator< (sefield::TetStub const & t) const
 {
-    if (pSortedVerts[0] < t.pSortedVerts[0]) return true;
-    if (pSortedVerts[0] > t.pSortedVerts[0]) return false;
-    if (pSortedVerts[1] < t.pSortedVerts[1]) return true;
-    if (pSortedVerts[1] > t.pSortedVerts[1]) return false;
-    if (pSortedVerts[2] < t.pSortedVerts[2]) return true;
-    if (pSortedVerts[2] > t.pSortedVerts[2]) return false;
-    if (pSortedVerts[3] < t.pSortedVerts[3]) return true;
+    if (pSortedVerts[0] < t.pSortedVerts[0]) { return true;
+}
+    if (pSortedVerts[0] > t.pSortedVerts[0]) { return false;
+}
+    if (pSortedVerts[1] < t.pSortedVerts[1]) { return true;
+}
+    if (pSortedVerts[1] > t.pSortedVerts[1]) { return false;
+}
+    if (pSortedVerts[2] < t.pSortedVerts[2]) { return true;
+}
+    if (pSortedVerts[2] > t.pSortedVerts[2]) { return false;
+}
+    if (pSortedVerts[3] < t.pSortedVerts[3]) { return true;
+}
     //if (pSortedVerts[3] > t.pSortedVerts[3]) return false;
     return false;
 }
@@ -113,11 +120,11 @@ sefield::TetMesh::TetMesh
 )
 : pElements(nv)
 , pConnections()
-, pVertexPerm(0)
+, pVertexPerm(nullptr)
 , pNTri(ntr)
 , pNTet(ntet)
-, pTetrahedrons(0)
-, pTriangles(0)
+, pTetrahedrons(nullptr)
+, pTriangles(nullptr)
 , pTetLUT()
 //, pTetHS(0)
 //, pNbrHMS(0)
@@ -126,7 +133,7 @@ sefield::TetMesh::TetMesh
     double * vpos2 = vpos;
     for (uint i = 0; i < nv; ++i, vpos2 += 3)
     {
-        VertexElement * velt = new VertexElement(i, vpos2);
+        auto * velt = new VertexElement(i, vpos2);
         pElements[i] = velt;
     }
 
@@ -153,7 +160,7 @@ sefield::TetMesh::TetMesh
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sefield::TetMesh::~TetMesh(void)
+sefield::TetMesh::~TetMesh()
 {
     delete[] pTriangles;
     delete[] pTetrahedrons;
@@ -241,7 +248,7 @@ void sefield::TetMesh::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::TetMesh::extractConnections(void)
+void sefield::TetMesh::extractConnections()
 {
     typedef set<ConnStub> ConnSet;
     typedef ConnSet::iterator ConnSetI;
@@ -295,7 +302,7 @@ void sefield::TetMesh::extractConnections(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::TetMesh::allocateSurface(void)
+void sefield::TetMesh::allocateSurface()
 {
     AssertLog(pTriangles != 0);
 
@@ -331,7 +338,7 @@ void sefield::TetMesh::allocateSurface(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::TetMesh::reindexElements(void)
+void sefield::TetMesh::reindexElements()
 {
     uint i = 0;
     VertexElementPVecI e_end = pElements.end();
@@ -414,7 +421,7 @@ void sefield::TetMesh::applyConductance(double d)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double sefield::TetMesh::getTotalCapacitance(void)
+double sefield::TetMesh::getTotalCapacitance()
 {
     double ret = 0.;
     for (unsigned i = 0; i < pElements.size(); i++)
@@ -426,7 +433,7 @@ double sefield::TetMesh::getTotalCapacitance(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double sefield::TetMesh::getTotalArea(void)
+double sefield::TetMesh::getTotalArea()
 {
     double ret = 0.;
     for (unsigned i = 0; i < pElements.size(); i++)
@@ -438,7 +445,7 @@ double sefield::TetMesh::getTotalArea(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> sefield::TetMesh::centerOfMass(void)
+std::vector<double> sefield::TetMesh::centerOfMass()
 {
     int nelt = pElements.size();
     std::vector<double> ret = std::vector<double>(3);
@@ -617,7 +624,7 @@ void sefield::TetMesh::axisOrderElements(uint opt_method, std::string const & op
         //time(&btime);
 
         std::vector<double> com = centerOfMass();
-        double ** m = new double*[3];
+        auto ** m = new double*[3];
         for (uint i = 0; i < 3; i++)
         {
             m[i] = new double[3];
@@ -874,7 +881,7 @@ void sefield::TetMesh::mainEvec
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::TetMesh::reordered(void)
+void sefield::TetMesh::reordered()
 {
     uint * tris = pTriangles;
     for (uint i = 0; i < pNTri; ++i, tris += 3)
@@ -909,7 +916,7 @@ sefield::VertexConnection * sefield::TetMesh::newConnection
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<uint> sefield::TetMesh::getVertexPermutation(void)
+std::vector<uint> sefield::TetMesh::getVertexPermutation()
 {
     uint nverts = countVertices();
 
@@ -926,7 +933,7 @@ std::vector<uint> sefield::TetMesh::getVertexPermutation(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /*
-void sefield::TetMesh::savematrix(void)
+void sefield::TetMesh::savematrix()
 {
     ofstream fout;
     fout.open("matrixdata.txt");

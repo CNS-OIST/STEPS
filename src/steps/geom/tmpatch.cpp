@@ -25,18 +25,18 @@
  */
 
 // Standard headers.
-#include <cassert>
 #include <algorithm>
-#include <unordered_set>
-#include <vector>
+#include <cassert>
 #include <sstream>
 #include <string>
+#include <unordered_set>
+#include <vector>
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
-#include "steps/geom/tmpatch.hpp"
 #include "steps/geom/tmcomp.hpp"
+#include "steps/geom/tmpatch.hpp"
 #include "steps/math/point.hpp"
 #include "steps/util/collections.hpp"
 // logging
@@ -54,8 +54,9 @@ stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
 , pTetmesh(container)
 , pTrisN(0)
 {
-    if (pTetmesh == 0)
+    if (pTetmesh == nullptr) {
         ArgErrLog("No mesh provided to Patch initializer function.");
+    }
 
     // upcast the compartment pointers for this overloaded constructor
 
@@ -64,24 +65,29 @@ stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
     stetmesh::TmComp *ocomp = dynamic_cast<stetmesh::TmComp *>(wmocomp);
 
     // The maximum triangle index in tetrahedral mesh
-    uint maxidx = (pTetmesh->countTris() -1);
+    uint maxidx = pTetmesh->countTris() - 1;
 
     // The patch's area - contributed to from all triangles
     double area = 0.0;
 
     std::unordered_set<uint> visited_tris(tris.size());
     for (uint tri: tris) {
-        if (visited_tris.count(tri)) continue;
+        if (visited_tris.count(tri) > 0) {
+            continue;
+        }
         visited_tris.insert(tri);
 
-        if (tri > maxidx)
-            ArgErrLog("Invalid triangle index "+std::to_string(tri)+".");
+        if (tri > maxidx) {
+            ArgErrLog("Invalid triangle index " + std::to_string(tri) + ".");
+        }
 
-        if (pTetmesh->getTriPatch(tri) != nullptr)
-            ArgErrLog("Triangle with index "+std::to_string(tri)+" already belongs to a patch.");
+        if (pTetmesh->getTriPatch(tri) != nullptr) {
+            ArgErrLog("Triangle with index " + std::to_string(tri) + " already belongs to a patch.");
+        }
 
-        if (pTetmesh->getTriDiffBoundary(tri) != nullptr)
-            ArgErrLog("Triangle with index "+std::to_string(tri)+" belongs to a diffusion boundary.");
+        if (pTetmesh->getTriDiffBoundary(tri) != nullptr) {
+            ArgErrLog("Triangle with index " + std::to_string(tri) + " belongs to a diffusion boundary.");
+        }
 
         // Add triangle if compartments match those of patch, flipping
         // triangle neighbours if required.
@@ -148,14 +154,16 @@ stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
         // tri_tets[0] exists
         if (updated_tri_tets[0] >= 0) {
             point3d b_to_b = pTetmesh->_getTriBarycenter(tri) - pTetmesh->_getTetBarycenter(updated_tri_tets[0]);
-            if (dot(b_to_b, pTetmesh->_getTriNorm(tri)) < 0)
+            if (dot(b_to_b, pTetmesh->_getTriNorm(tri)) < 0) {
                 pTetmesh->_flipTriVerts(tri);
+            }
         }
         // tri_tets[1] exists
         else if (updated_tri_tets[1] >= 0) {
             point3d b_to_b = pTetmesh->_getTriBarycenter(tri) - pTetmesh->_getTetBarycenter(updated_tri_tets[1]);
-            if (dot(b_to_b, pTetmesh->_getTriNorm(tri)) >= 0)
+            if (dot(b_to_b, pTetmesh->_getTriNorm(tri)) >= 0) {
                 pTetmesh->_flipTriVerts(tri);
+            }
         }
 
         // Update area, patch, bounding box.
@@ -179,14 +187,14 @@ std::vector<bool> stetmesh::TmPatch::isTriInside(const std::vector<uint> &tris) 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> stetmesh::TmPatch::getBoundMin(void) const
+std::vector<double> stetmesh::TmPatch::getBoundMin() const
 {
     return steps::util::as_vector(pBBox.min());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> stetmesh::TmPatch::getBoundMax(void) const
+std::vector<double> stetmesh::TmPatch::getBoundMax() const
 {
     return steps::util::as_vector(pBBox.max());
 }

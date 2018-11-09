@@ -26,9 +26,9 @@
 
 
 // Standard library & STL headers.
+#include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <algorithm>
 #include <functional>
 #include <iostream>
 
@@ -40,11 +40,11 @@
 #include "steps/solver/diffdef.hpp"
 #include "steps/solver/reacdef.hpp"
 #include "steps/tetexact/diff.hpp"
+#include "steps/tetexact/kproc.hpp"
 #include "steps/tetexact/reac.hpp"
 #include "steps/tetexact/tet.hpp"
-#include "steps/tetexact/tri.hpp"
-#include "steps/tetexact/kproc.hpp"
 #include "steps/tetexact/tetexact.hpp"
+#include "steps/tetexact/tri.hpp"
 #include "steps/tetexact/wmvol.hpp"
 
 // logging
@@ -64,8 +64,8 @@ stex::WmVol::WmVol
 : pIdx(idx)
 , pCompdef(cdef)
 , pVol(vol)
-, pPoolCount(0)
-, pPoolFlags(0)
+, pPoolCount(nullptr)
+, pPoolFlags(nullptr)
 , pKProcs()
 , pNextTris()
 {
@@ -84,7 +84,7 @@ stex::WmVol::WmVol
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::WmVol::~WmVol(void)
+stex::WmVol::~WmVol()
 {
     // Delete species pool information.
     delete[] pPoolCount;
@@ -134,7 +134,7 @@ void stex::WmVol::setupKProcs(stex::Tetexact * tex)
     for (uint i = 0; i < nreacs; ++i)
     {
         ssolver::Reacdef * rdef = compdef()->reacdef(i);
-        stex::Reac * r = new stex::Reac(rdef, this);
+        auto * r = new stex::Reac(rdef, this);
         pKProcs[j++] = r;
         tex->addKProc(r);
     }
@@ -143,7 +143,7 @@ void stex::WmVol::setupKProcs(stex::Tetexact * tex)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::WmVol::reset(void)
+void stex::WmVol::reset()
 {
     uint nspecs = compdef()->countSpecs();
     std::fill_n(pPoolCount, nspecs, 0);
@@ -190,8 +190,9 @@ void stex::WmVol::incCount(uint lidx, int inc)
 
 void stex::WmVol::setClamped(uint lidx, bool clamp)
 {
-    if (clamp == true) pPoolFlags[lidx] |= CLAMPED;
-    else pPoolFlags[lidx] &= ~CLAMPED;
+    if (clamp == true) { pPoolFlags[lidx] |= CLAMPED;
+    } else { pPoolFlags[lidx] &= ~CLAMPED;
+}
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -40,7 +40,7 @@ namespace swmd = steps::wmdirect;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmd::KProc::KProc(void)
+swmd::KProc::KProc()
 : rExtent(0)
 // , pFlags(0)
 , pSchedIDX(0)
@@ -50,28 +50,26 @@ swmd::KProc::KProc(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmd::KProc::~KProc(void)
-{
-
-}
+swmd::KProc::~KProc()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint swmd::KProc::getExtent(void) const
+uint swmd::KProc::getExtent() const
 {
     return rExtent;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::KProc::resetExtent(void)
+void swmd::KProc::resetExtent()
 {
     rExtent = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-steps::solver::Reacdef * swmd::KProc::defr(void) const
+steps::solver::Reacdef * swmd::KProc::defr() const
 {
     // Should only be called on derived object
     AssertLog(false);
@@ -79,7 +77,7 @@ steps::solver::Reacdef * swmd::KProc::defr(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-steps::solver::SReacdef * swmd::KProc::defsr(void) const
+steps::solver::SReacdef * swmd::KProc::defsr() const
 {
     // Should olny be called on derived object
     AssertLog(false);

@@ -89,7 +89,7 @@ public:
 
     /// Destructor.
     ///
-    ~VertexElement(void);
+    ~VertexElement();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -124,7 +124,7 @@ public:
     /// some additional data structures locally in VertexElement based
     /// on connections to other vertices.
     ///
-    void fix(void);
+    void fix();
 
     inline void setVolume(double d)
     { pVolume = d; }
@@ -140,22 +140,22 @@ public:
     // GENERAL INFORMATION
     ////////////////////////////////////////////////////////////////////////
 
-    inline uint getIDX(void) const
+    inline uint getIDX() const
     { return pIDX; }
 
-    inline double getX(void) const
+    inline double getX() const
     { return pXPos; }
 
-    inline double getY(void) const
+    inline double getY() const
     { return pYPos; }
 
-    inline double getZ(void) const
+    inline double getZ() const
     { return pZPos; }
 
-    inline double getSurfaceArea(void) const
+    inline double getSurfaceArea() const
     { return pSurface; }
 
-    inline double getCapacitance(void) const
+    inline double getCapacitance() const
     { return pCapacitance; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -165,13 +165,13 @@ public:
     inline VertexElement* getNeighbor(uint i) const
     { return pNbrs[i]; }
 
-    inline VertexElement** getNeighbours(void) const
+    inline VertexElement** getNeighbours() const
     { return pNbrs; }
 
     inline uint nbrIdx(uint i) const
     { return pNbrs[i]->getIDX(); }
 
-    inline uint getNCon(void) const
+    inline uint getNCon() const
     { return pNCon; }
 
     inline double getCC(uint i) const

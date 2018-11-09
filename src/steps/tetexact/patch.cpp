@@ -32,8 +32,8 @@
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/solver/compdef.hpp"
-#include "steps/tetexact/patch.hpp"
 #include "steps/tetexact/kproc.hpp"
+#include "steps/tetexact/patch.hpp"
 #include "steps/tetexact/reac.hpp"
 #include "steps/tetexact/tri.hpp"
 
@@ -58,9 +58,8 @@ stex::Patch::Patch(ssolver::Patchdef * patchdef)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Patch::~Patch(void)
-{
-}
+stex::Patch::~Patch()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -99,7 +98,8 @@ void stex::Patch::modCount(uint slidx, double count)
 
 stex::Tri * stex::Patch::pickTriByArea(double rand01) const
 {
-    if (countTris() == 0) return 0;
+    if (countTris() == 0) { return nullptr;
+}
     if (countTris() == 1) return pTris[0];
 
     double accum = 0.0;

@@ -67,7 +67,7 @@ public:
 
     /// Destructor.
     ///
-    ~Matrix(void);
+    ~Matrix();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -84,7 +84,7 @@ public:
 
     /// Makes a deep copy of the matrix.
     ///
-    Matrix * copy(void);
+    Matrix * copy();
 
     /// Computes left-hand vector product.
     ///
@@ -94,19 +94,19 @@ public:
 
     /// Returns the transpose of this matrix.
     ///
-    Matrix * transpose(void);
+    Matrix * transpose();
 
     /// Computes the determinant of this matrix.
     ///
-    double det(void);
+    double det();
 
     /// Returns the inverse of this matrix.
     ///
-    Matrix * inverse(void);
+    Matrix * inverse();
 
     /// Compute the LU decomposition.
     ///
-    void LU(void);
+    void LU();
 
     ///
     double * lubksb(double*);

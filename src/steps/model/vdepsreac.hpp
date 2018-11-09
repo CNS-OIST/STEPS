@@ -100,7 +100,7 @@ public:
               double dv = 0.0, uint tablesize = 0);
 
     /// Destructor
-    ~VDepSReac(void);
+    ~VDepSReac();
 
     ////////////////////////////////////////////////////////////////////////
     // VOLTAGE-DEPENDENT SURFACE REACTION PROPERTIES
@@ -109,7 +109,7 @@ public:
     /// Return the voltage-dependent surface reaction ID.
     ///
     /// \return ID of the voltage-dependent surface reaction.
-    std::string getID(void) const
+    std::string getID() const
     { return pID; }
 
     /// Set or change the voltage-dependent surface reaction ID.
@@ -120,13 +120,13 @@ public:
     /// Return a pointer to the parent surface system.
     ///
     /// \return Pointer to the surface system.
-    Surfsys * getSurfsys(void) const
+    Surfsys * getSurfsys() const
     { return pSurfsys; }
 
     /// Return a pointer to the parent model.
     ///
     /// \return Pointer to the parent model.
-    Model * getModel(void) const
+    Model * getModel() const
     { return pModel; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -137,7 +137,7 @@ public:
     ///
     /// \return True if ilhs is set.
     ///         False if else.
-    bool getInner(void) const
+    bool getInner() const
     { return (! pOuter); }
 
 
@@ -146,13 +146,13 @@ public:
     ///
     /// \return True if olhs is set, or neither olhs or ilhs are set.
     ///         False if else.
-    bool getOuter(void) const
+    bool getOuter() const
     { return pOuter; }
 
     /// Return a list of outer volume species on the left hand side of reaction.
     ///
     /// \return List of pointers of left hand side outer volume species.
-    const std::vector<Spec *> & getOLHS(void) const
+    const std::vector<Spec *> & getOLHS() const
     { return pOLHS; }
 
     /// Set the outer volume species on the left hand side of reaction.
@@ -163,7 +163,7 @@ public:
     /// Return a list of inner volume species on the left hand side of reaction.
     ///
     /// \return List of pointers of left hand side inner volume species.
-    const std::vector<Spec *> & getILHS(void) const
+    const std::vector<Spec *> & getILHS() const
     { return pILHS; }
 
     /// Set the inner volume species on the left hand side of reaction.
@@ -174,7 +174,7 @@ public:
     /// Return a list of surface species on the left hand side of reaction.
     ///
     /// \return List of pointers of left hand side surface species.
-    const std::vector<Spec *> & getSLHS(void) const
+    const std::vector<Spec *> & getSLHS() const
     { return pSLHS; }
 
     /// Set the surface species on the left hand side of reaction.
@@ -185,7 +185,7 @@ public:
     /// Return a list of inner volume species on the right hand side of reaction.
     ///
     /// \return List of pointers of right hand side inner volume species.
-    const std::vector<Spec *> & getIRHS(void) const
+    const std::vector<Spec *> & getIRHS() const
     { return pIRHS; }
 
     /// Set the inner volume species on the right hand side of reaction.
@@ -196,7 +196,7 @@ public:
     /// Return a list of surface species on the right hand side of reaction.
     ///
     /// \return List of pointers of right hand side surface species.
-    const std::vector<Spec *> & getSRHS(void) const
+    const std::vector<Spec *> & getSRHS() const
     { return pSRHS; }
 
     /// Set the surface species on the right hand side of reaction.
@@ -207,7 +207,7 @@ public:
     /// Return a list of outer volume species on the right hand side of reaction.
     ///
     /// \return List of pointers of right hand side outer volume species.
-    const std::vector<Spec *> & getORHS(void) const
+    const std::vector<Spec *> & getORHS() const
     { return pORHS; }
 
     /// Set the outer volume species on the right hand side of reaction.
@@ -218,12 +218,12 @@ public:
     /// Get the order of the surface reaction.
     ///
     /// \return Order of the reaction.
-    uint getOrder(void) const
+    uint getOrder() const
     { return pOrder; }
 
     /// Get a table of reaction parameter over the range.
     ///
-    std::vector<double> getK(void) const;
+    std::vector<double> getK() const;
 
     /// Get a list of all species.
     ///
@@ -232,7 +232,7 @@ public:
     /// and does not contain any duplicate members.
     ///
     /// \return List of pointers to the species.
-    std::vector<Spec *> getAllSpecs(void) const;
+    std::vector<Spec *> getAllSpecs() const;
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED): SOLVER-HELPER METHODS
@@ -240,19 +240,19 @@ public:
 
     /// Get the table of transition rates.
     ///
-    double * _getK(void) const
+    double * _getK() const
     { return pK; }
 
-    inline double _getVMin(void) const
+    inline double _getVMin() const
     { return pVMin; }
 
-    inline double _getVMax(void) const
+    inline double _getVMax() const
     { return pVMax; }
 
-    inline double _getDV(void) const
+    inline double _getDV() const
     { return pDV; }
 
-    inline uint _getTablesize(void) const
+    inline uint _getTablesize() const
     { return pTablesize; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -263,7 +263,7 @@ public:
     ///
     /// Called if Python object deleted, or from del method in parent object.
     /// Will only be called once
-    void _handleSelfDelete(void);
+    void _handleSelfDelete();
 
     ////////////////////////////////////////////////////////////////////////
 

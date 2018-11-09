@@ -18,12 +18,14 @@ set(CXX_DIALECT_OPT_CXX14    "-std=c++14")
 set(CXX_DIALECT_OPT_CXX14EXT "-std=gnu++14")
 
 
-if( (CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^ppc" ) OR ( CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^power" ) )
-     ## ppc arch do not support -march= syntax 
-     set(COMPILER_OPT_ARCH_NATIVE "-mcpu=native")
-     add_definitions(-D_BLUEGENE)
-else()
-     set(COMPILER_OPT_ARCH_NATIVE "-march=native")
+if(NOT CMAKE_BUILD_TYPE MATCHES Debug)
+    if( (CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^ppc" ) OR ( CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^power" ) )
+         ## ppc arch do not support -march= syntax
+         set(COMPILER_OPT_ARCH_NATIVE "-mcpu=native")
+         add_definitions(-D_BLUEGENE)
+    else()
+         set(COMPILER_OPT_ARCH_NATIVE "-march=native")
+    endif()
 endif()
 
 

@@ -31,12 +31,12 @@
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
-#include "steps/solver/compdef.hpp"
 #include "steps/mpi/tetopsplit/comp.hpp"
 #include "steps/mpi/tetopsplit/kproc.hpp"
 #include "steps/mpi/tetopsplit/reac.hpp"
 #include "steps/mpi/tetopsplit/tet.hpp"
 #include "steps/mpi/tetopsplit/wmvol.hpp"
+#include "steps/solver/compdef.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -57,9 +57,8 @@ smtos::Comp::Comp(steps::solver::Compdef * compdef)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::Comp::~Comp(void)
-{
-}
+smtos::Comp::~Comp()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -98,7 +97,8 @@ void smtos::Comp::modCount(uint slidx, double count)
 
 smtos::WmVol * smtos::Comp::pickTetByVol(double rand01) const
 {
-    if (countTets() == 0) return 0;
+    if (countTets() == 0) { return nullptr;
+}
     if (countTets() == 1) return pTets[0];
 
     double accum = 0.0;
@@ -110,7 +110,7 @@ smtos::WmVol * smtos::Comp::pickTetByVol(double rand01) const
         if (selector < accum) return (*t);
     }
     AssertLog(false);
-    return 0;
+    return nullptr;
 }
 
 ///////////////////////////////////////////////////////////////////////////

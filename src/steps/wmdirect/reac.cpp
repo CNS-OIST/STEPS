@@ -32,9 +32,9 @@
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/math/constants.hpp"
-#include "steps/wmdirect/reac.hpp"
 #include "steps/wmdirect/comp.hpp"
 #include "steps/wmdirect/kproc.hpp"
+#include "steps/wmdirect/reac.hpp"
 #include "steps/wmdirect/wmdirect.hpp"
 // logging
 #include "easylogging++.h"
@@ -61,8 +61,8 @@ static inline double comp_ccst(double kcst, double vol, uint order)
 ////////////////////////////////////////////////////////////////////////////////
 
 swmd::Reac::Reac(ssolver::Reacdef * rdef, swmd::Comp * comp)
-: KProc()
-, pReacdef(rdef)
+: 
+ pReacdef(rdef)
 , pComp(comp)
 , pUpdVec()
 , pCcst(0.0)
@@ -77,9 +77,8 @@ swmd::Reac::Reac(ssolver::Reacdef * rdef, swmd::Comp * comp)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmd::Reac::~Reac(void)
-{
-}
+swmd::Reac::~Reac()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -97,7 +96,7 @@ void swmd::Reac::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool swmd::Reac::active(void) const
+bool swmd::Reac::active() const
 {
     uint lridx = pComp->def()->reacG2L(defr()->gidx());
     return pComp->def()->active(lridx);
@@ -105,7 +104,7 @@ bool swmd::Reac::active(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Reac::reset(void)
+void swmd::Reac::reset()
 {
     resetExtent();
     uint lridx = pComp->def()->reacG2L(defr()->gidx());
@@ -115,7 +114,7 @@ void swmd::Reac::reset(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Reac::resetCcst(void)
+void swmd::Reac::resetCcst()
 {
     uint lridx = pComp->def()->reacG2L(pReacdef->gidx());
     double kcst = pComp->def()->kcst(lridx);
@@ -126,7 +125,7 @@ void swmd::Reac::resetCcst(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Reac::setupDeps(void)
+void swmd::Reac::setupDeps()
 {
     SchedIDXSet updset;
     ssolver::gidxTVecCI sbgn = defr()->bgnUpdColl();
@@ -176,8 +175,9 @@ void swmd::Reac::setupDeps(void)
 
 bool swmd::Reac::depSpecComp(uint gidx, swmd::Comp * comp)
 {
-    if (pComp != comp) return false;
-    return defr()->dep(gidx);
+    if (pComp != comp) { return false;
+}
+    return defr()->dep(gidx) != 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -189,9 +189,10 @@ bool swmd::Reac::depSpecPatch(uint gidx, swmd::Patch * patch)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double swmd::Reac::rate(void) const
+double swmd::Reac::rate() const
 {
-    if (inactive()) return 0.0;
+    if (inactive()) { return 0.0;
+}
 
     // Prefetch some variables.
     ssolver::Compdef * cdef = pComp->def();
@@ -204,8 +205,9 @@ double swmd::Reac::rate(void) const
         for (uint pool = 0; pool < nspecs; ++pool)
         {
             uint lhs = lhs_vec[pool];
-            if (lhs == 0) continue;
-            uint cnt = static_cast<uint>(cnt_vec[pool]);
+            if (lhs == 0) { continue;
+}
+            auto cnt = static_cast<uint>(cnt_vec[pool]);
             if (lhs > cnt)
             {
                 h_mu = 0.0;
@@ -245,7 +247,7 @@ double swmd::Reac::rate(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<uint> const & swmd::Reac::apply(void)
+std::vector<uint> const & swmd::Reac::apply()
 {
     ssolver::Compdef * cdef = pComp->def();
     double * local = cdef->pools();

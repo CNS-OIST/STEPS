@@ -27,8 +27,8 @@
 
 #include <mpi.h>
 
-#include "steps/mpi/mpi_finish.hpp"
 #include "steps/mpi/mpi_common.hpp"
+#include "steps/mpi/mpi_finish.hpp"
 
 #include "easylogging++.h"
 
@@ -36,15 +36,8 @@
 #include "petscsys.h"
 #endif
 
-void steps::mpi::mpiFinish(void) {
-#ifdef USE_PETSC
-    PetscBool PETSc_used = PETSC_FALSE;
-    PetscInitialized(&PETSc_used);
-
-    if (!PETSc_used) {
-    int status = MPI_Finalize();
-    }
-#endif
+void steps::mpi::mpiFinish() {
+    MPI_Finalize();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -32,29 +32,29 @@
  */
 
 // STL headers.
-#include <string>
 #include <cassert>
 #include <sstream>
+#include <string>
 
 // STEPS headers.
 #include "steps/common.h"
-#include "steps/solver/types.hpp"
 #include "steps/error.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/patchdef.hpp"
-#include "steps/solver/sreacdef.hpp"
-#include "steps/solver/diffdef.hpp"
-#include "steps/solver/ohmiccurrdef.hpp"
-#include "steps/solver/ghkcurrdef.hpp"
-#include "steps/solver/vdeptransdef.hpp"
-#include "steps/solver/vdepsreacdef.hpp"
-#include "steps/solver/compdef.hpp"
 #include "steps/geom/patch.hpp"
-#include "steps/model/sreac.hpp"
 #include "steps/model/ghkcurr.hpp"
 #include "steps/model/ohmiccurr.hpp"
-#include "steps/model/vdeptrans.hpp"
+#include "steps/model/sreac.hpp"
 #include "steps/model/vdepsreac.hpp"
+#include "steps/model/vdeptrans.hpp"
+#include "steps/solver/compdef.hpp"
+#include "steps/solver/diffdef.hpp"
+#include "steps/solver/ghkcurrdef.hpp"
+#include "steps/solver/ohmiccurrdef.hpp"
+#include "steps/solver/patchdef.hpp"
+#include "steps/solver/sreacdef.hpp"
+#include "steps/solver/statedef.hpp"
+#include "steps/solver/types.hpp"
+#include "steps/solver/vdepsreacdef.hpp"
+#include "steps/solver/vdeptransdef.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -69,66 +69,66 @@ ssolver::Patchdef::Patchdef(Statedef * sd, uint idx, steps::wm::Patch * p)
 , pName()
 , pArea()
 , pPssys()
-, pIcomp(0)
-, pOcomp(0)
-, pInner(0)
-, pOuter(0)
+, pIcomp(nullptr)
+, pOcomp(nullptr)
+, pInner(nullptr)
+, pOuter(nullptr)
 , pSetupRefsdone(false)
 , pSetupIndsdone(false)
 , pSpecsN_I(0)
 , pSpecsN_S(0)
 , pSpecsN_O(0)
-, pSpec_G2L(0)
-, pSpec_L2G(0)
-, pPoolCount(0)
-, pPoolFlags(0)
+, pSpec_G2L(nullptr)
+, pSpec_L2G(nullptr)
+, pPoolCount(nullptr)
+, pPoolFlags(nullptr)
 , pSReacsN(0)
-, pSReac_G2L(0)
-, pSReac_L2G(0)
-, pSReacKcst(0)
-, pSReacFlags(0)
-, pSReac_DEP_I_Spec(0)
-, pSReac_DEP_S_Spec(0)
-, pSReac_DEP_O_Spec(0)
-, pSReac_LHS_I_Spec(0)
-, pSReac_LHS_S_Spec(0)
-, pSReac_LHS_O_Spec(0)
-, pSReac_UPD_I_Spec(0)
-, pSReac_UPD_S_Spec(0)
-, pSReac_UPD_O_Spec(0)
+, pSReac_G2L(nullptr)
+, pSReac_L2G(nullptr)
+, pSReacKcst(nullptr)
+, pSReacFlags(nullptr)
+, pSReac_DEP_I_Spec(nullptr)
+, pSReac_DEP_S_Spec(nullptr)
+, pSReac_DEP_O_Spec(nullptr)
+, pSReac_LHS_I_Spec(nullptr)
+, pSReac_LHS_S_Spec(nullptr)
+, pSReac_LHS_O_Spec(nullptr)
+, pSReac_UPD_I_Spec(nullptr)
+, pSReac_UPD_S_Spec(nullptr)
+, pSReac_UPD_O_Spec(nullptr)
 , pSurfDiffsN(0)
-, pSurfDiff_G2L(0)
-, pSurfDiff_L2G(0)
-, pSurfDiff_DEP_Spec(0)
-, pSurfDiff_LIG(0)
+, pSurfDiff_G2L(nullptr)
+, pSurfDiff_L2G(nullptr)
+, pSurfDiff_DEP_Spec(nullptr)
+, pSurfDiff_LIG(nullptr)
 , pOhmicCurrsN(0)
-, pOhmicCurr_G2L(0)
-, pOhmicCurr_L2G(0)
-, pOhmicCurr_DEP_Spec(0)
-, pOhmicCurr_CHANSTATE(0)
+, pOhmicCurr_G2L(nullptr)
+, pOhmicCurr_L2G(nullptr)
+, pOhmicCurr_DEP_Spec(nullptr)
+, pOhmicCurr_CHANSTATE(nullptr)
 , pGHKcurrsN(0)
-, pGHKcurr_G2L(0)
-, pGHKcurr_DEP_Spec(0)
-, pGHKcurr_CHANSTATE(0)
-, pGHKcurr_ION(0)
+, pGHKcurr_G2L(nullptr)
+, pGHKcurr_DEP_Spec(nullptr)
+, pGHKcurr_CHANSTATE(nullptr)
+, pGHKcurr_ION(nullptr)
 , pVDepTransN(0)
-, pVDepTrans_G2L(0)
-, pVDepTrans_L2G(0)
-, pVDepTrans_DEP_Spec(0)
-, pVDepTrans_SRCCHANSTATE(0)
-, pVDepTrans_DSTCHANSTATE(0)
+, pVDepTrans_G2L(nullptr)
+, pVDepTrans_L2G(nullptr)
+, pVDepTrans_DEP_Spec(nullptr)
+, pVDepTrans_SRCCHANSTATE(nullptr)
+, pVDepTrans_DSTCHANSTATE(nullptr)
 , pVDepSReacsN(0)
-, pVDepSReac_G2L(0)
-, pVDepSReac_L2G(0)
-, pVDepSReac_DEP_I_Spec(0)
-, pVDepSReac_DEP_S_Spec(0)
-, pVDepSReac_DEP_O_Spec(0)
-, pVDepSReac_LHS_I_Spec(0)
-, pVDepSReac_LHS_S_Spec(0)
-, pVDepSReac_LHS_O_Spec(0)
-, pVDepSReac_UPD_I_Spec(0)
-, pVDepSReac_UPD_S_Spec(0)
-, pVDepSReac_UPD_O_Spec(0)
+, pVDepSReac_G2L(nullptr)
+, pVDepSReac_L2G(nullptr)
+, pVDepSReac_DEP_I_Spec(nullptr)
+, pVDepSReac_DEP_S_Spec(nullptr)
+, pVDepSReac_DEP_O_Spec(nullptr)
+, pVDepSReac_LHS_I_Spec(nullptr)
+, pVDepSReac_LHS_S_Spec(nullptr)
+, pVDepSReac_LHS_O_Spec(nullptr)
+, pVDepSReac_UPD_I_Spec(nullptr)
+, pVDepSReac_UPD_S_Spec(nullptr)
+, pVDepSReac_UPD_O_Spec(nullptr)
 {
     AssertLog(pStatedef != 0);
     AssertLog(p != 0);
@@ -191,17 +191,24 @@ ssolver::Patchdef::Patchdef(Statedef * sd, uint idx, steps::wm::Patch * p)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::Patchdef::~Patchdef(void)
+ssolver::Patchdef::~Patchdef()
 {
     if (pStatedef->countSpecs() > 0) delete[] pSpec_G2L;
-    if (pStatedef->countSReacs() > 0) delete[] pSReac_G2L;
-    if (pStatedef->countSurfDiffs() > 0) delete[] pSurfDiff_G2L;
-    if (pStatedef->countOhmicCurrs() > 0) delete[] pOhmicCurr_G2L;
-    if (pStatedef->countGHKcurrs() > 0) delete[] pGHKcurr_G2L;
-    if (pStatedef->countVDepTrans() > 0) delete[] pVDepTrans_G2L;
-    if (pStatedef->countVDepSReacs() > 0) delete[] pVDepSReac_G2L;
+    if (pStatedef->countSReacs() > 0) { delete[] pSReac_G2L;
+}
+    if (pStatedef->countSurfDiffs() > 0) { delete[] pSurfDiff_G2L;
+}
+    if (pStatedef->countOhmicCurrs() > 0) { delete[] pOhmicCurr_G2L;
+}
+    if (pStatedef->countGHKcurrs() > 0) { delete[] pGHKcurr_G2L;
+}
+    if (pStatedef->countVDepTrans() > 0) { delete[] pVDepTrans_G2L;
+}
+    if (pStatedef->countVDepSReacs() > 0) { delete[] pVDepSReac_G2L;
+}
 
-    if (pSpecsN_S != 0) delete[] pSpec_L2G;
+    if (pSpecsN_S != 0) { delete[] pSpec_L2G;
+}
 
     if (pSReacsN != 0)
     {
@@ -212,7 +219,7 @@ ssolver::Patchdef::~Patchdef(void)
         delete[] pSReac_DEP_I_Spec;
         delete[] pSReac_LHS_I_Spec;
         delete[] pSReac_UPD_I_Spec;
-        if (pOuter != 0)
+        if (pOuter != nullptr)
         {
             delete[] pSReac_DEP_O_Spec;
             delete[] pSReac_LHS_O_Spec;
@@ -229,7 +236,7 @@ ssolver::Patchdef::~Patchdef(void)
         delete[] pVDepSReac_DEP_I_Spec;
         delete[] pVDepSReac_LHS_I_Spec;
         delete[] pVDepSReac_UPD_I_Spec;
-        if (pOuter != 0)
+        if (pOuter != nullptr)
         {
             delete[] pVDepSReac_DEP_O_Spec;
             delete[] pVDepSReac_LHS_O_Spec;
@@ -304,7 +311,7 @@ void ssolver::Patchdef::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Patchdef::setup_references(void)
+void ssolver::Patchdef::setup_references()
 {
     AssertLog(pSetupRefsdone == false);
     AssertLog(pSetupIndsdone == false);
@@ -313,7 +320,7 @@ void ssolver::Patchdef::setup_references(void)
     AssertLog(pIcomp != 0);
     uint icompidx = pStatedef->getCompIdx(pIcomp);                ///// bit long-winded, add new method to statedef??
     pInner = pStatedef->compdef(icompidx);
-    if (pOcomp != 0)
+    if (pOcomp != nullptr)
     {
         uint ocompidx = pStatedef->getCompIdx(pOcomp);
         pOuter = pStatedef->compdef(ocompidx);
@@ -415,7 +422,8 @@ void ssolver::Patchdef::setup_references(void)
     // on this patch: to the patch, inner or outer compartment.
     for(uint sr = 0; sr < ngsreacs; ++sr)
     {
-        if(pSReac_G2L[sr] == LIDX_UNDEFINED) continue;
+        if(pSReac_G2L[sr] == LIDX_UNDEFINED) { continue;
+}
         SReacdef * srdef = pStatedef->sreacdef(sr);
         AssertLog(srdef != 0);
         for (uint s = 0; s < ngspecs; ++s)
@@ -423,7 +431,8 @@ void ssolver::Patchdef::setup_references(void)
             if (srdef->reqspec_S(s) == true)
             {
                 AssertLog(pStatedef->specdef(s) != 0);
-                if (pSpec_G2L[s] == LIDX_UNDEFINED) pSpec_G2L[s] = pSpecsN_S++;
+                if (pSpec_G2L[s] == LIDX_UNDEFINED) { pSpec_G2L[s] = pSpecsN_S++;
+}
             }
             if (srdef->reqspec_I(s) == true)
             {
@@ -432,7 +441,7 @@ void ssolver::Patchdef::setup_references(void)
             }
             if (srdef->reqspec_O(s) == true)
             {
-                if (pOuter == 0)
+                if (pOuter == nullptr)
                 {
                     std::ostringstream os;
                     os << "Can't add surface reaction '" << srdef->name() << "' to patch '";
@@ -446,21 +455,24 @@ void ssolver::Patchdef::setup_references(void)
 
     for (uint sd = 0; sd < ngsdiffs; ++sd)
     {
-        if (pSurfDiff_G2L[sd] == LIDX_UNDEFINED) continue;
+        if (pSurfDiff_G2L[sd] == LIDX_UNDEFINED) { continue;
+}
         Diffdef * sddef = pStatedef->surfdiffdef(sd);
         AssertLog(sddef != 0);
         for (uint s = 0; s < ngspecs; ++s)
         {
             if (sddef->reqspec(s) == true)
             {
-                if (pSpec_G2L[s] == LIDX_UNDEFINED) pSpec_G2L[s] = pSpecsN_S++;
+                if (pSpec_G2L[s] == LIDX_UNDEFINED) { pSpec_G2L[s] = pSpecsN_S++;
+}
             }
         }
     }
 
     for(uint vdsr = 0; vdsr < ngvdepsreacs; ++vdsr)
     {
-        if(pVDepSReac_G2L[vdsr] == LIDX_UNDEFINED) continue;
+        if(pVDepSReac_G2L[vdsr] == LIDX_UNDEFINED) { continue;
+}
         VDepSReacdef * vdsrdef = pStatedef->vdepsreacdef(vdsr);
         AssertLog(vdsrdef != 0);
         for (uint s = 0; s < ngspecs; ++s)
@@ -468,7 +480,8 @@ void ssolver::Patchdef::setup_references(void)
             if (vdsrdef->reqspec_S(s) == true)
             {
                 AssertLog(pStatedef->specdef(s) != 0);
-                if (pSpec_G2L[s] == LIDX_UNDEFINED) pSpec_G2L[s] = pSpecsN_S++;
+                if (pSpec_G2L[s] == LIDX_UNDEFINED) { pSpec_G2L[s] = pSpecsN_S++;
+}
             }
             if (vdsrdef->reqspec_I(s) == true)
             {
@@ -477,7 +490,7 @@ void ssolver::Patchdef::setup_references(void)
             }
             if (vdsrdef->reqspec_O(s) == true)
             {
-                if (pOuter == 0)
+                if (pOuter == nullptr)
                 {
                     std::ostringstream os;
                     os << "Can't add voltage-dependent reaction '" << vdsrdef->name() << "' to patch '";
@@ -491,7 +504,8 @@ void ssolver::Patchdef::setup_references(void)
 
     for (uint oc = 0; oc < ngohmiccurrs; ++oc)
     {
-        if(pOhmicCurr_G2L[oc] == LIDX_UNDEFINED) continue;
+        if(pOhmicCurr_G2L[oc] == LIDX_UNDEFINED) { continue;
+}
         OhmicCurrdef * ocdef = pStatedef->ohmiccurrdef(oc);
         AssertLog(ocdef != 0);
         uint added = 0;
@@ -501,7 +515,8 @@ void ssolver::Patchdef::setup_references(void)
             if (ocdef->req(s) == true)
             {
                 AssertLog(pStatedef->specdef(s) != 0);
-                if (pSpec_G2L[s] == LIDX_UNDEFINED) pSpec_G2L[s] = pSpecsN_S++;
+                if (pSpec_G2L[s] == LIDX_UNDEFINED) { pSpec_G2L[s] = pSpecsN_S++;
+}
                 added +=1;
             }
         }
@@ -511,7 +526,8 @@ void ssolver::Patchdef::setup_references(void)
 
     for (uint ghk = 0; ghk < ngghkcurrs; ++ghk)
     {
-        if (pGHKcurr_G2L[ghk] == LIDX_UNDEFINED) continue;
+        if (pGHKcurr_G2L[ghk] == LIDX_UNDEFINED) { continue;
+}
         GHKcurrdef * ghkdef = pStatedef->ghkcurrdef(ghk);
         AssertLog(ghkdef != 0);
         uint added = 0;
@@ -524,7 +540,8 @@ void ssolver::Patchdef::setup_references(void)
                 // Only add the channel state, not the volume ion species (that affects the GHK rate)
                 if (ghkdef->req_v(s) == false)
                 {
-                    if (pSpec_G2L[s] == LIDX_UNDEFINED) pSpec_G2L[s] = pSpecsN_S++;
+                    if (pSpec_G2L[s] == LIDX_UNDEFINED) { pSpec_G2L[s] = pSpecsN_S++;
+}
                     added += 1;
                 }
             }
@@ -533,7 +550,7 @@ void ssolver::Patchdef::setup_references(void)
             {
                 AssertLog(pInner != 0);
                 pInner->addSpec(s);
-                if (pOuter == 0)
+                if (pOuter == nullptr)
                 {
                     if (ghkdef->voconc() < 0.0)
                     {
@@ -544,7 +561,8 @@ void ssolver::Patchdef::setup_references(void)
                         ArgErrLog(os.str());
                     }
                 }
-                else if (ghkdef->voconc() < 0.0) pOuter->addSpec(s);
+                else if (ghkdef->voconc() < 0.0) { pOuter->addSpec(s);
+}
             }
         }
         // Only one channel state should be added per ghk current
@@ -553,14 +571,16 @@ void ssolver::Patchdef::setup_references(void)
 
     for (uint vdt = 0; vdt < ngvdeptrans; ++vdt)
     {
-        if (pVDepTrans_G2L[vdt] == LIDX_UNDEFINED) continue;
+        if (pVDepTrans_G2L[vdt] == LIDX_UNDEFINED) { continue;
+}
         VDepTransdef * vdtdef = pStatedef->vdeptransdef(vdt);
         for (uint s = 0; s < ngspecs; ++s)
         {
             if (vdtdef->req(s) == true)
             {
                 AssertLog(pStatedef->specdef(s) != 0);
-                if (pSpec_G2L[s] == LIDX_UNDEFINED) pSpec_G2L[s] = pSpecsN_S++;
+                if (pSpec_G2L[s] == LIDX_UNDEFINED) { pSpec_G2L[s] = pSpecsN_S++;
+}
             }
         }
     }
@@ -570,7 +590,7 @@ void ssolver::Patchdef::setup_references(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Patchdef::setup_indices(void)
+void ssolver::Patchdef::setup_indices()
 {
     AssertLog(pSetupRefsdone == true);
     AssertLog(pSetupIndsdone == false);
@@ -625,14 +645,17 @@ void ssolver::Patchdef::setup_indices(void)
         for (uint i = 0; i < ngspecs; ++i)
         {
             uint lidx = pSpec_G2L[i];
-            if (lidx == LIDX_UNDEFINED) continue;
+            if (lidx == LIDX_UNDEFINED) { continue;
+}
             pSpec_L2G[lidx] = i;
         }
     }
 
     // 2 -- COPY #SPECS FOR INNER AND OUTER COMPS
-    if (pInner != 0) pSpecsN_I = pInner->countSpecs();
-    if (pOuter != 0) pSpecsN_O = pOuter->countSpecs();
+    if (pInner != nullptr) { pSpecsN_I = pInner->countSpecs();
+}
+    if (pOuter != nullptr) { pSpecsN_O = pOuter->countSpecs();
+}
 
     // 3 -- DEAL WITH PATCH SREAC'S
     if (pSReacsN != 0)
@@ -643,7 +666,8 @@ void ssolver::Patchdef::setup_indices(void)
         for (uint i = 0; i < ngsreacs; ++i)
         {
             uint lidx = pSReac_G2L[i];
-            if (lidx == LIDX_UNDEFINED) continue;
+            if (lidx == LIDX_UNDEFINED) { continue;
+}
             pSReac_L2G[lidx] = i;
         }
 
@@ -668,7 +692,7 @@ void ssolver::Patchdef::setup_indices(void)
             std::fill_n(pSReac_LHS_I_Spec, arrsize_i, 0);
             std::fill_n(pSReac_UPD_I_Spec, arrsize_i, 0);
         }
-        if (pOuter != 0) // Only create if outer comp exists.
+        if (pOuter != nullptr) // Only create if outer comp exists.
         {
             arrsize_o = pSpecsN_O * pSReacsN;
             pSReac_DEP_O_Spec = new int[arrsize_o];
@@ -687,7 +711,8 @@ void ssolver::Patchdef::setup_indices(void)
             // Handle surface stuff.
             for (uint si = 0; si < ngspecs; ++si)
             {
-                if (srdef->reqspec_S(si) == false) continue;
+                if (srdef->reqspec_S(si) == false) { continue;
+}
 
                 // TODO: turn into error check?
                 uint sil = pSpec_G2L[si];
@@ -707,7 +732,8 @@ void ssolver::Patchdef::setup_indices(void)
 
                 for (uint si = 0; si < ngspecs; ++si)
                 {
-                    if (srdef->reqspec_I(si) == false) continue;
+                    if (srdef->reqspec_I(si) == false) { continue;
+}
 
                     // TODO: turn into error check?
                     uint sil = specG2L_I(si);
@@ -728,7 +754,8 @@ void ssolver::Patchdef::setup_indices(void)
 
                 for (uint si = 0; si < ngspecs; ++si)
                 {
-                    if (srdef->reqspec_O(si) == false) continue;
+                    if (srdef->reqspec_O(si) == false) { continue;
+}
 
                     // TODO: turn into error check?
                     uint sil = specG2L_O(si);
@@ -752,7 +779,8 @@ void ssolver::Patchdef::setup_indices(void)
         for (uint i = 0; i < ngsdiffs; ++i)
         {
             uint lidx = pSurfDiff_G2L[i];
-            if (lidx == LIDX_UNDEFINED) continue;
+            if (lidx == LIDX_UNDEFINED) { continue;
+}
             pSurfDiff_L2G[lidx] = i;
         }
 
@@ -766,7 +794,8 @@ void ssolver::Patchdef::setup_indices(void)
             pSurfDiff_LIG[di] = pSpec_G2L[sddef->lig()];
             for (uint si = 0; si < ngspecs; ++si)
             {
-                if (sddef->reqspec(si) == false) continue;
+                if (sddef->reqspec(si) == false) { continue;
+}
                 uint sil = pSpec_G2L[si];
                 AssertLog(sil != LIDX_UNDEFINED);
                 uint aridx = _IDX_SurfDiff_Spec(di, sil);
@@ -784,7 +813,8 @@ void ssolver::Patchdef::setup_indices(void)
         for (uint i = 0; i < ngvdsreacs; ++i)
         {
             uint lidx = pVDepSReac_G2L[i];
-            if (lidx == LIDX_UNDEFINED) continue;
+            if (lidx == LIDX_UNDEFINED) { continue;
+}
             pVDepSReac_L2G[lidx] = i;
         }
 
@@ -809,7 +839,7 @@ void ssolver::Patchdef::setup_indices(void)
             std::fill_n(pVDepSReac_LHS_I_Spec, arrsize_i, 0);
             std::fill_n(pVDepSReac_UPD_I_Spec, arrsize_i, 0);
         }
-        if (pOuter != 0) // Only create if outer comp exists.
+        if (pOuter != nullptr) // Only create if outer comp exists.
         {
             arrsize_o = pSpecsN_O * pVDepSReacsN;
             pVDepSReac_DEP_O_Spec = new int[arrsize_o];
@@ -828,7 +858,8 @@ void ssolver::Patchdef::setup_indices(void)
             // Handle surface stuff.
             for (uint si = 0; si < ngspecs; ++si)
             {
-                if (vdsrdef->reqspec_S(si) == false) continue;
+                if (vdsrdef->reqspec_S(si) == false) { continue;
+}
 
                 // TODO: turn into error check?
                 uint sil = pSpec_G2L[si];
@@ -848,7 +879,8 @@ void ssolver::Patchdef::setup_indices(void)
 
                 for (uint si = 0; si < ngspecs; ++si)
                 {
-                    if (vdsrdef->reqspec_I(si) == false) continue;
+                    if (vdsrdef->reqspec_I(si) == false) { continue;
+}
 
                     // TODO: turn into error check?
                     uint sil = specG2L_I(si);
@@ -869,7 +901,8 @@ void ssolver::Patchdef::setup_indices(void)
 
                 for (uint si = 0; si < ngspecs; ++si)
                 {
-                    if (vdsrdef->reqspec_O(si) == false) continue;
+                    if (vdsrdef->reqspec_O(si) == false) { continue;
+}
 
                     // TODO: turn into error check?
                     uint sil = specG2L_O(si);
@@ -892,7 +925,8 @@ void ssolver::Patchdef::setup_indices(void)
         for (uint i = 0; i < ngohmiccurrs; ++i)
         {
             uint lidx = ohmiccurrG2L(i);
-            if (lidx == LIDX_UNDEFINED) continue;
+            if (lidx == LIDX_UNDEFINED) { continue;
+}
             pOhmicCurr_L2G[lidx] = i;
         }
 
@@ -910,7 +944,8 @@ void ssolver::Patchdef::setup_indices(void)
             OhmicCurrdef * ocdef = ohmiccurrdef(ri);
             for (uint si = 0; si < ngspecs; ++si)
             {
-                if (ocdef->req(si) == false) continue;
+                if (ocdef->req(si) == false) { continue;
+}
                 // TODO: turn into error check?
                 uint slidx = specG2L(si);
                 AssertLog(slidx != LIDX_UNDEFINED);
@@ -931,7 +966,8 @@ void ssolver::Patchdef::setup_indices(void)
         for (uint i = 0; i < ngghkcurrs; ++i)
         {
             uint lidx = ghkcurrG2L(i);
-            if (lidx == LIDX_UNDEFINED) continue;
+            if (lidx == LIDX_UNDEFINED) { continue;
+}
             pGHKcurr_L2G[lidx] = i;
         }
         // Create local _DEP and _CHANSTATE vectors.
@@ -950,7 +986,8 @@ void ssolver::Patchdef::setup_indices(void)
             GHKcurrdef * ghkdef = ghkcurrdef(ri);
             for (uint si = 0; si < ngspecs; ++si)
             {
-                if (ghkdef->req(si) == false) continue;
+                if (ghkdef->req(si) == false) { continue;
+}
                 // TODO: turn into error check?
                 uint slidx = specG2L(si);
                 // If not the volume ion species local index should be defined.
@@ -974,7 +1011,8 @@ void ssolver::Patchdef::setup_indices(void)
         for (uint i = 0; i < ngvdeptrans; ++i)
         {
             uint lidx = vdeptransG2L(i);
-            if (lidx == LIDX_UNDEFINED) continue;
+            if (lidx == LIDX_UNDEFINED) { continue;
+}
             pVDepTrans_L2G[lidx] = i;
         }
         // Create _DEP and _CHANSTATE vectors
@@ -995,7 +1033,8 @@ void ssolver::Patchdef::setup_indices(void)
 
             for (uint si = 0; si < ngspecs; ++si)
             {
-                if (vdtdef->req(si) == false) continue;
+                if (vdtdef->req(si) == false) { continue;
+}
 
                 // TODO: turn into error check?
                 uint slidx = specG2L(si);
@@ -1050,14 +1089,14 @@ void ssolver::Patchdef::setup_indices(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double ssolver::Patchdef::area(void) const
+double ssolver::Patchdef::area() const
 {
     return pArea;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string const ssolver::Patchdef::name(void) const
+std::string const ssolver::Patchdef::name() const
 {
     return pName;
 }
@@ -1072,7 +1111,7 @@ void ssolver::Patchdef::setArea(double a)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Patchdef::reset(void)
+void ssolver::Patchdef::reset()
 {
     AssertLog(pSetupRefsdone == true);
     AssertLog(pSetupIndsdone == true);
@@ -1106,8 +1145,9 @@ void ssolver::Patchdef::setClamped(uint slidx, bool clamp)
     AssertLog(pSetupRefsdone == true);
     AssertLog(pSetupIndsdone == true);
     AssertLog(slidx < pSpecsN_S);
-    if (clamp == true) pPoolFlags[slidx] |= CLAMPED;
-    else pPoolFlags[slidx] &= ~CLAMPED;
+    if (clamp == true) { pPoolFlags[slidx] |= CLAMPED;
+    } else { pPoolFlags[slidx] &= ~CLAMPED;
+}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1392,15 +1432,17 @@ void ssolver::Patchdef::setActive(uint srlidx, bool active)
     AssertLog(pSetupRefsdone == true);
     AssertLog(pSetupIndsdone == true);
     AssertLog(srlidx < pSReacsN);
-    if (active == true) pSReacFlags[srlidx] &= ~INACTIVATED;
-    else pSReacFlags[srlidx] |= INACTIVATED;
+    if (active == true) { pSReacFlags[srlidx] &= ~INACTIVATED;
+    } else { pSReacFlags[srlidx] |= INACTIVATED;
+}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint ssolver::Patchdef::specG2L_I(uint gidx) const
 {
-    if (pInner == 0) return LIDX_UNDEFINED;
+    if (pInner == nullptr) { return LIDX_UNDEFINED;
+}
     return pInner->specG2L(gidx);
 }
 
@@ -1408,7 +1450,8 @@ uint ssolver::Patchdef::specG2L_I(uint gidx) const
 
 uint ssolver::Patchdef::specG2L_O(uint gidx) const
 {
-    if (pOuter == 0) return LIDX_UNDEFINED;
+    if (pOuter == nullptr) { return LIDX_UNDEFINED;
+}
     return pOuter->specG2L(gidx);
 }
 

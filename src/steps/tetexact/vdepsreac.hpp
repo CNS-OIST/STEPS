@@ -66,7 +66,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     VDepSReac(steps::solver::VDepSReacdef * vdsrdef, steps::tetexact::Tri * tri);
-    ~VDepSReac(void);
+    ~VDepSReac();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -81,15 +81,15 @@ public:
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    void setupDeps(void);
+    void setupDeps();
     bool depSpecTet(uint gidx, steps::tetexact::WmVol * tet);
     bool depSpecTri(uint gidx, steps::tetexact::Tri * tri);
-    void reset(void);
+    void reset();
 
     double rate(steps::tetexact::Tetexact * solver = 0);
     std::vector<KProc*> const & apply(steps::rng::RNG * rng, double dt, double simtime);
 
-    uint updVecSize(void) const
+    uint updVecSize() const
     { return pUpdVec.size(); }
 
     ////////////////////////////////////////////////////////////////////////

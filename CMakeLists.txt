@@ -9,13 +9,12 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMake)
 project(STEPS)
 
 set(VERSION_MAJOR 3)
-set(VERSION_MINOR 3)
+set(VERSION_MINOR 4)
 set(VERSION_PATCH 0)
 set(STEPS_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
 # OPTIONS
 option(TARGET_NATIVE_ARCH "Generate non-portable arch-specific code" ON)
-option(PYTHON_BINDINGS_CYTHON "Generate bindings using Cthon, instead of Swig" ON)
 option(USE_BDSYSTEM_LAPACK "Use new BDSystem/Lapack code for E-Field solver" OFF)
 set(USE_MPI   "Default" CACHE STRING "Use MPI for parallel solvers")
 set(USE_PETSC "Default" CACHE STRING "Use PETSC library for parallel E-Field solver")
@@ -26,12 +25,33 @@ if (NOT USE_PETSC MATCHES "^(Default|True|False)$")
     message(FATAL_ERROR "Acceptable values for USE_PETSC are: \"Default\", \"True\", \"False\"!")
 endif()
 
+# Valgrind
+set(VALGRIND "" CACHE STRING "Valgrind plus arguments for testing")
+if(NOT VALGRIND STREQUAL "")
+    file(GLOB valgrind_supps ${CMAKE_CURRENT_SOURCE_DIR}/test/ci/valgrind/*.supp)
+    foreach(valgrind_supp IN LISTS valgrind_supps)
+        LIST(APPEND valgrind_supps_cmd --suppressions=${valgrind_supp})
+    endforeach()
+    set(VALGRIND "${VALGRIND}" ${valgrind_supps_cmd})
+endif()
 
 # Compiler options
 # -------------------------------------------------------------------
 include(CMake/Compiler.cmake)
 
 include(CMake/steps_portability_check.cmake)
+
+option(USE_CLANG_TIDY "Perform C++ static analysis while compiling" FALSE)
+if(USE_CLANG_TIDY)
+    find_package(CLANG_TIDY REQUIRED)
+    if(CLANG_TIDY_FOUND)
+        cmake_minimum_required(VERSION 3.6)
+        set(CLANG_TIDY_ARGS "" CACHE STRING "clang-tidy command options")
+        set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXECUTABLE}" ${CLANG_TIDY_ARGS})
+    else()
+        message(ERROR "Could not find clang-tidy utility")
+    endif()
+endif()
 
 # Nuke any -DNDEBUG in the compiler options introduced by CMake.
 include(CMake/ManipulateVariables.cmake)
@@ -48,6 +68,19 @@ if(TARGET_NATIVE_ARCH)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILER_OPT_ARCH_NATIVE}")
 endif()
 
+# Code coverage
+SET(CODECOV_GCOVR_OPTIONS "-v --filter='.*/src/steps/.*'")
+include(UseCodeCoverage)
+if(ENABLE_CODECOVERAGE)
+    install(
+        DIRECTORY ${CMAKE_BINARY_DIR}/${CODECOV_HTMLOUTPUTDIR}/
+        DESTINATION share/steps/${STEPS_VERSION}/coverage
+    )
+    install(
+        FILES ${CMAKE_BINARY_DIR}/${CODECOV_XMLOUTPUTFILE}
+        DESTINATION share/steps/${STEPS_VERSION}/coverage
+    )
+endif()
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
@@ -72,6 +105,12 @@ if (USE_MPI MATCHES "^(Default|True)$")
     endif()
     if (MPI_FOUND)
         add_definitions(-DUSE_MPI)
+        find_program(MPIRUN
+            NAMES mpirun
+            HINTS ${MPI_HOME} $ENV{MPI_HOME}
+            PATHS ${_MPI_PREFIX_PATH}
+            PATH_SUFFIXES bin
+            DOC "Executable for running MPI programs.")
     endif()
 endif()
 

@@ -1,0 +1,12 @@
+---
+Checks: 'clang-diagnostic-*,clang-analyzer-*,-clang-analyzer-alpha*,*,-clang-analyzer-alpha.*,-cppcoreguidelines-pro-type-vararg,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-cppcoreguidelines-pro-bounds-pointer-arithmetic,-readability-implicit-bool-cast,-cppcoreguidelines-pro-bounds-constant-array-index,-google-runtime-reference,cppcoreguidelines-owning-memory'
+FormatStyle: file
+
+# Checks to use with "clang-tidy -fix": google-readability-namespace-comments,hicpp-braces-around-statements,modernize-use-equals-default,modernize-use-nullptr,llvm-include-order,modernize-redundant-void-arg,readability-implicit-bool-conversion,readability-redundant-member-init
+
+# Warnings to fix:
+# cppcoreguidelines-pro-type-member-init
+# readability-named-parameter
+# google-build-using-namespace
+#
+# maybe pro-bounds-pointer-arithmetic but may be required by cython

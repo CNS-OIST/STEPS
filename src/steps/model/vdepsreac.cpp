@@ -33,9 +33,9 @@
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/model/model.hpp"
+#include "steps/model/spec.hpp"
 #include "steps/model/surfsys.hpp"
 #include "steps/model/vdepsreac.hpp"
-#include "steps/model/spec.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -54,7 +54,7 @@ VDepSReac::VDepSReac(std::string const & id, Surfsys * surfsys,
                      vector<double> ktab, double vmin, double vmax,
                      double dv, uint tablesize)
 : pID(id)
-, pModel(0)
+, pModel(nullptr)
 , pSurfsys(surfsys)
 , pOuter(false)
 , pOLHS()
@@ -64,13 +64,13 @@ VDepSReac::VDepSReac(std::string const & id, Surfsys * surfsys,
 , pSRHS()
 , pORHS()
 , pOrder(0)
-, pK(0)
+, pK(nullptr)
 , pVMin(vmin)
 , pVMax(vmax)
 , pDV(dv)
 , pTablesize(tablesize)
 {
-    if (pSurfsys == 0)
+    if (pSurfsys == nullptr)
     {
         ostringstream os;
         os << "No surfsys provided to SReac initializer function";
@@ -114,15 +114,16 @@ VDepSReac::VDepSReac(std::string const & id, Surfsys * surfsys,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-VDepSReac::~VDepSReac(void)
+VDepSReac::~VDepSReac()
 {
-    if (pSurfsys == 0) return;
+    if (pSurfsys == nullptr) { return;
+}
     _handleSelfDelete();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void VDepSReac::_handleSelfDelete(void)
+void VDepSReac::_handleSelfDelete()
 {
     pSurfsys->_handleVDepSReacDel(this);
     delete[] pK;
@@ -133,8 +134,8 @@ void VDepSReac::_handleSelfDelete(void)
     pSLHS.clear();
     pILHS.clear();
     pOLHS.clear();
-    pSurfsys = 0;
-    pModel = 0;
+    pSurfsys = nullptr;
+    pModel = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -258,7 +259,7 @@ void VDepSReac::setORHS(vector<Spec *> const & orhs)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> VDepSReac::getK(void) const
+std::vector<double> VDepSReac::getK() const
 {
     std::vector<double> k = std::vector<double>(pTablesize);
     for (uint i = 0; i < pTablesize; ++i) k[i] = pK[i];
@@ -267,7 +268,7 @@ std::vector<double> VDepSReac::getK(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-vector<Spec *> VDepSReac::getAllSpecs(void) const
+vector<Spec *> VDepSReac::getAllSpecs() const
 {
     SpecPVec specs = SpecPVec();
     bool first_occ = true;

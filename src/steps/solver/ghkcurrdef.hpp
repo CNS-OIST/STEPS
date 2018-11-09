@@ -69,7 +69,7 @@ public:
     GHKcurrdef(Statedef * sd, uint gidx, steps::model::GHKcurr * ghk);
 
     /// Destructor
-    ~GHKcurrdef(void);
+    ~GHKcurrdef();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -85,18 +85,18 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Setup the object.
-    void setup(void);
+    void setup();
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: GHK CURRENT
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this ghk current.
-    inline uint gidx(void) const
+    inline uint gidx() const
     { return pIdx; }
 
     /// Return the name of the ghk current.
-    inline std::string const name(void) const
+    inline std::string const name() const
     { return pName; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -104,30 +104,30 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     // Return the global index of the ion.
-    uint ion(void) const;
+    uint ion() const;
 
     // Return real flux flag
-    inline bool realflux(void) const
+    inline bool realflux() const
     { return pRealFlux; }
 
     // Return virtual outer concentration
-    inline double voconc(void) const
+    inline double voconc() const
     { return pVirtual_oconc; }
 
     // Return voltage-shift
-    inline double vshift(void) const
+    inline double vshift() const
     { return pVshift; }
 
     /// Return the calculated single channel permeability.
-    inline double perm(void) const
+    inline double perm() const
     { return pPerm ; }
 
     // Return the valence of the ion
-    inline int valence(void) const
+    inline int valence() const
     { return pValence; }
 
     // Return the global index of the channel state
-    uint chanstate(void) const;
+    uint chanstate() const;
 
     // For channel state
     int dep(uint gidx) const;

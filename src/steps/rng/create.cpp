@@ -26,16 +26,16 @@
 
 
 // Standard library & STL headers.
-#include <string>
 #include <iostream>
+#include <string>
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
-#include "steps/rng/rng.hpp"
-#include "steps/rng/r123.hpp"
-#include "steps/rng/mt19937.hpp"
 #include "steps/rng/create.hpp"
+#include "steps/rng/mt19937.hpp"
+#include "steps/rng/r123.hpp"
+#include "steps/rng/rng.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -60,8 +60,8 @@ RNG* create_mt19937(uint bufsize)
 }
 
 
-}
-}
+}  // namespace rng
+}  // namespace steps
 
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -26,8 +26,8 @@
 
 
 // Standard library & STL headers.
-#include <vector>
 #include <cassert>
+#include <vector>
 
 // STEPS headers.
 #include "steps/common.h"
@@ -41,44 +41,44 @@ namespace stex = steps::tetexact;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::KProc::KProc(void)
+stex::KProc::KProc()
 : rExtent(0)
 , pFlags(0)
 , pSchedIDX(0)
-, crData()
+ 
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::KProc::~KProc(void)
-{
-}
+stex::KProc::~KProc()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void stex::KProc::setActive(bool active)
 {
-    if (active == true) pFlags &= ~INACTIVATED;
-    else pFlags |= INACTIVATED;
+    if (active == true) { pFlags &= ~INACTIVATED;
+    } else { pFlags |= INACTIVATED;
+}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint stex::KProc::getExtent(void) const
+uint stex::KProc::getExtent() const
 {
     return rExtent;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::KProc::resetExtent(void)
+void stex::KProc::resetExtent()
 {
     rExtent = 0;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::KProc::resetCcst(void) const
+void stex::KProc::resetCcst() const
 {
     // This should never get called on base object
     AssertLog(false);
@@ -86,7 +86,7 @@ void stex::KProc::resetCcst(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stex::KProc::c(void) const
+double stex::KProc::c() const
 {
     // Should never get called on base object
     AssertLog(false);
@@ -94,7 +94,7 @@ double stex::KProc::c(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stex::KProc::h(void)
+double stex::KProc::h()
 {
     // Should never get called on base object
     AssertLog(false);

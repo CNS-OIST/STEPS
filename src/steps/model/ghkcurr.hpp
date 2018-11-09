@@ -103,7 +103,7 @@ public:
             double virtual_oconc = -1.0, double vshift = 0.0);
 
     /// Destructor
-    ~GHKcurr(void);
+    ~GHKcurr();
 
     ////////////////////////////////////////////////////////////////////////
     // GHK CURRENT PROPERTIES
@@ -112,7 +112,7 @@ public:
     /// Return the GHK current ID.
     ///
     /// \return ID of the GHK current.
-    std::string getID(void) const
+    std::string getID() const
     { return pID; }
 
     /// Set or change the GHK current ID.
@@ -123,19 +123,19 @@ public:
     /// Return a pointer to the parent surface system.
     ///
     /// \return Pointer to the surface system.
-    Surfsys * getSurfsys(void) const
+    Surfsys * getSurfsys() const
     { return pSurfsys; }
 
     /// Return a pointer to the parent model.
     ///
     /// \return Pointer to the parent model.
-    Model * getModel(void) const
+    Model * getModel() const
     { return pModel; }
 
     /// Return a pointer to the associated channel state.
     ///
     /// \return Pointer to the channel state.
-    ChanState * getChanState(void) const
+    ChanState * getChanState() const
     { return pChanState; }
 
     /// Change the channel state.
@@ -146,7 +146,7 @@ public:
     /// Return a pointer to the ion.
     ///
     /// \return Pointer to the ion.
-    Spec * getIon(void) const
+    Spec * getIon() const
     { return pIon; }
 
     /// Change the ion.
@@ -158,7 +158,7 @@ public:
     /// Return the channel conductance (in siemens) at the specified conditions.
     ///
     /// \return Channel conductance associated with GHK current.
-    double getG(void) const
+    double getG() const
     { return pG; }
 
     /// Change the channel conductance at the specified conditions.
@@ -170,7 +170,7 @@ public:
     /// Return the calculated conductance information.
     ///
     /// \return Conductance measurement information.
-    std::map<std::string, double> getGInfo(void) const;
+    std::map<std::string, double> getGInfo() const;
     */
 
     /// Set or change the permeability measurement information.
@@ -190,7 +190,7 @@ public:
     ///
     /// Called if Python object deleted, or from del method in parent object.
     /// Will only be called once
-    void _handleSelfDelete(void);
+    void _handleSelfDelete();
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: CONDUCTANCE INFORMATION
@@ -198,29 +198,29 @@ public:
     /// Return whether user has supplied conductance information or not.
     ///
     /// \Return Conductance information supplied bool
-    bool _infosupplied(void) const
+    bool _infosupplied() const
     { return pInfoSupplied; }
 
-    double _G(void) const;
-    int _valence(void) const;
-    double _V(void) const;
-    double _temp(void) const;
-    double _oconc(void) const;
-    double _iconc(void) const;
+    double _G() const;
+    int _valence() const;
+    double _V() const;
+    double _temp() const;
+    double _oconc() const;
+    double _iconc() const;
 
-    double _P(void) const;
+    double _P() const;
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS
     ////////////////////////////////////////////////////////////////////////
     // Real flux flag
-    bool _realflux(void) const
+    bool _realflux() const
     { return pRealFlux; }
 
-    double _voconc(void) const
+    double _voconc() const
     { return pVirtual_conc; }
 
-    double _vshift(void) const
+    double _vshift() const
     { return pVshift; }
 
     ////////////////////////////////////////////////////////////////////////

@@ -67,7 +67,7 @@ public:
     Specdef(Statedef * sd, uint idx, steps::model::Spec * d);
 
     /// Destructor
-    ~Specdef(void);
+    ~Specdef();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -83,11 +83,11 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this species.
-    inline uint gidx(void) const
+    inline uint gidx() const
     { return pIdx; }
 
     /// Return the name of the species.
-    std::string const name(void) const;
+    std::string const name() const;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: SETUP
@@ -96,7 +96,7 @@ public:
     ///
     /// This method is included for consistency with other def objects,
     /// but currently does nothing.
-    void setup(void);
+    void setup();
 
     ////////////////////////////////////////////////////////////////////////
 

@@ -90,9 +90,9 @@ public:
     ///             of pointers which is represented as
     ///             a sequence in Python.
     ///
-    Memb(std::string const & id, Tetmesh * container,
+    Memb(std::string id, Tetmesh * container,
             std::vector<TmPatch *> const & patches,
-            bool verify = false, uint opt_method = 1, double search_percent = 100.0, std::string const & opt_file_name = std::string());
+            bool verify = false, uint opt_method = 1, double search_percent = 100.0, std::string opt_file_name = std::string());
 
     // Destructor
     ~Memb() {}
@@ -104,13 +104,13 @@ public:
     /// Return a pointer to the tetmesh container object.
     ///
     /// \return Pointer to the parent tetmesh container.
-    steps::tetmesh::Tetmesh * getContainer(void) const
+    steps::tetmesh::Tetmesh * getContainer() const
     { return pTetmesh; }
 
     /// Return the membrane id.
     ///
     /// \return ID of the membrane.
-    std::string getID(void) const
+    std::string const & getID() const
     { return pID; }
 
     /// Return whether triangles (specified by index) are inside this patch.
@@ -122,25 +122,25 @@ public:
     /// Return all triangles (by index) in the patch.
     ///
     /// \return List of indices of triangles.
-    inline std::vector<uint> getAllTriIndices(void) const
+    inline std::vector<uint> const & getAllTriIndices() const
     { return pTri_indices; }
 
     /// Return the number of triangles in this Memb.
     ///
     /// \return the number of triangles in this Memb
-    inline uint countTris(void) const
+    inline uint countTris() const
     { return pTrisN; }
 
     /// Return all tetrahedrons in the conduction volume.
     ///
     /// \return List of indices of tetrahedrons in conduction volume.
-    inline std::vector<uint> getAllVolTetIndices(void) const
+    inline std::vector<uint> const & getAllVolTetIndices() const
     { return pTet_indices; }
 
     /// Return the number of tetrahedrons in the conduction volume.
     ///
     /// \return the number of tetrahedrons in the conduction volume
-    inline uint countVolTets(void) const
+    inline uint countVolTets() const
     { return pTetsN; }
 
     /// Return all 'virtual triangles' that is the triangles that
@@ -150,25 +150,25 @@ public:
     /// the future.
     ///
     /// \return List of indices of virtual triangles.
-    inline std::vector<uint> getAllVirtTriIndices(void) const
+    inline std::vector<uint> const & getAllVirtTriIndices() const
     { return pTrivirt_indices; }
 
     /// Return the number of virtual triangles in this Memb.
     ///
     /// \return the number of virtual triangles in this Memb
-    inline uint countVirtTris(void) const
+    inline uint countVirtTris() const
     { return pTriVirtsN; }
 
     /// Return all vertices in the conduction volume and membrane surface.
     ///
     /// \return List of indices of vertices in membrane surface and conduction volume.
-    inline std::vector<uint> getAllVertIndices(void) const
+    inline std::vector<uint> const & getAllVertIndices() const
     { return pVert_indices; }
 
     /// Return the number of vertices in the conduction volume and membrane surface.
     ///
     /// \return the number of vertices in membrane surface and conduction volume.
-    inline uint countVerts(void) const
+    inline uint countVerts() const
     { return pVertsN; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -178,13 +178,13 @@ public:
     /// Return all triangles (by index) in the patch.
     ///
     /// \return List of indices of triangles.
-    inline std::vector<uint> const & _getAllTriIndices(void) const
+    inline std::vector<uint> const & _getAllTriIndices() const
     { return pTri_indices; }
 
     /// Return all tetrahedrons in the conduction volume.
     ///
     /// \return List of indices of tetrahedrons in conduction volume.
-    inline std::vector<uint> const & _getAllVolTetIndices(void) const
+    inline std::vector<uint> const & _getAllVolTetIndices() const
     { return pTet_indices; }
 
     /// Return all 'virtual triangles' that is the triangles that
@@ -194,34 +194,34 @@ public:
     /// the future.
     ///
     /// \return List of indices of virtual triangles.
-    inline std::vector<uint> const & _getAllVirtTriIndices(void) const
+    inline std::vector<uint> const & _getAllVirtTriIndices() const
     { return pTrivirt_indices; }
 
     /// Return all vertices in the conduction volume and membrane surface.
     ///
     /// \return List of indices of vertices in membrane surface and conduction volume.
-    inline std::vector<uint> const & _getAllVertIndices(void) const
+    inline std::vector<uint> const & _getAllVertIndices() const
     { return pVert_indices; }
 
     /// Return whether surface is 'open' or not
     ///
     /// \return Bool of open or not.
-    inline bool open(void) const
+    inline bool open() const
     { return pOpen; }
 
     /// Return the method the user has specified to optimize the vertex
     /// indexing in the conduction volume.
-    inline uint _getOpt_method(void)
+    inline uint _getOpt_method()
     { return pOpt_method; }
 
     /// Return the percentage of starting nodes tested for breadth-first search (default 100%)
     /// Will be ignored if principal axis search is used
-    inline double _getSearch_percent(void)
+    inline double _getSearch_percent()
     { return pSearch_percent; }
 
 
     /// Return optimization file, if it exists (otherwise empty string)
-    std::string _getOpt_file_name(void) const
+    std::string const & _getOpt_file_name() const
     { return pOpt_file_name; }
 
     ////////////////////////////////////////////////////////////////////////

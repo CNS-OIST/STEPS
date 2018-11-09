@@ -29,8 +29,8 @@
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
-#include "steps/math/point.hpp"
 #include "steps/math/linsolve.hpp"
+#include "steps/math/point.hpp"
 #include "steps/math/tetrahedron.hpp"
 
 // logging
@@ -211,7 +211,8 @@ double tet_longestedge2(const point3d &p0, const point3d &p1,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-}} // namespace steps:math
+}  // namespace math
+}  // namespace steps
 
 // END
 

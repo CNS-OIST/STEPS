@@ -56,7 +56,7 @@ Spec::Spec(string const & id, Model * model, int valence)
 , pModel(model)
 , pValence(valence)
 {
-    if (pModel == 0)
+    if (pModel == nullptr)
     {
         ostringstream os;
         os << "No model provided to Spec initializer function";
@@ -67,18 +67,19 @@ Spec::Spec(string const & id, Model * model, int valence)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Spec::~Spec(void)
+Spec::~Spec()
 {
-    if (pModel == 0) return;
+    if (pModel == nullptr) { return;
+}
     _handleSelfDelete();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Spec::_handleSelfDelete(void)
+void Spec::_handleSelfDelete()
 {
     pModel->_handleSpecDel(this);
-    pModel = 0;
+    pModel = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

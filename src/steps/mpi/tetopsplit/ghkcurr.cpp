@@ -26,12 +26,12 @@
 
 
 // Standard library & STL headers.
-#include <vector>
 #include <cmath>
-#include <iostream>
 #include <fstream>
-#include <sstream>
+#include <iostream>
 #include <limits>
+#include <sstream>
+#include <vector>
 
 // STEPS headers.
 #include "steps/common.h"
@@ -39,11 +39,11 @@
 #include "steps/math/constants.hpp"
 #include "steps/math/ghk.hpp"
 #include "steps/mpi/tetopsplit/ghkcurr.hpp"
-#include "steps/mpi/tetopsplit/tri.hpp"
-#include "steps/mpi/tetopsplit/tet.hpp"
-#include "steps/mpi/tetopsplit/wmvol.hpp"
 #include "steps/mpi/tetopsplit/kproc.hpp"
+#include "steps/mpi/tetopsplit/tet.hpp"
 #include "steps/mpi/tetopsplit/tetopsplit.hpp"
+#include "steps/mpi/tetopsplit/tri.hpp"
+#include "steps/mpi/tetopsplit/wmvol.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -56,8 +56,8 @@ namespace sm = steps::math;
 ////////////////////////////////////////////////////////////////////////////////
 
 smtos::GHKcurr::GHKcurr(ssolver::GHKcurrdef * ghkdef, smtos::Tri * tri)
-: KProc()
-, pGHKcurrdef(ghkdef)
+: 
+ pGHKcurrdef(ghkdef)
 , pTri(tri)
 , localUpdVec()
 , remoteUpdVec()
@@ -70,9 +70,8 @@ smtos::GHKcurr::GHKcurr(ssolver::GHKcurrdef * ghkdef, smtos::Tri * tri)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::GHKcurr::~GHKcurr(void)
-{
-}
+smtos::GHKcurr::~GHKcurr()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -104,7 +103,7 @@ void smtos::GHKcurr::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::GHKcurr::reset(void)
+void smtos::GHKcurr::reset()
 {
 
     crData.recorded = false;
@@ -117,7 +116,7 @@ void smtos::GHKcurr::reset(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::GHKcurr::setupDeps(void)
+void smtos::GHKcurr::setupDeps()
 {
     AssertLog(pTri->getInHost());
     std::set<smtos::KProc*> local;
@@ -171,7 +170,7 @@ void smtos::GHKcurr::setupDeps(void)
         }
     }
 
-    if (otet != 0)
+    if (otet != nullptr)
     {
         if (otet->getHost() != pTri->getHost()) {
             std::ostringstream os;
@@ -243,7 +242,8 @@ bool smtos::GHKcurr::depSpecTet(uint gidx, smtos::WmVol * tet)
 
 bool smtos::GHKcurr::depSpecTri(uint gidx, smtos::Tri * triangle)
 {
-    if (triangle != pTri) return false;
+    if (triangle != pTri) { return false;
+}
     return (pGHKcurrdef->dep(gidx) != ssolver::DEP_NONE);
 
 }
@@ -295,8 +295,9 @@ double smtos::GHKcurr::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
     double iconc = (pTri->iTet()->conc(gidxion))*1.0e3;
     double oconc = 0.0;
 
-    if (voconc < 0.0)  oconc = (pTri->oTet()->conc(gidxion))*1.0e3;
-    else  oconc = voconc*1.0e3;
+    if (voconc < 0.0) {  oconc = (pTri->oTet()->conc(gidxion))*1.0e3;
+    } else {  oconc = voconc*1.0e3;
+}
 
     double v = solver->getTriV(pTri->idx());
     double T = solver->getTemp();
@@ -311,15 +312,16 @@ double smtos::GHKcurr::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
     double rt = flux/(sm::E_CHARGE * static_cast<double>(pGHKcurrdef->valence()));
     // Now a positive rate is always an efflux and a negative rate is an influx
     // Set positive or negative flux flag
-    if (rt >= 0.0) setEffFlux(true);
-    else setEffFlux(false);
+    if (rt >= 0.0) { setEffFlux(true);
+    } else { setEffFlux(false);
+}
 
     // Find the number of available channel states
     ssolver::Patchdef * pdef = pTri->patchdef();
     uint ghklidx = pdef->ghkcurrG2L(pGHKcurrdef->gidx());
     // Fetch the local index of the channelstate
     uint cslidx = pdef->ghkcurr_chanstate(ghklidx);
-    double n = static_cast<double>(pTri->pools()[cslidx]);
+    auto n = static_cast<double>(pTri->pools()[cslidx]);
 
     return fabs(rt) * n;
 }
@@ -331,8 +333,9 @@ void smtos::GHKcurr::apply(steps::rng::RNG * rng, double dt, double simtime, dou
     smtos::WmVol * otet = pTri->oTet();
 
     ssolver::Compdef * innercdef = itet->compdef();
-    ssolver::Compdef * outercdef = 0;
-    if (otet) outercdef = otet->compdef();
+    ssolver::Compdef * outercdef = nullptr;
+    if (otet != nullptr) { outercdef = otet->compdef();
+}
 
     // Fetch the global index of the ion and the valence
     const uint gidxion = pGHKcurrdef->ion();
@@ -349,16 +352,19 @@ void smtos::GHKcurr::apply(steps::rng::RNG * rng, double dt, double simtime, dou
     uint linneridx = innercdef->specG2L(gidxion);
 
     uint louteridx = std::numeric_limits<unsigned int>::max( );
-    if (outercdef) louteridx = outercdef->specG2L(gidxion);
+    if (outercdef != nullptr) { louteridx = outercdef->specG2L(gidxion);
+}
 
     if (efflux())
     {
         if (realflux)
         {
-            if (itet->clamped(linneridx) == false) itet->incCount(linneridx,- 1, period);
-            if (otet && voconc < 0.0)
+            if (itet->clamped(linneridx) == false) { itet->incCount(linneridx,- 1, period);
+}
+            if ((otet != nullptr) && voconc < 0.0)
             {
-                if (otet->clamped(louteridx) == false) otet->incCount(louteridx, 1, period);
+                if (otet->clamped(louteridx) == false) { otet->incCount(louteridx, 1, period);
+}
             }
         }
         // A positive outward current is a positive current by convention
@@ -368,10 +374,12 @@ void smtos::GHKcurr::apply(steps::rng::RNG * rng, double dt, double simtime, dou
     {
         if (realflux)
         {
-            if (itet->clamped(linneridx) == false) itet->incCount(linneridx, 1, period);
-            if (otet && voconc < 0.0)
+            if (itet->clamped(linneridx) == false) { itet->incCount(linneridx, 1, period);
+}
+            if ((otet != nullptr) && voconc < 0.0)
             {
-                if (otet->clamped(louteridx) == false) otet->incCount(louteridx, -1, period);
+                if (otet->clamped(louteridx) == false) { otet->incCount(louteridx, -1, period);
+}
             }
         }
         // A positive outward current is a positive current by convention
@@ -397,20 +405,20 @@ std::vector<smtos::KProc*> const & smtos::GHKcurr::getLocalUpdVec(int direction)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::GHKcurr::resetOccupancies(void)
+void smtos::GHKcurr::resetOccupancies()
 {
     
     pTri->resetPoolOccupancy();
     
     // Update inner tet pools.
     smtos::WmVol * itet = pTri->iTet();
-    if (itet != 0)
+    if (itet != nullptr)
     {
         itet->resetPoolOccupancy();
     }
     
     smtos::WmVol * otet = pTri->oTet();
-    if (otet != 0)
+    if (otet != nullptr)
     {
         otet->resetPoolOccupancy();
     }

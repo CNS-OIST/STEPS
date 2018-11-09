@@ -26,59 +26,59 @@
 
 
 // Standard library & STL headers.
-#include <cmath>
-#include <vector>
-#include <map>
-#include <cassert>
-#include <iostream>
-#include <sstream>
 #include <algorithm>
-#include <limits>
-#include <memory>
-#include <queue>
+#include <cassert>
+#include <cmath>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
+#include <limits>
+#include <map>
+#include <memory>
+#include <queue>
+#include <sstream>
+#include <vector>
 
 // STEPS headers.
 #include "steps/common.h"
-#include "steps/tetexact/tetexact.hpp"
-#include "steps/tetexact/kproc.hpp"
-#include "steps/tetexact/tet.hpp"
-#include "steps/tetexact/tri.hpp"
-#include "steps/tetexact/reac.hpp"
-#include "steps/tetexact/sreac.hpp"
-#include "steps/tetexact/diff.hpp"
-#include "steps/tetexact/sdiff.hpp"
-#include "steps/tetexact/comp.hpp"
-#include "steps/tetexact/patch.hpp"
-#include "steps/tetexact/wmvol.hpp"
-#include "steps/tetexact/ghkcurr.hpp"
-#include "steps/tetexact/vdeptrans.hpp"
-#include "steps/tetexact/vdepsreac.hpp"
-#include "steps/tetexact/diffboundary.hpp"
-#include "steps/tetexact/sdiffboundary.hpp"
+#include "steps/error.hpp"
+#include "steps/geom/tetmesh.hpp"
 #include "steps/math/constants.hpp"
 #include "steps/math/point.hpp"
-#include "steps/error.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/compdef.hpp"
-#include "steps/solver/patchdef.hpp"
-#include "steps/solver/reacdef.hpp"
-#include "steps/solver/sreacdef.hpp"
-#include "steps/solver/diffdef.hpp"
-#include "steps/solver/diffboundarydef.hpp"
-#include "steps/solver/sdiffboundarydef.hpp"
 #include "steps/solver/chandef.hpp"
+#include "steps/solver/compdef.hpp"
+#include "steps/solver/diffboundarydef.hpp"
+#include "steps/solver/diffdef.hpp"
 #include "steps/solver/ghkcurrdef.hpp"
 #include "steps/solver/ohmiccurrdef.hpp"
-#include "steps/solver/vdeptransdef.hpp"
-#include "steps/solver/vdepsreacdef.hpp"
+#include "steps/solver/patchdef.hpp"
+#include "steps/solver/reacdef.hpp"
+#include "steps/solver/sdiffboundarydef.hpp"
+#include "steps/solver/sreacdef.hpp"
+#include "steps/solver/statedef.hpp"
 #include "steps/solver/types.hpp"
-#include "steps/geom/tetmesh.hpp"
+#include "steps/solver/vdepsreacdef.hpp"
+#include "steps/solver/vdeptransdef.hpp"
+#include "steps/tetexact/comp.hpp"
+#include "steps/tetexact/diff.hpp"
+#include "steps/tetexact/diffboundary.hpp"
+#include "steps/tetexact/ghkcurr.hpp"
+#include "steps/tetexact/kproc.hpp"
+#include "steps/tetexact/patch.hpp"
+#include "steps/tetexact/reac.hpp"
+#include "steps/tetexact/sdiff.hpp"
+#include "steps/tetexact/sdiffboundary.hpp"
+#include "steps/tetexact/sreac.hpp"
+#include "steps/tetexact/tet.hpp"
+#include "steps/tetexact/tetexact.hpp"
+#include "steps/tetexact/tri.hpp"
+#include "steps/tetexact/vdepsreac.hpp"
+#include "steps/tetexact/vdeptrans.hpp"
+#include "steps/tetexact/wmvol.hpp"
 #include "steps/util/distribute.hpp"
 
-#include "steps/solver/efield/efield.hpp"
 #include "steps/solver/efield/dVsolver.hpp"
+#include "steps/solver/efield/efield.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -104,7 +104,7 @@ void stex::schedIDXSet_To_Vec(stex::SchedIDXSet const & s, stex::SchedIDXVec & v
 stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r,
                          int calcMembPot)
 : API(m, g, r)
-, pMesh(0)
+, pMesh(nullptr)
 , pKProcs()
 , pComps()
 , pCompMap()
@@ -120,12 +120,12 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
 , pTemp(0.0)
 , pEFDT(1.0e-5)
 , pEFNVerts(0)
-, pEFVerts(0)
+, pEFVerts(nullptr)
 , pEFNTris(0)
-, pEFTris(0)
+, pEFTris(nullptr)
 , pEFTris_vec(0)
 , pEFNTets(0)
-, pEFTets(0)
+, pEFTets(nullptr)
 , pEFVert_GtoL()
 , pEFTri_GtoL()
 , pEFTet_GtoL()
@@ -145,7 +145,7 @@ stex::Tetexact::Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rn
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Tetexact::~Tetexact(void)
+stex::Tetexact::~Tetexact()
 {
     for (auto c: pComps) delete c;
     for (auto p: pPatches) delete p;
@@ -418,35 +418,35 @@ void stex::Tetexact::restore(std::string const & file_name)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-std::string stex::Tetexact::getSolverName(void) const
+std::string stex::Tetexact::getSolverName() const
 {
     return "tetexact";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string stex::Tetexact::getSolverDesc(void) const
+std::string stex::Tetexact::getSolverDesc() const
 {
     return "SSA Composition and Rejection Exact Method in tetrahedral mesh";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string stex::Tetexact::getSolverAuthors(void) const
+std::string stex::Tetexact::getSolverAuthors() const
 {
     return "Stefan Wils, Iain Hepburn, Weiliang Chen";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string stex::Tetexact::getSolverEmail(void) const
+std::string stex::Tetexact::getSolverEmail() const
 {
     return "steps.dev@gmail.com";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tetexact::_setup(void)
+void stex::Tetexact::_setup()
 {
     // Perform upcast.
     pMesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom());
@@ -1012,11 +1012,14 @@ void stex::Tetexact::_setup(void)
     if (efflag() == true) _setupEField();
 
     nEntries = pKProcs.size();
+
+    // force update on zero order reactions
+    _update();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tetexact::_setupEField(void)
+void stex::Tetexact::_setupEField()
 {
     using steps::math::point3d;
     using namespace steps::solver::efield;
@@ -1366,7 +1369,7 @@ void stex::Tetexact::_addTri(uint triidx, steps::tetexact::Patch * patch, double
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tetexact::reset(void)
+void stex::Tetexact::reset()
 {
     std::for_each(pComps.begin(), pComps.end(), std::mem_fun(&Comp::reset));
     std::for_each(pPatches.begin(), pPatches.end(), std::mem_fun(&Patch::reset));
@@ -1410,6 +1413,7 @@ void stex::Tetexact::reset(void)
     nSum = 0.0;
     pA0 = 0.0;
 
+    _update();
     statedef()->resetTime();
     statedef()->resetNSteps();
 }
@@ -1534,7 +1538,7 @@ void stex::Tetexact::advance(double adv)
 
 ////////////////////////////////////////////////////////////////////////
 
-void stex::Tetexact::step(void)
+void stex::Tetexact::step()
 {
     if (efflag() == true)
     {
@@ -1553,14 +1557,14 @@ void stex::Tetexact::step(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stex::Tetexact::getTime(void) const
+double stex::Tetexact::getTime() const
 {
     return statedef()->time();
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-uint stex::Tetexact::getNSteps(void) const
+uint stex::Tetexact::getNSteps() const
 {
     return statedef()->nsteps();
 }
@@ -2299,7 +2303,7 @@ void stex::Tetexact::addKProc(steps::tetexact::KProc * kp)
 
 ////////////////////////////////////////////////////////////////////////////////
 /*
-void stex::Tetexact::_build(void)
+void stex::Tetexact::_build()
 {
     AssertLog(pBuilt == false);
 
@@ -2308,7 +2312,7 @@ void stex::Tetexact::_build(void)
 */
 ////////////////////////////////////////////////////////////////////////////////
 
-steps::tetexact::KProc * stex::Tetexact::_getNext(void) const
+steps::tetexact::KProc * stex::Tetexact::_getNext() const
 {
 
     AssertLog(pA0 >= 0.0);
@@ -2442,7 +2446,7 @@ steps::tetexact::KProc * stex::Tetexact::_getNext(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 /*
-void stex::Tetexact::_reset(void)
+void stex::Tetexact::_reset()
 {
 
 }

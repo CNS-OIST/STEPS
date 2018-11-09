@@ -28,9 +28,9 @@
 // Standard library & STL headers.
 #include <cassert>
 #include <cmath>
-#include <string>
 #include <iostream>
 #include <random>
+#include <string>
 
 // STEPS headers.
 #include "steps/common.h"
@@ -52,10 +52,10 @@ using steps::rng::RNG;
 
 ////////////////////////////////////////////////////////////////////////////////
 RNG::RNG(uint bufsize)
-: rBuffer(0)
+: rBuffer(nullptr)
 , rSize(bufsize)
-, rNext(0)
-, rEnd(0)
+, rNext(nullptr)
+, rEnd(nullptr)
 , pInitialized(false)
 {
     rBuffer = new uint[rSize];
@@ -64,9 +64,10 @@ RNG::RNG(uint bufsize)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-RNG::~RNG(void)
+RNG::~RNG()
 {
-    if (rBuffer != 0) delete[] rBuffer;
+    if (rBuffer != nullptr) { delete[] rBuffer;
+}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -82,7 +83,7 @@ void RNG::initialize(ulong const & seed)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-float RNG::getStdExp(void)
+float RNG::getStdExp()
 {
     static float q[8] =
     {
@@ -104,9 +105,11 @@ S30:
      * JJV unpredictable behavior if U is initially 0.5.
      *  if(u <= 1.0) goto S20;
      */
-    if(u < 1.0) goto S20;
+    if(u < 1.0) { goto S20;
+}
     u -= 1.0;
-    if(u > *q1) goto S60;
+    if(u > *q1) { goto S60;
+}
     sexpo = a + u;
     return sexpo;
 S60:
@@ -115,9 +118,11 @@ S60:
     umin = ustar;
 S70:
     ustar = getUnfEE();
-    if(ustar < umin) umin = ustar;
+    if(ustar < umin) { umin = ustar;
+}
     i += 1;
-    if(u > *(q + i - 1)) goto S70;
+    if(u > *(q + i - 1)) { goto S70;
+}
     sexpo = a + umin * *q1;
     return sexpo;
 }
@@ -153,8 +158,10 @@ long RNG::getPsn(float lambda)
     static float omega, p, p0, px, py, q, s, t, u, v, x, xx, pp[35];
     float mu = 1.0 / lambda;
 
-    if(mu == muprev) goto S10;
-    if(mu < 10.0) goto S120;
+    if(mu == muprev) { goto S10;
+}
+    if(mu < 10.0) { goto S120;
+}
 
     // CASE A. RECALCULATION OF S,D,LL IF MU HAS CHANGED.
     // JJV changed l in Case A to ll
@@ -170,15 +177,18 @@ long RNG::getPsn(float lambda)
 S10:
     // STEP N. NORMAL SAMPLE - SNORM(IR) FOR STANDARD NORMAL DEVIATE.
     g = mu + s * getStdNrm();
-    if(g < 0.0) goto S20;
+    if(g < 0.0) { goto S20;
+}
     ignpoi = (long) (g);
     // STEP I. IMMEDIATE ACCEPTANCE IF IGNPOI IS LARGE ENOUGH.
-    if(ignpoi >= ll) return ignpoi;
+    if(ignpoi >= ll) { return ignpoi;
+}
     // STEP S. SQUEEZE ACCEPTANCE - SUNIF(IR) FOR (0,1)-SAMPLE U.
     fk = (float)ignpoi;
     difmuk = mu - fk;
     u = getUnfEE();
-    if(d * u >= difmuk * difmuk * difmuk) return ignpoi;
+    if(d * u >= difmuk * difmuk * difmuk) { return ignpoi;
+}
 
 S20:
     // STEP P. PREPARATIONS FOR STEPS Q AND H.
@@ -187,7 +197,8 @@ S20:
     // THE QUANTITIES B1, B2, C3, C2, C1, C0 ARE FOR THE HERMITE
     // APPROXIMATIONS TO THE DISCRETE NORMAL PROBABILITIES FK.
     // C=.1069/MU GUARANTEES MAJORIZATION BY THE 'HAT'-FUNCTION.
-    if(mu == muold) goto S30;
+    if(mu == muold) { goto S30;
+}
     muold = mu;
     omega = 0.3989423 / s;
     b1 = 4.166667e-2 / mu;
@@ -199,7 +210,8 @@ S20:
     c = 0.1069 / mu;
 
 S30:
-    if(g < 0.0) goto S50;
+    if(g < 0.0) { goto S50;
+}
     // 'SUBROUTINE' F IS CALLED (KFLAG=0 FOR CORRECT RETURN).
     kflag = 0;
     goto S70;
@@ -216,7 +228,8 @@ S50:
     u = getUnfEE();
     u += (u - 1.0);
     t = 1.8 + smath::sign(e, u);
-    if(t <= -0.6744) goto S50;
+    if(t <= -0.6744) { goto S50;
+}
     ignpoi = (long) (mu + s * t);
     fk = (float)ignpoi;
     difmuk = mu - fk;
@@ -232,7 +245,8 @@ S60:
 S70:
     // STEP F. 'SUBROUTINE' F. CALCULATION OF PX,PY,FX,FY.
     // CASE IGNPOI .LT. 10 USES FACTORIALS FROM TABLE FACT/
-    if(ignpoi >= 10) goto S80;
+    if(ignpoi >= 10) { goto S80;
+}
     px = -mu;
     py = pow((double)mu, (double)ignpoi) / *(fact + ignpoi);
     goto S110;
@@ -260,16 +274,19 @@ S110:
     xx = x * x;
     fx = -0.5 * xx;
     fy = omega * (((c3 * xx + c2) * xx + c1) * xx + c0);
-    if(kflag <= 0) goto S40;
+    if(kflag <= 0) { goto S40;
+}
     goto S60;
 
 S120:
     // CASE B. (START NEW TABLE AND CALCULATE P0 IF NECESSARY)
     // JJV changed MUPREV assignment to initial value.
     muprev = -1.0e37;
-    if(mu == muold) goto S130;
+    if(mu == muold) { goto S130;
+}
     // JJV added argument checker here.
-    if(mu >= 0.0) goto S125;
+    if(mu >= 0.0) { goto S125;
+}
     // NO EXIT!
     CLOG(WARNING, "general_log") << "MU < 0 in IGNPOI: MU:" << mu << std::endl;
     CLOG(WARNING, "general_log") << "Abort\n";
@@ -286,18 +303,22 @@ S130:
     // STEP U. UNIFORM SAMPLE FOR INVERSION METHOD.
     u = getUnfEE();
     ignpoi = 0;
-    if(u <= p0) return ignpoi;
+    if(u <= p0) { return ignpoi;
+}
     // STEP T. TABLE COMPARISON UNTIL THE END PP(L) OF THE
     // PP-TABLE OF CUMULATIVE POISSON PROBABILITIES
     // (0.458=PP(9) FOR MU=10).
-    if(l == 0) goto S150;
+    if(l == 0) { goto S150;
+}
     j = 1;
     if(u > 0.458) j = smath::min(l,m);
     for(k=j; k<=l; ++k)
     {
-        if(u <= *(pp + k - 1)) goto S180;
+        if(u <= *(pp + k - 1)) { goto S180;
+}
     }
-    if(l == 35) goto S130;
+    if(l == 35) { goto S130;
+}
 
 S150:
     // STEP C. CREATION OF NEW POISSON PROBABILITIES P
@@ -308,7 +329,8 @@ S150:
         p = p * mu / (float)k;
         q += p;
         *(pp + k - 1) = q;
-        if(u <= q) goto S170;
+        if(u <= q) { goto S170;
+}
     }
     l = 35;
     goto S130;
@@ -337,7 +359,7 @@ S180:
 //
 // THE DEFINITIONS OF THE CONSTANTS A(K), D(K), T(K) AND
 // H(K) ARE ACCORDING TO THE ABOVEMENTIONED ARTICLE
-float RNG::getStdNrm(void)
+float RNG::getStdNrm()
 {
     static float a[32] =
     {
@@ -384,26 +406,31 @@ float RNG::getStdNrm(void)
     static float snorm, u, s, ustar, aa, w, y, tt;
     u = getUnfEE();
     s = 0.0;
-    if(u > 0.5) s = 1.0;
+    if(u > 0.5) { s = 1.0;
+}
     u += (u - s);
     u = 32.0 * u;
     i = (long)(u);
-    if(i == 32) i = 31;
-    if(i == 0) goto S100;
+    if(i == 32) { i = 31;
+}
+    if(i == 0) { goto S100;
+}
 
     // START CENTER
     ustar = u - (float)i;
     aa = *(a + i - 1);
 
 S40:
-    if(ustar <= *(t + i - 1)) goto S60;
+    if(ustar <= *(t + i - 1)) { goto S60;
+}
     w = (ustar - *(t + i - 1)) * *(h + i - 1);
 
 S50:
     // EXIT   (BOTH CASES)
     y = aa + w;
     snorm = y;
-    if(s == 1.0) snorm = -y;
+    if(s == 1.0) { snorm = -y;
+}
     return snorm;
 
 S60:
@@ -418,9 +445,11 @@ S70:
     ustar = getUnfEE();
 
 S80:
-    if(ustar > tt) goto S50;
+    if(ustar > tt) { goto S50;
+}
     u = getUnfEE();
-    if(ustar >= u) goto S70;
+    if(ustar >= u) { goto S70;
+}
     ustar = getUnfEE();
     goto S40;
 
@@ -436,7 +465,8 @@ S110:
 
 S120:
     u += u;
-    if(u < 1.0) goto S110;
+    if(u < 1.0) { goto S110;
+}
     u -= 1.0;
 
 S140:
@@ -449,9 +479,11 @@ S150:
 
 S160:
     ustar = getUnfEE();
-    if(ustar > tt) goto S50;
+    if(ustar > tt) { goto S50;
+}
     u = getUnfEE();
-    if(ustar >= u) goto S150;
+    if(ustar >= u) { goto S150;
+}
     u = getUnfEE();
     goto S140;
 }

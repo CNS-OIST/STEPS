@@ -85,7 +85,7 @@ public:
 
     ///
     /// This is the constructor for the tetmesh (tetrahedron mesh) namespace.
-    DiffBoundary(std::string const & id, Tetmesh * container,
+    DiffBoundary(std::string id, Tetmesh * container,
             std::vector<uint> const & tris);
 
     /// Destructor.
@@ -98,7 +98,7 @@ public:
     /// Return the patch id.
     ///
     /// \return ID of the diffusion boundary.
-    std::string getID(void) const
+    std::string const & getID() const
     { return pID; }
 
     /// Set or change the diffusion boundary id.
@@ -109,25 +109,25 @@ public:
     /// Return a pointer to the geometry container object.
     ///
     /// \return Pointer to the parent geometry container.
-    steps::tetmesh::Tetmesh * getContainer(void) const
+    steps::tetmesh::Tetmesh * getContainer() const
     { return pTetmesh; }
 
     /// Return whether triangles (specified by index) are inside this diffusion boundary.
     ///
     /// \param tri List of indices of triangles.
     /// \return Results of whether the triangles are inside the diffusion boundary.
-    std::vector<bool> isTriInside(const std::vector<uint> &tri) const;
+    std::vector<bool> isTriInside(std::vector<uint> const &tris) const;
 
     /// Return all triangles (by index) in the diffusion boundary.
     ///
     /// \return List of indices of triangles.
-    inline std::vector<uint> getAllTriIndices(void) const
+    inline std::vector<uint> const & getAllTriIndices() const
     { return pTri_indices; }
 
     /// Return the compartments this diffusion boundary connects
     ///
     /// \return List of the two compartments.
-    inline std::vector<steps::wm::Comp *> getComps(void) const
+    inline std::vector<steps::wm::Comp *> getComps() const
     { return std::vector<steps::wm::Comp *>{pIComp, pOComp}; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -137,7 +137,7 @@ public:
     /// Return all triangles (by index) in the diffusion boundary.
     ///
     /// \return List of indices of triangles.
-    inline std::vector<uint> const & _getAllTriIndices(void) const
+    inline std::vector<uint> const & _getAllTriIndices() const
     { return pTri_indices; }
 
     ////////////////////////////////////////////////////////////////////////

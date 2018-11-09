@@ -27,21 +27,21 @@
 
 
 // Standard library & STL headers.
-#include <vector>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <sstream>
+#include <vector>
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/math/constants.hpp"
+#include "steps/mpi/tetopsplit/kproc.hpp"
+#include "steps/mpi/tetopsplit/sdiff.hpp"
+#include "steps/mpi/tetopsplit/tetopsplit.hpp"
+#include "steps/mpi/tetopsplit/tri.hpp"
 #include "steps/solver/diffdef.hpp"
 #include "steps/solver/patchdef.hpp"
-#include "steps/mpi/tetopsplit/sdiff.hpp"
-#include "steps/mpi/tetopsplit/tri.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-#include "steps/mpi/tetopsplit/tetopsplit.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -55,8 +55,8 @@ namespace smath = steps::math;
 ////////////////////////////////////////////////////////////////////////////////
 
 smtos::SDiff::SDiff(ssolver::Diffdef * sdef, smtos::Tri * tri)
-: KProc()
-, pSDiffdef(sdef)
+: 
+ pSDiffdef(sdef)
 , pTri(tri)
 , localAllUpdVec()
 , remoteAllUpdVec()
@@ -87,7 +87,7 @@ smtos::SDiff::SDiff(ssolver::Diffdef * sdef, smtos::Tri * tri)
     for (uint i = 0; i < 3; ++i)
     {
         pSDiffBndDirection[i] = pTri->getSDiffBndDirection(i);
-        if (next[i] == 0)
+        if (next[i] == nullptr)
         {
             pNeighbPatchLidx[i] = -1;
             continue;
@@ -109,19 +109,21 @@ smtos::SDiff::SDiff(ssolver::Diffdef * sdef, smtos::Tri * tri)
         // Compute the scaled diffusion constant.
         // Need to here check if the direction is a diffusion boundary
         double dist = pTri->dist(i);
-        if ((dist > 0.0) && (next[i] != 0))
+        if ((dist > 0.0) && (next[i] != nullptr))
         {
             if (pSDiffBndDirection[i] == true)
             {
-                if (pSDiffBndActive[i])
+                if (pSDiffBndActive[i]) {
                     d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
-                else d[i] = 0.0;
+                } else { d[i] = 0.0;
+}
             }
             else
             {
-                if (next[i]->patchdef() == pTri->patchdef())
+                if (next[i]->patchdef() == pTri->patchdef()) {
                     d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
-                else d[i] = 0.0;
+                } else { d[i] = 0.0;
+}
             }
         }
     }
@@ -167,9 +169,8 @@ smtos::SDiff::SDiff(ssolver::Diffdef * sdef, smtos::Tri * tri)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::SDiff::~SDiff(void)
-{
-}
+smtos::SDiff::~SDiff()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -236,7 +237,7 @@ void smtos::SDiff::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::SDiff::setupDeps(void)
+void smtos::SDiff::setupDeps()
 {
     // We will check all KProcs of the following simulation elements:
     //   * the 'source' triangle
@@ -269,7 +270,7 @@ void smtos::SDiff::setupDeps(void)
 
     // Check the neighbouring tetrahedrons.
     smtos::WmVol * itet = pTri->iTet();
-    if (itet != 0)
+    if (itet != nullptr)
     {
         if (pTri->getHost() != itet->getHost()) {
             std::ostringstream os;
@@ -287,7 +288,7 @@ void smtos::SDiff::setupDeps(void)
     }
 
     smtos::WmVol * otet = pTri->oTet();
-    if (otet != 0)
+    if (otet != nullptr)
     {
         if (pTri->getHost() != otet->getHost()) {
             std::ostringstream os;
@@ -311,7 +312,8 @@ void smtos::SDiff::setupDeps(void)
     {
         // Fetch next triangle, if it exists.
         smtos::Tri * next = pTri->nextTri(i);
-        if (next == 0) continue;
+        if (next == nullptr) { continue;
+}
         
         if (next->getHost() != pTri->getHost()) {
             pTri->solver()->addNeighHost(next->getHost());
@@ -339,7 +341,7 @@ void smtos::SDiff::setupDeps(void)
         }
         // Fetch inner tetrahedron, if it exists.
         smtos::WmVol * itet = next->iTet();
-        if (itet != 0)
+        if (itet != nullptr)
         {
             if (next->getHost() != itet->getHost()) {
                 std::ostringstream os;
@@ -365,7 +367,7 @@ void smtos::SDiff::setupDeps(void)
 
         // Fetch outer tetrahedron, if it exists.
         smtos::WmVol * otet = next->oTet();
-        if (otet != 0)
+        if (otet != nullptr)
         {
             if (next->getHost() != otet->getHost()) {
                 std::ostringstream os;
@@ -411,14 +413,16 @@ bool smtos::SDiff::depSpecTet(uint gidx, smtos::WmVol * tet)
 
 bool smtos::SDiff::depSpecTri(uint gidx, smtos::Tri * tri)
 {
-    if (pTri != tri) return false;
-    if (gidx != ligGIdx) return false;
+    if (pTri != tri) { return false;
+}
+    if (gidx != ligGIdx) { return false;
+}
     return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::SDiff::reset(void)
+void smtos::SDiff::reset()
 {
     resetExtent();
 
@@ -475,19 +479,21 @@ void smtos::SDiff::setDcst(double dcst)
         // Compute the scaled diffusion constant.
         // Need to here check if the direction is a diffusion boundary
         double dist = pTri->dist(i);
-        if ((dist > 0.0) && (next[i] != 0))
+        if ((dist > 0.0) && (next[i] != nullptr))
         {
             if (pSDiffBndDirection[i] == true)
             {
-                if (pSDiffBndActive[i])
+                if (pSDiffBndActive[i]) {
                     d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
-                else d[i] = 0;
+                } else { d[i] = 0;
+}
             }
             else
             {
-                if (next[i]->patchdef() == pTri->patchdef())
+                if (next[i]->patchdef() == pTri->patchdef()) {
                     d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
-                else d[i] = 0;
+                } else { d[i] = 0;
+}
             }
         }
     }
@@ -546,7 +552,8 @@ void smtos::SDiff::setDirectionDcst(int direction, double dcst)
     directionalDcsts[direction] = dcst;
     
     // Automatically activate boundary diffusion if necessary
-    if (pSDiffBndDirection[direction] == true) pSDiffBndActive[direction] = true;
+    if (pSDiffBndDirection[direction] == true) { pSDiffBndActive[direction] = true;
+}
 
     smtos::Tri * next[3] =
     {
@@ -562,7 +569,7 @@ void smtos::SDiff::setDirectionDcst(int direction, double dcst)
     {
         // if directional diffusion dcst exists use directional dcst, else use the standard one
         double dist = pTri->dist(i);
-        if ((dist > 0.0) && (next[i] != 0))
+        if ((dist > 0.0) && (next[i] != nullptr))
         {
             if (pSDiffBndDirection[i] == true)
             {
@@ -574,7 +581,8 @@ void smtos::SDiff::setDirectionDcst(int direction, double dcst)
                     	// This part must use the default pDcst, not the function argument dcst
                         d[i] = (pTri->length(i) * pDcst) / (pTri->area() * dist);
                 }
-                else d[i] = 0;
+                else { d[i] = 0;
+}
             }
             else
             {
@@ -586,7 +594,8 @@ void smtos::SDiff::setDirectionDcst(int direction, double dcst)
                     	// This part must use the default pDcst, not the function argument dcst
                         d[i] = (pTri->length(i) * pDcst) / (pTri->area() * dist);
                 }
-                else d[i] = 0;
+                else { d[i] = 0;
+}
             }
         }
     }
@@ -680,62 +689,29 @@ int smtos::SDiff::apply(steps::rng::RNG * rng)
     // Apply change in next voxel: select a direction.
     double sel = rng->getUnfEE();
 
-    if (sel < pNonCDFSelector[0])
-    {
-        // Direction 1.
-        smtos::Tri * nexttri = pTri->nextTri(0);
-        // If there is no next tet 0, pCDFSelector[0] should be zero
-        // So we can assert that nextet 0 does indeed exist
-        AssertLog(nexttri != 0);
-
-        if (nexttri->clamped(lidxTri) == false)
-        {
-            nexttri->incCount(lidxTri,1);
+    int iSel = 0;
+    double pCDFSelector = 0.0;
+    for (; iSel < 2; ++iSel) {
+        pCDFSelector += pNonCDFSelector[iSel];
+        if(sel < pCDFSelector) {
+            break;
         }
-        if (clamped == false) {pTri->incCount(lidxTri, -1); }
+    }       
 
-        rExtent++;
+    // Direction iSel.
+    smtos::Tri * nexttri = pTri->nextTri(iSel);
+    AssertLog(nexttri != 0);
 
-        return 0;
-    }
-    else if (sel < pNonCDFSelector[0] + pNonCDFSelector[1])
-    {
-        // Direction 2.
-        smtos::Tri * nexttri = pTri->nextTri(1);
-        // If there is no next tet 1, pCDFSelector[1] should be zero
-        // So we can assert that nextet 1 does indeed exist
-        AssertLog(nexttri != 0);
+    if (nexttri->clamped(pNeighbPatchLidx[iSel]) == false) {
+        nexttri->incCount(pNeighbPatchLidx[iSel],1);
+}
 
-        if (nexttri->clamped(lidxTri) == false)
-        {
-            nexttri->incCount(lidxTri,1);
-        }
-        if (clamped == false) {pTri->incCount(lidxTri, -1); }
+    if (clamped == false) {
+        pTri->incCount(lidxTri, -1);
+}
 
-        rExtent++;
-
-        return 1;
-    }
-    else
-    {
-        // Direction 3.
-        smtos::Tri * nexttri = pTri->nextTri(2);
-        AssertLog(nexttri != 0);
-
-        if (nexttri->clamped(lidxTri) == false)
-        {
-            nexttri->incCount(lidxTri,1);
-        }
-        if (clamped == false) {pTri->incCount(lidxTri, -1); }
-
-        rExtent++;
-
-        return 2;
-
-    }
-
-    // This should never happen!
-    ProgErrLog("Cannot find a suitable direction for surface diffusion!");
+    rExtent++;
+    return iSel;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -773,39 +749,43 @@ int smtos::SDiff::apply(steps::rng::RNG * rng, uint nmolcs)
 
         // This is really important: if chance is a fraction over 1.0 the binomial
         // cycles to the largest unsigned int
-        if (chance >= 1.0) chance=1.0;
+        if (chance >= 1.0) { chance=1.0;
+}
 
         uint molcsthisdir = rng->getBinom(max_molcs, chance);
 
-        if (molcsthisdir)
+        if (molcsthisdir != 0u)
         {
 
         	smtos::Tri * nexttri = pTri->nextTri(direction);
 
             AssertLog(nexttri != 0);
+            AssertLog(pNeighbPatchLidx[direction] > -1);
 
-            if (nexttri->clamped(lidxTri) == false)
+            if (nexttri->clamped(pNeighbPatchLidx[direction]) == false)
         	{
-            	nexttri->incCount(lidxTri,molcsthisdir);
+            	nexttri->incCount(pNeighbPatchLidx[direction],molcsthisdir);
         	}
 
         	molcs_moved+=molcsthisdir;
         }
-        if (molcs_moved == nmolcs) break;
+        if (molcs_moved == nmolcs) { break;
+}
 
     }
     //last direction, chance =1
     uint direction = pDirections[pNdirections-1];
     int molcsthisdir = nmolcs-molcs_moved;
-    if (molcsthisdir)
+    if (molcsthisdir != 0)
     {
     	smtos::Tri * nexttri = pTri->nextTri(direction);
 
         AssertLog(nexttri != 0);
+        AssertLog(pNeighbPatchLidx[direction] > -1);
 
-        if (nexttri->clamped(lidxTri) == false)
+        if (nexttri->clamped(pNeighbPatchLidx[direction]) == false)
     	{
-        	nexttri->incCount(lidxTri,molcsthisdir);
+        	nexttri->incCount(pNeighbPatchLidx[direction],molcsthisdir);
     	}
 
     	molcs_moved+=molcsthisdir;

@@ -31,14 +31,14 @@
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/math/constants.hpp"
-#include "steps/wmrssa/sreac.hpp"
-#include "steps/wmrssa/patch.hpp"
 #include "steps/wmrssa/comp.hpp"
+#include "steps/wmrssa/patch.hpp"
+#include "steps/wmrssa/sreac.hpp"
 #include "steps/wmrssa/wmrssa.hpp"
 
 // logging
-#include "steps/error.hpp"
 #include "easylogging++.h"
+#include "steps/error.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace swmrssa = steps::wmrssa;
@@ -70,8 +70,8 @@ static inline double comp_ccst_area(double kcst, double area, uint order)
 ////////////////////////////////////////////////////////////////////////////////
 
 swmrssa::SReac::SReac(ssolver::SReacdef * srdef, swmrssa::Patch * patch)
-: KProc()
-, pSReacdef(srdef)
+: 
+ pSReacdef(srdef)
 , pPatch(patch)
 , pUpdVec()
 , pCcst()
@@ -110,9 +110,8 @@ swmrssa::SReac::SReac(ssolver::SReacdef * srdef, swmrssa::Patch * patch)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmrssa::SReac::~SReac(void)
-{
-}
+swmrssa::SReac::~SReac()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -130,7 +129,7 @@ void swmrssa::SReac::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool swmrssa::SReac::active(void) const
+bool swmrssa::SReac::active() const
 {
     uint lsridx = pPatch->def()->sreacG2L(defsr()->gidx());
     return pPatch->def()->active(lsridx);
@@ -138,7 +137,7 @@ bool swmrssa::SReac::active(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::SReac::setupDeps(void)
+void swmrssa::SReac::setupDeps()
 {
     Comp * icomp = pPatch->iComp();
     Comp * ocomp = pPatch->oComp();
@@ -162,7 +161,7 @@ void swmrssa::SReac::setupDeps(void)
         }
     }
 
-    if (icomp != 0)
+    if (icomp != nullptr)
     {
         kprocend = icomp->kprocEnd();
         for (KProcPVecCI k = icomp->kprocBegin(); k != kprocend; ++k)
@@ -205,7 +204,7 @@ void swmrssa::SReac::setupDeps(void)
         }
     }
 
-    if (ocomp != 0)
+    if (ocomp != nullptr)
     {
         kprocend = ocomp->kprocEnd();
         for (KProcPVecCI k = ocomp->kprocBegin(); k != kprocend; ++k)
@@ -270,13 +269,14 @@ bool swmrssa::SReac::depSpecComp(uint gidx, swmrssa::Comp * comp)
 
 bool swmrssa::SReac::depSpecPatch(uint gidx, swmrssa::Patch * patch)
 {
-    if (patch != pPatch) return false;
+    if (patch != pPatch) { return false;
+}
     return (defsr()->dep_S(gidx) != ssolver::DEP_NONE);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::SReac::reset(void)
+void swmrssa::SReac::reset()
 {
     resetExtent();
     uint lsridx = pPatch->def()->sreacG2L(defsr()->gidx());
@@ -286,7 +286,7 @@ void swmrssa::SReac::reset(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::SReac::resetCcst(void)
+void swmrssa::SReac::resetCcst()
 {
     uint lsridx = pPatch->def()->sreacG2L(defsr()->gidx());
     double kcst = pPatch->def()->kcst(lsridx);
@@ -321,7 +321,8 @@ void swmrssa::SReac::resetCcst(void)
 
 double swmrssa::SReac::rate(steps::wmrssa::PropensityRSSA prssa)
 {
-    if (inactive()) return 0.0;
+    if (inactive()) { return 0.0;
+}
 
     // First we compute the combinatorial part.
     //   1/ for the surface part of the stoichiometry
@@ -329,8 +330,9 @@ double swmrssa::SReac::rate(steps::wmrssa::PropensityRSSA prssa)
     //      depending on whether the sreac is inner() or outer()
     // Then we multiply with mesoscopic constant.
 
-    if (prssa == steps::wmrssa::BOUNDS)
+    if (prssa == steps::wmrssa::BOUNDS) {
         pPropensityLB = rate(steps::wmrssa::LOWERBOUND);
+}
 
     ssolver::Patchdef * pdef = pPatch->def();
     uint lidx = pdef->sreacG2L(defsr()->gidx());
@@ -343,8 +345,9 @@ double swmrssa::SReac::rate(steps::wmrssa::PropensityRSSA prssa)
     for (uint s = 0; s < nspecs_s; ++s)
     {
         uint lhs = lhs_s_vec[s];
-        if (lhs == 0) continue;
-        uint cnt = static_cast<uint>(cnt_s_vec[s]);
+        if (lhs == 0) { continue;
+}
+        auto cnt = static_cast<uint>(cnt_s_vec[s]);
         if (lhs > cnt)
         {
             return 0.0;
@@ -384,7 +387,8 @@ double swmrssa::SReac::rate(steps::wmrssa::PropensityRSSA prssa)
         for (uint s = 0; s < nspecs_i; ++s)
         {
             uint lhs = lhs_i_vec[s];
-            if (lhs == 0) continue;
+            if (lhs == 0) { continue;
+}
             uint cnt = static_cast<double>(cnt_i_vec[s]);
             if (lhs > cnt)
             {
@@ -425,7 +429,8 @@ double swmrssa::SReac::rate(steps::wmrssa::PropensityRSSA prssa)
         for (uint s = 0; s < nspecs_o; ++s)
         {
             uint lhs = lhs_o_vec[s];
-            if (lhs == 0) continue;
+            if (lhs == 0) { continue;
+}
             uint cnt = static_cast<double>(cnt_o_vec[s]);
             if (lhs > cnt)
             {
@@ -464,7 +469,7 @@ double swmrssa::SReac::rate(steps::wmrssa::PropensityRSSA prssa)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<uint> const & swmrssa::SReac::apply(void)
+std::vector<uint> const & swmrssa::SReac::apply()
 {
     SchedIDXSet updset;
     //bool returnUpdVec = false;

@@ -87,7 +87,7 @@ public:
     Volsys(std::string const & id, Model * model);
 
     /// Destructor
-    ~Volsys(void);
+    ~Volsys();
 
     ////////////////////////////////////////////////////////////////////////
     // VOLUME SYSTEM PROPERTIES
@@ -96,7 +96,7 @@ public:
     /// Return the volume system ID.
     ///
     /// \return A string of volume system ID.
-    std::string getID(void) const
+    std::string getID() const
     { return pID; }
 
     /// Set or change the volume system ID.
@@ -107,7 +107,7 @@ public:
     /// Return a pointer to the parent model.
     ///
     /// \return Pointer to the parent model.
-    Model * getModel(void) const
+    Model * getModel() const
     { return pModel; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -129,7 +129,7 @@ public:
     ///
     /// \return A vector of pointers to the reaction objects
     ///         stored in the system.
-    std::vector<Reac *> getAllReacs(void) const;
+    std::vector<Reac *> getAllReacs() const;
 
     ////////////////////////////////////////////////////////////////////////
     // OPERATIONS (EXPOSED TO PYTHON): DIFFUSION
@@ -150,7 +150,7 @@ public:
     ///
     /// \return A vector of pointers to the diffusion objects
     ///         stored in the system.
-    std::vector<Diff *> getAllDiffs(void) const;
+    std::vector<Diff *> getAllDiffs() const;
 
     ////////////////////////////////////////////////////////////////////////
     // OPERATIONS (EXPOSED TO PYTHON): SPECIES
@@ -162,7 +162,7 @@ public:
     ///
     /// This method returns a list of all species involved in this volume system,
     /// no duplicate member is included.
-    std::vector<Spec *> getAllSpecs(void) const;
+    std::vector<Spec *> getAllSpecs() const;
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: DELETION
@@ -172,7 +172,7 @@ public:
     ///
     /// Called if Python object deleted, or from del method in parent object.
     /// Will only be called once.
-    void _handleSelfDelete(void);
+    void _handleSelfDelete();
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: REACTIONS
@@ -230,7 +230,7 @@ public:
     /// Count the reactions in the volume system.
     ///
     /// \return Number of reactions.
-    inline uint _countReacs(void) const
+    inline uint _countReacs() const
     { return pReacs.size(); }
 
     /// Get a reaction with index lidx
@@ -242,13 +242,13 @@ public:
     /// Get all species in the volume system.
     ///
     /// \return A list of pointers to the species.
-    const std::map<std::string, Reac *> & _getAllReacs(void) const
+    const std::map<std::string, Reac *> & _getAllReacs() const
     { return pReacs; }
 
     /// Count the diffusion rules in the volume system.
     ///
     /// \return Number of diffusion rules.
-    inline uint _countDiffs(void) const
+    inline uint _countDiffs() const
     { return pDiffs.size(); }
 
     /// Get a diffusion rule with index lidx.
@@ -260,7 +260,7 @@ public:
     /// Get all diffusion rules in the volume system.
     ///
     /// \return List of pointers to diffusion rules.
-    const std::map<std::string, Diff *> & _getAllDiffs(void) const
+    const std::map<std::string, Diff *> & _getAllDiffs() const
     { return pDiffs; }
 
     ////////////////////////////////////////////////////////////////////////

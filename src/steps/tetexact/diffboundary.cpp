@@ -32,8 +32,8 @@
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/solver/diffboundarydef.hpp"
-#include "steps/tetexact/diffboundary.hpp"
 #include "steps/tetexact/comp.hpp"
+#include "steps/tetexact/diffboundary.hpp"
 
 
 // logging
@@ -47,8 +47,8 @@ namespace ssolver = steps::solver;
 
 stex::DiffBoundary::DiffBoundary(steps::solver::DiffBoundarydef * dbdef)
 : pDiffBoundarydef(dbdef)
-, pCompA(0)
-, pCompB(0)
+, pCompA(nullptr)
+, pCompB(nullptr)
 , pTets()
 , pTetDirection()
 , pSetComps(false)
@@ -58,10 +58,8 @@ stex::DiffBoundary::DiffBoundary(steps::solver::DiffBoundarydef * dbdef)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::DiffBoundary::~DiffBoundary(void)
-{
-
-}
+stex::DiffBoundary::~DiffBoundary()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -93,7 +91,7 @@ void stex::DiffBoundary::setComps(stex::Comp * compa, stex::Comp * compb)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Comp * stex::DiffBoundary::compA(void)
+stex::Comp * stex::DiffBoundary::compA()
 {
     AssertLog(pSetComps == true);
     return pCompA;
@@ -101,7 +99,7 @@ stex::Comp * stex::DiffBoundary::compA(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Comp * stex::DiffBoundary::compB(void)
+stex::Comp * stex::DiffBoundary::compB()
 {
     AssertLog(pSetComps == true);
     return pCompB;

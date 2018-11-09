@@ -27,8 +27,8 @@
 
 // STL headers.
 #include <algorithm>
-#include <utility>
 #include <cmath>
+#include <utility>
 
 // STEPS headers.
 #include "steps/common.h"
@@ -56,7 +56,8 @@ void dVSolverBase::initMesh(TetMesh *mesh) {
 
 void dVSolverBase::setSurfaceConductance(double g_surface, double v_rev) {
     pVExt = v_rev;
-    if (!pMesh) return;
+    if (pMesh == nullptr) { return;
+}
 
     for (int i = 0; i < pNVerts; ++i) {
         VertexElement* ve = pMesh->getVertex(i);
@@ -80,5 +81,7 @@ int dVSolverBase::meshHalfBW(TetMesh *mesh) {
     return halfbw;
 }
 
-}}} // namespace steps::solver::efield
+}  // namespace efield
+}  // namespace solver
+}  // namespace steps
 

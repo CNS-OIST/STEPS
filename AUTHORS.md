@@ -36,7 +36,10 @@ Stefan Wils (OIST, UA, 2006 - 2009)
 From École polytechnique fédérale de Lausanne, Switzerland (Since STEPS version 3.0.0):
 
 Fabien Delalondre
-* Technical lead and coordination for Blue Brain team contribution
+* Technical lead and coordination for Blue Brain team contribution (to June 2018)
+
+James King
+* Technical lead and coordination for Blue Brain team contribution (from July 2018)
 
 Tristan Carel
 * Docker image (https://github.com/CNS-OIST/STEPS_Docker)
@@ -49,6 +52,7 @@ Francesco Casalegno
 
 Samuel Melchior
 * Rejection-based SSA for well mixed solver
+* Optimisation of Wmrk4 non-spatial deterministic solver.
     
 Aleksandr Ovcharenko
 * R123 random number generator

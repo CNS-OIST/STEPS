@@ -33,18 +33,18 @@
  */
 
 // STL headers.
-#include <string>
 #include <cassert>
+#include <string>
 
 // STEPS headers.
 #include "steps/common.h"
-#include "steps/solver/types.hpp"
 #include "steps/error.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/compdef.hpp"
-#include "steps/solver/reacdef.hpp"
 #include "steps/geom/comp.hpp"
 #include "steps/model/spec.hpp"
+#include "steps/solver/compdef.hpp"
+#include "steps/solver/reacdef.hpp"
+#include "steps/solver/statedef.hpp"
+#include "steps/solver/types.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -65,10 +65,10 @@ ssolver::Reacdef::Reacdef(Statedef * sd, uint idx, steps::model::Reac * r)
 , pLhs()
 , pRhs()
 , pSetupdone(false)
-, pSpec_DEP(0)
-, pSpec_LHS(0)
-, pSpec_RHS(0)
-, pSpec_UPD(0)
+, pSpec_DEP(nullptr)
+, pSpec_LHS(nullptr)
+, pSpec_RHS(nullptr)
+, pSpec_UPD(nullptr)
 , pSpec_UPD_Coll()
 {
     AssertLog(pStatedef != 0);
@@ -81,7 +81,8 @@ ssolver::Reacdef::Reacdef(Statedef * sd, uint idx, steps::model::Reac * r)
     pRhs = r->getRHS();
 
     uint nspecs = pStatedef->countSpecs();
-    if (nspecs == 0) return; // Would be weird, but okay.
+    if (nspecs == 0) { return; // Would be weird, but okay.
+}
     pSpec_DEP = new int[nspecs];
     std::fill_n(pSpec_DEP, nspecs, DEP_NONE);
     pSpec_LHS = new uint[nspecs];
@@ -95,7 +96,7 @@ ssolver::Reacdef::Reacdef(Statedef * sd, uint idx, steps::model::Reac * r)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::Reacdef::~Reacdef(void)
+ssolver::Reacdef::~Reacdef()
 {
     if (pStatedef->countSpecs() > 0)
     {
@@ -122,7 +123,7 @@ void ssolver::Reacdef::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Reacdef::setup(void)
+void ssolver::Reacdef::setup()
 {
     AssertLog(pSetupdone == false);
 
@@ -144,10 +145,11 @@ void ssolver::Reacdef::setup(void)
     uint nspecs = pStatedef->countSpecs();
     for (uint i = 0; i < nspecs; ++i)
     {
-        int lhs = static_cast<int>(pSpec_LHS[i]);
-        int rhs = static_cast<int>(pSpec_RHS[i]);
+        auto lhs = static_cast<int>(pSpec_LHS[i]);
+        auto rhs = static_cast<int>(pSpec_RHS[i]);
         int aux = pSpec_UPD[i] = (rhs - lhs);
-        if (lhs != 0) pSpec_DEP[i] |= DEP_STOICH;
+        if (lhs != 0) { pSpec_DEP[i] |= DEP_STOICH;
+}
         if (aux != 0) pSpec_UPD_Coll.push_back(i);
     }
 
@@ -156,21 +158,21 @@ void ssolver::Reacdef::setup(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string const ssolver::Reacdef::name(void) const
+std::string const ssolver::Reacdef::name() const
 {
     return pName;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint ssolver::Reacdef::order(void) const
+uint ssolver::Reacdef::order() const
 {
     return pOrder;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double ssolver::Reacdef::kcst(void) const
+double ssolver::Reacdef::kcst() const
 {
     return pKcst;
 }
@@ -215,8 +217,10 @@ bool ssolver::Reacdef::reqspec(uint gidx) const
 {
     AssertLog(pSetupdone == true);
     AssertLog(gidx < pStatedef->countSpecs());
-    if (pSpec_DEP[gidx] != DEP_NONE) return true;
-    if (pSpec_RHS[gidx] != 0) return true;
+    if (pSpec_DEP[gidx] != DEP_NONE) { return true;
+}
+    if (pSpec_RHS[gidx] != 0) { return true;
+}
     return false;
 }
 

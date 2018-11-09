@@ -26,9 +26,9 @@
 
 
 // Standard library & STL headers.
+#include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <algorithm>
 #include <functional>
 #include <iostream>
 
@@ -38,17 +38,17 @@
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/math/constants.hpp"
+#include "steps/mpi/mpi_common.hpp"
+#include "steps/mpi/tetopsplit/diff.hpp"
+#include "steps/mpi/tetopsplit/kproc.hpp"
+#include "steps/mpi/tetopsplit/reac.hpp"
+#include "steps/mpi/tetopsplit/tet.hpp"
+#include "steps/mpi/tetopsplit/tetopsplit.hpp"
+#include "steps/mpi/tetopsplit/tri.hpp"
+#include "steps/mpi/tetopsplit/wmvol.hpp"
 #include "steps/solver/compdef.hpp"
 #include "steps/solver/diffdef.hpp"
 #include "steps/solver/reacdef.hpp"
-#include "steps/mpi/mpi_common.hpp"
-#include "steps/mpi/tetopsplit/diff.hpp"
-#include "steps/mpi/tetopsplit/reac.hpp"
-#include "steps/mpi/tetopsplit/tet.hpp"
-#include "steps/mpi/tetopsplit/tri.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-#include "steps/mpi/tetopsplit/tetopsplit.hpp"
-#include "steps/mpi/tetopsplit/wmvol.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -67,8 +67,8 @@ smtos::WmVol::WmVol
 : pIdx(idx)
 , pCompdef(cdef)
 , pVol(vol)
-, pPoolCount(0)
-, pPoolFlags(0)
+, pPoolCount(nullptr)
+, pPoolFlags(nullptr)
 , pKProcs()
 , pNextTris()
 , myRank(rank)
@@ -88,7 +88,7 @@ smtos::WmVol::WmVol
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::WmVol::~WmVol(void)
+smtos::WmVol::~WmVol()
 {
     // Delete species pool information.
     delete[] pPoolCount;
@@ -139,9 +139,9 @@ void smtos::WmVol::setupKProcs(smtos::TetOpSplitP * tex)
         for (uint i = 0; i < nKProcs; ++i)
         {
             ssolver::Reacdef * rdef = compdef()->reacdef(i);
-            smtos::Reac * r = new smtos::Reac(rdef, this);
+            auto * r = new smtos::Reac(rdef, this);
             pKProcs[j++] = r;
-            uint idx = tex->addKProc(r, hostRank);
+            uint idx = tex->addKProc(r);
             r->setSchedIDX(idx);
         }
     }
@@ -151,16 +151,17 @@ void smtos::WmVol::setupKProcs(smtos::TetOpSplitP * tex)
         
         for (uint i = 0; i < nKProcs; ++i)
         {
-            uint idx = tex->addKProc(NULL, hostRank);
+            uint idx = tex->addKProc(NULL);
         }
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::WmVol::setupDeps(void)
+void smtos::WmVol::setupDeps()
 {
-    if (myRank != hostRank) return;
+    if (myRank != hostRank) { return;
+}
     for (auto kp : pKProcs) {
         kp->setupDeps();
     }
@@ -171,9 +172,10 @@ void smtos::WmVol::setupDeps(void)
 bool smtos::WmVol::KProcDepSpecTet(uint kp_lidx, smtos::WmVol* kp_container,  uint spec_gidx)
 {
     // for wmv it is always reaction so no need to check kproc type
-    if (kp_container != this) return false;
+    if (kp_container != this) { return false;
+}
     ssolver::Reacdef * rdef = compdef()->reacdef(kp_lidx);
-    return rdef->dep(spec_gidx);
+    return rdef->dep(spec_gidx) != 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -186,7 +188,7 @@ bool smtos::WmVol::KProcDepSpecTri(uint kp_lidx, smtos::Tri* kp_container, uint 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::WmVol::reset(void)
+void smtos::WmVol::reset()
 {
     uint nspecs = compdef()->countSpecs();
     std::fill_n(pPoolCount, nspecs, 0);
@@ -240,8 +242,9 @@ void smtos::WmVol::incCount(uint lidx, int inc, double period, bool local_change
 
 void smtos::WmVol::setClamped(uint lidx, bool clamp)
 {
-    if (clamp == true) pPoolFlags[lidx] |= CLAMPED;
-    else pPoolFlags[lidx] &= ~CLAMPED;
+    if (clamp == true) { pPoolFlags[lidx] |= CLAMPED;
+    } else { pPoolFlags[lidx] &= ~CLAMPED;
+}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -253,7 +256,7 @@ smtos::Reac * smtos::WmVol::reac(uint lidx) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 // MPISTEPS
-bool smtos::WmVol::getInHost(void)
+bool smtos::WmVol::getInHost()
 {
     return (hostRank == myRank);
 }
@@ -274,7 +277,7 @@ void smtos::WmVol::setSolver(steps::mpi::tetopsplit::TetOpSplitP* solver)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::TetOpSplitP* smtos::WmVol::solver(void)
+smtos::TetOpSplitP* smtos::WmVol::solver()
 {
     return pSol;
 }
@@ -295,7 +298,7 @@ double smtos::WmVol::getLastUpdate(uint lidx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::WmVol::resetPoolOccupancy(void)
+void smtos::WmVol::resetPoolOccupancy()
 {
     AssertLog(false);
 }

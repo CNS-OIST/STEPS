@@ -25,19 +25,19 @@
  */
 
 // Standard headers.
-#include <cassert>
 #include <algorithm>
-#include <unordered_set>
-#include <vector>
+#include <cassert>
 #include <sstream>
 #include <string>
+#include <unordered_set>
+#include <vector>
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/error.hpp"
 #include "steps/geom/sdiffboundary.hpp"
 #include "steps/geom/tmpatch.hpp"
 #include "steps/util/collections.hpp"
-#include "steps/error.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -46,37 +46,44 @@ namespace stetmesh = steps::tetmesh;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stetmesh::SDiffBoundary::SDiffBoundary(std::string const & id, Tetmesh * container,
+stetmesh::SDiffBoundary::SDiffBoundary(std::string id, Tetmesh * container,
             std::vector<uint> const & bars, std::vector<stetmesh::TmPatch *> const & patches)
-: pID(id)
+: pID(std::move(id))
 , pTetmesh(container)
 , pIPatch(nullptr)
 , pOPatch(nullptr)
 , pBarsN(0)
 , pBar_indices()
 {
-    if (pTetmesh == 0)
-        ArgErrLog("No mesh provided to Surface Diffusion Boundary initializer function.");
+    if (pTetmesh == nullptr) {
+      ArgErrLog("No mesh provided to Surface Diffusion Boundary initializer function.");
+    }
 
-    if (bars.empty())
-    	ArgErrLog("No triangles provided to Surface Diffusion Boundary initializer function.");
+    if (bars.empty()) {
+      ArgErrLog("No triangles provided to Surface Diffusion Boundary initializer function.");
+    }
 
-    if (patches.size() != 2)
-        ArgErrLog("The number of patches provided to Surface Diffusion initializer function must be length 2.");
+    if (patches.size() != 2) {
+      ArgErrLog("The number of patches provided to Surface Diffusion initializer function must be length 2.");
+    }
 
     // The maximum triangle index in tetrahedral mesh
     uint maxidx = (pTetmesh->countBars() -1);
 
     std::unordered_set<uint> visited_bars(bars.size());
     for (uint bar: bars) {
-        if (visited_bars.count(bar)) continue;
+        if (visited_bars.count(bar) != 0u) {
+          continue;
+        }
         visited_bars.insert(bar);
 
-        if (bar > maxidx)
-            ArgErrLog("Invalid bar index "+std::to_string(bar)+".");
+        if (bar > maxidx) {
+          ArgErrLog("Invalid bar index " + std::to_string(bar) + ".");
+        }
 
-        if (pTetmesh->getBarSDiffBoundary(bar) != nullptr)
-            ArgErrLog("Bar with index "+std::to_string(bar)+" already belongs to a surface diffusion boundary.");
+        if (pTetmesh->getBarSDiffBoundary(bar) != nullptr) {
+          ArgErrLog("Bar with index " + std::to_string(bar) + " already belongs to a surface diffusion boundary.");
+        }
 
         // Need to find one triangle from inner patch and one from outer in this lot:
         std::set<uint> bartris = pTetmesh->getBarTriNeighbs(bar);
@@ -85,24 +92,32 @@ stetmesh::SDiffBoundary::SDiffBoundary(std::string const & id, Tetmesh * contain
     	int innertriidx = -1;
     	int outertriidx = -1;
 
-        for (std::set<uint>::const_iterator tri = bartris.begin(); tri!=bartris.end(); ++tri )
+        for (const auto tri : bartris)
         {
-        	stetmesh::TmPatch *tri_patch = pTetmesh->getTriPatch(*tri);
+        	stetmesh::TmPatch *tri_patch = pTetmesh->getTriPatch(tri);
 
-        	if (tri_patch == patches[0])
-        	{
-        		if (innertriidx == -1) innertriidx = *tri;
-        		else ArgErrLog("Duplicate copy of patch" + patches[0]->getID() + " in connected triangles to bar " + std::to_string(bar));
+        	if (tri_patch == patches[0]) {
+        		if (innertriidx == -1) {
+        		  innertriidx = tri;
+        		} else {
+        		  ArgErrLog("Duplicate copy of patch" + patches[0]->getID() + " in connected triangles to bar " + std::to_string(bar));
+        		}
         	}
-        	else if (tri_patch == patches[1])
-        	{
-        		if (outertriidx == -1) outertriidx = *tri;
-        		else ArgErrLog("Duplicate copy of patch" + patches[1]->getID() + " in connected triangles to bar " + std::to_string(bar));
+        	else if (tri_patch == patches[1]) {
+        		if (outertriidx == -1) {
+        		  outertriidx = tri;
+        		} else {
+        		  ArgErrLog("Duplicate copy of patch" + patches[1]->getID() + " in connected triangles to bar " + std::to_string(bar));
+        		}
         	}
         }
 
-        if (innertriidx == -1) ArgErrLog("Patch" + patches[0]->getID() + " is not connected to bar " + std::to_string(bar));
-        if (outertriidx == -1) ArgErrLog("Patch" + patches[1]->getID() + " is not connected to bar " + std::to_string(bar));
+        if (innertriidx == -1) {
+          ArgErrLog("Patch" + patches[0]->getID() + " is not connected to bar " + std::to_string(bar));
+        }
+        if (outertriidx == -1) {
+          ArgErrLog("Patch" + patches[1]->getID() + " is not connected to bar " + std::to_string(bar));
+        }
 
         pBar_indices.push_back(bar);
         pTetmesh->setBarSDiffBoundary(bar, this);
@@ -125,8 +140,10 @@ stetmesh::SDiffBoundary::SDiffBoundary(std::string const & id, Tetmesh * contain
 
 void stetmesh::SDiffBoundary::setID(std::string const & id)
 {
-    AssertLog(pTetmesh != 0);
-    if (id == pID) return;
+    AssertLog(pTetmesh != nullptr);
+    if (id == pID) {
+      return;
+    }
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
     // it pass by into the Python layer.

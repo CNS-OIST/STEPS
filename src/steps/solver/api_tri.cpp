@@ -26,16 +26,16 @@
 
 
 // STL headers.
-#include <string>
 #include <sstream>
+#include <string>
 
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
+#include "steps/geom/tetmesh.hpp"
 #include "steps/solver/api.hpp"
 #include "steps/solver/statedef.hpp"
-#include "steps/geom/tetmesh.hpp"
 // logging
 #include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
@@ -47,7 +47,7 @@ using namespace steps::solver;
 
 double API::getTriArea(uint tidx) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -70,7 +70,7 @@ double API::getTriArea(uint tidx) const
 
 void API::setTriArea(uint tidx, double area)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -94,7 +94,7 @@ void API::setTriArea(uint tidx, double area)
 
 double API::getTriCount(uint tidx, string const & s) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -120,7 +120,7 @@ double API::getTriCount(uint tidx, string const & s) const
 
 bool API::getTriSpecDefined(uint tidx, string const & s) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -145,7 +145,7 @@ bool API::getTriSpecDefined(uint tidx, string const & s) const
 
 void API::setTriCount(uint tidx, string const & s, double n)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -177,7 +177,7 @@ void API::setTriCount(uint tidx, string const & s, double n)
 
 double API::getTriAmount(uint tidx, string const & s) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -203,7 +203,7 @@ double API::getTriAmount(uint tidx, string const & s) const
 
 void API::setTriAmount(uint tidx, string const & s, double m)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -235,7 +235,7 @@ void API::setTriAmount(uint tidx, string const & s, double m)
 
 bool API::getTriClamped(uint tidx, string const & s) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -261,7 +261,7 @@ bool API::getTriClamped(uint tidx, string const & s) const
 
 void API::setTriClamped(uint tidx, string const & s, bool buf)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -287,7 +287,7 @@ void API::setTriClamped(uint tidx, string const & s, bool buf)
 
 double API::getTriSReacK(uint tidx, string const & r) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -313,7 +313,7 @@ double API::getTriSReacK(uint tidx, string const & r) const
 
 void API::setTriSReacK(uint tidx, string const & r, double kf)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -345,7 +345,7 @@ void API::setTriSReacK(uint tidx, string const & r, double kf)
 
 bool API::getTriSReacActive(uint tidx, string const & r) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -371,7 +371,7 @@ bool API::getTriSReacActive(uint tidx, string const & r) const
 
 void API::setTriSReacActive(uint tidx, string const & r, bool act)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -398,7 +398,7 @@ void API::setTriSReacActive(uint tidx, string const & r, bool act)
 
 double API::getTriSReacH(uint tidx, string const & r) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -424,7 +424,7 @@ double API::getTriSReacH(uint tidx, string const & r) const
 
 double API::getTriSReacC(uint tidx, string const & r) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -450,7 +450,7 @@ double API::getTriSReacC(uint tidx, string const & r) const
 
 double API::getTriSReacA(uint tidx, string const & r) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -483,7 +483,7 @@ double API::getTriDiffD(uint tidx, string const & d, uint direction_tri) const
 
 double API::getTriSDiffD(uint tidx, string const & d, uint direction_tri) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -516,7 +516,7 @@ void API::setTriDiffD(uint tidx, string const & d, double dk, uint direction_tri
 
 void API::setTriSDiffD(uint tidx, string const & d, double dk, uint direction_tri)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -553,7 +553,7 @@ void API::setTriSDiffD(uint tidx, string const & d, double dk, uint direction_tr
 
 double API::getTriV(uint tidx) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -577,7 +577,7 @@ double API::getTriV(uint tidx) const
 
 void API::setTriV(uint tidx, double v)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -601,7 +601,7 @@ void API::setTriV(uint tidx, double v)
 
 bool API::getTriVClamped(uint tidx) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -625,7 +625,7 @@ bool API::getTriVClamped(uint tidx) const
 
 void API::setTriVClamped(uint tidx, bool cl)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -649,7 +649,7 @@ void API::setTriVClamped(uint tidx, bool cl)
 
 double API::getTriOhmicI(uint tidx)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -673,7 +673,7 @@ double API::getTriOhmicI(uint tidx)
 
 double API::getTriOhmicI(uint tidx, string const & oc)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -699,7 +699,7 @@ double API::getTriOhmicI(uint tidx, string const & oc)
 
 double API::getTriGHKI(uint tidx)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -723,7 +723,7 @@ double API::getTriGHKI(uint tidx)
 
 double API::getTriGHKI(uint tidx, string const & ghk)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -748,7 +748,7 @@ double API::getTriGHKI(uint tidx, string const & ghk)
 
 double API::getTriI(uint tidx) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -772,7 +772,7 @@ double API::getTriI(uint tidx) const
 
 void API::setTriIClamp(uint tidx, double i)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -796,7 +796,7 @@ void API::setTriIClamp(uint tidx, double i)
 
 void API::setTriCapac(uint tidx, double cm)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -820,7 +820,7 @@ void API::setTriCapac(uint tidx, double cm)
 
 bool API::getTriVDepSReacActive(uint tidx, string const & vsr) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {
@@ -846,7 +846,7 @@ bool API::getTriVDepSReacActive(uint tidx, string const & vsr) const
 
 void API::setTriVDepSReacActive(uint tidx, string const & vsr, bool act)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTris())
         {

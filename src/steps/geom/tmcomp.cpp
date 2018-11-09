@@ -25,18 +25,18 @@
  */
 
 // STL headers.
-#include <cassert>
 #include <algorithm>
+#include <cassert>
+#include <sstream>
 #include <unordered_set>
 #include <vector>
-#include <sstream>
 
 // STEPS headers.
 #include "steps/common.h"
-#include "steps/math/point.hpp"
+#include "steps/error.hpp"
 #include "steps/geom/tetmesh.hpp"
 #include "steps/geom/tmcomp.hpp"
-#include "steps/error.hpp"
+#include "steps/math/point.hpp"
 #include "steps/util/collections.hpp"
 // logging
 #include "easylogging++.h"
@@ -53,25 +53,31 @@ stetmesh::TmComp::TmComp(std::string const & id, Tetmesh * container,
 , pTetsN(0)
 , pTet_indices(0)
 {
-    if (pTetmesh == 0)
+    if (pTetmesh == nullptr) {
         ArgErrLog("No mesh provided to TmComp initializer function.");
+    }
 
-    if (tets.size() == 0)
+    if (tets.empty()) {
         ArgErrLog("No tetrahedrons provided to TmComp initializer function.");
+    }
 
     // The maximum tetrahedron index in tetrahedral mesh
     uint maxidx = (pTetmesh-> countTets())-1;
 
     std::unordered_set<uint> visited_tets(tets.size());
     for (uint tet: tets) {
-        if (visited_tets.count(tet)) continue;
+        if (visited_tets.count(tet)) {
+            continue;
+        }
         visited_tets.insert(tet);
 
-        if (tet > maxidx)
-            ArgErrLog("Invalid tetrahedron index "+std::to_string(tet)+".");
+        if (tet > maxidx) {
+            ArgErrLog("Invalid tetrahedron index " + std::to_string(tet) + ".");
+        }
 
-        if (pTetmesh->getTetComp(tet) != nullptr)
-            ArgErrLog("Tetrahedron with index "+std::to_string(tet)+" already belongs to a compartment.");
+        if (pTetmesh->getTetComp(tet) != nullptr) {
+            ArgErrLog("Tetrahedron with index " + std::to_string(tet) + " already belongs to a compartment.");
+        }
 
         // Add the tetrahedron to this compartment.
         pTet_indices.push_back(tet);
@@ -92,14 +98,14 @@ stetmesh::TmComp::TmComp(std::string const & id, Tetmesh * container,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stetmesh::TmComp::setVol(double vol)
+void stetmesh::TmComp::setVol(double /* vol */)
 {
     NotImplErrLog("""Cannot set volume of Tetmesh comp object; vol calculated internally.");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> stetmesh::TmComp::getBoundMin(void) const
+std::vector<double> stetmesh::TmComp::getBoundMin() const
 {
     const point3d &p = pBBox.min();
     return std::vector<double>(p.begin(),p.end());
@@ -107,7 +113,7 @@ std::vector<double> stetmesh::TmComp::getBoundMin(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> stetmesh::TmComp::getBoundMax(void) const
+std::vector<double> stetmesh::TmComp::getBoundMax() const
 {
     const point3d &p = pBBox.max();
     return std::vector<double>(p.begin(),p.end());

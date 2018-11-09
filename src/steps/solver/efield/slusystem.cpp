@@ -25,8 +25,8 @@
  */
 
 
-#include <stdexcept>
 #include <algorithm>
+#include <stdexcept>
 
 #include <mpi.h>
 
@@ -109,7 +109,7 @@ SLUSystem::SLUSystem(const sparsity_template &S, MPI_Comm mpi_comm):
     slu.reset(new SLUData(mpi_comm, pN, true));
 }
 
-SLUSystem::~SLUSystem() {}
+SLUSystem::~SLUSystem() = default;
 
 void SLUSystem::solve() {
     // use copy of A...
@@ -142,4 +142,6 @@ void SLUSystem::solve() {
     slu->factored = true;
 }
 
-}}} // namespace steps::solver::efield
+}  // namespace efield
+}  // namespace solver
+}  // namespace steps

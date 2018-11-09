@@ -71,7 +71,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     SReac(steps::solver::SReacdef * srdef, steps::mpi::tetopsplit::Tri * tri);
-    ~SReac(void);
+    ~SReac();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -86,25 +86,25 @@ public:
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    double c(void) const
+    double c() const
     { return pCcst; }
-    void resetCcst(void);
+    void resetCcst();
 
-    inline double kcst(void) const
+    inline double kcst() const
     { return pKcst; }
     void setKcst(double k);
 
-    double h(void)
+    double h()
     { return (rate()/pCcst); }
 
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    void setupDeps(void);
+    void setupDeps();
     bool depSpecTet(uint gidx, steps::mpi::tetopsplit::WmVol * tet);
     bool depSpecTri(uint gidx, steps::mpi::tetopsplit::Tri * tri);
-    void reset(void);
+    void reset();
     double rate(steps::mpi::tetopsplit::TetOpSplitP * solver = 0);
     double getScaledDcst(steps::mpi::tetopsplit::TetOpSplitP * solver = 0)
     {return 0.0;}
@@ -115,20 +115,20 @@ public:
     std::vector<KProc*> const & getLocalUpdVec(int direction = -1);
     std::vector<uint> const & getRemoteUpdVec(int direction = -1);
 
-    void resetOccupancies(void);
+    void resetOccupancies();
 
     ////////////////////////////////////////////////////////////////////////
 
-    //inline steps::solver::Reacdef * defr(void) const
+    //inline steps::solver::Reacdef * defr() const
     //{ return pReacdef; }
 
     ////////////////////////////////////////////////////////////////////////
     // mpi
-    bool getInHost(void) {
+    bool getInHost() {
         return pTri->getInHost();
     }
     
-    int getHost(void) {
+    int getHost() {
         return pTri->getHost();
     }
     

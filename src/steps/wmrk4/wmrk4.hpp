@@ -57,32 +57,58 @@ typedef uiVec::iterator                    uiVecI;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+struct Reactant{
+    uint globalIndex;
+    uint order;
+    Reactant(uint gidx, uint o) : globalIndex(gidx), order(o) {}
+};
+
+struct SpecieInReaction{
+    uint globalIndex;
+    int populationChange;
+    SpecieInReaction(uint gidx, int v) : globalIndex(gidx), populationChange(v) {}
+};
+
+struct Reaction{
+    std::vector<Reactant> reactants;
+    std::vector<SpecieInReaction> affectedSpecies;
+    bool isActivated;
+    double c; // constant relating populations, not concentrations !
+    void addSpecies(uint gidx, uint order, int populationChange)
+    {
+        if (order > 0)
+            reactants.push_back(Reactant(gidx, order));
+        if (populationChange != 0)
+            affectedSpecies.push_back(SpecieInReaction(gidx, populationChange));
+    }
+};
+
 class Wmrk4: public API
 {
 
 public:
 
     Wmrk4(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r);
-    ~Wmrk4(void);
+    ~Wmrk4();
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER INFORMATION
     ////////////////////////////////////////////////////////////////////////
 
-    std::string getSolverName(void) const;
-    std::string getSolverDesc(void) const;
-    std::string getSolverAuthors(void) const;
-    std::string getSolverEmail(void) const;
+    std::string getSolverName() const;
+    std::string getSolverDesc() const;
+    std::string getSolverAuthors() const;
+    std::string getSolverEmail() const;
 
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROLS
     ////////////////////////////////////////////////////////////////////////
 
-    void reset(void);
+    void reset();
     void run(double endtime);
     void advance(double adv);
-    void step(void);
+    void step();
 
     void setDT(double dt)
     { setRk4DT(dt); }
@@ -94,7 +120,7 @@ public:
     //      GENERAL
     ////////////////////////////////////////////////////////////////////////
 
-    double getTime(void) const;
+    double getTime() const;
 
     void checkpoint(std::string const & file_name);
     void restore(std::string const & file_name);
@@ -158,17 +184,17 @@ private:
 
     /// initialises vectors and builds the reaction matrix.
     ///
-    void _setup(void);
+    void _setup();
 
     /// this function refills the values and flags vectors
     /// called if a flag or a count changed
     ///
-    void _refill(void);
+    void _refill();
 
     /// refill the Ccst vectors
     /// called if reaction constants are changed during simulation
     ///
-    void _refillCcst(void);
+    void _refillCcst();
 
     /// returns properly scaled reaction constant
     ///
@@ -193,17 +219,11 @@ private:
     /// update local values vector,
     /// then update state with computed counts
     ///
-    void _update(void);
+    void _update();
 
     ////////////////////////////////////////////////////////////////////////
     // WMRK4 SOLVER MEMBERS
     ////////////////////////////////////////////////////////////////////////
-
-    /// the reaction matrix
-    uint **                                pReacMtx;
-
-    /// update matrix of rhs - lhs
-    int **                                pUpdMtx;
 
     /// number of species total: all species in all comps and patches
     uint                                pSpecs_tot;
@@ -212,26 +232,17 @@ private:
     /// in each comp and patch
     uint                                pReacs_tot;
 
-    /// Properly scaled reaction constant vector
-    dVec                                pCcst;
-
     /// vector holding current molecular counts (as doubles)
     dVec                                pVals;
 
     /// vector holding flags on species
     uiVec                                pSFlags;
 
-    /// vector holding flags on reactions
-    uiVec                                pRFlags;
-
     /// vector holding new, calculated counts
     dVec                                pNewVals;
 
     /// vector of present derivatives
     dVec                                pDyDx;
-
-    /// matrix of derivatives from each reaction for each species
-    double **                            pDyDxlhs;
 
     /// the time step
     double                                pDT;
@@ -240,6 +251,8 @@ private:
     dVec                                yt;
     dVec                                dyt;
     dVec                                dym;
+
+    std::vector<Reaction> 				reactions;
 
     ////////////////////////////////////////////////////////////////////////
 

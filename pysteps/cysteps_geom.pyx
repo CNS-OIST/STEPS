@@ -179,6 +179,8 @@ cdef class _py_Geom(_py__base):
 
     @staticmethod
     cdef _py_Geom from_ptr(Geom *ptr):
+        if (ptr == NULL):
+            return None
         cdef _py_Geom obj = _py_Geom.__new__(_py_Geom)
         obj._ptr = ptr
         return obj
@@ -338,7 +340,8 @@ cdef class _py_Patch(_py__base):
         list<string>
 
         """
-        return self.ptr().getSurfsys()
+        all_names = self.ptr().getSurfsys()
+        return [from_std_string(s) for s in all_names]
 
     def delSurfsys(self, str id):
         """
@@ -429,6 +432,8 @@ cdef class _py_Patch(_py__base):
 
     @staticmethod
     cdef _py_Patch from_ptr(Patch *ptr):
+        if (ptr == NULL):
+            return None
         cdef _py_Patch obj = _py_Patch.__new__(_py_Patch)
         obj._ptr = ptr
         return obj
@@ -718,6 +723,8 @@ cdef class _py_Comp(_py__base):
 
     @staticmethod
     cdef _py_Comp from_ptr(Comp *ptr):
+        if (ptr == NULL):
+            return None
         cdef _py_Comp obj = _py_Comp.__new__(_py_Comp)
         obj._ptr = ptr
         return obj
@@ -2286,6 +2293,8 @@ cdef class _py_Tetmesh(_py_Geom):
 
     @staticmethod
     cdef _py_Tetmesh from_ptr(Tetmesh *ptr):
+        if (ptr == NULL):
+            return None
         cdef _py_Tetmesh obj = _py_Tetmesh.__new__(_py_Tetmesh)
         obj._ptr = ptr
         return obj
@@ -2419,6 +2428,8 @@ cdef class _py_TmComp(_py_Comp):
 
     @staticmethod
     cdef _py_TmComp from_ptr(TmComp *ptr):
+        if (ptr == NULL):
+            return None
         cdef _py_TmComp obj = _py_TmComp.__new__(_py_TmComp)
         obj._ptr = ptr
         return obj
@@ -2532,6 +2543,8 @@ cdef class _py_TmPatch(_py_Patch):
 
     @staticmethod
     cdef _py_TmPatch from_ptr(TmPatch *ptr):
+        if (ptr == NULL):
+            return None
         cdef _py_TmPatch obj = _py_TmPatch.__new__(_py_TmPatch)
         obj._ptr = ptr
         return obj
@@ -2798,6 +2811,8 @@ cdef class _py_Memb(_py__base):
 
     @staticmethod
     cdef _py_Memb from_ptr(Memb *ptr):
+        if (ptr == NULL):
+            return None
         cdef _py_Memb obj = _py_Memb.__new__(_py_Memb)
         obj._ptr = ptr
         return obj
@@ -2939,6 +2954,8 @@ cdef class _py_DiffBoundary(_py__base):
 
     @staticmethod
     cdef _py_DiffBoundary from_ptr(DiffBoundary *ptr):
+        if (ptr == NULL):
+            return None
         cdef _py_DiffBoundary obj = _py_DiffBoundary.__new__(_py_DiffBoundary)
         obj._ptr = ptr
         return obj
@@ -3092,6 +3109,8 @@ cdef class _py_SDiffBoundary(_py__base):
 
     @staticmethod
     cdef _py_SDiffBoundary from_ptr(SDiffBoundary *ptr):
+        if (ptr == NULL):
+            return None
         cdef _py_SDiffBoundary obj = _py_SDiffBoundary.__new__(_py_SDiffBoundary)
         obj._ptr = ptr
         return obj

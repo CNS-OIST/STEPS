@@ -37,6 +37,6 @@
 
  namespace steps {
 
-void finish(void);
+void finish();
 
 }

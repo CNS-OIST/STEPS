@@ -85,7 +85,7 @@ public:
     Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
         double l0, double l1, double l2, double d0, double d1, double d2,
         int tetinner, int tetouter, int tri0, int tri1, int tri2);
-    ~Tri(void);
+    ~Tri();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -118,29 +118,29 @@ public:
     void setupKProcs(stex::Tetexact * tex, bool efield = false);
 
     /// Set all pool flags and molecular populations to zero.
-    void reset(void);
+    void reset();
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: GENERAL
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Patchdef * patchdef(void) const
+    inline steps::solver::Patchdef * patchdef() const
     { return pPatchdef; }
 
-    inline uint idx(void) const
+    inline uint idx() const
     { return pIdx; }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SHAPE & CONNECTIVITY
     ////////////////////////////////////////////////////////////////////////
 
-    inline double area(void) const
+    inline double area() const
     { return pArea; }
 
-    inline stex::WmVol * iTet(void) const
+    inline stex::WmVol * iTet() const
     { return pInnerTet; }
 
-    inline stex::WmVol * oTet(void) const
+    inline stex::WmVol * oTet() const
     { return pOuterTet; }
 
     inline stex::Tri * nextTri(uint i) const
@@ -186,11 +186,11 @@ public:
     void incECharge(uint lidx, int charge);
 
     // Should be called at the beginning of every EField time-step
-    void resetECharge(void);
+    void resetECharge();
 
     // reset the Ohmic current opening time integral info, also should be
     // called just before commencing or just after completing an EField dt
-    void resetOCintegrals(void);
+    void resetOCintegrals();
 
     double computeI(double v, double dt, double simtime);
 
@@ -204,7 +204,7 @@ public:
     // MAIN FUNCTIONALITY
     ////////////////////////////////////////////////////////////////////////
 
-    inline uint * pools(void) const
+    inline uint * pools() const
     { return pPoolCount; }
     void setCount(uint lidx, uint count);
     void incCount(uint lidx, int inc);
@@ -223,13 +223,13 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline std::vector<stex::KProc *>::const_iterator kprocBegin(void) const
+    inline std::vector<stex::KProc *>::const_iterator kprocBegin() const
     { return pKProcs.begin(); }
-    inline std::vector<stex::KProc *>::const_iterator kprocEnd(void) const
+    inline std::vector<stex::KProc *>::const_iterator kprocEnd() const
     { return pKProcs.end(); }
-    inline std::vector<stex::KProc *> & kprocs(void)
+    inline std::vector<stex::KProc *> & kprocs()
     { return pKProcs; }
-    inline uint countKProcs(void) const
+    inline uint countKProcs() const
     { return pKProcs.size(); }
 
     stex::SReac * sreac(uint lidx) const;

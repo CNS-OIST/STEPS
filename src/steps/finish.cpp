@@ -26,6 +26,6 @@
 
 #include "finish.hpp"
 
-void steps::finish(void) {
+void steps::finish() {
 
 }

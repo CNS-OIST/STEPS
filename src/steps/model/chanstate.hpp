@@ -81,7 +81,7 @@ public:
     ChanState(std::string const & id, Model* model, Chan * chan);
 
     /// Destructor
-    ~ChanState(void);
+    ~ChanState();
 
     ////////////////////////////////////////////////////////////////////////
     // CHANNEL STATE PROPERTIES
@@ -90,7 +90,7 @@ public:
     /// Return a pointer to the associated channel.
     ///
     /// \return Pointer to the associated channel.
-    Chan * getChan(void) const
+    Chan * getChan() const
     { return pChan; }
 
     void setID(std::string const & id);
@@ -103,7 +103,7 @@ public:
     ///
     /// Called if Python object deleted, or from del method in parent object.
     /// Will only be called once
-    void _handleSelfDelete(void);
+    void _handleSelfDelete();
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED): SOLVER HELPER METHODS

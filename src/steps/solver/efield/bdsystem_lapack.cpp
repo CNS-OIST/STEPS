@@ -53,4 +53,6 @@ void BDSystemLapack::solve()
     dgbsv_(&n,&h,&h,&nrhs,pA.data(),&ldab,&pwork[0],&px[0],&n,&info);
 }
 
-}}} // namespace steps::solver::efield
+}  // namespace efield
+}  // namespace solver
+}  // namespace steps

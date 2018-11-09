@@ -34,7 +34,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void steps::math::setSysRandInitTime(void)
+void steps::math::setSysRandInitTime()
 {
     srand(static_cast<unsigned int>(time(0)));
 }

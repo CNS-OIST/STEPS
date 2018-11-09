@@ -68,6 +68,7 @@ point3d tri_ranpnt(const point3d &p0, const point3d &p1, const point3d &p2, doub
     return (1-u)*p0 + (u-v)*p1 + v*p2;
 }
 
-}} // namespace steps::math
+}  // namespace math
+}  // namespace steps
 
 // END

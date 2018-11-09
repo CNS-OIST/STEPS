@@ -31,18 +31,18 @@
 
 // STL headers.
 #include <cassert>
+#include <iostream>
 #include <sstream>
 #include <string>
-#include <iostream>
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
-#include "steps/model/model.hpp"
-#include "steps/model/surfsys.hpp"
-#include "steps/model/ghkcurr.hpp"
-#include "steps/model/spec.hpp"
 #include "steps/model/chanstate.hpp"
+#include "steps/model/ghkcurr.hpp"
+#include "steps/model/model.hpp"
+#include "steps/model/spec.hpp"
+#include "steps/model/surfsys.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -56,7 +56,7 @@ using namespace steps::model;
 GHKcurr::GHKcurr(string const & id, Surfsys * surfsys, ChanState * chanstate,
                  Spec * ion, bool computeflux, double virtual_oconc, double vshift)
 : pID(id)
-, pModel(0)
+, pModel(nullptr)
 , pSurfsys(surfsys)
 , pChanState(chanstate)
 , pIon(ion)
@@ -72,19 +72,19 @@ GHKcurr::GHKcurr(string const & id, Surfsys * surfsys, ChanState * chanstate,
 , pInfoSupplied(false)
 , pVirtual_conc(virtual_oconc)
 {
-    if (pSurfsys == 0)
+    if (pSurfsys == nullptr)
     {
         ostringstream os;
         os << "No surfsys provided to GHKcurr initializer function";
         ArgErrLog(os.str());
     }
-    if (pChanState == 0)
+    if (pChanState == nullptr)
     {
         ostringstream os;
         os << "No channel state provided to GHKcurr initializer function";
         ArgErrLog(os.str());
     }
-    if (pIon == 0)
+    if (pIon == nullptr)
     {
         ostringstream os;
         os << "No ion provided to GHKcurr initializer function";
@@ -140,9 +140,10 @@ GHKcurr::GHKcurr(string const & id, Surfsys * surfsys, ChanState * chanstate,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-GHKcurr::~GHKcurr(void)
+GHKcurr::~GHKcurr()
 {
-    if (pSurfsys == 0) return;
+    if (pSurfsys == nullptr) { return;
+}
     _handleSelfDelete();
 }
 
@@ -274,7 +275,7 @@ void GHKcurr::setPInfo(double g, double V, double T, double oconc, double iconc)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double GHKcurr::_G(void) const
+double GHKcurr::_G() const
 {
     AssertLog(_infosupplied() == true);
     return pG;
@@ -282,7 +283,7 @@ double GHKcurr::_G(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double GHKcurr::_P(void) const
+double GHKcurr::_P() const
 {
     AssertLog(_infosupplied() == true);
     return pP;
@@ -290,7 +291,7 @@ double GHKcurr::_P(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int GHKcurr::_valence(void) const
+int GHKcurr::_valence() const
 {
     AssertLog(_infosupplied() == true);
     return pValence;
@@ -298,7 +299,7 @@ int GHKcurr::_valence(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double GHKcurr::_V(void) const
+double GHKcurr::_V() const
 {
     AssertLog(_infosupplied() == true);
     return pV;;
@@ -306,7 +307,7 @@ double GHKcurr::_V(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double GHKcurr::_temp(void) const
+double GHKcurr::_temp() const
 {
     AssertLog(_infosupplied() == true);
     return pTemp;
@@ -314,7 +315,7 @@ double GHKcurr::_temp(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double GHKcurr::_oconc(void) const
+double GHKcurr::_oconc() const
 {
     AssertLog(_infosupplied() == true);
     return pOuterConc;
@@ -322,7 +323,7 @@ double GHKcurr::_oconc(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double GHKcurr::_iconc(void) const
+double GHKcurr::_iconc() const
 {
     AssertLog(_infosupplied() == true);
     return pInnerConc;
@@ -373,7 +374,7 @@ void GHKcurr::setGMeasInfo(std::map<std::string, double> const & ginfo)
 */
 ////////////////////////////////////////////////////////////////////////////////
 
-void GHKcurr::_handleSelfDelete(void)
+void GHKcurr::_handleSelfDelete()
 {
     pSurfsys->_handleGHKcurrDel(this);
     pG = 0.0;

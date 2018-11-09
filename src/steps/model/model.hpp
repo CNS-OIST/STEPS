@@ -120,11 +120,11 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Constructor
-    Model(void);
+    Model() = default;
     /// Destructor
-    ~Model(void);
+    ~Model();
 
-    // Model * deepcopy(void);
+    // Model * deepcopy();
 
     ////////////////////////////////////////////////////////////////////////
     // OPERATIONS: SPECIES (EXPOSED TO PYTHON)
@@ -143,7 +143,7 @@ public:
     /// Return a list of all species in the Model object.
     ///
     /// \return List of pointers to the species in the Model object.
-    std::vector<Spec *> getAllSpecs(void) const;
+    std::vector<Spec *> getAllSpecs() const;
 
     ////////////////////////////////////////////////////////////////////////
     // OPERATIONS: CHANNELS (EXPOSED TO PYTHON)
@@ -164,7 +164,7 @@ public:
     /// Return a list of all channels in the Model object.
     ///
     /// \return List of pointers to the channels in the Model object.
-    std::vector<Chan *> getAllChans(void) const;
+    std::vector<Chan *> getAllChans() const;
 
     ////////////////////////////////////////////////////////////////////////
     // OPERATIONS: VOLSYS (EXPOSED TO PYTHON)
@@ -184,7 +184,7 @@ public:
     /// Return a list of all volume systems in the Model object.
     ///
     /// \return List of pointers to the volume systems in the Model object.
-    std::vector<Volsys *> getAllVolsyss(void) const;
+    std::vector<Volsys *> getAllVolsyss() const;
 
     ////////////////////////////////////////////////////////////////////////
     // OPERATIONS: SURFSYS (EXPOSED TO PYTHON)
@@ -204,7 +204,7 @@ public:
     /// Return a list of all surface systems in the Model object.
     ///
     /// \return List of pointers to the surface systems in the Model object.
-    std::vector<Surfsys *> getAllSurfsyss(void) const;
+    std::vector<Surfsys *> getAllSurfsyss() const;
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED): SOLVER HELPER METHODS
@@ -213,7 +213,7 @@ public:
     /// Count the species in the Model object.
     ///
     /// \return Number of species.
-    inline uint _countSpecs(void) const
+    inline uint _countSpecs() const
     { return pSpecs.size(); }
 
     /// Return a species with index gidx.
@@ -225,7 +225,7 @@ public:
     /// Count the channels in the Model object.
     ///
     /// \return Number of channels.
-    inline uint _countChans(void) const
+    inline uint _countChans() const
     { return pChans.size(); }
 
     /// Return a channel with index gidx.
@@ -237,7 +237,7 @@ public:
     /// Count the reactions in the Model object.
     ///
     /// \return Number of reactions.
-    uint _countReacs(void) const;
+    uint _countReacs() const;
 
     /// Return a reaction with index gidx
     ///
@@ -248,7 +248,7 @@ public:
     /// Count the surface reactions in the Model object.
     ///
     /// \return Number of surface reactions.
-    uint _countSReacs(void) const;
+    uint _countSReacs() const;
 
     /// Return a surface with index gidx.
     ///
@@ -259,7 +259,7 @@ public:
     /// Count the voltage-dependent transitions in the Model object.
     ///
     /// \return Number of voltage-dependent transitions.
-    uint _countVDepTrans(void) const;
+    uint _countVDepTrans() const;
 
     /// Return a voltage-dependent reaction with index gidx.
     ///
@@ -270,7 +270,7 @@ public:
     /// Count the voltage-dependent reactions in the Model object.
     ///
     /// \return Number of voltage-dependent reactions.
-    uint _countVDepSReacs(void) const;
+    uint _countVDepSReacs() const;
 
     /// Return a voltage-dependent transition with index gidx.
     ///
@@ -281,7 +281,7 @@ public:
     /// Count the ohmic currents in the Model object.
     ///
     /// \return Number of ohmic currents.
-    uint _countOhmicCurrs(void) const;
+    uint _countOhmicCurrs() const;
 
     /// Return an ohmic current with index gidx.
     ///
@@ -292,7 +292,7 @@ public:
     /// Count the ghk currents in the Model object.
     ///
     /// \return Number of ghk currents.
-    uint _countGHKcurrs(void) const;
+    uint _countGHKcurrs() const;
 
     /// Return an ghk current with index gidx.
     ///
@@ -303,7 +303,7 @@ public:
     /// Count the volume diffusions in the Model object.
     ///
     /// \return Number of volume diffusions.
-    uint _countVDiffs(void) const;
+    uint _countVDiffs() const;
 
     /// Return a volume diffusion with index gidx.
     ///
@@ -314,7 +314,7 @@ public:
     /// Count the surface diffusions in the Model object.
     ///
     /// \return Number of surface diffusions.
-    uint _countSDiffs(void) const;
+    uint _countSDiffs() const;
 
     /// Return a surface diffusion with index gidx.
     ///

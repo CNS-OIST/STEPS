@@ -53,14 +53,14 @@ sefield::VertexElement::VertexElement(uint idx, double * vpos)
 , pCapacitance(0.0)
 , pConnections()
 , pNCon(0)
-, pNbrs(0)
-, pCcs(0)
+, pNbrs(nullptr)
+, pCcs(nullptr)
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sefield::VertexElement::~VertexElement(void)
+sefield::VertexElement::~VertexElement()
 {
     delete[] pNbrs;
     delete[] pCcs;
@@ -90,7 +90,7 @@ void sefield::VertexElement::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::VertexElement::fix(void)
+void sefield::VertexElement::fix()
 {
     pNCon = pConnections.size();
     pNbrs = new VertexElement*[pNCon];

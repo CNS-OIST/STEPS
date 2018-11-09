@@ -25,17 +25,17 @@
  */
 
 
-#include <iostream>
-#include <sstream>
 #include <cmath>
+#include <iostream>
 #include <memory>
+#include <sstream>
 
 #include "steps/tetode/tetode.hpp"
 
-#include "steps/tetode/tet.hpp"
-#include "steps/tetode/tri.hpp"
 #include "steps/tetode/comp.hpp"
 #include "steps/tetode/patch.hpp"
+#include "steps/tetode/tet.hpp"
+#include "steps/tetode/tri.hpp"
 
 #include "steps/common.h"
 #include "steps/error.hpp"
@@ -53,14 +53,14 @@
 #include "steps/error.hpp"
 
 #include "third_party/cvode-2.6.0/src/cvode/cvode.h"                 /* prototypes for CVODE fcts., consts. */
-#include "third_party/cvode-2.6.0/src/nvec_ser/nvector_serial.h"      /* serial N_Vector types, fcts., macros */
 #include "third_party/cvode-2.6.0/src/cvode/cvode_dense.h"          /* prototype for CVDense */
+#include "third_party/cvode-2.6.0/src/nvec_ser/nvector_serial.h"      /* serial N_Vector types, fcts., macros */
 #include "third_party/cvode-2.6.0/src/sundials/sundials_dense.h"     /* definitions DlsMat DENSE_ELEM */
-#include "third_party/cvode-2.6.0/src/sundials/sundials_types.h"     /* definition of type realtype */
 #include "third_party/cvode-2.6.0/src/sundials/sundials_nvector.h"
+#include "third_party/cvode-2.6.0/src/sundials/sundials_types.h"     /* definition of type realtype */
 
-#include "steps/solver/efield/efield.hpp"
 #include "steps/solver/efield/dVsolver.hpp"
+#include "steps/solver/efield/efield.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -126,7 +126,7 @@ void check_flag(void *flagvalue, const char *funcname, int opt)
     int *errflag;
 
     /* Check if SUNDIALS function returned NULL pointer - no memory allocated */
-    if (opt == 0 && flagvalue == NULL)
+    if (opt == 0 && flagvalue == nullptr)
     {
         std::ostringstream os;
         os << "\nSUNDIALS_ERROR: %s() failed - returned NULL pointer\n\n",  funcname;
@@ -146,8 +146,8 @@ void check_flag(void *flagvalue, const char *funcname, int opt)
      }
 }
 
-}
-}
+}  // namespace tetode
+}  // namespace steps
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -325,14 +325,14 @@ int stode::CVodeState::run(realtype endtime) {
 stode::TetODE::TetODE(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r,
          int calcMembPot)
 : API(m, g, r)
-, pMesh(0)
+, pMesh(nullptr)
 , pComps()
 , pPatches()
 , pTris()
 , pTets()
 , pSpecs_tot(0)
 , pReacs_tot(0)
-, pCVodeState(0)
+, pCVodeState(nullptr)
 , pInitialised(false)
 , pTolsset(false)
 , pReinit(true)
@@ -340,12 +340,12 @@ stode::TetODE::TetODE(steps::model::Model * m, steps::wm::Geom * g, steps::rng::
 , pTemp(0.0)
 , pEFDT(1.0e-5)
 , pEFNVerts(0)
-, pEFVerts(0)
+, pEFVerts(nullptr)
 , pEFNTris(0)
-, pEFTris(0)
+, pEFTris(nullptr)
 , pEFTris_vec(0)
 , pEFNTets(0)
-, pEFTets(0)
+, pEFTets(nullptr)
 , pEFVert_GtoL()
 , pEFTri_GtoL()
 , pEFTet_GtoL()
@@ -356,7 +356,7 @@ stode::TetODE::TetODE(steps::model::Model * m, steps::wm::Geom * g, steps::rng::
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stode::TetODE::~TetODE(void)
+stode::TetODE::~TetODE()
 {
     CompPVecCI comp_e = pComps.end();
     for (CompPVecCI c = pComps.begin(); c != comp_e; ++c) delete *c;
@@ -391,28 +391,28 @@ stode::TetODE::~TetODE(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string stode::TetODE::getSolverName(void) const
+std::string stode::TetODE::getSolverName() const
 {
     return "tetODE";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string stode::TetODE::getSolverDesc(void) const
+std::string stode::TetODE::getSolverDesc() const
 {
     return "Reaction-diffusion ODE solver in tetrahedral mesh";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string stode::TetODE::getSolverAuthors(void) const
+std::string stode::TetODE::getSolverAuthors() const
 {
     return "Iain Hepburn";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string stode::TetODE::getSolverEmail(void) const
+std::string stode::TetODE::getSolverEmail() const
 {
     return "steps.dev@gmail.com";
 }
@@ -499,7 +499,7 @@ void stode::TetODE::restore(std::string const & file_name)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stode::TetODE::reset(void)
+void stode::TetODE::reset()
 {
     std::ostringstream os;
     os << "reset() not implemented for steps::solver::TetODE solver";
@@ -515,14 +515,14 @@ void stode::TetODE::setMaxNumSteps(uint maxn)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stode::TetODE::getTime(void) const
+double stode::TetODE::getTime() const
 {
     return statedef()->time();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stode::TetODE::_setup(void)
+void stode::TetODE::_setup()
 {
     // Perform upcast.
     pMesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom());
@@ -1455,7 +1455,7 @@ void stode::TetODE::setTemp(double t)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stode::TetODE::_setupEField(void)
+void stode::TetODE::_setupEField()
 {
     using steps::math::point3d;
     using namespace steps::solver::efield;

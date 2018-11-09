@@ -92,10 +92,10 @@ public:
     /// \param container Pointer to the parent geometry container.
     /// \param volsys Pointer to the implemented volume system.
     /// \param vol Volume of the compartment.
-    Comp(std::string const & id, steps::wm::Geom * container, double vol = 0.0);
+    Comp(std::string id, steps::wm::Geom * container, double vol = 0.0);
 
     /// Destructor
-    virtual ~Comp(void);
+    virtual ~Comp();
 
     ////////////////////////////////////////////////////////////////////////
     // COMPARTMENT PROPERTIES
@@ -104,7 +104,7 @@ public:
     /// Return the compartment id.
     ///
     /// \return ID of the compartment.
-    std::string getID(void) const
+    std::string const & getID() const
     { return pID; }
 
     /// Set or change the compartment id.
@@ -115,13 +115,13 @@ public:
     /// Return a pointer to the geometry container object.
     ///
     /// \return Pointer to the parent geometry container.
-    steps::wm::Geom * getContainer(void) const
+    steps::wm::Geom * getContainer() const
     { return pContainer; }
 
     /// Return the volume of the compartment.
     ///
     /// \return Volume of the compartment.
-    double getVol(void) const
+    double getVol() const
     { return pVol; }
 
     /// Set the volume of the compartment.
@@ -141,7 +141,7 @@ public:
     /// Return a list of volume systems implemented by the compartment.
     ///
     /// \return List of ids of volume systems.
-    std::set<std::string> getVolsys(void) const
+    std::set<std::string> const & getVolsys() const
     { return pVolsys; }
 
     /// Delete a volume system with name id.
@@ -171,7 +171,7 @@ public:
     /// \return List of pointers to the inner patches.
     /// \warning If a compartment is set as the outer compartment of a patch,
     ///          this patch is a inner patch of the compartment.
-    std::set<steps::wm::Patch *> getIPatches(void) const
+    std::set<steps::wm::Patch *> getIPatches() const
     { return pIPatches; }
 
     /// Return a copy of the set of outer patches.
@@ -179,7 +179,7 @@ public:
     /// \return List of pointers to the outer patches.
     /// \warning If a compartment is set as the inner compartment of a patch,
     ///          this patch is a outer patch of the compartment.
-    std::set<steps::wm::Patch *> getOPatches(void) const
+    std::set<steps::wm::Patch *> getOPatches() const
     { return pOPatches; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -214,7 +214,7 @@ public:
     ///
     /// Called if Python object deleted, or from del method in parent object.
     /// Will only be called once
-    void _handleSelfDelete(void);
+    void _handleSelfDelete();
 
 
     ////////////////////////////////////////////////////////////////////////
@@ -224,7 +224,7 @@ public:
     /// Count the inner patches.
     ///
     /// \return Number of the inner patches.
-    inline uint _countIPatches(void) const
+    inline uint _countIPatches() const
     { return pIPatches.size(); }
 
     /// Get a inner patch with index lidx.
@@ -236,7 +236,7 @@ public:
     /// Count the outer patches.
     ///
     /// \return Number of the outer patches.
-    inline uint _countOPatches(void) const
+    inline uint _countOPatches() const
     { return pOPatches.size(); }
 
     /// Get a outer patch with index lidx.

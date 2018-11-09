@@ -26,19 +26,19 @@
 
 
 // STL headers.
-#include <string>
 #include <cassert>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 // STEPS headers.
 #include "steps/common.h"
-#include "steps/solver/types.hpp"
 #include "steps/error.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/ohmiccurrdef.hpp"
 #include "steps/model/chanstate.hpp"
 #include "steps/model/ohmiccurr.hpp"
+#include "steps/solver/ohmiccurrdef.hpp"
+#include "steps/solver/statedef.hpp"
+#include "steps/solver/types.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -56,14 +56,15 @@ ssolver::OhmicCurrdef::OhmicCurrdef(Statedef * sd, uint gidx, smod::OhmicCurr * 
 , pChanState()
 , pG(0.0)
 , pERev(0.0)
-, pSpec_DEP(0)
+, pSpec_DEP(nullptr)
 , pSpec_CHANSTATE(GIDX_UNDEFINED)
 {
     AssertLog(pStatedef != 0);
     AssertLog(oc != 0);
 
     uint nspecs = pStatedef->countSpecs();
-    if (nspecs == 0) return; // Would be weird, but okay.
+    if (nspecs == 0) { return; // Would be weird, but okay.
+}
     pSpec_DEP = new int[nspecs];
     std::fill_n(pSpec_DEP, nspecs, DEP_NONE);
 
@@ -76,7 +77,7 @@ ssolver::OhmicCurrdef::OhmicCurrdef(Statedef * sd, uint gidx, smod::OhmicCurr * 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::OhmicCurrdef::~OhmicCurrdef(void)
+ssolver::OhmicCurrdef::~OhmicCurrdef()
 {
     if (pStatedef->countSpecs() > 0) delete[] pSpec_DEP;
 }
@@ -99,7 +100,7 @@ void ssolver::OhmicCurrdef::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::OhmicCurrdef::setup(void)
+void ssolver::OhmicCurrdef::setup()
 {
     AssertLog(pSetupdone == false);
 
@@ -113,7 +114,7 @@ void ssolver::OhmicCurrdef::setup(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint ssolver::OhmicCurrdef::chanstate(void) const
+uint ssolver::OhmicCurrdef::chanstate() const
 {
     AssertLog(pSetupdone == true);
     return pSpec_CHANSTATE;
@@ -134,7 +135,8 @@ bool ssolver::OhmicCurrdef::req(uint gidx) const
 {
     AssertLog(pSetupdone == true);
     AssertLog(gidx < pStatedef->countSpecs());
-    if (pSpec_DEP[gidx] != DEP_NONE) return true;
+    if (pSpec_DEP[gidx] != DEP_NONE) { return true;
+}
     return false;
 }
 

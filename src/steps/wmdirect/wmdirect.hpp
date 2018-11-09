@@ -80,7 +80,7 @@ class Wmdirect: public steps::solver::API
 public:
 
     Wmdirect(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r);
-    ~Wmdirect(void);
+    ~Wmdirect();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -95,20 +95,20 @@ public:
     // SOLVER INFORMATION
     ////////////////////////////////////////////////////////////////////////
 
-    std::string getSolverName(void) const;
-    std::string getSolverDesc(void) const;
-    std::string getSolverAuthors(void) const;
-    std::string getSolverEmail(void) const;
+    std::string getSolverName() const;
+    std::string getSolverDesc() const;
+    std::string getSolverAuthors() const;
+    std::string getSolverEmail() const;
 
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROLS
     ////////////////////////////////////////////////////////////////////////
 
-    void reset(void);
+    void reset();
     void run(double endtime);
     void advance(double adv);
-    void step(void);
+    void step();
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
@@ -116,12 +116,12 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
 
-    double getTime(void) const;
+    double getTime() const;
 
-    inline double getA0(void) const
+    inline double getA0() const
     { return pA0; }
 
-    uint getNSteps(void) const;
+    uint getNSteps() const;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
@@ -213,7 +213,7 @@ public:
     // Called from local Comp or Patch objects. Ass KProc to this object
     void addKProc(steps::wmdirect::KProc * kp);
 
-    inline uint countKProcs(void) const
+    inline uint countKProcs() const
     { return pKProcs.size(); }
 
     ////////////////////////////////////////////////////////////////////////
@@ -230,13 +230,13 @@ private:
 
     // called when local comp, patch, reac, sreac objects have been created
     // by constructor
-    void _setup(void);
+    void _setup();
 
-    void _build(void);
+    void _build();
 
-    steps::wmdirect::KProc * _getNext(void) const;
+    steps::wmdirect::KProc * _getNext() const;
 
-    void _reset(void);
+    void _reset();
 
     void _update(SchedIDXVec const & entries);
 

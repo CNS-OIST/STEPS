@@ -79,7 +79,7 @@ public:
     Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
             double l0, double l1, double l2, double d0, double d1, double d2,
             int tetinner, int tetouter, int tri0, int tri1, int tri2);
-    ~Tri(void);
+    ~Tri();
 
     ////////////////////////////////////////////////////////////////////////
     // SETUP
@@ -109,23 +109,23 @@ public:
     // DATA ACCESS: GENERAL
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Patchdef * patchdef(void) const
+    inline steps::solver::Patchdef * patchdef() const
     { return pPatchdef; }
 
-    inline uint idx(void) const
+    inline uint idx() const
     { return pIdx; }
 
-    inline double area(void) const
+    inline double area() const
     { return pArea; }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SHAPE & CONNECTIVITY
     ////////////////////////////////////////////////////////////////////////
 
-    inline stode::Tet * iTet(void) const
+    inline stode::Tet * iTet() const
     { return pInnerTet; }
 
-    inline stode::Tet * oTet(void) const
+    inline stode::Tet * oTet() const
     { return pOuterTet; }
 
     inline stode::Tri * nextTri(uint i) const
@@ -160,7 +160,7 @@ public:
     double getGHKI(double v,double dt, steps::tetode::TetODE * solver) const;
 
     /*
-    inline uint * pools(void) const
+    inline uint * pools() const
     { return pPoolCount; }
     void setCount(uint lidx, uint count);
 
@@ -176,11 +176,11 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /*
-    inline std::vector<stex::KProc *>::const_iterator kprocBegin(void) const
+    inline std::vector<stex::KProc *>::const_iterator kprocBegin() const
     { return pKProcs.begin(); }
-    inline std::vector<stex::KProc *>::const_iterator kprocEnd(void) const
+    inline std::vector<stex::KProc *>::const_iterator kprocEnd() const
     { return pKProcs.end(); }
-    inline uint countKProcs(void) const
+    inline uint countKProcs() const
     { return pKProcs.size(); }
 
     stex::SReac * sreac(uint lidx) const;

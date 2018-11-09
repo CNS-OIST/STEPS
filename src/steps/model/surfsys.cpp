@@ -33,24 +33,24 @@
 
 // STL headers.
 #include <cassert>
+#include <map>
 #include <sstream>
 #include <string>
-#include <map>
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
-#include "steps/model/model.hpp"
-#include "steps/model/spec.hpp"
 #include "steps/model/chan.hpp"
 #include "steps/model/chanstate.hpp"
-#include "steps/model/surfsys.hpp"
-#include "steps/model/sreac.hpp"
-#include "steps/model/vdeptrans.hpp"
-#include "steps/model/ohmiccurr.hpp"
-#include "steps/model/ghkcurr.hpp"
-#include "steps/model/vdepsreac.hpp"
 #include "steps/model/diff.hpp"
+#include "steps/model/ghkcurr.hpp"
+#include "steps/model/model.hpp"
+#include "steps/model/ohmiccurr.hpp"
+#include "steps/model/spec.hpp"
+#include "steps/model/sreac.hpp"
+#include "steps/model/surfsys.hpp"
+#include "steps/model/vdepsreac.hpp"
+#include "steps/model/vdeptrans.hpp"
 #include "steps/util/checkid.hpp"
 
 // logging
@@ -74,7 +74,7 @@ Surfsys::Surfsys(string const & id, Model * model)
 , pOhmicCurrs()
 , pGHKcurrs()
 {
-    if (pModel == 0)
+    if (pModel == nullptr)
     {
         ostringstream os;
         os << "No model provided to Surfsys initializer function";
@@ -85,9 +85,10 @@ Surfsys::Surfsys(string const & id, Model * model)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Surfsys::~Surfsys(void)
+Surfsys::~Surfsys()
 {
-    if (pModel == 0) return;
+    if (pModel == nullptr) { return;
+}
     _handleSelfDelete();
 }
 
@@ -108,7 +109,7 @@ void Surfsys::setID(string const & id)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Surfsys::_handleSelfDelete(void)
+void Surfsys::_handleSelfDelete()
 {
     std::vector<steps::model::SReac *> allsreacs = getAllSReacs();
     SReacPVecCI sreac_end = allsreacs.end();
@@ -191,7 +192,7 @@ void Surfsys::delSReac(string const & id)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<SReac *> Surfsys::getAllSReacs(void) const
+std::vector<SReac *> Surfsys::getAllSReacs() const
 {
     SReacPVec sreacs = SReacPVec();
     SReacPMapCI sr_end = pSReacs.end();
@@ -228,7 +229,7 @@ void Surfsys::delDiff(string const & id)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<Diff *> Surfsys::getAllDiffs(void) const
+std::vector<Diff *> Surfsys::getAllDiffs() const
 {
     DiffPVec diffs = DiffPVec();
     DiffPMapCI d_end = pDiffs.end();
@@ -241,7 +242,7 @@ std::vector<Diff *> Surfsys::getAllDiffs(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<Spec *> Surfsys::getAllSpecs(void) const
+std::vector<Spec *> Surfsys::getAllSpecs() const
 {
     SpecPVec specs = SpecPVec();
     bool first_occ = true;
@@ -680,7 +681,7 @@ void Surfsys::delVDepTrans(std::string const & id)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<VDepTrans *> Surfsys::getAllVDepTrans(void) const
+std::vector<VDepTrans *> Surfsys::getAllVDepTrans() const
 {
     VDepTransPVec vdeptrans = VDepTransPVec();
     VDepTransPMapCI vd_end = pVDepTrans.end();
@@ -764,7 +765,7 @@ void Surfsys::delVDepSReac(std::string const & id)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<VDepSReac *> Surfsys::getAllVDepSReacs(void) const
+std::vector<VDepSReac *> Surfsys::getAllVDepSReacs() const
 {
     VDepSReacPVec vdepsreac = VDepSReacPVec();
     VDepSReacPMapCI vd_end = pVDepSReacs.end();
@@ -847,7 +848,7 @@ void Surfsys::delOhmicCurr(std::string const & id)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<OhmicCurr *> Surfsys::getAllOhmicCurrs(void) const
+std::vector<OhmicCurr *> Surfsys::getAllOhmicCurrs() const
 {
     OhmicCurrPVec ohmiccurr = OhmicCurrPVec();
     OhmicCurrPMapCI oc_end = pOhmicCurrs.end();
@@ -929,7 +930,7 @@ void Surfsys::delGHKcurr(std::string const & id)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<GHKcurr *> Surfsys::getAllGHKcurrs(void) const
+std::vector<GHKcurr *> Surfsys::getAllGHKcurrs() const
 {
     GHKcurrPVec ghkcurr = GHKcurrPVec();
     GHKcurrPMapCI ghk_end = pGHKcurrs.end();

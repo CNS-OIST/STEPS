@@ -38,8 +38,8 @@
 #include "steps/wmrssa/wmrssa.hpp"
 
 // logging
-#include "steps/error.hpp"
 #include "easylogging++.h"
+#include "steps/error.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace swmrssa = steps::wmrssa;
@@ -55,13 +55,13 @@ swmrssa::Comp::Comp(steps::solver::Compdef * compdef)
 {
     assert (pCompdef != 0);
     uint nspecs = compdef->countSpecs();
-    pPoolLB = new double[nspecs];
-    pPoolUB = new double[nspecs];
+    pPoolLB = new double[nspecs]();
+    pPoolUB = new double[nspecs]();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmrssa::Comp::~Comp(void)
+swmrssa::Comp::~Comp()
 {
     for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
     {
@@ -93,7 +93,7 @@ void swmrssa::Comp::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::Comp::reset(void)
+void swmrssa::Comp::reset()
 {
     std::for_each(pKProcs.begin(), pKProcs.end(), std::mem_fun(&swmrssa::KProc::reset));
 }
@@ -108,7 +108,7 @@ void swmrssa::Comp::setupKProcs(swmrssa::Wmrssa * wmd)
     for (uint i = 0; i < nreacs; ++i)
     {
         ssolver::Reacdef * rdef = def()->reacdef(i);
-        swmrssa::Reac * r = new swmrssa::Reac(rdef, this);
+        auto * r = new swmrssa::Reac(rdef, this);
         pKProcs[i] = r;
         wmd->addKProc(r);
     }
@@ -124,7 +124,7 @@ steps::wmrssa::KProc * swmrssa::Comp::reac(uint lridx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::Comp::setupDeps(void)
+void swmrssa::Comp::setupDeps()
 {
     std::for_each(pKProcs.begin(), pKProcs.end(),
         std::mem_fun(&KProc::setupDeps));
@@ -180,8 +180,9 @@ void swmrssa::Comp::setBounds(uint i, int nc)
 bool swmrssa::Comp::isOutOfBound(uint i, int nc)
 {
     AssertLog(i < def()->countSpecs());
-    if (nc > pPoolLB[i] && nc < pPoolUB[i])
+    if (nc > pPoolLB[i] && nc < pPoolUB[i]) {
         return false;
+}
     setBounds(i, nc);
     return true;
 }
@@ -199,7 +200,7 @@ double* swmrssa::Comp::pools(steps::wmrssa::PropensityRSSA prssa) const
     }
 }
 
-void swmrssa::Comp::setupSpecDeps(void)
+void swmrssa::Comp::setupSpecDeps()
 {
     uint nspecs = def()->countSpecs();
     localSpecUpdKProcs.resize(nspecs);

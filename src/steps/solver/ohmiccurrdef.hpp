@@ -68,7 +68,7 @@ public:
     OhmicCurrdef(Statedef * sd, uint gidx, steps::model::OhmicCurr * oc);
 
     /// Destructor
-    ~OhmicCurrdef(void);
+    ~OhmicCurrdef();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -85,27 +85,27 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Setup the object.
-    void setup(void);
+    void setup();
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: OHMIC CURRENT
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this ohmic current.
-    inline uint gidx(void) const
+    inline uint gidx() const
     { return pIdx; }
 
     /// Return the name of the ohmic current.
-    inline std::string const name(void) const
+    inline std::string const name() const
     { return pName; }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: PARAMETERS
     ////////////////////////////////////////////////////////////////////////
 
-    inline double getG(void) const
+    inline double getG() const
     { return pG; }
-    inline double getERev(void) const
+    inline double getERev() const
     { return pERev; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -113,7 +113,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     // Return the global index of the channel state
-    uint chanstate(void) const;
+    uint chanstate() const;
 
     int dep(uint gidx) const;
     bool req(uint gidx) const;

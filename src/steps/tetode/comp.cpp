@@ -26,8 +26,8 @@
 
 
 // Standard library & STL headers.
-#include <vector>
 #include <map>
+#include <vector>
 
 // STEPS headers.
 #include "steps/common.h"
@@ -55,9 +55,8 @@ stode::Comp::Comp(steps::solver::Compdef * compdef)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stode::Comp::~Comp(void)
-{
-}
+stode::Comp::~Comp()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 

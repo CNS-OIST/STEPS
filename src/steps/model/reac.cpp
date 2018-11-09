@@ -32,17 +32,17 @@
 
 // STL headers.
 #include <cassert>
+#include <iostream>
 #include <sstream>
 #include <string>
-#include <iostream>
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/model/model.hpp"
-#include "steps/model/volsys.hpp"
 #include "steps/model/reac.hpp"
 #include "steps/model/spec.hpp"
+#include "steps/model/volsys.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -56,14 +56,14 @@ using namespace steps::model;
 Reac::Reac(string const & id, Volsys * volsys, vector<Spec *> const & lhs,
            vector<Spec *> const & rhs, double kcst)
 : pID(id)
-, pModel(0)
+, pModel(nullptr)
 , pVolsys(volsys)
 , pLHS()
 , pRHS()
 , pOrder(0)
 , pKcst(kcst)
 {
-    if (pVolsys == 0)
+    if (pVolsys == nullptr)
     {
         ostringstream os;
         os << "No volsys provided to Reac initializer function";
@@ -87,23 +87,24 @@ Reac::Reac(string const & id, Volsys * volsys, vector<Spec *> const & lhs,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Reac::~Reac(void)
+Reac::~Reac()
 {
-    if (pVolsys == 0) return;
+    if (pVolsys == nullptr) { return;
+}
     _handleSelfDelete();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Reac::_handleSelfDelete(void)
+void Reac::_handleSelfDelete()
 {
     pVolsys->_handleReacDel(this);
     pKcst = 0.0;
     pOrder = 0;
     pRHS.clear();
     pLHS.clear();
-    pVolsys = 0;
-    pModel = 0;
+    pVolsys = nullptr;
+    pModel = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -167,7 +168,7 @@ void Reac::setKcst(double kcst)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-vector<Spec *> Reac::getAllSpecs(void) const
+vector<Spec *> Reac::getAllSpecs() const
 {
     SpecPVec specs = SpecPVec();
     bool first_occ = true;

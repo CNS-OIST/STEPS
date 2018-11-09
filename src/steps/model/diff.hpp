@@ -97,7 +97,7 @@ public:
     Diff(std::string const & id, Surfsys * surfsys, Spec * lig, double dcst=0.0);
 
     /// Destructor
-    ~Diff(void);
+    ~Diff();
 
     ////////////////////////////////////////////////////////////////////////
     // DIFFUSION RULE PROPERTIES
@@ -106,7 +106,7 @@ public:
     /// Return the diffusion rule ID.
     ///
     /// \return ID of the diffusion rule.
-    std::string getID(void) const
+    std::string getID() const
     { return pID; }
 
     /// Set the ID of the diffusion rule.
@@ -117,19 +117,19 @@ public:
     /// Return a pointer to the parent volume system.
     ///
     /// \return Pointer to the parent volume system.
-    Volsys * getVolsys(void) const
+    Volsys * getVolsys() const
     { return pVolsys; }
 
     /// Return a pointer to the parent surface system.
     ///
     /// \return Pointer to the parent surface system.
-    Surfsys * getSurfsys(void) const
+    Surfsys * getSurfsys() const
     { return pSurfsys; }
 
     /// Return a pointer to the parent model.
     ///
     /// \return Pointer to the parent model.
-    Model * getModel(void) const
+    Model * getModel() const
     { return pModel; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -139,7 +139,7 @@ public:
     /// Return a pointer to the species to which this diffusion rule applies
     ///
     /// \return Pointer of the species
-    Spec * getLig(void) const
+    Spec * getLig() const
     { return pLig; }
 
     /// Set the species which this difusion rule applies to.
@@ -150,7 +150,7 @@ public:
     /// Get the rate constant of the diffusion rule.
     ///
     /// \return Rate constant of the diffusion rule.
-    double getDcst(void) const
+    double getDcst() const
     { return pDcst; }
 
     /// Set the rate constant of the diffusion rule.
@@ -162,7 +162,7 @@ public:
     ///
     /// \return List of pointers of species.
     /// \warning Currently will return only one species.
-    std::vector<Spec *> getAllSpecs(void) const;
+    std::vector<Spec *> getAllSpecs() const;
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: DELETION
@@ -172,7 +172,7 @@ public:
     ///
     /// Called if Python object deleted, or from del method in parent object.
     /// Will only be called once
-    void _handleSelfDelete(void);
+    void _handleSelfDelete();
 
     ////////////////////////////////////////////////////////////////////////
 

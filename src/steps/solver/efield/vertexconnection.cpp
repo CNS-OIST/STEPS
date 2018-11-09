@@ -26,9 +26,9 @@
 
 
 // STL headers.
+#include <cassert>
 #include <iostream>
 #include <sstream>
-#include <cassert>
 
 // STEPS headers.
 #include "steps/common.h"
@@ -58,9 +58,8 @@ sefield::VertexConnection::VertexConnection(sefield::VertexElement * v1, sefield
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sefield::VertexConnection::~VertexConnection(void)
-{
-}
+sefield::VertexConnection::~VertexConnection()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -92,21 +91,21 @@ sefield::VertexElement * sefield::VertexConnection::getOther(sefield::VertexElem
     else
     {
         AssertLog(0);
-        ret = 0;
+        ret = nullptr;
     }
     return ret;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-//bool VertexConnection::hasInternalEnd(void)
+//bool VertexConnection::hasInternalEnd()
 //{
 //    return (vea->isInternal() || veb->isInternal());
 //}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-//bool VertexConnection::isEdge(void)
+//bool VertexConnection::isEdge()
 //{
 //    return (vea->isEdge() && veb->isEdge());
 //}

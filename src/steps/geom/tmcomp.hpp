@@ -89,13 +89,13 @@ public:
     /// Return a list of all tetrahedron by indices.
     ///
     /// \return List of indices of the tetrahedrons.
-    inline std::vector<uint> getAllTetIndices(void) const
+    inline std::vector<uint> const & getAllTetIndices() const
     { return pTet_indices; }
 
     /// Return the number of tetrahedrons in this TmComp
     ///
     /// \return the number of tetrahedrons in this TmCOmp
-    inline uint countTets(void) const
+    inline uint countTets() const
     { return pTetsN; }
 
     // Return whether tetrahedrons (specified by index) are inside this compartment.
@@ -107,12 +107,12 @@ public:
     /// Get the minimal coordinate of the rectangular bounding box.
     ///
     /// \return Minimal coordinate of the rectangular bounding box.
-    std::vector<double> getBoundMin(void) const;
+    std::vector<double> getBoundMin() const;
 
     /// Get the maximal coordinate of the rectangular bounding box.
     ///
     /// \return Maximal coordinate of the rectangular bounding box.
-    std::vector<double> getBoundMax(void) const;
+    std::vector<double> getBoundMax() const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO C++)
@@ -121,7 +121,7 @@ public:
     /// Return all tetrahedrons (by index) in the compartment.
     ///
     /// \return List of indices of tetrahedrons.
-    inline std::vector<uint> const & _getAllTetIndices(void) const
+    inline std::vector<uint> const & _getAllTetIndices() const
     { return pTet_indices; }
 
 private:

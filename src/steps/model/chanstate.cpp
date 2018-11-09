@@ -55,7 +55,7 @@ ChanState::ChanState(string const & id, Model * model, Chan * chan)
 : Spec(id, model)
 , pChan(chan)
 {
-    if (pChan == 0)
+    if (pChan == nullptr)
     {
         ostringstream os;
         os << "No channel provided to ChanState initializer function";
@@ -73,21 +73,22 @@ ChanState::ChanState(string const & id, Model * model, Chan * chan)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ChanState::~ChanState(void)
+ChanState::~ChanState()
 {
-    if (pChan == 0) return;
+    if (pChan == nullptr) { return;
+}
     _handleSelfDelete();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ChanState::_handleSelfDelete(void)
+void ChanState::_handleSelfDelete()
 {
     // Base method
     Spec::_handleSelfDelete();
 
     pChan->_handleChanStateDel(this);
-    pChan = 0;
+    pChan = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -26,14 +26,14 @@
 
 // Standard library & STL headers.
 #include <cassert>
-#include <string>
 #include <sstream>
+#include <string>
 
 // STEPS headers.
 #include "steps/common.h"
-#include "steps/rng/rng.hpp"
-#include "steps/rng/mt19937.hpp"
 #include "steps/error.hpp"
+#include "steps/rng/mt19937.hpp"
+#include "steps/rng/rng.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -61,7 +61,7 @@ void MT19937::concreteInitialize(ulong seed)
 ////////////////////////////////////////////////////////////////////////////////
 
 /// Fills the buffer with random numbers on [0,0xffffffff]-interval.
-void MT19937::concreteFillBuffer(void)
+void MT19937::concreteFillBuffer()
 {
     ulong y;
     static ulong mag01[2] = { 0x0UL, MT_MATRIX_A };
@@ -76,7 +76,8 @@ void MT19937::concreteFillBuffer(void)
 
             // If init_genrand() has not been called, a default
             // initial seed is used.
-            if (pStateInit == MT_N + 1) initialize(5489UL);
+            if (pStateInit == MT_N + 1) { initialize(5489UL);
+}
 
             for (kk = 0; kk < MT_N - MT_M; ++kk)
             {
@@ -116,9 +117,8 @@ MT19937::MT19937(uint bufsize)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-MT19937::~MT19937(void)
-{
-}
+MT19937::~MT19937()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 

@@ -47,10 +47,10 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 sefield::Matrix::Matrix(uint n0)
-: pA(0)
-, pWS(0)
+: pA(nullptr)
+, pWS(nullptr)
 , pN(n0)
-, pPerm(0)
+, pPerm(nullptr)
 , pSign(0)
 {
     // Check size argument.
@@ -68,10 +68,10 @@ sefield::Matrix::Matrix(uint n0)
 ////////////////////////////////////////////////////////////////////////////////
 
 sefield::Matrix::Matrix(uint nn, double ** da)
-: pA(0)
-, pWS(0)
+: pA(nullptr)
+, pWS(nullptr)
 , pN(nn)
-, pPerm(0)
+, pPerm(nullptr)
 , pSign(0)
 {
     // Check input arguments.
@@ -94,7 +94,7 @@ sefield::Matrix::Matrix(uint nn, double ** da)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sefield::Matrix::~Matrix(void)
+sefield::Matrix::~Matrix()
 {
     delete[] pPerm;
     delete[] pWS;
@@ -130,10 +130,10 @@ void sefield::Matrix::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sefield::Matrix * sefield::Matrix::copy(void)
+sefield::Matrix * sefield::Matrix::copy()
 {
     // NOTE: The memory is cleaned up in det() and inverse()
-    Matrix * m = new Matrix(pN, pA);
+    auto * m = new Matrix(pN, pA);
     for (uint i = 0; i < pN; ++i)
     {
         m->pPerm[i] = pPerm[i];
@@ -148,7 +148,7 @@ double * sefield::Matrix::lvprod(double * v)
 {
     // NOTE: THe memory allocated for this vector is eventually cleaned up in
     // Tetcoupler::coupleMesh()
-    double * r = new double[pN];
+    auto * r = new double[pN];
     fill_n(r, pN, 0.0);
 
     for (uint i = 0; i < pN; ++i)
@@ -164,7 +164,7 @@ double * sefield::Matrix::lvprod(double * v)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double sefield::Matrix::det(void)
+double sefield::Matrix::det()
 {
     Matrix * t = copy();
     t->LU();
@@ -179,11 +179,11 @@ double sefield::Matrix::det(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::Matrix::LU(void)
+void sefield::Matrix::LU()
 {
     int i, imax, j, k;
     double big, dum, sum, temp;
-    double * vv = new double[pN];
+    auto * vv = new double[pN];
     double TINY = 1.0e-20;
 
     pSign = 1;
@@ -262,13 +262,13 @@ void sefield::Matrix::LU(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sefield::Matrix * sefield::Matrix::inverse(void)
+sefield::Matrix * sefield::Matrix::inverse()
 {
     Matrix * t = copy();
     Matrix * r = copy();
     t->LU();
 
-    double * c = new double[pN];
+    auto * c = new double[pN];
     for (uint j = 0; j < pN; ++j)
     {
         for (uint i = 0; i < pN; ++i)

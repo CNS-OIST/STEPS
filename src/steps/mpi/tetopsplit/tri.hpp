@@ -85,7 +85,7 @@ public:
     Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
         double l0, double l1, double l2, double d0, double d1, double d2,
         int tetinner, int tetouter, int tri0, int tri1, int tri2, int rank, int host_rank);
-    ~Tri(void);
+    ~Tri();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -117,29 +117,29 @@ public:
     void setupKProcs(smtos::TetOpSplitP * tex, bool efield = false);
 
     /// Set all pool flags and molecular populations to zero.
-    void reset(void);
+    void reset();
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: GENERAL
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Patchdef * patchdef(void) const
+    inline steps::solver::Patchdef * patchdef() const
     { return pPatchdef; }
 
-    inline uint idx(void) const
+    inline uint idx() const
     { return pIdx; }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SHAPE & CONNECTIVITY
     ////////////////////////////////////////////////////////////////////////
 
-    inline double area(void) const
+    inline double area() const
     { return pArea; }
 
-    inline smtos::WmVol * iTet(void) const
+    inline smtos::WmVol * iTet() const
     { return pInnerTet; }
 
-    inline smtos::WmVol * oTet(void) const
+    inline smtos::WmVol * oTet() const
     { return pOuterTet; }
 
     inline smtos::Tri * nextTri(uint i) const
@@ -178,11 +178,11 @@ public:
     { return pSDiffBndDirection[idx]; }
 
     /////////////////////////// Dependency ////////////////////////////////
-    inline uint getStartKProcIdx(void)
+    inline uint getStartKProcIdx()
     {return startKProcIdx;}
     
     // setup dependence for KProcs in this subvolume
-    void setupDeps(void);
+    void setupDeps();
     
     // check if kp_lidx in this vol depends on spec_gidx in WMVol kp_container
     virtual bool KProcDepSpecTet(uint kp_lidx, WmVol* kp_container, uint spec_gidx);
@@ -197,11 +197,11 @@ public:
     void incECharge(uint lidx, int charge);
 
     // Should be called at the beginning of every EField time-step
-    void resetECharge(void);
+    void resetECharge();
 
     // reset the Ohmic current opening time integral info, also should be
     // called just before commencing or just after completing an EField dt
-    void resetOCintegrals(void);
+    void resetOCintegrals();
 
     double computeI(double v, double dt, double simtime);
 
@@ -215,7 +215,7 @@ public:
     // MAIN FUNCTIONALITY
     ////////////////////////////////////////////////////////////////////////
 
-    inline uint * pools(void) const
+    inline uint * pools() const
     { return pPoolCount; }
     void setCount(uint lidx, uint count, double period = 0.0);
     void incCount(uint lidx, int inc, double period = 0.0, bool local_change = false);
@@ -234,13 +234,13 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline std::vector<smtos::KProc *>::const_iterator kprocBegin(void) const
+    inline std::vector<smtos::KProc *>::const_iterator kprocBegin() const
     { return pKProcs.begin(); }
-    inline std::vector<smtos::KProc *>::const_iterator kprocEnd(void) const
+    inline std::vector<smtos::KProc *>::const_iterator kprocEnd() const
     { return pKProcs.end(); }
-    inline std::vector<smtos::KProc *> & kprocs(void)
+    inline std::vector<smtos::KProc *> & kprocs()
     { return pKProcs; }
-    inline uint countKProcs(void) const
+    inline uint countKProcs() const
     {
         return nKProcs;
     }
@@ -260,22 +260,22 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    bool getInHost(void);
+    bool getInHost();
     void setHost(int host, int rank);
-    int getHost(void) {return hostRank;}
+    int getHost() {return hostRank;}
     void setSolver(steps::mpi::tetopsplit::TetOpSplitP* sol);
-    steps::mpi::tetopsplit::TetOpSplitP* solver(void);
+    steps::mpi::tetopsplit::TetOpSplitP* solver();
     
-    //void sendSyncPools(void);
+    //void sendSyncPools();
     //void recvSyncPools(int source);
 	double getPoolOccupancy(uint lidx);
 	double getLastUpdate(uint lidx);
-	void resetPoolOccupancy(void);
+	void resetPoolOccupancy();
 
     std::vector<smtos::KProc*> const & getSpecUpdKProcs(uint slidx);
     
     void repartition(smtos::TetOpSplitP * tex, int rank, int host_rank);
-    void setupBufferLocations(void);
+    void setupBufferLocations();
 private:
 
     ////////////////////////////////////////////////////////////////////////

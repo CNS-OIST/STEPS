@@ -26,10 +26,10 @@
 
 
 // Standard library & STL headers.
-#include <vector>
 #include <cmath>
 #include <iostream>
 #include <limits>
+#include <vector>
 
 // STEPS headers.
 #include "steps/common.h"
@@ -37,11 +37,11 @@
 #include "steps/math/constants.hpp"
 #include "steps/math/ghk.hpp"
 #include "steps/tetexact/ghkcurr.hpp"
-#include "steps/tetexact/tri.hpp"
-#include "steps/tetexact/tet.hpp"
-#include "steps/tetexact/wmvol.hpp"
 #include "steps/tetexact/kproc.hpp"
+#include "steps/tetexact/tet.hpp"
 #include "steps/tetexact/tetexact.hpp"
+#include "steps/tetexact/tri.hpp"
+#include "steps/tetexact/wmvol.hpp"
 
 #include "easylogging++.h"
 
@@ -54,8 +54,8 @@ namespace sm = steps::math;
 ////////////////////////////////////////////////////////////////////////////////
 
 stex::GHKcurr::GHKcurr(ssolver::GHKcurrdef * ghkdef, stex::Tri * tri)
-: KProc()
-, pGHKcurrdef(ghkdef)
+: 
+ pGHKcurrdef(ghkdef)
 , pTri(tri)
 , pUpdVec()
 , pEffFlux(true)
@@ -66,9 +66,8 @@ stex::GHKcurr::GHKcurr(ssolver::GHKcurrdef * ghkdef, stex::Tri * tri)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::GHKcurr::~GHKcurr(void)
-{
-}
+stex::GHKcurr::~GHKcurr()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -100,7 +99,7 @@ void stex::GHKcurr::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::GHKcurr::reset(void)
+void stex::GHKcurr::reset()
 {
 
     crData.recorded = false;
@@ -113,7 +112,7 @@ void stex::GHKcurr::reset(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::GHKcurr::setupDeps(void)
+void stex::GHKcurr::setupDeps()
 {
     std::set<stex::KProc*> updset;
 
@@ -149,7 +148,7 @@ void stex::GHKcurr::setupDeps(void)
         }
     }
 
-    if (otet != 0)
+    if (otet != nullptr)
     {
         // Now check KProcs in the outer tetrahedron
         kprocend = otet->kprocEnd();
@@ -208,7 +207,8 @@ bool stex::GHKcurr::depSpecTet(uint gidx, stex::WmVol * tet)
 
 bool stex::GHKcurr::depSpecTri(uint gidx, stex::Tri * triangle)
 {
-    if (triangle != pTri) return false;
+    if (triangle != pTri) { return false;
+}
     return (pGHKcurrdef->dep(gidx) != ssolver::DEP_NONE);
 
 }
@@ -227,8 +227,9 @@ double stex::GHKcurr::rate(steps::tetexact::Tetexact * solver)
     double iconc = (pTri->iTet()->conc(gidxion))*1.0e3;
     double oconc = 0.0;
 
-    if (voconc < 0.0)  oconc = (pTri->oTet()->conc(gidxion))*1.0e3;
-    else  oconc = voconc*1.0e3;
+    if (voconc < 0.0) {  oconc = (pTri->oTet()->conc(gidxion))*1.0e3;
+    } else {  oconc = voconc*1.0e3;
+}
 
     double v = solver->getTriV(pTri->idx());
     double T = solver->getTemp();
@@ -243,15 +244,16 @@ double stex::GHKcurr::rate(steps::tetexact::Tetexact * solver)
     double rt = flux/(sm::E_CHARGE * static_cast<double>(pGHKcurrdef->valence()));
     // Now a positive rate is always an efflux and a negative rate is an influx
     // Set positive or negative flux flag
-    if (rt >= 0.0) setEffFlux(true);
-    else setEffFlux(false);
+    if (rt >= 0.0) { setEffFlux(true);
+    } else { setEffFlux(false);
+}
 
     // Find the number of available channel states
     ssolver::Patchdef * pdef = pTri->patchdef();
     uint ghklidx = pdef->ghkcurrG2L(pGHKcurrdef->gidx());
     // Fetch the local index of the channelstate
     uint cslidx = pdef->ghkcurr_chanstate(ghklidx);
-    double n = static_cast<double>(pTri->pools()[cslidx]);
+    auto n = static_cast<double>(pTri->pools()[cslidx]);
 
     return fabs(rt) * n;
 }

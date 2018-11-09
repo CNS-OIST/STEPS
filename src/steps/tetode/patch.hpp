@@ -72,7 +72,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     Patch(steps::solver::Patchdef * patchdef);
-    ~Patch(void);
+    ~Patch();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -96,7 +96,7 @@ public:
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline double area(void) const
+    inline double area() const
     { return pArea; }
 
     // Return the local index of a tri given by global index
@@ -105,16 +105,16 @@ public:
     // Return the tri of a given local index
     Tri * getTri(uint lidx);
 
-    inline steps::solver::Patchdef * def(void) const
+    inline steps::solver::Patchdef * def() const
     { return pPatchdef; }
 
-    inline uint countTris(void) const
+    inline uint countTris() const
     { return pTris.size(); }
 
 
-    inline TriPVecCI bgnTri(void) const
+    inline TriPVecCI bgnTri() const
     { return pTris.begin(); }
-    inline TriPVecCI endTri(void) const
+    inline TriPVecCI endTri() const
     { return pTris.end(); }
 
     ////////////////////////////////////////////////////////////////////////

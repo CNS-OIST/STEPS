@@ -32,8 +32,8 @@
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
-#include "steps/geom/geom.hpp"
 #include "steps/geom/comp.hpp"
+#include "steps/geom/geom.hpp"
 #include "steps/geom/patch.hpp"
 #include "steps/util/checkid.hpp"
 
@@ -42,29 +42,19 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-using namespace std;
 namespace swm = steps::wm;
-
 using steps::util::checkID;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swm::Geom::Geom(void)
-: pComps()
-, pPatches()
+swm::Geom::~Geom()
 {
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-swm::Geom::~Geom(void)
-{
-    while (pComps.empty() == false)
+    while (!pComps.empty())
     {
         CompPMapCI comp = pComps.begin();
         delete(comp->second);
     }
-    while(pPatches.empty() == false)
+    while (!pPatches.empty())
     {
         PatchPMapCI patch = pPatches.begin();
         delete(patch->second);
@@ -73,22 +63,22 @@ swm::Geom::~Geom(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swm::Comp * swm::Geom::getComp(string const & id) const
+swm::Comp * swm::Geom::getComp(std::string const & id) const
 {
-    CompPMapCI comp = pComps.find(id);
+    auto comp = pComps.find(id);
     if (comp == pComps.end())
     {
-        ostringstream os;
+        std::ostringstream os;
         os << "Container does not contain compartment with name '" << id << "'\n";
         ArgErrLog(os.str());
     }
-    AssertLog(comp->second != 0);
+    AssertLog(comp->second != nullptr);
     return comp->second;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Geom::delComp(string const & id)
+void swm::Geom::delComp(std::string const & id)
 {
     swm::Comp * comp = getComp(id);
     delete(comp);
@@ -96,36 +86,34 @@ void swm::Geom::delComp(string const & id)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<swm::Comp *> swm::Geom::getAllComps(void) const
+std::vector<swm::Comp *> swm::Geom::getAllComps() const
 {
     CompPVec comps = CompPVec();
-    CompPMapCI comp_end = pComps.end();
-    for (CompPMapCI c = pComps.begin(); c != comp_end; ++c)
-    {
-        comps.push_back(c->second);
+    for (const auto& c: pComps) {
+        comps.push_back(c.second);
     }
     return comps;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swm::Patch * swm::Geom::getPatch(string const & id) const
+swm::Patch * swm::Geom::getPatch(std::string const & id) const
 {
-    PatchPMapCI patch = pPatches.find(id);
+    auto patch = pPatches.find(id);
     
     if (patch == pPatches.end())
     {
-        ostringstream os;
+        std::ostringstream os;
         os << "Container does not contain patch with name '" << id << "'\n";
         ArgErrLog(os.str());
     }
-    AssertLog(patch->second != 0);
+    AssertLog(patch->second != nullptr);
     return patch->second;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Geom::delPatch(string const & id)
+void swm::Geom::delPatch(std::string const & id)
 {
     swm::Patch * patch = getPatch(id);
     delete(patch);
@@ -133,25 +121,25 @@ void swm::Geom::delPatch(string const & id)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<swm::Patch *> swm::Geom::getAllPatches(void) const
+std::vector<swm::Patch *> swm::Geom::getAllPatches() const
 {
     PatchPVec patches = PatchPVec();
-    PatchPMapCI patch_end = pPatches.end();
-    for (PatchPMapCI p = pPatches.begin(); p != patch_end; ++p)
-    {
-        patches.push_back(p->second);
+    patches.reserve(pPatches.size());
+
+    for (const auto&  p: pPatches) {
+        patches.push_back(p.second);
     }
     return patches;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Geom::_checkCompID(string const & id) const
+void swm::Geom::_checkCompID(std::string const & id) const
 {
     checkID(id);
     if (pComps.find(id) != pComps.end())
     {
-        ostringstream os;
+        std::ostringstream os;
         os << "'" << id << "' is already in use.\n";
         ArgErrLog(os.str());
     }
@@ -159,16 +147,18 @@ void swm::Geom::_checkCompID(string const & id) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Geom::_handleCompIDChange(string const & o, string const & n)
+void swm::Geom::_handleCompIDChange(std::string const & o, std::string const & n)
 {
     CompPMapCI c_old = pComps.find(o);
     AssertLog(c_old != pComps.end());
 
-    if (o == n) return;
+    if (o == n) {
+      return;
+    }
     _checkCompID(n);
 
     swm::Comp * c = c_old->second;
-    AssertLog(c != 0);
+    AssertLog(c != nullptr);
     pComps.erase(c->getID());                        // or s_old->first
     pComps.insert(CompPMap::value_type(n, c));
 }
@@ -192,12 +182,12 @@ void swm::Geom::_handleCompDel(swm::Comp * comp)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Geom::_checkPatchID(string const & id) const
+void swm::Geom::_checkPatchID(std::string const & id) const
 {
     checkID(id);
     if (pPatches.find(id) != pPatches.end())
     {
-        ostringstream os;
+        std::ostringstream os;
         os << "'" << id << "' is already in use.\n";
         ArgErrLog(os.str());
     }
@@ -205,16 +195,19 @@ void swm::Geom::_checkPatchID(string const & id) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Geom::_handlePatchIDChange(string const & o, string const & n)
+void swm::Geom::_handlePatchIDChange(std::string const & o, std::string const & n)
 {
+    if (o == n) {
+      return;
+    }
+
     PatchPMapCI p_old = pPatches.find(o);
     AssertLog(p_old != pPatches.end());
 
-    if (o == n) return;
     _checkPatchID(n);
 
     swm::Patch * p = p_old->second;
-    AssertLog(p != 0);
+    AssertLog(p != nullptr);
     pPatches.erase(p->getID());                        // or s_old->first
     pPatches.insert(PatchPMap::value_type(n, p));
 }
@@ -224,8 +217,12 @@ void swm::Geom::_handlePatchIDChange(string const & o, string const & n)
 void swm::Geom::_handlePatchAdd(swm::Patch * patch)
 {
     AssertLog(patch->getContainer() == this);
-    _checkPatchID(patch->getID());
-    pPatches.insert(PatchPMap::value_type(patch->getID(), patch));
+    checkID(patch->getID());
+    if (!pPatches.insert(std::make_pair(patch->getID(), patch)).second) {
+        std::ostringstream os;
+        os << "'" << patch->getID() << "' is already in use.\n";
+        ArgErrLog(os.str());
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -241,8 +238,8 @@ void swm::Geom::_handlePatchDel(swm::Patch * patch)
 steps::wm::Comp * swm::Geom::_getComp(uint gidx) const
 {
     AssertLog(gidx < pComps.size());
-    std::map<std::string, Comp *>::const_iterator cp_it = pComps.begin();
-    for (uint i=0; i< gidx; ++i) ++cp_it;
+    auto cp_it = pComps.begin();
+    std::advance(cp_it, gidx);
     return cp_it->second;
 }
 
@@ -251,8 +248,8 @@ steps::wm::Comp * swm::Geom::_getComp(uint gidx) const
 steps::wm::Patch * swm::Geom::_getPatch(uint gidx) const
 {
     AssertLog(gidx < pPatches.size());
-    std::map<std::string, Patch *>::const_iterator pt_it = pPatches.begin();
-    for (uint i=0; i< gidx; ++i) ++pt_it;
+    auto pt_it = pPatches.begin();
+    std::advance(pt_it, gidx);
     return pt_it->second;
 }
 

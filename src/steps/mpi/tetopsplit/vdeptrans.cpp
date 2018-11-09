@@ -26,19 +26,19 @@
 
 
 // Standard library & STL headers.
-#include <vector>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <sstream>
+#include <vector>
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/math/constants.hpp"
-#include "steps/mpi/tetopsplit/vdeptrans.hpp"
-#include "steps/mpi/tetopsplit/tri.hpp"
-#include "steps/mpi/tetopsplit/tet.hpp"
 #include "steps/mpi/tetopsplit/kproc.hpp"
+#include "steps/mpi/tetopsplit/tet.hpp"
 #include "steps/mpi/tetopsplit/tetopsplit.hpp"
+#include "steps/mpi/tetopsplit/tri.hpp"
+#include "steps/mpi/tetopsplit/vdeptrans.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -51,8 +51,8 @@ namespace ssolver = steps::solver;
 ////////////////////////////////////////////////////////////////////////////////
 
 smtos::VDepTrans::VDepTrans(ssolver::VDepTransdef * vdtdef, smtos::Tri * tri)
-: KProc()
-, pVDepTransdef(vdtdef)
+: 
+ pVDepTransdef(vdtdef)
 , pTri(tri)
 , localUpdVec()
 , remoteUpdVec()
@@ -64,9 +64,8 @@ smtos::VDepTrans::VDepTrans(ssolver::VDepTransdef * vdtdef, smtos::Tri * tri)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::VDepTrans::~VDepTrans(void)
-{
-}
+smtos::VDepTrans::~VDepTrans()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -96,7 +95,7 @@ void smtos::VDepTrans::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::VDepTrans::reset(void)
+void smtos::VDepTrans::reset()
 {
 
     crData.recorded = false;
@@ -108,7 +107,7 @@ void smtos::VDepTrans::reset(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::VDepTrans::setupDeps(void)
+void smtos::VDepTrans::setupDeps()
 {
     AssertLog(pTri->getInHost());
     std::set<smtos::KProc*> updset;
@@ -140,7 +139,8 @@ bool smtos::VDepTrans::depSpecTet(uint gidx, smtos::WmVol * tet)
 
 bool smtos::VDepTrans::depSpecTri(uint gidx, smtos::Tri * triangle)
 {
-    if (triangle != pTri) return false;
+    if (triangle != pTri) { return false;
+}
     return (pVDepTransdef->dep(gidx) != ssolver::DEP_NONE);
 }
 
@@ -153,7 +153,7 @@ double smtos::VDepTrans::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
     // Fetch the local index of the srcchannel
     uint srclidx = pdef->vdeptrans_srcchanstate(vdtlidx);
 
-    double n = static_cast<double>(pTri->pools()[srclidx]);
+    auto n = static_cast<double>(pTri->pools()[srclidx]);
     double v = solver->getTriV(pTri->idx());
     double ra = pVDepTransdef->getVDepRate(v);
 
@@ -177,12 +177,14 @@ void smtos::VDepTrans::apply(steps::rng::RNG * rng, double dt, double simtime, d
         uint oc_cs = pdef->ohmiccurr_chanstate(oc);
         if (oc_cs == src)
         {
-            if (pTri->clamped(src) == true) continue;
+            if (pTri->clamped(src) == true) { continue;
+}
             pTri->setOCchange(oc, src, dt, simtime);
         }
         else if (oc_cs == dst)
         {
-            if (pTri->clamped(dst) == true) continue;
+            if (pTri->clamped(dst) == true) { continue;
+}
             pTri->setOCchange(oc, dst, dt, simtime);
         }
     }
@@ -219,7 +221,7 @@ std::vector<smtos::KProc*> const & smtos::VDepTrans::getLocalUpdVec(int directio
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::VDepTrans::resetOccupancies(void)
+void smtos::VDepTrans::resetOccupancies()
 {
     
     pTri->resetPoolOccupancy();

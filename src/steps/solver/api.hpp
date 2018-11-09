@@ -82,20 +82,20 @@ public:
 
     /// Destructor
     ///
-    virtual ~API(void);
+    virtual ~API();
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER INFORMATION
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the solver's name.
-    virtual std::string getSolverName(void) const = 0;
+    virtual std::string getSolverName() const = 0;
     /// Return the solver's description.
-    virtual std::string getSolverDesc(void) const = 0;
+    virtual std::string getSolverDesc() const = 0;
     /// Return the solver's author.
-    virtual std::string getSolverAuthors(void) const = 0;
+    virtual std::string getSolverAuthors() const = 0;
     /// Return the solver's email.
-    virtual std::string getSolverEmail(void) const = 0;
+    virtual std::string getSolverEmail() const = 0;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROLS
@@ -108,7 +108,7 @@ public:
     virtual void restore(std::string const & file_name) = 0;
 
     /// Reset the solver.
-    virtual void reset(void) = 0;
+    virtual void reset() = 0;
 
     /// Run the solver until a given end time.
     ///
@@ -121,7 +121,7 @@ public:
     virtual void advance(double adv);
 
     /// Run the solver for a step.
-    virtual void step(void);
+    virtual void step();
 
     /// Set DT of the numerical solver.
     ///
@@ -150,28 +150,28 @@ public:
     //      GENERAL
     ////////////////////////////////////////////////////////////////////////
     /// Return the time.
-    virtual double getTime(void) const = 0;
+    virtual double getTime() const = 0;
 
     /// Return the DT of the numerical solver
-    virtual double getRk4DT(void) const;
+    virtual double getRk4DT() const;
 
     /// Return the DT
     /// Replaced by getRk4DT, but included for backwards compatability
-    virtual double getDT(void) const;
+    virtual double getDT() const;
 
     /// Return the DT of the membrane potential solver
     /// \todo ask iain
-    virtual double getEfieldDT(void) const;
+    virtual double getEfieldDT() const;
 
     /// Return the simulation temperature
-    virtual double getTemp(void) const;
+    virtual double getTemp() const;
 
     /// Return the A0
     /// \todo ask iain
-    virtual double getA0(void) const;
+    virtual double getA0() const;
 
     /// Return the number of steps.
-    virtual uint getNSteps(void) const;
+    virtual uint getNSteps() const;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROLS:
@@ -1064,10 +1064,10 @@ public:
     // DATA RECORDING:
     ////////////////////////////////////////////////////////////////////////
     /// Count the number of compartments
-    uint getNComps(void) const;
+    uint getNComps() const;
 
     /// Count the number of patches
-    uint getNPatches(void) const;
+    uint getNPatches() const;
 
     /// Get a compartment's name by its index in the solver
     std::string getCompName(uint c_idx) const;
@@ -1375,19 +1375,19 @@ protected:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return a reference of the Model object.
-    steps::model::Model * model(void) const
+    steps::model::Model * model() const
     { return pModel; }
 
     /// Return a reference of the Geom object.
-    steps::wm::Geom * geom(void) const
+    steps::wm::Geom * geom() const
     { return pGeom; }
 
     /// Return a reference of the RNG object
-    steps::rng::RNG * rng(void) const
+    steps::rng::RNG * rng() const
     { return pRNG; }
 
     /// Return a reference of the Statedef object.
-    steps::solver::Statedef * statedef(void) const
+    steps::solver::Statedef * statedef() const
     { return pStatedef; }
 
     ////////////////////////////////////////////////////////////////////////

@@ -69,7 +69,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     Reac(steps::solver::Reacdef * rdef, steps::mpi::tetopsplit::WmVol * tet);
-    ~Reac(void);
+    ~Reac();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -84,26 +84,26 @@ public:
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    double c(void) const
+    double c() const
     { return pCcst; }
-    void resetCcst(void);
+    void resetCcst();
 
-    inline double kcst(void) const
+    inline double kcst() const
     { return pKcst; }
     void setKcst(double k);
 
-    double h(void)
+    double h()
     { return (rate()/pCcst); }
 
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    void setupDeps(void);
+    void setupDeps();
     bool depSpecTet(uint gidx, steps::mpi::tetopsplit::WmVol * tet);
     bool depSpecTri(uint gidx, steps::mpi::tetopsplit::Tri * tri);
 
-    void reset(void);
+    void reset();
     double rate(steps::mpi::tetopsplit::TetOpSplitP * solver = 0);
     double getScaledDcst(steps::mpi::tetopsplit::TetOpSplitP * solver = 0)
     {return 0.0;}
@@ -114,18 +114,18 @@ public:
     std::vector<KProc*> const & getLocalUpdVec(int direction = -1);
     std::vector<uint> const & getRemoteUpdVec(int direction = -1);
 	
-    void resetOccupancies(void);
+    void resetOccupancies();
 	
     /// MPI
-    bool getInHost(void) {
+    bool getInHost() {
         return pTet->getInHost();
     }
 
-    int getHost(void) {
+    int getHost() {
         return pTet->getHost();
     }
     
-    steps::mpi::tetopsplit::WmVol* container(void) {
+    steps::mpi::tetopsplit::WmVol* container() {
         return pTet;
     }
     ////////////////////////////////////////////////////////////////////////

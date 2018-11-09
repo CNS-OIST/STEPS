@@ -39,10 +39,10 @@
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
-#include "steps/model/model.hpp"
-#include "steps/model/volsys.hpp"
 #include "steps/model/diff.hpp"
+#include "steps/model/model.hpp"
 #include "steps/model/spec.hpp"
+#include "steps/model/volsys.hpp"
 
 #include "steps/model/surfsys.hpp"
 
@@ -58,14 +58,14 @@ using namespace steps::model;
 
 Diff::Diff(string const & id, Volsys * volsys, Spec * lig, double dcst)
 : pID(id)
-, pModel(0)
+, pModel(nullptr)
 , pVolsys(volsys)
-, pSurfsys(0)
+, pSurfsys(nullptr)
 , pLig(lig)
 , pDcst(dcst)
 , pIsvolume(true)
 {
-    if (pVolsys == 0)
+    if (pVolsys == nullptr)
     {
         ostringstream os;
         os << "No volsys provided to Diff initializer function.";
@@ -87,14 +87,14 @@ Diff::Diff(string const & id, Volsys * volsys, Spec * lig, double dcst)
 
 Diff::Diff(string const & id, Surfsys * surfsys, Spec * lig, double dcst)
 : pID(id)
-, pModel(0)
+, pModel(nullptr)
 , pSurfsys(surfsys)
-, pVolsys(0)
+, pVolsys(nullptr)
 , pLig(lig)
 , pDcst(dcst)
 , pIsvolume(false)
 {
-    if (pSurfsys == 0)
+    if (pSurfsys == nullptr)
     {
         ostringstream os;
         os << "No surfsys provided to Diff initializer function.";
@@ -114,36 +114,38 @@ Diff::Diff(string const & id, Surfsys * surfsys, Spec * lig, double dcst)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Diff::~Diff(void)
+Diff::~Diff()
 {
     if (pIsvolume)
     {
-        if (pVolsys == 0) return;
+        if (pVolsys == nullptr) { return;
+}
     }
     else
     {
-        if (pSurfsys == 0) return;
+        if (pSurfsys == nullptr) { return;
+}
     }
     _handleSelfDelete();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Diff::_handleSelfDelete(void)
+void Diff::_handleSelfDelete()
 {
     if (pIsvolume)
     {
         pVolsys->_handleDiffDel(this);
-        pVolsys = 0;
+        pVolsys = nullptr;
     }
     else
     {
         pSurfsys->_handleDiffDel(this);
-        pSurfsys = 0;
+        pSurfsys = nullptr;
     }
     pDcst = 0.0;
-    pLig = 0;
-    pModel = 0;
+    pLig = nullptr;
+    pModel = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -202,7 +204,7 @@ void Diff::setLig(Spec * lig)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-vector<Spec *> Diff::getAllSpecs(void) const
+vector<Spec *> Diff::getAllSpecs() const
 {
     SpecPVec specs = SpecPVec();
     specs.push_back(pLig);

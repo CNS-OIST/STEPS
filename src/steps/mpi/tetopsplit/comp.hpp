@@ -72,7 +72,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     Comp(steps::solver::Compdef * compdef);
-    ~Comp(void);
+    ~Comp();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -91,32 +91,32 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline void reset(void)
+    inline void reset()
     { def()->reset(); }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Compdef * def(void) const
+    inline steps::solver::Compdef * def() const
     { return pCompdef; }
 
-    inline double vol(void) const
+    inline double vol() const
     { return pVol; }
 
-    inline double * pools(void) const
+    inline double * pools() const
     { return def()->pools(); }
 
     void modCount(uint slidx, double count);
 
-    inline uint countTets(void) const
+    inline uint countTets() const
     { return pTets.size(); }
 
     smtos::WmVol * pickTetByVol(double rand01) const;
 
-    inline WmVolPVecCI bgnTet(void) const
+    inline WmVolPVecCI bgnTet() const
     { return pTets.begin(); }
-    inline WmVolPVecCI endTet(void) const
+    inline WmVolPVecCI endTet() const
     { return pTets.end(); }
 
     ////////////////////////////////////////////////////////////////////////
