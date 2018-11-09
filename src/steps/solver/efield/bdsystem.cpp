@@ -26,8 +26,8 @@
 
 
 #include <algorithm>
-#include <utility>
 #include <cmath>
+#include <utility>
 
 #include "steps/common.h"
 #include "steps/solver/efield/bdsystem.hpp"
@@ -68,11 +68,13 @@ void BDSystem::solve()
     {
         int p = h-i;
 
-        for (int j = p; j < w; ++j)
+        for (int j = p; j < w; ++j) {
             ai[j-p] = ai[j];
+}
 
-        for (int j = w-p; j < w; ++j)
+        for (int j = w-p; j < w; ++j) {
             ai[j] = 0.0;
+}
 
         ai += w;
     }
@@ -97,10 +99,12 @@ void BDSystem::solve()
                 ipiv = j;
             }
         }
-        if (dum == 0.) ak[0] = TINY;
+        if (dum == 0.) { ak[0] = TINY;
+}
 
         pp[k] = ipiv;
-        if (ipiv != k) swap_row(ak,a+ipiv*w,w);
+        if (ipiv != k) { swap_row(ak,a+ipiv*w,w);
+}
 
         // perform eliminiation
         double *aij = ak+w; // aij == a + (k+1)*w + 0
@@ -137,8 +141,9 @@ void BDSystem::solve()
         if (i != k) std::swap(xk[0],x[i]);
         
         int p = std::min(h+1,n-k);
-        for (int i = 1; i < p; ++i)
+        for (int i = 1; i < p; ++i) {
             xk[i] -= lk[i-1]*xk[0];
+}
 
         lk += h;
         ++xk;
@@ -155,11 +160,14 @@ void BDSystem::solve()
         int p = std::min(w,n-k);
 
         double d = xk[0];
-        for (int i = 1; i < p; ++i)
+        for (int i = 1; i < p; ++i) {
             d -= ak[i]*xk[i];
+}
 
         xk[0] = d/ak[0];
     }
 }
 
-}}} // namespace steps::solver::efield
+}  // namespace efield
+}  // namespace solver
+}  // namespace steps

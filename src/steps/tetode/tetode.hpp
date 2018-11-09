@@ -133,25 +133,25 @@ public:
 
     TetODE(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r,
             int calcMembPot = EF_NONE);
-    ~TetODE(void);
+    ~TetODE();
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER INFORMATION
     ////////////////////////////////////////////////////////////////////////
 
-    std::string getSolverName(void) const;
-    std::string getSolverDesc(void) const;
-    std::string getSolverAuthors(void) const;
-    std::string getSolverEmail(void) const;
+    std::string getSolverName() const;
+    std::string getSolverDesc() const;
+    std::string getSolverAuthors() const;
+    std::string getSolverEmail() const;
 
 
     void checkpoint(std::string const & file_name);
 
     void restore(std::string const & file_name);
 
-    double getTime(void) const;
+    double getTime() const;
 
-    inline double getTemp(void) const
+    inline double getTemp() const
     { return pTemp; }
 
     void setTemp(double t);
@@ -161,14 +161,14 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     // Will of course be added- just for compilation purposes
-    void reset(void);
+    void reset();
     void run(double endtime);
     void advance(double adv);
-    //void step(void);
+    //void step();
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::tetmesh::Tetmesh * mesh(void) const
+    inline steps::tetmesh::Tetmesh * mesh() const
     { return pMesh; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -351,7 +351,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
 
-    void _setup(void);
+    void _setup();
 
     uint _addComp(steps::solver::Compdef * cdef);
 
@@ -387,15 +387,15 @@ public:
     inline bool efflag() const
     { return pEFoption != EF_NONE; }
 
-    void _setupEField(void);
+    void _setupEField();
 
-    inline uint neftets(void) const
+    inline uint neftets() const
     { return pEFNTets; }
 
-    inline uint neftris(void) const
+    inline uint neftris() const
     { return pEFNTris; }
 
-    inline uint nefverts(void) const
+    inline uint nefverts() const
     { return pEFNVerts; }
 
 

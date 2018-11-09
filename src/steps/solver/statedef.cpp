@@ -32,9 +32,9 @@
  */
 
 // STL headers.
-#include <string>
-#include <sstream>
 #include <cassert>
+#include <sstream>
+#include <string>
 
 // STEPS headers.
 #include "steps/common.h"
@@ -42,21 +42,21 @@
 #include "steps/geom/geom.hpp"
 #include "steps/model/model.hpp"
 #include "steps/rng/rng.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/specdef.hpp"
+#include "steps/solver/chandef.hpp"
 #include "steps/solver/compdef.hpp"
+#include "steps/solver/diffboundarydef.hpp"
+#include "steps/solver/diffdef.hpp"
+#include "steps/solver/diffdef.hpp"
+#include "steps/solver/ghkcurrdef.hpp"
+#include "steps/solver/ohmiccurrdef.hpp"
 #include "steps/solver/patchdef.hpp"
 #include "steps/solver/reacdef.hpp"
-#include "steps/solver/sreacdef.hpp"
-#include "steps/solver/diffdef.hpp"
-#include "steps/solver/diffdef.hpp"
-#include "steps/solver/chandef.hpp"
-#include "steps/solver/vdeptransdef.hpp"
-#include "steps/solver/vdepsreacdef.hpp"
-#include "steps/solver/ohmiccurrdef.hpp"
-#include "steps/solver/ghkcurrdef.hpp"
-#include "steps/solver/diffboundarydef.hpp"
 #include "steps/solver/sdiffboundarydef.hpp"
+#include "steps/solver/specdef.hpp"
+#include "steps/solver/sreacdef.hpp"
+#include "steps/solver/statedef.hpp"
+#include "steps/solver/vdepsreacdef.hpp"
+#include "steps/solver/vdeptransdef.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -102,7 +102,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     AssertLog(nspecs > 0);
     for (uint sidx = 0; sidx < nspecs; ++sidx)
     {
-        ssolver::Specdef * specdef = new Specdef(this, sidx,  pModel->_getSpec(sidx));
+        auto * specdef = new Specdef(this, sidx,  pModel->_getSpec(sidx));
         AssertLog(specdef != 0);
         pSpecdefs.push_back(specdef);
     }
@@ -110,7 +110,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     uint nchans = pModel->_countChans();
     for (uint chidx = 0; chidx < nchans; ++chidx)
     {
-        ssolver::Chandef * chandef = new Chandef(this, chidx, pModel->_getChan(chidx));
+        auto * chandef = new Chandef(this, chidx, pModel->_getChan(chidx));
         AssertLog(chandef != 0);
         pChandefs.push_back(chandef);
     }
@@ -118,7 +118,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     uint nreacs = pModel->_countReacs();
     for (uint ridx = 0; ridx < nreacs; ++ridx)
     {
-        ssolver::Reacdef * reacdef = new Reacdef(this, ridx, pModel->_getReac(ridx));
+        auto * reacdef = new Reacdef(this, ridx, pModel->_getReac(ridx));
         AssertLog(reacdef != 0);
         pReacdefs.push_back(reacdef);
     }
@@ -126,7 +126,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     uint nvdiffs = pModel->_countVDiffs();
     for (uint didx = 0; didx < nvdiffs; ++didx)
     {
-           ssolver::Diffdef * diffdef = new Diffdef(this, didx, pModel->_getVDiff(didx));
+           auto * diffdef = new Diffdef(this, didx, pModel->_getVDiff(didx));
            AssertLog(diffdef != 0);
            pDiffdefs.push_back(diffdef);
     }
@@ -134,7 +134,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     uint nsdiffs = pModel->_countSDiffs();
     for (uint didx = 0; didx < nsdiffs; ++didx)
     {
-           ssolver::Diffdef * surfdiffdef = new Diffdef(this, didx, pModel->_getSDiff(didx));
+           auto * surfdiffdef = new Diffdef(this, didx, pModel->_getSDiff(didx));
            AssertLog(surfdiffdef != 0);
            pSurfDiffdefs.push_back(surfdiffdef);
     }
@@ -142,7 +142,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     uint nsreacs = pModel->_countSReacs();
     for (uint sridx = 0; sridx < nsreacs; ++sridx)
     {
-          ssolver::SReacdef * sreacdef = new SReacdef(this, sridx, pModel->_getSReac(sridx));
+          auto * sreacdef = new SReacdef(this, sridx, pModel->_getSReac(sridx));
            AssertLog(sreacdef != 0);
            pSReacdefs.push_back(sreacdef);
     }
@@ -150,7 +150,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     uint nvdtrans = pModel->_countVDepTrans();
     for (uint vdtidx = 0; vdtidx < nvdtrans; ++vdtidx)
     {
-        ssolver::VDepTransdef * vdtdef = new VDepTransdef(this, vdtidx, pModel->_getVDepTrans(vdtidx));
+        auto * vdtdef = new VDepTransdef(this, vdtidx, pModel->_getVDepTrans(vdtidx));
         AssertLog(vdtdef != 0);
         pVDepTransdefs.push_back(vdtdef);
     }
@@ -158,7 +158,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     uint nvdsreacs = pModel->_countVDepSReacs();
     for (uint vdsridx = 0; vdsridx < nvdsreacs; ++vdsridx)
     {
-        ssolver::VDepSReacdef * vdsrdef = new VDepSReacdef(this, vdsridx, pModel->_getVDepSReac(vdsridx));
+        auto * vdsrdef = new VDepSReacdef(this, vdsridx, pModel->_getVDepSReac(vdsridx));
         AssertLog(vdsrdef != 0);
         pVDepSReacdefs.push_back(vdsrdef);
     }
@@ -166,7 +166,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     uint nohmiccurrs = pModel->_countOhmicCurrs();
     for (uint ocidx = 0; ocidx < nohmiccurrs; ++ocidx)
     {
-        ssolver::OhmicCurrdef * ocdef = new OhmicCurrdef(this, ocidx, pModel->_getOhmicCurr(ocidx));
+        auto * ocdef = new OhmicCurrdef(this, ocidx, pModel->_getOhmicCurr(ocidx));
         AssertLog(ocdef != 0);
         pOhmicCurrdefs.push_back(ocdef);
     }
@@ -174,7 +174,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     uint nghkcurrs = pModel->_countGHKcurrs();
     for (uint ghkidx = 0; ghkidx < nghkcurrs; ++ghkidx)
     {
-        ssolver::GHKcurrdef * ghkdef = new GHKcurrdef(this, ghkidx, pModel->_getGHKcurr(ghkidx));
+        auto * ghkdef = new GHKcurrdef(this, ghkidx, pModel->_getGHKcurr(ghkidx));
         AssertLog(ghkdef != 0);
         pGHKcurrdefs.push_back(ghkdef);
     }
@@ -183,7 +183,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     AssertLog(ncomps >0);
     for (uint cidx = 0; cidx < ncomps; ++cidx)
     {
-        ssolver::Compdef * compdef = new Compdef(this, cidx, pGeom->_getComp(cidx));
+        auto * compdef = new Compdef(this, cidx, pGeom->_getComp(cidx));
         AssertLog(compdef != 0);
         pCompdefs.push_back(compdef);
     }
@@ -191,17 +191,17 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     uint npatches = pGeom->_countPatches();
     for (uint pidx = 0; pidx < npatches; ++pidx)
     {
-        ssolver::Patchdef * patchdef = new Patchdef(this, pidx, pGeom->_getPatch(pidx));
+        auto * patchdef = new Patchdef(this, pidx, pGeom->_getPatch(pidx));
         AssertLog(patchdef != 0);
         pPatchdefs.push_back(patchdef);
     }
 
-    if (steps::tetmesh::Tetmesh * tetmesh = dynamic_cast<steps::tetmesh::Tetmesh *>(pGeom))
+    if (auto * tetmesh = dynamic_cast<steps::tetmesh::Tetmesh *>(pGeom))
     {
         uint ndiffbs = tetmesh->_countDiffBoundaries();
         for (uint dbidx = 0; dbidx < ndiffbs; ++dbidx)
         {
-            ssolver::DiffBoundarydef * diffboundarydef = new DiffBoundarydef(this, dbidx, tetmesh->_getDiffBoundary(dbidx));
+            auto * diffboundarydef = new DiffBoundarydef(this, dbidx, tetmesh->_getDiffBoundary(dbidx));
             AssertLog(diffboundarydef != 0);
             pDiffBoundarydefs.push_back(diffboundarydef);
         }
@@ -209,7 +209,7 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
         uint nsdiffbs = tetmesh->_countSDiffBoundaries();
         for (uint sdbidx = 0; sdbidx < nsdiffbs; ++sdbidx)
         {
-            ssolver::SDiffBoundarydef * sdiffboundarydef = new SDiffBoundarydef(this, sdbidx, tetmesh->_getSDiffBoundary(sdbidx));
+            auto * sdiffboundarydef = new SDiffBoundarydef(this, sdbidx, tetmesh->_getSDiffBoundary(sdbidx));
             AssertLog(sdiffboundarydef != 0);
             pSDiffBoundarydefs.push_back(sdiffboundarydef);
         }
@@ -501,7 +501,8 @@ uint ssolver::Statedef::getCompIdx(steps::wm::Comp * comp) const
     uint cidx = 0;
     while(cidx < maxcidx)
     {
-        if (comp == pGeom->_getComp(cidx)) return cidx;
+        if (comp == pGeom->_getComp(cidx)) { return cidx;
+}
         ++cidx;
     }
     // Argument should be valid so we should not get here
@@ -542,7 +543,8 @@ uint ssolver::Statedef::getPatchIdx(steps::wm::Patch * patch) const
     uint pidx = 0;
     while(pidx < maxpidx)
     {
-        if (patch == pGeom->_getPatch(pidx)) return pidx;
+        if (patch == pGeom->_getPatch(pidx)) { return pidx;
+}
         ++pidx;
     }
     // Argument should be valid so we should not get here
@@ -585,7 +587,8 @@ uint ssolver::Statedef::getSpecIdx(steps::model::Spec * spec) const
     uint sidx = 0;
     while(sidx < maxsidx)
     {
-        if (spec == pModel->_getSpec(sidx)) return sidx;
+        if (spec == pModel->_getSpec(sidx)) { return sidx;
+}
         ++sidx;
     }
     // Argument should be valid so we should not get here
@@ -626,7 +629,8 @@ uint ssolver::Statedef::getReacIdx(steps::model::Reac * reac) const
     uint ridx = 0;
     while(ridx < maxridx)
     {
-        if (reac == pModel->_getReac(ridx)) return ridx;
+        if (reac == pModel->_getReac(ridx)) { return ridx;
+}
         ++ridx;
     }
     // Argument should be valid so we should not get here
@@ -667,7 +671,8 @@ uint ssolver::Statedef::getSReacIdx(steps::model::SReac * sreac) const
     uint sridx = 0;
     while(sridx < maxsridx)
     {
-        if (sreac == pModel->_getSReac(sridx)) return sridx;
+        if (sreac == pModel->_getSReac(sridx)) { return sridx;
+}
         ++sridx;
     }
     // Argument should be valid so we should not get here
@@ -708,7 +713,8 @@ uint ssolver::Statedef::getDiffIdx(steps::model::Diff * diff) const
     uint didx = 0;
     while(didx < maxdidx)
     {
-        if (diff == pModel->_getVDiff(didx)) return didx;
+        if (diff == pModel->_getVDiff(didx)) { return didx;
+}
         ++didx;
     }
     // Argument should be valid so we should not get here
@@ -749,7 +755,8 @@ uint ssolver::Statedef::getSurfDiffIdx(steps::model::Diff * diff) const
     uint didx = 0;
     while(didx < maxdidx)
     {
-        if (diff == pModel->_getSDiff(didx)) return didx;
+        if (diff == pModel->_getSDiff(didx)) { return didx;
+}
         ++didx;
     }
     // Argument should be valid so we should not get here
@@ -790,7 +797,8 @@ uint ssolver::Statedef::getOhmicCurrIdx(steps::model::OhmicCurr * ohmiccurr) con
     uint ocidx = 0;
     while(ocidx < maxocidx)
     {
-        if (ohmiccurr == pModel->_getOhmicCurr(ocidx)) return ocidx;
+        if (ohmiccurr == pModel->_getOhmicCurr(ocidx)) { return ocidx;
+}
         ++ocidx;
     }
     // Argument should be valid so we should not get here
@@ -831,7 +839,8 @@ uint ssolver::Statedef::getVDepTransIdx(steps::model::VDepTrans * vdeptrans) con
     uint vdtidx = 0;
     while(vdtidx < maxvdtidx)
     {
-        if (vdeptrans == pModel->_getVDepTrans(vdtidx)) return vdtidx;
+        if (vdeptrans == pModel->_getVDepTrans(vdtidx)) { return vdtidx;
+}
         ++vdtidx;
     }
     // Argument should be valid so we should not get here
@@ -872,7 +881,8 @@ uint ssolver::Statedef::getVDepSReacIdx(steps::model::VDepSReac * vdepsreac) con
     uint vdsridx = 0;
     while(vdsridx < maxvdsridx)
     {
-        if (vdepsreac == pModel->_getVDepSReac(vdsridx)) return vdsridx;
+        if (vdepsreac == pModel->_getVDepSReac(vdsridx)) { return vdsridx;
+}
         ++vdsridx;
     }
     // Argument should be valid so we should not get here
@@ -913,7 +923,8 @@ uint ssolver::Statedef::getGHKcurrIdx(steps::model::GHKcurr * ghkcurr) const
     uint ghkidx = 0;
     while(ghkidx < maxghkidx)
     {
-        if (ghkcurr == pModel->_getGHKcurr(ghkidx)) return ghkidx;
+        if (ghkcurr == pModel->_getGHKcurr(ghkidx)) { return ghkidx;
+}
         ++ghkidx;
     }
     // Argument should be valid so we should not get here
@@ -997,13 +1008,14 @@ uint ssolver::Statedef::getDiffBoundaryIdx(std::string const & d) const
 uint ssolver::Statedef::getDiffBoundaryIdx(steps::tetmesh::DiffBoundary * diffb) const
 {
     uint maxdidx = pDiffBoundarydefs.size();
-    if (steps::tetmesh::Tetmesh * tetmesh = dynamic_cast<steps::tetmesh::Tetmesh *>(pGeom))
+    if (auto * tetmesh = dynamic_cast<steps::tetmesh::Tetmesh *>(pGeom))
     {
         AssertLog(maxdidx == tetmesh->_countDiffBoundaries());
         uint didx = 0;
         while(didx < maxdidx)
         {
-            if (diffb == tetmesh->_getDiffBoundary(didx)) return didx;
+            if (diffb == tetmesh->_getDiffBoundary(didx)) { return didx;
+}
             ++didx;
         }
         // Argument should be valid so we should not get here
@@ -1056,13 +1068,14 @@ uint ssolver::Statedef::getSDiffBoundaryIdx(std::string const & sd) const
 uint ssolver::Statedef::getSDiffBoundaryIdx(steps::tetmesh::SDiffBoundary * sdiffb) const
 {
     uint maxsdidx = pSDiffBoundarydefs.size();
-    if (steps::tetmesh::Tetmesh * tetmesh = dynamic_cast<steps::tetmesh::Tetmesh *>(pGeom))
+    if (auto * tetmesh = dynamic_cast<steps::tetmesh::Tetmesh *>(pGeom))
     {
         AssertLog(maxsdidx == tetmesh->_countSDiffBoundaries());
         uint sdidx = 0;
         while(sdidx < maxsdidx)
         {
-            if (sdiffb == tetmesh->_getSDiffBoundary(sdidx)) return sdidx;
+            if (sdiffb == tetmesh->_getSDiffBoundary(sdidx)) { return sdidx;
+}
             ++sdidx;
         }
         // Argument should be valid so we should not get here

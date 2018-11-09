@@ -33,8 +33,8 @@
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/solver/efield/efield.hpp"
-#include "steps/solver/efield/tetmesh.hpp"
 #include "steps/solver/efield/tetcoupler.hpp"
+#include "steps/solver/efield/tetmesh.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -58,7 +58,7 @@ namespace sefield = steps::solver::efield;
 
 sefield::EField::EField(std::unique_ptr<EFieldSolver> impl):
     pVProp(std::move(impl)),
-    pMesh(0),
+    pMesh(nullptr),
     pNVerts(0), pNTris(0), pNTets(0),
     pCPerm()
 {}
@@ -125,7 +125,7 @@ void sefield::EField::initMesh(uint nverts, double * verts,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sefield::EField::~EField(void)
+sefield::EField::~EField()
 {
     delete pMesh;
 }

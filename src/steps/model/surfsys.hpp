@@ -90,7 +90,7 @@ public:
     Surfsys(std::string const & id, Model * model);
 
     /// Destructor
-    ~Surfsys(void);
+    ~Surfsys();
 
     ////////////////////////////////////////////////////////////////////////
     // SURFACE SYSTEM PROPERTIES
@@ -99,7 +99,7 @@ public:
     /// Return the surface system ID.
     ///
     /// \return ID of the surface system.
-    std::string getID(void) const
+    std::string getID() const
     { return pID; }
     /// Set or change the surface system ID.
     ///
@@ -109,7 +109,7 @@ public:
     /// Return a pointer to the parent model.
     ///
     /// \return Pointer to the parent model.
-    Model * getModel(void) const
+    Model * getModel() const
     { return pModel; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -130,7 +130,7 @@ public:
     /// Return a list of all surface reactions.
     ///
     /// \return List of pointers to surface reactions.
-    std::vector<SReac *> getAllSReacs(void) const;
+    std::vector<SReac *> getAllSReacs() const;
 
     ////////////////////////////////////////////////////////////////////////
     // OPERATIONS (EXPOSED TO PYTHON): DIFFUSION
@@ -151,7 +151,7 @@ public:
     ///
     /// \return A vector of pointers to the diffusion objects
     ///         stored in the system.
-    std::vector<Diff *> getAllDiffs(void) const;
+    std::vector<Diff *> getAllDiffs() const;
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: SURFACE REACTIONS
@@ -220,7 +220,7 @@ public:
     /// Return a list of all voltage-dependent transitions.
     ///
     /// \return List of pointers to voltage-dependent transitions.
-    std::vector<VDepTrans *> getAllVDepTrans(void) const;
+    std::vector<VDepTrans *> getAllVDepTrans() const;
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: VOLTAGE-DEPENDENT TRANSITIONS
@@ -265,7 +265,7 @@ public:
     /// Return a list of all voltage-dependent reactions.
     ///
     /// \return List of pointers to voltage-dependent transitions.
-    std::vector<VDepSReac *> getAllVDepSReacs(void) const;
+    std::vector<VDepSReac *> getAllVDepSReacs() const;
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: VOLTAGE-DEPENDENT REACTIONS
@@ -310,7 +310,7 @@ public:
     /// Return a list of all ohmic currents.
     ///
     /// \return List of pointers to ohmic currents.
-    std::vector<OhmicCurr *> getAllOhmicCurrs(void) const;
+    std::vector<OhmicCurr *> getAllOhmicCurrs() const;
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: OHMIC CURRENT
@@ -355,7 +355,7 @@ public:
     /// Return a list of all ghk currents.
     ///
     /// \return List of pointers to ghk currents.
-    std::vector<GHKcurr *> getAllGHKcurrs(void) const;
+    std::vector<GHKcurr *> getAllGHKcurrs() const;
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: GHK CURRENT
@@ -389,7 +389,7 @@ public:
     /// Return all species in the surface system.
     ///
     /// \return List of pointers to the species.
-    std::vector<Spec *> getAllSpecs(void) const;
+    std::vector<Spec *> getAllSpecs() const;
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: DELETION
@@ -399,7 +399,7 @@ public:
     ///
     /// Called if Python object deleted, or from del method in parent object.
     /// Will only be called once
-    void _handleSelfDelete(void);
+    void _handleSelfDelete();
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED): SOLVER HELPER METHODS
@@ -408,7 +408,7 @@ public:
     /// Count the surface reactions in the surface system.
     ///
     /// \return Number of surface reactions.
-    inline uint _countSReacs(void) const
+    inline uint _countSReacs() const
     { return pSReacs.size(); }
 
     /// Get a surface reaction with index lidx.
@@ -420,7 +420,7 @@ public:
     /// Count the voltage-dependent transitions in the surface system.
     ///
     /// \return Number of voltage-dependent transitions.
-    inline uint _countVDepTrans(void) const
+    inline uint _countVDepTrans() const
     { return pVDepTrans.size(); }
 
     /// Get a voltage-dependent transition with index lidx.
@@ -432,7 +432,7 @@ public:
     /// Count the voltage-dependent reactions in the surface system.
     ///
     /// \return Number of voltage-dependent reactions.
-    inline uint _countVDepSReacs(void) const
+    inline uint _countVDepSReacs() const
     { return pVDepSReacs.size(); }
 
     /// Get a voltage-dependent reactions with index lidx.
@@ -444,7 +444,7 @@ public:
     /// Count the ohmic currents in the surface system.
     ///
     /// \return Number of ohmic currents.
-    inline uint _countOhmicCurrs(void) const
+    inline uint _countOhmicCurrs() const
     { return pOhmicCurrs.size(); }
 
     /// Get ohmic current object with index lidx.
@@ -456,7 +456,7 @@ public:
     /// Count the ghk currents in the surface system.
     ///
     /// \return Number of ghk currents.
-    inline uint _countGHKcurrs(void) const
+    inline uint _countGHKcurrs() const
     { return pGHKcurrs.size(); }
 
     /// Get ghk current object with index lidx.
@@ -468,38 +468,38 @@ public:
     /// Get all surface reactions in the surface system.
     ///
     /// \return Map of surface reactions.
-    const std::map<std::string, SReac *> & _getAllSReacs(void) const
+    const std::map<std::string, SReac *> & _getAllSReacs() const
     { return pSReacs; }
 
     /// Get all ohmic currents in the system
     ///
     /// \return Map of ohmic currents
-    const std::map<std::string, OhmicCurr *> & _getAllOhmicCurrs(void) const
+    const std::map<std::string, OhmicCurr *> & _getAllOhmicCurrs() const
     { return pOhmicCurrs; }
 
     /// Get all ghk currents in the system
     ///
     /// \return Map of ghk currents
-    const std::map<std::string, GHKcurr *> & _getAllGHKcurrs(void) const
+    const std::map<std::string, GHKcurr *> & _getAllGHKcurrs() const
     { return pGHKcurrs; }
 
     /// Get all voltage-dependent transitions in the system
     ///
     /// \return Map of voltage-dependent transitions
-    const std::map<std::string, VDepTrans *> & _getAllVDepTrans(void) const
+    const std::map<std::string, VDepTrans *> & _getAllVDepTrans() const
     { return pVDepTrans; }
 
     /// Get all voltage-dependent reactions in the system
     ///
     /// \return Map of voltage-dependent reactions
-    const std::map<std::string, VDepSReac *> & _getAllVDepSReacs(void) const
+    const std::map<std::string, VDepSReac *> & _getAllVDepSReacs() const
     { return pVDepSReacs; }
 
 
     /// Count the diffusion rules in the volume system.
     ///
     /// \return Number of diffusion rules.
-    inline uint _countDiffs(void) const
+    inline uint _countDiffs() const
     { return pDiffs.size(); }
 
     /// Get a diffusion rule with index lidx.
@@ -511,7 +511,7 @@ public:
     /// Get all diffusion rules in the surface system.
     ///
     /// \return List of pointers to diffusion rules.
-    const std::map<std::string, Diff *> & _getAllDiffs(void) const
+    const std::map<std::string, Diff *> & _getAllDiffs() const
     { return pDiffs; }
 
     ////////////////////////////////////////////////////////////////////////

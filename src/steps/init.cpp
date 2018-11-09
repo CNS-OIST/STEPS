@@ -50,7 +50,7 @@ NOTE: WARNING and INFO mesages do not terminate the simulation.
 
 INITIALIZE_EASYLOGGINGPP
 
-void steps::init(void) {
+void steps::init() {
 
     // easylogging initialization
     el::Loggers::addFlag(el::LoggingFlag::ImmediateFlush);

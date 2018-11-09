@@ -26,28 +26,28 @@
 
 
 // Standard library & STL headers.
+#include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <algorithm>
 #include <functional>
 #include <iostream>
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
+#include "steps/math/constants.hpp"
+#include "steps/solver/ohmiccurrdef.hpp"
 #include "steps/solver/patchdef.hpp"
 #include "steps/solver/sreacdef.hpp"
-#include "steps/solver/ohmiccurrdef.hpp"
-#include "steps/tetexact/vdeptrans.hpp"
-#include "steps/tetexact/vdepsreac.hpp"
 #include "steps/tetexact/ghkcurr.hpp"
-#include "steps/tetexact/sreac.hpp"
-#include "steps/tetexact/sdiff.hpp"
-#include "steps/tetexact/tet.hpp"
-#include "steps/tetexact/tri.hpp"
 #include "steps/tetexact/kproc.hpp"
+#include "steps/tetexact/sdiff.hpp"
+#include "steps/tetexact/sreac.hpp"
+#include "steps/tetexact/tet.hpp"
 #include "steps/tetexact/tetexact.hpp"
-#include "steps/math/constants.hpp"
+#include "steps/tetexact/tri.hpp"
+#include "steps/tetexact/vdepsreac.hpp"
+#include "steps/tetexact/vdeptrans.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -67,17 +67,17 @@ stex::Tri::Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
 , pArea(area)
 , pLengths()
 , pDist()
-, pInnerTet(0)
-, pOuterTet(0)
+, pInnerTet(nullptr)
+, pOuterTet(nullptr)
 , pTets()
 , pNextTri()
-, pPoolCount(0)
-, pPoolFlags(0)
+, pPoolCount(nullptr)
+, pPoolFlags(nullptr)
 , pKProcs()
-, pECharge(0)
-, pECharge_last(0)
-, pOCchan_timeintg(0)
-, pOCtime_upd(0)
+, pECharge(nullptr)
+, pECharge_last(nullptr)
+, pOCchan_timeintg(nullptr)
+, pOCtime_upd(nullptr)
 {
     AssertLog(pPatchdef != 0);
     AssertLog(pArea > 0.0);
@@ -92,9 +92,9 @@ stex::Tri::Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
     pTris[1] = tri1;
     pTris[2] = tri2;
 
-    pNextTri[0] = 0;
-    pNextTri[1] = 0;
-    pNextTri[2] = 0;
+    pNextTri[0] = nullptr;
+    pNextTri[1] = nullptr;
+    pNextTri[2] = nullptr;
 
     pLengths[0] = l0;
     pLengths[1] = l1;
@@ -128,7 +128,7 @@ stex::Tri::Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Tri::~Tri(void)
+stex::Tri::~Tri()
 {
     delete[] pPoolCount;
     delete[] pPoolFlags;
@@ -218,8 +218,9 @@ void stex::Tri::setNextTri(uint i, stex::Tri * t)
 void stex::Tri::setupKProcs(stex::Tetexact * tex, bool efield)
 {
     uint kprocvecsize = pPatchdef->countSReacs()+pPatchdef->countSurfDiffs();
-    if (efield == true)
+    if (efield == true) {
         kprocvecsize += (pPatchdef->countVDepTrans() + pPatchdef->countVDepSReacs() + pPatchdef->countGHKcurrs());
+}
     pKProcs.resize(kprocvecsize);
 
     uint j = 0;
@@ -228,7 +229,7 @@ void stex::Tri::setupKProcs(stex::Tetexact * tex, bool efield)
     for (uint i=0; i < nsreacs; ++i)
     {
         ssolver::SReacdef * srdef = patchdef()->sreacdef(i);
-        stex::SReac * sr = new SReac(srdef, this);
+        auto * sr = new SReac(srdef, this);
         AssertLog(sr != 0);
         pKProcs[j++] = sr;
         tex->addKProc(sr);
@@ -238,7 +239,7 @@ void stex::Tri::setupKProcs(stex::Tetexact * tex, bool efield)
     for (uint i=0; i < nsdiffs; ++i)
     {
         ssolver::Diffdef * sddef = patchdef()->surfdiffdef(i);
-        stex::SDiff * sd = new SDiff(sddef, this);
+        auto * sd = new SDiff(sddef, this);
         AssertLog(sd != 0);
         pKProcs[j++] = sd;
         tex->addKProc(sd);
@@ -251,7 +252,7 @@ void stex::Tri::setupKProcs(stex::Tetexact * tex, bool efield)
         for (uint i=0; i < nvdtrans; ++i)
         {
             ssolver::VDepTransdef * vdtdef = patchdef()->vdeptransdef(i);
-            stex::VDepTrans * vdt = new VDepTrans(vdtdef, this);
+            auto * vdt = new VDepTrans(vdtdef, this);
             AssertLog(vdt != 0);
             pKProcs[j++] = vdt;
             tex->addKProc(vdt);
@@ -261,7 +262,7 @@ void stex::Tri::setupKProcs(stex::Tetexact * tex, bool efield)
         for (uint i=0; i < nvdsreacs; ++i)
         {
             ssolver::VDepSReacdef * vdsrdef = patchdef()->vdepsreacdef(i);
-            stex::VDepSReac * vdsr = new VDepSReac(vdsrdef, this);
+            auto * vdsr = new VDepSReac(vdsrdef, this);
             AssertLog(vdsr != 0);
             pKProcs[j++] = vdsr;
             tex->addKProc(vdsr);
@@ -271,7 +272,7 @@ void stex::Tri::setupKProcs(stex::Tetexact * tex, bool efield)
         for (uint i=0; i < nghkcurrs; ++i)
         {
             ssolver::GHKcurrdef * ghkdef = patchdef()->ghkcurrdef(i);
-            stex::GHKcurr * ghk = new GHKcurr(ghkdef, this);
+            auto * ghk = new GHKcurr(ghkdef, this);
             AssertLog(ghk != 0);
             pKProcs[j++] = ghk;
             tex->addKProc(ghk);
@@ -281,7 +282,7 @@ void stex::Tri::setupKProcs(stex::Tetexact * tex, bool efield)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tri::reset(void)
+void stex::Tri::reset()
 {
     uint nspecs = patchdef()->countSpecs();
     std::fill_n(pPoolCount, nspecs, 0);
@@ -302,7 +303,7 @@ void stex::Tri::reset(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tri::resetECharge(void)
+void stex::Tri::resetECharge()
 {
     uint nghkcurrs = pPatchdef->countGHKcurrs();
 
@@ -316,7 +317,7 @@ void stex::Tri::resetECharge(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tri::resetOCintegrals(void)
+void stex::Tri::resetOCintegrals()
 {
     uint nocs = patchdef()->countOhmicCurrs();
     std::fill_n(pOCchan_timeintg, nocs, 0.0);
@@ -337,7 +338,7 @@ void stex::Tri::setCount(uint lidx, uint count)
 {
     AssertLog(lidx < patchdef()->countSpecs());
     double oldcount = pPoolCount[lidx];
-    double c = static_cast<double>(count);
+    auto c = static_cast<double>(count);
     pPoolCount[lidx] = c;
 
     /* 16/01/10 IH: Counts no longer stored in patch object.
@@ -380,8 +381,9 @@ void stex::Tri::setOCchange(uint oclidx, uint slidx, double dt, double simtime)
 
 void stex::Tri::setClamped(uint lidx, bool clamp)
 {
-    if (clamp == true) pPoolFlags[lidx] |= CLAMPED;
-    else pPoolFlags[lidx] &= ~CLAMPED;
+    if (clamp == true) { pPoolFlags[lidx] |= CLAMPED;
+    } else { pPoolFlags[lidx] &= ~CLAMPED;
+}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -445,7 +447,7 @@ double stex::Tri::getGHKI(uint lidx, double dt) const
     AssertLog(lidx < nghkcurrs);
 
     int efcharge = pECharge_last[lidx];
-    double efcharged = static_cast<double>(efcharge);
+    auto efcharged = static_cast<double>(efcharge);
 
     return ((efcharged*steps::math::E_CHARGE)/dt);
 }
@@ -461,7 +463,7 @@ double stex::Tri::getGHKI(double dt) const
         efcharge += pECharge_last[i];
     }
 
-    double efcharged = static_cast<double>(efcharge);
+    auto efcharged = static_cast<double>(efcharge);
 
     return ((efcharged*steps::math::E_CHARGE)/dt);
 }
@@ -493,7 +495,7 @@ double stex::Tri::computeI(double v, double dt, double simtime)
     }
     
     // The contribution from GHK charge movement.
-    double efcharged = static_cast<double>(efcharge);
+    auto efcharged = static_cast<double>(efcharge);
 
     // Convert charge to coulombs and find mean current
     current += ((efcharged*steps::math::E_CHARGE)/dt);

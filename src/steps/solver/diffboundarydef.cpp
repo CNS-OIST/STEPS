@@ -26,16 +26,16 @@
 
 
 // STL headers.
-#include <string>
 #include <cassert>
+#include <string>
 
 // STEPS headers.
 #include "steps/common.h"
-#include "steps/solver/types.hpp"
 #include "steps/error.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/diffboundarydef.hpp"
 #include "steps/geom/comp.hpp"
+#include "steps/solver/diffboundarydef.hpp"
+#include "steps/solver/statedef.hpp"
+#include "steps/solver/types.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -51,8 +51,8 @@ ssolver::DiffBoundarydef::DiffBoundarydef(Statedef * sd, uint idx, stetmesh::Dif
 , pIdx(idx)
 , pName()
 , pTris()
-, pCompA_temp(0)
-, pCompB_temp(0)
+, pCompA_temp(nullptr)
+, pCompB_temp(nullptr)
 , pCompA(0)
 , pCompB(0)
 , pSetupdone(false)
@@ -72,9 +72,8 @@ ssolver::DiffBoundarydef::DiffBoundarydef(Statedef * sd, uint idx, stetmesh::Dif
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::DiffBoundarydef::~DiffBoundarydef(void)
-{
-}
+ssolver::DiffBoundarydef::~DiffBoundarydef()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -92,7 +91,7 @@ void ssolver::DiffBoundarydef::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::DiffBoundarydef::setup(void)
+void ssolver::DiffBoundarydef::setup()
 {
     AssertLog(pSetupdone == false);
 
@@ -106,7 +105,7 @@ void ssolver::DiffBoundarydef::setup(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string const ssolver::DiffBoundarydef::name(void) const
+std::string const ssolver::DiffBoundarydef::name() const
 {
     return pName;
 }

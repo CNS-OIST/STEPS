@@ -27,25 +27,25 @@
 
 
 // Standard library & STL headers.
-#include <cmath>
-#include <vector>
 #include <cassert>
+#include <cmath>
+#include <fstream>
 #include <iostream>
 #include <sstream>
-#include <fstream>
+#include <vector>
 
 
 // STEPS headers.
 #include "steps/common.h"
-#include "steps/wmrk4/wmrk4.hpp"
-#include "steps/math/constants.hpp"
 #include "steps/error.hpp"
-#include "steps/solver/statedef.hpp"
+#include "steps/math/constants.hpp"
 #include "steps/solver/compdef.hpp"
 #include "steps/solver/patchdef.hpp"
 #include "steps/solver/reacdef.hpp"
 #include "steps/solver/sreacdef.hpp"
+#include "steps/solver/statedef.hpp"
 #include "steps/solver/types.hpp"
+#include "steps/wmrk4/wmrk4.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -57,17 +57,12 @@ namespace ssolver = steps::solver;
 
 swmrk4::Wmrk4::Wmrk4(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r)
 : API(m, g, r)
-, pReacMtx(0)
-, pUpdMtx(0)
 , pSpecs_tot(0)
 , pReacs_tot(0)
-, pCcst()
 , pVals()
 , pSFlags()
-, pRFlags()
 , pNewVals()
 , pDyDx()
-, pDyDxlhs(0)
 , pDT(0.0)
 , yt()
 , dyt()
@@ -90,68 +85,38 @@ swmrk4::Wmrk4::Wmrk4(steps::model::Model * m, steps::wm::Geom * g, steps::rng::R
         nreacstot += statedef()->patchdef(i)->countSReacs();
     }
 
-    pReacMtx = new uint * [nreacstot];
-    for (uint i=0; i< nreacstot; ++i)
-    {
-        pReacMtx[i]= new uint[nspecstot];
-        std::fill_n(pReacMtx[i], nspecstot, 0);
-    }
-
-    pUpdMtx = new int * [nreacstot];
-    for (uint i=0; i< nreacstot; ++i)
-    {
-        pUpdMtx[i] = new int[nspecstot];
-        std::fill_n(pUpdMtx[i], nspecstot, 0);
-    }
-
-    pDyDxlhs = new double * [nspecstot];
-    for (uint i=0; i< nspecstot; ++i)
-    {
-        pDyDxlhs[i] = new double[nreacstot];
-        std::fill_n(pDyDxlhs[i], nreacstot, 0.0);
-    }
-
     _setup();
-    _refill();
-    _refillCcst();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-swmrk4::Wmrk4::~Wmrk4(void)
-{
-    for(uint i=0; i< pReacs_tot; ++i) delete[] pReacMtx[i];
-    delete[] pReacMtx;
-    for(uint i=0; i< pReacs_tot; ++i) delete[] pUpdMtx[i];
-    delete[] pUpdMtx;
-    for (uint i=0; i< pSpecs_tot; ++i) delete[] pDyDxlhs[i];
-    delete[] pDyDxlhs;
-}
+swmrk4::Wmrk4::~Wmrk4()
+= default;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::string swmrk4::Wmrk4::getSolverName(void) const
+std::string swmrk4::Wmrk4::getSolverName() const
 {
     return "wmrk4";
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::string swmrk4::Wmrk4::getSolverDesc(void) const
+std::string swmrk4::Wmrk4::getSolverDesc() const
 {
     return "Runge-Kutta Method in well-mixed conditions";
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::string swmrk4::Wmrk4::getSolverAuthors(void) const
+std::string swmrk4::Wmrk4::getSolverAuthors() const
 {
-    return "Iain Hepburn and Stefan Wils";
+    return "Sam Melchior, Iain Hepburn and Stefan Wils";
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::string swmrk4::Wmrk4::getSolverEmail(void) const
+std::string swmrk4::Wmrk4::getSolverEmail() const
 {
     return "ihepburn@oist.jp";
 }
@@ -159,7 +124,7 @@ std::string swmrk4::Wmrk4::getSolverEmail(void) const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void swmrk4::Wmrk4::reset(void)
+void swmrk4::Wmrk4::reset()
 {
     uint comps = statedef()->countComps();
     for (uint i=0; i < comps; ++i) statedef()->compdef(i)->reset();
@@ -202,7 +167,7 @@ void swmrk4::Wmrk4::advance(double adv)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void swmrk4::Wmrk4::step(void)
+void swmrk4::Wmrk4::step()
 {
     AssertLog(pDT > 0.0);
     _rksteps(statedef()->time(), statedef()->time() + pDT);
@@ -224,7 +189,7 @@ void swmrk4::Wmrk4::setRk4DT(double dt)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-double swmrk4::Wmrk4::getTime(void) const
+double swmrk4::Wmrk4::getTime() const
 {
     return statedef()->time();
 }
@@ -244,19 +209,9 @@ void swmrk4::Wmrk4::checkpoint(std::string const & file_name)
 
     cp_file.write((char*)&state_buffer, sizeof(double) * 3);
 
-    cp_file.write((char*)pReacMtx, sizeof(uint) * pReacs_tot * pSpecs_tot);
-
-    cp_file.write((char*)pUpdMtx, sizeof(int) * pReacs_tot * pSpecs_tot);
-
-    cp_file.write((char*)pDyDxlhs, sizeof(double) * pSpecs_tot * pReacs_tot);
-
-    cp_file.write((char*)&pCcst.front(), sizeof(double) * pCcst.size());
-
     cp_file.write((char*)&pVals.front(), sizeof(double) * pVals.size());
 
     cp_file.write((char*)&pSFlags.front(), sizeof(uint) * pSFlags.size());
-
-    cp_file.write((char*)&pRFlags.front(), sizeof(uint) * pRFlags.size());
 
     cp_file.write((char*)&pNewVals.front(), sizeof(double) * pNewVals.size());
 
@@ -300,19 +255,9 @@ void swmrk4::Wmrk4::restore(std::string const & file_name)
 
     pDT = state_buffer[2];
 
-    cp_file.read((char*)pReacMtx, sizeof(uint) * pReacs_tot * pSpecs_tot);
-
-    cp_file.read((char*)pUpdMtx, sizeof(int) * pReacs_tot * pSpecs_tot);
-
-    cp_file.read((char*)pDyDxlhs, sizeof(double) * pSpecs_tot * pReacs_tot);
-
-    cp_file.read((char*)&pCcst.front(), sizeof(double) * pCcst.size());
-
     cp_file.read((char*)&pVals.front(), sizeof(double) * pVals.size());
 
     cp_file.read((char*)&pSFlags.front(), sizeof(uint) * pSFlags.size());
-
-    cp_file.read((char*)&pRFlags.front(), sizeof(uint) * pRFlags.size());
 
     cp_file.read((char*)&pNewVals.front(), sizeof(double) * pNewVals.size());
 
@@ -790,7 +735,7 @@ double swmrk4::Wmrk4::_ccst2D(double kcst, double area, uint order)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrk4::Wmrk4::_setup(void)
+void swmrk4::Wmrk4::_setup()
 
 {
     /// cumulative number of species from each compartment and patch
@@ -814,11 +759,6 @@ void swmrk4::Wmrk4::_setup(void)
     AssertLog(pSpecs_tot > 0);
     AssertLog(pReacs_tot > 0);
 
-    /// initialise vectors
-    for(uint i=0; i< pReacs_tot; ++i)
-    {
-        pRFlags.push_back(0);
-    }
     for(uint i=0; i< pSpecs_tot; ++i)
     {
         pVals.push_back(0.0);
@@ -846,18 +786,19 @@ void swmrk4::Wmrk4::_setup(void)
 
         for(uint j=0; j< compReacs_N; ++j)
         {
+            Reaction reaction;
             for(uint k=0; k< compSpecs_N; ++k)
             {
                 uint lhs = statedef()->compdef(i)->reac_lhs_bgn(j)[k];
                 int upd = statedef()->compdef(i)->reac_upd_bgn(j)[k];
-                pReacMtx[rowp + j][colp + k] = lhs;
-                pUpdMtx[rowp + j][colp + k] = upd;
+                reaction.addSpecies(colp + k, lhs, upd);
             }
             /// set scaled reaction constant
             double reac_kcst = statedef()->compdef(i)->kcst(j);
             double comp_vol = statedef()->compdef(i)->vol();
             uint reac_order = statedef()->compdef(i)->reacdef(j)->order();
-            pCcst.push_back(_ccst(reac_kcst, comp_vol, reac_order));
+            reaction.c = _ccst(reac_kcst, comp_vol, reac_order);
+            reactions.push_back(reaction);
         }
         /// step up markers for next compartment
         rowp += compReacs_N;
@@ -875,11 +816,11 @@ void swmrk4::Wmrk4::_setup(void)
 
         for (uint j=0; j< patchReacs_N; ++j)
         {
+            Reaction reaction;
             for(uint k=0; k< patchSpecs_N_S; ++k)
             {   uint slhs = statedef()->patchdef(i)->sreac_lhs_S_bgn(j)[k];
                 int supd = statedef()->patchdef(i)->sreac_upd_S_bgn(j)[k];
-                pReacMtx[rowp + j][colp + k] = slhs;
-                pUpdMtx[rowp + j][colp + k] = supd;
+                reaction.addSpecies(colp + k, slhs, supd);
             }
 
             /// fill for inner and outer compartments involved in sreac j
@@ -899,8 +840,7 @@ void swmrk4::Wmrk4::_setup(void)
                 {
                     uint ilhs = statedef()->patchdef(i)->sreac_lhs_I_bgn(j)[k];
                     int iupd = statedef()->patchdef(i)->sreac_upd_I_bgn(j)[k];
-                    pReacMtx[rowp + j][mtx_icompidx + k] = ilhs;
-                    pUpdMtx[rowp + j][mtx_icompidx + k] = iupd;
+                    reaction.addSpecies(mtx_icompidx + k, ilhs, iupd);
                 }
             }
             if (statedef()->patchdef(i)->ocompdef() != 0)
@@ -915,8 +855,7 @@ void swmrk4::Wmrk4::_setup(void)
                 {
                     uint olhs = statedef()->patchdef(i)->sreac_lhs_O_bgn(j)[k];
                     int oupd = statedef()->patchdef(i)->sreac_upd_O_bgn(j)[k];
-                    pReacMtx[rowp + j][mtx_ocompidx + k] = olhs;
-                    pUpdMtx[rowp + j][mtx_ocompidx + k] = oupd;
+                    reaction.addSpecies(mtx_ocompidx + k, olhs, oupd);
                 }
             }
             if (statedef()->patchdef(i)->sreacdef(j)->surf_surf() == false)
@@ -935,7 +874,7 @@ void swmrk4::Wmrk4::_setup(void)
                 }
                 double sreac_kcst = statedef()->patchdef(i)->kcst(j);
                 uint sreac_order = statedef()->patchdef(i)->sreacdef(j)->order();
-                pCcst.push_back(_ccst(sreac_kcst, vol, sreac_order));
+                reaction.c = _ccst(sreac_kcst, vol, sreac_order);
             }
             else
             {
@@ -943,8 +882,9 @@ void swmrk4::Wmrk4::_setup(void)
                 double area = statedef()->patchdef(i)->area();
                 double sreac_kcst = statedef()->patchdef(i)->kcst(j);
                 uint sreac_order = statedef()->patchdef(i)->sreacdef(j)->order();
-                pCcst.push_back(_ccst2D(sreac_kcst, area, sreac_order));
+                reaction.c = _ccst2D(sreac_kcst, area, sreac_order);
             }
+            reactions.push_back(reaction);
 
         }
         /// move markers to next point in matrix
@@ -952,12 +892,14 @@ void swmrk4::Wmrk4::_setup(void)
         colp += patchSpecs_N_S;
     }
 
-    AssertLog(pCcst.size() == pReacs_tot);
+    AssertLog(reactions.size() == pReacs_tot);
+    _refill();
+    _refillCcst();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrk4::Wmrk4::_refill(void)
+void swmrk4::Wmrk4::_refill()
 {
     uint Comps_N = statedef()->countComps();
     uint Patches_N = statedef()->countPatches();
@@ -979,7 +921,7 @@ void swmrk4::Wmrk4::_refill(void)
         }
         for(uint k=0; k< comp_Reacs_N; ++k)
         {
-            pRFlags[r_marker + k] = comp->rflags()[k];
+            reactions[r_marker + k].isActivated = comp->active(k);
         }
         c_marker += comp_Specs_N;
         r_marker += comp_Reacs_N;
@@ -998,7 +940,7 @@ void swmrk4::Wmrk4::_refill(void)
         }
         for (uint k=0; k< patch_Reacs_N; ++k)
         {
-            pRFlags[r_marker + k] = patch->srflags()[k];
+            reactions[r_marker + k].isActivated = patch->active(k);
         }
         c_marker += patch_Specs_N;
         r_marker += patch_Reacs_N;
@@ -1006,21 +948,18 @@ void swmrk4::Wmrk4::_refill(void)
 
     AssertLog(c_marker == pVals.size());
     AssertLog(pVals.size() == pSFlags.size());
-    AssertLog(r_marker == pRFlags.size());
-    AssertLog(pReacs_tot == pRFlags.size());
     AssertLog(pSFlags.size() == pSpecs_tot);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrk4::Wmrk4::_refillCcst(void)
+void swmrk4::Wmrk4::_refillCcst()
 {
     uint Comps_N = statedef()->countComps();
     uint Patches_N = statedef()->countPatches();
     AssertLog(Comps_N > 0);
 
-    // simplest to reset Ccst vector
-    pCcst = std::vector<double>();
+    uint r_marker = 0;
 
     for (uint i=0; i< Comps_N; ++i)
     {
@@ -1035,8 +974,9 @@ void swmrk4::Wmrk4::_refillCcst(void)
             double reac_kcst = statedef()->compdef(i)->kcst(j);
             double comp_vol = statedef()->compdef(i)->vol();
             uint reac_order = statedef()->compdef(i)->reacdef(j)->order();
-            pCcst.push_back(_ccst(reac_kcst, comp_vol, reac_order));
+            reactions[r_marker + j].c = _ccst(reac_kcst, comp_vol, reac_order);
         }
+        r_marker += compReacs_N;
     }
 
     /// now loop over patches,
@@ -1044,9 +984,6 @@ void swmrk4::Wmrk4::_refillCcst(void)
     for(uint i=0; i< Patches_N; ++i)
     {
         uint patchReacs_N = statedef()->patchdef(i)->countSReacs();
-        // uint patchSpecs_N_S = statedef()->patchdef(i)->countSpecs();
-        // uint patchSpecs_N_I = statedef()->patchdef(i)->countSpecs_I();
-        // uint patchSpecs_N_O = statedef()->patchdef(i)->countSpecs_O();
 
         for (uint j=0; j< patchReacs_N; ++j)
         {
@@ -1069,7 +1006,7 @@ void swmrk4::Wmrk4::_refillCcst(void)
                 // so didn't take into account sim-level changes
                 double sreac_kcst = statedef()->patchdef(i)->kcst(j);
                 uint sreac_order = statedef()->patchdef(i)->sreacdef(j)->order();
-                pCcst.push_back(_ccst(sreac_kcst, vol, sreac_order));
+                reactions[r_marker + j].c = _ccst(sreac_kcst, vol, sreac_order);
                 }
             else
             {
@@ -1077,70 +1014,44 @@ void swmrk4::Wmrk4::_refillCcst(void)
                 double area = statedef()->patchdef(i)->area();
                 double sreac_kcst = statedef()->patchdef(i)->kcst(j);
                 uint sreac_order = statedef()->patchdef(i)->sreacdef(j)->order();
-                pCcst.push_back(_ccst2D(sreac_kcst, area, sreac_order));
+                reactions[r_marker + j].c = _ccst2D(sreac_kcst, area, sreac_order);
             }
         }
+        r_marker += patchReacs_N;
     }
 
-    AssertLog(pCcst.size() == pReacs_tot);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void swmrk4::Wmrk4::_setderivs(dVec & vals, dVec & dydx)
 {
-    for (uint n=0; n< pSpecs_tot; ++n)
+    std::fill(dydx.begin(), dydx.end(), 0);
+    for(const auto &reaction: reactions)
     {
-        for(uint r=0; r< pReacs_tot; ++r)
+        if (reaction.isActivated)
         {
-            /// check reaction flags
-            if (pRFlags[r] & Statedef::INACTIVE_REACFLAG)                        /////////
+            double numberOfReactionFirings = reaction.c;
+            for (const auto &reactant: reaction.reactants)
             {
-                pDyDxlhs[n][r] = 0.0;
-                continue;
-            }
-
-            if (pUpdMtx[r][n] == 0)
-            {
-                pDyDxlhs[n][r] = 0.0;
-                continue;
-            }
-
-            // This assumes correct reaction rate constant e.g unimolecular second order
-            // reaction A+A--k->B
-            // d[A]/dt = -2k[A]^2
-            pDyDxlhs[n][r] = pUpdMtx[r][n] * pCcst[r];
-            for (uint i=0; i < pSpecs_tot; ++i)
-            {
-                double dydx_lhs_temp = 1.0;
-                double val = vals[i];
-                switch (pReacMtx[r][i])
+                const double population = vals[reactant.globalIndex];
+                switch (reactant.order)
                 {
-                    case 4: dydx_lhs_temp *= val;
-                    case 3: dydx_lhs_temp *= val;
-                    case 2: dydx_lhs_temp *= val;
-                    case 1: dydx_lhs_temp *= val;
+                    case 4: numberOfReactionFirings *= population;
+                    case 3: numberOfReactionFirings *= population;
+                    case 2: numberOfReactionFirings *= population;
+                    case 1: numberOfReactionFirings *= population;
                     case 0: break;
                     /// allow maximum 4 molecules of one species in reaction
                     default: AssertLog(0);
                 }
-                pDyDxlhs[n][r] *= dydx_lhs_temp;
             }
-        }
-    }
-
-    for (uint n=0; n< pSpecs_tot; ++n)
-    {
-        dydx[n] = 0.0;
-        // If species is clamped the dy/dx is zero:
-        if (pSFlags[n] & Statedef::CLAMPED_POOLFLAG)
-        {
-            continue;
-        }
-
-        for (uint r=0; r< pReacs_tot; ++r)
-        {
-            dydx[n] += pDyDxlhs[n][r];
+            for (const auto &specie: reaction.affectedSpecies)
+            {
+                if (pSFlags[specie.globalIndex] & Statedef::CLAMPED_POOLFLAG)
+                    continue;
+                dydx[specie.globalIndex] += specie.populationChange*numberOfReactionFirings;
+            }
         }
     }
 }
@@ -1222,7 +1133,7 @@ void swmrk4::Wmrk4::_rksteps(double t1, double t2)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrk4::Wmrk4::_update(void)
+void swmrk4::Wmrk4::_update()
 {
     /// update local values vector with computed counts
     for (uint i=0; i< pSpecs_tot; ++i)

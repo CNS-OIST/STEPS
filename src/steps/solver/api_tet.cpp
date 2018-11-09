@@ -26,16 +26,16 @@
 
 
 // STL headers.
-#include <string>
 #include <sstream>
+#include <string>
 
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
+#include "steps/geom/tetmesh.hpp"
 #include "steps/solver/api.hpp"
 #include "steps/solver/statedef.hpp"
-#include "steps/geom/tetmesh.hpp"
 // logging
 #include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
@@ -47,7 +47,7 @@ using namespace steps::solver;
 
 double API::getTetVol(uint tidx) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -70,7 +70,7 @@ double API::getTetVol(uint tidx) const
 
 void API::setTetVol(uint tidx, double vol)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -93,7 +93,7 @@ void API::setTetVol(uint tidx, double vol)
 
 bool API::getTetSpecDefined(uint tidx, string const & s) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -119,7 +119,7 @@ bool API::getTetSpecDefined(uint tidx, string const & s) const
 
 double API::getTetCount(uint tidx, string const & s) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -144,7 +144,7 @@ double API::getTetCount(uint tidx, string const & s) const
 
 void API::setTetCount(uint tidx, string const & s, double n)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -177,7 +177,7 @@ void API::setTetCount(uint tidx, string const & s, double n)
 
 double API::getTetAmount(uint tidx, string const & s) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -203,7 +203,7 @@ double API::getTetAmount(uint tidx, string const & s) const
 
 void API::setTetAmount(uint tidx, string const & s, double m)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -235,7 +235,7 @@ void API::setTetAmount(uint tidx, string const & s, double m)
 
 double API::getTetConc(uint tidx, string const & s) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -261,7 +261,7 @@ double API::getTetConc(uint tidx, string const & s) const
 
 void API::setTetConc(uint tidx, string const & s, double c)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -293,7 +293,7 @@ void API::setTetConc(uint tidx, string const & s, double c)
 
 bool API::getTetClamped(uint tidx, string const & s) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -319,7 +319,7 @@ bool API::getTetClamped(uint tidx, string const & s) const
 
 void API::setTetClamped(uint tidx, string const & s, bool buf)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -345,7 +345,7 @@ void API::setTetClamped(uint tidx, string const & s, bool buf)
 
 double API::getTetReacK(uint tidx, string const & r) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -371,7 +371,7 @@ double API::getTetReacK(uint tidx, string const & r) const
 
 void API::setTetReacK(uint tidx, string const & r, double kf)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -403,7 +403,7 @@ void API::setTetReacK(uint tidx, string const & r, double kf)
 
 bool API::getTetReacActive(uint tidx, string const & r) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -429,7 +429,7 @@ bool API::getTetReacActive(uint tidx, string const & r) const
 
 void API::setTetReacActive(uint tidx, string const & r, bool act)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -455,7 +455,7 @@ void API::setTetReacActive(uint tidx, string const & r, bool act)
 
 double API::getTetDiffD(uint tidx, string const & d, uint direction_tet) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -481,7 +481,7 @@ double API::getTetDiffD(uint tidx, string const & d, uint direction_tet) const
 
 void API::setTetDiffD(uint tidx, string const & d, double dk, uint direction_tet)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -519,7 +519,7 @@ void API::setTetDiffD(uint tidx, string const & d, double dk, uint direction_tet
 
 bool API::getTetDiffActive(uint tidx, string const & d) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -545,7 +545,7 @@ bool API::getTetDiffActive(uint tidx, string const & d) const
 
 void API::setTetDiffActive(uint tidx, string const & d, bool act)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
 
         if (tidx >= mesh->countTets())
@@ -572,7 +572,7 @@ void API::setTetDiffActive(uint tidx, string const & d, bool act)
 
 double API::getTetReacH(uint tidx, string const & r) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
 
         if (tidx >= mesh->countTets())
@@ -599,7 +599,7 @@ double API::getTetReacH(uint tidx, string const & r) const
 
 double API::getTetReacC(uint tidx, string const & r) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -625,7 +625,7 @@ double API::getTetReacC(uint tidx, string const & r) const
 
 double API::getTetReacA(uint tidx, string const & r) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
 
         if (tidx >= mesh->countTets())
@@ -652,7 +652,7 @@ double API::getTetReacA(uint tidx, string const & r) const
 
 double API::getTetDiffA(uint tidx, string const & d) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -678,7 +678,7 @@ double API::getTetDiffA(uint tidx, string const & d) const
 
 double API::getTetV(uint tidx) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -701,7 +701,7 @@ double API::getTetV(uint tidx) const
 
 void API::setTetV(uint tidx, double v)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -724,7 +724,7 @@ void API::setTetV(uint tidx, double v)
 
 bool API::getTetVClamped(uint tidx) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {
@@ -748,7 +748,7 @@ bool API::getTetVClamped(uint tidx) const
 
 void API::setTetVClamped(uint tidx, bool cl)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (tidx >= mesh->countTets())
         {

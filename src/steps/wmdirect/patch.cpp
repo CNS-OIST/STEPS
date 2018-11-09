@@ -32,14 +32,14 @@
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
-#include "steps/wmdirect/patch.hpp"
+#include "steps/solver/patchdef.hpp"
+#include "steps/solver/statedef.hpp"
+#include "steps/solver/types.hpp"
 #include "steps/wmdirect/comp.hpp"
 #include "steps/wmdirect/kproc.hpp"
+#include "steps/wmdirect/patch.hpp"
 #include "steps/wmdirect/sreac.hpp"
 #include "steps/wmdirect/wmdirect.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/patchdef.hpp"
-#include "steps/solver/types.hpp"
 // logging
 #include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
@@ -56,13 +56,14 @@ swmd::Patch::Patch(steps::solver::Patchdef * patchdef, swmd::Comp * icomp, swmd:
 , pOComp(ocomp)
 {
     AssertLog(pPatchdef != 0);
-    if (iComp() != 0) iComp()->addIPatch(this);
+    if (iComp() != nullptr) { iComp()->addIPatch(this);
+}
     if (oComp() != 0) oComp()->addOPatch(this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmd::Patch::~Patch(void)
+swmd::Patch::~Patch()
 {
     for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
     {
@@ -100,7 +101,7 @@ void swmd::Patch::setupKProcs(swmd::Wmdirect * wmd)
     for (uint i = 0; i < nsreacs; ++i)
     {
         ssolver::SReacdef * srdef = def()->sreacdef(i);
-        swmd::SReac * sr = new swmd::SReac(srdef, this);
+        auto * sr = new swmd::SReac(srdef, this);
         pKProcs[i] = sr;
         wmd->addKProc(sr);
     }
@@ -108,7 +109,7 @@ void swmd::Patch::setupKProcs(swmd::Wmdirect * wmd)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Patch::setupDeps(void)
+void swmd::Patch::setupDeps()
 {
     std::for_each(pKProcs.begin(), pKProcs.end(),
         std::mem_fun(&KProc::setupDeps));
@@ -124,7 +125,7 @@ swmd::KProc * swmd::Patch::sreac(uint lsridx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Patch::reset(void)
+void swmd::Patch::reset()
 {
     std::for_each(pKProcs.begin(), pKProcs.end(), std::mem_fun(&KProc::reset));
 }

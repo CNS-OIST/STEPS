@@ -92,7 +92,7 @@ public:
 
     /// Destructor
     ///
-    virtual ~R123(void) {}
+    virtual ~R123() {}
 
 protected:
 
@@ -103,7 +103,7 @@ protected:
 
     /// Fills the buffer with random numbers on [0,0xffffffff]-interval.
     ///
-    virtual void concreteFillBuffer(void);
+    virtual void concreteFillBuffer();
 
 private:
 

@@ -60,7 +60,7 @@ public:
     Diffdef(Statedef * sd, uint idx, steps::model::Diff * d);
 
     /// Destructor
-    ~Diffdef(void);
+    ~Diffdef();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -76,21 +76,21 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this diffusion rule.
-    inline uint gidx(void) const
+    inline uint gidx() const
     { return pIdx; }
 
     /// Return the name of this diffusion rule.
-    std::string const name(void) const;
+    std::string const name() const;
 
     /// Return the diffusion constant.
-    double dcst(void) const;
+    double dcst() const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: LIGAND
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of the ligand species.
-    uint lig(void) const;
+    uint lig() const;
 
     /// \todo check
     int dep(uint gidx) const;
@@ -103,7 +103,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Setup the object.
-    void setup(void);
+    void setup();
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: DIFFUSION RULE

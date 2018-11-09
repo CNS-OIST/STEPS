@@ -26,17 +26,17 @@
 
 
 // STL headers.
-#include <string>
 #include <cassert>
+#include <string>
 
 // STEPS headers.
 #include "steps/common.h"
-#include "steps/solver/types.hpp"
 #include "steps/error.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/specdef.hpp"
-#include "steps/solver/diffdef.hpp"
 #include "steps/model/spec.hpp"
+#include "steps/solver/diffdef.hpp"
+#include "steps/solver/specdef.hpp"
+#include "steps/solver/statedef.hpp"
+#include "steps/solver/types.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -54,7 +54,7 @@ ssolver::Diffdef::Diffdef(Statedef * sd, uint idx, steps::model::Diff * d)
 , pDcst()
 , pLig()
 , pSetupdone(false)
-, pSpec_DEP(0)
+, pSpec_DEP(nullptr)
 {
     AssertLog(pStatedef != 0);
     AssertLog(d != 0);
@@ -64,7 +64,8 @@ ssolver::Diffdef::Diffdef(Statedef * sd, uint idx, steps::model::Diff * d)
     pLig = d->getLig()->getID();
 
     uint nspecs = pStatedef->countSpecs();
-    if (nspecs == 0) return;
+    if (nspecs == 0) { return;
+}
     pSpec_DEP = new int[nspecs];
     std::fill_n(pSpec_DEP, nspecs, DEP_NONE);
 
@@ -72,7 +73,7 @@ ssolver::Diffdef::Diffdef(Statedef * sd, uint idx, steps::model::Diff * d)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::Diffdef::~Diffdef(void)
+ssolver::Diffdef::~Diffdef()
 {
     if (pStatedef->countSpecs() > 0) delete[] pSpec_DEP;
 }
@@ -93,7 +94,7 @@ void ssolver::Diffdef::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Diffdef::setup(void)
+void ssolver::Diffdef::setup()
 {
     AssertLog(pSetupdone == false);
 
@@ -105,14 +106,14 @@ void ssolver::Diffdef::setup(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string const ssolver::Diffdef::name(void) const
+std::string const ssolver::Diffdef::name() const
 {
     return pName;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double ssolver::Diffdef::dcst(void) const
+double ssolver::Diffdef::dcst() const
 {
     return pDcst;
 }
@@ -127,7 +128,7 @@ void ssolver::Diffdef::setDcst(double d)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint ssolver::Diffdef::lig(void) const
+uint ssolver::Diffdef::lig() const
 {
     AssertLog(pStatedef != 0);
     return pStatedef->getSpecIdx(pLig);
@@ -157,7 +158,8 @@ bool ssolver::Diffdef::reqspec(uint gidx) const
 {
     AssertLog(pSetupdone == true);
     AssertLog(gidx < pStatedef->countSpecs());
-    if (pSpec_DEP[gidx] != DEP_NONE) return true;
+    if (pSpec_DEP[gidx] != DEP_NONE) { return true;
+}
     return false;
 }
 

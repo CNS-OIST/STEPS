@@ -26,19 +26,19 @@
 
 
 // STL headers.
-#include <string>
 #include <cassert>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 // STEPS headers.
 #include "steps/common.h"
-#include "steps/solver/types.hpp"
 #include "steps/error.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/vdepsreacdef.hpp"
-#include "steps/model/vdepsreac.hpp"
 #include "steps/model/spec.hpp"
+#include "steps/model/vdepsreac.hpp"
+#include "steps/solver/statedef.hpp"
+#include "steps/solver/types.hpp"
+#include "steps/solver/vdepsreacdef.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -58,7 +58,7 @@ ssolver::VDepSReacdef::VDepSReacdef(Statedef * sd, uint idx, smod::VDepSReac * v
 , pVMin(0.0)
 , pVMax(0.0)
 , pDV(0.0)
-, pVKTab(0)
+, pVKTab(nullptr)
 , pOrder()
 , pIlhs()
 , pOlhs()
@@ -67,18 +67,18 @@ ssolver::VDepSReacdef::VDepSReacdef(Statedef * sd, uint idx, smod::VDepSReac * v
 , pOrhs()
 , pSrhs()
 , pSurface_surface(true)
-, pSpec_I_DEP(0)
-, pSpec_S_DEP(0)
-, pSpec_O_DEP(0)
-, pSpec_I_LHS(0)
-, pSpec_S_LHS(0)
-, pSpec_O_LHS(0)
-, pSpec_I_RHS(0)
-, pSpec_S_RHS(0)
-, pSpec_O_RHS(0)
-, pSpec_I_UPD(0)
-, pSpec_S_UPD(0)
-, pSpec_O_UPD(0)
+, pSpec_I_DEP(nullptr)
+, pSpec_S_DEP(nullptr)
+, pSpec_O_DEP(nullptr)
+, pSpec_I_LHS(nullptr)
+, pSpec_S_LHS(nullptr)
+, pSpec_O_LHS(nullptr)
+, pSpec_I_RHS(nullptr)
+, pSpec_S_RHS(nullptr)
+, pSpec_O_RHS(nullptr)
+, pSpec_I_UPD(nullptr)
+, pSpec_S_UPD(nullptr)
+, pSpec_O_UPD(nullptr)
 , pSpec_I_UPD_Coll()
 , pSpec_S_UPD_Coll()
 , pSpec_O_UPD_Coll()
@@ -122,11 +122,13 @@ ssolver::VDepSReacdef::VDepSReacdef(Statedef * sd, uint idx, smod::VDepSReac * v
     pOrhs = vdsr->getORHS();
     pSrhs = vdsr->getSRHS();
 
-    if (vdsr->getInner() == true) pOrient = VDepSReacdef::INSIDE;
-    else pOrient = VDepSReacdef::OUTSIDE;
+    if (vdsr->getInner() == true) { pOrient = VDepSReacdef::INSIDE;
+    } else { pOrient = VDepSReacdef::OUTSIDE;
+}
 
     uint nspecs = pStatedef->countSpecs();
-    if (nspecs == 0) return; // Would be weird, but okay.
+    if (nspecs == 0) { return; // Would be weird, but okay.
+}
     pSpec_S_DEP = new int[nspecs];
     std::fill_n(pSpec_S_DEP, nspecs, DEP_NONE);
     pSpec_S_LHS = new uint[nspecs];
@@ -162,7 +164,7 @@ ssolver::VDepSReacdef::VDepSReacdef(Statedef * sd, uint idx, smod::VDepSReac * v
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::VDepSReacdef::~VDepSReacdef(void)
+ssolver::VDepSReacdef::~VDepSReacdef()
 {
     if (pStatedef->countSpecs() > 0)
     {
@@ -212,7 +214,7 @@ void ssolver::VDepSReacdef::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::VDepSReacdef::setup(void)
+void ssolver::VDepSReacdef::setup()
 {
     AssertLog(pSetupdone == false);
 
@@ -269,10 +271,11 @@ void ssolver::VDepSReacdef::setup(void)
     // Deal with surface.
     for (uint i = 0; i < nspecs; ++i)
     {
-        int lhs = static_cast<int>(pSpec_S_LHS[i]);
-        int rhs = static_cast<int>(pSpec_S_RHS[i]);
+        auto lhs = static_cast<int>(pSpec_S_LHS[i]);
+        auto rhs = static_cast<int>(pSpec_S_RHS[i]);
         int aux = pSpec_S_UPD[i] = (rhs - lhs);
-        if (lhs != 0) pSpec_S_DEP[i] |= DEP_STOICH;
+        if (lhs != 0) { pSpec_S_DEP[i] |= DEP_STOICH;
+}
         if (aux != 0) pSpec_S_UPD_Coll.push_back(i);
     }
 
@@ -280,9 +283,10 @@ void ssolver::VDepSReacdef::setup(void)
     for (uint i = 0; i < nspecs; ++i)
     {
         int lhs = (inside() ? static_cast<int>(pSpec_I_LHS[i]) : 0);
-        int rhs = static_cast<int>(pSpec_I_RHS[i]);
+        auto rhs = static_cast<int>(pSpec_I_RHS[i]);
         int aux = pSpec_I_UPD[i] = (rhs - lhs);
-        if (lhs != 0) pSpec_I_DEP[i] |= DEP_STOICH;
+        if (lhs != 0) { pSpec_I_DEP[i] |= DEP_STOICH;
+}
         if (aux != 0) pSpec_I_UPD_Coll.push_back(i);
     }
 
@@ -290,9 +294,10 @@ void ssolver::VDepSReacdef::setup(void)
     for (uint i = 0; i < nspecs; ++i)
     {
         int lhs = (outside() ? static_cast<int>(pSpec_O_LHS[i]) : 0);
-        int rhs = static_cast<int>(pSpec_O_RHS[i]);
+        auto rhs = static_cast<int>(pSpec_O_RHS[i]);
         int aux = pSpec_O_UPD[i] = (rhs - lhs);
-        if (lhs != 0) pSpec_O_DEP[i] |= DEP_STOICH;
+        if (lhs != 0) { pSpec_O_DEP[i] |= DEP_STOICH;
+}
         if (aux != 0) pSpec_O_UPD_Coll.push_back(i);
     }
 
@@ -301,8 +306,10 @@ void ssolver::VDepSReacdef::setup(void)
 
     for (uint i = 0; i < nspecs; ++i)
     {
-        if (reqspec_I(i) == true) pReqInside  = true;
-        if (reqspec_O(i) == true) pReqOutside  = true;
+        if (reqspec_I(i) == true) { pReqInside  = true;
+}
+        if (reqspec_O(i) == true) { pReqOutside  = true;
+}
     }
 
 }
@@ -330,7 +337,7 @@ double ssolver::VDepSReacdef::getVDepK(double v) const
 
     double v2 = ((v - pVMin) / pDV);
     double lv = floor(v2);
-    uint lvidx = static_cast<uint>(lv);
+    auto lvidx = static_cast<uint>(lv);
     uint uvidx = static_cast<uint>(ceil(v2));
     double r = v2-lv;
 
@@ -340,7 +347,7 @@ double ssolver::VDepSReacdef::getVDepK(double v) const
 
 ////////////////////////////////////////////////////////////////////////////////
 /*
-bool ssolver::VDepSReacdef::reqInside(void) const
+bool ssolver::VDepSReacdef::reqInside() const
 {
     AssertLog(pSetupdone == true);
 
@@ -353,7 +360,7 @@ bool ssolver::VDepSReacdef::reqInside(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool ssolver::VDepSReacdef::reqOutside(void) const
+bool ssolver::VDepSReacdef::reqOutside() const
 {
     AssertLog(pSetupdone == true);
 
@@ -369,7 +376,8 @@ bool ssolver::VDepSReacdef::reqOutside(void) const
 
 uint ssolver::VDepSReacdef::lhs_I(uint gidx) const
 {
-    if (outside()) return 0;
+    if (outside()) { return 0;
+}
     AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_I_LHS[gidx];
 }
@@ -386,7 +394,8 @@ uint ssolver::VDepSReacdef::lhs_S(uint gidx) const
 
 uint ssolver::VDepSReacdef::lhs_O(uint gidx) const
 {
-    if (inside()) return 0;
+    if (inside()) { return 0;
+}
     AssertLog(gidx < pStatedef->countSpecs());
     return pSpec_O_LHS[gidx];
 }
@@ -397,7 +406,8 @@ int ssolver::VDepSReacdef::dep_I(uint gidx) const
 {
     AssertLog(pSetupdone == true);
     AssertLog(gidx < pStatedef->countSpecs());
-    if (outside()) return DEP_NONE;
+    if (outside()) { return DEP_NONE;
+}
     return pSpec_I_DEP[gidx];
 }
 
@@ -416,7 +426,8 @@ int ssolver::VDepSReacdef::dep_O(uint gidx) const
 {
     AssertLog(pSetupdone == true);
     AssertLog(gidx < pStatedef->countSpecs());
-    if (inside()) return DEP_NONE;
+    if (inside()) { return DEP_NONE;
+}
     return pSpec_O_DEP[gidx];
 }
 
@@ -477,9 +488,12 @@ bool ssolver::VDepSReacdef::reqspec_I(uint gidx) const
 {
     AssertLog(pSetupdone == true);
     AssertLog(gidx < pStatedef->countSpecs());
-    if (inside())
-        if (pSpec_I_DEP[gidx] != DEP_NONE) return true;
-    if (pSpec_I_RHS[gidx] != 0) return true;
+    if (inside()) {
+        if (pSpec_I_DEP[gidx] != DEP_NONE) { return true;
+}
+}
+    if (pSpec_I_RHS[gidx] != 0) { return true;
+}
     return false;
 }
 
@@ -489,8 +503,10 @@ bool ssolver::VDepSReacdef::reqspec_S(uint gidx) const
 {
     AssertLog(pSetupdone == true);
     AssertLog(gidx < pStatedef->countSpecs());
-    if (pSpec_S_DEP[gidx] != DEP_NONE) return true;
-    if (pSpec_S_RHS[gidx] != 0) return true;
+    if (pSpec_S_DEP[gidx] != DEP_NONE) { return true;
+}
+    if (pSpec_S_RHS[gidx] != 0) { return true;
+}
     return false;
 }
 
@@ -500,9 +516,12 @@ bool ssolver::VDepSReacdef::reqspec_O(uint gidx) const
 {
     AssertLog(pSetupdone == true);
     AssertLog(gidx < pStatedef->countSpecs());
-    if (outside())
-        if (pSpec_O_DEP[gidx] != DEP_NONE) return true;
-    if (pSpec_O_RHS[gidx] != 0) return true;
+    if (outside()) {
+        if (pSpec_O_DEP[gidx] != DEP_NONE) { return true;
+}
+}
+    if (pSpec_O_RHS[gidx] != 0) { return true;
+}
     return false;
 }
 

@@ -31,17 +31,17 @@
 
 // STL headers.
 #include <cassert>
+#include <iostream>
 #include <sstream>
 #include <string>
-#include <iostream>
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/model/model.hpp"
-#include "steps/model/surfsys.hpp"
-#include "steps/model/sreac.hpp"
 #include "steps/model/spec.hpp"
+#include "steps/model/sreac.hpp"
+#include "steps/model/surfsys.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -58,7 +58,7 @@ SReac::SReac(string const & id, Surfsys * surfsys,
              vector<Spec *> const & irhs, vector<Spec *> const & srhs,
              vector<Spec *> const & orhs, double kcst)
 : pID(id)
-, pModel(0)
+, pModel(nullptr)
 , pSurfsys(surfsys)
 , pOuter(false)
 , pOLHS()
@@ -70,7 +70,7 @@ SReac::SReac(string const & id, Surfsys * surfsys,
 , pOrder(0)
 , pKcst(kcst)
 {
-    if (pSurfsys == 0)
+    if (pSurfsys == nullptr)
     {
         ostringstream os;
         os << "No surfsys provided to SReac initializer function";
@@ -107,15 +107,16 @@ SReac::SReac(string const & id, Surfsys * surfsys,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-SReac::~SReac(void)
+SReac::~SReac()
 {
-    if (pSurfsys == 0) return;
+    if (pSurfsys == nullptr) { return;
+}
     _handleSelfDelete();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void SReac::_handleSelfDelete(void)
+void SReac::_handleSelfDelete()
 {
     pSurfsys->_handleSReacDel(this);
     pKcst = 0.0;
@@ -126,8 +127,8 @@ void SReac::_handleSelfDelete(void)
     pSLHS.clear();
     pILHS.clear();
     pOLHS.clear();
-    pSurfsys = 0;
-    pModel = 0;
+    pSurfsys = nullptr;
+    pModel = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -265,7 +266,7 @@ void SReac::setKcst(double kcst)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-vector<Spec *> SReac::getAllSpecs(void) const
+vector<Spec *> SReac::getAllSpecs() const
 {
     SpecPVec specs = SpecPVec();
     bool first_occ = true;

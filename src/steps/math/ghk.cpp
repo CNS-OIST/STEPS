@@ -27,8 +27,8 @@
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
-#include "steps/math/ghk.hpp"
 #include "steps/math/constants.hpp"
+#include "steps/math/ghk.hpp"
 
 // STL headers.
 #include <cassert>

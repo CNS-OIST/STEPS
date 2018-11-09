@@ -75,7 +75,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     Comp(steps::solver::Compdef * compdef);
-    ~Comp(void);
+    ~Comp();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -98,7 +98,7 @@ public:
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Compdef * def(void) const
+    inline steps::solver::Compdef * def() const
     { return pCompdef; }
 
     // Return the local index of a tet given by global index
@@ -108,25 +108,25 @@ public:
     Tet * getTet(uint lidx);
 
 
-    inline double vol(void) const
+    inline double vol() const
     { return pVol; }
 
     /*
-    inline double * pools(void) const
+    inline double * pools() const
     { return def()->pools(); }
 
     void modCount(uint slidx, double count);
 
     */
 
-    inline uint countTets(void) const
+    inline uint countTets() const
     { return pTets.size(); }
 
     //stex::WmVol * pickTetByVol(double rand01) const;
 
-    inline TetPVecCI bgnTet(void) const
+    inline TetPVecCI bgnTet() const
     { return pTets.begin(); }
-    inline TetPVecCI endTet(void) const
+    inline TetPVecCI endTet() const
     { return pTets.end(); }
 
     ////////////////////////////////////////////////////////////////////////

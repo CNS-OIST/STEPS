@@ -99,26 +99,26 @@ public:
             int calcMembPot = EF_NONE, std::vector<uint> const &tet_hosts = std::vector<uint>(),
             std::map<uint, uint> const &tri_hosts = std::map<uint, uint>(),
             std::vector<uint> const &wm_hosts = std::vector<uint>());
-    ~TetOpSplitP(void);
+    ~TetOpSplitP();
 
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER INFORMATION
     ////////////////////////////////////////////////////////////////////////
 
-    std::string getSolverName(void) const;
-    std::string getSolverDesc(void) const;
-    std::string getSolverAuthors(void) const;
-    std::string getSolverEmail(void) const;
+    std::string getSolverName() const;
+    std::string getSolverDesc() const;
+    std::string getSolverAuthors() const;
+    std::string getSolverEmail() const;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROLS
     ////////////////////////////////////////////////////////////////////////
 
-    void reset(void);
+    void reset();
     void run(double endtime);
     void advance(double adv);
-    void step(void);
+    void step();
 
     void checkpoint(std::string const & file_name);
     void restore(std::string const & file_name);
@@ -126,15 +126,15 @@ public:
 
     void setEfieldDT(double efdt);
 
-    inline double efdt(void) const
+    inline double efdt() const
     { return pEFDT; }
 
-    inline double getEfieldDT(void) const
+    inline double getEfieldDT() const
     { return pEFDT; }
 
     void setTemp(double t);
 
-    inline double getTemp(void) const
+    inline double getTemp() const
     { return pTemp; }
 
     // save the optimal vertex indexing
@@ -147,12 +147,12 @@ public:
     //      GENERAL
     ////////////////////////////////////////////////////////////////////////
 
-    double getTime(void) const;
+    double getTime() const;
 
-    inline double getA0(void) const
+    inline double getA0() const
     { return pA0; }
 
-    uint getNSteps(void) const;
+    uint getNSteps() const;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
@@ -382,18 +382,16 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    // Called from local Comp or Patch objects. Add KProc to this object
-    uint addKProc(steps::mpi::tetopsplit::KProc * kp, int host);
-    //void addLocalKProc(steps::mpi::tetopsplit::KProc * kp);
+    uint addKProc(steps::mpi::tetopsplit::KProc * kp);
 
     void addDiff(Diff* diff);
     void addSDiff(SDiff* sdiff);
-    inline uint countKProcs(void) const
+    inline uint countKProcs() const
     { return pKProcs.size(); }
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::tetmesh::Tetmesh * mesh(void) const
+    inline steps::tetmesh::Tetmesh * mesh() const
     { return pMesh; }
 
     inline steps::mpi::tetopsplit::Comp * _comp(uint cidx) const
@@ -403,7 +401,7 @@ public:
         return pComps[cidx];
     }
 
-    inline std::vector<steps::mpi::tetopsplit::Patch *>  patches(void) const
+    inline std::vector<steps::mpi::tetopsplit::Patch *>  patches() const
     { return pPatches; }
 
     inline steps::mpi::tetopsplit::Patch * _patch(uint pidx) const
@@ -431,10 +429,10 @@ public:
     inline steps::mpi::tetopsplit::Tri * _tri(uint tidx) const
     { return pTris[tidx]; }
 
-    inline double a0(void) const
+    inline double a0() const
     { return pA0; }
 
-    //inline bool built(void)
+    //inline bool built()
     //{ return pBuilt; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -461,19 +459,19 @@ public:
 
     // called when local tet, tri, reac, sreac objects have been created
     // by constructor
-    void _setup(void);
+    void _setup();
 
     void _runWithoutEField(double endtime);
     void _runWithEField(double endtime);
-    //void _build(void);
+    //void _build();
     void _refreshEFTrisV();
 
     double _getRate(uint i) const
     { return pKProcs[i]->rate(); }
 
-    steps::mpi::tetopsplit::KProc * _getNext(void) const;
+    steps::mpi::tetopsplit::KProc * _getNext() const;
 
-    //void _reset(void);
+    //void _reset();
 
     void _executeStep(steps::mpi::tetopsplit::KProc * kp, double dt, double period = 0.0);
     void _updateSpec(steps::mpi::tetopsplit::WmVol * tet, uint spec_gidx);
@@ -491,18 +489,18 @@ public:
     ////////////////////////// ADDED FOR EFIELD ////////////////////////////
 
     /// Check the EField flag
-    inline bool efflag(void) const
+    inline bool efflag() const
     { return pEFoption != EF_NONE; }
 
-    void _setupEField(void);
+    void _setupEField();
 
-    inline uint neftets(void) const
+    inline uint neftets() const
     { return pEFNTets; }
 
-    inline uint neftris(void) const
+    inline uint neftris() const
     { return pEFNTris; }
 
-    inline uint nefverts(void) const
+    inline uint nefverts() const
     { return pEFNVerts; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -582,20 +580,20 @@ public:
 
     double getReacExtent(bool local = false);
     double getDiffExtent(bool local = false);
-    double getNIteration(void);
+    double getNIteration();
     
-    double getUpdPeriod(void) {return updPeriod;}
+    double getUpdPeriod() {return updPeriod;}
     
     void repartitionAndReset(std::vector<uint> const &tet_hosts,
                      std::map<uint, uint> const &tri_hosts  = std::map<uint, uint>(),
                      std::vector<uint> const &wm_hosts = std::vector<uint>());
     
-    double getCompTime(void);
-    double getSyncTime(void);
-    double getIdleTime(void);
-    double getEFieldTime(void);
-    double getRDTime(void);
-    double getDataExchangeTime(void);
+    double getCompTime();
+    double getSyncTime();
+    double getIdleTime();
+    double getEFieldTime();
+    double getRDTime();
+    double getDataExchangeTime();
     
     // Not currently exposed to Python:
      uint getTetHostRank(uint tidx);
@@ -671,17 +669,17 @@ private:
 
     ////////////////////////////////////////////////////////////////////////////////
     
-    void _computeUpdPeriod(void);
+    void _computeUpdPeriod();
     void _updateLocal(std::set<KProc*> const & upd_entries);
     void _updateLocal(std::vector<KProc*> const & upd_entries);
     void _updateLocal(std::vector<uint> const & upd_entries);
     void _updateLocal(uint* upd_entries, uint buffer_size);
-    void _updateLocal(void);
+    void _updateLocal();
     CRGroup* _getGroup(int pow);
     void _extendPGroups(uint new_size);
     void _extendNGroups(uint new_size);
     void _extendGroup(CRGroup* group, uint size = 1024);
-    void _updateSum(void);
+    void _updateSum();
     void _updateElement(KProc* kp);
     ////////////////////////////////////////////////////////////////////////
 
@@ -776,7 +774,7 @@ private:
     void _remoteSyncAndUpdate(void* requests, std::vector<KProc*> & applied_diffs, std::vector<int> & directions);
     
     //void _applyRemoteMoleculeChanges(std::vector<MPI_Request> & requests);
-    //void _syncPoolCounts(void);
+    //void _syncPoolCounts();
     //void _updateKProcRates(std::vector<KProc*> & applylist, std::vector<int> & directions, std::vector<MPI_Request> & requests);
     // send, receive and process remote upadtes
     //void _updateRemoteKProcRates(std::vector<MPI_Request> & requests);

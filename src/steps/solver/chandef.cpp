@@ -26,17 +26,17 @@
 
 
 // STL headers.
-#include <string>
 #include <cassert>
+#include <string>
 
 // STEPS headers.
 #include "steps/common.h"
-#include "steps/solver/types.hpp"
 #include "steps/error.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/chandef.hpp"
 #include "steps/model/chan.hpp"
 #include "steps/model/chanstate.hpp"
+#include "steps/solver/chandef.hpp"
+#include "steps/solver/statedef.hpp"
+#include "steps/solver/types.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -50,7 +50,7 @@ ssolver::Chandef::Chandef(Statedef * sd, uint idx, steps::model::Chan * c)
 : pStatedef(sd)
 , pIdx(idx)
 , pName()
-, pChanStates(0)
+, pChanStates(nullptr)
 , pNChanStates(0)
 , pChanStatesVec()
 , pSetupdone(false)
@@ -61,7 +61,8 @@ ssolver::Chandef::Chandef(Statedef * sd, uint idx, steps::model::Chan * c)
 
     pChanStatesVec = c->getAllChanStates();
     pNChanStates = pChanStatesVec.size();
-    if (pNChanStates == 0) return;
+    if (pNChanStates == 0) { return;
+}
 
     pChanStates = new uint[pNChanStates];
     std::fill_n(pChanStates, pNChanStates, GIDX_UNDEFINED);
@@ -71,9 +72,10 @@ ssolver::Chandef::Chandef(Statedef * sd, uint idx, steps::model::Chan * c)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::Chandef::~Chandef(void)
+ssolver::Chandef::~Chandef()
 {
-    if (pNChanStates > 0) delete[] pChanStates;
+    if (pNChanStates > 0) { delete[] pChanStates;
+}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -88,7 +90,8 @@ void ssolver::Chandef::checkpoint(std::fstream & cp_file)
 
 void ssolver::Chandef::restore(std::fstream & cp_file)
 {
-    if (pNChanStates > 0) delete[] pChanStates;
+    if (pNChanStates > 0) { delete[] pChanStates;
+}
 
     cp_file.read((char*)&pNChanStates, sizeof(uint));
     pChanStates = new uint[pNChanStates];
@@ -97,14 +100,14 @@ void ssolver::Chandef::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string const ssolver::Chandef::name(void) const
+std::string const ssolver::Chandef::name() const
 {
     return pName;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Chandef::setup(void)
+void ssolver::Chandef::setup()
 {
 
     AssertLog(pSetupdone == false);

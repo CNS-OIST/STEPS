@@ -90,27 +90,27 @@ public:
 
     Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r,
              int calcMembPot = EF_NONE);
-    ~Tetexact(void);
+    ~Tetexact();
 
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER INFORMATION
     ////////////////////////////////////////////////////////////////////////
 
-    std::string getSolverName(void) const;
-    std::string getSolverDesc(void) const;
-    std::string getSolverAuthors(void) const;
-    std::string getSolverEmail(void) const;
+    std::string getSolverName() const;
+    std::string getSolverDesc() const;
+    std::string getSolverAuthors() const;
+    std::string getSolverEmail() const;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROLS
     ////////////////////////////////////////////////////////////////////////
 
-    void reset(void);
+    void reset();
     void run(double endtime);
     void advance(double adv);
     //void advanceSteps(uint nsteps);
-    void step(void);
+    void step();
 
     void checkpoint(std::string const & file_name);
     void restore(std::string const & file_name);
@@ -118,15 +118,15 @@ public:
 
     void setEfieldDT(double efdt);
 
-    inline double efdt(void) const
+    inline double efdt() const
     { return pEFDT; }
 
-    inline double getEfieldDT(void) const
+    inline double getEfieldDT() const
     { return pEFDT; }
 
     void setTemp(double t);
 
-    inline double getTemp(void) const
+    inline double getTemp() const
     { return pTemp; }
 
     // save the optimal vertex indexing
@@ -139,12 +139,12 @@ public:
     //      GENERAL
     ////////////////////////////////////////////////////////////////////////
 
-    double getTime(void) const;
+    double getTime() const;
 
-    inline double getA0(void) const
+    inline double getA0() const
     { return pA0; }
 
-    uint getNSteps(void) const;
+    uint getNSteps() const;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
@@ -433,12 +433,12 @@ public:
     // Called from local Comp or Patch objects. Add KProc to this object
     void addKProc(steps::tetexact::KProc * kp);
 
-    inline uint countKProcs(void) const
+    inline uint countKProcs() const
     { return pKProcs.size(); }
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::tetmesh::Tetmesh * mesh(void) const
+    inline steps::tetmesh::Tetmesh * mesh() const
     { return pMesh; }
 
     inline steps::tetexact::Comp * _comp(uint cidx) const {
@@ -451,7 +451,7 @@ public:
         return c;
     }
 
-    inline std::vector<steps::tetexact::Patch *>  patches(void) const
+    inline std::vector<steps::tetexact::Patch *>  patches() const
     { return pPatches; }
 
     inline steps::tetexact::Patch * _patch(uint pidx) const {
@@ -480,7 +480,7 @@ public:
     inline steps::tetexact::Tri * _tri(uint tidx) const
     { return pTris[tidx]; }
 
-    inline double a0(void) const
+    inline double a0() const
     { return pA0; }
 
     // Checked global to local index translations
@@ -522,17 +522,17 @@ public:
 
     // called when local tet, tri, reac, sreac objects have been created
     // by constructor
-    void _setup(void);
+    void _setup();
 
 
-    //void _build(void);
+    //void _build();
 
     double _getRate(uint i) const
     { return pKProcs[i]->rate(); }
 
-    steps::tetexact::KProc * _getNext(void) const;
+    steps::tetexact::KProc * _getNext() const;
 
-    //void _reset(void);
+    //void _reset();
 
     void _executeStep(steps::tetexact::KProc * kp, double dt);
 
@@ -558,18 +558,18 @@ public:
     ////////////////////////// ADDED FOR EFIELD ////////////////////////////
 
     /// Check the EField flag
-    inline bool efflag(void) const
+    inline bool efflag() const
     { return pEFoption != EF_NONE; }
 
-    void _setupEField(void);
+    void _setupEField();
 
-    inline uint neftets(void) const
+    inline uint neftets() const
     { return pEFNTets; }
 
-    inline uint neftris(void) const
+    inline uint neftris() const
     { return pEFNTris; }
 
-    inline uint nefverts(void) const
+    inline uint nefverts() const
     { return pEFNVerts; }
 
         
@@ -625,7 +625,7 @@ private:
 
     ////////////////////////////////////////////////////////////////////////////////
 
-    inline void _update(void) {
+    inline void _update() {
         _update(pKProcs.begin(), pKProcs.end());
     }
 
@@ -713,7 +713,7 @@ private:
 
     void _updateElement(KProc* kp);
 
-    inline void _updateSum(void) {
+    inline void _updateSum() {
         #ifdef SSA_DEBUG
         CLOG(INFO, "general_log") << "update A0 from " << pA0 << " to ";
         #endif

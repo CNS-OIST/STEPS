@@ -30,12 +30,12 @@
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <numeric>
 #include <set>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <numeric>
 
 #include "steps/common.h"
 #include "steps/error.hpp"
@@ -46,11 +46,11 @@
 #include "steps/math/tetrahedron.hpp"
 #include "steps/math/triangle.hpp"
 
-#include "steps/geom/tetmesh.hpp"
 #include "steps/geom/memb.hpp"
+#include "steps/geom/tetmesh.hpp"
 
-#include "steps/util/collections.hpp"
 #include "steps/util/checkid.hpp"
+#include "steps/util/collections.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -66,8 +66,8 @@ using steps::util::checkID;
 stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
                            std::vector<uint> const & tets,
                            std::vector<uint> const & tris)
-: Geom()
-, pVertsN(0)
+: 
+ pVertsN(0)
 , pBarsN(0)
 , pTrisN(0)
 , pTetsN(0)
@@ -78,21 +78,26 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
     using steps::math::small_sort;
     using std::to_string;
 
-    srand (time(NULL));
+    srand (time(nullptr));
     
     // check the vectors are of the expected size
-    if (verts.size() % 3 || tris.size() % 3 || tets.size() % 4)
+    if (verts.size() % 3 || tris.size() % 3 || tets.size() % 4) {
         ArgErrLog("Tables supplied to Tet mesh initialiser function are not of the expected dimensions");
+    }
 
     pVertsN = verts.size() / 3;
-    if (!pVertsN) ArgErrLog("Empty vertex list");
+    if (pVertsN == 0u) {
+        ArgErrLog("Empty vertex list");
+    }
 
     pTetsN = tets.size() / 4;
-    if (!pTetsN) ArgErrLog("Empty tets list");
+    if (!pTetsN) {
+        ArgErrLog("Empty tets list");
+    }
 
     // copy vertices and update bounding box
     pVerts.resize(pVertsN);
-    for (uint i = 0, j = 0; i < pVertsN; ++i, j+=3) {
+    for (size_t i = 0, j = 0; i < pVertsN; ++i, j+=3) {
         point3d vert = {verts[j],verts[j+1],verts[j+2]};
         pVerts[i] = vert;
         pBBox.insert(vert);
@@ -100,8 +105,9 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 
     // copy tets; 
     pTets.resize(pTetsN);
-    for (uint i = 0, j = 0; i < pTetsN; ++i, j+=4)
-        pTets[i] = tet_verts{tets[j],tets[j+1],tets[j+2],tets[j+3]};
+    for (size_t i = 0, j = 0; i < pTetsN; ++i, j+=4) {
+        pTets[i] = tet_verts{tets[j], tets[j + 1], tets[j + 2], tets[j + 3]};
+    }
 
     // Add user-supplied tris and faces for each tet to pTris and set
     // tet->tri adjacency
@@ -110,9 +116,9 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
         auto tri_indices = make_unique_indexer<tri_verts>(std::back_inserter(pTris));
 
         // first add user-supplied tris:
-        size_t userTrisN = tris.size()/3;
-        for (uint i = 0; i < tris.size(); i+=3)
+        for (size_t i = 0; i < tris.size(); i+=3) {
             tri_indices.insert(small_sort<3>(tri_verts{tris[i], tris[i+1], tris[i+2]}));
+        }
 
         for (uint i = 0; i < pTetsN; ++i) {
             const tet_verts &tet=pTets[i];
@@ -123,8 +129,9 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
                 small_sort<3>(tri_verts{tet[1],tet[2],tet[3]})
             };
 
-            for (int j = 0; j < 4; ++j)
+            for (int j = 0; j < 4; ++j) {
                 pTet_tri_neighbours[i][j] = tri_indices[tris[j]];
+            }
         }
     }
     pTris.shrink_to_fit();
@@ -146,14 +153,17 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
         pTet_vols[i] = steps::math::tet_vol(v[0],v[1],v[2],v[3]);
         pTet_barycentres[i] = steps::math::tet_barycenter(v[0],v[1],v[2],v[3]);
 
-        if (pTet_vols[i]<=0) ArgErrLog("degenerate tetrahedron "+to_string(i));
+        if (pTet_vols[i]<=0) {
+            ArgErrLog("degenerate tetrahedron "+to_string(i));
+        }
 
         for (int face = 0; face < 4; ++face) {
             int tri = pTet_tri_neighbours[i][face];
             auto &tri_tets = pTri_tet_neighbours[tri];
 
-            if (tri_tets[0] == -1) tri_tets[0]=i;
-            else if (tri_tets[1] == -1) {
+            if (tri_tets[0] == -1) {
+                tri_tets[0]=i;
+            } else if (tri_tets[1] == -1) {
                 tri_tets[1] = i;
 
                 // tri_tets[0] and [1] are neighbours.
@@ -163,8 +173,9 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
                 bool found_other_face = false;
                 for (int other_face = 0; other_face < 4; ++other_face) {
                     if (pTet_tri_neighbours[other_tet][other_face] == tri) {
-                        if (pTet_tet_neighbours[other_tet][other_face] != -1)
+                        if (pTet_tet_neighbours[other_tet][other_face] != -1) {
                             ProgErrLog("inconsistent tet<->tet association");
+                        }
 
                         pTet_tet_neighbours[other_tet][other_face] = i;
                         found_other_face = true;
@@ -199,7 +210,9 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
         pTri_norms[i] = steps::math::tri_normal(v[0], v[1], v[2]);
         pTri_barycs[i] = steps::math::tri_barycenter(v[0], v[1], v[2]);
 
-        if (pTri_areas[i]<=0) ArgErrLog("degenerate triangle "+to_string(i));
+        if (pTri_areas[i]<=0) {
+            ArgErrLog("degenerate triangle "+to_string(i));
+        }
     }
 
     // initialise tet compartment association.
@@ -228,8 +241,9 @@ void stetmesh::Tetmesh::buildBarData() {
             small_sort<2>(bar_verts{tri[1],tri[2]}),
         };
 
-        for (int j = 0; j < 3; ++j) 
+        for (int j = 0; j < 3; ++j) {
             pTri_bars[i][j] = bar_indices[bars[j]];
+        }
     }
     pBars.shrink_to_fit();
     pBarsN = pBars.size();
@@ -254,8 +268,8 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
         std::vector<double> const & tet_barycs,
         std::vector<uint> const & tet_tri_neighbs,
         std::vector<int> const & tet_tet_neighbs)
-: Geom()
-, pVertsN()
+: 
+ pVertsN()
 , pBarsN(0)
 , pTrisN(0)
 , pTetsN(0)
@@ -263,33 +277,54 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 , pDiffBoundaries()
 {
     // check the vectors are of the expected size
-    if (verts.size() % 3 || tris.size() % 3 || tets.size() % 4)
+    if (verts.size() % 3 || tris.size() % 3 || tets.size() % 4) {
         ArgErrLog("Tables supplied to Tet mesh initialiser function are not of the expected dimensions");
+    }
 
     pVertsN = verts.size() / 3;
-    if (!pVertsN) ArgErrLog("Empty vertex list");
+    if (pVertsN == 0u) {
+        ArgErrLog("Empty vertex list");
+    }
 
     pTetsN = tets.size() / 4;
-    if (!pTetsN) ArgErrLog("Empty tets list");
+    if (!pTetsN) {
+        ArgErrLog("Empty tets list");
+    }
 
     pTrisN = tris.size() /3;
-    if (!pTetsN) ArgErrLog("Empty tris list");
+    if (!pTetsN) {
+        ArgErrLog("Empty tris list");
+    }
 
-    if (tri_areas.size() != pTrisN)         ArgErrLog("Inconsistent tri_areas size");
-    if (tri_norms.size() != pTrisN*3)       ArgErrLog("Inconsistent tri_norms size");
-    if (tri_tet_neighbs.size() != pTrisN*2) ArgErrLog("Inconsistent tri_tet_neighbrs size");
-    if (tet_vols.size() != pTetsN)          ArgErrLog("Inconsistent tet_vols size");
-    if (tet_barycs.size() != pTetsN*3)      ArgErrLog("Inconsistent tet_barycs size");
-    if (tet_tri_neighbs.size() != pTetsN*4) ArgErrLog("Inconsistent tet_tri_neighbs size");
-    if (tet_tet_neighbs.size() != pTetsN*4) ArgErrLog("Inconsistent tet_tet_neighbs size");
+    if (tri_areas.size() != pTrisN) {
+        ArgErrLog("Inconsistent tri_areas size");
+    }
+    if (tri_norms.size() != pTrisN*3) {
+        ArgErrLog("Inconsistent tri_norms size");
+    }
+    if (tri_tet_neighbs.size() != pTrisN*2) {
+        ArgErrLog("Inconsistent tri_tet_neighbrs size");
+    }
+    if (tet_vols.size() != pTetsN) {
+        ArgErrLog("Inconsistent tet_vols size");
+    }
+    if (tet_barycs.size() != pTetsN*3) {
+        ArgErrLog("Inconsistent tet_barycs size");
+    }
+    if (tet_tri_neighbs.size() != pTetsN*4) {
+        ArgErrLog("Inconsistent tet_tri_neighbs size");
+    }
+    if (tet_tet_neighbs.size() != pTetsN*4) {
+        ArgErrLog("Inconsistent tet_tet_neighbs size");
+    }
 
 
     // see comment in other constructor
-    srand (time(NULL));
+    srand (time(nullptr));
     
     // copy vertex information and update bounding box
     pVerts.resize(pVertsN);
-    for (uint i = 0, j = 0; i < pVertsN; ++i, j += 3) {
+    for (size_t i = 0, j = 0; i < pVertsN; ++i, j += 3) {
         point3d vert = {verts[j], verts[j+1], verts[j+2]};
 
         pVerts[i] = vert;
@@ -300,7 +335,7 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
     pTris.resize(pTrisN);
     pTri_norms.resize(pTrisN);
     pTri_barycs.resize(pTrisN);
-    for (uint i = 0, j = 0; i < pTrisN; ++i, j += 3) {
+    for (size_t i = 0, j = 0; i < pTrisN; ++i, j += 3) {
         tri_verts tri = {tris[j], tris[j+1], tris[j+2]};
 
         pTris[i] = tri;
@@ -308,7 +343,11 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
         pTri_barycs[i] = steps::math::tri_barycenter(pVerts[tri[0]], pVerts[tri[1]], pVerts[tri[2]]);
     }
     pTri_areas = tri_areas;
-    for (auto a: pTri_areas) if (a<=0) ArgErrLog("triangle with non-positive area");
+    for (auto a: pTri_areas) {
+        if (a<=0) {
+            ArgErrLog("triangle with non-positive area");
+        }
+    }
     pTri_diffboundaries.assign(pTrisN, nullptr);
     pTri_patches.assign(pTrisN, nullptr);
 
@@ -318,23 +357,28 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
     // copy tet information and compute tet barycentres.
     pTets.resize(pTetsN);
     pTet_barycentres.resize(pTetsN);
-    for (uint i = 0, j = 0; i < pTetsN; ++i, j += 4) {
+    for (size_t i = 0, j = 0; i < pTetsN; ++i, j += 4) {
         tet_verts tet = {tets[j], tets[j+1], tets[j+2], tets[j+3]};
 
         pTets[i] = tet;
         pTet_barycentres[i] = steps::math::tet_barycenter(pVerts[tet[0]], pVerts[tet[1]], pVerts[tet[2]], pVerts[tet[3]]);
     }
     pTet_vols = tet_vols;
-    for (auto v: pTet_vols) if (v<=0) ArgErrLog("tetrahedron with non-positive volume");
+    for (auto v: pTet_vols) {
+      if (v<=0) {
+        ArgErrLog("tetrahedron with non-positive volume");
+      }
+    }
 
     // copy tet/tri and tet/tet neighbourhood infoirmation.
     pTri_tet_neighbours.resize(pTrisN);
-    for (uint i = 0, j = 0; i < pTrisN; ++i, j += 2)
-        pTri_tet_neighbours[i] = tri_tets{tri_tet_neighbs[j], tri_tet_neighbs[j+1]};
+    for (size_t i = 0, j = 0; i < pTrisN; ++i, j += 2) {
+        pTri_tet_neighbours[i] = tri_tets{tri_tet_neighbs[j], tri_tet_neighbs[j + 1]};
+    }
 
     pTet_tri_neighbours.resize(pTetsN);
     pTet_tet_neighbours.resize(pTetsN);
-    for (uint i = 0, j = 0; i < pTetsN; ++i, j += 4) {
+    for (size_t i = 0, j = 0; i < pTetsN; ++i, j += 4) {
         pTet_tri_neighbours[i] = tet_tris{tet_tri_neighbs[j], tet_tri_neighbs[j+1], tet_tri_neighbs[j+2], tet_tri_neighbs[j+3]};
         pTet_tet_neighbours[i] = tet_tets{tet_tet_neighbs[j], tet_tet_neighbs[j+1], tet_tet_neighbs[j+2], tet_tet_neighbs[j+3]};
     }
@@ -344,17 +388,23 @@ stetmesh::Tetmesh::Tetmesh(std::vector<double> const & verts,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stetmesh::Tetmesh::~Tetmesh(void)
+stetmesh::Tetmesh::~Tetmesh()
 {
-    for (auto &membs: pMembs) delete membs.second;
-    for (auto &diffb: pDiffBoundaries) delete diffb.second;
+    for (auto &membs: pMembs) {
+        delete membs.second;
+    }
+    for (auto &diffb: pDiffBoundaries) {
+        delete diffb.second;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 std::vector<double> stetmesh::Tetmesh::getVertex(uint vidx) const
 {
-    if (vidx >= pVertsN) ArgErrLog("Vertex index is out of range.");
+    if (vidx >= pVertsN) {
+        ArgErrLog("Vertex index is out of range.");
+    }
     return as_vector(pVerts[vidx]);
 }
 
@@ -362,7 +412,9 @@ std::vector<double> stetmesh::Tetmesh::getVertex(uint vidx) const
 
 std::vector<uint> stetmesh::Tetmesh::getBar(uint bidx) const
 {
-    if (bidx >= pBarsN) ArgErrLog("Bar index is out of range.");
+    if (bidx >= pBarsN) {
+        ArgErrLog("Bar index is out of range.");
+    }
     return as_vector(pBars[bidx]);
 }
 
@@ -370,7 +422,9 @@ std::vector<uint> stetmesh::Tetmesh::getBar(uint bidx) const
 
 std::vector<uint> stetmesh::Tetmesh::getTri(uint tidx) const
 {
-    if (tidx >= pTrisN) ArgErrLog("Triangle index is out of range.");
+    if (tidx >= pTrisN) {
+        ArgErrLog("Triangle index is out of range.");
+    }
     return as_vector(pTris[tidx]);
 }
 
@@ -378,7 +432,9 @@ std::vector<uint> stetmesh::Tetmesh::getTri(uint tidx) const
 
 double stetmesh::Tetmesh::getTriArea(uint tidx) const
 {
-    if (tidx >= pTrisN) ArgErrLog("Triangle index is out of range.");
+    if (tidx >= pTrisN) {
+        ArgErrLog("Triangle index is out of range.");
+    }
     return pTri_areas[tidx];
 }
 
@@ -386,7 +442,9 @@ double stetmesh::Tetmesh::getTriArea(uint tidx) const
 
 std::vector<double> stetmesh::Tetmesh::getTriBarycenter(uint tidx) const
 {
-    if (tidx >= pTrisN) ArgErrLog("Triangle index is out of range.");
+    if (tidx >= pTrisN) {
+        ArgErrLog("Triangle index is out of range.");
+    }
     return as_vector(pTri_barycs[tidx]);
 }
 
@@ -394,7 +452,9 @@ std::vector<double> stetmesh::Tetmesh::getTriBarycenter(uint tidx) const
 
 std::vector<double> stetmesh::Tetmesh::getTriNorm(uint tidx) const
 {
-    if (tidx >= pTrisN) ArgErrLog("Triangle index is out of range.");
+    if (tidx >= pTrisN) {
+        ArgErrLog("Triangle index is out of range.");
+    }
     return as_vector(pTri_norms[tidx]);
 }
 
@@ -402,7 +462,9 @@ std::vector<double> stetmesh::Tetmesh::getTriNorm(uint tidx) const
 
 stetmesh::TmPatch * stetmesh::Tetmesh::getTriPatch(uint tidx) const
 {
-    if (tidx >= pTrisN) ArgErrLog("Triangle index is out of range.");
+    if (tidx >= pTrisN) {
+        ArgErrLog("Triangle index is out of range.");
+    }
     return pTri_patches[tidx];
 }
 
@@ -410,7 +472,9 @@ stetmesh::TmPatch * stetmesh::Tetmesh::getTriPatch(uint tidx) const
 
 void stetmesh::Tetmesh::setTriPatch(uint tidx, stetmesh::TmPatch * patch)
 {
-    if (tidx >= pTrisN) ArgErrLog("Triangle index is out of range.");
+    if (tidx >= pTrisN) {
+        ArgErrLog("Triangle index is out of range.");
+    }
     pTri_patches[tidx] = patch;
 }
 
@@ -418,7 +482,9 @@ void stetmesh::Tetmesh::setTriPatch(uint tidx, stetmesh::TmPatch * patch)
 
 void stetmesh::Tetmesh::setTriDiffBoundary(uint tidx, stetmesh::DiffBoundary * diffb)
 {
-    if (tidx >= pTrisN) ArgErrLog("Triangle index is out of range.");
+    if (tidx >= pTrisN) {
+        ArgErrLog("Triangle index is out of range.");
+    }
     pTri_diffboundaries[tidx] = diffb;
 }
 
@@ -426,7 +492,9 @@ void stetmesh::Tetmesh::setTriDiffBoundary(uint tidx, stetmesh::DiffBoundary * d
 
 stetmesh::DiffBoundary * stetmesh::Tetmesh::getTriDiffBoundary(uint tidx) const
 {
-    if (tidx >= pTrisN) ArgErrLog("Triangle index is out of range.");
+    if (tidx >= pTrisN) {
+        ArgErrLog("Triangle index is out of range.");
+    }
     return pTri_diffboundaries[tidx];
 }
 
@@ -434,7 +502,9 @@ stetmesh::DiffBoundary * stetmesh::Tetmesh::getTriDiffBoundary(uint tidx) const
 
 void stetmesh::Tetmesh::setBarSDiffBoundary(uint bidx, stetmesh::SDiffBoundary * sdiffb)
 {
-    if (bidx >= pBarsN) ArgErrLog("Bar index is out of range.");
+    if (bidx >= pBarsN) {
+        ArgErrLog("Bar index is out of range.");
+    }
     pBar_sdiffboundaries[bidx] = sdiffb;
 }
 
@@ -442,7 +512,9 @@ void stetmesh::Tetmesh::setBarSDiffBoundary(uint bidx, stetmesh::SDiffBoundary *
 
 stetmesh::SDiffBoundary * stetmesh::Tetmesh::getBarSDiffBoundary(uint bidx) const
 {
-    if (bidx >= pBarsN) ArgErrLog("Bar index is out of range.");
+    if (bidx >= pBarsN) {
+        ArgErrLog("Bar index is out of range.");
+    }
     return pBar_sdiffboundaries[bidx];
 }
 
@@ -450,7 +522,9 @@ stetmesh::SDiffBoundary * stetmesh::Tetmesh::getBarSDiffBoundary(uint bidx) cons
 
 std::vector<uint> stetmesh::Tetmesh::getTriBars(uint tidx) const
 {
-    if (tidx >= pTrisN) ArgErrLog("Triangle index is out of range.");
+    if (tidx >= pTrisN) {
+        ArgErrLog("Triangle index is out of range.");
+    }
     return as_vector(pTri_bars[tidx]);
 }
 
@@ -458,7 +532,9 @@ std::vector<uint> stetmesh::Tetmesh::getTriBars(uint tidx) const
 
 std::vector<int> stetmesh::Tetmesh::getTriTetNeighb(uint tidx) const
 {
-    if (tidx >= pTrisN) ArgErrLog("Triangle index is out of range.");
+    if (tidx >= pTrisN) {
+        ArgErrLog("Triangle index is out of range.");
+    }
     return as_vector(pTri_tet_neighbours[tidx]);
 }
 
@@ -466,20 +542,26 @@ std::vector<int> stetmesh::Tetmesh::getTriTetNeighb(uint tidx) const
 
 std::vector<int> stetmesh::Tetmesh::getTriTriNeighb(uint tidx, const stetmesh::TmPatch * tmpatch) const
 {
-    if (tidx >= pTrisN) ArgErrLog("Triangle index is out of range.");
+    if (tidx >= pTrisN) {
+        ArgErrLog("Triangle index is out of range.");
+    }
 
     // Triangles are neighbours if they share a bar
     std::vector<int> neighbours(3,-1);
     tri_bars bars = pTri_bars[tidx];
 
     for (uint tri = 0; tri < pTrisN; ++tri) {
-        if (tri == tidx || pTri_patches[tri] != tmpatch) continue;
+        if (tri == tidx || pTri_patches[tri] != tmpatch) {
+            continue;
+        }
 
         tri_bars neighbtribars = pTri_bars[tri];
         int next = 0;
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
-                if (neighbtribars[j] != bars[i]) continue;
+                if (neighbtribars[j] != bars[i]) {
+                    continue;
+                }
 
                 if (neighbours[i] != -1) {
                     std::ostringstream os;
@@ -492,7 +574,9 @@ std::vector<int> stetmesh::Tetmesh::getTriTriNeighb(uint tidx, const stetmesh::T
                 next = 1;
                 break;
             }
-            if (next) break;
+            if (next) {
+                break;
+            }
         }
     }
     return neighbours;
@@ -501,20 +585,26 @@ std::vector<int> stetmesh::Tetmesh::getTriTriNeighb(uint tidx, const stetmesh::T
 ////////////////////////////////////////////////////////////////////////////////
 std::vector<int> stetmesh::Tetmesh::getTriTriNeighb(uint tidx) const
 {
-    if (tidx >= pTrisN) ArgErrLog("Triangle index is out of range.");
+    if (tidx >= pTrisN) {
+        ArgErrLog("Triangle index is out of range.");
+    }
 
     // Triangles are neighbours if they share a bar
     std::vector<int> neighbours(3,-1);
     tri_bars bars = pTri_bars[tidx];
 
     for (uint tri = 0; tri < pTrisN; ++tri) {
-        if (tri == tidx || pTri_patches[tri] == nullptr) continue;
+        if (tri == tidx || pTri_patches[tri] == nullptr) {
+            continue;
+        }
 
         tri_bars neighbtribars = pTri_bars[tri];
         int next = 0;
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
-                if (neighbtribars[j] != bars[i]) continue;
+                if (neighbtribars[j] != bars[i]) {
+                    continue;
+                }
 
                 if (neighbours[i] != -1) {
                     std::ostringstream os;
@@ -526,7 +616,9 @@ std::vector<int> stetmesh::Tetmesh::getTriTriNeighb(uint tidx) const
                 next = 1;
                 break;
             }
-            if (next) break;
+            if (next) {
+                break;
+            }
         }
     }
     return neighbours;
@@ -536,7 +628,9 @@ std::vector<int> stetmesh::Tetmesh::getTriTriNeighb(uint tidx) const
 
 std::set<uint> stetmesh::Tetmesh::getTriTriNeighbs(uint tidx) const
 {
-    if (tidx >= pTrisN) ArgErrLog("Triangle index is out of range.");
+    if (tidx >= pTrisN) {
+        ArgErrLog("Triangle index is out of range.");
+    }
 
     // Triangles are neighbours if they share a bar
 
@@ -544,12 +638,16 @@ std::set<uint> stetmesh::Tetmesh::getTriTriNeighbs(uint tidx) const
     tri_bars bars = pTri_bars[tidx];
 
     for (uint tri = 0; tri < pTrisN; ++tri) {
-        if (tri == tidx) continue;
+        if (tri == tidx) {
+            continue;
+        }
 
         tri_bars neighbtribars = pTri_bars[tri];
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
-                if (neighbtribars[j] != bars[i]) continue;
+                if (neighbtribars[j] != bars[i]) {
+                    continue;
+                }
 
                 neighbours.insert(tri);
                 goto next_tri;
@@ -565,14 +663,18 @@ next_tri: ;
 
 std::set<uint> stetmesh::Tetmesh::getBarTriNeighbs(uint bidx) const
 {
-    if (bidx >= pBarsN) ArgErrLog("Bar index is out of range.");
+    if (bidx >= pBarsN) {
+        ArgErrLog("Bar index is out of range.");
+    }
 
     std::set<uint> neighbours;
 
     for (uint tri = 0; tri < pTrisN; ++tri) {
         tri_bars neighbtribars = pTri_bars[tri];
         for (int i = 0; i < 3; ++i) {
-            if (neighbtribars[i] != bidx) continue;
+            if (neighbtribars[i] != bidx) {
+                continue;
+            }
 
             neighbours.insert(tri);
             goto next_tri;
@@ -587,13 +689,13 @@ next_tri: ;
 
 void stetmesh::Tetmesh::setBarTris(uint bidx, int itriidx, int otriidx)
 {
-    if (bidx >= pBarsN) ArgErrLog("Bar index is out of range.");
-    if (itriidx < 0 or otriidx < 0 or itriidx >= pTrisN or otriidx >= pTrisN)
-    {
+    if (bidx >= pBarsN) {
+        ArgErrLog("Bar index is out of range.");
+    }
+    if (itriidx < 0 or otriidx < 0 or itriidx >= pTrisN or otriidx >= pTrisN) {
     	ArgErrLog("Invalid triangle index.");
    	}
-    if (pBar_tri_neighbours[bidx][0] >= 0 or pBar_tri_neighbours[bidx][1] >= 0)
-    {
+    if (pBar_tri_neighbours[bidx][0] >= 0 or pBar_tri_neighbours[bidx][1] >= 0) {
     	std::ostringstream os;
     	os << "Bar " << bidx << " is part of more than one surface diffusion boundary.";
     	ArgErrLog(os.str());
@@ -633,7 +735,9 @@ void stetmesh::Tetmesh::_flipTriVerts(uint tidx)
 
 std::vector<uint>  stetmesh::Tetmesh::getTet(uint tidx) const
 {
-    if (tidx >= pTetsN) ArgErrLog("Tetrahedron index is out of range.");
+    if (tidx >= pTetsN) {
+        ArgErrLog("Tetrahedron index is out of range.");
+    }
     return as_vector(pTets[tidx]);
 }
 
@@ -648,7 +752,9 @@ double stetmesh::Tetmesh::getMeshVolume() const
 
 double stetmesh::Tetmesh::getTetVol(uint tidx) const
 {
-    if (tidx >= pTetsN) ArgErrLog("Tetrahedron index is out of range.");
+    if (tidx >= pTetsN) {
+        ArgErrLog("Tetrahedron index is out of range.");
+    }
     return pTet_vols[tidx];
 }
 
@@ -656,7 +762,9 @@ double stetmesh::Tetmesh::getTetVol(uint tidx) const
 
 double stetmesh::Tetmesh::getTetQualityRER(uint tidx) const
 {
-    if (tidx >= pTetsN) ArgErrLog("Tetrahedron index is out of range.");
+    if (tidx >= pTetsN) {
+        ArgErrLog("Tetrahedron index is out of range.");
+    }
 
     tet_verts verts = pTets[tidx];
     const point3d &v0 = pVerts[verts[0]], &v1 = pVerts[verts[1]],
@@ -669,7 +777,9 @@ double stetmesh::Tetmesh::getTetQualityRER(uint tidx) const
 
 std::vector<double> stetmesh::Tetmesh::getTetBarycenter(uint tidx) const
 {
-    if (tidx >= pTetsN) ArgErrLog("Tetrahedron index is out of range.");
+    if (tidx >= pTetsN) {
+        ArgErrLog("Tetrahedron index is out of range.");
+    }
     return as_vector(pTet_barycentres[tidx]);
 }
 
@@ -677,7 +787,9 @@ std::vector<double> stetmesh::Tetmesh::getTetBarycenter(uint tidx) const
 
 stetmesh::TmComp * stetmesh::Tetmesh::getTetComp(uint tidx) const
 {
-    if (tidx >= pTetsN) ArgErrLog("Tetrahedron index is out of range.");
+    if (tidx >= pTetsN) {
+        ArgErrLog("Tetrahedron index is out of range.");
+    }
     return pTet_comps[tidx];
 }
 
@@ -685,7 +797,9 @@ stetmesh::TmComp * stetmesh::Tetmesh::getTetComp(uint tidx) const
 
 void stetmesh::Tetmesh::setTetComp(uint tidx, stetmesh::TmComp * comp)
 {
-    if (tidx >= pTetsN) ArgErrLog("Tetrahedron index is out of range.");
+    if (tidx >= pTetsN) {
+        ArgErrLog("Tetrahedron index is out of range.");
+    }
     pTet_comps[tidx] = comp;
 }
 
@@ -693,7 +807,9 @@ void stetmesh::Tetmesh::setTetComp(uint tidx, stetmesh::TmComp * comp)
 
 std::vector<uint> stetmesh::Tetmesh::getTetTriNeighb(uint tidx) const
 {
-    if (tidx >= pTetsN) ArgErrLog("Tetrahedron index is out of range.");
+    if (tidx >= pTetsN) {
+        ArgErrLog("Tetrahedron index is out of range.");
+    }
     return as_vector(pTet_tri_neighbours[tidx]);
 }
 
@@ -701,21 +817,26 @@ std::vector<uint> stetmesh::Tetmesh::getTetTriNeighb(uint tidx) const
 
 std::vector<int> stetmesh::Tetmesh::getTetTetNeighb(uint tidx) const
 {
-    if (tidx >= pTetsN) ArgErrLog("Tetrahedron index is out of range.");
+    if (tidx >= pTetsN) {
+        ArgErrLog("Tetrahedron index is out of range.");
+    }
     return as_vector(pTet_tet_neighbours[tidx]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int stetmesh::Tetmesh::findTetByPoint(std::vector<double> p) const
+int stetmesh::Tetmesh::findTetByPoint(std::vector<double> const &p) const
 {
     point3d x{p[0],p[1],p[2]};
-    if (!pBBox.contains(x)) return -1;
+    if (!pBBox.contains(x)) {
+        return -1;
+    }
 
     for (int tidx = 0; tidx < pTetsN; ++tidx) {
         tet_verts v = pTets[tidx];
-        if (steps::math::tet_inside(pVerts[v[0]], pVerts[v[1]], pVerts[v[2]], pVerts[v[3]], x))
+        if (steps::math::tet_inside(pVerts[v[0]], pVerts[v[1]], pVerts[v[2]], pVerts[v[3]], x)) {
             return tidx;
+        }
     }
 
     return -1;
@@ -723,14 +844,14 @@ int stetmesh::Tetmesh::findTetByPoint(std::vector<double> p) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> stetmesh::Tetmesh::getBoundMin(void) const
+std::vector<double> stetmesh::Tetmesh::getBoundMin() const
 {
     return as_vector(pBBox.min());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> stetmesh::Tetmesh::getBoundMax(void) const
+std::vector<double> stetmesh::Tetmesh::getBoundMax() const
 {
     return as_vector(pBBox.max());
 }
@@ -738,7 +859,7 @@ std::vector<double> stetmesh::Tetmesh::getBoundMax(void) const
 ////////////////////////////////////////////////////////////////////////////////
 
 // Created by weiliang 2010.02.02
-std::vector<int> stetmesh::Tetmesh::getSurfTris(void) const
+std::vector<int> stetmesh::Tetmesh::getSurfTris() const
 {
     std::vector<int> tribounds;
     for (int t = 0; t < pTrisN; t++) {
@@ -755,8 +876,9 @@ std::vector<int> stetmesh::Tetmesh::getSurfTris(void) const
 void stetmesh::Tetmesh::_checkMembID(std::string const & id) const
 {
     checkID(id);
-    if (pMembs.find(id) != pMembs.end())
+    if (pMembs.find(id) != pMembs.end()) {
         ArgErrLog("'" + id + "' is already in use.");
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -766,11 +888,13 @@ void stetmesh::Tetmesh::_handleMembIDChange(std::string const & o, std::string c
     MembPMapCI m_old = pMembs.find(o);
     AssertLog(m_old != pMembs.end());
 
-    if (o == n) return;
+    if (o == n) {
+        return;
+    }
     _checkMembID(n);
 
     Memb * m = m_old->second;
-    AssertLog(m != 0);
+    AssertLog(m != nullptr);
     pMembs.erase(m->getID());                        // or s_old->first
     pMembs.insert(MembPMap::value_type(n, m));
 }
@@ -797,8 +921,9 @@ void stetmesh::Tetmesh::_handleMembDel(stetmesh::Memb * memb)
 void stetmesh::Tetmesh::_checkDiffBoundaryID(std::string const & id) const
 {
     checkID(id);
-    if (pDiffBoundaries.find(id) != pDiffBoundaries.end())
+    if (pDiffBoundaries.find(id) != pDiffBoundaries.end()) {
         ArgErrLog("'" + id + "' is already in use.");
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -808,11 +933,13 @@ void stetmesh::Tetmesh::_handleDiffBoundaryIDChange(std::string const & o, std::
     DiffBoundaryPMapCI db_old = pDiffBoundaries.find(o);
     AssertLog(db_old != pDiffBoundaries.end());
 
-    if (o == n) return;
+    if (o == n) {
+        return;
+    }
     _checkDiffBoundaryID(n);
 
     DiffBoundary * db = db_old->second;
-    AssertLog(db != 0);
+    AssertLog(db != nullptr);
     pDiffBoundaries.erase(db->getID());                        // or s_old->first
     pDiffBoundaries.insert(DiffBoundaryPMap::value_type(n, db));
 }
@@ -839,8 +966,9 @@ void stetmesh::Tetmesh::_handleDiffBoundaryDel(stetmesh::DiffBoundary * diffb)
 void stetmesh::Tetmesh::_checkSDiffBoundaryID(std::string const & id) const
 {
     checkID(id);
-    if (pSDiffBoundaries.find(id) != pSDiffBoundaries.end())
+    if (pSDiffBoundaries.find(id) != pSDiffBoundaries.end()) {
         ArgErrLog("'" + id + "' is already in use.");
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -850,11 +978,13 @@ void stetmesh::Tetmesh::_handleSDiffBoundaryIDChange(std::string const & o, std:
     SDiffBoundaryPMapCI db_old = pSDiffBoundaries.find(o);
     AssertLog(db_old != pSDiffBoundaries.end());
 
-    if (o == n) return;
+    if (o == n) {
+        return;
+    }
     _checkSDiffBoundaryID(n);
 
     SDiffBoundary * db = db_old->second;
-    AssertLog(db != 0);
+    AssertLog(db != nullptr);
     pSDiffBoundaries.erase(db->getID());                        // or s_old->first
     pSDiffBoundaries.insert(SDiffBoundaryPMap::value_type(n, db));
 }
@@ -881,8 +1011,8 @@ void stetmesh::Tetmesh::_handleSDiffBoundaryDel(stetmesh::SDiffBoundary * sdiffb
 steps::tetmesh::SDiffBoundary * stetmesh::Tetmesh::_getSDiffBoundary(uint gidx) const
 {
     AssertLog(gidx < pSDiffBoundaries.size());
-    std::map<std::string, SDiffBoundary *>::const_iterator db_it = pSDiffBoundaries.begin();
-    for (uint i=0; i< gidx; ++i) ++db_it;
+    auto db_it = pSDiffBoundaries.begin();
+    std::advance(db_it, gidx);
     return db_it->second;
 }
 
@@ -891,8 +1021,8 @@ steps::tetmesh::SDiffBoundary * stetmesh::Tetmesh::_getSDiffBoundary(uint gidx) 
 steps::tetmesh::Memb * stetmesh::Tetmesh::_getMemb(uint gidx) const
 {
     AssertLog(gidx < pMembs.size());
-    std::map<std::string, Memb *>::const_iterator mb_it = pMembs.begin();
-    for (uint i=0; i< gidx; ++i) ++mb_it;
+    auto mb_it = pMembs.begin();
+    std::advance(mb_it, gidx);
     return mb_it->second;
 }
 
@@ -901,8 +1031,8 @@ steps::tetmesh::Memb * stetmesh::Tetmesh::_getMemb(uint gidx) const
 steps::tetmesh::DiffBoundary * stetmesh::Tetmesh::_getDiffBoundary(uint gidx) const
 {
     AssertLog(gidx < pDiffBoundaries.size());
-    std::map<std::string, DiffBoundary *>::const_iterator db_it = pDiffBoundaries.begin();
-    for (uint i=0; i< gidx; ++i) ++db_it;
+    auto db_it = pDiffBoundaries.begin();
+    std::advance(db_it, gidx);
     return db_it->second;
 }
 
@@ -926,7 +1056,7 @@ void batch_copy_components_n(const std::vector<T> &items, I idx_iter, size_t n, 
             out_iter = std::copy(item.begin(),item.end(),out_iter);
         }
     }
-    catch (std::out_of_range &e) {
+    catch (const std::out_of_range &e) {
         ArgErrLog("Index out of range: no item with index "+std::to_string(index)+".");
     }
 }
@@ -944,7 +1074,7 @@ void batch_copy_n(const std::vector<T> &items, I idx_iter, size_t n, J out_iter)
             *out_iter++ = items.at(index);
         }
     }
-    catch (std::out_of_range &e) {
+    catch (const std::out_of_range &e) {
         ArgErrLog("Index out of range: no item with index "+std::to_string(index)+".");
     }
 }
@@ -963,8 +1093,9 @@ std::vector<double> stetmesh::Tetmesh::getBatchTetBarycentres(std::vector<uint> 
 
 void stetmesh::Tetmesh::getBatchTetBarycentresNP(const unsigned int* indices, int input_size, double* centres, int output_size) const
 {
-    if (input_size * 3 != output_size)
+    if (input_size * 3 != output_size) {
         ArgErrLog("Length of output array should be 3 * length of input array.");
+    }
     
     batch_copy_components_n(pTet_barycentres, indices, input_size, centres);
 }
@@ -984,8 +1115,9 @@ std::vector<double> stetmesh::Tetmesh::getBatchTriBarycentres(std::vector<uint> 
 
 void stetmesh::Tetmesh::getBatchTriBarycentresNP(const unsigned int* indices, int input_size, double* centres, int output_size) const
 {
-    if (input_size * 3 != output_size)
+    if (input_size * 3 != output_size) {
         ArgErrLog("Length of output array should be 3 * length of input array.");
+    }
     
     batch_copy_components_n(pTri_barycs, indices, input_size, centres);
 }
@@ -1005,8 +1137,9 @@ std::vector<double> stetmesh::Tetmesh::getBatchVertices(std::vector<uint> const 
 
 void stetmesh::Tetmesh::getBatchVerticesNP(const unsigned int* indices, int input_size, double* coordinates, int output_size) const
 {
-    if (input_size * 3 != output_size)
+    if (input_size * 3 != output_size) {
         ArgErrLog("Length of output array (coordinates) should be 3 * length of input array (indices).");
+    }
     
     batch_copy_components_n(pVerts, indices, input_size, coordinates);
 }
@@ -1026,8 +1159,9 @@ std::vector<uint> stetmesh::Tetmesh::getBatchTris(std::vector<uint> const & tris
 
 void stetmesh::Tetmesh::getBatchTrisNP(const unsigned int* t_indices, int input_size, unsigned int* v_indices, int output_size) const
 {
-    if (input_size * 3 != output_size)
+    if (input_size * 3 != output_size) {
         ArgErrLog("Length of output array should be 3 * length of input array.");
+    }
     
     batch_copy_components_n(pTris, t_indices, input_size, v_indices);
 }
@@ -1047,8 +1181,9 @@ std::vector<uint> stetmesh::Tetmesh::getBatchTets(std::vector<uint> const & tets
 
 void stetmesh::Tetmesh::getBatchTetsNP(const unsigned int* t_indices, int input_size, unsigned int* v_indices, int output_size) const
 {
-    if (input_size * 4 != output_size)
+    if (input_size * 4 != output_size) {
         ArgErrLog("Length of output array should be 4 * length of input array.");
+    }
     
     batch_copy_components_n(pTets, t_indices, input_size, v_indices);
 }
@@ -1077,8 +1212,9 @@ uint stetmesh::Tetmesh::getTetVerticesSetSizeNP(const unsigned int* t_indices, i
 
 void stetmesh::Tetmesh::getTriVerticesMappingSetNP(const unsigned int* t_indices, int input_size, unsigned int* t_vertices, int t_vertices_size, unsigned int* v_set, int v_set_size) const
 {
-    if (input_size * 3 != t_vertices_size)
+    if (input_size * 3 != t_vertices_size) {
         ArgErrLog("Length of t_vertices array should be 3 * length of input array.");
+    }
     
     // put unique vertices in v_set
     auto v_set_indices = make_unique_indexer<unsigned int>(v_set);
@@ -1086,11 +1222,13 @@ void stetmesh::Tetmesh::getTriVerticesMappingSetNP(const unsigned int* t_indices
 
     for (int t = 0; t < input_size; ++t) {
         uint tidx = t_indices[t];
-        if (tidx >= pTrisN) 
-            ArgErrLog("Index out of range: no item with index "+std::to_string(tidx)+".");
+        if (tidx >= pTrisN) {
+            ArgErrLog("Index out of range: no item with index " + std::to_string(tidx) + ".");
+        }
         
-        for (unsigned int vidx: pTris[tidx]) 
+        for (unsigned int vidx: pTris[tidx]) {
             t_vertices[t_vertices_index++] = v_set_indices[vidx];
+        }
     }
 
     AssertLog((int)v_set_indices.size() == v_set_size);
@@ -1101,19 +1239,22 @@ void stetmesh::Tetmesh::getTriVerticesMappingSetNP(const unsigned int* t_indices
 
 void stetmesh::Tetmesh::getTetVerticesMappingSetNP(const unsigned int* t_indices, int input_size, unsigned int* t_vertices, int t_vertices_size, unsigned int* v_set, int v_set_size) const
 {
-    if (input_size * 4 != t_vertices_size)
+    if (input_size * 4 != t_vertices_size) {
         ArgErrLog("Length of t_vertices array should be 4 * length of input array.");
+    }
     
     auto v_set_indices = make_unique_indexer<unsigned int>(v_set);
     int t_vertices_index = 0;
 
     for (int t = 0; t < input_size; ++t) {
         uint tidx = t_indices[t];
-        if (tidx >= pTetsN) 
-            ArgErrLog("Index out of range: no item with index "+std::to_string(tidx)+".");
+        if (tidx >= pTetsN) {
+            ArgErrLog("Index out of range: no item with index " + std::to_string(tidx) + ".");
+        }
         
-        for (unsigned int vidx: pTets[tidx]) 
+        for (unsigned int vidx: pTets[tidx]) {
             t_vertices[t_vertices_index++] = v_set_indices[vidx];
+        }
     }
     
     AssertLog((int)v_set_indices.size() == v_set_size);
@@ -1125,19 +1266,21 @@ void stetmesh::Tetmesh::getTetVerticesMappingSetNP(const unsigned int* t_indices
 
 void stetmesh::Tetmesh::genPointsInTet(unsigned tidx, unsigned npnts, double* coords, int coord_size) const
 {
-    if (npnts * 3 != coord_size)
+    if (npnts * 3 != coord_size) {
         ArgErrLog("Coordinate array size should be 3 * npnts.");
+    }
 
-    if (tidx >= pTetsN) 
-        ArgErrLog("Index out of range: no tetrahedron with index "+std::to_string(tidx)+".");
+    if (tidx >= pTetsN) {
+        ArgErrLog("Index out of range: no tetrahedron with index " + std::to_string(tidx) + ".");
+    }
     
     auto tet = pTets[tidx];
     point3d v[4] = {pVerts[tet[0]], pVerts[tet[1]], pVerts[tet[2]], pVerts[tet[3]]};
     
     for (uint p = 0, j = 0; p < npnts; p++, j+=3) {
-        double s = ((double) rand() / (RAND_MAX));
-        double t = ((double) rand() / (RAND_MAX));
-        double u = ((double) rand() / (RAND_MAX));
+        double s = static_cast<double>(rand() / RAND_MAX);
+        double t = static_cast<double>(rand() / RAND_MAX);
+        double u = static_cast<double>(rand() / RAND_MAX);
 
         point3d x = steps::math::tet_ranpnt(v[0], v[1], v[2], v[3], s, t, u);
         coords[j]   = x[0];
@@ -1150,18 +1293,20 @@ void stetmesh::Tetmesh::genPointsInTet(unsigned tidx, unsigned npnts, double* co
 
 void stetmesh::Tetmesh::genPointsInTri(unsigned tidx, unsigned npnts, double* coords, int coord_size) const
 {
-    if (npnts * 3 != coord_size)
+    if (npnts * 3 != coord_size) {
         ArgErrLog("Coordinate array size should be 3 * npnts.");
+    }
 
-    if (tidx >= pTrisN)
-        ArgErrLog("Index out of range: no triangle with index "+std::to_string(tidx)+".");
+    if (tidx >= pTrisN) {
+        ArgErrLog("Index out of range: no triangle with index " + std::to_string(tidx) + ".");
+    }
     
     auto tri = pTris[tidx];
     point3d v[3] = {pVerts[tri[0]], pVerts[tri[1]], pVerts[tri[2]]};
     
     for (uint p = 0, j = 0; p < npnts; p++, j+=3) {
-        double s = ((double) rand() / (RAND_MAX));
-        double t = ((double) rand() / (RAND_MAX));
+        double s = static_cast<double>(rand() / RAND_MAX);
+        double t = static_cast<double>(rand() / RAND_MAX);
         
         point3d x = steps::math::tri_ranpnt(v[0], v[1], v[2], s, t);
         coords[j]   = x[0];
@@ -1174,52 +1319,61 @@ void stetmesh::Tetmesh::genPointsInTri(unsigned tidx, unsigned npnts, double* co
 
 void stetmesh::Tetmesh::genTetVisualPointsNP(const unsigned int* indices, int index_size, const unsigned int* point_counts, int count_size, double* coords, int coord_size) const
 {
-    if (index_size != count_size)
+    if (index_size != count_size) {
         ArgErrLog("Length of point_counts array should be length of indices array.");
+    }
     
     uint cpos = 0;
     for (uint i = 0; i < index_size; i++) {
-        uint tidx = indices[i];
         uint npnts = point_counts[i];
         uint ncoords = 3*npnts;
 
-        if (cpos + ncoords > coord_size) ArgErrLog("Length of coords array too short.");
+        if (cpos + ncoords > coord_size) {
+            ArgErrLog("Length of coords array too short.");
+        }
 
         genPointsInTet(indices[i], npnts, coords+cpos, ncoords);
         cpos += ncoords;
     }
     
-    if (cpos != coord_size) ArgErrLog("Length of coords array longer than expected.");
+    if (cpos != coord_size) {
+        ArgErrLog("Length of coords array longer than expected.");
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void stetmesh::Tetmesh::genTriVisualPointsNP(const unsigned int* indices, int index_size, const unsigned int* point_counts, int count_size, double* coords, int coord_size) const
 {
-    if (index_size != count_size)
+    if (index_size != count_size) {
         ArgErrLog("Length of point_counts array should be length of indices array.");
+    }
     
     uint cpos = 0;
     for (uint i = 0; i < index_size; i++) {
-        uint tidx = indices[i];
         uint npnts = point_counts[i];
         uint ncoords = 3*npnts;
 
-        if (cpos + ncoords > coord_size) ArgErrLog("Length of coords array too short.");
+        if (cpos + ncoords > coord_size) {
+            ArgErrLog("Length of coords array too short.");
+        }
 
         genPointsInTri(indices[i], npnts, coords+cpos, ncoords);
         cpos += ncoords;
     }
     
-    if (cpos != coord_size) ArgErrLog("Length of coords array longer than expected.");
+    if (cpos != coord_size) {
+        ArgErrLog("Length of coords array longer than expected.");
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void stetmesh::Tetmesh::getBatchTetVolsNP(const unsigned int* indices, int index_size, double* volumes, int volume_size) const
 {
-    if (index_size != volume_size)
+    if (index_size != volume_size) {
         ArgErrLog("Length of volumes array should be length of indices array.");
+    }
     
     batch_copy_n(pTet_vols, indices, index_size, volumes);
 }
@@ -1228,8 +1382,9 @@ void stetmesh::Tetmesh::getBatchTetVolsNP(const unsigned int* indices, int index
 
 void stetmesh::Tetmesh::getBatchTriAreasNP(const unsigned int* indices, int index_size, double* areas, int area_size) const
 {
-    if (index_size != area_size)
+    if (index_size != area_size) {
         ArgErrLog("Length of areas array should be length of indices array.");
+    }
     
     batch_copy_n(pTri_areas, indices, index_size, areas);
 }
@@ -1238,16 +1393,18 @@ void stetmesh::Tetmesh::getBatchTriAreasNP(const unsigned int* indices, int inde
 
 void stetmesh::Tetmesh::reduceBatchTetPointCountsNP(const unsigned int* indices, int index_size, unsigned int* point_counts, int count_size, double max_density)
 {
-    if (index_size != count_size)
+    if (index_size != count_size) {
         ArgErrLog("Length of point_counts array should be length of indices array.");
+    }
     
     for (uint i = 0; i < index_size; i++) {
         uint tidx = indices[i];
         
-        if (tidx >= pTetsN) 
-            ArgErrLog("Index out of range: no tetrahedron with index "+std::to_string(tidx)+".");
+        if (tidx >= pTetsN) {
+            ArgErrLog("Index out of range: no tetrahedron with index " + std::to_string(tidx) + ".");
+        }
     
-        point_counts[i] = std::min(point_counts[i], (uint)(max_density * pTet_vols[tidx]));
+        point_counts[i] = std::min(point_counts[i], static_cast<uint>(max_density * pTet_vols[tidx]));
     }
 }
 
@@ -1255,16 +1412,18 @@ void stetmesh::Tetmesh::reduceBatchTetPointCountsNP(const unsigned int* indices,
 
 void stetmesh::Tetmesh::reduceBatchTriPointCountsNP(const unsigned int* indices, int index_size, unsigned int* point_counts, int count_size, double max_density)
 {
-    if (index_size != count_size)
+    if (index_size != count_size) {
         ArgErrLog("Length of point_counts array should be length of indices array.");
+    }
     
     for (uint i = 0; i < index_size; i++) {
         uint tidx = indices[i];
         
-        if (tidx >= pTrisN) 
-            ArgErrLog("Index out of range: no triangle with index "+std::to_string(tidx)+".");
+        if (tidx >= pTrisN) {
+            ArgErrLog("Index out of range: no triangle with index " + std::to_string(tidx) + ".");
+        }
     
-        point_counts[i] = std::min(point_counts[i], (uint)(max_density * pTri_areas[tidx]));
+        point_counts[i] = std::min(point_counts[i], static_cast<uint>(max_density * pTri_areas[tidx]));
     }
 }
 
@@ -1275,49 +1434,37 @@ void stetmesh::Tetmesh::reduceBatchTriPointCountsNP(const unsigned int* indices,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stetmesh::Tetmesh::addROI(std::string id, steps::tetmesh::ElementType type, std::set<uint> const &indices)
+void stetmesh::Tetmesh::addROI(std::string const &id, steps::tetmesh::ElementType type, std::set<uint> const &indices)
 {
-    if (mROI.find(id) != mROI.end()) {
+    if (!mROI.insert(std::make_pair(id, ROISet(type, indices))).second) {
         CLOG(WARNING, "general_log") << "ROI data with id " << id << " already exists. Use replaceROI() to replace the data.\n";
     }
-    else
-    {
-        ROISet data(type, indices);
-        mROI[id] = data;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void stetmesh::Tetmesh::removeROI(std::string const &id)
+{
+    if (mROI.erase(id) == 0) {
+        CLOG(WARNING, "general_log") << "Unable to find ROI data with id " << id << ".\n";
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void stetmesh::Tetmesh::removeROI(std::string id)
+void stetmesh::Tetmesh::replaceROI(std::string const &id, steps::tetmesh::ElementType type, std::set<uint> const &indices)
 {
-    std::map<std::string, ROISet>::iterator it = mROI.find(id);
+    auto it = mROI.find(id);
     if (it == mROI.end()) {
         CLOG(WARNING, "general_log") << "Unable to find ROI data with id " << id << ".\n";
-    }
-    else
-    {
-        mROI.erase(it);
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-void stetmesh::Tetmesh::replaceROI(std::string id, steps::tetmesh::ElementType type, std::set<uint> const &indices)
-{
-    std::map<std::string, ROISet>::iterator it = mROI.find(id);
-    if (it == mROI.end()) {
-        CLOG(WARNING, "general_log") << "Unable to find ROI data with id " << id << ".\n";
-    }
-    else
-    {
+    } else {
         it->second.type = type;
         it->second.indices.assign(indices.begin(), indices.end());
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-steps::tetmesh::ElementType stetmesh::Tetmesh::getROIType(std::string id) const
+steps::tetmesh::ElementType stetmesh::Tetmesh::getROIType(std::string const & id) const
 {
-    std::map<std::string, ROISet>::const_iterator it = mROI.find(id);
+    auto it = mROI.find(id);
     if (it == mROI.end()) {
         CLOG(WARNING, "general_log") << "Unable to find ROI data with id " << id << ".\n";
         return steps::tetmesh::ELEM_UNDEFINED;
@@ -1327,20 +1474,21 @@ steps::tetmesh::ElementType stetmesh::Tetmesh::getROIType(std::string id) const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-std::vector<uint> stetmesh::Tetmesh::getROIData(std::string id) const
+std::vector<uint> const & stetmesh::Tetmesh::getROIData(std::string const &id) const
 {
-    std::map<std::string, ROISet>::const_iterator it = mROI.find(id);
+    auto it = mROI.find(id);
     if (it == mROI.end()) {
         CLOG(WARNING, "general_log") << "Unable to find ROI data with id " << id << ".\n";
-        return std::vector<uint> ();
+        static const std::vector<uint> empty;
+        return empty;
     }
     return it->second.indices;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-uint stetmesh::Tetmesh::getROIDataSize(std::string id) const
+uint stetmesh::Tetmesh::getROIDataSize(std::string const &id) const
 {
-    std::map<std::string, ROISet>::const_iterator it = mROI.find(id);
+    auto it = mROI.find(id);
     if (it == mROI.end()) {
         CLOG(WARNING, "general_log") << "Unable to find ROI data with id " << id << ".\n";
         return ELEM_UNDEFINED;
@@ -1351,19 +1499,20 @@ uint stetmesh::Tetmesh::getROIDataSize(std::string id) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint stetmesh::Tetmesh::getNROIs(void)
+uint stetmesh::Tetmesh::getNROIs() const
 {
     return mROI.size();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stetmesh::ROISet stetmesh::Tetmesh::getROI(std::string id) const
+stetmesh::ROISet const & stetmesh::Tetmesh::getROI(std::string const &id) const
 {
-    std::map<std::string, ROISet>::const_iterator it = mROI.find(id);
+    auto it = mROI.find(id);
     if (it == mROI.end()) {
         CLOG(WARNING, "general_log") << "Unable to find ROI data with id " << id << ".\n";
-        return stetmesh::ROISet();
+        static const stetmesh::ROISet empty;
+        return empty;
     }
 
     return it->second;
@@ -1372,24 +1521,25 @@ stetmesh::ROISet stetmesh::Tetmesh::getROI(std::string id) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<std::string> stetmesh::Tetmesh::getAllROINames(void)
+std::vector<std::string> stetmesh::Tetmesh::getAllROINames() const
 {
     std::vector<std::string> output;
-    
-    for (std::map<std::string, ROISet>::iterator it = mROI.begin(); it != mROI.end(); it++) {
-        output.push_back(it->first);
+    output.reserve(mROI.size());
+
+    for (auto const& it : mROI) {
+        output.push_back(it.first);
     }
     return output;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint* stetmesh::Tetmesh::_getROIData(std::string id) const
+uint* stetmesh::Tetmesh::_getROIData(std::string const &id) const
 {
-    std::map<std::string, ROISet>::const_iterator it = mROI.find(id);
+    auto it = mROI.find(id);
     if (it == mROI.end()) {
         CLOG(WARNING, "general_log") << "Unable to find ROI data with id " << id << ".\n";
-        return NULL;
+        return nullptr;
     }
 
     return const_cast<uint*>(&(it->second.indices.front()));
@@ -1397,10 +1547,10 @@ uint* stetmesh::Tetmesh::_getROIData(std::string id) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool stetmesh::Tetmesh::checkROI(std::string id, steps::tetmesh::ElementType type, uint count, bool warning) const
+bool stetmesh::Tetmesh::checkROI(std::string const &id, steps::tetmesh::ElementType type, uint count, bool warning) const
 {
     bool condition = true;
-    std::map<std::string, ROISet>::const_iterator it = mROI.find(id);
+    auto it = mROI.find(id);
     if (warning && it == mROI.end()) {
         CLOG(WARNING, "general_log") << "Unable to find ROI data with id " << id << ".\n";
         return false;
@@ -1422,9 +1572,11 @@ bool stetmesh::Tetmesh::checkROI(std::string id, steps::tetmesh::ElementType typ
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> stetmesh::Tetmesh::getROITetBarycentres(std::string ROI_id) const
+std::vector<double> stetmesh::Tetmesh::getROITetBarycentres(std::string const &ROI_id) const
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TET)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TET)) {
+        ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     
     uint *indices = _getROIData(ROI_id);
     int inputsize = getROIDataSize(ROI_id);
@@ -1438,9 +1590,11 @@ std::vector<double> stetmesh::Tetmesh::getROITetBarycentres(std::string ROI_id) 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stetmesh::Tetmesh::getROITetBarycentresNP(std::string ROI_id, double* centres, int output_size) const
+void stetmesh::Tetmesh::getROITetBarycentresNP(std::string const &ROI_id, double* centres, int output_size) const
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TET, output_size / 3)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TET, output_size / 3)) {
+        ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     
     uint *indices = _getROIData(ROI_id);
     int inputsize = getROIDataSize(ROI_id);
@@ -1450,9 +1604,11 @@ void stetmesh::Tetmesh::getROITetBarycentresNP(std::string ROI_id, double* centr
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> stetmesh::Tetmesh::getROITriBarycentres(std::string ROI_id) const
+std::vector<double> stetmesh::Tetmesh::getROITriBarycentres(std::string const &ROI_id) const
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) {
+        ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     
     uint *indices = _getROIData(ROI_id);
     int inputsize = getROIDataSize(ROI_id);
@@ -1466,9 +1622,11 @@ std::vector<double> stetmesh::Tetmesh::getROITriBarycentres(std::string ROI_id) 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stetmesh::Tetmesh::getROITriBarycentresNP(std::string ROI_id, double* centres, int output_size) const
+void stetmesh::Tetmesh::getROITriBarycentresNP(std::string const& ROI_id, double* centres, int output_size) const
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TRI, output_size / 3)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TRI, output_size / 3)) {
+        ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     
     uint *indices = _getROIData(ROI_id);
     int inputsize = getROIDataSize(ROI_id);
@@ -1478,9 +1636,11 @@ void stetmesh::Tetmesh::getROITriBarycentresNP(std::string ROI_id, double* centr
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> stetmesh::Tetmesh::getROIVertices(std::string ROI_id) const
+std::vector<double> stetmesh::Tetmesh::getROIVertices(std::string const& ROI_id) const
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_VERTEX)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_VERTEX)) {
+        ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     
     uint *indices = _getROIData(ROI_id);
     int inputsize = getROIDataSize(ROI_id);
@@ -1493,9 +1653,11 @@ std::vector<double> stetmesh::Tetmesh::getROIVertices(std::string ROI_id) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stetmesh::Tetmesh::getROIVerticesNP(std::string ROI_id, double* coordinates, int output_size) const
+void stetmesh::Tetmesh::getROIVerticesNP(std::string const &ROI_id, double* coordinates, int output_size) const
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_VERTEX, output_size / 3)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_VERTEX, output_size / 3)) {
+        ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     
     uint *indices = _getROIData(ROI_id);
     int inputsize = getROIDataSize(ROI_id);
@@ -1505,9 +1667,11 @@ void stetmesh::Tetmesh::getROIVerticesNP(std::string ROI_id, double* coordinates
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<uint> stetmesh::Tetmesh::getROITris(std::string ROI_id) const
+std::vector<uint> stetmesh::Tetmesh::getROITris(std::string const &ROI_id) const
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) {
+        ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     
     uint *indices = _getROIData(ROI_id);
     int inputsize = getROIDataSize(ROI_id);
@@ -1520,9 +1684,11 @@ std::vector<uint> stetmesh::Tetmesh::getROITris(std::string ROI_id) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stetmesh::Tetmesh::getROITrisNP(std::string ROI_id, unsigned int* v_indices, int output_size) const
+void stetmesh::Tetmesh::getROITrisNP(std::string const &ROI_id, unsigned int* v_indices, int output_size) const
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TRI, output_size / 3)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TRI, output_size / 3)) {
+        ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     
     uint *indices = _getROIData(ROI_id);
     int inputsize = getROIDataSize(ROI_id);
@@ -1532,9 +1698,11 @@ void stetmesh::Tetmesh::getROITrisNP(std::string ROI_id, unsigned int* v_indices
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<uint> stetmesh::Tetmesh::getROITets(std::string ROI_id) const
+std::vector<uint> stetmesh::Tetmesh::getROITets(std::string const &ROI_id) const
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TET)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TET)) {
+        ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     
     uint *indices = _getROIData(ROI_id);
     int inputsize = getROIDataSize(ROI_id);
@@ -1547,9 +1715,11 @@ std::vector<uint> stetmesh::Tetmesh::getROITets(std::string ROI_id) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stetmesh::Tetmesh::getROITetsNP(std::string ROI_id, unsigned int* v_indices, int output_size) const
+void stetmesh::Tetmesh::getROITetsNP(std::string const &ROI_id, unsigned int* v_indices, int output_size) const
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TET, output_size / 4)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TET, output_size / 4)) {
+        ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     
     uint *indices = _getROIData(ROI_id);
     int inputsize = getROIDataSize(ROI_id);
@@ -1559,9 +1729,11 @@ void stetmesh::Tetmesh::getROITetsNP(std::string ROI_id, unsigned int* v_indices
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint stetmesh::Tetmesh::getROITriVerticesSetSizeNP(std::string ROI_id) const
+uint stetmesh::Tetmesh::getROITriVerticesSetSizeNP(std::string const &ROI_id) const
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) {
+        ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     
     uint *indices = _getROIData(ROI_id);
     int inputsize = getROIDataSize(ROI_id);
@@ -1571,9 +1743,11 @@ uint stetmesh::Tetmesh::getROITriVerticesSetSizeNP(std::string ROI_id) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint stetmesh::Tetmesh::getROITetVerticesSetSizeNP(std::string ROI_id) const
+uint stetmesh::Tetmesh::getROITetVerticesSetSizeNP(std::string const &ROI_id) const
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TET)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TET)) {
+        ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     
     uint *indices = _getROIData(ROI_id);
     int inputsize = getROIDataSize(ROI_id);
@@ -1583,9 +1757,11 @@ uint stetmesh::Tetmesh::getROITetVerticesSetSizeNP(std::string ROI_id) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stetmesh::Tetmesh::getROITriVerticesMappingSetNP(std::string ROI_id, unsigned int* t_vertices, int t_vertices_size, unsigned int* v_set, int v_set_size) const
+void stetmesh::Tetmesh::getROITriVerticesMappingSetNP(std::string const &ROI_id, unsigned int* t_vertices, int t_vertices_size, unsigned int* v_set, int v_set_size) const
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TRI, t_vertices_size / 3)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TRI, t_vertices_size / 3)) {
+        ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     
     uint *indices = _getROIData(ROI_id);
     int inputsize = getROIDataSize(ROI_id);
@@ -1595,9 +1771,11 @@ void stetmesh::Tetmesh::getROITriVerticesMappingSetNP(std::string ROI_id, unsign
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stetmesh::Tetmesh::getROITetVerticesMappingSetNP(std::string ROI_id, unsigned int* t_vertices, int t_vertices_size, unsigned int* v_set, int v_set_size) const
+void stetmesh::Tetmesh::getROITetVerticesMappingSetNP(std::string const &ROI_id, unsigned int* t_vertices, int t_vertices_size, unsigned int* v_set, int v_set_size) const
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TET, t_vertices_size / 4)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TET, t_vertices_size / 4)) {
+        ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     
     uint *indices = _getROIData(ROI_id);
     int inputsize = getROIDataSize(ROI_id);
@@ -1607,9 +1785,11 @@ void stetmesh::Tetmesh::getROITetVerticesMappingSetNP(std::string ROI_id, unsign
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stetmesh::Tetmesh::genROITetVisualPointsNP(std::string ROI_id, unsigned int* point_counts, int count_size, double* coords, int coord_size) const
+void stetmesh::Tetmesh::genROITetVisualPointsNP(std::string const &ROI_id, unsigned int* point_counts, int count_size, double* coords, int coord_size) const
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TET, count_size)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TET, count_size)) {
+        ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     
     uint *indices = _getROIData(ROI_id);
     int inputsize = getROIDataSize(ROI_id);
@@ -1619,9 +1799,11 @@ void stetmesh::Tetmesh::genROITetVisualPointsNP(std::string ROI_id, unsigned int
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stetmesh::Tetmesh::genROITriVisualPointsNP(std::string ROI_id, unsigned int* point_counts, int count_size, double* coords, int coord_size) const
+void stetmesh::Tetmesh::genROITriVisualPointsNP(std::string const &ROI_id, unsigned int* point_counts, int count_size, double* coords, int coord_size) const
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TRI, count_size)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TRI, count_size)) {
+        ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     
     uint *indices = _getROIData(ROI_id);
     int inputsize = getROIDataSize(ROI_id);
@@ -1631,9 +1813,11 @@ void stetmesh::Tetmesh::genROITriVisualPointsNP(std::string ROI_id, unsigned int
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stetmesh::Tetmesh::getROITetVolsNP(std::string ROI_id, double* volumes, int volume_size) const
+void stetmesh::Tetmesh::getROITetVolsNP(std::string const &ROI_id, double* volumes, int volume_size) const
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TET, volume_size)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TET, volume_size)) {
+        ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     
     uint *indices = _getROIData(ROI_id);
     int inputsize = getROIDataSize(ROI_id);
@@ -1643,9 +1827,11 @@ void stetmesh::Tetmesh::getROITetVolsNP(std::string ROI_id, double* volumes, int
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stetmesh::Tetmesh::getROITriAreasNP(std::string ROI_id, double* areas, int area_size) const
+void stetmesh::Tetmesh::getROITriAreasNP(std::string const &ROI_id, double* areas, int area_size) const
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TRI, area_size)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TRI, area_size)) {
+        ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     
     uint *indices = _getROIData(ROI_id);
     int inputsize = getROIDataSize(ROI_id);
@@ -1655,14 +1841,16 @@ void stetmesh::Tetmesh::getROITriAreasNP(std::string ROI_id, double* areas, int 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stetmesh::Tetmesh::getROIVol(std::string ROI_id) const
+double stetmesh::Tetmesh::getROIVol(std::string const & ROI_id) const
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TET)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TET)) {
+        ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     uint *indices = _getROIData(ROI_id);
-    int roisize = getROIDataSize(ROI_id);
+    const int roisize = getROIDataSize(ROI_id);
     
     double sum_vol = 0.0;
-    for (uint t = 0; t < roisize; t++) {
+    for (int t = 0; t < roisize; ++t) {
         sum_vol += getTetVol(indices[t]);
     }
     
@@ -1671,14 +1859,16 @@ double stetmesh::Tetmesh::getROIVol(std::string ROI_id) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stetmesh::Tetmesh::getROIArea(std::string ROI_id) const
+double stetmesh::Tetmesh::getROIArea(std::string const & ROI_id) const
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TRI)) {
+        ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     uint *indices = _getROIData(ROI_id);
-    int roisize = getROIDataSize(ROI_id);
+    const int roisize = getROIDataSize(ROI_id);
     
     double sum_area = 0.0;
-    for (uint t = 0; t < roisize; t++) {
+    for (int t = 0; t < roisize; t++) {
         sum_area += getTriArea(indices[t]);
     }
     
@@ -1687,9 +1877,11 @@ double stetmesh::Tetmesh::getROIArea(std::string ROI_id) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stetmesh::Tetmesh::reduceROITetPointCountsNP(std::string ROI_id, unsigned int* point_counts, int count_size, double max_density)
+void stetmesh::Tetmesh::reduceROITetPointCountsNP(std::string const &ROI_id, unsigned int* point_counts, int count_size, double max_density)
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TET, count_size)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TET, count_size)) {
+      ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     
     uint *indices = _getROIData(ROI_id);
     int inputsize = getROIDataSize(ROI_id);
@@ -1699,9 +1891,11 @@ void stetmesh::Tetmesh::reduceROITetPointCountsNP(std::string ROI_id, unsigned i
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stetmesh::Tetmesh::reduceROITriPointCountsNP(std::string ROI_id, unsigned int* point_counts, int count_size, double max_density)
+void stetmesh::Tetmesh::reduceROITriPointCountsNP(std::string const &ROI_id, unsigned int* point_counts, int count_size, double max_density)
 {
-    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TRI, count_size)) ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    if (!checkROI(ROI_id, steps::tetmesh::ELEM_TRI, count_size)) {
+      ArgErrLog("ROI check fail, please make sure the ROI stores correct elements.");
+    }
     
     uint *indices = _getROIData(ROI_id);
     int inputsize = getROIDataSize(ROI_id);

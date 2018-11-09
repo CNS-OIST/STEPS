@@ -26,9 +26,9 @@
 
 
 // Standard library & STL headers.
+#include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <algorithm>
 #include <functional>
 #include <iostream>
 
@@ -39,11 +39,11 @@
 #include "steps/solver/diffdef.hpp"
 #include "steps/solver/reacdef.hpp"
 #include "steps/tetexact/diff.hpp"
+#include "steps/tetexact/kproc.hpp"
 #include "steps/tetexact/reac.hpp"
 #include "steps/tetexact/tet.hpp"
-#include "steps/tetexact/tri.hpp"
-#include "steps/tetexact/kproc.hpp"
 #include "steps/tetexact/tetexact.hpp"
+#include "steps/tetexact/tri.hpp"
 #include "steps/tetexact/wmvol.hpp"
 
 // logging
@@ -78,7 +78,7 @@ stex::Tet::Tet
     // but we can store their indices
     for (uint i=0; i <= 3; ++i)
     {
-        pNextTet[i] = 0;
+        pNextTet[i] = nullptr;
         pNextTris[i] = 0;
     }
     pTets[0] = tet0;
@@ -103,10 +103,8 @@ stex::Tet::Tet
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Tet::~Tet(void)
-{
-
-}
+stex::Tet::~Tet()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -160,7 +158,7 @@ void stex::Tet::setNextTri(uint i, stex::Tri * t)
     AssertLog(pNextTris.size() == 4);
     AssertLog(i <= 3);
 
-    pNextTet[i] = 0;
+    pNextTet[i] = nullptr;
     pNextTris[i]= t;
 }
 
@@ -188,7 +186,7 @@ void stex::Tet::setupKProcs(stex::Tetexact * tex)
     for (uint i = 0; i < ndiffs; ++i)
     {
         ssolver::Diffdef * ddef = compdef()->diffdef(i);
-        stex::Diff * d = new stex::Diff(ddef, this);
+        auto * d = new stex::Diff(ddef, this);
         kprocs()[j++] = d;
         tex->addKProc(d);
     }

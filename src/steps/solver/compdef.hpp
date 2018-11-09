@@ -71,7 +71,7 @@ public:
     Compdef(Statedef * sd, uint idx, steps::wm::Comp * c);
 
     /// Destructor
-    ~Compdef(void);
+    ~Compdef();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -88,24 +88,24 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the volume of this compartment.
-    double vol(void) const;
+    double vol() const;
 
     /// Return the global index of this compartment
-    inline uint gidx(void) const
+    inline uint gidx() const
     { return pIdx; }
 
     /// Return the name of this compartment.
-    std::string const name(void) const;
+    std::string const name() const;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: SETUP
     ////////////////////////////////////////////////////////////////////////
 
     /// Setup all reference.
-    void setup_references(void);
+    void setup_references();
 
     /// Setup all indices.
-    void setup_indices(void);
+    void setup_indices();
 
     /// Add a species with global index gidx.
     ///
@@ -133,14 +133,14 @@ public:
 
     /// Reset count, flags members of this compartment. Called when reset()
     /// method in solver object is executed.
-    void reset(void);
+    void reset();
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SPECIES
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of species that can occur in this compartment
-    inline uint countSpecs(void) const
+    inline uint countSpecs() const
     { return pSpecsN; }
 
     /// Return the local species index for global index argument.
@@ -156,7 +156,7 @@ public:
     { return pSpec_L2G[lidx]; }
     
     /// Returns pointer to flags on species for this compartment.
-    inline uint * flags(void) const
+    inline uint * flags() const
     { return pPoolFlags; }
 
     static const uint CLAMPED = 1;
@@ -169,7 +169,7 @@ public:
     { return pPoolFlags[slidx] & CLAMPED; }
 
     /// Return pointer to species' counts in this compartment.
-    inline double * pools(void) const
+    inline double * pools() const
     { return pPoolCount; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -193,7 +193,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of reactions that can occur in this compartment.
-    inline uint countReacs(void) const
+    inline uint countReacs() const
     { return pReacsN; }
 
     /// Return the local reaction index for global index argument.
@@ -242,7 +242,7 @@ public:
     Reacdef * reacdef(uint rlidx) const;
 
     /// Return pointer to flags on reactions for this compartment.
-    inline uint * rflags(void) const
+    inline uint * rflags() const
     { return pReacFlags; }
 
     static const uint INACTIVATED = 1;
@@ -281,7 +281,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of diffusion rules for this compartment.
-    inline uint countDiffs(void) const
+    inline uint countDiffs() const
     { return pDiffsN; }
 
     /// Returns a pointer to Diffdef specified by local index.

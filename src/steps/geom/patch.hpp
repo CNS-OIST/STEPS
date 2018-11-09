@@ -103,11 +103,11 @@ public:
     /// \param ocomp Pointer to the outer compartment.
     /// \param surfsys Pointer to the associated surface system.
     /// \param area Area of the patch.
-    Patch(std::string const & id, steps::wm::Geom * container,
+    Patch(std::string id, steps::wm::Geom * container,
           steps::wm::Comp* icomp, steps::wm::Comp* ocomp = 0, double area = 0.0);
 
     /// Destructor
-    virtual ~Patch(void);
+    virtual ~Patch();
 
     ////////////////////////////////////////////////////////////////////////
     // PATCH PROPERTIES (EXPOSED TO PYTHON)
@@ -116,7 +116,7 @@ public:
     /// Return the patch id.
     ///
     /// \return ID of the patch.
-    std::string getID(void) const
+    std::string const & getID() const
     { return pID; }
 
     /// Set or change the patch id.
@@ -127,19 +127,19 @@ public:
     /// Return a pointer to the geometry container object.
     ///
     /// \return Pointer to the parent geometry container.
-    steps::wm::Geom * getContainer(void) const
+    steps::wm::Geom * getContainer() const
     { return pContainer; }
 
     /// Return the area of the patch.
     ///
     /// \return Area of the patch.
-    double getArea(void) const
+    double getArea() const
     { return pArea; }
 
     /// Set the area of the patch.
     ///
     /// \param area Area of the patch.
-    virtual void setArea(double vol);
+    virtual void setArea(double area);
 
     ////////////////////////////////////////////////////////////////////////
     // OPERATIONS (EXPOSED TO PYTHON): VOLUME SYSTEM
@@ -153,7 +153,7 @@ public:
     /// Get a surface system.
     ///
     /// \return List of the surface systems associated to the patch.
-    std::set<std::string> getSurfsys(void) const
+    std::set<std::string> const & getSurfsys() const
     {return pSurfsys; }
 
     /// Delete a surface system with name id.
@@ -177,13 +177,13 @@ public:
     /// Return the inner compartment.
     ///
     /// \return Pointer to the inner compartment.
-    steps::wm::Comp * getIComp(void) const
+    steps::wm::Comp * getIComp() const
     { return pIComp; }
 
     ///Return the outer compartment.
     ///
     /// \return Pointer to the outer compartment.
-    steps::wm::Comp * getOComp(void) const
+    steps::wm::Comp * getOComp() const
     { return pOComp; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -207,7 +207,7 @@ public:
     ///
     /// Called if Python object deleted, or from del method in parent object.
     /// Will only be called once
-    void _handleSelfDelete(void);
+    void _handleSelfDelete();
 
     ////////////////////////////////////////////////////////////////////////
 

@@ -28,12 +28,12 @@
 
 #include <mpi.h>
 
-#include "steps/mpi/mpi_init.hpp"
 #include "easylogging++.h"
+#include "steps/mpi/mpi_init.hpp"
 
 
 
-void steps::mpi::mpiInit(void) {
+void steps::mpi::mpiInit() {
     /* Initialize MPI */
     MPI_Init(NULL, NULL);
 
@@ -67,13 +67,13 @@ void steps::mpi::mpiInit(void) {
     MPI_Barrier(MPI_COMM_WORLD);
 }
 
-int steps::mpi::getRank(void) {
+int steps::mpi::getRank() {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     return rank;
 }
 
-int steps::mpi::getNHosts(void) {
+int steps::mpi::getNHosts() {
     int nhosts;
     MPI_Comm_size(MPI_COMM_WORLD, &nhosts);
     return nhosts;

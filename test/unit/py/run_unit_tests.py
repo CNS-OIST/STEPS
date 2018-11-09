@@ -26,9 +26,11 @@ import unittest2
 import nose
 import model_test
 import directional_dcst_test
+import sdiff_bugfix_test
+import multi_sys_test
 
 def suite():
-    all_tests = [ model_test.suite(), directional_dcst_test.suite() ]
+    all_tests = [ model_test.suite(), directional_dcst_test.suite(), sdiff_bugfix_test.suite(),multi_sys_test.suite() ]
     return unittest2.TestSuite(all_tests)
 
 if __name__ == "__main__":

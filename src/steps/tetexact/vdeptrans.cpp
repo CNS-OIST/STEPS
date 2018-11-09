@@ -32,11 +32,11 @@
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/math/constants.hpp"
-#include "steps/tetexact/vdeptrans.hpp"
-#include "steps/tetexact/tri.hpp"
-#include "steps/tetexact/tet.hpp"
 #include "steps/tetexact/kproc.hpp"
+#include "steps/tetexact/tet.hpp"
 #include "steps/tetexact/tetexact.hpp"
+#include "steps/tetexact/tri.hpp"
+#include "steps/tetexact/vdeptrans.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -48,8 +48,8 @@ namespace ssolver = steps::solver;
 ////////////////////////////////////////////////////////////////////////////////
 
 stex::VDepTrans::VDepTrans(ssolver::VDepTransdef * vdtdef, stex::Tri * tri)
-: KProc()
-, pVDepTransdef(vdtdef)
+: 
+ pVDepTransdef(vdtdef)
 , pTri(tri)
 , pUpdVec()
 {
@@ -59,9 +59,8 @@ stex::VDepTrans::VDepTrans(ssolver::VDepTransdef * vdtdef, stex::Tri * tri)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::VDepTrans::~VDepTrans(void)
-{
-}
+stex::VDepTrans::~VDepTrans()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -91,7 +90,7 @@ void stex::VDepTrans::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::VDepTrans::reset(void)
+void stex::VDepTrans::reset()
 {
 
     crData.recorded = false;
@@ -103,7 +102,7 @@ void stex::VDepTrans::reset(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::VDepTrans::setupDeps(void)
+void stex::VDepTrans::setupDeps()
 {
     std::set<stex::KProc*> updset;
 
@@ -131,7 +130,8 @@ bool stex::VDepTrans::depSpecTet(uint gidx, stex::WmVol * tet)
 
 bool stex::VDepTrans::depSpecTri(uint gidx, stex::Tri * triangle)
 {
-    if (triangle != pTri) return false;
+    if (triangle != pTri) { return false;
+}
     return (pVDepTransdef->dep(gidx) != ssolver::DEP_NONE);
 }
 
@@ -144,7 +144,7 @@ double stex::VDepTrans::rate(steps::tetexact::Tetexact * solver)
     // Fetch the local index of the srcchannel
     uint srclidx = pdef->vdeptrans_srcchanstate(vdtlidx);
 
-    double n = static_cast<double>(pTri->pools()[srclidx]);
+    auto n = static_cast<double>(pTri->pools()[srclidx]);
     double v = solver->getTriV(pTri->idx());
     double ra = pVDepTransdef->getVDepRate(v);
 

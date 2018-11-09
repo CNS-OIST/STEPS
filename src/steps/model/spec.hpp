@@ -86,7 +86,7 @@ public:
     Spec(std::string const & id, Model * model, int valence = 0);
 
     /// Destructor
-    virtual ~Spec(void);
+    virtual ~Spec();
 
     ////////////////////////////////////////////////////////////////////////
     // SPECIES PROPERTIES
@@ -95,7 +95,7 @@ public:
     /// Return the species ID.
     ///
     /// \return ID of the species.
-    std::string getID(void) const
+    std::string getID() const
     { return pID; }
 
     /// Set or change the species ID.
@@ -106,7 +106,7 @@ public:
     /// Return a pointer to the parent model.
     ///
     /// \return Pointer to the parent model.
-    Model * getModel(void) const
+    Model * getModel() const
     { return pModel; }
 
     /// Set the valence of the species.
@@ -117,7 +117,7 @@ public:
     /// Return the valence of the species.
     ///
     /// \return Valence of the species.
-    int getValence(void) const
+    int getValence() const
     { return pValence; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -128,7 +128,7 @@ public:
     ///
     /// Called if Python object deleted, or from del method in parent object.
     /// Will only be called once
-    virtual void _handleSelfDelete(void);
+    virtual void _handleSelfDelete();
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED): SOLVER HELPER METHODS

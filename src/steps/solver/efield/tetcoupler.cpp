@@ -27,11 +27,11 @@
 
 // STL headers.
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <cassert>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -62,13 +62,12 @@ sefield::TetCoupler::TetCoupler(TetMesh * mesh)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sefield::TetCoupler::~TetCoupler(void)
-{
-}
+sefield::TetCoupler::~TetCoupler()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::TetCoupler::coupleMesh(void)
+void sefield::TetCoupler::coupleMesh()
 {
 
     typedef vector<double*> doublePVec;
@@ -317,7 +316,7 @@ void sefield::TetCoupler::fluxCoeficients(sefield::VertexElement * ve, sefield::
 
 
     // vertices in its rows.
-    double** m = new double*[3];
+    auto** m = new double*[3];
     for (uint i = 0; i < 3; ++i)
     {
         m[i] = new double[3];
@@ -331,7 +330,7 @@ void sefield::TetCoupler::fluxCoeficients(sefield::VertexElement * ve, sefield::
         m[iv][2] = ves[iv]->getZ() - ve->getZ();
     }
     // Create a matrix with m as initialization.
-    Matrix* vm = new Matrix(3, m);
+    auto* vm = new Matrix(3, m);
 
     // Need to be consistent about the orientation of tetrahedra. One way
     // is to take the dot product of one vector with the cross product of

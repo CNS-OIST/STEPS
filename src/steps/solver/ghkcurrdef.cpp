@@ -31,22 +31,22 @@
 #endif
 
 // STL headers.
-#include <string>
 #include <cassert>
+#include <cmath>
 #include <iostream>
 #include <sstream>
-#include <cmath>
+#include <string>
 
 // STEPS headers.
 #include "steps/common.h"
-#include "steps/math/ghk.hpp"
-#include "steps/solver/types.hpp"
 #include "steps/error.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/ghkcurrdef.hpp"
+#include "steps/math/ghk.hpp"
 #include "steps/model/chanstate.hpp"
-#include "steps/model/spec.hpp"
 #include "steps/model/ghkcurr.hpp"
+#include "steps/model/spec.hpp"
+#include "steps/solver/ghkcurrdef.hpp"
+#include "steps/solver/statedef.hpp"
+#include "steps/solver/types.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -67,10 +67,10 @@ ssolver::GHKcurrdef::GHKcurrdef(Statedef * sd, uint gidx, smod::GHKcurr * ghk)
 , pVirtual_oconc()
 , pPerm(0.0)
 , pValence(0)
-, pSpec_DEP(0)
+, pSpec_DEP(nullptr)
 , pSpec_CHANSTATE(GIDX_UNDEFINED)
 , pSpec_ION(GIDX_UNDEFINED)
-, pSpec_VOL_DEP(0)
+, pSpec_VOL_DEP(nullptr)
 {
     AssertLog(pStatedef != 0);
     AssertLog(ghk != 0);
@@ -127,7 +127,8 @@ ssolver::GHKcurrdef::GHKcurrdef(Statedef * sd, uint gidx, smod::GHKcurr * ghk)
     }
 
     uint nspecs = pStatedef->countSpecs();
-    if (nspecs == 0) return; // Would be weird, but okay.
+    if (nspecs == 0) { return; // Would be weird, but okay.
+}
     pSpec_DEP = new int[nspecs];
     std::fill_n(pSpec_DEP, nspecs, DEP_NONE);
 
@@ -137,7 +138,7 @@ ssolver::GHKcurrdef::GHKcurrdef(Statedef * sd, uint gidx, smod::GHKcurr * ghk)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::GHKcurrdef::~GHKcurrdef(void)
+ssolver::GHKcurrdef::~GHKcurrdef()
 {
     if (pStatedef->countSpecs() > 0)
     {
@@ -170,7 +171,7 @@ void ssolver::GHKcurrdef::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::GHKcurrdef::setup(void)
+void ssolver::GHKcurrdef::setup()
 {
     AssertLog(pSetupdone == false);
 
@@ -200,7 +201,7 @@ void ssolver::GHKcurrdef::setup(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint ssolver::GHKcurrdef::chanstate(void) const
+uint ssolver::GHKcurrdef::chanstate() const
 {
     AssertLog(pSetupdone == true);
     return pSpec_CHANSTATE;
@@ -208,7 +209,7 @@ uint ssolver::GHKcurrdef::chanstate(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint ssolver::GHKcurrdef::ion(void) const
+uint ssolver::GHKcurrdef::ion() const
 {
     AssertLog(pSetupdone == true);
     return pSpec_ION;
@@ -236,7 +237,8 @@ bool ssolver::GHKcurrdef::req(uint gidx) const
 {
     AssertLog(pSetupdone == true);
     AssertLog(gidx < pStatedef->countSpecs());
-    if (pSpec_DEP[gidx] != DEP_NONE) return true;
+    if (pSpec_DEP[gidx] != DEP_NONE) { return true;
+}
     return false;
 }
 
@@ -246,7 +248,8 @@ bool ssolver::GHKcurrdef::req_v(uint gidx) const
 {
     AssertLog(pSetupdone == true);
     AssertLog(gidx < pStatedef->countSpecs());
-    if (pSpec_VOL_DEP[gidx] != DEP_NONE) return true;
+    if (pSpec_VOL_DEP[gidx] != DEP_NONE) { return true;
+}
     return false;
 }
 

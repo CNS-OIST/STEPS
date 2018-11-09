@@ -70,7 +70,7 @@ public:
     Reacdef(Statedef * sd, uint idx, steps::model::Reac * r);
 
     /// Destructor
-    ~Reacdef(void);
+    ~Reacdef();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -86,17 +86,17 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this reaction rule.
-    inline uint gidx(void) const
+    inline uint gidx() const
     { return pIdx; }
 
     /// Return the name of the reaction.
-    std::string const name(void) const;
+    std::string const name() const;
 
     /// Return the order of this reaction.
-    uint order(void) const;
+    uint order() const;
 
     /// Return the MACROscopic reaction constant.
-    double kcst(void) const;
+    double kcst() const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: STOICHIOMETRY
@@ -108,16 +108,16 @@ public:
     int upd(uint gidx) const;
     bool reqspec(uint gidx) const;
 
-    inline steps::solver::gidxTVecCI bgnUpdColl(void) const
+    inline steps::solver::gidxTVecCI bgnUpdColl() const
     { return pSpec_UPD_Coll.begin(); }
-    inline steps::solver::gidxTVecCI endUpdColl(void) const
+    inline steps::solver::gidxTVecCI endUpdColl() const
     { return pSpec_UPD_Coll.end(); }
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: SETUP
     ////////////////////////////////////////////////////////////////////////
     /// Setup the object.
-    void setup(void);
+    void setup();
 
     ////////////////////////////////////////////////////////////////////////
 

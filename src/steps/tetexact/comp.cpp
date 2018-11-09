@@ -59,9 +59,8 @@ stex::Comp::Comp(steps::solver::Compdef * compdef)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Comp::~Comp(void)
-{
-}
+stex::Comp::~Comp()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -100,7 +99,8 @@ void stex::Comp::modCount(uint slidx, double count)
 
 stex::WmVol * stex::Comp::pickTetByVol(double rand01) const
 {
-    if (countTets() == 0) return 0;
+    if (countTets() == 0) { return nullptr;
+}
     if (countTets() == 1) return pTets[0];
 
     double accum = 0.0;
@@ -112,7 +112,7 @@ stex::WmVol * stex::Comp::pickTetByVol(double rand01) const
         if (selector < accum) return (*t);
     }
     AssertLog(false);
-    return 0;
+    return nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

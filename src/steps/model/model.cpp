@@ -38,14 +38,14 @@
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
-#include "steps/model/model.hpp"
-#include "steps/model/spec.hpp"
 #include "steps/model/chan.hpp"
-#include "steps/model/vdeptrans.hpp"
-#include "steps/model/vdepsreac.hpp"
 #include "steps/model/ghkcurr.hpp"
+#include "steps/model/model.hpp"
 #include "steps/model/ohmiccurr.hpp"
+#include "steps/model/spec.hpp"
 #include "steps/model/surfsys.hpp"
+#include "steps/model/vdepsreac.hpp"
+#include "steps/model/vdeptrans.hpp"
 #include "steps/model/volsys.hpp"
 
 #include "steps/util/checkid.hpp"
@@ -58,20 +58,10 @@ using namespace std;
 using namespace steps::model;
 
 using steps::util::checkID;
-//
-////////////////////////////////////////////////////////////////////////////////
-
-Model::Model(void)
-: pSpecs()
-, pChans()
-, pVolsys()
-, pSurfsys()
-{
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Model::~Model(void)
+Model::~Model()
 {
     while (pSpecs.empty() == false)
     {
@@ -123,7 +113,7 @@ void Model::delSpec(string const & id)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<Spec *> Model::getAllSpecs(void) const
+std::vector<Spec *> Model::getAllSpecs() const
 {
     SpecPVec specs = SpecPVec();
     SpecPMapCI spec_end = pSpecs.end();
@@ -136,7 +126,7 @@ std::vector<Spec *> Model::getAllSpecs(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<Volsys *> Model::getAllVolsyss(void) const
+std::vector<Volsys *> Model::getAllVolsyss() const
 {
     VolsysPVec volsyss = VolsysPVec();
     VolsysPMapCI vsys_end = pVolsys.end();
@@ -149,7 +139,7 @@ std::vector<Volsys *> Model::getAllVolsyss(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<Surfsys *> Model::getAllSurfsyss(void) const
+std::vector<Surfsys *> Model::getAllSurfsyss() const
 {
     SurfsysPVec surfsyss = SurfsysPVec();
     SurfsysPMapCI ssys_end = pSurfsys.end();
@@ -177,7 +167,7 @@ Chan * Model::getChan(string const & id) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<Chan *> Model::getAllChans(void) const
+std::vector<Chan *> Model::getAllChans() const
 {
     ChanPVec chans = ChanPVec();
     ChanPMapCI chan_end = pChans.end();
@@ -437,7 +427,7 @@ void Model::_handleSurfsysDel(Surfsys * surfsys)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint Model::_countReacs(void) const
+uint Model::_countReacs() const
 {
     uint nreacs = 0;
 
@@ -451,7 +441,7 @@ uint Model::_countReacs(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint Model::_countSReacs(void) const
+uint Model::_countSReacs() const
 {
     uint nsreacs = 0;
 
@@ -465,7 +455,7 @@ uint Model::_countSReacs(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint Model::_countVDiffs(void) const
+uint Model::_countVDiffs() const
 {
     uint ndiffs = 0;
 
@@ -479,7 +469,7 @@ uint Model::_countVDiffs(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint Model::_countSDiffs(void) const
+uint Model::_countSDiffs() const
 {
     uint ndiffs = 0;
 
@@ -493,7 +483,7 @@ uint Model::_countSDiffs(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint Model::_countVDepTrans(void) const
+uint Model::_countVDepTrans() const
 {
     uint nvdts = 0;
 
@@ -507,7 +497,7 @@ uint Model::_countVDepTrans(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint Model::_countVDepSReacs(void) const
+uint Model::_countVDepSReacs() const
 {
     uint nvdsrs = 0;
 
@@ -521,7 +511,7 @@ uint Model::_countVDepSReacs(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint Model::_countOhmicCurrs(void) const
+uint Model::_countOhmicCurrs() const
 {
     uint nocs = 0;
 
@@ -535,7 +525,7 @@ uint Model::_countOhmicCurrs(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint Model::_countGHKcurrs(void) const
+uint Model::_countGHKcurrs() const
 {
     uint nghks = 0;
 

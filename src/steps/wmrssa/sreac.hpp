@@ -62,7 +62,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     SReac(steps::solver::SReacdef * srdef, Patch * patch);
-    ~SReac(void);
+    ~SReac();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -79,9 +79,9 @@ public:
 
     static const int INACTIVATED = 1;
 
-    bool active(void) const;
+    bool active() const;
 
-    bool inactive(void) const
+    bool inactive() const
     { return (! active()); }
 
 
@@ -89,30 +89,30 @@ public:
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    void setupDeps(void);
+    void setupDeps();
     bool depSpecComp(uint gidx, Comp * comp);
     bool depSpecPatch(uint gidx, Patch * patch);
-    void reset(void);
+    void reset();
     double rate(steps::wmrssa::PropensityRSSA prssa = steps::wmrssa::CURRENT);
-    std::vector<uint> const & apply(void);
+    std::vector<uint> const & apply();
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::SReacdef * defsr(void) const
+    inline steps::solver::SReacdef * defsr() const
     { return pSReacdef; }
 
-    void resetCcst(void);
+    void resetCcst();
 
-    double c(void) const
+    double c() const
     { return pCcst; }
 
-    double propensityLB(void) const
+    double propensityLB() const
     { return pPropensityLB; }
 
-    double h(void)
+    double h()
     { return (rate()/pCcst); }
 
-    uint updVecSize(void) const
+    uint updVecSize() const
     { return pUpdVec.size(); }
 
     ////////////////////////////////////////////////////////////////////////

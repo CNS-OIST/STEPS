@@ -467,14 +467,16 @@ class VisualTrisChannel(gl.GLScatterPlotItem):
         self.spec_size = spec_size
         
         self.tris = np.array(tris, dtype = np.uint32)
+        # total counts of species channels in eaxh tris
         total_counts = np.zeros(self.tris.size)
         individual_counts = np.zeros(self.tris.size)
         
         for s in specs_colors.keys():
             self.sim.getBatchTriCountsNP(self.tris, s, individual_counts)
             total_counts += individual_counts
-        
-        self.starts = np.cumsum(total_counts) - 1
+
+        self.starts = np.insert(np.cumsum(total_counts), 0, 0)
+
         total = sum(total_counts)
         data = np.zeros(int(total) * 3)
         point_counts = total_counts.astype(np.uint32)
@@ -490,8 +492,6 @@ class VisualTrisChannel(gl.GLScatterPlotItem):
             for t in range(self.tris.size):
                 self.color[int(self.starts[t] + current_counter[t]) : int(self.starts[t] + current_counter[t] + individual_counts[t])] = self.specs_colors[s]
                 current_counter[t] += individual_counts[t]
-
-        
         gl.GLScatterPlotItem.__init__(self, pos = data, color=self.color, size=self.spec_size, pxMode=False)
         display.addItem(self)
     
@@ -506,6 +506,7 @@ class VisualTrisChannel(gl.GLScatterPlotItem):
             for t in range(self.tris.size):
                 self.color[int(self.starts[t] + current_counter[t]) : int(self.starts[t] + current_counter[t] + individual_counts[t])] = self.specs_colors[s]
                 current_counter[t] += individual_counts[t]
+        
         self.setData(color = self.color)
     
     def setSpecColor(self, spec, color):

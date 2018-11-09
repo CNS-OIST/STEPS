@@ -175,7 +175,7 @@ public:
     Statedef(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r);
 
     /// Destructor
-    ~Statedef(void);
+    ~Statedef();
 
     uint getMembIdx(std::string const & m) const;
 
@@ -195,7 +195,7 @@ public:
     Compdef * compdef(uint gidx) const;
 
     /// Return the total number of compartments in the simulation state.
-    inline uint countComps(void) const
+    inline uint countComps() const
     { return pCompdefs.size(); }
 
     /// Return the global index of compartment identified by string argument.
@@ -211,11 +211,11 @@ public:
     uint getCompIdx(steps::wm::Comp * comp) const;
 
     /// Return the beginning iterator of the Compdefs objects.
-    std::vector<Compdef*>::const_iterator bgnComp(void) const
+    std::vector<Compdef*>::const_iterator bgnComp() const
     { return pCompdefs.begin(); }
 
     /// Return the end iterator of the Compdefs objects.
-    std::vector<Compdef*>::const_iterator endComp(void) const
+    std::vector<Compdef*>::const_iterator endComp() const
     { return pCompdefs.end(); }
 
     ////////////////////////////////////////////////////////////////////////
@@ -228,7 +228,7 @@ public:
     Patchdef * patchdef(uint gidx) const;
 
     /// Return the total number of patches in the simulation state.
-    uint countPatches(void) const
+    uint countPatches() const
     { return pPatchdefs.size(); }
 
     /// Return the global index of patch identified by string argument.
@@ -244,11 +244,11 @@ public:
     uint getPatchIdx(steps::wm::Patch * patch) const;
 
     /// Return the beginning iterator of the Patchdefs objects.
-    std::vector<Patchdef*>::const_iterator bgnPatch(void) const
+    std::vector<Patchdef*>::const_iterator bgnPatch() const
     { return pPatchdefs.begin(); }
 
     /// Return the end iterator of the Patchdefs objects.
-    std::vector<Patchdef*>::const_iterator endPatch(void) const
+    std::vector<Patchdef*>::const_iterator endPatch() const
     { return pPatchdefs.end(); }
 
     ////////////////////////////////////////////////////////////////////////
@@ -256,7 +256,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of species in the simulation state.
-    uint countSpecs(void) const
+    uint countSpecs() const
     { return pSpecdefs.size(); }
 
     /// Return pointer to Specdef object specified by global index argument.
@@ -276,7 +276,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of reactions in the simulation state.
-    uint countReacs(void) const
+    uint countReacs() const
     { return pReacdefs.size(); }
 
     /// Return pointer to Reacdef object specified by global index argument.
@@ -301,7 +301,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of surface reactions in the simulation state.
-    uint countSReacs(void) const
+    uint countSReacs() const
     { return pSReacdefs.size(); }
 
     /// Return pointer to SReacdef object specified by global index argument.
@@ -325,7 +325,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of diffusion rules in the simulation state.
-    uint countDiffs(void) const
+    uint countDiffs() const
     { return pDiffdefs.size(); }
 
     /// Return pointer to Diffdef object specified by global index argument.
@@ -350,7 +350,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of surface diffusion rules in the simulation state.
-    uint countSurfDiffs(void) const
+    uint countSurfDiffs() const
     { return pSurfDiffdefs.size(); }
 
     /// Return pointer to SurfDiffdef object specified by global index argument.
@@ -375,7 +375,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of voltage-dependent transitions in the simulation state.
-    uint countVDepTrans(void) const
+    uint countVDepTrans() const
     { return pVDepTransdefs.size(); }
 
     /// Return pointer to VDepTransdef object specified by global index argument.
@@ -400,7 +400,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of voltage-dependent transitions in the simulation state.
-    uint countVDepSReacs(void) const
+    uint countVDepSReacs() const
     { return pVDepSReacdefs.size(); }
 
     /// Return pointer to VDepSReacdef object specified by global index argument.
@@ -425,7 +425,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of ohmic currents in the simulation state.
-    uint countOhmicCurrs(void) const
+    uint countOhmicCurrs() const
     { return pOhmicCurrdefs.size(); }
 
     /// Return pointer to OhmicCurr object specified by global index argument.
@@ -450,7 +450,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of ghk currents in the simulation state.
-    uint countGHKcurrs(void) const
+    uint countGHKcurrs() const
     { return pGHKcurrdefs.size(); }
 
     /// Return pointer to GHKcurr object specified by global index argument.
@@ -475,7 +475,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of diffusion boundaries in the simulation state.
-    uint countDiffBoundaries(void) const
+    uint countDiffBoundaries() const
     { return pDiffBoundarydefs.size(); }
 
     /// Return pointer to DiffBoundarydef object specified by global index argument.
@@ -496,11 +496,11 @@ public:
     uint getDiffBoundaryIdx(steps::tetmesh::DiffBoundary * diffb) const;
 
     /// Return the beginning iterator of the Diffusion Boundary objects.
-    std::vector<DiffBoundarydef *>::const_iterator bgnDiffBoundary(void) const
+    std::vector<DiffBoundarydef *>::const_iterator bgnDiffBoundary() const
     { return pDiffBoundarydefs.begin(); }
 
     /// Return the end iterator of the Diffusion Boundary objects.
-    std::vector<DiffBoundarydef *>::const_iterator endDiffBoundary(void) const
+    std::vector<DiffBoundarydef *>::const_iterator endDiffBoundary() const
     { return pDiffBoundarydefs.end(); }
 
     ////////////////////////////////////////////////////////////////////////
@@ -508,7 +508,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of surface diffusion boundaries in the simulation state.
-    uint countSDiffBoundaries(void) const
+    uint countSDiffBoundaries() const
     { return pSDiffBoundarydefs.size(); }
 
     /// Return pointer to SDiffBoundarydef object specified by global index argument.
@@ -529,11 +529,11 @@ public:
     uint getSDiffBoundaryIdx(steps::tetmesh::SDiffBoundary * sdiffb) const;
 
     /// Return the beginning iterator of the Surface Diffusion Boundary objects.
-    std::vector<SDiffBoundarydef *>::const_iterator bgnSDiffBoundary(void) const
+    std::vector<SDiffBoundarydef *>::const_iterator bgnSDiffBoundary() const
     { return pSDiffBoundarydefs.begin(); }
 
     /// Return the end iterator of the Surface Diffusion Boundary objects.
-    std::vector<SDiffBoundarydef *>::const_iterator endSDiffBoundary(void) const
+    std::vector<SDiffBoundarydef *>::const_iterator endSDiffBoundary() const
     { return pSDiffBoundarydefs.end(); }
 
     ////////////////////////////////////////////////////////////////////////
@@ -541,15 +541,15 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the current simulation time.
-    inline double time(void) const
+    inline double time() const
     { return pTime; }
 
     /// Return the model object.
-    inline steps::model::Model * model(void) const
+    inline steps::model::Model * model() const
     { return pModel; }
 
     /// Return the random number generator object.
-    inline steps::rng::RNG * rng(void) const
+    inline steps::rng::RNG * rng() const
     { return pRNG; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -567,7 +567,7 @@ public:
     void incTime(double dt);
 
     /// Reset the simulation time to 0s.
-    inline void resetTime(void)
+    inline void resetTime()
     { pTime = 0.0; }
 
     /// Increase the time step.
@@ -576,11 +576,11 @@ public:
     void incNSteps(uint i = 1);
 
     /// Reset the time step to 0.
-    inline void resetNSteps(void)
+    inline void resetNSteps()
     { pNSteps = 0; }
 
     /// Return current simulation time step.
-    inline uint nsteps(void) const
+    inline uint nsteps() const
     { return pNSteps; }
 
     inline void setNSteps(uint nsteps)

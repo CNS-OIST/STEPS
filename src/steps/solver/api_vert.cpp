@@ -26,15 +26,15 @@
 
 
 // STL headers.
-#include <string>
 #include <sstream>
+#include <string>
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
+#include "steps/geom/tetmesh.hpp"
 #include "steps/solver/api.hpp"
 #include "steps/solver/statedef.hpp"
-#include "steps/geom/tetmesh.hpp"
 // logging
 #include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
@@ -46,7 +46,7 @@ using namespace steps::solver;
 
 double API::getVertV(uint vidx) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (vidx >= mesh->countVertices())
         {
@@ -69,7 +69,7 @@ double API::getVertV(uint vidx) const
 
 void API::setVertV(uint vidx, double v)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (vidx >= mesh->countVertices())
         {
@@ -92,7 +92,7 @@ void API::setVertV(uint vidx, double v)
 
 bool API::getVertVClamped(uint vidx) const
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (vidx >= mesh->countVertices())
         {
@@ -115,7 +115,7 @@ bool API::getVertVClamped(uint vidx) const
 
 void API::setVertVClamped(uint vidx, bool cl)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (vidx >= mesh->countVertices())
         {
@@ -138,7 +138,7 @@ void API::setVertVClamped(uint vidx, bool cl)
 
 void API::setVertIClamp(uint vidx, double i)
 {
-    if (steps::tetmesh::Tetmesh * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
         if (vidx >= mesh->countVertices())
         {

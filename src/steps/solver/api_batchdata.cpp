@@ -26,17 +26,17 @@
 
 
 // STL headers.
-#include <string>
 #include <sstream>
+#include <string>
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/solver/api.hpp"
-#include "steps/solver/statedef.hpp"
 #include "steps/solver/compdef.hpp"
 #include "steps/solver/patchdef.hpp"
 #include "steps/solver/specdef.hpp"
+#include "steps/solver/statedef.hpp"
 
 // logging
 #include "easylogging++.h"

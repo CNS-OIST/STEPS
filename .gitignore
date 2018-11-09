@@ -37,3 +37,5 @@ pysteps/steps/cysteps_mpi.cpp
 .python-version
 
 .ipynb_checkpoints
+
+spconfig.py

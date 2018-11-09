@@ -26,30 +26,30 @@
 
 
 // Standard library & STL headers.
-#include <cmath>
-#include <vector>
-#include <cassert>
-#include <iostream>
-#include <sstream>
 #include <algorithm>
+#include <cassert>
+#include <cmath>
+#include <iostream>
 #include <limits>
+#include <sstream>
+#include <vector>
 
 // STEPS headers.
 #include "steps/common.h"
-#include "steps/wmrssa/wmrssa.hpp"
-#include "steps/wmrssa/kproc.hpp"
-#include "steps/wmrssa/comp.hpp"
-#include "steps/wmrssa/patch.hpp"
-#include "steps/wmrssa/reac.hpp"
-#include "steps/wmrssa/sreac.hpp"
-#include "steps/math/constants.hpp"
 #include "steps/error.hpp"
-#include "steps/solver/statedef.hpp"
+#include "steps/math/constants.hpp"
 #include "steps/solver/compdef.hpp"
 #include "steps/solver/patchdef.hpp"
 #include "steps/solver/reacdef.hpp"
 #include "steps/solver/sreacdef.hpp"
+#include "steps/solver/statedef.hpp"
 #include "steps/solver/types.hpp"
+#include "steps/wmrssa/comp.hpp"
+#include "steps/wmrssa/kproc.hpp"
+#include "steps/wmrssa/patch.hpp"
+#include "steps/wmrssa/reac.hpp"
+#include "steps/wmrssa/sreac.hpp"
+#include "steps/wmrssa/wmrssa.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -97,9 +97,9 @@ swmrssa::Wmrssa::Wmrssa(steps::model::Model * m, steps::wm::Geom * g, steps::rng
 , pLevelSizes()
 , pLevels()
 , pBuilt(false)
-, pIndices(0)
+, pIndices(nullptr)
 , pMaxUpSize(0)
-, pRannum(0)
+, pRannum(nullptr)
 {
     assert (model() != 0);
     assert (geom() != 0);
@@ -131,11 +131,13 @@ swmrssa::Wmrssa::Wmrssa(steps::model::Model * m, steps::wm::Geom * g, steps::rng
     }
 
     _setup();
+    // force update for zero order reactions
+    _reset();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmrssa::Wmrssa::~Wmrssa(void)
+swmrssa::Wmrssa::~Wmrssa()
 {
 
     CompPVecCI comp_e = pComps.end();
@@ -219,7 +221,7 @@ uint swmrssa::Wmrssa::_addPatch(steps::solver::Patchdef * pdef)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::Wmrssa::_setup(void)
+void swmrssa::Wmrssa::_setup()
 {
     CompPVecCI c_end = pComps.end();
     for (CompPVecCI c = pComps.begin(); c != c_end; ++c)
@@ -260,28 +262,28 @@ void swmrssa::Wmrssa::_setup(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string swmrssa::Wmrssa::getSolverName(void) const
+std::string swmrssa::Wmrssa::getSolverName() const
 {
     return "wmrssa";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string swmrssa::Wmrssa::getSolverDesc(void) const
+std::string swmrssa::Wmrssa::getSolverDesc() const
 {
     return "Rejection-based SSA Method in well-mixed conditions, based on Thanh V, Zunino R, Priami C (n.d.) On the rejection-based algorithm for simulation and analysis of large-scale reaction networks. The Journal of Chemical Physics 142:244106";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string swmrssa::Wmrssa::getSolverAuthors(void) const
+std::string swmrssa::Wmrssa::getSolverAuthors() const
 {
     return "Samuel Melchior";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string swmrssa::Wmrssa::getSolverEmail(void) const
+std::string swmrssa::Wmrssa::getSolverEmail() const
 {
     return "Please visit our website for more information (https://steps.sourceforge.net)";
 }
@@ -289,7 +291,7 @@ std::string swmrssa::Wmrssa::getSolverEmail(void) const
 
 ////////////////////////////////////////////////////////////////////////
 
-void swmrssa::Wmrssa::reset(void)
+void swmrssa::Wmrssa::reset()
 {
     uint comps = statedef()->countComps();
     for (uint i=0; i < comps; ++i) statedef()->compdef(i)->reset();
@@ -355,7 +357,7 @@ void swmrssa::Wmrssa::advance(double adv)
 
 ////////////////////////////////////////////////////////////////////////
 
-void swmrssa::Wmrssa::step(void)
+void swmrssa::Wmrssa::step()
 {
     bool isRejected = true;
     double erlangFactor = 1;
@@ -377,14 +379,14 @@ void swmrssa::Wmrssa::step(void)
 
 ////////////////////////////////////////////////////////////////////////
 
-double swmrssa::Wmrssa::getTime(void) const
+double swmrssa::Wmrssa::getTime() const
 {
     return statedef()->time();
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-uint swmrssa::Wmrssa::getNSteps(void) const
+uint swmrssa::Wmrssa::getNSteps() const
 {
     return statedef()->nsteps();
 }
@@ -1175,7 +1177,7 @@ void swmrssa::Wmrssa::addKProc(KProc * kp)
 
 ////////////////////////////////////////////////////////////////////////
 
-void swmrssa::Wmrssa::_build(void)
+void swmrssa::Wmrssa::_build()
 {
     assert (pBuilt == false);
 
@@ -1234,7 +1236,7 @@ void swmrssa::Wmrssa::_build(void)
 
 ////////////////////////////////////////////////////////////////////////
 
-uint swmrssa::Wmrssa::_getNext(void) const
+uint swmrssa::Wmrssa::_getNext() const
 {
     AssertLog(pA0 >= 0.0);
     // Quick check to see whether nothing is there.
@@ -1295,7 +1297,7 @@ uint swmrssa::Wmrssa::_getNext(void) const
 
 ////////////////////////////////////////////////////////////////////////
 
-void swmrssa::Wmrssa::_reset(void)
+void swmrssa::Wmrssa::_reset()
 {
     if (pKProcs.size() == 0) return;
 

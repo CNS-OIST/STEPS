@@ -37,18 +37,18 @@
 
 // STL headers.
 #include <cassert>
+#include <map>
 #include <sstream>
 #include <string>
-#include <map>
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
+#include "steps/model/diff.hpp"
 #include "steps/model/model.hpp"
+#include "steps/model/reac.hpp"
 #include "steps/model/spec.hpp"
 #include "steps/model/volsys.hpp"
-#include "steps/model/reac.hpp"
-#include "steps/model/diff.hpp"
 #include "steps/util/checkid.hpp"
 
 // logging
@@ -68,7 +68,7 @@ Volsys::Volsys(string const & id, Model * model)
 , pReacs()
 , pDiffs()
 {
-    if (pModel == 0)
+    if (pModel == nullptr)
     {
         ostringstream os;
         os << "No model provided to Volsys initializer function";
@@ -79,15 +79,16 @@ Volsys::Volsys(string const & id, Model * model)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Volsys::~Volsys(void)
+Volsys::~Volsys()
 {
-    if (pModel == 0) return;
+    if (pModel == nullptr) { return;
+}
     _handleSelfDelete();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Volsys::_handleSelfDelete(void)
+void Volsys::_handleSelfDelete()
 {
     std::vector<steps::model::Reac *> allreacs = getAllReacs();
     ReacPVecCI reac_end = allreacs.end();
@@ -105,7 +106,7 @@ void Volsys::_handleSelfDelete(void)
     pModel->_handleVolsysDel(this);
     pReacs.clear();
     pDiffs.clear();
-    pModel = 0;
+    pModel = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -149,7 +150,7 @@ void Volsys::delReac(string const & id)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<Reac *> Volsys::getAllReacs(void) const
+std::vector<Reac *> Volsys::getAllReacs() const
 {
     ReacPVec reacs = ReacPVec();
     ReacPMapCI r_end = pReacs.end();
@@ -186,7 +187,7 @@ void Volsys::delDiff(string const & id)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<Diff *> Volsys::getAllDiffs(void) const
+std::vector<Diff *> Volsys::getAllDiffs() const
 {
     DiffPVec diffs = DiffPVec();
     DiffPMapCI d_end = pDiffs.end();
@@ -199,7 +200,7 @@ std::vector<Diff *> Volsys::getAllDiffs(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<Spec *> Volsys::getAllSpecs(void) const
+std::vector<Spec *> Volsys::getAllSpecs() const
 {
     SpecPVec specs = SpecPVec();
     bool first_occ = true;

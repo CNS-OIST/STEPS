@@ -39,8 +39,8 @@
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/geom/memb.hpp"
-#include "steps/geom/tmpatch.hpp"
 #include "steps/geom/tmcomp.hpp"
+#include "steps/geom/tmpatch.hpp"
 #include "steps/util/collections.hpp"
 
 // logging
@@ -50,10 +50,10 @@ namespace stetmesh = steps::tetmesh;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stetmesh::Memb::Memb(std::string const & id, Tetmesh * container,
+stetmesh::Memb::Memb(std::string id, Tetmesh * container,
                      std::vector<stetmesh::TmPatch *> const & patches,
-                     bool verify, uint opt_method, double search_percent, std::string const & opt_file_name)
-: pID(id)
+                     bool verify, uint opt_method, double search_percent, std::string opt_file_name)
+: pID(std::move(id))
 , pTetmesh(container)
 , pVert_indices()
 , pTrisN(0)
@@ -63,24 +63,29 @@ stetmesh::Memb::Memb(std::string const & id, Tetmesh * container,
 , pOpen(false)
 , pOpt_method(opt_method)
 , pSearch_percent(search_percent)
-, pOpt_file_name(opt_file_name)
+, pOpt_file_name(std::move(opt_file_name))
 {
     using steps::ArgErr;
 
-    if (pTetmesh == 0)
+    if (pTetmesh == nullptr) {
         ArgErrLog("No mesh provided to Membrane initializer function.");
+    }
 
-    if (patches.size() == 0)
+    if (patches.empty()) {
         ArgErrLog("No Patches provided to Membrane initializer function.");
+    }
 
-    if (pOpt_method != 1 && pOpt_method != 2)
+    if (pOpt_method != 1 && pOpt_method != 2) {
         ArgErrLog("Unknown optimization method. Choices are 1 or 2.");
+    }
 
-    if (pSearch_percent > 100.0)
+    if (pSearch_percent > 100.0) {
         ArgErrLog("Search percentage is greater than 100.");
+    }
 
-    if (pSearch_percent <= 0.0)
+    if (pSearch_percent <= 0.0) {
         ArgErrLog("Search percentage must be greater than 0.");
+    }
 
     std::set<uint> tets_set;
     for (const TmPatch *p: patches) {
@@ -88,9 +93,10 @@ stetmesh::Memb::Memb(std::string const & id, Tetmesh * container,
         pTri_indices.insert(pTri_indices.end(), patch_tris.begin(), patch_tris.end());
         
         stetmesh::TmComp *comp = dynamic_cast<stetmesh::TmComp *>(p->getIComp());
-        if (comp == nullptr)
-            ArgErrLog("Conduction volume (inner compartment(s) to "
+        if (comp == nullptr) {
+          ArgErrLog("Conduction volume (inner compartment(s) to "
                     "membrane patch(es) must be tetrahedral and not well-mixed.");
+        }
 
         const auto &comp_tets = comp->_getAllTetIndices();
         tets_set.insert(comp_tets.begin(), comp_tets.end());
@@ -100,10 +106,13 @@ stetmesh::Memb::Memb(std::string const & id, Tetmesh * container,
     pTetsN = pTet_indices.size();
     pTrisN = pTri_indices.size();
     
-    if (pTrisN == 0)
-        ArgErrLog("Membrane contains no triangles.");
+    if (pTrisN == 0) {
+      ArgErrLog("Membrane contains no triangles.");
+    }
 
-    if (verify) verifyMemb();
+    if (verify) {
+      verifyMemb();
+    }
 
     // Create sorted set of unique vertex indices
     std::set<uint> verts_set;
@@ -138,12 +147,16 @@ void stetmesh::Memb::verifyMemb() {
         // Fetch all triangle neighbours- we don't know how many neighbours there are
         std::set<uint> tritrineighbs = pTetmesh->getTriTriNeighbs(*(tri));
 
-        std::vector<uint>::const_iterator t_end = pTri_indices.end();
+        auto t_end = pTri_indices.end();
         for (std::vector<uint>::const_iterator t = pTri_indices.begin(); t != t_end; ++t)
         {
             // continue of this is the same triangle
-            if ((*t) == (*tri)) continue;
-            if (tritrineighbs.find(*t) != tritrineighbs.end()) neighbours +=1;
+            if ((*t) == (*tri)) {
+              continue;
+            }
+            if (tritrineighbs.find(*t) != tritrineighbs.end()) {
+              neighbours +=1;
+            }
         }
 
         // If 3 neighbours weren't found this is not a closed surface
@@ -188,7 +201,9 @@ void stetmesh::Memb::verifyMemb() {
         for (std::vector<uint>::const_iterator t = pTri_indices.begin(); t != t_end; ++t)
         {
             // continue if this is the same triangle
-            if ((*t) == triidx) continue;
+            if ((*t) == triidx) {
+              continue;
+            }
             if (trineighbs.find(*t) != trineighbs.end())
             {
                 // A triangle's neighbour. Now need to check if it is already in the queue
@@ -202,8 +217,9 @@ void stetmesh::Memb::verifyMemb() {
         tri_queue.pop();
     }
 
-    if (tri_set.size() != pTri_indices.size())
-        ArgErrLog("Triangular surface provided to Membrane initializer function is a multiple surface.");
+    if (tri_set.size() != pTri_indices.size()) {
+      ArgErrLog("Triangular surface provided to Membrane initializer function is a multiple surface.");
+    }
 
     // Loop over all triangles and test that all triangles have one tetrahedron
     // neighbour in the volume.
@@ -217,16 +233,20 @@ void stetmesh::Memb::verifyMemb() {
         std::vector<uint>::const_iterator t_end = pTet_indices.end();
         for (std::vector<uint>::const_iterator t = pTet_indices.begin(); t!= t_end; ++t)
         {
-            if (tritetneighbs[0] == (*t) || tritetneighbs[1] == (*t)) tetneighbours+=1;
+            if (tritetneighbs[0] == (*t) || tritetneighbs[1] == (*t)) {
+              tetneighbours += 1;
+            }
         }
 
-        if (tetneighbours < 1)
-            ArgErrLog("Conduction volume provided to Membrane initializer function "
-                  " is not connected to membrane triangle # " + std::to_string(*tri) + ".");
+        if (tetneighbours < 1) {
+          ArgErrLog("Conduction volume provided to Membrane initializer function "
+                    " is not connected to membrane triangle # " + std::to_string(*tri) + ".");
+        }
 
-        if (tetneighbours > 1)
-            ArgErrLog("Conduction volume provided to Membrane initializer function "
-                  " is connected twice to membrane triangle # " + std::to_string(*tri) + ".");
+        if (tetneighbours > 1) {
+          ArgErrLog("Conduction volume provided to Membrane initializer function "
+                    " is connected twice to membrane triangle # " + std::to_string(*tri) + ".");
+        }
     }
 
     // Now perform the 'multiple volume' test
@@ -249,7 +269,9 @@ void stetmesh::Memb::verifyMemb() {
         for (std::vector<uint>::const_iterator t = pTet_indices.begin(); t != t_end; ++t)
         {
             // continue if this is the same tet
-            if ((*t) == tetidx) continue;
+            if ((*t) == tetidx) {
+              continue;
+            }
             for (uint i = 0; i < 4; ++i)
             {
                 if (tetneighbs[i] == (*t))
@@ -294,15 +316,17 @@ void stetmesh::Memb::verifyMemb() {
             // triangle (in the correct direction) makes up part of the
             // 'virtual surface'
             std::vector<uint>::const_iterator tettemp_end = pTet_indices.end();
+            //std::array<bool, 4> gotneighb{false, false, false, false};
             bool gotneighb[4] = {false, false, false, false};
-            for (std::vector<uint>::const_iterator tettemp = pTet_indices.begin(); tettemp!= tettemp_end; ++tettemp)
+            for (const auto tettemp : pTet_indices)
             {
-                if ((*tettemp) == (*tet)) continue;
-                for (uint i = 0; i < 4; ++i)
+                if (tettemp == *tet) {
+                  continue;
+                }
+                for (int i = 0; i < 4; ++i)
                 {
-                    if (tettetneighbs[i] == (*tettemp))
-                    {
-                        AssertLog(gotneighb[i] == false);
+                    if (tettetneighbs[i] == tettemp) {
+                        AssertLog(!gotneighb[i]);
                         gotneighb[i] = true;
                         break;
                     }
@@ -313,7 +337,7 @@ void stetmesh::Memb::verifyMemb() {
             std::vector<uint> tettrineighb = pTetmesh->getTetTriNeighb(*tet);
             for (uint j = 0; j < 4; ++j)
             {
-                if (gotneighb[j] == false)
+                if (!gotneighb[j])
                 {
                     // Now need to check if the triangle in this direction is in
                     // pTri_indices
@@ -327,7 +351,9 @@ void stetmesh::Memb::verifyMemb() {
                             break;
                         }
                     }
-                    if (membtri == false) trivirttemp.push_back(pTetmesh->getTetTriNeighb(*tet)[j]);
+                    if (!membtri ) {
+                      trivirttemp.push_back(pTetmesh->getTetTriNeighb(*tet)[j]);
+                    }
                 }
             }
         }
@@ -352,31 +378,35 @@ void stetmesh::Memb::verifyMemb() {
             std::set<uint> trineighbs = pTetmesh->getTriTriNeighbs(triidx);
 
             std::vector<uint>::const_iterator t_end = pTri_indices.end();
-            for (std::vector<uint>::const_iterator t = pTri_indices.begin(); t != t_end; ++t)
+            for (const auto t : pTri_indices)
             {
                 // continue if this is the same triangle
-                if ((*t) == triidx) continue;
-                if (trineighbs.find(*t) != trineighbs.end())
+                if (t == triidx) {
+                  continue;
+                }
+                if (trineighbs.find(t) != trineighbs.end())
                 {
                     // A triangle's neighbour. Now need to check if it is already in the queue
-                    if (tri_set.find((*t)) == tri_set.end())
+                    if (tri_set.find(t) == tri_set.end())
                     {
-                        tri_queue.push(*t);
-                        tri_set.insert(*t);
+                        tri_queue.push(t);
+                        tri_set.insert(t);
                     }
                 }
             }
-            std::vector<uint>::const_iterator tv_end = trivirttemp.end();
-            for (std::vector<uint>::const_iterator tv = trivirttemp.begin(); tv!= tv_end; ++tv)
+            const auto& tv_end = trivirttemp.end();
+            for (const auto tv : trivirttemp)
             {
-                if ((*tv) == triidx) continue;
-                if (trineighbs.find(*tv) != trineighbs.end())
+                if (tv == triidx) {
+                  continue;
+                }
+                if (trineighbs.find(tv) != trineighbs.end())
                 {
-                    if (tri_set.find((*tv)) == tri_set.end())
+                    if (tri_set.find(tv) == tri_set.end())
                     {
-                        tri_queue.push(*tv);
-                        tri_set.insert(*tv);
-                        trivirt_set.insert(*tv);
+                        tri_queue.push(tv);
+                        tri_set.insert(tv);
+                        trivirt_set.insert(tv);
                     }
                 }
             }
@@ -385,10 +415,8 @@ void stetmesh::Memb::verifyMemb() {
 
         // So trivirt_set holds all the virtual triangles. Just need to copy to
         // vector
-        std::set<uint>::const_iterator tvset_end = trivirt_set.end();
-        for (std::set<uint>::const_iterator tvset = trivirt_set.begin(); tvset != tvset_end; ++tvset)
-        {
-            pTrivirt_indices.push_back(*tvset);
+        for (const auto& tvset : trivirt_set) {
+            pTrivirt_indices.push_back(tvset);
         }
 
         pTriVirtsN = pTrivirt_indices.size();

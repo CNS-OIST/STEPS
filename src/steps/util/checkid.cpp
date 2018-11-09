@@ -42,8 +42,11 @@ static inline bool ascii_is_alphanum(char c) {
 }
 
 bool isValidID(const char *s) {
-    if (!ascii_is_alpha(*s)) return false;
-    while (*++s) if (!ascii_is_alphanum(*s)) return false;
+    if (!ascii_is_alpha(*s)) { return false;
+}
+    while (*++s != 0) { if (!ascii_is_alphanum(*s)) { return false;
+}
+}
 
     return true;
 }
@@ -60,4 +63,5 @@ void checkID(const std::string &s) {
     if (!isValidID(s)) {ArgErrLog("'"+s+"' is not a valid id.");}
 }
 
-}} // namespace steps::util
+}  // namespace util
+}  // namespace steps

@@ -32,12 +32,12 @@
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/math/constants.hpp"
-#include "steps/tetexact/sreac.hpp"
-#include "steps/tetexact/tri.hpp"
-#include "steps/tetexact/tet.hpp"
-#include "steps/tetexact/wmvol.hpp"
 #include "steps/tetexact/kproc.hpp"
+#include "steps/tetexact/sreac.hpp"
+#include "steps/tetexact/tet.hpp"
 #include "steps/tetexact/tetexact.hpp"
+#include "steps/tetexact/tri.hpp"
+#include "steps/tetexact/wmvol.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -85,8 +85,8 @@ static inline double comp_ccst_area(double kcst, double area, uint order)
 ////////////////////////////////////////////////////////////////////////////////
 
 stex::SReac::SReac(ssolver::SReacdef * srdef, stex::Tri * tri)
-: KProc()
-, pSReacdef(srdef)
+: 
+ pSReacdef(srdef)
 , pTri(tri)
 , pUpdVec()
 , pCcst(0.0)
@@ -127,9 +127,8 @@ stex::SReac::SReac(ssolver::SReacdef * srdef, stex::Tri * tri)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::SReac::~SReac(void)
-{
-}
+stex::SReac::~SReac()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -166,7 +165,7 @@ void stex::SReac::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::SReac::reset(void)
+void stex::SReac::reset()
 {
 
     crData.recorded = false;
@@ -180,7 +179,7 @@ void stex::SReac::reset(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::SReac::resetCcst(void)
+void stex::SReac::resetCcst()
 {
     uint lsridx = pTri->patchdef()->sreacG2L(pSReacdef->gidx());
     double kcst = pTri->patchdef()->kcst(lsridx);
@@ -247,7 +246,7 @@ void stex::SReac::setKcst(double k)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::SReac::setupDeps(void)
+void stex::SReac::setupDeps()
 {
     // For all non-zero entries gidx in SReacDef's UPD_S:
     //   Perform depSpecTri(gidx,tri()) for:
@@ -291,7 +290,7 @@ void stex::SReac::setupDeps(void)
         }
     }
 
-    if (itet != 0)
+    if (itet != nullptr)
     {
         kprocend = itet->kprocEnd();
         for (KProcPVecCI k = itet->kprocBegin(); k != kprocend; ++k)
@@ -326,7 +325,7 @@ void stex::SReac::setupDeps(void)
         }
     }
 
-    if (otet != 0)
+    if (otet != nullptr)
     {
         kprocend = otet->kprocEnd();
         for (KProcPVecCI k = otet->kprocBegin(); k != kprocend; ++k)
@@ -392,7 +391,8 @@ bool stex::SReac::depSpecTet(uint gidx, stex::WmVol * tet)
 
 bool stex::SReac::depSpecTri(uint gidx, stex::Tri * triangle)
 {
-    if (triangle != pTri) return false;
+    if (triangle != pTri) { return false;
+}
     return (pSReacdef->dep_S(gidx) != ssolver::DEP_NONE);
 }
 
@@ -419,7 +419,8 @@ double stex::SReac::rate(steps::tetexact::Tetexact * solver)
         for (uint s = 0; s < nspecs_s; ++s)
         {
             uint lhs = lhs_s_vec[s];
-            if (lhs == 0) continue;
+            if (lhs == 0) { continue;
+}
             uint cnt = cnt_s_vec[s];
             if (lhs > cnt)
             {
@@ -460,7 +461,8 @@ double stex::SReac::rate(steps::tetexact::Tetexact * solver)
             for (uint s = 0; s < nspecs_i; ++s)
             {
                 uint lhs = lhs_i_vec[s];
-                if (lhs == 0) continue;
+                if (lhs == 0) { continue;
+}
                 uint cnt = cnt_i_vec[s];
                 if (lhs > cnt)
                 {
@@ -501,7 +503,8 @@ double stex::SReac::rate(steps::tetexact::Tetexact * solver)
             for (uint s = 0; s < nspecs_o; ++s)
             {
                 uint lhs = lhs_o_vec[s];
-                if (lhs == 0) continue;
+                if (lhs == 0) { continue;
+}
                 uint cnt = cnt_o_vec[s];
                 if (lhs > cnt)
                 {

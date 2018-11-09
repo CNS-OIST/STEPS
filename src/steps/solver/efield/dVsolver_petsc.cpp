@@ -25,8 +25,8 @@
  */
 
 
-#include <fstream>
 #include <algorithm>
+#include <fstream>
 #include <mpi.h>
 
 #ifdef USE_PETSC
@@ -40,7 +40,7 @@ namespace efield {
 /// c-tor
 dVSolverPETSC::dVSolverPETSC() {
     // Initialize PETSC (also MPI if not already done)
-    PetscInitialize(NULL, NULL, NULL, NULL);
+    PetscInitialize(nullptr, nullptr, nullptr, nullptr);
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -240,7 +240,7 @@ void dVSolverPETSC::advance(double dt) {
 
     long int n_levels = 10;
     PCGAMGSetNlevels(pPc, n_levels); 
-    PCMGSetLevels(pPc, n_levels, NULL);
+    PCMGSetLevels(pPc, n_levels, nullptr);
 
     // Call solver and print statistics   
     KSPSolve(pKsp, pb, px);
@@ -276,5 +276,7 @@ void dVSolverPETSC::init() {
 
 
 
-}}} // namespace steps::solver::efield
+}  // namespace efield
+}  // namespace solver
+}  // namespace steps
 

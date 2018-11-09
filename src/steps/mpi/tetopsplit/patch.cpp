@@ -38,11 +38,11 @@
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
-#include "steps/solver/compdef.hpp"
-#include "steps/mpi/tetopsplit/patch.hpp"
 #include "steps/mpi/tetopsplit/kproc.hpp"
+#include "steps/mpi/tetopsplit/patch.hpp"
 #include "steps/mpi/tetopsplit/reac.hpp"
 #include "steps/mpi/tetopsplit/tri.hpp"
+#include "steps/solver/compdef.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -63,9 +63,8 @@ smtos::Patch::Patch(ssolver::Patchdef * patchdef)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::Patch::~Patch(void)
-{
-}
+smtos::Patch::~Patch()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -104,7 +103,8 @@ void smtos::Patch::modCount(uint slidx, double count)
 
 smtos::Tri * smtos::Patch::pickTriByArea(double rand01) const
 {
-    if (countTris() == 0) return 0;
+    if (countTris() == 0) { return nullptr;
+}
     if (countTris() == 1) return pTris[0];
 
     double accum = 0.0;

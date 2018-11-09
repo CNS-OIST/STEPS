@@ -78,7 +78,7 @@ public:
 
     /// Destructor.
     ///
-    ~VertexConnection(void);
+    ~VertexConnection();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -91,8 +91,8 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    //bool isEdge(void);
-    //bool hasInternalEnd(void);
+    //bool isEdge();
+    //bool hasInternalEnd();
 
     /// When called with a VertexElement that is part of this connection,
     /// this method returns the VertexElement on the other side of the
@@ -104,13 +104,13 @@ public:
     inline void setGeomCouplingConstant(double d)
     { pGeomCC = d; }
 
-    inline VertexElement * getA(void) const
+    inline VertexElement * getA() const
     { return pVert1; }
 
-    inline VertexElement * getB(void) const
+    inline VertexElement * getB() const
     { return pVert2; }
 
-    inline double getGeomCouplingConstant(void) const
+    inline double getGeomCouplingConstant() const
     { return pGeomCC; }
 
     ////////////////////////////////////////////////////////////////////////

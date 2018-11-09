@@ -60,7 +60,7 @@ public:
 
     /// Destructor.
     ///
-    ~TetCoupler(void);
+    ~TetCoupler();
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -69,7 +69,7 @@ public:
     /// The coupling constants are stored in the VertexConnection
     /// objects stored in the mesh.
     ///
-    void coupleMesh(void);
+    void coupleMesh();
 
     ////////////////////////////////////////////////////////////////////////
 

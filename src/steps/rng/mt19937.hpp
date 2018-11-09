@@ -105,7 +105,7 @@ public:
 
     /// Destructor
     ///
-    virtual ~MT19937(void);
+    virtual ~MT19937();
 
 protected:
 
@@ -116,7 +116,7 @@ protected:
 
     /// Fills the buffer with random numbers on [0,0xffffffff]-interval.
     ///
-    virtual void concreteFillBuffer(void);
+    virtual void concreteFillBuffer();
 
 private:
 

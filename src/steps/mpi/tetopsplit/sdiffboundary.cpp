@@ -28,9 +28,9 @@
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
-#include "steps/solver/sdiffboundarydef.hpp"
-#include "steps/mpi/tetopsplit/sdiffboundary.hpp"
 #include "steps/mpi/tetopsplit/patch.hpp"
+#include "steps/mpi/tetopsplit/sdiffboundary.hpp"
+#include "steps/solver/sdiffboundarydef.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -44,8 +44,8 @@ namespace ssolver = steps::solver;
 smtos::SDiffBoundary::SDiffBoundary(steps::solver::SDiffBoundarydef * sdbdef)
 : pSDiffBoundarydef(sdbdef)
 , pSetPatches(false)
-, pPatchA(0)
-, pPatchB(0)
+, pPatchA(nullptr)
+, pPatchB(nullptr)
 , pTris()
 , pTriDirection()
 {
@@ -54,10 +54,8 @@ smtos::SDiffBoundary::SDiffBoundary(steps::solver::SDiffBoundarydef * sdbdef)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::SDiffBoundary::~SDiffBoundary(void)
-{
-
-}
+smtos::SDiffBoundary::~SDiffBoundary()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -89,7 +87,7 @@ void smtos::SDiffBoundary::setPatches(smtos::Patch * patcha, smtos::Patch * patc
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::Patch * smtos::SDiffBoundary::patchA(void)
+smtos::Patch * smtos::SDiffBoundary::patchA()
 {
     AssertLog(pSetPatches == true);
     return pPatchA;
@@ -97,7 +95,7 @@ smtos::Patch * smtos::SDiffBoundary::patchA(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::Patch * smtos::SDiffBoundary::patchB(void)
+smtos::Patch * smtos::SDiffBoundary::patchB()
 {
     AssertLog(pSetPatches == true);
     return pPatchB;

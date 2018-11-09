@@ -26,34 +26,34 @@
 
 
 // Standard library & STL headers.
+#include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <algorithm>
-#include <functional>
-#include <vector>
-#include <iostream>
 #include <fstream>
+#include <functional>
+#include <iostream>
 #include <sstream>
+#include <vector>
 
 #include <mpi.h>
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
+#include "steps/math/constants.hpp"
+#include "steps/mpi/mpi_common.hpp"
+#include "steps/mpi/tetopsplit/ghkcurr.hpp"
+#include "steps/mpi/tetopsplit/kproc.hpp"
+#include "steps/mpi/tetopsplit/sdiff.hpp"
+#include "steps/mpi/tetopsplit/sreac.hpp"
+#include "steps/mpi/tetopsplit/tet.hpp"
+#include "steps/mpi/tetopsplit/tetopsplit.hpp"
+#include "steps/mpi/tetopsplit/tri.hpp"
+#include "steps/mpi/tetopsplit/vdepsreac.hpp"
+#include "steps/mpi/tetopsplit/vdeptrans.hpp"
+#include "steps/solver/ohmiccurrdef.hpp"
 #include "steps/solver/patchdef.hpp"
 #include "steps/solver/sreacdef.hpp"
-#include "steps/solver/ohmiccurrdef.hpp"
-#include "steps/mpi/mpi_common.hpp"
-#include "steps/mpi/tetopsplit/vdeptrans.hpp"
-#include "steps/mpi/tetopsplit/vdepsreac.hpp"
-#include "steps/mpi/tetopsplit/ghkcurr.hpp"
-#include "steps/mpi/tetopsplit/sreac.hpp"
-#include "steps/mpi/tetopsplit/sdiff.hpp"
-#include "steps/mpi/tetopsplit/tet.hpp"
-#include "steps/mpi/tetopsplit/tri.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-#include "steps/mpi/tetopsplit/tetopsplit.hpp"
-#include "steps/math/constants.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -72,19 +72,19 @@ smtos::Tri::Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
 , pArea(area)
 , pLengths()
 , pDist()
-, pInnerTet(0)
-, pOuterTet(0)
+, pInnerTet(nullptr)
+, pOuterTet(nullptr)
 , pTets()
 , pNextTri()
-, pPoolCount(0)
-, pPoolFlags(0)
+, pPoolCount(nullptr)
+, pPoolFlags(nullptr)
 , pKProcs()
-, pECharge(0)
-, pECharge_last(0)
-, pOCchan_timeintg(0)
-, pOCtime_upd(0)
-, pPoolOccupancy(0)
-, pLastUpdate(0)
+, pECharge(nullptr)
+, pECharge_last(nullptr)
+, pOCchan_timeintg(nullptr)
+, pOCtime_upd(nullptr)
+, pPoolOccupancy(nullptr)
+, pLastUpdate(nullptr)
 , myRank(rank)
 , hostRank(host_rank)
 {
@@ -101,9 +101,9 @@ smtos::Tri::Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
     pTris[1] = tri1;
     pTris[2] = tri2;
 
-    pNextTri[0] = 0;
-    pNextTri[1] = 0;
-    pNextTri[2] = 0;
+    pNextTri[0] = nullptr;
+    pNextTri[1] = nullptr;
+    pNextTri[2] = nullptr;
 
     pLengths[0] = l0;
     pLengths[1] = l1;
@@ -142,7 +142,7 @@ smtos::Tri::Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::Tri::~Tri(void)
+smtos::Tri::~Tri()
 {
     delete[] pPoolCount;
     delete[] pPoolFlags;
@@ -238,8 +238,9 @@ void smtos::Tri::setupKProcs(smtos::TetOpSplitP * tex, bool efield)
     uint j = 0;
     
     nKProcs = pPatchdef->countSReacs()+pPatchdef->countSurfDiffs();
-    if (hasEfield == true)
+    if (hasEfield == true) {
         nKProcs += (pPatchdef->countVDepTrans() + pPatchdef->countVDepSReacs() + pPatchdef->countGHKcurrs());
+}
     
     if (hostRank == myRank) {
         pKProcs.resize(nKProcs);
@@ -250,10 +251,10 @@ void smtos::Tri::setupKProcs(smtos::TetOpSplitP * tex, bool efield)
         for (uint i=0; i < nsreacs; ++i)
         {
             ssolver::SReacdef * srdef = patchdef()->sreacdef(i);
-            smtos::SReac * sr = new SReac(srdef, this);
+            auto * sr = new SReac(srdef, this);
             AssertLog(sr != 0);
             pKProcs[j++] = sr;
-            uint idx = tex->addKProc(sr, hostRank);
+            uint idx = tex->addKProc(sr);
             sr->setSchedIDX(idx);
         }
 
@@ -261,10 +262,10 @@ void smtos::Tri::setupKProcs(smtos::TetOpSplitP * tex, bool efield)
         for (uint i=0; i < nsdiffs; ++i)
         {
             ssolver::Diffdef * sddef = patchdef()->surfdiffdef(i);
-            smtos::SDiff * sd = new SDiff(sddef, this);
+            auto * sd = new SDiff(sddef, this);
             AssertLog(sd != 0);
             pKProcs[j++] = sd;
-            uint idx = tex->addKProc(sd, hostRank);
+            uint idx = tex->addKProc(sd);
             sd->setSchedIDX(idx);
             tex->addSDiff(sd);
         }
@@ -276,10 +277,10 @@ void smtos::Tri::setupKProcs(smtos::TetOpSplitP * tex, bool efield)
             for (uint i=0; i < nvdtrans; ++i)
             {
                 ssolver::VDepTransdef * vdtdef = patchdef()->vdeptransdef(i);
-                smtos::VDepTrans * vdt = new VDepTrans(vdtdef, this);
+                auto * vdt = new VDepTrans(vdtdef, this);
                 AssertLog(vdt != 0);
                 pKProcs[j++] = vdt;
-                uint idx = tex->addKProc(vdt, hostRank);
+                uint idx = tex->addKProc(vdt);
                 vdt->setSchedIDX(idx);
             }
 
@@ -287,10 +288,10 @@ void smtos::Tri::setupKProcs(smtos::TetOpSplitP * tex, bool efield)
             for (uint i=0; i < nvdsreacs; ++i)
             {
                 ssolver::VDepSReacdef * vdsrdef = patchdef()->vdepsreacdef(i);
-                smtos::VDepSReac * vdsr = new VDepSReac(vdsrdef, this);
+                auto * vdsr = new VDepSReac(vdsrdef, this);
                 AssertLog(vdsr != 0);
                 pKProcs[j++] = vdsr;
-                uint idx = tex->addKProc(vdsr, hostRank);
+                uint idx = tex->addKProc(vdsr);
                 vdsr->setSchedIDX(idx);
             }
 
@@ -298,10 +299,10 @@ void smtos::Tri::setupKProcs(smtos::TetOpSplitP * tex, bool efield)
             for (uint i=0; i < nghkcurrs; ++i)
             {
                 ssolver::GHKcurrdef * ghkdef = patchdef()->ghkcurrdef(i);
-                smtos::GHKcurr * ghk = new GHKcurr(ghkdef, this);
+                auto * ghk = new GHKcurr(ghkdef, this);
                 AssertLog(ghk != 0);
                 pKProcs[j++] = ghk;
-                uint idx = tex->addKProc(ghk, hostRank);
+                uint idx = tex->addKProc(ghk);
                 ghk->setSchedIDX(idx);
             }
         }
@@ -309,15 +310,16 @@ void smtos::Tri::setupKProcs(smtos::TetOpSplitP * tex, bool efield)
     else {
         pKProcs.resize(0);
         for (uint k = 0; k < nKProcs; k++) {
-            tex->addKProc(NULL, hostRank);
+            tex->addKProc(NULL);
         }
     }
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Tri::setupDeps(void)
+void smtos::Tri::setupDeps()
 {
-    if (myRank != hostRank) return;
+    if (myRank != hostRank) { return;
+}
     for (auto kp : pKProcs) {
         kp->setupDeps();
     }
@@ -328,7 +330,8 @@ void smtos::Tri::setupDeps(void)
     {
         // Fetch next triangles, if it exists.
         smtos::Tri * next = nextTri(i);
-        if (next == 0) continue;
+        if (next == nullptr) { continue;
+}
         if (next->getHost() != getHost()) {
             has_remote_neighbors = true;
             break;
@@ -354,7 +357,7 @@ void smtos::Tri::setupDeps(void)
         
         // Check the neighbouring tetrahedrons.
         smtos::WmVol * itet = iTet();
-        if (itet != 0)
+        if (itet != nullptr)
         {
             if (getHost() != itet->getHost()) {
                 std::ostringstream os;
@@ -371,7 +374,7 @@ void smtos::Tri::setupDeps(void)
         }
         
         smtos::WmVol * otet = oTet();
-        if (otet != 0)
+        if (otet != nullptr)
         {
             if (getHost() != otet->getHost()) {
                 std::ostringstream os;
@@ -473,7 +476,8 @@ bool smtos::Tri::KProcDepSpecTri(uint kp_lidx, smtos::Tri* kp_container, uint sp
     // if kp is surf reaction
     uint remain = kp_lidx;
     if (remain < pPatchdef->countSReacs()) {
-        if (kp_container != this) return false;
+        if (kp_container != this) { return false;
+}
         ssolver::SReacdef * srdef = patchdef()->sreacdef(remain);
         return (srdef->dep_S(spec_gidx) != ssolver::DEP_NONE);
     }
@@ -481,9 +485,11 @@ bool smtos::Tri::KProcDepSpecTri(uint kp_lidx, smtos::Tri* kp_container, uint sp
     
     // if kp is surface diff
     if (remain < pPatchdef->countSurfDiffs()) {
-        if (kp_container != this) return false;
+        if (kp_container != this) { return false;
+}
         ssolver::Diffdef * sddef = patchdef()->surfdiffdef(remain);
-        if (spec_gidx != sddef->lig()) return false;
+        if (spec_gidx != sddef->lig()) { return false;
+}
         return true;
     }
     
@@ -495,7 +501,8 @@ bool smtos::Tri::KProcDepSpecTri(uint kp_lidx, smtos::Tri* kp_container, uint sp
         // VDepTrans
         if (remain < pPatchdef->countVDepTrans()) {
             ssolver::VDepTransdef * vdtdef = patchdef()->vdeptransdef(remain);
-            if (kp_container != this) return false;
+            if (kp_container != this) { return false;
+}
             return (vdtdef->dep(spec_gidx) != ssolver::DEP_NONE);
         }
         remain -= pPatchdef->countVDepTrans();
@@ -503,7 +510,8 @@ bool smtos::Tri::KProcDepSpecTri(uint kp_lidx, smtos::Tri* kp_container, uint sp
         // VDepSReac
         if (remain < pPatchdef->countVDepSReacs()) {
             ssolver::VDepSReacdef * vdsrdef = patchdef()->vdepsreacdef(remain);
-            if (kp_container != this) return false;
+            if (kp_container != this) { return false;
+}
             return (vdsrdef->dep_S(spec_gidx) != ssolver::DEP_NONE);
         }
         remain -= pPatchdef->countVDepSReacs();
@@ -511,7 +519,8 @@ bool smtos::Tri::KProcDepSpecTri(uint kp_lidx, smtos::Tri* kp_container, uint sp
         // GHK
         if (remain < pPatchdef->countGHKcurrs()) {
             ssolver::GHKcurrdef * ghkdef = patchdef()->ghkcurrdef(remain);
-            if (kp_container != this) return false;
+            if (kp_container != this) { return false;
+}
             return (ghkdef->dep(spec_gidx) != ssolver::DEP_NONE);
         }
     }
@@ -521,7 +530,7 @@ bool smtos::Tri::KProcDepSpecTri(uint kp_lidx, smtos::Tri* kp_container, uint sp
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Tri::reset(void)
+void smtos::Tri::reset()
 {
     uint nspecs = patchdef()->countSpecs();
     std::fill_n(pPoolCount, nspecs, 0);
@@ -542,7 +551,7 @@ void smtos::Tri::reset(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Tri::resetECharge(void)
+void smtos::Tri::resetECharge()
 {
     uint nghkcurrs = pPatchdef->countGHKcurrs();
 
@@ -556,7 +565,7 @@ void smtos::Tri::resetECharge(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Tri::resetOCintegrals(void)
+void smtos::Tri::resetOCintegrals()
 {
     uint nocs = patchdef()->countOhmicCurrs();
     std::fill_n(pOCchan_timeintg, nocs, 0.0);
@@ -578,9 +587,10 @@ void smtos::Tri::setCount(uint lidx, uint count, double period)
     // tri count doesn't care about global
     AssertLog(lidx < patchdef()->countSpecs());
 	double oldcount = pPoolCount[lidx];
-	double c = static_cast<double>(count);
+	auto c = static_cast<double>(count);
 	pPoolCount[lidx] = c;
-	if (period == 0.0) return;
+	if (period == 0.0) { return;
+}
 	// Count has changed,
 	double lastupdate = pLastUpdate[lidx];
 	AssertLog(period >= lastupdate);
@@ -616,7 +626,8 @@ void smtos::Tri::incCount(uint lidx, int inc, double period, bool local_change)
 		AssertLog(oldcount + inc >= 0.0);
 		pPoolCount[lidx] += inc;
     
-		if (period == 0.0 || local_change) return;
+		if (period == 0.0 || local_change) { return;
+}
 		// Count has changed,
 		double lastupdate = pLastUpdate[lidx];
 		AssertLog(period >= lastupdate);
@@ -653,8 +664,9 @@ void smtos::Tri::setOCchange(uint oclidx, uint slidx, double dt, double simtime)
 
 void smtos::Tri::setClamped(uint lidx, bool clamp)
 {
-    if (clamp == true) pPoolFlags[lidx] |= CLAMPED;
-    else pPoolFlags[lidx] &= ~CLAMPED;
+    if (clamp == true) { pPoolFlags[lidx] |= CLAMPED;
+    } else { pPoolFlags[lidx] &= ~CLAMPED;
+}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -718,7 +730,7 @@ double smtos::Tri::getGHKI(uint lidx, double dt) const
     AssertLog(lidx < nghkcurrs);
 
     int efcharge = pECharge_last[lidx];
-    double efcharged = static_cast<double>(efcharge);
+    auto efcharged = static_cast<double>(efcharge);
 
     return ((efcharged*steps::math::E_CHARGE)/dt);
 }
@@ -734,7 +746,7 @@ double smtos::Tri::getGHKI(double dt) const
         efcharge += pECharge_last[i];
     }
 
-    double efcharged = static_cast<double>(efcharge);
+    auto efcharged = static_cast<double>(efcharge);
 
     return ((efcharged*steps::math::E_CHARGE)/dt);
 }
@@ -779,7 +791,7 @@ double smtos::Tri::computeI(double v, double dt, double simtime)
     }
 
     // The contribution from GHK charge movement.
-    double efcharged = static_cast<double>(efcharge);
+    auto efcharged = static_cast<double>(efcharge);
     
     // Convert charge to coulombs and find mean current
     current += ((efcharged*steps::math::E_CHARGE)/dt);
@@ -819,7 +831,7 @@ double smtos::Tri::getOhmicI(uint lidx, double v,double dt) const
 
 ////////////////////////////////////////////////////////////////////////////////
 // MPISTEPS
-bool smtos::Tri::getInHost(void)
+bool smtos::Tri::getInHost()
 {
     return (hostRank == myRank);
 }
@@ -839,7 +851,7 @@ void smtos::Tri::setSolver(steps::mpi::tetopsplit::TetOpSplitP* sol)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::TetOpSplitP* smtos::Tri::solver(void)
+smtos::TetOpSplitP* smtos::Tri::solver()
 {
     return pSol;
 }
@@ -862,7 +874,7 @@ double smtos::Tri::getLastUpdate(uint lidx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Tri::resetPoolOccupancy(void)
+void smtos::Tri::resetPoolOccupancy()
 {
 	uint nspecs = pPatchdef->countSpecs();
     std::fill_n(pPoolOccupancy, nspecs, 0.0);
@@ -896,7 +908,7 @@ void smtos::Tri::repartition(smtos::TetOpSplitP * tex, int rank, int host_rank)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Tri::setupBufferLocations(void)
+void smtos::Tri::setupBufferLocations()
 {
     uint nspecs = pPatchdef->countSpecs();
     bufferLocations.assign(nspecs, std::numeric_limits<uint>::max());

@@ -26,20 +26,20 @@
 
 
 // Standard library & STL headers.
-#include <vector>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <sstream>
+#include <vector>
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/math/constants.hpp"
-#include "steps/mpi/tetopsplit/sreac.hpp"
-#include "steps/mpi/tetopsplit/tri.hpp"
-#include "steps/mpi/tetopsplit/tet.hpp"
-#include "steps/mpi/tetopsplit/wmvol.hpp"
 #include "steps/mpi/tetopsplit/kproc.hpp"
+#include "steps/mpi/tetopsplit/sreac.hpp"
+#include "steps/mpi/tetopsplit/tet.hpp"
 #include "steps/mpi/tetopsplit/tetopsplit.hpp"
+#include "steps/mpi/tetopsplit/tri.hpp"
+#include "steps/mpi/tetopsplit/wmvol.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -87,8 +87,8 @@ static inline double comp_ccst_area(double kcst, double area, uint order)
 ////////////////////////////////////////////////////////////////////////////////
 
 smtos::SReac::SReac(ssolver::SReacdef * srdef, smtos::Tri * tri)
-: KProc()
-, pSReacdef(srdef)
+: 
+ pSReacdef(srdef)
 , pTri(tri)
 , localUpdVec()
 , remoteUpdVec()
@@ -132,9 +132,8 @@ smtos::SReac::SReac(ssolver::SReacdef * srdef, smtos::Tri * tri)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::SReac::~SReac(void)
-{
-}
+smtos::SReac::~SReac()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -171,7 +170,7 @@ void smtos::SReac::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::SReac::reset(void)
+void smtos::SReac::reset()
 {
 
     crData.recorded = false;
@@ -185,7 +184,7 @@ void smtos::SReac::reset(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::SReac::resetCcst(void)
+void smtos::SReac::resetCcst()
 {
     uint lsridx = pTri->patchdef()->sreacG2L(pSReacdef->gidx());
     double kcst = pTri->patchdef()->kcst(lsridx);
@@ -252,7 +251,7 @@ void smtos::SReac::setKcst(double k)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::SReac::setupDeps(void)
+void smtos::SReac::setupDeps()
 {
     // For all non-zero entries gidx in SReacDef's UPD_S:
     //   Perform depSpecTri(gidx,tri()) for:
@@ -298,7 +297,7 @@ void smtos::SReac::setupDeps(void)
         }
     }
 
-    if (itet != 0)
+    if (itet != nullptr)
     {
         if (pTri->getHost() != itet->getHost()) {
             std::ostringstream os;
@@ -344,7 +343,7 @@ void smtos::SReac::setupDeps(void)
         }
     }
 
-    if (otet != 0)
+    if (otet != nullptr)
     {
         if (pTri->getHost() != otet->getHost()) {
             std::ostringstream os;
@@ -421,7 +420,8 @@ bool smtos::SReac::depSpecTet(uint gidx, smtos::WmVol * tet)
 
 bool smtos::SReac::depSpecTri(uint gidx, smtos::Tri * triangle)
 {
-    if (triangle != pTri) return false;
+    if (triangle != pTri) { return false;
+}
     return (pSReacdef->dep_S(gidx) != ssolver::DEP_NONE);
 }
 
@@ -447,7 +447,8 @@ double smtos::SReac::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
         for (uint s = 0; s < nspecs_s; ++s)
         {
             uint lhs = lhs_s_vec[s];
-            if (lhs == 0) continue;
+            if (lhs == 0) { continue;
+}
             uint cnt = cnt_s_vec[s];
             if (lhs > cnt)
             {
@@ -488,7 +489,8 @@ double smtos::SReac::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
             for (uint s = 0; s < nspecs_i; ++s)
             {
                 uint lhs = lhs_i_vec[s];
-                if (lhs == 0) continue;
+                if (lhs == 0) { continue;
+}
                 uint cnt = cnt_i_vec[s];
                 if (lhs > cnt)
                 {
@@ -529,7 +531,8 @@ double smtos::SReac::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
             for (uint s = 0; s < nspecs_o; ++s)
             {
                 uint lhs = lhs_o_vec[s];
-                if (lhs == 0) continue;
+                if (lhs == 0) { continue;
+}
                 uint cnt = cnt_o_vec[s];
                 if (lhs > cnt)
                 {
@@ -587,7 +590,8 @@ void smtos::SReac::apply(steps::rng::RNG * rng, double dt, double simtime, doubl
 	{
 		// Patchdef returns local index
 		uint cs_lidx = pdef->ohmiccurr_chanstate(oc);
-		if (pTri->clamped(cs_lidx) == true) continue;
+		if (pTri->clamped(cs_lidx) == true) { continue;
+}
 		int upd = upd_s_vec[cs_lidx];
 		// Now here a channel state related to an ohmic current has changed
 		// it's number: tell the triangle
@@ -598,7 +602,8 @@ void smtos::SReac::apply(steps::rng::RNG * rng, double dt, double simtime, doubl
     uint nspecs_s = pdef->countSpecs();
     for (uint s = 0; s < nspecs_s; ++s)
     {
-        if (pTri->clamped(s) == true) continue;
+        if (pTri->clamped(s) == true) { continue;
+}
         int upd = upd_s_vec[s];
         int nc = static_cast<int>(cnt_s_vec[s]) + upd;
         AssertLog(nc >= 0);
@@ -607,14 +612,15 @@ void smtos::SReac::apply(steps::rng::RNG * rng, double dt, double simtime, doubl
 
     // Update inner tet pools.
     smtos::WmVol * itet = pTri->iTet();
-    if (itet != 0)
+    if (itet != nullptr)
     {
         int * upd_i_vec = pdef->sreac_upd_I_bgn(lidx);
         uint * cnt_i_vec = itet->pools();
         uint nspecs_i = pdef->countSpecs_I();
         for (uint s = 0; s < nspecs_i; ++s)
         {
-            if (itet->clamped(s) == true) continue;
+            if (itet->clamped(s) == true) { continue;
+}
             int upd = upd_i_vec[s];
             int nc = static_cast<int>(cnt_i_vec[s]) + upd;
             AssertLog(nc >= 0);
@@ -624,14 +630,15 @@ void smtos::SReac::apply(steps::rng::RNG * rng, double dt, double simtime, doubl
 
     // Update outer tet pools.
     smtos::WmVol * otet = pTri->oTet();
-    if (otet != 0)
+    if (otet != nullptr)
     {
         int * upd_o_vec = pdef->sreac_upd_O_bgn(lidx);
         uint * cnt_o_vec = otet->pools();
         uint nspecs_o = pdef->countSpecs_O();
         for (uint s = 0; s < nspecs_o; ++s)
         {
-            if (otet->clamped(s) == true) continue;
+            if (otet->clamped(s) == true) { continue;
+}
             int upd = upd_o_vec[s];
             int nc = static_cast<int>(cnt_o_vec[s]) + upd;
             AssertLog(nc >= 0);
@@ -658,20 +665,20 @@ std::vector<smtos::KProc*> const & smtos::SReac::getLocalUpdVec(int direction)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::SReac::resetOccupancies(void)
+void smtos::SReac::resetOccupancies()
 {
 
     pTri->resetPoolOccupancy();
 
     // Update inner tet pools.
     smtos::WmVol * itet = pTri->iTet();
-    if (itet != 0)
+    if (itet != nullptr)
     {
     	itet->resetPoolOccupancy();
     }
 
     smtos::WmVol * otet = pTri->oTet();
-    if (otet != 0)
+    if (otet != nullptr)
     {
     	otet->resetPoolOccupancy();
     }

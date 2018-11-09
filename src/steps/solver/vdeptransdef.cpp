@@ -26,19 +26,19 @@
 
 
 // STL headers.
-#include <string>
 #include <cassert>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 // STEPS headers.
 #include "steps/common.h"
-#include "steps/solver/types.hpp"
 #include "steps/error.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/vdeptransdef.hpp"
 #include "steps/model/chanstate.hpp"
 #include "steps/model/vdeptrans.hpp"
+#include "steps/solver/statedef.hpp"
+#include "steps/solver/types.hpp"
+#include "steps/solver/vdeptransdef.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -58,8 +58,8 @@ ssolver::VDepTransdef::VDepTransdef(Statedef * sd, uint idx, smod::VDepTrans * v
 , pDV(0.0)
 , pSrc()
 , pDst()
-, pVRateTab(0)
-, pSpec_DEP(0)
+, pVRateTab(nullptr)
+, pSpec_DEP(nullptr)
 , pSpec_SRCCHAN(GIDX_UNDEFINED)
 , pSpec_DSTCHAN(GIDX_UNDEFINED)
 {
@@ -88,14 +88,15 @@ ssolver::VDepTransdef::VDepTransdef(Statedef * sd, uint idx, smod::VDepTrans * v
     }
 
     uint nspecs = pStatedef->countSpecs();
-    if (nspecs == 0) return; // Would be weird, but okay.
+    if (nspecs == 0) { return; // Would be weird, but okay.
+}
     pSpec_DEP = new int[nspecs];
     std::fill_n(pSpec_DEP, nspecs, DEP_NONE);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::VDepTransdef::~VDepTransdef(void)
+ssolver::VDepTransdef::~VDepTransdef()
 {
     delete[] pVRateTab;
 
@@ -126,7 +127,7 @@ void ssolver::VDepTransdef::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::VDepTransdef::setup(void)
+void ssolver::VDepTransdef::setup()
 {
     AssertLog(pSetupdone == false);
 
@@ -143,7 +144,7 @@ void ssolver::VDepTransdef::setup(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint ssolver::VDepTransdef::srcchanstate(void) const
+uint ssolver::VDepTransdef::srcchanstate() const
 {
     AssertLog(pSetupdone == true);
     return pSpec_SRCCHAN;
@@ -151,7 +152,7 @@ uint ssolver::VDepTransdef::srcchanstate(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint ssolver::VDepTransdef::dstchanstate(void) const
+uint ssolver::VDepTransdef::dstchanstate() const
 {
     AssertLog(pSetupdone == true);
     return pSpec_DSTCHAN;
@@ -180,7 +181,7 @@ double ssolver::VDepTransdef::getVDepRate(double v) const
 
     double v2 = ((v - pVMin) / pDV);
     double lv = floor(v2);
-    uint lvidx = static_cast<uint>(lv);
+    auto lvidx = static_cast<uint>(lv);
     uint uvidx = static_cast<uint>(ceil(v2));
     double r = v2-lv;
 
@@ -203,7 +204,8 @@ bool ssolver::VDepTransdef::req(uint gidx) const
 {
     AssertLog(pSetupdone == true);
     AssertLog(gidx < pStatedef->countSpecs());
-    if (pSpec_DEP[gidx] != DEP_NONE) return true;
+    if (pSpec_DEP[gidx] != DEP_NONE) { return true;
+}
     return false;
 }
 

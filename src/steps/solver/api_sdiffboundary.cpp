@@ -26,8 +26,8 @@
 
 
 // STL headers.
-#include <string>
 #include <sstream>
+#include <string>
 
 // STEPS headers.
 #include "steps/common.h"

@@ -75,7 +75,7 @@ public:
     Chandef(Statedef * sd, uint idx, steps::model::Chan * c);
 
     /// Destructor
-    ~Chandef(void);
+    ~Chandef();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -91,22 +91,22 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this species.
-    inline uint gidx(void) const
+    inline uint gidx() const
     { return pIdx; }
 
     /// Return the name of the species.
-    std::string const name(void) const;
+    std::string const name() const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: CHANNEL STATES
     ////////////////////////////////////////////////////////////////////////
 
     // The global species indices of the associated channel states.
-    inline uint * chanstates(void) const
+    inline uint * chanstates() const
     { return pChanStates; }
 
     // The number of channel states describing this channel.
-    inline uint nchanstates(void) const
+    inline uint nchanstates() const
     { return pNChanStates; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -114,7 +114,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
     /// Setup the object.
     ///
-    void setup(void);
+    void setup();
 
     ////////////////////////////////////////////////////////////////////////
 

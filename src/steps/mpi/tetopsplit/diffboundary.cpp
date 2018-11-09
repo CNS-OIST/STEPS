@@ -30,9 +30,9 @@
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
-#include "steps/solver/diffboundarydef.hpp"
-#include "steps/mpi/tetopsplit/diffboundary.hpp"
 #include "steps/mpi/tetopsplit/comp.hpp"
+#include "steps/mpi/tetopsplit/diffboundary.hpp"
+#include "steps/solver/diffboundarydef.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -45,8 +45,8 @@ namespace ssolver = steps::solver;
 
 smtos::DiffBoundary::DiffBoundary(steps::solver::DiffBoundarydef * dbdef)
 : pDiffBoundarydef(dbdef)
-, pCompA(0)
-, pCompB(0)
+, pCompA(nullptr)
+, pCompB(nullptr)
 , pTets()
 , pTetDirection()
 , pSetComps(false)
@@ -56,10 +56,8 @@ smtos::DiffBoundary::DiffBoundary(steps::solver::DiffBoundarydef * dbdef)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::DiffBoundary::~DiffBoundary(void)
-{
-
-}
+smtos::DiffBoundary::~DiffBoundary()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -91,7 +89,7 @@ void smtos::DiffBoundary::setComps(smtos::Comp * compa, smtos::Comp * compb)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::Comp * smtos::DiffBoundary::compA(void)
+smtos::Comp * smtos::DiffBoundary::compA()
 {
     AssertLog(pSetComps == true);
     return pCompA;
@@ -99,7 +97,7 @@ smtos::Comp * smtos::DiffBoundary::compA(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::Comp * smtos::DiffBoundary::compB(void)
+smtos::Comp * smtos::DiffBoundary::compB()
 {
     AssertLog(pSetComps == true);
     return pCompB;

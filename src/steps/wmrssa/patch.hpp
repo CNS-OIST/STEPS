@@ -74,7 +74,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     Patch(steps::solver::Patchdef * patchdef, swmrssa::Comp * icomp, swmrssa::Comp * ocomp);
-    ~Patch(void);
+    ~Patch();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -88,34 +88,34 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     void setupKProcs(Wmrssa * wmd);
-    void setupDeps(void);
+    void setupDeps();
 
-    void reset(void);
+    void reset();
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Patchdef * def(void) const
+    inline steps::solver::Patchdef * def() const
     { return pPatchdef; }
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline std::vector<steps::wmrssa::KProc *>::const_iterator kprocBegin(void) const
+    inline std::vector<steps::wmrssa::KProc *>::const_iterator kprocBegin() const
     { return pKProcs.begin(); }
-    inline std::vector<steps::wmrssa::KProc *>::const_iterator kprocEnd(void) const
+    inline std::vector<steps::wmrssa::KProc *>::const_iterator kprocEnd() const
     { return pKProcs.end(); }
-    inline uint countKProcs(void) const
+    inline uint countKProcs() const
     { return pKProcs.size(); }
 
     steps::wmrssa::KProc * sreac(uint lsridx) const;
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline swmrssa::Comp * iComp(void) const
+    inline swmrssa::Comp * iComp() const
     { return pIComp; }
 
-    inline swmrssa::Comp * oComp(void) const
+    inline swmrssa::Comp * oComp() const
     { return pOComp; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -123,7 +123,7 @@ public:
     void setBounds(uint i, int nc);
     bool isOutOfBound(uint i, int nc);
     double* pools(steps::wmrssa::PropensityRSSA prssa) const;
-    void setupSpecDeps(void);
+    void setupSpecDeps();
     std::vector<steps::wmrssa::KProc*> const & getSpecUpdKProcs(uint slidx);
 
 private:

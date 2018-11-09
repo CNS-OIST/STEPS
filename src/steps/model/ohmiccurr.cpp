@@ -26,17 +26,17 @@
 
 // STL headers.
 #include <cassert>
+#include <iostream>
 #include <sstream>
 #include <string>
-#include <iostream>
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
-#include "steps/model/model.hpp"
-#include "steps/model/surfsys.hpp"
-#include "steps/model/ohmiccurr.hpp"
 #include "steps/model/chanstate.hpp"
+#include "steps/model/model.hpp"
+#include "steps/model/ohmiccurr.hpp"
+#include "steps/model/surfsys.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -51,19 +51,19 @@ using namespace steps::model;
 OhmicCurr::OhmicCurr(string const & id, Surfsys * surfsys,
           ChanState * chanstate, double erev, double g)
 : pID(id)
-, pModel(0)
+, pModel(nullptr)
 , pSurfsys(surfsys)
 , pChanState(chanstate)
 , pERev(erev)
 , pG(g)
 {
-    if (pSurfsys == 0)
+    if (pSurfsys == nullptr)
     {
         ostringstream os;
         os << "No surfsys provided to OhmicCurr initializer function";
         ArgErrLog(os.str());
     }
-    if (pChanState == 0)
+    if (pChanState == nullptr)
     {
         ostringstream os;
         os << "No channel state provided to OhmicCurr initializer function";
@@ -84,9 +84,10 @@ OhmicCurr::OhmicCurr(string const & id, Surfsys * surfsys,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-OhmicCurr::~OhmicCurr(void)
+OhmicCurr::~OhmicCurr()
 {
-    if (pSurfsys == 0) return;
+    if (pSurfsys == nullptr) { return;
+}
     _handleSelfDelete();
 }
 
@@ -136,7 +137,7 @@ void OhmicCurr::setG(double g)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void OhmicCurr::_handleSelfDelete(void)
+void OhmicCurr::_handleSelfDelete()
 {
     pSurfsys->_handleOhmicCurrDel(this);
     pG = 0.0;

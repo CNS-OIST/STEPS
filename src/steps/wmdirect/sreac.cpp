@@ -32,9 +32,9 @@
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/math/constants.hpp"
-#include "steps/wmdirect/sreac.hpp"
-#include "steps/wmdirect/patch.hpp"
 #include "steps/wmdirect/comp.hpp"
+#include "steps/wmdirect/patch.hpp"
+#include "steps/wmdirect/sreac.hpp"
 #include "steps/wmdirect/wmdirect.hpp"
 // logging
 #include "easylogging++.h"
@@ -69,8 +69,8 @@ static inline double comp_ccst_area(double kcst, double area, uint order)
 ////////////////////////////////////////////////////////////////////////////////
 
 swmd::SReac::SReac(ssolver::SReacdef * srdef, swmd::Patch * patch)
-: KProc()
-, pSReacdef(srdef)
+: 
+ pSReacdef(srdef)
 , pPatch(patch)
 , pUpdVec()
 , pCcst()
@@ -109,9 +109,8 @@ swmd::SReac::SReac(ssolver::SReacdef * srdef, swmd::Patch * patch)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmd::SReac::~SReac(void)
-{
-}
+swmd::SReac::~SReac()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -129,7 +128,7 @@ void swmd::SReac::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool swmd::SReac::active(void) const
+bool swmd::SReac::active() const
 {
     uint lsridx = pPatch->def()->sreacG2L(defsr()->gidx());
     return pPatch->def()->active(lsridx);
@@ -137,7 +136,7 @@ bool swmd::SReac::active(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::SReac::setupDeps(void)
+void swmd::SReac::setupDeps()
 {
     Comp * icomp = pPatch->iComp();
     Comp * ocomp = pPatch->oComp();
@@ -161,7 +160,7 @@ void swmd::SReac::setupDeps(void)
         }
     }
 
-    if (icomp != 0)
+    if (icomp != nullptr)
     {
         kprocend = icomp->kprocEnd();
         for (KProcPVecCI k = icomp->kprocBegin(); k != kprocend; ++k)
@@ -204,7 +203,7 @@ void swmd::SReac::setupDeps(void)
         }
     }
 
-    if (ocomp != 0)
+    if (ocomp != nullptr)
     {
         kprocend = ocomp->kprocEnd();
         for (KProcPVecCI k = ocomp->kprocBegin(); k != kprocend; ++k)
@@ -269,13 +268,14 @@ bool swmd::SReac::depSpecComp(uint gidx, swmd::Comp * comp)
 
 bool swmd::SReac::depSpecPatch(uint gidx, swmd::Patch * patch)
 {
-    if (patch != pPatch) return false;
+    if (patch != pPatch) { return false;
+}
     return (defsr()->dep_S(gidx) != ssolver::DEP_NONE);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::SReac::reset(void)
+void swmd::SReac::reset()
 {
     resetExtent();
     uint lsridx = pPatch->def()->sreacG2L(defsr()->gidx());
@@ -285,7 +285,7 @@ void swmd::SReac::reset(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::SReac::resetCcst(void)
+void swmd::SReac::resetCcst()
 {
     uint lsridx = pPatch->def()->sreacG2L(defsr()->gidx());
     double kcst = pPatch->def()->kcst(lsridx);
@@ -318,9 +318,10 @@ void swmd::SReac::resetCcst(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double swmd::SReac::rate(void) const
+double swmd::SReac::rate() const
 {
-    if (inactive()) return 0.0;
+    if (inactive()) { return 0.0;
+}
 
     // First we compute the combinatorial part.
     //   1/ for the surface part of the stoichiometry
@@ -339,8 +340,9 @@ double swmd::SReac::rate(void) const
     for (uint s = 0; s < nspecs_s; ++s)
     {
         uint lhs = lhs_s_vec[s];
-        if (lhs == 0) continue;
-        uint cnt = static_cast<uint>(cnt_s_vec[s]);
+        if (lhs == 0) { continue;
+}
+        auto cnt = static_cast<uint>(cnt_s_vec[s]);
         if (lhs > cnt)
         {
             return 0.0;
@@ -380,7 +382,8 @@ double swmd::SReac::rate(void) const
         for (uint s = 0; s < nspecs_i; ++s)
         {
             uint lhs = lhs_i_vec[s];
-            if (lhs == 0) continue;
+            if (lhs == 0) { continue;
+}
             uint cnt = static_cast<double>(cnt_i_vec[s]);
             if (lhs > cnt)
             {
@@ -421,7 +424,8 @@ double swmd::SReac::rate(void) const
         for (uint s = 0; s < nspecs_o; ++s)
         {
             uint lhs = lhs_o_vec[s];
-            if (lhs == 0) continue;
+            if (lhs == 0) { continue;
+}
             uint cnt = static_cast<double>(cnt_o_vec[s]);
             if (lhs > cnt)
             {
@@ -460,7 +464,7 @@ double swmd::SReac::rate(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<uint> const & swmd::SReac::apply(void)
+std::vector<uint> const & swmd::SReac::apply()
 {
     ssolver::Patchdef * pdef = pPatch->def();
     uint lidx = pdef->sreacG2L(defsr()->gidx());

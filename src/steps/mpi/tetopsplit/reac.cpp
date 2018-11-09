@@ -27,20 +27,20 @@
 
 
 // Standard library & STL headers.
-#include <vector>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <sstream>
+#include <vector>
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/math/constants.hpp"
-#include "steps/solver/reacdef.hpp"
+#include "steps/mpi/tetopsplit/kproc.hpp"
 #include "steps/mpi/tetopsplit/reac.hpp"
 #include "steps/mpi/tetopsplit/tet.hpp"
-#include "steps/mpi/tetopsplit/wmvol.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
 #include "steps/mpi/tetopsplit/tetopsplit.hpp"
+#include "steps/mpi/tetopsplit/wmvol.hpp"
+#include "steps/solver/reacdef.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -69,8 +69,8 @@ static inline double comp_ccst(double kcst, double vol, uint order, double compv
 ////////////////////////////////////////////////////////////////////////////////
 
 smtos::Reac::Reac(ssolver::Reacdef * rdef, smtos::WmVol * tet)
-: KProc()
-, pReacdef(rdef)
+: 
+ pReacdef(rdef)
 , pTet(tet)
 , localUpdVec()
 , remoteUpdVec()
@@ -89,9 +89,8 @@ smtos::Reac::Reac(ssolver::Reacdef * rdef, smtos::WmVol * tet)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::Reac::~Reac(void)
-{
-}
+smtos::Reac::~Reac()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -127,7 +126,7 @@ void smtos::Reac::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Reac::reset(void)
+void smtos::Reac::reset()
 {
 
     crData.recorded = false;
@@ -141,7 +140,7 @@ void smtos::Reac::reset(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Reac::resetCcst(void)
+void smtos::Reac::resetCcst()
 {
     uint lridx = pTet->compdef()->reacG2L(pReacdef->gidx());
     double kcst = pTet->compdef()->kcst(lridx);
@@ -163,7 +162,7 @@ void smtos::Reac::setKcst(double k)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Reac::setupDeps(void)
+void smtos::Reac::setupDeps()
 {
     AssertLog(pTet->getInHost());
     std::set<smtos::KProc*> updset;
@@ -216,8 +215,9 @@ void smtos::Reac::setupDeps(void)
 
 bool smtos::Reac::depSpecTet(uint gidx, smtos::WmVol * tet)
 {
-    if (pTet != tet) return false;
-    return pReacdef->dep(gidx);
+    if (pTet != tet) { return false;
+}
+    return pReacdef->dep(gidx) != 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -245,7 +245,8 @@ double smtos::Reac::rate(smtos::TetOpSplitP * solver)
     for (uint pool = 0; pool < nspecs; ++pool)
     {
         uint lhs = lhs_vec[pool];
-        if (lhs == 0) continue;
+        if (lhs == 0) { continue;
+}
         uint cnt = cnt_vec[pool];
         if (lhs > cnt) {
             h_mu = 0.0;
@@ -270,7 +271,8 @@ void smtos::Reac::apply(steps::rng::RNG * rng, double dt, double simtime, double
     uint nspecs = cdef->countSpecs();
     for (uint i = 0; i < nspecs; ++i)
     {
-        if (pTet->clamped(i) == true) continue;
+        if (pTet->clamped(i) == true) { continue;
+}
         int j = upd_vec[i];
         int nc = static_cast<int>(local[i]) + j;
         AssertLog(nc >= 0);
@@ -296,7 +298,7 @@ std::vector<smtos::KProc*> const & smtos::Reac::getLocalUpdVec(int direction)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Reac::resetOccupancies(void)
+void smtos::Reac::resetOccupancies()
 {
     pTet->resetPoolOccupancy();
 }

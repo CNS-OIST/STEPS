@@ -27,15 +27,15 @@
 
 // Standard library & STL headers.
 #include <cassert>
-#include <string>
-#include <sstream>
 #include <cstdint>
+#include <sstream>
+#include <string>
 
 // STEPS headers.
 #include "steps/common.h"
-#include "steps/rng/rng.hpp"
-#include "steps/rng/r123.hpp"
 #include "steps/error.hpp"
+#include "steps/rng/r123.hpp"
+#include "steps/rng/rng.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -65,7 +65,7 @@ void R123::concreteInitialize(ulong seed)
 ////////////////////////////////////////////////////////////////////////////////
 
 /// Fills the buffer with random numbers on [0,0xffffffff]-interval.
-void R123::concreteFillBuffer(void)
+void R123::concreteFillBuffer()
 {
     uint* b;
     for (b = rBuffer; b+4 <= rEnd; b+=4) {

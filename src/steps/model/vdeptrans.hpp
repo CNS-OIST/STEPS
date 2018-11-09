@@ -87,7 +87,7 @@ public:
              double dv, uint tablesize);
 
     /// Destructor
-    ~VDepTrans(void);
+    ~VDepTrans();
 
     ////////////////////////////////////////////////////////////////////////
     // VOLTAGE-DEPENDENT TRANSITION PROPERTIES
@@ -96,7 +96,7 @@ public:
     /// Return the voltage-dependent transition ID.
     ///
     /// \return ID of the voltage-dependent transition.
-    std::string getID(void) const
+    std::string getID() const
     { return pID; }
 
     /// Set or change the voltage-dependent transition ID.
@@ -107,19 +107,19 @@ public:
     /// Return a pointer to the parent surface system.
     ///
     /// \return Pointer to the surface system.
-    Surfsys * getSurfsys(void) const
+    Surfsys * getSurfsys() const
     { return pSurfsys; }
 
     /// Return a pointer to the parent model.
     ///
     /// \return Pointer to the parent model.
-    Model * getModel(void) const
+    Model * getModel() const
     { return pModel; }
 
     /// Return a pointer to the associated channel.
     ///
     /// \return Pointer to associated channel.
-    Chan * getChan(void) const
+    Chan * getChan() const
     { return pChan; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -129,7 +129,7 @@ public:
     /// Return a pointer to the 'source' channel state
     ///
     /// \return Pointer of the source channel state
-    ChanState * getSrc(void) const
+    ChanState * getSrc() const
     { return pSrc; }
 
     /// Set the 'source' channel state
@@ -140,7 +140,7 @@ public:
     /// Return a pointer to the 'destination' channel state
     ///
     /// \return Pointer of the destination channel state
-    ChanState * getDst(void) const
+    ChanState * getDst() const
     { return pDst; }
 
     /// Set the 'destination' channel state
@@ -150,7 +150,7 @@ public:
 
     /// Get a table of transition rates over the range.
     ///
-    std::vector<double> getRate(void) const;
+    std::vector<double> getRate() const;
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED): SOLVER-HELPER METHODS
@@ -158,19 +158,19 @@ public:
 
     /// Get the table of transition rates.
     ///
-    double * _getRate(void) const
+    double * _getRate() const
     { return pRate; }
 
-    inline double _getVMin(void) const
+    inline double _getVMin() const
     { return pVMin; }
 
-    inline double _getVMax(void) const
+    inline double _getVMax() const
     { return pVMax; }
 
-    inline double _getDV(void) const
+    inline double _getDV() const
     { return pDV; }
 
-    inline uint _getTablesize(void) const
+    inline uint _getTablesize() const
     { return pTablesize; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -181,7 +181,7 @@ public:
     ///
     /// Called if Python object deleted, or from del method in parent object.
     /// Will only be called once
-    void _handleSelfDelete(void);
+    void _handleSelfDelete();
 
 private:
 

@@ -26,8 +26,8 @@
 
 
 // STL headers.
-#include <string>
 #include <sstream>
+#include <string>
 
 // STEPS headers.
 #include "steps/common.h"
@@ -51,15 +51,15 @@ API::API(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r)
 : pModel(m)
 , pGeom(g)
 , pRNG(r)
-, pStatedef(0)
+, pStatedef(nullptr)
 {
-    if (pModel == 0)
+    if (pModel == nullptr)
     {
         std::ostringstream os;
         os << "No model provided to solver initializer function";
         ArgErrLog(os.str());
     }
-    if (pGeom == 0)
+    if (pGeom == nullptr)
     {
         std::ostringstream os;
         os << "No geometry provided to solver initializer function";
@@ -109,7 +109,7 @@ API::API(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-API::~API(void)
+API::~API()
 {
     delete pStatedef;
 }
@@ -117,7 +117,7 @@ API::~API(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::step(void)
+void API::step()
 {
     NotImplErrLog("");
 }
@@ -138,7 +138,7 @@ void  API::setRk4DT(double dt)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getRk4DT(void) const
+double API::getRk4DT() const
 {
     NotImplErrLog("");
 }
@@ -152,7 +152,7 @@ void  API::setDT(double dt)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getDT(void) const
+double API::getDT() const
 {
     NotImplErrLog("");
 }
@@ -166,7 +166,7 @@ void API::setEfieldDT(double efdt)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getEfieldDT(void) const
+double API::getEfieldDT() const
 {
     NotImplErrLog("");
 }
@@ -180,21 +180,21 @@ void API::setTemp(double temp)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTemp(void) const
+double API::getTemp() const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getA0(void) const
+double API::getA0() const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint API::getNSteps(void) const
+uint API::getNSteps() const
 {
     NotImplErrLog("");
 }

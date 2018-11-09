@@ -27,25 +27,25 @@
 
 
 // Standard library & STL headers.
+#include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <algorithm>
 #include <functional>
 #include <iostream>
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
-#include "steps/solver/patchdef.hpp"
-#include "steps/solver/ohmiccurrdef.hpp"
 #include "steps/solver/ghkcurrdef.hpp"
+#include "steps/solver/ohmiccurrdef.hpp"
+#include "steps/solver/patchdef.hpp"
 
 #include "steps/tetode/tetode.hpp"
 
-#include "steps/tetode/tet.hpp"
-#include "steps/tetode/tri.hpp"
 #include "steps/math/constants.hpp"
 #include "steps/math/ghk.hpp"
+#include "steps/tetode/tet.hpp"
+#include "steps/tetode/tri.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -66,8 +66,8 @@ stode::Tri::Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
 , pArea(area)
 , pLengths()
 , pDist()
-, pInnerTet(0)
-, pOuterTet(0)
+, pInnerTet(nullptr)
+, pOuterTet(nullptr)
 , pTets()
 , pNextTri()
 {
@@ -84,9 +84,9 @@ stode::Tri::Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
     pTris[1] = tri1;
     pTris[2] = tri2;
 
-    pNextTri[0] = 0;
-    pNextTri[1] = 0;
-    pNextTri[2] = 0;
+    pNextTri[0] = nullptr;
+    pNextTri[1] = nullptr;
+    pNextTri[2] = nullptr;
 
     pLengths[0] = l0;
     pLengths[1] = l1;
@@ -100,10 +100,8 @@ stode::Tri::Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stode::Tri::~Tri(void)
-{
-
-}
+stode::Tri::~Tri()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -190,8 +188,9 @@ double stode::Tri::getGHKI(double v,double dt, steps::tetode::TetODE * solver) c
         double iconc = solver->_getTetConc(iTet()->idx(), gidxion)*1.0e3;
         double oconc = 0.0;
 
-        if (voconc < 0.0)  oconc = solver->_getTetConc(oTet()->idx(), gidxion)*1.0e3;
-        else  oconc = voconc*1.0e3;
+        if (voconc < 0.0) {  oconc = solver->_getTetConc(oTet()->idx(), gidxion)*1.0e3;
+        } else {  oconc = voconc*1.0e3;
+}
 
         //double v = solver->getTriV(idx()); // check indices are global or local
         double T = solver->getTemp();
@@ -219,7 +218,8 @@ double stode::Tri::getGHKI(double v,double dt, steps::tetode::TetODE * solver) c
             // rt is number of ions per second; positive is an efflux and a negative is an influx
             double count = rt*dt;
 
-            if (voconc < 0.0) solver->_setTetCount(oTet()->idx(), gidxion, solver->_getTetCount(oTet()->idx(), gidxion)+count);
+            if (voconc < 0.0) { solver->_setTetCount(oTet()->idx(), gidxion, solver->_getTetCount(oTet()->idx(), gidxion)+count);
+}
             solver->_setTetCount(iTet()->idx(), gidxion, solver->_getTetCount(iTet()->idx(), gidxion)-count);
 
 

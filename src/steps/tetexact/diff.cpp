@@ -26,17 +26,17 @@
 
 
 // Standard library & STL headers.
-#include <vector>
 #include <iostream>
+#include <vector>
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/math/constants.hpp"
-#include "steps/solver/diffdef.hpp"
 #include "steps/solver/compdef.hpp"
+#include "steps/solver/diffdef.hpp"
 #include "steps/tetexact/diff.hpp"
-#include "steps/tetexact/tet.hpp"
 #include "steps/tetexact/kproc.hpp"
+#include "steps/tetexact/tet.hpp"
 #include "steps/tetexact/tetexact.hpp"
 
 // logging
@@ -50,8 +50,8 @@ namespace smath = steps::math;
 ////////////////////////////////////////////////////////////////////////////////
 
 stex::Diff::Diff(ssolver::Diffdef * ddef, stex::Tet * tet)
-: KProc()
-, pDiffdef(ddef)
+: 
+ pDiffdef(ddef)
 , pTet(tet)
 , pUpdVec()
 , pScaledDcst(0.0)
@@ -76,7 +76,7 @@ stex::Diff::Diff(ssolver::Diffdef * ddef, stex::Tet * tet)
     for (uint i = 0; i < 4; ++i)
     {
         pDiffBndDirection[i] = pTet->getDiffBndDirection(i);
-        if (next[i] == 0)
+        if (next[i] == nullptr)
         {
             pNeighbCompLidx[i] = -1;
             continue;
@@ -98,13 +98,14 @@ stex::Diff::Diff(ssolver::Diffdef * ddef, stex::Tet * tet)
         // Compute the scaled diffusion constant.
         // Need to here check if the direction is a diffusion boundary
         double dist = pTet->dist(i);
-        if ((dist > 0.0) && (next[i] != 0))
+        if ((dist > 0.0) && (next[i] != nullptr))
         {
             if (pDiffBndDirection[i] == true)
             {
-                if (pDiffBndActive[i])
+                if (pDiffBndActive[i]) {
                     d[i] = (pTet->area(i) * dcst) / (pTet->vol() * dist);
-                else d[i] = 0.0;
+                } else { d[i] = 0.0;
+}
             }
             else
             {
@@ -142,9 +143,8 @@ stex::Diff::Diff(ssolver::Diffdef * ddef, stex::Tet * tet)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Diff::~Diff(void)
-{
-}
+stex::Diff::~Diff()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -205,7 +205,7 @@ void stex::Diff::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Diff::setupDeps(void)
+void stex::Diff::setupDeps()
 {
     // We will check all KProcs of the following simulation elements:
     //   * the 'source' tetrahedron
@@ -236,7 +236,8 @@ void stex::Diff::setupDeps(void)
     for (uint i = 0; i < 4; ++i)
     {
         stex::Tri * next = pTet->nextTri(i);
-        if (next == 0) continue;
+        if (next == nullptr) { continue;
+}
         kprocend = next->kprocEnd();
         for (KProcPVecCI k = next->kprocBegin(); k != kprocend; ++k)
         {
@@ -251,10 +252,12 @@ void stex::Diff::setupDeps(void)
     {
         // Fetch next tetrahedron, if it exists.
         stex::Tet * next = pTet->nextTet(i);
-        if (next == 0)
+        if (next == nullptr) {
             continue;
-        if (pTet->nextTri(i) != 0)
+}
+        if (pTet->nextTri(i) != nullptr) {
             continue;
+}
 
         // Copy local dependencies.
         std::set<stex::KProc*> local2(local.begin(), local.end());
@@ -275,7 +278,8 @@ void stex::Diff::setupDeps(void)
         {
             // Fetch next triangle, if it exists.
             stex::Tri * next2 = next->nextTri(j);
-            if (next2 == 0) continue;
+            if (next2 == nullptr) { continue;
+}
 
             // Find deps.
             kprocend = next2->kprocEnd();
@@ -297,7 +301,8 @@ void stex::Diff::setupDeps(void)
 bool stex::Diff::depSpecTet(uint gidx, stex::WmVol * tet)
 {
     if (pTet != tet) return false;
-    if (gidx != ligGIdx) return false;
+    if (gidx != ligGIdx) { return false;
+}
     return true;
 }
 
@@ -310,7 +315,7 @@ bool stex::Diff::depSpecTri(uint gidx, stex::Tri * tri)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Diff::reset(void)
+void stex::Diff::reset()
 {
     resetExtent();
 
@@ -396,13 +401,14 @@ void stex::Diff::setDcst(double dcst)
         // Compute the scaled diffusion constant.
         // Need to here check if the direction is a diffusion boundary
         double dist = pTet->dist(i);
-        if ((dist > 0.0) && (next[i] != 0))
+        if ((dist > 0.0) && (next[i] != nullptr))
         {
             if (pDiffBndDirection[i] == true)
             {
-                if (pDiffBndActive[i])
+                if (pDiffBndActive[i]) {
                     d[i] = (pTet->area(i) * dcst) / (pTet->vol() * dist);
-                else d[i] = 0.0;
+                } else { d[i] = 0.0;
+}
             }
             else
             {
@@ -450,7 +456,8 @@ void stex::Diff::setDirectionDcst(int direction, double dcst)
     directionalDcsts[direction] = dcst;
 
     // Automatically activate boundary diffusion if necessary
-    if (pDiffBndDirection[direction] == true) pDiffBndActive[direction] = true;
+    if (pDiffBndDirection[direction] == true) { pDiffBndActive[direction] = true;
+}
     
     stex::Tet * next[4] =
     {
@@ -467,7 +474,7 @@ void stex::Diff::setDirectionDcst(int direction, double dcst)
         // Compute the scaled diffusion constant.
         // Need to here check if the direction is a diffusion boundary
         double dist = pTet->dist(i);
-        if ((dist > 0.0) && (next[i] != 0))
+        if ((dist > 0.0) && (next[i] != nullptr))
         {
             if (pDiffBndDirection[i] == true)
             {
@@ -478,7 +485,8 @@ void stex::Diff::setDirectionDcst(int direction, double dcst)
                     else
                         d[i] = (pTet->area(i) * pDcst) / (pTet->vol() * dist);
                 }
-                else d[i] = 0.0;
+                else { d[i] = 0.0;
+}
             }
             else
             {
@@ -580,7 +588,7 @@ std::vector<stex::KProc*> const & stex::Diff::apply(steps::rng::RNG * rng, doubl
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint stex::Diff::updVecSize(void) const
+uint stex::Diff::updVecSize() const
 {
     uint maxsize = pUpdVec[0].size();
     for (uint i=1; i <= 3; ++i)

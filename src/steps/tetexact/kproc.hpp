@@ -76,8 +76,8 @@ public:
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    KProc(void);
-    virtual ~KProc(void);
+    KProc();
+    virtual ~KProc();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -95,18 +95,18 @@ public:
 
     static const int INACTIVATED = 1;
 
-    inline bool active(void) const
+    inline bool active() const
     { return !(pFlags & INACTIVATED); }
-    inline bool inactive(void) const
+    inline bool inactive() const
     { return (pFlags & INACTIVATED); }
     void setActive(bool active);
 
-    inline uint flags(void) const
+    inline uint flags() const
     { return pFlags; }
 
     ////////////////////////////////////////////////////////////////////////
 
-    uint schedIDX(void) const
+    uint schedIDX() const
     { return pSchedIDX; }
 
     void setSchedIDX(uint idx)
@@ -119,17 +119,17 @@ public:
     /// This function is called when all kproc objects have been created,
     /// allowing the kproc to pre-compute its SchedIDXVec.
     ///
-    virtual void setupDeps(void) = 0;
+    virtual void setupDeps() = 0;
 
     virtual bool depSpecTet(uint gidx, steps::tetexact::WmVol * tet) = 0;
     virtual bool depSpecTri(uint gidx, steps::tetexact::Tri * tri) = 0;
 
     /// Reset this Kproc.
     ///
-    virtual void reset(void) = 0;
+    virtual void reset() = 0;
 
     // Recompute the Ccst for this KProc
-    virtual void resetCcst(void) const;
+    virtual void resetCcst() const;
 
     /// Compute the rate for this kproc (its propensity value).
     ///
@@ -137,11 +137,11 @@ public:
 
     // Return the ccst for this kproc
     // NOTE: not pure for this solver because doesn't make sense for Diff
-    virtual double c(void) const;
+    virtual double c() const;
 
     // Return the h value for this kproc (number of available reaction channels)
     // NOTE: not pure for this solver because doesn;t make sense for Diff
-    virtual double h(void);
+    virtual double h();
 
     /// Apply a single discrete instance of the kinetic process, returning
     /// a vector of kproc schedule indices that need to be updated as a
@@ -151,12 +151,12 @@ public:
     // by Diff
     virtual std::vector<KProc*> const & apply(steps::rng::RNG * rng, double dt, double simtime) = 0;
 
-    virtual uint updVecSize(void) const = 0;
+    virtual uint updVecSize() const = 0;
 
     ////////////////////////////////////////////////////////////////////////
 
-    uint getExtent(void) const;
-    void resetExtent(void);
+    uint getExtent() const;
+    void resetExtent();
 
     ////////////////////////////////////////////////////////////////////////
     /*
@@ -164,8 +164,8 @@ public:
     // object
     // Separate methods to avoid making a base KProcdef class
     //
-    virtual steps::solver::Reacdef * defr(void) const;
-    virtual steps::solver::SReacdef * defsr(void) const;
+    virtual steps::solver::Reacdef * defr() const;
+    virtual steps::solver::SReacdef * defsr() const;
     */// compileerror; // check this
 
     ////////////////////////////////////////////////////////////////////////

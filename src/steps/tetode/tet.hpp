@@ -80,9 +80,9 @@ public:
         double d0, double d1, double d2, double d3,
         int tet0, int tet1, int tet2, int tet3
     );
-    ~Tet(void);
+    ~Tet() = default;
 
-    inline steps::solver::Compdef * compdef(void) const
+    inline steps::solver::Compdef * compdef() const
     { return pCompdef; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -116,11 +116,11 @@ public:
 
     /// Get the volume.
     ///
-    inline double vol(void) const
+    inline double vol() const
     { return pVol; }
 
     /// get the index
-    inline uint idx(void)
+    inline uint idx()
     { return pIdx; }
 
     /// Get pointer to the next neighbouring triangle.

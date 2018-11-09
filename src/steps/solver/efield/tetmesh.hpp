@@ -169,7 +169,7 @@ public:
     TetMesh(uint nv, double * vpos,
             uint ntr, uint * trivi,
             uint ntet, uint * tetvi);
-    ~TetMesh(void);
+    ~TetMesh();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -186,7 +186,7 @@ public:
     ///
     /// Originally from TetMesh.
     ///
-    void extractConnections(void);
+    void extractConnections();
 
     /// Called by the EField constructor after extractConnections().
     /// This method basically loops over all triangles in the mesh,
@@ -197,7 +197,7 @@ public:
     ///
     /// Originally from TetMesh.
     ///
-    void allocateSurface(void);
+    void allocateSurface();
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -207,7 +207,7 @@ public:
     ///
     /// Originally from Mesh.
     ///
-    void reindexElements(void);
+    void reindexElements();
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: VERTICES
@@ -217,7 +217,7 @@ public:
     ///
     /// Originally from Mesh.
     ///
-    inline uint countVertices(void) const
+    inline uint countVertices() const
     { return pElements.size(); }
 
     /// Originally from Mesh.
@@ -251,7 +251,7 @@ public:
 
     /// Originally from TetMesh.
     ///
-    inline uint getNTri(void) const
+    inline uint getNTri() const
     { return pNTri; }
 
     /// Originally from TetMesh.
@@ -268,7 +268,7 @@ public:
     // DATA ACCESS: TETRAHEDRONS
     ////////////////////////////////////////////////////////////////////////
 
-    inline uint getNTet(void) const
+    inline uint getNTet() const
     { return pNTet; }
 
     inline uint * getTetrahedron(uint i) const
@@ -294,11 +294,11 @@ public:
 
     /// Originally from Mesh.
     ///
-    double getTotalCapacitance(void);
+    double getTotalCapacitance();
 
     /// Originally from Mesh.
     ///
-    double getTotalArea(void);
+    double getTotalArea();
 
     /// Originally from Mesh.
     /// Iain: big changes here
@@ -311,7 +311,7 @@ public:
 
     /// Originally from Mesh.
     ///
-    std::vector<double> centerOfMass(void);
+    std::vector<double> centerOfMass();
 
     /// Originally from Mesh.
     /// Iain: defunct: replaced by 'walking' method in fill_ve_vec function
@@ -320,7 +320,7 @@ public:
 
     /// Originally from Mesh.
     ///
-    uint ncon(void)
+    uint ncon()
     { return pConnections.size(); }
 
     /// Originally from Mesh.
@@ -328,7 +328,7 @@ public:
     VertexConnection* getConnection(uint i)
     { return pConnections[i]; }
 
-    std::vector<uint> getVertexPermutation(void);
+    std::vector<uint> getVertexPermutation();
 
     ////////////////////////////////////////////////////////////////////////
     // FROM TETMESH
@@ -336,15 +336,15 @@ public:
 
     /// Originally from TetMesh.
     ///
-    void reconstruct(void);
+    void reconstruct();
 
     /// Originally from TetMesh.
     ///
-    void reordered(void);
+    void reordered();
 
     // Just temporary functions to have a look at the matrix
     //void displayMatrix(uint);
-    //void savematrix(void);
+    //void savematrix();
 
 private:
 

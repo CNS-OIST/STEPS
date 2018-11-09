@@ -83,7 +83,7 @@ public:
         double d0, double d1, double d2, double d3,
         int tet0, int tet1, int tet2, int tet3, int rank, int host_rank
     );
-    ~Tet(void);
+    ~Tet();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -166,7 +166,7 @@ public:
 
     /////////////////////////// Dependency ////////////////////////////////
     // setup dependence for KProcs in this subvolume
-    void setupDeps(void);
+    void setupDeps();
     
     // check if kp_lidx in this vol depends on spec_gidx in WMVol kp_container
     virtual bool KProcDepSpecTet(uint kp_lidx, WmVol* kp_container, uint spec_gidx);
@@ -183,13 +183,13 @@ public:
 	    return pPoolOccupancy[lidx];
 	}
     double getLastUpdate(uint lidx);
-	void resetPoolOccupancy(void);
+	void resetPoolOccupancy();
     
     std::vector<smtos::KProc*> const & getSpecUpdKProcs(uint slidx);
 
     ////////////////////////////////////////////////////////////
     void repartition(smtos::TetOpSplitP * tex, int rank, int host_rank);
-    void setupBufferLocations(void);
+    void setupBufferLocations();
 
 private:
 

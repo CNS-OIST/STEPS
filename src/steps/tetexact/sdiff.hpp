@@ -65,7 +65,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     SDiff(steps::solver::Diffdef * sdef, steps::tetexact::Tri * tri);
-    ~SDiff(void);
+    ~SDiff();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -80,24 +80,24 @@ public:
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Diffdef * def(void) const
+    inline steps::solver::Diffdef * def() const
     { return pSDiffdef; }
 
     double dcst(int direction = -1);
     void setDcst(double d);
     void setDirectionDcst(int direction, double dcst);
 
-    void setupDeps(void);
+    void setupDeps();
 
     bool depSpecTet(uint gidx, steps::tetexact::WmVol * tet);
     bool depSpecTri(uint gidx, steps::tetexact::Tri * tri);
 
-    void reset(void);
+    void reset();
     double rate(steps::tetexact::Tetexact * solver = 0);
 
     std::vector<KProc*> const & apply(steps::rng::RNG * rng, double dt, double simtime);
 
-    uint updVecSize(void) const;
+    uint updVecSize() const;
 
     ////////////////////////////////////////////////////////////////////////
 

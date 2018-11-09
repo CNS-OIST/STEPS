@@ -57,7 +57,7 @@ swmd::Comp::Comp(steps::solver::Compdef * compdef)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmd::Comp::~Comp(void)
+swmd::Comp::~Comp()
 {
     for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
     {
@@ -87,7 +87,7 @@ void swmd::Comp::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Comp::reset(void)
+void swmd::Comp::reset()
 {
     std::for_each(pKProcs.begin(), pKProcs.end(), std::mem_fun(&swmd::KProc::reset));
 }
@@ -102,7 +102,7 @@ void swmd::Comp::setupKProcs(swmd::Wmdirect * wmd)
     for (uint i = 0; i < nreacs; ++i)
     {
         ssolver::Reacdef * rdef = def()->reacdef(i);
-        swmd::Reac * r = new swmd::Reac(rdef, this);
+        auto * r = new swmd::Reac(rdef, this);
         pKProcs[i] = r;
         wmd->addKProc(r);
     }
@@ -118,7 +118,7 @@ steps::wmdirect::KProc * swmd::Comp::reac(uint lridx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Comp::setupDeps(void)
+void swmd::Comp::setupDeps()
 {
     std::for_each(pKProcs.begin(), pKProcs.end(),
         std::mem_fun(&KProc::setupDeps));

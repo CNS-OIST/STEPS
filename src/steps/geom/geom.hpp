@@ -62,10 +62,10 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Constructor
-    Geom(void);
+    Geom() = default;
 
     /// Destructor
-    virtual ~Geom(void);
+    virtual ~Geom();
 
     ////////////////////////////////////////////////////////////////////////
     // OPERATIONS (EXPOSED TO PYTHON) : COMPARTMENTS
@@ -85,7 +85,7 @@ public:
     /// Return all compartments in the geometry container.
     ///
     /// \return List of pointers to the compartment objects.
-    std::vector<steps::wm::Comp *> getAllComps(void) const;
+    std::vector<steps::wm::Comp *> getAllComps() const;
 
     ////////////////////////////////////////////////////////////////////////
     // OPERATIONS (EXPOSED TO PYTHON): PATCHES
@@ -105,7 +105,7 @@ public:
     /// Return all patches in the geometry container.
     ///
     /// \return List of pointers to the patch objects.
-    std::vector<steps::wm::Patch *> getAllPatches(void) const;
+    std::vector<steps::wm::Patch *> getAllPatches() const;
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED): SOLVER HELPER METHODS
@@ -114,7 +114,7 @@ public:
     /// Count the compartments in the geometry container.
     ///
     /// \return Number of compartments.
-    inline uint _countComps(void) const
+    inline uint _countComps() const
     { return pComps.size(); }
 
     /// Return a compartment with index gidx.
@@ -126,7 +126,7 @@ public:
     /// Count the patches in the geometry container.
     ///
     /// \return Number of patches.
-    inline uint _countPatches(void) const
+    inline uint _countPatches() const
     { return pPatches.size(); }
 
     /// Return a patch with index gidx.

@@ -81,7 +81,7 @@ public:
     Chan(std::string const & id, Model * model);
 
     /// Destructor
-    ~Chan(void);
+    ~Chan();
 
     ////////////////////////////////////////////////////////////////////////
     // CHANNEL PROPERTIES
@@ -90,7 +90,7 @@ public:
     /// Return the channel ID.
     ///
     /// \return ID of the channel.
-    std::string getID(void) const
+    std::string getID() const
     { return pID; }
 
     /// Set or change the species ID.
@@ -101,7 +101,7 @@ public:
     /// Return a pointer to the parent model.
     ///
     /// \return Pointer to the parent model.
-    Model * getModel(void) const
+    Model * getModel() const
     { return pModel; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -125,7 +125,7 @@ public:
     ///
     /// \return A vector of pointers to the channel state objects
     ///         stored in the system.
-    std::vector<ChanState *> getAllChanStates(void) const;
+    std::vector<ChanState *> getAllChanStates() const;
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: DELETION
@@ -135,7 +135,7 @@ public:
     ///
     /// Called if Python object deleted, or from del method in parent object.
     /// Will only be called once
-    void _handleSelfDelete(void);
+    void _handleSelfDelete();
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED): STEPS::MODEL OPERATIONS

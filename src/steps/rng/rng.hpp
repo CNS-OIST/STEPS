@@ -54,7 +54,7 @@ public:
     RNG(uint bufsize);
 
     /// Destructor
-    virtual ~RNG(void);
+    virtual ~RNG();
 
     /// Initialize the generator with seed.
     ///
@@ -70,7 +70,7 @@ public:
 
     /// Return the next random int in the buffer of the generator.
     ///
-    inline uint get(void)
+    inline uint get()
     {
         if (rNext == rEnd) { concreteFillBuffer(); rNext = rBuffer; }
         return *(rNext++);
@@ -78,7 +78,7 @@ public:
 
     /// Generates a uniform random number on [0,1] real interval.
     ///
-    inline double getUnfII(void)
+    inline double getUnfII()
     {
         // Divided by 2^32-1.
         return get() * (1.0 / 4294967295.0);
@@ -86,7 +86,7 @@ public:
 
     /// Generates a uniform random number on [0,1) real interval.
     ///
-    inline double getUnfIE(void)
+    inline double getUnfIE()
     {
         // Divided by 2^32.
         return get() * (1.0/4294967296.0);
@@ -94,7 +94,7 @@ public:
 
     /// Generates a uniform random number on (0,1) real interval.
     ///
-    inline double getUnfEE(void)
+    inline double getUnfEE()
     {
         // Divided by 2^32.
         return (((double)get()) + 0.5) * (1.0/4294967296.0);
@@ -102,14 +102,14 @@ public:
 
     /// Generates a uniform random number on [0,1) with 53-bit resolution.
     ///
-    inline double getUnfIE53(void)
+    inline double getUnfIE53()
     {
         ulong a = get() >> 5, b = get() >> 6;
         return(a * 67108864.0 + b) * (1.0 / 9007199254740992.0);
     }
 
     /// Get a standard exponentially distributed number.
-    float getStdExp(void);
+    float getStdExp();
 
     /// Get an exponentially distributed number with mean lambda.
     ///
@@ -121,7 +121,7 @@ public:
 
     /// Get a standard normally distributed random number.
     ///
-    float getStdNrm(void);
+    float getStdNrm();
 
     /// Get a binomially distributed number with parameters t and p.
     ///
@@ -139,7 +139,7 @@ protected:
 
     /// Fills the buffer with random numbers on [0,0xffffffff]-interval.
     ///
-    virtual void concreteFillBuffer(void) = 0;
+    virtual void concreteFillBuffer() = 0;
 
 private:
 

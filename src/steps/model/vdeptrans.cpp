@@ -32,11 +32,11 @@
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
+#include "steps/model/chan.hpp"
+#include "steps/model/chanstate.hpp"
 #include "steps/model/model.hpp"
 #include "steps/model/surfsys.hpp"
 #include "steps/model/vdeptrans.hpp"
-#include "steps/model/chanstate.hpp"
-#include "steps/model/chan.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -52,9 +52,9 @@ VDepTrans::VDepTrans(std::string const & id, Surfsys * surfsys,
                      std::vector<double> rate, double vmin, double vmax,
                      double dv, uint tablesize)
 : pID(id)
-, pModel(0)
+, pModel(nullptr)
 , pSurfsys(surfsys)
-, pChan(0)
+, pChan(nullptr)
 , pSrc(src)
 , pDst(dst)
 , pRate()
@@ -63,7 +63,7 @@ VDepTrans::VDepTrans(std::string const & id, Surfsys * surfsys,
 , pDV(dv)
 , pTablesize(tablesize)
 {
-    if (pSurfsys == 0)
+    if (pSurfsys == nullptr)
     {
         ostringstream os;
         os << "No surfsys provided to VDepTrans initializer function";
@@ -100,22 +100,23 @@ VDepTrans::VDepTrans(std::string const & id, Surfsys * surfsys,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-VDepTrans::~VDepTrans(void)
+VDepTrans::~VDepTrans()
 {
-    if (pSurfsys == 0) return;
+    if (pSurfsys == nullptr) { return;
+}
     _handleSelfDelete();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void VDepTrans::_handleSelfDelete(void)
+void VDepTrans::_handleSelfDelete()
 {
     pSurfsys->_handleVDepTransDel(this);
     delete[] pRate;
-    pSrc = 0;
-    pDst = 0;
-    pSurfsys = 0;
-    pModel = 0;
+    pSrc = nullptr;
+    pDst = nullptr;
+    pSurfsys = nullptr;
+    pModel = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -168,7 +169,7 @@ void VDepTrans::setDst(ChanState * dst)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> VDepTrans::getRate(void) const
+std::vector<double> VDepTrans::getRate() const
 {
     std::vector<double> rate = std::vector<double>(pTablesize);
     for (uint i = 0; i < pTablesize; ++i) rate[i] = pRate[i];

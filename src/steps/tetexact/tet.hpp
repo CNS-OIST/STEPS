@@ -82,7 +82,7 @@ public:
         double d0, double d1, double d2, double d3,
         int tet0, int tet1, int tet2, int tet3
     );
-    ~Tet(void);
+    ~Tet();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING

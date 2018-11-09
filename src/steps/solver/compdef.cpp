@@ -26,22 +26,22 @@
 
 
 // STL headers.
-#include <string>
-#include <cassert>
 #include <algorithm>
+#include <cassert>
+#include <string>
 
 // STEPS headers.
 #include "steps/common.h"
-#include "steps/solver/types.hpp"
 #include "steps/error.hpp"
-#include "steps/solver/statedef.hpp"
+#include "steps/geom/comp.hpp"
+#include "steps/model/diff.hpp"
+#include "steps/model/reac.hpp"
 #include "steps/solver/compdef.hpp"
+#include "steps/solver/diffdef.hpp"
 #include "steps/solver/patchdef.hpp"
 #include "steps/solver/reacdef.hpp"
-#include "steps/solver/diffdef.hpp"
-#include "steps/geom/comp.hpp"
-#include "steps/model/reac.hpp"
-#include "steps/model/diff.hpp"
+#include "steps/solver/statedef.hpp"
+#include "steps/solver/types.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -58,25 +58,25 @@ ssolver::Compdef::Compdef(Statedef * sd, uint idx, steps::wm::Comp * c)
 , pCvsys()
 , pSetupRefsdone(false)
 , pSetupIndsdone(false)
-, pPoolFlags(0)
-, pPoolCount(0)
-, pReacKcst(0)
-, pDiffDcst(0)
-, pReacFlags(0)
+, pPoolFlags(nullptr)
+, pPoolCount(nullptr)
+, pReacKcst(nullptr)
+, pDiffDcst(nullptr)
+, pReacFlags(nullptr)
 , pSpecsN(0)
-, pSpec_G2L(0)
-, pSpec_L2G(0)
+, pSpec_G2L(nullptr)
+, pSpec_L2G(nullptr)
 , pReacsN(0)
-, pReac_G2L(0)
-, pReac_L2G(0)
-, pReac_DEP_Spec(0)
-, pReac_LHS_Spec(0)
-, pReac_UPD_Spec(0)
+, pReac_G2L(nullptr)
+, pReac_L2G(nullptr)
+, pReac_DEP_Spec(nullptr)
+, pReac_LHS_Spec(nullptr)
+, pReac_UPD_Spec(nullptr)
 , pDiffsN(0)
-, pDiff_G2L(0)
-, pDiff_L2G(0)
-, pDiff_DEP_Spec(0)
-, pDiff_LIG(0)
+, pDiff_G2L(nullptr)
+, pDiff_L2G(nullptr)
+, pDiff_DEP_Spec(nullptr)
+, pDiff_LIG(nullptr)
 {
     AssertLog(pStatedef != 0);
     AssertLog(c != 0);
@@ -109,11 +109,13 @@ ssolver::Compdef::Compdef(Statedef * sd, uint idx, steps::wm::Comp * c)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::Compdef::~Compdef(void)
+ssolver::Compdef::~Compdef()
 {
     if (pStatedef->countSpecs() > 0 ) delete[] pSpec_G2L;
-    if (pStatedef->countReacs() > 0) delete[] pReac_G2L;
-    if (pStatedef->countDiffs() > 0) delete[] pDiff_G2L;
+    if (pStatedef->countReacs() > 0) { delete[] pReac_G2L;
+}
+    if (pStatedef->countDiffs() > 0) { delete[] pDiff_G2L;
+}
 
     if (pSpecsN != 0)
     {
@@ -217,22 +219,26 @@ void ssolver::Compdef::setup_references()
     // species (from surface reactions)
     for (uint r = 0; r < ngreacs; ++r)
     {
-        if (pReac_G2L[r] == LIDX_UNDEFINED) continue;
+        if (pReac_G2L[r] == LIDX_UNDEFINED) { continue;
+}
         Reacdef * rdef = pStatedef->reacdef(r);
         AssertLog(rdef != 0);
         for (uint s = 0; s < ngspecs; ++s)
         {
-            if (rdef->reqspec(s) == true) addSpec(s);
+            if (rdef->reqspec(s) == true) { addSpec(s);
+}
         }
     }
     for (uint d = 0; d < ngdiffs; ++d)
     {
-        if (pDiff_G2L[d] == LIDX_UNDEFINED) continue;
+        if (pDiff_G2L[d] == LIDX_UNDEFINED) { continue;
+}
         Diffdef * ddef = pStatedef->diffdef(d);
         AssertLog(ddef != 0);
         for (uint s = 0; s < ngspecs; ++s)
         {
-            if (ddef->reqspec(s) == true) addSpec(s);
+            if (ddef->reqspec(s) == true) { addSpec(s);
+}
         }
     }
 
@@ -241,7 +247,7 @@ void ssolver::Compdef::setup_references()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Compdef::setup_indices(void)
+void ssolver::Compdef::setup_indices()
 {
     AssertLog(pSetupRefsdone == true);
     AssertLog(pSetupIndsdone == false);
@@ -257,7 +263,8 @@ void ssolver::Compdef::setup_indices(void)
         for (uint i=0; i < ngspecs; ++i)
         {
             uint lidx = pSpec_G2L[i];
-            if (lidx ==  LIDX_UNDEFINED) continue;
+            if (lidx ==  LIDX_UNDEFINED) { continue;
+}
             pSpec_L2G[lidx] = i;
         }
     }
@@ -268,7 +275,8 @@ void ssolver::Compdef::setup_indices(void)
         for (uint i=0; i < ngreacs; ++i)
         {
             uint lidx = pReac_G2L[i];
-            if (lidx == LIDX_UNDEFINED) continue;
+            if (lidx == LIDX_UNDEFINED) { continue;
+}
             pReac_L2G[lidx] = i;
         }
         uint arrsize = pSpecsN * pReacsN;
@@ -283,7 +291,8 @@ void ssolver::Compdef::setup_indices(void)
             Reacdef * rdef = reacdef(ri);
             for (uint si = 0; si < ngspecs; ++si)
             {
-                if (rdef->reqspec(si) == false) continue;
+                if (rdef->reqspec(si) == false) { continue;
+}
                 uint sil = pSpec_G2L[si];
                 AssertLog(sil != LIDX_UNDEFINED);
 
@@ -301,7 +310,8 @@ void ssolver::Compdef::setup_indices(void)
         for (uint i = 0; i < ngdiffs; ++i)
         {
             uint lidx = pDiff_G2L[i];
-            if (lidx == LIDX_UNDEFINED) continue;
+            if (lidx == LIDX_UNDEFINED) { continue;
+}
             pDiff_L2G[lidx] = i;
         }
 
@@ -315,7 +325,8 @@ void ssolver::Compdef::setup_indices(void)
             pDiff_LIG[di] = pSpec_G2L[ddef->lig()];
             for (uint si = 0; si < ngspecs; ++si)
             {
-                if (ddef->reqspec(si) == false) continue;
+                if (ddef->reqspec(si) == false) { continue;
+}
                 uint sil = pSpec_G2L[si];
                 AssertLog(sil != LIDX_UNDEFINED);
                 uint aridx = _IDX_Diff_Spec(di, sil);
@@ -400,20 +411,21 @@ void ssolver::Compdef::addSpec(uint gidx)
 {
     AssertLog(pSetupIndsdone == false);
     AssertLog(pStatedef->specdef(gidx) != 0);
-    if (pSpec_G2L[gidx] != LIDX_UNDEFINED) return;
+    if (pSpec_G2L[gidx] != LIDX_UNDEFINED) { return;
+}
     pSpec_G2L[gidx] = pSpecsN++;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double ssolver::Compdef::vol(void) const
+double ssolver::Compdef::vol() const
 {
     return pVol;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string const ssolver::Compdef::name(void) const
+std::string const ssolver::Compdef::name() const
 {
     return pName;
 
@@ -429,7 +441,7 @@ void ssolver::Compdef::setVol(double v)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Compdef::reset(void)
+void ssolver::Compdef::reset()
 {
     AssertLog(pSetupRefsdone == true);
     AssertLog(pSetupIndsdone == true);
@@ -467,8 +479,9 @@ void ssolver::Compdef::setClamped(uint slidx, bool clamp)
     AssertLog(pSetupRefsdone == true);
     AssertLog(pSetupIndsdone == true);
     AssertLog(slidx < pSpecsN);
-    if (clamp == true) pPoolFlags[slidx] |= CLAMPED;
-    else pPoolFlags[slidx] &= ~CLAMPED;
+    if (clamp == true) { pPoolFlags[slidx] |= CLAMPED;
+    } else { pPoolFlags[slidx] &= ~CLAMPED;
+}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -555,8 +568,9 @@ void ssolver::Compdef::setActive(uint rlidx, bool active)
     AssertLog(pSetupRefsdone == true);
     AssertLog(pSetupIndsdone == true);
     AssertLog(rlidx < pReacsN);
-    if (active == true) pReacFlags[rlidx] &= ~INACTIVATED;
-    else pReacFlags[rlidx] |= INACTIVATED;
+    if (active == true) { pReacFlags[rlidx] &= ~INACTIVATED;
+    } else { pReacFlags[rlidx] |= INACTIVATED;
+}
 }
 
 ////////////////////////////////////////////////////////////////////////////////

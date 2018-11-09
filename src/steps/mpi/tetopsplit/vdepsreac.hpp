@@ -67,7 +67,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     VDepSReac(steps::solver::VDepSReacdef * vdsrdef, steps::mpi::tetopsplit::Tri * tri);
-    ~VDepSReac(void);
+    ~VDepSReac();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -82,10 +82,10 @@ public:
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    void setupDeps(void);
+    void setupDeps();
     bool depSpecTet(uint gidx, steps::mpi::tetopsplit::WmVol * tet);
     bool depSpecTri(uint gidx, steps::mpi::tetopsplit::Tri * tri);
-    void reset(void);
+    void reset();
 
     double rate(steps::mpi::tetopsplit::TetOpSplitP * solver = 0);
     double getScaledDcst(steps::mpi::tetopsplit::TetOpSplitP * solver = 0)
@@ -96,13 +96,13 @@ public:
     std::vector<KProc*> const & getLocalUpdVec(int direction = -1);
     std::vector<uint> const & getRemoteUpdVec(int direction = -1);
     
-    void resetOccupancies(void);
+    void resetOccupancies();
     
-    bool getInHost(void) {
+    bool getInHost() {
         return pTri->getInHost();
     }
     
-    int getHost(void) {
+    int getHost() {
         return pTri->getHost();
     }
     ////////////////////////////////////////////////////////////////////////

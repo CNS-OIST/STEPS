@@ -97,7 +97,7 @@ public:
          double kcst = 0.0);
 
     /// Destructor
-    ~Reac(void);
+    ~Reac();
 
     ////////////////////////////////////////////////////////////////////////
     // REACTION RULE PROPERTIES
@@ -106,7 +106,7 @@ public:
     /// Return the reaction rule ID.
     ///
     /// \return ID of the reaction.
-    std::string getID(void) const
+    std::string getID() const
     { return pID; }
 
     /// Set or change the reaction rule ID.
@@ -117,13 +117,13 @@ public:
     /// Return a pointer to the parent volume system.
     ///
     /// \return Pointer to the volume system.
-    Volsys * getVolsys(void) const
+    Volsys * getVolsys() const
     { return pVolsys; }
 
     /// Return a pointer to the parent model.
     ///
     /// \return Pointer to the parent Model.
-    Model * getModel(void) const
+    Model * getModel() const
     { return pModel; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -132,7 +132,7 @@ public:
     /// Get the species on the left hand side of the reaction.
     ///
     /// \return Vector of pointers to the left hand side species.
-    const std::vector<Spec *> & getLHS(void) const
+    const std::vector<Spec *> & getLHS() const
     { return pLHS; }
 
     /// Set or reset the species on the left hand side of the reaction.
@@ -143,7 +143,7 @@ public:
     /// Get the species on the right hand side of the reaction.
     ///
     ///    \return Vector of pointers to the right hand side species.
-    const std::vector<Spec *> & getRHS(void) const
+    const std::vector<Spec *> & getRHS() const
     { return pRHS; }
 
     /// Set or reset the species on the right hand side of the reaction.
@@ -157,18 +157,18 @@ public:
     /// on both the left and right-hand side. No duplicate member includes.
     ///
     /// \return Vector of pointers to the species.
-    std::vector<Spec *> getAllSpecs(void) const;
+    std::vector<Spec *> getAllSpecs() const;
 
     /// Return the order of the reaction.
     ///
     /// \return The order of the reaction.
-    uint getOrder(void) const
+    uint getOrder() const
     { return pOrder; }
 
     /// Return the rate constant of the reaction.
     ///
     /// \return The rate constant of the reaction.
-    double getKcst(void) const
+    double getKcst() const
     { return pKcst; }
 
     /// Set or reset the rate constant of the reaction.
@@ -184,7 +184,7 @@ public:
     ///
     /// Called if Python object deleted, or from del method in parent object.
     /// \warning Will only be called once
-    void _handleSelfDelete(void);
+    void _handleSelfDelete();
 
     ////////////////////////////////////////////////////////////////////////
 

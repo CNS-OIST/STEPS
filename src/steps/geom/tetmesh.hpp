@@ -151,7 +151,7 @@ public:
             std::vector<int> const & tet_tet_neighbs);
 
     /// Destructor
-    virtual ~Tetmesh(void);
+    virtual ~Tetmesh();
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO PYTHON): VERTICES
@@ -166,7 +166,7 @@ public:
     /// Count the vertices in the Temesh.
     ///
     /// \return Number of the vertices.
-    inline uint countVertices(void) const
+    inline uint countVertices() const
     { return pVertsN; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -182,14 +182,14 @@ public:
     /// Count the bars in the Tetmesh.
     ///
     /// \return Number of bars.
-    inline uint countBars(void) const
+    inline uint countBars() const
     { return pBarsN; }
 
     ///Set the surface diffusion boundary which a bar belongs to.
     ///
     /// \param tidx Index of the bar.
     /// \param sdiffb Pointer to the associated surface diffusion boundary.
-    void setBarSDiffBoundary(uint tidx, steps::tetmesh::SDiffBoundary * sdiffb);
+    void setBarSDiffBoundary(uint bidx, steps::tetmesh::SDiffBoundary * sdiffb);
 
     /// Return the surface diffusion boundary which a triangle is associated to.
     ///
@@ -224,7 +224,7 @@ public:
     /// Count the triangles in the Temesh.
     ///
     /// \return Number of the triangles.
-    inline uint countTris(void) const
+    inline uint countTris() const
     { return pTrisN; }
 
     /// Return the area of a triangle with index tidx.
@@ -330,7 +330,7 @@ public:
     /// Count the number of tetrahedrons.
     ///
     /// \return Number of tetrahedrons.
-    inline uint countTets(void) const
+    inline uint countTets() const
     { return pTetsN; }
 
     /// Return the volume of a tetrahedron by its index.
@@ -397,7 +397,7 @@ public:
     /// \param p A point given by its coordinates.
     /// \return ID of the found tetrahedron.
 
-    int findTetByPoint(std::vector<double> p) const;
+    int findTetByPoint(std::vector<double> const &p) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO PYTHON): MESH
@@ -406,22 +406,22 @@ public:
     /// Return the minimal coordinate of the rectangular bounding box.
     ///
     /// \return Minimal coordinate of the rectangular bounding box.
-    std::vector<double> getBoundMin(void) const;
+    std::vector<double> getBoundMin() const;
 
     /// Return the maximal coordinate of the rectangular bounding box.
     ///
     /// \return Maximal coordinate of the rectangular bounding box.
-    std::vector<double> getBoundMax(void) const;
+    std::vector<double> getBoundMax() const;
 
     /// Return the total volume of the mesh.
     ///
     /// \return Volume of the mesh.
-    double getMeshVolume(void) const;
+    double getMeshVolume() const;
 
     /// Return the triangles which form the surface boundary of the mesh.
     /// \return Vector of the triangle boundary.
     // Weiliang 2010.02.02
-    std::vector<int> getSurfTris(void) const;
+    std::vector<int> getSurfTris() const;
 
     ////////////////////////////////////////////////////////////////////////
     // Batch Data Access
@@ -503,109 +503,109 @@ public:
     ////////////////////////////////////////////////////////////////////////
     
     /// Add a ROI data
-    void addROI(std::string id, ElementType type, std::set<uint> const &indices);
+    void addROI(std::string const &id, ElementType type, std::set<uint> const &indices);
     
     /// Remove a ROI data
-    void removeROI(std::string id);
+    void removeROI(std::string const &id);
     
     /// Replace a ROI data with a new set with the same name
-    void replaceROI(std::string id, ElementType type, std::set<uint> const &indices);
+    void replaceROI(std::string const &id, ElementType type, std::set<uint> const &indices);
     
     /// Return the type of a ROI data
-    ElementType getROIType(std::string id) const;
+    ElementType getROIType(std::string const &id) const;
     
     /// Return the data of a ROI
-    std::vector<uint> getROIData(std::string id) const;
+    std::vector<uint> const & getROIData(std::string const &id) const;
     
     /// Return the data size of a ROI
-    uint getROIDataSize(std::string id) const;
+    uint getROIDataSize(std::string const &id) const;
     
     /// get the total number of ROI recorded
-    uint getNROIs(void);
+    uint getNROIs() const;
     
     /// Return a ROI
-    ROISet getROI(std::string id) const;
-    
+    ROISet const & getROI(std::string const &id) const;
+
     /// get all ROI names
-    std::vector<std::string> getAllROINames(void);
+    std::vector<std::string> getAllROINames() const;
     
     /// return pointer of a ROI data
-    uint* _getROIData(std::string id) const;
+    uint* _getROIData(std::string const &id) const;
     
     /// check if a ROI enquire is valid
-    bool checkROI(std::string id, ElementType type, uint count = 0, bool warning = true) const;
+    bool checkROI(std::string const &id, ElementType type, uint count = 0, bool warning = true) const;
     
     ////////////////////////////////////////////////////////////////////////
     // ROI Data Access
     ////////////////////////////////////////////////////////////////////////
     
     /// get barycentres of a list of tetrahedrons
-    std::vector<double> getROITetBarycentres(std::string ROI_id) const;
+    std::vector<double> getROITetBarycentres(std::string const &ROI_id) const;
     
     /// get barycentres of a list of tetrahedrons
-    void getROITetBarycentresNP(std::string ROI_id, double* centres, int output_size) const;
+    void getROITetBarycentresNP(std::string const &ROI_id, double* centres, int output_size) const;
     
     /// get barycentres of a list of triangles
-    std::vector<double> getROITriBarycentres(std::string ROI_id) const;
+    std::vector<double> getROITriBarycentres(std::string const &ROI_id) const;
     
     /// get barycentres of a list of triangles
-    void getROITriBarycentresNP(std::string ROI_id, double* centres, int output_size) const;
+    void getROITriBarycentresNP(std::string const &ROI_id, double* centres, int output_size) const;
     
     /// get coordinates of a list of vertices
-    std::vector<double> getROIVertices(std::string ROI_id) const;
+    std::vector<double> getROIVertices(std::string const & ROI_id) const;
     
     /// get coordinates of a list of vertices
-    void getROIVerticesNP(std::string ROI_id, double* coordinates, int output_size) const;
+    void getROIVerticesNP(std::string const &ROI_id, double* coordinates, int output_size) const;
     
     /// get vertex indices of a list of triangles
-    std::vector<uint> getROITris(std::string ROI_id) const;
+    std::vector<uint> getROITris(std::string const &ROI_id) const;
     
     /// get vertex indices of a list of triangles
-    void getROITrisNP(std::string ROI_id, unsigned int* v_indices, int output_size) const;
+    void getROITrisNP(std::string const &ROI_id, unsigned int* v_indices, int output_size) const;
     
     /// get vertex indices of a list of tetrahedrons
-    std::vector<uint> getROITets(std::string ROI_id) const;
+    std::vector<uint> getROITets(std::string const &ROI_id) const;
     
     /// get vertex indices of a list of tetrahedrons
-    void getROITetsNP(std::string ROI_id, unsigned int* v_indices, int output_size) const;
+    void getROITetsNP(std::string const &ROI_id, unsigned int* v_indices, int output_size) const;
     
     /// return the size of a set with unique vertex indices of a list of triangles
     /// preparation function for furture numpy data access
-    uint getROITriVerticesSetSizeNP(std::string ROI_id) const;
+    uint getROITriVerticesSetSizeNP(std::string const &ROI_id) const;
     
     /// return the size of a set with unique vertex indices of a list of tetrahedrons
     /// preparation function for furture numpy data access
-    uint getROITetVerticesSetSizeNP(std::string ROI_id) const;
+    uint getROITetVerticesSetSizeNP(std::string const &ROI_id) const;
     
     /// Get the set with unique vertex indices of a list of triangles, write into given 1D array
-    void getROITriVerticesMappingSetNP(std::string ROI_id, unsigned int* t_vertices, int t_vertices_size, unsigned int* v_set, int v_set_size) const;
+    void getROITriVerticesMappingSetNP(std::string const &ROI_id, unsigned int* t_vertices, int t_vertices_size, unsigned int* v_set, int v_set_size) const;
     
     /// Get the set with unique vertex indices of a list of tetrahedrons, write into given 1D array
-    void getROITetVerticesMappingSetNP(std::string ROI_id, unsigned int* t_vertices, int t_vertices_size, unsigned int* v_set, int v_set_size) const;
+    void getROITetVerticesMappingSetNP(std::string const &ROI_id, unsigned int* t_vertices, int t_vertices_size, unsigned int* v_set, int v_set_size) const;
     
     /// Generate the random points required in point_counts for tets in indices and store them in coords
-    void genROITetVisualPointsNP(std::string ROI_id, unsigned int* point_counts, int count_size, double* coords, int coord_size) const;
+    void genROITetVisualPointsNP(std::string const &ROI_id, unsigned int* point_counts, int count_size, double* coords, int coord_size) const;
     
     /// Generate the random points required in point_counts for tris in indices and store them in coords
-    void genROITriVisualPointsNP(std::string ROI_id, unsigned int* point_counts, int count_size, double* coords, int coord_size) const;
+    void genROITriVisualPointsNP(std::string const &ROI_id, unsigned int* point_counts, int count_size, double* coords, int coord_size) const;
     
     /// get the volumes of a list of tetrahedrons
-    void getROITetVolsNP(std::string ROI_id, double* volumes, int volume_size) const;
+    void getROITetVolsNP(std::string const &ROI_id, double* volumes, int volume_size) const;
     
     /// get the areas of a list of triangles
-    void getROITriAreasNP(std::string ROI_id, double* areas, int area_size) const;
+    void getROITriAreasNP(std::string const &ROI_id, double* areas, int area_size) const;
     
     /// get the total volume of a tetrahedral roi
-    double getROIVol(std::string ROI_id) const;
+    double getROIVol(std::string const &ROI_id) const;
     
     /// get the total area of a triangular roi
-    double getROIArea(std::string ROI_id) const;
+    double getROIArea(std::string const &ROI_id) const;
     
     /// reduce the number of points required to be generated in a list of tets based on maximum point density
-    void reduceROITetPointCountsNP(std::string ROI_id, unsigned int* point_counts, int count_size, double max_density);
+    void reduceROITetPointCountsNP(std::string const &ROI_id, unsigned int* point_counts, int count_size, double max_density);
     
     /// reduce the number of points required to be generated in a list of tris based on maximum point density
-    void reduceROITriPointCountsNP(std::string ROI_id, unsigned int* point_counts, int count_size, double max_density);
+    void reduceROITriPointCountsNP(std::string const &ROI_id, unsigned int* point_counts, int count_size, double max_density);
     
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (C++ INTERNAL)
@@ -713,7 +713,7 @@ public:
     /// Count the membranes in the tetmesh container.
     ///
     /// \return Number of membranes.
-    inline uint _countMembs(void) const
+    inline uint _countMembs() const
     { return pMembs.size(); }
 
     /// Return a membrane with index gidx.
@@ -748,7 +748,7 @@ public:
     /// Count the diffusion boundaries in the tetmesh container.
     ///
     /// \return Number of diffusion boundaries.
-    inline uint _countDiffBoundaries(void) const
+    inline uint _countDiffBoundaries() const
     { return pDiffBoundaries.size(); }
 
     /// Return a diffusion boundary with index gidx.
@@ -783,7 +783,7 @@ public:
     /// Count the surface diffusion boundaries in the tetmesh container.
     ///
     /// \return Number of surface diffusion boundaries.
-    inline uint _countSDiffBoundaries(void) const
+    inline uint _countSDiffBoundaries() const
     { return pSDiffBoundaries.size(); }
 
     /// Return a surface diffusion boundary with index gidx.
@@ -835,7 +835,7 @@ private:
     ///////////////////////// DATA: TRIANGLES //////////////////////////////
     ///
     /// The total number of triangles in the mesh
-    uint                                pTrisN;
+    size_t                                pTrisN;
     /// The triangles by vertices index
     std::vector<tri_verts>              pTris;
     // The bars of the triangle
@@ -858,7 +858,7 @@ private:
     ///////////////////////// DATA: TETRAHEDRA /////////////////////////////
     ///
     /// The total number of tetrahedron in the mesh
-    uint                                pTetsN;
+    size_t                                pTetsN;
     /// The tetrahedron by vertices index
     std::vector<tet_verts>              pTets;
     /// The volume of the tetrahedron
@@ -881,7 +881,7 @@ private:
 
     // List of contained membranes. Members of this class because they
     // do not belong in a well-mixed geometry description
-    std::map<std::string, steps::tetmesh::Memb *>       pMembs;
+    MembPMap       pMembs;
     std::map<std::string, steps::tetmesh::DiffBoundary *> pDiffBoundaries;
     std::map<std::string, steps::tetmesh::SDiffBoundary *> pSDiffBoundaries;
     

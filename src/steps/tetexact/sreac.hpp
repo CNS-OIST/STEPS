@@ -69,7 +69,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     SReac(steps::solver::SReacdef * srdef, steps::tetexact::Tri * tri);
-    ~SReac(void);
+    ~SReac();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -84,34 +84,34 @@ public:
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    double c(void) const
+    double c() const
     { return pCcst; }
-    void resetCcst(void);
+    void resetCcst();
 
-    inline double kcst(void) const
+    inline double kcst() const
     { return pKcst; }
     void setKcst(double k);
 
-    double h(void)
+    double h()
     { return (rate()/pCcst); }
 
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    void setupDeps(void);
+    void setupDeps();
     bool depSpecTet(uint gidx, steps::tetexact::WmVol * tet);
     bool depSpecTri(uint gidx, steps::tetexact::Tri * tri);
-    void reset(void);
+    void reset();
     double rate(steps::tetexact::Tetexact * solver = 0);
     std::vector<KProc*> const & apply(steps::rng::RNG * rng, double dt, double simtime);
 
-    uint updVecSize(void) const
+    uint updVecSize() const
     { return pUpdVec.size(); }
 
     ////////////////////////////////////////////////////////////////////////
 
-    //inline steps::solver::Reacdef * defr(void) const
+    //inline steps::solver::Reacdef * defr() const
     //{ return pReacdef; }
 
     ////////////////////////////////////////////////////////////////////////

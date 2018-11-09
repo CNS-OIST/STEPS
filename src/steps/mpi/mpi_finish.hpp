@@ -41,7 +41,7 @@
  namespace steps {
  namespace mpi {
 
-void mpiFinish(void);
+void mpiFinish();
 
 }
 }

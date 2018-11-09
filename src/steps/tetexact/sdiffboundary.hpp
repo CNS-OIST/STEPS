@@ -73,7 +73,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     SDiffBoundary(steps::solver::SDiffBoundarydef * sdbdef);
-    ~SDiffBoundary(void);
+    ~SDiffBoundary();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -88,23 +88,23 @@ public:
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::SDiffBoundarydef * def(void) const
+    inline steps::solver::SDiffBoundarydef * def() const
     { return pSDiffBoundarydef; }
 
     // We need access to the compartments so as to check if species are defined
-    stex::Patch * patchA(void);
+    stex::Patch * patchA();
 
-    stex::Patch * patchB(void);
+    stex::Patch * patchB();
 
     void setPatches(stex::Patch * patcha, stex::Patch * patchb);
 
 
     void setTriDirection(uint tri, uint direction);
 
-    std::vector<uint> getTris(void) const
+    std::vector<uint> getTris() const
     { return pTris; }
 
-    std::vector<uint> getTriDirection(void) const
+    std::vector<uint> getTriDirection() const
     { return pTriDirection; }
 
     ////////////////////////////////////////////////////////////////////////

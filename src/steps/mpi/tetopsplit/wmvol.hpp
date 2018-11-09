@@ -87,7 +87,7 @@ public:
         uint idx, steps::solver::Compdef * cdef, double vol, int rank, int host_rank
     );
 
-    virtual ~WmVol(void);
+    virtual ~WmVol();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -111,15 +111,15 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    virtual void reset(void);
+    virtual void reset();
 
     ////////////////////////////////////////////////////////////////////////
     // GENERAL INFORMATION
     ////////////////////////////////////////////////////////////////////////
-    inline steps::solver::Compdef * compdef(void) const
+    inline steps::solver::Compdef * compdef() const
     { return pCompdef; }
 
-    inline uint idx(void) const
+    inline uint idx() const
     { return pIdx; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -128,13 +128,13 @@ public:
 
     /// Get the volume.
     ///
-    inline double vol(void) const
+    inline double vol() const
     { return pVol; }
 
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline uint * pools(void) const
+    inline uint * pools() const
     { return pPoolCount; }
     virtual void setCount(uint lidx, uint count, double period = 0.0);
     virtual void incCount(uint lidx, int inc, double period = 0.0, bool local_change = false);
@@ -150,25 +150,25 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline std::vector<smtos::Tri *>::const_iterator nexttriBegin(void) const
+    inline std::vector<smtos::Tri *>::const_iterator nexttriBegin() const
     { return pNextTris.begin(); }
-    inline std::vector<smtos::Tri *>::const_iterator nexttriEnd(void) const
+    inline std::vector<smtos::Tri *>::const_iterator nexttriEnd() const
     { return pNextTris.end(); }
-    inline uint countNextTris(void) const
+    inline uint countNextTris() const
     { return pNextTris.size(); }
 
 
-    inline std::vector<smtos::KProc *>::const_iterator kprocBegin(void) const
+    inline std::vector<smtos::KProc *>::const_iterator kprocBegin() const
     { return pKProcs.begin(); }
-    inline std::vector<smtos::KProc *>::const_iterator kprocEnd(void) const
+    inline std::vector<smtos::KProc *>::const_iterator kprocEnd() const
     { return pKProcs.end(); }
-    inline uint getStartKProcIdx(void)
+    inline uint getStartKProcIdx()
     {return startKProcIdx;}
-    inline uint countKProcs(void) const
+    inline uint countKProcs() const
     {
         return nKProcs;
     }
-    inline std::vector<smtos::KProc *> & kprocs(void)
+    inline std::vector<smtos::KProc *> & kprocs()
     { return pKProcs; }
     
     inline KProc * getKProc(uint lidx)
@@ -182,25 +182,25 @@ public:
     
     virtual double getPoolOccupancy(uint lidx);
     virtual double getLastUpdate(uint lidx);
-    virtual void resetPoolOccupancy(void);
+    virtual void resetPoolOccupancy();
 
     ////////////////////////////////////////////////////////////////////////
     
     // MPISTEPS
-    bool getInHost(void);
-    int getHost(void) {return hostRank;}
+    bool getInHost();
+    int getHost() {return hostRank;}
     void setHost(int host, int rank);
     //void addSyncHost(int host);
     void setSolver(steps::mpi::tetopsplit::TetOpSplitP* solver);
-    steps::mpi::tetopsplit::TetOpSplitP* solver(void);
+    steps::mpi::tetopsplit::TetOpSplitP* solver();
     
-    //virtual void sendSyncPools(void);
+    //virtual void sendSyncPools();
     //void recvSyncPools(int source);
     // MPISTEPS
     
     /////////////////////////// Dependency ////////////////////////////////
     // setup dependence for KProcs in this subvolume
-    void setupDeps(void);
+    void setupDeps();
     
     // check if kp_lidx in this vol depends on spec_gidx in WMVol kp_container
     virtual bool KProcDepSpecTet(uint kp_lidx, WmVol* kp_container, uint spec_gidx);

@@ -83,7 +83,7 @@ public:
         uint idx, steps::solver::Compdef * cdef, double vol
     );
 
-    virtual ~WmVol(void);
+    virtual ~WmVol();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -107,15 +107,15 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    virtual void reset(void);
+    virtual void reset();
 
     ////////////////////////////////////////////////////////////////////////
     // GENERAL INFORMATION
     ////////////////////////////////////////////////////////////////////////
-    inline steps::solver::Compdef * compdef(void) const
+    inline steps::solver::Compdef * compdef() const
     { return pCompdef; }
 
-    inline uint idx(void) const
+    inline uint idx() const
     { return pIdx; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -124,13 +124,13 @@ public:
 
     /// Get the volume.
     ///
-    inline double vol(void) const
+    inline double vol() const
     { return pVol; }
 
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline uint * pools(void) const
+    inline uint * pools() const
     { return pPoolCount; }
     void setCount(uint lidx, uint count);
     void incCount(uint lidx, int inc);
@@ -146,23 +146,23 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline std::vector<stex::Tri *>::const_iterator nexttriBegin(void) const
+    inline std::vector<stex::Tri *>::const_iterator nexttriBegin() const
     { return pNextTris.begin(); }
-    inline std::vector<stex::Tri *>::const_iterator nexttriEnd(void) const
+    inline std::vector<stex::Tri *>::const_iterator nexttriEnd() const
     { return pNextTris.end(); }
-    inline uint countNextTris(void) const
+    inline uint countNextTris() const
     { return pNextTris.size(); }
-    inline const std::vector<stex::Tri *> & nexttris(void) const
+    inline const std::vector<stex::Tri *> & nexttris() const
     { return pNextTris; }
 
 
-    inline std::vector<stex::KProc *>::const_iterator kprocBegin(void) const
+    inline std::vector<stex::KProc *>::const_iterator kprocBegin() const
     { return pKProcs.begin(); }
-    inline std::vector<stex::KProc *>::const_iterator kprocEnd(void) const
+    inline std::vector<stex::KProc *>::const_iterator kprocEnd() const
     { return pKProcs.end(); }
-    inline uint countKProcs(void) const
+    inline uint countKProcs() const
     { return pKProcs.size(); }
-    inline std::vector<stex::KProc *> & kprocs(void)
+    inline std::vector<stex::KProc *> & kprocs()
     { return pKProcs; }
 
     stex::Reac * reac(uint lidx) const;

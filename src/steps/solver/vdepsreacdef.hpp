@@ -75,7 +75,7 @@ public:
     VDepSReacdef(Statedef * sd, uint gidx, steps::model::VDepSReac * vdsr);
 
     /// Destructor
-    ~VDepSReacdef(void);
+    ~VDepSReacdef();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -91,22 +91,22 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Setup the object.
-    void setup(void);
+    void setup();
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: VOLTAGE-DEPENDENT REACTION
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this voltage-dependent reaction.
-    inline uint gidx(void) const
+    inline uint gidx() const
     { return pIdx; }
 
     /// Return the name of the voltage-dependent reaction.
-    inline std::string const name(void) const
+    inline std::string const name() const
     { return pName; }
 
     /// Return the order of this surface reaction.
-    inline uint order(void) const
+    inline uint order() const
     { return pOrder; }
 
     /// Returns the reaction constant for value of V in the range.
@@ -119,7 +119,7 @@ public:
 
     /// Returns true if the left hand side of the reaction stoichiometry
     /// involves reactants on the surface and on the inside volume.
-    inline bool inside(void) const
+    inline bool inside() const
     { return (pOrient == INSIDE); }
 
     /// Returns true if any aspect of the surface reaction references
@@ -136,8 +136,8 @@ public:
     /// It basically polls SReacDef::req_I for each possible species.
 
     ///
-    //bool reqInside(void) const;
-    inline bool reqInside(void) const
+    //bool reqInside() const;
+    inline bool reqInside() const
     { return pReqInside; }
 
 
@@ -146,7 +146,7 @@ public:
     /// method is mutually exclusive with SReacDef::inside, but not
     /// with SReacDef::insideRef.
     ///
-    inline bool outside(void) const
+    inline bool outside() const
     { return (pOrient == OUTSIDE); }
 
     /// Returns true if any aspect of the surface reaction references
@@ -162,15 +162,15 @@ public:
     ///
     /// It basically polls SReacDef::req_O for each possible species.
     ///
-    //bool reqOutside(void) const;
-    inline bool reqOutside(void) const
+    //bool reqOutside() const;
+    inline bool reqOutside() const
     { return pReqOutside; }
 
 
     /// Return true if this reaction only involves surface species,
     /// nothing in a volume at all. In that case the reaction constant
     /// should be treated in 2D
-    inline bool surf_surf(void) const
+    inline bool surf_surf() const
     { return pSurface_surface; }
 
     /// Returns the number of molecules of species idx required in
@@ -217,17 +217,17 @@ public:
     bool reqspec_S(uint gidx) const;
     bool reqspec_O(uint gidx) const;
 
-    inline gidxTVecCI beginUpdColl_I(void) const
+    inline gidxTVecCI beginUpdColl_I() const
     { return pSpec_I_UPD_Coll.begin(); }
-    inline gidxTVecCI endUpdColl_I(void) const
+    inline gidxTVecCI endUpdColl_I() const
     { return pSpec_I_UPD_Coll.end(); }
-    inline gidxTVecCI beginUpdColl_S(void) const
+    inline gidxTVecCI beginUpdColl_S() const
     { return pSpec_S_UPD_Coll.begin(); }
-    inline gidxTVecCI endUpdColl_S(void) const
+    inline gidxTVecCI endUpdColl_S() const
     { return pSpec_S_UPD_Coll.end(); }
-    inline gidxTVecCI beginUpdColl_O(void) const
+    inline gidxTVecCI beginUpdColl_O() const
     { return pSpec_O_UPD_Coll.begin(); }
-    inline gidxTVecCI endUpdColl_O(void) const
+    inline gidxTVecCI endUpdColl_O() const
     { return pSpec_O_UPD_Coll.end(); }
 
     ////////////////////////////////////////////////////////////////////////

@@ -67,7 +67,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     SDiff(steps::solver::Diffdef * sdef, steps::mpi::tetopsplit::Tri * tri);
-    ~SDiff(void);
+    ~SDiff();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -82,19 +82,19 @@ public:
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Diffdef * def(void) const
+    inline steps::solver::Diffdef * def() const
     { return pSDiffdef; }
 
     double dcst(int direction = -1);
     void setDcst(double d);
     void setDirectionDcst(int direction, double dcst);
 
-    void setupDeps(void);
+    void setupDeps();
 
     bool depSpecTet(uint gidx, steps::mpi::tetopsplit::WmVol * tet);
     bool depSpecTri(uint gidx, steps::mpi::tetopsplit::Tri * tri);
 
-    void reset(void);
+    void reset();
     double rate(steps::mpi::tetopsplit::TetOpSplitP * solver = 0);
     double getScaledDcst(steps::mpi::tetopsplit::TetOpSplitP * solver = 0);
     
@@ -105,11 +105,11 @@ public:
     std::vector<KProc*> const & getLocalUpdVec(int direction = -1);
     std::vector<uint> const & getRemoteUpdVec(int direction = -1);
 
-    bool getInHost(void) {
+    bool getInHost() {
         return pTri->getInHost();
     }
     
-    int getHost(void) {
+    int getHost() {
         return pTri->getHost();
     }
     ////////////////////////////////////////////////////////////////////////
@@ -120,11 +120,11 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline uint getLigLidx(void) {return lidxTri;}
+    inline uint getLigLidx() {return lidxTri;}
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::mpi::tetopsplit::Tri* getTri(void) {return pTri;}
+    inline steps::mpi::tetopsplit::Tri* getTri() {return pTri;}
 
     ////////////////////////////////////////////////////////////////////////
 

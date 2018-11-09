@@ -26,17 +26,17 @@
 
 // STL headers.
 #include <cassert>
+#include <map>
 #include <sstream>
 #include <string>
-#include <map>
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
-#include "steps/model/model.hpp"
-#include "steps/model/spec.hpp"
 #include "steps/model/chan.hpp"
 #include "steps/model/chanstate.hpp"
+#include "steps/model/model.hpp"
+#include "steps/model/spec.hpp"
 #include "steps/util/checkid.hpp"
 
 // logging
@@ -55,7 +55,7 @@ Chan::Chan(string const & id, Model * model)
 , pModel(model)
 , pChanStates()
 {
-    if (pModel == 0)
+    if (pModel == nullptr)
     {
         ostringstream os;
         os << "No model provided to Channel initializer function.";
@@ -66,15 +66,16 @@ Chan::Chan(string const & id, Model * model)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Chan::~Chan(void)
+Chan::~Chan()
 {
-    if (pModel == 0) return;
+    if (pModel == nullptr) { return;
+}
     _handleSelfDelete();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Chan::_handleSelfDelete(void)
+void Chan::_handleSelfDelete()
 {
     std::vector<steps::model::ChanState *> allstates = getAllChanStates();
     ChanStatePVecCI cstate_end = allstates.end();
@@ -85,7 +86,7 @@ void Chan::_handleSelfDelete(void)
 
     pModel->_handleChanDel(this);
     pChanStates.clear();
-    pModel = 0;
+    pModel = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -120,7 +121,7 @@ ChanState * Chan::getChanState(string const & id) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<ChanState *> Chan::getAllChanStates(void) const
+std::vector<ChanState *> Chan::getAllChanStates() const
 {
     ChanStatePVec cstates = ChanStatePVec();
     ChanStatePMapCI cs_end = pChanStates.end();

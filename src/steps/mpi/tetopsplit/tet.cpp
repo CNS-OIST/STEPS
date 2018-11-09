@@ -26,29 +26,29 @@
 
 
 // Standard library & STL headers.
+#include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <algorithm>
 #include <functional>
 #include <iostream>
-#include <vector>
 #include <iostream>
-#include <sstream>
 #include <limits> 
+#include <sstream>
+#include <vector>
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
+#include "steps/mpi/tetopsplit/diff.hpp"
+#include "steps/mpi/tetopsplit/kproc.hpp"
+#include "steps/mpi/tetopsplit/reac.hpp"
+#include "steps/mpi/tetopsplit/tet.hpp"
+#include "steps/mpi/tetopsplit/tetopsplit.hpp"
+#include "steps/mpi/tetopsplit/tri.hpp"
+#include "steps/mpi/tetopsplit/wmvol.hpp"
 #include "steps/solver/compdef.hpp"
 #include "steps/solver/diffdef.hpp"
 #include "steps/solver/reacdef.hpp"
-#include "steps/mpi/tetopsplit/diff.hpp"
-#include "steps/mpi/tetopsplit/reac.hpp"
-#include "steps/mpi/tetopsplit/tet.hpp"
-#include "steps/mpi/tetopsplit/tri.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-#include "steps/mpi/tetopsplit/tetopsplit.hpp"
-#include "steps/mpi/tetopsplit/wmvol.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -73,8 +73,8 @@ smtos::Tet::Tet
 , pNextTet()
 , pAreas()
 , pDist()
-, pPoolOccupancy(0)
-, pLastUpdate(0)
+, pPoolOccupancy(nullptr)
+, pLastUpdate(nullptr)
 {
     AssertLog(a0 > 0.0 && a1 > 0.0 && a2 > 0.0 && a3 > 0.0);
     AssertLog(d0 >= 0.0 && d1 >= 0.0 && d2 >= 0.0 && d3 >= 0.0);
@@ -85,7 +85,7 @@ smtos::Tet::Tet
     // but we can store their indices
     for (uint i=0; i <= 3; ++i)
     {
-        pNextTet[i] = 0;
+        pNextTet[i] = nullptr;
         pNextTris[i] = 0;
     }
     pTets[0] = tet0;
@@ -114,7 +114,7 @@ smtos::Tet::Tet
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::Tet::~Tet(void)
+smtos::Tet::~Tet()
 {
     delete[] pPoolOccupancy;
     delete[] pLastUpdate;
@@ -174,7 +174,7 @@ void smtos::Tet::setNextTri(uint i, smtos::Tri * t)
     // This is too common now to include this message- for any internal patch this happens
     //if (pNextTet[i] != 0) CLOG(INFO, "general_log") << "WARNING: writing over nextTet index " << i;
 
-    pNextTet[i] = 0;
+    pNextTet[i] = nullptr;
     pNextTris[i]= t;
 }
 
@@ -197,16 +197,16 @@ void smtos::Tet::setupKProcs(smtos::TetOpSplitP * tex)
             ssolver::Reacdef * rdef = compdef()->reacdef(i);
             smtos::Reac * r = new smtos::Reac(rdef, this);
             pKProcs[j++] = r;
-            uint idx = tex->addKProc(r, hostRank);
+            uint idx = tex->addKProc(r);
             r->setSchedIDX(idx);
         }
         
         for (uint i = 0; i < ndiffs; ++i)
         {
             ssolver::Diffdef * ddef = compdef()->diffdef(i);
-            smtos::Diff * d = new smtos::Diff(ddef, this);
+            auto * d = new smtos::Diff(ddef, this);
             kprocs()[j++] = d;
-            uint idx = tex->addKProc(d, hostRank);
+            uint idx = tex->addKProc(d);
             d->setSchedIDX(idx);
             tex->addDiff(d);
         }
@@ -217,7 +217,7 @@ void smtos::Tet::setupKProcs(smtos::TetOpSplitP * tex)
         
         for (uint i = 0; i < nKProcs; ++i)
         {
-            uint idx = tex->addKProc(NULL, hostRank);
+            uint idx = tex->addKProc(NULL);
         }
     }
 
@@ -230,9 +230,10 @@ void smtos::Tet::setupKProcs(smtos::TetOpSplitP * tex)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Tet::setupDeps(void)
+void smtos::Tet::setupDeps()
 {
-    if (myRank != hostRank) return;
+    if (myRank != hostRank) { return;
+}
     uint nkprocs = pKProcs.size();
     for (uint k = 0; k < nkprocs; k++) {
         pKProcs[k]->setupDeps();
@@ -244,7 +245,8 @@ void smtos::Tet::setupDeps(void)
     {
         // Fetch next tetrahedron, if it exists.
         smtos::Tet * next = nextTet(i);
-        if (next == 0) continue;
+        if (next == nullptr) { continue;
+}
         if (next->getHost() != getHost()) {
             has_remote_neighbors = true;
             break;
@@ -274,7 +276,8 @@ void smtos::Tet::setupDeps(void)
         for (uint i = 0; i < 4; ++i)
         {
             smtos::Tri * next = nextTri(i);
-            if (next == 0) continue;
+            if (next == nullptr) { continue;
+}
             
             // next tri has to be in the same host to prevent
             // cross process surface reaction
@@ -306,7 +309,7 @@ bool smtos::Tet::KProcDepSpecTet(uint kp_lidx, smtos::WmVol* kp_container,  uint
     if (remain < compdef()->countReacs()) {
         if (kp_container != this) return false;
         ssolver::Reacdef * rdef = compdef()->reacdef(remain);
-        return rdef->dep(spec_gidx);
+        return rdef->dep(spec_gidx) != 0;
     }
     remain -= compdef()->countReacs();
     AssertLog(remain < compdef()->countDiffs());
@@ -362,7 +365,8 @@ void smtos::Tet::setCount(uint lidx, uint count, double period)
     uint oldcount = pPoolCount[lidx];
 	pPoolCount[lidx] = count;
 	
-	if (period == 0.0) return;
+	if (period == 0.0) { return;
+}
 	
 	// Count has changed,
 	double lastupdate = pLastUpdate[lidx];
@@ -400,7 +404,8 @@ void smtos::Tet::incCount(uint lidx, int inc, double period, bool local_change)
 		pPoolCount[lidx] += inc;
 		
 		
-		if (period == 0.0 || local_change) return;
+		if (period == 0.0 || local_change) { return;
+}
 		// Count has changed,
 		double lastupdate = pLastUpdate[lidx];
 		AssertLog(period >= lastupdate);
@@ -433,7 +438,7 @@ double smtos::Tet::getLastUpdate(uint lidx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Tet::resetPoolOccupancy(void)
+void smtos::Tet::resetPoolOccupancy()
 {
     uint nspecs = compdef()->countSpecs();
     std::fill_n(pPoolOccupancy, nspecs, 0.0);
@@ -464,7 +469,7 @@ void smtos::Tet::repartition(smtos::TetOpSplitP * tex, int rank, int host_rank)
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Tet::setupBufferLocations(void)
+void smtos::Tet::setupBufferLocations()
 {
     uint nspecs = pCompdef->countSpecs();
     bufferLocations.assign(nspecs, std::numeric_limits<uint>::max());

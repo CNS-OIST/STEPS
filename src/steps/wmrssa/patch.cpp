@@ -31,18 +31,18 @@
 
 // STEPS headers.
 #include "steps/common.h"
-#include "steps/wmrssa/patch.hpp"
+#include "steps/solver/patchdef.hpp"
+#include "steps/solver/statedef.hpp"
+#include "steps/solver/types.hpp"
 #include "steps/wmrssa/comp.hpp"
 #include "steps/wmrssa/kproc.hpp"
+#include "steps/wmrssa/patch.hpp"
 #include "steps/wmrssa/sreac.hpp"
 #include "steps/wmrssa/wmrssa.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/patchdef.hpp"
-#include "steps/solver/types.hpp"
 
 // logging
-#include "steps/error.hpp"
 #include "easylogging++.h"
+#include "steps/error.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace swmrssa = steps::wmrssa;
@@ -57,16 +57,17 @@ swmrssa::Patch::Patch(steps::solver::Patchdef * patchdef, swmrssa::Comp * icomp,
 , pOComp(ocomp)
 {
     AssertLog(pPatchdef != 0);
-    if (iComp() != 0) iComp()->addIPatch(this);
+    if (iComp() != nullptr) { iComp()->addIPatch(this);
+}
     if (oComp() != 0) oComp()->addOPatch(this);
     uint nspecs = patchdef->countSpecs();
-    pPoolLB = new double[nspecs];
-    pPoolUB = new double[nspecs];
+    pPoolLB = new double[nspecs]();
+    pPoolUB = new double[nspecs]();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmrssa::Patch::~Patch(void)
+swmrssa::Patch::~Patch()
 {
     for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
     {
@@ -104,7 +105,7 @@ void swmrssa::Patch::setupKProcs(swmrssa::Wmrssa * wmd)
     for (uint i = 0; i < nsreacs; ++i)
     {
         ssolver::SReacdef * srdef = def()->sreacdef(i);
-        swmrssa::SReac * sr = new swmrssa::SReac(srdef, this);
+        auto * sr = new swmrssa::SReac(srdef, this);
         pKProcs[i] = sr;
         wmd->addKProc(sr);
     }
@@ -112,7 +113,7 @@ void swmrssa::Patch::setupKProcs(swmrssa::Wmrssa * wmd)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::Patch::setupDeps(void)
+void swmrssa::Patch::setupDeps()
 {
     std::for_each(pKProcs.begin(), pKProcs.end(),
         std::mem_fun(&KProc::setupDeps));
@@ -128,7 +129,7 @@ swmrssa::KProc * swmrssa::Patch::sreac(uint lsridx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::Patch::reset(void)
+void swmrssa::Patch::reset()
 {
     std::for_each(pKProcs.begin(), pKProcs.end(), std::mem_fun(&KProc::reset));
 }
@@ -169,8 +170,9 @@ void swmrssa::Patch::setBounds(uint i, int nc)
 bool swmrssa::Patch::isOutOfBound(uint i, int nc)
 {
     AssertLog(i < def()->countSpecs());
-    if (nc > pPoolLB[i] && nc < pPoolUB[i])
+    if (nc > pPoolLB[i] && nc < pPoolUB[i]) {
         return false;
+}
     setBounds(i, nc);
     return true;
 }
@@ -192,7 +194,7 @@ double* swmrssa::Patch::pools(steps::wmrssa::PropensityRSSA prssa) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::Patch::setupSpecDeps(void)
+void swmrssa::Patch::setupSpecDeps()
 {
     uint nspecs = def()->countSpecs();
     localSpecUpdKProcs.resize(nspecs);
@@ -204,7 +206,7 @@ void swmrssa::Patch::setupSpecDeps(void)
                 localSpecUpdKProcs[slidx].push_back(*k);
             }
         }
-        if (pIComp)
+        if (pIComp != nullptr)
         {
             KProcPVecCI kprocend = pIComp->kprocEnd();
             for (KProcPVecCI k = pIComp->kprocBegin(); k != kprocend; ++k) {
@@ -213,7 +215,7 @@ void swmrssa::Patch::setupSpecDeps(void)
                 }
             }
         }
-        if (pOComp)
+        if (pOComp != nullptr)
         {
             KProcPVecCI kprocend = pOComp->kprocEnd();
             for (KProcPVecCI k = pOComp->kprocBegin(); k != kprocend; ++k) {

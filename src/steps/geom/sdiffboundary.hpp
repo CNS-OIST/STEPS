@@ -87,7 +87,7 @@ public:
 
     ///
     /// This is the constructor for the tetmesh (tetrahedron mesh) namespace.
-    SDiffBoundary(std::string const & id, Tetmesh * container,
+    SDiffBoundary(std::string id, Tetmesh * container,
             std::vector<uint> const & bars, std::vector<steps::tetmesh::TmPatch *> const & patches);
 
     /// Destructor.
@@ -100,7 +100,7 @@ public:
     /// Return the patch id.
     ///
     /// \return ID of the surface diffusion boundary.
-    std::string getID(void) const
+    std::string const & getID() const
     { return pID; }
 
     /// Set or change the surface diffusion boundary id.
@@ -111,25 +111,25 @@ public:
     /// Return a pointer to the geometry container object.
     ///
     /// \return Pointer to the parent geometry container.
-    steps::tetmesh::Tetmesh * getContainer(void) const
+    steps::tetmesh::Tetmesh * getContainer() const
     { return pTetmesh; }
 
     /// Return whether bars (specified by index) are inside this surface diffusion boundary.
     ///
     /// \param bar List of indices of bars.
     /// \return Results of whether the bars are inside the surface diffusion boundary.
-    std::vector<bool> isBarInside(const std::vector<uint> &bar) const;
+    std::vector<bool> isBarInside(const std::vector<uint> &bars) const;
 
     /// Return all bars (by index) in the surface diffusion boundary.
     ///
     /// \return List of indices of bars.
-    inline std::vector<uint> getAllBarIndices(void) const
+    inline std::vector<uint> const & getAllBarIndices() const
     { return pBar_indices; }
 
     /// Return the patches this surface diffusion boundary connects
     ///
     /// \return List of the two patches.
-    inline std::vector<steps::wm::Patch *> getPatches(void) const
+    inline std::vector<steps::wm::Patch *> getPatches() const
     { return std::vector<steps::wm::Patch *>{pIPatch, pOPatch}; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -139,7 +139,7 @@ public:
     /// Return all bars (by index) in the surface diffusion boundary.
     ///
     /// \return List of indices of bars.
-    inline std::vector<uint> const & _getAllBarIndices(void) const
+    inline std::vector<uint> const & _getAllBarIndices() const
     { return pBar_indices; }
 
     ////////////////////////////////////////////////////////////////////////

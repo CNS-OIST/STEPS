@@ -26,31 +26,31 @@
 
 
 // Standard library & STL headers.
-#include <cmath>
-#include <vector>
-#include <cassert>
-#include <iostream>
-#include <sstream>
 #include <algorithm>
+#include <cassert>
+#include <cmath>
+#include <iostream>
 #include <limits>
+#include <sstream>
+#include <vector>
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
-#include "steps/wmdirect/wmdirect.hpp"
-#include "steps/wmdirect/kproc.hpp"
-#include "steps/wmdirect/comp.hpp"
-#include "steps/wmdirect/patch.hpp"
-#include "steps/wmdirect/reac.hpp"
-#include "steps/wmdirect/sreac.hpp"
-#include "steps/math/constants.hpp"
 #include "steps/error.hpp"
-#include "steps/solver/statedef.hpp"
+#include "steps/math/constants.hpp"
 #include "steps/solver/compdef.hpp"
 #include "steps/solver/patchdef.hpp"
 #include "steps/solver/reacdef.hpp"
 #include "steps/solver/sreacdef.hpp"
+#include "steps/solver/statedef.hpp"
 #include "steps/solver/types.hpp"
+#include "steps/wmdirect/comp.hpp"
+#include "steps/wmdirect/kproc.hpp"
+#include "steps/wmdirect/patch.hpp"
+#include "steps/wmdirect/reac.hpp"
+#include "steps/wmdirect/sreac.hpp"
+#include "steps/wmdirect/wmdirect.hpp"
 // logging
 #include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
@@ -97,9 +97,9 @@ swmd::Wmdirect::Wmdirect(steps::model::Model * m, steps::wm::Geom * g, steps::rn
 , pLevelSizes()
 , pLevels()
 , pBuilt(false)
-, pIndices(0)
+, pIndices(nullptr)
 , pMaxUpSize(0)
-, pRannum(0)
+, pRannum(nullptr)
 {
     AssertLog(model() != 0);
     AssertLog(geom() != 0);
@@ -129,11 +129,14 @@ swmd::Wmdirect::Wmdirect(steps::model::Model * m, steps::wm::Geom * g, steps::rn
     }
 
     _setup();
+
+    // force update for zero order reactions
+    _reset();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmd::Wmdirect::~Wmdirect(void)
+swmd::Wmdirect::~Wmdirect()
 {
 
     CompPVecCI comp_e = pComps.end();
@@ -217,7 +220,7 @@ uint swmd::Wmdirect::_addPatch(steps::solver::Patchdef * pdef)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Wmdirect::_setup(void)
+void swmd::Wmdirect::_setup()
 {
     CompPVecCI c_end = pComps.end();
     for (CompPVecCI c = pComps.begin(); c != c_end; ++c)
@@ -256,28 +259,28 @@ void swmd::Wmdirect::_setup(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string swmd::Wmdirect::getSolverName(void) const
+std::string swmd::Wmdirect::getSolverName() const
 {
     return "wmdirect";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string swmd::Wmdirect::getSolverDesc(void) const
+std::string swmd::Wmdirect::getSolverDesc() const
 {
     return "SSA Direct Method in well-mixed conditions";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string swmd::Wmdirect::getSolverAuthors(void) const
+std::string swmd::Wmdirect::getSolverAuthors() const
 {
     return "Stefan Wils and Iain Hepburn";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string swmd::Wmdirect::getSolverEmail(void) const
+std::string swmd::Wmdirect::getSolverEmail() const
 {
     return "stefan@tnb.ua.ac.be, ihepburn@oist.jp";
 }
@@ -285,7 +288,7 @@ std::string swmd::Wmdirect::getSolverEmail(void) const
 
 ////////////////////////////////////////////////////////////////////////
 
-void swmd::Wmdirect::reset(void)
+void swmd::Wmdirect::reset()
 {
     uint comps = statedef()->countComps();
     for (uint i=0; i < comps; ++i) statedef()->compdef(i)->reset();
@@ -341,7 +344,7 @@ void swmd::Wmdirect::advance(double adv)
 
 ////////////////////////////////////////////////////////////////////////
 
-void swmd::Wmdirect::step(void)
+void swmd::Wmdirect::step()
 {
     swmd::KProc * kp = _getNext();
     if (kp == 0) return;
@@ -353,14 +356,14 @@ void swmd::Wmdirect::step(void)
 
 ////////////////////////////////////////////////////////////////////////
 
-double swmd::Wmdirect::getTime(void) const
+double swmd::Wmdirect::getTime() const
 {
     return statedef()->time();
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-uint swmd::Wmdirect::getNSteps(void) const
+uint swmd::Wmdirect::getNSteps() const
 {
     return statedef()->nsteps();
 }
@@ -1151,7 +1154,7 @@ void swmd::Wmdirect::addKProc(KProc * kp)
 
 ////////////////////////////////////////////////////////////////////////
 
-void swmd::Wmdirect::_build(void)
+void swmd::Wmdirect::_build()
 {
     AssertLog(pBuilt == false);
 
@@ -1210,7 +1213,7 @@ void swmd::Wmdirect::_build(void)
 
 ////////////////////////////////////////////////////////////////////////
 
-swmd::KProc * swmd::Wmdirect::_getNext(void) const
+swmd::KProc * swmd::Wmdirect::_getNext() const
 {
     AssertLog(pA0 >= 0.0);
     // Stefan's remark on using one random number for each branch instead of just one for the whole search
@@ -1279,7 +1282,7 @@ swmd::KProc * swmd::Wmdirect::_getNext(void) const
 
 ////////////////////////////////////////////////////////////////////////
 
-void swmd::Wmdirect::_reset(void)
+void swmd::Wmdirect::_reset()
 {
     if (pKProcs.size() == 0) return;
 

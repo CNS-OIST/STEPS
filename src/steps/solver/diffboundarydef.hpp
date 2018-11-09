@@ -67,9 +67,9 @@ public:
     DiffBoundarydef(Statedef * sd, uint idx, steps::tetmesh::DiffBoundary * db);
 
     /// Destructor
-    ~DiffBoundarydef(void);
+    ~DiffBoundarydef();
 
-    void setup(void);
+    void setup();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -85,18 +85,18 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this diffusion boundary.
-    inline uint gidx(void) const
+    inline uint gidx() const
     { return pIdx; }
 
     /// Return the name of this diffusion boundary.
-    std::string const name(void) const;
+    std::string const name() const;
 
-    inline std::vector<uint> tris(void) const
+    inline std::vector<uint> tris() const
     { return pTris; }
 
-    inline uint compa(void) const
+    inline uint compa() const
     { return pCompA; }
-    inline uint compb(void) const
+    inline uint compb() const
     { return pCompB; }
 
 

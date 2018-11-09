@@ -74,7 +74,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     Patch(steps::solver::Patchdef * patchdef, swmd::Comp * icomp, swmd::Comp * ocomp);
-    ~Patch(void);
+    ~Patch();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -88,34 +88,34 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     void setupKProcs(Wmdirect * wmd);
-    void setupDeps(void);
+    void setupDeps();
 
-    void reset(void);
+    void reset();
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Patchdef * def(void) const
+    inline steps::solver::Patchdef * def() const
     { return pPatchdef; }
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline std::vector<steps::wmdirect::KProc *>::const_iterator kprocBegin(void) const
+    inline std::vector<steps::wmdirect::KProc *>::const_iterator kprocBegin() const
     { return pKProcs.begin(); }
-    inline std::vector<steps::wmdirect::KProc *>::const_iterator kprocEnd(void) const
+    inline std::vector<steps::wmdirect::KProc *>::const_iterator kprocEnd() const
     { return pKProcs.end(); }
-    inline uint countKProcs(void) const
+    inline uint countKProcs() const
     { return pKProcs.size(); }
 
     steps::wmdirect::KProc * sreac(uint lsridx) const;
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline swmd::Comp * iComp(void) const
+    inline swmd::Comp * iComp() const
     { return pIComp; }
 
-    inline swmd::Comp * oComp(void) const
+    inline swmd::Comp * oComp() const
     { return pOComp; }
 
     ////////////////////////////////////////////////////////////////////////

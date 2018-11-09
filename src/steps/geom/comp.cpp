@@ -32,8 +32,8 @@
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
-#include "steps/geom/geom.hpp"
 #include "steps/geom/comp.hpp"
+#include "steps/geom/geom.hpp"
 #include "steps/geom/patch.hpp"
 
 #include "steps/model/model.hpp"
@@ -46,15 +46,15 @@ namespace swm = steps::wm;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swm::Comp::Comp(std::string const & id, swm::Geom * container, double vol)
-: pID(id)
+swm::Comp::Comp(std::string id, swm::Geom * container, double vol)
+: pID(std::move(id))
 , pContainer(container)
 , pVolsys()
 , pVol(vol)
 , pIPatches()
 , pOPatches()
 {
-    if (pContainer == 0)
+    if (pContainer == nullptr)
     {
         ArgErrLog("No container provided to Comp initializer function.");
     }
@@ -68,9 +68,11 @@ swm::Comp::Comp(std::string const & id, swm::Geom * container, double vol)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swm::Comp::~Comp(void)
+swm::Comp::~Comp()
 {
-    if (pContainer == 0) return;
+    if (pContainer == nullptr) {
+      return;
+    }
     _handleSelfDelete();
 }
 
@@ -78,8 +80,10 @@ swm::Comp::~Comp(void)
 
 void swm::Comp::setID(std::string const & id)
 {
-    AssertLog(pContainer != 0);
-    if (id == pID) return;
+    AssertLog(pContainer != nullptr);
+    if (id == pID) {
+      return;
+    }
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
     // it pass by into the Python layer.
@@ -93,7 +97,7 @@ void swm::Comp::setID(std::string const & id)
 
 void swm::Comp::setVol(double vol)
 {
-    AssertLog(pContainer != 0);
+    AssertLog(pContainer != nullptr);
     if (vol < 0.0)
     {
         ArgErrLog("Compartment volume can't be negative.");
@@ -201,14 +205,14 @@ void swm::Comp::_delOPatch(swm::Patch * patch)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Comp::_handleSelfDelete(void)
+void swm::Comp::_handleSelfDelete()
 {
     pContainer->_handleCompDel(this);
     pVol = 0.0;
     pVolsys.clear();
     pIPatches.clear();
     pOPatches.clear();
-    pContainer = 0;
+    pContainer = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -216,9 +220,9 @@ void swm::Comp::_handleSelfDelete(void)
 steps::wm::Patch * swm::Comp::_getIPatch(uint lidx) const
 {
     AssertLog(lidx < pIPatches.size());
-    std::set<steps::wm::Patch *>::const_iterator pit = pIPatches.begin();
-    for (uint i=0; i < lidx; ++i) ++pit;
-    return (*pit);
+    auto pit = pIPatches.begin();
+    std::advance(pit, lidx);
+    return *pit;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -226,9 +230,9 @@ steps::wm::Patch * swm::Comp::_getIPatch(uint lidx) const
 steps::wm::Patch * swm::Comp::_getOPatch(uint lidx) const
 {
     AssertLog(lidx < pOPatches.size());
-    std::set<steps::wm::Patch *>::const_iterator pit = pOPatches.begin();
-    for (uint i=0; i < lidx; ++i) ++pit;
-    return (*pit);
+    auto pit = pOPatches.begin();
+    std::advance(pit, lidx);
+    return *pit;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

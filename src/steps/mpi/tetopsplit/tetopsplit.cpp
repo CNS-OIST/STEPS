@@ -26,20 +26,20 @@
 
 
 // Standard library headers.
-#include <cmath>
-#include <vector>
-#include <map>
+#include <algorithm>
+#include <algorithm>
 #include <cassert>
-#include <iostream>
+#include <cmath>
 #include <fstream>
-#include <sstream>
-#include <algorithm>
-#include <limits>
-#include <queue>
 #include <iomanip>
-#include <algorithm>
+#include <iostream>
 #include <iterator>
+#include <limits>
+#include <map>
 #include <numeric>
+#include <queue>
+#include <sstream>
+#include <vector>
 
 #include <mpi.h>
 
@@ -49,45 +49,45 @@
 
 // STEPS headers.
 #include "steps/common.h"
-#include "steps/mpi/mpi_common.hpp"
-#include "steps/mpi/tetopsplit/tetopsplit.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-#include "steps/mpi/tetopsplit/tet.hpp"
-#include "steps/mpi/tetopsplit/tri.hpp"
-#include "steps/mpi/tetopsplit/reac.hpp"
-#include "steps/mpi/tetopsplit/sreac.hpp"
-#include "steps/mpi/tetopsplit/diff.hpp"
-#include "steps/mpi/tetopsplit/sdiff.hpp"
-#include "steps/mpi/tetopsplit/comp.hpp"
-#include "steps/mpi/tetopsplit/patch.hpp"
-#include "steps/mpi/tetopsplit/wmvol.hpp"
-#include "steps/mpi/tetopsplit/ghkcurr.hpp"
-#include "steps/mpi/tetopsplit/vdeptrans.hpp"
-#include "steps/mpi/tetopsplit/vdepsreac.hpp"
-#include "steps/mpi/tetopsplit/diffboundary.hpp"
-#include "steps/mpi/tetopsplit/sdiffboundary.hpp"
+#include "steps/error.hpp"
+#include "steps/geom/tetmesh.hpp"
 #include "steps/math/constants.hpp"
 #include "steps/math/point.hpp"
-#include "steps/error.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/compdef.hpp"
-#include "steps/solver/patchdef.hpp"
-#include "steps/solver/reacdef.hpp"
-#include "steps/solver/sreacdef.hpp"
-#include "steps/solver/diffdef.hpp"
+#include "steps/mpi/mpi_common.hpp"
+#include "steps/mpi/tetopsplit/comp.hpp"
+#include "steps/mpi/tetopsplit/diff.hpp"
+#include "steps/mpi/tetopsplit/diffboundary.hpp"
+#include "steps/mpi/tetopsplit/ghkcurr.hpp"
+#include "steps/mpi/tetopsplit/kproc.hpp"
+#include "steps/mpi/tetopsplit/patch.hpp"
+#include "steps/mpi/tetopsplit/reac.hpp"
+#include "steps/mpi/tetopsplit/sdiff.hpp"
+#include "steps/mpi/tetopsplit/sdiffboundary.hpp"
+#include "steps/mpi/tetopsplit/sreac.hpp"
+#include "steps/mpi/tetopsplit/tet.hpp"
+#include "steps/mpi/tetopsplit/tetopsplit.hpp"
+#include "steps/mpi/tetopsplit/tri.hpp"
+#include "steps/mpi/tetopsplit/vdepsreac.hpp"
+#include "steps/mpi/tetopsplit/vdeptrans.hpp"
+#include "steps/mpi/tetopsplit/wmvol.hpp"
 #include "steps/solver/chandef.hpp"
+#include "steps/solver/compdef.hpp"
+#include "steps/solver/diffboundarydef.hpp"
+#include "steps/solver/diffdef.hpp"
 #include "steps/solver/ghkcurrdef.hpp"
 #include "steps/solver/ohmiccurrdef.hpp"
-#include "steps/solver/vdeptransdef.hpp"
-#include "steps/solver/vdepsreacdef.hpp"
-#include "steps/solver/types.hpp"
-#include "steps/solver/diffboundarydef.hpp"
+#include "steps/solver/patchdef.hpp"
+#include "steps/solver/reacdef.hpp"
 #include "steps/solver/sdiffboundarydef.hpp"
-#include "steps/geom/tetmesh.hpp"
+#include "steps/solver/sreacdef.hpp"
+#include "steps/solver/statedef.hpp"
+#include "steps/solver/types.hpp"
+#include "steps/solver/vdepsreacdef.hpp"
+#include "steps/solver/vdeptransdef.hpp"
 
-#include "steps/solver/efield/efield.hpp"
 #include "steps/solver/efield/dVsolver.hpp"
 #include "steps/solver/efield/dVsolver_slu.hpp"
+#include "steps/solver/efield/efield.hpp"
 #ifdef USE_PETSC
 #include "steps/solver/efield/dVsolver_petsc.hpp"
 #endif
@@ -118,7 +118,7 @@ smtos::TetOpSplitP::TetOpSplitP(steps::model::Model * m, steps::wm::Geom * g, st
         int calcMembPot, std::vector<uint> const &tet_hosts, std::map<uint, uint> const &tri_hosts,
         std::vector<uint> const &wm_hosts)
 : API(m, g, r)
-, pMesh(0)
+, pMesh(nullptr)
 , pKProcs()
 , pComps()
 , pCompMap()
@@ -176,13 +176,13 @@ smtos::TetOpSplitP::TetOpSplitP(steps::model::Model * m, steps::wm::Geom * g, st
     // All initialization code now in _setup() to allow EField solver to be
     // derived and create EField local objects within the constructor
     _setup();
-    
+    _updateLocal();
     MPI_Barrier(MPI_COMM_WORLD);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::TetOpSplitP::~TetOpSplitP(void)
+smtos::TetOpSplitP::~TetOpSplitP()
 {
     for (auto c: pComps) delete c;
     for (auto p: pPatches) delete p;
@@ -470,35 +470,35 @@ void smtos::TetOpSplitP::restore(std::string const & file_name)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-std::string smtos::TetOpSplitP::getSolverName(void) const
+std::string smtos::TetOpSplitP::getSolverName() const
 {
     return "Parallel TetOpSplit";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string smtos::TetOpSplitP::getSolverDesc(void) const
+std::string smtos::TetOpSplitP::getSolverDesc() const
 {
     return "Parallel approximate stochastic method in tetrahedral mesh";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string smtos::TetOpSplitP::getSolverAuthors(void) const
+std::string smtos::TetOpSplitP::getSolverAuthors() const
 {
     return "Iain Hepburn, Weiliang Chen, Stefan Wils, Sam Yates";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string smtos::TetOpSplitP::getSolverEmail(void) const
+std::string smtos::TetOpSplitP::getSolverEmail() const
 {
     return "steps.dev@gmail.com";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::TetOpSplitP::_setup(void)
+void smtos::TetOpSplitP::_setup()
 {
     // Perform upcast.
     pMesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom());
@@ -1098,7 +1098,7 @@ void smtos::TetOpSplitP::_setup(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::TetOpSplitP::_setupEField(void)
+void smtos::TetOpSplitP::_setupEField()
 {
     using steps::math::point3d;
     using namespace steps::solver::efield;
@@ -1160,11 +1160,14 @@ void smtos::TetOpSplitP::_setupEField(void)
     uint ntets= mesh()->countTets();
 
     pEFVert_GtoL = new int[nverts];
-    for (uint i=0; i < nverts; ++i) pEFVert_GtoL[i] = -1;
+    for (uint i=0; i < nverts; ++i) { pEFVert_GtoL[i] = -1;
+}
     pEFTri_GtoL = new int[ntris];
-    for (uint i=0; i< ntris; ++i) pEFTri_GtoL[i] = -1;
+    for (uint i=0; i< ntris; ++i) { pEFTri_GtoL[i] = -1;
+}
     pEFTet_GtoL = new int[ntets];
-    for (uint i=0; i < ntets; ++i) pEFTet_GtoL[i] = -1;
+    for (uint i=0; i < ntets; ++i) { pEFTet_GtoL[i] = -1;
+}
 
     pEFTri_LtoG = new uint[neftris()];
 
@@ -1398,7 +1401,7 @@ void smtos::TetOpSplitP::_addTri(uint triidx, steps::mpi::tetopsplit::Patch * pa
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::TetOpSplitP::reset(void)
+void smtos::TetOpSplitP::reset()
 {
     std::for_each(pComps.begin(), pComps.end(), std::mem_fun(&Comp::reset));
     std::for_each(pPatches.begin(), pPatches.end(), std::mem_fun(&Patch::reset));
@@ -1877,7 +1880,7 @@ void smtos::TetOpSplitP::advance(double adv)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::TetOpSplitP::step(void)
+void smtos::TetOpSplitP::step()
 {
     std::ostringstream os;
     os << "This function is not available for this solver!";
@@ -1886,14 +1889,14 @@ void smtos::TetOpSplitP::step(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::TetOpSplitP::getTime(void) const
+double smtos::TetOpSplitP::getTime() const
 {
     return statedef()->time();
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-uint smtos::TetOpSplitP::getNSteps(void) const
+uint smtos::TetOpSplitP::getNSteps() const
 {
     return statedef()->nsteps();
 }
@@ -3127,7 +3130,7 @@ void smtos::TetOpSplitP::_setSDiffBoundaryDcst(uint sdbidx, uint sidx, double dc
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint smtos::TetOpSplitP::addKProc(steps::mpi::tetopsplit::KProc * kp, int host)
+uint smtos::TetOpSplitP::addKProc(steps::mpi::tetopsplit::KProc * kp)
 {
     SchedIDX nidx = pKProcs.size();
     pKProcs.push_back(kp);
@@ -3136,7 +3139,7 @@ uint smtos::TetOpSplitP::addKProc(steps::mpi::tetopsplit::KProc * kp, int host)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-steps::mpi::tetopsplit::KProc * smtos::TetOpSplitP::_getNext(void) const
+steps::mpi::tetopsplit::KProc * smtos::TetOpSplitP::_getNext() const
 {
 
     AssertLog(pA0 >= 0.0);
@@ -5455,7 +5458,7 @@ void smtos::TetOpSplitP::_setMembVolRes(uint midx, double ro)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::TetOpSplitP::_computeUpdPeriod(void)
+void smtos::TetOpSplitP::_computeUpdPeriod()
 {
     double local_max_rate = 0.0;
     
@@ -5526,7 +5529,7 @@ void smtos::TetOpSplitP::_updateLocal(std::vector<uint> const & upd_entries) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::TetOpSplitP::_updateLocal(void) {
+void smtos::TetOpSplitP::_updateLocal() {
     for (uint i = 0; i < nEntries; i++) {
         KProc* kp = pKProcs[i];
         if (kp != NULL)
@@ -5585,7 +5588,7 @@ void smtos::TetOpSplitP::_extendGroup(CRGroup* group, uint size) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::TetOpSplitP::_updateSum(void) {
+void smtos::TetOpSplitP::_updateSum() {
     pA0 = 0.0;
 
     uint n_neg_groups = nGroups.size();
@@ -8015,7 +8018,7 @@ double smtos::TetOpSplitP::getDiffExtent(bool local)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::TetOpSplitP::getNIteration(void)
+double smtos::TetOpSplitP::getNIteration()
 {
     return nIteration;
 }
@@ -8024,39 +8027,39 @@ double smtos::TetOpSplitP::getNIteration(void)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double smtos::TetOpSplitP::getCompTime(void)
+double smtos::TetOpSplitP::getCompTime()
 {
     return compTime;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::TetOpSplitP::getSyncTime(void)
+double smtos::TetOpSplitP::getSyncTime()
 {
     return syncTime;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-double smtos::TetOpSplitP::getIdleTime(void)
+double smtos::TetOpSplitP::getIdleTime()
 {
     return idleTime;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::TetOpSplitP::getEFieldTime(void)
+double smtos::TetOpSplitP::getEFieldTime()
 {
     return efieldTime;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::TetOpSplitP::getRDTime(void)
+double smtos::TetOpSplitP::getRDTime()
 {
     return rdTime;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::TetOpSplitP::getDataExchangeTime(void)
+double smtos::TetOpSplitP::getDataExchangeTime()
 {
     return dataExchangeTime;
 }

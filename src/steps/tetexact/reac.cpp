@@ -27,18 +27,18 @@
 
 
 // Standard library & STL headers.
-#include <vector>
 #include <iostream>
+#include <vector>
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/math/constants.hpp"
 #include "steps/solver/reacdef.hpp"
+#include "steps/tetexact/kproc.hpp"
 #include "steps/tetexact/reac.hpp"
 #include "steps/tetexact/tet.hpp"
-#include "steps/tetexact/wmvol.hpp"
-#include "steps/tetexact/kproc.hpp"
 #include "steps/tetexact/tetexact.hpp"
+#include "steps/tetexact/wmvol.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -68,8 +68,8 @@ static inline double comp_ccst(double kcst, double vol, uint order, double compv
 ////////////////////////////////////////////////////////////////////////////////
 
 stex::Reac::Reac(ssolver::Reacdef * rdef, stex::WmVol * tet)
-: KProc()
-, pReacdef(rdef)
+: 
+ pReacdef(rdef)
 , pTet(tet)
 , pUpdVec()
 , pCcst(0.0)
@@ -87,9 +87,8 @@ stex::Reac::Reac(ssolver::Reacdef * rdef, stex::WmVol * tet)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Reac::~Reac(void)
-{
-}
+stex::Reac::~Reac()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -125,7 +124,7 @@ void stex::Reac::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Reac::reset(void)
+void stex::Reac::reset()
 {
 
     crData.recorded = false;
@@ -139,7 +138,7 @@ void stex::Reac::reset(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Reac::resetCcst(void)
+void stex::Reac::resetCcst()
 {
     uint lridx = pTet->compdef()->reacG2L(pReacdef->gidx());
     double kcst = pTet->compdef()->kcst(lridx);
@@ -161,7 +160,7 @@ void stex::Reac::setKcst(double k)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Reac::setupDeps(void)
+void stex::Reac::setupDeps()
 {
     std::set<stex::KProc*> updset;
     ssolver::gidxTVecCI sbgn = pReacdef->bgnUpdColl();
@@ -207,8 +206,9 @@ void stex::Reac::setupDeps(void)
 
 bool stex::Reac::depSpecTet(uint gidx, stex::WmVol * tet)
 {
-    if (pTet != tet) return false;
-    return pReacdef->dep(gidx);
+    if (pTet != tet) { return false;
+}
+    return pReacdef->dep(gidx) != 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -235,7 +235,8 @@ double stex::Reac::rate(steps::tetexact::Tetexact * solver)
     for (uint pool = 0; pool < nspecs; ++pool)
     {
         uint lhs = lhs_vec[pool];
-        if (lhs == 0) continue;
+        if (lhs == 0) { continue;
+}
         uint cnt = cnt_vec[pool];
         if (lhs > cnt)
         {

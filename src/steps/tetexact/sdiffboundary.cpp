@@ -31,8 +31,8 @@
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/solver/sdiffboundarydef.hpp"
-#include "steps/tetexact/sdiffboundary.hpp"
 #include "steps/tetexact/patch.hpp"
+#include "steps/tetexact/sdiffboundary.hpp"
 
 
 // logging
@@ -47,8 +47,8 @@ namespace ssolver = steps::solver;
 stex::SDiffBoundary::SDiffBoundary(steps::solver::SDiffBoundarydef * sdbdef)
 : pSDiffBoundarydef(sdbdef)
 , pSetPatches(false)
-, pPatchA(0)
-, pPatchB(0)
+, pPatchA(nullptr)
+, pPatchB(nullptr)
 , pTris()
 , pTriDirection()
 {
@@ -57,10 +57,8 @@ stex::SDiffBoundary::SDiffBoundary(steps::solver::SDiffBoundarydef * sdbdef)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::SDiffBoundary::~SDiffBoundary(void)
-{
-
-}
+stex::SDiffBoundary::~SDiffBoundary()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -92,7 +90,7 @@ void stex::SDiffBoundary::setPatches(stex::Patch * patcha, stex::Patch * patchb)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Patch * stex::SDiffBoundary::patchA(void)
+stex::Patch * stex::SDiffBoundary::patchA()
 {
     AssertLog(pSetPatches == true);
     return pPatchA;
@@ -100,7 +98,7 @@ stex::Patch * stex::SDiffBoundary::patchA(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Patch * stex::SDiffBoundary::patchB(void)
+stex::Patch * stex::SDiffBoundary::patchB()
 {
     AssertLog(pSetPatches == true);
     return pPatchB;

@@ -31,14 +31,14 @@
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/math/constants.hpp"
-#include "steps/wmrssa/reac.hpp"
 #include "steps/wmrssa/comp.hpp"
 #include "steps/wmrssa/kproc.hpp"
+#include "steps/wmrssa/reac.hpp"
 #include "steps/wmrssa/wmrssa.hpp"
 
 // logging
-#include "steps/error.hpp"
 #include "easylogging++.h"
+#include "steps/error.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace swmrssa = steps::wmrssa;
@@ -62,8 +62,8 @@ static inline double comp_ccst(double kcst, double vol, uint order)
 ////////////////////////////////////////////////////////////////////////////////
 
 swmrssa::Reac::Reac(ssolver::Reacdef * rdef, swmrssa::Comp * comp)
-: KProc()
-, pReacdef(rdef)
+: 
+ pReacdef(rdef)
 , pComp(comp)
 , pUpdVec()
 , pCcst(0.0)
@@ -78,9 +78,8 @@ swmrssa::Reac::Reac(ssolver::Reacdef * rdef, swmrssa::Comp * comp)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmrssa::Reac::~Reac(void)
-{
-}
+swmrssa::Reac::~Reac()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -98,7 +97,7 @@ void swmrssa::Reac::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool swmrssa::Reac::active(void) const
+bool swmrssa::Reac::active() const
 {
     uint lridx = pComp->def()->reacG2L(defr()->gidx());
     return pComp->def()->active(lridx);
@@ -106,7 +105,7 @@ bool swmrssa::Reac::active(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::Reac::reset(void)
+void swmrssa::Reac::reset()
 {
     resetExtent();
     uint lridx = pComp->def()->reacG2L(defr()->gidx());
@@ -116,7 +115,7 @@ void swmrssa::Reac::reset(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::Reac::resetCcst(void)
+void swmrssa::Reac::resetCcst()
 {
     uint lridx = pComp->def()->reacG2L(pReacdef->gidx());
     double kcst = pComp->def()->kcst(lridx);
@@ -127,7 +126,7 @@ void swmrssa::Reac::resetCcst(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::Reac::setupDeps(void)
+void swmrssa::Reac::setupDeps()
 {
     ssolver::gidxTVecCI sbgn = defr()->bgnUpdColl();
     ssolver::gidxTVecCI send = defr()->endUpdColl();
@@ -184,8 +183,9 @@ void swmrssa::Reac::setupDeps(ssolver::gidxTVecCI sbgn, ssolver::gidxTVecCI send
 
 bool swmrssa::Reac::depSpecComp(uint gidx, swmrssa::Comp * comp)
 {
-    if (pComp != comp) return false;
-    return defr()->dep(gidx);
+    if (pComp != comp) { return false;
+}
+    return defr()->dep(gidx) != 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -199,10 +199,12 @@ bool swmrssa::Reac::depSpecPatch(uint gidx, swmrssa::Patch * patch)
 
 double swmrssa::Reac::rate(steps::wmrssa::PropensityRSSA prssa)
 {
-    if (inactive()) return 0.0;
+    if (inactive()) { return 0.0;
+}
 
-    if (prssa == steps::wmrssa::BOUNDS)
+    if (prssa == steps::wmrssa::BOUNDS) {
         pPropensityLB = rate(steps::wmrssa::LOWERBOUND);
+}
 
     // Prefetch some variables.
     ssolver::Compdef * cdef = pComp->def();
@@ -215,8 +217,9 @@ double swmrssa::Reac::rate(steps::wmrssa::PropensityRSSA prssa)
         for (uint pool = 0; pool < nspecs; ++pool)
         {
             uint lhs = lhs_vec[pool];
-            if (lhs == 0) continue;
-            uint cnt = static_cast<uint>(cnt_vec[pool]);
+            if (lhs == 0) { continue;
+}
+            auto cnt = static_cast<uint>(cnt_vec[pool]);
             if (lhs > cnt)
             {
                 h_mu = 0.0;
@@ -256,7 +259,7 @@ double swmrssa::Reac::rate(steps::wmrssa::PropensityRSSA prssa)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<uint> const & swmrssa::Reac::apply(void)
+std::vector<uint> const & swmrssa::Reac::apply()
 {
     SchedIDXSet updset;
     //bool returnUpdVec = false;

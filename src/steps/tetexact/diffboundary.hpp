@@ -74,7 +74,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     DiffBoundary(steps::solver::DiffBoundarydef * dbdef);
-    ~DiffBoundary(void);
+    ~DiffBoundary();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -89,13 +89,13 @@ public:
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::DiffBoundarydef * def(void) const
+    inline steps::solver::DiffBoundarydef * def() const
     { return pDiffBoundarydef; }
 
     // We need access to the compartments so as to check if species are defined
-    stex::Comp * compA(void);
+    stex::Comp * compA();
 
-    stex::Comp * compB(void);
+    stex::Comp * compB();
 
     void setComps(stex::Comp * compa, stex::Comp * compb);
 
@@ -112,10 +112,10 @@ public:
     void setTetDirection(uint tet, uint direction);
 
 
-    std::vector<uint> getTets(void) const
+    std::vector<uint> getTets() const
     { return pTets; }
 
-    std::vector<uint> getTetDirection(void) const
+    std::vector<uint> getTetDirection() const
     { return pTetDirection; }
 
     ////////////////////////////////////////////////////////////////////////

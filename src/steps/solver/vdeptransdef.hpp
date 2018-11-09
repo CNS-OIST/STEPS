@@ -69,7 +69,7 @@ public:
     VDepTransdef(Statedef * sd, uint gidx, steps::model::VDepTrans * vdt);
 
     /// Destructor
-    ~VDepTransdef(void);
+    ~VDepTransdef();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -87,18 +87,18 @@ public:
     void setDstChan(uint gidx);
      */
     /// Setup the object.
-    void setup(void);
+    void setup();
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: VOLTAGE-DEPENDENT TRANSITION
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this voltage-dependent transition.
-    inline uint gidx(void) const
+    inline uint gidx() const
     { return pIdx; }
 
     /// Return the name of the voltage-dependent transition.
-    inline std::string const name(void) const
+    inline std::string const name() const
     { return pName; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -115,10 +115,10 @@ public:
 
     /// Return the global index of the source channel state (channel states
     /// stored as species objects)
-    uint srcchanstate(void) const;
+    uint srcchanstate() const;
 
     /// Return the global index of the destination channel
-    uint dstchanstate(void) const;
+    uint dstchanstate() const;
 
     int dep(uint gidx) const;
     bool req(uint gidx) const;

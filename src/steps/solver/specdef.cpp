@@ -32,16 +32,16 @@
  */
 
 // STL headers.
-#include <string>
 #include <cassert>
+#include <string>
 
 // STEPS headers.
 #include "steps/common.h"
-#include "steps/solver/types.hpp"
 #include "steps/error.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/specdef.hpp"
 #include "steps/model/spec.hpp"
+#include "steps/solver/specdef.hpp"
+#include "steps/solver/statedef.hpp"
+#include "steps/solver/types.hpp"
 
 // logging
 #include "easylogging++.h"
@@ -66,10 +66,8 @@ ssolver::Specdef::Specdef(Statedef * sd, uint idx, steps::model::Spec * s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::Specdef::~Specdef(void)
-{
-
-}
+ssolver::Specdef::~Specdef()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -87,14 +85,14 @@ void ssolver::Specdef::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string const ssolver::Specdef::name(void) const
+std::string const ssolver::Specdef::name() const
 {
     return pName;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Specdef::setup(void)
+void ssolver::Specdef::setup()
 {
 
 }

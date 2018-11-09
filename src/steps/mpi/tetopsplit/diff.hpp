@@ -68,7 +68,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     Diff(steps::solver::Diffdef * ddef, steps::mpi::tetopsplit::Tet * tet);
-    ~Diff(void);
+    ~Diff();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -83,17 +83,17 @@ public:
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Diffdef * def(void) const
+    inline steps::solver::Diffdef * def() const
     { return pDiffdef; }
 
     double dcst(int direction = -1);
     void setDcst(double d);
     void setDirectionDcst(int direction, double dcst);
 
-    void setupDeps(void);
+    void setupDeps();
     bool depSpecTet(uint gidx, steps::mpi::tetopsplit::WmVol * tet);
     bool depSpecTri(uint gidx, steps::mpi::tetopsplit::Tri * tri);
-    void reset(void);
+    void reset();
     double rate(steps::mpi::tetopsplit::TetOpSplitP * solver = 0);
     inline double getScaledDcst(steps::mpi::tetopsplit::TetOpSplitP * solver = 0) {
         return pScaledDcst;
@@ -113,22 +113,22 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    //inline steps::solver::Reacdef * defr(void) const
+    //inline steps::solver::Reacdef * defr() const
     //{ return pReacdef; }
 
-    inline uint getLigLidx(void) {return lidxTet;}
+    inline uint getLigLidx() {return lidxTet;}
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::mpi::tetopsplit::Tet* getTet(void) {return pTet;}
+    inline steps::mpi::tetopsplit::Tet* getTet() {return pTet;}
     ////////////////////////////////////////////////////////////////////////
 
     // MPI STUFF
-    bool getInHost(void) {
+    bool getInHost() {
         return pTet->getInHost();
     }
     
-    int getHost(void) {
+    int getHost() {
         return pTet->getHost();
     }
     

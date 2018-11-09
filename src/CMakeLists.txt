@@ -152,8 +152,8 @@ set(lib_public_headers
     "steps/geom/comp.hpp"                      "steps/geom/diffboundary.hpp"
     "steps/geom/geom.hpp"                      "steps/geom/memb.hpp"
     "steps/geom/patch.hpp"                     "steps/geom/sdiffboundary.hpp"
-    "steps/geom/tetmesh.hpp"                   "steps/geom/tetmesh_rw.hpp"
-    "steps/geom/tmcomp.hpp"                    "steps/geom/tmpatch.hpp"
+    "steps/geom/tetmesh.hpp"
+        "steps/geom/tmcomp.hpp"                    "steps/geom/tmpatch.hpp"
     #
     "steps/util/collections.hpp"               "steps/util/fnv_hash.hpp"
     "steps/util/type_traits.hpp"               "steps/util/checkid.hpp"
@@ -289,7 +289,9 @@ add_definitions(-DENABLE_ASSERTLOG=1)
 # =================================== MPI Profiling ===========================================================
 
 # enable below to turn on MPI profiling
+if(USE_MPI_)
 add_definitions(-DMPI_PROFILING=1)
+endif()
 
 # ============================================================================================================
 

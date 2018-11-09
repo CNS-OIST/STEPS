@@ -33,12 +33,12 @@
 
 
 // Standard library & STL headers.
-#include <vector>
 #include <cassert>
-#include <iostream>
 #include <fstream>
-#include <sstream>
+#include <iostream>
 #include <random>
+#include <sstream>
+#include <vector>
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
@@ -52,44 +52,44 @@ namespace smtos = steps::mpi::tetopsplit;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::KProc::KProc(void)
+smtos::KProc::KProc()
 : rExtent(0)
 , pFlags(0)
 , pSchedIDX(0)
-, crData()
+ 
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::KProc::~KProc(void)
-{
-}
+smtos::KProc::~KProc()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void smtos::KProc::setActive(bool active)
 {
-    if (active == true) pFlags &= ~INACTIVATED;
-    else pFlags |= INACTIVATED;
+    if (active == true) { pFlags &= ~INACTIVATED;
+    } else { pFlags |= INACTIVATED;
+}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint smtos::KProc::getExtent(void) const
+uint smtos::KProc::getExtent() const
 {
     return rExtent;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::KProc::resetExtent(void)
+void smtos::KProc::resetExtent()
 {
     rExtent = 0;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::KProc::resetCcst(void) const
+void smtos::KProc::resetCcst() const
 {
     // This should never get called on base object
     AssertLog(false);
@@ -97,7 +97,7 @@ void smtos::KProc::resetCcst(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::KProc::c(void) const
+double smtos::KProc::c() const
 {
     // Should never get called on base object
     AssertLog(false);
@@ -105,7 +105,7 @@ double smtos::KProc::c(void) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::KProc::h(void)
+double smtos::KProc::h()
 {
     // Should never get called on base object
     AssertLog(false);
@@ -138,7 +138,7 @@ void smtos::KProc::apply(steps::rng::RNG * rng, double dt, double simtime, doubl
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::KProc::resetOccupancies(void)
+void smtos::KProc::resetOccupancies()
 {
     // Should never get called on base object
     AssertLog(false);
@@ -162,7 +162,7 @@ std::vector<uint> const & smtos::KProc::getRemoteUpdVec(int direction)
 
 ////////////////////////////////////////////////////////////////////////////////
 /*
-std::vector<smtos::KProc*> const & smtos::KProc::getSharedUpd(void)
+std::vector<smtos::KProc*> const & smtos::KProc::getSharedUpd()
 {
     // Should never get called on base object
 	AssertLog(false);

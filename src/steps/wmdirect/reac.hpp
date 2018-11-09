@@ -61,7 +61,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     Reac(steps::solver::Reacdef * rdef, Comp * comp);
-    ~Reac(void);
+    ~Reac();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -78,9 +78,9 @@ public:
 
     static const int INACTIVATED = 1;
 
-    bool active(void) const;
+    bool active() const;
 
-    bool inactive(void) const
+    bool inactive() const
     { return (! active()); }
 
 
@@ -88,27 +88,27 @@ public:
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    void setupDeps(void);
+    void setupDeps();
     bool depSpecComp(uint gidx, Comp * comp);
     bool depSpecPatch(uint gidx, Patch * patch);
-    void reset(void);
-    double rate(void) const;
-    std::vector<uint> const & apply(void);
+    void reset();
+    double rate() const;
+    std::vector<uint> const & apply();
 
-    uint updVecSize(void) const
+    uint updVecSize() const
     { return pUpdVec.size(); }
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Reacdef * defr(void) const
+    inline steps::solver::Reacdef * defr() const
     { return pReacdef; }
 
-    void resetCcst(void);
+    void resetCcst();
 
-    double c(void) const
+    double c() const
     { return pCcst; }
 
-    double h(void) const
+    double h() const
     { return (rate()/pCcst); }
 
     ////////////////////////////////////////////////////////////////////////

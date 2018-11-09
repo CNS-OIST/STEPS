@@ -83,7 +83,7 @@ public:
     Patchdef(Statedef * sd, uint idx, steps::wm::Patch * p);
 
     /// Destructor
-    ~Patchdef(void);
+    ~Patchdef();
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
@@ -98,21 +98,21 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the area of this patch.
-    double area(void) const;
+    double area() const;
 
     /// Return the global index of this patch.
-    inline uint gidx(void) const
+    inline uint gidx() const
     { return pIdx; }
 
     /// Return the name of the patch.
-    std::string const name(void) const;
+    std::string const name() const;
 
     /// Return a pointer to the inner compartment.
-    inline Compdef * icompdef(void) const
+    inline Compdef * icompdef() const
     { return pInner; }
 
     /// Return a pointer to the outer compartment.
-    inline Compdef * ocompdef(void) const
+    inline Compdef * ocompdef() const
     { return pOuter; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -120,10 +120,10 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Setup all references.
-    void setup_references(void);
+    void setup_references();
 
     /// Setup all indices.
-    void setup_indices(void);
+    void setup_indices();
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: PATCH
@@ -137,30 +137,30 @@ public:
     /// Get the area of the patch
     ///
     /// \return Area of the patch
-    inline double getArea(void) const
+    inline double getArea() const
     { return pArea; }
 
     /// Reset count, flags members of this patch. Called when reset()
     /// method in solver object is executed.
     ///
-    void reset(void);
+    void reset();
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SPECIES
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the number of species defined for this surface patch.
-    inline uint countSpecs(void) const
+    inline uint countSpecs() const
     { return pSpecsN_S; }
 
     /// Return the number of species defined for the inner compartment.
     /// Should not be called before Compdef::setup()
-    inline uint countSpecs_I(void) const
+    inline uint countSpecs_I() const
     { return pSpecsN_I; }
 
     /// Return the number of species defined for the outer compartment.
     /// Should not be called before Compdef::setup()
-    inline uint countSpecs_O(void) const
+    inline uint countSpecs_O() const
     { return pSpecsN_O; }
 
     /// Return the local species index for global index argument.
@@ -192,11 +192,11 @@ public:
     uint specG2L_O(uint gidx) const;
 
     /// Return pointer to species' counts on this patch.
-    inline double * pools(void) const
+    inline double * pools() const
     { return pPoolCount; }
 
     /// Returns pointer to flags on species for this patch.
-    inline uint * flags(void) const
+    inline uint * flags() const
     { return pPoolFlags; }
 
     static const uint CLAMPED = 1;
@@ -230,7 +230,7 @@ public:
 
     /// Return the total number of surface reactions that can occur on this
     /// patch.
-    inline uint countSReacs(void) const
+    inline uint countSReacs() const
     { return pSReacsN; }
 
     /// Return the local surface reaction index for global index argument.
@@ -276,7 +276,7 @@ public:
     int * sreac_upd_O_end(uint lidx) const;
 
     /// Return pointer to flags on surface reactions for this patch.
-    inline uint * srflags(void) const
+    inline uint * srflags() const
     { return pSReacFlags; }
 
     static const uint INACTIVATED = 1;
@@ -299,7 +299,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of surface diffusion rules for this patch.
-    inline uint countSurfDiffs(void) const
+    inline uint countSurfDiffs() const
     { return pSurfDiffsN; }
 
     /// Returns a pointer to Diffdef specified by local index.
@@ -332,7 +332,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the number of ohmic currents defined in this patch.
-    inline uint countOhmicCurrs(void) const
+    inline uint countOhmicCurrs() const
     { return pOhmicCurrsN; }
 
     /// Return the local index of ohmic current with global index gidx.
@@ -360,7 +360,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the number of GHK currents defined in this patch.
-    inline uint countGHKcurrs(void) const
+    inline uint countGHKcurrs() const
     { return pGHKcurrsN; }
 
     /// Return the local index of GHK current with global index gidx.
@@ -392,7 +392,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the number of voltage-dependent transitions defined in this patch
-    inline uint countVDepTrans(void) const
+    inline uint countVDepTrans() const
     { return pVDepTransN; }
 
     /// Return the local index of v-dep transition with global index gidx.
@@ -422,7 +422,7 @@ public:
 
     /// Return the total number of voltage-dependent reactions that can occur on this
     /// patch.
-    inline uint countVDepSReacs(void) const
+    inline uint countVDepSReacs() const
     { return pVDepSReacsN; }
 
     /// Return the local voltage-dependent reaction index for global index argument.

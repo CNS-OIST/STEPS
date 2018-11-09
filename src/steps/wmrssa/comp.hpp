@@ -70,7 +70,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     Comp(steps::solver::Compdef * compdef);
-    ~Comp(void);
+    ~Comp();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -84,24 +84,24 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     void setupKProcs(Wmrssa * wmd);
-    void setupDeps(void);
+    void setupDeps();
 
-    void reset(void);
+    void reset();
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Compdef * def(void) const
+    inline steps::solver::Compdef * def() const
     { return pCompdef; }
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline std::vector<steps::wmrssa::KProc *>::const_iterator kprocBegin(void) const
+    inline std::vector<steps::wmrssa::KProc *>::const_iterator kprocBegin() const
     { return pKProcs.begin(); }
-    inline std::vector<steps::wmrssa::KProc *>::const_iterator kprocEnd(void) const
+    inline std::vector<steps::wmrssa::KProc *>::const_iterator kprocEnd() const
     { return pKProcs.end(); }
-    inline uint countKProcs(void) const
+    inline uint countKProcs() const
     { return pKProcs.size(); }
 
     steps::wmrssa::KProc * reac(uint lridx) const;
@@ -110,22 +110,22 @@ public:
 
     void addIPatch(Patch * p);
 
-    inline uint countIPatches(void) const
+    inline uint countIPatches() const
     { return pIPatches.size(); }
 
-    inline std::vector<steps::wmrssa::Patch *>::const_iterator beginIPatches(void) const
+    inline std::vector<steps::wmrssa::Patch *>::const_iterator beginIPatches() const
     { return pIPatches.begin(); }
-    inline std::vector<steps::wmrssa::Patch *>::const_iterator  endIPatches(void) const
+    inline std::vector<steps::wmrssa::Patch *>::const_iterator  endIPatches() const
     { return pIPatches.end(); }
 
     void addOPatch(Patch * p);
 
-    inline uint countOPatches(void) const
+    inline uint countOPatches() const
     { return pOPatches.size(); }
 
-    inline std::vector<steps::wmrssa::Patch *>::const_iterator  beginOPatches(void) const
+    inline std::vector<steps::wmrssa::Patch *>::const_iterator  beginOPatches() const
     { return pOPatches.begin(); }
-    inline std::vector<steps::wmrssa::Patch *>::const_iterator  endOPatches(void) const
+    inline std::vector<steps::wmrssa::Patch *>::const_iterator  endOPatches() const
     { return pOPatches.end(); }
 
     ////////////////////////////////////////////////////////////////////////
@@ -133,7 +133,7 @@ public:
     void setBounds(uint i, int nc);
     bool isOutOfBound(uint i, int nc);
     double* pools(steps::wmrssa::PropensityRSSA prssa) const;
-    void setupSpecDeps(void);
+    void setupSpecDeps();
     std::vector<steps::wmrssa::KProc*> const & getSpecUpdKProcs(uint slidx);
 
 private:

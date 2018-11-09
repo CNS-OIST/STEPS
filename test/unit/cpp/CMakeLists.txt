@@ -1,6 +1,3 @@
-set(CMAKE_CXX_FLAGS_RELEASE "")
-set(CMAKE_CXX_FLAGS "-g ${CXX_DIALECT_OPT_CXX11} -O0")
-
 foreach(test_name point3d bbox tetmesh membership checkid rng sample small_binomial)
     add_executable("test_${test_name}" "test_${test_name}.cpp")
     list(APPEND tests ${test_name})
@@ -27,11 +24,13 @@ endif()
 add_custom_target(tests)
 
 foreach(test_name IN LISTS tests)
+    string(REPLACE " " ";" valgrind "${VALGRIND}")
     set(test_target "test_${test_name}")
+    set(test_str ${valgrind} ${CMAKE_CURRENT_BINARY_DIR}/${test_target})
 
     target_link_libraries("${test_target}" ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS} ${libs})
 
-    add_test(NAME "${test_name}" COMMAND "${test_target}")
+    add_test(NAME "${test_name}" COMMAND ${test_str})
     add_dependencies(tests "${test_target}")
 endforeach()
 

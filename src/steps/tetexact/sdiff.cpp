@@ -27,8 +27,8 @@
 
 
 // Standard library & STL headers.
-#include <vector>
 #include <iostream>
+#include <vector>
 
 // STEPS headers.
 #include "steps/common.h"
@@ -36,10 +36,10 @@
 #include "steps/math/constants.hpp"
 #include "steps/solver/diffdef.hpp"
 #include "steps/solver/patchdef.hpp"
-#include "steps/tetexact/sdiff.hpp"
-#include "steps/tetexact/tri.hpp"
 #include "steps/tetexact/kproc.hpp"
+#include "steps/tetexact/sdiff.hpp"
 #include "steps/tetexact/tetexact.hpp"
+#include "steps/tetexact/tri.hpp"
 
 
 // logging
@@ -55,8 +55,8 @@ namespace smath = steps::math;
 ////////////////////////////////////////////////////////////////////////////////
 
 stex::SDiff::SDiff(ssolver::Diffdef * sdef, stex::Tri * tri)
-: KProc()
-, pSDiffdef(sdef)
+: 
+ pSDiffdef(sdef)
 , pTri(tri)
 , pUpdVec()
 , pScaledDcst(0.0)
@@ -81,7 +81,7 @@ stex::SDiff::SDiff(ssolver::Diffdef * sdef, stex::Tri * tri)
     for (uint i = 0; i < 3; ++i)
     {
         pSDiffBndDirection[i] = pTri->getSDiffBndDirection(i);
-        if (next[i] == 0)
+        if (next[i] == nullptr)
         {
             pNeighbPatchLidx[i] = -1;
             continue;
@@ -103,19 +103,21 @@ stex::SDiff::SDiff(ssolver::Diffdef * sdef, stex::Tri * tri)
         // Compute the scaled diffusion constant.
         // Need to here check if the direction is a diffusion boundary
         double dist = pTri->dist(i);
-        if ((dist > 0.0) && (next[i] != 0))
+        if ((dist > 0.0) && (next[i] != nullptr))
         {
             if (pSDiffBndDirection[i] == true)
             {
-                if (pSDiffBndActive[i])
+                if (pSDiffBndActive[i]) {
                     d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
-                else d[i] = 0.0;
+                } else { d[i] = 0.0;
+}
             }
             else
             {
-                if (next[i]->patchdef() == pTri->patchdef())
+                if (next[i]->patchdef() == pTri->patchdef()) {
                     d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
-                else d[i] = 0.0;
+                } else { d[i] = 0.0;
+}
             }
         }
     }
@@ -143,9 +145,8 @@ stex::SDiff::SDiff(ssolver::Diffdef * sdef, stex::Tri * tri)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::SDiff::~SDiff(void)
-{
-}
+stex::SDiff::~SDiff()
+= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -207,7 +208,7 @@ void stex::SDiff::restore(std::fstream & cp_file)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::SDiff::setupDeps(void)
+void stex::SDiff::setupDeps()
 {
     // We will check all KProcs of the following simulation elements:
     //   * the 'source' triangle
@@ -237,8 +238,9 @@ void stex::SDiff::setupDeps(void)
     stex::WmVol * itet[2] = {pTri->iTet(), pTri->oTet()};
     for (uint i = 0; i < 2; ++i)
     {
-        if (itet[i] == 0)
+        if (itet[i] == nullptr) {
             continue;
+}
         kprocend = itet[i]->kprocEnd();
         for (KProcPVecCI k = itet[i]->kprocBegin(); k != kprocend; ++k)
         {
@@ -253,7 +255,8 @@ void stex::SDiff::setupDeps(void)
     {
         // Fetch next triangle, if it exists.
         stex::Tri * next = pTri->nextTri(i);
-        if (next == 0) continue;
+        if (next == nullptr) { continue;
+}
 
         // Copy local dependencies.
         std::set<stex::KProc*> local2(local.begin(), local.end());
@@ -271,8 +274,9 @@ void stex::SDiff::setupDeps(void)
         stex::WmVol * itet[2] = {pTri->iTet(), pTri->oTet()};
         for (uint j = 0; j < 2; ++j)
         {
-            if (itet[j] == 0)
+            if (itet[j] == nullptr) {
                 continue;
+}
 
             // Find deps.
             kprocend = itet[j]->kprocEnd();
@@ -301,14 +305,16 @@ bool stex::SDiff::depSpecTet(uint gidx, stex::WmVol * tet)
 
 bool stex::SDiff::depSpecTri(uint gidx, stex::Tri * tri)
 {
-    if (pTri != tri) return false;
-    if (gidx != ligGIdx) return false;
+    if (pTri != tri) { return false;
+}
+    if (gidx != ligGIdx) { return false;
+}
     return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::SDiff::reset(void)
+void stex::SDiff::reset()
 {
     resetExtent();
 
@@ -364,19 +370,21 @@ void stex::SDiff::setDcst(double dcst)
         // Compute the scaled diffusion constant.
         // Need to here check if the direction is a diffusion boundary
         double dist = pTri->dist(i);
-        if ((dist > 0.0) && (next[i] != 0))
+        if ((dist > 0.0) && (next[i] != nullptr))
         {
             if (pSDiffBndDirection[i] == true)
             {
-                if (pSDiffBndActive[i])
+                if (pSDiffBndActive[i]) {
                     d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
-                else d[i] = 0;
+                } else { d[i] = 0;
+}
             }
             else
             {
-                if (next[i]->patchdef() == pTri->patchdef())
+                if (next[i]->patchdef() == pTri->patchdef()) {
                     d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
-                else d[i] = 0;
+                } else { d[i] = 0;
+}
             }
         }
     }
@@ -549,8 +557,8 @@ std::vector<stex::KProc*> const & stex::SDiff::apply(steps::rng::RNG * rng, doub
     // So we can assert that nextet 0 does indeed exist
     AssertLog(nexttri != 0);
 
-    if (nexttri->clamped(lidxTri) == false)
-        nexttri->incCount(lidxTri,1);
+    if (nexttri->clamped(pNeighbPatchLidx[iSel]) == false)
+        nexttri->incCount(pNeighbPatchLidx[iSel],1);
 
     if (clamped == false)
         pTri->incCount(lidxTri, -1);
@@ -562,7 +570,7 @@ std::vector<stex::KProc*> const & stex::SDiff::apply(steps::rng::RNG * rng, doub
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint stex::SDiff::updVecSize(void) const
+uint stex::SDiff::updVecSize() const
 {
     uint maxsize = pUpdVec[0].size();
     for (uint i=1; i <= 2; ++i)

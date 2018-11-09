@@ -1,4 +1,10 @@
 Release Notes
+
+Version 3.4.0 (2018-11)
+==========================
+1. Optimisation of non-spatial deterministic solver Wmrk4. Vast improvement in performance for large models. 
+2. Various bug fixes and unit tests.
+
 Version 3.3.0 (2018-04)
 ==========================
 1. Implemented Rejection-based SSA (Thanh V, Zunino R, Priami C (n.d.) On the rejection-based algorithm for simulation and analysis of large-scale reaction networks. The Journal of Chemical Physics 142:244106) as a faster alternative to Wmdirect
@@ -10,7 +16,7 @@ Version 3.2.0 (2017-10)
 ==========================
 1. Extensive rework on Cython binding and documentation with Jupyter notebook.
 2. Extend support for Python 3.3~.
-3. several bug fixs.
+3. several bug fixes.
 Note: SWIG Binding will be removed in 3.3 release.
 
 Version 3.1.0 (2017-6)

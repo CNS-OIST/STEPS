@@ -83,8 +83,8 @@ public:
     ///
     /// This is the constructor for the wm (well-mixed) namespace.
     TmPatch(std::string const & id, Tetmesh * container,
-         std::vector<uint> const & tris, steps::wm::Comp* icomp,
-            steps::wm::Comp* ocomp = 0);
+         std::vector<uint> const & tris, steps::wm::Comp* wmicomp,
+            steps::wm::Comp* wmocomp = nullptr);
 
     /// Destructor.
     ~TmPatch() {}
@@ -102,18 +102,18 @@ public:
     /// Return all triangles (by index) in the patch.
     ///
     /// \return List of indices of triangles.
-    std::vector<uint> getAllTriIndices(void) const
+    std::vector<uint> const & getAllTriIndices() const
     { return pTri_indices; }
 
     /// Get the minimal coordinate of the rectangular bounding box or a plane.
     ///
     /// \return Minimal coordinate of the rectangular bounding box or a plane.
-    std::vector<double> getBoundMin(void) const;
+    std::vector<double> getBoundMin() const;
 
     /// Get the maximal coordinate of the rectangular bounding box or a plane.
     ///
     /// \return Maximal coordinate of the rectangular bounding box or a plane.
-    std::vector<double> getBoundMax(void) const;
+    std::vector<double> getBoundMax() const;
     
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO C++)
@@ -122,7 +122,7 @@ public:
     /// Return all triangles (by index) in the patch.
     ///
     /// \return List of indices of triangles.
-    inline std::vector<uint> const & _getAllTriIndices(void) const
+    inline std::vector<uint> const & _getAllTriIndices() const
     { return pTri_indices; }
 
     ////////////////////////////////////////////////////////////////////////

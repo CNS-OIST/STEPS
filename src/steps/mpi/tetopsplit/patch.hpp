@@ -72,7 +72,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     Patch(steps::solver::Patchdef * patchdef);
-    ~Patch(void);
+    ~Patch();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -92,35 +92,35 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline void reset(void)
+    inline void reset()
     { def()->reset(); }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Patchdef * def(void) const
+    inline steps::solver::Patchdef * def() const
     { return pPatchdef; }
 
-    inline double area(void) const
+    inline double area() const
     { return pArea; }
 
     //void setArea(double a);
 
-    inline double * pools(void) const
+    inline double * pools() const
     { return def()->pools(); }
 
     void modCount(uint slidx, double count);
 
 
-    inline uint countTris(void) const
+    inline uint countTris() const
     { return pTris.size(); }
 
     smtos::Tri * pickTriByArea(double rand01) const;
 
-    inline TriPVecCI bgnTri(void) const
+    inline TriPVecCI bgnTri() const
     { return pTris.begin(); }
-    inline TriPVecCI endTri(void) const
+    inline TriPVecCI endTri() const
     { return pTris.end(); }
 
     ////////////////////////////////////////////////////////////////////////

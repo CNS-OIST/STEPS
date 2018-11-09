@@ -37,6 +37,6 @@
 
  namespace steps {
 
-void init(void);
+void init();
 
 }

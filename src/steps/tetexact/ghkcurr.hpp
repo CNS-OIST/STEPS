@@ -66,7 +66,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     GHKcurr(steps::solver::GHKcurrdef * ghkdef, steps::tetexact::Tri * tri);
-    ~GHKcurr(void);
+    ~GHKcurr();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -81,10 +81,10 @@ public:
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    void setupDeps(void);
+    void setupDeps();
     bool depSpecTet(uint gidx, steps::tetexact::WmVol * tet);
     bool depSpecTri(uint gidx, steps::tetexact::Tri * tri);
-    void reset(void);
+    void reset();
 
 
     double rate(steps::tetexact::Tetexact * solver);
@@ -92,13 +92,13 @@ public:
     // double rate(double v, double T);
     std::vector<KProc*> const & apply(steps::rng::RNG * rng, double dt, double simtime);
 
-    inline bool efflux(void) const
+    inline bool efflux() const
     { return pEffFlux; }
 
     void setEffFlux(bool efx)
     { pEffFlux = efx; }
 
-    uint updVecSize(void) const
+    uint updVecSize() const
     { return pUpdVec.size(); }
 
     ////////////////////////////////////////////////////////////////////////

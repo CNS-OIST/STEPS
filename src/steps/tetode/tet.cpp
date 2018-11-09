@@ -26,17 +26,17 @@
 
 
 // Standard library & STL headers.
+#include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <algorithm>
 #include <functional>
 #include <iostream>
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
-#include "steps/tetode/tetode.hpp"
 #include "steps/tetode/tet.hpp"
+#include "steps/tetode/tetode.hpp"
 #include "steps/tetode/tri.hpp"
 // logging
 #include "easylogging++.h"
@@ -72,8 +72,8 @@ stode::Tet::Tet
     // but we can store their indices
     for (uint i=0; i <= 3; ++i)
     {
-        pNextTet[i] = 0;
-        pNextTri[i] = 0;
+        pNextTet[i] = nullptr;
+        pNextTri[i] = nullptr;
     }
     pTets[0] = tet0;
     pTets[1] = tet1;
@@ -95,25 +95,18 @@ stode::Tet::Tet
 
 ////////////////////////////////////////////////////////////////////////////////
 
- stode::Tet::~Tet(void)
-{
-
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 void stode::Tet::setNextTet(uint i, stode::Tet * t)
 {
 
     if (t->compdef() != compdef())
     {
-        pNextTet[i] = 0;
+        pNextTet[i] = nullptr;
     }
     else
     {
         pNextTet[i] = t;
         if (pNextTri[i] != 0) CLOG(INFO, "general_log") << "WARNING: writing over nextTri index " << i;
-        pNextTri[i] = 0;
+        pNextTri[i] = nullptr;
     }
 
 }
@@ -135,7 +128,7 @@ void stode::Tet::setNextTri(uint i, stode::Tri * t)
     // This is too common now to include this message- for any internal patch this happens
     //if (pNextTet[i] != 0) CLOG(INFO, "general_log") << "WARNING: writing over nextTet index " << i;
 
-    pNextTet[i] = 0;
+    pNextTet[i] = nullptr;
     pNextTri[i]= t;
 }
 

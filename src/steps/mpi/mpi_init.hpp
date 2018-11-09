@@ -38,9 +38,9 @@
  namespace steps {
  namespace mpi {
 
-void mpiInit(void);
-int getRank(void);
-int getNHosts(void);
+void mpiInit();
+int getRank();
+int getNHosts();
 
 }
 }
