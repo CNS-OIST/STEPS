@@ -1,5 +1,9 @@
 Release Notes
 
+Version 3.4.1 (2018-11)
+==========================
+1. Critical bug fix for TetOpSplit solver.
+
 Version 3.4.0 (2018-11)
 ==========================
 1. Optimisation of non-spatial deterministic solver Wmrk4. Vast improvement in performance for large models. 

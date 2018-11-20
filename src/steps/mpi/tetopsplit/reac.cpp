@@ -246,14 +246,38 @@ double smtos::Reac::rate(smtos::TetOpSplitP * solver)
     {
         uint lhs = lhs_vec[pool];
         if (lhs == 0) { continue;
-}
-        uint cnt = cnt_vec[pool];
-        if (lhs > cnt) {
-            h_mu = 0.0;
-            break;
         }
-        AssertLog((lhs <= 4) && (lhs >0));
-        h_mu *= (cnt - lhs + 1);
+        uint cnt = cnt_vec[pool];
+        if (lhs > cnt)	  
+        {	
+            h_mu = 0.0;	
+            break;
+        }	      
+        switch (lhs)
+        {
+            case 4:	
+            {	
+                h_mu *= static_cast<double>(cnt - 3);	
+            }	
+            case 3:	
+            {	
+                h_mu *= static_cast<double>(cnt - 2);	
+            }	
+            case 2:	
+            {	
+                h_mu *= static_cast<double>(cnt - 1);	
+            }	
+            case 1:	
+            {	
+                h_mu *= static_cast<double>(cnt);	
+                break;	
+            }	
+            default:	
+            {	
+                AssertLog(0);	
+                return 0.0;	
+            }	
+        }
     }
 
     // Multiply with scaled reaction constant.
