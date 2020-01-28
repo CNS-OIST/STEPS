@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -76,14 +76,16 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this diffusion rule.
-    inline uint gidx() const
+    inline uint gidx() const noexcept
     { return pIdx; }
 
     /// Return the name of this diffusion rule.
-    std::string const name() const;
+    inline const std::string& name() const noexcept
+    { return pName; }
 
     /// Return the diffusion constant.
-    double dcst() const;
+    inline double dcst() const noexcept
+    { return pDcst; }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: LIGAND
@@ -141,6 +143,9 @@ private:
     // The chemical species to which this diffusion rule applies,
     // safer to store as a sting, rather than model level spec object pointer
     std::string                         pLig;
+
+    // The global index of the spec
+    uint                                ligGIdx;
 
     bool                                pSetupdone;
 

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -67,29 +67,15 @@ namespace ssolver = steps::solver;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r)
+ssolver::Statedef::Statedef(steps::model::Model *m, steps::wm::Geom *g, const rng::RNGptr &r)
 : pModel(m)
 , pGeom(g)
 , pRNG(r)
 , pTime(0.0)
 , pNSteps(0)
-, pSpecdefs()
-, pChandefs()
-, pCompdefs()
-, pPatchdefs()
-, pReacdefs()
-, pSReacdefs()
-, pVDepTransdefs()
-, pVDepSReacdefs()
-, pDiffdefs()
-, pOhmicCurrdefs()
-, pGHKcurrdefs()
-, pDiffBoundarydefs()
-, pSDiffBoundarydefs()
-
 {
-    AssertLog(pModel != 0);
-    AssertLog(pGeom != 0);
+    AssertLog(pModel != nullptr);
+    AssertLog(pGeom != nullptr);
 
 
     // Create the def objects.
@@ -220,44 +206,44 @@ ssolver::Statedef::Statedef(steps::model::Model * m, steps::wm::Geom * g, steps:
     // surface reactions to inner, outer comp
     // NOTE: Again, order is important.
     //
-    for (SpecdefPVecI s = pSpecdefs.begin(); s != pSpecdefs.end(); ++s)
-        (*s)->setup();
-    for (ChandefPVecI ch = pChandefs.begin(); ch != pChandefs.end(); ++ch)
-        (*ch)->setup();
-    for (ReacdefPVecI r = pReacdefs.begin(); r != pReacdefs.end(); ++r)
-        (*r)->setup();
-    for (DiffdefPVecI d = pDiffdefs.begin(); d != pDiffdefs.end(); ++d)
-        (*d)->setup();
-    for (SurfDiffdefPVecI sd = pSurfDiffdefs.begin(); sd != pSurfDiffdefs.end(); ++sd)
-        (*sd)->setup();
+    for (auto &pSpecdef : pSpecdefs)
+        pSpecdef->setup();
+    for (auto &pChandef : pChandefs)
+        pChandef->setup();
+    for (auto &pReacdef : pReacdefs)
+        pReacdef->setup();
+    for (auto &pDiffdef : pDiffdefs)
+        pDiffdef->setup();
+    for (auto &pSurfDiffdef : pSurfDiffdefs)
+        pSurfDiffdef->setup();
 
-    for (SReacdefPVecI sr = pSReacdefs.begin(); sr != pSReacdefs.end(); ++sr)
-        (*sr)->setup();
-    for (VDepSReacdefPVecI vdsr = pVDepSReacdefs.begin(); vdsr != pVDepSReacdefs.end(); ++vdsr)
-        (*vdsr)->setup();
-    for (VDepTransdefPVecI vdt = pVDepTransdefs.begin(); vdt != pVDepTransdefs.end(); ++vdt)
-        (*vdt)->setup();
-    for (OhmicCurrdefPVecI oc = pOhmicCurrdefs.begin(); oc != pOhmicCurrdefs.end(); ++oc)
-        (*oc)->setup();
-    for (GHKcurrdefPVecI ghk = pGHKcurrdefs.begin(); ghk != pGHKcurrdefs.end(); ++ghk)
-        (*ghk)->setup();
-    for (CompdefPVecI c = pCompdefs.begin(); c != pCompdefs.end(); ++c)
-        (*c)->setup_references();
-    for (PatchdefPVecI p = pPatchdefs.begin(); p != pPatchdefs.end(); ++p)
-        (*p)->setup_references();
+    for (auto &pSReacdef : pSReacdefs)
+        pSReacdef->setup();
+    for (auto &pVDepSReacdef : pVDepSReacdefs)
+        pVDepSReacdef->setup();
+    for (auto &pVDepTransdef : pVDepTransdefs)
+        pVDepTransdef->setup();
+    for (auto &pOhmicCurrdef : pOhmicCurrdefs)
+        pOhmicCurrdef->setup();
+    for (auto &pGHKcurrdef : pGHKcurrdefs)
+        pGHKcurrdef->setup();
+    for (auto &pCompdef : pCompdefs)
+        pCompdef->setup_references();
+    for (auto &pPatchdef : pPatchdefs)
+        pPatchdef->setup_references();
 
     // Make local indices for species, (surface) reactions, diffusion rules
     // in compartments then patches. Separate method necessary since e.g.
     // Patchdef::setup_references can add species to Compdef
-    for (CompdefPVecI c = pCompdefs.begin(); c != pCompdefs.end(); ++c)
-        (*c)->setup_indices();
-    for (PatchdefPVecI p = pPatchdefs.begin(); p != pPatchdefs.end(); ++p)
-        (*p)->setup_indices();
+    for (auto& pCompdef: pCompdefs)
+        pCompdef->setup_indices();
+    for (auto &pPatchdef : pPatchdefs)
+        pPatchdef->setup_indices();
 
-    for (DiffBoundaryDefPVecI db = pDiffBoundarydefs.begin(); db != pDiffBoundarydefs.end(); ++db)
-        (*db)->setup();
-    for (SDiffBoundaryDefPVecI sdb = pSDiffBoundarydefs.begin(); sdb != pSDiffBoundarydefs.end(); ++sdb)
-        (*sdb)->setup();
+    for (auto &pDiffBoundarydef : pDiffBoundarydefs)
+        pDiffBoundarydef->setup();
+    for (auto &pSDiffBoundarydef : pSDiffBoundarydefs)
+        pSDiffBoundarydef->setup();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -382,8 +368,8 @@ void ssolver::Statedef::checkpoint(std::fstream & cp_file)
     for (GHKcurrdefPVecCI ghkc = pGHKcurrdefs.begin(); ghkc != ghkc_end; ++ghkc) {
         (*ghkc)->checkpoint(cp_file);
     }
-    cp_file.write((char*)&pTime, sizeof(double));
-    cp_file.write((char*)&pNSteps, sizeof(uint));
+    cp_file.write(reinterpret_cast<char*>(&pTime), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pNSteps), sizeof(uint));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -461,8 +447,8 @@ void ssolver::Statedef::restore(std::fstream & cp_file)
         (*ghkc)->restore(cp_file);
     }
 
-    cp_file.read((char*)&pTime, sizeof(double));
-    cp_file.read((char*)&pNSteps, sizeof(uint));
+    cp_file.read(reinterpret_cast<char*>(&pTime), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pNSteps), sizeof(uint));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -501,8 +487,9 @@ uint ssolver::Statedef::getCompIdx(steps::wm::Comp * comp) const
     uint cidx = 0;
     while(cidx < maxcidx)
     {
-        if (comp == pGeom->_getComp(cidx)) { return cidx;
-}
+        if (comp == pGeom->_getComp(cidx)) {
+            return cidx;
+        }
         ++cidx;
     }
     // Argument should be valid so we should not get here

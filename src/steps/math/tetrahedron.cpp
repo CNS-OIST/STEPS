@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -41,47 +41,10 @@ namespace math {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static std::array<double,4> tet_barycentric(const point3d &p0, point3d p1,
-                                            point3d p2, point3d p3, point3d pi) 
-{
-    // Translate to p0 at origin
-    p1-=p0;
-    p2-=p0;
-    p3-=p0;
-    pi-=p0;
-
-    // Prepase base matrix.
-    double a[12];
-    a[ 0] = p1[0];
-    a[ 1] = p1[1];
-    a[ 2] = p1[2];
-    a[ 3] = p2[0];
-    a[ 4] = p2[1];
-    a[ 5] = p2[2];
-    a[ 6] = p3[0];
-    a[ 7] = p3[1];
-    a[ 8] = p3[2];
-    a[ 9] = pi[0];
-    a[10] = pi[1];
-    a[11] = pi[2];
-
-    // Solve this system.
-    int info = steps::math::linsolve(3, 1, a);
-    if (info != 0)
-        AssertLog(0);
-
-    double b1 = a[ 9];
-    double b2 = a[10];
-    double b3 = a[11];
-    return std::array<double,4>{1 - (b1 + b2 + b3), b1, b2, b3};
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 double tet_vol(const point3d &p0, const point3d &p1,
                             const point3d &p2, const point3d &p3)
 {
-    return std::fabs(dot(p1-p0,cross(p2-p0,p3-p0)))/6;
+    return std::fabs((p1-p0).dot((p2-p0).cross(p3-p0)))/6;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -94,12 +57,35 @@ point3d tet_barycenter(const point3d &p0, const point3d &p1,
 
 ////////////////////////////////////////////////////////////////////////////////
 
+// For a given face of a tetrahedron tell if a particular point (pi) is in the same side
+// than the opposite point (opposite) than the triangle defined by (center, p1, p2).
+// To know it, it only look if dot-product of (norm of (center, p1, p2) * (center, opposite)
+// is the same sign than norm of (center, p1, p2) * (center, pi).
+static inline bool same_direction(const point3d &center, const point3d& opposite,
+                 const point3d& p1, const point3d& p2,
+                 const point3d& pi)
+{
+    // TetMesh check that any tetrahedron is not degenerated, so don't test it
+
+    // FIXME: the normal of a face is alreay computed by TetMesh, but I don't see how to use it.
+    auto normal = (p1 - center).cross(p2 - center);
+    auto A = (opposite - center).dot(normal);
+
+    auto B = (pi - center).dot(normal);
+    if (A * B < 0) return false;
+    return true;
+}
+
 bool tet_inside(const point3d &p0, const point3d &p1,
                 const point3d &p2, const point3d &p3,
                 const point3d &pi)
 {
-    auto po = tet_barycentric(p0, p1, p2, p3, pi);
-    return po[0] >= 0 && po[1] >= 0 && po[2] >= 0 && po[3] >= 0;
+    if (!same_direction(p0, p3, p1, p2, pi)) return false;
+    if (!same_direction(p0, p2, p1, p3, pi)) return false;
+    if (!same_direction(p0, p1, p2, p3, pi)) return false;
+    if (!same_direction(p1, p0, p2, p3, pi)) return false;
+
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -155,24 +141,24 @@ double tet_circumrad2(const point3d &p0, const point3d &p1,
     a[ 0] = q1[0];
     a[ 3] = q1[1];
     a[ 6] = q1[2];
-    a[ 9] = dot(q1, q1);
+    a[ 9] = q1.dot(q1);
 
     a[ 1] = q2[0];
     a[ 4] = q2[1];
     a[ 7] = q2[2];
-    a[10] = dot(q2, q2);
+    a[10] = q2.dot(q2);
 
     a[ 2] = q3[0];
     a[ 5] = q3[1];
     a[ 8] = q3[2];
-    a[11] = dot(q3, q3);
+    a[11] = q3.dot(q3);
 
     int info = steps::math::linsolve(3, 1, a);
     if (info != 0)
         AssertLog(0);
 
     point3d d{a[9], a[10], a[11]};
-    return 0.25 * dot(d, d);
+    return 0.25 * d.dot(d);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -188,8 +174,8 @@ double tet_shortestedge(const point3d &p0, const point3d &p1,
 double tet_shortestedge2(const point3d &p0, const point3d &p1,
                          const point3d &p2, const point3d &p3)
 {
-    return std::min(std::min(dist2(p0,p1), std::min(dist2(p0,p2), dist2(p0,p3))),
-                    std::min(dist2(p1,p2), std::min(dist2(p1,p3), dist2(p2,p3))));
+    return std::min(std::min(p0.dist2(p1), std::min(p0.dist2(p2), p0.dist2(p3))),
+                    std::min(p1.dist2(p2), std::min(p1.dist2(p3), p2.dist2(p3))));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -205,8 +191,8 @@ double tet_longestedge(const point3d &p0, const point3d &p1,
 double tet_longestedge2(const point3d &p0, const point3d &p1,
                         const point3d &p2, const point3d &p3)
 {
-    return std::max(std::max(dist2(p0,p1), std::max(dist2(p0,p2), dist2(p0,p3))),
-                    std::max(dist2(p1,p2), std::max(dist2(p1,p3), dist2(p2,p3))));
+    return std::max(std::max(p0.dist2(p1), std::max(p0.dist2(p2), p0.dist2(p3))),
+                    std::max(p1.dist2(p2), std::max(p1.dist2(p3), p2.dist2(p3))));
 }
 
 ////////////////////////////////////////////////////////////////////////////////

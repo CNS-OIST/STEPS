@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -38,7 +38,8 @@ namespace solver {
 namespace efield {
 
 struct EFieldSolver {
-    /** Initialize state with given mesh */
+    virtual ~EFieldSolver() = default;
+  /** Initialize state with given mesh */
     virtual void initMesh(TetMesh *mesh) =0;
 
     /** Set membrane conductance and reversal potential (for leak current) */
@@ -48,28 +49,28 @@ struct EFieldSolver {
     virtual void setPotential(double v) =0;
 
     /** Retrieve potential at vertex i */
-    virtual double getV(int i) const =0;
+    virtual double getV(vertex_id_t i) const =0;
 
     /** Set potential at vertex i */
-    virtual void setV(int i, double v) =0;
+    virtual void setV(vertex_id_t i, double v) =0;
 
     /** Get voltage clamped status for vertex i */
-    virtual bool getClamped(int i) const =0;
+    virtual bool getClamped(vertex_id_t i) const =0;
 
     /** Set voltage clamped status for vertex i */
-    virtual void setClamped(int i, bool clamped) =0;
+    virtual void setClamped(vertex_id_t i, bool clamped) =0;
 
     /** Get current through triangle i */
-    virtual double getTriI(int i) const =0;
+    virtual double getTriI(triangle_id_t i) const =0;
 
     /** Set current through triangle i to d (pA) */
-    virtual void setTriI(int i,double d) =0;
+    virtual void setTriI(triangle_id_t i, double d) =0;
 
     /** Set additional current injection for triangle i to c (pA) */
-    virtual void setTriIClamp(int i, double c) =0;
+    virtual void setTriIClamp(triangle_id_t i, double c) =0;
 
     /** Set additional current injection for area associated with vertex i to c (pA) */
-    virtual void setVertIClamp(int i, double c) =0;
+    virtual void setVertIClamp(vertex_id_t i, double c) =0;
 
     /** Solve for voltage with given dt */
     virtual void advance(double dt) =0;

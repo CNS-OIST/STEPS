@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,7 +30,7 @@
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/geom/patch.hpp"
-//#include "tetmesh.hpp"
+#include "steps/geom/fwd.hpp"
 
 // STL headers
 #include <vector>
@@ -43,11 +43,6 @@
  namespace tetmesh {
 
 ////////////////////////////////////////////////////////////////////////////////
-
-// Forward declarations.
-class Tetmesh;
-class Memb;
-class TmPatch;
 
 // Auxiliary declarations.
 typedef Memb *                          MembP;
@@ -92,10 +87,7 @@ public:
     ///
     Memb(std::string id, Tetmesh * container,
             std::vector<TmPatch *> const & patches,
-            bool verify = false, uint opt_method = 1, double search_percent = 100.0, std::string opt_file_name = std::string());
-
-    // Destructor
-    ~Memb() {}
+            bool verify = false, uint opt_method = 1, double search_percent = 100.0, std::string opt_file_name = {});
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO PYTHON):
@@ -104,43 +96,44 @@ public:
     /// Return a pointer to the tetmesh container object.
     ///
     /// \return Pointer to the parent tetmesh container.
-    steps::tetmesh::Tetmesh * getContainer() const
+    inline steps::tetmesh::Tetmesh * getContainer() const noexcept
     { return pTetmesh; }
 
     /// Return the membrane id.
     ///
     /// \return ID of the membrane.
-    std::string const & getID() const
+    inline std::string const & getID() const noexcept
     { return pID; }
 
     /// Return whether triangles (specified by index) are inside this patch.
     ///
     /// \param tri List of indices of triangles.
     /// \return Results of whether the triangles are inside the patch.
-    std::vector<bool> isTriInside(const std::vector<uint> &tri) const;
+    std::vector<bool> isTriInside(const std::vector<index_t> &tri) const;
 
     /// Return all triangles (by index) in the patch.
     ///
     /// \return List of indices of triangles.
-    inline std::vector<uint> const & getAllTriIndices() const
-    { return pTri_indices; }
+    inline std::vector<index_t> getAllTriIndices() const noexcept {
+        return strong_type_to_value_type(pTri_indices);
+    }
 
     /// Return the number of triangles in this Memb.
     ///
     /// \return the number of triangles in this Memb
-    inline uint countTris() const
+    inline uint countTris() const noexcept
     { return pTrisN; }
 
     /// Return all tetrahedrons in the conduction volume.
     ///
     /// \return List of indices of tetrahedrons in conduction volume.
-    inline std::vector<uint> const & getAllVolTetIndices() const
-    { return pTet_indices; }
+    inline std::vector<index_t> getAllVolTetIndices() const noexcept
+    { return strong_type_to_value_type(pTet_indices); }
 
     /// Return the number of tetrahedrons in the conduction volume.
     ///
     /// \return the number of tetrahedrons in the conduction volume
-    inline uint countVolTets() const
+    inline uint countVolTets() const noexcept
     { return pTetsN; }
 
     /// Return all 'virtual triangles' that is the triangles that
@@ -150,25 +143,25 @@ public:
     /// the future.
     ///
     /// \return List of indices of virtual triangles.
-    inline std::vector<uint> const & getAllVirtTriIndices() const
-    { return pTrivirt_indices; }
+    inline std::vector<index_t> getAllVirtTriIndices() const noexcept
+    { return strong_type_to_value_type(pTrivirt_indices); }
 
     /// Return the number of virtual triangles in this Memb.
     ///
     /// \return the number of virtual triangles in this Memb
-    inline uint countVirtTris() const
+    inline uint countVirtTris() const noexcept
     { return pTriVirtsN; }
 
     /// Return all vertices in the conduction volume and membrane surface.
     ///
     /// \return List of indices of vertices in membrane surface and conduction volume.
-    inline std::vector<uint> const & getAllVertIndices() const
-    { return pVert_indices; }
+    inline std::vector<index_t> getAllVertIndices() const noexcept
+    { return strong_type_to_value_type(pVert_indices); }
 
     /// Return the number of vertices in the conduction volume and membrane surface.
     ///
     /// \return the number of vertices in membrane surface and conduction volume.
-    inline uint countVerts() const
+    inline uint countVerts() const noexcept
     { return pVertsN; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -178,13 +171,13 @@ public:
     /// Return all triangles (by index) in the patch.
     ///
     /// \return List of indices of triangles.
-    inline std::vector<uint> const & _getAllTriIndices() const
+    inline std::vector<triangle_id_t> const & _getAllTriIndices() const noexcept
     { return pTri_indices; }
 
     /// Return all tetrahedrons in the conduction volume.
     ///
     /// \return List of indices of tetrahedrons in conduction volume.
-    inline std::vector<uint> const & _getAllVolTetIndices() const
+    inline std::vector<tetrahedron_id_t> const & _getAllVolTetIndices() const noexcept
     { return pTet_indices; }
 
     /// Return all 'virtual triangles' that is the triangles that
@@ -194,34 +187,34 @@ public:
     /// the future.
     ///
     /// \return List of indices of virtual triangles.
-    inline std::vector<uint> const & _getAllVirtTriIndices() const
+    inline std::vector<triangle_id_t> const & _getAllVirtTriIndices() const noexcept
     { return pTrivirt_indices; }
 
     /// Return all vertices in the conduction volume and membrane surface.
     ///
     /// \return List of indices of vertices in membrane surface and conduction volume.
-    inline std::vector<uint> const & _getAllVertIndices() const
+    inline std::vector<vertex_id_t> const & _getAllVertIndices() const noexcept
     { return pVert_indices; }
 
     /// Return whether surface is 'open' or not
     ///
     /// \return Bool of open or not.
-    inline bool open() const
+    inline bool open() const noexcept
     { return pOpen; }
 
     /// Return the method the user has specified to optimize the vertex
     /// indexing in the conduction volume.
-    inline uint _getOpt_method()
+    inline uint _getOpt_method() const noexcept
     { return pOpt_method; }
 
     /// Return the percentage of starting nodes tested for breadth-first search (default 100%)
     /// Will be ignored if principal axis search is used
-    inline double _getSearch_percent()
+    inline double _getSearch_percent() const noexcept
     { return pSearch_percent; }
 
 
     /// Return optimization file, if it exists (otherwise empty string)
-    std::string const & _getOpt_file_name() const
+    inline std::string const & _getOpt_file_name() const noexcept
     { return pOpt_file_name; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -235,23 +228,23 @@ private:
     std::string                         pID;
     Tetmesh                           * pTetmesh;
 
-    std::vector<uint>                   pTri_indices;
+    std::vector<triangle_id_t>                   pTri_indices;
 
     // The conduction volume tetrahedron indices
-    std::vector<uint>                   pTet_indices;
+    std::vector<tetrahedron_id_t>                   pTet_indices;
 
     // The 'virtual triangles', triangles that will have to be voltage-clamped
-    std::vector<uint>                   pTrivirt_indices;
+    std::vector<triangle_id_t>                   pTrivirt_indices;
 
     // The vertices
-    std::vector<uint>                   pVert_indices;
+    std::vector<vertex_id_t>                   pVert_indices;
 
-    uint                                pTrisN;
-    uint                                pTetsN;
-    uint                                pTriVirtsN;
-    uint                                pVertsN;
+    uint                                pTrisN{0};
+    uint                                pTetsN{0};
+    uint                                pTriVirtsN{0};
+    uint                                pVertsN{0};
 
-    bool                                pOpen;
+    bool                                pOpen{false};
 
     uint                                pOpt_method;
 
@@ -263,8 +256,8 @@ private:
 
 };
 
-}
-}
+} // namespace tetmesh
+} // namespace steps
 
 #endif
 

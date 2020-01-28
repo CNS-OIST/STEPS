@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -41,18 +41,11 @@ namespace stex = steps::tetexact;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::KProc::KProc()
-: rExtent(0)
-, pFlags(0)
-, pSchedIDX(0)
- 
-{
-}
+stex::KProc::KProc() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::KProc::~KProc()
-= default;
+stex::KProc::~KProc() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -65,7 +58,7 @@ void stex::KProc::setActive(bool active)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint stex::KProc::getExtent() const
+unsigned long long stex::KProc::getExtent() const
 {
     return rExtent;
 }

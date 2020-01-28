@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -79,9 +79,9 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     WmVol
-    (
-        uint idx, steps::solver::Compdef * cdef, double vol
-    );
+      (
+        tetrahedron_id_t idx, steps::solver::Compdef *cdef, double vol
+      );
 
     virtual ~WmVol();
 
@@ -112,10 +112,10 @@ public:
     ////////////////////////////////////////////////////////////////////////
     // GENERAL INFORMATION
     ////////////////////////////////////////////////////////////////////////
-    inline steps::solver::Compdef * compdef() const
+    inline steps::solver::Compdef * compdef() const noexcept
     { return pCompdef; }
 
-    inline uint idx() const
+    inline tetrahedron_id_t idx() const noexcept
     { return pIdx; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -124,13 +124,13 @@ public:
 
     /// Get the volume.
     ///
-    inline double vol() const
+    inline double vol() const noexcept
     { return pVol; }
 
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline uint * pools() const
+    inline const std::vector<uint>& pools() const noexcept
     { return pPoolCount; }
     void setCount(uint lidx, uint count);
     void incCount(uint lidx, int inc);
@@ -140,29 +140,29 @@ public:
 
     static const uint CLAMPED = 1;
 
-    inline bool clamped(uint lidx) const
+    inline bool clamped(uint lidx) const noexcept
     { return pPoolFlags[lidx] & CLAMPED; }
     void setClamped(uint lidx, bool clamp);
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline std::vector<stex::Tri *>::const_iterator nexttriBegin() const
+    inline std::vector<stex::Tri *>::const_iterator nexttriBegin() const noexcept
     { return pNextTris.begin(); }
-    inline std::vector<stex::Tri *>::const_iterator nexttriEnd() const
+    inline std::vector<stex::Tri *>::const_iterator nexttriEnd() const noexcept
     { return pNextTris.end(); }
-    inline uint countNextTris() const
-    { return pNextTris.size(); }
-    inline const std::vector<stex::Tri *> & nexttris() const
+    inline uint countNextTris() const noexcept
+    { return static_cast<uint>(pNextTris.size()); }
+    inline const std::vector<stex::Tri *> & nexttris() const noexcept
     { return pNextTris; }
 
 
-    inline std::vector<stex::KProc *>::const_iterator kprocBegin() const
+    inline std::vector<stex::KProc *>::const_iterator kprocBegin() const noexcept
     { return pKProcs.begin(); }
-    inline std::vector<stex::KProc *>::const_iterator kprocEnd() const
+    inline std::vector<stex::KProc *>::const_iterator kprocEnd() const noexcept
     { return pKProcs.end(); }
-    inline uint countKProcs() const
-    { return pKProcs.size(); }
-    inline std::vector<stex::KProc *> & kprocs()
+    inline uint countKProcs() const noexcept
+    { return static_cast<uint>(pKProcs.size()); }
+    inline std::vector<stex::KProc *> & kprocs() noexcept
     { return pKProcs; }
 
     stex::Reac * reac(uint lidx) const;
@@ -183,16 +183,16 @@ private:
 
     ////////////////////////////////////////////////////////////////////////
 
-    uint                                 pIdx;
+    tetrahedron_id_t                                 pIdx;
 
     steps::solver::Compdef            * pCompdef;
 
     double                              pVol;
 
     /// Numbers of molecules -- stored as uint.
-    uint                              * pPoolCount;
+    std::vector<uint>                   pPoolCount;
     /// Flags on these pools -- stored as machine word flags.
-    uint                              * pPoolFlags;
+    std::vector<uint>                   pPoolFlags;
 
     ////////////////////////////////////////////////////////////////////////
 

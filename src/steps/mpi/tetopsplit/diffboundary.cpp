@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -45,30 +45,20 @@ namespace ssolver = steps::solver;
 
 smtos::DiffBoundary::DiffBoundary(steps::solver::DiffBoundarydef * dbdef)
 : pDiffBoundarydef(dbdef)
-, pCompA(nullptr)
-, pCompB(nullptr)
-, pTets()
-, pTetDirection()
-, pSetComps(false)
 {
-    AssertLog(dbdef != 0);
+    AssertLog(dbdef != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::DiffBoundary::~DiffBoundary()
-= default;
-
-////////////////////////////////////////////////////////////////////////////////
-
-void smtos::DiffBoundary::checkpoint(std::fstream & cp_file)
+void smtos::DiffBoundary::checkpoint(std::fstream & /*cp_file*/)
 {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::DiffBoundary::restore(std::fstream & cp_file)
+void smtos::DiffBoundary::restore(std::fstream & /*cp_file*/)
 {
     // reserve
 }
@@ -78,8 +68,8 @@ void smtos::DiffBoundary::restore(std::fstream & cp_file)
 void smtos::DiffBoundary::setComps(smtos::Comp * compa, smtos::Comp * compb)
 {
     AssertLog(pSetComps == false);
-    AssertLog(compa != 0);
-    AssertLog(compb != 0);
+    AssertLog(compa != nullptr);
+    AssertLog(compb != nullptr);
     AssertLog(compa != compb);
 
     pCompA = compa;
@@ -91,7 +81,7 @@ void smtos::DiffBoundary::setComps(smtos::Comp * compa, smtos::Comp * compb)
 
 smtos::Comp * smtos::DiffBoundary::compA()
 {
-    AssertLog(pSetComps == true);
+    AssertLog(pSetComps);
     return pCompA;
 }
 
@@ -99,13 +89,13 @@ smtos::Comp * smtos::DiffBoundary::compA()
 
 smtos::Comp * smtos::DiffBoundary::compB()
 {
-    AssertLog(pSetComps == true);
+    AssertLog(pSetComps);
     return pCompB;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::DiffBoundary::setTetDirection(uint tet, uint direction)
+void smtos::DiffBoundary::setTetDirection(tetrahedron_id_t tet, uint direction)
 {
     AssertLog(direction < 4);
 

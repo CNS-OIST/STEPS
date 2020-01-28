@@ -18,7 +18,6 @@ let
     steps-py3_build = steps_build.override {
         python = python3;
         pythonPackages = python3Packages;
-        cython = python3Packages.cython;
         numpy = python3Packages.numpy;
     };
 in

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -107,7 +107,8 @@ public:
     { return pKProcs.end(); }
     inline uint countKProcs() const
     { return pKProcs.size(); }
-
+    inline const std::vector<steps::wmrssa::KProc*>& kprocs() const noexcept
+    { return pKProcs; }
     steps::wmrssa::KProc * sreac(uint lsridx) const;
 
     ////////////////////////////////////////////////////////////////////////
@@ -124,7 +125,8 @@ public:
     bool isOutOfBound(uint i, int nc);
     double* pools(steps::wmrssa::PropensityRSSA prssa) const;
     void setupSpecDeps();
-    std::vector<steps::wmrssa::KProc*> const & getSpecUpdKProcs(uint slidx);
+    inline std::vector<steps::wmrssa::KProc*> const & getSpecUpdKProcs(uint slidx) noexcept
+    { return localSpecUpdKProcs[slidx]; }
 
 private:
 

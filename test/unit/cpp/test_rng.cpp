@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include "steps/rng/create.hpp"
+#include "steps/error.hpp"
 #include "steps/math/tools.hpp"
 
 #include "gtest/gtest.h"
@@ -56,7 +57,7 @@ void binomial_check(const std::string &str, uint t, double p, uint t_test, doubl
     const uint n_dof = n_sample - 1;
     std::vector<uint> vec_rng(n_sample);
 
-    RNG* rng = create(str, n_sample);
+    auto rng = create(str, n_sample);
     rng->initialize(12345u);
 
     /// Generating samples from the supposed binomial
@@ -91,8 +92,6 @@ void binomial_check(const std::string &str, uint t, double p, uint t_test, doubl
                                              << level_confidence << ": p_value is " << p_value
                                              << " which is not large enough to reject the hypothesis of binomial distribution" << std::endl;
     }
-
-    delete rng;
 }
 
 /// Kendall rank correlation test for the independency of streams
@@ -100,9 +99,9 @@ void kendall_rank_correlation_check(const std::string &str, const uint n_sample,
     std::vector<uint>  samples1(n_sample);
     std::vector<uint>  samples2(n_sample);
 
-    RNG* rng1 = create(str, n_sample);
+    auto rng1 = create(str, n_sample);
     rng1->initialize(seed1);
-    RNG* rng2 = create(str, n_sample);
+    auto rng2 = create(str, n_sample);
     rng2->initialize(seed2);
 
     for (uint i=0; i < n_sample; ++i) {
@@ -122,9 +121,6 @@ void kendall_rank_correlation_check(const std::string &str, const uint n_sample,
 
     ASSERT_LE(p_value, 1. - level_confidence) << "Failed Kendall correlation test with the level of confidence " << level_confidence
                                               << ". p_value " << p_value << " is not large enough to reject the hypothesis of correlated streams" << std::endl;
-
-    delete rng1;
-    delete rng2;
 }
 
 

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,21 +24,20 @@
 
  */
 
-
 #include <algorithm>
 #include <stdexcept>
 
 #include <mpi.h>
 
+extern "C" {
+#include <superlu_ddefs.h>
+}
+
+#include <easylogging++.h>
+
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/solver/efield/slusystem.hpp"
-
-extern "C" {
-#include "third_party/superlu_dist-4.1/src/superlu_ddefs.h"
-}
-
-#include "easylogging++.h"
 
 namespace steps {
 namespace solver {
@@ -54,9 +53,9 @@ struct supermatrix_nc_view {
         M.Store = &data;
 
         data.nnz = S.pNnz;
-        data.nzval = &S.pValues[0];
-        data.rowind = &S.pRidx[0];
-        data.colptr = &S.pCoff[0];
+        data.nzval = S.pValues.data();
+        data.rowind = S.pRidx.data();
+        data.colptr = S.pCoff.data();
     }
 
     SuperMatrix M;
@@ -68,7 +67,11 @@ struct SLUData {
     bool factored;
     bool keepperm;
 
+#if defined(SUPERLU_DIST_MAJOR_VERSION) && SUPERLU_DIST_MAJOR_VERSION >= 5
+    superlu_dist_options_t options;
+#else
     superlu_options_t options;
+#endif
     gridinfo_t grid;
     ScalePermstruct_t perm;
     LUstruct_t lu;
@@ -101,10 +104,10 @@ struct SLUData {
 };
 
 SLUSystem::SLUSystem(const sparsity_template &S, MPI_Comm mpi_comm):
-    pN((int)S.dim()), pA(S),
-    pb(pN,0.0), px(pN,0.0),
-    pb_view(pN,&pb[0]), px_view(pN,&px[0]),
-    pBerr(0)
+    pN(static_cast<int>(S.dim())), pA(S),
+       pb(pN,0.0), px(pN,0.0),
+       pb_view(pN, pb.data()), px_view(pN, px.data()),
+       pBerr(0)
 {
     slu.reset(new SLUData(mpi_comm, pN, true));
 }
@@ -127,7 +130,7 @@ void SLUSystem::solve() {
 
     int info;
 
-    pdgssvx_ABglobal(&slu->options, &slu_A.M, &slu->perm, &px[0], pN, 1,
+    pdgssvx_ABglobal(&slu->options, &slu_A.M, &slu->perm, px.data(), pN, 1,
         &slu->grid, &slu->lu, &pBerr, &slu->stat, &info);
 
     if (info>0) {

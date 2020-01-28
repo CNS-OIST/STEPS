@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -60,41 +60,40 @@ stex::GHKcurr::GHKcurr(ssolver::GHKcurrdef * ghkdef, stex::Tri * tri)
 , pUpdVec()
 , pEffFlux(true)
 {
-    AssertLog(pGHKcurrdef != 0);
-    AssertLog(pTri != 0);
+    AssertLog(pGHKcurrdef != nullptr);
+    AssertLog(pTri != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::GHKcurr::~GHKcurr()
-= default;
+stex::GHKcurr::~GHKcurr() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void stex::GHKcurr::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&rExtent, sizeof(uint));
-    cp_file.write((char*)&pFlags, sizeof(uint));
-    cp_file.write((char*)&pEffFlux, sizeof(bool));
+    cp_file.write(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.write(reinterpret_cast<char*>(&pFlags), sizeof(uint));
+    cp_file.write(reinterpret_cast<char*>(&pEffFlux), sizeof(bool));
 
-    cp_file.write((char*)&(crData.recorded), sizeof(bool));
-    cp_file.write((char*)&(crData.pow), sizeof(int));
-    cp_file.write((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.write((char*)&(crData.rate), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.write(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.write(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.write(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void stex::GHKcurr::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&rExtent, sizeof(uint));
-    cp_file.read((char*)&pFlags, sizeof(uint));
-    cp_file.read((char*)&pEffFlux, sizeof(bool));
+    cp_file.read(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.read(reinterpret_cast<char*>(&pFlags), sizeof(uint));
+    cp_file.read(reinterpret_cast<char*>(&pEffFlux), sizeof(bool));
 
-    cp_file.read((char*)&(crData.recorded), sizeof(bool));
-    cp_file.read((char*)&(crData.pow), sizeof(int));
-    cp_file.read((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.read((char*)&(crData.rate), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.read(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.read(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.read(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -122,53 +121,39 @@ void stex::GHKcurr::setupDeps()
 
     WmVol * itet = pTri->iTet();
     WmVol * otet = pTri->oTet();
-    AssertLog(itet != 0);
+    AssertLog(itet != nullptr);
     // The global species of the ion
     const uint gidxion = pGHKcurrdef->ion();
 
     // First check KProcs in the inner tetrahedron
-    KProcPVecCI kprocend = itet->kprocEnd();
-    for (KProcPVecCI k = itet->kprocBegin(); k != kprocend; ++k)
-    {
-        if ((*k)->depSpecTet(gidxion, itet) == true)
-            updset.insert(*k);
+    for (auto const& k: itet->kprocs()) {
+        if (k->depSpecTet(gidxion, itet))
+            updset.insert(k);
     }
 
-    std::vector<stex::Tri *>::const_iterator tri_end = itet->nexttriEnd();
-    for (std::vector<stex::Tri *>::const_iterator tri = itet->nexttriBegin();
-             tri != tri_end; ++tri)
-    {
-        if ((*tri) == 0) continue;
+    for (auto const& tri : itet->nexttris()) {
+        if (tri == nullptr) continue;
 
-        kprocend = (*tri)->kprocEnd();
-        for (KProcPVecCI k = (*tri)->kprocBegin(); k != kprocend; ++k)
-        {
-            if ((*k)->depSpecTet(gidxion, itet) == true)
-                updset.insert(*k);
+        for (auto const& k: tri->kprocs()) {
+            if (k->depSpecTet(gidxion, itet))
+                updset.insert(k);
         }
     }
 
     if (otet != nullptr)
     {
         // Now check KProcs in the outer tetrahedron
-        kprocend = otet->kprocEnd();
-        for (KProcPVecCI k = otet->kprocBegin(); k != kprocend; ++k)
-        {
-            if ((*k)->depSpecTet(gidxion, otet) == true)
-                updset.insert(*k);
+        for (auto const& k: otet->kprocs()) {
+            if (k->depSpecTet(gidxion, otet))
+                updset.insert(k);
         }
 
-        tri_end = otet->nexttriEnd();
-        for (std::vector<stex::Tri *>::const_iterator tri = otet->nexttriBegin();
-            tri != tri_end; ++tri)
-        {
-            if ((*tri) == 0) continue;
+        for (auto const& tri : otet->nexttris()) {
+            if (tri == nullptr) continue;
 
-            kprocend = (*tri)->kprocEnd();
-            for (KProcPVecCI k = (*tri)->kprocBegin(); k != kprocend; ++k)
-            {
-                if ((*k)->depSpecTet(gidxion, otet) == true)
-                    updset.insert(*k);
+            for (auto const& k : tri->kprocs()) {
+                if (k->depSpecTet(gidxion, otet))
+                    updset.insert(k);
             }
         }
     }
@@ -222,10 +207,10 @@ double stex::GHKcurr::rate(steps::tetexact::Tetexact * solver)
     // remembering that flux can be positive or negative (bi-directional)
     const uint gidxion = pGHKcurrdef->ion();
     double voconc = pGHKcurrdef->voconc();
+    double oconc = 0.0;
 
     // Get concentrations in Molar units: convert to Mol/m^3
     double iconc = (pTri->iTet()->conc(gidxion))*1.0e3;
-    double oconc = 0.0;
 
     if (voconc < 0.0) {  oconc = (pTri->oTet()->conc(gidxion))*1.0e3;
     } else {  oconc = voconc*1.0e3;
@@ -244,9 +229,7 @@ double stex::GHKcurr::rate(steps::tetexact::Tetexact * solver)
     double rt = flux/(sm::E_CHARGE * static_cast<double>(pGHKcurrdef->valence()));
     // Now a positive rate is always an efflux and a negative rate is an influx
     // Set positive or negative flux flag
-    if (rt >= 0.0) { setEffFlux(true);
-    } else { setEffFlux(false);
-}
+    setEffFlux(rt >= 0.0);
 
     // Find the number of available channel states
     ssolver::Patchdef * pdef = pTri->patchdef();
@@ -260,18 +243,18 @@ double stex::GHKcurr::rate(steps::tetexact::Tetexact * solver)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<stex::KProc*> const & stex::GHKcurr::apply(steps::rng::RNG * rng, double dt, double simtime)
+std::vector<stex::KProc*> const & stex::GHKcurr::apply(const rng::RNGptr &/*rng*/, double /*dt*/, double /*simtime*/)
 {
     stex::WmVol * itet = pTri->iTet();
     stex::WmVol * otet = pTri->oTet();
 
     ssolver::Compdef * innercdef = itet->compdef();
-    ssolver::Compdef * outercdef = 0;
+    ssolver::Compdef * outercdef = nullptr;
     if (otet) outercdef = otet->compdef();
 
     // Fetch the global index of the ion and the valence
-    const uint gidxion = pGHKcurrdef->ion();
-    const uint valence = pGHKcurrdef->valence();
+    const auto gidxion = pGHKcurrdef->ion();
+    const auto valence = pGHKcurrdef->valence();
 
     ssolver::Patchdef * pdef = pTri->patchdef();
     const uint ghklidx = pdef->ghkcurrG2L(pGHKcurrdef->gidx());
@@ -290,10 +273,10 @@ std::vector<stex::KProc*> const & stex::GHKcurr::apply(steps::rng::RNG * rng, do
     {
         if (realflux)
         {
-            if (itet->clamped(linneridx) == false) itet->incCount(linneridx,- 1);
+            if (!itet->clamped(linneridx)) itet->incCount(linneridx, - 1);
             if (otet && voconc < 0.0)
             {
-                if (otet->clamped(louteridx) == false) otet->incCount(louteridx, 1);
+                if (!otet->clamped(louteridx)) otet->incCount(louteridx, 1);
             }
         }
         // A positive outward current is a positive current by convention
@@ -303,10 +286,10 @@ std::vector<stex::KProc*> const & stex::GHKcurr::apply(steps::rng::RNG * rng, do
     {
         if (realflux)
         {
-            if (itet->clamped(linneridx) == false) itet->incCount(linneridx, 1);
+            if (!itet->clamped(linneridx)) itet->incCount(linneridx, 1);
             if (otet && voconc < 0.0)
             {
-                if (otet->clamped(louteridx) == false) otet->incCount(louteridx, -1);
+                if (!otet->clamped(louteridx)) otet->incCount(louteridx, -1);
             }
         }
         // A positive outward current is a positive current by convention

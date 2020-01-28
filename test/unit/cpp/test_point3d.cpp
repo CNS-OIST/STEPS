@@ -2,6 +2,7 @@
 #include <cmath>
 
 #include "steps/math/point.hpp"
+#include "steps/math/triangle.hpp"
 
 #include "gtest/gtest.h"
 
@@ -72,11 +73,53 @@ TEST(Point3d,vector_ops) {
 
     double d=p[0]*q[0]+p[1]*q[1]+p[2]*q[2];
 
-    ASSERT_EQ(d,dot(p,q));
+    ASSERT_EQ(d,p.dot(q));
 
     point3d x={p[1]*q[2]-p[2]*q[1],
                p[2]*q[0]-p[0]*q[2],
                p[0]*q[1]-p[1]*q[0]};
 
-    ASSERT_EQ(x,cross(p,q));
+    ASSERT_EQ(x,p.cross(q));
+}
+
+TEST(Point3d,intersection) {
+    point3d t0{1, 1, 1},
+            t1{1, 1, 2},
+            t2{1, 2, 2};
+
+    // result holder
+    point3d intersect;
+
+    {
+        point3d lc(tri_barycenter(t0,t1,t2)),
+                l1{10.0, 10.0, 10.0},
+                l0(lc - 0.2*(l1-lc));
+
+        // Common case
+        ASSERT_TRUE(tri_intersect_line(t0, t1, t2, l0, l1, intersect));
+        ASSERT_TRUE(tri_intersect_line(t0, t1, t2, l0, l1, intersect, false));
+        ASSERT_TRUE(lc.almostEqual(intersect));
+
+        // outside yields false
+        point3d l2 = lc + 1.5*(l1-lc);  // point after l1
+        ASSERT_FALSE(tri_intersect_line(t0, t1, t2, l1, l2, intersect, true));
+        ASSERT_FALSE(tri_intersect_line(t0, t1, t2, l1, l2, intersect, false));
+
+        //But reversal ok in ray mode
+        ASSERT_TRUE(tri_intersect_line(t0, t1, t2, l2, l1, intersect, false));
+        ASSERT_FALSE(tri_intersect_line(t0, t1, t2, l2, l1, intersect, true));
+
+        point3d p0{0.0, 2.0, 1.0}, p1{2.0, 2.0, 1.0};
+        ASSERT_FALSE(tri_intersect_line(t0, t1, t2, p0, p1, intersect, true));
+        ASSERT_FALSE(tri_intersect_line(t0, t1, t2, p0, p1, intersect, false));
+    }
+
+    // 100% Independent
+    {
+        point3d p0{0.0, 1.2, 1.8},
+                p1{0.5, 1.2, 1.8};
+        ASSERT_TRUE(tri_intersect_line(t0, t1, t2, p0, p1, intersect, false));
+        ASSERT_FALSE(tri_intersect_line(t0, t1, t2, p0, p1, intersect, true));
+    }
+
 }

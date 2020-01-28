@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -28,6 +28,7 @@ import numpy as np
 import random
 
 import steps.geom
+from steps.geom import INDEX_DTYPE
 
 class VisualTetsSpec(gl.GLScatterPlotItem):
     """
@@ -60,7 +61,7 @@ class VisualTetsSpec(gl.GLScatterPlotItem):
         self.sim = sim
         self.spec_id = spec_id
         
-        if spec_color == None:
+        if spec_color is None:
             self.spec_color = [random.random(), random.random(), random.random(), random.random()]
         else:
             self.spec_color = spec_color
@@ -70,7 +71,7 @@ class VisualTetsSpec(gl.GLScatterPlotItem):
         self.max_density = max_density
         self.auto_adjust = auto_adjust
         
-        self.tets = np.array(tets, dtype = np.uint32)
+        self.tets = np.array(tets, dtype = INDEX_DTYPE)
         self.counts = np.zeros(self.tets.size)
         sim.getBatchTetCountsNP(self.tets, spec_id, self.counts)
         
@@ -274,7 +275,7 @@ class VisualTrisSpec(gl.GLScatterPlotItem):
         self.max_density = max_density
         self.auto_adjust = auto_adjust
         
-        self.tris = np.array(tris, dtype = np.uint32)
+        self.tris = np.array(tris, dtype = INDEX_DTYPE)
         self.counts = np.zeros(self.tris.size)
         
         sim.getBatchTriCountsNP(self.tris, spec_id, self.counts)
@@ -466,7 +467,7 @@ class VisualTrisChannel(gl.GLScatterPlotItem):
         
         self.spec_size = spec_size
         
-        self.tris = np.array(tris, dtype = np.uint32)
+        self.tris = np.array(tris, dtype = INDEX_DTYPE)
         # total counts of species channels in eaxh tris
         total_counts = np.zeros(self.tris.size)
         individual_counts = np.zeros(self.tris.size)
@@ -486,7 +487,7 @@ class VisualTrisChannel(gl.GLScatterPlotItem):
         
         self.color = np.zeros(int(total) * 4).reshape(-1, 4)
         
-        current_counter = np.zeros(self.tris.size, dtype = np.uint32)
+        current_counter = np.zeros(self.tris.size, dtype = INDEX_DTYPE)
         for s in self.specs_colors.keys():
             sim.getBatchTriCountsNP(self.tris, s, individual_counts)
             for t in range(self.tris.size):
@@ -499,7 +500,7 @@ class VisualTrisChannel(gl.GLScatterPlotItem):
         """
             Update the component.
         """
-        current_counter = np.zeros(self.tris.size, dtype = np.uint32)
+        current_counter = np.zeros(self.tris.size, dtype = INDEX_DTYPE)
         individual_counts = np.zeros(self.tris.size)
         for s in self.specs_colors.keys():
             self.sim.getBatchTriCountsNP(self.tris, s, individual_counts)

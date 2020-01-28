@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -34,13 +34,14 @@
 #include <set>
 #include <fstream>
 
+// logging
+#include <easylogging++.h>
+
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/solver/compdef.hpp"
 #include "steps/mpi/tetopsplit/kproc.hpp"
 #include "steps/solver/types.hpp"
-// logging
-#include "third_party/easyloggingpp/src/easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
  namespace steps {
@@ -83,9 +84,9 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     WmVol
-    (
-        uint idx, steps::solver::Compdef * cdef, double vol, int rank, int host_rank
-    );
+      (
+        tetrahedron_id_t idx, steps::solver::Compdef *cdef, double vol, int rank, int host_rank
+      );
 
     virtual ~WmVol();
 
@@ -116,10 +117,10 @@ public:
     ////////////////////////////////////////////////////////////////////////
     // GENERAL INFORMATION
     ////////////////////////////////////////////////////////////////////////
-    inline steps::solver::Compdef * compdef() const
+    inline steps::solver::Compdef * compdef() const noexcept
     { return pCompdef; }
 
-    inline uint idx() const
+    inline tetrahedron_id_t idx() const noexcept
     { return pIdx; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -128,7 +129,7 @@ public:
 
     /// Get the volume.
     ///
-    inline double vol() const
+    inline double vol() const noexcept
     { return pVol; }
 
 
@@ -144,55 +145,55 @@ public:
 
     static const uint CLAMPED = 1;
 
-    inline bool clamped(uint lidx) const
+    inline bool clamped(uint lidx) const noexcept
     { return pPoolFlags[lidx] & CLAMPED; }
     void setClamped(uint lidx, bool clamp);
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline std::vector<smtos::Tri *>::const_iterator nexttriBegin() const
+    inline std::vector<smtos::Tri *>::const_iterator nexttriBegin() const noexcept
     { return pNextTris.begin(); }
-    inline std::vector<smtos::Tri *>::const_iterator nexttriEnd() const
+    inline std::vector<smtos::Tri *>::const_iterator nexttriEnd() const noexcept
     { return pNextTris.end(); }
-    inline uint countNextTris() const
+    inline const std::vector<smtos::Tri *>& nexttris() const noexcept
+    { return pNextTris; }
+    inline uint countNextTris() const noexcept
     { return pNextTris.size(); }
 
 
-    inline std::vector<smtos::KProc *>::const_iterator kprocBegin() const
+    inline std::vector<smtos::KProc *>::const_iterator kprocBegin() const noexcept
     { return pKProcs.begin(); }
-    inline std::vector<smtos::KProc *>::const_iterator kprocEnd() const
+    inline std::vector<smtos::KProc *>::const_iterator kprocEnd() const noexcept
     { return pKProcs.end(); }
-    inline uint getStartKProcIdx()
+    inline uint getStartKProcIdx() const noexcept
     {return startKProcIdx;}
-    inline uint countKProcs() const
-    {
-        return nKProcs;
-    }
-    inline std::vector<smtos::KProc *> & kprocs()
+    inline uint countKProcs() const noexcept
+    { return nKProcs; }
+    inline std::vector<smtos::KProc *> & kprocs() noexcept
     { return pKProcs; }
     
     inline KProc * getKProc(uint lidx)
     {
-        if (hostRank != myRank) return NULL;
+        if (hostRank != myRank) return nullptr;
         AssertLog(lidx < pKProcs.size());
         return pKProcs[lidx];
     }
 
     smtos::Reac * reac(uint lidx) const;
     
-    virtual double getPoolOccupancy(uint lidx);
-    virtual double getLastUpdate(uint lidx);
+    virtual double getPoolOccupancy(uint lidx) const;
+    virtual double getLastUpdate(uint lidx) const;
     virtual void resetPoolOccupancy();
 
     ////////////////////////////////////////////////////////////////////////
     
     // MPISTEPS
-    bool getInHost();
-    int getHost() {return hostRank;}
+    bool getInHost() const;
+    inline int getHost() const { return hostRank; }
     void setHost(int host, int rank);
     //void addSyncHost(int host);
     void setSolver(steps::mpi::tetopsplit::TetOpSplitP* solver);
-    steps::mpi::tetopsplit::TetOpSplitP* solver();
+    steps::mpi::tetopsplit::TetOpSplitP* solver() const;
     
     //virtual void sendSyncPools();
     //void recvSyncPools(int source);
@@ -200,7 +201,7 @@ public:
     
     /////////////////////////// Dependency ////////////////////////////////
     // setup dependence for KProcs in this subvolume
-    void setupDeps();
+    virtual void setupDeps();
     
     // check if kp_lidx in this vol depends on spec_gidx in WMVol kp_container
     virtual bool KProcDepSpecTet(uint kp_lidx, WmVol* kp_container, uint spec_gidx);
@@ -224,20 +225,20 @@ protected:
 
     ////////////////////////////////////////////////////////////////////////
 
-    uint                                 pIdx;
+    tetrahedron_id_t                    pIdx;
 
     steps::solver::Compdef            * pCompdef;
 
     double                              pVol;
 
     /// Numbers of molecules -- stored as uint.
-    uint                              * pPoolCount;
+    uint                              * pPoolCount{nullptr};
     /// Flags on these pools -- stored as machine word flags.
-    uint                              * pPoolFlags;
+    uint                              * pPoolFlags{nullptr};
 
     ///////// MPI STUFFS ////////////////////////////////////////////////////
-    int                                 hostRank;
     int                                 myRank;
+    int                                 hostRank;
     steps::mpi::tetopsplit::TetOpSplitP         * pSol;
     
 };

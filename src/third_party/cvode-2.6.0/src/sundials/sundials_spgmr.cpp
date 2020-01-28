@@ -56,7 +56,7 @@ SpgmrMem SpgmrMalloc(int l_max, N_Vector vec_tmpl)
   /* Get memory for the Hessenberg matrix Hes. */
 
   Hes = NULL;
-  Hes = (realtype **) malloc((l_max+1)*sizeof(realtype *)); 
+  Hes = static_cast<realtype **> (malloc((l_max + 1) * sizeof(realtype *)));
   if (Hes == NULL) {
     N_VDestroyVectorArray(V, l_max+1);
     return(NULL);
@@ -64,7 +64,7 @@ SpgmrMem SpgmrMalloc(int l_max, N_Vector vec_tmpl)
 
   for (k = 0; k <= l_max; k++) {
     Hes[k] = NULL;
-    Hes[k] = (realtype *) malloc(l_max*sizeof(realtype));
+    Hes[k] = static_cast<realtype *> (malloc(l_max * sizeof(realtype)));
     if (Hes[k] == NULL) {
       for (i = 0; i < k; i++) {free(Hes[i]); Hes[i] = NULL;}
       free(Hes); Hes = NULL;
@@ -76,7 +76,7 @@ SpgmrMem SpgmrMalloc(int l_max, N_Vector vec_tmpl)
   /* Get memory for Givens rotation components. */
   
   givens = NULL;
-  givens = (realtype *) malloc(2*l_max*sizeof(realtype));
+  givens = static_cast<realtype *> (malloc(2 * l_max * sizeof(realtype)));
   if (givens == NULL) {
     for (i = 0; i <= l_max; i++) {free(Hes[i]); Hes[i] = NULL;}
     free(Hes); Hes = NULL;
@@ -98,7 +98,7 @@ SpgmrMem SpgmrMalloc(int l_max, N_Vector vec_tmpl)
   /* Get memory to hold SPGMR y and g vectors. */
 
   yg = NULL;
-  yg = (realtype *) malloc((l_max+1)*sizeof(realtype));
+  yg = static_cast<realtype *> (malloc((l_max + 1) * sizeof(realtype)));
   if (yg == NULL) {
     N_VDestroy(xcor);
     free(givens); givens = NULL;
@@ -124,7 +124,7 @@ SpgmrMem SpgmrMalloc(int l_max, N_Vector vec_tmpl)
   /* Get memory for an SpgmrMemRec containing SPGMR matrices and vectors. */
 
   mem = NULL;
-  mem = (SpgmrMem) malloc(sizeof(SpgmrMemRec));
+  mem = static_cast<SpgmrMem> (malloc(sizeof(SpgmrMemRec)));
   if (mem == NULL) {
     N_VDestroy(vtemp);
     free(yg); yg = NULL;
@@ -436,19 +436,17 @@ int SpgmrSolve(SpgmrMem mem, void *A_data, N_Vector x, N_Vector b,
 void SpgmrFree(SpgmrMem mem)
 {
   int i, l_max;
-  realtype **Hes, *givens, *yg;
+  realtype **Hes;
   
   if (mem == NULL) return;
 
   l_max  = mem->l_max;
   Hes    = mem->Hes;
-  givens = mem->givens;
-  yg     = mem->yg;
 
   for (i = 0; i <= l_max; i++) {free(Hes[i]); Hes[i] = NULL;}
   free(Hes); Hes = NULL;
-  free(mem->givens); givens = NULL; 
-  free(mem->yg); yg = NULL;
+  free(mem->givens);
+  free(mem->yg);
 
   N_VDestroyVectorArray(mem->V, l_max+1);
   N_VDestroy(mem->xcor);

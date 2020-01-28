@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,6 +30,7 @@
 
 
 // Standard library & STL headers.
+#include <array>
 #include <map>
 #include <string>
 #include <vector>
@@ -40,6 +41,7 @@
 #include "steps/common.h"
 #include "steps/math/constants.hpp"
 #include "steps/solver/diffdef.hpp"
+#include "steps/solver/types.hpp"
 #include "steps/mpi/tetopsplit/kproc.hpp"
 #include "steps/mpi/tetopsplit/tetopsplit.hpp"
 
@@ -56,8 +58,7 @@ class Tri;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class SDiff
-: public steps::mpi::tetopsplit::KProc
+class SDiff: public KProc
 {
 
 public:
@@ -66,50 +67,49 @@ public:
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    SDiff(steps::solver::Diffdef * sdef, steps::mpi::tetopsplit::Tri * tri);
-    ~SDiff();
+    SDiff(steps::solver::Diffdef * sdef, Tri * tri);
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream & cp_file) override;
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream & cp_file) override;
 
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Diffdef * def() const
+    inline steps::solver::Diffdef * def() const noexcept
     { return pSDiffdef; }
 
     double dcst(int direction = -1);
     void setDcst(double d);
     void setDirectionDcst(int direction, double dcst);
 
-    void setupDeps();
+    void setupDeps() override;
 
-    bool depSpecTet(uint gidx, steps::mpi::tetopsplit::WmVol * tet);
-    bool depSpecTri(uint gidx, steps::mpi::tetopsplit::Tri * tri);
+    bool depSpecTet(uint gidx, WmVol * tet) override;
+    bool depSpecTri(uint gidx, Tri * tri) override;
 
-    void reset();
-    double rate(steps::mpi::tetopsplit::TetOpSplitP * solver = 0);
-    double getScaledDcst(steps::mpi::tetopsplit::TetOpSplitP * solver = 0);
+    void reset() override;
+    double rate(TetOpSplitP * solver = nullptr) override;
+    double getScaledDcst(TetOpSplitP * solver = nullptr) const override;
     
-    
-    int apply(steps::rng::RNG * rng);
-    int apply(steps::rng::RNG * rng, uint nmolcs);
+    using KProc::apply;
+    int apply(const rng::RNGptr &rng) override;
+    int apply(const rng::RNGptr &rng, uint nmolcs) override;
 
-    std::vector<KProc*> const & getLocalUpdVec(int direction = -1);
-    std::vector<uint> const & getRemoteUpdVec(int direction = -1);
+    std::vector<KProc*> const & getLocalUpdVec(int direction = -1) const override;
+    std::vector<uint> const & getRemoteUpdVec(int direction = -1) const override;
 
-    bool getInHost() {
+    bool getInHost() const noexcept override {
         return pTri->getInHost();
     }
     
-    int getHost() {
+    int getHost() const noexcept override {
         return pTri->getHost();
     }
     ////////////////////////////////////////////////////////////////////////
@@ -120,11 +120,11 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline uint getLigLidx() {return lidxTri;}
+    inline uint getLigLidx() const noexcept {return lidxTri;}
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::mpi::tetopsplit::Tri* getTri() {return pTri;}
+    inline Tri* getTri() const noexcept {return pTri;}
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -132,10 +132,9 @@ private:
 
     ////////////////////////////////////////////////////////////////////////
 
-    uint                                ligGIdx;
     uint                                lidxTri;
     steps::solver::Diffdef              * pSDiffdef;
-    steps::mpi::tetopsplit::Tri         * pTri;
+    Tri         * pTri;
 
     std::vector<KProc*>                 localUpdVec[3];
     std::vector<KProc*>					localAllUpdVec;
@@ -152,24 +151,23 @@ private:
     // Storing the species local index for each neighbouring tri: Needed
     // because neighbours may belong to different patches for
     // diffusion boundary for surfaces
-    int                                 pNeighbPatchLidx[3];
-
+    std::array<solver::lidxT, 3>  pNeighbPatchLidx{solver::LIDX_UNDEFINED, solver::LIDX_UNDEFINED, solver::LIDX_UNDEFINED};
 
     /// Properly scaled diffusivity constant.
-    double                              pScaledDcst;
+    double                              pScaledDcst{};
     // Compartmental dcst. Stored for convenience
-    double                              pDcst;
+    double                              pDcst{};
     std::map<uint, double>              directionalDcsts;
 
-    double 								pNonCDFSelector[3];
+    std::array<double, 3>  				pNonCDFSelector{0.0, 0.0, 0.0};
     std::vector<uint> 					pDirections;
-    uint				 				pNdirections;
+    uint				 				pNdirections{0};
 
     // A flag to see if the species can move between compartments
-    bool                                pSDiffBndActive[3];
+    std::array<bool, 3>     pSDiffBndActive{false, false, false};
 
     // Flags to store if a direction is a diffusion boundary direction
-    bool                                pSDiffBndDirection[3];
+    std::array<bool, 3>     pSDiffBndDirection{false, false, false};
 
     ////////////////////////////////////////////////////////////////////////
 

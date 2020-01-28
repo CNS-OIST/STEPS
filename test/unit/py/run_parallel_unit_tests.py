@@ -25,9 +25,9 @@
 import unittest2
 import nose
 import parallel_diff_sel_test
-
+import parallel_setget_count_test
 def suite():
-    all_tests = [ parallel_diff_sel_test.suite() ]
+    all_tests = [ parallel_diff_sel_test.suite(), parallel_setget_count_test.suite()]
     return unittest2.TestSuite(all_tests)
 
 if __name__ == "__main__":

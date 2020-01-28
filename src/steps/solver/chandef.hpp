@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -91,22 +91,23 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this species.
-    inline uint gidx() const
+    inline uint gidx() const noexcept
     { return pIdx; }
 
     /// Return the name of the species.
-    std::string const name() const;
+    inline const std::string& name() const noexcept
+    { return pName; }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: CHANNEL STATES
     ////////////////////////////////////////////////////////////////////////
 
     // The global species indices of the associated channel states.
-    inline uint * chanstates() const
+    inline uint * chanstates() const noexcept
     { return pChanStates; }
 
     // The number of channel states describing this channel.
-    inline uint nchanstates() const
+    inline uint nchanstates() const noexcept
     { return pNChanStates; }
 
     ////////////////////////////////////////////////////////////////////////

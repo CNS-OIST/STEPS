@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -58,20 +58,21 @@ namespace sm = steps::math;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stode::Tri::Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
-            double l0, double l1, double l2, double d0, double d1, double d2,
-            int tetinner, int tetouter, int tri0, int tri1, int tri2)
+stode::Tri::Tri(triangle_id_t idx, steps::solver::Patchdef *patchdef, double area,
+                double l0, double l1, double l2, double d0, double d1, double d2,
+                tetrahedron_id_t tetinner, tetrahedron_id_t tetouter,
+                triangle_id_t tri0, triangle_id_t tri1, triangle_id_t tri2)
 : pIdx(idx)
 , pPatchdef(patchdef)
+, pTets()
+, pTris()
+, pNextTri()
 , pArea(area)
 , pLengths()
 , pDist()
-, pInnerTet(nullptr)
-, pOuterTet(nullptr)
-, pTets()
-, pNextTri()
+
 {
-    AssertLog(pPatchdef != 0);
+    AssertLog(pPatchdef != nullptr);
     AssertLog(pArea > 0.0);
 
     AssertLog(l0 > 0.0 && l1 > 0.0 && l2 > 0.0);
@@ -128,13 +129,13 @@ void stode::Tri::setNextTri(uint i, stode::Tri * t)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stode::Tri::checkpoint(std::fstream & cp_file)
+void stode::Tri::checkpoint(std::fstream & /*cp_file*/)
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stode::Tri::restore(std::fstream & cp_file)
+void stode::Tri::restore(std::fstream & /*cp_file*/)
 {
 }
 
@@ -152,7 +153,6 @@ double stode::Tri::getOhmicI(double v, steps::tetode::TetODE * solver) const
 
         // Now need to get the states from TetODE object, and remember to convert local indices to the global ones it needs
         uint spec_gidx = patchdef()->specL2G(patchdef()->ohmiccurr_chanstate(i));
-        uint patch_gidx = patchdef()->gidx();
 
         double n = solver->_getTriCount(pIdx, spec_gidx);
         //if (idx() %1000 == 0) CLOG(INFO, "general_log") << "\nN# " << i << ": " << n;

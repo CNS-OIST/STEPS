@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -40,18 +40,16 @@
 #include "steps/util/collections.hpp"
 // logging
 #include "easylogging++.h"
-namespace stetmesh = steps::tetmesh;
 
-using steps::math::point3d;
+namespace steps {
+namespace tetmesh {
 
-////////////////////////////////////////////////////////////////////////////////
+using math::point3d;
 
-stetmesh::TmComp::TmComp(std::string const & id, Tetmesh * container,
-                         std::vector<uint> const & tets)
+TmComp::TmComp(std::string const & id, Tetmesh * container,
+                         std::vector<index_t> const & tets)
 : steps::wm::Comp(id, container, 0.0)
 , pTetmesh(container)
-, pTetsN(0)
-, pTet_indices(0)
 {
     if (pTetmesh == nullptr) {
         ArgErrLog("No mesh provided to TmComp initializer function.");
@@ -62,10 +60,11 @@ stetmesh::TmComp::TmComp(std::string const & id, Tetmesh * container,
     }
 
     // The maximum tetrahedron index in tetrahedral mesh
-    uint maxidx = (pTetmesh-> countTets())-1;
+    auto maxidx = static_cast<index_t>(pTetmesh-> countTets() - 1);
 
-    std::unordered_set<uint> visited_tets(tets.size());
-    for (uint tet: tets) {
+    std::unordered_set<index_t> visited_tets(tets.size());
+    pTet_indices.reserve(tets.size());
+    for (const auto tet: tets) {
         if (visited_tets.count(tet)) {
             continue;
         }
@@ -87,7 +86,7 @@ stetmesh::TmComp::TmComp(std::string const & id, Tetmesh * container,
         pVol += pTetmesh->getTetVol(tet);
 
         // Grow bounding box.
-        const uint *tet_verts = pTetmesh->_getTet(tet);
+        const auto tet_verts = pTetmesh->_getTet(tet);
         for (uint j = 0; j < 4; ++j) {
             pBBox.insert(pTetmesh->_getVertex(tet_verts[j]));
         }
@@ -98,35 +97,33 @@ stetmesh::TmComp::TmComp(std::string const & id, Tetmesh * container,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stetmesh::TmComp::setVol(double /* vol */)
+void TmComp::setVol(double /* vol */)
 {
-    NotImplErrLog("""Cannot set volume of Tetmesh comp object; vol calculated internally.");
+    NotImplErrLog("Cannot set volume of Tetmesh comp object; vol calculated internally.");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> stetmesh::TmComp::getBoundMin() const
+std::vector<double> TmComp::getBoundMin() const
 {
     const point3d &p = pBBox.min();
-    return std::vector<double>(p.begin(),p.end());
+    return {p.begin(),p.end()};
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> stetmesh::TmComp::getBoundMax() const
+std::vector<double> TmComp::getBoundMax() const
 {
     const point3d &p = pBBox.max();
-    return std::vector<double>(p.begin(),p.end());
+    return {p.begin(),p.end()};
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<bool> stetmesh::TmComp::isTetInside(const std::vector<uint> &tets) const
+std::vector<bool> TmComp::isTetInside(const std::vector<index_t> &tets) const
 {
     return steps::util::map_membership(tets, pTet_indices);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
-
+} // namespace tetmesh
+} // namespace steps

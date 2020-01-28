@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -42,18 +42,15 @@
 // logging
 #include "easylogging++.h"
 
-namespace stetmesh = steps::tetmesh;
+namespace steps {
+namespace tetmesh {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stetmesh::SDiffBoundary::SDiffBoundary(std::string id, Tetmesh * container,
-            std::vector<uint> const & bars, std::vector<stetmesh::TmPatch *> const & patches)
+SDiffBoundary::SDiffBoundary(std::string id, Tetmesh * container,
+            std::vector<index_t> const & bars, std::vector<TmPatch *> const & patches)
 : pID(std::move(id))
 , pTetmesh(container)
-, pIPatch(nullptr)
-, pOPatch(nullptr)
-, pBarsN(0)
-, pBar_indices()
 {
     if (pTetmesh == nullptr) {
       ArgErrLog("No mesh provided to Surface Diffusion Boundary initializer function.");
@@ -86,25 +83,25 @@ stetmesh::SDiffBoundary::SDiffBoundary(std::string id, Tetmesh * container,
         }
 
         // Need to find one triangle from inner patch and one from outer in this lot:
-        std::set<uint> bartris = pTetmesh->getBarTriNeighbs(bar);
+        const std::set<triangle_id_t> bartris = pTetmesh->getBarTriNeighbs(bar);
 
     	// Must be one and only one copy of inner patch and outer patch
-    	int innertriidx = -1;
-    	int outertriidx = -1;
+    	triangle_id_t innertriidx = UNKNOWN_TRI;
+        triangle_id_t outertriidx = UNKNOWN_TRI;
 
         for (const auto tri : bartris)
         {
-        	stetmesh::TmPatch *tri_patch = pTetmesh->getTriPatch(tri);
+        	TmPatch *tri_patch = pTetmesh->getTriPatch(tri);
 
         	if (tri_patch == patches[0]) {
-        		if (innertriidx == -1) {
+        		if (innertriidx == UNKNOWN_TRI) {
         		  innertriidx = tri;
         		} else {
         		  ArgErrLog("Duplicate copy of patch" + patches[0]->getID() + " in connected triangles to bar " + std::to_string(bar));
         		}
         	}
         	else if (tri_patch == patches[1]) {
-        		if (outertriidx == -1) {
+        		if (outertriidx == UNKNOWN_TRI) {
         		  outertriidx = tri;
         		} else {
         		  ArgErrLog("Duplicate copy of patch" + patches[1]->getID() + " in connected triangles to bar " + std::to_string(bar));
@@ -112,10 +109,10 @@ stetmesh::SDiffBoundary::SDiffBoundary(std::string id, Tetmesh * container,
         	}
         }
 
-        if (innertriidx == -1) {
+        if (innertriidx == UNKNOWN_TRI) {
           ArgErrLog("Patch" + patches[0]->getID() + " is not connected to bar " + std::to_string(bar));
         }
-        if (outertriidx == -1) {
+        if (outertriidx == UNKNOWN_TRI) {
           ArgErrLog("Patch" + patches[1]->getID() + " is not connected to bar " + std::to_string(bar));
         }
 
@@ -131,14 +128,13 @@ stetmesh::SDiffBoundary::SDiffBoundary(std::string id, Tetmesh * container,
     pIPatch = patches[0];
     pOPatch = patches[1];
 
-    pBarsN = pBar_indices.size();
     pTetmesh->_handleSDiffBoundaryAdd(this);
 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stetmesh::SDiffBoundary::setID(std::string const & id)
+void SDiffBoundary::setID(std::string const & id)
 {
     AssertLog(pTetmesh != nullptr);
     if (id == pID) {
@@ -155,12 +151,10 @@ void stetmesh::SDiffBoundary::setID(std::string const & id)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<bool> stetmesh::SDiffBoundary::isBarInside(const std::vector<uint> & bars) const
+std::vector<bool> SDiffBoundary::isBarInside(const std::vector<index_t> & bars) const
 {
     return steps::util::map_membership(bars, pBar_indices);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-
-// END
+} // namespace tetmesh
+} // namespace steps

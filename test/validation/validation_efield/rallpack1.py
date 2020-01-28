@@ -8,6 +8,7 @@
 
 
 import steps.quiet
+from steps.geom import UNKNOWN_TET
 import steps.model as smodel
 import steps.geom as sgeom
 import steps.rng as srng
@@ -41,12 +42,12 @@ def ROIset(x):
 
 def boundary_tets(mesh):
     return (i for i in range(mesh.ntets)
-            if any([nb == -1 for nb in mesh.getTestNeighb(i)]))
+            if any([nb == UNKNOWN_TET for nb in mesh.getTestNeighb(i)]))
 
 def boundary_tris(mesh):
     def btris(tet):
         return [mesh.getTetTriNeighb(tet)[face] for face in range(4)
-                if mesh.getTetTetNeighb(tet)[face]==-1]
+                if mesh.getTetTetNeighb(tet)[face] == UNKNOWN_TET]
 
     return (tri for tet in range(mesh.ntets) for tri in btris(tet))
 

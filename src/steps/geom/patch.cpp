@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -41,17 +41,13 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace swm = steps::wm;
+namespace steps {
+namespace wm {
 
-////////////////////////////////////////////////////////////////////////////////
-
-swm::Patch::Patch(std::string id, swm::Geom * container, swm::Comp* icomp,
-        swm::Comp* ocomp, double area)
+Patch::Patch(std::string id, Geom * container, Comp* icomp,
+        Comp* ocomp, double area)
 : pID(std::move(id))
 , pContainer(container)
-, pIComp()
-, pOComp()
-, pSurfsys()
 , pArea(area)
 {
     if (pContainer == nullptr)
@@ -77,7 +73,7 @@ swm::Patch::Patch(std::string id, swm::Geom * container, swm::Comp* icomp,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swm::Patch::~Patch()
+Patch::~Patch()
 {
     if (pContainer == nullptr) {
         return;
@@ -87,7 +83,7 @@ swm::Patch::~Patch()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Patch::setID(std::string const & id)
+void Patch::setID(std::string const & id)
 {
     AssertLog(pContainer != nullptr);
     if (id == pID) {
@@ -104,7 +100,7 @@ void swm::Patch::setID(std::string const & id)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Patch::setArea(double area)
+void Patch::setArea(double area)
 {
     AssertLog(pContainer != nullptr);
     if (area < 0.0)
@@ -118,7 +114,7 @@ void swm::Patch::setArea(double area)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Patch::addSurfsys(std::string const & id)
+void Patch::addSurfsys(std::string const & id)
 {
     // string identifier is only added to set if it is not already included
     pSurfsys.insert(id);
@@ -126,7 +122,7 @@ void swm::Patch::addSurfsys(std::string const & id)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Patch::delSurfsys(std::string const & id)
+void Patch::delSurfsys(std::string const & id)
 {
     // string identifier is only removed from set if it is included
     pSurfsys.erase(id);
@@ -134,7 +130,7 @@ void swm::Patch::delSurfsys(std::string const & id)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<steps::model::Spec*> swm::Patch::getAllSpecs(steps::model::Model* model)
+std::vector<steps::model::Spec*> Patch::getAllSpecs(steps::model::Model* model) const
 {
     std::set<steps::model::Spec*> pSpecs;
     for (const auto& id : pSurfsys) {
@@ -143,13 +139,12 @@ std::vector<steps::model::Spec*> swm::Patch::getAllSpecs(steps::model::Model* mo
         pSpecs.insert(specs.begin(), specs.end());
     }
 
-    std::vector<steps::model::Spec*> spec_vec(pSpecs.begin(), pSpecs.end());
-    return spec_vec;
+    return {pSpecs.begin(), pSpecs.end()};
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<steps::model::SReac*> swm::Patch::getAllSReacs(steps::model::Model* model)
+std::vector<steps::model::SReac*> Patch::getAllSReacs(steps::model::Model* model) const
 {
     std::set<steps::model::SReac*> pSReacs;
     for (const auto& id : pSurfsys) {
@@ -158,13 +153,12 @@ std::vector<steps::model::SReac*> swm::Patch::getAllSReacs(steps::model::Model* 
         pSReacs.insert(sreacs.begin(), sreacs.end());
     }
 
-    std::vector<steps::model::SReac*> sreac_vec(pSReacs.begin(), pSReacs.end());
-    return sreac_vec;
+    return {pSReacs.begin(), pSReacs.end()};
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Patch::_setIComp(swm::Comp* icomp)
+void Patch::_setIComp(Comp* icomp)
 {
     if (icomp->getContainer() != pContainer)
     {
@@ -172,7 +166,7 @@ void swm::Patch::_setIComp(swm::Comp* icomp)
         os << "Compartment does not belong to same container as patch.\n";
         ArgErrLog(os.str());
     }
-    std::set<swm::Patch *> ipatches  = icomp->getIPatches();
+    auto const& ipatches  = icomp->getIPatches();
     if (ipatches.find(this) != ipatches.end())
     {
         std::ostringstream os;
@@ -193,7 +187,7 @@ void swm::Patch::_setIComp(swm::Comp* icomp)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Patch::_setOComp(swm::Comp* ocomp)
+void Patch::_setOComp(Comp* ocomp)
 {
     if (ocomp == nullptr) {
         return;
@@ -205,7 +199,7 @@ void swm::Patch::_setOComp(swm::Comp* ocomp)
            os << "Compartment does not belong to same container as patch.\n";
            ArgErrLog(os.str());
     }
-    std::set<swm::Patch *> opatches  = ocomp->getOPatches();
+    auto const& opatches  = ocomp->getOPatches();
     if (opatches.find(this) != opatches.end())
     {
           std::ostringstream os;
@@ -225,7 +219,7 @@ void swm::Patch::_setOComp(swm::Comp* ocomp)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Patch::_handleSelfDelete()
+void Patch::_handleSelfDelete()
 {
     pContainer->_handlePatchDel(this);
     pArea = 0.0;
@@ -235,7 +229,6 @@ void swm::Patch::_handleSelfDelete()
     pContainer = nullptr;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-/// END
+} // namespace wm
+} // namespace steps
 

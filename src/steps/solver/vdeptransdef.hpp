@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -94,11 +94,11 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this voltage-dependent transition.
-    inline uint gidx() const
+    inline uint gidx() const noexcept
     { return pIdx; }
 
     /// Return the name of the voltage-dependent transition.
-    inline std::string const name() const
+    inline std::string const name() const noexcept
     { return pName; }
 
     ////////////////////////////////////////////////////////////////////////

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -62,16 +62,16 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     SReac(steps::solver::SReacdef * srdef, Patch * patch);
-    ~SReac();
+    ~SReac() override;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream & cp_file) override;
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream & cp_file) override;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
@@ -81,7 +81,7 @@ public:
 
     bool active() const;
 
-    bool inactive() const
+    inline bool inactive() const
     { return (! active()); }
 
 
@@ -89,27 +89,27 @@ public:
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    void setupDeps();
-    bool depSpecComp(uint gidx, Comp * comp);
-    bool depSpecPatch(uint gidx, Patch * patch);
-    void reset();
-    double rate() const;
-    std::vector<uint> const & apply();
+    void setupDeps() override;
+    bool depSpecComp(uint gidx, Comp * comp) override;
+    bool depSpecPatch(uint gidx, Patch * patch) override;
+    void reset() override;
+    double rate() const override;
+    std::vector<uint> const & apply() override;
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::SReacdef * defsr() const
+    inline steps::solver::SReacdef * defsr() const noexcept override
     { return pSReacdef; }
 
-    void resetCcst();
+    void resetCcst() override;
 
-    double c() const
+    inline double c() const noexcept override
     { return pCcst; }
 
-    double h() const
+    inline double h() const noexcept override
     { return (rate()/pCcst); }
 
-    uint updVecSize() const
+    inline uint updVecSize() const noexcept override
     { return pUpdVec.size(); }
 
     ////////////////////////////////////////////////////////////////////////

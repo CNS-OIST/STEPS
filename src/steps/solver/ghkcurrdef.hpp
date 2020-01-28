@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -92,11 +92,11 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this ghk current.
-    inline uint gidx() const
+    inline uint gidx() const noexcept
     { return pIdx; }
 
     /// Return the name of the ghk current.
-    inline std::string const name() const
+    inline std::string const name() const noexcept
     { return pName; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -107,23 +107,23 @@ public:
     uint ion() const;
 
     // Return real flux flag
-    inline bool realflux() const
+    inline bool realflux() const noexcept
     { return pRealFlux; }
 
     // Return virtual outer concentration
-    inline double voconc() const
+    inline double voconc() const noexcept
     { return pVirtual_oconc; }
 
     // Return voltage-shift
-    inline double vshift() const
+    inline double vshift() const noexcept
     { return pVshift; }
 
     /// Return the calculated single channel permeability.
-    inline double perm() const
+    inline double perm() const noexcept
     { return pPerm ; }
 
     // Return the valence of the ion
-    inline int valence() const
+    inline int valence() const noexcept
     { return pValence; }
 
     // Return the global index of the channel state
@@ -152,7 +152,7 @@ private:
     std::string                         pName;
 
     // True if setup() has been called.
-    bool                                pSetupdone;
+    bool                                pSetupdone{false};
 
 
     ////////////////////////////////////////////////////////////////////////
@@ -166,11 +166,11 @@ private:
     std::string                         pIon;
 
     // Flag whether the current is modelled as real movement of ions or not
-    bool                                 pRealFlux;
+    bool                                 pRealFlux{false};
 
     // The virtual outer conc: if this is positive then the
     // concentration in the outer compartment (if it exists) will be ignored
-    double                                 pVirtual_oconc;
+    double                                 pVirtual_oconc{0.0};
 
     // The voltage-shift for the current calculation, defaults to zero.
     double                                 pVshift;
@@ -178,20 +178,20 @@ private:
     // The single-channel permeability  information.
     // This is calculated internally from the conductance information
     // supplied by user to GHKcurr object
-    double                                pPerm;
+    double                                pPerm{0.0};
 
     // The ion valence, copied for calculation of the GHK flux
-    int                                 pValence;
+    int                                 pValence{0};
 
-    int *                                  pSpec_DEP;
+    int *                                  pSpec_DEP{nullptr};
 
-    int *                                 pSpec_VOL_DEP;
+    int *                                 pSpec_VOL_DEP{nullptr};
 
     // Global index of the channel state
-    uint                                   pSpec_CHANSTATE;
+    uint                                   pSpec_CHANSTATE{GIDX_UNDEFINED};
 
     // Global index of the ion.
-    uint                                 pSpec_ION;
+    uint                                 pSpec_ION{GIDX_UNDEFINED};
 
     ////////////////////////////////////////////////////////////////////////
 

@@ -11,7 +11,8 @@ cimport std
 cimport steps_wm
 cimport steps_rng
 cimport steps_model
-#cimport steps_tetmesh
+from steps_common cimport *
+
 
 # ======================================================================================================================
 cdef extern from "steps/solver/patchdef.hpp" namespace "steps::solver":
@@ -23,118 +24,18 @@ cdef extern from "steps/solver/patchdef.hpp" namespace "steps::solver":
 
     ###### Cybinding for Patchdef ######
     cdef cppclass Patchdef:
-        Patchdef(Statedef*, unsigned int, steps_wm.Patch*)
-#         #void checkpoint(std.fstream)
-#         #void restore(std.fstream)
-#         double area()
-#         unsigned int gidx()
-#         std.string name()
-#         Compdef* icompdef()
-#         Compdef* ocompdef()
-#         void setup_references()
-#         void setup_indices()
-#         void setArea(double)
-#         double getArea()
-#         void reset()
-#         unsigned int countSpecs()
-#         unsigned int countSpecs_I()
-#         unsigned int countSpecs_O()
-#         unsigned int specG2L(unsigned int)
-#         unsigned int specL2G(unsigned int)
-#         unsigned int specG2L_I(unsigned int)
-#         unsigned int specG2L_O(unsigned int)
-#         double* pools()
-#         unsigned int* flags()
-#         bool clamped(unsigned int)
-#         void setCount(unsigned int, double)
-#         void setClamped(unsigned int, bool)
-#         unsigned int countSReacs()
-#         unsigned int sreacG2L(unsigned int)
-#         SReacdef* sreacdef(unsigned int)
-#         int sreac_dep_I(unsigned int, unsigned int)
-#         int sreac_dep_S(unsigned int, unsigned int)
-#         int sreac_dep_O(unsigned int, unsigned int)
-#         unsigned int* sreac_lhs_I_bgn(unsigned int)
-#         unsigned int* sreac_lhs_I_end(unsigned int)
-#         unsigned int* sreac_lhs_S_bgn(unsigned int)
-#         unsigned int* sreac_lhs_S_end(unsigned int)
-#         unsigned int* sreac_lhs_O_bgn(unsigned int)
-#         unsigned int* sreac_lhs_O_end(unsigned int)
-#         int* sreac_upd_I_bgn(unsigned int)
-#         int* sreac_upd_I_end(unsigned int)
-#         int* sreac_upd_S_bgn(unsigned int)
-#         int* sreac_upd_S_end(unsigned int)
-#         int* sreac_upd_O_bgn(unsigned int)
-#         int* sreac_upd_O_end(unsigned int)
-#         unsigned int* srflags()
-#         bool active(unsigned int)
-#         double kcst(unsigned int)
-#         unsigned int countSurfDiffs()
-#         Diffdef* surfdiffdef(unsigned int)
-#         unsigned int surfdiffG2L(unsigned int)
-#         unsigned int surfdiff_dep(unsigned int, unsigned int)
-#         double dcst(unsigned int)
-#         unsigned int countOhmicCurrs()
-#         unsigned int ohmiccurrG2L(unsigned int)
-#         unsigned int ohmiccurrL2G(unsigned int)
-#         OhmicCurrdef* ohmiccurrdef(unsigned int)
-#         int ohmiccurr_dep_S(unsigned int, unsigned int)
-#         unsigned int ohmiccurr_chanstate(unsigned int)
-#         unsigned int countGHKcurrs()
-#         unsigned int ghkcurrG2L(unsigned int)
-#         unsigned int GHKcurrL2G(unsigned int)
-#         GHKcurrdef* ghkcurrdef(unsigned int)
-#         int ghkcurr_dep_S(unsigned int, unsigned int)
-#         unsigned int ghkcurr_chanstate(unsigned int)
-#         unsigned int ghkcurr_ion(unsigned int)
-#         unsigned int countVDepTrans()
-#         unsigned int vdeptransG2L(unsigned int)
-#         unsigned int vdeptransL2G(unsigned int)
-#         VDepTransdef* vdeptransdef(unsigned int)
-#         int vdeptrans_dep_S(unsigned int, unsigned int)
-#         unsigned int vdeptrans_srcchanstate(unsigned int)
-#         unsigned int vdeptrans_dstchanstate(unsigned int)
-#         unsigned int countVDepSReacs()
-#         unsigned int vdepsreacG2L(unsigned int)
-#         VDepSReacdef* vdepsreacdef(unsigned int)
-#         int vdepsreac_dep_I(unsigned int, unsigned int)
-#         int vdepsreac_dep_S(unsigned int, unsigned int)
-#         int vdepsreac_dep_O(unsigned int, unsigned int)
-#         unsigned int* vdepsreac_lhs_I_bgn(unsigned int)
-#         unsigned int* vdepsreac_lhs_I_end(unsigned int)
-#         unsigned int* vdepsreac_lhs_S_bgn(unsigned int)
-#         unsigned int* vdepsreac_lhs_S_end(unsigned int)
-#         unsigned int* vdepsreac_lhs_O_bgn(unsigned int)
-#         unsigned int* vdepsreac_lhs_O_end(unsigned int)
-#         int* vdepsreac_upd_I_bgn(unsigned int)
-#         int* vdepsreac_upd_I_end(unsigned int)
-#         int* vdepsreac_upd_S_bgn(unsigned int)
-#         int* vdepsreac_upd_S_end(unsigned int)
-#         int* vdepsreac_upd_O_bgn(unsigned int)
-#         int* vdepsreac_upd_O_end(unsigned int)
-#         void setKcst(unsigned int, double)
-#         void setActive(unsigned int, bool)
-#         Patchdef()
-# 
+        Patchdef(Statedef*, uint, steps_wm.Patch*)
+
+
 # ======================================================================================================================
 cdef extern from "steps/solver/diffdef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
 
     ###### Cybinding for Diffdef ######
     cdef cppclass Diffdef:
-        Diffdef(Statedef*, unsigned int, steps_model.Diff*)
-#         void checkpoint(std.fstream)
-#         void restore(std.fstream)
-#         unsigned int gidx()
-#         std.string name()
-#         double dcst()
-#         unsigned int lig()
-#         int dep(unsigned int)
-#         bool reqspec(unsigned int)
-#         void setup()
-#         void setDcst(double)
-#         Diffdef()
-# 
+        Diffdef(Statedef*, uint, steps_model.Diff*)
+
+
 # ======================================================================================================================
 cdef extern from "steps/solver/ohmiccurrdef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
@@ -145,210 +46,27 @@ cdef extern from "steps/solver/ohmiccurrdef.hpp" namespace "steps::solver":
 
     ###### Cybinding for OhmicCurrdef ######
     cdef cppclass OhmicCurrdef:
-        OhmicCurrdef(Statedef*, unsigned int, steps_model.OhmicCurr*)
-#         void checkpoint(std.fstream)
-#         void restore(std.fstream)
-#         void setup()
-#         unsigned int gidx()
-#         std.string name()
-#         double getG()
-#         double getERev()
-#         unsigned int chanstate()
-#         int dep(unsigned int)
-#         bool req(unsigned int)
-#         OhmicCurrdef()
-# 
+        OhmicCurrdef(Statedef*, uint, steps_model.OhmicCurr*)
+
+
 # ======================================================================================================================
 cdef extern from "steps/solver/sreacdef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
 
     ###### Cybinding for SReacdef ######
     cdef cppclass SReacdef:
-        SReacdef(Statedef*, unsigned int, steps_model.SReac*)
-#         #void checkpoint(std.fstream)
-#         #void restore(std.fstream)
-#         unsigned int gidx()
-#         std.string name()
-#         unsigned int order()
-#         double kcst()
-#         void setup()
-#         bool inside()
-#         bool reqInside()
-#         bool outside()
-#         bool reqOutside()
-#         bool surf_surf()
-#         unsigned int lhs_I(unsigned int)
-#         unsigned int lhs_S(unsigned int)
-#         unsigned int lhs_O(unsigned int)
-#         int dep_I(unsigned int)
-#         int dep_S(unsigned int)
-#         int dep_O(unsigned int)
-#         unsigned int rhs_I(unsigned int)
-#         unsigned int rhs_S(unsigned int)
-#         unsigned int rhs_O(unsigned int)
-#         int upd_I(unsigned int)
-#         int upd_S(unsigned int)
-#         int upd_O(unsigned int)
-#         bool reqspec_I(unsigned int)
-#         bool reqspec_S(unsigned int)
-#         bool reqspec_O(unsigned int)
-#         std.vector[unsigned int].const_iterator beginUpdColl_I()
-#         std.vector[unsigned int].const_iterator endUpdColl_I()
-#         std.vector[unsigned int].const_iterator beginUpdColl_S()
-#         std.vector[unsigned int].const_iterator endUpdColl_S()
-#         std.vector[unsigned int].const_iterator beginUpdColl_O()
-#         std.vector[unsigned int].const_iterator endUpdColl_O()
-# 
-# # ======================================================================================================================
-# cdef extern from "steps/solver/types.hpp" namespace "steps::solver":
-# # ----------------------------------------------------------------------------------------------------------------------
-#     ctypedef unsigned int gidxT
-#     ctypedef std.vector[unsigned int] gidxTVec
-#     ctypedef std.vector[unsigned int].iterator gidxTVecI
-#     ctypedef std.vector[unsigned int].const_iterator gidxTVecCI
-#     ctypedef std.vector[unsigned int*] gidxTPVec
-#     ctypedef std.vector[unsigned int*].iterator gidxTPVecI
-#     ctypedef std.vector[unsigned int*].const_iterator gidxTPVecCI
-#     ctypedef unsigned int lidxT
-#     ctypedef std.vector[unsigned int] lidxTVec
-#     ctypedef std.vector[unsigned int].iterator lidxTVecI
-#     ctypedef std.vector[unsigned int].const_iterator lidxTVecCI
-#     ctypedef std.vector[unsigned int*] lidxTPVec
-#     ctypedef std.vector[unsigned int*].iterator lidxTPVecI
-#     ctypedef std.vector[unsigned int*].const_iterator lidxTPVecCI
-#     ctypedef int depT
-#     ctypedef std.vector[int] depTVec
-#     ctypedef std.vector[int].iterator depTVecI
-#     ctypedef std.vector[int].const_iterator depTVecCI
-# 
+        SReacdef(Statedef*, uint, steps_model.SReac*)
+
+
 # ======================================================================================================================
 cdef extern from "steps/solver/statedef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
-#     ctypedef Specdef* SpecdefP
-#     ctypedef std.vector[Specdef*] SpecdefPVec
-#     ctypedef std.vector[Specdef*].iterator SpecdefPVecI
-#     ctypedef std.vector[Specdef*].const_iterator SpecdefPVecCI
-#     ctypedef Compdef* CompdefP
-#     ctypedef std.vector[Compdef*] CompdefPVec
-#     ctypedef std.vector[Compdef*].iterator CompdefPVecI
-#     ctypedef std.vector[Compdef*].const_iterator CompdefPVecCI
-#     ctypedef Patchdef* PatchdefP
-#     ctypedef std.vector[Patchdef*] PatchdefPVec
-#     ctypedef std.vector[Patchdef*].iterator PatchdefPVecI
-#     ctypedef std.vector[Patchdef*].const_iterator PatchdefPVecCI
-#     ctypedef Reacdef* ReacdefP
-#     ctypedef std.vector[Reacdef*] ReacdefPVec
-#     ctypedef std.vector[Reacdef*].iterator ReacdefPVecI
-#     ctypedef std.vector[Reacdef*].const_iterator ReacdefPVecCI
-#     ctypedef SReacdef* SReacdefP
-#     ctypedef std.vector[SReacdef*] SReacdefPVec
-#     ctypedef std.vector[SReacdef*].iterator SReacdefPVecI
-#     ctypedef std.vector[SReacdef*].const_iterator SReacdefPVecCI
-#     ctypedef Diffdef* DiffdefP
-#     ctypedef std.vector[Diffdef*] DiffdefPVec
-#     ctypedef std.vector[Diffdef*].iterator DiffdefPVecI
-#     ctypedef std.vector[Diffdef*].const_iterator DiffdefPVecCI
-#     ctypedef Diffdef* SurfDiffdefP
-#     ctypedef std.vector[Diffdef*] SurfDiffdefPVec
-#     ctypedef std.vector[Diffdef*].iterator SurfDiffdefPVecI
-#     ctypedef std.vector[Diffdef*].const_iterator SurfDiffdefPVecCI
-#     ctypedef Chandef* ChandefP
-#     ctypedef std.vector[Chandef*] ChandefPVec
-#     ctypedef std.vector[Chandef*].iterator ChandefPVecI
-#     ctypedef std.vector[Chandef*].const_iterator ChandefPVecCI
-#     ctypedef VDepTransdef* VDepTransdefP
-#     ctypedef std.vector[VDepTransdef*] VDepTransdefPVec
-#     ctypedef std.vector[VDepTransdef*].iterator VDepTransdefPVecI
-#     ctypedef std.vector[VDepTransdef*].const_iterator VDepTransdefPVecCI
-#     ctypedef VDepSReacdef* VDepSReacdefP
-#     ctypedef std.vector[VDepSReacdef*] VDepSReacdefPVec
-#     ctypedef std.vector[VDepSReacdef*].iterator VDepSReacdefPVecI
-#     ctypedef std.vector[VDepSReacdef*].const_iterator VDepSReacdefPVecCI
-#     ctypedef OhmicCurrdef* OhmicCurrdefP
-#     ctypedef std.vector[OhmicCurrdef*] OhmicCurrdefPVec
-#     ctypedef std.vector[OhmicCurrdef*].iterator OhmicCurrdefPVecI
-#     ctypedef std.vector[OhmicCurrdef*].const_iterator OhmicCurrdefPVecCI
-#     ctypedef GHKcurrdef* GHKcurrdefP
-#     ctypedef std.vector[GHKcurrdef*] GHKcurrdefPVec
-#     ctypedef std.vector[GHKcurrdef*].iterator GHKcurrdefPVecI
-#     ctypedef std.vector[GHKcurrdef*].const_iterator GHKcurrdefPVecCI
-#     ctypedef DiffBoundarydef* DiffBoundarydefP
-#     ctypedef std.vector[DiffBoundarydef*] DiffBoundarydefPVec
-#     ctypedef std.vector[DiffBoundarydef*].iterator DiffBoundarydefPVecI
-#     ctypedef std.vector[DiffBoundarydef*].const_iterator DiffBoundarydefPVecCI
-# 
+
     ###### Cybinding for Statedef ######
     cdef cppclass Statedef:
         Statedef(steps_model.Model*, steps_wm.Geom*, steps_rng.RNG*)
-#         unsigned int getMembIdx(std.string)
-#         void checkpoint(std.fstream)
-#         void restore(std.fstream)
-#         Compdef* compdef(unsigned int)
-#         unsigned int countComps()
-#         unsigned int getCompIdx(std.string)
-#         unsigned int getCompIdx(steps_wm.Comp*)
-#         std.vector[Compdef*] bgnComp()
-#         std.vector[Compdef*] endComp()
-#         Patchdef* patchdef(unsigned int)
-#         unsigned int countPatches()
-#         unsigned int getPatchIdx(std.string)
-#         unsigned int getPatchIdx(steps_wm.Patch*)
-#         std.vector[Patchdef*] bgnPatch()
-#         std.vector[Patchdef*] endPatch()
-#         unsigned int countSpecs()
-#         Specdef* specdef(unsigned int)
-#         unsigned int getSpecIdx(std.string)
-#         unsigned int getSpecIdx(steps_model.Spec*)
-#         unsigned int countReacs()
-#         Reacdef* reacdef(unsigned int)
-#         unsigned int getReacIdx(std.string)
-#         unsigned int getReacIdx(steps_model.Reac*)
-#         unsigned int countSReacs()
-#         SReacdef* sreacdef(unsigned int)
-#         unsigned int getSReacIdx(std.string)
-#         unsigned int getSReacIdx(steps_model.SReac*)
-#         unsigned int countDiffs()
-#         Diffdef* diffdef(unsigned int)
-#         unsigned int getDiffIdx(std.string)
-#         unsigned int getDiffIdx(steps_model.Diff*)
-#         unsigned int countSurfDiffs()
-#         Diffdef* surfdiffdef(unsigned int)
-#         unsigned int getSurfDiffIdx(std.string)
-#         unsigned int getSurfDiffIdx(steps_model.Diff*)
-#         unsigned int countVDepTrans()
-#         VDepTransdef* vdeptransdef(unsigned int)
-#         unsigned int getVDepTransIdx(std.string)
-#         unsigned int getVDepTransIdx(steps_model.VDepTrans*)
-#         unsigned int countVDepSReacs()
-#         VDepSReacdef* vdepsreacdef(unsigned int)
-#         unsigned int getVDepSReacIdx(std.string)
-#         unsigned int getVDepSReacIdx(steps_model.VDepSReac*)
-#         unsigned int countOhmicCurrs()
-#         OhmicCurrdef* ohmiccurrdef(unsigned int)
-#         unsigned int getOhmicCurrIdx(std.string)
-#         unsigned int getOhmicCurrIdx(steps_model.OhmicCurr*)
-#         unsigned int countGHKcurrs()
-#         GHKcurrdef* ghkcurrdef(unsigned int)
-#         unsigned int getGHKcurrIdx(std.string)
-#         unsigned int getGHKcurrIdx(steps_model.GHKcurr*)
-#         unsigned int countDiffBoundaries()
-#         DiffBoundarydef* diffboundarydef(unsigned int)
-#         unsigned int getDiffBoundaryIdx(std.string)
-#         #unsigned int getDiffBoundaryIdx(steps_tetmesh.DiffBoundary*)
-#         std.vector[DiffBoundarydef*] bgnDiffBoundary()
-#         std.vector[DiffBoundarydef*] endDiffBoundary()
-#         double time()
-#         steps_model.Model* model()
-#         steps_rng.RNG* rng()
-#         void setTime(double)
-#         void incTime(double)
-#         void resetTime()
-#         void incNSteps(unsigned int)
-#         void resetNSteps()
-#         unsigned int nsteps()
-#         void setNSteps(unsigned int)
-#         Statedef()
-# 
+
+
 # ======================================================================================================================
 cdef extern from "steps/solver/compdef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
@@ -359,48 +77,9 @@ cdef extern from "steps/solver/compdef.hpp" namespace "steps::solver":
 
     ###### Cybinding for Compdef ######
     cdef cppclass Compdef:
-        Compdef(Statedef*, unsigned int, steps_wm.Comp*)
-#         void checkpoint(std.fstream)
-#         void restore(std.fstream)
-#         double vol()
-#         unsigned int gidx()
-#         std.string name()
-#         void setup_references()
-#         void setup_indices()
-#         void addSpec(unsigned int)
-#         void addIPatchdef(Patchdef*)
-#         void addOPatchdef(Patchdef*)
-#         void setVol(double)
-#         void reset()
-#         unsigned int countSpecs()
-#         unsigned int specG2L(unsigned int)
-#         unsigned int specL2G(unsigned int)
-#         unsigned int* flags()
-#         bool clamped(unsigned int)
-#         double* pools()
-#         void setCount(unsigned int, double)
-#         void setClamped(unsigned int, bool)
-#         unsigned int countReacs()
-#         unsigned int reacG2L(unsigned int)
-#         unsigned int* reac_lhs_bgn(unsigned int)
-#         unsigned int* reac_lhs_end(unsigned int)
-#         int* reac_upd_bgn(unsigned int)
-#         int* reac_upd_end(unsigned int)
-#         int reac_dep(unsigned int, unsigned int)
-#         Reacdef* reacdef(unsigned int)
-#         unsigned int* rflags()
-#         bool active(unsigned int)
-#         double kcst(unsigned int)
-#         void setKcst(unsigned int, double)
-#         void setActive(unsigned int, bool)
-#         unsigned int countDiffs()
-#         Diffdef* diffdef(unsigned int)
-#         unsigned int diffG2L(unsigned int)
-#         unsigned int diff_dep(unsigned int, unsigned int)
-#         double dcst(unsigned int)
-#         void setDcst(unsigned int, double)
-#         Compdef()
-# 
+        Compdef(Statedef*, uint, steps_wm.Comp*)
+
+
 # ======================================================================================================================
 cdef extern from "steps/solver/vdepsreacdef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
@@ -411,56 +90,18 @@ cdef extern from "steps/solver/vdepsreacdef.hpp" namespace "steps::solver":
 
     ###### Cybinding for VDepSReacdef ######
     cdef cppclass VDepSReacdef:
-        VDepSReacdef(Statedef*, unsigned int, steps_model.VDepSReac*)
-#         void checkpoint(std.fstream)
-#         void restore(std.fstream)
-#         void setup()
-#         unsigned int gidx()
-#         std.string name()
-#         unsigned int order()
-#         double getVDepK(double)
-#         bool inside()
-#         bool reqInside()
-#         bool outside()
-#         bool reqOutside()
-#         bool surf_surf()
-#         unsigned int lhs_I(unsigned int)
-#         unsigned int lhs_S(unsigned int)
-#         unsigned int lhs_O(unsigned int)
-#         int dep_I(unsigned int)
-#         int dep_S(unsigned int)
-#         int dep_O(unsigned int)
-#         unsigned int rhs_I(unsigned int)
-#         unsigned int rhs_S(unsigned int)
-#         unsigned int rhs_O(unsigned int)
-#         int upd_I(unsigned int)
-#         int upd_S(unsigned int)
-#         int upd_O(unsigned int)
-#         bool reqspec_I(unsigned int)
-#         bool reqspec_S(unsigned int)
-#         bool reqspec_O(unsigned int)
-#         std.vector[unsigned int].const_iterator beginUpdColl_I()
-#         std.vector[unsigned int].const_iterator endUpdColl_I()
-#         std.vector[unsigned int].const_iterator beginUpdColl_S()
-#         std.vector[unsigned int].const_iterator endUpdColl_S()
-#         std.vector[unsigned int].const_iterator beginUpdColl_O()
-#         std.vector[unsigned int].const_iterator endUpdColl_O()
-#         VDepSReacdef()
-# 
+        VDepSReacdef(Statedef*, uint, steps_model.VDepSReac*)
+
+
 # ======================================================================================================================
 cdef extern from "steps/solver/specdef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
 
     ###### Cybinding for Specdef ######
     cdef cppclass Specdef:
-        Specdef(Statedef*, unsigned int, steps_model.Spec*)
-#         void checkpoint(std.fstream)
-#         void restore(std.fstream)
-#         unsigned int gidx()
-#         std.string name()
-#         void setup()
-#         Specdef()
-# 
+        Specdef(Statedef*, uint, steps_model.Spec*)
+
+
 # ======================================================================================================================
 cdef extern from "steps/solver/vdeptransdef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
@@ -471,19 +112,9 @@ cdef extern from "steps/solver/vdeptransdef.hpp" namespace "steps::solver":
 
     ###### Cybinding for VDepTransdef ######
     cdef cppclass VDepTransdef:
-        VDepTransdef(Statedef*, unsigned int, steps_model.VDepTrans*)
-#         void checkpoint(std.fstream)
-#         void restore(std.fstream)
-#         void setup()
-#         unsigned int gidx()
-#         std.string name()
-#         double getVDepRate(double)
-#         unsigned int srcchanstate()
-#         unsigned int dstchanstate()
-#         int dep(unsigned int)
-#         bool req(unsigned int)
-#         VDepTransdef()
-# 
+        VDepTransdef(Statedef*, uint, steps_model.VDepTrans*)
+
+
 # ======================================================================================================================
 cdef extern from "steps/solver/ghkcurrdef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
@@ -494,64 +125,27 @@ cdef extern from "steps/solver/ghkcurrdef.hpp" namespace "steps::solver":
 
     ###### Cybinding for GHKcurrdef ######
     cdef cppclass GHKcurrdef:
-        GHKcurrdef(Statedef*, unsigned int, steps_model.GHKcurr*)
-#         void checkpoint(std.fstream)
-#         void restore(std.fstream)
-#         void setup()
-#         unsigned int gidx()
-#         std.string name()
-#         unsigned int ion()
-#         bool realflux()
-#         double voconc()
-#         double vshift()
-#         double perm()
-#         int valence()
-#         unsigned int chanstate()
-#         int dep(unsigned int)
-#         bool req(unsigned int)
-#         int dep_v(unsigned int)
-#         bool req_v(unsigned int)
-#         GHKcurrdef()
-# 
+        GHKcurrdef(Statedef*, uint, steps_model.GHKcurr*)
+
+
 # ======================================================================================================================
 cdef extern from "steps/solver/reacdef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
 
     ###### Cybinding for Reacdef ######
     cdef cppclass Reacdef:
-        Reacdef(Statedef*, unsigned int, steps_model.Reac*)
-#         void checkpoint(std.fstream)
-#         void restore(std.fstream)
-#         unsigned int gidx()
-#         std.string name()
-#         unsigned int order()
-#         double kcst()
-#         unsigned int lhs(unsigned int)
-#         int dep(unsigned int)
-#         unsigned int rhs(unsigned int)
-#         int upd(unsigned int)
-#         bool reqspec(unsigned int)
-#         std.vector[unsigned int].const_iterator bgnUpdColl()
-#         std.vector[unsigned int].const_iterator endUpdColl()
-#         void setup()
-#         Reacdef()
-# 
+        Reacdef(Statedef*, uint, steps_model.Reac*)
+
+
 # ======================================================================================================================
 cdef extern from "steps/solver/chandef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
 
     ###### Cybinding for Chandef ######
     cdef cppclass Chandef:
-        Chandef(Statedef*, unsigned int, steps_model.Chan*)
-#         void checkpoint(std.fstream)
-#         void restore(std.fstream)
-#         unsigned int gidx()
-#         std.string name()
-#         unsigned int* chanstates()
-#         unsigned int nchanstates()
-#         void setup()
-#         Chandef()
-# 
+        Chandef(Statedef*, uint, steps_model.Chan*)
+
+
 # ======================================================================================================================
 cdef extern from "steps/solver/diffboundarydef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
@@ -564,16 +158,7 @@ cdef extern from "steps/solver/diffboundarydef.hpp" namespace "steps::solver":
     cdef cppclass DiffBoundarydef:
         #The constructor requires another namespace
         pass
-        #DiffBoundarydef(Statedef*, unsigned int, steps_tetmesh.DiffBoundary*)
-#         void setup()
-#         void checkpoint(std.fstream)
-#         void restore(std.fstream)
-#         unsigned int gidx()
-#         std.string name()
-#         std.vector[unsigned int] tris()
-#         unsigned int compa()
-#         unsigned int compb()
-#         DiffBoundarydef()
+
 
 # ======================================================================================================================
 cdef extern from "steps/solver/sdiffboundarydef.hpp" namespace "steps::solver":
@@ -587,16 +172,7 @@ cdef extern from "steps/solver/sdiffboundarydef.hpp" namespace "steps::solver":
     cdef cppclass SDiffBoundarydef:
         #The constructor requires another namespace
         pass
-        #SDiffBoundarydef(Statedef*, unsigned int, steps_tetmesh.SDiffBoundary*)
-#         void setup()
-#         void checkpoint(std.fstream)
-#         void restore(std.fstream)
-#         unsigned int gidx()
-#         std.string name()
-#         std.vector[unsigned int] tris()
-#         unsigned int compa()
-#         unsigned int compb()
-#         DiffBoundarydef()
+
 
 # ======================================================================================================================
 cdef extern from "steps/solver/api.hpp" namespace "steps::solver::API":
@@ -605,16 +181,17 @@ cdef extern from "steps/solver/api.hpp" namespace "steps::solver::API":
         EF_NONE
         EF_DEFAULT
         EF_DV_BDSYS
-        EF_DV_SLUSYS
         EF_DV_PETSC
-        # ======================================================================================================================
+
+
+# ======================================================================================================================
 cdef extern from "steps/solver/api.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
 #
-    cdef cppclass API:
     ###### Cybinding for API ######
-    ##### THis is now just placeholding- actually contains ALL solver functions, including
-    ### Those not in the API
+    # This is now just placeholding- actually contains ALL solver functions, including
+    # Those not in the API
+    cdef cppclass API:
         API(steps_model.Model*, steps_wm.Geom*, steps_rng.RNG*)
         # Only functions that are in pyx API
         #std.string getSolverName() except +
@@ -630,7 +207,7 @@ cdef extern from "steps/solver/api.hpp" namespace "steps::solver":
         #void setRk4DT(double) except +
         #void setDT(double) except +
         #void setEfieldDT(double) except +
-        #void setNSteps(unsigned int) except +
+        #void setNSteps(uint) except +
         #void setTime(double) except +
         #void setTemp(double) except +
         #double getTime() except +
@@ -639,7 +216,7 @@ cdef extern from "steps/solver/api.hpp" namespace "steps::solver":
         #double getEfieldDT() except +
         #double getTemp() except +
         #double getA0() except +
-        #unsigned int getNSteps() except +
+        #uint getNSteps() except +
         double getCompVol(std.string) except +
         void setCompVol(std.string, double) except +
         double getCompCount(std.string, std.string) except +
@@ -661,35 +238,35 @@ cdef extern from "steps/solver/api.hpp" namespace "steps::solver":
         double getCompReacC(std.string, std.string) except +
         double getCompReacH(std.string, std.string) except +
         double getCompReacA(std.string, std.string) except +
-        unsigned int getCompReacExtent(std.string, std.string) except +
+        unsigned long long getCompReacExtent(std.string, std.string) except +
         void resetCompReacExtent(std.string, std.string) except +
-        double getTetVol(unsigned int) except +
-        void setTetVol(unsigned int, double) except +
-        bool getTetSpecDefined(unsigned int, std.string) except +
-        double getTetCount(unsigned int, std.string) except +
-        void setTetCount(unsigned int, std.string, double) except +
-        double getTetAmount(unsigned int, std.string) except +
-        void setTetAmount(unsigned int, std.string, double) except +
-        double getTetConc(unsigned int, std.string) except +
-        void setTetConc(unsigned int, std.string, double) except +
-        bool getTetClamped(unsigned int, std.string) except +
-        void setTetClamped(unsigned int, std.string, bool) except +
-        double getTetReacK(unsigned int, std.string) except +
-        void setTetReacK(unsigned int, std.string, double) except +
-        bool getTetReacActive(unsigned int, std.string) except +
-        void setTetReacActive(unsigned int, std.string, bool) except +
-        double getTetDiffD(unsigned int, std.string, unsigned int) except +
-        void setTetDiffD(unsigned int, std.string, double, unsigned int) except +
-        bool getTetDiffActive(unsigned int, std.string) except +
-        void setTetDiffActive(unsigned int, std.string, bool) except +
-        double getTetReacC(unsigned int, std.string) except +
-        double getTetReacH(unsigned int, std.string) except +
-        double getTetReacA(unsigned int, std.string) except +
-        double getTetDiffA(unsigned int, std.string) except +
-        double getTetV(unsigned int) except +
-        void setTetV(unsigned int, double) except +
-        bool getTetVClamped(unsigned int) except +
-        void setTetVClamped(unsigned int, bool) except +
+        double getTetVol(uint) except +
+        void setTetVol(uint, double) except +
+        bool getTetSpecDefined(uint, std.string) except +
+        double getTetCount(uint, std.string) except +
+        void setTetCount(uint, std.string, double) except +
+        double getTetAmount(uint, std.string) except +
+        void setTetAmount(uint, std.string, double) except +
+        double getTetConc(uint, std.string) except +
+        void setTetConc(uint, std.string, double) except +
+        bool getTetClamped(uint, std.string) except +
+        void setTetClamped(uint, std.string, bool) except +
+        double getTetReacK(uint, std.string) except +
+        void setTetReacK(uint, std.string, double) except +
+        bool getTetReacActive(uint, std.string) except +
+        void setTetReacActive(uint, std.string, bool) except +
+        double getTetDiffD(uint, std.string, uint) except +
+        void setTetDiffD(uint, std.string, double, uint) except +
+        bool getTetDiffActive(uint, std.string) except +
+        void setTetDiffActive(uint, std.string, bool) except +
+        double getTetReacC(uint, std.string) except +
+        double getTetReacH(uint, std.string) except +
+        double getTetReacA(uint, std.string) except +
+        double getTetDiffA(uint, std.string) except +
+        double getTetV(uint) except +
+        void setTetV(uint, double) except +
+        bool getTetVClamped(uint) except +
+        void setTetVClamped(uint, bool) except +
         double getPatchArea(std.string) except +
         void setPatchArea(std.string, double) except +
         double getPatchCount(std.string, std.string) except +
@@ -705,7 +282,7 @@ cdef extern from "steps/solver/api.hpp" namespace "steps::solver":
         double getPatchSReacC(std.string, std.string) except +
         double getPatchSReacH(std.string, std.string) except +
         double getPatchSReacA(std.string, std.string) except +
-        unsigned int getPatchSReacExtent(std.string, std.string) except +
+        unsigned long long getPatchSReacExtent(std.string, std.string) except +
         void resetPatchSReacExtent(std.string, std.string) except +
         bool getPatchVDepSReacActive(std.string, std.string) except +
         void setPatchVDepSReacActive(std.string, std.string, bool) except +
@@ -715,93 +292,63 @@ cdef extern from "steps/solver/api.hpp" namespace "steps::solver":
         void setSDiffBoundaryDiffusionActive(std.string, std.string, bool) except +
         bool getSDiffBoundaryDiffusionActive(std.string, std.string) except +
         void setSDiffBoundaryDcst(std.string, std.string, double, std.string) except +
-        double getTriArea(unsigned int) except +
-        void setTriArea(unsigned int, double) except +
-        bool getTriSpecDefined(unsigned int, std.string) except +
-        double getTriCount(unsigned int, std.string) except +
-        void setTriCount(unsigned int, std.string, double) except +
-        double getTriAmount(unsigned int, std.string) except +
-        void setTriAmount(unsigned int, std.string, double) except +
-        bool getTriClamped(unsigned int, std.string) except +
-        void setTriClamped(unsigned int, std.string, bool) except +
-        double getTriSReacK(unsigned int, std.string) except +
-        void setTriSReacK(unsigned int, std.string, double) except +
-        bool getTriSReacActive(unsigned int, std.string) except +
-        void setTriSReacActive(unsigned int, std.string, bool) except +
-        double getTriSReacC(unsigned int, std.string) except +
-        double getTriSReacH(unsigned int, std.string) except +
-        double getTriSReacA(unsigned int, std.string) except +
-        double getTriDiffD(unsigned int, std.string, unsigned int) except +
-        double getTriSDiffD(unsigned int, std.string, unsigned int) except +
-        void setTriDiffD(unsigned int, std.string, double, unsigned int) except +
-        void setTriSDiffD(unsigned int, std.string, double, unsigned int) except +
-        double getTriV(unsigned int) except +
-        void setTriV(unsigned int, double) except +
-        bool getTriVClamped(unsigned int) except +
-        void setTriVClamped(unsigned int, bool) except +
-        double getTriOhmicI(unsigned int) except +
-        double getTriOhmicI(unsigned int, std.string) except +
-        double getTriGHKI(unsigned int) except +
-        double getTriGHKI(unsigned int, std.string) except +
-        double getTriI(unsigned int) except +
-        void setTriIClamp(unsigned int, double) except +
-        bool getTriVDepSReacActive(unsigned int, std.string) except +
-        void setTriVDepSReacActive(unsigned int, std.string, bool) except +
-        void setTriCapac(unsigned int, double) except +
-        double getVertV(unsigned int) except +
-        void setVertV(unsigned int, double) except +
-        bool getVertVClamped(unsigned int) except +
-        void setVertVClamped(unsigned int, bool) except +
-        void setVertIClamp(unsigned int, double) except +
+        double getTriArea(uint) except +
+        void setTriArea(uint, double) except +
+        bool getTriSpecDefined(uint, std.string) except +
+        double getTriCount(uint, std.string) except +
+        void setTriCount(uint, std.string, double) except +
+        double getTriAmount(uint, std.string) except +
+        void setTriAmount(uint, std.string, double) except +
+        bool getTriClamped(uint, std.string) except +
+        void setTriClamped(uint, std.string, bool) except +
+        double getTriSReacK(uint, std.string) except +
+        void setTriSReacK(uint, std.string, double) except +
+        bool getTriSReacActive(uint, std.string) except +
+        void setTriSReacActive(uint, std.string, bool) except +
+        double getTriSReacC(uint, std.string) except +
+        double getTriSReacH(uint, std.string) except +
+        double getTriSReacA(uint, std.string) except +
+        double getTriDiffD(uint, std.string, uint) except +
+        double getTriSDiffD(uint, std.string, uint) except +
+        void setTriDiffD(uint, std.string, double, uint) except +
+        void setTriSDiffD(uint, std.string, double, uint) except +
+        double getTriV(uint) except +
+        void setTriV(uint, double) except +
+        bool getTriVClamped(uint) except +
+        void setTriVClamped(uint, bool) except +
+        double getTriOhmicI(uint) except +
+        double getTriOhmicI(uint, std.string) except +
+        double getTriGHKI(uint) except +
+        double getTriGHKI(uint, std.string) except +
+        double getTriI(uint) except +
+        void setTriIClamp(uint, double) except +
+        bool getTriVDepSReacActive(uint, std.string) except +
+        void setTriVDepSReacActive(uint, std.string, bool) except +
+        void setTriCapac(uint, double) except +
+        double getVertV(uint) except +
+        void setVertV(uint, double) except +
+        bool getVertVClamped(uint) except +
+        void setVertVClamped(uint, bool) except +
+        void setVertIClamp(uint, double) except +
         void setMembPotential(std.string, double) except +
         void setMembCapac(std.string, double) except +
         void setMembVolRes(std.string, double) except +
         void setMembRes(std.string, double, double) except +
-        unsigned int getNComps() except +
-        unsigned int getNPatches() except +
-        std.string getCompName(unsigned int) except +
-        std.string getPatchName(unsigned int) except +
-        unsigned int getNCompSpecs(unsigned int) except +
-        unsigned int getNPatchSpecs(unsigned int) except +
-        std.string getCompSpecName(unsigned int, unsigned int) except +
-        std.string getPatchSpecName(unsigned int, unsigned int) except +
-        #std.vector[double] getBatchTetCounts(std.vector[unsigned int], std.string) except +
-        #std.vector[double] getBatchTriCounts(std.vector[unsigned int], std.string) except +
-        #void getBatchTetCountsNP(unsigned int*, int, std.string, double*, int) except +
-        #void getBatchTriCountsNP(unsigned int*, int, std.string, double*, int) except +
-        #std.vector[double] getROITetCounts(std.string, std.string) except +
-        #std.vector[double] getROITriCounts(std.string, std.string) except +
-        #void getROITetCountsNP(std.string, std.string, double*, int) except +
-        #void getROITriCountsNP(std.string, std.string, double*, int) except +
-        #double getROIVol(std.string) except +
-        #double getROIArea(std.string) except +
-        #double getROICount(std.string, std.string) except +
-        #void setROICount(std.string, std.string, double) except +
-        #double getROIAmount(std.string, std.string) except +
-        #double getROIConc(std.string, std.string) except +
-        #void setROIConc(std.string, std.string, double) except +
-        #void setROIClamped(std.string, std.string, bool) except +
-        #void setROIReacK(std.string, std.string, double) except +
-        #void setROISReacK(std.string, std.string, double) except +
-        #void setROIDiffD(std.string, std.string, double) except +
-        #void setROIReacActive(std.string, std.string, bool) except +
-        #void setROISReacActive(std.string, std.string, bool) except +
-        #void setROIDiffActive(std.string, std.string, bool) except +
-        #void setROIVDepSReacActive(std.string, std.string, bool) except +
-        #unsigned int getROIReacExtent(std.string, std.string) except +
-        #void resetROIReacExtent(std.string, std.string) except +
-        #unsigned int getROISReacExtent(std.string, std.string) except +
-        #void resetROISReacExtent(std.string, std.string) except +
-        #unsigned int getROIDiffExtent(std.string, std.string) except +
-        #void resetROIDiffExtent(std.string, std.string) except +
-        #void saveMembOpt(std.string) except +
-        double sumBatchTetCountsNP(unsigned int*, int, std.string) except +
-        double sumBatchTriCountsNP(unsigned int*, int, std.string) except +
-        double sumBatchTriGHKIsNP(unsigned int*, int, std.string) except +
-        double sumBatchTriOhmicIsNP(unsigned int*, int, std.string) except +
+        uint getNComps() except +
+        uint getNPatches() except +
+        std.string getCompName(uint) except +
+        std.string getPatchName(uint) except +
+        uint getNCompSpecs(uint) except +
+        uint getNPatchSpecs(uint) except +
+        std.string getCompSpecName(uint, uint) except +
+        std.string getPatchSpecName(uint, uint) except +
+        double sumBatchTetCountsNP(uint*, int, std.string) except +
+        double sumBatchTriCountsNP(uint*, int, std.string) except +
+        double sumBatchTriGHKIsNP(uint*, int, std.string) except +
+        double sumBatchTriOhmicIsNP(uint*, int, std.string) except +
         void setDiffApplyThreshold(int) except +
-        double getReacExtent(bool) except +
-        double getDiffExtent(bool) except +
+        unsigned long long getReacExtent(bool) except +
+        unsigned long long getDiffExtent(bool) except +
         double getNIteration() except +
         double getCompTime() except +
         double getSyncTime() except +
@@ -810,7 +357,4 @@ cdef extern from "steps/solver/api.hpp" namespace "steps::solver":
         double getEFieldTime() except +
         double getRDTime() except +
         double getDataExchangeTime() except +
-        void repartitionAndReset(std.vector[unsigned int],std.map[unsigned int, unsigned int], std.vector[unsigned int]) except +
- 
-        
-
+        void repartitionAndReset(std.vector[uint],std.map[uint, uint], std.vector[uint]) except +

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -52,16 +52,15 @@ swmd::Comp::Comp(steps::solver::Compdef * compdef)
 , pIPatches()
 , pOPatches()
 {
-    AssertLog(pCompdef != 0);
+    AssertLog(pCompdef != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 swmd::Comp::~Comp()
 {
-    for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
-    {
-        delete (*k);
+    for (auto const& k : pKProcs) {
+        delete k;
     }
 }
 
@@ -69,9 +68,8 @@ swmd::Comp::~Comp()
 
 void swmd::Comp::checkpoint(std::fstream & cp_file)
 {
-    for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
-    {
-        (*k)->checkpoint(cp_file);
+    for (auto const& k : pKProcs) {
+        k->checkpoint(cp_file);
     }
 }
 
@@ -79,9 +77,8 @@ void swmd::Comp::checkpoint(std::fstream & cp_file)
 
 void swmd::Comp::restore(std::fstream & cp_file)
 {
-    for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
-    {
-        (*k)->restore(cp_file);
+    for (auto const& k : pKProcs) {
+        k->restore(cp_file);
     }
 }
 

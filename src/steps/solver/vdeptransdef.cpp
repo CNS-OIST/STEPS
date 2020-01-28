@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -51,20 +51,19 @@ namespace smod = steps::model;
 ssolver::VDepTransdef::VDepTransdef(Statedef * sd, uint idx, smod::VDepTrans * vdt)
 : pStatedef(sd)
 , pIdx(idx)
-, pName()
 , pSetupdone(false)
 , pVMin(0.0)
 , pVMax(0.0)
 , pDV(0.0)
+, pVRateTab(nullptr)
 , pSrc()
 , pDst()
-, pVRateTab(nullptr)
 , pSpec_DEP(nullptr)
 , pSpec_SRCCHAN(GIDX_UNDEFINED)
 , pSpec_DSTCHAN(GIDX_UNDEFINED)
 {
-    AssertLog(pStatedef != 0);
-    AssertLog(vdt != 0);
+    AssertLog(pStatedef != nullptr);
+    AssertLog(vdt != nullptr);
 
     pName = vdt->getID();
 
@@ -111,25 +110,25 @@ ssolver::VDepTransdef::~VDepTransdef()
 
 void ssolver::VDepTransdef::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&pVMin, sizeof(double));
-    cp_file.write((char*)&pVMax, sizeof(double));
-    cp_file.write((char*)&pDV, sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pVMin), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pVMax), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pDV), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void ssolver::VDepTransdef::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&pVMin, sizeof(double));
-    cp_file.read((char*)&pVMax, sizeof(double));
-    cp_file.read((char*)&pDV, sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pVMin), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pVMax), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pDV), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void ssolver::VDepTransdef::setup()
 {
-    AssertLog(pSetupdone == false);
+    AssertLog(!pSetupdone);
 
     uint sidx = pStatedef->getSpecIdx(pSrc);
     uint didx = pStatedef->getSpecIdx(pDst);

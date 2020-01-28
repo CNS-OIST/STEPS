@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -104,7 +104,7 @@ public:
     /// Return the compartment id.
     ///
     /// \return ID of the compartment.
-    std::string const & getID() const
+    inline std::string const & getID() const noexcept
     { return pID; }
 
     /// Set or change the compartment id.
@@ -115,13 +115,13 @@ public:
     /// Return a pointer to the geometry container object.
     ///
     /// \return Pointer to the parent geometry container.
-    steps::wm::Geom * getContainer() const
+    inline steps::wm::Geom * getContainer() const noexcept
     { return pContainer; }
 
     /// Return the volume of the compartment.
     ///
     /// \return Volume of the compartment.
-    double getVol() const
+    inline double getVol() const noexcept
     { return pVol; }
 
     /// Set the volume of the compartment.
@@ -141,7 +141,7 @@ public:
     /// Return a list of volume systems implemented by the compartment.
     ///
     /// \return List of ids of volume systems.
-    std::set<std::string> const & getVolsys() const
+    inline std::set<std::string> const & getVolsys() const noexcept
     { return pVolsys; }
 
     /// Delete a volume system with name id.
@@ -153,14 +153,14 @@ public:
     // OPERATIONS (EXPOSED TO PYTHON): MODEL LINKING
     ////////////////////////////////////////////////////////////////////////
     /// Return all spec in the compartment giving a model.
-    std::vector<steps::model::Spec*> getAllSpecs(steps::model::Model* model);
+    std::vector<steps::model::Spec*> getAllSpecs(steps::model::Model* model) const;
 
     /// Return all Reac in the compartment giving a model.
-    std::vector<steps::model::Reac*> getAllReacs(steps::model::Model* model);
+    std::vector<steps::model::Reac*> getAllReacs(steps::model::Model* model) const;
 
 
     /// Return all Diff in the compartment giving a model.
-    std::vector<steps::model::Diff*> getAllDiffs(steps::model::Model* model);
+    std::vector<steps::model::Diff*> getAllDiffs(steps::model::Model* model) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO PYTHON): PATCHES
@@ -171,7 +171,7 @@ public:
     /// \return List of pointers to the inner patches.
     /// \warning If a compartment is set as the outer compartment of a patch,
     ///          this patch is a inner patch of the compartment.
-    std::set<steps::wm::Patch *> getIPatches() const
+    inline const std::set<steps::wm::Patch *>& getIPatches() const noexcept
     { return pIPatches; }
 
     /// Return a copy of the set of outer patches.
@@ -179,7 +179,7 @@ public:
     /// \return List of pointers to the outer patches.
     /// \warning If a compartment is set as the inner compartment of a patch,
     ///          this patch is a outer patch of the compartment.
-    std::set<steps::wm::Patch *> getOPatches() const
+    inline const std::set<steps::wm::Patch *>& getOPatches() const noexcept
     { return pOPatches; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -224,7 +224,7 @@ public:
     /// Count the inner patches.
     ///
     /// \return Number of the inner patches.
-    inline uint _countIPatches() const
+    inline uint _countIPatches() const noexcept
     { return pIPatches.size(); }
 
     /// Get a inner patch with index lidx.
@@ -236,7 +236,7 @@ public:
     /// Count the outer patches.
     ///
     /// \return Number of the outer patches.
-    inline uint _countOPatches() const
+    inline uint _countOPatches() const noexcept
     { return pOPatches.size(); }
 
     /// Get a outer patch with index lidx.
@@ -271,8 +271,8 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-}
-}
+} // namespace wm
+} // namespace steps
 
 #endif
 // STEPS_WM_COMP_HPP

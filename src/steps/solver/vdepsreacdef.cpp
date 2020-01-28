@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -54,12 +54,6 @@ ssolver::VDepSReacdef::VDepSReacdef(Statedef * sd, uint idx, smod::VDepSReac * v
 : pStatedef(sd)
 , pIdx(idx)
 , pName()
-, pSetupdone(false)
-, pVMin(0.0)
-, pVMax(0.0)
-, pDV(0.0)
-, pVKTab(nullptr)
-, pOrder()
 , pIlhs()
 , pOlhs()
 , pSlhs()
@@ -67,6 +61,9 @@ ssolver::VDepSReacdef::VDepSReacdef(Statedef * sd, uint idx, smod::VDepSReac * v
 , pOrhs()
 , pSrhs()
 , pSurface_surface(true)
+
+// pOrient?
+
 , pSpec_I_DEP(nullptr)
 , pSpec_S_DEP(nullptr)
 , pSpec_O_DEP(nullptr)
@@ -82,6 +79,10 @@ ssolver::VDepSReacdef::VDepSReacdef(Statedef * sd, uint idx, smod::VDepSReac * v
 , pSpec_I_UPD_Coll()
 , pSpec_S_UPD_Coll()
 , pSpec_O_UPD_Coll()
+, pVMin(0.0)
+, pVMax(0.0)
+, pDV(0.0)
+, pVKTab(nullptr)
 , pReqInside(false)
 , pReqOutside(false)
 {
@@ -198,18 +199,18 @@ ssolver::VDepSReacdef::~VDepSReacdef()
 
 void ssolver::VDepSReacdef::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&pVMin, sizeof(double));
-    cp_file.write((char*)&pVMax, sizeof(double));
-    cp_file.write((char*)&pDV, sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pVMin), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pVMax), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pDV), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void ssolver::VDepSReacdef::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&pVMin, sizeof(double));
-    cp_file.read((char*)&pVMax, sizeof(double));
-    cp_file.read((char*)&pDV, sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pVMin), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pVMax), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pDV), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -218,51 +219,39 @@ void ssolver::VDepSReacdef::setup()
 {
     AssertLog(pSetupdone == false);
 
-    if (outside()) { AssertLog(pIlhs.size() == 0); }
-    else if (inside()) { AssertLog(pOlhs.size() == 0); }
+    if (outside()) { AssertLog(pIlhs.empty()); }
+    else if (inside()) { AssertLog(pOlhs.empty()); }
     else AssertLog(false);
 
-    smod::SpecPVecCI ol_end = pOlhs.end();
-    for (smod::SpecPVecCI ol = pOlhs.begin(); ol != ol_end; ++ol)
-    {
+    for (auto const& ol: pOlhs) {
         pSurface_surface = false;
-        uint sidx = pStatedef->getSpecIdx(*ol);
+        uint sidx = pStatedef->getSpecIdx(ol);
         pSpec_O_LHS[sidx] += 1;
     }
 
-    smod::SpecPVecCI il_end = pIlhs.end();
-    for (smod::SpecPVecCI il = pIlhs.begin(); il != il_end; ++il)
-    {
+    for (auto const& il: pIlhs) {
         pSurface_surface = false;
-        uint sidx = pStatedef->getSpecIdx(*il);
+        uint sidx = pStatedef->getSpecIdx(il);
         pSpec_I_LHS[sidx] += 1;
     }
 
-    smod::SpecPVecCI sl_end = pSlhs.end();
-    for (smod::SpecPVecCI sl = pSlhs.begin(); sl != sl_end; ++sl)
-    {
-        uint sidx = pStatedef->getSpecIdx(*sl);
+    for (auto const& sl: pSlhs) {
+        uint sidx = pStatedef->getSpecIdx(sl);
         pSpec_S_LHS[sidx] += 1;
     }
 
-    smod::SpecPVecCI ir_end = pIrhs.end();
-    for (smod::SpecPVecCI ir = pIrhs.begin(); ir != ir_end; ++ir)
-    {
-        uint sidx = pStatedef->getSpecIdx(*ir);
+    for (auto const& ir: pIrhs) {
+        uint sidx = pStatedef->getSpecIdx(ir);
         pSpec_I_RHS[sidx] += 1;
     }
 
-    smod::SpecPVecCI sr_end = pSrhs.end();
-    for (smod::SpecPVecCI sr = pSrhs.begin(); sr != sr_end; ++sr)
-    {
-        uint sidx = pStatedef->getSpecIdx(*sr);
+    for (auto const& sr: pSrhs) {
+        uint sidx = pStatedef->getSpecIdx(sr);
         pSpec_S_RHS[sidx] += 1;
     }
 
-    smod::SpecPVecCI orh_end = pOrhs.end();
-    for (smod::SpecPVecCI orh = pOrhs.begin(); orh != orh_end; ++orh)
-    {
-        uint sidx = pStatedef->getSpecIdx(*orh);
+    for (auto const& orh: pOrhs) {
+        uint sidx = pStatedef->getSpecIdx(orh);
         pSpec_O_RHS[sidx] += 1;
     }
 
@@ -319,7 +308,7 @@ void ssolver::VDepSReacdef::setup()
 double ssolver::VDepSReacdef::getVDepK(double v) const
 {
     AssertLog(pSetupdone == true);
-    AssertLog(pVKTab != 0);
+    AssertLog(pVKTab != nullptr);
     if (v > pVMax)
     {
         std::ostringstream os;
@@ -505,9 +494,7 @@ bool ssolver::VDepSReacdef::reqspec_S(uint gidx) const
     AssertLog(gidx < pStatedef->countSpecs());
     if (pSpec_S_DEP[gidx] != DEP_NONE) { return true;
 }
-    if (pSpec_S_RHS[gidx] != 0) { return true;
-}
-    return false;
+    return pSpec_S_RHS[gidx] != 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -520,9 +507,7 @@ bool ssolver::VDepSReacdef::reqspec_O(uint gidx) const
         if (pSpec_O_DEP[gidx] != DEP_NONE) { return true;
 }
 }
-    if (pSpec_O_RHS[gidx] != 0) { return true;
-}
-    return false;
+    return pSpec_O_RHS[gidx] != 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

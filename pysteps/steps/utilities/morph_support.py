@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -25,86 +25,79 @@ from __future__ import print_function
 
 # Supporting Module for generating STEPS morph sectioning file using NEURON
 
-import sys
-from steps.utilities.geom_decompose import *
+from steps.utilities.geom_decompose import getCenter
+from steps.utilities.geom_decompose import isPointInCylinder
+from steps.geom import UNKNOWN_TET, UNKNOWN_TRI
+
+
+try:
+    from neuron import h
+    HAS_NEURON = True
+except ImportError:
+    print("Unable to import NEURON module, NEURON related functions will not be usable.")
+    HAS_NEURON = False
+
+
+def neuron2morph(h):
+    """
+    Generate morph sectioning data from NEURON h interface with preloaded morphology.
+    """
+    sections = {}
+
+    for sec in h.allsec():
+        sections[sec.name()] = {}
+        sections[sec.name()]["name"] = sec.name()
+        sr = h.SectionRef(sec=sec)
+        if sr.has_parent():
+            parent = sr.parent.name()
+        else:
+            parent = None
+        sections[sec.name()]["parent"] = parent
+
+        children = []
+        for child in sr.child:
+            children.append(child.name())
+
+        sections[sec.name()]["children"] = children
+        n3d = int(h.n3d())
+        sections[sec.name()]["points"] = []
+        for i in range(n3d):
+            sections[sec.name()]["points"].append([h.x3d(i),
+                                                   h.y3d(i),
+                                                   h.z3d(i),
+                                                   h.diam3d(i)])
+    return sections
+
 
 def hoc2morph(hoc_file):
     """
     Generate morph sectioning data from NEURON hoc file.
     """
-    
-    import sys
-    from neuron import h
-    
-    sections = {}
-    h.load_file(hoc_file)
 
-    for sec in h.allsec():
-        sections[sec.name()] = {}
-        sections[sec.name()]["name"] = sec.name()
-        sr = h.SectionRef(sec=sec)
-        if sr.has_parent():
-            parent = sr.parent.name()
-        else:
-            parent = None
-        sections[sec.name()]["parent"] = parent
+    if HAS_NEURON:
+        h.load_file(hoc_file)
+        return neuron2morph(h)
+    else:
+        print("NEURON module is not available.")
 
-        children = []
-        for child in sr.child:
-            children.append(child.name())
-
-        sections[sec.name()]["children"] = children
-        x = []
-        y = []
-        z = []
-        d = []
-        n3d = int(h.n3d())
-        sections[sec.name()]["points"] = []
-        for i in range(n3d):
-            sections[sec.name()]["points"].append([h.x3d(i), h.y3d(i), h.z3d(i), h.diam3d(i)])
-    return sections
 
 def swc2morph(swc_file):
     """
     Generate morph sectioning data from swc file.
     """
-    
-    from neuron import h
-    h.load_file('stdlib.hoc')
-    h.load_file('import3d.hoc')
-    
-    cell = h.Import3d_SWC_read()
-    cell.input(swc_file)
+    if HAS_NEURON:
+        h.load_file('stdlib.hoc')
+        h.load_file('import3d.hoc')
 
-    i3d = h.Import3d_GUI(cell, 0)
-    i3d.instantiate(None)
+        cell = h.Import3d_SWC_read()
+        cell.input(swc_file)
 
-    sections = {}
+        i3d = h.Import3d_GUI(cell, 0)
+        i3d.instantiate(None)
+        return neuron2morph(h)
 
-    for sec in h.allsec():
-        sections[sec.name()] = {}
-        sections[sec.name()]["name"] = sec.name()
-        sr = h.SectionRef(sec=sec)
-        if sr.has_parent():
-            parent = sr.parent.name()
-        else:
-            parent = None
-        sections[sec.name()]["parent"] = parent
-
-        children = []
-        for child in sr.child:
-            children.append(child.name())
-
-        sections[sec.name()]["children"] = children
-        x = []
-        y = []
-        z = []
-        d = []
-        n3d = int(h.n3d())
-        sections[sec.name()]["points"] = []
-        for i in range(n3d):
-            sections[sec.name()]["points"].append([h.x3d(i), h.y3d(i), h.z3d(i), h.diam3d(i)])
-    return sections
+    else:
+        print("NEURON module is not available.")
 
 ################################################################################
 
@@ -112,24 +105,22 @@ def swc2morph(swc_file):
 
 ################################################################################
 
-def mapMorphTetmesh(morph_sections, mesh, morph2mesh_scale = 1e-6):
+
+def mapMorphTetmesh(morph_sections, mesh, morph2mesh_scale=1e-6):
     """
     Map each tetrahedron in a mesh to morph sectioning.
-    
+
     Parameters:
        * morph_sections    Morphology sectioning data generated by steps.utilities.morph_support.hoc2morph or swc2morph
        * mesh              STEPS Tetmesh object
-       * morph2mesh_scale  Scaling factor from morph sectioning data to Tetmesh data, Default: 1e-6, that is 1 unit (usually micron) in the morph file equals 1e-6 unit (meter) in Tetmesh 
-    
+       * morph2mesh_scale  Scaling factor from morph sectioning data to Tetmesh data, Default: 1e-6, that is 1 unit (usually micron) in the morph file equals 1e-6 unit (meter) in Tetmesh
+
     Return:
        A list in format of [sec_id_tet0, sec_id_tet1, sec_id_tet_n, ...] where the n_th element stores the section id for tetrahedron n.
     """
-    
-    
     ntets = mesh.ntets
     mapped_list = [None] * ntets
     dsq_list = [-1] * ntets
-    
     for sec in morph_sections.values():
 
         points = sec["points"]
@@ -139,20 +130,20 @@ def mapMorphTetmesh(morph_sections, mesh, morph2mesh_scale = 1e-6):
             p1 = points[i+1]
             center = getCenter(p0, p1, morph2mesh_scale)
             intet = mesh.findTetByPoint(center)
-            if intet == -1:
+            if intet == UNKNOWN_TET:
                 print("Tracking point ", center, " of ", sec["name"], " is not in the mesh.")
                 print("Try to track end points instead.")
                 intet = mesh.findTetByPoint([p0[0] * morph2mesh_scale, p0[1] * morph2mesh_scale, p0[2] * morph2mesh_scale])
-                if intet == -1:
+                if intet == UNKNOWN_TET:
                     print("First end point is not in the mesh, try second end point.")
                     intet = mesh.findTetByPoint([p1[0] * morph2mesh_scale, p1[1] * morph2mesh_scale, p1[2] * morph2mesh_scale])
-                    if intet == -1:
+                    if intet == UNKNOWN_TET:
                         print("Second end point not in the mesh, will skip this cylinder.")
                         continue
 
             mapped_list[intet] = sec["name"]
             dsq_list[intet] = 0.0
-            
+
             # expend to neighbor tetrahedrons to see
             # if they also belong to this cylinder
             can_expend = True
@@ -162,11 +153,13 @@ def mapMorphTetmesh(morph_sections, mesh, morph2mesh_scale = 1e-6):
                 for check_tet in check_set:
                     neighb_tets = mesh.getTetTetNeighb(check_tet)
                     for t in neighb_tets:
-                        if t == -1: continue
+                        if t == UNKNOWN_TET:
+                            continue
                         center = mesh.getTetBarycenter(t)
                         dsq = isPointInCylinder(p0, p1, center, morph2mesh_scale)
-                        if dsq == -1: continue
-                        if mapped_list[t] == None:
+                        if dsq < 0:
+                            continue
+                        if mapped_list[t] is None:
                             expension.add(t)
                             mapped_list[t] = sec["name"]
                             dsq_list[t] = dsq
@@ -175,15 +168,14 @@ def mapMorphTetmesh(morph_sections, mesh, morph2mesh_scale = 1e-6):
                             expension.add(t)
                             mapped_list[t] = sec["name"]
                             dsq_list[t] = dsq
-            
-                        
+
                 if len(expension) == 0:
                     can_expend = False
                 else:
                     check_set = expension
 
     for tet in range(len(mapped_list)):
-        if mapped_list[tet] == None:
+        if mapped_list[tet] is None:
             can_expend = True
             unmap_set = set([tet])
             check_set = set([tet])
@@ -191,11 +183,13 @@ def mapMorphTetmesh(morph_sections, mesh, morph2mesh_scale = 1e-6):
             while can_expend:
                 expension = set([])
                 for check_tet in check_set:
-                    if not can_expend: break
+                    if not can_expend:
+                        break
                     neighb_tets = mesh.getTetTetNeighb(check_tet)
                     for t in neighb_tets:
-                        if t == -1: continue
-                        if mapped_list[t] == None:
+                        if t == UNKNOWN_TET:
+                            continue
+                        if mapped_list[t] is None:
                             unmap_set.add(t)
                             expension.add(t)
                         else:
@@ -204,7 +198,7 @@ def mapMorphTetmesh(morph_sections, mesh, morph2mesh_scale = 1e-6):
                             break
                 check_set = expension
             for t in unmap_set:
-                assert(mapped_list[t] == None)
+                assert(mapped_list[t] is None)
                 mapped_list[t] = found_mapping
 
     tet_part_table = {}
@@ -212,14 +206,15 @@ def mapMorphTetmesh(morph_sections, mesh, morph2mesh_scale = 1e-6):
         if mapped_list[tet] not in tet_part_table.keys():
             tet_part_table[mapped_list[tet]] = []
         tet_part_table[mapped_list[tet]].append(tet)
-        
+
     for part in tet_part_table.values():
         for tet in part:
             found_neighbor_parts = set([])
             neighb_tets = mesh.getTetTetNeighb(tet)
             neighb_in_part = False
             for n_tet in neighb_tets:
-                if n_tet == -1: continue
+                if n_tet == UNKNOWN_TET:
+                    continue
                 found_neighbor_parts.add(mapped_list[n_tet])
                 if n_tet in part:
                     neighb_in_part = True
@@ -228,6 +223,7 @@ def mapMorphTetmesh(morph_sections, mesh, morph2mesh_scale = 1e-6):
                 print("Tetrahedron %i has no neighbor in its partition. Try to reassign." % (tet))
                 found_neighbor_parts = list(found_neighbor_parts)
                 if len(found_neighbor_parts) > 1:
-                    print("Multiple reassignment options: ", found_neighbor_parts, " choose the first one by default.")
+                    print("Multiple reassignment options: ",
+                          found_neighbor_parts, " choose the first one by default.")
                 mapped_list[tet] = found_neighbor_parts[0]
     return mapped_list

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -114,7 +114,7 @@ public:
     /// Count the compartments in the geometry container.
     ///
     /// \return Number of compartments.
-    inline uint _countComps() const
+    inline std::size_t _countComps() const noexcept
     { return pComps.size(); }
 
     /// Return a compartment with index gidx.
@@ -126,7 +126,7 @@ public:
     /// Count the patches in the geometry container.
     ///
     /// \return Number of patches.
-    inline uint _countPatches() const
+    inline std::size_t _countPatches() const noexcept
     { return pPatches.size(); }
 
     /// Return a patch with index gidx.
@@ -197,8 +197,8 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-}
-}
+} // namespace wm
+} // namespace steps
 
 #endif
 // STEPS_WM_GEOM_HPP

@@ -9,6 +9,7 @@ from cython.operator cimport dereference as deref
 cimport std
 cimport steps_model
 
+
 # ======================================================================================================================
 cdef extern from "steps/geom/comp.hpp" namespace "steps::wm":
 # ----------------------------------------------------------------------------------------------------------------------
@@ -72,10 +73,9 @@ cdef extern from "steps/geom/geom.hpp" namespace "steps::wm":
     cdef cppclass Geom:
         Geom()
         Comp* getComp(std.string) except +
-        void delComp(std.string) except + 
+        void delComp(std.string) except +
         std.vector[Comp*] getAllComps()
         Patch* getPatch(std.string) except +
         void delPatch(std.string) except +
         std.vector[Patch*] getAllPatches()
-        
-        
+

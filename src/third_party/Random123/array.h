@@ -69,7 +69,7 @@ template <typename value_type>
 inline R123_CUDA_DEVICE value_type assemble_from_u32(uint32_t *p32){
     value_type v=0;
     for(size_t i=0; i<(3+sizeof(value_type))/4; ++i)
-        v |= ((value_type)(*p32++)) << (32*i);
+        v |= (static_cast<value_type>(*p32++)) << (32*i);
     return v;
 }
 
@@ -224,7 +224,7 @@ struct r123arrayinsertable<uint8_t>{
     const uint8_t& v;
     r123arrayinsertable(const uint8_t& t_) : v(t_) {} 
     friend std::ostream& operator<<(std::ostream& os, const r123arrayinsertable<uint8_t>& t){
-        return os << (int)t.v;
+        return os << static_cast<int>(t.v);
     }
 };
 

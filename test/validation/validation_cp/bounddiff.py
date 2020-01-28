@@ -12,7 +12,7 @@
 
 from __future__ import print_function, absolute_import
 import os
-import datetime
+from steps.geom import UNKNOWN_TET
 import steps.model as smodel
 import math
 import steps.solver as solvmod
@@ -126,20 +126,12 @@ def test_bdiff():
 
     for i in range(ntets):
         tettemp = g.getTetTetNeighb(i)
-        if (tettemp[0] ==-1 or tettemp[1] == -1 or tettemp[2] == -1 or tettemp[3] == -1): 
+        templist = [t for t in range(4) if tettemp[t] == UNKNOWN_TET]
+        if templist:
             boundtets.append(i)
-            templist = []
-            if (tettemp[0] == -1): 
-                templist.append(0)
-            if (tettemp[1] == -1): 
-                templist.append(1)
-            if (tettemp[2] == -1): 
-                templist.append(2)
-            if (tettemp[3] == -1): 
-                templist.append(3)
             bt_srftriidx.append(templist)
 
-    assert (boundtets.__len__() == bt_srftriidx.__len__())
+    assert len(boundtets) == len(bt_srftriidx)
 
     minztets = []
     boundminz = g.getBoundMin()[2] + 0.01e-06

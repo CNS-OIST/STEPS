@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -97,12 +97,14 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline std::vector<steps::wmrssa::KProc *>::const_iterator kprocBegin() const
+    inline std::vector<steps::wmrssa::KProc *>::const_iterator kprocBegin() const noexcept
     { return pKProcs.begin(); }
-    inline std::vector<steps::wmrssa::KProc *>::const_iterator kprocEnd() const
+    inline std::vector<steps::wmrssa::KProc *>::const_iterator kprocEnd() const noexcept
     { return pKProcs.end(); }
-    inline uint countKProcs() const
+    inline uint countKProcs() const noexcept
     { return pKProcs.size(); }
+    inline const std::vector<steps::wmrssa::KProc *> kprocs() const noexcept
+    { return pKProcs; }
 
     steps::wmrssa::KProc * reac(uint lridx) const;
 
@@ -110,23 +112,27 @@ public:
 
     void addIPatch(Patch * p);
 
-    inline uint countIPatches() const
+    inline uint countIPatches() const noexcept
     { return pIPatches.size(); }
 
-    inline std::vector<steps::wmrssa::Patch *>::const_iterator beginIPatches() const
+    inline std::vector<steps::wmrssa::Patch *>::const_iterator beginIPatches() const noexcept
     { return pIPatches.begin(); }
-    inline std::vector<steps::wmrssa::Patch *>::const_iterator  endIPatches() const
+    inline std::vector<steps::wmrssa::Patch *>::const_iterator  endIPatches() const noexcept
     { return pIPatches.end(); }
+    inline const std::vector<steps::wmrssa::Patch *>& ipatches() const noexcept
+    { return pIPatches; }
 
     void addOPatch(Patch * p);
 
-    inline uint countOPatches() const
+    inline uint countOPatches() const noexcept
     { return pOPatches.size(); }
 
-    inline std::vector<steps::wmrssa::Patch *>::const_iterator  beginOPatches() const
+    inline std::vector<steps::wmrssa::Patch *>::const_iterator  beginOPatches() const noexcept
     { return pOPatches.begin(); }
-    inline std::vector<steps::wmrssa::Patch *>::const_iterator  endOPatches() const
+    inline std::vector<steps::wmrssa::Patch *>::const_iterator  endOPatches() const noexcept
     { return pOPatches.end(); }
+    inline const std::vector<steps::wmrssa::Patch *>& opatches() const noexcept
+    { return pOPatches; }
 
     ////////////////////////////////////////////////////////////////////////
 

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -106,7 +106,7 @@ public:
     /// Return the diffusion rule ID.
     ///
     /// \return ID of the diffusion rule.
-    std::string getID() const
+    inline const std::string& getID() const noexcept
     { return pID; }
 
     /// Set the ID of the diffusion rule.
@@ -117,19 +117,19 @@ public:
     /// Return a pointer to the parent volume system.
     ///
     /// \return Pointer to the parent volume system.
-    Volsys * getVolsys() const
+    inline Volsys * getVolsys() const noexcept
     { return pVolsys; }
 
     /// Return a pointer to the parent surface system.
     ///
     /// \return Pointer to the parent surface system.
-    Surfsys * getSurfsys() const
+    inline Surfsys * getSurfsys() const noexcept
     { return pSurfsys; }
 
     /// Return a pointer to the parent model.
     ///
     /// \return Pointer to the parent model.
-    Model * getModel() const
+    inline Model * getModel() const noexcept
     { return pModel; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -139,7 +139,7 @@ public:
     /// Return a pointer to the species to which this diffusion rule applies
     ///
     /// \return Pointer of the species
-    Spec * getLig() const
+    inline Spec * getLig() const noexcept
     { return pLig; }
 
     /// Set the species which this difusion rule applies to.
@@ -150,7 +150,7 @@ public:
     /// Get the rate constant of the diffusion rule.
     ///
     /// \return Rate constant of the diffusion rule.
-    double getDcst() const
+    inline double getDcst() const noexcept
     { return pDcst; }
 
     /// Set the rate constant of the diffusion rule.
@@ -181,10 +181,10 @@ private:
     ////////////////////////////////////////////////////////////////////////
 
     std::string                         pID;
-    Model                             * pModel;
+    Model                             * pModel{nullptr};
 
     Volsys                            * pVolsys;
-    Surfsys                              * pSurfsys;
+    Surfsys                              * pSurfsys{nullptr};
 
     Spec                              * pLig;
     double                              pDcst;

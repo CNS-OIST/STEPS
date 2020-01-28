@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -94,6 +94,8 @@ class LinSystem
 public:
     LinSystem(size_t nrow,size_t ncol): pNRow(nrow), pNCol(ncol) {}
 
+    virtual ~LinSystem() = default;
+
     virtual const AMatrix &A() const =0;
     virtual AMatrix &A() =0;
 
@@ -104,8 +106,8 @@ public:
     
     virtual void solve() =0;
 
-    size_t nrow() const { return pNRow; }
-    size_t ncol() const { return pNRow; }
+    inline size_t nrow() const noexcept { return pNRow; }
+    inline size_t ncol() const noexcept { return pNCol; }
 
 private:
     size_t pNRow,pNCol;

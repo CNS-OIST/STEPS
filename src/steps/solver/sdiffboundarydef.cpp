@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -48,25 +48,24 @@ namespace stetmesh = steps::tetmesh;
 
 ssolver::SDiffBoundarydef::SDiffBoundarydef(Statedef * sd, uint idx, stetmesh::SDiffBoundary * sdb)
 : pStatedef(sd)
+, pSetupdone(false)
 , pIdx(idx)
 , pName()
 , pBars()
-, pPatchA_temp(nullptr)
-, pPatchB_temp(nullptr)
 , pPatchA(0)
-, pPatchB(0)
-, pSetupdone(false)
+, pPatchB(0), pPatchA_temp(nullptr)
+, pPatchB_temp(nullptr)
 {
-    AssertLog(pStatedef != 0);
-    AssertLog(sdb != 0);
+    AssertLog(pStatedef != nullptr);
+    AssertLog(sdb != nullptr);
 
     pName = sdb->getID();
     pBars = sdb->_getAllBarIndices();
-    std::vector<steps::wm::Patch *> patches = sdb->getPatches();
+    auto patches = sdb->getPatches();
     pPatchA_temp = patches[0];
     pPatchB_temp = patches[1];
-    AssertLog(pPatchA_temp != 0);
-    AssertLog(pPatchB_temp != 0);
+    AssertLog(pPatchA_temp != nullptr);
+    AssertLog(pPatchB_temp != nullptr);
 
 }
 
@@ -77,14 +76,14 @@ ssolver::SDiffBoundarydef::~SDiffBoundarydef()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::SDiffBoundarydef::checkpoint(std::fstream & cp_file)
+void ssolver::SDiffBoundarydef::checkpoint(std::fstream & /*cp_file*/)
 {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::SDiffBoundarydef::restore(std::fstream & cp_file)
+void ssolver::SDiffBoundarydef::restore(std::fstream & /*cp_file*/)
 {
     // reserve
 }
@@ -97,17 +96,8 @@ void ssolver::SDiffBoundarydef::setup()
 
     pPatchA = pStatedef->getPatchIdx(pPatchA_temp);
     pPatchB = pStatedef->getPatchIdx(pPatchB_temp);
-    AssertLog(pPatchA >= 0);
-    AssertLog(pPatchB >= 0);
     pSetupdone = true;
 
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-std::string const ssolver::SDiffBoundarydef::name() const
-{
-    return pName;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -101,16 +101,16 @@ public:
     ///
     VertexElement * getOther(VertexElement *);
 
-    inline void setGeomCouplingConstant(double d)
+    inline void setGeomCouplingConstant(double d) noexcept
     { pGeomCC = d; }
 
-    inline VertexElement * getA() const
+    inline VertexElement * getA() const noexcept
     { return pVert1; }
 
-    inline VertexElement * getB() const
+    inline VertexElement * getB() const noexcept
     { return pVert2; }
 
-    inline double getGeomCouplingConstant() const
+    inline double getGeomCouplingConstant() const noexcept
     { return pGeomCC; }
 
     ////////////////////////////////////////////////////////////////////////

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -40,32 +40,11 @@ namespace swmd = steps::wmdirect;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmd::KProc::KProc()
-: rExtent(0)
-// , pFlags(0)
-, pSchedIDX(0)
-{
-
-}
+swmd::KProc::KProc() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmd::KProc::~KProc()
-= default;
-
-////////////////////////////////////////////////////////////////////////////////
-
-uint swmd::KProc::getExtent() const
-{
-    return rExtent;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void swmd::KProc::resetExtent()
-{
-    rExtent = 0;
-}
+swmd::KProc::~KProc() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 

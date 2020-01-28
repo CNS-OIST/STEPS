@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -89,13 +89,13 @@ public:
     ///
 
     VDepSReac(std::string const & id, Surfsys * surfsys,
-              std::vector<Spec *> const & olhs = std::vector<Spec *>(),
-              std::vector<Spec *> const & ilhs = std::vector<Spec *>(),
-              std::vector<Spec *> const & slhs = std::vector<Spec *>(),
-              std::vector<Spec *> const & irhs = std::vector<Spec *>(),
-              std::vector<Spec *> const & srhs = std::vector<Spec *>(),
-              std::vector<Spec *> const & orhs = std::vector<Spec *>(),
-              std::vector<double> ktab = std::vector<double>(),
+              std::vector<Spec *> const & olhs = {},
+              std::vector<Spec *> const & ilhs = {},
+              std::vector<Spec *> const & slhs = {},
+              std::vector<Spec *> const & irhs = {},
+              std::vector<Spec *> const & srhs = {},
+              std::vector<Spec *> const & orhs = {},
+              std::vector<double> ktab = {},
               double vmin = 0.0, double vmax = 0.0,
               double dv = 0.0, uint tablesize = 0);
 
@@ -109,7 +109,7 @@ public:
     /// Return the voltage-dependent surface reaction ID.
     ///
     /// \return ID of the voltage-dependent surface reaction.
-    std::string getID() const
+    inline std::string getID() const noexcept
     { return pID; }
 
     /// Set or change the voltage-dependent surface reaction ID.
@@ -120,13 +120,13 @@ public:
     /// Return a pointer to the parent surface system.
     ///
     /// \return Pointer to the surface system.
-    Surfsys * getSurfsys() const
+    inline Surfsys * getSurfsys() const noexcept
     { return pSurfsys; }
 
     /// Return a pointer to the parent model.
     ///
     /// \return Pointer to the parent model.
-    Model * getModel() const
+    inline Model * getModel() const noexcept
     { return pModel; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -137,8 +137,8 @@ public:
     ///
     /// \return True if ilhs is set.
     ///         False if else.
-    bool getInner() const
-    { return (! pOuter); }
+    inline bool getInner() const noexcept
+    { return !pOuter; }
 
 
     /// Check if the lhs involves species in the outer compartment,
@@ -146,13 +146,13 @@ public:
     ///
     /// \return True if olhs is set, or neither olhs or ilhs are set.
     ///         False if else.
-    bool getOuter() const
+    inline bool getOuter() const noexcept
     { return pOuter; }
 
     /// Return a list of outer volume species on the left hand side of reaction.
     ///
     /// \return List of pointers of left hand side outer volume species.
-    const std::vector<Spec *> & getOLHS() const
+    inline const std::vector<Spec *> & getOLHS() const noexcept
     { return pOLHS; }
 
     /// Set the outer volume species on the left hand side of reaction.
@@ -163,7 +163,7 @@ public:
     /// Return a list of inner volume species on the left hand side of reaction.
     ///
     /// \return List of pointers of left hand side inner volume species.
-    const std::vector<Spec *> & getILHS() const
+    inline const std::vector<Spec *> & getILHS() const noexcept
     { return pILHS; }
 
     /// Set the inner volume species on the left hand side of reaction.
@@ -174,7 +174,7 @@ public:
     /// Return a list of surface species on the left hand side of reaction.
     ///
     /// \return List of pointers of left hand side surface species.
-    const std::vector<Spec *> & getSLHS() const
+    inline const std::vector<Spec *> & getSLHS() const noexcept
     { return pSLHS; }
 
     /// Set the surface species on the left hand side of reaction.
@@ -185,7 +185,7 @@ public:
     /// Return a list of inner volume species on the right hand side of reaction.
     ///
     /// \return List of pointers of right hand side inner volume species.
-    const std::vector<Spec *> & getIRHS() const
+    inline const std::vector<Spec *> & getIRHS() const noexcept
     { return pIRHS; }
 
     /// Set the inner volume species on the right hand side of reaction.
@@ -196,7 +196,7 @@ public:
     /// Return a list of surface species on the right hand side of reaction.
     ///
     /// \return List of pointers of right hand side surface species.
-    const std::vector<Spec *> & getSRHS() const
+    inline const std::vector<Spec *> & getSRHS() const noexcept
     { return pSRHS; }
 
     /// Set the surface species on the right hand side of reaction.
@@ -207,7 +207,7 @@ public:
     /// Return a list of outer volume species on the right hand side of reaction.
     ///
     /// \return List of pointers of right hand side outer volume species.
-    const std::vector<Spec *> & getORHS() const
+    inline const std::vector<Spec *> & getORHS() const noexcept
     { return pORHS; }
 
     /// Set the outer volume species on the right hand side of reaction.
@@ -218,7 +218,7 @@ public:
     /// Get the order of the surface reaction.
     ///
     /// \return Order of the reaction.
-    uint getOrder() const
+    inline uint getOrder() const noexcept
     { return pOrder; }
 
     /// Get a table of reaction parameter over the range.
@@ -240,19 +240,19 @@ public:
 
     /// Get the table of transition rates.
     ///
-    double * _getK() const
+    inline double * _getK() const noexcept
     { return pK; }
 
-    inline double _getVMin() const
+    inline double _getVMin() const noexcept
     { return pVMin; }
 
-    inline double _getVMax() const
+    inline double _getVMax() const noexcept
     { return pVMax; }
 
-    inline double _getDV() const
+    inline double _getDV() const noexcept
     { return pDV; }
 
-    inline uint _getTablesize() const
+    inline uint _getTablesize() const noexcept
     { return pTablesize; }
 
     ////////////////////////////////////////////////////////////////////////

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -98,17 +98,17 @@ public:
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Compdef * def() const
+    inline steps::solver::Compdef * def() const noexcept
     { return pCompdef; }
 
     // Return the local index of a tet given by global index
-    uint getTet_GtoL(uint gidx);
+    tetrahedron_id_t getTet_GtoL(tetrahedron_id_t gidx);
 
     // Return the tet of a given local index
-    Tet * getTet(uint lidx);
+    Tet * getTet(tetrahedron_id_t lidx);
 
 
-    inline double vol() const
+    inline double vol() const noexcept
     { return pVol; }
 
     /*
@@ -119,15 +119,18 @@ public:
 
     */
 
-    inline uint countTets() const
+    inline std::size_t countTets() const noexcept
     { return pTets.size(); }
 
     //stex::WmVol * pickTetByVol(double rand01) const;
 
-    inline TetPVecCI bgnTet() const
+    inline TetPVecCI bgnTet() const noexcept
     { return pTets.begin(); }
-    inline TetPVecCI endTet() const
+    inline TetPVecCI endTet() const noexcept
     { return pTets.end(); }
+    inline const TetPVec& tets() const noexcept
+    { return pTets; }
+
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -136,12 +139,12 @@ private:
     ////////////////////////////////////////////////////////////////////////
 
     steps::solver::Compdef                    * pCompdef;
-    double                                     pVol;
+    double                                     pVol{0.0};
 
     TetPVec                                 pTets;
 
     // A map storing global index to local
-    std::map<uint, uint>                    pTets_GtoL;
+    std::map<tetrahedron_id_t, tetrahedron_id_t>                    pTets_GtoL;
 
     ////////////////////////////////////////////////////////////////////////
 

@@ -7,23 +7,25 @@ __copyright__ = "Copyright 2016 EPFL BBP-project"
 # =====================================================================================================================
 from cython.operator cimport dereference as deref
 from libcpp cimport bool
+from libcpp.memory cimport shared_ptr
 cimport std
 cimport steps_rng
 cimport steps_wm
 cimport steps_model
+
 
 # ======================================================================================================================
 cdef extern from "steps/wmrk4/wmrk4.hpp" namespace "steps::wmrk4":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef std.vector[double] dVec
     # ctypedef std.vector[double].iterator dVecI
-    # ctypedef std.vector[unsigned int] uiVec
-    # ctypedef std.vector[unsigned int].iterator uiVecI
+    # ctypedef std.vector[uint] uiVec
+    # ctypedef std.vector[uint].iterator uiVecI
 
     ###### Cybinding for Wmrk4 ######
     cdef cppclass Wmrk4:
         # Modified by Iain
-        Wmrk4(steps_model.Model*, steps_wm.Geom*, steps_rng.RNG*) except +
+        Wmrk4(steps_model.Model*, steps_wm.Geom*, shared_ptr[steps_rng.RNG]) except +
         std.string getSolverName() except +
         std.string getSolverDesc() except +
         std.string getSolverAuthors() except +
@@ -64,4 +66,3 @@ cdef extern from "steps/wmrk4/wmrk4.hpp" namespace "steps::wmrk4":
         bool getPatchSReacActive(std.string, std.string) except +
         void setPatchSReacActive(std.string, std.string, bool) except +
 
-        

@@ -6,6 +6,7 @@ test/validation/.logs/*
 .gitignore~
 
 pysteps/steps/cysteps_mpi.so
+pysteps/steps/cysteps.cpp
 
 .logs/*
 .project
@@ -26,6 +27,7 @@ STEPS.egg-info/PKG-INFO
 doc/user_manual/.logs
 doc/user_manual/build
 build/
+_build*/
 
 README
 
@@ -35,6 +37,8 @@ pysteps/steps/cysteps_mpi.cpp
 .idea
 
 .python-version
+Pipfile
+Pipfile.lock
 
 .ipynb_checkpoints
 

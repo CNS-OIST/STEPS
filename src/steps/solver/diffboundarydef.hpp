@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -85,18 +85,20 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this diffusion boundary.
-    inline uint gidx() const
+    inline uint gidx() const noexcept
     { return pIdx; }
 
     /// Return the name of this diffusion boundary.
-    std::string const name() const;
+    const std::string& name() const noexcept
+    { return pName; }
 
-    inline std::vector<uint> tris() const
+    inline const std::vector<triangle_id_t>& tris() const noexcept
     { return pTris; }
 
-    inline uint compa() const
+    inline uint compa() const noexcept
     { return pCompA; }
-    inline uint compb() const
+
+    inline uint compb() const noexcept
     { return pCompB; }
 
 
@@ -108,7 +110,7 @@ private:
 
     Statedef                          * pStatedef;
 
-    bool                                 pSetupdone;
+    bool                                 pSetupdone{false};
 
     // The global index of this diffusion boundary
     uint                                pIdx;
@@ -118,17 +120,17 @@ private:
 
     // List of all the triangles
 
-    std::vector<uint>                     pTris;
+    std::vector<triangle_id_t>                     pTris;
 
     // Diffboundarydef will have a setup() to copy the Compdef pointers
     //Lets store pointers
-    uint                                 pCompA;
-    uint                                 pCompB;
+    uint                                 pCompA{0};
+    uint                                 pCompB{0};
 
     // The pointer to the well-mixed comps is stored, but should not be used
     // only here so it's available during setup.
-    steps::wm::Comp *                     pCompA_temp;
-    steps::wm::Comp *                     pCompB_temp;
+    steps::wm::Comp *                     pCompA_temp{nullptr};
+    steps::wm::Comp *                     pCompB_temp{nullptr};
 
     ////////////////////////////////////////////////////////////////////////
 

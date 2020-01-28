@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -101,18 +101,19 @@ public:
     double area() const;
 
     /// Return the global index of this patch.
-    inline uint gidx() const
+    inline uint gidx() const noexcept
     { return pIdx; }
 
     /// Return the name of the patch.
-    std::string const name() const;
+    const std::string& name() const noexcept
+    { return pName; }
 
     /// Return a pointer to the inner compartment.
-    inline Compdef * icompdef() const
+    inline Compdef * icompdef() const noexcept
     { return pInner; }
 
     /// Return a pointer to the outer compartment.
-    inline Compdef * ocompdef() const
+    inline Compdef * ocompdef() const noexcept
     { return pOuter; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -137,7 +138,7 @@ public:
     /// Get the area of the patch
     ///
     /// \return Area of the patch
-    inline double getArea() const
+    inline double getArea() const noexcept
     { return pArea; }
 
     /// Reset count, flags members of this patch. Called when reset()
@@ -150,29 +151,29 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the number of species defined for this surface patch.
-    inline uint countSpecs() const
+    inline uint countSpecs() const noexcept
     { return pSpecsN_S; }
 
     /// Return the number of species defined for the inner compartment.
     /// Should not be called before Compdef::setup()
-    inline uint countSpecs_I() const
+    inline uint countSpecs_I() const noexcept
     { return pSpecsN_I; }
 
     /// Return the number of species defined for the outer compartment.
     /// Should not be called before Compdef::setup()
-    inline uint countSpecs_O() const
+    inline uint countSpecs_O() const noexcept
     { return pSpecsN_O; }
 
     /// Return the local species index for global index argument.
     ///
     /// \param gidx Global index of the species.
-    inline uint specG2L(uint gidx) const
+    inline uint specG2L(uint gidx) const noexcept
     { return pSpec_G2L[gidx]; }
 
     /// Return the global species index for local index argument.
     ///
     /// \param lidx local index of the species.
-    inline uint specL2G(uint lidx) const
+    inline uint specL2G(uint lidx) const noexcept
     { return pSpec_L2G[lidx]; }
 
 
@@ -192,11 +193,11 @@ public:
     uint specG2L_O(uint gidx) const;
 
     /// Return pointer to species' counts on this patch.
-    inline double * pools() const
+    inline double * pools() const noexcept
     { return pPoolCount; }
 
     /// Returns pointer to flags on species for this patch.
-    inline uint * flags() const
+    inline uint * flags() const noexcept
     { return pPoolFlags; }
 
     static const uint CLAMPED = 1;
@@ -205,7 +206,7 @@ public:
     /// clamped or not.
     ///
     /// \param slidx Local index of the species.
-    inline bool clamped(uint slidx) const
+    inline bool clamped(uint slidx) const noexcept
     { return pPoolFlags[slidx] & CLAMPED; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -230,13 +231,13 @@ public:
 
     /// Return the total number of surface reactions that can occur on this
     /// patch.
-    inline uint countSReacs() const
+    inline uint countSReacs() const noexcept
     { return pSReacsN; }
 
     /// Return the local surface reaction index for global index argument.
     ///
     /// \param gidx Global index of the surface reaction.
-    inline uint sreacG2L(uint gidx) const
+    inline uint sreacG2L(uint gidx) const noexcept
     { return pSReac_G2L[gidx]; }
     /*
     inline gidxT sreacL2G(lidxT idx) const
@@ -276,7 +277,7 @@ public:
     int * sreac_upd_O_end(uint lidx) const;
 
     /// Return pointer to flags on surface reactions for this patch.
-    inline uint * srflags() const
+    inline uint * srflags() const noexcept
     { return pSReacFlags; }
 
     static const uint INACTIVATED = 1;
@@ -285,13 +286,13 @@ public:
     /// is active or not.
     ///
     /// \param rlidx Local index of the surface reaction.
-    inline bool active(uint rlidx) const
+    inline bool active(uint rlidx) const noexcept
     { return !(pSReacFlags[rlidx] & INACTIVATED); }
 
     /// Return the kcst for a surface reaction specified by local index
     ///
     /// \param rlidx Local index of the surface reaction.
-    inline double kcst(uint rlidx) const
+    inline double kcst(uint rlidx) const noexcept
     { return pSReacKcst[rlidx]; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -299,7 +300,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of surface diffusion rules for this patch.
-    inline uint countSurfDiffs() const
+    inline uint countSurfDiffs() const noexcept
     { return pSurfDiffsN; }
 
     /// Returns a pointer to Diffdef specified by local index.
@@ -310,7 +311,7 @@ public:
     /// Return the local surface diffusion index for global index argument.
     ///
     /// \param gidx Global index of the surface diffusion.
-    uint surfdiffG2L(uint gidx) const
+    uint surfdiffG2L(uint gidx) const noexcept
     { return pSurfDiff_G2L[gidx]; }
 
     /// Return the local index of species of surface diffusion specified by
@@ -324,7 +325,7 @@ public:
     /// Return the rate constant of surface diffusion by local index argument.
     ///
     /// \param dlidx Local index of the surface diffusion.
-    inline double dcst(uint dlidx) const
+    inline double dcst(uint dlidx) const noexcept
     { return pSurfDiffDcst[dlidx]; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -332,15 +333,15 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the number of ohmic currents defined in this patch.
-    inline uint countOhmicCurrs() const
+    inline uint countOhmicCurrs() const noexcept
     { return pOhmicCurrsN; }
 
     /// Return the local index of ohmic current with global index gidx.
-    inline uint ohmiccurrG2L(uint gidx) const
+    inline uint ohmiccurrG2L(uint gidx) const noexcept
     { return pOhmicCurr_G2L[gidx]; }
 
     /// Return the global index of ohmic current with local index lidx.
-    inline uint ohmiccurrL2G(uint lidx) const
+    inline uint ohmiccurrL2G(uint lidx) const noexcept
     { return pOhmicCurr_L2G[lidx]; }
 
     /// Return a pointer to ohmic current definition object (type OhmicCurrdef)
@@ -360,15 +361,15 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the number of GHK currents defined in this patch.
-    inline uint countGHKcurrs() const
+    inline uint countGHKcurrs() const noexcept
     { return pGHKcurrsN; }
 
     /// Return the local index of GHK current with global index gidx.
-    inline uint ghkcurrG2L(uint gidx) const
+    inline uint ghkcurrG2L(uint gidx) const noexcept
     { return pGHKcurr_G2L[gidx]; }
 
     /// Return the global index of GHK current with local index lidx.
-    inline uint GHKcurrL2G(uint lidx) const
+    inline uint GHKcurrL2G(uint lidx) const noexcept
     { return pGHKcurr_L2G[lidx]; }
 
     /// Return a pointer to GHK current definition object (type GHKcurrdef)
@@ -392,15 +393,15 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the number of voltage-dependent transitions defined in this patch
-    inline uint countVDepTrans() const
+    inline uint countVDepTrans() const noexcept
     { return pVDepTransN; }
 
     /// Return the local index of v-dep transition with global index gidx.
-    inline uint vdeptransG2L(uint gidx) const
+    inline uint vdeptransG2L(uint gidx) const noexcept
     { return pVDepTrans_G2L[gidx]; }
 
     /// Return the global index of v-dep transition with local index lidx
-    inline uint vdeptransL2G(uint lidx) const
+    inline uint vdeptransL2G(uint lidx) const noexcept
     { return pVDepTrans_L2G[lidx]; }
 
     /// Return a pointer to vdeptrans definition object (type VDepTransdef)
@@ -422,13 +423,13 @@ public:
 
     /// Return the total number of voltage-dependent reactions that can occur on this
     /// patch.
-    inline uint countVDepSReacs() const
+    inline uint countVDepSReacs() const noexcept
     { return pVDepSReacsN; }
 
     /// Return the local voltage-dependent reaction index for global index argument.
     ///
     /// \param gidx Global index of the voltage-dependent reaction.
-    inline uint vdepsreacG2L(uint gidx) const
+    inline uint vdepsreacG2L(uint gidx) const noexcept
     { return pVDepSReac_G2L[gidx]; }
     /*
     inline gidxT sreacL2G(lidxT idx) const

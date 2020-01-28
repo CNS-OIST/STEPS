@@ -106,7 +106,7 @@ SpbcgMem SpbcgMalloc(int l_max, N_Vector vec_tmpl)
   /* Get memory for an SpbcgMemRec containing SPBCG matrices and vectors */
 
   mem = NULL;
-  mem = (SpbcgMem) malloc(sizeof(SpbcgMemRec));
+  mem = static_cast<SpbcgMem> (malloc(sizeof(SpbcgMemRec)));
   if (mem == NULL) {
     N_VDestroy(r_star);
     N_VDestroy(r);

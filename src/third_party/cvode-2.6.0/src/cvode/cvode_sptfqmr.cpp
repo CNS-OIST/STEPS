@@ -115,7 +115,7 @@ int CVSptfqmr(void *cvode_mem, int pretype, int maxl)
     CVProcessError(NULL, CVSPILS_MEM_NULL, "CVSPTFQMR", "CVSptfqmr", MSGS_CVMEM_NULL);
     return(CVSPILS_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   /* Check if N_VDotProd is present */
   if (vec_tmpl->ops->nvdotprod == NULL) {
@@ -133,7 +133,7 @@ int CVSptfqmr(void *cvode_mem, int pretype, int maxl)
 
   /* Get memory for CVSpilsMemRec */
   cvspils_mem = NULL;
-  cvspils_mem = (CVSpilsMem) malloc(sizeof(struct CVSpilsMemRec));
+  cvspils_mem = static_cast<CVSpilsMem> (malloc(sizeof(struct CVSpilsMemRec)));
   if (cvspils_mem == NULL) {
     CVProcessError(cv_mem, CVSPILS_MEM_FAIL, "CVSPTFQMR", "CVSptfqmr", MSGS_MEM_FAIL);
     return(CVSPILS_MEM_FAIL);
@@ -204,7 +204,7 @@ int CVSptfqmr(void *cvode_mem, int pretype, int maxl)
   }
   
   /* Attach SPTFQMR memory to spils memory structure */
-  spils_mem = (void *) sptfqmr_mem;
+  spils_mem = static_cast<void *> (sptfqmr_mem);
 
   /* Attach linear solver memory to integrator memory */
   lmem = cvspils_mem;
@@ -235,8 +235,8 @@ static int CVSptfqmrInit(CVodeMem cv_mem)
   CVSpilsMem cvspils_mem;
   SptfqmrMem sptfqmr_mem;
 
-  cvspils_mem = (CVSpilsMem) lmem;
-  sptfqmr_mem = (SptfqmrMem) spils_mem;
+  cvspils_mem = static_cast<CVSpilsMem> (lmem);
+  sptfqmr_mem = static_cast<SptfqmrMem> (spils_mem);
 
   /* Initialize counters */
   npe = nli = nps = ncfl = nstlpre = 0;
@@ -291,7 +291,7 @@ static int CVSptfqmrSetup(CVodeMem cv_mem, int convfail, N_Vector ypred,
   int  retval;
   CVSpilsMem cvspils_mem;
 
-  cvspils_mem = (CVSpilsMem) lmem;
+  cvspils_mem = static_cast<CVSpilsMem> (lmem);
 
   /* Use nst, gamma/gammap, and convfail to set J eval. flag jok */
   dgamma = ABS((gamma/gammap) - ONE);
@@ -356,9 +356,9 @@ static int CVSptfqmrSolve(CVodeMem cv_mem, N_Vector b, N_Vector weight,
   SptfqmrMem sptfqmr_mem;
   int nli_inc, nps_inc, retval;
   
-  cvspils_mem = (CVSpilsMem) lmem;
+  cvspils_mem = static_cast<CVSpilsMem> (lmem);
 
-  sptfqmr_mem = (SptfqmrMem) spils_mem;
+  sptfqmr_mem = static_cast<SptfqmrMem> (spils_mem);
 
   /* Test norm(b); if small, return x = 0 or x = b */
   deltar = eplifac * tq[4]; 
@@ -440,12 +440,12 @@ static void CVSptfqmrFree(CVodeMem cv_mem)
   CVSpilsMem cvspils_mem;
   SptfqmrMem sptfqmr_mem;
     
-  cvspils_mem = (CVSpilsMem) lmem;
+  cvspils_mem = static_cast<CVSpilsMem> (lmem);
 
   N_VDestroy(ytemp);
   N_VDestroy(x);
 
-  sptfqmr_mem = (SptfqmrMem) spils_mem;
+  sptfqmr_mem = static_cast<SptfqmrMem> (spils_mem);
   SptfqmrFree(sptfqmr_mem);
 
   if (cvspils_mem->s_pfree != NULL) (cvspils_mem->s_pfree)(cv_mem);

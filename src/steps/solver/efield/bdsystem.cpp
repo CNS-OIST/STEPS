@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -50,11 +50,11 @@ void BDSystem::solve()
 {
     constexpr double TINY = 1.0e-20;
 
-    int n = (int)pN;
-    int h = (int)pHalfBW;
-    int w = 2*h+1;
+    auto n = pN;
+    auto h = pHalfBW;
+    auto w = 2 * h + 1;
     double *a = pA.data(); // will hold U from LU decomposition
-    double *l = h>0?&pL[0]:0;
+    double *l = h > 0? pL.data(): nullptr;
 
     // w is equivalent to pBW in the prop. 'a' dimensions are nrow ('n') x 'w'
 
@@ -64,15 +64,15 @@ void BDSystem::solve()
     // unused elements and padding with zeroes on the right.
     double *ai = a; // ai corresponds to ith row of a
 
-    for (int i = 0; i < h; ++i)
+    for (auto i = 0u; i < h; ++i)
     {
-        int p = h-i;
+        auto p = h - i;
 
-        for (int j = p; j < w; ++j) {
+        for (auto j = p; j < w; ++j) {
             ai[j-p] = ai[j];
 }
 
-        for (int j = w-p; j < w; ++j) {
+        for (auto j = w - p; j < w; ++j) {
             ai[j] = 0.0;
 }
 
@@ -81,15 +81,15 @@ void BDSystem::solve()
 
     double *ak = a;
     double *lk = l;
-    for (int k = 0; k < n; ++k)
+    for (auto k = 0u; k < n; ++k)
     {
         // find pivot in the following h rows
-        int p = std::min(k+h+1,n);
+        auto p = std::min(k + h + 1, n);
  
         double dum = std::abs(ak[0]);
-        int ipiv = k;
+        auto ipiv = k;
         double *aj = ak;
-        for (int j = k+1; j < p; ++j)
+        for (auto j = k + 1; j < p; ++j)
         {
             aj += w;
             double abs_aj = std::abs(aj[0]);
@@ -103,21 +103,22 @@ void BDSystem::solve()
 }
 
         pp[k] = ipiv;
-        if (ipiv != k) { swap_row(ak,a+ipiv*w,w);
-}
+        if (ipiv != k) {
+            swap_row(ak, a + ipiv * w, w);
+        }
 
         // perform eliminiation
         double *aij = ak+w; // aij == a + (k+1)*w + 0
         double *lki = lk;
 
-        for (int i = k+1; i < p; ++i)
+        for (auto i = k+1; i < p; ++i)
         {
             dum = aij[0]/ak[0];
 
             // lki == l + k*h + (i-k-1)
             *lki++ = dum;
 
-            for (int j = 1; j < w; ++j)
+            for (auto j = 1u; j < w; ++j)
             {
                 ++aij; // aij == a + i*w + j
                 aij[-1] =  aij[0] - ak[j]*dum;
@@ -131,19 +132,21 @@ void BDSystem::solve()
 
     // 2. Forward substitution, b into x.
     std::copy(pb.begin(),pb.end(),px.begin());
-    double *x = &px[0];
+    double *x = px.data();
     double *xk = x;
     lk = l;
     ak = a;
-    for (int k = 0; k < n; ++k)
+    for (auto k = 0u; k < n; ++k)
     {
-        int i = pp[k];
-        if (i != k) std::swap(xk[0],x[i]);
+        auto i = pp[k];
+        if (i != static_cast<int>(k)) {
+            std::swap(xk[0], x[i]);
+        }
         
-        int p = std::min(h+1,n-k);
-        for (int i = 1; i < p; ++i) {
-            xk[i] -= lk[i-1]*xk[0];
-}
+        auto p = std::min(h + 1, n - k);
+        for (auto j = 1u; j < p; ++j) {
+            xk[j] -= lk[j-1]*xk[0];
+        }
 
         lk += h;
         ++xk;
@@ -152,20 +155,22 @@ void BDSystem::solve()
     // 3. Backward substitution on x
     ak = a+n*w;
     xk = x+n;
-    for (int k = n-1; k >=0; --k)
+  {
+    for (auto k = static_cast<int>(n) - 1; k >= 0; --k)
     {
-        ak-=w;
-        --xk;
+      ak-=w;
+      --xk;
 
-        int p = std::min(w,n-k);
+      auto p = std::min(w,n-k);
 
-        double d = xk[0];
-        for (int i = 1; i < p; ++i) {
-            d -= ak[i]*xk[i];
-}
+      double d = xk[0];
+      for (auto i = 1u; i < p; ++i) {
+        d -= ak[i]*xk[i];
+      }
 
-        xk[0] = d/ak[0];
+      xk[0] = d/ak[0];
     }
+  }
 }
 
 }  // namespace efield

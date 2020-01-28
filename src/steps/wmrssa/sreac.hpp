@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -62,16 +62,16 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     SReac(steps::solver::SReacdef * srdef, Patch * patch);
-    ~SReac();
+    ~SReac() override;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream & cp_file) override;
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream & cp_file) override;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
@@ -81,7 +81,7 @@ public:
 
     bool active() const;
 
-    bool inactive() const
+    inline bool inactive() const noexcept
     { return (! active()); }
 
 
@@ -89,30 +89,30 @@ public:
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    void setupDeps();
-    bool depSpecComp(uint gidx, Comp * comp);
-    bool depSpecPatch(uint gidx, Patch * patch);
-    void reset();
-    double rate(steps::wmrssa::PropensityRSSA prssa = steps::wmrssa::CURRENT);
-    std::vector<uint> const & apply();
+    void setupDeps() override;
+    bool depSpecComp(uint gidx, Comp * comp) override;
+    bool depSpecPatch(uint gidx, Patch * patch) override;
+    void reset() override;
+    double rate(steps::wmrssa::PropensityRSSA prssa = steps::wmrssa::CURRENT) override;
+    std::vector<uint> const & apply() override;
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::SReacdef * defsr() const
+    inline steps::solver::SReacdef * defsr() const noexcept override
     { return pSReacdef; }
 
-    void resetCcst();
+    void resetCcst() override;
 
-    double c() const
+    inline double c() const noexcept override
     { return pCcst; }
 
-    double propensityLB() const
+    inline double propensityLB() const noexcept override
     { return pPropensityLB; }
 
-    double h()
+    inline double h() noexcept override
     { return (rate()/pCcst); }
 
-    uint updVecSize() const
+    uint updVecSize() const override
     { return pUpdVec.size(); }
 
     ////////////////////////////////////////////////////////////////////////
@@ -124,11 +124,10 @@ private:
     steps::solver::SReacdef           * pSReacdef;
     Patch                             * pPatch;
     std::vector<uint>                   pUpdVec;
-    std::vector<uint>                   emptyVec;
 
     /// Properly scaled reaction constant.
-    double                              pCcst;
-    double                              pPropensityLB;
+    double                              pCcst{0.0};
+    double                              pPropensityLB{0.0};
 
     ////////////////////////////////////////////////////////////////////////
 

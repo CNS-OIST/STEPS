@@ -38,7 +38,7 @@ class TetmeshCreationTestCase(unittest2.TestCase):
         mesh=Tetmesh(vs,tets,tris)
         self.assertEqual(4*mesh.ntets,len(tets))
         self.assertEqual(3*mesh.nverts,len(vs))
-    
+
 
 class TetmeshComponentTestCase(unittest2.TestCase):
     """ Tests compartment and patch creation. """
@@ -69,7 +69,21 @@ class TetmeshComponentTestCase(unittest2.TestCase):
         tris_inpatch=[x for x in patch12.isTriInside(test_tris)]
         check_inpatch=[tri in patch12.tris for tri in test_tris]
         self.assertEqual(tris_inpatch,check_inpatch)
- 
+
+    def testIntersection(self):
+        vs = [0.,0.,0.,5.,5.,0.,5.,0.,0.,0.,0.,5.]
+        tets=[0,1,2,3]
+        mesh=Tetmesh(vs, tets, [])
+
+        pts = np.array([[.0, .0, 0.],[.1, .1, 5.1]])
+        isecs = mesh.intersect(pts)
+        self.assertEqual(len(isecs), 1)
+        self.assertEqual(len(isecs[0]), 1)
+        self.assertEqual(len(isecs[0][0]), 2)  # tuple
+        self.assertEqual(isecs[0][0][0], 0)
+        self.assertLess(isecs[0][0][1], 1)
+        self.assertGreater(isecs[0][0][1], 0.9)
+
 
 class TetmeshNPTestCase(unittest2.TestCase):
     """ Test numpy-wrapper access with Batch methods. """
@@ -90,8 +104,8 @@ class TetmeshNPTestCase(unittest2.TestCase):
         self.mesh.getBatchTetsNP(np.array([0,2],dtype=np.uint32),np_test_subset)
         np_check=np.array([self.tets[i] for i in [0,1,2,3,8,9,10,11]])
         self.assertEqual([x for x in np_test_subset],[x for x in np_check])
-        
-        
+
+
 
 def suite():
     all_tests = []

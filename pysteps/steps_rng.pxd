@@ -6,16 +6,19 @@
 __copyright__ = "Copyright 2016 EPFL BBP-project"
 # =====================================================================================================================
 from cython.operator cimport dereference as deref
+from libcpp.memory cimport shared_ptr
 cimport std
+from steps_common cimport *
+
 
 # ======================================================================================================================
 cdef extern from "steps/rng/create.hpp" namespace "steps::rng":
 # ----------------------------------------------------------------------------------------------------------------------
     # Create a random number generator with name rng_name and return as RNG object.
-    RNG * create(std.string rng_name, unsigned int bufsize) except +
+    shared_ptr[RNG] create(std.string rng_name, uint bufsize) except +
 
     # Create a MT19937 random number generator and return as RNG object.
-    RNG * create_mt19937(unsigned int bufsize) except +
+    shared_ptr[RNG] create_mt19937(uint bufsize) except +
 
 
 # ======================================================================================================================
@@ -24,7 +27,8 @@ cdef extern from "steps/rng/r123.hpp" namespace "steps::rng":
 
     ###### Cybinding for R123 ######
     cdef cppclass R123:
-        R123(unsigned int) except +
+        R123(uint) except +
+
 
 # ======================================================================================================================
 cdef extern from "steps/rng/rng.hpp" namespace "steps::rng":
@@ -32,12 +36,12 @@ cdef extern from "steps/rng/rng.hpp" namespace "steps::rng":
 
     ###### Cybinding for RNG ######
     cdef cppclass RNG:
-        RNG(unsigned int) except +
+        RNG(uint) except +
         void initialize(unsigned long)
-        unsigned int min()
-        unsigned int max()
-        unsigned int operator()()
-        unsigned int get()
+        uint min()
+        uint max()
+        uint operator()()
+        uint get()
         double getUnfII()
         double getUnfIE()
         double getUnfEE()
@@ -46,7 +50,8 @@ cdef extern from "steps/rng/rng.hpp" namespace "steps::rng":
         double getExp(double)
         long getPsn(float)
         float getStdNrm()
-        unsigned int getBinom(unsigned int, double)
+        uint getBinom(uint, double)
+
 
 # ======================================================================================================================
 cdef extern from "steps/rng/mt19937.hpp" namespace "steps::rng":
@@ -54,4 +59,4 @@ cdef extern from "steps/rng/mt19937.hpp" namespace "steps::rng":
 
     ###### Cybinding for MT19937 ######
     cdef cppclass MT19937:
-        MT19937(unsigned int) except +
+        MT19937(uint) except +

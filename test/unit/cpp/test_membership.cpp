@@ -65,6 +65,7 @@ TEST(Membership,ConfirmCopies) {
     count_copies<float>::copies=0;
 
     // With the hash_references tag, no copies should be made of elements of x.
+    hash_references_tag hash_references;
 
     auto v=map_membership(hash_references,cc_e,cc_x,std::hash<double>());
     ASSERT_TRUE(std::equal(v.begin(),v.end(),std::begin(M)));

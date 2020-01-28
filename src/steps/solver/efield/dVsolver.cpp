@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -59,7 +59,7 @@ void dVSolverBase::setSurfaceConductance(double g_surface, double v_rev) {
     if (pMesh == nullptr) { return;
 }
 
-    for (int i = 0; i < pNVerts; ++i) {
+    for (auto i = 0u; i < pNVerts; ++i) {
         VertexElement* ve = pMesh->getVertex(i);
         pGExt[ve->getIDX()] = g_surface * ve->getSurfaceArea();
     }
@@ -67,14 +67,14 @@ void dVSolverBase::setSurfaceConductance(double g_surface, double v_rev) {
 
 int dVSolverBase::meshHalfBW(TetMesh *mesh) {
     int halfbw = 0;
-    int nVerts = mesh->countVertices();
-    for (int i = 0; i < nVerts; ++i) {
+    auto nVerts = mesh->countVertices();
+    for (auto i = 0u; i < nVerts; ++i) {
         VertexElement *ve = mesh->getVertex(i);
 
         int idx = ve->getIDX();
         int ncon = ve->getNCon();
         for (int j = 0; j < ncon; ++j) {
-            halfbw = std::max(halfbw, std::abs(idx - (int)ve->nbrIdx(j)));
+            halfbw = std::max(halfbw, std::abs(idx - static_cast<int>(ve->nbrIdx(j))));
         }
     }
 

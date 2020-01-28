@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -47,7 +47,7 @@ using namespace steps::solver;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-API::API(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r)
+API::API(steps::model::Model *m, steps::wm::Geom *g, const rng::RNGptr &r)
 : pModel(m)
 , pGeom(g)
 , pRNG(r)
@@ -104,7 +104,6 @@ API::API(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r)
     // create state object, which will in turn create compdef, specdef etc
     //objects and initialise
     pStatedef = new Statedef(m, g, r);
-    AssertLog(pStatedef != 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -124,14 +123,14 @@ void API::step()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::advance(double adv)
+void API::advance(double /*adv*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void  API::setRk4DT(double dt)
+void  API::setRk4DT(double /*dt*/)
 {
     NotImplErrLog("");
 }
@@ -145,7 +144,7 @@ double API::getRk4DT() const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void  API::setDT(double dt)
+void  API::setDT(double /*dt*/)
 {
     NotImplErrLog("");
 }
@@ -159,7 +158,7 @@ double API::getDT() const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setEfieldDT(double efdt)
+void API::setEfieldDT(double /*efdt*/)
 {
     NotImplErrLog("");
 }
@@ -173,7 +172,7 @@ double API::getEfieldDT() const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTemp(double temp)
+void API::setTemp(double /*temp*/)
 {
     NotImplErrLog("");
 }
@@ -201,13 +200,13 @@ uint API::getNSteps() const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTime(double time)
+void API::setTime(double /*time*/)
 {
     NotImplErrLog("");
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setNSteps(uint nsteps)
+void API::setNSteps(uint /*nsteps*/)
 {
     NotImplErrLog("");
 }

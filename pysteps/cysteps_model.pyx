@@ -2436,7 +2436,7 @@ cdef class _py_VDepSReac(_py__base):
     cdef VDepSReac *ptr(self):
         return <VDepSReac*> self._ptr
 
-    def __init__(self, str id, _py_Surfsys surfsys, list olhs=[], list ilhs=[], list slhs=[], list irhs=[], list srhs=[], list orhs=[], std.vector[double] ktab=[], double vmin=0, double vmax=0, double dv=0, unsigned int tablesize=0):
+    def __init__(self, str id, _py_Surfsys surfsys, list olhs=[], list ilhs=[], list slhs=[], list irhs=[], list srhs=[], list orhs=[], std.vector[double] ktab=[], double vmin=0, double vmax=0, double dv=0, uint tablesize=0):
         """
         Construction::
         

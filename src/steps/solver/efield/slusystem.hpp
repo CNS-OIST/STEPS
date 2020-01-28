@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -28,14 +28,17 @@
 #ifndef STEPS_SOLVER_EFIELD_SLUSYSTEM_HPP
 #define STEPS_SOLVER_EFIELD_SLUSYSTEM_HPP 1
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
+#include <memory>
 #include <stdexcept>
 #include <vector>
-#include <memory>
 
-#include <iterator>
-#include <algorithm>
+extern "C" {
+#include <superlu_defs.h>
+}
 
 #include <mpi.h>
 
@@ -45,7 +48,7 @@
 
 
 // logging
-#include "third_party/easyloggingpp/src/easylogging++.h"
+#include <easylogging++.h>
 
 namespace steps {
 namespace solver {
@@ -84,8 +87,8 @@ struct SLU_NCMatrix: public AMatrix {
     explicit SLU_NCMatrix(const sparsity_template &S): pN(S.dim()), pNnz(S.size()), pValues(S.size()), pRidx(S.size()), pCoff(S.dim()+1)
     {
         int offset = 0;
-        int *ridx = &pRidx.front();
-        for (int col=0; col<pN; ++col) {
+        int_t *ridx = pRidx.data();
+        for (auto col = 0u; col < pN; ++col) {
             const auto &scol = S.cols[col];
 
             pCoff[col] = offset;
@@ -94,17 +97,17 @@ struct SLU_NCMatrix: public AMatrix {
             int next_offset = offset + scol.size();
             std::sort(ridx+offset, ridx+next_offset);
             
-            if (ridx[offset]<0 || ridx[next_offset-1]>=pN)
+            if (ridx[offset]<0 || static_cast<size_t>(ridx[next_offset - 1]) >= pN)
                 ProgErrLog("out of range element in sparsity matrix");
 
             // handle duplicates gracefully
-            const int *adj = std::unique(ridx+offset, ridx+next_offset);
+            const int_t *adj = std::unique(ridx+offset, ridx+next_offset);
             next_offset = adj-ridx;
 
             offset = next_offset;
         }
         pCoff[pN] = offset;
-        if (offset < pNnz) {
+        if (offset < static_cast<int>(pNnz)) {
             // there were some duplicates
             pNnz = offset;
 
@@ -124,12 +127,12 @@ struct SLU_NCMatrix: public AMatrix {
     }
 
     double get(size_t row, size_t col) const override final {
-        int i=get_offset((int)row, (int)col);
+        int i=get_offset(static_cast<int>(row), static_cast<int>(col));
         return i>=0?pValues[i]:0;
     }
 
     void set(size_t row, size_t col, double value) override final {
-        int i=get_offset((int)row, (int)col);
+        int i=get_offset(static_cast<int>(row), static_cast<int>(col));
         if (i<0) ArgErrLog("index not in sparse template");
 
         pValues[i]=value;
@@ -143,15 +146,15 @@ private:
     size_t pN, pNnz;
 
     std::vector<double> pValues;
-    std::vector<int> pRidx;
-    std::vector<int> pCoff;
+    std::vector<int_t> pRidx;
+    std::vector<int_t> pCoff;
 
     int get_offset(int i, int j) const {
-        const int *r0 = &pRidx.front();
-        const int *rb = r0+pCoff[j];
-        const int *re = r0+pCoff[j+1];
+        const int_t *r0 = pRidx.data();
+        const int_t *rb = r0+pCoff[j];
+        const int_t *re = r0+pCoff[j+1];
 
-        const int *r = std::lower_bound(rb, re, i);
+        const int_t *r = std::lower_bound(rb, re, i);
         if (r==re || *r!=i)
             return -1;
         else return r-r0;

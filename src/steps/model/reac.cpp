@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -77,7 +77,7 @@ Reac::Reac(string const & id, Volsys * volsys, vector<Spec *> const & lhs,
     }
 
     pModel = pVolsys->getModel();
-    AssertLog(pModel != 0);
+    AssertLog(pModel != nullptr);
 
     setLHS(lhs);
     setRHS(rhs);
@@ -111,7 +111,7 @@ void Reac::_handleSelfDelete()
 
 void Reac::setID(string const & id)
 {
-    AssertLog(pVolsys != 0);
+    AssertLog(pVolsys != nullptr);
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
     // it pass by into the Python layer.
@@ -125,14 +125,14 @@ void Reac::setID(string const & id)
 
 void Reac::setLHS(vector<Spec *> const & lhs)
 {
-    AssertLog(pVolsys != 0);
+    AssertLog(pVolsys != nullptr);
     pLHS.clear();
+    pLHS.reserve(lhs.size());
 
-    SpecPVecCI l_end = lhs.end();
-    for (SpecPVecCI l = lhs.begin(); l != l_end; ++l)
-    {
-        AssertLog((*l)->getModel() == pModel);
-        pLHS.push_back(*l);
+
+    for (auto const& l: lhs) {
+        AssertLog(l->getModel() == pModel);
+        pLHS.push_back(l);
     }
     pOrder = pLHS.size();
 }
@@ -141,14 +141,13 @@ void Reac::setLHS(vector<Spec *> const & lhs)
 
 void Reac::setRHS(vector<Spec *> const & rhs)
 {
-    AssertLog(pVolsys != 0);
+    AssertLog(pVolsys != nullptr);
     pRHS.clear();
+    pRHS.reserve(rhs.size());
 
-    SpecPVecCI r_end = rhs.end();
-    for (SpecPVecCI r = rhs.begin(); r != r_end; ++r)
-    {
-        AssertLog((*r)->getModel() == pModel);
-        pRHS.push_back(*r);
+    for (auto const& r: rhs) {
+        AssertLog(r->getModel() == pModel);
+        pRHS.push_back(r);
     }
 }
 
@@ -156,7 +155,7 @@ void Reac::setRHS(vector<Spec *> const & rhs)
 
 void Reac::setKcst(double kcst)
 {
-    AssertLog(pVolsys != 0);
+    AssertLog(pVolsys != nullptr);
     if (kcst < 0.0)
     {
         ostringstream os;
@@ -170,41 +169,29 @@ void Reac::setKcst(double kcst)
 
 vector<Spec *> Reac::getAllSpecs() const
 {
-    SpecPVec specs = SpecPVec();
-    bool first_occ = true;
+    SpecPVec specs;
+    bool first_occ;
 
-    SpecPVec lhs = getLHS();
-    SpecPVecCI l_end = lhs.end();
-    for (SpecPVecCI l = lhs.begin(); l != l_end; ++l)
-    {
+    for (auto const& l: getLHS()) {
         first_occ = true;
-        SpecPVecCI s_end = specs.end();
-        for (SpecPVecCI s = specs.begin(); s != s_end; ++s)
-        {
-            if ((*s) == (*l))
-            {
+        for (auto const& s: specs) {
+            if (s == l) {
                 first_occ = false;
                 break;
             }
         }
-        if (first_occ == true) specs.push_back((*l));
+        if (first_occ) specs.push_back(l);
     }
 
-    SpecPVec rhs = getRHS();
-    SpecPVecCI r_end = rhs.end();
-    for (SpecPVecCI r = rhs.begin(); r != r_end; ++r)
-    {
+    for (auto const& r: getRHS()) {
         first_occ = true;
-        SpecPVecCI s_end = specs.end();
-        for (SpecPVecCI s = specs.begin(); s != s_end; ++s)
-        {
-            if ((*s) == (*r))
-            {
+        for (auto const& s: specs) {
+            if (s == r) {
                 first_occ = false;
                 break;
             }
         }
-        if (first_occ == true) specs.push_back((*r));
+        if (first_occ) specs.push_back(r);
     }
 
     return specs;

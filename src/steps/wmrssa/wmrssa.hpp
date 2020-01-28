@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -79,36 +79,36 @@ class Wmrssa: public steps::solver::API
 
 public:
 
-    Wmrssa(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r);
-    ~Wmrssa();
+    Wmrssa(steps::model::Model *m, steps::wm::Geom *g, const rng::RNGptr &r);
+    ~Wmrssa() override;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::string const & file_name);
+    void checkpoint(std::string const & file_name) override;
 
     /// restore data
-    void restore(std::string const & file_name);
+    void restore(std::string const & file_name) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER INFORMATION
     ////////////////////////////////////////////////////////////////////////
 
-    std::string getSolverName() const;
-    std::string getSolverDesc() const;
-    std::string getSolverAuthors() const;
-    std::string getSolverEmail() const;
+    std::string getSolverName() const override;
+    std::string getSolverDesc() const override;
+    std::string getSolverAuthors() const override;
+    std::string getSolverEmail() const override;
 
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROLS
     ////////////////////////////////////////////////////////////////////////
 
-    void reset();
-    void run(double endtime);
-    void advance(double adv);
-    void step();
+    void reset() override;
+    void run(double endtime) override;
+    void advance(double adv) override;
+    void step() override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
@@ -116,9 +116,9 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
 
-    double getTime() const;
+    double getTime() const override;
 
-    uint getNSteps() const;
+    uint getNSteps() const override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
@@ -126,43 +126,43 @@ public:
     //      Developer only
     ////////////////////////////////////////////////////////////////////////
 
-    void setTime(double time);
-    void setNSteps(uint nsteps);
+    void setTime(double time) override;
+    void setNSteps(uint nsteps) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
     //      COMPARTMENT
     ////////////////////////////////////////////////////////////////////////
 
-     double _getCompVol(uint cidx) const;
-    void _setCompVol(uint cidx, double vol);
+     double _getCompVol(uint cidx) const override;
+    void _setCompVol(uint cidx, double vol) override;
 
-     double _getCompCount(uint cidx, uint sidx) const;
-     void _setCompCount(uint cidx, uint sidx, double n);
+     double _getCompCount(uint cidx, uint sidx) const override;
+     void _setCompCount(uint cidx, uint sidx, double n) override;
 
-     double _getCompAmount(uint cidx, uint sidx) const;
-    void _setCompAmount(uint cidx, uint sidx, double a);
+     double _getCompAmount(uint cidx, uint sidx) const override;
+    void _setCompAmount(uint cidx, uint sidx, double a) override;
 
-    double _getCompConc(uint cidx, uint sidx) const;
-     void _setCompConc(uint cidx, uint sidx, double c);
+    double _getCompConc(uint cidx, uint sidx) const override;
+     void _setCompConc(uint cidx, uint sidx, double c) override;
 
-    bool _getCompClamped(uint cidx, uint sidx) const;
-    void _setCompClamped(uint cidx, uint sidx, bool b);
+    bool _getCompClamped(uint cidx, uint sidx) const override;
+    void _setCompClamped(uint cidx, uint sidx, bool b) override;
 
-    double _getCompReacK(uint cidx, uint ridx) const;
-    void _setCompReacK(uint cidx, uint ridx, double kf);
+    double _getCompReacK(uint cidx, uint ridx) const override;
+    void _setCompReacK(uint cidx, uint ridx, double kf) override;
 
-     bool _getCompReacActive(uint cidx, uint ridx) const;
-    void _setCompReacActive(uint cidx, uint ridx, bool a);
+     bool _getCompReacActive(uint cidx, uint ridx) const override;
+    void _setCompReacActive(uint cidx, uint ridx, bool a) override;
 
-    double _getCompReacC(uint cidx, uint ridx) const;
+    double _getCompReacC(uint cidx, uint ridx) const override;
 
-    double _getCompReacH(uint cidx, uint ridx) const;
+    double _getCompReacH(uint cidx, uint ridx) const override;
 
-    double _getCompReacA(uint cidx, uint ridx) const;
+    long double _getCompReacA(uint cidx, uint ridx) const override;
 
-    uint _getCompReacExtent(uint cidx, uint ridx) const;
-     void _resetCompReacExtent(uint cidx, uint ridx);
+    unsigned long long _getCompReacExtent(uint cidx, uint ridx) const override;
+     void _resetCompReacExtent(uint cidx, uint ridx) override;
 
     ////////////////////////////////////////////////////////////////////////
 /*
@@ -178,39 +178,39 @@ public:
     //      PATCH
     ////////////////////////////////////////////////////////////////////////
 
-    double _getPatchArea(uint pidx) const;
-    void _setPatchArea(uint pidx, double area);
+    double _getPatchArea(uint pidx) const override;
+    void _setPatchArea(uint pidx, double area) override;
 
-     double _getPatchCount(uint pidx, uint sidx) const;
-    void _setPatchCount(uint pidx, uint sidx, double n);
+     double _getPatchCount(uint pidx, uint sidx) const override;
+    void _setPatchCount(uint pidx, uint sidx, double n) override;
 
-    double _getPatchAmount(uint pidx, uint sidx) const;
-     void _setPatchAmount(uint pidx, uint sidx, double a);
+    double _getPatchAmount(uint pidx, uint sidx) const override;
+     void _setPatchAmount(uint pidx, uint sidx, double a) override;
 
-    bool _getPatchClamped(uint pidx, uint sidx) const;
-    void _setPatchClamped(uint pidx, uint sidx, bool buf);
+    bool _getPatchClamped(uint pidx, uint sidx) const override;
+    void _setPatchClamped(uint pidx, uint sidx, bool buf) override;
 
-    double _getPatchSReacK(uint pidx, uint ridx) const;
-      void _setPatchSReacK(uint pidx, uint ridx, double kf);
+    double _getPatchSReacK(uint pidx, uint ridx) const override;
+      void _setPatchSReacK(uint pidx, uint ridx, double kf) override;
 
-     bool _getPatchSReacActive(uint pidx, uint ridx) const;
-     void _setPatchSReacActive(uint pidx, uint ridx, bool a);
+     bool _getPatchSReacActive(uint pidx, uint ridx) const override;
+     void _setPatchSReacActive(uint pidx, uint ridx, bool a) override;
 
-     double _getPatchSReacC(uint pidx, uint ridx) const;
+     double _getPatchSReacC(uint pidx, uint ridx) const override;
 
-     double _getPatchSReacH(uint pidx, uint ridx) const;
+     double _getPatchSReacH(uint pidx, uint ridx) const override;
 
-     double _getPatchSReacA(uint pidx, uint ridx) const;
+     double _getPatchSReacA(uint pidx, uint ridx) const override;
 
-     uint _getPatchSReacExtent(uint pidx, uint ridx) const;
-    void _resetPatchSReacExtent(uint pidx, uint ridx);
+     unsigned long long _getPatchSReacExtent(uint pidx, uint ridx) const override;
+    void _resetPatchSReacExtent(uint pidx, uint ridx) override;
 
     ////////////////////////////////////////////////////////////////////////
 
     // Called from local Comp or Patch objects. Ass KProc to this object
     void addKProc(steps::wmrssa::KProc * kp);
 
-    inline uint countKProcs() const
+    inline uint countKProcs() const noexcept
     { return pKProcs.size(); }
 
     ////////////////////////////////////////////////////////////////////////
@@ -250,11 +250,12 @@ private:
 
     std::vector<steps::wmrssa::Patch *>      pPatches;
 
+    /// \brief sum of propensities
+    double                                     pA0{0.0};
+
     ////////////////////////////////////////////////////////////////////////
     // N-ARY TREE
     ////////////////////////////////////////////////////////////////////////
-
-    double                                     pA0;
 
     std::vector<uint>                          pLevelSizes;
 
@@ -263,19 +264,20 @@ private:
     ////////////////////////////////////////////////////////////////////////
 
     // Keeps track of whether _build() has been called
-    bool                                       pBuilt;
+    bool                                       pBuilt{false};
 
     ////////////////////////////////////////////////////////////////////////
 
     // Tables to hold update vector indices and random numbers respectively,
     // to be re-used each step.
-    uint                                     * pIndices;
-    uint                                        pMaxUpSize;
-    double                                   * pRannum;
+    uint                                     * pIndices{nullptr};
+    uint                                        pMaxUpSize{0};
+    double                                   * pRannum{nullptr};
 
     ////////////////////////////////////////////////////////////////////////
 
-    uint countUpdate, countSteps;
+    uint countUpdate{0};
+    uint countSteps{0};
 
 };
 

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -62,9 +62,9 @@ public:
 
     // direct access to compact representation
 
-    const double *data() const { return &pData[0]; }
-    double *data() { return &pData[0]; }
-    const size_t data_size() const { return pData.size(); }
+    inline const double *data() const noexcept { return pData.data(); }
+    inline double *data() noexcept { return pData.data(); }
+    inline size_t data_size() const noexcept { return pData.size(); }
 
 private:
     size_t pN;
@@ -87,8 +87,8 @@ public:
         px(n,0.0),
         pL(halfbw*n,0.0),
         pp(n,0),
-        pb_view(n,&pb[0]),
-        px_view(n,&px[0])
+        pb_view(n, pb.data()),
+        px_view(n, px.data())
     {}
 
     const matrix_type &A() const { return pA; }

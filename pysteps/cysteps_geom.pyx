@@ -15,6 +15,15 @@ from steps_tetmesh cimport *
 # Python Wrappers to namespace steps::wm
 # ======================================================================================================================
 
+cdef extern from "steps/geom/fwd.hpp":
+    cdef index_t _UNKNOWN_TET "steps::UNKNOWN_TET.get()"
+    cdef index_t _UNKNOWN_TRI "steps::UNKNOWN_TRI.get()"
+    cdef int _INDEX_NUM_BYTES "sizeof(steps::index_t)";
+
+UNKNOWN_TET = _UNKNOWN_TET
+UNKNOWN_TRI = _UNKNOWN_TRI
+INDEX_NUM_BYTES = _INDEX_NUM_BYTES
+
 #Functions previously defined in the .i Swig files(!!)
 def castToTmComp(_py_Comp base):
     """
@@ -760,8 +769,8 @@ cdef class _py_ElementType:
 
 cdef class _py_ROISet:
     cdef readonly ElementType type
-    cdef readonly std.vector[uint] indices
-    def __init__(self, ElementType t=ELEM_UNDEFINED, std.vector[uint] indices=[]):
+    cdef readonly std.vector[index_t] indices
+    def __init__(self, ElementType t=ELEM_UNDEFINED, std.vector[index_t] indices=[]):
         self.type = t
         self.indices = indices
 
@@ -773,7 +782,7 @@ cdef class _py_Tetmesh(_py_Geom):
     cdef Tetmesh *ptrx(self):
         return <Tetmesh*> self._ptr
 
-    def __init__(self, std.vector[double] verts, std.vector[unsigned int] tets, std.vector[unsigned int] tris=[]):
+    def __init__(self, std.vector[double] verts, std.vector[index_t] tets, std.vector[index_t] tris=[]):
         """
         Construction1::
 
@@ -794,9 +803,9 @@ cdef class _py_Tetmesh(_py_Geom):
         one-dimensional list tets=[0,1,2,3,0,1,3,4,1,3,4,5].
 
         Arguments:
-        list<float> verts
-        list<int> tets
-        list<int> tris
+        list<double> verts
+        list<index_t> tets
+        list<index_t> tris
 
         Construction2::
         mesh = steps.geom.Tetmesh(nverts, ntets, ntris)
@@ -810,13 +819,13 @@ cdef class _py_Tetmesh(_py_Geom):
         he scope for user error when using this method.
 
         Arguments:
-        int nverts
-        int ntets
-        int ntris
+        index_t nverts
+        index_t ntets
+        index_t ntris
         """
         self._ptr = new Tetmesh( verts, tets, tris )
 
-    def getVertex(self, unsigned int vidx):
+    def getVertex(self, index_t vidx):
         """
         Returns the coordinates of vertex with index vidx in the container.
 
@@ -825,7 +834,7 @@ cdef class _py_Tetmesh(_py_Geom):
             getVertex(vidx)
 
         Arguments:
-        int vidx
+        index_t vidx
 
         Return:
         list<float, length = 3>
@@ -850,7 +859,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return self.ptrx().countVertices()
 
-    def getBar(self, unsigned int bidx):
+    def getBar(self, index_t bidx):
         """
         Returns the vertices of bar with index bidx in the container.
 
@@ -859,17 +868,17 @@ cdef class _py_Tetmesh(_py_Geom):
             getBar(bidx)
 
         Arguments:
-        int bidx
+        index_t bidx
 
         Return:
-        list<int, length = 2>
+        list<index_t, length = 2>
 
         """
         return self.ptrx().getBar(bidx)
 
     def countBars(self, ):
         """
-        Returns the total nubmer of bars in the mesh.
+        Returns the total number of bars in the mesh.
 
         Syntax::
 
@@ -884,7 +893,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return self.ptrx().countBars()
 
-    def getTri(self, unsigned int tidx):
+    def getTri(self, index_t tidx):
         """
         Returns the triangle with index tidx in the container by its three vertex indices.
 
@@ -893,10 +902,10 @@ cdef class _py_Tetmesh(_py_Geom):
             getTri(tidx)
 
         Arguments:
-        int tidx
+        index_t tidx
 
         Return:
-        list<int, length = 3>
+        list<index_t, length = 3>
 
         """
         return self.ptrx().getTri(tidx)
@@ -918,7 +927,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return self.ptrx().countTris()
 
-    def getTriArea(self, unsigned int tidx):
+    def getTriArea(self, index_t tidx):
         """
         Returns the area of the triangle with index tidx.
 
@@ -927,7 +936,7 @@ cdef class _py_Tetmesh(_py_Geom):
             getTriArea(tidx)
 
         Arguments:
-        int tidx
+        index_t tidx
 
         Return:
         float
@@ -935,7 +944,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return self.ptrx().getTriArea(tidx)
 
-    def getTriBars(self, unsigned int tidx):
+    def getTriBars(self, index_t tidx):
         """
         Returns the index of the bars that comprise the triangle.
 
@@ -944,7 +953,7 @@ cdef class _py_Tetmesh(_py_Geom):
             getTriBars(tidx)
 
         Arguments:
-        int tidx
+        index_t tidx
 
         Return:
         list<int, length = 3>
@@ -952,7 +961,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return self.ptrx().getTriBars(tidx)
 
-    def getTriBarycenter(self, unsigned int tidx):
+    def getTriBarycenter(self, index_t tidx):
         """
         Returns the Cartesian coordinates of the barycenter of triangle with index tidx.
 
@@ -961,7 +970,7 @@ cdef class _py_Tetmesh(_py_Geom):
             getTriBarycenter(tidx)
 
         Arguments:
-        int tidx
+        index_t tidx
 
         Return:
         list<float, length = 3>
@@ -969,7 +978,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return self.ptrx().getTriBarycenter(tidx)
 
-    def getTriNorm(self, unsigned int tidx):
+    def getTriNorm(self, index_t tidx):
         """
         Returns the normal vector of the triangle with index tidx.
 
@@ -978,7 +987,7 @@ cdef class _py_Tetmesh(_py_Geom):
             getTriNorm(tidx)
 
         Arguments:
-        int tidx
+        index_t tidx
 
         Return:
         list<float, length = 3>
@@ -986,7 +995,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return self.ptrx().getTriNorm(tidx)
 
-    def getTriPatch(self, unsigned int tidx):
+    def getTriPatch(self, index_t tidx):
         """
         Returns a reference to a step.geom.TmPatch object: the patch which triangle
         with index tidx belongs to. Returns None if triangle not assigned to a patch.
@@ -996,7 +1005,7 @@ cdef class _py_Tetmesh(_py_Geom):
             getTriPatch(tidx)
 
         Arguments:
-        int tidx
+        index_t tidx
 
         Return:
         steps.geom.TmPatch
@@ -1004,7 +1013,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return _py_TmPatch.from_ptr(self.ptrx().getTriPatch(tidx))
 
-    def setTriPatch(self, unsigned int tidx, _py_TmPatch patch):
+    def setTriPatch(self, index_t tidx, _py_TmPatch patch):
         """
         Set the patch which triangle with index tidx belongs to..
 
@@ -1013,7 +1022,7 @@ cdef class _py_Tetmesh(_py_Geom):
             setTriPatch(tidx, patch)
 
         Arguments:
-        int tidx
+        index_t tidx
         steps.geom.TmPatch patch
 
         Return:
@@ -1022,7 +1031,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         self.ptrx().setTriPatch(tidx, patch.ptrx())
 
-    def setTriDiffBoundary(self, unsigned int tidx, _py_DiffBoundary diffb):
+    def setTriDiffBoundary(self, index_t tidx, _py_DiffBoundary diffb):
         """
         Set the diffusion boundary which triangle with index tidx belongs to..
 
@@ -1031,7 +1040,7 @@ cdef class _py_Tetmesh(_py_Geom):
             setTriDiffBoundary(tidx, diffb)
 
         Arguments:
-        int tidx
+        index_t tidx
         steps.geom.DiffBoundary diffb
 
         Return:
@@ -1040,7 +1049,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         self.ptrx().setTriDiffBoundary(tidx, diffb.ptr())
 
-    def getTriDiffBoundary(self, unsigned int tidx):
+    def getTriDiffBoundary(self, index_t tidx):
         """
         Returns a reference to a step.geom.Diffboundary object: the diffusion boundary triangle
         with index tidx belongs to. Returns None if triangle not assigned to a diffusion boundary.
@@ -1050,7 +1059,7 @@ cdef class _py_Tetmesh(_py_Geom):
             getTriDiffBoundary(tidx)
 
         Arguments:
-        int tidx
+        index_t tidx
 
         Return:
         steps.geom.DiffBoundary
@@ -1058,25 +1067,25 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return _py_DiffBoundary.from_ptr(self.ptrx().getTriDiffBoundary(tidx))
 
-    def getTriTetNeighb(self, unsigned int tidx):
+    def getTriTetNeighb(self, index_t tidx):
         """
         Returns the indices of the two neighbouring tetrahedrons of triangle with
-        index tidx. An index of -1 indicates no neighbour (triangle is on the mesh border).
+        index tidx. An index of UNKNOWN_TET indicates no neighbour (triangle is on the mesh border).
 
         Syntax::
 
             getTriTetNeighb(tidx)
 
         Arguments:
-        int tidx
+        index_t tidx
 
         Return:
-        list<int, length = 2>
+        list<index_t, length = 2>
 
         """
         return self.ptrx().getTriTetNeighb(tidx)
 
-    def getTriTriNeighb(self, unsigned int tidx, _py_TmPatch tmpatch):
+    def getTriTriNeighb(self, index_t tidx, _py_TmPatch tmpatch):
         """
         Returns the indices of the neighbouring triangles (that is all triangles that
         share a 'bar') of triangle with index tidx within the same patch.
@@ -1086,15 +1095,15 @@ cdef class _py_Tetmesh(_py_Geom):
             getTriTriNeighb(int)
 
         Arguments:
-        int tidx
+        index_t tidx
 
         Returns:
-        list<int>
+        list<index_t>
 
         """
         return self.ptrx().getTriTriNeighb(tidx, tmpatch.ptrx())
 
-    def getTriTriNeighbs(self, unsigned int tidx):
+    def getTriTriNeighbs(self, index_t tidx):
         """
         Returns the indices of the neighbouring triangles (that is all triangles that
         share a 'bar') of triangle with index tidx.
@@ -1104,15 +1113,15 @@ cdef class _py_Tetmesh(_py_Geom):
             getTriTriNeighbs(int)
 
         Arguments:
-        int tidx
+        index_t tidx
 
         Returns:
-        list<int>
+        list<index_t>
 
         """
         return self.ptrx().getTriTriNeighbs(tidx)
 
-    def getTet(self, unsigned int tidx):
+    def getTet(self, index_t tidx):
         """
         Returns the tetrahedron with index tidx in the container by its four vertex indices.
 
@@ -1120,10 +1129,10 @@ cdef class _py_Tetmesh(_py_Geom):
             getTet(tidx)
 
         Arguments:
-        int tidx
+        index_t tidx
 
         Return:
-        list<int, length = 4>
+        list<index_t, length = 4>
 
         """
         return self.ptrx().getTet(tidx)
@@ -1145,7 +1154,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return self.ptrx().countTets()
 
-    def getTetVol(self, unsigned int tidx):
+    def getTetVol(self, index_t tidx):
         """
         Returns the volume of the tetrahedron with index tidx.
 
@@ -1154,7 +1163,7 @@ cdef class _py_Tetmesh(_py_Geom):
             getTetVol(tidx)
 
         Arguments:
-        int tidx
+        index_t tidx
 
         Return:
         float
@@ -1162,7 +1171,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return self.ptrx().getTetVol(tidx)
 
-    def getTetQualityRER(self, unsigned int tidx):
+    def getTetQualityRER(self, index_t tidx):
         """
         Returns the radius-edge-ratio (a quality measurement) of tetrahedron with index tidx.
 
@@ -1171,7 +1180,7 @@ cdef class _py_Tetmesh(_py_Geom):
             getTetQualityRER(tidx)
 
         Arguments:
-        int tidx
+        index_t tidx
 
         Return:
         float
@@ -1179,7 +1188,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return self.ptrx().getTetQualityRER(tidx)
 
-    def getTetBarycenter(self, unsigned int tidx):
+    def getTetBarycenter(self, index_t tidx):
         """
         Returns the barycenter of the tetrahedron with index tidx.
 
@@ -1188,7 +1197,7 @@ cdef class _py_Tetmesh(_py_Geom):
             getTetBarycenter(tidx)
 
         Arguments:
-        int tidx
+        index_t tidx
 
         Return:
         list<float, length = 3>
@@ -1196,7 +1205,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return self.ptrx().getTetBarycenter(tidx)
 
-    def getTetComp(self, unsigned int tidx):
+    def getTetComp(self, index_t tidx):
         """
         Returns a reference to a steps.geom.Comp object: the compartment which
         tetrahedron with index tidx belongs to. Returns None if tetrahedron not
@@ -1207,7 +1216,7 @@ cdef class _py_Tetmesh(_py_Geom):
             getTetComp(tidx)
 
         Arguments:
-        int tidx
+        index_t tidx
 
         Return:
         steps.geom.TmComp
@@ -1215,7 +1224,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return _py_TmComp.from_ptr(self.ptrx().getTetComp(tidx))
 
-    def setTetComp(self, unsigned int tidx, _py_TmComp comp):
+    def setTetComp(self, index_t tidx, _py_TmComp comp):
         """
         Set the compartment which tetrahedron with index tidx belongs to..
 
@@ -1224,7 +1233,7 @@ cdef class _py_Tetmesh(_py_Geom):
             setTetComp(tidx, comp)
 
         Arguments:
-        int tidx
+        index_t tidx
         steps.geom.TmComp comp
 
         Return:
@@ -1233,7 +1242,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         self.ptrx().setTetComp(tidx, comp.ptrx())
 
-    def getTetTriNeighb(self, unsigned int tidx):
+    def getTetTriNeighb(self, index_t tidx):
         """
         Returns the indices of the four neighbouring triangles of tetrahedron with index tidx.
 
@@ -1242,15 +1251,15 @@ cdef class _py_Tetmesh(_py_Geom):
             getTetTriNeighb(tidx)
 
         Arguments:
-        int tidx
+        index_t tidx
 
         Return:
-        list<int, length = 4>
+        list<index_t, length = 4>
 
         """
         return self.ptrx().getTetTriNeighb(tidx)
 
-    def getTetTetNeighb(self, unsigned int tidx):
+    def getTetTetNeighb(self, index_t tidx):
         """
         Returns the indices of the four neighbouring tetrahedrons of tetrahedron with index tidx.
         An index of -1 indicates no neighbour (tetrahedron is on the mesh border).
@@ -1260,10 +1269,10 @@ cdef class _py_Tetmesh(_py_Geom):
             getTetTetNeighb(tidx)
 
         Arguments:
-        int tidx
+        index_t tidx
 
         Return:
-        list<int, length = 4>
+        list<index_t, length = 4>
 
         """
         return self.ptrx().getTetTetNeighb(tidx)
@@ -1282,10 +1291,10 @@ cdef class _py_Tetmesh(_py_Geom):
         list<float, length = 3> p
 
         Return:
-        int
+        index_t
 
         """
-        return self.ptrx().findTetByPoint(p)
+        return self.ptrx().findTetByPoint(p).get()
 
     def getBoundMin(self, ):
         """
@@ -1351,13 +1360,13 @@ cdef class _py_Tetmesh(_py_Geom):
         None
 
         Return:
-        list<int>
+        list<index_t>
 
         """
         return self.ptrx().getSurfTris()
 
     ## Batch related
-    def getBatchVertices(self, std.vector[uint] verts):
+    def getBatchVertices(self, std.vector[index_t] verts):
         """
         Get coordinates of a list of vertices.
 
@@ -1366,7 +1375,7 @@ cdef class _py_Tetmesh(_py_Geom):
             getBatchVertices(verts)
 
         Arguments:
-        list<int> verts
+        list<index_t> verts
 
         Return:
         list<float, length = len(verts) * 3>
@@ -1374,19 +1383,19 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return self.ptrx().getBatchVertices(verts)
 
-    def getBatchVerticesNP(self, uint[:] indices, double[:] coordinates):
+    def getBatchVerticesNP(self, index_t[:] indices, double[:] coordinates):
         """
         Get coordinates of a list of vertices.
 
         Syntax::
 
             import numpy as np
-            indices = np.array([0, 1, 2], dtype= np.uint32)
+            indices = np.array([0, 1, 2], dtype= np.uint64)
             coordinates = np.zeros(len(indices) * 3)
             getBatchVertices(indices, coordinates)
 
         Arguments:
-        numpy.array<uint> indices
+        numpy.array<index_t> indices
         numpy.array<float, length = len(indices) * 3> coordinates
 
         Return:
@@ -1395,7 +1404,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         self.ptrx().getBatchVerticesNP(&indices[0], indices.shape[0], &coordinates[0], coordinates.shape[0])
 
-    def getBatchTris(self, std.vector[uint] tris):
+    def getBatchTris(self, std.vector[index_t] tris):
         """
         Get vertex indices of a list of triangles.
 
@@ -1404,15 +1413,15 @@ cdef class _py_Tetmesh(_py_Geom):
             getBatchTris(tris)
 
         Arguments:
-        list<int> tris
+        list<index_t> tris
 
         Return:
-        list<int, length = len(tris) * 3>
+        list<index_t, length = len(tris) * 3>
 
         """
         return self.ptrx().getBatchTris(tris)
 
-    def getBatchTrisNP(self, uint[:] t_indices, uint[:] v_indices):
+    def getBatchTrisNP(self, index_t[:] t_indices, index_t[:] v_indices):
         """
         Get vertex indices of a list of triangles.
 
@@ -1421,8 +1430,8 @@ cdef class _py_Tetmesh(_py_Geom):
             getBatchTrisNP(t_indices, v_indices)
 
         Arguments:
-        numpy.array<uint> t_indices
-        numpy.array<uint, length = len(t_indices) * 3> v_indices
+        numpy.array<index_t> t_indices
+        numpy.array<index_t, length = len(t_indices) * 3> v_indices
 
         Return:
         None
@@ -1430,7 +1439,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         self.ptrx().getBatchTrisNP(&t_indices[0], t_indices.shape[0], &v_indices[0], v_indices.shape[0])
 
-    def getBatchTets(self, std.vector[uint] tets):
+    def getBatchTets(self, std.vector[index_t] tets):
         """
         Get vertex indices of a list of tetrahedrons.
 
@@ -1439,15 +1448,15 @@ cdef class _py_Tetmesh(_py_Geom):
             getBatchTets(tets)
 
         Arguments:
-        list<int> tets
+        list<index_t> tets
 
         Return:
-        list<int, length = len(tets) * 4>
+        list<index_t, length = len(tets) * 4>
 
         """
         return self.ptrx().getBatchTets(tets)
 
-    def getBatchTetsNP(self, uint[:] t_indices, uint[:] v_indices):
+    def getBatchTetsNP(self, index_t[:] t_indices, index_t[:] v_indices):
         """
         Get vertex indices of a list of triangles.
 
@@ -1456,8 +1465,8 @@ cdef class _py_Tetmesh(_py_Geom):
             getBatchTetsNP(t_indices, v_indices)
 
         Arguments:
-        numpy.array<uint> t_indices
-        numpy.array<uint, length = len(t_indices) * 4> v_indices
+        numpy.array<index_t> t_indices
+        numpy.array<index_t, length = len(t_indices) * 4> v_indices
 
         Return:
         None
@@ -1465,7 +1474,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         self.ptrx().getBatchTetsNP( & t_indices[0], t_indices.shape[0], & v_indices[0], v_indices.shape[0])
 
-    def getTriVerticesSetSizeNP(self, uint[:] t_indices):
+    def getTriVerticesSetSizeNP(self, index_t[:] t_indices):
         """
         Return the size of a set with unique vertex indices of a list of triangles,
         preparation function for furture numpy data access.
@@ -1475,7 +1484,7 @@ cdef class _py_Tetmesh(_py_Geom):
             getTriVerticesSetSizeNP(t_indices)
 
         Arguments:
-        numpy.array<uint> t_indices
+        numpy.array<index_t> t_indices
 
         Return:
         int
@@ -1483,7 +1492,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return self.ptrx().getTriVerticesSetSizeNP( & t_indices[0], t_indices.shape[0])
 
-    def getTetVerticesSetSizeNP(self, uint[:] t_indices):
+    def getTetVerticesSetSizeNP(self, index_t[:] t_indices):
         """
         Return the size of a set with unique vertex indices of a list of tetrahedrons,
         preparation function for furture numpy data access.
@@ -1493,15 +1502,15 @@ cdef class _py_Tetmesh(_py_Geom):
             getTetVerticesSetSizeNP(t_indices)
 
         Arguments:
-        numpy.array<uint> t_indices
+        numpy.array<index_t> t_indices
 
         Return:
-        int
+        index_t
 
         """
         return self.ptrx().getTetVerticesSetSizeNP( & t_indices[0], t_indices.shape[0])
 
-    def getTriVerticesMappingSetNP(self, uint[:] t_indices, uint[:] t_vertices, uint[:] v_set):
+    def getTriVerticesMappingSetNP(self, index_t[:] t_indices, index_t[:] t_vertices, index_t[:] v_set):
         """
         Get the vertex indices of a list of triangles.
         The vertex indices are reindexed, with their oringinal STEPS indices stored in a given array,
@@ -1512,9 +1521,9 @@ cdef class _py_Tetmesh(_py_Geom):
             getTriVerticesMappingSetNP(t_indices, t_vertices, v_set)
 
         Arguments:
-        numpy.array<uint> t_indices
-        numpy.array<uint, length = length(t_indices) * 3> t_vertices
-        numpy.array<uint, length = getTriVerticesSetSizeNP(t_indices)> v_set
+        numpy.array<index_t> t_indices
+        numpy.array<index_t, length = length(t_indices) * 3> t_vertices
+        numpy.array<index_t, length = getTriVerticesSetSizeNP(t_indices)> v_set
 
         Return:
         None
@@ -1522,7 +1531,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         self.ptrx().getTriVerticesMappingSetNP( & t_indices[0], t_indices.shape[0], & t_vertices[0], t_vertices.shape[0], & v_set[0], v_set.shape[0])
 
-    def getTetVerticesMappingSetNP(self, uint[:] t_indices, uint[:] t_vertices, uint[:] v_set):
+    def getTetVerticesMappingSetNP(self, index_t[:] t_indices, index_t[:] t_vertices, index_t[:] v_set):
         """
         Get the vertex indices of a list of tetrahedrons.
         The vertex indices are reindexed, with their oringinal STEPS indices stored in a given array,
@@ -1533,9 +1542,9 @@ cdef class _py_Tetmesh(_py_Geom):
             getTetVerticesMappingSetNP(t_indices, t_vertices, v_set)
 
         Arguments:
-        numpy.array<uint> t_indices
-        numpy.array<uint, length = length(t_indices) * 4> t_vertices
-        numpy.array<uint, length = getTriVerticesSetSizeNP(t_indices)> v_set
+        numpy.array<index_t> t_indices
+        numpy.array<index_t, length = length(t_indices) * 4> t_vertices
+        numpy.array<index_t, length = getTriVerticesSetSizeNP(t_indices)> v_set
 
         Return:
         None
@@ -1543,7 +1552,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         self.ptrx().getTetVerticesMappingSetNP( & t_indices[0], t_indices.shape[0], & t_vertices[0], t_vertices.shape[0], & v_set[0], v_set.shape[0])
 
-    def genPointsInTet(self, uint tidx, uint npnts, double[:] coords):
+    def genPointsInTet(self, index_t tidx, uint npnts, double[:] coords):
         """
         Generate npnts random point coordinates x,y,z within a tetraedron with index tidx, export it to NumPy array cords
 
@@ -1552,7 +1561,7 @@ cdef class _py_Tetmesh(_py_Geom):
             genPointsInTet(t_idx, npnts, coords)
 
         Arguments:
-        int tidx
+        index_t tidx
         int npnts
         numpy.array<float, length = npnts * 3> coords
 
@@ -1563,7 +1572,7 @@ cdef class _py_Tetmesh(_py_Geom):
         if not len(coords): return False
         return self.ptrx().genPointsInTet(tidx, npnts, &coords[0], coords.shape[0])
 
-    def genPointsInTri(self, uint tidx, uint npnts, double[:] coords):
+    def genPointsInTri(self, index_t tidx, uint npnts, double[:] coords):
         """
         Generate npnts random point coordinates x,y,z within a triangle with index tidx, export it to NumPy array cords
 
@@ -1572,7 +1581,7 @@ cdef class _py_Tetmesh(_py_Geom):
             genPointsInTri(t_idx, npnts, coords)
 
         Arguments:
-        int tidx
+        index_t tidx
         int npnts
         numpy.array<float, length = npnts * 3> coords
 
@@ -1583,7 +1592,7 @@ cdef class _py_Tetmesh(_py_Geom):
         if not len(coords): return False
         return self.ptrx().genPointsInTri(tidx, npnts, &coords[0], coords.shape[0])
 
-    def genTetVisualPointsNP(self, uint[:] indices, uint[:] point_counts, double[:] coords):
+    def genTetVisualPointsNP(self, index_t[:] indices, uint[:] point_counts, double[:] coords):
         """
         For each tetrahedron index in indices, randomly generate a set of point coordinates x,y,z within the tetrahedron, where n is
         stored in point_counts. The number of points required to be generated for tetrahedron indices[i] is point_counts[i].
@@ -1594,9 +1603,9 @@ cdef class _py_Tetmesh(_py_Geom):
             genTetVisualPointsNP(indices, point_counts, coords)
 
         Arguments:
-        numpy.array<uint> indices
+        numpy.array<index_t> indices
         numpy.array<uint, length = length(indices)> point_counts
-        numpy.array<float, length = sum(point_counts) * 3> coords
+        numpy.array<double, length = sum(point_counts) * 3> coords
 
         Return:
         None
@@ -1605,7 +1614,7 @@ cdef class _py_Tetmesh(_py_Geom):
         if not len(coords): return False
         return self.ptrx().genTetVisualPointsNP(&indices[0], indices.shape[0], &point_counts[0], point_counts.shape[0], &coords[0], coords.shape[0])
 
-    def genTriVisualPointsNP(self, uint[:] indices, uint[:] point_counts, double[:] coords):
+    def genTriVisualPointsNP(self, index_t[:] indices, uint[:] point_counts, double[:] coords):
         """
         For each triangle index in indices, randomly generate a set of point coordinates x,y,z within the triangle, where n is
         stored in point_counts. The number of points required to be generated for triangle indices[i] is point_counts[i].
@@ -1616,9 +1625,9 @@ cdef class _py_Tetmesh(_py_Geom):
             genTriVisualPointsNP(indices, point_counts, coords)
 
         Arguments:
-        numpy.array<uint> indices
+        numpy.array<index_t> indices
         numpy.array<uint, length = length(indices)> point_counts
-        numpy.array<float, length = sum(point_counts) * 3> coords
+        numpy.array<double, length = sum(point_counts) * 3> coords
 
         Return:
         None
@@ -1627,7 +1636,7 @@ cdef class _py_Tetmesh(_py_Geom):
         if not len(coords): return False
         return self.ptrx().genTriVisualPointsNP(&indices[0], indices.shape[0], &point_counts[0], point_counts.shape[0], &coords[0], coords.shape[0])
 
-    def getBatchTetVolsNP(self, uint[:] indices, double[:] volumes):
+    def getBatchTetVolsNP(self, index_t[:] indices, double[:] volumes):
         """
         Get the volumes of a list of tetrahedrons in indices and stored in volumes.
 
@@ -1636,8 +1645,8 @@ cdef class _py_Tetmesh(_py_Geom):
             getBatchTetVolsNP(indices, volumes)
 
         Arguments:
-        numpy.array<uint> indices
-        numpy.array<float, length = length(indices)> volumes
+        numpy.array<index_t> indices
+        numpy.array<double, length = length(indices)> volumes
 
         Return:
         None
@@ -1645,7 +1654,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return self.ptrx().getBatchTetVolsNP(&indices[0], indices.shape[0], &volumes[0], volumes.shape[0])
 
-    def getBatchTriAreasNP(self, uint[:] indices, double[:] areas):
+    def getBatchTriAreasNP(self, index_t[:] indices, double[:] areas):
         """
         Get the areas of a list of triangles in indices and stored in areas.
 
@@ -1654,7 +1663,7 @@ cdef class _py_Tetmesh(_py_Geom):
             getBatchTriAreasNP(indices, areas)
 
         Arguments:
-        numpy.array<uint> indices
+        numpy.array<index_t> indices
         numpy.array<float, length = length(indices)> areas
 
         Return:
@@ -1663,7 +1672,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return self.ptrx().getBatchTriAreasNP(&indices[0], indices.shape[0], &areas[0], areas.shape[0])
 
-    def reduceBatchTetPointCountsNP(self, uint[:] indices, uint[:] point_counts, double max_density):
+    def reduceBatchTetPointCountsNP(self, index_t[:] indices, uint[:] point_counts, double max_density):
         """
         Reduce the number of random point coordinates generated for each tetrahedron in indices so that the point density of the tetrahedron is below max_density. If the density is already below max_density for that tetrahedron, the count stored in point_counts is intacted.
 
@@ -1672,7 +1681,7 @@ cdef class _py_Tetmesh(_py_Geom):
             reduceBatchTetPointCountsNP(indices, point_counts, max_density)
 
         Arguments:
-        numpy.array<uint> indices
+        numpy.array<index_t> indices
         numpy.array<uint, length = length(indices)> point_counts
         float max_density
 
@@ -1682,7 +1691,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return self.ptrx().reduceBatchTetPointCountsNP(&indices[0], indices.shape[0], &point_counts[0], point_counts.shape[0], max_density)
 
-    def reduceBatchTriPointCountsNP(self, uint[:] indices, uint[:] point_counts, double max_density):
+    def reduceBatchTriPointCountsNP(self, index_t[:] indices, uint[:] point_counts, double max_density):
         """
         Reduce the number of random point coordinates generated for each triangle in indices so that the point density of the triangle is below max_density. If the density is already below max_density for that triangle, the count stored in point_counts is intacted.
 
@@ -1691,9 +1700,9 @@ cdef class _py_Tetmesh(_py_Geom):
             reduceBatchTriPointCountsNP(indices, point_counts, max_density)
 
         Arguments:
-        numpy.array<uint> indices
+        numpy.array<index_t> indices
         numpy.array<uint, length = length(indices)> point_counts
-        float max_density
+        double max_density
 
         Return:
         None
@@ -1702,7 +1711,7 @@ cdef class _py_Tetmesh(_py_Geom):
         return self.ptrx().reduceBatchTriPointCountsNP(&indices[0], indices.shape[0], &point_counts[0], point_counts.shape[0], max_density)
 
     ## ROI related ##
-    def addROI(self, str id, ElementType type, std.set[unsigned int] indices):
+    def addROI(self, str id, ElementType type, std.set[index_t] indices):
         """
         Add a Region of Interest data record with name id to the ROI dataset.
         The type of elements stored in the ROI data can be one of the follows:
@@ -1715,7 +1724,7 @@ cdef class _py_Tetmesh(_py_Geom):
         Arguments:
         string id
         ElementType type
-        list<int> indices
+        set<index_t> indices
 
         Return:
         None
@@ -1740,7 +1749,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         self.ptrx().removeROI(to_std_string(id))
 
-    def replaceROI(self, str id, ElementType type, std.set[unsigned int] indices):
+    def replaceROI(self, str id, ElementType type, std.set[index_t] indices):
         """
         Replace a Region of Interest data record with name id with new data.
 
@@ -1751,7 +1760,7 @@ cdef class _py_Tetmesh(_py_Geom):
         Arguments:
         string id
         ElementType type
-        list<int> indices
+        set<index_t> indices
 
         Return:
         None
@@ -1788,7 +1797,7 @@ cdef class _py_Tetmesh(_py_Geom):
         string id
 
         Return:
-        list<int>
+        list<index_t>
 
         """
         return self.ptrx().getROIData(to_std_string(id))
@@ -1842,8 +1851,8 @@ cdef class _py_Tetmesh(_py_Geom):
         ROISet
 
         """
-        cdef ROISet roi = self.ptrx().getROI(to_std_string(id))
-        return _py_ROISet(roi.type, roi.indices)
+        cdef ROISet rois = self.ptrx().getROI(to_std_string(id))
+        return _py_ROISet(rois.type, rois.indices)
 
     def getROIArea(self, str ROI_id):
         """
@@ -1876,7 +1885,7 @@ cdef class _py_Tetmesh(_py_Geom):
         Return:
         float
 
-        """    
+        """
         return self.ptrx().getROIVol(to_std_string(ROI_id))
 
     def getAllROINames(self):
@@ -1894,13 +1903,13 @@ cdef class _py_Tetmesh(_py_Geom):
         list<string>
 
         """
-        all_names = self.ptrx().getAllROINames() 
+        all_names = self.ptrx().getAllROINames()
         return [from_std_string(s) for s in all_names]
 
     def checkROI(self, str id, ElementType type, uint count=0, bool warning=True):
         """
         Check if an ROI enquire is valid.
-        
+
         Syntax::
 
             checkROI(id, type, count=0, warning=true)
@@ -1908,12 +1917,12 @@ cdef class _py_Tetmesh(_py_Geom):
         Arguments:
         string id
         ElementType type
-        int count          
+        int count
         bool warning
 
         Return:
         bool
-        
+
         """
         return self.ptrx().checkROI(to_std_string(id), type, count, warning )
 
@@ -2037,12 +2046,12 @@ cdef class _py_Tetmesh(_py_Geom):
         string ROI_id
 
         Return:
-        list<int>
+        list<index_t>
 
         """
         return self.ptrx().getROITris(to_std_string(ROI_id))
 
-    def getROITrisNP(self, str ROI_id, uint[:] v_indices):
+    def getROITrisNP(self, str ROI_id, index_t[:] v_indices):
         """
         Get vertices of elements stored in a triangular ROI and write to a NumPy array v_indices.
         The size of v_indices should be 3 * the number of elements stored in the ROI.
@@ -2053,7 +2062,7 @@ cdef class _py_Tetmesh(_py_Geom):
 
         Arguments:
         string ROI_id
-        numpy.array<uint> v_indices
+        numpy.array<index_t> v_indices
 
         Return:
         None
@@ -2073,12 +2082,12 @@ cdef class _py_Tetmesh(_py_Geom):
         string ROI_id
 
         Return:
-        list<int>
+        list<index_t>
 
         """
         return self.ptrx().getROITets(to_std_string(ROI_id))
 
-    def getROITetsNP(self, str ROI_id, uint[:] v_indices):
+    def getROITetsNP(self, str ROI_id, index_t[:] v_indices):
         """
         Get vertices of elements stored in a tetrahedral ROI and write to a NumPy array v_indices.
         The size of v_indices should be 3 * the number of elements stored in the ROI.
@@ -2089,7 +2098,7 @@ cdef class _py_Tetmesh(_py_Geom):
 
         Arguments:
         string ROI_id
-        numpy.array<uint> v_indices
+        numpy.array<index_t> v_indices
 
         Return:
         None
@@ -2131,7 +2140,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return self.ptrx().getROITetVerticesSetSizeNP(to_std_string(ROI_id))
 
-    def getROITriVerticesMappingSetNP(self, str ROI_id, uint[:] t_vertices, uint[:] v_set):
+    def getROITriVerticesMappingSetNP(self, str ROI_id, index_t[:] t_vertices, index_t[:] v_set):
         """
         Add all vertex indices of a list of triangles in a ROI to a set and write it to a NumPy array v_set.
         For each of the triangle, t_vertices records the positions of its vertices in v_set.
@@ -2144,8 +2153,8 @@ cdef class _py_Tetmesh(_py_Geom):
 
         Arguments:
         string ROI_id
-        numpy.array<uint> v_indices
-        numpy.array<uint> v_set
+        numpy.array<index_t> v_indices
+        numpy.array<index_t> v_set
 
         Return:
         None
@@ -2153,7 +2162,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return self.ptrx().getROITriVerticesMappingSetNP(to_std_string(ROI_id), &t_vertices[0], t_vertices.shape[0], &v_set[0], v_set.shape[0])
 
-    def getROITetVerticesMappingSetNP(self, str ROI_id, uint[:] t_vertices, uint[:] v_set):
+    def getROITetVerticesMappingSetNP(self, str ROI_id, index_t[:] t_vertices, index_t[:] v_set):
         """
         Add all vertex indices of a list of tetrahedrons in a ROI to a set and write it to a NumPy array v_set.
         For each of the tetrahedron, t_vertices records the positions of its vertices in v_set.
@@ -2166,8 +2175,8 @@ cdef class _py_Tetmesh(_py_Geom):
 
         Arguments:
         string ROI_id
-        numpy.array<uint> v_indices
-        numpy.array<uint> v_set
+        numpy.array<index_t> v_indices
+        numpy.array<index_t> v_set
 
         Return:
         None
@@ -2188,7 +2197,7 @@ cdef class _py_Tetmesh(_py_Geom):
         Arguments:
         string ROI_id
         numpy.array<uint> point_counts
-        numpy.array<float> coords
+        numpy.array<double> coords
 
         Return:
         None
@@ -2209,7 +2218,7 @@ cdef class _py_Tetmesh(_py_Geom):
         Arguments:
         string ROI_id
         numpy.array<uint> point_counts
-        numpy.array<float> coords
+        numpy.array<double> coords
 
         Return:
         None
@@ -2264,7 +2273,7 @@ cdef class _py_Tetmesh(_py_Geom):
         Arguments:
         string ROI_id
         numpy.array<uint> point_counts
-        float max_density
+        double max_density
 
         Return:
         None
@@ -2283,13 +2292,27 @@ cdef class _py_Tetmesh(_py_Geom):
         Arguments:
         string ROI_id
         numpy.array<uint, length = length(indices)> point_counts
-        float max_density
+        double max_density
 
         Return:
         None
 
         """
         return self.ptrx().reduceROITriPointCountsNP(to_std_string(ROI_id), &point_counts[0], point_counts.shape[0], max_density)
+
+    def intersect(self, double[:, :] point_coords):
+        """
+        Computes the intersection of line segment(s) given the vertices with the current mesh
+
+        Args:
+            points: A 2-D numpy array (/memview), where each position contains the 3 point
+                    coordinates
+
+        Returns:
+            A list where each position contains the list of intersected tets (and respective
+            intersection ratio) of each line segment.
+        """
+        return self.ptrx().intersect(&point_coords[0][0], point_coords.shape[0])
 
     @staticmethod
     cdef _py_Tetmesh from_ptr(Tetmesh *ptr):
@@ -2317,7 +2340,7 @@ cdef class _py_TmComp(_py_Comp):
     cdef TmComp *ptrx(self):
         return <TmComp*> self._ptr
 
-    def __init__(self, str id, _py_Tetmesh container, std.vector[unsigned int] tets):
+    def __init__(self, str id, _py_Tetmesh container, std.vector[index_t] tets):
         """
         Construction::
 
@@ -2330,7 +2353,7 @@ cdef class _py_TmComp(_py_Comp):
         Arguments:
         string id
         steps.geom.Tetmesh container
-        list<int> tets
+        list<index_t> tets
         """
         self._ptr = new TmComp(to_std_string(id), container.ptrx(), tets)
 
@@ -2352,7 +2375,7 @@ cdef class _py_TmComp(_py_Comp):
         Return:
         list<int>
 
-        """    
+        """
         return self.ptrx().getAllTetIndices()
 
     def countTets(self, ):
@@ -2372,7 +2395,7 @@ cdef class _py_TmComp(_py_Comp):
         """
         return self.ptrx().countTets()
 
-    def isTetInside(self, std.vector[unsigned int] tets):
+    def isTetInside(self, std.vector[index_t] tets):
         """
         Returns a list of Booleans describing if tetrahedrons tets are
         assigned to the compartment.
@@ -2382,7 +2405,7 @@ cdef class _py_TmComp(_py_Comp):
             isTetInside(tets)
 
         Arguments:
-        list<int> tets
+        list<index_t> tets
 
         Return:
         list<bool, length = length(tets)>
@@ -2450,7 +2473,7 @@ cdef class _py_TmPatch(_py_Patch):
     cdef TmPatch *ptrx(self):
         return <TmPatch*> self._ptr
 
-    def __init__(self, str id, _py_Tetmesh container, std.vector[unsigned int] tris, _py_Comp icomp, _py_Comp ocomp=None):
+    def __init__(self, str id, _py_Tetmesh container, std.vector[index_t] tris, _py_Comp icomp, _py_Comp ocomp=None):
         """
         Construction::
 
@@ -2464,13 +2487,13 @@ cdef class _py_TmPatch(_py_Patch):
         Arguments:
         string id
         steps.geom.Tetmesh container
-        list<int> tris
+        list<index_t> tris
         steps.geom.TmComp icomp
         steps.geom.TmComp ocomp (default = None)
         """
         self._ptr = new TmPatch(to_std_string(id), container.ptrx(), tris, icomp.ptr(), ocomp.ptr() if ocomp else NULL)
 
-    def isTriInside(self, std.vector[unsigned int] tris):
+    def isTriInside(self, std.vector[index_t] tris):
         """
         Returns a list of Booleans describing if triangles tris are
         assigned to the patch.
@@ -2480,7 +2503,7 @@ cdef class _py_TmPatch(_py_Patch):
             isTriInside(tris)
 
         Arguments:
-        list<int> tris
+        list<index_t> tris
 
         Return:
         list<bool, length = length(tris)>
@@ -2500,7 +2523,7 @@ cdef class _py_TmPatch(_py_Patch):
         None
 
         Return:
-        list<int>
+        list<index_t>
 
         """
         return self.ptrx().getAllTriIndices()
@@ -2565,7 +2588,7 @@ cdef class _py_Memb(_py__base):
     cdef Memb *ptr(self):
         return <Memb*> self._ptr
 
-    def __init__(self, str id, _py_Tetmesh container, list patches, bool verify=False, unsigned int opt_method=1, double search_percent=100.0, str opt_file_name=""):
+    def __init__(self, str id, _py_Tetmesh container, list patches, bool verify=False, uint opt_method=1, double search_percent=100.0, str opt_file_name=""):
         """
         Construction:
 
@@ -2579,8 +2602,8 @@ cdef class _py_Memb(_py__base):
         more than 3 neighbours. Specify optimization method with opt_method (default = 1):
         1 = principal axis ordering (quick to set up but usually results in slower simulation than method 2).
         2 = breadth first search (can be time-consuming to set up, but usually faster simulation.
-        If 2:breadth first search is chosen then argument search_percent can specify the number of starting points to search for the 
-        lowest bandwidth. 
+        If 2:breadth first search is chosen then argument search_percent can specify the number of starting points to search for the
+        lowest bandwidth.
         If a filename (with full path) is given in optional argument opt_file_name the membrane optimization will be loaded from file,
         which was saved previously for this membrane with solver method steps.solver.Tetexact.saveMembOpt()
 
@@ -2632,7 +2655,7 @@ cdef class _py_Memb(_py__base):
         """
         return from_std_string(self.ptr().getID())
 
-    def isTriInside(self, std.vector[unsigned int] tri):
+    def isTriInside(self, std.vector[index_t] tri):
         """
         Returns a list of Booleans describing if triangles tris are
         assigned to the membrane.
@@ -2642,7 +2665,7 @@ cdef class _py_Memb(_py__base):
             isTriInside(tris)
 
         Arguments:
-        list<int> tris
+        list<index_t> tris
 
         Return:
         list<bool, length = length(tris)>
@@ -2662,7 +2685,7 @@ cdef class _py_Memb(_py__base):
         None
 
         Return:
-        list<int>
+        list<index_t>
 
         """
         return self.ptr().getAllTriIndices()
@@ -2697,7 +2720,7 @@ cdef class _py_Memb(_py__base):
         None
 
         Return:
-        list<int>
+        list<index_t>
 
         """
         return self.ptr().getAllVolTetIndices()
@@ -2714,7 +2737,7 @@ cdef class _py_Memb(_py__base):
         None
 
         Return:
-        int
+        uint
 
 
         """
@@ -2732,7 +2755,7 @@ cdef class _py_Memb(_py__base):
         None
 
         Return:
-        list<int>
+        list<index_t>
 
 
         """
@@ -2750,7 +2773,7 @@ cdef class _py_Memb(_py__base):
         None
 
         Return:
-        int
+        uint
 
 
         """
@@ -2768,7 +2791,7 @@ cdef class _py_Memb(_py__base):
         None
 
         Return:
-        list<int>
+        list<index_t>
 
         """
         return self.ptr().getAllVertIndices()
@@ -2785,7 +2808,7 @@ cdef class _py_Memb(_py__base):
         None
 
         Returns:
-        int
+        uint
 
 
         """
@@ -2833,7 +2856,7 @@ cdef class _py_DiffBoundary(_py__base):
     cdef DiffBoundary *ptr(self):
         return <DiffBoundary*> self._ptr
 
-    def __init__(self, str id, _py_Tetmesh container, std.vector[unsigned int] tris):
+    def __init__(self, str id, _py_Tetmesh container, std.vector[index_t] tris):
         """
         Construction::
 
@@ -2845,7 +2868,7 @@ cdef class _py_DiffBoundary(_py__base):
         Arguments:
         string id
         steps.geom.Tetmesh container
-        list<int> tris
+        list<index_t> tris
         """
         self._ptr = new DiffBoundary(to_std_string(id), container.ptrx(), tris)
 
@@ -2900,7 +2923,7 @@ cdef class _py_DiffBoundary(_py__base):
         """
         return _py_Tetmesh.from_ptr(self.ptr().getContainer())
 
-    def isTriInside(self, std.vector[unsigned int] tri):
+    def isTriInside(self, std.vector[index_t] tri):
         """
         Returns a list of Booleans describing if triangles tris are
         assigned to the diffusion boundary.
@@ -2910,7 +2933,7 @@ cdef class _py_DiffBoundary(_py__base):
             isTriInside(tris)
 
         Arguments:
-        list<int> tris
+        list<index_t> tris
 
         Return:
         list<bool, length = length(tris)>
@@ -2930,7 +2953,7 @@ cdef class _py_DiffBoundary(_py__base):
         None
 
         Return:
-        list<int>
+        list<index_t>
 
         """
         return self.ptr().getAllTriIndices()
@@ -2978,7 +3001,7 @@ cdef class _py_SDiffBoundary(_py__base):
     cdef SDiffBoundary *ptr(self):
         return <SDiffBoundary*> self._ptr
 
-    def __init__(self, str id, _py_Tetmesh container, std.vector[unsigned int] bars, list patches):
+    def __init__(self, str id, _py_Tetmesh container, std.vector[index_t] bars, list patches):
         """
         Construction::
 
@@ -2991,7 +3014,7 @@ cdef class _py_SDiffBoundary(_py__base):
         Arguments:
         string id
         steps.geom.Tetmesh container
-        list<int> bars
+        list<index_t> bars
         list<steps.geom.TmPatch> (length 2) patches
         """
         cdef std.vector[TmPatch*] _patches
@@ -3017,7 +3040,7 @@ cdef class _py_SDiffBoundary(_py__base):
         return from_std_string(self.ptr().getID())
 
     def setID(self, str id):
-    
+
         """
         Set the identifier string of the surface diffusion boundary.
 
@@ -3032,7 +3055,7 @@ cdef class _py_SDiffBoundary(_py__base):
         None
 
         """
-        
+
         if not isinstance(id, bytes):
             id = id.encode()
 
@@ -3055,7 +3078,7 @@ cdef class _py_SDiffBoundary(_py__base):
         """
         return _py_Tetmesh.from_ptr(self.ptr().getContainer())
 
-    def isBarInside(self, std.vector[unsigned int] bars):
+    def isBarInside(self, std.vector[index_t] bars):
         """
         Returns a list of Booleans describing if bars are
         assigned to the surface diffusion boundary.
@@ -3065,7 +3088,7 @@ cdef class _py_SDiffBoundary(_py__base):
             isBarInside(bars)
 
         Arguments:
-        list<int> bars
+        list<index_t> bars
 
         Return:
         list<bool, length = length(bars)>
@@ -3087,7 +3110,7 @@ cdef class _py_SDiffBoundary(_py__base):
         Return:
         list<int>
 
-        """    
+        """
         return self.ptr().getAllBarIndices()
 
     def getPatches(self, ):
@@ -3104,7 +3127,7 @@ cdef class _py_SDiffBoundary(_py__base):
         Return:
         list<steps::wm::Patch, length = 2>
 
-        """    
+        """
         return _py_Patch.vector2list(self.ptr().getPatches())
 
     @staticmethod

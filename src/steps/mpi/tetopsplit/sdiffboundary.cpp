@@ -49,24 +49,19 @@ smtos::SDiffBoundary::SDiffBoundary(steps::solver::SDiffBoundarydef * sdbdef)
 , pTris()
 , pTriDirection()
 {
-    AssertLog(sdbdef != 0);
+    AssertLog(sdbdef != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::SDiffBoundary::~SDiffBoundary()
-= default;
-
-////////////////////////////////////////////////////////////////////////////////
-
-void smtos::SDiffBoundary::checkpoint(std::fstream & cp_file)
+void smtos::SDiffBoundary::checkpoint(std::fstream & /*cp_file*/)
 {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::SDiffBoundary::restore(std::fstream & cp_file)
+void smtos::SDiffBoundary::restore(std::fstream & /*cp_file*/)
 {
     // reserve
 }
@@ -75,9 +70,9 @@ void smtos::SDiffBoundary::restore(std::fstream & cp_file)
 
 void smtos::SDiffBoundary::setPatches(smtos::Patch * patcha, smtos::Patch * patchb)
 {
-    AssertLog(pSetPatches == false);
-    AssertLog(patcha != 0);
-    AssertLog(patchb != 0);
+    AssertLog(!pSetPatches);
+    AssertLog(patcha != nullptr);
+    AssertLog(patchb != nullptr);
     AssertLog(patcha != patchb);
 
     pPatchA = patcha;
@@ -89,7 +84,7 @@ void smtos::SDiffBoundary::setPatches(smtos::Patch * patcha, smtos::Patch * patc
 
 smtos::Patch * smtos::SDiffBoundary::patchA()
 {
-    AssertLog(pSetPatches == true);
+    AssertLog(pSetPatches);
     return pPatchA;
 }
 
@@ -97,13 +92,13 @@ smtos::Patch * smtos::SDiffBoundary::patchA()
 
 smtos::Patch * smtos::SDiffBoundary::patchB()
 {
-    AssertLog(pSetPatches == true);
+    AssertLog(pSetPatches);
     return pPatchB;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::SDiffBoundary::setTriDirection(uint tri, uint direction)
+void smtos::SDiffBoundary::setTriDirection(triangle_id_t tri, uint direction)
 {
     AssertLog(direction < 3);
 

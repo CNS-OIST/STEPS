@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -42,17 +42,13 @@
 #include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace swm = steps::wm;
+namespace steps {
+namespace wm {
 
-////////////////////////////////////////////////////////////////////////////////
-
-swm::Comp::Comp(std::string id, swm::Geom * container, double vol)
-: pID(std::move(id))
+Comp::Comp(std::string id, Geom * container, double vol)
+: pVol(vol)
+, pID(std::move(id))
 , pContainer(container)
-, pVolsys()
-, pVol(vol)
-, pIPatches()
-, pOPatches()
 {
     if (pContainer == nullptr)
     {
@@ -68,7 +64,7 @@ swm::Comp::Comp(std::string id, swm::Geom * container, double vol)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swm::Comp::~Comp()
+Comp::~Comp()
 {
     if (pContainer == nullptr) {
       return;
@@ -78,7 +74,7 @@ swm::Comp::~Comp()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Comp::setID(std::string const & id)
+void Comp::setID(std::string const & id)
 {
     AssertLog(pContainer != nullptr);
     if (id == pID) {
@@ -95,7 +91,7 @@ void swm::Comp::setID(std::string const & id)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Comp::setVol(double vol)
+void Comp::setVol(double vol)
 {
     AssertLog(pContainer != nullptr);
     if (vol < 0.0)
@@ -107,7 +103,7 @@ void swm::Comp::setVol(double vol)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Comp::addVolsys(std::string const & id)
+void Comp::addVolsys(std::string const & id)
 {
     // string identifier is only added to set if it is not already included
     pVolsys.insert(id);
@@ -115,7 +111,7 @@ void swm::Comp::addVolsys(std::string const & id)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Comp::delVolsys(std::string const & id)
+void Comp::delVolsys(std::string const & id)
 {
     // string identifier is only removed from set if it is included
     pVolsys.erase(id);
@@ -123,7 +119,7 @@ void swm::Comp::delVolsys(std::string const & id)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<steps::model::Spec*> swm::Comp::getAllSpecs(steps::model::Model* model)
+std::vector<steps::model::Spec*> Comp::getAllSpecs(steps::model::Model* model) const
 {
     std::set<steps::model::Spec*> pSpecs;
     std::set<std::string>::iterator it;
@@ -133,13 +129,12 @@ std::vector<steps::model::Spec*> swm::Comp::getAllSpecs(steps::model::Model* mod
         pSpecs.insert(specs.begin(), specs.end());
     }
 
-    std::vector<steps::model::Spec*> spec_vec(pSpecs.begin(), pSpecs.end());
-    return spec_vec;
+    return {pSpecs.begin(), pSpecs.end()};
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<steps::model::Reac*> swm::Comp::getAllReacs(steps::model::Model* model)
+std::vector<steps::model::Reac*> Comp::getAllReacs(steps::model::Model* model) const
 {
     std::set<steps::model::Reac*> pReacs;
     std::set<std::string>::iterator it;
@@ -149,13 +144,12 @@ std::vector<steps::model::Reac*> swm::Comp::getAllReacs(steps::model::Model* mod
         pReacs.insert(reacs.begin(), reacs.end());
     }
 
-    std::vector<steps::model::Reac*> reac_vec(pReacs.begin(), pReacs.end());
-    return reac_vec;
+    return {pReacs.begin(), pReacs.end()};
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<steps::model::Diff*> swm::Comp::getAllDiffs(steps::model::Model* model)
+std::vector<steps::model::Diff*> Comp::getAllDiffs(steps::model::Model* model) const
 {
     std::set<steps::model::Diff*> pDiffs;
     std::set<std::string>::iterator it;
@@ -165,14 +159,13 @@ std::vector<steps::model::Diff*> swm::Comp::getAllDiffs(steps::model::Model* mod
         pDiffs.insert(diffs.begin(), diffs.end());
     }
 
-    std::vector<steps::model::Diff*> diff_vec(pDiffs.begin(), pDiffs.end());
-    return diff_vec;
+    return {pDiffs.begin(), pDiffs.end()};
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Comp::_addIPatch(swm::Patch * patch)
+void Comp::_addIPatch(Patch * patch)
 {
     AssertLog(patch->getOComp() == this);
     // patch pointer is only added to set if it is not already included
@@ -181,14 +174,14 @@ void swm::Comp::_addIPatch(swm::Patch * patch)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Comp::_delIPatch(swm::Patch * patch)
+void Comp::_delIPatch(Patch * patch)
 {
     AssertLog(patch->getOComp() == this);
     pIPatches.erase(patch);
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Comp::_addOPatch(swm::Patch * patch)
+void Comp::_addOPatch(Patch * patch)
 {
     AssertLog(patch->getIComp() == this);
     // patch pointer is only added to set if it is not already included
@@ -197,7 +190,7 @@ void swm::Comp::_addOPatch(swm::Patch * patch)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Comp::_delOPatch(swm::Patch * patch)
+void Comp::_delOPatch(Patch * patch)
 {
     AssertLog(patch->getIComp() == this);
     pOPatches.erase(patch);
@@ -205,7 +198,7 @@ void swm::Comp::_delOPatch(swm::Patch * patch)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swm::Comp::_handleSelfDelete()
+void Comp::_handleSelfDelete()
 {
     pContainer->_handleCompDel(this);
     pVol = 0.0;
@@ -217,7 +210,7 @@ void swm::Comp::_handleSelfDelete()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-steps::wm::Patch * swm::Comp::_getIPatch(uint lidx) const
+steps::wm::Patch * Comp::_getIPatch(uint lidx) const
 {
     AssertLog(lidx < pIPatches.size());
     auto pit = pIPatches.begin();
@@ -227,7 +220,7 @@ steps::wm::Patch * swm::Comp::_getIPatch(uint lidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-steps::wm::Patch * swm::Comp::_getOPatch(uint lidx) const
+steps::wm::Patch * Comp::_getOPatch(uint lidx) const
 {
     AssertLog(lidx < pOPatches.size());
     auto pit = pOPatches.begin();
@@ -235,6 +228,6 @@ steps::wm::Patch * swm::Comp::_getOPatch(uint lidx) const
     return *pit;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+} // namespace wm
+} // namespace steps
 
-/// END

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -110,24 +110,24 @@ public:
 
     static const int INACTIVATED = 1;
 
-    inline bool active() const
+    inline bool active() const noexcept
     { return !(pFlags & INACTIVATED); }
-    inline bool inactive() const
+    inline bool inactive() const noexcept
     { return (pFlags & INACTIVATED); }
     void setActive(bool active);
 
-    inline uint flags() const
+    inline uint flags() const noexcept
     { return pFlags; }
 
     ////////////////////////////////////////////////////////////////////////
 
-    uint schedIDX() const
+    uint schedIDX() const noexcept
     { return pSchedIDX; }
 
-    void setSchedIDX(uint idx)
+    void setSchedIDX(uint idx) noexcept
     { pSchedIDX = idx; }
     
-    uint getType(){return type;}
+    uint getType() const noexcept { return type; }
 
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
@@ -138,20 +138,20 @@ public:
     ///
     virtual void setupDeps() = 0;
 
-    virtual bool depSpecTet(uint gidx, steps::mpi::tetopsplit::WmVol * tet) = 0;
-    virtual bool depSpecTri(uint gidx, steps::mpi::tetopsplit::Tri * tri) = 0;
+    virtual bool depSpecTet(uint gidx, steps::mpi::tetopsplit::WmVol * tet = nullptr) = 0;
+    virtual bool depSpecTri(uint gidx, steps::mpi::tetopsplit::Tri * tri = nullptr) = 0;
 
     /// Reset this Kproc.
     ///
     virtual void reset() = 0;
 
     // Recompute the Ccst for this KProc
-    virtual void resetCcst() const;
+    virtual void resetCcst();
 
     /// Compute the rate for this kproc (its propensity value).
     ///
-    virtual double rate(steps::mpi::tetopsplit::TetOpSplitP * solver = 0)  = 0;
-    virtual double getScaledDcst(steps::mpi::tetopsplit::TetOpSplitP * solver = 0)  = 0;
+    virtual double rate(steps::mpi::tetopsplit::TetOpSplitP * solver = nullptr)  = 0;
+    virtual double getScaledDcst(steps::mpi::tetopsplit::TetOpSplitP * solver = nullptr) const = 0;
 
     // Return the ccst for this kproc
     // NOTE: not pure for this solver because doesn't make sense for Diff
@@ -168,26 +168,38 @@ public:
     // NOTE: Random number generator available to this function for use
     // by Diff
 
-	virtual int apply(steps::rng::RNG * rng);
-    virtual int apply(steps::rng::RNG * rng, uint nmolcs);
-    virtual std::vector<KProc*> const & getLocalUpdVec(int direction = -1);
-    virtual std::vector<uint> const & getRemoteUpdVec(int direction = -1);
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Woverloaded-virtual"
+    virtual int apply(const rng::RNGptr &rng);
+    virtual int apply(const rng::RNGptr &rng, uint nmolcs);
+    virtual void apply(const rng::RNGptr &rng, double dt, double simtime, double period);
+#pragma clang diagnostic pop
+#elif defined(__GNUC__) || defined(__GNUG__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
+    virtual int apply(const rng::RNGptr &rng);
+    virtual int apply(const rng::RNGptr &rng, uint nmolcs);
+    virtual void apply(const rng::RNGptr &rng, double dt, double simtime, double period);
+#pragma GCC diagnostic pop
+#endif
+
+    virtual std::vector<KProc*> const & getLocalUpdVec(int direction = -1) const;
+    virtual std::vector<uint> const & getRemoteUpdVec(int direction = -1) const;
 
     // Intended for reactions within the SSA
     // Special case for SReacs where dt and simtime are needed if Ohmic Currents are involved, i.e. a
     // Surface reaction can open or close an ohmic current channel
-    virtual void apply(steps::rng::RNG * rng, double dt, double simtime, double period);
-	
-	
+
     virtual void resetOccupancies();
     
-    virtual bool getInHost() = 0;
-    virtual int getHost() = 0;
+    virtual bool getInHost() const = 0;
+    virtual int getHost() const = 0;
 	
 	//virtual std::vector<KProc*> const & getSharedUpd();
     ////////////////////////////////////////////////////////////////////////
 
-    uint getExtent() const;
+    unsigned long long getExtent() const;
     void resetExtent();
 
     ////////////////////////////////////////////////////////////////////////
@@ -207,7 +219,7 @@ public:
 
 protected:
 
-    uint                                rExtent;
+    unsigned long long                  rExtent;
 
     ////////////////////////////////////////////////////////////////////////
 

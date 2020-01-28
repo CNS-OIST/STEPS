@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -106,18 +106,18 @@ public:
     /// It's not clear why this should happen... Maybe delete in the
     /// future?
     ///
-    inline void setIDX(uint i)
+    inline void setIDX(uint i) noexcept
     { pIDX = i; }
 
     /// Adds an amount of surface area to the surface associated with
     /// this vertex.
     ///
-    inline void incrementSurfaceArea(double sa)
+    inline void incrementSurfaceArea(double sa) noexcept
     { pSurface += sa; }
 
     /// Called by VertexConnection::attachToVertices().
     ///
-    inline void addConnection(VertexConnection* vc)
+    inline void addConnection(VertexConnection* vc) noexcept
     { pConnections.push_back(vc); }
 
     /// Called by TetMesh::extractConnections(). This basically sets up
@@ -126,12 +126,12 @@ public:
     ///
     void fix();
 
-    inline void setVolume(double d)
+    inline void setVolume(double d) noexcept
     { pVolume = d; }
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline void applySurfaceCapacitance(double c)
+    inline void applySurfaceCapacitance(double c) noexcept
     { pCapacitance = c * pSurface; }
 
     void applyConductance(double);
@@ -140,41 +140,41 @@ public:
     // GENERAL INFORMATION
     ////////////////////////////////////////////////////////////////////////
 
-    inline uint getIDX() const
+    inline uint getIDX() const noexcept
     { return pIDX; }
 
-    inline double getX() const
+    inline double getX() const noexcept
     { return pXPos; }
 
-    inline double getY() const
+    inline double getY() const noexcept
     { return pYPos; }
 
-    inline double getZ() const
+    inline double getZ() const noexcept
     { return pZPos; }
 
-    inline double getSurfaceArea() const
+    inline double getSurfaceArea() const noexcept
     { return pSurface; }
 
-    inline double getCapacitance() const
+    inline double getCapacitance() const noexcept
     { return pCapacitance; }
 
     ////////////////////////////////////////////////////////////////////////
     // CONNECTIVITY INFORMATION
     ////////////////////////////////////////////////////////////////////////
 
-    inline VertexElement* getNeighbor(uint i) const
+    inline VertexElement* getNeighbor(uint i) const noexcept
     { return pNbrs[i]; }
 
-    inline VertexElement** getNeighbours() const
+    inline VertexElement** getNeighbours() const noexcept
     { return pNbrs; }
 
-    inline uint nbrIdx(uint i) const
+    inline uint nbrIdx(uint i) const noexcept
     { return pNbrs[i]->getIDX(); }
 
-    inline uint getNCon() const
+    inline uint getNCon() const noexcept
     { return pNCon; }
 
-    inline double getCC(uint i) const
+    inline double getCC(uint i) const noexcept
     { return pCcs[i]; }
 
     ////////////////////////////////////////////////////////////////////////

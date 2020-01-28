@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -75,8 +75,8 @@ swmd::SReac::SReac(ssolver::SReacdef * srdef, swmd::Patch * patch)
 , pUpdVec()
 , pCcst()
 {
-    AssertLog(pSReacdef != 0);
-    AssertLog(pPatch != 0);
+    AssertLog(pSReacdef != nullptr);
+    AssertLog(pPatch != nullptr);
 
     uint lsridx = pPatch->def()->sreacG2L(defsr()->gidx());
     double kcst = pPatch->def()->kcst(lsridx);
@@ -84,14 +84,14 @@ swmd::SReac::SReac(ssolver::SReacdef * srdef, swmd::Patch * patch)
     if (defsr()->surf_surf() == false)
     {
         double vol;
-        if (defsr()->inside() == true)
+        if (defsr()->inside())
         {
-            AssertLog(pPatch->iComp() != 0);
+            AssertLog(pPatch->iComp() != nullptr);
             vol = pPatch->iComp()->def()->vol();
         }
         else
         {
-            AssertLog(pPatch->oComp() != 0);
+            AssertLog(pPatch->oComp() != nullptr);
             vol = pPatch->oComp()->def()->vol();
         }
 
@@ -109,21 +109,20 @@ swmd::SReac::SReac(ssolver::SReacdef * srdef, swmd::Patch * patch)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmd::SReac::~SReac()
-= default;
+swmd::SReac::~SReac() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void swmd::SReac::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&pCcst, sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pCcst), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void swmd::SReac::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&pCcst, sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pCcst), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -140,64 +139,36 @@ void swmd::SReac::setupDeps()
 {
     Comp * icomp = pPatch->iComp();
     Comp * ocomp = pPatch->oComp();
-
-    ssolver::gidxTVecCI s_beg = defsr()->beginUpdColl_S();
-    ssolver::gidxTVecCI s_end = defsr()->endUpdColl_S();
-    ssolver::gidxTVecCI i_beg = defsr()->beginUpdColl_I();
-    ssolver::gidxTVecCI i_end = defsr()->endUpdColl_I();
-    ssolver::gidxTVecCI o_beg = defsr()->beginUpdColl_O();
-    ssolver::gidxTVecCI o_end = defsr()->endUpdColl_O();
-
     SchedIDXSet updset;
 
-    KProcPVecCI kprocend = pPatch->kprocEnd();
-    for (KProcPVecCI k = pPatch->kprocBegin(); k != kprocend; ++k)
-    {
-        for (ssolver::gidxTVecCI spec = s_beg; spec != s_end; ++spec)
-        {
-            if ((*k)->depSpecPatch(*spec, pPatch) == true)
-                updset.insert((*k)->schedIDX());
+    for (auto const& k : pPatch->kprocs()) {
+        for (auto const& spec : defsr()->updColl_S()) {
+            if (k->depSpecPatch(spec, pPatch))
+                updset.insert(k->schedIDX());
         }
     }
 
     if (icomp != nullptr)
     {
-        kprocend = icomp->kprocEnd();
-        for (KProcPVecCI k = icomp->kprocBegin(); k != kprocend; ++k)
-        {
-            for (ssolver::gidxTVecCI spec = i_beg; spec != i_end; ++spec)
-            {
-                if ((*k)->depSpecComp(*spec, icomp) == true)
-                    updset.insert((*k)->schedIDX());
+        for (auto const& k : icomp->kprocs()) {
+            for (auto const& spec : defsr()->updColl_I()) {
+                if (k->depSpecComp(spec, icomp))
+                    updset.insert(k->schedIDX());
             }
         }
-
-        PatchPVecCI ip_bgn = icomp->beginIPatches();
-        PatchPVecCI ip_end = icomp->endIPatches();
-        for (PatchPVecCI ip = ip_bgn; ip != ip_end; ++ip)
-        {
-            kprocend = (*ip)->kprocEnd();
-            for (KProcPVecCI k = (*ip)->kprocBegin(); k != kprocend; ++k)
-            {
-                for (ssolver::gidxTVecCI spec = i_beg; spec != i_end; ++spec)
-                {
-                    if ((*k)->depSpecComp(*spec, icomp) == true)
-                        updset.insert((*k)->schedIDX());
+        for (auto const& ip : icomp->ipatches()) {
+            for (auto const& k : ip->kprocs()) {
+                for (auto const& spec : defsr()->updColl_I()) {
+                    if (k->depSpecComp(spec, icomp))
+                        updset.insert(k->schedIDX());
                 }
             }
         }
-
-        PatchPVecCI op_bgn = icomp->beginOPatches();
-        PatchPVecCI op_end = icomp->endOPatches();
-        for (PatchPVecCI op = op_bgn; op != op_end; ++op)
-        {
-            kprocend = (*op)->kprocEnd();
-            for (KProcPVecCI k = (*op)->kprocBegin(); k != kprocend; ++k)
-            {
-                for (ssolver::gidxTVecCI spec = i_beg; spec != i_end; ++spec)
-                {
-                    if ((*k)->depSpecComp(*spec, icomp) == true)
-                        updset.insert((*k)->schedIDX());
+        for (auto const&  op : icomp->opatches()) {
+            for (auto const& k : op->kprocs()) {
+                for (auto const& spec : defsr()->updColl_I()) {
+                    if (k->depSpecComp(spec, icomp))
+                        updset.insert(k->schedIDX());
                 }
             }
         }
@@ -205,42 +176,27 @@ void swmd::SReac::setupDeps()
 
     if (ocomp != nullptr)
     {
-        kprocend = ocomp->kprocEnd();
-        for (KProcPVecCI k = ocomp->kprocBegin(); k != kprocend; ++k)
-        {
-            for (ssolver::gidxTVecCI spec = o_beg; spec != o_end; ++spec)
-            {
-                if ((*k)->depSpecComp(*spec, ocomp) == true)
-                    updset.insert((*k)->schedIDX());
+        for (auto const& k : ocomp->kprocs()) {
+            for (auto const& spec : defsr()->updColl_O()) {
+                if (k->depSpecComp(spec, ocomp))
+                    updset.insert(k->schedIDX());
             }
         }
 
-        PatchPVecCI ip_bgn = ocomp->beginIPatches();
-        PatchPVecCI ip_end = ocomp->endIPatches();
-        for (PatchPVecCI ip = ip_bgn; ip != ip_end; ++ip)
-        {
-            kprocend = (*ip)->kprocEnd();
-            for (KProcPVecCI k = (*ip)->kprocBegin(); k != kprocend; ++k)
-            {
-                for (ssolver::gidxTVecCI spec = o_beg; spec != o_end; ++spec)
-                {
-                    if ((*k)->depSpecComp(*spec, ocomp) == true)
-                        updset.insert((*k)->schedIDX());
+        for (auto const& ip : ocomp->ipatches()) {
+            for (auto const& k : ip->kprocs()) {
+                for (auto const& spec : defsr()->updColl_O()) {
+                    if (k->depSpecComp(spec, ocomp))
+                        updset.insert(k->schedIDX());
                 }
             }
         }
 
-        PatchPVecCI op_bgn = ocomp->beginOPatches();
-        PatchPVecCI op_end = ocomp->endOPatches();
-        for (PatchPVecCI op = op_bgn; op != op_end; ++op)
-        {
-            kprocend = (*op)->kprocEnd();
-            for (KProcPVecCI k = (*op)->kprocBegin(); k != kprocend; ++k)
-            {
-                for (ssolver::gidxTVecCI spec = o_beg; spec != o_end; ++spec)
-                {
-                    if ((*k)->depSpecComp(*spec, ocomp) == true)
-                        updset.insert((*k)->schedIDX());
+        for (auto const& op : ocomp->opatches()) {
+            for (auto const& k : op->kprocs()) {
+                for (auto const& spec : defsr()->updColl_O()) {
+                    if (k->depSpecComp(spec, ocomp))
+                        updset.insert(k->schedIDX());
                 }
             }
         }
@@ -293,9 +249,9 @@ void swmd::SReac::resetCcst()
     if (defsr()->surf_surf() == false)
     {
         double vol;
-        if (defsr()->inside() == true)
+        if (defsr()->inside())
         {
-            AssertLog(pPatch->iComp() != 0);
+            AssertLog(pPatch->iComp() != nullptr);
             vol = pPatch->iComp()->def()->vol();
         }
         else
@@ -384,7 +340,7 @@ double swmd::SReac::rate() const
             uint lhs = lhs_i_vec[s];
             if (lhs == 0) { continue;
 }
-            uint cnt = static_cast<double>(cnt_i_vec[s]);
+            uint cnt = cnt_i_vec[s];
             if (lhs > cnt)
             {
                 return 0.0;
@@ -411,7 +367,6 @@ double swmd::SReac::rate() const
                 default:
                 {
                     AssertLog(0);
-                    return 0.0;
                 }
             }
         }
@@ -426,7 +381,7 @@ double swmd::SReac::rate() const
             uint lhs = lhs_o_vec[s];
             if (lhs == 0) { continue;
 }
-            uint cnt = static_cast<double>(cnt_o_vec[s]);
+            uint cnt = cnt_o_vec[s];
             if (lhs > cnt)
             {
                 return 0.0;
@@ -452,8 +407,7 @@ double swmd::SReac::rate() const
                 }
                 default:
                 {
-                    AssertLog(0);
-                    return 0.0;
+                    AssertLog(false);
                 }
             }
         }
@@ -476,7 +430,7 @@ std::vector<uint> const & swmd::SReac::apply()
 
     for (uint s = 0; s < nspecs_s; ++s)
     {
-        if (pdef->clamped(s) == true) continue;
+        if (pdef->clamped(s)) continue;
         int upd = upd_s_vec[s];
         if (upd == 0) continue;
         int nc = static_cast<int>(cnt_s_vec[s]) + upd;
@@ -486,14 +440,14 @@ std::vector<uint> const & swmd::SReac::apply()
 
     // Update inner comp pools.
     Comp * icomp = pPatch->iComp();
-    if (icomp != 0)
+    if (icomp != nullptr)
     {
         int * upd_i_vec = pdef->sreac_upd_I_bgn(lidx);
         double * cnt_i_vec = icomp->def()->pools();
         uint nspecs_i = pdef->countSpecs_I();
         for (uint s = 0; s < nspecs_i; ++s)
         {
-            if (icomp->def()->clamped(s) == true) continue;
+            if (icomp->def()->clamped(s)) continue;
             int upd = upd_i_vec[s];
             if (upd == 0) continue;
             int nc = static_cast<int>(cnt_i_vec[s]) + upd;
@@ -504,14 +458,14 @@ std::vector<uint> const & swmd::SReac::apply()
 
     // Update outer comp pools.
     Comp * ocomp = pPatch->oComp();
-    if (ocomp != 0)
+    if (ocomp != nullptr)
     {
         int * upd_o_vec = pdef->sreac_upd_O_bgn(lidx);
         double * cnt_o_vec = ocomp->def()->pools();
         uint nspecs_o = pdef->countSpecs_O();
         for (uint s = 0; s < nspecs_o; ++s)
         {
-            if (ocomp->def()->clamped(s) == true) continue;
+            if (ocomp->def()->clamped(s)) continue;
             int upd = upd_o_vec[s];
             if (upd == 0) continue;
             int nc = static_cast<int>(cnt_o_vec[s]) + upd;

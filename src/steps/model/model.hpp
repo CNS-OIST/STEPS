@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -213,7 +213,7 @@ public:
     /// Count the species in the Model object.
     ///
     /// \return Number of species.
-    inline uint _countSpecs() const
+    inline uint _countSpecs() const noexcept
     { return pSpecs.size(); }
 
     /// Return a species with index gidx.
@@ -225,7 +225,7 @@ public:
     /// Count the channels in the Model object.
     ///
     /// \return Number of channels.
-    inline uint _countChans() const
+    inline uint _countChans() const noexcept
     { return pChans.size(); }
 
     /// Return a channel with index gidx.

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -68,11 +68,6 @@ using steps::util::checkID;
 Surfsys::Surfsys(string const & id, Model * model)
 : pID(id)
 , pModel(model)
-, pSReacs()
-, pVDepTrans()
-, pVDepSReacs()
-, pOhmicCurrs()
-, pGHKcurrs()
 {
     if (pModel == nullptr)
     {
@@ -96,7 +91,7 @@ Surfsys::~Surfsys()
 
 void Surfsys::setID(string const & id)
 {
-    AssertLog(pModel != 0);
+    AssertLog(pModel != nullptr);
     if (id == pID) return;
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
@@ -111,46 +106,24 @@ void Surfsys::setID(string const & id)
 
 void Surfsys::_handleSelfDelete()
 {
-    std::vector<steps::model::SReac *> allsreacs = getAllSReacs();
-    SReacPVecCI sreac_end = allsreacs.end();
-    for(SReacPVecCI sreac = allsreacs.begin(); sreac != sreac_end; ++sreac)
-    {
-        delete(*sreac);
+    for (auto const& sreac: getAllSReacs()) {
+        delete sreac;
+    }
+    for (auto const& vdtrans: getAllVDepTrans()) {
+        delete vdtrans;
+    }
+    for (auto const& vdsreac: getAllVDepSReacs()) {
+        delete vdsreac;
+    }
+    for (auto const& oc: getAllOhmicCurrs()) {
+        delete oc;
+    }
+    for (auto const& ghk: getAllGHKcurrs()) {
+        delete ghk;
     }
 
-    std::vector<steps::model::VDepTrans *> allvdeptrans = getAllVDepTrans();
-    VDepTransPVecCI vdtrans_end = allvdeptrans.end();
-    for(VDepTransPVecCI vdtrans = allvdeptrans.begin(); vdtrans != vdtrans_end; ++vdtrans)
-    {
-        delete(*vdtrans);
-    }
-
-    std::vector<steps::model::VDepSReac *> allvdepsreacs = getAllVDepSReacs();
-    VDepSReacPVecCI vdsreac_end = allvdepsreacs.end();
-    for(VDepSReacPVecCI vdsreac = allvdepsreacs.begin(); vdsreac != vdsreac_end; ++vdsreac)
-    {
-        delete(*vdsreac);
-    }
-
-    std::vector<steps::model::OhmicCurr *> allocurrs = getAllOhmicCurrs();
-    OhmicCurrPVecCI oc_end = allocurrs.end();
-    for(OhmicCurrPVecCI oc = allocurrs.begin(); oc != oc_end; ++oc)
-    {
-        delete(*oc);
-    }
-
-    std::vector<steps::model::GHKcurr *> allghks = getAllGHKcurrs();
-    GHKcurrPVecCI ghk_end = allghks.end();
-    for(GHKcurrPVecCI ghk = allghks.begin(); ghk != ghk_end; ++ghk)
-    {
-        delete(*ghk);
-    }
-
-    std::vector<steps::model::Diff *> alldiffs = getAllDiffs();
-    DiffPVecCI diff_end = alldiffs.end();
-    for (DiffPVecCI diff = alldiffs.begin(); diff != diff_end; ++diff)
-    {
-        delete(*diff);
+    for (auto const& diff: getAllDiffs()) {
+        delete diff;
     }
 
     pModel->_handleSurfsysDel(this);
@@ -163,14 +136,14 @@ void Surfsys::_handleSelfDelete()
 
     pDiffs.clear();
 
-    pModel = 0;
+    pModel = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 SReac * Surfsys::getSReac(string const & id) const
 {
-    SReacPMapCI sreac = pSReacs.find(id);
+    auto sreac = pSReacs.find(id);
     if (sreac == pSReacs.end())
     {
         ostringstream os;
@@ -178,7 +151,7 @@ SReac * Surfsys::getSReac(string const & id) const
         "reaction with name '" << id << "'";
         ArgErrLog(os.str());
     }
-    AssertLog(sreac->second != 0);
+    AssertLog(sreac->second != nullptr);
     return sreac->second;
 }
 
@@ -187,18 +160,17 @@ SReac * Surfsys::getSReac(string const & id) const
 void Surfsys::delSReac(string const & id)
 {
     SReac * sreac = getSReac(id);
-    delete(sreac);
+    delete sreac;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 std::vector<SReac *> Surfsys::getAllSReacs() const
 {
-    SReacPVec sreacs = SReacPVec();
-    SReacPMapCI sr_end = pSReacs.end();
-    for (SReacPMapCI sr = pSReacs.begin(); sr != sr_end; ++sr)
-    {
-        sreacs.push_back(sr->second);
+    SReacPVec sreacs;
+    sreacs.reserve(pSReacs.size());
+    for (auto const& sr: pSReacs) {
+        sreacs.push_back(sr.second);
     }
     return sreacs;
 }
@@ -207,14 +179,14 @@ std::vector<SReac *> Surfsys::getAllSReacs() const
 
 Diff * Surfsys::getDiff(string const & id) const
 {
-    DiffPMapCI diff = pDiffs.find(id);
+    auto diff = pDiffs.find(id);
     if (diff == pDiffs.end())
     {
         ostringstream os;
         os << "Model does not contain diffusion with name '" << id << "'";
         ArgErrLog(os.str());
     }
-    AssertLog(diff->second != 0);
+    AssertLog(diff->second != nullptr);
     return diff->second;
 }
 
@@ -224,147 +196,94 @@ void Surfsys::delDiff(string const & id)
 {
     Diff * diff = getDiff(id);
     // delete diff object since it is owned by c++, not python
-    delete(diff);
+    delete diff;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 std::vector<Diff *> Surfsys::getAllDiffs() const
 {
-    DiffPVec diffs = DiffPVec();
-    DiffPMapCI d_end = pDiffs.end();
-    for (DiffPMapCI d = pDiffs.begin(); d != d_end; ++d)
-    {
-        diffs.push_back(d->second);
+    DiffPVec diffs;
+    diffs.reserve(pDiffs.size());
+    for (auto const& d: pDiffs) {
+        diffs.push_back(d.second);
     }
     return diffs;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<Spec *> Surfsys::getAllSpecs() const
+SpecPVec Surfsys::getAllSpecs() const
 {
     SpecPVec specs = SpecPVec();
     bool first_occ = true;
-    bool first_occ_dst = true;
-    bool first_occ_src = true;
-
-    SReacPVec sreacs = getAllSReacs();
-    SReacPVecCI sreac_end = sreacs.end();
-    for (SReacPVecCI sreac = sreacs.begin(); sreac != sreac_end; ++sreac)
-    {
-        SpecPVec sr_specs = (*sreac)->getAllSpecs();
-        SpecPVecCI sr_spec_end = sr_specs.end();
-        for (SpecPVecCI sr_spec = sr_specs.begin();
-             sr_spec != sr_spec_end; ++sr_spec)
-        {
+    for (auto const& sreac: getAllSReacs()) {
+        for (auto const& sr_spec: sreac->getAllSpecs()) {
             first_occ = true;
-            SpecPVecCI allspecs_end = specs.end();
-            for (SpecPVecCI allspecs = specs.begin();
-                allspecs != allspecs_end; ++allspecs)
-            {
-                if ((*sr_spec) == (*allspecs))
-                {
+            for (auto const& allspecs: specs) {
+                if (sr_spec == allspecs) {
                     first_occ = false;
                     break;
                 }
             }
-            if (first_occ == true) specs.push_back(*sr_spec);
+            if (first_occ) specs.push_back(sr_spec);
         }
     }
 
-    VDepSReacPVec vdepsreacs = getAllVDepSReacs();
-    VDepSReacPVecCI vdepsreac_end = vdepsreacs.end();
-    for (VDepSReacPVecCI vdepsreac = vdepsreacs.begin(); vdepsreac != vdepsreac_end; ++vdepsreac)
-    {
-        SpecPVec sr_specs = (*vdepsreac)->getAllSpecs();
-        SpecPVecCI sr_spec_end = sr_specs.end();
-        for (SpecPVecCI sr_spec = sr_specs.begin();
-             sr_spec != sr_spec_end; ++sr_spec)
-        {
-            first_occ = true;
-            SpecPVecCI allspecs_end = specs.end();
-            for (SpecPVecCI allspecs = specs.begin();
-                allspecs != allspecs_end; ++allspecs)
-            {
-                if ((*sr_spec) == (*allspecs))
-                {
+    for (auto const& vdepsreac : getAllVDepSReacs()) {
+        for (auto const& sr_spec: vdepsreac->getAllSpecs()) {
+            for (auto const& allspecs: specs) {
+                if (sr_spec == allspecs) {
                     first_occ = false;
                     break;
                 }
             }
-            if (first_occ == true) specs.push_back(*sr_spec);
+            if (first_occ) specs.push_back(sr_spec);
         }
     }
 
-    VDepTransPVec vdeptranss = getAllVDepTrans();
-    VDepTransPVecCI vdeptrans_end = vdeptranss.end();
-    for (VDepTransPVecCI vdeptrans = vdeptranss.begin(); vdeptrans != vdeptrans_end; ++vdeptrans)
-    {
-        SpecP dst = (*vdeptrans)->getDst();
-        SpecP src = (*vdeptrans)->getSrc();
-        first_occ_dst = true;
-        first_occ_src = true;
-        SpecPVecCI allspecs_end = specs.end();
-        for (SpecPVecCI allspecs = specs.begin();
-                allspecs != allspecs_end; ++allspecs)
-        {
-            if (dst == (*allspecs))
-            {
+    for (auto const& vdeptrans: getAllVDepTrans()) {
+        SpecP dst = vdeptrans->getDst();
+        SpecP src = vdeptrans->getSrc();
+        bool first_occ_dst = true;
+        bool first_occ_src = true;
+        for (auto const& allspecs: specs) {
+            if (dst == allspecs) {
                 first_occ_dst = false;
-                if (first_occ_src == false) break;
-            }
-            else if (src == (*allspecs))
-            {
+                if (!first_occ_src) break;
+            } else if (src == allspecs) {
                 first_occ_src = false;
-                if (first_occ_dst == false) break;
+                if (!first_occ_dst) break;
             }
         }
-        if (first_occ_dst == true) specs.push_back(dst);
-        if (first_occ_src == true) specs.push_back(src);
+        if (first_occ_dst) specs.push_back(dst);
+        if (first_occ_src) specs.push_back(src);
     }
 
-    GHKcurrPVec ghks = getAllGHKcurrs();
-    GHKcurrPVecCI ghk_end = ghks.end();
-    for(GHKcurrPVecCI ghk = ghks.begin(); ghk != ghk_end; ++ghk)
+    for (auto const& ghk: getAllGHKcurrs())
     {
-        SpecP ghk_spec = (*ghk)->getIon();
+        SpecP ghk_spec = ghk->getIon();
 
         first_occ = true;
-        SpecPVecCI allspecs_end = specs.end();
-        for (SpecPVecCI allspecs = specs.begin();
-            allspecs != allspecs_end; ++allspecs)
-        {
-            if (ghk_spec == (*allspecs))
-            {
+        for (auto const& allspecs: specs) {
+            if (ghk_spec == allspecs) {
                 first_occ = false;
                 break;
             }
         }
-        if (first_occ == true) specs.push_back(ghk_spec);
+        if (first_occ) specs.push_back(ghk_spec);
     }
 
-    DiffPVec diffs = getAllDiffs();
-    DiffPVecCI diff_end = diffs.end();
-    for(DiffPVecCI diff = diffs.begin();diff != diff_end; ++diff)
-    {
-        SpecPVec d_specs = (*diff)->getAllSpecs();
-        SpecPVecCI d_spec_end = d_specs.end();
-        for (SpecPVecCI d_spec = d_specs.begin();
-            d_spec != d_spec_end; ++d_spec)
-        {
+    for (auto const& diff: getAllDiffs()) {
+        for (auto const& d_spec: diff->getAllSpecs()) {
             first_occ = true;
-            SpecPVecCI allspecs_end = specs.end();
-            for (SpecPVecCI allspecs = specs.begin();
-                allspecs != allspecs_end; ++allspecs)
-            {
-                if ((*d_spec) == (*allspecs))
-                {
+            for (auto const& allspecs: specs) {
+                if (d_spec == allspecs) {
                     first_occ = false;
                     break;
                 }
             }
-            if (first_occ == true) specs.push_back(*d_spec);
+            if (first_occ) specs.push_back(d_spec);
         }
     }
 
@@ -397,9 +316,9 @@ void Surfsys::_handleSReacIDChange(string const & o, string const & n)
     _checkSReacID(n);
 
     SReac * sr = sr_old->second;
-    AssertLog(sr != 0);
+    AssertLog(sr != nullptr);
     pSReacs.erase(sr->getID());
-    pSReacs.insert(SReacPMap::value_type(n,sr));
+    pSReacs.emplace(n, sr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -443,8 +362,8 @@ void Surfsys::_handleDiffIDChange(string const & o, string const & n)
     _checkDiffID(n);
 
     Diff * d = d_old->second;
-    AssertLog(d != 0);
-    pDiffs.erase(d->getID());
+    AssertLog(d != nullptr);
+    AssertLog(pDiffs.erase(d->getID()) == 1);
     pDiffs.insert(DiffPMap::value_type(n,d));
 }
 
@@ -469,133 +388,94 @@ void Surfsys::_handleDiffDel(Diff * diff)
 
 void Surfsys::_handleSpecDelete(Spec * spec)
 {
-    SReacPMapCI sreac_end = pSReacs.end();
-    std::vector<std::string> sreacs_del = std::vector<std::string>();
-    for (SReacPMapCI sreac = pSReacs.begin(); sreac != sreac_end; ++sreac)
     {
-        SpecPVec specs = (sreac->second->getAllSpecs());
-        SpecPVecCI sr_spec_end = specs.end();
-        for (SpecPVecCI sr_spec = specs.begin();
-             sr_spec != sr_spec_end; ++sr_spec)
-        {
-            if ((*sr_spec)== spec)
-            {
-                sreacs_del.push_back(sreac->second->getID());
-                break;
+        std::vector<std::string> sreacs_del;
+        for (auto const& sreac: pSReacs) {
+            SpecPVec specs = sreac.second->getAllSpecs();
+            for (auto const& sr_spec: specs) {
+                if (sr_spec == spec) {
+                    sreacs_del.push_back(sreac.second->getID());
+                    break;
+                }
             }
         }
-    }
-    std::vector<std::string>::const_iterator sr_del_end = sreacs_del.end();
-    for (std::vector<std::string>::const_iterator sr_del = sreacs_del.begin();
-         sr_del != sr_del_end; ++sr_del)
-    {
-        delSReac(*sr_del);
-    }
-
-    GHKcurrPMapCI ghk_end = pGHKcurrs.end();
-    std::vector<std::string> ghks_del = std::vector<std::string>();
-    for (GHKcurrPMapCI ghk = pGHKcurrs.begin(); ghk != ghk_end; ++ghk)
-    {
-        SpecP ion = ghk->second->getIon();
-        if (ion == spec)
-        {
-            ghks_del.push_back(ghk->second->getID());
-        }
-        // spec may be a channel state
-        SpecP cstate = ghk->second->getChanState();
-        if (cstate == spec)
-        {
-            ghks_del.push_back(ghk->second->getID());
+        for (auto const& sr_del: sreacs_del) {
+            delSReac(sr_del);
         }
     }
-    std::vector<std::string>::const_iterator ghk_del_end = ghks_del.end();
-    for (std::vector<std::string>::const_iterator ghkcurr_del = ghks_del.begin();
-         ghkcurr_del != ghk_del_end; ++ghkcurr_del)
     {
-        delGHKcurr(*ghkcurr_del);
-    }
-
-    // spec may also be a derived ChanState object -> need to delete any
-    // vdeptrans and ohmic currents that include this channel state
-    OhmicCurrPMapCI oc_end = pOhmicCurrs.end();
-    std::vector<std::string> oc_del = std::vector<std::string>();
-    for (OhmicCurrPMapCI oc = pOhmicCurrs.begin(); oc != oc_end; ++oc)
-    {
-        SpecP cstate = oc->second->getChanState();
-        if (cstate == spec)
-        {
-            oc_del.push_back(oc->second->getID());
-        }
-    }
-    std::vector<std::string>::const_iterator oc_del_end = oc_del.end();
-    for (std::vector<std::string>::const_iterator occurr_del = oc_del.begin();
-         occurr_del != oc_del_end; ++occurr_del)
-    {
-        delOhmicCurr(*occurr_del);
-    }
-
-    VDepTransPMapCI vdt_end = pVDepTrans.end();
-    std::vector<std::string> vdt_del = std::vector<std::string>();
-    for(VDepTransPMapCI vdt = pVDepTrans.begin(); vdt != vdt_end; ++vdt)
-    {
-        SpecP dst = vdt->second->getDst();
-        SpecP src = vdt->second->getSrc();
-        if(dst == spec or src == spec)
-        {
-            vdt_del.push_back(vdt->second->getID());
-        }
-    }
-    std::vector<std::string>::const_iterator vdt_del_end = vdt_del.end();
-    for(std::vector<std::string>::const_iterator vdept_del = vdt_del.begin();
-        vdept_del != vdt_del_end; ++vdept_del)
-    {
-        delVDepTrans(*vdept_del);
-    }
-
-    VDepSReacPMapCI vdepsreac_end = pVDepSReacs.end();
-    std::vector<std::string> vdepsreacs_del = std::vector<std::string>();
-    for (VDepSReacPMapCI vdepsreac = pVDepSReacs.begin(); vdepsreac != vdepsreac_end; ++vdepsreac)
-    {
-        SpecPVec specs = (vdepsreac->second->getAllSpecs());
-        SpecPVecCI sr_spec_end = specs.end();
-        for (SpecPVecCI sr_spec = specs.begin();
-             sr_spec != sr_spec_end; ++sr_spec)
-        {
-            if ((*sr_spec) == spec)
-            {
-                vdepsreacs_del.push_back(vdepsreac->second->getID());
-                break;
+        std::vector<std::string> ghks_del;
+        for (auto const& ghk: pGHKcurrs) {
+            SpecP ion = ghk.second->getIon();
+            if (ion == spec) {
+                ghks_del.push_back(ghk.second->getID());
+            }
+            // spec may be a channel state
+            SpecP cstate = ghk.second->getChanState();
+            if (cstate == spec) {
+                ghks_del.push_back(ghk.second->getID());
             }
         }
-    }
-    std::vector<std::string>::const_iterator vdsr_del_end = vdepsreacs_del.end();
-    for (std::vector<std::string>::const_iterator vdsr_del = vdepsreacs_del.begin();
-         vdsr_del != vdsr_del_end; ++vdsr_del)
-    {
-        delVDepSReac(*vdsr_del);
-    }
-
-    std::vector<std::string> diffs_del = std::vector<std::string>();
-    DiffPMapCI diff_end = pDiffs.end();
-    for (DiffPMapCI diff = pDiffs.begin(); diff != diff_end; ++diff)
-    {
-        SpecPVec specs = (diff->second->getAllSpecs());
-        SpecPVecCI d_spec_end = specs.end();
-        for (SpecPVecCI d_spec = specs.begin();
-             d_spec != d_spec_end; ++d_spec)
-        {
-            if ((*d_spec) == spec)
-            {
-                diffs_del.push_back(diff->second->getID());
-                break;
-            }
+        for (auto const& ghk: ghks_del) {
+            delGHKcurr(ghk);
         }
     }
-    std::vector<std::string>::const_iterator d_del_end = diffs_del.end();
-    for (std::vector<std::string>::const_iterator d_del = diffs_del.begin();
-         d_del != d_del_end; ++d_del)
     {
-        delDiff(*d_del);
+        // spec may also be a derived ChanState object -> need to delete any
+        // vdeptrans and ohmic currents that include this channel state
+        std::vector<std::string> oc_del;
+        for (auto const& oc: pOhmicCurrs) {
+            SpecP cstate = oc.second->getChanState();
+            if (cstate == spec) {
+                oc_del.push_back(cstate->getID());
+            }
+        }
+        for (auto const& occurr_del: oc_del) {
+            delOhmicCurr(occurr_del);
+        }
+    }
+    {
+        std::vector<std::string> vdt_del;
+        for (auto const& vdt: pVDepTrans) {
+            SpecP dst = vdt.second->getDst();
+            SpecP src = vdt.second->getSrc();
+            if (dst == spec or src == spec) {
+                vdt_del.push_back(vdt.second->getID());
+            }
+        }
+        for (auto const& vdept_del: vdt_del)  {
+            delVDepTrans(vdept_del);
+        }
+    }
+    {
+        std::vector<std::string> vdepsreacs_del;
+        for (auto const& vdepsreac: pVDepSReacs) {
+            SpecPVec specs = vdepsreac.second->getAllSpecs();
+            for (auto const& sr_spec: specs) {
+                if (sr_spec == spec) {
+                    vdepsreacs_del.push_back(vdepsreac.second->getID());
+                    break;
+                }
+            }
+        }
+        for (auto const& vdsr_del: vdepsreacs_del) {
+            delVDepSReac(vdsr_del);
+        }
+    }
+    {
+        std::vector<std::string> diffs_del;
+        for (auto const& diff: pDiffs) {
+            SpecPVec specs = diff.second->getAllSpecs();
+            for (auto const& d_spec: specs) {
+                if (d_spec == spec) {
+                    diffs_del.push_back(diff.second->getID());
+                    break;
+                }
+            }
+        }
+        for (auto const& d_del: diffs_del) {
+            delDiff(d_del);
+        }
     }
 }
 
@@ -603,55 +483,41 @@ void Surfsys::_handleSpecDelete(Spec * spec)
 
 void Surfsys::_handleChanDelete(Chan * chan)
 {
-    VDepTransPMapCI vdtrans_end = pVDepTrans.end();
-    std::vector<std::string> vdtrans_del = std::vector<std::string>();
-    for (VDepTransPMapCI vdtrans = pVDepTrans.begin(); vdtrans != vdtrans_end; ++vdtrans)
     {
-        ChanP chans = (vdtrans->second->getChan());
-        if (chans == chan)
-        {
-            vdtrans_del.push_back(vdtrans->second->getID());
+        std::vector<std::string> vdtrans_del;
+        for (auto const &vdtrans: pVDepTrans) {
+            ChanP chans = vdtrans.second->getChan();
+            if (chans == chan) {
+                vdtrans_del.push_back(vdtrans.second->getID());
+            }
+        }
+        for (auto const &vd_del: vdtrans_del) {
+            delVDepTrans(vd_del);
         }
     }
-    std::vector<std::string>::const_iterator vd_del_end = vdtrans_del.end();
-    for (std::vector<std::string>::const_iterator vd_del = vdtrans_del.begin();
-         vd_del != vd_del_end; ++vd_del)
     {
-        delVDepTrans(*vd_del);
-    }
-
-    OhmicCurrPMapCI ohmcurr_end = pOhmicCurrs.end();
-    std::vector<std::string> ohmcurr_del = std::vector<std::string>();
-    for (OhmicCurrPMapCI ohmcurr = pOhmicCurrs.begin(); ohmcurr != ohmcurr_end; ++ohmcurr)
-    {
-        ChanP chans = (ohmcurr->second->getChanState()->getChan());
-        if (chans == chan)
-        {
-            ohmcurr_del.push_back(ohmcurr->second->getID());
+        std::vector<std::string> ohmcurr_del;
+        for (auto const &ohmcurr: pOhmicCurrs) {
+            ChanP chans = ohmcurr.second->getChanState()->getChan();
+            if (chans == chan) {
+                ohmcurr_del.push_back(ohmcurr.second->getID());
+            }
+        }
+        for (auto const& oc_del: ohmcurr_del) {
+            delOhmicCurr(oc_del);
         }
     }
-    std::vector<std::string>::const_iterator oc_del_end = ohmcurr_del.end();
-    for (std::vector<std::string>::const_iterator oc_del = ohmcurr_del.begin();
-         oc_del != oc_del_end; ++oc_del)
     {
-        delOhmicCurr(*oc_del);
-    }
-
-    GHKcurrPMapCI ghkcurr_end = pGHKcurrs.end();
-    std::vector<std::string> ghkcurr_del = std::vector<std::string>();
-    for (GHKcurrPMapCI ghkcurr = pGHKcurrs.begin(); ghkcurr != ghkcurr_end; ++ghkcurr)
-    {
-        ChanP chans = (ghkcurr->second->getChanState()->getChan());
-        if (chans == chan)
-        {
-            ghkcurr_del.push_back(ghkcurr->second->getID());
+        std::vector<std::string> ghkcurr_del;
+        for (auto const& ghkcurr: pGHKcurrs) {
+            ChanP chans = ghkcurr.second->getChanState()->getChan();
+            if (chans == chan) {
+                ghkcurr_del.push_back(ghkcurr.second->getID());
+            }
         }
-    }
-    std::vector<std::string>::const_iterator ghk_del_end = ghkcurr_del.end();
-    for (std::vector<std::string>::const_iterator ghk_del = ghkcurr_del.begin();
-         ghk_del != ghk_del_end; ++ghk_del)
-    {
-        delGHKcurr(*ghk_del);
+        for (auto const& ghk_del: ghkcurr_del) {
+            delGHKcurr(ghk_del);
+        }
     }
 }
 
@@ -659,7 +525,7 @@ void Surfsys::_handleChanDelete(Chan * chan)
 
 VDepTrans * Surfsys::getVDepTrans(std::string const & id) const
 {
-    VDepTransPMapCI vdeptrans = pVDepTrans.find(id);
+    auto vdeptrans = pVDepTrans.find(id);
     if (vdeptrans == pVDepTrans.end())
     {
         ostringstream os;
@@ -667,7 +533,7 @@ VDepTrans * Surfsys::getVDepTrans(std::string const & id) const
         "transition with name '" << id << "'";
         ArgErrLog(os.str());
     }
-    AssertLog(vdeptrans->second != 0);
+    AssertLog(vdeptrans->second != nullptr);
     return vdeptrans->second;
 }
 
@@ -676,18 +542,17 @@ VDepTrans * Surfsys::getVDepTrans(std::string const & id) const
 void Surfsys::delVDepTrans(std::string const & id)
 {
     VDepTrans * vdeptrans = getVDepTrans(id);
-    delete(vdeptrans);
+    delete vdeptrans;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 std::vector<VDepTrans *> Surfsys::getAllVDepTrans() const
 {
-    VDepTransPVec vdeptrans = VDepTransPVec();
-    VDepTransPMapCI vd_end = pVDepTrans.end();
-    for (VDepTransPMapCI vd = pVDepTrans.begin(); vd != vd_end; ++vd)
-    {
-        vdeptrans.push_back(vd->second);
+    VDepTransPVec vdeptrans;
+    vdeptrans.reserve(pVDepTrans.size());
+    for (auto const& vd: pVDepTrans) {
+        vdeptrans.push_back(vd.second);
     }
     return vdeptrans;
 }
@@ -703,7 +568,7 @@ void Surfsys::_handleVDepTransIDChange(string const & o, string const & n)
     _checkVDepTransID(n);
 
     VDepTrans * vd = vd_old->second;
-    AssertLog(vd != 0);
+    AssertLog(vd != nullptr);
     pVDepTrans.erase(vd->getID());
     pVDepTrans.insert(VDepTransPMap::value_type(n,vd));
 }
@@ -743,7 +608,7 @@ void Surfsys::_handleVDepTransDel(VDepTrans * vdeptrans)
 
 VDepSReac * Surfsys::getVDepSReac(std::string const & id) const
 {
-    VDepSReacPMapCI vdepsreac = pVDepSReacs.find(id);
+    auto vdepsreac = pVDepSReacs.find(id);
     if (vdepsreac == pVDepSReacs.end())
     {
         ostringstream os;
@@ -751,7 +616,7 @@ VDepSReac * Surfsys::getVDepSReac(std::string const & id) const
         "surface reaction with name '" << id << "'";
         ArgErrLog(os.str());
     }
-    AssertLog(vdepsreac->second != 0);
+    AssertLog(vdepsreac->second != nullptr);
     return vdepsreac->second;
 }
 
@@ -760,18 +625,17 @@ VDepSReac * Surfsys::getVDepSReac(std::string const & id) const
 void Surfsys::delVDepSReac(std::string const & id)
 {
     VDepSReac * vdepsreac = getVDepSReac(id);
-    delete(vdepsreac);
+    delete vdepsreac;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 std::vector<VDepSReac *> Surfsys::getAllVDepSReacs() const
 {
-    VDepSReacPVec vdepsreac = VDepSReacPVec();
-    VDepSReacPMapCI vd_end = pVDepSReacs.end();
-    for (VDepSReacPMapCI vd = pVDepSReacs.begin(); vd != vd_end; ++vd)
-    {
-        vdepsreac.push_back(vd->second);
+    VDepSReacPVec vdepsreac;
+    vdepsreac.reserve(pVDepSReacs.size());
+    for (auto const& vd: pVDepSReacs) {
+        vdepsreac.push_back(vd.second);
     }
     return vdepsreac;
 }
@@ -780,14 +644,14 @@ std::vector<VDepSReac *> Surfsys::getAllVDepSReacs() const
 
 void Surfsys::_handleVDepSReacIDChange(string const & o, string const & n)
 {
-    VDepSReacPMapCI vd_old = pVDepSReacs.find(o);
+    auto vd_old = pVDepSReacs.find(o);
     AssertLog(vd_old != pVDepSReacs.end());
 
     if (o==n) return;
     _checkVDepSReacID(n);
 
     VDepSReac * vd = vd_old->second;
-    AssertLog(vd != 0);
+    AssertLog(vd != nullptr);
     pVDepSReacs.erase(vd->getID());
     pVDepSReacs.insert(VDepSReacPMap::value_type(n,vd));
 }
@@ -827,14 +691,14 @@ void Surfsys::_handleVDepSReacDel(VDepSReac * vdepsreac)
 
 OhmicCurr * Surfsys::getOhmicCurr(std::string const & id) const
 {
-    OhmicCurrPMapCI ohmiccurr = pOhmicCurrs.find(id);
+    auto ohmiccurr = pOhmicCurrs.find(id);
     if (ohmiccurr == pOhmicCurrs.end())
     {
         ostringstream os;
         os << "Model does not contain ohmic current with name '" << id << "'";
         ArgErrLog(os.str());
     }
-    AssertLog(ohmiccurr->second != 0);
+    AssertLog(ohmiccurr->second != nullptr);
     return ohmiccurr->second;
 }
 
@@ -843,18 +707,17 @@ OhmicCurr * Surfsys::getOhmicCurr(std::string const & id) const
 void Surfsys::delOhmicCurr(std::string const & id)
 {
     OhmicCurr * ohmiccurr = getOhmicCurr(id);
-    delete(ohmiccurr);
+    delete ohmiccurr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 std::vector<OhmicCurr *> Surfsys::getAllOhmicCurrs() const
 {
-    OhmicCurrPVec ohmiccurr = OhmicCurrPVec();
-    OhmicCurrPMapCI oc_end = pOhmicCurrs.end();
-    for (OhmicCurrPMapCI oc = pOhmicCurrs.begin(); oc != oc_end; ++oc)
-    {
-        ohmiccurr.push_back(oc->second);
+    OhmicCurrPVec ohmiccurr;
+    ohmiccurr.reserve(pOhmicCurrs.size());
+    for (auto const& oc: pOhmicCurrs) {
+        ohmiccurr.push_back(oc.second);
     }
     return ohmiccurr;
 }
@@ -870,7 +733,7 @@ void Surfsys::_handleOhmicCurrIDChange(string const & o, string const & n)
     _checkOhmicCurrID(n);
 
     OhmicCurr * oc = oc_old->second;
-    AssertLog(oc != 0);
+    AssertLog(oc != nullptr);
     pOhmicCurrs.erase(oc->getID());
     pOhmicCurrs.insert(OhmicCurrPMap::value_type(n,oc));
 }
@@ -909,14 +772,14 @@ void Surfsys::_handleOhmicCurrDel(OhmicCurr * ohmiccurr)
 
 GHKcurr * Surfsys::getGHKcurr(std::string const & id) const
 {
-    GHKcurrPMapCI ghkcurr = pGHKcurrs.find(id);
+    auto ghkcurr = pGHKcurrs.find(id);
     if (ghkcurr == pGHKcurrs.end())
     {
         ostringstream os;
         os << "Model does not contain ghk current with name '" << id << "'";
         ArgErrLog(os.str());
     }
-    AssertLog(ghkcurr->second != 0);
+    AssertLog(ghkcurr->second != nullptr);
     return ghkcurr->second;
 }
 
@@ -925,18 +788,17 @@ GHKcurr * Surfsys::getGHKcurr(std::string const & id) const
 void Surfsys::delGHKcurr(std::string const & id)
 {
     GHKcurr * ghkcurr = getGHKcurr(id);
-    delete(ghkcurr);
+    delete ghkcurr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 std::vector<GHKcurr *> Surfsys::getAllGHKcurrs() const
 {
-    GHKcurrPVec ghkcurr = GHKcurrPVec();
-    GHKcurrPMapCI ghk_end = pGHKcurrs.end();
-    for (GHKcurrPMapCI ghk = pGHKcurrs.begin(); ghk != ghk_end; ++ghk)
-    {
-        ghkcurr.push_back(ghk->second);
+    GHKcurrPVec ghkcurr;
+    ghkcurr.reserve(pGHKcurrs.size());
+    for (auto const& ghk: pGHKcurrs) {
+        ghkcurr.push_back(ghk.second);
     }
     return ghkcurr;
 }
@@ -945,14 +807,14 @@ std::vector<GHKcurr *> Surfsys::getAllGHKcurrs() const
 
 void Surfsys::_handleGHKcurrIDChange(string const & o, string const & n)
 {
-    GHKcurrPMapCI ghk_old = pGHKcurrs.find(o);
+    auto ghk_old = pGHKcurrs.find(o);
     AssertLog(ghk_old != pGHKcurrs.end());
 
     if (o==n) return;
     _checkGHKcurrID(n);
 
     GHKcurr * ghk = ghk_old->second;
-    AssertLog(ghk != 0);
+    AssertLog(ghk != nullptr);
     pGHKcurrs.erase(ghk->getID());
     pGHKcurrs.insert(GHKcurrPMap::value_type(n,ghk));
 }
@@ -992,8 +854,8 @@ void Surfsys::_handleGHKcurrDel(GHKcurr * ghkcurr)
 SReac * Surfsys::_getSReac(uint lidx) const
 {
     AssertLog(lidx < pSReacs.size());
-    std::map<std::string, SReac *>::const_iterator sr_it = pSReacs.begin();
-    for (uint i=0; i< lidx; ++i) ++sr_it;
+    auto sr_it = pSReacs.begin();
+    std::advance(sr_it, lidx);
     return sr_it->second;
 }
 
@@ -1002,8 +864,8 @@ SReac * Surfsys::_getSReac(uint lidx) const
 VDepTrans * Surfsys::_getVDepTrans(uint lidx) const
 {
     AssertLog(lidx < pVDepTrans.size());
-    std::map<std::string, VDepTrans *>::const_iterator vd_it = pVDepTrans.begin();
-    for (uint i=0; i< lidx; ++i) ++vd_it;
+    auto vd_it = pVDepTrans.begin();
+    std::advance(vd_it, lidx);
     return vd_it->second;
 }
 
@@ -1012,8 +874,8 @@ VDepTrans * Surfsys::_getVDepTrans(uint lidx) const
 VDepSReac * Surfsys::_getVDepSReac(uint lidx) const
 {
     AssertLog(lidx < pVDepSReacs.size());
-    std::map<std::string, VDepSReac *>::const_iterator vd_it = pVDepSReacs.begin();
-    for (uint i=0; i< lidx; ++i) ++vd_it;
+    auto vd_it = pVDepSReacs.begin();
+    std::advance(vd_it, lidx);
     return vd_it->second;
 }
 
@@ -1022,8 +884,8 @@ VDepSReac * Surfsys::_getVDepSReac(uint lidx) const
 OhmicCurr * Surfsys::_getOhmicCurr(uint lidx) const
 {
     AssertLog(lidx < pOhmicCurrs.size());
-    std::map<std::string, OhmicCurr *>::const_iterator oc_it = pOhmicCurrs.begin();
-    for (uint i=0; i< lidx; ++i) ++oc_it;
+    auto oc_it = pOhmicCurrs.begin();
+    std::advance(oc_it, lidx);
     return oc_it->second;
 }
 
@@ -1032,8 +894,8 @@ OhmicCurr * Surfsys::_getOhmicCurr(uint lidx) const
 GHKcurr * Surfsys::_getGHKcurr(uint lidx) const
 {
     AssertLog(lidx < pGHKcurrs.size());
-    std::map<std::string, GHKcurr *>::const_iterator ghk_it = pGHKcurrs.begin();
-    for (uint i=0; i< lidx; ++i) ++ghk_it;
+    auto ghk_it = pGHKcurrs.begin();
+    std::advance(ghk_it, lidx);
     return ghk_it->second;
 }
 
@@ -1042,8 +904,8 @@ GHKcurr * Surfsys::_getGHKcurr(uint lidx) const
 Diff * Surfsys::_getDiff(uint lidx) const
 {
     AssertLog(lidx < pDiffs.size());
-    std::map<std::string, Diff *>::const_iterator df_it = pDiffs.begin();
-    for (uint i=0; i< lidx; ++i) ++df_it;
+    auto df_it = pDiffs.begin();
+    std::advance(df_it, lidx);
     return df_it->second;
 }
 

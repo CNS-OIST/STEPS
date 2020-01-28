@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -53,8 +53,8 @@ stex::VDepTrans::VDepTrans(ssolver::VDepTransdef * vdtdef, stex::Tri * tri)
 , pTri(tri)
 , pUpdVec()
 {
-    AssertLog(pVDepTransdef != 0);
-    AssertLog(pTri != 0);
+    AssertLog(pVDepTransdef != nullptr);
+    AssertLog(pTri != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -66,26 +66,26 @@ stex::VDepTrans::~VDepTrans()
 
 void stex::VDepTrans::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&rExtent, sizeof(uint));
-    cp_file.write((char*)&pFlags, sizeof(uint));
+    cp_file.write(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.write(reinterpret_cast<char*>(&pFlags), sizeof(uint));
 
-    cp_file.write((char*)&(crData.recorded), sizeof(bool));
-    cp_file.write((char*)&(crData.pow), sizeof(int));
-    cp_file.write((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.write((char*)&(crData.rate), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.write(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.write(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.write(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void stex::VDepTrans::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&rExtent, sizeof(uint));
-    cp_file.read((char*)&pFlags, sizeof(uint));
+    cp_file.read(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.read(reinterpret_cast<char*>(&pFlags), sizeof(uint));
 
-    cp_file.read((char*)&(crData.recorded), sizeof(bool));
-    cp_file.read((char*)&(crData.pow), sizeof(int));
-    cp_file.read((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.read((char*)&(crData.rate), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.read(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.read(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.read(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -106,13 +106,12 @@ void stex::VDepTrans::setupDeps()
 {
     std::set<stex::KProc*> updset;
 
-    KProcPVecCI kprocend = pTri->kprocEnd();
-    for (KProcPVecCI k = pTri->kprocBegin(); k != kprocend; ++k)
-    {
-        if ((*k)->depSpecTri(pVDepTransdef->srcchanstate(), pTri) == true)
-            updset.insert(*k);
-        if ((*k)->depSpecTri(pVDepTransdef->dstchanstate(), pTri) == true)
-            updset.insert(*k);
+    for (auto const& k : pTri->kprocs()) {
+        if (k->depSpecTri(pVDepTransdef->srcchanstate(), pTri)) {
+            updset.insert(k);
+        } else if (k->depSpecTri(pVDepTransdef->dstchanstate(), pTri)) {
+            updset.insert(k);
+        }
     }
 
     pUpdVec.assign(updset.begin(), updset.end());
@@ -121,7 +120,7 @@ void stex::VDepTrans::setupDeps()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool stex::VDepTrans::depSpecTet(uint gidx, stex::WmVol * tet)
+bool stex::VDepTrans::depSpecTet(uint /*gidx*/, stex::WmVol * /*tet*/)
 {
     return false;
 }
@@ -153,7 +152,7 @@ double stex::VDepTrans::rate(steps::tetexact::Tetexact * solver)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<stex::KProc*> const & stex::VDepTrans::apply(steps::rng::RNG * rng, double dt, double simtime)
+std::vector<stex::KProc*> const & stex::VDepTrans::apply(const rng::RNGptr &/*rng*/, double dt, double simtime)
 {
     ssolver::Patchdef * pdef = pTri->patchdef();
     uint lidx = pdef->vdeptransG2L(pVDepTransdef->gidx());
@@ -168,12 +167,12 @@ std::vector<stex::KProc*> const & stex::VDepTrans::apply(steps::rng::RNG * rng, 
         uint oc_cs = pdef->ohmiccurr_chanstate(oc);
         if (oc_cs == src)
         {
-            if (pTri->clamped(src) == true) continue;
+            if (pTri->clamped(src)) continue;
             pTri->setOCchange(oc, src, dt, simtime);
         }
         else if (oc_cs == dst)
         {
-            if (pTri->clamped(dst) == true) continue;
+            if (pTri->clamped(dst)) continue;
             pTri->setOCchange(oc, dst, dt, simtime);
         }
     }
@@ -187,7 +186,6 @@ std::vector<stex::KProc*> const & stex::VDepTrans::apply(steps::rng::RNG * rng, 
     if (pTri->clamped(dst) == false)
     {
         uint nc = pTri->pools()[dst];
-        AssertLog(nc >= 0);
         pTri->setCount(dst,  (nc+1));
     }
 

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -51,7 +51,7 @@ namespace smath = steps::math;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static inline double comp_ccst(double kcst, double vol, uint order, double compvol)
+static inline double comp_ccst(double kcst, double vol, uint order, double /*compvol*/)
 {
     double vscale = 1.0e3 * vol * smath::AVOGADRO;
     int o1 = static_cast<int>(order) - 1;
@@ -75,8 +75,8 @@ stex::Reac::Reac(ssolver::Reacdef * rdef, stex::WmVol * tet)
 , pCcst(0.0)
 , pKcst(0.0)
 {
-    AssertLog(pReacdef != 0);
-    AssertLog(pTet != 0);
+    AssertLog(pReacdef != nullptr);
+    AssertLog(pTet != nullptr);
 
     uint lridx = pTet->compdef()->reacG2L(pReacdef->gidx());
     double kcst = pTet->compdef()->kcst(lridx);
@@ -87,39 +87,38 @@ stex::Reac::Reac(ssolver::Reacdef * rdef, stex::WmVol * tet)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Reac::~Reac()
-= default;
+stex::Reac::~Reac() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void stex::Reac::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&rExtent, sizeof(uint));
-    cp_file.write((char*)&pFlags, sizeof(uint));
+    cp_file.write(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.write(reinterpret_cast<char*>(&pFlags), sizeof(uint));
 
-    cp_file.write((char*)&pCcst, sizeof(double));
-    cp_file.write((char*)&pKcst, sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pCcst), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pKcst), sizeof(double));
 
-    cp_file.write((char*)&(crData.recorded), sizeof(bool));
-    cp_file.write((char*)&(crData.pow), sizeof(int));
-    cp_file.write((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.write((char*)&(crData.rate), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.write(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.write(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.write(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void stex::Reac::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&rExtent, sizeof(uint));
-    cp_file.read((char*)&pFlags, sizeof(uint));
+    cp_file.read(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.read(reinterpret_cast<char*>(&pFlags), sizeof(uint));
 
-    cp_file.read((char*)&pCcst, sizeof(double));
-    cp_file.read((char*)&pKcst, sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pCcst), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pKcst), sizeof(double));
 
-    cp_file.read((char*)&(crData.recorded), sizeof(bool));
-    cp_file.read((char*)&(crData.pow), sizeof(int));
-    cp_file.read((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.read((char*)&(crData.rate), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.read(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.read(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.read(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -132,13 +131,13 @@ void stex::Reac::reset()
     crData.pos = 0;
     crData.rate = 0.0;
     resetExtent();
-    resetCcst();
+    _resetCcst();
     setActive(true);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Reac::resetCcst()
+void stex::Reac::_resetCcst()
 {
     uint lridx = pTet->compdef()->reacG2L(pReacdef->gidx());
     double kcst = pTet->compdef()->kcst(lridx);
@@ -163,36 +162,25 @@ void stex::Reac::setKcst(double k)
 void stex::Reac::setupDeps()
 {
     std::set<stex::KProc*> updset;
-    ssolver::gidxTVecCI sbgn = pReacdef->bgnUpdColl();
-    ssolver::gidxTVecCI send = pReacdef->endUpdColl();
 
     // Search in local tetrahedron.
-    KProcPVecCI kprocend = pTet->kprocEnd();
-    for (KProcPVecCI k = pTet->kprocBegin(); k != kprocend; ++k)
-    {
-        for (ssolver::gidxTVecCI s = sbgn; s != send; ++s)
-        {
-            if ((*k)->depSpecTet(*s, pTet) == true) {
+    for (auto const& k : pTet->kprocs()) {
+        for (auto const& s : pReacdef->UPD_Coll()) {
+            if (k->depSpecTet(s, pTet)) {
                 //updset.insert((*k)->getSSARef());
-                updset.insert(*k);
+                updset.insert(k);
             }
         }
     }
 
-    std::vector<stex::Tri *>::const_iterator tri_end = pTet->nexttriEnd();
-    for (std::vector<stex::Tri *>::const_iterator tri = pTet->nexttriBegin();
-             tri != tri_end; ++tri)
-    {
-        if ((*tri) == 0) continue;
+    for (auto const& tri : pTet->nexttris()) {
+        if (tri == nullptr) continue;
 
-        kprocend = (*tri)->kprocEnd();
-        for (KProcPVecCI k = (*tri)->kprocBegin(); k != kprocend; ++k)
-        {
-            for (ssolver::gidxTVecCI s = sbgn; s != send; ++s)
-            {
-                if ((*k)->depSpecTet(*s, pTet) == true) {
+        for (auto const& k : tri->kprocs()) {
+            for (auto const& s : pReacdef->UPD_Coll()) {
+                if (k->depSpecTet(s, pTet) == true) {
                     //updset.insert((*k)->getSSARef());
-                    updset.insert(*k);
+                    updset.insert(k);
                 }
             }
         }
@@ -213,14 +201,14 @@ bool stex::Reac::depSpecTet(uint gidx, stex::WmVol * tet)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool stex::Reac::depSpecTri(uint gidx, stex::Tri * tri)
+bool stex::Reac::depSpecTri(uint /*gidx*/, stex::Tri * /*tri*/)
 {
     return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stex::Reac::rate(steps::tetexact::Tetexact * solver)
+double stex::Reac::rate(steps::tetexact::Tetexact * /*solver*/)
 {
     if (inactive()) return 0.0;
 
@@ -228,7 +216,7 @@ double stex::Reac::rate(steps::tetexact::Tetexact * solver)
     ssolver::Compdef * cdef = pTet->compdef();
     uint nspecs = cdef->countSpecs();
     uint * lhs_vec = cdef->reac_lhs_bgn(cdef->reacG2L(pReacdef->gidx()));
-    uint * cnt_vec = pTet->pools();
+    auto const& cnt_vec = pTet->pools();
 
     // Compute combinatorial part.
     double h_mu = 1.0;
@@ -276,16 +264,16 @@ double stex::Reac::rate(steps::tetexact::Tetexact * solver)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<stex::KProc*> const & stex::Reac::apply(steps::rng::RNG * rng, double dt, double simtime)
+std::vector<stex::KProc*> const & stex::Reac::apply(const rng::RNGptr &/*rng*/, double /*dt*/, double /*simtime*/)
 {
-    uint * local = pTet->pools();
+    auto const& local = pTet->pools();
     ssolver::Compdef * cdef = pTet->compdef();
     uint l_ridx = cdef->reacG2L(pReacdef->gidx());
     int * upd_vec = cdef->reac_upd_bgn(l_ridx);
     uint nspecs = cdef->countSpecs();
     for (uint i = 0; i < nspecs; ++i)
     {
-        if (pTet->clamped(i) == true) continue;
+        if (pTet->clamped(i)) continue;
         int j = upd_vec[i];
         if (j == 0) continue;
         int nc = static_cast<int>(local[i]) + j;

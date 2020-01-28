@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -62,14 +62,14 @@ stex::SDiffBoundary::~SDiffBoundary()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::SDiffBoundary::checkpoint(std::fstream & cp_file)
+void stex::SDiffBoundary::checkpoint(std::fstream & /*cp_file*/)
 {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::SDiffBoundary::restore(std::fstream & cp_file)
+void stex::SDiffBoundary::restore(std::fstream & /*cp_file*/)
 {
     // reserve
 }
@@ -79,8 +79,8 @@ void stex::SDiffBoundary::restore(std::fstream & cp_file)
 void stex::SDiffBoundary::setPatches(stex::Patch * patcha, stex::Patch * patchb)
 {
     AssertLog(pSetPatches == false);
-    AssertLog(patcha != 0);
-    AssertLog(patchb != 0);
+    AssertLog(patcha != nullptr);
+    AssertLog(patchb != nullptr);
     AssertLog(patcha != patchb);
 
     pPatchA = patcha;
@@ -106,7 +106,7 @@ stex::Patch * stex::SDiffBoundary::patchB()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::SDiffBoundary::setTriDirection(uint tri, uint direction)
+void stex::SDiffBoundary::setTriDirection(triangle_id_t tri, uint direction)
 {
     AssertLog(direction < 3);
 

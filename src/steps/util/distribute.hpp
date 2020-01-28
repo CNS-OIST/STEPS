@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -28,15 +28,17 @@
 #ifndef STEPS_UTIL_DISTRIBUTE_HPP
 #define STEPS_UTIL_DISTRIBUTE_HPP
 
-#include <numeric>
-#include <cstddef>
 #include <algorithm>
+#include <cstddef>
+#include <numeric>
 #include <random>
+
+// logging
+#include <easylogging++.h>
 
 #include "steps/error.hpp"
 #include "steps/math/sample.hpp"
-// logging
-#include "third_party/easyloggingpp/src/easylogging++.h"
+
 namespace steps {
 namespace util {
 
@@ -124,14 +126,14 @@ void distribute_quantity(double x, FwdIter b, FwdIter e, Weight weight, SetCount
         if (xi_floor-1>std::numeric_limits<uint>::max())
             ArgErrLog("quantity too large to distribute (integer limit)");
 
-        uint ni = (uint)xi_floor;
+        uint ni = static_cast<uint>(xi_floor);
         set_count(*i, ni);
         allocated += ni;
     }
     
     if (allocated>x)
         ProgErrLog("internal error in count rounding");
-    uint remainder = (uint)(x-allocated);
+    auto remainder = static_cast<uint>(x-allocated);
 
     if (remainder == 0) return;
 

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -65,9 +65,9 @@ namespace ssolver = steps::solver;
 
 ssolver::Patchdef::Patchdef(Statedef * sd, uint idx, steps::wm::Patch * p)
 : pStatedef(sd)
-, pIdx(idx)
 , pName()
 , pArea()
+, pIdx(idx)
 , pPssys()
 , pIcomp(nullptr)
 , pOcomp(nullptr)
@@ -99,24 +99,9 @@ ssolver::Patchdef::Patchdef(Statedef * sd, uint idx, steps::wm::Patch * p)
 , pSurfDiffsN(0)
 , pSurfDiff_G2L(nullptr)
 , pSurfDiff_L2G(nullptr)
+, pSurfDiffDcst(nullptr)
 , pSurfDiff_DEP_Spec(nullptr)
 , pSurfDiff_LIG(nullptr)
-, pOhmicCurrsN(0)
-, pOhmicCurr_G2L(nullptr)
-, pOhmicCurr_L2G(nullptr)
-, pOhmicCurr_DEP_Spec(nullptr)
-, pOhmicCurr_CHANSTATE(nullptr)
-, pGHKcurrsN(0)
-, pGHKcurr_G2L(nullptr)
-, pGHKcurr_DEP_Spec(nullptr)
-, pGHKcurr_CHANSTATE(nullptr)
-, pGHKcurr_ION(nullptr)
-, pVDepTransN(0)
-, pVDepTrans_G2L(nullptr)
-, pVDepTrans_L2G(nullptr)
-, pVDepTrans_DEP_Spec(nullptr)
-, pVDepTrans_SRCCHANSTATE(nullptr)
-, pVDepTrans_DSTCHANSTATE(nullptr)
 , pVDepSReacsN(0)
 , pVDepSReac_G2L(nullptr)
 , pVDepSReac_L2G(nullptr)
@@ -129,6 +114,24 @@ ssolver::Patchdef::Patchdef(Statedef * sd, uint idx, steps::wm::Patch * p)
 , pVDepSReac_UPD_I_Spec(nullptr)
 , pVDepSReac_UPD_S_Spec(nullptr)
 , pVDepSReac_UPD_O_Spec(nullptr)
+, pOhmicCurrsN(0)
+, pOhmicCurr_G2L(nullptr)
+, pOhmicCurr_L2G(nullptr)
+, pOhmicCurr_DEP_Spec(nullptr)
+, pOhmicCurr_CHANSTATE(nullptr)
+, pGHKcurrsN(0)
+, pGHKcurr_G2L(nullptr)
+, pGHKcurr_L2G(nullptr)
+, pGHKcurr_DEP_Spec(nullptr)
+, pGHKcurr_CHANSTATE(nullptr)
+, pGHKcurr_ION(nullptr)
+, pVDepTransN(0)
+, pVDepTrans_G2L(nullptr)
+, pVDepTrans_L2G(nullptr)
+, pVDepTrans_DEP_Spec(nullptr)
+, pVDepTrans_SRCCHANSTATE(nullptr)
+, pVDepTrans_DSTCHANSTATE(nullptr)
+
 {
     AssertLog(pStatedef != 0);
     AssertLog(p != 0);
@@ -293,20 +296,20 @@ ssolver::Patchdef::~Patchdef()
 
 void ssolver::Patchdef::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)pPoolCount, sizeof(double) * pSpecsN_S);
-    cp_file.write((char*)pPoolFlags, sizeof(uint) * pSpecsN_S);
-    cp_file.write((char*)pSReacKcst, sizeof(double) * pSReacsN);
-    cp_file.write((char*)pSReacFlags, sizeof(uint) * pSReacsN);
+    cp_file.write(reinterpret_cast<char*>(pPoolCount), sizeof(double) * pSpecsN_S);
+    cp_file.write(reinterpret_cast<char*>(pPoolFlags), sizeof(uint) * pSpecsN_S);
+    cp_file.write(reinterpret_cast<char*>(pSReacKcst), sizeof(double) * pSReacsN);
+    cp_file.write(reinterpret_cast<char*>(pSReacFlags), sizeof(uint) * pSReacsN);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void ssolver::Patchdef::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)pPoolCount, sizeof(double) * pSpecsN_S);
-    cp_file.read((char*)pPoolFlags, sizeof(uint) * pSpecsN_S);
-    cp_file.read((char*)pSReacKcst, sizeof(double) * pSReacsN);
-    cp_file.read((char*)pSReacFlags, sizeof(uint) * pSReacsN);
+    cp_file.read(reinterpret_cast<char*>(pPoolCount), sizeof(double) * pSpecsN_S);
+    cp_file.read(reinterpret_cast<char*>(pPoolFlags), sizeof(uint) * pSpecsN_S);
+    cp_file.read(reinterpret_cast<char*>(pSReacKcst), sizeof(double) * pSReacsN);
+    cp_file.read(reinterpret_cast<char*>(pSReacFlags), sizeof(uint) * pSReacsN);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -317,7 +320,7 @@ void ssolver::Patchdef::setup_references()
     AssertLog(pSetupIndsdone == false);
 
     // first find the inner and outer comps of this patch
-    AssertLog(pIcomp != 0);
+    AssertLog(pIcomp != nullptr);
     uint icompidx = pStatedef->getCompIdx(pIcomp);                ///// bit long-winded, add new method to statedef??
     pInner = pStatedef->compdef(icompidx);
     if (pOcomp != nullptr)
@@ -335,81 +338,67 @@ void ssolver::Patchdef::setup_references()
     const uint ngsdiffs = pStatedef->countSurfDiffs();
 
 
-    if (ngspecs == 0) AssertLog(pSpec_G2L == 0);
-    if (ngsreacs == 0) AssertLog(pSReac_G2L == 0);
-    if (ngvdepsreacs == 0) AssertLog(pVDepSReac_G2L == 0);
-    if (ngohmiccurrs == 0) AssertLog(pOhmicCurr_G2L == 0);
-    if (ngghkcurrs == 0) AssertLog(pGHKcurr_G2L == 0);
-    if (ngvdeptrans == 0) AssertLog(pVDepTrans_G2L == 0);
-    if (ngsdiffs == 0) AssertLog(pSurfDiff_G2L == 0);
+    if (ngspecs == 0) AssertLog(pSpec_G2L == nullptr);
+    if (ngsreacs == 0) AssertLog(pSReac_G2L == nullptr);
+    if (ngvdepsreacs == 0) AssertLog(pVDepSReac_G2L == nullptr);
+    if (ngohmiccurrs == 0) AssertLog(pOhmicCurr_G2L == nullptr);
+    if (ngghkcurrs == 0) AssertLog(pGHKcurr_G2L == nullptr);
+    if (ngvdeptrans == 0) AssertLog(pVDepTrans_G2L == nullptr);
+    if (ngsdiffs == 0) AssertLog(pSurfDiff_G2L == nullptr);
 
 
     // set up local sreac indices
-    std::set<std::string>::const_iterator s_end = pPssys.end();
-    for(std::set<std::string>::const_iterator s = pPssys.begin();
-        s != s_end; ++s)
-    {
-        std::map<std::string, steps::model::SReac *> ssreacs = pStatedef->model()->getSurfsys(*s)->_getAllSReacs();
+    //auto s_end = pPssys.end();
+    for (auto const& s: pPssys) {
+        auto ssreacs = pStatedef->model()->getSurfsys(s)->_getAllSReacs();
         if (ngsreacs == 0) AssertLog(ssreacs.empty() == true);
-        std::map<std::string, steps::model::SReac*>::const_iterator sr_end = ssreacs.end();
-        for(std::map<std::string, steps::model::SReac *>::const_iterator sr = ssreacs.begin(); sr != sr_end; ++sr)
-        {
-            uint gidx = pStatedef->getSReacIdx((sr->second));
+        for (auto const& sr: ssreacs) {
+            uint gidx = pStatedef->getSReacIdx(sr.second);
             AssertLog(gidx < ngsreacs);
-            if(pSReac_G2L[gidx] != LIDX_UNDEFINED) continue;
+            if (pSReac_G2L[gidx] != LIDX_UNDEFINED) continue;
             pSReac_G2L[gidx] = pSReacsN++;
         }
 
-           std::map<std::string, steps::model::Diff *> sdiffs = pStatedef->model()->getSurfsys(*s)->_getAllDiffs();
+        auto sdiffs = pStatedef->model()->getSurfsys(s)->_getAllDiffs();
         if (ngsdiffs == 0) AssertLog(sdiffs.empty() == true);
-           std::map<std::string, steps::model::Diff*>::const_iterator sd_end = sdiffs.end();
-           for (std::map<std::string, steps::model::Diff*>::const_iterator sd = sdiffs.begin(); sd != sd_end; ++sd)
-           {
-               uint gidx = pStatedef->getSurfDiffIdx((sd->second));
-               AssertLog(gidx < ngsdiffs);
-               if (pSurfDiff_G2L[gidx] != LIDX_UNDEFINED) continue;
-               pSurfDiff_G2L[gidx] = pSurfDiffsN++;
-           }
+        for (auto const& sd: sdiffs) {
+            uint gidx = pStatedef->getSurfDiffIdx(sd.second);
+            AssertLog(gidx < ngsdiffs);
+            if (pSurfDiff_G2L[gidx] != LIDX_UNDEFINED) continue;
+            pSurfDiff_G2L[gidx] = pSurfDiffsN++;
+        }
 
-        std::map<std::string, steps::model::VDepSReac *> vdssreacs = pStatedef->model()->getSurfsys(*s)->_getAllVDepSReacs();
+        auto vdssreacs = pStatedef->model()->getSurfsys(s)->_getAllVDepSReacs();
         if (ngvdepsreacs == 0) AssertLog(vdssreacs.empty() == true);
-        std::map<std::string, steps::model::VDepSReac*>::const_iterator vdsr_end = vdssreacs.end();
-        for(std::map<std::string, steps::model::VDepSReac *>::const_iterator vdsr = vdssreacs.begin(); vdsr != vdsr_end; ++vdsr)
-        {
-            uint gidx = pStatedef->getVDepSReacIdx((vdsr->second));
+        for (auto const& vdsr: vdssreacs) {
+            uint gidx = pStatedef->getVDepSReacIdx(vdsr.second);
             AssertLog(gidx < ngvdepsreacs);
-            if(pVDepSReac_G2L[gidx] != LIDX_UNDEFINED) continue;
+            if (pVDepSReac_G2L[gidx] != LIDX_UNDEFINED) continue;
             pVDepSReac_G2L[gidx] = pVDepSReacsN++;
         }
 
-        std::map<std::string, steps::model::OhmicCurr *> ocs = pStatedef->model()->getSurfsys(*s)->_getAllOhmicCurrs();
+        auto ocs = pStatedef->model()->getSurfsys(s)->_getAllOhmicCurrs();
         if (ngohmiccurrs == 0) AssertLog(ocs.empty() == true);
-        std::map<std::string, steps::model::OhmicCurr *>::const_iterator oc_end = ocs.end();
-        for(std::map<std::string, steps::model::OhmicCurr *>::const_iterator oc = ocs.begin(); oc != oc_end; ++oc)
-        {
-            uint gidx = pStatedef->getOhmicCurrIdx((oc->second));
+        for (auto const& oc: ocs) {
+            uint gidx = pStatedef->getOhmicCurrIdx(oc.second);
             AssertLog(gidx < ngohmiccurrs);
             if(pOhmicCurr_G2L[gidx] != LIDX_UNDEFINED) continue;
             pOhmicCurr_G2L[gidx] = pOhmicCurrsN++;
         }
 
-        std::map<std::string, steps::model::GHKcurr *> ghks = pStatedef->model()->getSurfsys(*s)->_getAllGHKcurrs();
+        auto ghks = pStatedef->model()->getSurfsys(s)->_getAllGHKcurrs();
         if (ngghkcurrs == 0) AssertLog(ghks.empty() == true);
-        std::map<std::string, steps::model::GHKcurr *>::const_iterator ghk_end = ghks.end();
-        for(std::map<std::string, steps::model::GHKcurr *>::const_iterator ghk = ghks.begin(); ghk != ghk_end; ++ghk)
-        {
-            uint gidx = pStatedef->getGHKcurrIdx((ghk->second));
+        for (auto const& ghk: ghks) {
+            uint gidx = pStatedef->getGHKcurrIdx(ghk.second);
             AssertLog(gidx < ngghkcurrs);
-            if(pGHKcurr_G2L[gidx] != LIDX_UNDEFINED) continue;
+            if (pGHKcurr_G2L[gidx] != LIDX_UNDEFINED) continue;
             pGHKcurr_G2L[gidx] = pGHKcurrsN++;
         }
 
-        std::map<std::string, steps::model::VDepTrans *> vdts = pStatedef->model()->getSurfsys(*s)->_getAllVDepTrans();
+        auto vdts = pStatedef->model()->getSurfsys(s)->_getAllVDepTrans();
         if (ngvdeptrans == 0) AssertLog(vdts.empty() == true);
-        std::map<std::string, steps::model::VDepTrans *>::const_iterator vdt_end = vdts.end();
-        for(std::map<std::string, steps::model::VDepTrans *>::const_iterator vdt = vdts.begin(); vdt != vdt_end; ++vdt)
-        {
-            uint gidx = pStatedef->getVDepTransIdx((vdt->second));
+        for (auto const& vdt: vdts) {
+            uint gidx = pStatedef->getVDepTransIdx(vdt.second);
             AssertLog(gidx < ngvdeptrans);
             if(pVDepTrans_G2L[gidx] != LIDX_UNDEFINED) continue;
             pVDepTrans_G2L[gidx] = pVDepTransN++;
@@ -425,18 +414,18 @@ void ssolver::Patchdef::setup_references()
         if(pSReac_G2L[sr] == LIDX_UNDEFINED) { continue;
 }
         SReacdef * srdef = pStatedef->sreacdef(sr);
-        AssertLog(srdef != 0);
+        AssertLog(srdef != nullptr);
         for (uint s = 0; s < ngspecs; ++s)
         {
             if (srdef->reqspec_S(s) == true)
             {
-                AssertLog(pStatedef->specdef(s) != 0);
+                AssertLog(pStatedef->specdef(s) != nullptr);
                 if (pSpec_G2L[s] == LIDX_UNDEFINED) { pSpec_G2L[s] = pSpecsN_S++;
 }
             }
             if (srdef->reqspec_I(s) == true)
             {
-                AssertLog(pInner != 0);
+                AssertLog(pInner != nullptr);
                 pInner->addSpec(s);
             }
             if (srdef->reqspec_O(s) == true)
@@ -458,7 +447,7 @@ void ssolver::Patchdef::setup_references()
         if (pSurfDiff_G2L[sd] == LIDX_UNDEFINED) { continue;
 }
         Diffdef * sddef = pStatedef->surfdiffdef(sd);
-        AssertLog(sddef != 0);
+        AssertLog(sddef != nullptr);
         for (uint s = 0; s < ngspecs; ++s)
         {
             if (sddef->reqspec(s) == true)
@@ -474,18 +463,18 @@ void ssolver::Patchdef::setup_references()
         if(pVDepSReac_G2L[vdsr] == LIDX_UNDEFINED) { continue;
 }
         VDepSReacdef * vdsrdef = pStatedef->vdepsreacdef(vdsr);
-        AssertLog(vdsrdef != 0);
+        AssertLog(vdsrdef != nullptr);
         for (uint s = 0; s < ngspecs; ++s)
         {
             if (vdsrdef->reqspec_S(s) == true)
             {
-                AssertLog(pStatedef->specdef(s) != 0);
+                AssertLog(pStatedef->specdef(s) != nullptr);
                 if (pSpec_G2L[s] == LIDX_UNDEFINED) { pSpec_G2L[s] = pSpecsN_S++;
 }
             }
             if (vdsrdef->reqspec_I(s) == true)
             {
-                AssertLog(pInner != 0);
+                AssertLog(pInner != nullptr);
                 pInner->addSpec(s);
             }
             if (vdsrdef->reqspec_O(s) == true)
@@ -507,14 +496,14 @@ void ssolver::Patchdef::setup_references()
         if(pOhmicCurr_G2L[oc] == LIDX_UNDEFINED) { continue;
 }
         OhmicCurrdef * ocdef = pStatedef->ohmiccurrdef(oc);
-        AssertLog(ocdef != 0);
+        AssertLog(ocdef != nullptr);
         uint added = 0;
         for (uint s = 0; s < ngspecs; ++s)
         {
             // Add the channel state
             if (ocdef->req(s) == true)
             {
-                AssertLog(pStatedef->specdef(s) != 0);
+                AssertLog(pStatedef->specdef(s) != nullptr);
                 if (pSpec_G2L[s] == LIDX_UNDEFINED) { pSpec_G2L[s] = pSpecsN_S++;
 }
                 added +=1;
@@ -529,14 +518,14 @@ void ssolver::Patchdef::setup_references()
         if (pGHKcurr_G2L[ghk] == LIDX_UNDEFINED) { continue;
 }
         GHKcurrdef * ghkdef = pStatedef->ghkcurrdef(ghk);
-        AssertLog(ghkdef != 0);
+        AssertLog(ghkdef != nullptr);
         uint added = 0;
         for (uint s = 0; s < ngspecs; ++s)
         {
             // Add the channel state
             if (ghkdef->req(s) == true)
             {
-                AssertLog(pStatedef->specdef(s) != 0);
+                AssertLog(pStatedef->specdef(s) != nullptr);
                 // Only add the channel state, not the volume ion species (that affects the GHK rate)
                 if (ghkdef->req_v(s) == false)
                 {
@@ -548,7 +537,7 @@ void ssolver::Patchdef::setup_references()
             // Add the volume ion species to the inner and outer compartment.
             if (ghkdef->req_v(s) == true)
             {
-                AssertLog(pInner != 0);
+                AssertLog(pInner != nullptr);
                 pInner->addSpec(s);
                 if (pOuter == nullptr)
                 {
@@ -578,7 +567,7 @@ void ssolver::Patchdef::setup_references()
         {
             if (vdtdef->req(s) == true)
             {
-                AssertLog(pStatedef->specdef(s) != 0);
+                AssertLog(pStatedef->specdef(s) != nullptr);
                 if (pSpec_G2L[s] == LIDX_UNDEFINED) { pSpec_G2L[s] = pSpecsN_S++;
 }
             }
@@ -728,7 +717,7 @@ void ssolver::Patchdef::setup_indices()
             if (srdef->reqInside() == true)
             {
                 // TODO: turn into real error check?
-                AssertLog(pInner != 0);
+                AssertLog(pInner != nullptr);
 
                 for (uint si = 0; si < ngspecs; ++si)
                 {
@@ -750,7 +739,7 @@ void ssolver::Patchdef::setup_indices()
             if (srdef->reqOutside() == true)
             {
                 // TODO: turn into real error check?
-                AssertLog(pOuter != 0);
+                AssertLog(pOuter != nullptr);
 
                 for (uint si = 0; si < ngspecs; ++si)
                 {
@@ -875,7 +864,7 @@ void ssolver::Patchdef::setup_indices()
             if (vdsrdef->reqInside() == true)
             {
                 // TODO: turn into real error check?
-                AssertLog(pInner != 0);
+                AssertLog(pInner != nullptr);
 
                 for (uint si = 0; si < ngspecs; ++si)
                 {
@@ -897,7 +886,7 @@ void ssolver::Patchdef::setup_indices()
             if (vdsrdef->reqOutside() == true)
             {
                 // TODO: turn into real error check?
-                AssertLog(pOuter != 0);
+                AssertLog(pOuter != nullptr);
 
                 for (uint si = 0; si < ngspecs; ++si)
                 {
@@ -1029,7 +1018,7 @@ void ssolver::Patchdef::setup_indices()
         for (uint ri = 0; ri < countVDepTrans(); ++ri)
         {
             VDepTransdef * vdtdef = vdeptransdef(ri);
-            AssertLog(vdtdef != 0);
+            AssertLog(vdtdef != nullptr);
 
             for (uint si = 0; si < ngspecs; ++si)
             {
@@ -1092,13 +1081,6 @@ void ssolver::Patchdef::setup_indices()
 double ssolver::Patchdef::area() const
 {
     return pArea;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-std::string const ssolver::Patchdef::name() const
-{
-    return pName;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

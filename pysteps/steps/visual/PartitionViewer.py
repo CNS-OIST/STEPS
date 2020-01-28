@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -28,7 +28,9 @@ from pyqtgraph.Qt import QtCore, QtGui, QtOpenGL
 import numpy as np
 import pyqtgraph.opengl as gl
 import random
-
+from steps.geom import INDEX_DTYPE
+from steps.geom import UNKNOWN_TET
+from steps.geom import UNKNOWN_TRI
 def createColorMap(partitions):
     """
     Genrate a random color map for a partition.
@@ -43,7 +45,7 @@ def createColorMap(partitions):
         color_map = {}
         for part in partitions:
             if part not in color_map.keys():
-                if part == None:
+                if part is None:
                     color_map[part] = [1.0, 0.0, 0.0, 1.0]
                 else:
                     color_map[part] = [random.random(), random.random(), random.random(), 0.3]
@@ -52,7 +54,7 @@ def createColorMap(partitions):
         color_map = {}
         for part in partitions.values():
             if part not in color_map.keys():
-                if part == None:
+                if part is None:
                     color_map[part] = [1.0, 0.0, 0.0, 1.0]
                 else:
                     color_map[part] = [random.random(), random.random(), random.random(), 0.3]
@@ -125,12 +127,12 @@ class TetPartitionDisplay(QtGui.QMainWindow):
             self.main_axis = 0
 
         self.center = new_center
-        if color_map == None:
+        if color_map is None:
             self.color_map = {}
         else:
             self.color_map = color_map
         for tet_part in self.tet_part_table:
-            if tet_part == None:
+            if tet_part is None:
                 self.color_map[None] = [1.0, 0.0, 0.0, 1.0]
             else:
                 if tet_part not in self.color_map:
@@ -142,7 +144,7 @@ class TetPartitionDisplay(QtGui.QMainWindow):
                 self.widget_mapping[tet_part] = []
             self.widget_mapping[tet_part].append(part)
 
-        if morph_sections != None:
+        if morph_sections is not None:
             for sec in morph_sections.values():
                 c = None
                 if sec["name"] not in self.color_map:
@@ -230,17 +232,17 @@ class TetPartitionMesh(gl.GLMeshItem):
         for tet in tet_list:
             tris = mesh.getTetTriNeighb(tet)
             for tri in tris:
-                if tri == -1: continue
+                if tri == UNKNOWN_TRI: continue
                 neighb_tets = mesh.getTriTetNeighb(tri)
                 for neighb_tet in neighb_tets:
-                    if neighb_tet == -1 or neighb_tet not in tet_list:
+                    if neighb_tet == UNKNOWN_TET or neighb_tet not in tet_list:
                         surface_tris.append(tri)
     
-        surface_tris = np.array(surface_tris, dtype = np.uint32)
+        surface_tris = np.array(surface_tris, dtype = INDEX_DTYPE)
         
         v_set_size = mesh.getTriVerticesSetSizeNP(surface_tris)
-        tris_data = np.zeros(surface_tris.size * 3, dtype = np.uint32)
-        v_set = np.zeros(v_set_size, dtype = np.uint32)
+        tris_data = np.zeros(surface_tris.size * 3, dtype = INDEX_DTYPE)
+        v_set = np.zeros(v_set_size, dtype = INDEX_DTYPE)
         verts_data = np.zeros(v_set_size * 3)
         mesh.getTriVerticesMappingSetNP(surface_tris, tris_data, v_set)
         mesh.getBatchVerticesNP(v_set, verts_data)
@@ -417,11 +419,11 @@ class TriPartitionMesh(gl.GLMeshItem):
         if not color:
             color = [random.random(), random.random(), random.random(), 0.3]
     
-        surface_tris = np.array(tri_list, dtype = np.uint32)
+        surface_tris = np.array(tri_list, dtype = INDEX_DTYPE)
         
         v_set_size = mesh.getTriVerticesSetSizeNP(surface_tris)
-        tris_data = np.zeros(surface_tris.size * 3, dtype = np.uint32)
-        v_set = np.zeros(v_set_size, dtype = np.uint32)
+        tris_data = np.zeros(surface_tris.size * 3, dtype = INDEX_DTYPE)
+        v_set = np.zeros(v_set_size, dtype = INDEX_DTYPE)
         verts_data = np.zeros(v_set_size * 3)
         mesh.getTriVerticesMappingSetNP(surface_tris, tris_data, v_set)
         mesh.getBatchVerticesNP(v_set, verts_data)

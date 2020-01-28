@@ -64,7 +64,7 @@ typedef SDiffBoundaryPVec::const_iterator        SDiffBoundaryPVecCI;
 /// Tetmesh object is responsible for maintaining lifetime of associated
 /// SDiffBoundary objects (Python proxy class must set thisown to zero.)
 ///
-/// \warning Methods start with an underscore are not exposed to Python.
+/// \warning Methods starting with an underscore are not exposed to Python.
 class SDiffBoundary
 {
 
@@ -88,7 +88,7 @@ public:
     ///
     /// This is the constructor for the tetmesh (tetrahedron mesh) namespace.
     SDiffBoundary(std::string id, Tetmesh * container,
-            std::vector<uint> const & bars, std::vector<steps::tetmesh::TmPatch *> const & patches);
+            std::vector<index_t> const & bars, std::vector<steps::tetmesh::TmPatch *> const & patches);
 
     /// Destructor.
     virtual ~SDiffBoundary() {}
@@ -100,7 +100,7 @@ public:
     /// Return the patch id.
     ///
     /// \return ID of the surface diffusion boundary.
-    std::string const & getID() const
+    inline std::string const & getID() const noexcept
     { return pID; }
 
     /// Set or change the surface diffusion boundary id.
@@ -111,26 +111,26 @@ public:
     /// Return a pointer to the geometry container object.
     ///
     /// \return Pointer to the parent geometry container.
-    steps::tetmesh::Tetmesh * getContainer() const
+    inline steps::tetmesh::Tetmesh * getContainer() const noexcept
     { return pTetmesh; }
 
     /// Return whether bars (specified by index) are inside this surface diffusion boundary.
     ///
     /// \param bar List of indices of bars.
     /// \return Results of whether the bars are inside the surface diffusion boundary.
-    std::vector<bool> isBarInside(const std::vector<uint> &bars) const;
+    std::vector<bool> isBarInside(const std::vector<index_t> &bars) const;
 
     /// Return all bars (by index) in the surface diffusion boundary.
     ///
     /// \return List of indices of bars.
-    inline std::vector<uint> const & getAllBarIndices() const
+    inline std::vector<index_t> const & getAllBarIndices() const noexcept
     { return pBar_indices; }
 
     /// Return the patches this surface diffusion boundary connects
     ///
     /// \return List of the two patches.
-    inline std::vector<steps::wm::Patch *> getPatches() const
-    { return std::vector<steps::wm::Patch *>{pIPatch, pOPatch}; }
+    inline std::vector<steps::wm::Patch *> getPatches() const noexcept
+    { return {pIPatch, pOPatch}; }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO C++)
@@ -139,7 +139,7 @@ public:
     /// Return all bars (by index) in the surface diffusion boundary.
     ///
     /// \return List of indices of bars.
-    inline std::vector<uint> const & _getAllBarIndices() const
+    inline std::vector<index_t> const & _getAllBarIndices() const noexcept
     { return pBar_indices; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -150,12 +150,11 @@ private:
 
     std::string                         pID;
 
-    steps::wm::Patch *                  pIPatch;
-    steps::wm::Patch *                  pOPatch;
+    steps::wm::Patch *                  pIPatch{nullptr};
+    steps::wm::Patch *                  pOPatch{nullptr};
 
     steps::tetmesh::Tetmesh           * pTetmesh;
-    std::vector<uint>                   pBar_indices;
-    uint                                pBarsN;
+    std::vector<index_t>   pBar_indices;
 
 ////////////////////////////////////////////////////////////////////////////////
 

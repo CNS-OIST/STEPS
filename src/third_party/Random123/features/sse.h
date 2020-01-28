@@ -133,7 +133,7 @@ R123_STATIC_INLINE uint64_t _mm_extract_lo64(__m128i si){
    since at least gcc-3.4.4.  The no-'x' spelling showed up
    around 4.2. */
 R123_STATIC_INLINE uint64_t _mm_extract_lo64(__m128i si){
-    return (uint64_t)_mm_cvtsi128_si64x(si);
+    return static_cast<uint64_t>(_mm_cvtsi128_si64x(si));
 }
 #endif
 #if defined(__GNUC__) && __GNUC__ < 4
@@ -208,7 +208,7 @@ R123_STATIC_INLINE r123m128i& operator+=(r123m128i& lhs, R123_ULONG_LONG n){
     // return c;     // NO CARRY!  
 
     int64_t lo64 = _mm_extract_lo64(c);
-    if((uint64_t)lo64 < n)
+    if(static_cast<uint64_t>(lo64) < n)
         c = _mm_add_epi64(c, _mm_set_epi64x(1,0));
     lhs.m = c;
     return lhs; 

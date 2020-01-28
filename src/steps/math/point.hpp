@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -93,11 +93,48 @@ struct point3d: public std::array<double,3> {
         return (*this)[0]==x[0] && (*this)[1]==x[1] && (*this)[2]==x[2];
     }
 
+    bool almostEqual(const point3d &x) const {
+        static const double EPSILON = 1e-9;
+        if (*this == x){
+            return true;
+        }
+        const point3d d(std::abs((*this)[0] - x[0]),
+                        std::abs((*this)[1] - x[1]),
+                        std::abs((*this)[2] - x[2]));
+        return d[0] < std::abs(x[0]) * EPSILON &&
+               d[1] < std::abs(x[1]) * EPSILON &&
+               d[2] < std::abs(x[2]) * EPSILON;
+    }
+
     bool operator!=(const point3d &x) const {
         return !(*this==x);
     }
 
     static point3d zero() { return point3d{0,0,0}; }
+
+    inline double dot(const point3d &q) const {
+        const point3d &p = *this;
+        return p[0]*q[0]+p[1]*q[1]+p[2]*q[2];
+    }
+
+    inline point3d cross(const point3d &q) const {
+        const point3d &p = *this;
+        return point3d{
+                p[1]*q[2] - p[2]*q[1],
+                p[2]*q[0] - p[0]*q[2],
+                p[0]*q[1] - p[1]*q[0]
+        };
+    }
+
+    inline double dist2(point3d b) const {
+        b -= (*this);
+        return b.dot(b);
+    }
+
+    inline double distance(const point3d &b) const {
+        return std::sqrt(this->dist2(b));
+    }
+
 };
 
 inline point3d operator+(point3d p, const point3d &q) {
@@ -120,25 +157,10 @@ inline point3d operator/(point3d p, double x) {
     return p/=x;
 }
 
-inline double dot(const point3d &p, const point3d &q) {
-    return p[0]*q[0]+p[1]*q[1]+p[2]*q[2];
-}
 
-inline point3d cross(const point3d &p, const point3d &q) {
-    return point3d{
-        p[1]*q[2] - p[2]*q[1],
-        p[2]*q[0] - p[0]*q[2],
-        p[0]*q[1] - p[1]*q[0]
-    };
-}
-
-inline double dist2(point3d a, const point3d &b) {
-    a -= b;
-    return dot(a,a);
-}
-
-inline double distance(point3d a, const point3d &b) {
-    return std::sqrt(dist2(a,b));
+// Compat. point3d overload
+inline double distance(const point3d &a, const point3d &b) {
+    return a.distance(b);
 }
 
 }} // namespace steps::math

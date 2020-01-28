@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -56,10 +56,10 @@ using namespace steps::model;
 GHKcurr::GHKcurr(string const & id, Surfsys * surfsys, ChanState * chanstate,
                  Spec * ion, bool computeflux, double virtual_oconc, double vshift)
 : pID(id)
-, pModel(nullptr)
 , pSurfsys(surfsys)
 , pChanState(chanstate)
 , pIon(ion)
+, pRealFlux(computeflux)
 , pG(0.0)
 , pValence(0)
 , pV(0.0)
@@ -67,10 +67,9 @@ GHKcurr::GHKcurr(string const & id, Surfsys * surfsys, ChanState * chanstate,
 , pInnerConc(0.0)
 , pOuterConc(0.0)
 , pP(0.0)
-, pRealFlux(computeflux)
-, pVshift(vshift)
 , pInfoSupplied(false)
 , pVirtual_conc(virtual_oconc)
+, pVshift(vshift)
 {
     if (pSurfsys == nullptr)
     {
@@ -132,7 +131,7 @@ GHKcurr::GHKcurr(string const & id, Surfsys * surfsys, ChanState * chanstate,
     */
 
     pModel = pSurfsys->getModel();
-    AssertLog(pModel != 0);
+    AssertLog(pModel != nullptr);
 
     pSurfsys->_handleGHKcurrAdd(this);
 
@@ -151,7 +150,7 @@ GHKcurr::~GHKcurr()
 
 void GHKcurr::setID(string const & id)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
     // it pass by into the Python layer.
@@ -165,7 +164,7 @@ void GHKcurr::setID(string const & id)
 
 void GHKcurr::setChanState(ChanState * chanstate)
 {
-    AssertLog(chanstate != 0);
+    AssertLog(chanstate != nullptr);
     pChanState = chanstate;
 }
 
@@ -173,7 +172,7 @@ void GHKcurr::setChanState(ChanState * chanstate)
 
 void GHKcurr::setIon(Spec * ion)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
 
     if (ion->getValence() == 0)
     {
@@ -190,7 +189,7 @@ void GHKcurr::setIon(Spec * ion)
 
 void GHKcurr::setP(double p)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
     if (p <= 0.0)
     {
         ostringstream os;
@@ -218,7 +217,7 @@ void GHKcurr::setP(double p)
 
 void GHKcurr::setPInfo(double g, double V, double T, double oconc, double iconc)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
 
     if (pP != 0.0)
     {

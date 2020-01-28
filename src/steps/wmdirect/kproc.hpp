@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -142,11 +142,6 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    uint getExtent() const;
-    void resetExtent();
-
-    ////////////////////////////////////////////////////////////////////////
-
     // Return a pointer to the corresponding Reacdef or SReacdef object
     // Separate methods to avoid makeing a base KProcdef class
     //
@@ -155,9 +150,19 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
+    inline unsigned long long getExtent() const noexcept {
+        return rExtent;
+    }
+
+    inline void resetExtent() {
+        rExtent = 0;
+    }
+
+
+
 protected:
 
-    uint                                rExtent;
+    unsigned long long                  rExtent{0};
 
 private:
 
@@ -165,7 +170,7 @@ private:
     /*
     uint                                pFlags;
     */
-    uint                                pSchedIDX;
+    uint                                pSchedIDX{0};
 
     ////////////////////////////////////////////////////////////////////////
 };

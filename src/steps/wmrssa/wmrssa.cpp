@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -87,46 +87,26 @@ void swmrssa::schedIDXSet_To_Vec(swmrssa::SchedIDXSet const & s, swmrssa::SchedI
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmrssa::Wmrssa::Wmrssa(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r)
+swmrssa::Wmrssa::Wmrssa(steps::model::Model *m, steps::wm::Geom *g, const rng::RNGptr &r)
 : API(m, g, r)
-, pKProcs()
-, pComps()
-, pCompMap()
-, pPatches()
-, pA0(0.0)
-, pLevelSizes()
-, pLevels()
-, pBuilt(false)
-, pIndices(nullptr)
-, pMaxUpSize(0)
-, pRannum(nullptr)
 {
-    assert (model() != 0);
-    assert (geom() != 0);
-    countUpdate = 0;
-    countSteps = 0;
-
-    if (rng() == 0)
+    if (rng() == nullptr)
     {
         std::ostringstream os;
         os << "No RNG provided to solver initializer function";
         ArgErrLog(os.str());
     }
 
-    ssolver::CompDefPVecCI c_end = statedef()->endComp();
-    for (ssolver::CompDefPVecCI c = statedef()->bgnComp(); c != c_end; ++c)
-    {
-        uint compdef_gidx = (*c)->gidx();
-        uint comp_idx = _addComp(*c);
+    for (auto const& c : statedef().comps()) {
+        uint compdef_gidx = c->gidx();
+        uint comp_idx = _addComp(c);
         AssertLog(compdef_gidx == comp_idx);
     }
 
     // Create the actual patches.
-    ssolver::PatchDefPVecCI p_end = statedef()->endPatch();
-    for (ssolver::PatchDefPVecCI p = statedef()->bgnPatch(); p != p_end; ++p)
-    {
-        uint patchdef_gidx = (*p)->gidx();
-        uint patch_idx = _addPatch(*p);
+    for (auto const& p : statedef().patches()) {
+        uint patchdef_gidx = p->gidx();
+        uint patch_idx = _addPatch(p);
         AssertLog(patchdef_gidx == patch_idx);
     }
 
@@ -164,7 +144,7 @@ void swmrssa::Wmrssa::checkpoint(std::string const & file_name)
     PatchPVecCI patch_e = pPatches.end();
     for (PatchPVecCI p = pPatches.begin(); p != patch_e; ++p) (*p)->checkpoint(cp_file);
 
-    statedef()->checkpoint(cp_file);
+    statedef().checkpoint(cp_file);
 
     cp_file.close();
 }
@@ -185,7 +165,7 @@ void swmrssa::Wmrssa::restore(std::string const & file_name)
     PatchPVecCI patch_e = pPatches.end();
     for (PatchPVecCI p = pPatches.begin(); p != patch_e; ++p) (*p)->restore(cp_file);
 
-    statedef()->restore(cp_file);
+    statedef().restore(cp_file);
 
     cp_file.close();
 
@@ -196,8 +176,8 @@ void swmrssa::Wmrssa::restore(std::string const & file_name)
 
 uint swmrssa::Wmrssa::_addComp(steps::solver::Compdef * cdef)
 {
-    swmrssa::Comp * comp = new Comp(cdef);
-    AssertLog(comp != 0);
+    auto * comp = new Comp(cdef);
+    AssertLog(comp != nullptr);
     uint compidx = pComps.size();
     pComps.push_back(comp);
     pCompMap[cdef] = comp;
@@ -208,12 +188,16 @@ uint swmrssa::Wmrssa::_addComp(steps::solver::Compdef * cdef)
 
 uint swmrssa::Wmrssa::_addPatch(steps::solver::Patchdef * pdef)
 {
-    Comp * icomp = 0;
-    Comp * ocomp = 0;
-    if (pdef->icompdef()) icomp = pCompMap[pdef->icompdef()];
-    if (pdef->ocompdef()) ocomp = pCompMap[pdef->ocompdef()];
-    swmrssa::Patch * patch = new Patch(pdef, icomp, ocomp);
-    AssertLog(patch != 0);
+    Comp * icomp = nullptr;
+    Comp * ocomp = nullptr;
+    if (pdef->icompdef()) {
+      icomp = pCompMap[pdef->icompdef()];
+    }
+    if (pdef->ocompdef()) {
+      ocomp = pCompMap[pdef->ocompdef()];
+    }
+    auto * patch = new Patch(pdef, icomp, ocomp);
+    AssertLog(patch != nullptr);
     uint patchidx = pPatches.size();
     pPatches.push_back(patch);
     return patchidx;
@@ -223,38 +207,27 @@ uint swmrssa::Wmrssa::_addPatch(steps::solver::Patchdef * pdef)
 
 void swmrssa::Wmrssa::_setup()
 {
-    CompPVecCI c_end = pComps.end();
-    for (CompPVecCI c = pComps.begin(); c != c_end; ++c)
-    {
-        (*c)->setupKProcs(this);
+    for (auto const& c : pComps) {
+        c->setupKProcs(this);
     }
 
-    PatchPVecCI p_end = pPatches.end();
-    for (PatchPVecCI p = pPatches.begin(); p != p_end; ++p)
-    {
-
-        (*p)->setupKProcs(this);
+    for (auto const& p : pPatches) {
+        p->setupKProcs(this);
     }
 
     // Resolve all dependencies
-    for (CompPVecCI c = pComps.begin(); c != c_end; ++c)
-    {
-        KProcPVecCI kprocend = (*c)->kprocEnd();
-        for (KProcPVecCI k = (*c)->kprocBegin(); k != kprocend; ++k)
-        {
-            (*k)->setupDeps();      // This is no longer useful, right?
+    for (auto const& c : pComps) {
+        for (auto const& k : c->kprocs()) {
+            k->setupDeps();      // This is no longer useful, right?
         }
-        (*c)->setupSpecDeps();
+        c->setupSpecDeps();
     }
-    for (PatchPVecCI p = pPatches.begin(); p != p_end; ++p)
-    {
+    for (auto const& p : pPatches) {
 
-        KProcPVecCI kprocend = (*p)->kprocEnd();
-        for (KProcPVecCI k = (*p)->kprocBegin(); k != kprocend; ++k)
-        {
-            (*k)->setupDeps();
+        for (auto const& k : p->kprocs()) {
+            k->setupDeps();
         }
-        (*p)->setupSpecDeps();
+        p->setupSpecDeps();
     }
 
     _build();
@@ -293,16 +266,16 @@ std::string swmrssa::Wmrssa::getSolverEmail() const
 
 void swmrssa::Wmrssa::reset()
 {
-    uint comps = statedef()->countComps();
-    for (uint i=0; i < comps; ++i) statedef()->compdef(i)->reset();
-    uint patches = statedef()->countPatches();
-    for (uint i=0; i < patches; ++i) statedef()->patchdef(i)->reset();
+    uint comps = statedef().countComps();
+    for (uint i=0; i < comps; ++i) statedef().compdef(i)->reset();
+    uint patches = statedef().countPatches();
+    for (uint i=0; i < patches; ++i) statedef().patchdef(i)->reset();
 
     std::for_each(pComps.begin(), pComps.end(), std::mem_fun(&Comp::reset));
     std::for_each(pPatches.begin(), pPatches.end(), std::mem_fun(&Patch::reset));
 
-    statedef()->resetTime();
-    statedef()->resetNSteps();
+    statedef().resetTime();
+    statedef().resetNSteps();
 
     _reset();
 }
@@ -311,13 +284,13 @@ void swmrssa::Wmrssa::reset()
 
 void swmrssa::Wmrssa::run(double endtime)
 {
-    if (endtime < statedef()->time())
+    if (endtime < statedef().time())
     {
         std::ostringstream os;
         os << "Endtime is before current simulation time";
         ArgErrLog(os.str());
     }
-    while (statedef()->time() < endtime)
+    while (statedef().time() < endtime)
     {
         if (pA0 == 0.0) break;
         bool isRejected = true;
@@ -327,17 +300,17 @@ void swmrssa::Wmrssa::run(double endtime)
         {
             uint cur_node = _getNext();
             kp = pKProcs[cur_node];
-            if (kp == 0) break;
+            if (kp == nullptr) break;
             double randnum = rng()->getUnfIE()*pLevels[0][cur_node];
             if (randnum <= kp->propensityLB() || randnum <= kp->rate())
                 isRejected = false;
             erlangFactor *= rng()->getUnfIE();
         }
         double dt = -1/pA0*log(erlangFactor);
-        if ((statedef()->time() + dt) > endtime) break;
+        if ((statedef().time() + dt) > endtime) break;
         _executeStep(kp, dt);
     }
-    statedef()->setTime(endtime);
+    statedef().setTime(endtime);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -351,7 +324,7 @@ void swmrssa::Wmrssa::advance(double adv)
         ArgErrLog(os.str());
     }
 
-    double endtime = statedef()->time() + adv;
+    double endtime = statedef().time() + adv;
     run(endtime);
 }
 
@@ -361,19 +334,21 @@ void swmrssa::Wmrssa::step()
 {
     bool isRejected = true;
     double erlangFactor = 1;
-    swmrssa::KProc *kp;
+    swmrssa::KProc *kp = nullptr;
     while(isRejected)
     {
         if (pA0 == 0.0) break;
         uint cur_node = _getNext();
         kp = pKProcs[cur_node];
-        if (kp == 0) break;
+        if (kp == nullptr) break;
         double randnum = rng()->getUnfIE()*pLevels[0][cur_node];
         if (randnum <= kp->propensityLB() || randnum <= kp->rate())
             isRejected = false;
         erlangFactor *= rng()->getUnfIE();
     }
-    double dt = -1/pA0*log(erlangFactor);
+    AssertLog(kp != nullptr);
+    AssertLog(pA0 != 0.0);
+    double dt = -1 / pA0 * std::log(erlangFactor);
     _executeStep(kp, dt);
 }
 
@@ -381,21 +356,21 @@ void swmrssa::Wmrssa::step()
 
 double swmrssa::Wmrssa::getTime() const
 {
-    return statedef()->time();
+    return statedef().time();
 }
 
 ////////////////////////////////////////////////////////////////////////
 
 uint swmrssa::Wmrssa::getNSteps() const
 {
-    return statedef()->nsteps();
+    return statedef().nsteps();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void swmrssa::Wmrssa::setTime(double time)
 {
-    statedef()->setTime(time);
+    statedef().setTime(time);
 }
 
 
@@ -403,16 +378,16 @@ void swmrssa::Wmrssa::setTime(double time)
 
 void swmrssa::Wmrssa::setNSteps(uint nsteps)
 {
-    statedef()->setNSteps(nsteps);
+    statedef().setNSteps(nsteps);
 }
 
 ////////////////////////////////////////////////////////////////////////
 
 double swmrssa::Wmrssa::_getCompVol(uint cidx) const
 {
-    AssertLog(cidx < statedef()->countComps());
-    ssolver::Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    ssolver::Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     return comp->vol();
 }
 
@@ -420,9 +395,9 @@ double swmrssa::Wmrssa::_getCompVol(uint cidx) const
 
 void swmrssa::Wmrssa::_setCompVol(uint cidx, double vol)
 {
-    AssertLog(cidx < statedef()->countComps());
-    ssolver::Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    ssolver::Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     comp->setVol(vol);
 
     // Reset the reaction C constants
@@ -437,10 +412,10 @@ void swmrssa::Wmrssa::_setCompVol(uint cidx, double vol)
 
 double swmrssa::Wmrssa::_getCompCount(uint cidx, uint sidx) const
 {
-    AssertLog(cidx < statedef()->countComps());
-    AssertLog(sidx < statedef()->countSpecs());
-    ssolver::Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(sidx < statedef().countSpecs());
+    ssolver::Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     uint slidx = comp->specG2L(sidx);
     if (slidx == ssolver::LIDX_UNDEFINED)
     {
@@ -455,10 +430,10 @@ double swmrssa::Wmrssa::_getCompCount(uint cidx, uint sidx) const
 
 void swmrssa::Wmrssa::_setCompCount(uint cidx, uint sidx, double n)
 {
-    AssertLog(cidx < statedef()->countComps());
-    AssertLog(sidx < statedef()->countSpecs());
-    ssolver::Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(sidx < statedef().countSpecs());
+    ssolver::Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     uint slidx = comp->specG2L(sidx);
     if (slidx == ssolver::LIDX_UNDEFINED)
     {
@@ -483,7 +458,7 @@ void swmrssa::Wmrssa::_setCompCount(uint cidx, uint sidx, double n)
         double rand01 = rng()->getUnfIE();
         if (rand01 < n_frc)c++;
     }
-    double n_double = static_cast<double>(c);
+    auto n_double = static_cast<double>(c);
     comp->setCount(slidx, n_double);
     // Rates have changed
     _reset();
@@ -514,8 +489,8 @@ double swmrssa::Wmrssa::_getCompConc(uint cidx, uint sidx) const
 {
     // the following method does all the necessary argument checking
     double count = _getCompCount(cidx, sidx);
-    ssolver::Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    ssolver::Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     double vol = comp->vol();
     return count/ (1.0e3 * vol * steps::math::AVOGADRO);
 }
@@ -525,9 +500,9 @@ double swmrssa::Wmrssa::_getCompConc(uint cidx, uint sidx) const
 void swmrssa::Wmrssa::_setCompConc(uint cidx, uint sidx, double c)
 {
     AssertLog(c >= 0.0);
-    assert (cidx < statedef()->countComps());
-    ssolver::Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    assert (cidx < statedef().countComps());
+    ssolver::Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     double count = c * (1.0e3 * comp->vol() * steps::math::AVOGADRO);
     // the following method does all the necessary argument checking
     _setCompCount(cidx, sidx, count);
@@ -537,10 +512,10 @@ void swmrssa::Wmrssa::_setCompConc(uint cidx, uint sidx, double c)
 
 bool swmrssa::Wmrssa::_getCompClamped(uint cidx, uint sidx) const
 {
-    AssertLog(cidx < statedef()->countComps());
-    AssertLog(sidx < statedef()->countSpecs());
-    ssolver::Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(sidx < statedef().countSpecs());
+    ssolver::Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     uint lsidx = comp->specG2L(sidx);
     if (lsidx == ssolver::LIDX_UNDEFINED)
     {
@@ -556,10 +531,10 @@ bool swmrssa::Wmrssa::_getCompClamped(uint cidx, uint sidx) const
 
 void swmrssa::Wmrssa::_setCompClamped(uint cidx, uint sidx, bool b)
 {
-    AssertLog(cidx < statedef()->countComps());
-    AssertLog(sidx < statedef()->countSpecs());
-    ssolver::Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(sidx < statedef().countSpecs());
+    ssolver::Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     uint lsidx = comp->specG2L(sidx);
     if (lsidx == ssolver::LIDX_UNDEFINED)
     {
@@ -576,10 +551,10 @@ void swmrssa::Wmrssa::_setCompClamped(uint cidx, uint sidx, bool b)
 
 double swmrssa::Wmrssa::_getCompReacK(uint cidx, uint ridx) const
 {
-    AssertLog(cidx < statedef()->countComps());
-    AssertLog(ridx < statedef()->countReacs());
-    ssolver::Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(ridx < statedef().countReacs());
+    ssolver::Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     uint lridx = comp->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -595,11 +570,11 @@ double swmrssa::Wmrssa::_getCompReacK(uint cidx, uint ridx) const
 
 void swmrssa::Wmrssa::_setCompReacK(uint cidx, uint ridx, double kf)
 {
-    AssertLog(cidx < statedef()->countComps());
-    AssertLog(ridx < statedef()->countReacs());
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(ridx < statedef().countReacs());
     assert (kf >= 0.0);
-    ssolver::Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    ssolver::Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     uint lridx = comp->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -626,10 +601,10 @@ void swmrssa::Wmrssa::_setCompReacK(uint cidx, uint ridx, double kf)
 
 bool swmrssa::Wmrssa::_getCompReacActive(uint cidx, uint ridx) const
 {
-    AssertLog(cidx < statedef()->countComps());
-    AssertLog(ridx < statedef()->countReacs());
-    ssolver::Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(ridx < statedef().countReacs());
+    ssolver::Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     uint lridx = comp->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -645,10 +620,10 @@ bool swmrssa::Wmrssa::_getCompReacActive(uint cidx, uint ridx) const
 
 void swmrssa::Wmrssa::_setCompReacActive(uint cidx, uint ridx, bool a)
 {
-    AssertLog(cidx < statedef()->countComps());
-    AssertLog(ridx < statedef()->countReacs());
-    ssolver::Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(ridx < statedef().countReacs());
+    ssolver::Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     uint lridx = comp->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -667,10 +642,10 @@ void swmrssa::Wmrssa::_setCompReacActive(uint cidx, uint ridx, bool a)
 
 double swmrssa::Wmrssa::_getCompReacC(uint cidx, uint ridx) const
 {
-    AssertLog(cidx < statedef()->countComps());
-    AssertLog(ridx < statedef()->countReacs());
-    ssolver::Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(ridx < statedef().countReacs());
+    ssolver::Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     uint lridx = comp->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -694,10 +669,10 @@ double swmrssa::Wmrssa::_getCompReacC(uint cidx, uint ridx) const
 
 double swmrssa::Wmrssa::_getCompReacH(uint cidx, uint ridx) const
 {
-    AssertLog(cidx < statedef()->countComps());
-    AssertLog(ridx < statedef()->countReacs());
-    ssolver::Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(ridx < statedef().countReacs());
+    ssolver::Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     uint lridx = comp->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -719,12 +694,12 @@ double swmrssa::Wmrssa::_getCompReacH(uint cidx, uint ridx) const
 
 ////////////////////////////////////////////////////////////////////////
 
-double swmrssa::Wmrssa::_getCompReacA(uint cidx, uint ridx) const
+long double swmrssa::Wmrssa::_getCompReacA(uint cidx, uint ridx) const
 {
-    AssertLog(cidx < statedef()->countComps());
-    AssertLog(ridx < statedef()->countReacs());
-    ssolver::Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(ridx < statedef().countReacs());
+    ssolver::Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     uint lridx = comp->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -741,17 +716,17 @@ double swmrssa::Wmrssa::_getCompReacA(uint cidx, uint ridx) const
     swmrssa::KProc * lreac = lcomp->reac(lridx);
     assert (lreac->defr() == comp->reacdef(lridx));
 
-    return lreac->rate();
+    return static_cast<long double>(lreac->rate());
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-uint swmrssa::Wmrssa::_getCompReacExtent(uint cidx, uint ridx) const
+unsigned long long swmrssa::Wmrssa::_getCompReacExtent(uint cidx, uint ridx) const
 {
-    AssertLog(cidx < statedef()->countComps());
-    AssertLog(ridx < statedef()->countReacs());
-    ssolver::Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(ridx < statedef().countReacs());
+    ssolver::Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     uint lridx = comp->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -775,10 +750,10 @@ uint swmrssa::Wmrssa::_getCompReacExtent(uint cidx, uint ridx) const
 
 void swmrssa::Wmrssa::_resetCompReacExtent(uint cidx, uint ridx)
 {
-    AssertLog(cidx < statedef()->countComps());
-    AssertLog(ridx < statedef()->countReacs());
-    ssolver::Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(ridx < statedef().countReacs());
+    ssolver::Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     uint lridx = comp->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -802,9 +777,9 @@ void swmrssa::Wmrssa::_resetCompReacExtent(uint cidx, uint ridx)
 
 double swmrssa::Wmrssa::_getPatchArea(uint pidx) const
 {
-    AssertLog(pidx < statedef()->countPatches());
-    ssolver::Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    AssertLog(pidx < statedef().countPatches());
+    ssolver::Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     return patch->area();
 }
 
@@ -812,9 +787,9 @@ double swmrssa::Wmrssa::_getPatchArea(uint pidx) const
 
 void swmrssa::Wmrssa::_setPatchArea(uint pidx, double area)
 {
-    AssertLog(pidx < statedef()->countPatches());
-    ssolver::Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    AssertLog(pidx < statedef().countPatches());
+    ssolver::Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     patch->setArea(area);
 }
 
@@ -822,10 +797,10 @@ void swmrssa::Wmrssa::_setPatchArea(uint pidx, double area)
 
 double swmrssa::Wmrssa::_getPatchCount(uint pidx, uint sidx) const
 {
-    AssertLog(pidx < statedef()->countPatches());
-    AssertLog(sidx < statedef()->countSpecs());
-    ssolver::Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(sidx < statedef().countSpecs());
+    ssolver::Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     uint slidx = patch->specG2L(sidx);
     if (slidx == ssolver::LIDX_UNDEFINED)
     {
@@ -841,10 +816,10 @@ double swmrssa::Wmrssa::_getPatchCount(uint pidx, uint sidx) const
 
 void swmrssa::Wmrssa::_setPatchCount(uint pidx, uint sidx, double n)
 {
-    AssertLog(pidx < statedef()->countPatches());
-    AssertLog(sidx< statedef()->countSpecs());
-    ssolver::Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(sidx< statedef().countSpecs());
+    ssolver::Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     uint slidx = patch->specG2L(sidx);
     if (slidx == ssolver::LIDX_UNDEFINED)
     {
@@ -865,7 +840,7 @@ void swmrssa::Wmrssa::_setPatchCount(uint pidx, uint sidx, double n)
     uint c = static_cast<uint>(n_int);
     if (n_frc > 0.0)
     {
-        double rand01 = statedef()->rng()->getUnfIE();
+        double rand01 = statedef().rng()->getUnfIE();
         if (rand01 < n_frc)c++;
     }
     n_int = static_cast<double>(c);
@@ -897,10 +872,10 @@ void swmrssa::Wmrssa::_setPatchAmount(uint pidx, uint sidx, double a)
 
 bool swmrssa::Wmrssa::_getPatchClamped(uint pidx, uint sidx) const
 {
-    AssertLog(pidx < statedef()->countPatches());
-    AssertLog(sidx < statedef()->countSpecs());
-    ssolver::Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(sidx < statedef().countSpecs());
+    ssolver::Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     uint lsidx = patch->specG2L(sidx);
     if (lsidx == ssolver::LIDX_UNDEFINED)
     {
@@ -916,10 +891,10 @@ bool swmrssa::Wmrssa::_getPatchClamped(uint pidx, uint sidx) const
 
 void swmrssa::Wmrssa::_setPatchClamped(uint pidx, uint sidx, bool buf)
 {
-    AssertLog(pidx < statedef()->countComps());
-    AssertLog(sidx < statedef()->countSpecs());
-    ssolver::Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    AssertLog(pidx < statedef().countComps());
+    AssertLog(sidx < statedef().countSpecs());
+    ssolver::Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     uint lsidx = patch->specG2L(sidx);
     if (lsidx == ssolver::LIDX_UNDEFINED)
     {
@@ -935,10 +910,10 @@ void swmrssa::Wmrssa::_setPatchClamped(uint pidx, uint sidx, bool buf)
 
 double swmrssa::Wmrssa::_getPatchSReacK(uint pidx, uint ridx) const
 {
-    AssertLog(pidx < statedef()->countPatches());
-    AssertLog(ridx < statedef()->countSReacs());
-    ssolver::Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(ridx < statedef().countSReacs());
+    ssolver::Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     uint lridx = patch->sreacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -954,11 +929,11 @@ double swmrssa::Wmrssa::_getPatchSReacK(uint pidx, uint ridx) const
 
 void swmrssa::Wmrssa::_setPatchSReacK(uint pidx, uint ridx, double kf)
 {
-    AssertLog(pidx < statedef()->countPatches());
-    AssertLog(ridx < statedef()->countSReacs());
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(ridx < statedef().countSReacs());
     assert (kf >= 0.0);
-    ssolver::Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    ssolver::Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     uint lridx = patch->sreacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -986,10 +961,10 @@ void swmrssa::Wmrssa::_setPatchSReacK(uint pidx, uint ridx, double kf)
 
 bool swmrssa::Wmrssa::_getPatchSReacActive(uint pidx, uint ridx) const
 {
-    AssertLog(pidx < statedef()->countPatches());
-    AssertLog(ridx < statedef()->countSReacs());
-    ssolver::Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(ridx < statedef().countSReacs());
+    ssolver::Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     uint lridx = patch->sreacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -1005,10 +980,10 @@ bool swmrssa::Wmrssa::_getPatchSReacActive(uint pidx, uint ridx) const
 
 void swmrssa::Wmrssa::_setPatchSReacActive(uint pidx, uint ridx, bool a)
 {
-    AssertLog(pidx < statedef()->countPatches());
-    AssertLog(ridx < statedef()->countSReacs());
-    ssolver::Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(ridx < statedef().countSReacs());
+    ssolver::Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     uint lridx = patch->sreacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -1027,11 +1002,11 @@ void swmrssa::Wmrssa::_setPatchSReacActive(uint pidx, uint ridx, bool a)
 
 double swmrssa::Wmrssa::_getPatchSReacC(uint pidx, uint ridx) const
 {
-    AssertLog(pidx < statedef()->countPatches());
-    AssertLog(ridx < statedef()->countSReacs());
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(ridx < statedef().countSReacs());
 
-    ssolver::Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    ssolver::Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     uint lridx = patch->sreacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -1055,11 +1030,11 @@ double swmrssa::Wmrssa::_getPatchSReacC(uint pidx, uint ridx) const
 
 double swmrssa::Wmrssa::_getPatchSReacH(uint pidx, uint ridx) const
 {
-    AssertLog(pidx < statedef()->countPatches());
-    AssertLog(ridx < statedef()->countSReacs());
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(ridx < statedef().countSReacs());
 
-    ssolver::Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    ssolver::Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     uint lridx = patch->sreacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -1083,11 +1058,11 @@ double swmrssa::Wmrssa::_getPatchSReacH(uint pidx, uint ridx) const
 
 double swmrssa::Wmrssa::_getPatchSReacA(uint pidx, uint ridx) const
 {
-    AssertLog(pidx < statedef()->countPatches());
-    AssertLog(ridx < statedef()->countSReacs());
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(ridx < statedef().countSReacs());
 
-    ssolver::Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    ssolver::Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     uint lridx = patch->sreacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -1110,12 +1085,12 @@ double swmrssa::Wmrssa::_getPatchSReacA(uint pidx, uint ridx) const
 
 ////////////////////////////////////////////////////////////////////////
 
-uint swmrssa::Wmrssa::_getPatchSReacExtent(uint pidx, uint ridx) const
+unsigned long long swmrssa::Wmrssa::_getPatchSReacExtent(uint pidx, uint ridx) const
 {
-    AssertLog(pidx < statedef()->countPatches());
-    AssertLog(ridx < statedef()->countSReacs());
-    ssolver::Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(ridx < statedef().countSReacs());
+    ssolver::Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     uint lridx = patch->sreacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -1140,10 +1115,10 @@ uint swmrssa::Wmrssa::_getPatchSReacExtent(uint pidx, uint ridx) const
 
 void swmrssa::Wmrssa::_resetPatchSReacExtent(uint pidx, uint ridx)
 {
-    AssertLog(pidx < statedef()->countPatches());
-    AssertLog(ridx < statedef()->countSReacs());
-    ssolver::Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(ridx < statedef().countSReacs());
+    ssolver::Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     uint lridx = patch->sreacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -1194,7 +1169,7 @@ void swmrssa::Wmrssa::_build()
         if (extra != 0) clsize += SCHEDULEWIDTH - extra;
 
         // Create the level and add it.
-        double * level = new double[clsize];
+        auto * level = new double[clsize];
         std::fill_n(level, clsize, 0.0);
         pLevelSizes.push_back(clsize);
         pLevels.push_back(level);
@@ -1255,7 +1230,7 @@ uint swmrssa::Wmrssa::_getNext() const
 
     // Run until top level.
     double a0 = pA0;
-    double * level = 0;
+    double * level = nullptr;
     while (clevel != 0)
     {
         // Decrease the current level.
@@ -1299,29 +1274,27 @@ uint swmrssa::Wmrssa::_getNext() const
 
 void swmrssa::Wmrssa::_reset()
 {
-    if (pKProcs.size() == 0) return;
+    if (pKProcs.empty()) return;
 
     CompPVecCI c_end = pComps.end();
     for (CompPVecCI c = pComps.begin(); c != c_end; ++c)
     {
         double * cnt_vec = (*c)->def()->pools();
         for (uint pool = 0; pool < (*c)->def()->countSpecs(); ++pool)
-            (*c)->setBounds(pool, cnt_vec[pool]);
+            (*c)->setBounds(pool, static_cast<int>(cnt_vec[pool]));
     }
     PatchPVecCI p_end = pPatches.end();
     for (PatchPVecCI p = pPatches.begin(); p != p_end; ++p)
     {
         double * cnt_vec = (*p)->def()->pools();
         for (uint pool = 0; pool < (*p)->def()->countSpecs(); ++pool)
-            (*p)->setBounds(pool, cnt_vec[pool]);
+            (*p)->setBounds(pool, static_cast<int>(cnt_vec[pool]));
     }
     // Reset the basic level: compute rates.
     double * oldlevel = pLevels[0];
     uint cur_node = 0;
-    std::vector<KProc*>::iterator kp_end = pKProcs.end();
-    for (std::vector<KProc*>::iterator kp = pKProcs.begin(); kp != kp_end; ++kp)
-    {
-        oldlevel[cur_node++] = (*kp)->rate(BOUNDS);
+    for (auto const& kp : pKProcs) {
+        oldlevel[cur_node++] = kp->rate(BOUNDS);
     }
 
     // Work up.
@@ -1369,13 +1342,11 @@ void swmrssa::Wmrssa::_update(SchedIDXVec const & entries)
     AssertLog(entries.size() <= pMaxUpSize);                                            /////////
 
     // Recompute rates.
-    SchedIDXVecCI sidx_end = entries.end();
     uint prev_e = 0xFFFFFFFF;
     uint cur_e = 0;
-    for (SchedIDXVecCI sidx = entries.begin(); sidx != sidx_end; ++sidx)
-    {
+    for (auto const& sidx : entries) {
         // Fetch index.
-        uint idx = *sidx;
+        uint idx = sidx;
         // Recompute rate, get difference, and store.
         double newrate = pKProcs[idx]->rate(BOUNDS);
         level0[idx] = newrate;
@@ -1462,8 +1433,8 @@ void swmrssa::Wmrssa::_executeStep(swmrssa::KProc * kp, double dt)
         countUpdate++;
     }
     countSteps++;
-    statedef()->incTime(dt);
-    statedef()->incNSteps(1);
+    statedef().incTime(dt);
+    statedef().incNSteps(1);
 }
 
 ////////////////////////////////////////////////////////////////////////

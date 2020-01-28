@@ -61,20 +61,33 @@ def run_sim():
     # In test runs, with good code, <0.1% will fail with a tolerance of 1% 
     tolerance_for = 1.0/100
 
+    ####################### Second order irreversible A2 ###################
+
+    global KCST_soA2, CONCA_soA2, tolerance_soA2
+
+    KCST_soA2 = 10.0e6        # The reaction constant
+
+    CONCA_soA2 = 10.0e-6
+
+    NITER_soA2 = 1000         # The number of iterations
+
+    # In test runs, with good code, <0.1% will fail with a tolerance of 2%
+    tolerance_soA2 = 1.0/100
+
     ####################### Second order irreversible AA ###################
 
     global KCST_soAA, CONCA_soAA, CONCB_soAA, tolerance_soAA
-
+    
     KCST_soAA = 50.0e6        # The reaction constant
-
+    
     CONCA_soAA = 20.0e-6
     CONCB_soAA = CONCA_soAA
-
+    
     NITER_soAA = 1000         # The number of iterations
-
-    # In test runs, with good code, <0.1% will fail with a tolerance of 1% 
+    
+    # In test runs, with good code, <0.1% will fail with a tolerance of 1%
     tolerance_soAA = 1.0/100
-
+    
     ####################### Second order irreversible AB ###################
 
     global KCST_soAB, CONCA_soAB, CONCB_soAB, tolerance_soAB
@@ -87,10 +100,36 @@ def run_sim():
 
     NITER_soAB = 1000         # The number of iterations
 
-
     # In test runs, with good code, <0.1% will fail with a tolerance of 1% 
     tolerance_soAB = 1.0/100
 
+    ####################### Third order irreversible A3 ###################
+
+    global KCST_toA3, CONCA_toA3, tolerance_toA3
+    
+    KCST_toA3 = 1.0e12        # The reaction constant
+    
+    CONCA_toA3 = 100.0e-6
+    
+    NITER_toA3 = 1000         # The number of iterations
+    
+    # In test runs, with good code, <0.1% will fail with a tolerance of 1%
+    tolerance_toA3 = 1.0/100
+
+    ####################### Third order irreversible A2B ###################
+
+    global KCST_toA2B, CONCA_toA2B, CONCB_toA2B, tolerance_toA2B
+    
+    KCST_toA2B = 0.1e12        # The reaction constant
+    
+    CONCA_toA2B = 30.0e-6
+    CONCB_toA2B = 20.0e-6
+    
+    NITER_toA2B = 1000         # The number of iterations
+    
+    # In test runs, with good code, <0.1% will fail with a tolerance of 1%
+    tolerance_toA2B = 1.0/100
+        
     ####################### Second order irreversible 2D ###################
 
     global COUNTA_so2d, COUNTB_so2d, CCST_so2d, tolerance_so2d
@@ -137,6 +176,11 @@ def run_sim():
     R1_for = smod.Reac('R1_for', volsys, lhs = [A_for], rhs = [B_for], kcst = KCST_f_for)
     R2_for = smod.Reac('R2_for', volsys, lhs = [B_for], rhs = [A_for], kcst = KCST_b_for)
 
+    # Second order irreversible A2
+    A_soA2 = smod.Spec('A_soA2', mdl)
+    C_soA2 = smod.Spec('C_soA2', mdl)
+    R1_soA2 = smod.Reac('R1_soA2', volsys, lhs = [A_soA2, A_soA2], rhs = [C_soA2], kcst = KCST_soA2)
+
     # Second order irreversible AA
     A_soAA = smod.Spec('A_soAA', mdl)
     B_soAA = smod.Spec('B_soAA', mdl)
@@ -149,6 +193,17 @@ def run_sim():
     C_soAB = smod.Spec('C_soAB', mdl)
     R1_soAB = smod.Reac('R1_soAB', volsys, lhs = [A_soAB, B_soAB], rhs = [C_soAB], kcst = KCST_soAB)
 
+    # Third order irreversible A3
+    A_toA3 = smod.Spec('A_toA3', mdl)
+    C_toA3 = smod.Spec('C_toA3', mdl)
+    R1_toA3 = smod.Reac('R1_toA3', volsys, lhs = [A_toA3, A_toA3, A_toA3], rhs = [C_toA3], kcst = KCST_toA3)
+
+    # Third order irreversible A2B
+    A_toA2B = smod.Spec('A_toA2B', mdl)
+    B_toA2B = smod.Spec('B_toA2B', mdl)
+    C_toA2B = smod.Spec('C_toA2B', mdl)
+    R1_toA3 = smod.Reac('R1_toA2B', volsys, lhs = [A_toA2B, A_toA2B, B_toA2B], rhs = [C_toA2B], kcst = KCST_toA2B)
+        
     # Second order irreversible 2D
     A_so2d = smod.Spec('A_so2d', mdl)
     B_so2d = smod.Spec('B_so2d', mdl)
@@ -182,9 +237,15 @@ def run_sim():
 
     res_m_for = numpy.zeros([NITER_for, ntpnts, 2]) 
 
+    res_m_soA2 = numpy.zeros([NITER_soA2, ntpnts, 2])
+
     res_m_soAA = numpy.zeros([NITER_soAA, ntpnts, 3])
 
     res_m_soAB = numpy.zeros([NITER_soAB, ntpnts, 3])
+
+    res_m_toA3 = numpy.zeros([NITER_toA3, ntpnts, 2])
+
+    res_m_toA2B = numpy.zeros([NITER_toA2B, ntpnts, 3])
 
     res_m_so2d = numpy.zeros([NITER_so2d, ntpnts, 3])
 
@@ -198,7 +259,10 @@ def run_sim():
         if i < NITER_for: 
             sim.setCompCount('comp1', 'A_for', COUNT_for)
             sim.setCompCount('comp1', 'B_for', 0.0)
-        
+
+        if i < NITER_soA2:
+            sim.setCompConc('comp1', 'A_soA2', CONCA_soA2)
+
         if i < NITER_soAA:
             sim.setCompConc('comp1', 'A_soAA', CONCA_soAA)
             sim.setCompConc('comp1', 'B_soAA', CONCB_soAA)
@@ -207,6 +271,13 @@ def run_sim():
             sim.setCompConc('comp1', 'A_soAB', CONCA_soAB)
             sim.setCompConc('comp1', 'B_soAB', CONCB_soAB)
         
+        if i < NITER_toA3:
+            sim.setCompConc('comp1', 'A_toA3', CONCA_toA3)
+
+        if i < NITER_toA2B:
+            sim.setCompConc('comp1', 'A_toA2B', CONCA_toA2B)
+            sim.setCompConc('comp1', 'B_toA2B', CONCB_toA2B)
+                                    
         if i < NITER_so2d:
             sim.setPatchCount('patch1', 'A_so2d', COUNTA_so2d)
             sim.setPatchCount('patch1', 'B_so2d', COUNTB_so2d)
@@ -221,7 +292,10 @@ def run_sim():
             if i < NITER_for: 
                 res_m_for[i, t, 0] = sim.getCompConc('comp1', 'A_for')*1e6
                 res_m_for[i, t, 1] = sim.getCompConc('comp1', 'B_for')*1e6
-            
+
+            if i < NITER_soA2:
+                res_m_soA2[i, t, 0] = sim.getCompConc('comp1', 'A_soA2')
+
             if i < NITER_soAA:
                 res_m_soAA[i, t, 0] = sim.getCompConc('comp1', 'A_soAA')
                 res_m_soAA[i, t, 1] = sim.getCompConc('comp1', 'B_soAA')
@@ -230,6 +304,14 @@ def run_sim():
                 res_m_soAB[i, t, 0] = sim.getCompConc('comp1', 'A_soAB')
                 res_m_soAB[i, t, 1] = sim.getCompConc('comp1', 'B_soAB')
 
+            if i < NITER_toA3:
+                res_m_toA3[i, t, 0] = sim.getCompConc('comp1', 'A_toA3')
+
+            if i < NITER_toA2B:
+                res_m_toA2B[i, t, 0] = sim.getCompConc('comp1', 'A_toA2B')
+                res_m_toA2B[i, t, 1] = sim.getCompConc('comp1', 'B_toA2B')
+                res_m_toA2B[i, t, 2] = sim.getCompConc('comp1', 'C_toA2B')
+                        
             if i < NITER_so2d:
                 res_m_so2d[i, t, 0] = sim.getPatchCount('patch1', 'A_so2d')
                 res_m_so2d[i, t, 1] = sim.getPatchCount('patch1', 'B_so2d') 
@@ -242,12 +324,21 @@ def run_sim():
     global mean_res_for
     mean_res_for = numpy.mean(res_m_for, 0)
 
+    global mean_res_soA2
+    mean_res_soA2 = numpy.mean(res_m_soA2, 0)
+    
     global mean_res_soAA
     mean_res_soAA = numpy.mean(res_m_soAA, 0)
 
     global mean_res_soAB
     mean_res_soAB = numpy.mean(res_m_soAB, 0)
 
+    global mean_res_toA3
+    mean_res_toA3 = numpy.mean(res_m_toA3, 0)
+
+    global mean_res_toA2B
+    mean_res_toA2B = numpy.mean(res_m_toA2B, 0)
+    
     global mean_res_so2d
     mean_res_so2d = numpy.mean(res_m_so2d, 0)
 
@@ -269,6 +360,7 @@ def test_foi():
         if i == 0: continue
         analy = N_foi*math.exp(-KCST_foi*tpnts[i])
         std = math.pow((N_foi*(math.exp(-KCST_foi*tpnts[i]))*(1-(math.exp(-KCST_foi*tpnts[i])))), 0.5)
+        
         assert tol_funcs.tolerable(analy, mean_res_foi[i], tolerance_foi)
         assert tol_funcs.tolerable(std, std_res_foi[i], tolerance_foi)
 
@@ -287,6 +379,60 @@ def test_for():
         assert tol_funcs.tolerable(mean_res_for[i,0], Aeq, tolerance_for)
         assert tol_funcs.tolerable(mean_res_for[i,1], Beq, tolerance_for)
 
+####################### Second order irreversible A2 ###################
+
+def test_soA2():
+    "Reaction - Second order, irreversible, 2A->C (Wmdirect)"
+    
+    if not ran_sim:
+        run_sim()
+    
+    invA = numpy.zeros(ntpnts)
+    lineA  = numpy.zeros(ntpnts)
+    for i in range(ntpnts):
+        invA[i] = (1.0/mean_res_soA2[i][0])
+        lineA[i] = (1.0/CONCA_soA2 +((tpnts[i]*2*KCST_soA2)))
+        assert tol_funcs.tolerable(invA[i], lineA[i], tolerance_soA2)
+
+####################### Third order irreversible A3 ###################
+
+def test_toA3():
+    "Reaction - Third order, irreversible, 3A->C (Wmdirect)"
+    
+    if not ran_sim:
+        run_sim()
+    
+    inv2A = numpy.zeros(ntpnts)
+    lineA  = numpy.zeros(ntpnts)
+    
+    for i in range(ntpnts):
+        inv2A[i] = (1.0/(mean_res_toA3[i][0]**2))
+        lineA[i] = (1.0/(CONCA_toA3**2) +((tpnts[i]*6*KCST_toA3)))        
+        assert tol_funcs.tolerable(inv2A[i], lineA[i], tolerance_toA3)
+
+####################### Third order irreversible A3 ###################
+
+def test_toA2B():
+    "Reaction - Third order, irreversible, 2A+B->C (Wmdirect)"
+    
+    if not ran_sim:
+        run_sim()
+
+    A0 = CONCA_toA2B
+    B0 = CONCB_toA2B
+    
+    delta_AB = A0-2*B0
+    delta_BA = 2*B0-A0
+        
+    kt = numpy.zeros(ntpnts)
+    lineA  = numpy.zeros(ntpnts)
+    for i in range(1, ntpnts):  
+        A = mean_res_toA2B[i][0]
+        B = mean_res_toA2B[i][1]
+        lineA[i] = (-1.0/delta_AB)*( (-1.0/delta_BA)*math.log( (B/A)/(B0/A0) ) +1.0/A - 1.0/A0 )        
+        kt[i] = (tpnts[i]*KCST_toA2B)
+        assert tol_funcs.tolerable(kt[i], lineA[i], tolerance_toA2B)
+    
 ####################### Second order irreversible AA ###################
 
 def test_soAA():

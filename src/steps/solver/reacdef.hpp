@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -86,7 +86,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this reaction rule.
-    inline uint gidx() const
+    inline uint gidx() const noexcept
     { return pIdx; }
 
     /// Return the name of the reaction.
@@ -108,10 +108,19 @@ public:
     int upd(uint gidx) const;
     bool reqspec(uint gidx) const;
 
-    inline steps::solver::gidxTVecCI bgnUpdColl() const
+    inline steps::solver::gidxTVecCI bgnUpdColl() const noexcept
     { return pSpec_UPD_Coll.begin(); }
-    inline steps::solver::gidxTVecCI endUpdColl() const
+    inline steps::solver::gidxTVecCI endUpdColl() const noexcept
     { return pSpec_UPD_Coll.end(); }
+    inline const gidxTVec& updColl() const noexcept {
+        return pSpec_UPD_Coll;
+    }
+    inline gidxTVec& updColl() noexcept {
+      return pSpec_UPD_Coll;
+    }
+
+    inline const steps::solver::gidxTVec& UPD_Coll() const noexcept
+    { return pSpec_UPD_Coll; }
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: SETUP

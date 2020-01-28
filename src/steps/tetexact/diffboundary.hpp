@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -73,7 +73,7 @@ public:
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    DiffBoundary(steps::solver::DiffBoundarydef * dbdef);
+    explicit DiffBoundary(steps::solver::DiffBoundarydef * dbdef);
     ~DiffBoundary();
 
     ////////////////////////////////////////////////////////////////////////
@@ -89,7 +89,7 @@ public:
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::DiffBoundarydef * def() const
+    inline steps::solver::DiffBoundarydef * def() const noexcept
     { return pDiffBoundarydef; }
 
     // We need access to the compartments so as to check if species are defined
@@ -109,13 +109,13 @@ public:
 
     // This information is the tetrahedron connected to this diffusion boundary
     // and the direction of the diffusion boundary for that tetrahedron (0 to 3)
-    void setTetDirection(uint tet, uint direction);
+    void setTetDirection(tetrahedron_id_t tet, uint direction);
 
 
-    std::vector<uint> getTets() const
+    inline const std::vector<tetrahedron_id_t>& getTets() const noexcept
     { return pTets; }
 
-    std::vector<uint> getTetDirection() const
+    inline const std::vector<uint>& getTetDirection() const noexcept
     { return pTetDirection; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -127,18 +127,18 @@ private:
     steps::solver::DiffBoundarydef    * pDiffBoundarydef;
 
     // Bool to check if compartments have been specified
-    bool                                 pSetComps;
+    bool                                 pSetComps{false};
 
     // Compartment arbitrarily labelled 'A'
-    stex::Comp                           * pCompA;
+    stex::Comp                           * pCompA{nullptr};
     // Compartment arbitrarily labelled 'B'
-    stex::Comp                           * pCompB;
+    stex::Comp                           * pCompB{nullptr};
 
     // A big vector of all the tetrahedrons connected to this diffusion boundary
     // If the diff boundary allows passage of an ion these tets will tell
     // their diffs for that ion to allow diffusion
     // The direction information I'm thinking will come from WHERE??
-    std::vector<uint>                     pTets;
+    std::vector<tetrahedron_id_t>                     pTets;
 
     // Directions have to be stored here - a tet could be connected to 2
     // different diffusion boundaries for example

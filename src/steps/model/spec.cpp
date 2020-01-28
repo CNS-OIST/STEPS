@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -86,7 +86,7 @@ void Spec::_handleSelfDelete()
 
 void Spec::setID(string const & id)
 {
-    AssertLog(pModel != 0);
+    AssertLog(pModel != nullptr);
     if (id == pID) return;
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
@@ -101,7 +101,7 @@ void Spec::setID(string const & id)
 
 void Spec::setValence(int valence)
 {
-    AssertLog(pModel != 0);
+    AssertLog(pModel != nullptr);
     pValence = valence;
 }
 

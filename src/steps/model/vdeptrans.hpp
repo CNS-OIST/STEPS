@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -96,7 +96,7 @@ public:
     /// Return the voltage-dependent transition ID.
     ///
     /// \return ID of the voltage-dependent transition.
-    std::string getID() const
+    inline std::string getID() const noexcept
     { return pID; }
 
     /// Set or change the voltage-dependent transition ID.
@@ -107,19 +107,19 @@ public:
     /// Return a pointer to the parent surface system.
     ///
     /// \return Pointer to the surface system.
-    Surfsys * getSurfsys() const
+    inline Surfsys * getSurfsys() const noexcept
     { return pSurfsys; }
 
     /// Return a pointer to the parent model.
     ///
     /// \return Pointer to the parent model.
-    Model * getModel() const
+    inline Model * getModel() const noexcept
     { return pModel; }
 
     /// Return a pointer to the associated channel.
     ///
     /// \return Pointer to associated channel.
-    Chan * getChan() const
+    inline Chan * getChan() const noexcept
     { return pChan; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -129,7 +129,7 @@ public:
     /// Return a pointer to the 'source' channel state
     ///
     /// \return Pointer of the source channel state
-    ChanState * getSrc() const
+    inline ChanState * getSrc() const noexcept
     { return pSrc; }
 
     /// Set the 'source' channel state
@@ -140,7 +140,7 @@ public:
     /// Return a pointer to the 'destination' channel state
     ///
     /// \return Pointer of the destination channel state
-    ChanState * getDst() const
+    inline ChanState * getDst() const noexcept
     { return pDst; }
 
     /// Set the 'destination' channel state
@@ -158,19 +158,19 @@ public:
 
     /// Get the table of transition rates.
     ///
-    double * _getRate() const
+    inline double * _getRate() const noexcept
     { return pRate; }
 
-    inline double _getVMin() const
+    inline double _getVMin() const noexcept
     { return pVMin; }
 
-    inline double _getVMax() const
+    inline double _getVMax() const noexcept
     { return pVMax; }
 
-    inline double _getDV() const
+    inline double _getDV() const noexcept
     { return pDV; }
 
-    inline uint _getTablesize() const
+    inline uint _getTablesize() const noexcept
     { return pTablesize; }
 
     ////////////////////////////////////////////////////////////////////////

@@ -95,7 +95,7 @@ int CVDiag(void *cvode_mem)
     CVProcessError(NULL, CVDIAG_MEM_NULL, "CVDIAG", "CVDiag", MSGDG_CVMEM_NULL);
     return(CVDIAG_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   /* Check if N_VCompare and N_VInvTest are present */
   if(vec_tmpl->ops->nvcompare == NULL ||
@@ -114,7 +114,7 @@ int CVDiag(void *cvode_mem)
 
   /* Get memory for CVDiagMemRec */
   cvdiag_mem = NULL;
-  cvdiag_mem = (CVDiagMem) malloc(sizeof(CVDiagMemRec));
+  cvdiag_mem = static_cast<CVDiagMem> (malloc(sizeof(CVDiagMemRec)));
   if (cvdiag_mem == NULL) {
     CVProcessError(cv_mem, CVDIAG_MEM_FAIL, "CVDIAG", "CVDiag", MSGDG_MEM_FAIL);
     return(CVDIAG_MEM_FAIL);
@@ -172,7 +172,7 @@ int CVDiagGetWorkSpace(void *cvode_mem, long int *lenrwLS, long int *leniwLS)
     CVProcessError(NULL, CVDIAG_MEM_NULL, "CVDIAG", "CVDiagGetWorkSpace", MSGDG_CVMEM_NULL);
     return(CVDIAG_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   *lenrwLS = 3*lrw1;
   *leniwLS = 3*liw1;
@@ -196,13 +196,13 @@ int CVDiagGetNumRhsEvals(void *cvode_mem, long int *nfevalsLS)
     CVProcessError(NULL, CVDIAG_MEM_NULL, "CVDIAG", "CVDiagGetNumRhsEvals", MSGDG_CVMEM_NULL);
     return(CVDIAG_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if (lmem == NULL) {
     CVProcessError(cv_mem, CVDIAG_LMEM_NULL, "CVDIAG", "CVDiagGetNumRhsEvals", MSGDG_LMEM_NULL);
     return(CVDIAG_LMEM_NULL);
   }
-  cvdiag_mem = (CVDiagMem) lmem;
+  cvdiag_mem = static_cast<CVDiagMem> (lmem);
 
   *nfevalsLS = nfeDI;
 
@@ -225,13 +225,13 @@ int CVDiagGetLastFlag(void *cvode_mem, int *flag)
     CVProcessError(NULL, CVDIAG_MEM_NULL, "CVDIAG", "CVDiagGetLastFlag", MSGDG_CVMEM_NULL);
     return(CVDIAG_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if (lmem == NULL) {
     CVProcessError(cv_mem, CVDIAG_LMEM_NULL, "CVDIAG", "CVDiagGetLastFlag", MSGDG_LMEM_NULL);
     return(CVDIAG_LMEM_NULL);
   }
-  cvdiag_mem = (CVDiagMem) lmem;
+  cvdiag_mem = static_cast<CVDiagMem> (lmem);
 
   *flag = last_flag;
 
@@ -248,7 +248,7 @@ char *CVDiagGetReturnFlagName(int flag)
 {
   char *name;
 
-  name = (char *)malloc(30*sizeof(char));
+  name = static_cast<char *> (malloc(30*sizeof(char)));
 
   switch(flag) {
   case CVDIAG_SUCCESS:
@@ -295,7 +295,7 @@ static int CVDiagInit(CVodeMem cv_mem)
 {
   CVDiagMem cvdiag_mem;
 
-  cvdiag_mem = (CVDiagMem) lmem;
+  cvdiag_mem = static_cast<CVDiagMem> (lmem);
 
   nfeDI = 0;
 
@@ -313,9 +313,9 @@ static int CVDiagInit(CVodeMem cv_mem)
  * -----------------------------------------------------------------
  */
 
-static int CVDiagSetup(CVodeMem cv_mem, int convfail, N_Vector ypred,
+static int CVDiagSetup(CVodeMem cv_mem, int /*convfail*/, N_Vector ypred,
                        N_Vector fpred, booleantype *jcurPtr, N_Vector vtemp1,
-                       N_Vector vtemp2, N_Vector vtemp3)
+                       N_Vector vtemp2, N_Vector /*vtemp3*/)
 {
   realtype r;
   N_Vector ftemp, y;
@@ -323,7 +323,7 @@ static int CVDiagSetup(CVodeMem cv_mem, int convfail, N_Vector ypred,
   CVDiagMem cvdiag_mem;
   int retval;
 
-  cvdiag_mem = (CVDiagMem) lmem;
+  cvdiag_mem = static_cast<CVDiagMem> (lmem);
 
   /* Rename work vectors for use as temporary values of y and f */
   ftemp = vtemp1;
@@ -383,14 +383,14 @@ static int CVDiagSetup(CVodeMem cv_mem, int convfail, N_Vector ypred,
  * -----------------------------------------------------------------
  */
 
-static int CVDiagSolve(CVodeMem cv_mem, N_Vector b, N_Vector weight,
-                       N_Vector ycur, N_Vector fcur)
+static int CVDiagSolve(CVodeMem cv_mem, N_Vector b, N_Vector /*weight*/,
+                       N_Vector /*ycur*/, N_Vector /*fcur*/)
 {
   booleantype invOK;
   realtype r;
   CVDiagMem cvdiag_mem;
 
-  cvdiag_mem = (CVDiagMem) lmem;
+  cvdiag_mem = static_cast<CVDiagMem> (lmem);
   
   /* If gamma has changed, update factor in M, and save gamma value */
 
@@ -427,7 +427,7 @@ static void CVDiagFree(CVodeMem cv_mem)
 {
   CVDiagMem cvdiag_mem;
   
-  cvdiag_mem = (CVDiagMem) lmem;
+  cvdiag_mem = static_cast<CVDiagMem> (lmem);
 
   N_VDestroy(M);
   N_VDestroy(bit);

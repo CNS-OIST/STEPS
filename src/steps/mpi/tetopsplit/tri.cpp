@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -64,31 +64,22 @@ namespace ssolver = steps::solver;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::Tri::Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
+smtos::Tri::Tri(triangle_id_t idx, steps::solver::Patchdef *patchdef, double area,
                 double l0, double l1, double l2, double d0, double d1, double d2,
-                 int tetinner, int tetouter, int tri0, int tri1, int tri2, int rank, int host_rank)
+                tetrahedron_id_t tetinner, tetrahedron_id_t tetouter,
+                triangle_id_t tri0, triangle_id_t tri1, triangle_id_t tri2,
+                int rank, int host_rank)
 : pIdx(idx)
 , pPatchdef(patchdef)
 , pArea(area)
 , pLengths()
 , pDist()
-, pInnerTet(nullptr)
-, pOuterTet(nullptr)
 , pTets()
 , pNextTri()
-, pPoolCount(nullptr)
-, pPoolFlags(nullptr)
-, pKProcs()
-, pECharge(nullptr)
-, pECharge_last(nullptr)
-, pOCchan_timeintg(nullptr)
-, pOCtime_upd(nullptr)
-, pPoolOccupancy(nullptr)
-, pLastUpdate(nullptr)
-, myRank(rank)
 , hostRank(host_rank)
+, myRank(rank)
 {
-    AssertLog(pPatchdef != 0);
+    AssertLog(pPatchdef != nullptr);
     AssertLog(pArea > 0.0);
 
     AssertLog(l0 > 0.0 && l1 > 0.0 && l2 > 0.0);
@@ -162,18 +153,18 @@ smtos::Tri::~Tri()
 void smtos::Tri::checkpoint(std::fstream & cp_file)
 {
     uint nspecs = patchdef()->countSpecs();
-    cp_file.write((char*)pPoolCount, sizeof(uint) * nspecs);
-    cp_file.write((char*)pPoolFlags, sizeof(uint) * nspecs);
+    cp_file.write(reinterpret_cast<char*>(pPoolCount), sizeof(uint) * nspecs);
+    cp_file.write(reinterpret_cast<char*>(pPoolFlags), sizeof(uint) * nspecs);
 
     uint nghkcurrs = pPatchdef->countGHKcurrs();
-    cp_file.write((char*)pECharge, sizeof(int) * nghkcurrs);
-    cp_file.write((char*)pECharge_last, sizeof(int) * nghkcurrs);
+    cp_file.write(reinterpret_cast<char*>(pECharge), sizeof(int) * nghkcurrs);
+    cp_file.write(reinterpret_cast<char*>(pECharge_last), sizeof(int) * nghkcurrs);
 
     uint nohmcurrs = pPatchdef->countOhmicCurrs();
-    cp_file.write((char*)pOCchan_timeintg, sizeof(double) * nohmcurrs);
-    cp_file.write((char*)pOCtime_upd, sizeof(double) * nohmcurrs);
+    cp_file.write(reinterpret_cast<char*>(pOCchan_timeintg), sizeof(double) * nohmcurrs);
+    cp_file.write(reinterpret_cast<char*>(pOCtime_upd), sizeof(double) * nohmcurrs);
 
-    cp_file.write((char*)pSDiffBndDirection, sizeof(bool) * 3);
+    cp_file.write(reinterpret_cast<char*>(pSDiffBndDirection), sizeof(bool) * 3);
 
 }
 
@@ -182,18 +173,18 @@ void smtos::Tri::checkpoint(std::fstream & cp_file)
 void smtos::Tri::restore(std::fstream & cp_file)
 {
     uint nspecs = patchdef()->countSpecs();
-    cp_file.read((char*)pPoolCount, sizeof(uint) * nspecs);
-    cp_file.read((char*)pPoolFlags, sizeof(uint) * nspecs);
+    cp_file.read(reinterpret_cast<char*>(pPoolCount), sizeof(uint) * nspecs);
+    cp_file.read(reinterpret_cast<char*>(pPoolFlags), sizeof(uint) * nspecs);
 
     uint nghkcurrs = pPatchdef->countGHKcurrs();
-    cp_file.read((char*)pECharge, sizeof(int) * nghkcurrs);
-    cp_file.read((char*)pECharge_last, sizeof(int) * nghkcurrs);
+    cp_file.read(reinterpret_cast<char*>(pECharge), sizeof(int) * nghkcurrs);
+    cp_file.read(reinterpret_cast<char*>(pECharge_last), sizeof(int) * nghkcurrs);
 
     uint nohmcurrs = pPatchdef->countOhmicCurrs();
-    cp_file.read((char*)pOCchan_timeintg, sizeof(double) * nohmcurrs);
-    cp_file.read((char*)pOCtime_upd, sizeof(double) * nohmcurrs);
+    cp_file.read(reinterpret_cast<char*>(pOCchan_timeintg), sizeof(double) * nohmcurrs);
+    cp_file.read(reinterpret_cast<char*>(pOCtime_upd), sizeof(double) * nohmcurrs);
 
-    cp_file.read((char*)pSDiffBndDirection, sizeof(bool) * 3);
+    cp_file.read(reinterpret_cast<char*>(pSDiffBndDirection), sizeof(bool) * 3);
 
 }
 
@@ -238,7 +229,7 @@ void smtos::Tri::setupKProcs(smtos::TetOpSplitP * tex, bool efield)
     uint j = 0;
     
     nKProcs = pPatchdef->countSReacs()+pPatchdef->countSurfDiffs();
-    if (hasEfield == true) {
+    if (hasEfield) {
         nKProcs += (pPatchdef->countVDepTrans() + pPatchdef->countVDepSReacs() + pPatchdef->countGHKcurrs());
 }
     
@@ -252,7 +243,7 @@ void smtos::Tri::setupKProcs(smtos::TetOpSplitP * tex, bool efield)
         {
             ssolver::SReacdef * srdef = patchdef()->sreacdef(i);
             auto * sr = new SReac(srdef, this);
-            AssertLog(sr != 0);
+            AssertLog(sr != nullptr);
             pKProcs[j++] = sr;
             uint idx = tex->addKProc(sr);
             sr->setSchedIDX(idx);
@@ -263,7 +254,7 @@ void smtos::Tri::setupKProcs(smtos::TetOpSplitP * tex, bool efield)
         {
             ssolver::Diffdef * sddef = patchdef()->surfdiffdef(i);
             auto * sd = new SDiff(sddef, this);
-            AssertLog(sd != 0);
+            AssertLog(sd != nullptr);
             pKProcs[j++] = sd;
             uint idx = tex->addKProc(sd);
             sd->setSchedIDX(idx);
@@ -271,14 +262,14 @@ void smtos::Tri::setupKProcs(smtos::TetOpSplitP * tex, bool efield)
         }
 
         // REMINDER: hasEfield not ready
-        if (hasEfield == true)
+        if (hasEfield)
         {
             uint nvdtrans = patchdef()->countVDepTrans();
             for (uint i=0; i < nvdtrans; ++i)
             {
                 ssolver::VDepTransdef * vdtdef = patchdef()->vdeptransdef(i);
                 auto * vdt = new VDepTrans(vdtdef, this);
-                AssertLog(vdt != 0);
+                AssertLog(vdt != nullptr);
                 pKProcs[j++] = vdt;
                 uint idx = tex->addKProc(vdt);
                 vdt->setSchedIDX(idx);
@@ -289,7 +280,7 @@ void smtos::Tri::setupKProcs(smtos::TetOpSplitP * tex, bool efield)
             {
                 ssolver::VDepSReacdef * vdsrdef = patchdef()->vdepsreacdef(i);
                 auto * vdsr = new VDepSReac(vdsrdef, this);
-                AssertLog(vdsr != 0);
+                AssertLog(vdsr != nullptr);
                 pKProcs[j++] = vdsr;
                 uint idx = tex->addKProc(vdsr);
                 vdsr->setSchedIDX(idx);
@@ -300,7 +291,7 @@ void smtos::Tri::setupKProcs(smtos::TetOpSplitP * tex, bool efield)
             {
                 ssolver::GHKcurrdef * ghkdef = patchdef()->ghkcurrdef(i);
                 auto * ghk = new GHKcurr(ghkdef, this);
-                AssertLog(ghk != 0);
+                AssertLog(ghk != nullptr);
                 pKProcs[j++] = ghk;
                 uint idx = tex->addKProc(ghk);
                 ghk->setSchedIDX(idx);
@@ -310,7 +301,7 @@ void smtos::Tri::setupKProcs(smtos::TetOpSplitP * tex, bool efield)
     else {
         pKProcs.resize(0);
         for (uint k = 0; k < nKProcs; k++) {
-            tex->addKProc(NULL);
+            tex->addKProc(nullptr);
         }
     }
 }
@@ -320,7 +311,7 @@ void smtos::Tri::setupDeps()
 {
     if (myRank != hostRank) { return;
 }
-    for (auto kp : pKProcs) {
+    for (auto& kp : pKProcs) {
         kp->setupDeps();
     }
     
@@ -337,7 +328,7 @@ void smtos::Tri::setupDeps()
             break;
         }
     }
-    if (has_remote_neighbors == false) {
+    if (!has_remote_neighbors) {
         localSpecUpdKProcs.clear();
         return;
     }
@@ -350,7 +341,7 @@ void smtos::Tri::setupDeps()
         for (uint sk = 0; sk < nkprocs; sk++)
         {
             // Check locally.
-            if (KProcDepSpecTri(sk, this, sgidx) == true) {
+            if (KProcDepSpecTri(sk, this, sgidx)) {
                 localSpecUpdKProcs[slidx].push_back(getKProc(sk));
             }
         }
@@ -367,7 +358,7 @@ void smtos::Tri::setupDeps()
             nkprocs = itet->countKProcs();
             for (uint k = 0; k < nkprocs; k++)
             {
-                if (itet->KProcDepSpecTri(k, this, sgidx) == true) {
+                if (itet->KProcDepSpecTri(k, this, sgidx)) {
                     localSpecUpdKProcs[slidx].push_back(itet->getKProc(k));
                 }
             }
@@ -384,7 +375,7 @@ void smtos::Tri::setupDeps()
             nkprocs = otet->countKProcs();
             for (uint k = 0; k < nkprocs; k++)
             {
-                if (otet->KProcDepSpecTri(k, this, sgidx) == true) {
+                if (otet->KProcDepSpecTri(k, this, sgidx)) {
                     localSpecUpdKProcs[slidx].push_back(otet->getKProc(k));
                 }
             }
@@ -419,7 +410,7 @@ bool smtos::Tri::KProcDepSpecTet(uint kp_lidx, smtos::WmVol* kp_container,  uint
     remain -= pPatchdef->countSurfDiffs();
     
     // REMINDER: hasEfield not ready
-    if (hasEfield == true)
+    if (hasEfield)
     {
         // VDepTrans
         if (remain < pPatchdef->countVDepTrans()) {
@@ -486,17 +477,15 @@ bool smtos::Tri::KProcDepSpecTri(uint kp_lidx, smtos::Tri* kp_container, uint sp
     // if kp is surface diff
     if (remain < pPatchdef->countSurfDiffs()) {
         if (kp_container != this) { return false;
-}
+    }
         ssolver::Diffdef * sddef = patchdef()->surfdiffdef(remain);
-        if (spec_gidx != sddef->lig()) { return false;
-}
-        return true;
+        return spec_gidx == sddef->lig();
     }
     
     remain -= pPatchdef->countSurfDiffs();
     
     // REMINDER: hasEfield not ready
-    if (hasEfield == true)
+    if (hasEfield)
     {
         // VDepTrans
         if (remain < pPatchdef->countVDepTrans()) {
@@ -587,8 +576,7 @@ void smtos::Tri::setCount(uint lidx, uint count, double period)
     // tri count doesn't care about global
     AssertLog(lidx < patchdef()->countSpecs());
 	double oldcount = pPoolCount[lidx];
-	auto c = static_cast<double>(count);
-	pPoolCount[lidx] = c;
+	pPoolCount[lidx] = count;
 	if (period == 0.0) { return;
 }
 	// Count has changed,
@@ -617,7 +605,7 @@ void smtos::Tri::incCount(uint lidx, int inc, double period, bool local_change)
             os << "Fail because molecule change of receiving end should always be non-negative.\n";
             ProgErrLog(os.str());
         }
-        bufferLocations[lidx] = pSol->registerRemoteMoleculeChange(hostRank, bufferLocations[lidx], SUB_TRI, pIdx, lidx, inc);
+        bufferLocations[lidx] = pSol->registerRemoteMoleculeChange(hostRank, bufferLocations[lidx], SUB_TRI, pIdx.get(), lidx, inc);
     }
     // local change by reac or diff
     else {
@@ -664,7 +652,7 @@ void smtos::Tri::setOCchange(uint oclidx, uint slidx, double dt, double simtime)
 
 void smtos::Tri::setClamped(uint lidx, bool clamp)
 {
-    if (clamp == true) { pPoolFlags[lidx] |= CLAMPED;
+    if (clamp) { pPoolFlags[lidx] |= CLAMPED;
     } else { pPoolFlags[lidx] &= ~CLAMPED;
 }
 }
@@ -678,7 +666,7 @@ smtos::SReac * smtos::Tri::sreac(uint lidx) const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int smtos::Tri::getTriDirection(uint tidx)
+int smtos::Tri::getTriDirection(triangle_id_t tidx)
 {
     for (uint i = 0; i < 3; i++) {
         if (pTris[i] == tidx) {
@@ -803,7 +791,7 @@ double smtos::Tri::computeI(double v, double dt, double simtime)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::Tri::getOhmicI(double v,double dt) const
+double smtos::Tri::getOhmicI(double v,double /*dt*/) const
 {
     double current = 0.0;
     uint nocs = patchdef()->countOhmicCurrs();
@@ -820,7 +808,7 @@ double smtos::Tri::getOhmicI(double v,double dt) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::Tri::getOhmicI(uint lidx, double v,double dt) const
+double smtos::Tri::getOhmicI(uint lidx, double v,double /*dt*/) const
 {
     AssertLog(lidx < patchdef()->countOhmicCurrs());
     ssolver::OhmicCurrdef * ocdef = patchdef()->ohmiccurrdef(lidx);
@@ -833,7 +821,7 @@ double smtos::Tri::getOhmicI(uint lidx, double v,double dt) const
 // MPISTEPS
 bool smtos::Tri::getInHost()
 {
-    return (hostRank == myRank);
+    return hostRank == myRank;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

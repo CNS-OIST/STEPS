@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -46,175 +46,175 @@ using namespace steps::solver;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> API::getROITetCounts(std::string ROI_id, std::string const & s) const
+std::vector<double> API::getROITetCounts(const std::string& /*ROI_id*/, std::string const & /*s*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> API::getROITriCounts(std::string ROI_id, std::string const & s) const
+std::vector<double> API::getROITriCounts(const std::string& /*ROI_id*/, std::string const & /*s*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::getROITetCountsNP(std::string ROI_id, std::string const & s, double* counts, int output_size) const
+void API::getROITetCountsNP(const std::string& /*ROI_id*/, std::string const & /*s*/, double* /*counts*/, int /*output_size*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::getROITriCountsNP(std::string ROI_id, std::string const & s, double* counts, int output_size) const
+void API::getROITriCountsNP(const std::string& /*ROI_id*/, std::string const & /*s*/, double* /*counts*/, int /*output_size*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getROIVol(std::string ROI_id) const
+double API::getROIVol(const std::string& /*ROI_id*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getROIArea(std::string ROI_id) const
+double API::getROIArea(const std::string& /*ROI_id*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getROICount(std::string ROI_id, std::string const & s) const
+double API::getROICount(const std::string& /*ROI_id*/, std::string const & /*s*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setROICount(std::string ROI_id, std::string const & s, double count)
+void API::setROICount(const std::string& /*ROI_id*/, std::string const & /*s*/, double /*count*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getROIAmount(std::string ROI_id, std::string const & s) const
+double API::getROIAmount(const std::string& /*ROI_id*/, std::string const & /*s*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getROIConc(std::string ROI_id, std::string const & s) const
+double API::getROIConc(const std::string& /*ROI_id*/, std::string const & /*s*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setROIConc(std::string ROI_id, std::string const & s, double conc)
+void API::setROIConc(const std::string& /*ROI_id*/, std::string const & /*s*/, double /*conc*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setROIClamped(std::string ROI_id, std::string const & s, bool b)
+void API::setROIClamped(const std::string& /*ROI_id*/, std::string const & /*s*/, bool /*b*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setROIReacK(std::string ROI_id, std::string const & r, double kf)
+void API::setROIReacK(const std::string& /*ROI_id*/, std::string const & /*r*/, double /*kf*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setROISReacK(std::string ROI_id, std::string const & sr, double kf)
+void API::setROISReacK(const std::string& /*ROI_id*/, std::string const & /*sr*/, double /*kf*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setROIDiffD(std::string ROI_id, std::string const & d, double dk)
+void API::setROIDiffD(const std::string& /*ROI_id*/, std::string const & /*d*/, double /*dk*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setROIReacActive(std::string ROI_id, std::string const & r, bool a)
+void API::setROIReacActive(const std::string& /*ROI_id*/, std::string const & /*r*/, bool /*a*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setROISReacActive(std::string ROI_id, std::string const & sr, bool a)
+void API::setROISReacActive(const std::string& /*ROI_id*/, std::string const & /*sr*/, bool /*a*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setROIDiffActive(std::string ROI_id, std::string const & d, bool act)
+void API::setROIDiffActive(const std::string& /*ROI_id*/, std::string const & /*d*/, bool /*act*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setROIVDepSReacActive(std::string ROI_id, std::string const & vsr, bool a)
+void API::setROIVDepSReacActive(const std::string& /*ROI_id*/, std::string const & /*vsr*/, bool /*a*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint API::getROIReacExtent(std::string ROI_id, std::string const & r) const
+unsigned long long API::getROIReacExtent(const std::string& /*ROI_id*/, std::string const & /*r*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::resetROIReacExtent(std::string ROI_id, std::string const & r)
+void API::resetROIReacExtent(const std::string& /*ROI_id*/, std::string const & /*r*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint API::getROISReacExtent(std::string ROI_id, std::string const & sr) const
+unsigned long long API::getROISReacExtent(const std::string& /*ROI_id*/, std::string const & /*sr*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::resetROISReacExtent(std::string ROI_id, std::string const & sr)
+void API::resetROISReacExtent(const std::string& /*ROI_id*/, std::string const & /*sr*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint API::getROIDiffExtent(std::string ROI_id, std::string const & d) const
+unsigned long long API::getROIDiffExtent(const std::string& /*ROI_id*/, std::string const & /*d*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::resetROIDiffExtent(std::string ROI_id, std::string const & d)
+void API::resetROIDiffExtent(const std::string& /*ROI_id*/, std::string const & /*d*/)
 {
     NotImplErrLog("");
 }

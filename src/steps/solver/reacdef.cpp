@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -71,8 +71,8 @@ ssolver::Reacdef::Reacdef(Statedef * sd, uint idx, steps::model::Reac * r)
 , pSpec_UPD(nullptr)
 , pSpec_UPD_Coll()
 {
-    AssertLog(pStatedef != 0);
-    AssertLog(r != 0);
+    AssertLog(pStatedef != nullptr);
+    AssertLog(r != nullptr);
 
     pName = r->getID();
     pOrder = r->getOrder();
@@ -111,14 +111,14 @@ ssolver::Reacdef::~Reacdef()
 
 void ssolver::Reacdef::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&pKcst, sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pKcst), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void ssolver::Reacdef::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&pKcst, sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pKcst), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -128,21 +128,17 @@ void ssolver::Reacdef::setup()
     AssertLog(pSetupdone == false);
 
     // first copy the information about the reaction stoichiometry from Reac object
-    smod::SpecPVecCI l_end = pLhs.end();
-    for (smod::SpecPVecCI l = pLhs.begin(); l != l_end; ++l)
-    {
-        uint sidx = pStatedef->getSpecIdx(*l);
+    for (auto const& l: pLhs) {
+        uint sidx = pStatedef->getSpecIdx(l);
         pSpec_LHS[sidx] += 1;
     }
-    smod::SpecPVecCI r_end = pRhs.end();
-    for (smod::SpecPVecCI r = pRhs.begin(); r != r_end; ++r)
-    {
-        uint sidx = pStatedef->getSpecIdx(*r);
+    for (auto const& r: pRhs) {
+        uint sidx = pStatedef->getSpecIdx(r);
         pSpec_RHS[sidx] += 1;
     }
 
     // Now set up the update vector
-    uint nspecs = pStatedef->countSpecs();
+    const uint nspecs = pStatedef->countSpecs();
     for (uint i = 0; i < nspecs; ++i)
     {
         auto lhs = static_cast<int>(pSpec_LHS[i]);

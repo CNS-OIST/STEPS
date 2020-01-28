@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -98,15 +98,15 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this voltage-dependent reaction.
-    inline uint gidx() const
+    inline uint gidx() const noexcept
     { return pIdx; }
 
     /// Return the name of the voltage-dependent reaction.
-    inline std::string const name() const
+    inline std::string const name() const noexcept
     { return pName; }
 
     /// Return the order of this surface reaction.
-    inline uint order() const
+    inline uint order() const noexcept
     { return pOrder; }
 
     /// Returns the reaction constant for value of V in the range.
@@ -119,7 +119,7 @@ public:
 
     /// Returns true if the left hand side of the reaction stoichiometry
     /// involves reactants on the surface and on the inside volume.
-    inline bool inside() const
+    inline bool inside() const noexcept
     { return (pOrient == INSIDE); }
 
     /// Returns true if any aspect of the surface reaction references
@@ -137,7 +137,7 @@ public:
 
     ///
     //bool reqInside() const;
-    inline bool reqInside() const
+    inline bool reqInside() const noexcept
     { return pReqInside; }
 
 
@@ -146,7 +146,7 @@ public:
     /// method is mutually exclusive with SReacDef::inside, but not
     /// with SReacDef::insideRef.
     ///
-    inline bool outside() const
+    inline bool outside() const noexcept
     { return (pOrient == OUTSIDE); }
 
     /// Returns true if any aspect of the surface reaction references
@@ -163,14 +163,14 @@ public:
     /// It basically polls SReacDef::req_O for each possible species.
     ///
     //bool reqOutside() const;
-    inline bool reqOutside() const
+    inline bool reqOutside() const noexcept
     { return pReqOutside; }
 
 
     /// Return true if this reaction only involves surface species,
     /// nothing in a volume at all. In that case the reaction constant
     /// should be treated in 2D
-    inline bool surf_surf() const
+    inline bool surf_surf() const noexcept
     { return pSurface_surface; }
 
     /// Returns the number of molecules of species idx required in
@@ -217,18 +217,24 @@ public:
     bool reqspec_S(uint gidx) const;
     bool reqspec_O(uint gidx) const;
 
-    inline gidxTVecCI beginUpdColl_I() const
+    inline gidxTVecCI beginUpdColl_I() const noexcept
     { return pSpec_I_UPD_Coll.begin(); }
-    inline gidxTVecCI endUpdColl_I() const
+    inline gidxTVecCI endUpdColl_I() const noexcept
     { return pSpec_I_UPD_Coll.end(); }
-    inline gidxTVecCI beginUpdColl_S() const
+    inline const gidxTVec& updcoll_I() const noexcept
+    { return pSpec_I_UPD_Coll; }
+    inline gidxTVecCI beginUpdColl_S() const noexcept
     { return pSpec_S_UPD_Coll.begin(); }
-    inline gidxTVecCI endUpdColl_S() const
+    inline gidxTVecCI endUpdColl_S() const noexcept
     { return pSpec_S_UPD_Coll.end(); }
-    inline gidxTVecCI beginUpdColl_O() const
+    inline const gidxTVec& updcoll_S() const noexcept
+    { return pSpec_S_UPD_Coll; }
+    inline gidxTVecCI beginUpdColl_O() const noexcept
     { return pSpec_O_UPD_Coll.begin(); }
-    inline gidxTVecCI endUpdColl_O() const
+    inline gidxTVecCI endUpdColl_O() const noexcept
     { return pSpec_O_UPD_Coll.end(); }
+    inline const gidxTVec& updcoll_O() const noexcept
+    { return pSpec_O_UPD_Coll; }
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -244,10 +250,10 @@ private:
     // The string identifier of this voltage-dependent reaction.
     std::string                         pName;
 
-    uint                                 pOrder;
+    uint                                 pOrder{0};
 
     // True if setup() has been called.
-    bool                                pSetupdone;
+    bool                                pSetupdone{false};
 
     // The stoichiometry stored as model level Spec objects.
     // To be used during setup ONLY

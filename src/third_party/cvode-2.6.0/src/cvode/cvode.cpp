@@ -339,7 +339,7 @@ void *CVodeCreate(int lmm, int iter)
   }
 
   cv_mem = NULL;
-  cv_mem = (CVodeMem) malloc(sizeof(struct CVodeMemRec));
+  cv_mem = static_cast<CVodeMem> (malloc(sizeof(struct CVodeMemRec)));
   if (cv_mem == NULL) {
     CVProcessError(NULL, 0, "CVODE", "CVodeCreate", MSGCV_CVMEM_FAIL);
     return(NULL);
@@ -405,7 +405,7 @@ void *CVodeCreate(int lmm, int iter)
 
   /* Return pointer to CVODE memory block */
 
-  return((void *)cv_mem);
+  return static_cast<void *> (cv_mem);
 }
 
 /*-----------------------------------------------------------------*/
@@ -439,7 +439,7 @@ int CVodeInit(void *cvode_mem, CVRhsFn f, realtype t0, N_Vector y0)
     CVProcessError(NULL, CV_MEM_NULL, "CVODE", "CVodeInit", MSGCV_NO_MEM);
     return(CV_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   /* Check for legal input parameters */
 
@@ -579,7 +579,7 @@ int CVodeReInit(void *cvode_mem, realtype t0, N_Vector y0)
     CVProcessError(NULL, CV_MEM_NULL, "CVODE", "CVodeReInit", MSGCV_NO_MEM);
     return(CV_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   /* Check if cvode_mem was allocated */
 
@@ -673,7 +673,7 @@ int CVodeSStolerances(void *cvode_mem, realtype reltol, realtype abstol)
     CVProcessError(NULL, CV_MEM_NULL, "CVODE", "CVodeSStolerances", MSGCV_NO_MEM);
     return(CV_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if (cv_mem->cv_MallocDone == FALSE) {
     CVProcessError(cv_mem, CV_NO_MALLOC, "CVODE", "CVodeSStolerances", MSGCV_NO_MALLOC);
@@ -715,7 +715,7 @@ int CVodeSVtolerances(void *cvode_mem, realtype reltol, N_Vector abstol)
     CVProcessError(NULL, CV_MEM_NULL, "CVODE", "CVodeSVtolerances", MSGCV_NO_MEM);
     return(CV_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if (cv_mem->cv_MallocDone == FALSE) {
     CVProcessError(cv_mem, CV_NO_MALLOC, "CVODE", "CVodeSVtolerances", MSGCV_NO_MALLOC);
@@ -764,7 +764,7 @@ int CVodeWFtolerances(void *cvode_mem, CVEwtFn efun)
     CVProcessError(NULL, CV_MEM_NULL, "CVODE", "CVodeWFtolerances", MSGCV_NO_MEM);
     return(CV_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if (cv_mem->cv_MallocDone == FALSE) {
     CVProcessError(cv_mem, CV_NO_MALLOC, "CVODE", "CVodeWFtolerances", MSGCV_NO_MALLOC);
@@ -812,7 +812,7 @@ int CVodeRootInit(void *cvode_mem, int nrtfn, CVRootFn g)
     CVProcessError(NULL, CV_MEM_NULL, "CVODE", "CVodeRootInit", MSGCV_NO_MEM);
     return(CV_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   nrt = (nrtfn < 0) ? 0 : nrtfn;
 
@@ -878,14 +878,14 @@ int CVodeRootInit(void *cvode_mem, int nrtfn, CVRootFn g)
 
   /* Allocate necessary memory and return */
   glo = NULL;
-  glo = (realtype *) malloc(nrt*sizeof(realtype));
+  glo = static_cast<realtype *> (malloc(nrt*sizeof(realtype)));
   if (glo == NULL) {
     CVProcessError(cv_mem, CV_MEM_FAIL, "CVODE", "CVodeRootInit", MSGCV_MEM_FAIL);
     return(CV_MEM_FAIL);
   }
 
   ghi = NULL;
-  ghi = (realtype *) malloc(nrt*sizeof(realtype));
+  ghi = static_cast<realtype *> (malloc(nrt*sizeof(realtype)));
   if (ghi == NULL) {
     free(glo); glo = NULL;
     CVProcessError(cv_mem, CV_MEM_FAIL, "CVODE", "CVodeRootInit", MSGCV_MEM_FAIL);
@@ -893,7 +893,7 @@ int CVodeRootInit(void *cvode_mem, int nrtfn, CVRootFn g)
   }
 
   grout = NULL;
-  grout = (realtype *) malloc(nrt*sizeof(realtype));
+  grout = static_cast<realtype *> (malloc(nrt*sizeof(realtype)));
   if (grout == NULL) {
     free(glo); glo = NULL;
     free(ghi); ghi = NULL;
@@ -902,7 +902,7 @@ int CVodeRootInit(void *cvode_mem, int nrtfn, CVRootFn g)
   }
 
   iroots = NULL;
-  iroots = (int *) malloc(nrt*sizeof(int));
+  iroots = static_cast<int *> (malloc(nrt*sizeof(int)));
   if (iroots == NULL) {
     free(glo); glo = NULL; 
     free(ghi); ghi = NULL;
@@ -912,7 +912,7 @@ int CVodeRootInit(void *cvode_mem, int nrtfn, CVRootFn g)
   }
 
   rootdir = NULL;
-  rootdir = (int *) malloc(nrt*sizeof(int));
+  rootdir = static_cast<int *> (malloc(nrt*sizeof(int)));
   if (rootdir == NULL) {
     free(glo); glo = NULL; 
     free(ghi); ghi = NULL;
@@ -923,7 +923,7 @@ int CVodeRootInit(void *cvode_mem, int nrtfn, CVRootFn g)
   }
 
   gactive = NULL;
-  gactive = (booleantype *) malloc(nrt*sizeof(booleantype));
+  gactive = static_cast<booleantype *> (malloc(nrt * sizeof(booleantype)));
   if (gactive == NULL) {
     free(glo); glo = NULL; 
     free(ghi); ghi = NULL;
@@ -1083,7 +1083,7 @@ int CVode(void *cvode_mem, realtype tout, N_Vector yout,
     CVProcessError(NULL, CV_MEM_NULL, "CVODE", "CVode", MSGCV_NO_MEM);
     return(CV_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   /* Check if cvode_mem was allocated */
   if (cv_mem->cv_MallocDone == FALSE) {
@@ -1503,7 +1503,7 @@ int CVodeGetDky(void *cvode_mem, realtype t, int k, N_Vector dky)
     CVProcessError(NULL, CV_MEM_NULL, "CVODE", "CVodeGetDky", MSGCV_NO_MEM);
     return(CV_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if (dky == NULL) {
     CVProcessError(cv_mem, CV_BAD_DKY, "CVODE", "CVodeGetDky", MSGCV_NULL_DKY);
@@ -1558,7 +1558,7 @@ void CVodeFree(void **cvode_mem)
 
   if (*cvode_mem == NULL) return;
 
-  cv_mem = (CVodeMem) (*cvode_mem);
+  cv_mem = static_cast<CVodeMem> (*cvode_mem);
   
   CVFreeVectors(cv_mem);
 
@@ -4045,7 +4045,7 @@ int CVEwtSet(N_Vector ycur, N_Vector weight, void *data)
 
   /* data points to cv_mem here */
 
-  cv_mem = (CVodeMem) data;
+  cv_mem = static_cast<CVodeMem> (data);
 
   switch(itol) {
   case CV_SS: 
@@ -4165,7 +4165,7 @@ void CVErrHandler(int error_code, const char *module,
 
   /* data points to cv_mem here */
 
-  cv_mem = (CVodeMem) data;
+  cv_mem = static_cast<CVodeMem> (data);
 
   if (error_code == CV_WARNING)
     sprintf(err_type,"WARNING");

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -85,8 +85,8 @@ ssolver::SReacdef::SReacdef(Statedef * sd, uint idx, steps::model::SReac * sr)
 , pSpec_O_UPD_Coll()
 {
 
-    AssertLog(pStatedef != 0);
-    AssertLog(sr != 0);
+    AssertLog(pStatedef != nullptr);
+    AssertLog(sr != nullptr);
 
     pName = sr->getID();
     pOrder = sr->getOrder();
@@ -178,14 +178,14 @@ ssolver::SReacdef::~SReacdef()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::SReacdef::checkpoint(std::fstream & cp_file)
+void ssolver::SReacdef::checkpoint(std::fstream & /*cp_file*/)
 {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::SReacdef::restore(std::fstream & cp_file)
+void ssolver::SReacdef::restore(std::fstream & /*cp_file*/)
 {
     // reserve
 }
@@ -218,51 +218,39 @@ void ssolver::SReacdef::setup()
     AssertLog(pSetupdone == false);
 
 
-    if (outside()) { AssertLog(pIlhs.size() == 0); }
-    else if (inside()) { AssertLog(pOlhs.size() == 0); }
+    if (outside()) { AssertLog(pIlhs.empty()); }
+    else if (inside()) { AssertLog(pOlhs.empty()); }
     else AssertLog(false);
 
-    smod::SpecPVecCI ol_end = pOlhs.end();
-    for (smod::SpecPVecCI ol = pOlhs.begin(); ol != ol_end; ++ol)
-    {
+    for (auto const& ol: pOlhs) {
         pSurface_surface = false;
-        uint sidx = pStatedef->getSpecIdx(*ol);
+        uint sidx = pStatedef->getSpecIdx(ol);
         pSpec_O_LHS[sidx] += 1;
     }
 
-    smod::SpecPVecCI il_end = pIlhs.end();
-    for (smod::SpecPVecCI il = pIlhs.begin(); il != il_end; ++il)
-    {
+    for (auto const& il: pIlhs) {
         pSurface_surface = false;
-        uint sidx = pStatedef->getSpecIdx(*il);
+        uint sidx = pStatedef->getSpecIdx(il);
         pSpec_I_LHS[sidx] += 1;
     }
 
-    smod::SpecPVecCI sl_end = pSlhs.end();
-    for (smod::SpecPVecCI sl = pSlhs.begin(); sl != sl_end; ++sl)
-    {
-        uint sidx = pStatedef->getSpecIdx(*sl);
+    for (auto const& sl: pSlhs) {
+        uint sidx = pStatedef->getSpecIdx(sl);
         pSpec_S_LHS[sidx] += 1;
     }
 
-    smod::SpecPVecCI ir_end = pIrhs.end();
-    for (smod::SpecPVecCI ir = pIrhs.begin(); ir != ir_end; ++ir)
-    {
-        uint sidx = pStatedef->getSpecIdx(*ir);
+    for (auto const& ir: pIrhs) {
+        uint sidx = pStatedef->getSpecIdx(ir);
         pSpec_I_RHS[sidx] += 1;
     }
 
-    smod::SpecPVecCI sr_end = pSrhs.end();
-    for (smod::SpecPVecCI sr = pSrhs.begin(); sr != sr_end; ++sr)
-    {
-        uint sidx = pStatedef->getSpecIdx(*sr);
+    for (auto const& sr: pSrhs) {
+        uint sidx = pStatedef->getSpecIdx(sr);
         pSpec_S_RHS[sidx] += 1;
     }
 
-    smod::SpecPVecCI orh_end = pOrhs.end();
-    for (smod::SpecPVecCI orh = pOrhs.begin(); orh != orh_end; ++orh)
-    {
-        uint sidx = pStatedef->getSpecIdx(*orh);
+    for (auto const& orh: pOrhs) {
+        uint sidx = pStatedef->getSpecIdx(orh);
         pSpec_O_RHS[sidx] += 1;
     }
 

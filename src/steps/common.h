@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -78,6 +78,40 @@ typedef unsigned long int                       ulong;
 }
 #endif
 /* __cplusplus */
+
+#ifdef __cplusplus
+
+#include <istream>
+#include <ostream>
+#include <vector>
+
+namespace steps {
+
+template<typename T>
+void checkpoint(std::ostream &istr, std::vector<T> &v, bool with_size = true) {
+  if (with_size) {
+    auto size = v.size();
+    istr.write(reinterpret_cast<char *>(size), sizeof(decltype(size)));
+  }
+  istr.write(reinterpret_cast<char *>(v.data()), sizeof(T) * v.size());
+}
+
+template<typename T>
+void restore(std::istream &istr, uint nelems, std::vector<T> &v) {
+  v.resize(nelems);
+  istr.read(reinterpret_cast<char *>(v.data()), sizeof(T) * nelems);
+}
+
+template<typename T>
+void restore(std::istream &istr, std::vector<T> &v) {
+  size_t nelems;
+  istr.read(reinterpret_cast<char *>(&nelems), sizeof(size_t));
+  restore(istr, nelems, v);
+}
+
+} // namespace steps
+
+#endif //__cplusplus
 
 #endif
 /* STEPS_COMMON_H */

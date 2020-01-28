@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -96,25 +96,25 @@ public:
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline double area() const
+    inline double area() const noexcept
     { return pArea; }
 
     // Return the local index of a tri given by global index
-    uint getTri_GtoL(uint gidx);
+    triangle_id_t getTri_GtoL(triangle_id_t gidx);
 
     // Return the tri of a given local index
     Tri * getTri(uint lidx);
 
-    inline steps::solver::Patchdef * def() const
+    inline steps::solver::Patchdef * def() const noexcept
     { return pPatchdef; }
 
-    inline uint countTris() const
+    inline uint countTris() const noexcept
     { return pTris.size(); }
 
 
-    inline TriPVecCI bgnTri() const
+    inline TriPVecCI bgnTri() const noexcept
     { return pTris.begin(); }
-    inline TriPVecCI endTri() const
+    inline TriPVecCI endTri() const noexcept
     { return pTris.end(); }
 
     ////////////////////////////////////////////////////////////////////////
@@ -130,7 +130,7 @@ private:
     double                                 pArea;
 
     // A map storing global index to local
-    std::map<uint, uint>                    pTris_GtoL;
+    std::map<triangle_id_t, triangle_id_t>                    pTris_GtoL;
 
 };
 

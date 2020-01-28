@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -32,22 +32,19 @@
 #include <cassert>
 #include <vector>
 
+// logging
+#include <easylogging++.h>
+
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/solver/compdef.hpp"
 #include "steps/tetexact/kproc.hpp"
 #include "steps/tetexact/wmvol.hpp"
 #include "steps/solver/types.hpp"
-// logging
-#include "third_party/easyloggingpp/src/easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace steps{
 namespace tetexact{
-
-////////////////////////////////////////////////////////////////////////////////
-
-namespace stex = steps::tetexact;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -66,7 +63,7 @@ typedef TetPVec::const_iterator         TetPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class Tet: public stex::WmVol
+class Tet: public WmVol
 {
 
 public:
@@ -76,22 +73,22 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     Tet
-    (
-        uint idx, steps::solver::Compdef * cdef, double vol,
+      (
+        tetrahedron_id_t idx, steps::solver::Compdef *cdef, double vol,
         double a0, double a1, double a2, double a3,
         double d0, double d1, double d2, double d3,
-        int tet0, int tet1, int tet2, int tet3
-    );
-    ~Tet();
+        tetrahedron_id_t tet0, tetrahedron_id_t tet1, tetrahedron_id_t tet2, tetrahedron_id_t tet3
+      );
+    ~Tet() override;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream & cp_file) override;
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream & cp_file) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SETUP
@@ -100,20 +97,20 @@ public:
 
     /// Set pointer to the next neighbouring tetrahedron.
     ///
-    void setNextTet(uint i, stex::Tet * t);
+    void setNextTet(uint i, Tet * t);
 
 
     /// Set pointer to the next neighbouring triangle.
-    void setNextTri(uint i, stex::Tri *t);
+    void setNextTri(uint i, Tri *t);
 
     // This method only asserts this method is not called on derived object
-    void setNextTri(stex::Tri *t);
+    void setNextTri(Tri *t) override;
 
 
     /// Create the kinetic processes -- to be called when all tetrahedrons
     /// and triangles have been fully declared and connected.
     ///
-    void setupKProcs(stex::Tetexact * tex);
+    void setupKProcs(Tetexact * tex) override;
 
 
     ////////////////////////////////////////////////////////////////////////
@@ -122,7 +119,7 @@ public:
 
     /// Get pointer to the next neighbouring triangle.
     ///
-    inline stex::Tri * nextTri(uint i) const
+    inline Tri * nextTri(uint i) const
     {
         AssertLog(i < 4);
         return pNextTris[i];
@@ -130,36 +127,36 @@ public:
 
     /// Get pointer to the next neighbouring tetrahedron.
     ///
-    inline stex::Tet * nextTet(uint i) const
+    inline Tet * nextTet(uint i) const noexcept
     { return pNextTet[i]; }
 
     /// Get the area of a boundary triangle.
     ///
-    inline double area(uint i) const
+    inline double area(uint i) const noexcept
     { return pAreas[i]; }
 
     /// Get the distance to the centroid of the next neighbouring
     /// tetrahedron.
     ///
-    inline double dist(uint i) const
+    inline double dist(uint i) const noexcept
     { return pDist[i]; }
     
     /// Find the direction index towards a neighbor tetrahedron.
     ///
-    int getTetDirection(uint tidx);
+    int getTetDirection(tetrahedron_id_t tidx) const;
 
     ////////////////////////////////////////////////////////////////////////
 
     // Set whether a direction is a diffusion boundary
     void setDiffBndDirection(uint i);
 
-    inline bool getDiffBndDirection(uint idx) const
+    inline bool getDiffBndDirection(uint idx) const noexcept
     { return pDiffBndDirection[idx]; }
 
 
-    stex::Diff * diff(uint lidx) const;
+    Diff * diff(uint lidx) const;
 
-    inline int tet(uint t)
+    inline tetrahedron_id_t tet(uint t) const noexcept
     { return pTets[t]; }
 
     /*
@@ -174,10 +171,10 @@ private:
     ////////////////////////////////////////////////////////////////////////
 
     // Indices of neighbouring tetrahedra.
-    int                                 pTets[4];
+    tetrahedron_id_t                    pTets[4];
 
     /// Pointers to neighbouring tetrahedra.
-    stex::Tet                         * pNextTet[4];
+    Tet                         * pNextTet[4];
 
     double                              pAreas[4];
     double                              pDist[4];

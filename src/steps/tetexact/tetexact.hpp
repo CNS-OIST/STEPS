@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -36,6 +36,9 @@
 #include <string>
 #include <vector>
 
+// logging
+#include <easylogging++.h>
+
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/solver/api.hpp"
@@ -51,10 +54,6 @@
 #include "steps/tetexact/sdiffboundary.hpp"
 #include "steps/tetexact/crstruct.hpp"
 #include "steps/solver/efield/efield.hpp"
-
-// logging
-#include "third_party/easyloggingpp/src/easylogging++.h"
-
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace steps {
@@ -88,45 +87,45 @@ class Tetexact: public steps::solver::API
 
 public:
 
-    Tetexact(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r,
+    Tetexact(steps::model::Model *m, steps::wm::Geom *g, const rng::RNGptr &r,
              int calcMembPot = EF_NONE);
-    ~Tetexact();
+    ~Tetexact() override;
 
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER INFORMATION
     ////////////////////////////////////////////////////////////////////////
 
-    std::string getSolverName() const;
-    std::string getSolverDesc() const;
-    std::string getSolverAuthors() const;
-    std::string getSolverEmail() const;
+    std::string getSolverName() const override;
+    std::string getSolverDesc() const override;
+    std::string getSolverAuthors() const override;
+    std::string getSolverEmail() const override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROLS
     ////////////////////////////////////////////////////////////////////////
 
-    void reset();
-    void run(double endtime);
-    void advance(double adv);
+    void reset() override;
+    void run(double endtime) override;
+    void advance(double adv) override;
     //void advanceSteps(uint nsteps);
-    void step();
+    void step() override;
 
-    void checkpoint(std::string const & file_name);
-    void restore(std::string const & file_name);
+    void checkpoint(std::string const & file_name) override;
+    void restore(std::string const & file_name) override;
     ////////////////////////// ADDED FOR EFIELD ////////////////////////////
 
-    void setEfieldDT(double efdt);
+    void setEfieldDT(double efdt) override;
 
-    inline double efdt() const
+    inline double efdt() noexcept
     { return pEFDT; }
 
-    inline double getEfieldDT() const
+    inline double getEfieldDT() const noexcept override
     { return pEFDT; }
 
-    void setTemp(double t);
+    void setTemp(double t) override;
 
-    inline double getTemp() const
+    inline double getTemp() const noexcept override
     { return pTemp; }
 
     // save the optimal vertex indexing
@@ -139,12 +138,12 @@ public:
     //      GENERAL
     ////////////////////////////////////////////////////////////////////////
 
-    double getTime() const;
+    double getTime() const override;
 
-    inline double getA0() const
+    inline double getA0() const noexcept override
     { return pA0; }
 
-    uint getNSteps() const;
+    uint getNSteps() const override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
@@ -152,281 +151,289 @@ public:
     //      Developer only
     ////////////////////////////////////////////////////////////////////////
 
-    void setTime(double time);
-    void setNSteps(uint nsteps);
+    void setTime(double time) override;
+    void setNSteps(uint nsteps) override;
 
     ////////////////////////////////////////////////////////////////////////
      // Batch Data Access
      ////////////////////////////////////////////////////////////////////////
 
-     std::vector<double> getBatchTetCounts(std::vector<uint> const & tets, std::string const & s) const;
+     std::vector<double> getBatchTetCounts(const std::vector<index_t> &tets, std::string const &s) const override;
 
-     std::vector<double> getBatchTriCounts(std::vector<uint> const & tris, std::string const & s) const;
+     std::vector<double> getBatchTriCounts(const std::vector<index_t> &tris, std::string const &s) const override;
 
-     void getBatchTetCountsNP(unsigned int* indices, int input_size, std::string const & s, double* counts, int output_size) const;
+     void getBatchTetCountsNP(const index_t *indices,
+                              int input_size,
+                              std::string const &s,
+                              double *counts,
+                              int output_size) const override;
 
-     void getBatchTriCountsNP(unsigned int* indices, int input_size, std::string const & s, double* counts, int output_size) const;
+     void getBatchTriCountsNP(const index_t *indices,
+                              int input_size,
+                              std::string const &s,
+                              double *counts,
+                              int output_size) const override;
 
      ////////////////////////////////////////////////////////////////////////
      // ROI Data Access
      ////////////////////////////////////////////////////////////////////////
 
      /// Get species counts of a list of tetrahedrons
-     std::vector<double> getROITetCounts(std::string ROI_id, std::string const & s) const;
+     std::vector<double> getROITetCounts(const std::string& ROI_id, std::string const & s) const override;
 
      /// Get species counts of a list of triangles
-     std::vector<double> getROITriCounts(std::string ROI_id, std::string const & s) const;
+     std::vector<double> getROITriCounts(const std::string& ROI_id, std::string const & s) const override;
 
      /// Get species counts of a list of tetrahedrons
-     void getROITetCountsNP(std::string ROI_id, std::string const & s, double* counts, int output_size) const;
+     void getROITetCountsNP(const std::string& ROI_id, std::string const & s, double* counts, int output_size) const override;
 
      /// Get species counts of a list of triangles
-     void getROITriCountsNP(std::string ROI_id, std::string const & s, double* counts, int output_size) const;
+     void getROITriCountsNP(const std::string& ROI_id, std::string const & s, double* counts, int output_size) const override;
 
-     double getROIVol(std::string ROI_id) const;
-     double getROIArea(std::string ROI_id) const;
+     double getROIVol(const std::string& ROI_id) const override;
+     double getROIArea(const std::string& ROI_id) const override;
 
-     double getROICount(std::string ROI_id, std::string const & s) const;
-     void setROICount(std::string ROI_id, std::string const & s, double count);
+     double getROICount(const std::string& ROI_id, std::string const & s) const override;
+     void setROICount(const std::string& ROI_id, std::string const & s, double count) override;
 
-     double getROIAmount(std::string ROI_id, std::string const & s) const;
-     double getROIConc(std::string ROI_id, std::string const & s) const;
-     void setROIConc(std::string ROI_id, std::string const & s, double conc);
+     double getROIAmount(const std::string& ROI_id, std::string const & s) const override;
+     double getROIConc(const std::string& ROI_id, std::string const & s) const override;
+     void setROIConc(const std::string& ROI_id, std::string const & s, double conc) override;
 
-     void setROIClamped(std::string ROI_id, std::string const & s, bool b);
+     void setROIClamped(const std::string& ROI_id, std::string const & s, bool b) override;
 
-     void setROIReacK(std::string ROI_id, std::string const & r, double kf);
-     void setROISReacK(std::string ROI_id, std::string const & sr, double kf);
-     void setROIDiffD(std::string ROI_id, std::string const & d, double dk);
+     void setROIReacK(const std::string& ROI_id, std::string const & r, double kf) override;
+     void setROISReacK(const std::string& ROI_id, std::string const & sr, double kf) override;
+     void setROIDiffD(const std::string& ROI_id, std::string const & d, double dk) override;
 
-     void setROIReacActive(std::string ROI_id, std::string const & r, bool a);
-     void setROISReacActive(std::string ROI_id, std::string const & sr, bool a);
-     void setROIDiffActive(std::string ROI_id, std::string const & d, bool a);
-     void setROIVDepSReacActive(std::string ROI_id, std::string const & vsr, bool a);
+     void setROIReacActive(const std::string& ROI_id, std::string const & r, bool a) override;
+     void setROISReacActive(const std::string& ROI_id, std::string const & sr, bool a) override;
+     void setROIDiffActive(const std::string& ROI_id, std::string const & d, bool a) override;
+     void setROIVDepSReacActive(const std::string& ROI_id, std::string const & vsr, bool a) override;
 
-     uint getROIReacExtent(std::string ROI_id, std::string const & r) const;
-     void resetROIReacExtent(std::string ROI_id, std::string const & r);
+     unsigned long long getROIReacExtent(const std::string& ROI_id, std::string const & r) const override;
+     void resetROIReacExtent(const std::string& ROI_id, std::string const & r) override;
 
-     uint getROISReacExtent(std::string ROI_id, std::string const & sr) const;
-     void resetROISReacExtent(std::string ROI_id, std::string const & sr);
+     unsigned long long getROISReacExtent(const std::string& ROI_id, std::string const & sr) const override;
+     void resetROISReacExtent(const std::string& ROI_id, std::string const & sr) override;
 
-     uint getROIDiffExtent(std::string ROI_id, std::string const & d) const;
-     void resetROIDiffExtent(std::string ROI_id, std::string const & d);
+     unsigned long long getROIDiffExtent(const std::string& ROI_id, std::string const & d) const override;
+     void resetROIDiffExtent(const std::string& ROI_id, std::string const & d) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
     //      COMPARTMENT
     ////////////////////////////////////////////////////////////////////////
 
-     double _getCompVol(uint cidx) const;
+     double _getCompVol(uint cidx) const override;
 
-     double _getCompCount(uint cidx, uint sidx) const;
-     void _setCompCount(uint cidx, uint sidx, double n);
+     double _getCompCount(uint cidx, uint sidx) const override;
+     void _setCompCount(uint cidx, uint sidx, double n) override;
 
-     double _getCompAmount(uint cidx, uint sidx) const;
-    void _setCompAmount(uint cidx, uint sidx, double a);
+     double _getCompAmount(uint cidx, uint sidx) const override;
+    void _setCompAmount(uint cidx, uint sidx, double a) override;
 
-    double _getCompConc(uint cidx, uint sidx) const;
-     void _setCompConc(uint cidx, uint sidx, double c);
+    double _getCompConc(uint cidx, uint sidx) const override;
+     void _setCompConc(uint cidx, uint sidx, double c) override;
 
-    bool _getCompClamped(uint cidx, uint sidx) const;
-    void _setCompClamped(uint cidx, uint sidx, bool b);
+    bool _getCompClamped(uint cidx, uint sidx) const override;
+    void _setCompClamped(uint cidx, uint sidx, bool b) override;
 
-    double _getCompReacK(uint cidx, uint ridx) const;
-    void _setCompReacK(uint cidx, uint ridx, double kf);
+    double _getCompReacK(uint cidx, uint ridx) const override;
+    void _setCompReacK(uint cidx, uint ridx, double kf) override;
 
-     bool _getCompReacActive(uint cidx, uint ridx) const;
-    void _setCompReacActive(uint cidx, uint ridx, bool a);
+     bool _getCompReacActive(uint cidx, uint ridx) const override;
+    void _setCompReacActive(uint cidx, uint ridx, bool a) override;
 
-    double _getCompReacH(uint cidx, uint ridx) const;
-    double _getCompReacC(uint cidx, uint ridx) const;
-    double _getCompReacA(uint cidx, uint ridx) const;
+    double _getCompReacH(uint cidx, uint ridx) const override;
+    double _getCompReacC(uint cidx, uint ridx) const override;
+    long double _getCompReacA(uint cidx, uint ridx) const override;
 
-    uint _getCompReacExtent(uint cidx, uint ridx) const;
-    void _resetCompReacExtent(uint cidx, uint ridx);
+    unsigned long long _getCompReacExtent(uint cidx, uint ridx) const override;
+    void _resetCompReacExtent(uint cidx, uint ridx) override;
 
-    double _getCompDiffD(uint cidx, uint didx) const;
-    void _setCompDiffD(uint cidx, uint didx, double dk);
+    double _getCompDiffD(uint cidx, uint didx) const override;
+    void _setCompDiffD(uint cidx, uint didx, double dk) override;
 
-    bool _getCompDiffActive(uint cidx, uint didx) const;
-    void _setCompDiffActive(uint cidx, uint didx, bool act);
+    bool _getCompDiffActive(uint cidx, uint didx) const override;
+    void _setCompDiffActive(uint cidx, uint didx, bool act) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
     //      PATCH
     ////////////////////////////////////////////////////////////////////////
 
-    double _getPatchArea(uint pidx) const;
+    double _getPatchArea(uint pidx) const override;
 
-     double _getPatchCount(uint pidx, uint sidx) const;
-    void _setPatchCount(uint pidx, uint sidx, double n);
+     double _getPatchCount(uint pidx, uint sidx) const override;
+    void _setPatchCount(uint pidx, uint sidx, double n) override;
 
-    double _getPatchAmount(uint pidx, uint sidx) const;
-     void _setPatchAmount(uint pidx, uint sidx, double a);
+    double _getPatchAmount(uint pidx, uint sidx) const override;
+     void _setPatchAmount(uint pidx, uint sidx, double a) override;
 
-    bool _getPatchClamped(uint pidx, uint sidx) const;
-    void _setPatchClamped(uint pidx, uint sidx, bool buf);
+    bool _getPatchClamped(uint pidx, uint sidx) const override;
+    void _setPatchClamped(uint pidx, uint sidx, bool buf) override;
 
-    double _getPatchSReacK(uint pidx, uint ridx) const;
-      void _setPatchSReacK(uint pidx, uint ridx, double kf);
+    double _getPatchSReacK(uint pidx, uint ridx) const override;
+      void _setPatchSReacK(uint pidx, uint ridx, double kf) override;
 
-     bool _getPatchSReacActive(uint pidx, uint ridx) const;
-     void _setPatchSReacActive(uint pidx, uint ridx, bool a);
+     bool _getPatchSReacActive(uint pidx, uint ridx) const override;
+     void _setPatchSReacActive(uint pidx, uint ridx, bool a) override;
 
-    double _getPatchSReacH(uint pidx, uint ridx) const;
-    double _getPatchSReacC(uint pidx, uint ridx) const;
-    double _getPatchSReacA(uint pidx, uint ridx) const;
+    double _getPatchSReacH(uint pidx, uint ridx) const override;
+    double _getPatchSReacC(uint pidx, uint ridx) const override;
+    double _getPatchSReacA(uint pidx, uint ridx) const override;
 
-    uint _getPatchSReacExtent(uint pidx, uint ridx) const;
-    void _resetPatchSReacExtent(uint pidx, uint ridx);
+    unsigned long long _getPatchSReacExtent(uint pidx, uint ridx) const override;
+    void _resetPatchSReacExtent(uint pidx, uint ridx) override;
 
-    bool _getPatchVDepSReacActive(uint pidx, uint vsridx) const;
-    void _setPatchVDepSReacActive(uint pidx, uint vsridx, bool a);
+    bool _getPatchVDepSReacActive(uint pidx, uint vsridx) const override;
+    void _setPatchVDepSReacActive(uint pidx, uint vsridx, bool a) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
     //      DIFFUSION BOUNDARIES
     ////////////////////////////////////////////////////////////////////////
 
-    void _setDiffBoundaryDiffusionActive(uint dbidx, uint didx, bool act);
-    bool _getDiffBoundaryDiffusionActive(uint dbidx, uint didx) const;
-    void _setDiffBoundaryDcst(uint dbidx, uint sidx, double dcst, uint direction_comp = std::numeric_limits<uint>::max());
+    void _setDiffBoundaryDiffusionActive(uint dbidx, uint didx, bool act) override;
+    bool _getDiffBoundaryDiffusionActive(uint dbidx, uint didx) const override;
+    void _setDiffBoundaryDcst(uint dbidx, uint sidx, double dcst, uint direction_comp = std::numeric_limits<uint>::max()) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
     //      SURFACE DIFFUSION BOUNDARIES
     ////////////////////////////////////////////////////////////////////////
 
-    void _setSDiffBoundaryDiffusionActive(uint sdbidx, uint didx, bool act);
-    bool _getSDiffBoundaryDiffusionActive(uint sdbidx, uint didx) const;
-    void _setSDiffBoundaryDcst(uint sdbidx, uint sidx, double dcst, uint direction_patch = std::numeric_limits<uint>::max());
+    void _setSDiffBoundaryDiffusionActive(uint sdbidx, uint didx, bool act) override;
+    bool _getSDiffBoundaryDiffusionActive(uint sdbidx, uint didx) const override;
+    void _setSDiffBoundaryDcst(uint sdbidx, uint sidx, double dcst, uint direction_patch = std::numeric_limits<uint>::max()) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
     //      TETRAHEDRAL VOLUME ELEMENTS
     ////////////////////////////////////////////////////////////////////////
 
-    double _getTetVol(uint tidx) const;
-    void _setTetVol(uint tidx, double vol);
+    double _getTetVol(tetrahedron_id_t tidx) const override;
+    void _setTetVol(tetrahedron_id_t tidx, double vol) override;
 
-    bool _getTetSpecDefined(uint tidx, uint sidx) const;
+    bool _getTetSpecDefined(tetrahedron_id_t tidx, uint sidx) const override;
 
-    double _getTetCount(uint tidx, uint sidx) const;
-    void _setTetCount(uint tidx, uint sidx, double n);
+    double _getTetCount(tetrahedron_id_t tidx, uint sidx) const override;
+    void _setTetCount(tetrahedron_id_t tidx, uint sidx, double n) override;
 
-    double _getTetAmount(uint tidx, uint sidx) const;
-    void _setTetAmount(uint tidx, uint sidx, double m);
+    double _getTetAmount(tetrahedron_id_t tidx, uint sidx) const override;
+    void _setTetAmount(tetrahedron_id_t tidx, uint sidx, double m) override;
 
-    double _getTetConc(uint tidx, uint sidx) const;
-    void _setTetConc(uint tidx, uint sidx, double c);
+    double _getTetConc(tetrahedron_id_t tidx, uint sidx) const override;
+    void _setTetConc(tetrahedron_id_t tidx, uint sidx, double c) override;
 
-    bool _getTetClamped(uint tidx, uint sidx) const;
-    void _setTetClamped(uint tidx, uint sidx, bool buf);
+    bool _getTetClamped(tetrahedron_id_t tidx, uint sidx) const override;
+    void _setTetClamped(tetrahedron_id_t tidx, uint sidx, bool buf) override;
 
-    double _getTetReacK(uint tidx, uint ridx) const;
-    void _setTetReacK(uint tidx, uint ridx, double kf);
+    double _getTetReacK(tetrahedron_id_t tidx, uint ridx) const override;
+    void _setTetReacK(tetrahedron_id_t tidx, uint ridx, double kf) override;
 
-    bool _getTetReacActive(uint tidx, uint ridx) const;
-    void _setTetReacActive(uint tidx, uint ridx, bool act);
+    bool _getTetReacActive(tetrahedron_id_t tidx, uint ridx) const override;
+    void _setTetReacActive(tetrahedron_id_t tidx, uint ridx, bool act) override;
 
-    double _getTetDiffD(uint tidx, uint didx, uint direction_tet = std::numeric_limits<uint>::max()) const;
-    void _setTetDiffD(uint tidx, uint didx, double dk,
-                      uint direction_tet = std::numeric_limits<uint>::max());
+    double _getTetDiffD(tetrahedron_id_t tidx, uint didx, tetrahedron_id_t direction_tet = UNKNOWN_TET) const override;
+    void _setTetDiffD(tetrahedron_id_t tidx, uint didx, double dk,
+                      tetrahedron_id_t direction_tet = UNKNOWN_TET) override;
 
-    bool _getTetDiffActive(uint tidx, uint didx) const;
-    void _setTetDiffActive(uint tidx, uint didx, bool act);
+    bool _getTetDiffActive(tetrahedron_id_t tidx, uint didx) const override;
+    void _setTetDiffActive(tetrahedron_id_t tidx, uint didx, bool act) override;
 
     ////////////////////////////////////////////////////////////////////////
 
-    double _getTetReacH(uint tidx, uint ridx) const;
-    double _getTetReacC(uint tidx, uint ridx) const;
-    double _getTetReacA(uint tidx, uint ridx) const;
+    double _getTetReacH(tetrahedron_id_t tidx, uint ridx) const override;
+    double _getTetReacC(tetrahedron_id_t tidx, uint ridx) const override;
+    double _getTetReacA(tetrahedron_id_t tidx, uint ridx) const override;
 
-    double _getTetDiffA(uint tidx, uint didx) const;
+    double _getTetDiffA(tetrahedron_id_t tidx, uint didx) const override;
 
     ////////////////////////// ADDED FOR EFIELD ////////////////////////////
 
-    double _getTetV(uint tidx) const;
-    void _setTetV(uint tidx, double v);
-    bool _getTetVClamped(uint tidx) const;
-    void _setTetVClamped(uint tidx, bool cl);
+    double _getTetV(tetrahedron_id_t tidx) const override;
+    void _setTetV(tetrahedron_id_t tidx, double v) override;
+    bool _getTetVClamped(tetrahedron_id_t tidx) const override;
+    void _setTetVClamped(tetrahedron_id_t tidx, bool cl) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
     //      TRIANGULAR SURFACE ELEMENTS
     ////////////////////////////////////////////////////////////////////////
 
-    double _getTriArea(uint tidx) const;
-    void _setTriArea(uint tidx, double area);
+    double _getTriArea(triangle_id_t tidx) const override;
+    void _setTriArea(triangle_id_t tidx, double area) override;
 
-    bool _getTriSpecDefined(uint tidx, uint sidx) const;
+    bool _getTriSpecDefined(triangle_id_t tidx, uint sidx) const override;
 
-    double _getTriCount(uint tidx, uint sidx) const;
-    void _setTriCount(uint tidx, uint sidx, double n);
+    double _getTriCount(triangle_id_t tidx, uint sidx) const override;
+    void _setTriCount(triangle_id_t tidx, uint sidx, double n) override;
 
-    double _getTriAmount(uint tidx, uint sidx) const;
-    void _setTriAmount(uint tidx, uint sidx, double m);
+    double _getTriAmount(triangle_id_t tidx, uint sidx) const override;
+    void _setTriAmount(triangle_id_t tidx, uint sidx, double m) override;
 
-    bool _getTriClamped(uint tidx, uint sidx) const;
-    void _setTriClamped(uint tidx, uint sidx, bool buf);
+    bool _getTriClamped(triangle_id_t tidx, uint sidx) const override;
+    void _setTriClamped(triangle_id_t tidx, uint sidx, bool buf) override;
 
-    double _getTriSReacK(uint tidx, uint ridx) const;
-    void _setTriSReacK(uint tidx, uint ridx, double kf);
+    double _getTriSReacK(triangle_id_t tidx, uint ridx) const override;
+    void _setTriSReacK(triangle_id_t tidx, uint ridx, double kf) override;
 
-    bool _getTriSReacActive(uint tidx, uint ridx) const;
-    void _setTriSReacActive(uint tidx, uint ridx, bool act);
+    bool _getTriSReacActive(triangle_id_t tidx, uint ridx) const override;
+    void _setTriSReacActive(triangle_id_t tidx, uint ridx, bool act) override;
     
-    double _getTriSDiffD(uint tidx, uint didx, uint direction_tri = std::numeric_limits<uint>::max()) const;
+    double _getTriSDiffD(triangle_id_t tidx, uint didx, triangle_id_t direction_tri) const override;
     
-    void _setTriSDiffD(uint tidx, uint didx, double dk,
-                      uint direction_tri = std::numeric_limits<uint>::max());
+    void _setTriSDiffD(triangle_id_t tidx, uint didx, double dk,
+                       triangle_id_t direction_tri) override;
 
     ////////////////////////////////////////////////////////////////////////
 
-    double _getTriSReacH(uint tidx, uint ridx) const;
-    double _getTriSReacC(uint tidx, uint ridx) const;
-    double _getTriSReacA(uint tidx, uint ridx) const;
+    double _getTriSReacH(triangle_id_t tidx, uint ridx) const override;
+    double _getTriSReacC(triangle_id_t tidx, uint ridx) const override;
+    double _getTriSReacA(triangle_id_t tidx, uint ridx) const override;
 
     ////////////////////////// ADDED FOR EFIELD ////////////////////////////
 
-    double _getTriV(uint tidx) const;
-    void _setTriV(uint tidx, double v);
-    bool _getTriVClamped(uint tidx) const;
-    void _setTriVClamped(uint tidx, bool cl);
+    double _getTriV(triangle_id_t tidx) const override;
+    void _setTriV(triangle_id_t tidx, double v) override;
+    bool _getTriVClamped(triangle_id_t tidx) const override;
+    void _setTriVClamped(triangle_id_t tidx, bool cl) override;
 
-    double _getTriOhmicI(uint tidx);
-    double _getTriOhmicI(uint tidx, uint ocidx);
+    double _getTriOhmicI(triangle_id_t tidx) override;
+    double _getTriOhmicI(triangle_id_t tidx, uint ocidx) override;
 
-    double _getTriGHKI(uint tidx);
-    double _getTriGHKI(uint tidx, uint ghkidx);
+    double _getTriGHKI(triangle_id_t tidx) override;
+    double _getTriGHKI(triangle_id_t tidx, uint ghkidx) override;
 
-    double _getTriI(uint tidx) const;
+    double _getTriI(triangle_id_t tidx) const override;
 
-    void _setTriIClamp(uint tidx, double cur);
+    void _setTriIClamp(triangle_id_t tidx, double cur) override;
 
-    bool _getTriVDepSReacActive(uint tidx, uint vsridx) const;
-    void _setTriVDepSReacActive(uint tidx, uint vsridx, bool act);
+    bool _getTriVDepSReacActive(triangle_id_t tidx, uint vsridx) const override;
+    void _setTriVDepSReacActive(triangle_id_t tidx, uint vsridx, bool act) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROL:
     //      VERTICES ELEMENTS
     ////////////////////////// ADDED FOR EFIELD ////////////////////////////
 
-    double _getVertV(uint vidx) const;
-    void _setVertV(uint vidx, double v);
-    bool _getVertVClamped(uint vidx) const;
-    void _setVertVClamped(uint vidx, bool cl);
-    void _setVertIClamp(uint tidx, double cur);
+    double _getVertV(vertex_id_t vidx) const override;
+    void _setVertV(vertex_id_t vidx, double v) override;
+    bool _getVertVClamped(vertex_id_t vidx) const override;
+    void _setVertVClamped(vertex_id_t vidx, bool cl) override;
+    void _setVertIClamp(vertex_id_t tidx, double cur) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROL:
     //      MEMBRANE AND VOLUME CONDUCTOR
     ////////////////////////// ADDED FOR EFIELD ////////////////////////////
 
-    void _setMembPotential(uint midx, double v);
-    void _setMembCapac(uint midx, double cm);
-    void _setMembVolRes(uint midx, double ro);
-    void _setMembRes(uint midx, double ro, double vrev);
+    void _setMembPotential(uint midx, double v) override;
+    void _setMembCapac(uint midx, double cm) override;
+    void _setMembVolRes(uint midx, double ro) override;
+    void _setMembRes(uint midx, double ro, double vrev) override;
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -438,26 +445,29 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::tetmesh::Tetmesh * mesh() const
-    { return pMesh; }
+    inline const steps::tetmesh::Tetmesh& mesh() const noexcept
+    { return *pMesh; }
+
+    inline steps::tetmesh::Tetmesh& mesh() noexcept
+    { return *pMesh; }
 
     inline steps::tetexact::Comp * _comp(uint cidx) const {
         // Moved assertions to this access routine to cut code duplication.
-        AssertLog(cidx < statedef()->countComps());
-        AssertLog(statedef()->countComps() == pComps.size());
+        AssertLog(cidx < statedef().countComps());
+        AssertLog(statedef().countComps() == pComps.size());
 
         auto c = pComps[cidx];
         //AssertLog(c !=0);
         return c;
     }
 
-    inline std::vector<steps::tetexact::Patch *>  patches() const
+    inline const std::vector<steps::tetexact::Patch *>&  patches() const
     { return pPatches; }
 
     inline steps::tetexact::Patch * _patch(uint pidx) const {
         // Moved assertions to this access routine to cut code duplication.
-        AssertLog(pidx < statedef()->countPatches());
-        AssertLog(statedef()->countPatches() == pPatches.size());
+        AssertLog(pidx < statedef().countPatches());
+        AssertLog(statedef().countPatches() == pPatches.size());
 
         auto p = pPatches[pidx];
         AssertLog(p !=0);
@@ -465,20 +475,20 @@ public:
     }
 
     inline steps::tetexact::DiffBoundary * _diffboundary(uint dbidx) const {
-        AssertLog(dbidx < statedef()->countDiffBoundaries());
+        AssertLog(dbidx < statedef().countDiffBoundaries());
         return pDiffBoundaries[dbidx];
     }
 
     inline steps::tetexact::SDiffBoundary * _sdiffboundary(uint sdbidx) const {
-        AssertLog(sdbidx < statedef()->countSDiffBoundaries());
+        AssertLog(sdbidx < statedef().countSDiffBoundaries());
         return pSDiffBoundaries[sdbidx];
     }
 
-    inline steps::tetexact::Tet * _tet(uint tidx) const
-    { return pTets[tidx]; }
+    inline steps::tetexact::Tet * _tet(tetrahedron_id_t tidx) const
+    { return pTets[tidx.get()]; }
 
-    inline steps::tetexact::Tri * _tri(uint tidx) const
-    { return pTris[tidx]; }
+    inline steps::tetexact::Tri * _tri(triangle_id_t tidx) const
+    { return pTris[tidx.get()]; }
 
     inline double a0() const
     { return pA0; }
@@ -501,7 +511,7 @@ public:
     // TETEXACT SOLVER METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    uint _addComp(steps::solver::Compdef * cdef);
+    std::size_t _addComp(steps::solver::Compdef * cdef);
 
     uint _addPatch(steps::solver::Patchdef * pdef);
 
@@ -510,15 +520,38 @@ public:
     uint _addSDiffBoundary(steps::solver::SDiffBoundarydef * sdbdef);
 
 
-    void _addTet(uint tetidx, steps::tetexact::Comp * comp, double vol, double a1,
-                 double a2, double a3, double a4, double d1, double d2,
-                 double d3, double d4, int tet0, int tet1, int tet2, int tet3);
+    void _addTet(tetrahedron_id_t tetidx,
+                 steps::tetexact::Comp *comp,
+                 double vol,
+                 double a1,
+                 double a2,
+                 double a3,
+                 double a4,
+                 double d1,
+                 double d2,
+                 double d3,
+                 double d4,
+                 tetrahedron_id_t tet0,
+                 tetrahedron_id_t tet1,
+                 tetrahedron_id_t tet2,
+                 tetrahedron_id_t tet3);
 
     void _addWmVol(uint cidx, steps::tetexact::Comp * comp, double vol);
 
-    void _addTri(uint triidx, steps::tetexact::Patch * patch, double area,
-            double l0, double l1, double l2, double d0, double d1, double d2,
-            int tinner, int touter, int tri0, int tri1, int tri2);
+    void _addTri(triangle_id_t triidx,
+                 steps::tetexact::Patch *patch,
+                 double area,
+                 double l0,
+                 double l1,
+                 double l2,
+                 double d0,
+                 double d1,
+                 double d2,
+                 tetrahedron_id_t tinner,
+                 tetrahedron_id_t touter,
+                 triangle_id_t tri0,
+                 triangle_id_t tri1,
+                 triangle_id_t tri2);
 
     // called when local tet, tri, reac, sreac objects have been created
     // by constructor
@@ -578,7 +611,18 @@ private:
 
     ////////////////////////////////////////////////////////////////////////
 
-    steps::tetmesh::Tetmesh *                    pMesh;
+    double getROITetCount(const std::vector<tetrahedron_id_t>& indices, const std::string& s) const;
+    double getROITriCount(const std::vector<triangle_id_t>& indices, const std::string& s) const;
+
+    void setROITetClamped(const std::vector<tetrahedron_id_t>& indices, std::string const & s, bool b);
+    void setROITriClamped(const std::vector<triangle_id_t>& indices, std::string const & s, bool b);
+
+    void setROITriCount(const std::vector<triangle_id_t>& indices, std::string const & s, double count);
+    void setROITetCount(const std::vector<tetrahedron_id_t >& indices, std::string const & s, double count);
+
+    double getROIVol(const std::vector<tetrahedron_id_t>& tets)const;
+
+    steps::tetmesh::Tetmesh *                    pMesh{nullptr};
 
     ////////////////////////////////////////////////////////////////////////
     // LIST OF TETEXACT SOLVER OBJECTS
@@ -605,10 +649,10 @@ private:
     ////////////////////////////////////////////////////////////////////////
     // CR SSA Kernel Data and Methods
     ////////////////////////////////////////////////////////////////////////
-    uint                                        nEntries;
+    std::size_t                                 nEntries;
     double                                      pSum;
     double                                      nSum;
-    double                                      pA0;
+    double                                      pA0{0.0};
 
     std::vector<KProc*>                         pKProcs;
 
@@ -698,9 +742,9 @@ private:
         #endif
 
         group->capacity += size;
-        group->indices = (KProc**)realloc(group->indices,
-                                          sizeof(KProc*) * group->capacity);
-        if (group->indices == NULL) {
+        group->indices = static_cast<KProc**>(realloc(group->indices,
+                                          sizeof(KProc*) * group->capacity));
+        if (group->indices == nullptr) {
             SysErrLog("DirectCR: unable to allocate memory for SSA group.");
         }
         #ifdef SSA_DEBUG
@@ -720,15 +764,11 @@ private:
 
         pA0 = 0.0;
 
-        uint n_neg_groups = nGroups.size();
-        uint n_pos_groups = pGroups.size();
-
-        for (uint i = 0; i < n_neg_groups; i++) {
-            pA0 += nGroups[i]->sum;
+        for (const auto& neg_grp: nGroups) {
+          pA0 += neg_grp->sum;
         }
-
-        for (uint i = 0; i < n_pos_groups; i++) {
-            pA0 += pGroups[i]->sum;
+        for (const auto& pos_grp: pGroups) {
+          pA0 += pos_grp->sum;
         }
 
         #ifdef SSA_DEBUG
@@ -746,42 +786,44 @@ private:
     //
     EF_solver                                    pEFoption;
 
-    double                                       pTemp;
+    double                                       pTemp{0.0};
 
     // Pointer to the EField object
     std::unique_ptr<steps::solver::efield::EField> pEField;
 
     // The Efield time-step
-    double                                       pEFDT;
+    double                                       pEFDT{1.0e-5};
 
     // The number of vertices
-    uint                                        pEFNVerts;
+    uint                                        pEFNVerts{0};
     // Array of vertices
-    double                                      * pEFVerts;
+    double                                      * pEFVerts{nullptr};
 
     // The number of membrane triangles
-    uint                                        pEFNTris;
+    uint                                        pEFNTris{0};
     // Array of membrane triangles
-    uint                                       * pEFTris;
+    // \TODO use vector<tri_verts> pointer instead
+    vertex_id_t                               * pEFTris{nullptr};
 
     std::vector<steps::tetexact::Tri *>        pEFTris_vec;
 
     // The number of tetrahedrons
-    uint                                        pEFNTets;
+    uint                                        pEFNTets{0};
     // Array of tetrahedrons
-    uint                                      * pEFTets;
+    // \TODO TCL: use vector<tet_verts> instead
+    vertex_id_t                               * pEFTets{nullptr};
 
     // Table of global vertex index to EField local vertex index (0, 1, ..., pEFNVerts - 1)
-    int                                      * pEFVert_GtoL;
+    vertex_id_t                               * pEFVert_GtoL{nullptr};
 
     // Table of global triangle index to EField local triangle index (0, 1, ..., pEFNTris-1)
-    int                                      * pEFTri_GtoL;
+    triangle_id_t                             * pEFTri_GtoL{nullptr};
 
     // Table of global tetrahedron index to EField local tet index (0, 1, ..., pEFNTets-1)
-    int                                       * pEFTet_GtoL;
+    tetrahedron_id_t                          * pEFTet_GtoL{nullptr};
 
     // Table of EField local triangle index to global triangle index.
-    uint                                      * pEFTri_LtoG;
+    triangle_id_t                             * pEFTri_LtoG{nullptr};
 
 
 };

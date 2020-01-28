@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,8 +30,10 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/geom/RegionOfInterest.hpp"
 #include "steps/math/point.hpp"
 #include "steps/math/bbox.hpp"
+#include "steps/geom/fwd.hpp"
 #include "steps/geom/geom.hpp"
 #include "steps/geom/tmpatch.hpp"
 #include "steps/geom/tmcomp.hpp"
@@ -58,16 +60,20 @@ class Memb;
 class DiffBoundary;
 class SDiffBoundary;
 
+// FIXME TCL: use proper storage according to type of element
 enum ElementType {ELEM_VERTEX, ELEM_TRI, ELEM_TET, ELEM_UNDEFINED = 99};
 
-struct ROISet {
+ struct ROISet {
+    using data_type = index_t;
+    using set_data_type = std::set<data_type>;
+    using vector_data_type = std::vector<data_type>;
     ROISet(): type(ELEM_UNDEFINED) {}
 
-    ROISet(ElementType t, std::set<uint> const &i):
+    ROISet(ElementType t, const set_data_type& i):
         type(t), indices(i.begin(),i.end()) {}
-    
+
     ElementType        type;
-    std::vector<uint>  indices;
+    vector_data_type  indices;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -123,7 +129,31 @@ NOTES:
 class Tetmesh : public steps::wm::Geom
 {
 public:
-    typedef steps::math::point3d point3d;
+    using point3d = steps::math::point3d;
+
+    /// \brief store the 4 possible tetrahedrons that are neighbors of a tetrahedron,
+    /// \a UNKNOWN_TET if there is no such tet.
+    using tet_tets = std::array<tetrahedron_id_t, 4>;
+    /// \brief store the 2 vertices of a bar
+    using bar_verts = std::array<vertex_id_t, 2>;
+    /// \brief store the 3 vertices of a triangle
+    using tri_verts = std::array<vertex_id_t, 3>;
+    /// \brief store the 4 vertices of a tetrahedron
+    using tet_verts = std::array<vertex_id_t, 4>;
+
+    /// \brief store the 3 bars which form a triangle
+    using tri_bars = std::array<bar_id_t, 3>;
+
+    /// \brief store the 2 possible triangles that are neighbors of a bar
+    /// (on a surface diffusion boundary), UINT_MAX if there is no such triangle
+    using bar_tris = std::array<triangle_id_t, 2>;
+
+    /// \brief store the 2 possible tetrahedrons that are neighbors of a triangle,
+    /// \a UNKNOWN_TET if there is no such tet
+    using tri_tets = std::array<tetrahedron_id_t, 2>;
+
+    /// \brief store the 4 triangles that form a tetrahedron
+    using tet_tris = std::array<triangle_id_t, 4>;
 
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
@@ -134,21 +164,23 @@ public:
     /// \param verts List of vertices.
     /// \param tets List of tetrahedrons.
     /// \param tris List of triangles.
-    Tetmesh(std::vector<double> const & verts, std::vector<uint> const & tets,
-            std::vector<uint> const & tris = std::vector<uint>());
+    Tetmesh(std::vector<double> const & verts,
+            std::vector<index_t> const & tets,
+            std::vector<index_t> const & tris = {});
 
     /// Constructor
     ///
     /// \param verts
-    Tetmesh(std::vector<double> const & verts, std::vector<uint> const & tris,
+    Tetmesh(std::vector<double> const & verts,
+            std::vector<vertex_id_t> const & tris,
             std::vector<double> const & tri_areas,
             std::vector<double> const & tri_norms,
-            std::vector<int> const & tri_tet_neighbs,
-            std::vector<uint> const & tets,
+            std::vector<tetrahedron_id_t> const & tri_tet_neighbs,
+            std::vector<vertex_id_t> const & tets,
             std::vector<double> const & tet_vols,
             std::vector<double> const & tet_barycs,
-            std::vector<uint> const & tet_tri_neighbs,
-            std::vector<int> const & tet_tet_neighbs);
+            std::vector<triangle_id_t> const & tet_tri_neighbs,
+            std::vector<tetrahedron_id_t> const & tet_tet_neighbs);
 
     /// Destructor
     virtual ~Tetmesh();
@@ -161,12 +193,12 @@ public:
     ///
     /// \param vidx Index of the vertex.
     /// \return Coordinates of the vertex.
-    std::vector<double> getVertex(uint vidx) const;
+    std::vector<double> getVertex(vertex_id_t vidx) const;
 
-    /// Count the vertices in the Temesh.
+    /// Count the vertices in the Tetmesh.
     ///
     /// \return Number of the vertices.
-    inline uint countVertices() const
+    inline index_t countVertices() const noexcept
     { return pVertsN; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -177,25 +209,25 @@ public:
     ///
     /// \param bidx Index of the bar.
     /// \return Indices of the two vertices that form the bar.
-    std::vector<uint> getBar(uint bidx) const;
+    std::vector<index_t> getBar(bar_id_t bidx) const;
 
     /// Count the bars in the Tetmesh.
     ///
     /// \return Number of bars.
-    inline uint countBars() const
+    inline unsigned long countBars() const noexcept
     { return pBarsN; }
 
     ///Set the surface diffusion boundary which a bar belongs to.
     ///
     /// \param tidx Index of the bar.
     /// \param sdiffb Pointer to the associated surface diffusion boundary.
-    void setBarSDiffBoundary(uint bidx, steps::tetmesh::SDiffBoundary * sdiffb);
+    void setBarSDiffBoundary(bar_id_t bidx, SDiffBoundary * sdiffb);
 
     /// Return the surface diffusion boundary which a triangle is associated to.
     ///
     /// \param bidx Index of the bar.
     /// \return Pointer to the surface diffusion boundary.
-    steps::tetmesh::SDiffBoundary * getBarSDiffBoundary(uint bidx) const;
+    SDiffBoundary * getBarSDiffBoundary(bar_id_t bidx) const;
 
     ///Return all the triangle neighbors of a bar by its index.
     ///NOTE: This differs from _getBarTriNeighb which returns the 2 triangles that a bar
@@ -203,12 +235,12 @@ public:
     /// \param bidx Index of the bar.
     /// \return Set of the triangle neighbors.
     ///
-    std::set<uint> getBarTriNeighbs(uint bidx) const;
+    std::set<triangle_id_t> getBarTriNeighbs(bar_id_t bidx) const;
 
     ///Set neighbouring tris to bar in context of surface diffusion boundary
     /// NOTE: Making one unique list for each bar disallows any bar from
     /// being part of more than one surface diffusion boundary.
-    void setBarTris(uint bidx, int itriidx, int otriidx);
+    void setBarTris(bar_id_t bidx, triangle_id_t itriidx, triangle_id_t otriidx);
 
 
     ////////////////////////////////////////////////////////////////////////
@@ -219,69 +251,69 @@ public:
     ///
     /// \param tidx Index of the triangle.
     /// \return Indices of the vertices that form the triangle.
-    std::vector<uint> getTri(uint tidx) const;
+    std::vector<index_t> getTri(triangle_id_t tidx) const;
 
     /// Count the triangles in the Temesh.
     ///
     /// \return Number of the triangles.
-    inline uint countTris() const
+    inline index_t countTris() const noexcept
     { return pTrisN; }
 
     /// Return the area of a triangle with index tidx.
     ///
     /// \param tidx Index of the triangle.
     /// \return Area of the triangle.
-    double getTriArea(uint tidx) const;
+    double getTriArea(triangle_id_t tidx) const;
 
     /// Return the bars of a triangle
     ///
     /// \param tidx Index of the triangle
     /// \return Bars of the triangle
-    std::vector<uint> getTriBars(uint tidx) const;
+    std::vector<index_t> getTriBars(triangle_id_t tidx) const;
 
     /// Return the barycentre of triangle with index tidx
     ///
     /// \param tidx Index of the triangle.
     /// \return Barycentre of the triangle.
-    std::vector<double> getTriBarycenter(uint tidx) const;
+    std::vector<double> getTriBarycenter(triangle_id_t tidx) const;
 
     /// Return the normalised triangle with index tidx
     ///
     /// \param tidx Index of the triangle.
     /// \return Coordinate of the normalised vertices form the triangle.
-    std::vector<double> getTriNorm(uint tidx) const;
+    std::vector<double> getTriNorm(triangle_id_t tidx) const;
 
     //getTriBarycentre
     /// Return the patch which a triangle associated to.
     ///
     /// \param tidx Index of the triangle.
     /// \return Pointer to the patch.
-    steps::tetmesh::TmPatch * getTriPatch(uint tidx) const;
+    TmPatch * getTriPatch(triangle_id_t tidx) const;
 
     ///Set the patch which a triangle belongs to.
     ///
     /// \param tidx Index of the triangle.
     /// \param patch Pointer to the associated patch.
-    void setTriPatch(uint tidx, steps::tetmesh::TmPatch * patch);
+    void setTriPatch(triangle_id_t tidx, TmPatch * patch);
 
     ///Set the diffusion boundary which a triangle belongs to.
     ///
     /// \param tidx Index of the triangle.
     /// \param diffb Pointer to the associated diffusion boundary.
-    void setTriDiffBoundary(uint tidx, steps::tetmesh::DiffBoundary * diffb);
+    void setTriDiffBoundary(triangle_id_t tidx, DiffBoundary * diffb);
 
     /// Return the diffusion boundary which a triangle is associated to.
     ///
     /// \param tidx Index of the triangle.
     /// \return Pointer to the diffusion boundary.
-    steps::tetmesh::DiffBoundary * getTriDiffBoundary(uint tidx) const;
+    DiffBoundary * getTriDiffBoundary(triangle_id_t tidx) const;
 
     ///Return the tetrahedron neighbors of a triangle by its index.
     ///
     /// \param tidx Index of the triangle.
     /// \return Vector of the tetrahedron neighbors.
     ///
-    std::vector<int> getTriTetNeighb(uint tidx) const;
+    std::vector<index_t> getTriTetNeighb(triangle_id_t tidx) const;
 
     ///Return the 3 triangle neighbors within the same patch of a triangle by its index.
     ///
@@ -289,7 +321,7 @@ public:
     /// \param tmpatch Pointer to the patch
     /// \return Vector of the triangle neighbors.
     ///
-    std::vector<int> getTriTriNeighb(uint tidx, const TmPatch * tmpatch) const;
+    std::vector<index_t> getTriTriNeighb(triangle_id_t tidx, const TmPatch * tmpatch) const;
 
     ///Return the 3 triangle neighbors of a triangle by its index.
     ///
@@ -299,24 +331,24 @@ public:
     /// This function differs from the one above as it doesn't exclude triangle neighbors
     /// in other patches
 
-    std::vector<int> getTriTriNeighb(uint tidx) const;
+    std::vector<index_t> getTriTriNeighb(triangle_id_t tidx) const;
 
     ///Return all the triangle neighbors of a triangle by its index.
     ///
     /// \param tidx Index of the triangle.
     /// \return Set of the triangle neighbors.
     ///
-    std::set<uint> getTriTriNeighbs(uint tidx) const;
+    std::set<index_t> getTriTriNeighbs(triangle_id_t tidx) const;
 
     /// Flip the triangle's inner and outer tetrahedron.
     ///
     /// \param tidx Index of the triangle.
-    void _flipTriTetNeighb(uint tidx);
+    void _flipTriTetNeighb(triangle_id_t tidx);
 
     /// Flip the triangle's vertices and recalculate the normal.
     ///
     /// \param Index of the triangle.
-    void _flipTriVerts(uint tidx);
+    void _flipTriVerts(triangle_id_t tidx);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO PYTHON): TETRAHEDRA
@@ -325,12 +357,12 @@ public:
     ///
     /// \param tidx Index of the tetrahedron.
     /// \return Vector of the indices of triangles which form the tetrahedron.
-    std::vector<uint>  getTet(uint tidx) const;
+    std::vector<index_t>  getTet(tetrahedron_id_t tidx) const;
 
     /// Count the number of tetrahedrons.
     ///
     /// \return Number of tetrahedrons.
-    inline uint countTets() const
+    inline std::size_t countTets() const noexcept
     { return pTetsN; }
 
     /// Return the volume of a tetrahedron by its index.
@@ -338,7 +370,7 @@ public:
     /// \param tidx Index of the tetrahedron.
     /// \return Volume of the tetrahedron.
 
-    double getTetVol(uint tidx) const;
+    double getTetVol(tetrahedron_id_t tidx) const;
 
     /// Computes the quality of the tetrahedron.
     ///
@@ -357,37 +389,37 @@ public:
     /// small value.
     ///
     /// \return Quality RER of the tetrahedron.
-    double getTetQualityRER(uint tidx) const;
+    double getTetQualityRER(tetrahedron_id_t tidx) const;
 
     /// Return the barycentre of the tetrahedron in x,y,z coordinates
     /// \param tidx Index of the tetrahedron
     /// \return Barycentre of the tetrahedron
-    std::vector<double> getTetBarycenter(uint tidx) const;
+    std::vector<double> getTetBarycenter(tetrahedron_id_t tidx) const;
 
     /// Return the compartment which a tetrahedron with index tidx belongs to.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \return Pointer to the compartment object.
 
-    steps::tetmesh::TmComp * getTetComp(uint tidx) const;
+    TmComp * getTetComp(tetrahedron_id_t tidx) const;
     ///Set the compartment which a tetrahedron with index tidx belongs to.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param comp Pointer to the compartment object.
 
-    void setTetComp(uint tidx, steps::tetmesh::TmComp * comp);
+    void setTetComp(tetrahedron_id_t tidx, TmComp * comp);
     ///Return the triangle neighbors of a tetrahedron with index tidx.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \return Vector of the triangle neighbors.
 
-    std::vector<uint> getTetTriNeighb(uint tidx) const;
+    std::vector<index_t> getTetTriNeighb(tetrahedron_id_t tidx) const;
     ///Return the tetrahedron neighbors of a tetrahedron with index tidx.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \return Vector of the tetrahedron neighbors.
 
-    std::vector<int> getTetTetNeighb(uint tidx) const;
+    std::vector<index_t> getTetTetNeighb(tetrahedron_id_t tidx) const;
 
     /// Find a tetrahedron which encompasses a given point.
     /// Return the index of the tetrahedron that encompasses point;
@@ -397,7 +429,9 @@ public:
     /// \param p A point given by its coordinates.
     /// \return ID of the found tetrahedron.
 
-    int findTetByPoint(std::vector<double> const &p) const;
+    tetrahedron_id_t findTetByPoint(std::vector<double> const &p) const;
+
+    tetrahedron_id_t findTetByPoint(point3d const &p) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO PYTHON): MESH
@@ -421,121 +455,167 @@ public:
     /// Return the triangles which form the surface boundary of the mesh.
     /// \return Vector of the triangle boundary.
     // Weiliang 2010.02.02
-    std::vector<int> getSurfTris() const;
+    std::vector<index_t> getSurfTris() const;
+
+    /// Computes the percentage of intersection of a segment with the mesh tets.
+    ///
+    /// \param p_start Beginning of segment.
+    /// \param p_end Ending of segment.
+    /// \param tet_start Index of tetrahedron containing \p p_start.
+    /// \param sampling Number of point to test for monte-carlo method.
+    /// \return A vector where each position contains pairs <tet, intersection ratio>.
+    std::vector<std::pair<tetrahedron_id_t, double>>
+    intersectMontecarlo(const point3d &p_start, const point3d &p_end, const tetrahedron_id_t &tet_start= UNKNOWN_TET, unsigned int sampling = 100)
+    const;
+
+    /// Computes the percentage of intersection of a segment with the mesh tets
+    ///
+    /// \return A vector where each position contains pairs <tet, intersection ratio>
+    std::vector<std::pair<tetrahedron_id_t, double>> intersectDeterministic(const point3d &p_start, const point3d &p_end, const tetrahedron_id_t &tet_start= UNKNOWN_TET)
+    const;
+
+    // public alias type for segment intersections
+    using intersection_list_t = std::vector<std::pair<index_t, double>>;
+
+    /// Computes the percentage of intersection of a line of segments with the mesh tets
+    ///
+    /// \return A vector of vectors (for each segment) containing pairs <tet, intersection ratio>
+    std::vector<intersection_list_t>
+    intersect(const double *points, int n_points, int sampling = -1) const;
+
 
     ////////////////////////////////////////////////////////////////////////
     // Batch Data Access
     ////////////////////////////////////////////////////////////////////////
     
     /// Get barycentres of a list of tetrahedrons
-    std::vector<double> getBatchTetBarycentres(std::vector<uint> const & tets) const;
+    std::vector<double> getBatchTetBarycentres(std::vector<tetrahedron_id_t> const & tets) const;
     
     /// Get barycentres of a list of tetrahedrons
-    void getBatchTetBarycentresNP(const unsigned int* indices, int input_size, double* centres, int output_size) const;
+    void getBatchTetBarycentresNP(const tetrahedron_id_t* indices, int input_size, double* centres, int output_size) const;
     
     /// Get barycentres of a list of triangles
-    std::vector<double> getBatchTriBarycentres(std::vector<uint> const & tris) const;
+    std::vector<double> getBatchTriBarycentres(std::vector<triangle_id_t> const & tris) const;
     
     /// Get barycentres of a list of triangles
-    void getBatchTriBarycentresNP(const unsigned int* indices, int input_size, double* centres, int output_size) const;
+    void getBatchTriBarycentresNP(const triangle_id_t* indices, int input_size, double* centres, int output_size) const;
     
     /// Get coordinates of a list of vertices
-    std::vector<double> getBatchVertices(std::vector<uint> const & verts) const;
+    std::vector<double> getBatchVertices(std::vector<index_t> const & verts) const;
     
     /// Get coordinates of a list of vertices
-    void getBatchVerticesNP(const unsigned int* indices, int input_size, double* coordinates, int output_size) const;
+    void getBatchVerticesNP(const index_t* indices, int input_size, double* coordinates, int output_size) const;
     
     /// Get vertex indices of a list of triangles
-    std::vector<uint> getBatchTris(std::vector<uint> const & tris) const;
+    std::vector<index_t> getBatchTris(std::vector<index_t> const & tris) const;
     
     /// Get vertex indices of a list of triangles
-    void getBatchTrisNP(const unsigned int* t_indices, int input_size, unsigned int* v_indices, int output_size) const;
+    void getBatchTrisNP(const index_t* t_indices, int input_size, index_t* v_indices, int output_size) const;
+
+    /// Get vertex indices of a list of tetrahedrons
+    std::vector<index_t> getBatchTets(std::vector<index_t> const & tets) const;
     
     /// Get vertex indices of a list of tetrahedrons
-    std::vector<uint> getBatchTets(std::vector<uint> const & tets) const;
-    
-    /// Get vertex indices of a list of tetrahedrons
-    void getBatchTetsNP(const unsigned int* t_indices, int input_size, unsigned int* v_indices, int output_size) const;
+    void getBatchTetsNP(const index_t* t_indices, int input_size, index_t* v_indices, int output_size) const;
     
     /// Return the size of a set with unique vertex indices of a list of triangles
-    /// preparation function for furture numpy data access
-    uint getTriVerticesSetSizeNP(const unsigned int* t_indices, int input_size) const;
+    /// preparation function for future numpy data access
+    uint getTriVerticesSetSizeNP(const index_t* t_indices, int input_size) const;
     
     /// Return the size of a set with unique vertex indices of a list of tetrahedrons
-    /// preparation function for furture numpy data access
-    uint getTetVerticesSetSizeNP(const unsigned int* t_indices, int input_size) const;
+    /// preparation function for future numpy data access
+    uint getTetVerticesSetSizeNP(const index_t* t_indices, int input_size) const;
     
     /// Get the set with unique vertex indices of a list of triangles, write into given 1D array
-    void getTriVerticesMappingSetNP(const unsigned int* t_indices, int input_size, unsigned int* t_vertices, int t_vertices_size, unsigned int* v_set, int v_set_size) const;
+    void getTriVerticesMappingSetNP(const index_t* t_indices, int input_size, index_t* t_vertices, int t_vertices_size, index_t* v_set, int v_set_size) const;
     
     /// Get the set with unique vertex indices of a list of tetrahedrons, write into given 1D array
-    void getTetVerticesMappingSetNP(const unsigned int* t_indices, int input_size, unsigned int* t_vertices, int t_vertices_size, unsigned int* v_set, int v_set_size) const;
+    void getTetVerticesMappingSetNP(const index_t* t_indices, int input_size, index_t* t_vertices, int t_vertices_size, index_t* v_set, int v_set_size) const;
     
     /// Generate npnts random points inside tetrahedron t_idx and write the coordinates to coords
-    void genPointsInTet(unsigned tidx, unsigned npnts, double* coords, int coord_size) const;
+    void genPointsInTet(tetrahedron_id_t tidx, unsigned npnts, double *coords, unsigned int coord_size) const;
     
     /// Generate npnts random points on triangle t_idx and write the coordinates to coords
-    void genPointsInTri(unsigned tidx, unsigned npnts, double* coords, int coord_size) const;
-    
+    void genPointsInTri(triangle_id_t tidx, unsigned npnts, double *coords, unsigned int coord_size) const;
+
     /// Generate the random points required in point_counts for tets in indices and store them in coords
-    void genTetVisualPointsNP(const unsigned int* indices, int index_size, const unsigned int* point_counts, int count_size, double* coords, int coord_size) const;
+    void genTetVisualPointsNP(const index_t *indices,
+                              unsigned int index_size,
+                              const unsigned int *point_counts,
+                              unsigned int count_size,
+                              double *coords,
+                              unsigned int coord_size) const;
     
     /// Generate the random points required in point_counts for tris in indices and store them in coords
-    void genTriVisualPointsNP(const unsigned int* indices, int index_size, const unsigned int* point_counts, int count_size, double* coords, int coord_size) const;
+    void genTriVisualPointsNP(const index_t *indices,
+                              unsigned int index_size,
+                              const unsigned int *point_counts,
+                              unsigned int count_size,
+                              double *coords,
+                              unsigned int coord_size) const;
     
     /// get the volumes of a list of tetrahedrons
-    void getBatchTetVolsNP(const unsigned int* indices, int index_size, double* volumes, int volume_size) const;
+    void getBatchTetVolsNP(const index_t* indices, int index_size, double* volumes, int volume_size) const;
     
     /// get the areas of a list of triangles
-    void getBatchTriAreasNP(const unsigned int* indices, int index_size, double* areas, int area_size) const;
+    void getBatchTriAreasNP(const index_t* indices, int index_size, double* areas, int area_size) const;
     
     /// reduce the number of points required to be generated in a list of tets based on maximum point density
-    void reduceBatchTetPointCountsNP(const unsigned int* indices, int index_size, unsigned int* point_counts, int count_size, double max_density);
+    void reduceBatchTetPointCountsNP(const index_t* indices,
+                                     unsigned int index_size,
+                                     unsigned int *point_counts,
+                                     unsigned int count_size,
+                                     double max_density);
     
     /// reduce the number of points required to be generated in a list of tris based on maximum point density
-    void reduceBatchTriPointCountsNP(const unsigned int* indices, int index_size, unsigned int* point_counts, int count_size, double max_density);
-    
-    /// Get tet neighbors for a list of tets, no duplication
-    ///std::vector<int> getTetsTetNeighbSet(std::vector<uint> const & t_indices) const;
+    void reduceBatchTriPointCountsNP(const index_t* indices,
+                                     unsigned int index_size,
+                                     unsigned int *point_counts,
+                                     unsigned int count_size,
+                                     double max_density);
     
     ////////////////////////////////////////////////////////////////////////
     // ROI (Region of Interest) Data
     ////////////////////////////////////////////////////////////////////////
     
     /// Add a ROI data
-    void addROI(std::string const &id, ElementType type, std::set<uint> const &indices);
+    void addROI(std::string const &id, ElementType type, const ROISet::set_data_type& indices);
     
     /// Remove a ROI data
+    [[gnu::deprecated("ROI type will be part of its identifier in future version")]]
     void removeROI(std::string const &id);
+    void removeROI(std::string const &id, ElementType type);
     
     /// Replace a ROI data with a new set with the same name
-    void replaceROI(std::string const &id, ElementType type, std::set<uint> const &indices);
+    void replaceROI(std::string const &id, ElementType type, const ROISet::set_data_type& indices);
     
     /// Return the type of a ROI data
+    [[gnu::deprecated("ROI type will be part of its identifier in future version")]]
     ElementType getROIType(std::string const &id) const;
-    
+
     /// Return the data of a ROI
-    std::vector<uint> const & getROIData(std::string const &id) const;
-    
+    [[gnu::deprecated("type should be specified when retrieving a ROI")]]
+    ROISet::vector_data_type getROIData(std::string const &id) const;
+    ROISet::vector_data_type const & getROIData(std::string const &id, ElementType type) const;
+
     /// Return the data size of a ROI
+    [[gnu::deprecated("usage lead to bad pattern")]]
     uint getROIDataSize(std::string const &id) const;
     
+    /// get the total number of ROI recorded
     /// get the total number of ROI recorded
     uint getNROIs() const;
     
     /// Return a ROI
-    ROISet const & getROI(std::string const &id) const;
+    ROISet getROI(std::string const &id) const;
 
     /// get all ROI names
     std::vector<std::string> getAllROINames() const;
-    
-    /// return pointer of a ROI data
-    uint* _getROIData(std::string const &id) const;
-    
+
     /// check if a ROI enquire is valid
     bool checkROI(std::string const &id, ElementType type, uint count = 0, bool warning = true) const;
-    
-    ////////////////////////////////////////////////////////////////////////
+
+  ////////////////////////////////////////////////////////////////////////
     // ROI Data Access
     ////////////////////////////////////////////////////////////////////////
     
@@ -558,30 +638,30 @@ public:
     void getROIVerticesNP(std::string const &ROI_id, double* coordinates, int output_size) const;
     
     /// get vertex indices of a list of triangles
-    std::vector<uint> getROITris(std::string const &ROI_id) const;
+    std::vector<index_t> getROITris(std::string const &ROI_id) const;
     
     /// get vertex indices of a list of triangles
-    void getROITrisNP(std::string const &ROI_id, unsigned int* v_indices, int output_size) const;
+    void getROITrisNP(std::string const &ROI_id, index_t* v_indices, int output_size) const;
     
     /// get vertex indices of a list of tetrahedrons
-    std::vector<uint> getROITets(std::string const &ROI_id) const;
+    std::vector<index_t> getROITets(std::string const &ROI_id) const;
     
     /// get vertex indices of a list of tetrahedrons
-    void getROITetsNP(std::string const &ROI_id, unsigned int* v_indices, int output_size) const;
+    void getROITetsNP(std::string const &ROI_id, index_t* v_indices, int output_size) const;
     
     /// return the size of a set with unique vertex indices of a list of triangles
-    /// preparation function for furture numpy data access
+    /// preparation function for future numpy data access
     uint getROITriVerticesSetSizeNP(std::string const &ROI_id) const;
     
     /// return the size of a set with unique vertex indices of a list of tetrahedrons
-    /// preparation function for furture numpy data access
+    /// preparation function for future numpy data access
     uint getROITetVerticesSetSizeNP(std::string const &ROI_id) const;
     
     /// Get the set with unique vertex indices of a list of triangles, write into given 1D array
-    void getROITriVerticesMappingSetNP(std::string const &ROI_id, unsigned int* t_vertices, int t_vertices_size, unsigned int* v_set, int v_set_size) const;
+    void getROITriVerticesMappingSetNP(std::string const &ROI_id, index_t* t_vertices, int t_vertices_size, index_t* v_set, int v_set_size) const;
     
     /// Get the set with unique vertex indices of a list of tetrahedrons, write into given 1D array
-    void getROITetVerticesMappingSetNP(std::string const &ROI_id, unsigned int* t_vertices, int t_vertices_size, unsigned int* v_set, int v_set_size) const;
+    void getROITetVerticesMappingSetNP(std::string const &ROI_id, index_t* t_vertices, int t_vertices_size, index_t* v_set, int v_set_size) const;
     
     /// Generate the random points required in point_counts for tets in indices and store them in coords
     void genROITetVisualPointsNP(std::string const &ROI_id, unsigned int* point_counts, int count_size, double* coords, int coord_size) const;
@@ -615,73 +695,76 @@ public:
     ///
     /// \param vidx Index of the vertex.
     /// \return Coordinates of the vertex.
-    const point3d &_getVertex(uint vidx) const { return pVerts[vidx]; }
+    inline const point3d &_getVertex(vertex_id_t vidx) const noexcept { return pVerts[vidx.get()]; }
 
     /// Return the bar with index bidx
     ///
     /// \param bidx Index of the bar.
     /// \return Indices of the two vertices that form the bar.
-    const uint *_getBar(uint bidx) const { return &pBars[bidx][0]; }
+    inline const vertex_id_t *_getBar(bar_id_t bidx) const noexcept { return pBars[bidx.get()].data(); }
 
     ///Return the triangle neighbors of a bar with index bidx.
     ///
     /// \param bidx Index of the bar.
     /// \return Array of the triangle neighbors.
-    const int * _getBarTriNeighb(uint bidx) const { return &pBar_tri_neighbours[bidx][0]; }
+    inline const triangle_id_t* _getBarTriNeighb(bar_id_t bidx) const noexcept { return pBar_tri_neighbours[bidx.get()].data(); }
 
     /// Return a triangle with index tidx.
     ///
     /// \param tidx Index of the triangle.
     /// \return List of the vertices form the triangle.
-    const uint * _getTri(uint tidx) const { return &pTris[tidx][0]; }
+    inline const vertex_id_t* _getTri(triangle_id_t tidx) const noexcept { return pTris[tidx.get()].data(); }
 
     /// Return a tetrahedron with index tidx.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \return List of the vertices form the tetrahedron.
-    const uint * _getTet(uint tidx) const { return &pTets[tidx][0]; }
+    inline const vertex_id_t* _getTet(tetrahedron_id_t tidx) const noexcept { return pTets[tidx.get()].data(); }
 
     ///Return the tetrahedron neighbors of a triangle with index tidx.
     ///
     /// \param tidx Index of the triangle.
     /// \return Array of the tetrahedron neighbors.
-    const int * _getTriTetNeighb(uint tidx) const { return &pTri_tet_neighbours[tidx][0]; }
+    /// \TODO TCL return const tri_tets& instead
+    inline const tetrahedron_id_t * _getTriTetNeighb(triangle_id_t tidx) const noexcept { return pTri_tet_neighbours[tidx.get()].data(); }
 
     ///Return the triangle neighbors of a tetrahedron with index tidx.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \return Array of the triangle neighbors.
-    const uint * _getTetTriNeighb(uint tidx) const { return &pTet_tri_neighbours[tidx][0]; }
+    /// \TODO TCL use const tet_tris& instead
+    inline const triangle_id_t * _getTetTriNeighb(tetrahedron_id_t tidx) const noexcept { return pTet_tri_neighbours[tidx.get()].data(); }
 
     ///Return the tetrahedron neighbors of a tetrahedron with index tidx.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \return Array of the tetrahedron neighbors.
-    const int * _getTetTetNeighb(uint tidx) const { return &pTet_tet_neighbours[tidx][0]; }
+    /// \TODO TCL return const tet_tets& instead
+    inline const tetrahedron_id_t * _getTetTetNeighb(tetrahedron_id_t tidx) const noexcept { return pTet_tet_neighbours[tidx.get()].data(); }
 
     /// Return the bars of a triangle
     ///
     /// \param tidx Index of the triangle
     /// \return Bars of the triangle
-    const uint *_getTriBars(uint tidx) const { return &pTri_bars[tidx][0]; }
+    inline const tri_bars& _getTriBars(triangle_id_t tidx) const noexcept { return pTri_bars[tidx.get()]; }
 
     /// Return the normal to the triangle with index tidx.
     ///
     /// \param tidx Index of the triangle.
     /// \return Point representing unit normal to triangle.
-    const point3d &_getTriNorm(uint tidx) const { return pTri_norms[tidx]; }
+    inline const point3d &_getTriNorm(triangle_id_t tidx) const noexcept { return pTri_norms[tidx.get()]; }
 
     /// Return the barycenter of the triangle with index tidx.
     ///
     /// \param tidx Index of the triangle.
     /// \return Barycenter of triangle.
-    const point3d &_getTriBarycenter(uint tidx) const { return pTri_barycs[tidx]; }
+    inline const point3d &_getTriBarycenter(triangle_id_t tidx) const noexcept { return pTri_barycs[tidx.get()]; }
 
     /// Return the barycenter of the tetrahedron with index tidx.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \return Barycenter of tetrahedron.
-    const point3d &_getTetBarycenter(uint tidx) const { return pTet_barycentres[tidx]; }
+    inline const point3d &_getTetBarycenter(tetrahedron_id_t tidx) const noexcept { return pTet_barycentres[tidx.get()]; }
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -699,12 +782,12 @@ public:
     /// Add a membrane.
     ///
     /// \param memb Pointer to the membrane.
-    void _handleMembAdd(steps::tetmesh::Memb * memb);
+    void _handleMembAdd(Memb * memb);
 
     /// Delete a membrane.
     ///
     /// \param patch Pointer to the membrane.
-    void _handleMembDel(steps::tetmesh::Memb * memb);
+    void _handleMembDel(Memb * memb);
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED): SOLVER HELPER METHODS
@@ -713,14 +796,14 @@ public:
     /// Count the membranes in the tetmesh container.
     ///
     /// \return Number of membranes.
-    inline uint _countMembs() const
+    inline uint _countMembs() const noexcept
     { return pMembs.size(); }
 
     /// Return a membrane with index gidx.
     ///
     /// \param gidx Index of the membrane.
     /// \return Pointer to the membrane.
-    steps::tetmesh::Memb * _getMemb(uint gidx) const;
+    Memb * _getMemb(uint gidx) const;
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -738,24 +821,24 @@ public:
     /// Add a diffusion boundary.
     ///
     /// \param diffb Pointer to the diffusion boundary.
-    void _handleDiffBoundaryAdd(steps::tetmesh::DiffBoundary * diffb);
+    void _handleDiffBoundaryAdd(DiffBoundary * diffb);
 
     /// Delete a diffusion boundary.
     ///
     /// \param diffb Pointer to the diffusion boundary.
-    void _handleDiffBoundaryDel(steps::tetmesh::DiffBoundary * diffb);
+    void _handleDiffBoundaryDel(DiffBoundary * diffb);
 
     /// Count the diffusion boundaries in the tetmesh container.
     ///
     /// \return Number of diffusion boundaries.
-    inline uint _countDiffBoundaries() const
+    inline uint _countDiffBoundaries() const noexcept
     { return pDiffBoundaries.size(); }
 
     /// Return a diffusion boundary with index gidx.
     ///
     /// \param gidx Index of the diffusion boundary.
     /// \return Pointer to the diffusion boundary.
-    steps::tetmesh::DiffBoundary * _getDiffBoundary(uint gidx) const;
+    DiffBoundary * _getDiffBoundary(uint gidx) const;
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -773,60 +856,50 @@ public:
     /// Add a surface diffusion boundary.
     ///
     /// \param sdiffb Pointer to the surface diffusion boundary.
-    void _handleSDiffBoundaryAdd(steps::tetmesh::SDiffBoundary * sdiffb);
+    void _handleSDiffBoundaryAdd(SDiffBoundary * sdiffb);
 
     /// Delete a diffusion boundary.
     ///
     /// \param sdiffb Pointer to the surface diffusion boundary.
-    void _handleSDiffBoundaryDel(steps::tetmesh::SDiffBoundary * sdiffb);
+    void _handleSDiffBoundaryDel(SDiffBoundary * sdiffb);
 
     /// Count the surface diffusion boundaries in the tetmesh container.
     ///
     /// \return Number of surface diffusion boundaries.
-    inline uint _countSDiffBoundaries() const
+    inline uint _countSDiffBoundaries() const noexcept
     { return pSDiffBoundaries.size(); }
 
     /// Return a surface diffusion boundary with index gidx.
     ///
     /// \param gidx Index of the surface diffusion boundary.
     /// \return Pointer to the surface diffusion boundary.
-    steps::tetmesh::SDiffBoundary * _getSDiffBoundary(uint gidx) const;
+    SDiffBoundary * _getSDiffBoundary(uint gidx) const;
 
     ////////////////////////////////////////////////////////////////////////
 
+    static const tri_tets UNKNOWN_TRI_NEIGHBORS;
+    static const tet_tets UNKNOWN_TET_NEIGHBORS;
+
 private:
-    typedef std::array<uint,2> bar_verts;
-    typedef std::array<uint,3> tri_verts;
-    typedef std::array<uint,4> tet_verts;
-
-    typedef std::array<uint,3> tri_bars;
-
-    typedef std::array<int,2> bar_tris;
-
-    typedef std::array<int,2>  tri_tets;
-
-    typedef std::array<uint,4> tet_tris;
-    typedef std::array<int,4>  tet_tets;
-
     /// Build pBars, pBarsN, pTri_bars from pTris.
     void buildBarData();
 
     ///////////////////////// DATA: VERTICES ///////////////////////////////
     ///
     /// The total number of vertices in the mesh
-    uint                                pVertsN;
+    index_t                                pVertsN{0};
     /// The vertices by x,y,z coordinates
     std::vector<point3d>                pVerts;
 
     /////////////////////////// DATA: BARS /////////////////////////////////
     ///
     /// The total number of 1D 'bars' in the mesh
-    uint                                pBarsN;
+    index_t                                pBarsN{0};
     /// The bars by the two vertices index
     std::vector<bar_verts>              pBars;
 
     /// The surface diffusion boundary a bar belongs to
-    std::vector<steps::tetmesh::SDiffBoundary *>  pBar_sdiffboundaries;
+    std::vector<SDiffBoundary *>  pBar_sdiffboundaries;
 
     /// The 2 triangle neighbours of each bar (by index) in the context of
     /// surface diffusion boundaries
@@ -835,7 +908,7 @@ private:
     ///////////////////////// DATA: TRIANGLES //////////////////////////////
     ///
     /// The total number of triangles in the mesh
-    size_t                                pTrisN;
+    index_t                         pTrisN{0};
     /// The triangles by vertices index
     std::vector<tri_verts>              pTris;
     // The bars of the triangle
@@ -847,10 +920,10 @@ private:
     /// The triangle normals
     std::vector<point3d>                pTri_norms;
     /// The patch a triangle belongs to
-    std::vector<steps::tetmesh::TmPatch *> pTri_patches;
+    std::vector<TmPatch *> pTri_patches;
 
     /// The diffusion boundary a triangle belongs to
-    std::vector<steps::tetmesh::DiffBoundary *> pTri_diffboundaries;
+    std::vector<DiffBoundary *> pTri_diffboundaries;
 
     /// The tetrahedron neighbours of each triangle (by index)
     std::vector<tri_tets>               pTri_tet_neighbours;
@@ -858,7 +931,7 @@ private:
     ///////////////////////// DATA: TETRAHEDRA /////////////////////////////
     ///
     /// The total number of tetrahedron in the mesh
-    size_t                                pTetsN;
+    index_t                         pTetsN{0};
     /// The tetrahedron by vertices index
     std::vector<tet_verts>              pTets;
     /// The volume of the tetrahedron
@@ -866,7 +939,7 @@ private:
     /// The barycentres of the tetrahedra
     std::vector<point3d>                pTet_barycentres;
     /// The compartment a tetrahedron belongs to
-    std::vector<steps::tetmesh::TmComp  *> pTet_comps;
+    std::vector<TmComp  *> pTet_comps;
     /// The triangle neighbours of each tetrahedron (by index)
     std::vector<tet_tris>               pTet_tri_neighbours;
     /// The tetrahedron neighbours of each tetrahedron (by index)
@@ -882,17 +955,20 @@ private:
     // List of contained membranes. Members of this class because they
     // do not belong in a well-mixed geometry description
     MembPMap       pMembs;
-    std::map<std::string, steps::tetmesh::DiffBoundary *> pDiffBoundaries;
-    std::map<std::string, steps::tetmesh::SDiffBoundary *> pSDiffBoundaries;
+    std::map<std::string, DiffBoundary *> pDiffBoundaries;
+    std::map<std::string, SDiffBoundary *> pSDiffBoundaries;
     
     ////////////////////////// ROI Dataset /////////////////////////////////
-    std::map<std::string, ROISet>                       mROI;
+    //std::map<std::string, ROISet>                       mROI;
+
+public:
+    RegionOfInterest rois;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-}
-}
+} // namespace tetmesh
+} // namespace steps
 
 #endif
 

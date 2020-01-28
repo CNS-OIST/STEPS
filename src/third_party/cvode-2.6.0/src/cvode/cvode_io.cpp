@@ -50,7 +50,7 @@ int CVodeSetErrHandlerFn(void *cvode_mem, CVErrHandlerFn ehfun, void *eh_data)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   cv_mem->cv_ehfun = ehfun;
   cv_mem->cv_eh_data = eh_data;
@@ -73,7 +73,7 @@ int CVodeSetErrFile(void *cvode_mem, FILE *errfp)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   cv_mem->cv_errfp = errfp;
 
@@ -95,7 +95,7 @@ int CVodeSetIterType(void *cvode_mem, int iter)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if ((iter != CV_FUNCTIONAL) && (iter != CV_NEWTON)) {
     CVProcessError(cv_mem, CV_ILL_INPUT, "CVODE", "CVodeSetIterType", MSGCV_BAD_ITER);
@@ -122,7 +122,7 @@ int CVodeSetUserData(void *cvode_mem, void *user_data)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   cv_mem->cv_user_data = user_data;
 
@@ -145,7 +145,7 @@ int CVodeSetMaxOrd(void *cvode_mem, int maxord)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if (maxord <= 0) {
     CVProcessError(cv_mem, CV_ILL_INPUT, "CVODE", "CVodeSetMaxOrd", MSGCV_NEG_MAXORD);
@@ -181,7 +181,7 @@ int CVodeSetMaxNumSteps(void *cvode_mem, long int mxsteps)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   /* Passing mxsteps=0 sets the default. Passing mxsteps<0 disables the test. */
 
@@ -208,7 +208,7 @@ int CVodeSetMaxHnilWarns(void *cvode_mem, int mxhnil)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   cv_mem->cv_mxhnil = mxhnil;
 
@@ -230,7 +230,7 @@ int CVodeSetStabLimDet(void *cvode_mem, booleantype sldet)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if( sldet && (cv_mem->cv_lmm != CV_BDF) ) {
     CVProcessError(cv_mem, CV_ILL_INPUT, "CVODE", "CVodeSetStabLimDet", MSGCV_SET_SLDET);
@@ -257,7 +257,7 @@ int CVodeSetInitStep(void *cvode_mem, realtype hin)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   cv_mem->cv_hin = hin;
 
@@ -279,7 +279,7 @@ int CVodeSetMinStep(void *cvode_mem, realtype hmin)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if (hmin<0) {
     CVProcessError(cv_mem, CV_ILL_INPUT, "CVODE", "CVodeSetMinStep", MSGCV_NEG_HMIN);
@@ -318,7 +318,7 @@ int CVodeSetMaxStep(void *cvode_mem, realtype hmax)
     return (CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if (hmax < 0) {
     CVProcessError(cv_mem, CV_ILL_INPUT, "CVODE", "CVodeSetMaxStep", MSGCV_NEG_HMAX);
@@ -356,7 +356,7 @@ int CVodeSetStopTime(void *cvode_mem, realtype tstop)
     CVProcessError(NULL, CV_MEM_NULL, "CVODE", "CVodeSetStopTime", MSGCV_NO_MEM);
     return (CV_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   /* If CVode was called at least once, test if tstop is legal
    * (i.e. if it was not already passed).
@@ -393,7 +393,7 @@ int CVodeSetMaxErrTestFails(void *cvode_mem, int maxnef)
     return (CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   cv_mem->cv_maxnef = maxnef;
 
@@ -416,7 +416,7 @@ int CVodeSetMaxConvFails(void *cvode_mem, int maxncf)
     return (CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   cv_mem->cv_maxncf = maxncf;
 
@@ -439,7 +439,7 @@ int CVodeSetMaxNonlinIters(void *cvode_mem, int maxcor)
     return (CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   cv_mem->cv_maxcor = maxcor;
 
@@ -462,7 +462,7 @@ int CVodeSetNonlinConvCoef(void *cvode_mem, realtype nlscoef)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   cv_mem->cv_nlscoef = nlscoef;
 
@@ -486,7 +486,7 @@ int CVodeSetRootDirection(void *cvode_mem, int *rootdir)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   nrt = cv_mem->cv_nrtfn;
   if (nrt==0) {
@@ -515,7 +515,7 @@ int CVodeSetNoInactiveRootWarn(void *cvode_mem)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   cv_mem->cv_mxgnull = 0;
   
@@ -571,7 +571,7 @@ int CVodeGetNumSteps(void *cvode_mem, long int *nsteps)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   *nsteps = nst;
 
@@ -593,7 +593,7 @@ int CVodeGetNumRhsEvals(void *cvode_mem, long int *nfevals)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   *nfevals = nfe;
 
@@ -615,7 +615,7 @@ int CVodeGetNumLinSolvSetups(void *cvode_mem, long int *nlinsetups)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   *nlinsetups = nsetups;
 
@@ -637,7 +637,7 @@ int CVodeGetNumErrTestFails(void *cvode_mem, long int *netfails)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   *netfails = netf;
 
@@ -659,7 +659,7 @@ int CVodeGetLastOrder(void *cvode_mem, int *qlast)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   *qlast = qu;
 
@@ -681,7 +681,7 @@ int CVodeGetCurrentOrder(void *cvode_mem, int *qcur)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   *qcur = next_q;
 
@@ -704,7 +704,7 @@ int CVodeGetNumStabLimOrderReds(void *cvode_mem, long int *nslred)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if (sldeton==FALSE)
     *nslred = 0;
@@ -729,7 +729,7 @@ int CVodeGetActualInitStep(void *cvode_mem, realtype *hinused)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   *hinused = h0u;
 
@@ -751,7 +751,7 @@ int CVodeGetLastStep(void *cvode_mem, realtype *hlast)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   *hlast = hu;
 
@@ -773,7 +773,7 @@ int CVodeGetCurrentStep(void *cvode_mem, realtype *hcur)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
   
   *hcur = next_h;
 
@@ -795,7 +795,7 @@ int CVodeGetCurrentTime(void *cvode_mem, realtype *tcur)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   *tcur = tn;
 
@@ -817,7 +817,7 @@ int CVodeGetTolScaleFactor(void *cvode_mem, realtype *tolsfact)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   *tolsfact = tolsf;
 
@@ -839,7 +839,7 @@ int CVodeGetErrWeights(void *cvode_mem, N_Vector eweight)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   N_VScale(ONE, ewt, eweight);
 
@@ -861,7 +861,7 @@ int CVodeGetEstLocalErrors(void *cvode_mem, N_Vector ele)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   N_VScale(ONE, acor, ele);
 
@@ -883,7 +883,7 @@ int CVodeGetWorkSpace(void *cvode_mem, long int *lenrw, long int *leniw)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   *leniw = liw;
   *lenrw = lrw;
@@ -909,7 +909,7 @@ int CVodeGetIntegratorStats(void *cvode_mem, long int *nsteps, long int *nfevals
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   *nsteps = nst;
   *nfevals = nfe;
@@ -940,7 +940,7 @@ int CVodeGetNumGEvals(void *cvode_mem, long int *ngevals)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   *ngevals = nge;
 
@@ -963,7 +963,7 @@ int CVodeGetRootInfo(void *cvode_mem, int *rootsfound)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   nrt = cv_mem->cv_nrtfn;
 
@@ -988,7 +988,7 @@ int CVodeGetNumNonlinSolvIters(void *cvode_mem, long int *nniters)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   *nniters = nni;
 
@@ -1011,7 +1011,7 @@ int CVodeGetNumNonlinSolvConvFails(void *cvode_mem, long int *nncfails)
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   *nncfails = ncfn;
 
@@ -1034,7 +1034,7 @@ int CVodeGetNonlinSolvStats(void *cvode_mem, long int *nniters,
     return(CV_MEM_NULL);
   }
 
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   *nniters = nni;
   *nncfails = ncfn;
@@ -1048,7 +1048,7 @@ char *CVodeGetReturnFlagName(int flag)
 {
   char *name;
 
-  name = (char *)malloc(24*sizeof(char));
+  name = static_cast<char *>(malloc(24 * sizeof(char)));
 
   switch(flag) {
   case CV_SUCCESS:

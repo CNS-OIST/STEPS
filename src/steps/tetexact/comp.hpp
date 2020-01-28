@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -89,27 +89,27 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    void reset() { def()->reset(); }
+    inline void reset() { def()->reset(); }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    steps::solver::Compdef *def() const { return pCompdef; }
+    inline steps::solver::Compdef *def() const noexcept { return pCompdef; }
 
-    double vol() const { return pVol; }
+    inline double vol() const noexcept { return pVol; }
 
-    double * pools() const { return def()->pools(); }
+    inline double * pools() const noexcept { return def()->pools(); }
 
     void modCount(uint slidx, double count);
 
-    uint countTets() const { return pTets.size(); }
+    inline uint countTets() const noexcept { return pTets.size(); }
 
     stex::WmVol * pickTetByVol(double rand01) const;
 
-    WmVolPVecCI bgnTet() const { return pTets.begin(); }
-    WmVolPVecCI endTet() const { return pTets.end(); }
-    const WmVolPVec &tets() const { return pTets; }
+    inline WmVolPVecCI bgnTet() const noexcept { return pTets.begin(); }
+    inline WmVolPVecCI endTet() const noexcept { return pTets.end(); }
+    inline const WmVolPVec &tets() const noexcept { return pTets; }
 
     ////////////////////////////////////////////////////////////////////////
 
