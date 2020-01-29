@@ -18,7 +18,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include <cmath>
 
 #include "sundials_math.h"
 
@@ -42,7 +42,7 @@ realtype RPowerR(realtype base, realtype exponent)
   if (base <= ZERO) return(ZERO);
 
 #if defined(SUNDIALS_USE_GENERIC_MATH)
-  return((realtype) pow((double) base, (double) exponent));
+  return std::pow(base, exponent);
 #elif defined(SUNDIALS_DOUBLE_PRECISION)
   return(pow(base, exponent));
 #elif defined(SUNDIALS_SINGLE_PRECISION)
@@ -57,7 +57,7 @@ realtype RSqrt(realtype x)
   if (x <= ZERO) return(ZERO);
 
 #if defined(SUNDIALS_USE_GENERIC_MATH)
-  return((realtype) sqrt((double) x));
+  return std::sqrt(x);
 #elif defined(SUNDIALS_DOUBLE_PRECISION)
   return(sqrt(x));
 #elif defined(SUNDIALS_SINGLE_PRECISION)
@@ -70,7 +70,7 @@ realtype RSqrt(realtype x)
 realtype RAbs(realtype x)
 {
 #if defined(SUNDIALS_USE_GENERIC_MATH)
-  return((realtype) fabs((double) x));
+  return std::fabs(x);
 #elif defined(SUNDIALS_DOUBLE_PRECISION)
   return(fabs(x));
 #elif defined(SUNDIALS_SINGLE_PRECISION)
@@ -83,7 +83,7 @@ realtype RAbs(realtype x)
 realtype RExp(realtype x)
 {
 #if defined(SUNDIALS_USE_GENERIC_MATH)
-  return((realtype) exp((double) x));
+  return std::exp(x);
 #elif defined(SUNDIALS_DOUBLE_PRECISION)
   return(exp(x));
 #elif defined(SUNDIALS_SINGLE_PRECISION)

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -59,7 +59,7 @@ class TetOpSplitP;
 ////////////////////////////////////////////////////////////////////////////////
 
 class Reac
-: public steps::mpi::tetopsplit::KProc
+: public KProc
 {
 
 public:
@@ -69,63 +69,64 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     Reac(steps::solver::Reacdef * rdef, steps::mpi::tetopsplit::WmVol * tet);
-    ~Reac();
+    ~Reac() override;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream & cp_file) override;
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream & cp_file) override;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    double c() const
+    double c() const override
     { return pCcst; }
-    void resetCcst();
+    void resetCcst() override;
 
     inline double kcst() const
     { return pKcst; }
     void setKcst(double k);
 
-    double h()
+    double h() noexcept override
     { return (rate()/pCcst); }
 
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    void setupDeps();
-    bool depSpecTet(uint gidx, steps::mpi::tetopsplit::WmVol * tet);
-    bool depSpecTri(uint gidx, steps::mpi::tetopsplit::Tri * tri);
+    void setupDeps() override;
+    bool depSpecTet(uint gidx, steps::mpi::tetopsplit::WmVol * tet) override;
+    bool depSpecTri(uint gidx, steps::mpi::tetopsplit::Tri * tri) override;
 
-    void reset();
-    double rate(steps::mpi::tetopsplit::TetOpSplitP * solver = 0);
-    double getScaledDcst(steps::mpi::tetopsplit::TetOpSplitP * solver = 0)
+    void reset() override;
+    double rate(steps::mpi::tetopsplit::TetOpSplitP * solver = nullptr) override;
+    inline double getScaledDcst(steps::mpi::tetopsplit::TetOpSplitP * /*solver*/ = nullptr) const noexcept override
     {return 0.0;}
     
 	// at the moment we assume that reactions are applied globally so no sync is required
-    void apply(steps::rng::RNG * rng, double dt, double simtime, double period);
+	using KProc::apply;
+    void apply(const rng::RNGptr &rng, double dt, double simtime, double period) override;
     
-    std::vector<KProc*> const & getLocalUpdVec(int direction = -1);
-    std::vector<uint> const & getRemoteUpdVec(int direction = -1);
+    std::vector<KProc*> const & getLocalUpdVec(int direction = -1) const override;
+    std::vector<uint> const & getRemoteUpdVec(int direction = -1) const override;
 	
-    void resetOccupancies();
+    void resetOccupancies() override;
 	
     /// MPI
-    bool getInHost() {
+    inline bool getInHost() const noexcept override {
         return pTet->getInHost();
     }
 
-    int getHost() {
+    inline int getHost() const noexcept override {
         return pTet->getHost();
     }
     
-    steps::mpi::tetopsplit::WmVol* container() {
+    inline steps::mpi::tetopsplit::WmVol* container() const noexcept {
         return pTet;
     }
     ////////////////////////////////////////////////////////////////////////

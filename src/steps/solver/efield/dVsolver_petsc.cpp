@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -151,8 +151,8 @@ void dVSolverPETSC::initMesh(TetMesh *mesh) {
     // Now, let's create a vector with the idxs of the triangles tri such that at least of the vertices of tri are in the interval [prbegin, prend)
     // This is necessary to have scalable assembly time
     for (uint tri_idx=0; tri_idx<pNTris; ++tri_idx) {
-        uint *triv = pMesh->getTriangle(tri_idx);
-        if (std::any_of(&triv[0], &triv[3], [this](uint i){return i>=prbegin && i<prend ;}))
+        auto *triv = pMesh->getTriangle(tri_idx);
+        if (std::any_of(triv, triv + 3, [this](vertex_id_t i){return i.get() >= prbegin && i.get() < prend ;}))
             loc_tris.push_back(tri_idx);
     } 
 }
@@ -165,8 +165,8 @@ void dVSolverPETSC::advance(double dt) {
     std::copy(&pVertCurClamp[prbegin], &pVertCurClamp[prend], &pVertCur[prbegin]);
     for (auto idx : loc_tris) {
         double c = (pTriCur[idx] + pTriCurClamp[idx]) / 3.0;
-        uint *triv = pMesh->getTriangle(idx);
-        std::for_each(&triv[0], &triv[3], [this, c](uint i){ pVertCur[i] +=c;});
+        auto *triv = pMesh->getTriangle(idx);
+        std::for_each(triv, triv + 3, [this, c](vertex_id_t i){ pVertCur[i.get()] +=c;});
     }
 
     double oodt = 1.0/dt;
@@ -196,7 +196,7 @@ void dVSolverPETSC::advance(double dt) {
             std::vector<PetscInt> idx_columns(ve->getNCon()+1);
             // respective values we want to insert
             std::vector<double> val_columns(ve->getNCon()+1);
-            for (int inbr = 0; inbr < ve->getNCon(); ++inbr) {
+            for (auto inbr = 0u; inbr < ve->getNCon(); ++inbr) {
                 int j = ve->nbrIdx(inbr);
                 double cc = ve->getCC(inbr);
                 rhs += cc * (pV[j] - pV[i]);
@@ -254,7 +254,7 @@ void dVSolverPETSC::advance(double dt) {
 
 
     // update membrane potential 
-    for (int i = 0; i < pNVerts; ++i)
+    for (auto i = 0u; i < pNVerts; ++i)
         if (pVertexClamp[i] == false) 
             pV[i] += deltaV[i];    
 

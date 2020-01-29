@@ -7,182 +7,32 @@ __copyright__ = "Copyright 2016 EPFL BBP-project"
 # =====================================================================================================================
 from cython.operator cimport dereference as deref
 from libcpp cimport bool
+from libcpp.memory cimport shared_ptr
 cimport std
 cimport steps_solver
 cimport steps_model
 cimport steps_tetmesh
 cimport steps_wm
 cimport steps_rng
+from steps_common cimport *
+from steps cimport index_t
 
-# ======================================================================================================================
-#cdef extern from "steps/tetexact/vdeptrans.hpp" namespace "steps::tetexact":
-# ----------------------------------------------------------------------------------------------------------------------
-
-    ###### Cybinding for VDepTrans ######
-    #cdef cppclass TEVDepTrans "steps::tetexact::VDepTrans":
-     #   TEVDepTrans(steps_solver.VDepTransdef*, TETri*)
-        # void checkpoint(std.fstream)
-        # void restore(std.fstream)
-        # void setupDeps()
-        # bool depSpecTet(unsigned int, WmVol*)
-        # bool depSpecTri(unsigned int, Tri*)
-        # void reset()
-        # double rate(Tetexact*)
-        # std.vector[TEKProc*] apply(steps.rng.RNG*, double, double)
-        # unsigned int updVecSize()
-
-# ======================================================================================================================
-#cdef extern from "steps/tetexact/diff.hpp" namespace "steps::tetexact":
-# ----------------------------------------------------------------------------------------------------------------------
-
-    ###### Cybinding for Diff ######
-    #cdef cppclass TEDiff "steps::tetexact::Diff":
-        #TEDiff(steps_solver.Diffdef*, TETet*)
-        # void checkpoint(std.fstream)
-        # void restore(std.fstream)
-        # steps.solver.Diffdef* def_()
-        # double dcst(int)
-        # void setDcst(double)
-        # void setDirectionDcst(int, double)
-        # void setupDeps()
-        # bool depSpecTet(unsigned int, WmVol*)
-        # bool depSpecTri(unsigned int, Tri*)
-        # void reset()
-        # double rate(Tetexact*)
-        # std.vector[TEKProc*] apply(steps.rng.RNG*, double, double)
-        # unsigned int updVecSize()
-        # void setDiffBndActive(unsigned int, bool)
-        # bool getDiffBndActive(unsigned int)
-
-# ======================================================================================================================
-#cdef extern from "steps/tetexact/kproc.hpp" namespace "steps::tetexact":
-# ----------------------------------------------------------------------------------------------------------------------
-    # ctypedef TEKProc* KProcP
-    # ctypedef std.vector[TEKProc*] KProcPVec
-    # ctypedef std.vector[TEKProc*].iterator KProcPVecI
-    # ctypedef std.vector[TEKProc*].const_iterator KProcPVecCI
-
-    ###### Cybinding for KProc ######
-    #cdef cppclass TEKProc "steps::tetexact::KProc":
-     #   TEKProc()
-        # void checkpoint(std.fstream)
-        # void restore(std.fstream)
-        # bool active()
-        # bool inactive()
-        # void setActive(bool)
-        # unsigned int flags()
-        # unsigned int schedIDX()
-        # void setSchedIDX(unsigned int)
-        # void setupDeps()
-        # bool depSpecTet(unsigned int, WmVol*)
-        # bool depSpecTri(unsigned int, Tri*)
-        # void reset()
-        # void resetCcst()
-        # double rate(Tetexact*)
-        # double c()
-        # double h()
-        # std.vector[TEKProc*] apply(steps.rng.RNG*, double, double)
-        # unsigned int updVecSize()
-        # unsigned int getExtent()
-        # void resetExtent()
-
-# ======================================================================================================================
-#cdef extern from "steps/tetexact/tet.hpp" namespace "steps::tetexact":
-# ----------------------------------------------------------------------------------------------------------------------
-    # ctypedef Tet* TetP
-    # ctypedef std.vector[Tet*] TetPVec
-    # ctypedef std.vector[Tet*].iterator TetPVecI
-    # ctypedef std.vector[Tet*].const_iterator TetPVecCI
-
-    ###### Cybinding for Tet ######
- #   cdef cppclass TETet "steps::tetexact::Tet":
-  #      TETet(unsigned int, steps_solver.Compdef*, double, double, double, double, double, double, double, double, double, int, int, int, int)
-        # void checkpoint(std.fstream)
-        # void restore(std.fstream)
-        # void setNextTet(unsigned int, Tet*)
-        # void setNextTri(unsigned int, Tri*)
-        # void setNextTri(Tri*)
-        # void setupKProcs(Tetexact*)
-        # Tri* nextTri(unsigned int)
-        # Tet* nextTet(unsigned int)
-        # double area(unsigned int)
-        # double dist(unsigned int)
-        # int getTetDirection(unsigned int)
-        # void setDiffBndDirection(unsigned int)
-        # bool getDiffBndDirection(unsigned int)
-        # Diff* diff(unsigned int)
-        # int tet(unsigned int)
-
-# ======================================================================================================================
-#cdef extern from "steps/tetexact/diffboundary.hpp" namespace "steps::tetexact":
-# ----------------------------------------------------------------------------------------------------------------------
-    # ctypedef DiffBoundary* DiffBoundaryP
-    # ctypedef std.vector[DiffBoundary*] DiffBoundaryPVec
-    # ctypedef std.vector[DiffBoundary*].iterator DiffBoundaryPVecI
-    # ctypedef std.vector[DiffBoundary*].const_iterator DiffBoundaryPVecCI
-
-    ###### Cybinding for DiffBoundary ######
-    #cdef cppclass TEDiffBoundary "steps::tetexact::DiffBoundary":
-     #   TEDiffBoundary(steps_solver.DiffBoundarydef*)
-        # void checkpoint(std.fstream)
-        # void restore(std.fstream)
-        # steps.solver.DiffBoundarydef* def_()
-        # Comp* compA()
-        # Comp* compB()
-        # void setComps(Comp*, Comp*)
-        # void setTetDirection(unsigned int, unsigned int)
-        # std.vector[unsigned int] getTets()
-        # std.vector[unsigned int] getTetDirection()
-
-# ======================================================================================================================
-#cdef extern from "steps/tetexact/crstruct.hpp" namespace "steps::tetexact":
-# ----------------------------------------------------------------------------------------------------------------------
-
-    ###### Cybinding for CRGroup ######
-    #cdef cppclass CRGroup:
-    #    CRGroup(int, unsigned int)
-    #    void free_indices()
-
-    ###### Cybinding for CRKProcData ######
-    #cdef cppclass CRKProcData:
-    #    CRKProcData()
-
-# ======================================================================================================================
-#cdef extern from "steps/tetexact/sdiff.hpp" namespace "steps::tetexact":
-# ----------------------------------------------------------------------------------------------------------------------
-
-   ###### Cybinding for SDiff ######
-   # cdef cppclass SDiff:
-        #SDiff(steps_solver.Diffdef*, TETri*)
-        # void checkpoint(std.fstream)
-        # void restore(std.fstream)
-        # steps.solver.Diffdef* sdef()
-        # double dcst(int)
-        # void setDcst(double)
-        # void setDirectionDcst(int, double)
-        # void setupDeps()
-        # bool depSpecTet(unsigned int, WmVol*)
-        # bool depSpecTri(unsigned int, Tri*)
-        # void reset()
-        # double rate(Tetexact*)
-        # std.vector[TEKProc*] apply(steps.rng.RNG*, double, double)
-        # unsigned int updVecSize()        
 
 # ======================================================================================================================
 cdef extern from "steps/tetexact/tetexact.hpp" namespace "steps::tetexact":
 # ----------------------------------------------------------------------------------------------------------------------
-    # ctypedef unsigned int SchedIDX
-    # ctypedef std.set[unsigned int] SchedIDXSet
-    # ctypedef std.set[unsigned int].iterator SchedIDXSetI
-    # ctypedef std.set[unsigned int].const_iterator SchedIDXSetCI
-    # ctypedef std.vector[unsigned int] SchedIDXVec
-    # ctypedef std.vector[unsigned int].iterator SchedIDXVecI
-    # ctypedef std.vector[unsigned int].const_iterator SchedIDXVecCI
+    # ctypedef uint SchedIDX
+    # ctypedef std.set[uint] SchedIDXSet
+    # ctypedef std.set[uint].iterator SchedIDXSetI
+    # ctypedef std.set[uint].const_iterator SchedIDXSetCI
+    # ctypedef std.vector[uint] SchedIDXVec
+    # ctypedef std.vector[uint].iterator SchedIDXVecI
+    # ctypedef std.vector[uint].const_iterator SchedIDXVecCI
 
     ###### Cybinding for Tetexact ######
     cdef cppclass Tetexact:
         # Heavily modified by Iain
-        Tetexact(steps_model.Model*, steps_wm.Geom*, steps_rng.RNG*, int) except +
+        Tetexact(steps_model.Model*, steps_wm.Geom*, shared_ptr[steps_rng.RNG], int) except +
         std.string getSolverName() except +
         std.string getSolverDesc() except +
         std.string getSolverAuthors() except +
@@ -194,14 +44,14 @@ cdef extern from "steps/tetexact/tetexact.hpp" namespace "steps::tetexact":
         void advance(double) except +
         void step() except +
         void setEfieldDT(double) except +
-        void setNSteps(unsigned int) except +
+        void setNSteps(uint) except +
         void setTime(double) except +
         void setTemp(double) except +
         double getTime() except +
         double getEfieldDT() except +
         double getTemp() except +
         double getA0() except +
-        unsigned int getNSteps() except +
+        uint getNSteps() except +
         double getCompVol(std.string) except +
         double getCompCount(std.string, std.string) except +
         void setCompCount(std.string, std.string, double) except +
@@ -222,35 +72,35 @@ cdef extern from "steps/tetexact/tetexact.hpp" namespace "steps::tetexact":
         double getCompReacC(std.string, std.string) except +
         double getCompReacH(std.string, std.string) except +
         double getCompReacA(std.string, std.string) except +
-        unsigned int getCompReacExtent(std.string, std.string) except +
+        unsigned long long getCompReacExtent(std.string, std.string) except +
         void resetCompReacExtent(std.string, std.string) except +
-        double getTetVol(unsigned int) except +
-        void setTetVol(unsigned int, double) except +
-        bool getTetSpecDefined(unsigned int, std.string) except +
-        double getTetCount(unsigned int, std.string) except +
-        void setTetCount(unsigned int, std.string, double) except +
-        double getTetAmount(unsigned int, std.string) except +
-        void setTetAmount(unsigned int, std.string, double) except +
-        double getTetConc(unsigned int, std.string) except +
-        void setTetConc(unsigned int, std.string, double) except +
-        bool getTetClamped(unsigned int, std.string) except +
-        void setTetClamped(unsigned int, std.string, bool) except +
-        double getTetReacK(unsigned int, std.string) except +
-        void setTetReacK(unsigned int, std.string, double) except +
-        bool getTetReacActive(unsigned int, std.string) except +
-        void setTetReacActive(unsigned int, std.string, bool) except +
-        double getTetDiffD(unsigned int, std.string, unsigned int) except +
-        void setTetDiffD(unsigned int, std.string, double, unsigned int) except +
-        bool getTetDiffActive(unsigned int, std.string) except +
-        void setTetDiffActive(unsigned int, std.string, bool) except +
-        double getTetReacC(unsigned int, std.string) except +
-        double getTetReacH(unsigned int, std.string) except +
-        double getTetReacA(unsigned int, std.string) except +
-        double getTetDiffA(unsigned int, std.string) except +
-        double getTetV(unsigned int) except +
-        void setTetV(unsigned int, double) except +
-        bool getTetVClamped(unsigned int) except +
-        void setTetVClamped(unsigned int, bool) except +
+        double getTetVol(uint) except +
+        void setTetVol(uint, double) except +
+        bool getTetSpecDefined(uint, std.string) except +
+        double getTetCount(uint, std.string) except +
+        void setTetCount(uint, std.string, double) except +
+        double getTetAmount(uint, std.string) except +
+        void setTetAmount(uint, std.string, double) except +
+        double getTetConc(uint, std.string) except +
+        void setTetConc(uint, std.string, double) except +
+        bool getTetClamped(uint, std.string) except +
+        void setTetClamped(uint, std.string, bool) except +
+        double getTetReacK(uint, std.string) except +
+        void setTetReacK(uint, std.string, double) except +
+        bool getTetReacActive(uint, std.string) except +
+        void setTetReacActive(uint, std.string, bool) except +
+        double getTetDiffD(uint, std.string, uint) except +
+        void setTetDiffD(uint, std.string, double, uint) except +
+        bool getTetDiffActive(uint, std.string) except +
+        void setTetDiffActive(uint, std.string, bool) except +
+        double getTetReacC(uint, std.string) except +
+        double getTetReacH(uint, std.string) except +
+        double getTetReacA(uint, std.string) except +
+        double getTetDiffA(uint, std.string) except +
+        double getTetV(uint) except +
+        void setTetV(uint, double) except +
+        bool getTetVClamped(uint) except +
+        void setTetVClamped(uint, bool) except +
         double getPatchArea(std.string) except +
         double getPatchCount(std.string, std.string) except +
         void setPatchCount(std.string, std.string, double) except +
@@ -265,7 +115,7 @@ cdef extern from "steps/tetexact/tetexact.hpp" namespace "steps::tetexact":
         double getPatchSReacC(std.string, std.string) except +
         double getPatchSReacH(std.string, std.string) except +
         double getPatchSReacA(std.string, std.string) except +
-        unsigned int getPatchSReacExtent(std.string, std.string) except +
+        unsigned long long getPatchSReacExtent(std.string, std.string) except +
         void resetPatchSReacExtent(std.string, std.string) except +
         bool getPatchVDepSReacActive(std.string, std.string) except +
         void setPatchVDepSReacActive(std.string, std.string, bool) except +
@@ -275,49 +125,49 @@ cdef extern from "steps/tetexact/tetexact.hpp" namespace "steps::tetexact":
         void setSDiffBoundaryDiffusionActive(std.string, std.string, bool) except +
         bool getSDiffBoundaryDiffusionActive(std.string, std.string) except +
         void setSDiffBoundaryDcst(std.string, std.string, double, std.string) except +
-        double getTriArea(unsigned int) except +
-        void setTriArea(unsigned int, double) except +
-        bool getTriSpecDefined(unsigned int, std.string) except +
-        double getTriCount(unsigned int, std.string) except +
-        void setTriCount(unsigned int, std.string, double) except +
-        double getTriAmount(unsigned int, std.string) except +
-        void setTriAmount(unsigned int, std.string, double) except +
-        bool getTriClamped(unsigned int, std.string) except +
-        void setTriClamped(unsigned int, std.string, bool) except +
-        double getTriSReacK(unsigned int, std.string) except +
-        void setTriSReacK(unsigned int, std.string, double) except +
-        bool getTriSReacActive(unsigned int, std.string) except +
-        void setTriSReacActive(unsigned int, std.string, bool) except +
-        double getTriSReacC(unsigned int, std.string) except +
-        double getTriSReacH(unsigned int, std.string) except +
-        double getTriSReacA(unsigned int, std.string) except +
-        double getTriSDiffD(unsigned int, std.string, unsigned int) except +
-        void setTriSDiffD(unsigned int, std.string, double, unsigned int) except +
-        double getTriV(unsigned int) except +
-        void setTriV(unsigned int, double) except +
-        bool getTriVClamped(unsigned int) except +
-        void setTriVClamped(unsigned int, bool) except +
-        double getTriOhmicI(unsigned int) except +
-        double getTriOhmicI(unsigned int, std.string) except +
-        double getTriGHKI(unsigned int) except +
-        double getTriGHKI(unsigned int, std.string) except +
-        double getTriI(unsigned int) except +
-        void setTriIClamp(unsigned int, double) except +
-        bool getTriVDepSReacActive(unsigned int, std.string) except +
-        void setTriVDepSReacActive(unsigned int, std.string, bool) except +
-        double getVertV(unsigned int) except +
-        void setVertV(unsigned int, double) except +
-        bool getVertVClamped(unsigned int) except +
-        void setVertVClamped(unsigned int, bool) except +
-        void setVertIClamp(unsigned int, double) except +
+        double getTriArea(uint) except +
+        void setTriArea(uint, double) except +
+        bool getTriSpecDefined(uint, std.string) except +
+        double getTriCount(uint, std.string) except +
+        void setTriCount(uint, std.string, double) except +
+        double getTriAmount(uint, std.string) except +
+        void setTriAmount(uint, std.string, double) except +
+        bool getTriClamped(uint, std.string) except +
+        void setTriClamped(uint, std.string, bool) except +
+        double getTriSReacK(uint, std.string) except +
+        void setTriSReacK(uint, std.string, double) except +
+        bool getTriSReacActive(uint, std.string) except +
+        void setTriSReacActive(uint, std.string, bool) except +
+        double getTriSReacC(uint, std.string) except +
+        double getTriSReacH(uint, std.string) except +
+        double getTriSReacA(uint, std.string) except +
+        double getTriSDiffD(uint, std.string, uint) except +
+        void setTriSDiffD(uint, std.string, double, uint) except +
+        double getTriV(uint) except +
+        void setTriV(uint, double) except +
+        bool getTriVClamped(uint) except +
+        void setTriVClamped(uint, bool) except +
+        double getTriOhmicI(uint) except +
+        double getTriOhmicI(uint, std.string) except +
+        double getTriGHKI(uint) except +
+        double getTriGHKI(uint, std.string) except +
+        double getTriI(uint) except +
+        void setTriIClamp(uint, double) except +
+        bool getTriVDepSReacActive(uint, std.string) except +
+        void setTriVDepSReacActive(uint, std.string, bool) except +
+        double getVertV(uint) except +
+        void setVertV(uint, double) except +
+        bool getVertVClamped(uint) except +
+        void setVertVClamped(uint, bool) except +
+        void setVertIClamp(uint, double) except +
         void setMembPotential(std.string, double) except +
         void setMembCapac(std.string, double) except +
         void setMembVolRes(std.string, double) except +
         void setMembRes(std.string, double, double) except +
-        std.vector[double] getBatchTetCounts(std.vector[unsigned int], std.string) except +
-        std.vector[double] getBatchTriCounts(std.vector[unsigned int], std.string) except +
-        void getBatchTetCountsNP(unsigned int*, int, std.string, double*, int) except +
-        void getBatchTriCountsNP(unsigned int*, int, std.string, double*, int) except +
+        std.vector[double] getBatchTetCounts(std.vector[index_t], std.string) except +
+        std.vector[double] getBatchTriCounts(std.vector[index_t], std.string) except +
+        void getBatchTetCountsNP(index_t*, int, std.string, double*, int) except +
+        void getBatchTriCountsNP(index_t*, int, std.string, double*, int) except +
         std.vector[double] getROITetCounts(std.string, std.string) except +
         std.vector[double] getROITriCounts(std.string, std.string) except +
         void getROITetCountsNP(std.string, std.string, double*, int) except +
@@ -337,231 +187,10 @@ cdef extern from "steps/tetexact/tetexact.hpp" namespace "steps::tetexact":
         void setROISReacActive(std.string, std.string, bool) except +
         void setROIDiffActive(std.string, std.string, bool) except +
         void setROIVDepSReacActive(std.string, std.string, bool) except +
-        unsigned int getROIReacExtent(std.string, std.string) except +
+        unsigned long long getROIReacExtent(std.string, std.string) except +
         void resetROIReacExtent(std.string, std.string) except +
-        unsigned int getROISReacExtent(std.string, std.string) except +
+        unsigned long long getROISReacExtent(std.string, std.string) except +
         void resetROISReacExtent(std.string, std.string) except +
-        unsigned int getROIDiffExtent(std.string, std.string) except +
+        unsigned long long getROIDiffExtent(std.string, std.string) except +
         void resetROIDiffExtent(std.string, std.string) except +
         void saveMembOpt(std.string) except +
-
-
-# ======================================================================================================================
-#cdef extern from "steps/tetexact/comp.hpp" namespace "steps::tetexact":
-# ----------------------------------------------------------------------------------------------------------------------
-    # ctypedef Comp* CompP
-    # ctypedef std.vector[Comp*] CompPVec
-    # ctypedef std.vector[Comp*].iterator CompPVecI
-    # ctypedef std.vector[Comp*].const_iterator CompPVecCI
-
-    ###### Cybinding for Comp ######
-    #cdef cppclass TEComp "steps::tetexact::Comp":
-        #TEComp(steps_solver.Compdef*)
-        # void checkpoint(std.fstream)
-        # void restore(std.fstream)
-        # void addTet(WmVol*)
-        # void reset()
-        # steps.solver.Compdef* def_()
-        # double vol()
-        # double* pools()
-        # void modCount(unsigned int, double)
-        # unsigned int countTets()
-        # WmVol* pickTetByVol(double)
-        # std.vector[WmVol*].const_iterator bgnTet()
-        # std.vector[WmVol*].const_iterator endTet()
-        # std.vector[WmVol*] tets()
-
-# ======================================================================================================================
-#cdef extern from "steps/tetexact/vdepsreac.hpp" namespace "steps::tetexact":
-# ----------------------------------------------------------------------------------------------------------------------
-
-    ###### Cybinding for VDepSReac ######
-    #cdef cppclass TEVDepSReac "steps::tetexact::VDepSReac":
-        #TEVDepSReac(steps_solver.VDepSReacdef*, TETri*)
-        # void checkpoint(std.fstream)
-        # void restore(std.fstream)
-        # void setupDeps()
-        # bool depSpecTet(unsigned int, WmVol*)
-        # bool depSpecTri(unsigned int, Tri*)
-        # void reset()
-        # double rate(Tetexact*)
-        # std.vector[TEKProc*] apply(steps.rng.RNG*, double, double)
-        # unsigned int updVecSize()
-
-# ======================================================================================================================
-#cdef extern from "steps/tetexact/reac.hpp" namespace "steps::tetexact":
-# ----------------------------------------------------------------------------------------------------------------------
-
-    ###### Cybinding for Reac ######
-    #cdef cppclass TEReac "steps::tetexact::Reac":
-        #TEReac(steps_solver.Reacdef*, TEWmVol*)
-        # void checkpoint(std.fstream)
-        # void restore(std.fstream)
-        # double c()
-        # void resetCcst()
-        # double kcst()
-        # void setKcst(double)
-        # double h()
-        # void setupDeps()
-        # bool depSpecTet(unsigned int, WmVol*)
-        # bool depSpecTri(unsigned int, Tri*)
-        # void reset()
-        # double rate(Tetexact*)
-        # std.vector[TEKProc*] apply(steps.rng.RNG*, double, double)
-        # unsigned int updVecSize()
-
-# ======================================================================================================================
-#cdef extern from "steps/tetexact/sreac.hpp" namespace "steps::tetexact":
-# ----------------------------------------------------------------------------------------------------------------------
-
-    ###### Cybinding for SReac ######
-    #cdef cppclass TESReac "steps::tetexact::SReac":
-        #TESReac(steps_solver.SReacdef*, TETri*)
-        # void checkpoint(std.fstream)
-        # void restore(std.fstream)
-        # double c()
-        # void resetCcst()
-        # double kcst()
-        # void setKcst(double)
-        # double h()
-        # void setupDeps()
-        # bool depSpecTet(unsigned int, WmVol*)
-        # bool depSpecTri(unsigned int, Tri*)
-        # void reset()
-        # double rate(Tetexact*)
-        # std.vector[TEKProc*] apply(steps.rng.RNG*, double, double)
-        # unsigned int updVecSize()
-
-# ======================================================================================================================
-#cdef extern from "steps/tetexact/wmvol.hpp" namespace "steps::tetexact":
-# ----------------------------------------------------------------------------------------------------------------------
-    # ctypedef WmVol* WmVolP
-    # ctypedef std.vector[WmVol*] WmVolPVec
-    # ctypedef std.vector[WmVol*].iterator WmVolPVecI
-    # ctypedef std.vector[WmVol*].const_iterator WmVolPVecCI
-
-    ###### Cybinding for WmVol ######
-    #cdef cppclass TEWmVol "steps::tetexact::WmVol":
-        #TEWmVol(unsigned int, steps_solver.Compdef*, double)
-        # void checkpoint(std.fstream)
-        # void restore(std.fstream)
-        # void setupKProcs(Tetexact*)
-        # void setNextTri(Tri*)
-        # void reset()
-        # steps.solver.Compdef* compdef()
-        # unsigned int idx()
-        # double vol()
-        # unsigned int* pools()
-        # void setCount(unsigned int, unsigned int)
-        # void incCount(unsigned int, int)
-        # double conc(unsigned int)
-        # bool clamped(unsigned int)
-        # void setClamped(unsigned int, bool)
-        # std.vector[Tri*] nexttriBegin()
-        # std.vector[Tri*] nexttriEnd()
-        # unsigned int countNextTris()
-        # std.vector[Tri*] nexttris()
-        # std.vector[TEKProc*] kprocBegin()
-        # std.vector[TEKProc*] kprocEnd()
-        # unsigned int countKProcs()
-        # std.vector[TEKProc*] kprocs()
-        # Reac* reac(unsigned int)
-
-# ======================================================================================================================
-#cdef extern from "steps/tetexact/ghkcurr.hpp" namespace "steps::tetexact":
-# ----------------------------------------------------------------------------------------------------------------------
-
-    ###### Cybinding for GHKcurr ######
-    #cdef cppclass TEGHKcurr "steps::tetexact::GHKcurr":
-        #TEGHKcurr(steps_solver.GHKcurrdef*, TETri*)
-        # void checkpoint(std.fstream)
-        # void restore(std.fstream)
-        # void setupDeps()
-        # bool depSpecTet(unsigned int, WmVol*)
-        # bool depSpecTri(unsigned int, Tri*)
-        # void reset()
-        # double rate(Tetexact*)
-        # std.vector[TEKProc*] apply(steps.rng.RNG*, double, double)
-        # bool efflux()
-        # void setEffFlux(bool)
-        # unsigned int updVecSize()
-
-# ======================================================================================================================
-#cdef extern from "steps/tetexact/patch.hpp" namespace "steps::tetexact":
-# ----------------------------------------------------------------------------------------------------------------------
-    # ctypedef Patch* PatchP
-    # ctypedef std.vector[Patch*] PatchPVec
-    # ctypedef std.vector[Patch*].iterator PatchPVecI
-    # ctypedef std.vector[Patch*].const_iterator PatchPVecCI
-
-    ###### Cybinding for Patch ######
-    #cdef cppclass TEPatch "steps::tetexact::Patch":
-        #TEPatch(steps_solver.Patchdef*)
-        # void checkpoint(std.fstream)
-        # void restore(std.fstream)
-        # void addTri(Tri*)
-        # void reset()
-        # steps.solver.Patchdef* def_()
-        # double area()
-        # double* pools()
-        # void modCount(unsigned int, double)
-        # unsigned int countTris()
-        # Tri* pickTriByArea(double)
-        # std.vector[Tri*].const_iterator bgnTri()
-        # std.vector[Tri*].const_iterator endTri()
-        # std.vector[Tri*] tris()
-
-# ======================================================================================================================
-#cdef extern from "steps/tetexact/tri.hpp" namespace "steps::tetexact":
-# ----------------------------------------------------------------------------------------------------------------------
-    # ctypedef Tri* TriP
-    # ctypedef std.vector[Tri*] TriPVec
-    # ctypedef std.vector[Tri*].iterator TriPVecI
-    # ctypedef std.vector[Tri*].const_iterator TriPVecCI
-
-    ###### Cybinding for Tri ######
-    #cdef cppclass TETri "steps::tetexact::Tri":
-        #TETri(unsigned int, steps_solver.Patchdef*, double, double, double, double, double, double, double, int, int, int, int, int)
-        # void checkpoint(std.fstream)
-        # void restore(std.fstream)
-        # void setInnerTet(WmVol*)
-        # void setOuterTet(WmVol*)
-        # void setNextTri(unsigned int, Tri*)
-        # void setupKProcs(Tetexact*, bool)
-        # void reset()
-        # steps.solver.Patchdef* patchdef()
-        # unsigned int idx()
-        # double area()
-        # WmVol* iTet()
-        # WmVol* oTet()
-        # Tri* nextTri(unsigned int)
-        # int tri(unsigned int)
-        # double length(unsigned int)
-        # double dist(unsigned int)
-        # int tet(unsigned int)
-        # int getTriDirection(unsigned int)
-        # void setDiffBndDirection(unsigned int)
-        # bool getDiffBndDirection(unsigned int)
-        # void incECharge(unsigned int, int)
-        # void resetECharge()
-        # void resetOCintegrals()
-        # double computeI(double, double, double)
-        # double getOhmicI(double, double)
-        # double getOhmicI(unsigned int, double, double)
-        # double getGHKI(double)
-        # double getGHKI(unsigned int, double)
-        # unsigned int* pools()
-        # void setCount(unsigned int, unsigned int)
-        # void incCount(unsigned int, int)
-        # bool clamped(unsigned int)
-        # void setClamped(unsigned int, bool)
-        # void setOCchange(unsigned int, unsigned int, double, double)
-        # std.vector[TEKProc*] kprocBegin()
-        # std.vector[TEKProc*] kprocEnd()
-        # std.vector[TEKProc*] kprocs()
-        # unsigned int countKProcs()
-        # SReac* sreac(unsigned int)
-        # SDiff* sdiff(unsigned int)
-        # VDepTrans* vdeptrans(unsigned int)
-        # VDepSReac* vdepsreac(unsigned int)
-        # GHKcurr* ghkcurr(unsigned int)

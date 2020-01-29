@@ -1,6 +1,33 @@
 # Set variables representing corresponding command-line options for
 # various compiler functionality
 
+include(CheckCXXCompilerFlag)
+
+# Set flags for older CMake
+if(${CMAKE_VERSION} VERSION_LESS 3.10)
+    if (CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang|AppleClang|Intel|PGI|XL)")
+        set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "-std=c++11")
+        set(CMAKE_CXX14_STANDARD_COMPILE_OPTION "-std=c++14")
+        set(CMAKE_CXX17_STANDARD_COMPILE_OPTION "-std=c++17")
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+        set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "")
+        set(CMAKE_CXX14_STANDARD_COMPILE_OPTION "/std:c++14")
+        set(CMAKE_CXX17_STANDARD_COMPILE_OPTION "/std:c++17")
+    endif()
+endif()
+
+check_cxx_compiler_flag("${CMAKE_CXX11_STANDARD_COMPILE_OPTION}" COMPILER_SUPPORTS_CXX11)
+check_cxx_compiler_flag("${CMAKE_CXX14_STANDARD_COMPILE_OPTION}" COMPILER_SUPPORTS_CXX14)
+check_cxx_compiler_flag("${CMAKE_CXX17_STANDARD_COMPILE_OPTION}" COMPILER_SUPPORTS_CXX17)
+
+set(CMAKE_LATEST_STANDARD_COMPILE_OPTION "${CMAKE_CXX11_STANDARD_COMPILE_OPTION}")
+if(COMPILER_SUPPORTS_CXX17)
+    set(CMAKE_LATEST_STANDARD_COMPILE_OPTION "${CMAKE_CXX17_STANDARD_COMPILE_OPTION}")
+elseif(COMPILER_SUPPORTS_CXX14)
+    set(CMAKE_LATEST_STANDARD_COMPILE_OPTION "${CMAKE_CXX14_STANDARD_COMPILE_OPTION}")
+endif()
+
+
 # Defaults follow GNU conventions
 
 set(C_DIALECT_OPT_C89    "-std=c89")

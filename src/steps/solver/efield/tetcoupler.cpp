@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -71,16 +71,13 @@ void sefield::TetCoupler::coupleMesh()
 {
 
     typedef vector<double*> doublePVec;
-    typedef doublePVec::iterator doublePVecI;
-    typedef doublePVec::const_iterator doublePVecCI;
-
 
     // For each vertex allocate space to accumulate coupling coefficients
     // to neighbors.
     uint nvertices = pMesh->countVertices();
     doublePVec vccs(nvertices);
-    doublePVecI vccs_bgn = vccs.begin();
-    doublePVecI vccs_end = vccs.end();
+//    auto vccs_bgn = vccs.begin();
+//    auto vccs_end = vccs.end();
 #pragma omp parallel for
     for (uint i = 0; i < nvertices; ++i)
     {
@@ -115,22 +112,19 @@ void sefield::TetCoupler::coupleMesh()
         // Now we need the following information about vertex ve:
         // a list of tetrahedrons of which ve is a part. This list
         // is returned as indices in the ve's neighbour's list.
-        vector<vector<uint> >  vti = pMesh->getNeighboringTetrahedra(ve);
+        const vector<std::array<uint, 3>>  vti = pMesh->getNeighboringTetrahedra(ve);
 
         // for (int[] tetinds : pMesh.neighboringTetrahedra(ve)) {
 
         // Loop over neighoubring tetrahedra
-        for (uint inbr = 0; inbr < vti.size(); ++inbr)
-        {
+        for (auto tetinds : vti) {
             // Get the tetrahedron by vertex neighbour indices (e.g if the vertex has 6 nighbours one
             // tetrahedron may be 2,4,5 or something
 
-            vector<uint> tetinds = (vti)[inbr];
-
-            // Get an array of the neighbouring vertices.
+          // Get an array of the neighbouring vertices.
             // (As said before, the ints in tetinds are indices in
             // the neighbours list of vertex ve, not global indices.
-            VertexElement ** ves = new VertexElement*[3];
+            auto ves = new VertexElement*[3];
             for (uint i = 0; i < 3; ++i)
             {
                 ves[i] = ve->getNeighbor(tetinds[i]);
@@ -234,8 +228,9 @@ void sefield::TetCoupler::coupleMesh()
 
     // Deallocate vccs.
 #pragma omp parallel for
-    for (int i=0; i<vccs.size(); ++i)
-        delete[] vccs[i];
+    for (auto i = 0u; i < vccs.size(); ++i) {
+      delete[] vccs[i];
+    }
     //for (doublePVecI vccs_i = vccs_bgn; vccs_i != vccs_end; ++vccs_i)
     //{
     //    delete[] (*vccs_i);

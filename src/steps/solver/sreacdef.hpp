@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -94,7 +94,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this surface reaction rule.
-    inline uint gidx() const
+    inline uint gidx() const noexcept
     { return pIdx; }
 
     /// Return the name of the surface reaction.
@@ -119,7 +119,7 @@ public:
 
     /// Returns true if the left hand side of the reaction stoichiometry
     /// involves reactants on the surface and on the inside volume.
-    inline bool inside() const
+    inline bool inside() const noexcept
     { return (pOrient == INSIDE); }
 
     /// Returns true if any aspect of the surface reaction references
@@ -143,7 +143,7 @@ public:
     /// method is mutually exclusive with SReacDef::inside, but not
     /// with SReacDef::insideRef.
     ///
-    inline bool outside() const
+    inline bool outside() const noexcept
     { return (pOrient == OUTSIDE); }
 
     /// Returns true if any aspect of the surface reaction references
@@ -164,7 +164,7 @@ public:
     /// Return true if this reaction only involves surface species,
     /// nothing in a volume at all. In that case the reaction constant
     /// should be treated in 2D
-    inline bool surf_surf() const
+    inline bool surf_surf() const noexcept
     { return pSurface_surface; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -215,18 +215,24 @@ public:
     bool reqspec_S(uint gidx) const;
     bool reqspec_O(uint gidx) const;
 
-    inline gidxTVecCI beginUpdColl_I() const
+    inline gidxTVecCI beginUpdColl_I() const noexcept
     { return pSpec_I_UPD_Coll.begin(); }
-    inline gidxTVecCI endUpdColl_I() const
+    inline gidxTVecCI endUpdColl_I() const noexcept
     { return pSpec_I_UPD_Coll.end(); }
-    inline gidxTVecCI beginUpdColl_S() const
+    inline const gidxTVec& updColl_I() const noexcept
+    { return pSpec_I_UPD_Coll ;}
+    inline gidxTVecCI beginUpdColl_S() const noexcept
     { return pSpec_S_UPD_Coll.begin(); }
-    inline gidxTVecCI endUpdColl_S() const
+    inline gidxTVecCI endUpdColl_S() const noexcept
     { return pSpec_S_UPD_Coll.end(); }
-    inline gidxTVecCI beginUpdColl_O() const
+    inline const gidxTVec& updColl_S() const noexcept
+    { return pSpec_S_UPD_Coll; }
+    inline gidxTVecCI beginUpdColl_O() const noexcept
     { return pSpec_O_UPD_Coll.begin(); }
-    inline gidxTVecCI endUpdColl_O() const
+    inline gidxTVecCI endUpdColl_O() const noexcept
     { return pSpec_O_UPD_Coll.end(); }
+    inline const gidxTVec& updColl_O() const noexcept
+    { return pSpec_O_UPD_Coll; }
 
     ////////////////////////////////////////////////////////////////////////
 

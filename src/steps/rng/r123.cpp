@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -46,7 +46,7 @@ using steps::rng::R123;
 
 /// Increment the first 2 values of ctr, translated to 64-bit
 void ctr_increment(R123::r123_type::ctr_type &ctr) {
-    uint64_t x = ctr[0] + ((uint64_t)ctr[1] << 32);
+    uint64_t x = ctr[0] + (static_cast<uint64_t>(ctr[1]) << 32);
     x++;
     ctr[0] = x;
     ctr[1] = x >> 32;

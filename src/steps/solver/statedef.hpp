@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -172,7 +172,7 @@ public:
     /// \param m Pointer to the model object.
     /// \param g Pointer to the geometry container.
     /// \param r Pointer to the random number generator.
-    Statedef(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r);
+    Statedef(steps::model::Model *m, steps::wm::Geom *g, const rng::RNGptr &r);
 
     /// Destructor
     ~Statedef();
@@ -195,7 +195,7 @@ public:
     Compdef * compdef(uint gidx) const;
 
     /// Return the total number of compartments in the simulation state.
-    inline uint countComps() const
+    inline uint countComps() const noexcept
     { return pCompdefs.size(); }
 
     /// Return the global index of compartment identified by string argument.
@@ -211,12 +211,14 @@ public:
     uint getCompIdx(steps::wm::Comp * comp) const;
 
     /// Return the beginning iterator of the Compdefs objects.
-    std::vector<Compdef*>::const_iterator bgnComp() const
+    inline std::vector<Compdef*>::const_iterator bgnComp() const noexcept
     { return pCompdefs.begin(); }
 
     /// Return the end iterator of the Compdefs objects.
-    std::vector<Compdef*>::const_iterator endComp() const
+    inline std::vector<Compdef*>::const_iterator endComp() const noexcept
     { return pCompdefs.end(); }
+    inline const std::vector<Compdef*>& comps() const noexcept
+    { return pCompdefs; }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: PATCHES
@@ -228,7 +230,7 @@ public:
     Patchdef * patchdef(uint gidx) const;
 
     /// Return the total number of patches in the simulation state.
-    uint countPatches() const
+    inline uint countPatches() const noexcept
     { return pPatchdefs.size(); }
 
     /// Return the global index of patch identified by string argument.
@@ -244,11 +246,14 @@ public:
     uint getPatchIdx(steps::wm::Patch * patch) const;
 
     /// Return the beginning iterator of the Patchdefs objects.
-    std::vector<Patchdef*>::const_iterator bgnPatch() const
+    inline std::vector<Patchdef*>::const_iterator bgnPatch() const noexcept
     { return pPatchdefs.begin(); }
 
+    inline const std::vector<Patchdef*>& patches() const noexcept
+    { return pPatchdefs; }
+
     /// Return the end iterator of the Patchdefs objects.
-    std::vector<Patchdef*>::const_iterator endPatch() const
+    inline std::vector<Patchdef*>::const_iterator endPatch() const noexcept
     { return pPatchdefs.end(); }
 
     ////////////////////////////////////////////////////////////////////////
@@ -256,7 +261,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of species in the simulation state.
-    uint countSpecs() const
+    inline uint countSpecs() const noexcept
     { return pSpecdefs.size(); }
 
     /// Return pointer to Specdef object specified by global index argument.
@@ -276,7 +281,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of reactions in the simulation state.
-    uint countReacs() const
+    inline uint countReacs() const noexcept
     { return pReacdefs.size(); }
 
     /// Return pointer to Reacdef object specified by global index argument.
@@ -301,7 +306,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of surface reactions in the simulation state.
-    uint countSReacs() const
+    inline uint countSReacs() const noexcept
     { return pSReacdefs.size(); }
 
     /// Return pointer to SReacdef object specified by global index argument.
@@ -325,7 +330,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of diffusion rules in the simulation state.
-    uint countDiffs() const
+    inline uint countDiffs() const noexcept
     { return pDiffdefs.size(); }
 
     /// Return pointer to Diffdef object specified by global index argument.
@@ -350,7 +355,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of surface diffusion rules in the simulation state.
-    uint countSurfDiffs() const
+    inline uint countSurfDiffs() const noexcept
     { return pSurfDiffdefs.size(); }
 
     /// Return pointer to SurfDiffdef object specified by global index argument.
@@ -375,7 +380,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of voltage-dependent transitions in the simulation state.
-    uint countVDepTrans() const
+    inline uint countVDepTrans() const noexcept
     { return pVDepTransdefs.size(); }
 
     /// Return pointer to VDepTransdef object specified by global index argument.
@@ -400,7 +405,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of voltage-dependent transitions in the simulation state.
-    uint countVDepSReacs() const
+    inline uint countVDepSReacs() const noexcept
     { return pVDepSReacdefs.size(); }
 
     /// Return pointer to VDepSReacdef object specified by global index argument.
@@ -425,7 +430,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of ohmic currents in the simulation state.
-    uint countOhmicCurrs() const
+    inline uint countOhmicCurrs() const noexcept
     { return pOhmicCurrdefs.size(); }
 
     /// Return pointer to OhmicCurr object specified by global index argument.
@@ -450,7 +455,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of ghk currents in the simulation state.
-    uint countGHKcurrs() const
+    inline uint countGHKcurrs() const noexcept
     { return pGHKcurrdefs.size(); }
 
     /// Return pointer to GHKcurr object specified by global index argument.
@@ -475,7 +480,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of diffusion boundaries in the simulation state.
-    uint countDiffBoundaries() const
+    inline uint countDiffBoundaries() const noexcept
     { return pDiffBoundarydefs.size(); }
 
     /// Return pointer to DiffBoundarydef object specified by global index argument.
@@ -496,19 +501,21 @@ public:
     uint getDiffBoundaryIdx(steps::tetmesh::DiffBoundary * diffb) const;
 
     /// Return the beginning iterator of the Diffusion Boundary objects.
-    std::vector<DiffBoundarydef *>::const_iterator bgnDiffBoundary() const
+    inline std::vector<DiffBoundarydef *>::const_iterator bgnDiffBoundary() const noexcept
     { return pDiffBoundarydefs.begin(); }
 
     /// Return the end iterator of the Diffusion Boundary objects.
-    std::vector<DiffBoundarydef *>::const_iterator endDiffBoundary() const
+    inline std::vector<DiffBoundarydef *>::const_iterator endDiffBoundary() const noexcept
     { return pDiffBoundarydefs.end(); }
+    inline const std::vector<DiffBoundarydef*>& diffBoundaries() const noexcept
+    { return pDiffBoundarydefs; }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SURFACE DIFFUSION BOUNDARY
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of surface diffusion boundaries in the simulation state.
-    uint countSDiffBoundaries() const
+    inline uint countSDiffBoundaries() const noexcept
     { return pSDiffBoundarydefs.size(); }
 
     /// Return pointer to SDiffBoundarydef object specified by global index argument.
@@ -529,27 +536,30 @@ public:
     uint getSDiffBoundaryIdx(steps::tetmesh::SDiffBoundary * sdiffb) const;
 
     /// Return the beginning iterator of the Surface Diffusion Boundary objects.
-    std::vector<SDiffBoundarydef *>::const_iterator bgnSDiffBoundary() const
+    inline std::vector<SDiffBoundarydef *>::const_iterator bgnSDiffBoundary() const noexcept
     { return pSDiffBoundarydefs.begin(); }
 
     /// Return the end iterator of the Surface Diffusion Boundary objects.
-    std::vector<SDiffBoundarydef *>::const_iterator endSDiffBoundary() const
+    inline std::vector<SDiffBoundarydef *>::const_iterator endSDiffBoundary() const noexcept
     { return pSDiffBoundarydefs.end(); }
+
+    inline const std::vector<SDiffBoundarydef*>& sdiffBoundaries() const noexcept
+    { return pSDiffBoundarydefs; }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: STATE
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the current simulation time.
-    inline double time() const
+    inline double time() const noexcept
     { return pTime; }
 
     /// Return the model object.
-    inline steps::model::Model * model() const
+    inline steps::model::Model * model() const noexcept
     { return pModel; }
 
     /// Return the random number generator object.
-    inline steps::rng::RNG * rng() const
+    inline const steps::rng::RNGptr& rng() const noexcept
     { return pRNG; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -567,7 +577,7 @@ public:
     void incTime(double dt);
 
     /// Reset the simulation time to 0s.
-    inline void resetTime()
+    inline void resetTime() noexcept
     { pTime = 0.0; }
 
     /// Increase the time step.
@@ -576,14 +586,14 @@ public:
     void incNSteps(uint i = 1);
 
     /// Reset the time step to 0.
-    inline void resetNSteps()
+    inline void resetNSteps() noexcept
     { pNSteps = 0; }
 
     /// Return current simulation time step.
-    inline uint nsteps() const
+    inline uint nsteps() const noexcept
     { return pNSteps; }
 
-    inline void setNSteps(uint nsteps)
+    inline void setNSteps(uint nsteps) noexcept
     { pNSteps = nsteps; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -592,7 +602,7 @@ private:
 
     steps::model::Model               * pModel;
     steps::wm::Geom                   * pGeom;
-    steps::rng::RNG                   * pRNG;
+    const steps::rng::RNGptr            pRNG;
 
     double                              pTime;
 

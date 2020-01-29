@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -95,10 +95,10 @@ public:
 
     static const int INACTIVATED = 1;
 
-    inline bool active() const
+    inline bool active() const noexcept
     { return !(pFlags & INACTIVATED); }
-    inline bool inactive() const
-    { return (pFlags & INACTIVATED); }
+    inline bool inactive() const noexcept
+    { return static_cast<bool>(pFlags & INACTIVATED); }
     void setActive(bool active);
 
     inline uint flags() const
@@ -133,7 +133,7 @@ public:
 
     /// Compute the rate for this kproc (its propensity value).
     ///
-    virtual double rate(steps::tetexact::Tetexact * solver = 0)  = 0;
+    virtual double rate(steps::tetexact::Tetexact * solver = nullptr) = 0;
 
     // Return the ccst for this kproc
     // NOTE: not pure for this solver because doesn't make sense for Diff
@@ -149,13 +149,13 @@ public:
     ///
     // NOTE: Random number generator available to this function for use
     // by Diff
-    virtual std::vector<KProc*> const & apply(steps::rng::RNG * rng, double dt, double simtime) = 0;
+    virtual std::vector<KProc*> const & apply(const rng::RNGptr &rng, double dt, double simtime) = 0;
 
     virtual uint updVecSize() const = 0;
 
     ////////////////////////////////////////////////////////////////////////
 
-    uint getExtent() const;
+    unsigned long long getExtent() const;
     void resetExtent();
 
     ////////////////////////////////////////////////////////////////////////
@@ -175,13 +175,13 @@ public:
 
 protected:
 
-    uint                                rExtent;
+    unsigned long long                  rExtent{0};
 
     ////////////////////////////////////////////////////////////////////////
 
-    uint                                pFlags;
+    uint                                pFlags{0};
 
-    uint                                pSchedIDX;
+    uint                                pSchedIDX{};
 
     ////////////////////////////////////////////////////////////////////////
 };

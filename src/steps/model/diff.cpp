@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -58,9 +58,7 @@ using namespace steps::model;
 
 Diff::Diff(string const & id, Volsys * volsys, Spec * lig, double dcst)
 : pID(id)
-, pModel(nullptr)
 , pVolsys(volsys)
-, pSurfsys(nullptr)
 , pLig(lig)
 , pDcst(dcst)
 , pIsvolume(true)
@@ -78,7 +76,7 @@ Diff::Diff(string const & id, Volsys * volsys, Spec * lig, double dcst)
         ArgErrLog(os.str());
     }
     pModel = pVolsys->getModel();
-    AssertLog(pModel != 0);
+    AssertLog(pModel != nullptr);
 
     pVolsys->_handleDiffAdd(this);
 }
@@ -87,9 +85,7 @@ Diff::Diff(string const & id, Volsys * volsys, Spec * lig, double dcst)
 
 Diff::Diff(string const & id, Surfsys * surfsys, Spec * lig, double dcst)
 : pID(id)
-, pModel(nullptr)
 , pSurfsys(surfsys)
-, pVolsys(nullptr)
 , pLig(lig)
 , pDcst(dcst)
 , pIsvolume(false)
@@ -107,7 +103,7 @@ Diff::Diff(string const & id, Surfsys * surfsys, Spec * lig, double dcst)
         ArgErrLog(os.str());
     }
     pModel = pSurfsys->getModel();
-    AssertLog(pModel != 0);
+    AssertLog(pModel != nullptr);
 
     pSurfsys->_handleDiffAdd(this);
 }
@@ -154,7 +150,7 @@ void Diff::setID(string const & id)
 {
     if (pIsvolume)
     {
-        AssertLog(pVolsys != 0);
+        AssertLog(pVolsys != nullptr);
         // The following might raise an exception, e.g. if the new ID is not
         // valid or not unique. If this happens, we don't catch but simply let
         // it pass by into the Python layer.
@@ -162,7 +158,7 @@ void Diff::setID(string const & id)
     }
     else
     {
-        AssertLog(pSurfsys != 0);
+        AssertLog(pSurfsys != nullptr);
         // The following might raise an exception, e.g. if the new ID is not
         // valid or not unique. If this happens, we don't catch but simply let
         // it pass by into the Python layer.
@@ -179,11 +175,11 @@ void Diff::setDcst(double dcst)
 {
     if (pIsvolume)
     {
-        AssertLog(pVolsys != 0);
+        AssertLog(pVolsys != nullptr);
     }
     else
     {
-        AssertLog(pSurfsys != 0);
+        AssertLog(pSurfsys != nullptr);
     }
     if(dcst < 0.0)
     {
@@ -198,17 +194,15 @@ void Diff::setDcst(double dcst)
 
 void Diff::setLig(Spec * lig)
 {
-    AssertLog(lig !=0);
+    AssertLog(lig != nullptr);
     pLig = lig;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-vector<Spec *> Diff::getAllSpecs() const
+std::vector<Spec *> Diff::getAllSpecs() const
 {
-    SpecPVec specs = SpecPVec();
-    specs.push_back(pLig);
-    return specs;
+  return {pLig};
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -31,10 +31,12 @@
 
 // STL headers.
 #include <string>
-#include <limits> 
+#include <limits>
+#include <steps/geom/fwd.hpp>
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/geom/fwd.hpp"
 #include "steps/geom/geom.hpp"
 #include "steps/model/model.hpp"
 #include "steps/rng/rng.hpp"
@@ -69,7 +71,6 @@ public:
         EF_NONE = 0, // must be zero for API compatibility
         EF_DEFAULT = 1, // must be one for API compatibility
         EF_DV_BDSYS,
-        EF_DV_SLUSYS,
         EF_DV_PETSC,
     };
 
@@ -78,7 +79,7 @@ public:
     /// \param m Pointer to the model.
     /// \param g Pointer to the geometry container.
     /// \param r Pointer to the random number generator.
-    API(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r);
+    API(steps::model::Model *m, steps::wm::Geom *g, const rng::RNGptr &r);
 
     /// Destructor
     ///
@@ -358,7 +359,7 @@ public:
     /// extents in all voxels of the compartment.
     /// \param c Name of the compartment.
     /// \param r Name of the reaction.
-    uint getCompReacExtent(std::string const & c, std::string const & r) const;
+    unsigned long long getCompReacExtent(std::string const & c, std::string const & r) const;
 
     /// Resets the extent of reaction r in compartment c to zero.
     ///
@@ -376,130 +377,132 @@ public:
     /// Returns the volume of a tetrahedron (in m^3).
     ///
     /// \param tidx Index of the tetrahedron.
-    double getTetVol(uint tidx) const;
+    double getTetVol(tetrahedron_id_t tidx) const;
 
     /// Set the volume of a tetrahedron (in m^3).
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param vol Volume of the tetrahedron.
-    void setTetVol(uint tidx, double vol);
+    void setTetVol(tetrahedron_id_t tidx, double vol);
 
     /// Returns whether species s is defined in a tetrahedral volume
     /// element (voxel).
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param s Name of the species.
-    bool getTetSpecDefined(uint tidx, std::string const & s) const;
+    bool getTetSpecDefined(tetrahedron_id_t tidx, std::string const & s) const;
 
     /// Returns the number of molecules of species s in a tetrahedral volume
     /// element (voxel).
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param s Name of the species.
-    double getTetCount(uint tidx, std::string const & s) const;
+    double getTetCount(tetrahedron_id_t tidx, std::string const & s) const;
 
     /// Sets the number of molecules of species s in a voxel.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param s Name of the species.
     /// \param n Number of molecules of the species.
-    void setTetCount(uint tidx, std::string const & s, double n);
+    void setTetCount(tetrahedron_id_t tidx, std::string const & s, double n);
 
     /// Returns the amount (in mols) of species s in a voxel.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param s Name of the species.
-    double getTetAmount(uint tidx, std::string const & s) const;
+    double getTetAmount(tetrahedron_id_t tidx, std::string const & s) const;
 
     /// Sets the amount (in mols) of species s in a voxel.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param s Name of the species.
     /// \param m Amount of the species.
-    void setTetAmount(uint tidx, std::string const & s, double m);
+    void setTetAmount(tetrahedron_id_t tidx, std::string const & s, double m);
 
     /// Returns the concentration (in molar units) of species s in a voxel..
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param s Name of the species.
-    double getTetConc(uint tidx, std::string const & s) const;
+    double getTetConc(tetrahedron_id_t tidx, std::string const & s) const;
 
     /// Sets the concentration (in molar units) of species s in a voxel.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param s Name of the species.
     /// \param c Concentration of the species.
-    void setTetConc(uint tidx, std::string const & s, double c);
+    void setTetConc(tetrahedron_id_t tidx, std::string const & s, double c);
 
     /// Returns whether the concentration of species s in a voxel
     /// remains constant over time (unless changed explicitly).
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param s Name of the species.
-    bool getTetClamped(uint tidx, std::string const & s) const;
+    bool getTetClamped(tetrahedron_id_t tidx, std::string const & s) const;
 
     /// Sets clamping of species s in a voxel on or off.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param s Name of the species.
     /// \param buf Flag to turn the clamping of species on or off.
-    void setTetClamped(uint tidx, std::string const & s, bool buf);
+    void setTetClamped(tetrahedron_id_t tidx, std::string const & s, bool buf);
 
     /// Returns the macroscopic reaction constant of reaction r in a voxel
     /// (units vary with order of reaction).
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param r Name of the reaction.
-    double getTetReacK(uint tidx, std::string const & r) const;
+    double getTetReacK(tetrahedron_id_t tidx, std::string const & r) const;
 
     /// Sets the macroscopic reaction constant of reaction r in a voxel.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param r Name of the reaction.
     /// \param kf Rate constant of the reaction.
-    void setTetReacK(uint tidx, std::string const & r, double kf);
+    void setTetReacK(tetrahedron_id_t tidx, std::string const & r, double kf);
 
     /// Returns whether reaction r in a voxel is active or not
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param r Name of the reaction.
-    bool getTetReacActive(uint tidx, std::string const & r) const;
+    bool getTetReacActive(tetrahedron_id_t tidx, std::string const & r) const;
 
     /// Activates/deactivates reaction r in a voxel.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param r Name of the reaction.
     /// \param act Flag to activate or deactivate the reaction.
-    void setTetReacActive(uint tidx, std::string const & r, bool act);
+    void setTetReacActive(tetrahedron_id_t tidx, std::string const & r, bool act);
 
     /// Returns the diffusion constant of diffusion rule d in a voxel.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param d Name of the deffusion.
     /// \param direction_tet Tetrahedron index which specifies diffusion direction.
-    double getTetDiffD(uint tidx, std::string const & d, uint direction_tet = std::numeric_limits<uint>::max()) const;
+    double getTetDiffD(tetrahedron_id_t tidx, std::string const &d,
+                       tetrahedron_id_t direction_tet) const;
 
     /// Sets the diffusion constant of diffusion rule d in a voxel.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param d Name of the diffusion.
     /// \param dk Rate constant of the diffusion.
-    /// \param direction_tet Tetdrhedron index which the diffusion towards.
-        void setTetDiffD(uint tidx, std::string const & d, double dk,
-                     uint direction_tet = std::numeric_limits<uint>::max());
+    /// \param direction_tet Tetrahedron index which the diffusion towards.
+        void setTetDiffD(
+        tetrahedron_id_t tidx, std::string const &d, double dk,
+        tetrahedron_id_t direction_tet);
 
     /// Returns whether diffusion rule d in a voxel is active or not.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param d Name of the diffusion.
-    bool getTetDiffActive(uint tidx, std::string const & d) const;
+    bool getTetDiffActive(tetrahedron_id_t tidx, std::string const & d) const;
 
     /// Activates/deactivates diffusion rule d in a voxel.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param d Name of the diffusion.
     /// \param act Flag to activate / deactivate the diffusion.
-    void setTetDiffActive(uint tidx, std::string const & d, bool act);
+    void setTetDiffActive(tetrahedron_id_t tidx, std::string const & d, bool act);
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -508,14 +511,14 @@ public:
     ///
     /// \param tidx Index of the diffusion.
     /// \param r Name of the reaction.
-    double getTetReacC(uint tidx, std::string const & r) const;
+    double getTetReacC(tetrahedron_id_t tidx, std::string const & r) const;
 
     /// Returns h_mu, the distinct number of ways in which reaction r can
     /// occur in a voxel, by computing the product of its reactants.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param Name of the reaction.
-    double getTetReacH(uint tidx, std::string const & r) const;
+    double getTetReacH(tetrahedron_id_t tidx, std::string const & r) const;
 
     /// Returns the propensity, a_mu, of reaction r in a voxel.
     /// The propensity value gives the probability per unit time that this
@@ -523,38 +526,38 @@ public:
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param r Name of the reaction.
-    double getTetReacA(uint tidx, std::string const & r) const;
+    double getTetReacA(tetrahedron_id_t tidx, std::string const & r) const;
 
     /// Returns the propensity, a_mu of diffusion rule d in a voxel.
     ///
     /// \param tidx Index of the tetrahedron.
     /// \param d Name of the diffusion.
-    double getTetDiffA(uint tidx, std::string const & d) const;
+    double getTetDiffA(tetrahedron_id_t tidx, std::string const & d) const;
 
     ////////////////////////////////////////////////////////////////////////
 
     /// Returns the potential of tetrahedron in Volts.
     ///
     /// \param tidx Index of the tetrahedron.
-    double getTetV(uint tidx) const;
+    double getTetV(tetrahedron_id_t tidx) const;
 
     /// Set the potential of tetrahedron.
     ///
     /// \param tidx Index of the tetrahedron
     /// \param V Potential in volts.
-    void setTetV(uint tidx, double v);
+    void setTetV(tetrahedron_id_t tidx, double v);
 
     /// Returns whether the potential of tetrahedron is clamped over time
     /// (unless changed explicitly)
     ///
     /// \param tidx Index of the tetrahedron
-    bool getTetVClamped(uint tidx) const;
+    bool getTetVClamped(tetrahedron_id_t tidx) const;
 
     /// Sets voltage clamp in tetrahedron.
     ///
     /// \param tidx Index of the tetrahedron
     /// \param cl Flag to turn the clamping on or off.
-    void setTetVClamped(uint tidx, bool cl);
+    void setTetVClamped(tetrahedron_id_t tidx, bool cl);
 
 
     ////////////////////////////////////////////////////////////////////////
@@ -702,7 +705,7 @@ public:
     /// all triangles of the patch.
     /// \param p Name of the patch.
     /// \param r Name of the reaction.
-    uint getPatchSReacExtent(std::string const & p, std::string const & r) const;
+    unsigned long long getPatchSReacExtent(std::string const & p, std::string const & r) const;
 
     /// Resets the extent of surface reaction r in patch p to zero.
     ///
@@ -789,66 +792,66 @@ public:
     /// Returns the area of the triangle (in m^2).
     ///
     /// \param tidx Index of the triangle.
-    double getTriArea(uint tidx) const;
+    double getTriArea(triangle_id_t tidx) const;
 
     /// Set the area (in m^2) of the triangle.
     ///
     /// \param tidx Index of the triangle.
     /// \param area Area of teh triangle.
-    void setTriArea(uint tidx, double area);
+    void setTriArea(triangle_id_t tidx, double area);
 
     /// Returns whether species s is defined in a triangle
     ///
     /// \param tidx Index of the triangle.
     /// \param s Name of the species.
-    bool getTriSpecDefined(uint tidx, std::string const & s) const;
+    bool getTriSpecDefined(triangle_id_t tidx, std::string const & s) const;
 
     /// Returns the number of molecules of species s in a triangle.
     ///
     /// \param tidx Index of the triangle.
     /// \param s Name of the species.
-    double getTriCount(uint tidx, std::string const & s) const;
+    double getTriCount(triangle_id_t tidx, std::string const & s) const;
 
     /// Sets the number of molecules of species s in a triangle.
     ///
     /// \param tidx Index of the triangle.
     /// \param s Name of the species.
     /// \param n Number of molecules of the species.
-    void setTriCount(uint tidx, std::string const & s, double n);
+    void setTriCount(triangle_id_t tidx, std::string const & s, double n);
 
     /// Returns the amount (in mols) of species s in a triangle.
     ///
     /// \param tidx Index of the triangle.
     /// \param s Name of the species.
-    double getTriAmount(uint tidx, std::string const & s) const;
+    double getTriAmount(triangle_id_t tidx, std::string const & s) const;
 
     /// Sets the amount (in mols) of species s in a triangle.
     ///
     /// \param tidx Index of the triangle.
     /// \param s Name of the species.
     /// \param m Amount of the species.
-    void setTriAmount(uint tidx, std::string const & s, double m);
+    void setTriAmount(triangle_id_t tidx, std::string const & s, double m);
 
     /// Returns whether the number of molecules of species s in a triangle
     /// remains constant over time (unless changed explicitly)
     ///
     /// \param tidx Index of the triangle.
     /// \param s name of the species.
-    bool getTriClamped(uint tidx, std::string const & s) const;
+    bool getTriClamped(triangle_id_t tidx, std::string const & s) const;
 
     /// Sets clamping of species s in a triangle on or off.
     ///
     /// \param tidx Index of the triangle.
     /// \param s name of the species.
     /// \param buf Flag to set clamping of species on /off.
-    void setTriClamped(uint tidx, std::string const & s, bool buf);
+    void setTriClamped(triangle_id_t tidx, std::string const & s, bool buf);
 
     /// Returns the macroscopic reaction constant of surface reaction r
     // in a triangle (units vary with order of reaction).
     ///
     /// \param tidx Index of the triangle.
     /// \param r name of the reaction.
-    double getTriSReacK(uint tidx, std::string const & r) const;
+    double getTriSReacK(triangle_id_t tidx, std::string const & r);
 
     /// Sets the macroscopic reaction constant of surface reaction r in
     // a triangle.
@@ -856,20 +859,20 @@ public:
     /// \param tidx Index of the triangle.
     /// \param r name of the reaction.
     /// \param kf Rate constant of the reaction.
-    void setTriSReacK(uint tidx, std::string const & r, double kf);
+    void setTriSReacK(triangle_id_t tidx, std::string const & r, double kf);
 
     /// Returns whether surface reaction r in a triangle is active or not.
     ///
     /// \param tidx Index of the triangle.
     /// \param r name of the reaction.
-    bool getTriSReacActive(uint tidx, std::string const & r) const;
+    bool getTriSReacActive(triangle_id_t tidx, std::string const & r);
 
     /// Activates/inactivates surface reaction r in a triangle.
     ///
     /// \param tidx Index of the triangle.
     /// \param r name of the reaction.
     /// \param act Flag to activate / deactivate the reaction.
-    void setTriSReacActive(uint tidx, std::string const & r, bool act);
+    void setTriSReacActive(triangle_id_t tidx, std::string const & r, bool act);
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -878,14 +881,14 @@ public:
     ///
     /// \param tidx Index of the triangle.
     /// \param r name of the reaction.
-    double getTriSReacC(uint tidx, std::string const & r) const;
+    double getTriSReacC(triangle_id_t tidx, std::string const & r);
 
     // Returns h_mu, the distinct number of ways in which surface reaction r
     // can occur in a triangle, by computing the product of it's reactants.
     ///
     /// \param tidx Index of the triangle.
     /// \param r name of the reaction.
-    double getTriSReacH(uint tidx, std::string const & r) const;
+    double getTriSReacH(triangle_id_t tidx, std::string const & r);
 
     // Returns the propensity, a_mu, of surface reaction r in a triangle.
     // The propensity value gives the probability per unit time that this
@@ -893,21 +896,21 @@ public:
     ///
     /// \param tidx Index of the triangle.
     /// \param r name of the reaction.
-    double getTriSReacA(uint tidx, std::string const & r) const;
+    double getTriSReacA(triangle_id_t tidx, std::string const & r);
 
     /// outdate function
-    double getTriDiffD(uint tidx, std::string const & d, uint direction_tri = std::numeric_limits<uint>::max()) const;
+    double getTriDiffD(triangle_id_t tidx, std::string const & d, uint direction_tri = std::numeric_limits<uint>::max());
 
     /// Returns the diffusion constant of diffusion rule d in a triangle.
     ///
     /// \param tidx Index of the triangle.
     /// \param d Name of the diffusion.
     /// \param direction_tet Triangle index which specifies diffusion direction.
-    double getTriSDiffD(uint tidx, std::string const & d, uint direction_tri = std::numeric_limits<uint>::max()) const;
+    double getTriSDiffD(triangle_id_t tidx, std::string const & d, triangle_id_t direction_tri);
     
     /// outdated function
-    void setTriDiffD(uint tidx, std::string const & d, double dk,
-                      uint direction_tri = std::numeric_limits<uint>::max());
+    void setTriDiffD(triangle_id_t tidx, std::string const & d, double dk,
+                      triangle_id_t direction_tri);
     
     
     /// Sets the diffusion constant of diffusion rule d on a triangle.
@@ -916,85 +919,85 @@ public:
     /// \param d Name of the diffusion.
     /// \param dk Rate constant of the diffusion.
     /// \param direction_tri Triangle index which the diffusion towards
-    void setTriSDiffD(uint tidx, std::string const & d, double dk,
-                     uint direction_tri = std::numeric_limits<uint>::max());
+    void setTriSDiffD(triangle_id_t tidx, std::string const & d, double dk,
+                     triangle_id_t direction_tri);
     ////////////////////////////////////////////////////////////////////////
 
     /// Returns the potential of triangle in Volts.
     ///
     /// \param tidx Index of the triangle.
-    double getTriV(uint tidx) const;
+    double getTriV(triangle_id_t tidx) const;
 
     /// Set the potential of triangle.
     ///
     /// \param tidx Index of the triangle
     /// \param V Potential in volts.
-    void setTriV(uint tidx, double v);
+    void setTriV(triangle_id_t tidx, double v);
 
     /// Returns whether the potential of triangle is clamped over time
     /// (unless changed explicitly).
     ///
     /// \param tidx Index of the triangle
-    bool getTriVClamped(uint tidx) const;
+    bool getTriVClamped(triangle_id_t tidx) const;
 
     /// Sets voltage clamp in triangle.
     ///
     /// \param tidx Index of the triangle
     /// \param cl Flag to turn the clamping on or off.
-    void setTriVClamped(uint tidx, bool cl);
+    void setTriVClamped(triangle_id_t tidx, bool cl);
 
     /// Returns the ohmic current of triangle in amperes.
     ///
     /// \param tidx Index of the triangle.
-    double getTriOhmicI(uint tidx);
+    double getTriOhmicI(triangle_id_t tidx);
 
     /// Returns the ohmic current of triangle in amperes.
     ///
     /// \param tidx Index of the triangle.
     /// \param oc name of the ohmic current
-    double getTriOhmicI(uint tidx, std::string const & oc);
+    double getTriOhmicI(triangle_id_t tidx, std::string const & oc);
 
     /// Returns the GHK current of triangle in amperes.
     ///
     /// \param tidx Index of the triangle.
-    double getTriGHKI(uint tidx);
+    double getTriGHKI(triangle_id_t tidx);
 
     /// Returns the GHK current of triangle in amperes.
     ///
     /// \param tidx Index of the triangle.
     /// \param ghk name of the ghk current
-    double getTriGHKI(uint tidx, std::string const & ghk);
+    double getTriGHKI(triangle_id_t tidx, std::string const & ghk);
 
     /// Returns the current of a triangle in amperes from the last EField
     /// calculation step.
     ///
     /// \param tidx Index of the triangle
-    double getTriI(uint tidx) const;
+    double getTriI(triangle_id_t tidx) const;
 
     /// Sets current injection to triangle.
     /// Will be assumed to be constant for one EField DT
     /// \param tidx Index of the triangle
     /// \param I Current in amperes.
-    void setTriIClamp(uint tidx, double i);
+    void setTriIClamp(triangle_id_t tidx, double i);
 
     /// Returns whether voltage-dependent surface reaction vsr in a triangle is active or not.
     ///
     /// \param tidx Index of the triangle.
     /// \param vsr name of the voltage-dependent surface reaction.
-    bool getTriVDepSReacActive(uint tidx, std::string const & vsr) const;
+    bool getTriVDepSReacActive(triangle_id_t tidx, std::string const & vsr);
 
     /// Activates/inactivates voltage-dependent surface reaction vsr in a triangle.
     ///
     /// \param tidx Index of the triangle.
     /// \param vsr name of the voltage-dependent surface reaction.
     /// \param act Flag to activate / deactivate the reaction.
-    void setTriVDepSReacActive(uint tidx, std::string const & vsr, bool act);
+    void setTriVDepSReacActive(triangle_id_t tidx, std::string const & vsr, bool act);
 
     /// Set the specific capacitance of a triangle surface element.
     ///
     /// \param tidx Index of the triangle surface element
     /// \param cm Specific membrane capacitance (farad / m^2)
-    void setTriCapac(uint tidx, double cm);
+    void setTriCapac(triangle_id_t tidx, double cm);
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROL:
@@ -1004,31 +1007,31 @@ public:
     /// Returns the potential of vertex in Volts.
     ///
     /// \param vidx Index of the vertex.
-    double getVertV(uint vidx) const;
+    double getVertV(vertex_id_t vidx) const;
 
     /// Set the potential of vertex.
     ///
     /// \param vidx Index of the vertex
     /// \param V Potential in volts.
-    void setVertV(uint vidx, double v);
+    void setVertV(vertex_id_t vidx, double v);
 
     /// Returns whether the potential of vertex is clamped over time
     /// (unless changed explicitly).
     ///
     /// \param vidx Index of the vertex
-    bool getVertVClamped(uint vidx) const;
+    bool getVertVClamped(vertex_id_t vidx) const;
 
     /// Sets voltage clamp in vertex.
     ///
     /// \param vidx Index of the vertex
     /// \param cl Flag to turn the clamping on or off.
-    void setVertVClamped(uint vidx, bool cl);
+    void setVertVClamped(vertex_id_t vidx, bool cl);
 
     /// Sets current injection to vertex.
     /// Will be assumed to be constant for one EField DT
     /// \param vidx Index of the vertex
     /// \param I Current in amperes.
-    void setVertIClamp(uint vidx, double i);
+    void setVertIClamp(vertex_id_t vidx, double i);
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROL:
@@ -1093,16 +1096,24 @@ public:
     ////////////////////////////////////////////////////////////////////////
     
     /// Get species counts of a list of tetrahedrons
-    virtual std::vector<double> getBatchTetCounts(std::vector<uint> const & tets, std::string const & s) const;
+    virtual std::vector<double> getBatchTetCounts(const std::vector<index_t> &tets, std::string const &s) const;
 
     /// Get species counts of a list of triangles
-    virtual std::vector<double> getBatchTriCounts(std::vector<uint> const & tris, std::string const & s) const;
+    virtual std::vector<double> getBatchTriCounts(const std::vector<index_t> &tris, std::string const &s) const;
     
     /// Get species counts of a list of tetrahedrons
-    virtual void getBatchTetCountsNP(unsigned int* indices, int input_size, std::string const & s, double* counts, int output_size) const;
+    virtual void getBatchTetCountsNP(const index_t *indices,
+                                     int input_size,
+                                     std::string const &s,
+                                     double *counts,
+                                     int output_size) const;
 
     /// Get species counts of a list of triangles
-    virtual void getBatchTriCountsNP(unsigned int* indices, int input_size, std::string const & s, double* counts, int output_size) const;
+    virtual void getBatchTriCountsNP(const index_t *indices,
+                                     int input_size,
+                                     std::string const &s,
+                                     double *counts,
+                                     int output_size) const;
     
 
     ////////////////////////////////////////////////////////////////////////
@@ -1110,46 +1121,46 @@ public:
     ////////////////////////////////////////////////////////////////////////
     
     /// Get species counts of a list of tetrahedrons
-    virtual std::vector<double> getROITetCounts(std::string ROI_id, std::string const & s) const;
+    virtual std::vector<double> getROITetCounts(const std::string& ROI_id, std::string const & s) const;
     
     /// Get species counts of a list of triangles
-    virtual std::vector<double> getROITriCounts(std::string ROI_id, std::string const & s) const;
+    virtual std::vector<double> getROITriCounts(const std::string& ROI_id, std::string const & s) const;
     
     /// Get species counts of a list of tetrahedrons
-    virtual void getROITetCountsNP(std::string ROI_id, std::string const & s, double* counts, int output_size) const;
+    virtual void getROITetCountsNP(const std::string& ROI_id, std::string const & s, double* counts, int output_size) const;
     
     /// Get species counts of a list of triangles
-    virtual void getROITriCountsNP(std::string ROI_id, std::string const & s, double* counts, int output_size) const;
+    virtual void getROITriCountsNP(const std::string& ROI_id, std::string const & s, double* counts, int output_size) const;
 
-     virtual double getROIVol(std::string ROI_id) const;
-    virtual double getROIArea(std::string ROI_id) const;
+     virtual double getROIVol(const std::string& ROI_id) const;
+    virtual double getROIArea(const std::string& ROI_id) const;
     
-     virtual double getROICount(std::string ROI_id, std::string const & s) const;
-    virtual void setROICount(std::string ROI_id, std::string const & s, double count);
+     virtual double getROICount(const std::string& ROI_id, std::string const & s) const;
+    virtual void setROICount(const std::string& ROI_id, std::string const & s, double count);
     
-     virtual double getROIAmount(std::string ROI_id, std::string const & s) const;
-    virtual double getROIConc(std::string ROI_id, std::string const & s) const;
-    virtual void setROIConc(std::string ROI_id, std::string const & s, double conc);
+     virtual double getROIAmount(const std::string& ROI_id, std::string const & s) const;
+    virtual double getROIConc(const std::string& ROI_id, std::string const & s) const;
+    virtual void setROIConc(const std::string& ROI_id, std::string const & s, double conc);
     
-    virtual void setROIClamped(std::string ROI_id, std::string const & s, bool b);
+    virtual void setROIClamped(const std::string& ROI_id, std::string const & s, bool b);
     
-    virtual void setROIReacK(std::string ROI_id, std::string const & r, double kf);
-      virtual void setROISReacK(std::string ROI_id, std::string const & sr, double kf);
-    virtual void setROIDiffD(std::string ROI_id, std::string const & d, double dk);
+    virtual void setROIReacK(const std::string& ROI_id, std::string const & r, double kf);
+      virtual void setROISReacK(const std::string& ROI_id, std::string const & sr, double kf);
+    virtual void setROIDiffD(const std::string& ROI_id, std::string const & d, double dk);
     
-    virtual void setROIReacActive(std::string ROI_id, std::string const & r, bool a);
-     virtual void setROISReacActive(std::string ROI_id, std::string const & sr, bool a);
-    virtual void setROIDiffActive(std::string ROI_id, std::string const & d, bool act);
-    virtual void setROIVDepSReacActive(std::string ROI_id, std::string const & vsr, bool a);
+    virtual void setROIReacActive(const std::string& ROI_id, std::string const & r, bool a);
+     virtual void setROISReacActive(const std::string& ROI_id, std::string const & sr, bool a);
+    virtual void setROIDiffActive(const std::string& ROI_id, std::string const & d, bool act);
+    virtual void setROIVDepSReacActive(const std::string& ROI_id, std::string const & vsr, bool a);
     
-    virtual uint getROIReacExtent(std::string ROI_id, std::string const & r) const;
-    virtual void resetROIReacExtent(std::string ROI_id, std::string const & r);
+    virtual unsigned long long getROIReacExtent(const std::string& ROI_id, std::string const & r) const;
+    virtual void resetROIReacExtent(const std::string& ROI_id, std::string const & r);
     
-    virtual uint getROISReacExtent(std::string ROI_id, std::string const & sr) const;
-    virtual void resetROISReacExtent(std::string ROI_id, std::string const & sr);
+    virtual unsigned long long getROISReacExtent(const std::string& ROI_id, std::string const & sr) const;
+    virtual void resetROISReacExtent(const std::string& ROI_id, std::string const & sr);
     
-    virtual uint getROIDiffExtent(std::string ROI_id, std::string const & d) const;
-    virtual void resetROIDiffExtent(std::string ROI_id, std::string const & s);
+    virtual unsigned long long getROIDiffExtent(const std::string& ROI_id, std::string const & d) const;
+    virtual void resetROIDiffExtent(const std::string& ROI_id, std::string const & s);
     
 protected:
 
@@ -1189,9 +1200,9 @@ protected:
 
     virtual double _getCompReacH(uint cidx, uint ridx) const;
     virtual double _getCompReacC(uint cidx, uint ridx) const;
-    virtual double _getCompReacA(uint cidx, uint ridx) const;
+    virtual long double _getCompReacA(uint cidx, uint ridx) const;
 
-    virtual uint _getCompReacExtent(uint cidx, uint ridx) const;
+    virtual unsigned long long _getCompReacExtent(uint cidx, uint ridx) const;
     virtual void _resetCompReacExtent(uint cidx, uint ridx);
 
     ////////////////////////////////////////////////////////////////////////
@@ -1199,49 +1210,49 @@ protected:
     //      TETRAHEDRAL VOLUME ELEMENTS
     ////////////////////////////////////////////////////////////////////////
 
-    virtual double _getTetVol(uint tidx) const;
-    virtual void _setTetVol(uint tidx, double vol);
+    virtual double _getTetVol(tetrahedron_id_t tidx) const;
+    virtual void _setTetVol(tetrahedron_id_t tidx, double vol);
 
-    virtual bool _getTetSpecDefined(uint tidx, uint sidx) const;
+    virtual bool _getTetSpecDefined(tetrahedron_id_t tidx, uint sidx) const;
 
-    virtual double _getTetCount(uint tidx, uint sidx) const;
-    virtual void _setTetCount(uint tidx, uint sidx, double n);
+    virtual double _getTetCount(tetrahedron_id_t tidx, uint sidx) const;
+    virtual void _setTetCount(tetrahedron_id_t tidx, uint sidx, double n);
 
-    virtual double _getTetAmount(uint tidx, uint sidx) const;
-    virtual void _setTetAmount(uint tidx, uint sidx, double m);
+    virtual double _getTetAmount(tetrahedron_id_t tidx, uint sidx) const;
+    virtual void _setTetAmount(tetrahedron_id_t tidx, uint sidx, double m);
 
-    virtual double _getTetConc(uint tidx, uint sidx) const;
-    virtual void _setTetConc(uint tidx, uint sidx, double c);
+    virtual double _getTetConc(tetrahedron_id_t tidx, uint sidx) const;
+    virtual void _setTetConc(tetrahedron_id_t tidx, uint sidx, double c);
 
-    virtual bool _getTetClamped(uint tidx, uint sidx) const;
-    virtual void _setTetClamped(uint tidx, uint sidx, bool buf);
+    virtual bool _getTetClamped(tetrahedron_id_t tidx, uint sidx) const;
+    virtual void _setTetClamped(tetrahedron_id_t tidx, uint sidx, bool buf);
 
-    virtual double _getTetReacK(uint tidx, uint ridx) const;
-    virtual void _setTetReacK(uint tidx, uint ridx, double kf);
+    virtual double _getTetReacK(tetrahedron_id_t tidx, uint ridx) const;
+    virtual void _setTetReacK(tetrahedron_id_t tidx, uint ridx, double kf);
 
-    virtual bool _getTetReacActive(uint tidx, uint ridx) const;
-    virtual void _setTetReacActive(uint tidx, uint ridx, bool act);
+    virtual bool _getTetReacActive(tetrahedron_id_t tidx, uint ridx) const;
+    virtual void _setTetReacActive(tetrahedron_id_t tidx, uint ridx, bool act);
 
-    virtual double _getTetDiffD(uint tidx, uint didx, uint direction_tet = std::numeric_limits<uint>::max()) const;
-    virtual void _setTetDiffD(uint tidx, uint didx, double dk, uint direction_tet = std::numeric_limits<uint>::max());
+    virtual double _getTetDiffD(tetrahedron_id_t tidx, uint didx, tetrahedron_id_t direction_tet = UNKNOWN_TET) const;
+    virtual void _setTetDiffD(tetrahedron_id_t tidx, uint didx, double dk, tetrahedron_id_t direction_tet = UNKNOWN_TET);
 
-    virtual bool _getTetDiffActive(uint tidx, uint didx) const;
-    virtual void _setTetDiffActive(uint tidx, uint didx, bool act);
+    virtual bool _getTetDiffActive(tetrahedron_id_t tidx, uint didx) const;
+    virtual void _setTetDiffActive(tetrahedron_id_t tidx, uint didx, bool act);
 
     ////////////////////////////////////////////////////////////////////////
 
-    virtual double _getTetReacH(uint tidx, uint ridx) const;
-    virtual double _getTetReacC(uint tidx, uint ridx) const;
-    virtual double _getTetReacA(uint tidx, uint ridx) const;
+    virtual double _getTetReacH(tetrahedron_id_t tidx, uint ridx) const;
+    virtual double _getTetReacC(tetrahedron_id_t tidx, uint ridx) const;
+    virtual double _getTetReacA(tetrahedron_id_t tidx, uint ridx) const;
 
-    virtual double _getTetDiffA(uint tidx, uint didx) const;
+    virtual double _getTetDiffA(tetrahedron_id_t tidx, uint didx) const;
 
     ////////////////////////// ADDED FOR EFIELD ////////////////////////////
 
-    virtual double _getTetV(uint tidx) const;
-    virtual void _setTetV(uint tidx, double v);
-    virtual bool _getTetVClamped(uint tidx) const;
-    virtual void _setTetVClamped(uint tidx, bool cl);
+    virtual double _getTetV(tetrahedron_id_t tidx) const;
+    virtual void _setTetV(tetrahedron_id_t tidx, double v);
+    virtual bool _getTetVClamped(tetrahedron_id_t tidx) const;
+    virtual void _setTetVClamped(tetrahedron_id_t tidx, bool cl);
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROL:
@@ -1275,7 +1286,7 @@ protected:
     virtual double _getPatchSReacC(uint pidx, uint ridx) const;
     virtual double _getPatchSReacA(uint pidx, uint ridx) const;
 
-    virtual uint _getPatchSReacExtent(uint pidx, uint ridx) const;
+    virtual unsigned long long _getPatchSReacExtent(uint pidx, uint ridx) const;
     virtual void _resetPatchSReacExtent(uint pidx, uint ridx);
 
     ////////////////////////////////////////////////////////////////////////
@@ -1301,54 +1312,54 @@ protected:
     //      TRIANGULAR SURFACE ELEMENTS
     ////////////////////////////////////////////////////////////////////////
 
-    virtual double _getTriArea(uint tidx) const;
-    virtual void _setTriArea(uint tidx, double area);
+    virtual double _getTriArea(triangle_id_t tidx) const;
+    virtual void _setTriArea(triangle_id_t tidx, double area);
 
-    virtual bool _getTriSpecDefined(uint tidx, uint sidx) const;
+    virtual bool _getTriSpecDefined(triangle_id_t tidx, uint sidx) const;
 
-    virtual double _getTriCount(uint tidx, uint sidx) const;
-    virtual void _setTriCount(uint tidx, uint sidx, double n);
+    virtual double _getTriCount(triangle_id_t tidx, uint sidx) const;
+    virtual void _setTriCount(triangle_id_t tidx, uint sidx, double n);
 
-    virtual double _getTriAmount(uint tidx, uint sidx) const;
-    virtual void _setTriAmount(uint tidx, uint sidx, double m);
+    virtual double _getTriAmount(triangle_id_t tidx, uint sidx) const;
+    virtual void _setTriAmount(triangle_id_t tidx, uint sidx, double m);
 
-    virtual bool _getTriClamped(uint tidx, uint sidx) const;
-    virtual void _setTriClamped(uint tidx, uint sidx, bool buf);
+    virtual bool _getTriClamped(triangle_id_t tidx, uint sidx) const;
+    virtual void _setTriClamped(triangle_id_t tidx, uint sidx, bool buf);
 
-    virtual double _getTriSReacK(uint tidx, uint ridx) const;
-    virtual void _setTriSReacK(uint tidx, uint ridx, double kf);
+    virtual double _getTriSReacK(triangle_id_t tidx, uint ridx) const;
+    virtual void _setTriSReacK(triangle_id_t tidx, uint ridx, double kf);
 
-    virtual double _getTriSDiffD(uint tidx, uint didx, uint direction_tri = std::numeric_limits<uint>::max()) const;
+    virtual double _getTriSDiffD(triangle_id_t tidx, uint didx, triangle_id_t direction_tri) const;
     
-    virtual void _setTriSDiffD(uint tidx, uint didx, double dk, uint direction_tri = std::numeric_limits<uint>::max());
+    virtual void _setTriSDiffD(triangle_id_t , uint , double , triangle_id_t);
     
-    virtual bool _getTriSReacActive(uint tidx, uint ridx) const;
-    virtual void _setTriSReacActive(uint tidx, uint ridx, bool act);
+    virtual bool _getTriSReacActive(triangle_id_t tidx, uint ridx) const;
+    virtual void _setTriSReacActive(triangle_id_t tidx, uint ridx, bool act);
 
     ////////////////////////////////////////////////////////////////////////
 
-    virtual double _getTriSReacH(uint tidx, uint ridx) const;
-    virtual double _getTriSReacC(uint tidx, uint ridx) const;
-    virtual double _getTriSReacA(uint tidx, uint ridx) const;
+    virtual double _getTriSReacH(triangle_id_t tidx, uint ridx) const;
+    virtual double _getTriSReacC(triangle_id_t tidx, uint ridx) const;
+    virtual double _getTriSReacA(triangle_id_t tidx, uint ridx) const;
 
     ////////////////////////// ADDED FOR EFIELD ////////////////////////////
 
-    virtual double _getTriV(uint tidx) const;
-    virtual void _setTriV(uint tidx, double v);
-    virtual bool _getTriVClamped(uint tidx) const;
-    virtual void _setTriVClamped(uint tidx, bool cl);
-    virtual double _getTriOhmicI(uint tidx);
-    virtual double _getTriOhmicI(uint tidx, uint ocidx);
-    virtual double _getTriI(uint tidx) const;
-    virtual void _setTriIClamp(uint tidx, double i);
+    virtual double _getTriV(triangle_id_t tidx) const;
+    virtual void _setTriV(triangle_id_t tidx, double v);
+    virtual bool _getTriVClamped(triangle_id_t tidx) const;
+    virtual void _setTriVClamped(triangle_id_t tidx, bool cl);
+    virtual double _getTriOhmicI(triangle_id_t tidx);
+    virtual double _getTriOhmicI(triangle_id_t tidx, uint ocidx);
+    virtual double _getTriI(triangle_id_t tidx) const;
+    virtual void _setTriIClamp(triangle_id_t tidx, double i);
 
-    virtual double _getTriGHKI(uint tidx);
-    virtual double _getTriGHKI(uint tidx, uint ocidx);
+    virtual double _getTriGHKI(triangle_id_t tidx);
+    virtual double _getTriGHKI(triangle_id_t tidx, uint ocidx);
 
-    virtual bool _getTriVDepSReacActive(uint tidx, uint vsridx) const;
-    virtual void _setTriVDepSReacActive(uint tidx, uint vsridx, bool act);
+    virtual bool _getTriVDepSReacActive(triangle_id_t tidx, uint vsridx) const;
+    virtual void _setTriVDepSReacActive(triangle_id_t tidx, uint vsridx, bool act);
 
-    virtual void _setTriCapac(uint tidx, double cm);
+    virtual void _setTriCapac(triangle_id_t tidx, double cm);
 
 
     ////////////////////////////////////////////////////////////////////////
@@ -1356,41 +1367,47 @@ protected:
     //      VERTICES ELEMENTS
     ////////////////////////////////////////////////////////////////////////
 
-    virtual double _getVertV(uint vidx) const;
-    virtual void _setVertV(uint vidx, double v);
-    virtual bool _getVertVClamped(uint vidx) const;
-    virtual void _setVertVClamped(uint vidx, bool cl);
-    virtual void _setVertIClamp(uint vidx, double i);
+    virtual double _getVertV(vertex_id_t vidx) const;
+    virtual void _setVertV(vertex_id_t vidx, double v);
+    virtual bool _getVertVClamped(vertex_id_t vidx) const;
+    virtual void _setVertVClamped(vertex_id_t vidx, bool cl);
+    virtual void _setVertIClamp(vertex_id_t vidx, double i);
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROL:
     //      MEMBRANES
     ////////////////////////////////////////////////////////////////////////
 
-    virtual void _setMembPotential(uint midx, double v);
+    virtual void _setMembPotential(uint  midx, double v);
     virtual void _setMembCapac(uint midx, double cm);
     virtual void _setMembVolRes(uint midx, double ro);
     virtual void _setMembRes(uint midx, double ro, double vrev);
 
     ////////////////////////////////////////////////////////////////////////
 
+public:
     /// Return a reference of the Model object.
-    steps::model::Model * model() const
+    inline steps::model::Model * model() const noexcept
     { return pModel; }
 
     /// Return a reference of the Geom object.
-    steps::wm::Geom * geom() const
+    inline steps::wm::Geom * geom() const noexcept
     { return pGeom; }
 
     /// Return a reference of the RNG object
-    steps::rng::RNG * rng() const
+    inline const steps::rng::RNGptr& rng() const noexcept
     { return pRNG; }
 
     /// Return a reference of the Statedef object.
-    steps::solver::Statedef * statedef() const
-    { return pStatedef; }
+    inline const steps::solver::Statedef& statedef() const noexcept
+    { return *pStatedef; }
 
-    ////////////////////////////////////////////////////////////////////////
+    /// Return a reference of the Statedef object.
+    inline steps::solver::Statedef& statedef() noexcept
+    { return *pStatedef; }
+
+
+  ////////////////////////////////////////////////////////////////////////
 
 private:
 
@@ -1400,7 +1417,7 @@ private:
 
     steps::wm::Geom *                   pGeom;
 
-    steps::rng::RNG *                   pRNG;
+    const steps::rng::RNGptr            pRNG;
 
     Statedef *                          pStatedef;
 
@@ -1410,8 +1427,8 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-}
-}
+} // namespace solver
+} // namespace steps
 
 #endif
 // STEPS_SOLVER_API_HPP

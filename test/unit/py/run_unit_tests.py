@@ -1,6 +1,6 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # STEPS - STochastic Engine for Pathway Simulation
-# Copyright (C) 2007-2014 Okinawa Institute of Science and Technology, Japan.
+# Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 # Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #
 # See the file AUTHORS for details.
@@ -22,17 +22,28 @@
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-import unittest2
+import sys
+
 import nose
+import unittest2
+
 import model_test
 import directional_dcst_test
 import sdiff_bugfix_test
+import getROIArea_bugfix_test
 import multi_sys_test
+import gmsh_multitag_test
 
 def suite():
-    all_tests = [ model_test.suite(), directional_dcst_test.suite(), sdiff_bugfix_test.suite(),multi_sys_test.suite() ]
+    all_tests = [
+        model_test.suite(), directional_dcst_test.suite(), sdiff_bugfix_test.suite(),
+        getROIArea_bugfix_test.suite(), multi_sys_test.suite(), 
+        gmsh_multitag_test.suite()
+    ]
     return unittest2.TestSuite(all_tests)
 
 if __name__ == "__main__":
-    unittest2.TextTestRunner(verbosity=2, buffer=True).run(suite())
+    result = unittest2.TextTestRunner(verbosity=2, buffer=True).run(suite())
+    if not result.wasSuccessful():
+        sys.exit(1)
     nose.run(argv=['test.py', '-v', '-w', 'distribution_test', '--all-modules'])

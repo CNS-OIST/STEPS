@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -92,8 +92,8 @@ public:
     /// \param rhs Vector of pointers to the species on the right hand side of the reaction.
     /// \param kcst Rate constant for the reaction.
     Reac(std::string const & id, Volsys * volsys,
-         std::vector<Spec *> const & lhs = std::vector<Spec *>(),
-         std::vector<Spec *> const & rhs = std::vector<Spec *>(),
+         std::vector<Spec *> const & lhs = {},
+         std::vector<Spec *> const & rhs = {},
          double kcst = 0.0);
 
     /// Destructor
@@ -106,7 +106,7 @@ public:
     /// Return the reaction rule ID.
     ///
     /// \return ID of the reaction.
-    std::string getID() const
+    inline std::string getID() const noexcept
     { return pID; }
 
     /// Set or change the reaction rule ID.
@@ -117,13 +117,13 @@ public:
     /// Return a pointer to the parent volume system.
     ///
     /// \return Pointer to the volume system.
-    Volsys * getVolsys() const
+    inline Volsys * getVolsys() const noexcept
     { return pVolsys; }
 
     /// Return a pointer to the parent model.
     ///
     /// \return Pointer to the parent Model.
-    Model * getModel() const
+    inline Model * getModel() const noexcept
     { return pModel; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -143,7 +143,7 @@ public:
     /// Get the species on the right hand side of the reaction.
     ///
     ///    \return Vector of pointers to the right hand side species.
-    const std::vector<Spec *> & getRHS() const
+    inline const std::vector<Spec *> & getRHS() const noexcept
     { return pRHS; }
 
     /// Set or reset the species on the right hand side of the reaction.
@@ -162,13 +162,13 @@ public:
     /// Return the order of the reaction.
     ///
     /// \return The order of the reaction.
-    uint getOrder() const
+    inline uint getOrder() const noexcept
     { return pOrder; }
 
     /// Return the rate constant of the reaction.
     ///
     /// \return The rate constant of the reaction.
-    double getKcst() const
+    inline double getKcst() const noexcept
     { return pKcst; }
 
     /// Set or reset the rate constant of the reaction.

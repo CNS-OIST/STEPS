@@ -73,7 +73,7 @@ class TetDirectionalDcstTestCase(unittest2.TestCase):
     
     def testTetZeroDirectionDiffRate(self):
         print("Testing tet zero directional diffusion rate from v1 to v2...")
-        for tri in self.pairing.keys():
+        for tri in self.pairing:
             self.solver.setTetDiffD(self.pairing[tri][0], "D_a", 0, self.pairing[tri][1])
             self.assertEqual(self.solver.getTetDiffD(self.pairing[tri][0], "D_a", self.pairing[tri][1]), 0)
             self.solver.setTetCount(self.pairing[tri][0], "A", 10)
@@ -85,7 +85,7 @@ class TetDirectionalDcstTestCase(unittest2.TestCase):
 
     def testTetNonZeroDirectionDiffRate(self):
         print("Testing tet non-zero directional diffusion rate from v1 to v2...")
-        for tri in self.pairing.keys():
+        for tri in self.pairing:
             self.solver.setTetDiffD(self.pairing[tri][0], "D_a", self.DCST / 10, self.pairing[tri][1])
             self.assertEqual(self.solver.getTetDiffD(self.pairing[tri][0], "D_a", self.pairing[tri][1]), self.DCST / 10)
             self.solver.setTetCount(self.pairing[tri][0], "A", 10)
@@ -97,7 +97,7 @@ class TetDirectionalDcstTestCase(unittest2.TestCase):
 
     def testTetDirectionalDcstCheckpoint(self):
         print("Testing checkpoint for tet directional dcst...")
-        for tri in self.pairing.keys():
+        for tri in self.pairing:
             self.solver.setTetDiffD(self.pairing[tri][0], "D_a", self.DCST / 10, self.pairing[tri][1])
             self.assertEqual(self.solver.getTetDiffD(self.pairing[tri][0], "D_a", self.pairing[tri][1]), self.DCST / 10)
             self.solver.setTetCount(self.pairing[tri][0], "A", 10)
@@ -117,7 +117,7 @@ class TetDirectionalDcstTestCase(unittest2.TestCase):
 
     def testTetNonDirectionDiffRate(self):
         print("Testing tet non directional diffusion rate...")
-        for tri in self.pairing.keys():
+        for tri in self.pairing:
             self.solver.setTetDiffD(self.pairing[tri][0], "D_a", self.DCST)
             self.assertEqual(self.solver.getTetDiffD(self.pairing[tri][0], "D_a"), self.DCST)
             self.solver.setTetCount(self.pairing[tri][0], "A", 10)
@@ -126,6 +126,16 @@ class TetDirectionalDcstTestCase(unittest2.TestCase):
         self.solver.run(1)
         print("V1 Count: ", self.solver.getROICount("v1_tets", "A"))
         print("V2 Count: ", self.solver.getROICount("v2_tets", "A"))
+
+    def testSetTetROICounts(self):
+        print("Test set counts in tetrahedra ROIs...")
+        for tri in self.pairing:
+            self.solver.setTetCount(self.pairing[tri][0], "A", 10)
+        print("Initial v1 Count: ", self.solver.getROICount("v1_tets", "A"))
+        self.assertGreater(self.solver.getROICount("v1_tets", "A"), 0)
+        self.solver.setROICount("v1_tets", "A", 20)
+        print("V1 Count after setting: ", self.solver.getROICount("v1_tets", "A"))
+        self.assertEqual(self.solver.getROICount("v1_tets", "A"), 20)
 
 class TriDirectionalDcstTestCase(unittest2.TestCase):
     """ Tests for triangular directional dcst. """
@@ -213,6 +223,15 @@ class TriDirectionalDcstTestCase(unittest2.TestCase):
         self.solver.run(1)
         print("Patch Count: ", self.solver.getPatchCount("patch", "A"))
         print("tri Count: ", self.solver.getTriCount(self.focus_tri, "A"))
+
+    def testSetTriROICounts(self):
+        print("Test set counts in triangle ROIs...")
+        self.solver.setTriCount(self.focus_tri, "A", 10)
+        print("Initial tri Count: ", self.solver.getROICount("focus_tri", "A"))
+        self.assertEqual(self.solver.getROICount("focus_tri", "A"), 10)
+        self.solver.setROICount("focus_tri", "A", 20)
+        print("Tri Count after setting: ", self.solver.getROICount("focus_tri", "A"))
+        self.assertEqual(self.solver.getROICount("focus_tri", "A"), 20)
 
 class DiffBndDirectionalDcstTestCase(unittest2.TestCase):
     """ Tests for directional dcst in diffusion boundary. """

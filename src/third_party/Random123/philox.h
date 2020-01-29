@@ -66,9 +66,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #define _mulhilo_dword_tpl(W, Word, Dword)                              \
 R123_CUDA_DEVICE R123_STATIC_INLINE Word mulhilo##W(Word a, Word b, Word* hip){ \
-    Dword product = ((Dword)a)*((Dword)b);                              \
+    Dword product = (static_cast<Dword>(a))*(static_cast<Dword>(b));                              \
     *hip = product>>W;                                                  \
-    return (Word)product;                                               \
+    return static_cast<Word>(product);                                               \
 }
 
 /*
@@ -226,14 +226,14 @@ _mulhilo_fail_tpl(64, uint64_t)
 #endif
 
 #ifndef PHILOX_M2x32_0
-#define PHILOX_M2x32_0 ((uint32_t)0xd256d193)
+#define PHILOX_M2x32_0 (0xd256d193u)
 #endif
 
 #ifndef PHILOX_M4x32_0
-#define PHILOX_M4x32_0 ((uint32_t)0xD2511F53)
+#define PHILOX_M4x32_0 (0xD2511F53u)
 #endif
 #ifndef PHILOX_M4x32_1
-#define PHILOX_M4x32_1 ((uint32_t)0xCD9E8D57)
+#define PHILOX_M4x32_1 (0xCD9E8D57u)
 #endif
 
 #ifndef PHILOX_W64_0
@@ -244,10 +244,10 @@ _mulhilo_fail_tpl(64, uint64_t)
 #endif
 
 #ifndef PHILOX_W32_0
-#define PHILOX_W32_0 ((uint32_t)0x9E3779B9)
+#define PHILOX_W32_0 (0x9E3779B9u)
 #endif
 #ifndef PHILOX_W32_1
-#define PHILOX_W32_1 ((uint32_t)0xBB67AE85)
+#define PHILOX_W32_1 (0xBB67AE85u)
 #endif
 
 #ifndef PHILOX2x32_DEFAULT_ROUNDS

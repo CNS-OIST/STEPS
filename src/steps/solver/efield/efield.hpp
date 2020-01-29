@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -33,6 +33,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <steps/geom/fwd.hpp>
 
 // STEPS headers.
 #include "steps/common.h"
@@ -88,11 +89,11 @@ public:
     /// \param tets  A 1D array of ntets * 4 uints in row-major order. These
     ///         indices point into the vertex array.
     ///
-    void initMesh(uint nverts, double * verts,
-                  uint ntris, uint * tris,
-                  uint ntets, uint * tets,
+    void initMesh(uint nverts, double *verts,
+                  uint ntris, vertex_id_t *tris,
+                  uint ntets, vertex_id_t *tets,
                   uint opt_method = 1,
-                  std::string const & opt_file_name = "",
+                  std::string const &opt_file_name = "",
                   double search_percent = 100.0);
 
     /// Destructor
@@ -136,64 +137,64 @@ public:
     /// Return the electric potential of a vertex (volts)
     /// \param vidx Index of the vertex
     /// \return Electric potential of the vertex (volts)
-    double  getVertV(uint vidx);
+    double  getVertV(vertex_id_t vidx);
 
     /// Set the electric potential of a vertex (volts)
     /// \param vidx Index of the vertex
     /// \param v Electric potential (volts)
-    void    setVertV(uint vidx, double v);
+    void    setVertV(vertex_id_t vidx, double v);
 
     /// Return whether the electric potential of a vertex is clamped.
     /// \param vidx Index of the vertex
     /// \Return True if electric potential is clamped, False otherwise
-    bool    getVertVClamped(uint vidx);
+    bool    getVertVClamped(vertex_id_t vidx);
 
     /// Set whether the electric potential of a vertex is clamped or not.
     /// \param vidx Index of the vertex
     /// \param cl Clamped (true) or unclamped (false)
-    void    setVertVClamped(uint vidx, bool cl);
+    void    setVertVClamped(vertex_id_t vidx, bool cl);
 
     /// Set the current clamp for a vertex  eleemnt.
     /// \param vidx Index of the vertex
     /// \param cur Current clamp for the vertex
-    void     setVertIClamp(uint vidx, double cur);
+    void     setVertIClamp(vertex_id_t vidx, double cur);
 
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the electric potential of a triangle surface element (volts)
     /// \param tidx Index of the triangle surface element
     /// \return Electric potential of the triangle surface element (volts)
-    double  getTriV(uint tidx);
+    double  getTriV(triangle_id_t tidx);
 
     /// Set the electric potential of a triangle surface element (volts)
     /// \param tidx Index of the triangle surface element
     /// \param v Electric potential (volts)
-    void     setTriV(uint tidx, double v);
+    void     setTriV(triangle_id_t tidx, double v);
 
     /// Return whether the electric potential of a triangle surface element is clamped or not.
     /// \param tidx Index of the triangle surface element
     /// \return True if electric potential clamped, False otherwise
-    bool    getTriVClamped(uint tidx);
+    bool    getTriVClamped(triangle_id_t tidx);
 
     /// Set whether the electric potential of a triangle surface element is clamped or not.
     /// \param tidx Index of the triangle
     /// \param cl Clamped (true) or unclamped (false)
-    void    setTriVClamped(uint tidx, bool cl);
+    void    setTriVClamped(triangle_id_t tidx, bool cl);
 
     /// Return the total current across a triangle surface element.
     /// \param tidx Index of the triangle surface element
     /// \return Current across the triangle (amps)
-    double  getTriI(uint tidx);
+    double  getTriI(triangle_id_t tidx);
 
     /// Set the current across a triangle surface element.
     /// \param tidx Index of the triangle surface element
     /// \param cur Current across the triangle (amps)
-    void    setTriI(uint tidx, double cur);
+    void    setTriI(triangle_id_t tidx, double cur);
 
     /// Set the current clamp for a triangle surface eleemnt.
     /// \param tidx Index of the triangle surface element
     /// \param cur Current clamp for the triangle surface element
-    void     setTriIClamp(uint tidx, double cur);
+    void     setTriIClamp(triangle_id_t tidx, double cur);
 
     /// Auxiliary function for setting current in all triangles at once.
     /// \param cur A 1D array, size = number of surface triangles,
@@ -203,29 +204,29 @@ public:
     /// Set the specific capacitance of a triangle surface element.
     /// \param tidx Index of the triangle surface element
     /// \param cm Specific membrane capacitance (farad / m^2)
-    void setTriCapac(uint tidx, double cm);
+    void setTriCapac(triangle_id_t tidx, double cm);
 
     ////////////////////////////////////////////////////////////////////////
 
     /// Return electric potential for internal tetrahedral elements (volts).
     /// \param tidx Index of the tetrahedron
     /// \return Electric potential of tetrahedron (volts)
-    double    getTetV(uint);
+    double    getTetV(tetrahedron_id_t tidx);
 
     /// Set the electric potential of a tetrahedral element (volts)
     /// \param tidx Index of the tetrahedral element
     /// \param v Electric potential (volts)
-    void     setTetV(uint tidx, double v);
+    void     setTetV(tetrahedron_id_t tidx, double v);
 
     /// Return whether the electric potential of a tetrahedral element is clamped or not.
     /// \param tidx Index of the tetrahedral element
     /// \return True if electric potential clamped, False otherwise
-    bool    getTetVClamped(uint tidx);
+    bool    getTetVClamped(tetrahedron_id_t tidx);
 
     /// Set whether the electric potential of a tetrahedral element is clamped or not.
     /// \param tidx Index of the tetrahedral element
     /// \param cl Clamped (true) or unclamped (false)
-    void    setTetVClamped(uint tidx, bool cl);
+    void    setTetVClamped(tetrahedron_id_t tidx, bool cl);
 
 
     ////////////////////////////////////////////////////////////////////////
@@ -240,15 +241,15 @@ public:
 
 private:
 
-    TetMesh                      *pMesh;
+    TetMesh                      *pMesh{nullptr};
     std::unique_ptr<EFieldSolver> pVProp;
-    std::vector<uint>             pCPerm;
+    std::vector<vertex_id_t>             pCPerm;
 
-    uint                          pNVerts;
-    uint                          pNTris;
-    uint                          pNTets;
+    index_t          pNVerts{0};
+    index_t        pNTris{0};
+    index_t pNTets{0};
 
-    std::vector<uint>             pTritoVert;
+    std::vector<vertex_id_t>             pTritoVert;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

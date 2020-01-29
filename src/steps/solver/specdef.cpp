@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -58,8 +58,8 @@ ssolver::Specdef::Specdef(Statedef * sd, uint idx, steps::model::Spec * s)
 , pName()
 , pSetupdone(false)
 {
-    AssertLog(pStatedef != 0);
-    AssertLog(s != 0);
+    AssertLog(pStatedef != nullptr);
+    AssertLog(s != nullptr);
     pName = s->getID();
 
 }
@@ -71,14 +71,14 @@ ssolver::Specdef::~Specdef()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Specdef::checkpoint(std::fstream & cp_file)
+void ssolver::Specdef::checkpoint(std::fstream & /*cp_file*/)
 {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Specdef::restore(std::fstream & cp_file)
+void ssolver::Specdef::restore(std::fstream & /*cp_file*/)
 {
     // reserve
 }
@@ -94,7 +94,7 @@ std::string const ssolver::Specdef::name() const
 
 void ssolver::Specdef::setup()
 {
-
+  pSetupdone = true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

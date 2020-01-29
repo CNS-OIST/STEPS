@@ -85,14 +85,14 @@ int CVBBDPrecInit(void *cvode_mem, int Nlocal,
     CVProcessError(NULL, CVSPILS_MEM_NULL, "CVBBDPRE", "CVBBDPrecInit", MSGBBD_MEM_NULL);
     return(CVSPILS_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   /* Test if one of the SPILS linear solvers has been attached */
   if (cv_mem->cv_lmem == NULL) {
     CVProcessError(cv_mem, CVSPILS_LMEM_NULL, "CVBBDPRE", "CVBBDPrecInit", MSGBBD_LMEM_NULL);
     return(CVSPILS_LMEM_NULL);
   }
-  cvspils_mem = (CVSpilsMem) cv_mem->cv_lmem;
+  cvspils_mem = static_cast<CVSpilsMem> (cv_mem->cv_lmem);
 
   /* Test if the NVECTOR package is compatible with the BLOCK BAND preconditioner */
   if(vec_tmpl->ops->nvgetarraypointer == NULL) {
@@ -102,7 +102,7 @@ int CVBBDPrecInit(void *cvode_mem, int Nlocal,
 
   /* Allocate data memory */
   pdata = NULL;
-  pdata = (CVBBDPrecData) malloc(sizeof *pdata);  
+  pdata = static_cast<CVBBDPrecData> (malloc(sizeof *pdata));
   if (pdata == NULL) {
     CVProcessError(cv_mem, CVSPILS_MEM_FAIL, "CVBBDPRE", "CVBBDPrecInit", MSGBBD_MEM_FAIL);
     return(CVSPILS_MEM_FAIL);
@@ -185,21 +185,21 @@ int CVBBDPrecReInit(void *cvode_mem,
     CVProcessError(NULL, CVSPILS_MEM_NULL, "CVBBDPRE", "CVBBDPrecReInit", MSGBBD_MEM_NULL);
     return(CVSPILS_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   /* Test if one of the SPILS linear solvers has been attached */
   if (cv_mem->cv_lmem == NULL) {
     CVProcessError(cv_mem, CVSPILS_LMEM_NULL, "CVBBDPRE", "CVBBDPrecReInit", MSGBBD_LMEM_NULL);
     return(CVSPILS_LMEM_NULL);
   }
-  cvspils_mem = (CVSpilsMem) cv_mem->cv_lmem;
+  cvspils_mem = static_cast<CVSpilsMem> (cv_mem->cv_lmem);
 
   /* Test if the preconditioner data is non-NULL */
   if (cvspils_mem->s_P_data == NULL) {
     CVProcessError(cv_mem, CVSPILS_PMEM_NULL, "CVBBDPRE", "CVBBDPrecReInit", MSGBBD_PMEM_NULL);
     return(CVSPILS_PMEM_NULL);
   } 
-  pdata = (CVBBDPrecData) cvspils_mem->s_P_data;
+  pdata = static_cast<CVBBDPrecData> (cvspils_mem->s_P_data);
 
   /* Load half-bandwidths */
   Nlocal = pdata->n_local;
@@ -225,19 +225,19 @@ int CVBBDPrecGetWorkSpace(void *cvode_mem, long int *lenrwBBDP, long int *leniwB
     CVProcessError(NULL, CVSPILS_MEM_NULL, "CVBBDPRE", "CVBBDPrecGetWorkSpace", MSGBBD_MEM_NULL);
     return(CVSPILS_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if (cv_mem->cv_lmem == NULL) {
     CVProcessError(cv_mem, CVSPILS_LMEM_NULL, "CVBBDPRE", "CVBBDPrecGetWorkSpace", MSGBBD_LMEM_NULL);
     return(CVSPILS_LMEM_NULL);
   }
-  cvspils_mem = (CVSpilsMem) cv_mem->cv_lmem;
+  cvspils_mem = static_cast<CVSpilsMem> (cv_mem->cv_lmem);
 
   if (cvspils_mem->s_P_data == NULL) {
     CVProcessError(cv_mem, CVSPILS_PMEM_NULL, "CVBBDPRE", "CVBBDPrecGetWorkSpace", MSGBBD_PMEM_NULL);
     return(CVSPILS_PMEM_NULL);
   } 
-  pdata = (CVBBDPrecData) cvspils_mem->s_P_data;
+  pdata = static_cast<CVBBDPrecData> (cvspils_mem->s_P_data);
 
   *lenrwBBDP = pdata->rpwsize;
   *leniwBBDP = pdata->ipwsize;
@@ -255,19 +255,19 @@ int CVBBDPrecGetNumGfnEvals(void *cvode_mem, long int *ngevalsBBDP)
     CVProcessError(NULL, CVSPILS_MEM_NULL, "CVBBDPRE", "CVBBDPrecGetNumGfnEvals", MSGBBD_MEM_NULL);
     return(CVSPILS_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if (cv_mem->cv_lmem == NULL) {
     CVProcessError(cv_mem, CVSPILS_LMEM_NULL, "CVBBDPRE", "CVBBDPrecGetNumGfnEvals", MSGBBD_LMEM_NULL);
     return(CVSPILS_LMEM_NULL);
   }
-  cvspils_mem = (CVSpilsMem) cv_mem->cv_lmem;
+  cvspils_mem = static_cast<CVSpilsMem> (cv_mem->cv_lmem);
 
   if (cvspils_mem->s_P_data == NULL) {
     CVProcessError(cv_mem, CVSPILS_PMEM_NULL, "CVBBDPRE", "CVBBDPrecGetNumGfnEvals", MSGBBD_PMEM_NULL);
     return(CVSPILS_PMEM_NULL);
   } 
-  pdata = (CVBBDPrecData) cvspils_mem->s_P_data;
+  pdata = static_cast<CVBBDPrecData> (cvspils_mem->s_P_data);
 
   *ngevalsBBDP = pdata->nge;
 
@@ -342,7 +342,7 @@ int CVBBDPrecGetNumGfnEvals(void *cvode_mem, long int *ngevalsBBDP)
  * -----------------------------------------------------------------
  */
 
-static int CVBBDPrecSetup(realtype t, N_Vector y, N_Vector fy, 
+static int CVBBDPrecSetup(realtype t, N_Vector y, N_Vector /*fy*/,
                           booleantype jok, booleantype *jcurPtr, 
                           realtype gamma, void *bbd_data, 
                           N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
@@ -352,9 +352,9 @@ static int CVBBDPrecSetup(realtype t, N_Vector y, N_Vector fy,
   CVodeMem cv_mem;
   int retval;
 
-  pdata = (CVBBDPrecData) bbd_data;
+  pdata = static_cast<CVBBDPrecData> (bbd_data);
 
-  cv_mem = (CVodeMem) pdata->cvode_mem;
+  cv_mem = static_cast<CVodeMem> (pdata->cvode_mem);
 
   if (jok) {
 
@@ -415,15 +415,15 @@ static int CVBBDPrecSetup(realtype t, N_Vector y, N_Vector fy,
  * -----------------------------------------------------------------
  */
 
-static int CVBBDPrecSolve(realtype t, N_Vector y, N_Vector fy, 
+static int CVBBDPrecSolve(realtype /*t*/, N_Vector /*y*/, N_Vector /*fy*/,
                           N_Vector r, N_Vector z, 
-                          realtype gamma, realtype delta,
-                          int lr, void *bbd_data, N_Vector tmp)
+                          realtype /*gamma*/, realtype /*delta*/,
+                          int /*lr*/, void *bbd_data, N_Vector /*tmp*/)
 {
   CVBBDPrecData pdata;
   realtype *zd;
 
-  pdata = (CVBBDPrecData) bbd_data;
+  pdata = static_cast<CVBBDPrecData> (bbd_data);
 
   /* Copy r to z, then do backsolve and return */
   N_VScale(ONE, r, z);
@@ -442,10 +442,10 @@ static void CVBBDPrecFree(CVodeMem cv_mem)
   CVBBDPrecData pdata;
   
   if (cv_mem->cv_lmem == NULL) return;
-  cvspils_mem = (CVSpilsMem) cv_mem->cv_lmem;
+  cvspils_mem = static_cast<CVSpilsMem> (cv_mem->cv_lmem);
   
   if (cvspils_mem->s_P_data == NULL) return;
-  pdata = (CVBBDPrecData) cvspils_mem->s_P_data;
+  pdata = static_cast<CVBBDPrecData> (cvspils_mem->s_P_data);
 
   DestroyMat(savedJ);
   DestroyMat(savedP);
@@ -487,7 +487,7 @@ static int CVBBDDQJac(CVBBDPrecData pdata, realtype t,
   realtype *y_data, *ewt_data, *gy_data, *gtemp_data, *ytemp_data, *col_j;
   int retval;
 
-  cv_mem = (CVodeMem) pdata->cvode_mem;
+  cv_mem = static_cast<CVodeMem> (pdata->cvode_mem);
 
   /* Load ytemp with y = predicted solution vector */
   N_VScale(ONE, y, ytemp);

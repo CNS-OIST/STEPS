@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -97,7 +97,7 @@ public:
     /// Return the ohmic current ID.
     ///
     /// \return ID of the ohmic current.
-    std::string getID() const
+    inline std::string getID() const noexcept
     { return pID; }
 
     /// Set or change the ohmic current ID.
@@ -108,19 +108,19 @@ public:
     /// Return a pointer to the parent surface system.
     ///
     /// \return Pointer to the surface system.
-    Surfsys * getSurfsys() const
+    inline Surfsys * getSurfsys() const noexcept
     { return pSurfsys; }
 
     /// Return a pointer to the parent model.
     ///
     /// \return Pointer to the parent model.
-    Model * getModel() const
+    inline Model * getModel() const noexcept
     { return pModel; }
 
     /// Return a pointer to the associated channel state.
     ///
     /// \return Pointer to the channel state.
-    ChanState * getChanState() const
+    inline ChanState * getChanState() const noexcept
     { return pChanState; }
 
     /// Change the channel state.
@@ -131,7 +131,7 @@ public:
     /// Return the reversal potential (in volts).
     ///
     /// \return Reversal potential of the ohmic current.
-    double getERev() const
+    inline double getERev() const noexcept
     { return pERev; }
 
     /// Change the reversal potential.
@@ -142,7 +142,7 @@ public:
     /// Return the channel conductance (in siemens).
     ///
     /// \return Channel conductance associated with ohmic current.
-    double getG() const
+    inline double getG() const noexcept
     { return pG; }
 
     /// Change the channel conductance.

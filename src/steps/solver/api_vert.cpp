@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -44,7 +44,7 @@ using namespace steps::solver;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getVertV(uint vidx) const
+double API::getVertV(vertex_id_t vidx) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -67,7 +67,7 @@ double API::getVertV(uint vidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setVertV(uint vidx, double v)
+void API::setVertV(vertex_id_t vidx, double v)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -90,7 +90,7 @@ void API::setVertV(uint vidx, double v)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getVertVClamped(uint vidx) const
+bool API::getVertVClamped(vertex_id_t vidx) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -100,7 +100,7 @@ bool API::getVertVClamped(uint vidx) const
             os << "Vertex index out of range.";
             ArgErrLog(os.str());
         }
-        _getVertVClamped(vidx);
+        return _getVertVClamped(vidx);
     }
 
     else
@@ -113,7 +113,7 @@ bool API::getVertVClamped(uint vidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setVertVClamped(uint vidx, bool cl)
+void API::setVertVClamped(vertex_id_t vidx, bool cl)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -136,7 +136,7 @@ void API::setVertVClamped(uint vidx, bool cl)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setVertIClamp(uint vidx, double i)
+void API::setVertIClamp(vertex_id_t vidx, double i)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -159,35 +159,35 @@ void API::setVertIClamp(uint vidx, double i)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getVertV(uint vidx) const
+double API::_getVertV(vertex_id_t /*vidx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setVertV(uint vidx, double v)
+void API::_setVertV(vertex_id_t /*vidx*/, double /*v*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getVertVClamped(uint vidx) const
+bool API::_getVertVClamped(vertex_id_t /*vidx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setVertVClamped(uint vidx, bool cl)
+void API::_setVertVClamped(vertex_id_t /*vidx*/, bool /*cl*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setVertIClamp(uint vidx, double i)
+void API::_setVertIClamp(vertex_id_t /*vidx*/, double /*i*/)
 {
     NotImplErrLog("");
 }

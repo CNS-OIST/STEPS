@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -90,13 +90,9 @@ smtos::SReac::SReac(ssolver::SReacdef * srdef, smtos::Tri * tri)
 : 
  pSReacdef(srdef)
 , pTri(tri)
-, localUpdVec()
-, remoteUpdVec()
-, pCcst(0.0)
-, pKcst(0.0)
 {
-    AssertLog(pSReacdef != 0);
-    AssertLog(pTri != 0);
+    AssertLog(pSReacdef != nullptr);
+    AssertLog(pTri != nullptr);
     
     type = KP_SREAC;
     
@@ -107,14 +103,14 @@ smtos::SReac::SReac(ssolver::SReacdef * srdef, smtos::Tri * tri)
     if (pSReacdef->surf_surf() == false)
     {
         double vol;
-        if (pSReacdef->inside() == true)
+        if (pSReacdef->inside())
         {
-            AssertLog(pTri->iTet() != 0);
+            AssertLog(pTri->iTet() != nullptr);
             vol = pTri->iTet()->vol();
         }
         else
         {
-            AssertLog(pTri->oTet() != 0);
+            AssertLog(pTri->oTet() != nullptr);
             vol = pTri->oTet()->vol();
         }
 
@@ -132,23 +128,18 @@ smtos::SReac::SReac(ssolver::SReacdef * srdef, smtos::Tri * tri)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::SReac::~SReac()
-= default;
-
-////////////////////////////////////////////////////////////////////////////////
-
 void smtos::SReac::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&rExtent, sizeof(uint));
-    cp_file.write((char*)&pFlags, sizeof(uint));
+    cp_file.write(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.write(reinterpret_cast<char*>(&pFlags), sizeof(uint));
 
-    cp_file.write((char*)&pCcst, sizeof(double));
-    cp_file.write((char*)&pKcst, sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pCcst), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pKcst), sizeof(double));
 
-    cp_file.write((char*)&(crData.recorded), sizeof(bool));
-    cp_file.write((char*)&(crData.pow), sizeof(int));
-    cp_file.write((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.write((char*)&(crData.rate), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.write(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.write(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.write(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 
 }
 
@@ -156,16 +147,16 @@ void smtos::SReac::checkpoint(std::fstream & cp_file)
 
 void smtos::SReac::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&rExtent, sizeof(uint));
-    cp_file.read((char*)&pFlags, sizeof(uint));
+    cp_file.read(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.read(reinterpret_cast<char*>(&pFlags), sizeof(uint));
 
-    cp_file.read((char*)&pCcst, sizeof(double));
-    cp_file.read((char*)&pKcst, sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pCcst), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pKcst), sizeof(double));
 
-    cp_file.read((char*)&(crData.recorded), sizeof(bool));
-    cp_file.read((char*)&(crData.pow), sizeof(int));
-    cp_file.read((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.read((char*)&(crData.rate), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.read(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.read(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.read(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -193,14 +184,14 @@ void smtos::SReac::resetCcst()
     if (pSReacdef->surf_surf() == false)
     {
         double vol;
-        if (pSReacdef->inside() == true)
+        if (pSReacdef->inside())
         {
-            AssertLog(pTri->iTet() != 0);
+            AssertLog(pTri->iTet() != nullptr);
             vol = pTri->iTet()->vol();
         }
         else
         {
-            AssertLog(pTri->oTet() != 0);
+            AssertLog(pTri->oTet() != nullptr);
             vol = pTri->oTet()->vol();
         }
 
@@ -226,14 +217,14 @@ void smtos::SReac::setKcst(double k)
     if (pSReacdef->surf_surf() == false)
     {
         double vol;
-        if (pSReacdef->inside() == true)
+        if (pSReacdef->inside())
         {
-            AssertLog(pTri->iTet() != 0);
+            AssertLog(pTri->iTet() != nullptr);
             vol = pTri->iTet()->vol();
         }
         else
         {
-            AssertLog(pTri->oTet() != 0);
+            AssertLog(pTri->oTet() != nullptr);
             vol = pTri->oTet()->vol();
         }
 
@@ -275,23 +266,14 @@ void smtos::SReac::setupDeps()
     WmVol * itet = pTri->iTet();
     WmVol * otet = pTri->oTet();
 
-    ssolver::gidxTVecCI s_beg = pSReacdef->beginUpdColl_S();
-    ssolver::gidxTVecCI s_end = pSReacdef->endUpdColl_S();
-    ssolver::gidxTVecCI i_beg = pSReacdef->beginUpdColl_I();
-    ssolver::gidxTVecCI i_end = pSReacdef->endUpdColl_I();
-    ssolver::gidxTVecCI o_beg = pSReacdef->beginUpdColl_O();
-    ssolver::gidxTVecCI o_end = pSReacdef->endUpdColl_O();
-
     std::set<smtos::KProc*> updset;
     uint nkprocs = pTri->countKProcs();
-    uint startKProcIdx = pTri->getStartKProcIdx();
-    
+
     // check if sk KProc in pTri depends on spec in pTri
     for (uint sk = 0; sk < nkprocs; sk++)
     {
-        for (ssolver::gidxTVecCI spec = s_beg; spec != s_end; ++spec)
-        {
-            if (pTri->KProcDepSpecTri(sk, pTri, *spec) == true) {
+        for (auto const& spec : pSReacdef->updColl_S()) {
+            if (pTri->KProcDepSpecTri(sk, pTri, spec)) {
                 updset.insert(pTri->getKProc(sk));
             }
         }
@@ -306,36 +288,29 @@ void smtos::SReac::setupDeps()
         }
         
         nkprocs = itet->countKProcs();
-        startKProcIdx = itet->getStartKProcIdx();
         for (uint k = 0; k < nkprocs; k++)
         {
-            for (ssolver::gidxTVecCI spec = i_beg; spec != i_end; ++spec)
-            {
-                if (itet->KProcDepSpecTet(k, itet, *spec) == true) {
+            for (auto const& spec : pSReacdef->updColl_I()) {
+                if (itet->KProcDepSpecTet(k, itet, spec)) {
                     updset.insert(itet->getKProc(k));
                     
                 }
             }
         }
 
-        std::vector<smtos::Tri *>::const_iterator tri_end = itet->nexttriEnd();
-        for (std::vector<smtos::Tri *>::const_iterator tri = itet->nexttriBegin();
-                 tri != tri_end; ++tri)
-        {
-            if ((*tri) == 0) continue;
-            if ((*tri)->getHost() != itet->getHost()) {
+        for (auto const& tri : itet->nexttris()) {
+            if (tri == nullptr) continue;
+            if (tri->getHost() != itet->getHost()) {
                 std::ostringstream os;
-                os << "Patch triangle " << (*tri)->idx() << " and its compartment tetrahedron " << itet->idx()  << " belong to different hosts.\n";
+                os << "Patch triangle " << tri->idx() << " and its compartment tetrahedron " << itet->idx()  << " belong to different hosts.\n";
                 NotImplErrLog(os.str());
             }
-            nkprocs = (*tri)->countKProcs();
-            startKProcIdx = (*tri)->getStartKProcIdx();
+            nkprocs = tri->countKProcs();
             for (uint sk = 0; sk < nkprocs; sk++)
             {
-                for (ssolver::gidxTVecCI spec = i_beg; spec != i_end; ++spec)
-                {
-                    if ((*tri)->KProcDepSpecTet(sk, itet, *spec) == true) {
-                        updset.insert((*tri)->getKProc(sk));
+                for (auto const& spec : pSReacdef->updColl_I()) {
+                    if (tri->KProcDepSpecTet(sk, itet, spec)) {
+                        updset.insert(tri->getKProc(sk));
                     }
 
                 }
@@ -353,39 +328,29 @@ void smtos::SReac::setupDeps()
         
         // check if sk KProc in pTri depends on spec in otet
         nkprocs = otet->countKProcs();
-        startKProcIdx = otet->getStartKProcIdx();
         for (uint k = 0; k < nkprocs; k++)
         {
-            for (ssolver::gidxTVecCI spec = o_beg; spec != o_end; ++spec)
-            {
-                if (otet->KProcDepSpecTet(k, otet, *spec) == true) {
+            for (auto const& spec : pSReacdef->updColl_O()) {
+                if (otet->KProcDepSpecTet(k, otet, spec)) {
                     updset.insert(otet->getKProc(k));
                 }
             }
         }
 
-
-
-        std::vector<smtos::Tri *>::const_iterator tri_end = otet->nexttriEnd();
-        for (std::vector<smtos::Tri *>::const_iterator tri = otet->nexttriBegin();
-                 tri != tri_end; ++tri)
-        {
-            if ((*tri) == 0) continue;
-            if ((*tri)->getHost() != otet->getHost()) {
+        for (auto const& tri : otet->nexttris()) {
+            if (tri == nullptr) continue;
+            if (tri->getHost() != otet->getHost()) {
                 std::ostringstream os;
-                os << "Patch triangle " << (*tri)->idx() << " and its compartment tetrahedron " << otet->idx()  << " belong to different hosts.\n";
+                os << "Patch triangle " << tri->idx() << " and its compartment tetrahedron " << otet->idx()  << " belong to different hosts.\n";
                 NotImplErrLog(os.str());
             }
-            nkprocs = (*tri)->countKProcs();
-            startKProcIdx = (*tri)->getStartKProcIdx();
+            nkprocs = tri->countKProcs();
             for (uint sk = 0; sk < nkprocs; sk++)
             {
-                for (ssolver::gidxTVecCI spec = o_beg; spec != o_end; ++spec)
-                {
-                    if ((*tri)->KProcDepSpecTet(sk, otet, *spec) == true) {
-                        updset.insert((*tri)->getKProc(sk));
+                for (auto const& spec : pSReacdef->updColl_O()) {
+                    if (tri->KProcDepSpecTet(sk, otet, spec)) {
+                        updset.insert(tri->getKProc(sk));
                     }
-                    
                 }
             }
         }
@@ -426,7 +391,7 @@ bool smtos::SReac::depSpecTri(uint gidx, smtos::Tri * triangle)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-double smtos::SReac::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
+double smtos::SReac::rate(steps::mpi::tetopsplit::TetOpSplitP * /*solver*/)
 {
        if (inactive()) return 0.0;
 
@@ -475,8 +440,7 @@ double smtos::SReac::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
                 }
                 default:
                 {
-                    AssertLog(0);
-                    return 0.0;
+                    AssertLog(false);
                 }
             }
         }
@@ -517,8 +481,7 @@ double smtos::SReac::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
                     }
                     default:
                     {
-                        AssertLog(0);
-                        return 0.0;
+                        AssertLog(false);
                     }
                 }
             }
@@ -559,8 +522,7 @@ double smtos::SReac::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
                     }
                     default:
                     {
-                        AssertLog(0);
-                        return 0.0;
+                        AssertLog(false);
                     }
                 }
             }
@@ -571,7 +533,7 @@ double smtos::SReac::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::SReac::apply(steps::rng::RNG * rng, double dt, double simtime, double period)
+void smtos::SReac::apply(const rng::RNGptr &/*rng*/, double dt, double simtime, double period)
 {
     ssolver::Patchdef * pdef = pTri->patchdef();
     uint lidx = pdef->sreacG2L(pSReacdef->gidx());
@@ -590,9 +552,8 @@ void smtos::SReac::apply(steps::rng::RNG * rng, double dt, double simtime, doubl
 	{
 		// Patchdef returns local index
 		uint cs_lidx = pdef->ohmiccurr_chanstate(oc);
-		if (pTri->clamped(cs_lidx) == true) { continue;
+		if (pTri->clamped(cs_lidx)) { continue;
 }
-		int upd = upd_s_vec[cs_lidx];
 		// Now here a channel state related to an ohmic current has changed
 		// it's number: tell the triangle
 		// Not sure what to do for this in operator-split
@@ -602,7 +563,7 @@ void smtos::SReac::apply(steps::rng::RNG * rng, double dt, double simtime, doubl
     uint nspecs_s = pdef->countSpecs();
     for (uint s = 0; s < nspecs_s; ++s)
     {
-        if (pTri->clamped(s) == true) { continue;
+        if (pTri->clamped(s)) { continue;
 }
         int upd = upd_s_vec[s];
         int nc = static_cast<int>(cnt_s_vec[s]) + upd;
@@ -619,7 +580,7 @@ void smtos::SReac::apply(steps::rng::RNG * rng, double dt, double simtime, doubl
         uint nspecs_i = pdef->countSpecs_I();
         for (uint s = 0; s < nspecs_i; ++s)
         {
-            if (itet->clamped(s) == true) { continue;
+            if (itet->clamped(s)) { continue;
 }
             int upd = upd_i_vec[s];
             int nc = static_cast<int>(cnt_i_vec[s]) + upd;
@@ -637,7 +598,7 @@ void smtos::SReac::apply(steps::rng::RNG * rng, double dt, double simtime, doubl
         uint nspecs_o = pdef->countSpecs_O();
         for (uint s = 0; s < nspecs_o; ++s)
         {
-            if (otet->clamped(s) == true) { continue;
+            if (otet->clamped(s)) { continue;
 }
             int upd = upd_o_vec[s];
             int nc = static_cast<int>(cnt_o_vec[s]) + upd;
@@ -651,14 +612,14 @@ void smtos::SReac::apply(steps::rng::RNG * rng, double dt, double simtime, doubl
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<uint> const & smtos::SReac::getRemoteUpdVec(int direction)
+std::vector<uint> const & smtos::SReac::getRemoteUpdVec(int /*direction*/) const
 {
     return remoteUpdVec;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<smtos::KProc*> const & smtos::SReac::getLocalUpdVec(int direction)
+std::vector<smtos::KProc*> const & smtos::SReac::getLocalUpdVec(int /*direction*/) const
 {
     return localUpdVec;
 }

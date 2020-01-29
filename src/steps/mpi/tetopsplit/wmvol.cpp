@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -61,20 +61,16 @@ namespace ssolver = steps::solver;
 ////////////////////////////////////////////////////////////////////////////////
 
 smtos::WmVol::WmVol
-(
-    uint idx, solver::Compdef * cdef, double vol, int rank, int host_rank
-)
+  (
+    tetrahedron_id_t idx, solver::Compdef *cdef, double vol, int rank, int host_rank
+  )
 : pIdx(idx)
 , pCompdef(cdef)
 , pVol(vol)
-, pPoolCount(nullptr)
-, pPoolFlags(nullptr)
-, pKProcs()
-, pNextTris()
 , myRank(rank)
 , hostRank(host_rank)
 {
-    AssertLog(pCompdef != 0);
+    AssertLog(pCompdef != nullptr);
     AssertLog(pVol > 0.0);
 
     // Based on compartment definition, build other structures.
@@ -104,8 +100,8 @@ smtos::WmVol::~WmVol()
 void smtos::WmVol::checkpoint(std::fstream & cp_file)
 {
     uint nspecs = compdef()->countSpecs();
-    cp_file.write((char*)pPoolCount, sizeof(uint) * nspecs);
-    cp_file.write((char*)pPoolFlags, sizeof(uint) * nspecs);
+    cp_file.write(reinterpret_cast<char*>(pPoolCount), sizeof(uint) * nspecs);
+    cp_file.write(reinterpret_cast<char*>(pPoolFlags), sizeof(uint) * nspecs);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -113,15 +109,14 @@ void smtos::WmVol::checkpoint(std::fstream & cp_file)
 void smtos::WmVol::restore(std::fstream & cp_file)
 {
     uint nspecs = compdef()->countSpecs();
-    cp_file.read((char*)pPoolCount, sizeof(uint) * nspecs);
-    cp_file.read((char*)pPoolFlags, sizeof(uint) * nspecs);
+    cp_file.read(reinterpret_cast<char*>(pPoolCount), sizeof(uint) * nspecs);
+    cp_file.read(reinterpret_cast<char*>(pPoolFlags), sizeof(uint) * nspecs);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void smtos::WmVol::setNextTri(smtos::Tri * t)
 {
-    uint index = pNextTris.size();
     pNextTris.push_back(t);
 }
 
@@ -151,7 +146,7 @@ void smtos::WmVol::setupKProcs(smtos::TetOpSplitP * tex)
         
         for (uint i = 0; i < nKProcs; ++i)
         {
-            uint idx = tex->addKProc(NULL);
+            tex->addKProc(nullptr);
         }
     }
 }
@@ -162,7 +157,7 @@ void smtos::WmVol::setupDeps()
 {
     if (myRank != hostRank) { return;
 }
-    for (auto kp : pKProcs) {
+    for (auto& kp : pKProcs) {
         kp->setupDeps();
     }
 }
@@ -180,7 +175,7 @@ bool smtos::WmVol::KProcDepSpecTet(uint kp_lidx, smtos::WmVol* kp_container,  ui
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool smtos::WmVol::KProcDepSpecTri(uint kp_lidx, smtos::Tri* kp_container, uint spec_gidx)
+bool smtos::WmVol::KProcDepSpecTri(uint /*kp_lidx*/, smtos::Tri* /*kp_container*/, uint /*spec_gidx*/)
 {
     // Reac never depends on species on triangle
     return false;
@@ -208,7 +203,7 @@ double smtos::WmVol::conc(uint gidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::WmVol::setCount(uint lidx, uint count, double period)
+void smtos::WmVol::setCount(uint lidx, uint count, double /*period*/)
 {
     AssertLog(lidx < compdef()->countSpecs());
     pPoolCount[lidx] = count;
@@ -217,7 +212,7 @@ void smtos::WmVol::setCount(uint lidx, uint count, double period)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::WmVol::incCount(uint lidx, int inc, double period, bool local_change)
+void smtos::WmVol::incCount(uint lidx, int inc, double /*period*/, bool local_change)
 {
     AssertLog(lidx < compdef()->countSpecs());
     
@@ -242,7 +237,7 @@ void smtos::WmVol::incCount(uint lidx, int inc, double period, bool local_change
 
 void smtos::WmVol::setClamped(uint lidx, bool clamp)
 {
-    if (clamp == true) { pPoolFlags[lidx] |= CLAMPED;
+    if (clamp) { pPoolFlags[lidx] |= CLAMPED;
     } else { pPoolFlags[lidx] &= ~CLAMPED;
 }
 }
@@ -256,9 +251,9 @@ smtos::Reac * smtos::WmVol::reac(uint lidx) const
 }
 ////////////////////////////////////////////////////////////////////////////////
 // MPISTEPS
-bool smtos::WmVol::getInHost()
+bool smtos::WmVol::getInHost() const
 {
-    return (hostRank == myRank);
+    return hostRank == myRank;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -277,21 +272,21 @@ void smtos::WmVol::setSolver(steps::mpi::tetopsplit::TetOpSplitP* solver)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::TetOpSplitP* smtos::WmVol::solver()
+smtos::TetOpSplitP* smtos::WmVol::solver() const
 {
     return pSol;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::WmVol::getPoolOccupancy(uint lidx)
+double smtos::WmVol::getPoolOccupancy(uint /*lidx*/) const
 {
     AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::WmVol::getLastUpdate(uint lidx)
+double smtos::WmVol::getLastUpdate(uint /*lidx*/) const
 {
     AssertLog(false);
 }

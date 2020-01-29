@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -61,16 +61,16 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     Reac(steps::solver::Reacdef * rdef, Comp * comp);
-    ~Reac();
+    ~Reac() override;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream & cp_file) override;
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream & cp_file) override;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
@@ -80,36 +80,36 @@ public:
 
     bool active() const;
 
-    bool inactive() const
-    { return (! active()); }
+    inline bool inactive() const
+    { return ! active(); }
 
 
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    void setupDeps();
-    bool depSpecComp(uint gidx, Comp * comp);
-    bool depSpecPatch(uint gidx, Patch * patch);
-    void reset();
-    double rate() const;
-    std::vector<uint> const & apply();
+    void setupDeps() override;
+    bool depSpecComp(uint gidx, Comp * comp) override;
+    bool depSpecPatch(uint gidx, Patch * patch) override;
+    void reset() override;
+    double rate() const override;
+    std::vector<uint> const & apply() override;
 
-    uint updVecSize() const
+    uint updVecSize() const noexcept  override
     { return pUpdVec.size(); }
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Reacdef * defr() const
+    inline steps::solver::Reacdef * defr() const noexcept override
     { return pReacdef; }
 
-    void resetCcst();
+    void resetCcst() override;
 
-    double c() const
+    inline double c() const noexcept override
     { return pCcst; }
 
-    double h() const
-    { return (rate()/pCcst); }
+    inline double h() const noexcept override
+    { return rate() / pCcst; }
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -121,7 +121,7 @@ private:
     Comp                              * pComp;
     std::vector<uint>                   pUpdVec;
     /// Properly scaled reaction constant.
-    double                              pCcst;
+    double                              pCcst{0.0};
 
     ////////////////////////////////////////////////////////////////////////
 

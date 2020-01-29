@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -25,6 +25,9 @@ from __future__ import print_function
 
 from numpy import *
 import math
+
+from steps.geom import UNKNOWN_TET
+from steps.geom import INDEX_DTYPE
 
 ################################################################################
 
@@ -91,7 +94,7 @@ def linearPartition(mesh, partition_info):
     dy = (bmax[1]-bmin[1])/partition_info[1]
     dz = (bmax[2]-bmin[2])/partition_info[2]
     
-    part=zeros(mesh.ntets, dtype='int')    
+    part=zeros(mesh.ntets, dtype=INDEX_DTYPE)    
     
     for tet in range(mesh.ntets):
         idx=0
@@ -140,13 +143,13 @@ def partitionTris(mesh, tet_partitions, tri_list):
     tri_partitions = {}
     for tri in tri_list:
         neigh_tets = mesh.getTriTetNeighb(tri)
-        if neigh_tets[0] == -1 and neigh_tets[0] == -1:
+        if neigh_tets[0] == UNKNOWN_TET and neigh_tets[0] == UNKNOWN_TET:
             print("Triangle ", tri, " has no attatched tetrahedron, which is unlikely. Please check your mesh.\n")
             continue
-        if neigh_tets[0] == -1:
+        if neigh_tets[0] == UNKNOWN_TET:
             tri_partitions[tri] = tet_partitions[neigh_tets[1]]
             continue
-        if neigh_tets[1] == -1:
+        if neigh_tets[1] == UNKNOWN_TET:
             tri_partitions[tri] = tet_partitions[neigh_tets[0]]
             continue
         if tet_partitions[neigh_tets[0]] == tet_partitions[neigh_tets[1]]:
@@ -159,7 +162,7 @@ def partitionTris(mesh, tet_partitions, tri_list):
     for tri in tri_list:
         neigh_tets = mesh.getTriTetNeighb(tri)
         for neigh_tet in neigh_tets:
-            if neigh_tet == -1: continue
+            if neigh_tet == UNKNOWN_TET: continue
             if tet_partitions[neigh_tet] != tri_partitions[tri]:
                 raise Exception("Patch triangle %i and its compartment tet are assigned to different processes." % (tri))
 
@@ -236,7 +239,7 @@ def validatePartition(mesh, tet_partitions, tri_partitions = {}):
             neighb_tets = mesh.getTetTetNeighb(tet)
             neighb_in_part = False
             for n_tet in neighb_tets:
-                if n_tet == -1: continue
+                if n_tet == UNKNOWN_TET: continue
                 if n_tet in part:
                     neighb_in_part = True
                     break
@@ -246,7 +249,7 @@ def validatePartition(mesh, tet_partitions, tri_partitions = {}):
     for tri in tri_partitions:
         neigh_tets = mesh.getTriTetNeighb(tri)
         for neigh_tet in neigh_tets:
-            if neigh_tet == -1: continue
+            if neigh_tet == UNKNOWN_TET: continue
             if tet_partitions[neigh_tet] != tri_partitions[tri]:
                 raise Exception("Patch triangle %i and its compartment tet are assigned to different processes." % (tri))
     print("Validation completed.")
@@ -339,7 +342,7 @@ def printPartitionStat(tet_partitions = [], tri_partitions = {}, wmvol_partition
                 partition_neighbors[tet_part] = set()
             neighbor_tets = mesh.getTetTetNeighb(tet)
             for neighb in neighbor_tets:
-                if neighb == -1: continue
+                if neighb == UNKNOWN_TET: continue
                 neighb_tet_part = tet_partitions[neighb]
                 if neighb_tet_part != tet_part:
                     partition_neighbors[tet_part].add(neighb_tet_part)

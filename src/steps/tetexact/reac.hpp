@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -68,45 +68,45 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     Reac(steps::solver::Reacdef * rdef, steps::tetexact::WmVol * tet);
-    ~Reac();
+    ~Reac() override;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream & cp_file) override;
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream & cp_file) override;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    double c() const
+    double c() const override
     { return pCcst; }
-    void resetCcst();
+    void _resetCcst();
 
     inline double kcst() const
     { return pKcst; }
     void setKcst(double k);
 
-    double h()
+    double h() override
     { return (rate()/pCcst); }
 
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    void setupDeps();
-    bool depSpecTet(uint gidx, steps::tetexact::WmVol * tet);
-    bool depSpecTri(uint gidx, steps::tetexact::Tri * tri);
-    void reset();
-    double rate(steps::tetexact::Tetexact * solver = 0);
-    std::vector<KProc*> const & apply(steps::rng::RNG * rng, double dt, double simtime);
+    void setupDeps() override;
+    bool depSpecTet(uint gidx, steps::tetexact::WmVol * tet) override;
+    bool depSpecTri(uint gidx, steps::tetexact::Tri * tri) override;
+    void reset() override;
+    double rate(steps::tetexact::Tetexact * solver = nullptr) override;
+    std::vector<KProc*> const & apply(const rng::RNGptr &rng, double dt, double simtime) override;
 
-    uint updVecSize() const
-    { return pUpdVec.size(); }
+    uint updVecSize() const override
+    { return static_cast<uint>(pUpdVec.size()); }
 
     ////////////////////////////////////////////////////////////////////////
 

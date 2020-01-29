@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -84,7 +84,7 @@ SReac::SReac(string const & id, Surfsys * surfsys,
     }
 
     // Can't have species on the lhs in the inner and outer compartment
-    if (olhs.size() != 0 && ilhs.size() != 0)
+    if (!olhs.empty() && !ilhs.empty())
     {
         ostringstream os;
         os << "Volume lhs species must belong to either inner or outer ";
@@ -93,10 +93,10 @@ SReac::SReac(string const & id, Surfsys * surfsys,
     }
 
     pModel = pSurfsys->getModel();
-    AssertLog(pModel != 0);
+    AssertLog(pModel != nullptr);
 
-    if (olhs.size() > 0) setOLHS(olhs);
-    if (ilhs.size() > 0) setILHS(ilhs);
+    if (!olhs.empty()) setOLHS(olhs);
+    if (!ilhs.empty()) setILHS(ilhs);
     setSLHS(slhs);
     setIRHS(irhs);
     setSRHS(srhs);
@@ -135,7 +135,7 @@ void SReac::_handleSelfDelete()
 
 void SReac::setID(string const & id)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
     // it pass by into the Python layer.
@@ -149,20 +149,19 @@ void SReac::setID(string const & id)
 
 void SReac::setOLHS(vector<Spec *> const & olhs)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
 
-    if (pILHS.size() != 0)
+    if (!pILHS.empty())
     {
         ostringstream os;
         os << "\nWARNING: Removing inner compartment species from lhs stoichiometry for SReac " << getID() <<".\n";
     }
     pILHS.clear();
     pOLHS.clear();
-    SpecPVecCI ol_end = olhs.end();
-    for (SpecPVecCI ol = olhs.begin(); ol != ol_end; ++ol)
-    {
-        AssertLog((*ol)->getModel() == pModel);
-        pOLHS.push_back(*ol);
+    pOLHS.reserve(olhs.size());
+    for (auto const& ol: olhs) {
+        AssertLog(ol->getModel() == pModel);
+        pOLHS.push_back(ol);
     }
     pOuter = true;
     pOrder = pOLHS.size() + pSLHS.size();
@@ -172,20 +171,19 @@ void SReac::setOLHS(vector<Spec *> const & olhs)
 
 void SReac::setILHS(vector<Spec *> const & ilhs)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
 
-    if (pOLHS.size() != 0)
+    if (!pOLHS.empty())
     {
         ostringstream os;
         os << "\nWARNING: Removing outer compartment species from lhs stoichiometry for SReac " << getID() <<".\n";
     }
     pOLHS.clear();
     pILHS.clear();
-    SpecPVecCI il_end = ilhs.end();
-    for (SpecPVecCI il = ilhs.begin(); il != il_end; ++il)
-    {
-        AssertLog((*il)->getModel() == pModel);
-        pILHS.push_back(*il);
+    pILHS.reserve(ilhs.size());
+    for (auto const& il: ilhs) {
+        AssertLog(il->getModel() == pModel);
+        pILHS.push_back(il);
     }
     pOuter = false;
     pOrder = pILHS.size() + pSLHS.size();
@@ -195,13 +193,12 @@ void SReac::setILHS(vector<Spec *> const & ilhs)
 
 void SReac::setSLHS(vector<Spec *> const & slhs)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
     pSLHS.clear();
-    SpecPVecCI sl_end = slhs.end();
-    for (SpecPVecCI sl = slhs.begin(); sl != sl_end; ++sl)
-    {
-        AssertLog((*sl)->getModel() == pModel);
-        pSLHS.push_back(*sl);
+    pSLHS.reserve(slhs.size());
+    for (auto const& sl: slhs) {
+        AssertLog(sl->getModel() == pModel);
+        pSLHS.push_back(sl);
     }
 
     if (pOuter) { pOrder = pOLHS.size() + pSLHS.size(); }
@@ -212,13 +209,12 @@ void SReac::setSLHS(vector<Spec *> const & slhs)
 
 void SReac::setIRHS(vector<Spec *> const & irhs)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
     pIRHS.clear();
-    SpecPVecCI ir_end = irhs.end();
-    for (SpecPVecCI ir = irhs.begin(); ir != ir_end; ++ir)
-    {
-        AssertLog((*ir)->getModel() == pModel);
-        pIRHS.push_back(*ir);
+    pIRHS.reserve(irhs.size());
+    for (auto const& ir: irhs) {
+        AssertLog(ir->getModel() == pModel);
+        pIRHS.push_back(ir);
     }
 }
 
@@ -226,13 +222,12 @@ void SReac::setIRHS(vector<Spec *> const & irhs)
 
 void SReac::setSRHS(vector<Spec *> const & srhs)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
     pSRHS.clear();
-    SpecPVecCI sr_end = srhs.end();
-    for (SpecPVecCI sr = srhs.begin(); sr != sr_end; ++sr)
-    {
-        AssertLog((*sr)->getModel() == pModel);
-        pSRHS.push_back(*sr);
+    pSRHS.reserve(srhs.size());
+    for (auto const& sr: srhs) {
+        AssertLog(sr->getModel() == pModel);
+        pSRHS.push_back(sr);
     }
 }
 
@@ -240,13 +235,12 @@ void SReac::setSRHS(vector<Spec *> const & srhs)
 
 void SReac::setORHS(vector<Spec *> const & orhs)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
     pORHS.clear();
-    SpecPVecCI or_end = orhs.end();
-    for (SpecPVecCI ors = orhs.begin(); ors != or_end; ++ors)
-    {
-        AssertLog((*ors)->getModel() == pModel);
-        pORHS.push_back(*ors);
+    pORHS.reserve(orhs.size());
+    for (auto const& ors: orhs) {
+        AssertLog(ors->getModel() == pModel);
+        pORHS.push_back(ors);
     }
 }
 
@@ -254,7 +248,7 @@ void SReac::setORHS(vector<Spec *> const & orhs)
 
 void SReac::setKcst(double kcst)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
     if(kcst < 0.0)
     {
         ostringstream os;
@@ -268,110 +262,92 @@ void SReac::setKcst(double kcst)
 
 vector<Spec *> SReac::getAllSpecs() const
 {
-    SpecPVec specs = SpecPVec();
-    bool first_occ = true;
-    AssertLog(pOLHS.size() == 0 || pILHS.size() == 0);
+    SpecPVec specs;
+    bool first_occ;
+    AssertLog(pOLHS.empty() || pILHS.empty());
 
-    SpecPVec olhs = getOLHS();
-    SpecPVecCI ol_end = olhs.end();
-    for (SpecPVecCI ol = olhs.begin(); ol != ol_end; ++ol)
+    for (auto const& ol: getOLHS())
     {
         first_occ = true;
-        SpecPVecCI s_end = specs.end();
-        for (SpecPVecCI s = specs.begin(); s != s_end; ++s)
+        for (auto const& s: specs)
         {
-            if ((*s) == (*ol))
+            if (s == ol)
             {
                 first_occ = false;
                 break;
             }
         }
-        if (first_occ == true) specs.push_back((*ol));
+        if (first_occ) specs.push_back(ol);
     }
 
-    SpecPVec ilhs = getILHS();
-    SpecPVecCI il_end = ilhs.end();
-    for (SpecPVecCI il = ilhs.begin(); il != il_end; ++il)
+    for (const auto& il: getILHS())
     {
         first_occ = true;
-        SpecPVecCI s_end = specs.end();
-        for (SpecPVecCI s = specs.begin(); s != s_end; ++s)
+        for (auto const& s: specs)
         {
-            if ((*s) == (*il))
+            if (s == il)
             {
                 first_occ = false;
                 break;
             }
         }
-        if (first_occ == true) specs.push_back((*il));
+        if (first_occ) specs.push_back(il);
     }
 
-    SpecPVec slhs = getSLHS();
-    SpecPVecCI sl_end = slhs.end();
-    for (SpecPVecCI sl = slhs.begin(); sl != sl_end; ++sl)
+    for (auto const& sl: getSLHS())
     {
         first_occ = true;
-        SpecPVecCI s_end = specs.end();
-        for (SpecPVecCI s = specs.begin(); s != s_end; ++s)
+        for (auto const& s: specs)
         {
-            if ((*s) == (*sl))
+            if (s == sl)
             {
                 first_occ = false;
                 break;
             }
         }
-        if (first_occ == true) specs.push_back((*sl));
+        if (first_occ) specs.push_back(sl);
     }
 
-    SpecPVec irhs = getIRHS();
-    SpecPVecCI ir_end = irhs.end();
-    for (SpecPVecCI ir = irhs.begin(); ir != ir_end; ++ir)
+    for (auto const& ir: getIRHS())
     {
         first_occ = true;
-        SpecPVecCI s_end = specs.end();
-        for (SpecPVecCI s = specs.begin(); s != s_end; ++s)
+        for (auto const& s: specs)
         {
-            if ((*s) == (*ir))
+            if (s == ir)
             {
                 first_occ = false;
                 break;
             }
         }
-        if (first_occ == true) specs.push_back((*ir));
+        if (first_occ) specs.push_back(ir);
     }
 
-    SpecPVec srhs = getSRHS();
-    SpecPVecCI sr_end = srhs.end();
-    for (SpecPVecCI sr = srhs.begin(); sr != sr_end; ++sr)
+    for (auto const& sr: getSRHS())
     {
         first_occ = true;
-        SpecPVecCI s_end = specs.end();
-        for (SpecPVecCI s = specs.begin(); s != s_end; ++s)
+        for (auto const& s: specs)
         {
-            if ((*s) == (*sr))
+            if (s == sr)
             {
                 first_occ = false;
                 break;
             }
         }
-        if (first_occ == true) specs.push_back((*sr));
+        if (first_occ) specs.push_back(sr);
     }
 
-    SpecPVec orhs = getORHS();
-    SpecPVecCI ors_end = orhs.end();
-    for (SpecPVecCI ors = orhs.begin(); ors != ors_end; ++ors)
+    for (auto const& ors: getORHS())
     {
         first_occ = true;
-        SpecPVecCI s_end = specs.end();
-        for (SpecPVecCI s = specs.begin(); s != s_end; ++s)
+        for (auto const& s: specs)
         {
-            if ((*s) == (*ors))
+            if (s == ors)
             {
                 first_occ = false;
                 break;
             }
         }
-        if (first_occ == true) specs.push_back((*ors));
+        if (first_occ) specs.push_back(ors);
     }
 
     return specs;

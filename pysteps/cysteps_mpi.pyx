@@ -1,3 +1,4 @@
+# cython: language_level=2
 ###___license_placeholder___###
 
 include "cysteps.pyx"
@@ -8,7 +9,7 @@ include "cysteps.pyx"
 cimport steps_mpi
 from steps_mpi cimport TetOpSplitP
 
-def mpiInit():	
+def mpiInit():
     """
     Initialise the MPI solver. NOTE: handled automatically, should not be called by user.
     """
@@ -53,14 +54,14 @@ cdef class _py_TetOpSplitP(_py_API):
         steps.geom.Geom geom
         steps.rng.RNG rng
         list<int> tet_hosts (default=[])
-        dict<int, int> tri_hosts (default={})
+        dict<index_t, int> tri_hosts (default={})
         list<int> wm_hosts (default=[])
         int calcMemPot (default=0)
         
         """
-        cdef std.map[uint, uint] _tri_hosts
+        cdef std.map[steps.triangle_id_t, uint] _tri_hosts
         for key, elem in tri_hosts.items():
-            _tri_hosts[key] = elem
+            _tri_hosts[steps.triangle_id_t(key)] = elem
         # We constructed a map. Now call constructor
         if model == None:
             raise TypeError('The Model object is empty.')
@@ -418,7 +419,7 @@ cdef class _py_TetOpSplitP(_py_API):
             setNSteps(nsteps)
             
         Arguments:
-        int nsteps
+        uint nsteps
 
         Return:
         None
@@ -427,7 +428,7 @@ cdef class _py_TetOpSplitP(_py_API):
         self.ptrx().setNSteps(nsteps)
 
 
-    def getBatchTetCounts(self, std.vector[uint] tets, str s):
+    def getBatchTetCounts(self, std.vector[index_t] tets, str s):
         """
         Get the counts of a species s in a list of tetrahedrons.
 
@@ -436,11 +437,11 @@ cdef class _py_TetOpSplitP(_py_API):
             getBatchTetCounts(tets, s)
 
         Arguments:
-        list<int> tets
+        list<index_t> tets
         string s
 
         Return:
-        list<float>
+        list<double>
 
         """
         if not isinstance(s, bytes):
@@ -448,7 +449,7 @@ cdef class _py_TetOpSplitP(_py_API):
 
         return self.ptrx().getBatchTetCounts(tets, s)
 
-    def getBatchTriCounts(self, std.vector[uint] tris, str s):
+    def getBatchTriCounts(self, std.vector[index_t] tris, str s):
         """
         Get the counts of a species s in a list of triangles.
 
@@ -457,11 +458,11 @@ cdef class _py_TetOpSplitP(_py_API):
             getBatchTriCounts(tris, s)
 
         Arguments:
-        list<int> tris
+        list<index_t> tris
         string s
 
         Return:
-        list<float>
+        list<double>
 
         """
         if not isinstance(s, bytes):
@@ -469,10 +470,55 @@ cdef class _py_TetOpSplitP(_py_API):
 
         return self.ptrx().getBatchTriCounts(tris, s)
 
+    def setBatchTetConcs(self, std.vector[index_t] tets, str s, std.vector[double] concs):
+        """
+        Set the concentration of a species s in a list of tetrahedrons individually.
+
+        Syntax::
+
+            setBatchTetConcs(tets, s, concs)
+
+        Arguments:
+        list<index_t> tets
+        string s
+        list<double> concs
+
+        Return:
+        None
+
+        """
+        t = s
+        if not isinstance(s, bytes):
+            t = s.encode()
+
+        self.ptrx().setBatchTetConcs(tets, t, concs)
+
+    def getBatchTetConcs(self, std.vector[index_t] tets, str s):
+        """
+        Get the individual concentration of a species s in a list of tetrahedrons.
+
+        Syntax::
+
+            getBatchTetConcs(tets, s)
+
+        Arguments:
+        list<index_t> tets
+        string s
+
+        Return:
+        list<double>
+
+        """
+        t = s
+        if not isinstance(s, bytes):
+            t = s.encode()
+
+        return self.ptrx().getBatchTetConcs(tets, t)
+
     # ---------------------------------------------------------------------------------
     # NUMPY section - we accept numpy arrays and generically typed memory-views
     # ---------------------------------------------------------------------------------
-    def getBatchTetCountsNP(self, uint[:] index_array, str s, double[:] counts):
+    def getBatchTetCountsNP(self, index_t[:] index_array, str s, double[:] counts):
         """
         Get the counts of a species s in a list of tetrahedrons.
 
@@ -480,9 +526,9 @@ cdef class _py_TetOpSplitP(_py_API):
             getBatchTetCountsNP(indices, s, counts)
 
         Arguments:
-        numpy.array<uint> indices
+        numpy.array<index_t> indices
         string s
-        numpy.array<float, length = len(indices)>
+        numpy.array<double, length = len(indices)>
 
         Return:
         None
@@ -493,7 +539,7 @@ cdef class _py_TetOpSplitP(_py_API):
 
         self.ptrx().getBatchTetCountsNP(&index_array[0], index_array.shape[0], s, &counts[0], counts.shape[0])
 
-    def getBatchTriCountsNP(self, uint[:] index_array, str s, double[:] counts):
+    def getBatchTriCountsNP(self, index_t[:] index_array, str s, double[:] counts):
         """
         Get the counts of a species s in a list of triangles.
 
@@ -501,9 +547,9 @@ cdef class _py_TetOpSplitP(_py_API):
             getBatchTriCountsNP(indices, s, counts)
 
         Arguments:
-        numpy.array<uint> indices
+        numpy.array<index_t> indices
         string s
-        numpy.array<float, length = len(indices)>
+        numpy.array<double, length = len(indices)>
 
         Return:
             None
@@ -970,7 +1016,7 @@ cdef class _py_TetOpSplitP(_py_API):
         string r
 
         Return:
-        int
+        index_t
 
         """
         return self.ptrx().getROIReacExtent(to_std_string(ROI_id), to_std_string(r))
@@ -1008,7 +1054,7 @@ cdef class _py_TetOpSplitP(_py_API):
         string sr
 
         Return:
-        int
+        index_t
 
         """
         return self.ptrx().getROISReacExtent(to_std_string(ROI_id), to_std_string(sr))
@@ -1046,7 +1092,7 @@ cdef class _py_TetOpSplitP(_py_API):
         string d
 
         Return:
-        int
+        index_t
 
         """
         return self.ptrx().getROIDiffExtent(to_std_string(ROI_id), to_std_string(d))
@@ -1096,30 +1142,15 @@ cdef class _py_TetOpSplitP(_py_API):
         """
         self.ptrx().setDiffApplyThreshold(threshold)
 
-    #def getTetHostRank(self, unsigned int tidx):
-    #    return self.ptrx().getTetHostRank(tidx)
-    #
-    #def getTriHostRank(self, unsigned int tidx):
-    #    return self.ptrx().getTriHostRank(tidx)
-    #
-    #def getWMVolHostRank(self, unsigned int idx):
-    #    return self.ptrx().getWMVolHostRank(idx)
-    #
-    #def addNeighHost(self, int host):
-    #    self.ptrx().addNeighHost(host)
-
-	#def registerRemoteChange(self, steps_mpi.SubVolType svol_type, unsigned int idx, unsigned int slidx, int change):
-	#     self.ptrx().registerRemoteChange(svol_type, idx, slidx, change)
-
     def getReacExtent(self, bool local=False):
         """
         Return the number of reaction events that have happened in the simulation.
         
         if all processes call this function, it will return the accumulated
-        result accross all processes. It can also be called in individual process with
+        result across all processes. It can also be called in individual process with
         the local argument set to true, in which case it returns the local result of this process.
         
-        By default it is called globally and return the accumlated result.
+        By default it is called globally and return the accumulated result.
         
         Syntax::
             
@@ -1129,7 +1160,7 @@ cdef class _py_TetOpSplitP(_py_API):
         bool local (default = False)
         
         Return:
-        float
+        index_t
         """
         return self.ptrx().getReacExtent(local)
 
@@ -1151,7 +1182,7 @@ cdef class _py_TetOpSplitP(_py_API):
         bool local (default = False)
         
         Return:
-        float
+        index_t
         """
         return self.ptrx().getDiffExtent(local)
 

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -105,9 +105,9 @@ S30:
      * JJV unpredictable behavior if U is initially 0.5.
      *  if(u <= 1.0) goto S20;
      */
-    if(u < 1.0) { goto S20;
+    if(u < 1.0f) { goto S20;
 }
-    u -= 1.0;
+    u -= 1.0f;
     if(u > *q1) { goto S60;
 }
     sexpo = a + u;
@@ -156,35 +156,35 @@ long RNG::getPsn(float lambda)
     static long ignpoi, j, k, kflag, l, ll, m;
     static float b1, b2, c, c0, c1, c2, c3, d, del, difmuk, e, fk, fx, fy, g;
     static float omega, p, p0, px, py, q, s, t, u, v, x, xx, pp[35];
-    float mu = 1.0 / lambda;
+    float mu = 1.0f / lambda;
 
     if(mu == muprev) { goto S10;
 }
-    if(mu < 10.0) { goto S120;
+    if(mu < 10.0f) { goto S120;
 }
 
     // CASE A. RECALCULATION OF S,D,LL IF MU HAS CHANGED.
     // JJV changed l in Case A to ll
     muprev = mu;
-    s = sqrt(mu);
-    d = 6.0 * mu * mu;
+    s = std::sqrt(mu);
+    d = 6.0f * mu * mu;
 
     // THE POISSON PROBABILITIES PK EXCEED THE DISCRETE NORMAL
     // PROBABILITIES FK WHENEVER K >= M(MU). LL=IFIX(MU-1.1484)
     // IS AN UPPER BOUND TO M(MU) FOR ALL MU >= 10 .
-    ll = (long)(mu - 1.1484);
+    ll = static_cast<long>(mu - 1.1484f);
 
 S10:
     // STEP N. NORMAL SAMPLE - SNORM(IR) FOR STANDARD NORMAL DEVIATE.
     g = mu + s * getStdNrm();
-    if(g < 0.0) { goto S20;
+    if(g < 0.0f) { goto S20;
 }
-    ignpoi = (long) (g);
+    ignpoi = static_cast<long>(g);
     // STEP I. IMMEDIATE ACCEPTANCE IF IGNPOI IS LARGE ENOUGH.
     if(ignpoi >= ll) { return ignpoi;
 }
     // STEP S. SQUEEZE ACCEPTANCE - SUNIF(IR) FOR (0,1)-SAMPLE U.
-    fk = (float)ignpoi;
+    fk = static_cast<float>(ignpoi);
     difmuk = mu - fk;
     u = getUnfEE();
     if(d * u >= difmuk * difmuk * difmuk) { return ignpoi;
@@ -200,17 +200,17 @@ S20:
     if(mu == muold) { goto S30;
 }
     muold = mu;
-    omega = 0.3989423 / s;
-    b1 = 4.166667e-2 / mu;
-    b2 = 0.3 * b1 * b1;
-    c3 = 0.1428571 * b1 * b2;
-    c2 = b2 - 15.0 * c3;
-    c1 = b1 - 6.0 * b2 + 45.0 * c3;
-    c0 = 1.0 - b1 + 3.0 * b2 - 15.0 * c3;
-    c = 0.1069 / mu;
+    omega = 0.3989423f / s;
+    b1 = 4.166667e-2f / mu;
+    b2 = 0.3f * b1 * b1;
+    c3 = 0.1428571f * b1 * b2;
+    c2 = b2 - 15.0f * c3;
+    c1 = b1 - 6.0f * b2 + 45.0f * c3;
+    c0 = 1.0f - b1 + 3.0f * b2 - 15.0f * c3;
+    c = 0.1069f / mu;
 
 S30:
-    if(g < 0.0) { goto S50;
+    if(g < 0.0f) { goto S50;
 }
     // 'SUBROUTINE' F IS CALLED (KFLAG=0 FOR CORRECT RETURN).
     kflag = 0;
@@ -218,7 +218,9 @@ S30:
 
 S40:
     // STEP Q. QUOTIENT ACCEPTANCE (RARE CASE).
-    if(fy - u * fy <= py * exp(px - fx)) return ignpoi;
+    if (fy - u * fy <= py * std::exp(px - fx)) {
+        return ignpoi;
+    }
 
 S50:
     // STEP E. EXPONENTIAL SAMPLE - SEXPO(IR) FOR STANDARD EXPONENTIAL
@@ -226,12 +228,12 @@ S50:
     // (IF T <= -.6744 THEN PK < FK FOR ALL MU >= 10.)
     e = getStdExp();
     u = getUnfEE();
-    u += (u - 1.0);
-    t = 1.8 + smath::sign(e, u);
-    if(t <= -0.6744) { goto S50;
+    u += (u - 1.0f);
+    t = 1.8f + smath::sign(e, u);
+    if(t <= -0.6744f) { goto S50;
 }
-    ignpoi = (long) (mu + s * t);
-    fk = (float)ignpoi;
+    ignpoi = static_cast<long>(mu + s * t);
+    fk = static_cast<float>(ignpoi);
     difmuk = mu - fk;
     // 'SUBROUTINE' F IS CALLED (KFLAG=1 FOR CORRECT RETURN).
     kflag = 1;
@@ -239,7 +241,7 @@ S50:
 
 S60:
     // STEP H. HAT ACCEPTANCE (E IS REPEATED ON REJECTION).
-    if(c * fabs(u) > py * exp(px + e) - fy * exp(fx + e)) goto S50;
+    if(c * std::fabs(u) > py * std::exp(px + e) - fy * std::exp(fx + e)) goto S50;
     return ignpoi;
 
 S70:
@@ -248,7 +250,7 @@ S70:
     if(ignpoi >= 10) { goto S80;
 }
     px = -mu;
-    py = pow((double)mu, (double)ignpoi) / *(fact + ignpoi);
+    py = std::pow(mu, static_cast<float>(ignpoi)) / *(fact + ignpoi);
     goto S110;
 
 S80:
@@ -256,23 +258,23 @@ S80:
     // A0-A7 FOR ACCURACY WHEN ADVISABLE
     // .8333333E - 1 = 1. / 12.
     // .3989423 = (2 * PI) ** (-.5) */
-    del = 8.333333e-2 / fk;
-    del -= (4.8 * del * del * del);
+    del = 8.333333e-2f / fk;
+    del -= (4.8f * del * del * del);
     v = difmuk / fk;
-    if(fabs(v) <= 0.25) goto S90;
-    px = fk * log(1.0 + v) - difmuk - del;
+    if(std::fabs(v) <= 0.25f) goto S90;
+    px = fk * std::log(1.0f + v) - difmuk - del;
     goto S100;
 
 S90:
     px = fk*v*v*(((((((a7*v+a6)*v+a5)*v+a4)*v+a3)*v+a2)*v+a1)*v+a0)-del;
 
 S100:
-    py = 0.3989423 / sqrt(fk);
+    py = 0.3989423f / std::sqrt(fk);
 
 S110:
-    x = (0.5 - difmuk) / s;
+    x = (0.5f - difmuk) / s;
     xx = x * x;
-    fx = -0.5 * xx;
+    fx = -0.5f * xx;
     fy = omega * (((c3 * xx + c2) * xx + c1) * xx + c0);
     if(kflag <= 0) { goto S40;
 }
@@ -285,7 +287,7 @@ S120:
     if(mu == muold) { goto S130;
 }
     // JJV added argument checker here.
-    if(mu >= 0.0) { goto S125;
+    if(mu >= 0.0f) { goto S125;
 }
     // NO EXIT!
     CLOG(WARNING, "general_log") << "MU < 0 in IGNPOI: MU:" << mu << std::endl;
@@ -294,9 +296,9 @@ S120:
 
 S125:
     muold = mu;
-    m = smath::max(1L, (long)(mu));
+    m = smath::max(1L, static_cast<long>(mu));
     l = 0;
-    p = exp(-mu);
+    p = std::exp(-mu);
     q = p0 = p;
 
 S130:
@@ -311,7 +313,7 @@ S130:
     if(l == 0) { goto S150;
 }
     j = 1;
-    if(u > 0.458) j = smath::min(l,m);
+    if(u > 0.458f) j = smath::min(l,m);
     for(k=j; k<=l; ++k)
     {
         if(u <= *(pp + k - 1)) { goto S180;
@@ -326,7 +328,7 @@ S150:
     l += 1;
     for(k = l; k <= 35; ++k)
     {
-        p = p * mu / (float)k;
+        p = p * mu / static_cast<float>(k);
         q += p;
         *(pp + k - 1) = q;
         if(u <= q) { goto S170;
@@ -406,18 +408,18 @@ float RNG::getStdNrm()
     static float snorm, u, s, ustar, aa, w, y, tt;
     u = getUnfEE();
     s = 0.0;
-    if(u > 0.5) { s = 1.0;
+    if(u > 0.5f) { s = 1.0;
 }
     u += (u - s);
-    u = 32.0 * u;
-    i = (long)(u);
+    u = 32.0f * u;
+    i = static_cast<long>(u);
     if(i == 32) { i = 31;
 }
     if(i == 0) { goto S100;
 }
 
     // START CENTER
-    ustar = u - (float)i;
+    ustar = u - static_cast<float>(i);
     aa = *(a + i - 1);
 
 S40:
@@ -429,7 +431,7 @@ S50:
     // EXIT   (BOTH CASES)
     y = aa + w;
     snorm = y;
-    if(s == 1.0) { snorm = -y;
+    if(s == 1.0f) { snorm = -y;
 }
     return snorm;
 
@@ -437,7 +439,7 @@ S60:
     // CENTER CONTINUED
     u = getUnfEE();
     w = u * (*(a + i) - aa);
-    tt = (0.5 * w + aa) * w;
+    tt = (0.5f * w + aa) * w;
     goto S80;
 
 S70:
@@ -465,13 +467,13 @@ S110:
 
 S120:
     u += u;
-    if(u < 1.0) { goto S110;
+    if(u < 1.0f) { goto S110;
 }
-    u -= 1.0;
+    u -= 1.0f;
 
 S140:
     w = u * *(d + i - 1);
-    tt = (0.5 * w + aa) * w;
+    tt = (0.5f * w + aa) * w;
     goto S160;
 
 S150:
@@ -490,7 +492,7 @@ S160:
 
 double RNG::getExp(double lambda)
 {
-     return (1.0 / lambda) * (double)getStdExp();
+     return (1.0 / lambda) * static_cast<double>(getStdExp());
 }
 
 

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -32,14 +32,14 @@
 #include <cassert>
 #include <vector>
 
+// logging
+#include <easylogging++.h>
+
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/solver/patchdef.hpp"
 #include "steps/solver/types.hpp"
-//#include "../tetode/tetode.hpp"
-// logging
-#include "third_party/easyloggingpp/src/easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
  namespace steps {
@@ -76,9 +76,10 @@ public:
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
-            double l0, double l1, double l2, double d0, double d1, double d2,
-            int tetinner, int tetouter, int tri0, int tri1, int tri2);
+    Tri(triangle_id_t idx, steps::solver::Patchdef *patchdef, double area,
+        double l0, double l1, double l2, double d0, double d1, double d2,
+        tetrahedron_id_t tetinner, tetrahedron_id_t tetouter,
+        triangle_id_t tri0, triangle_id_t tri1, triangle_id_t tri2);
     ~Tri();
 
     ////////////////////////////////////////////////////////////////////////
@@ -109,23 +110,23 @@ public:
     // DATA ACCESS: GENERAL
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Patchdef * patchdef() const
+    inline steps::solver::Patchdef * patchdef() const noexcept
     { return pPatchdef; }
 
-    inline uint idx() const
+    inline triangle_id_t idx() const noexcept
     { return pIdx; }
 
-    inline double area() const
+    inline double area() const noexcept
     { return pArea; }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SHAPE & CONNECTIVITY
     ////////////////////////////////////////////////////////////////////////
 
-    inline stode::Tet * iTet() const
+    inline stode::Tet * iTet() const noexcept
     { return pInnerTet; }
 
-    inline stode::Tet * oTet() const
+    inline stode::Tet * oTet() const noexcept
     { return pOuterTet; }
 
     inline stode::Tri * nextTri(uint i) const
@@ -134,21 +135,21 @@ public:
         return pNextTri[i];
     }
 
-    inline int tri(uint t)
+    inline triangle_id_t tri(uint t) noexcept
     { return pTris[t]; }
 
     /// Get the length of a boundary bar.
     ///
-    inline double length(uint i) const
+    inline double length(uint i) const noexcept
     { return pLengths[i]; }
 
     /// Get the distance to the centroid of the next neighbouring
     /// triangle.
     ///
-    inline double dist(uint i) const
+    inline double dist(uint i) const noexcept
     { return pDist[i]; }
 
-    inline int tet(uint t) const
+    inline tetrahedron_id_t tet(uint t) const noexcept
     { return pTets[t]; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -196,20 +197,20 @@ private:
 
     ////////////////////////////////////////////////////////////////////////
 
-    uint                                 pIdx;
+    triangle_id_t                       pIdx;
 
     steps::solver::Patchdef           * pPatchdef;
 
     /// Pointers to neighbouring tetrahedra.
-    stode::Tet                       * pInnerTet;
-    stode::Tet                       * pOuterTet;
+    stode::Tet                       * pInnerTet{nullptr};
+    stode::Tet                       * pOuterTet{nullptr};
 
     // Indices of two neighbouring tets; -1 if surface triangle (if
     // triangle's patch is on the surface of the mesh, quite often the case)
-    int                                 pTets[2];
+    tetrahedron_id_t                   pTets[2];
 
     // Indices of neighbouring triangles.
-    int                                 pTris[3];
+    triangle_id_t                      pTris[3];
 
     /// POinters to neighbouring triangles
     stode::Tri                        * pNextTri[3];

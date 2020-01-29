@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -35,7 +35,7 @@
 #include "steps/error.hpp"
 
 // logging
-#include "third_party/easyloggingpp/src/easylogging++.h"
+#include <easylogging++.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -49,7 +49,7 @@ struct CRGroup {
         sum = 0.0;
         capacity = init_size;
         size = 0;
-        indices = (KProc**)malloc(sizeof(KProc*) * init_size);
+        indices = static_cast<KProc**>(malloc(sizeof(KProc*) * init_size));
         if (indices == NULL)
             SysErrLog("DirectCR: unable to allocate memory for SSA group.");
 

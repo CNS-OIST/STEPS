@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -56,16 +56,17 @@ ssolver::Diffdef::Diffdef(Statedef * sd, uint idx, steps::model::Diff * d)
 , pSetupdone(false)
 , pSpec_DEP(nullptr)
 {
-    AssertLog(pStatedef != 0);
-    AssertLog(d != 0);
+    AssertLog(pStatedef != nullptr);
+    AssertLog(d != nullptr);
 
     pName = d->getID();
     pDcst = d->getDcst();
     pLig = d->getLig()->getID();
+    ligGIdx = pStatedef->getSpecIdx(pLig);
 
-    uint nspecs = pStatedef->countSpecs();
+    const uint nspecs = pStatedef->countSpecs();
     if (nspecs == 0) { return;
-}
+    }
     pSpec_DEP = new int[nspecs];
     std::fill_n(pSpec_DEP, nspecs, DEP_NONE);
 
@@ -82,14 +83,14 @@ ssolver::Diffdef::~Diffdef()
 
 void ssolver::Diffdef::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&pDcst, sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pDcst), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void ssolver::Diffdef::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&pDcst, sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pDcst), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -106,18 +107,6 @@ void ssolver::Diffdef::setup()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string const ssolver::Diffdef::name() const
-{
-    return pName;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-double ssolver::Diffdef::dcst() const
-{
-    return pDcst;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
 void ssolver::Diffdef::setDcst(double d)
@@ -130,8 +119,8 @@ void ssolver::Diffdef::setDcst(double d)
 
 uint ssolver::Diffdef::lig() const
 {
-    AssertLog(pStatedef != 0);
-    return pStatedef->getSpecIdx(pLig);
+    AssertLog(pStatedef != nullptr);
+    return ligGIdx;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -158,9 +147,7 @@ bool ssolver::Diffdef::reqspec(uint gidx) const
 {
     AssertLog(pSetupdone == true);
     AssertLog(gidx < pStatedef->countSpecs());
-    if (pSpec_DEP[gidx] != DEP_NONE) { return true;
-}
-    return false;
+    return pSpec_DEP[gidx] != DEP_NONE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

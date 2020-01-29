@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -66,32 +66,32 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     VDepTrans(steps::solver::VDepTransdef * vdtdef, steps::tetexact::Tri * tri);
-    ~VDepTrans();
+    ~VDepTrans() override;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream & cp_file) override;
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream & cp_file) override;
 
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    void setupDeps();
-    bool depSpecTet(uint gidx, steps::tetexact::WmVol * tet);
-    bool depSpecTri(uint gidx, steps::tetexact::Tri * tri);
-    void reset();
+    void setupDeps() override;
+    bool depSpecTet(uint gidx, steps::tetexact::WmVol * tet) override;
+    bool depSpecTri(uint gidx, steps::tetexact::Tri * tri) override;
+    void reset() override;
 
-    double rate(steps::tetexact::Tetexact * solver);
+    double rate(steps::tetexact::Tetexact * solver) override;
 
-    std::vector<KProc*> const & apply(steps::rng::RNG * rng, double dt,double simtime);
+    std::vector<KProc*> const & apply(const rng::RNGptr &rng, double dt, double simtime) override;
 
-    uint updVecSize() const
-    { return pUpdVec.size(); }
+    inline uint updVecSize() const override
+    { return static_cast<uint>(pUpdVec.size()); }
 
     ////////////////////////////////////////////////////////////////////////
 

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -72,7 +72,7 @@ public:
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    SDiffBoundary(steps::solver::SDiffBoundarydef * sdbdef);
+    explicit SDiffBoundary(steps::solver::SDiffBoundarydef * sdbdef);
     ~SDiffBoundary();
 
     ////////////////////////////////////////////////////////////////////////
@@ -88,7 +88,7 @@ public:
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::SDiffBoundarydef * def() const
+    inline steps::solver::SDiffBoundarydef * def() const noexcept
     { return pSDiffBoundarydef; }
 
     // We need access to the compartments so as to check if species are defined
@@ -99,12 +99,12 @@ public:
     void setPatches(stex::Patch * patcha, stex::Patch * patchb);
 
 
-    void setTriDirection(uint tri, uint direction);
+    void setTriDirection(triangle_id_t tri, uint direction);
 
-    std::vector<uint> getTris() const
+    const std::vector<triangle_id_t>& getTris() const noexcept
     { return pTris; }
 
-    std::vector<uint> getTriDirection() const
+    const std::vector<uint>& getTriDirection() const noexcept
     { return pTriDirection; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -124,7 +124,7 @@ private:
     stex::Patch                         * pPatchB;
 
     // A big vector of all the tris connected to this diffusion boundary
-    std::vector<uint>                     pTris;
+    std::vector<triangle_id_t>                     pTris;
 
     // Directions have to be stored here - a tri could be connected to 2
     // different diffusion boundaries for example

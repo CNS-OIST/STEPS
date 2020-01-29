@@ -29,6 +29,7 @@
 from __future__ import print_function
 import unittest2
 
+from steps.geom import UNKNOWN_TRI
 import steps.model as smodel
 import steps.geom as sgeom
 import steps.rng as srng
@@ -98,9 +99,9 @@ class SDiffBndSpeciesIDTestCase(unittest2.TestCase):
 
         ctetidx = self.mesh.findTetByPoint([0.0, 0.0, 0.5e-6])
         ctet_trineighbs = self.mesh.getTetTriNeighb(ctetidx)
-        self.ctri_idx=-1
+        self.ctri_idx = UNKNOWN_TRI
         for t in ctet_trineighbs: 
-            if t in patchA_tris+patchB_tris:
+            if t in patchA_tris + patchB_tris:
                 self.ctri_idx = t
 
         self.rng = srng.create('r123', 512)

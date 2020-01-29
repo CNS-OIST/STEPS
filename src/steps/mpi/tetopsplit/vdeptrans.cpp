@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -57,40 +57,35 @@ smtos::VDepTrans::VDepTrans(ssolver::VDepTransdef * vdtdef, smtos::Tri * tri)
 , localUpdVec()
 , remoteUpdVec()
 {
-    AssertLog(pVDepTransdef != 0);
-    AssertLog(pTri != 0);
+    AssertLog(pVDepTransdef != nullptr);
+    AssertLog(pTri != nullptr);
     type = KP_VDEPTRANS;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::VDepTrans::~VDepTrans()
-= default;
-
-////////////////////////////////////////////////////////////////////////////////
-
 void smtos::VDepTrans::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&rExtent, sizeof(uint));
-    cp_file.write((char*)&pFlags, sizeof(uint));
+    cp_file.write(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.write(reinterpret_cast<char*>(&pFlags), sizeof(uint));
 
-    cp_file.write((char*)&(crData.recorded), sizeof(bool));
-    cp_file.write((char*)&(crData.pow), sizeof(int));
-    cp_file.write((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.write((char*)&(crData.rate), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.write(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.write(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.write(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void smtos::VDepTrans::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&rExtent, sizeof(uint));
-    cp_file.read((char*)&pFlags, sizeof(uint));
+    cp_file.read(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.read(reinterpret_cast<char*>(&pFlags), sizeof(uint));
 
-    cp_file.read((char*)&(crData.recorded), sizeof(bool));
-    cp_file.read((char*)&(crData.pow), sizeof(int));
-    cp_file.read((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.read((char*)&(crData.rate), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.read(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.read(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.read(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -112,15 +107,14 @@ void smtos::VDepTrans::setupDeps()
     AssertLog(pTri->getInHost());
     std::set<smtos::KProc*> updset;
 
-    uint nkprocs = pTri->countKProcs();
-    uint startKProcIdx = pTri->getStartKProcIdx();
-    
+    auto nkprocs = pTri->countKProcs();
+
     // check if sk KProc in pTri depends on spec in pTri
     for (uint sk = 0; sk < nkprocs; sk++)
     {
-        if (pTri->KProcDepSpecTri(sk, pTri, pVDepTransdef->srcchanstate()) == true)
+        if (pTri->KProcDepSpecTri(sk, pTri, pVDepTransdef->srcchanstate()))
             updset.insert(pTri->getKProc(sk));
-        if (pTri->KProcDepSpecTri(sk, pTri, pVDepTransdef->dstchanstate()) == true)
+        if (pTri->KProcDepSpecTri(sk, pTri, pVDepTransdef->dstchanstate()))
             updset.insert(pTri->getKProc(sk));
     }
 
@@ -130,7 +124,7 @@ void smtos::VDepTrans::setupDeps()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool smtos::VDepTrans::depSpecTet(uint gidx, smtos::WmVol * tet)
+bool smtos::VDepTrans::depSpecTet(uint /*gidx*/, smtos::WmVol * /*tet*/)
 {
     return false;
 }
@@ -162,8 +156,7 @@ double smtos::VDepTrans::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::VDepTrans::apply(steps::rng::RNG * rng, double dt, double simtime, double period)
-{
+void smtos::VDepTrans::apply(steps::rng::RNG * /*rng*/, double dt, double simtime, double period) {
     ssolver::Patchdef * pdef = pTri->patchdef();
     uint lidx = pdef->vdeptransG2L(pVDepTransdef->gidx());
 
@@ -177,13 +170,13 @@ void smtos::VDepTrans::apply(steps::rng::RNG * rng, double dt, double simtime, d
         uint oc_cs = pdef->ohmiccurr_chanstate(oc);
         if (oc_cs == src)
         {
-            if (pTri->clamped(src) == true) { continue;
+            if (pTri->clamped(src)) { continue;
 }
             pTri->setOCchange(oc, src, dt, simtime);
         }
         else if (oc_cs == dst)
         {
-            if (pTri->clamped(dst) == true) { continue;
+            if (pTri->clamped(dst)) { continue;
 }
             pTri->setOCchange(oc, dst, dt, simtime);
         }
@@ -198,7 +191,6 @@ void smtos::VDepTrans::apply(steps::rng::RNG * rng, double dt, double simtime, d
 	if (pTri->clamped(dst) == false)
 	{
 		uint nc = pTri->pools()[dst];
-		AssertLog(nc >= 0);
 		pTri->setCount(dst,  (nc+1), period);
 	}
 
@@ -207,14 +199,14 @@ void smtos::VDepTrans::apply(steps::rng::RNG * rng, double dt, double simtime, d
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<uint> const & smtos::VDepTrans::getRemoteUpdVec(int direction)
+std::vector<uint> const & smtos::VDepTrans::getRemoteUpdVec(int /*direction*/) const
 {
     return remoteUpdVec;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<smtos::KProc*> const & smtos::VDepTrans::getLocalUpdVec(int direction)
+std::vector<smtos::KProc*> const & smtos::VDepTrans::getLocalUpdVec(int /*direction*/) const
 {
     return localUpdVec;
 }

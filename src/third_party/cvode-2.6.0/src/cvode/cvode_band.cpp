@@ -114,7 +114,7 @@ int CVBand(void *cvode_mem, int N, int mupper, int mlower)
     CVProcessError(NULL, CVDLS_MEM_NULL, "CVBAND", "CVBand", MSGD_CVMEM_NULL);
     return(CVDLS_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem>(cvode_mem);
 
   /* Test if the NVECTOR package is compatible with the BAND solver */
   if (vec_tmpl->ops->nvgetarraypointer == NULL) {
@@ -132,7 +132,7 @@ int CVBand(void *cvode_mem, int N, int mupper, int mlower)
   
   /* Get memory for CVDlsMemRec */
   cvdls_mem = NULL;
-  cvdls_mem = (CVDlsMem) malloc(sizeof(struct CVDlsMemRec));
+  cvdls_mem = static_cast<CVDlsMem>(malloc(sizeof(struct CVDlsMemRec)));
   if (cvdls_mem == NULL) {
     CVProcessError(cv_mem, CVDLS_MEM_FAIL, "CVBAND", "CVBand", MSGD_MEM_FAIL);
     return(CVDLS_MEM_FAIL);
@@ -211,7 +211,7 @@ static int cvBandInit(CVodeMem cv_mem)
 {
   CVDlsMem cvdls_mem;
 
-  cvdls_mem = (CVDlsMem) lmem;
+  cvdls_mem = static_cast<CVDlsMem>(lmem);
 
   nje   = 0;
   nfeDQ  = 0;
@@ -252,7 +252,7 @@ static int cvBandSetup(CVodeMem cv_mem, int convfail, N_Vector ypred,
   CVDlsMem cvdls_mem;
   int retval;
 
-  cvdls_mem = (CVDlsMem) lmem;
+  cvdls_mem = static_cast<CVDlsMem>(lmem);
 
   /* Use nst, gamma/gammap, and convfail to set J eval. flag jok */
 
@@ -316,13 +316,13 @@ static int cvBandSetup(CVodeMem cv_mem, int convfail, N_Vector ypred,
  * -----------------------------------------------------------------
  */
 
-static int cvBandSolve(CVodeMem cv_mem, N_Vector b, N_Vector weight,
-                       N_Vector ycur, N_Vector fcur)
+static int cvBandSolve(CVodeMem cv_mem, N_Vector b, N_Vector /*weight*/,
+                       N_Vector /*ycur*/, N_Vector /*fcur*/)
 {
   CVDlsMem cvdls_mem;
   realtype *bd;
 
-  cvdls_mem = (CVDlsMem) lmem;
+  cvdls_mem = static_cast<CVDlsMem>(lmem);
 
   bd = N_VGetArrayPointer(b);
 
@@ -349,7 +349,7 @@ static void cvBandFree(CVodeMem cv_mem)
 {
   CVDlsMem cvdls_mem;
 
-  cvdls_mem = (CVDlsMem) lmem;
+  cvdls_mem = static_cast<CVDlsMem>(lmem);
 
   DestroyMat(M);
   DestroyMat(savedJ);

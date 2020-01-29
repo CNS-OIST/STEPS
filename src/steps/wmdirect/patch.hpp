@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -96,26 +96,32 @@ public:
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Patchdef * def() const
+    inline steps::solver::Patchdef * def() const noexcept
     { return pPatchdef; }
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline std::vector<steps::wmdirect::KProc *>::const_iterator kprocBegin() const
+    inline std::vector<steps::wmdirect::KProc *>::const_iterator kprocBegin() const noexcept
     { return pKProcs.begin(); }
-    inline std::vector<steps::wmdirect::KProc *>::const_iterator kprocEnd() const
+    inline std::vector<steps::wmdirect::KProc *>::const_iterator kprocEnd() const noexcept
     { return pKProcs.end(); }
-    inline uint countKProcs() const
-    { return pKProcs.size(); }
+    inline uint countKProcs() const noexcept
+    { return static_cast<uint>(pKProcs.size()); }
+    inline const std::vector<steps::wmdirect::KProc *>& kprocs() const noexcept {
+        return pKProcs;
+    }
+    inline std::vector<steps::wmdirect::KProc *>& kprocs() noexcept {
+      return pKProcs;
+    }
 
     steps::wmdirect::KProc * sreac(uint lsridx) const;
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline swmd::Comp * iComp() const
+    inline swmd::Comp * iComp() const noexcept
     { return pIComp; }
 
-    inline swmd::Comp * oComp() const
+    inline swmd::Comp * oComp() const noexcept
     { return pOComp; }
 
     ////////////////////////////////////////////////////////////////////////

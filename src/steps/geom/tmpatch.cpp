@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -41,14 +41,17 @@
 #include "steps/util/collections.hpp"
 // logging
 #include "easylogging++.h"
-namespace stetmesh = steps::tetmesh;
 
-using steps::math::point3d;
+namespace steps {
+namespace tetmesh {
+
+using math::point3d;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
-                           std::vector<uint> const & tris, steps::wm::Comp* wmicomp,
+TmPatch::TmPatch(std::string const & id, Tetmesh * container,
+                           std::vector<index_t> const & tris,
+                           steps::wm::Comp* wmicomp,
                            steps::wm::Comp* wmocomp)
 : steps::wm::Patch(id, container, wmicomp, wmocomp, 0.0)
 , pTetmesh(container)
@@ -61,17 +64,17 @@ stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
     // upcast the compartment pointers for this overloaded constructor
 
     // Note that for well-mixed compartment this will return nullptr
-    stetmesh::TmComp *icomp = dynamic_cast<stetmesh::TmComp *>(wmicomp);
-    stetmesh::TmComp *ocomp = dynamic_cast<stetmesh::TmComp *>(wmocomp);
+    auto icomp = dynamic_cast<TmComp *>(wmicomp);
+    auto ocomp = dynamic_cast<TmComp *>(wmocomp);
 
     // The maximum triangle index in tetrahedral mesh
-    uint maxidx = pTetmesh->countTris() - 1;
+    auto maxidx = pTetmesh->countTris() - 1;
 
     // The patch's area - contributed to from all triangles
     double area = 0.0;
 
-    std::unordered_set<uint> visited_tris(tris.size());
-    for (uint tri: tris) {
+    std::unordered_set<index_t> visited_tris(tris.size());
+    for (auto tri: tris) {
         if (visited_tris.count(tri) > 0) {
             continue;
         }
@@ -92,7 +95,7 @@ stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
         // Add triangle if compartments match those of patch, flipping
         // triangle neighbours if required.
 
-        const int *tri_tets = pTetmesh->_getTriTetNeighb(tri);
+        const auto *tri_tets = pTetmesh->_getTriTetNeighb(tri);
 
         // Weiliang: bug fix for trianglar patch with pure well-mixed compartments
 
@@ -104,16 +107,16 @@ stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
         // there is no guarantee that tri_tets[0] != -1
 
         // if tri_tet[0] doesn't exist but tri_tet[1] exists
-        if (tri_tets[0] == -1 && tri_tets[1] != -1 ) {
-            stetmesh::TmComp * tri_comp = pTetmesh->getTetComp(tri_tets[1]);
+        if (tri_tets[0] == UNKNOWN_TET && tri_tets[1] != UNKNOWN_TET) {
+            auto tri_comp = pTetmesh->getTetComp(tri_tets[1]);
             // if tri_comp is inner
             // we flip it so that tri_tets[0] is now in inner comp
             if (tri_comp != nullptr && tri_comp == icomp) {
                 pTetmesh->_flipTriTetNeighb(tri);
             }
         }
-        else if (tri_tets[0] != -1 && tri_tets[1] == -1 ) {
-            stetmesh::TmComp * tri_comp = pTetmesh->getTetComp(tri_tets[0]);
+        else if (tri_tets[0] != UNKNOWN_TET && tri_tets[1] == UNKNOWN_TET) {
+            auto tri_comp = pTetmesh->getTetComp(tri_tets[0]);
             // if it is outcomp or nullptr
             // we flip it so that now tri_tets[1] is outer comp
             if (tri_comp != nullptr && tri_comp == ocomp) {
@@ -121,9 +124,9 @@ stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
             }
         }
         // both sides have tetrahedrons
-        else if (tri_tets[0] != -1 && tri_tets[1] != -1 ) {
-            stetmesh::TmComp * tri_comp0 = pTetmesh->getTetComp(tri_tets[0]);
-            stetmesh::TmComp * tri_comp1 = pTetmesh->getTetComp(tri_tets[1]);
+        else if (tri_tets[0] != UNKNOWN_TET && tri_tets[1] != UNKNOWN_TET) {
+            auto tri_comp0 = pTetmesh->getTetComp(tri_tets[0]);
+            auto tri_comp1 = pTetmesh->getTetComp(tri_tets[1]);
             // if tri_comp0 is not nullptr (no well-mixed) and is outcomp,
             // we flip so that tri_tets[1] is now ocomp
             if (tri_comp0 != nullptr && tri_comp0 == ocomp) {
@@ -149,19 +152,19 @@ stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
         // updated_tri_tets[0] will be inner tet, updated_tri_tets[1] will be outer tet.
         // note that they may not be used in the simulation, in which case flipping or not doesn't matter
 
-        const int *updated_tri_tets = pTetmesh->_getTriTetNeighb(tri);
+        const auto *updated_tri_tets = pTetmesh->_getTriTetNeighb(tri);
         
         // tri_tets[0] exists
-        if (updated_tri_tets[0] >= 0) {
+        if (updated_tri_tets[0] != UNKNOWN_TET) {
             point3d b_to_b = pTetmesh->_getTriBarycenter(tri) - pTetmesh->_getTetBarycenter(updated_tri_tets[0]);
-            if (dot(b_to_b, pTetmesh->_getTriNorm(tri)) < 0) {
+            if (b_to_b.dot(pTetmesh->_getTriNorm(tri)) < 0) {
                 pTetmesh->_flipTriVerts(tri);
             }
         }
         // tri_tets[1] exists
-        else if (updated_tri_tets[1] >= 0) {
-            point3d b_to_b = pTetmesh->_getTriBarycenter(tri) - pTetmesh->_getTetBarycenter(updated_tri_tets[1]);
-            if (dot(b_to_b, pTetmesh->_getTriNorm(tri)) >= 0) {
+        else if (updated_tri_tets[1] != UNKNOWN_TET) {
+            const point3d b_to_b = pTetmesh->_getTriBarycenter(tri) - pTetmesh->_getTetBarycenter(updated_tri_tets[1]);
+            if (b_to_b.dot(pTetmesh->_getTriNorm(tri)) >= 0) {
                 pTetmesh->_flipTriVerts(tri);
             }
         }
@@ -170,7 +173,7 @@ stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
         area += pTetmesh->getTriArea(tri);
         pTetmesh->setTriPatch(tri, this);
 
-        const uint *tri_verts = pTetmesh->_getTri(tri);
+        const auto tri_verts = pTetmesh->_getTri(tri);
         for (uint j = 0; j < 3; ++j) {
             pBBox.insert(pTetmesh->_getVertex(tri_verts[j]));
         }
@@ -180,25 +183,24 @@ stetmesh::TmPatch::TmPatch(std::string const & id, Tetmesh * container,
     setArea(area);
 }
 
-std::vector<bool> stetmesh::TmPatch::isTriInside(const std::vector<uint> &tris) const
+std::vector<bool> TmPatch::isTriInside(const std::vector<index_t> &tris) const
 {
     return steps::util::map_membership(tris, pTri_indices);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> stetmesh::TmPatch::getBoundMin() const
+std::vector<double> TmPatch::getBoundMin() const
 {
     return steps::util::as_vector(pBBox.min());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> stetmesh::TmPatch::getBoundMax() const
+std::vector<double> TmPatch::getBoundMax() const
 {
     return steps::util::as_vector(pBBox.max());
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
+} // namespace tetmesh
+} // namespace steps

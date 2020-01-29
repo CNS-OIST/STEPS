@@ -86,9 +86,11 @@ public:
     { return pIdx; }
 
     /// Return the name of this diffusion boundary.
-    std::string const name() const;
+    const std::string& name() const noexcept {
+        return pName;
+    }
 
-    inline std::vector<uint> bars() const
+    inline const std::vector<index_t>& bars() const
     { return pBars; }
 
     inline uint patcha() const
@@ -115,7 +117,7 @@ private:
 
     // List of all the bars
 
-    std::vector<uint>                    pBars;
+    std::vector<index_t>    pBars;
 
     uint                                 pPatchA;
     uint                                 pPatchB;

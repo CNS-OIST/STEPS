@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -76,7 +76,7 @@ void smtos::KProc::setActive(bool active)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint smtos::KProc::getExtent() const
+unsigned long long smtos::KProc::getExtent() const
 {
     return rExtent;
 }
@@ -89,7 +89,7 @@ void smtos::KProc::resetExtent()
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::KProc::resetCcst() const
+void smtos::KProc::resetCcst()
 {
     // This should never get called on base object
     AssertLog(false);
@@ -113,7 +113,7 @@ double smtos::KProc::h()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int smtos::KProc::apply(steps::rng::RNG * rng)
+int smtos::KProc::apply(const rng::RNGptr &/*rng*/)
 {
     // Should never get called on base object
 	AssertLog(false);
@@ -121,7 +121,7 @@ int smtos::KProc::apply(steps::rng::RNG * rng)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int smtos::KProc::apply(steps::rng::RNG * rng, uint nmolcs)
+int smtos::KProc::apply(const rng::RNGptr &/*rng*/, uint /*nmolcs*/)
 {
     // Should never get called on base object
 	AssertLog(false);
@@ -130,7 +130,7 @@ int smtos::KProc::apply(steps::rng::RNG * rng, uint nmolcs)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::KProc::apply(steps::rng::RNG * rng, double dt, double simtime, double period)
+void smtos::KProc::apply(const rng::RNGptr &/*rng*/, double /*dt*/, double /*simtime*/, double /*period*/)
 {
     // Should never get called on base object
     AssertLog(false);
@@ -146,7 +146,7 @@ void smtos::KProc::resetOccupancies()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<smtos::KProc*> const & smtos::KProc::getLocalUpdVec(int direction)
+std::vector<smtos::KProc*> const & smtos::KProc::getLocalUpdVec(int /*direction*/) const
 {
     // Should never get called on base object
     AssertLog(false);
@@ -154,7 +154,7 @@ std::vector<smtos::KProc*> const & smtos::KProc::getLocalUpdVec(int direction)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<uint> const & smtos::KProc::getRemoteUpdVec(int direction)
+std::vector<uint> const & smtos::KProc::getRemoteUpdVec(int /*direction*/) const
 {
     // Should never get called on base object
     AssertLog(false);

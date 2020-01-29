@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -31,7 +31,7 @@
 HOWTO: Logging, Assertion and Exception
 
 1. To enable assertion logging, make sure ENABLE_ASSERTLOG is defined in src/CMakeLists.txt
-2. Make sure "third_party/easy_loggingpp/src/easylogging++.h" and "steps/error.hpp" are included as header files
+2. Make sure "easylogging++.h" and "steps/error.hpp" are included as header files
 3. Use AssertLog(condition) to add assertion, for example
             int a = -1;
             AssertLog(a > 0);

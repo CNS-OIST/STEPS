@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -52,7 +52,7 @@ namespace smath = steps::math;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static inline double comp_ccst(double kcst, double vol, uint order, double compvol)
+static inline double comp_ccst(double kcst, double vol, uint order, double /*compvol*/)
 {
     double vscale = 1.0e3 * vol * smath::AVOGADRO;
     int o1 = static_cast<int>(order) - 1;
@@ -96,32 +96,32 @@ smtos::Reac::~Reac()
 
 void smtos::Reac::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&rExtent, sizeof(uint));
-    cp_file.write((char*)&pFlags, sizeof(uint));
+    cp_file.write(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.write(reinterpret_cast<char*>(&pFlags), sizeof(uint));
 
-    cp_file.write((char*)&pCcst, sizeof(double));
-    cp_file.write((char*)&pKcst, sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pCcst), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pKcst), sizeof(double));
 
-    cp_file.write((char*)&(crData.recorded), sizeof(bool));
-    cp_file.write((char*)&(crData.pow), sizeof(int));
-    cp_file.write((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.write((char*)&(crData.rate), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.write(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.write(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.write(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void smtos::Reac::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&rExtent, sizeof(uint));
-    cp_file.read((char*)&pFlags, sizeof(uint));
+    cp_file.read(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.read(reinterpret_cast<char*>(&pFlags), sizeof(uint));
 
-    cp_file.read((char*)&pCcst, sizeof(double));
-    cp_file.read((char*)&pKcst, sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pCcst), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pKcst), sizeof(double));
 
-    cp_file.read((char*)&(crData.recorded), sizeof(bool));
-    cp_file.read((char*)&(crData.pow), sizeof(int));
-    cp_file.read((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.read((char*)&(crData.rate), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.read(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.read(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.read(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -166,42 +166,33 @@ void smtos::Reac::setupDeps()
 {
     AssertLog(pTet->getInHost());
     std::set<smtos::KProc*> updset;
-    ssolver::gidxTVecCI sbgn = pReacdef->bgnUpdColl();
-    ssolver::gidxTVecCI send = pReacdef->endUpdColl();
 
     // Search in local tetrahedron.
     uint nkprocs = pTet->countKProcs();
-    uint startKProcIdx = pTet->getStartKProcIdx();
-    
+
     for (uint k = 0; k < nkprocs; k++)
     {
-        for (ssolver::gidxTVecCI s = sbgn; s != send; ++s)
-        {
-            if (pTet->KProcDepSpecTet(k, pTet, *s) == true) {
+        for (auto const& s : pReacdef->updColl()) {
+            if (pTet->KProcDepSpecTet(k, pTet, s)) {
                 updset.insert(pTet->getKProc(k));
             }
 
         }
     }
 
-    std::vector<smtos::Tri *>::const_iterator tri_end = pTet->nexttriEnd();
-    for (std::vector<smtos::Tri *>::const_iterator tri = pTet->nexttriBegin();
-             tri != tri_end; ++tri)
-    {
-        if ((*tri) == 0) continue;
-        if (pTet->getHost() != (*tri)->getHost()) {
+    for (auto const& tri : pTet->nexttris()) {
+        if (tri == nullptr) continue;
+        if (pTet->getHost() != tri->getHost()) {
             std::ostringstream os;
-            os << "Patch triangle " << (*tri)->idx() << " and its compartment tetrahedron " << pTet->idx()  << " belong to different hosts.\n";
+            os << "Patch triangle " << tri->idx() << " and its compartment tetrahedron " << pTet->idx()  << " belong to different hosts.\n";
             NotImplErrLog(os.str());
         }
-        nkprocs = (*tri)->countKProcs();
-        startKProcIdx = (*tri)->getStartKProcIdx();
+        nkprocs = tri->countKProcs();
         for (uint sk = 0; sk < nkprocs; sk++)
         {
-            for (ssolver::gidxTVecCI s = sbgn; s != send; ++s)
-            {
-                if ((*tri)->KProcDepSpecTet(sk, pTet, *s) == true) {
-                    updset.insert((*tri)->getKProc(sk));
+            for (auto const& s : pReacdef->updColl()) {
+                if (tri->KProcDepSpecTet(sk, pTet, s)) {
+                    updset.insert(tri->getKProc(sk));
                 }
 
             }
@@ -222,14 +213,14 @@ bool smtos::Reac::depSpecTet(uint gidx, smtos::WmVol * tet)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool smtos::Reac::depSpecTri(uint gidx, smtos::Tri * tri)
+bool smtos::Reac::depSpecTri(uint /*gidx*/, smtos::Tri * /*tri*/)
 {
     return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::Reac::rate(smtos::TetOpSplitP * solver)
+double smtos::Reac::rate(smtos::TetOpSplitP * /*solver*/)
 {
 
     if (inactive()) return 0.0;
@@ -286,7 +277,7 @@ double smtos::Reac::rate(smtos::TetOpSplitP * solver)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Reac::apply(steps::rng::RNG * rng, double dt, double simtime, double period)
+void smtos::Reac::apply(const rng::RNGptr &/*rng*/, double /*dt*/, double /*simtime*/, double period)
 {
     uint * local = pTet->pools();
     ssolver::Compdef * cdef = pTet->compdef();
@@ -295,8 +286,9 @@ void smtos::Reac::apply(steps::rng::RNG * rng, double dt, double simtime, double
     uint nspecs = cdef->countSpecs();
     for (uint i = 0; i < nspecs; ++i)
     {
-        if (pTet->clamped(i) == true) { continue;
-}
+        if (pTet->clamped(i) == true) {
+            continue;
+        }
         int j = upd_vec[i];
         int nc = static_cast<int>(local[i]) + j;
         AssertLog(nc >= 0);
@@ -308,14 +300,14 @@ void smtos::Reac::apply(steps::rng::RNG * rng, double dt, double simtime, double
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<uint> const & smtos::Reac::getRemoteUpdVec(int direction)
+std::vector<uint> const & smtos::Reac::getRemoteUpdVec(int /*direction*/) const
 {
     return remoteUpdVec;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<smtos::KProc*> const & smtos::Reac::getLocalUpdVec(int direction)
+std::vector<smtos::KProc*> const & smtos::Reac::getLocalUpdVec(int /*direction*/) const
 {
     return localUpdVec;
 }

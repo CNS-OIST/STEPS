@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -60,7 +60,7 @@ public:
         std::fill(pData.begin(),pData.end(),0.0);
     }
 
-    double *data() { return &pData[0]; }
+    inline double *data() noexcept { return pData.data(); }
 
 private:
     size_t pN;
@@ -83,17 +83,17 @@ public:
         pb(n,0.0),
         px(n,0.0),
         pwork(n),
-        pb_view(n,&pb[0]),
-        px_view(n,&px[0])
+        pb_view(n, pb.data()),
+        px_view(n, px.data())
     {}
 
-    const matrix_type &A() const { return pA; }
-    matrix_type &A() { return pA; }
+    const matrix_type &A() const noexcept { return pA; }
+    matrix_type &A() noexcept { return pA; }
 
-    const vector_type &b() const { return pb_view; }
-    vector_type &b() { return pb_view; }
+    const vector_type &b() const noexcept  { return pb_view; }
+    vector_type &b() noexcept  { return pb_view; }
 
-    const vector_type &x() const { return px_view; }
+    const vector_type &x() const noexcept { return px_view; }
 
     void solve(); // destructive: overwrites pA
 

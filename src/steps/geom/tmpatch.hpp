@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -83,7 +83,7 @@ public:
     ///
     /// This is the constructor for the wm (well-mixed) namespace.
     TmPatch(std::string const & id, Tetmesh * container,
-         std::vector<uint> const & tris, steps::wm::Comp* wmicomp,
+         std::vector<index_t> const & tris, steps::wm::Comp* wmicomp,
             steps::wm::Comp* wmocomp = nullptr);
 
     /// Destructor.
@@ -97,13 +97,13 @@ public:
     ///
     /// \param tris List of indices of triangles.
     /// \return Results of whether the triangles are inside the patch.
-    std::vector<bool> isTriInside(const std::vector<uint> &tris) const;
+    std::vector<bool> isTriInside(const std::vector<index_t> &tris) const;
 
     /// Return all triangles (by index) in the patch.
     ///
     /// \return List of indices of triangles.
-    std::vector<uint> const & getAllTriIndices() const
-    { return pTri_indices; }
+    std::vector<index_t> getAllTriIndices() const
+    { return strong_type_to_value_type(pTri_indices); }
 
     /// Get the minimal coordinate of the rectangular bounding box or a plane.
     ///
@@ -122,7 +122,7 @@ public:
     /// Return all triangles (by index) in the patch.
     ///
     /// \return List of indices of triangles.
-    inline std::vector<uint> const & _getAllTriIndices() const
+    inline std::vector<triangle_id_t> const & _getAllTriIndices() const
     { return pTri_indices; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -130,8 +130,8 @@ public:
 private:
 
     Tetmesh                           * pTetmesh;
-    std::vector<uint>                   pTri_indices;
-    uint                                pTrisN;
+    std::vector<triangle_id_t>          pTri_indices;
+    std::size_t                         pTrisN;
     
     steps::math::bounding_box           pBBox;
 };

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -51,7 +51,7 @@ public:
         dVSolverBase::initMesh(mesh);
         sparsity_template S(pNVerts);
 
-        for (int i = 0; i < pNVerts; ++i) {
+        for (auto i = 0u; i < pNVerts; ++i) {
             VertexElement *ve = mesh->getVertex(i);
 
             int idx = ve->getIDX();
@@ -59,7 +59,7 @@ public:
 
             S.insert(std::make_pair(idx, idx));
             for (int j = 0; j < ncon; ++j) {
-                S.insert(std::make_pair(idx, (int)ve->nbrIdx(j)));
+                S.insert(std::make_pair(idx, static_cast<int>(ve->nbrIdx(j))));
             }
         }
 

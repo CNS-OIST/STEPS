@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -50,13 +50,13 @@ ssolver::Chandef::Chandef(Statedef * sd, uint idx, steps::model::Chan * c)
 : pStatedef(sd)
 , pIdx(idx)
 , pName()
+, pSetupdone(false)
 , pChanStates(nullptr)
 , pNChanStates(0)
 , pChanStatesVec()
-, pSetupdone(false)
 {
-    AssertLog(pStatedef != 0);
-    AssertLog(c != 0);
+    AssertLog(pStatedef != nullptr);
+    AssertLog(c != nullptr);
     pName = c->getID();
 
     pChanStatesVec = c->getAllChanStates();
@@ -82,8 +82,8 @@ ssolver::Chandef::~Chandef()
 
 void ssolver::Chandef::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&pNChanStates, sizeof(uint));
-    cp_file.write((char*)pChanStates, sizeof(uint) * pNChanStates);
+    cp_file.write(reinterpret_cast<char*>(&pNChanStates), sizeof(uint));
+    cp_file.write(reinterpret_cast<char*>(pChanStates), sizeof(uint) * pNChanStates);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -93,16 +93,9 @@ void ssolver::Chandef::restore(std::fstream & cp_file)
     if (pNChanStates > 0) { delete[] pChanStates;
 }
 
-    cp_file.read((char*)&pNChanStates, sizeof(uint));
+    cp_file.read(reinterpret_cast<char*>(&pNChanStates), sizeof(uint));
     pChanStates = new uint[pNChanStates];
-    cp_file.read((char*)pChanStates, sizeof(uint) * pNChanStates);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-std::string const ssolver::Chandef::name() const
-{
-    return pName;
+    cp_file.read(reinterpret_cast<char*>(pChanStates), sizeof(uint) * pNChanStates);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

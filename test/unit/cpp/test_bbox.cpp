@@ -64,7 +64,7 @@ TEST(BoundingBox,contains) {
         ASSERT_TRUE(b.contains(x));
     }
 
-    point3d pmean=std::accumulate(&p[0],&p[0]+n,point3d{0,0,0})/(double)n;
+    point3d pmean=std::accumulate(&p[0],&p[0]+n,point3d{0,0,0})/static_cast<double>(n);
 
     ASSERT_TRUE(b.contains(pmean));
 

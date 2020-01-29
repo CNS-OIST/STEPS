@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -59,18 +59,19 @@ namespace ssolver = steps::solver;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Tri::Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
+stex::Tri::Tri(triangle_id_t idx, steps::solver::Patchdef * patchdef, double area,
                 double l0, double l1, double l2, double d0, double d1, double d2,
-                 int tetinner, int tetouter, int tri0, int tri1, int tri2)
+                tetrahedron_id_t tetinner, tetrahedron_id_t tetouter,
+                triangle_id_t tri0, triangle_id_t tri1, triangle_id_t tri2)
 : pIdx(idx)
 , pPatchdef(patchdef)
-, pArea(area)
-, pLengths()
-, pDist()
 , pInnerTet(nullptr)
 , pOuterTet(nullptr)
 , pTets()
 , pNextTri()
+, pArea(area)
+, pLengths()
+, pDist()
 , pPoolCount(nullptr)
 , pPoolFlags(nullptr)
 , pKProcs()
@@ -79,7 +80,7 @@ stex::Tri::Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
 , pOCchan_timeintg(nullptr)
 , pOCtime_upd(nullptr)
 {
-    AssertLog(pPatchdef != 0);
+    AssertLog(pPatchdef != nullptr);
     AssertLog(pArea > 0.0);
 
     AssertLog(l0 > 0.0 && l1 > 0.0 && l2 > 0.0);
@@ -146,18 +147,18 @@ stex::Tri::~Tri()
 void stex::Tri::checkpoint(std::fstream & cp_file)
 {
     uint nspecs = patchdef()->countSpecs();
-    cp_file.write((char*)pPoolCount, sizeof(uint) * nspecs);
-    cp_file.write((char*)pPoolFlags, sizeof(uint) * nspecs);
+    cp_file.write(reinterpret_cast<char*>(pPoolCount), sizeof(uint) * nspecs);
+    cp_file.write(reinterpret_cast<char*>(pPoolFlags), sizeof(uint) * nspecs);
 
     uint nghkcurrs = pPatchdef->countGHKcurrs();
-    cp_file.write((char*)pECharge, sizeof(int) * nghkcurrs);
-    cp_file.write((char*)pECharge_last, sizeof(int) * nghkcurrs);
+    cp_file.write(reinterpret_cast<char*>(pECharge), sizeof(int) * nghkcurrs);
+    cp_file.write(reinterpret_cast<char*>(pECharge_last), sizeof(int) * nghkcurrs);
 
     uint nohmcurrs = pPatchdef->countOhmicCurrs();
-    cp_file.write((char*)pOCchan_timeintg, sizeof(double) * nohmcurrs);
-    cp_file.write((char*)pOCtime_upd, sizeof(double) * nohmcurrs);
+    cp_file.write(reinterpret_cast<char*>(pOCchan_timeintg), sizeof(double) * nohmcurrs);
+    cp_file.write(reinterpret_cast<char*>(pOCtime_upd), sizeof(double) * nohmcurrs);
 
-    cp_file.write((char*)pSDiffBndDirection, sizeof(bool) * 3);
+    cp_file.write(reinterpret_cast<char*>(pSDiffBndDirection), sizeof(bool) * 3);
 
 }
 
@@ -166,18 +167,18 @@ void stex::Tri::checkpoint(std::fstream & cp_file)
 void stex::Tri::restore(std::fstream & cp_file)
 {
     uint nspecs = patchdef()->countSpecs();
-    cp_file.read((char*)pPoolCount, sizeof(uint) * nspecs);
-    cp_file.read((char*)pPoolFlags, sizeof(uint) * nspecs);
+    cp_file.read(reinterpret_cast<char*>(pPoolCount), sizeof(uint) * nspecs);
+    cp_file.read(reinterpret_cast<char*>(pPoolFlags), sizeof(uint) * nspecs);
 
     uint nghkcurrs = pPatchdef->countGHKcurrs();
-    cp_file.read((char*)pECharge, sizeof(int) * nghkcurrs);
-    cp_file.read((char*)pECharge_last, sizeof(int) * nghkcurrs);
+    cp_file.read(reinterpret_cast<char*>(pECharge), sizeof(int) * nghkcurrs);
+    cp_file.read(reinterpret_cast<char*>(pECharge_last), sizeof(int) * nghkcurrs);
 
     uint nohmcurrs = pPatchdef->countOhmicCurrs();
-    cp_file.read((char*)pOCchan_timeintg, sizeof(double) * nohmcurrs);
-    cp_file.read((char*)pOCtime_upd, sizeof(double) * nohmcurrs);
+    cp_file.read(reinterpret_cast<char*>(pOCchan_timeintg), sizeof(double) * nohmcurrs);
+    cp_file.read(reinterpret_cast<char*>(pOCtime_upd), sizeof(double) * nohmcurrs);
 
-    cp_file.read((char*)pSDiffBndDirection, sizeof(bool) * 3);
+    cp_file.read(reinterpret_cast<char*>(pSDiffBndDirection), sizeof(bool) * 3);
 
 }
 
@@ -218,7 +219,7 @@ void stex::Tri::setNextTri(uint i, stex::Tri * t)
 void stex::Tri::setupKProcs(stex::Tetexact * tex, bool efield)
 {
     uint kprocvecsize = pPatchdef->countSReacs()+pPatchdef->countSurfDiffs();
-    if (efield == true) {
+    if (efield) {
         kprocvecsize += (pPatchdef->countVDepTrans() + pPatchdef->countVDepSReacs() + pPatchdef->countGHKcurrs());
 }
     pKProcs.resize(kprocvecsize);
@@ -230,7 +231,7 @@ void stex::Tri::setupKProcs(stex::Tetexact * tex, bool efield)
     {
         ssolver::SReacdef * srdef = patchdef()->sreacdef(i);
         auto * sr = new SReac(srdef, this);
-        AssertLog(sr != 0);
+        AssertLog(sr != nullptr);
         pKProcs[j++] = sr;
         tex->addKProc(sr);
     }
@@ -240,20 +241,20 @@ void stex::Tri::setupKProcs(stex::Tetexact * tex, bool efield)
     {
         ssolver::Diffdef * sddef = patchdef()->surfdiffdef(i);
         auto * sd = new SDiff(sddef, this);
-        AssertLog(sd != 0);
+        AssertLog(sd != nullptr);
         pKProcs[j++] = sd;
         tex->addKProc(sd);
     }
 
 
-    if (efield == true)
+    if (efield)
     {
         uint nvdtrans = patchdef()->countVDepTrans();
         for (uint i=0; i < nvdtrans; ++i)
         {
             ssolver::VDepTransdef * vdtdef = patchdef()->vdeptransdef(i);
             auto * vdt = new VDepTrans(vdtdef, this);
-            AssertLog(vdt != 0);
+            AssertLog(vdt != nullptr);
             pKProcs[j++] = vdt;
             tex->addKProc(vdt);
         }
@@ -263,7 +264,7 @@ void stex::Tri::setupKProcs(stex::Tetexact * tex, bool efield)
         {
             ssolver::VDepSReacdef * vdsrdef = patchdef()->vdepsreacdef(i);
             auto * vdsr = new VDepSReac(vdsrdef, this);
-            AssertLog(vdsr != 0);
+            AssertLog(vdsr != nullptr);
             pKProcs[j++] = vdsr;
             tex->addKProc(vdsr);
         }
@@ -273,7 +274,7 @@ void stex::Tri::setupKProcs(stex::Tetexact * tex, bool efield)
         {
             ssolver::GHKcurrdef * ghkdef = patchdef()->ghkcurrdef(i);
             auto * ghk = new GHKcurr(ghkdef, this);
-            AssertLog(ghk != 0);
+            AssertLog(ghk != nullptr);
             pKProcs[j++] = ghk;
             tex->addKProc(ghk);
         }
@@ -337,9 +338,7 @@ void stex::Tri::incECharge(uint lidx, int charge)
 void stex::Tri::setCount(uint lidx, uint count)
 {
     AssertLog(lidx < patchdef()->countSpecs());
-    double oldcount = pPoolCount[lidx];
-    auto c = static_cast<double>(count);
-    pPoolCount[lidx] = c;
+    pPoolCount[lidx] = count;
 
     /* 16/01/10 IH: Counts no longer stored in patch object.
     // Now update the count in this tri's patch
@@ -356,7 +355,6 @@ void stex::Tri::incCount(uint lidx, int inc)
 {
     AssertLog(lidx < patchdef()->countSpecs());
     pPoolCount[lidx] += inc;
-    AssertLog(pPoolCount[lidx] >= 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -381,7 +379,7 @@ void stex::Tri::setOCchange(uint oclidx, uint slidx, double dt, double simtime)
 
 void stex::Tri::setClamped(uint lidx, bool clamp)
 {
-    if (clamp == true) { pPoolFlags[lidx] |= CLAMPED;
+    if (clamp) { pPoolFlags[lidx] |= CLAMPED;
     } else { pPoolFlags[lidx] &= ~CLAMPED;
 }
 }
@@ -395,7 +393,7 @@ stex::SReac * stex::Tri::sreac(uint lidx) const
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int stex::Tri::getTriDirection(uint tidx)
+int stex::Tri::getTriDirection(triangle_id_t tidx)
 {
     for (uint i = 0; i < 3; i++) {
         if (pTris[i] == tidx) {
@@ -507,7 +505,7 @@ double stex::Tri::computeI(double v, double dt, double simtime)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stex::Tri::getOhmicI(double v,double dt) const
+double stex::Tri::getOhmicI(double v,double /*dt*/) const
 {
     double current = 0.0;
     uint nocs = patchdef()->countOhmicCurrs();
@@ -524,7 +522,7 @@ double stex::Tri::getOhmicI(double v,double dt) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stex::Tri::getOhmicI(uint lidx, double v,double dt) const
+double stex::Tri::getOhmicI(uint lidx, double v,double /*dt*/) const
 {
     AssertLog(lidx < patchdef()->countOhmicCurrs());
     ssolver::OhmicCurrdef * ocdef = patchdef()->ohmiccurrdef(lidx);

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -34,11 +34,11 @@ namespace steps {
 namespace util {
 
 static inline bool ascii_is_alpha(char c) {
-    return c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c=='_';
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c=='_';
 }
 
 static inline bool ascii_is_alphanum(char c) {
-    return ascii_is_alpha(c) || c >='0' && c <='9';
+    return ascii_is_alpha(c) || (c >= '0' && c <= '9');
 }
 
 bool isValidID(const char *s) {

@@ -13,7 +13,7 @@ Iain Hepburn (OIST, UA, since 2008)
 * Meshio utilities
 * Diffusion Boundaries for Tetexact and TetOpSplit
 * Contribution to Swig and Cython bindings
-* Validation design, testing, and documentation 
+* Validation design, testing, and documentation
 
 Weiliang Chen (OIST, since 2009)
 * Development of STEPS since version 1.0.0: Well-mixed and spatial stochastic solver development
@@ -41,8 +41,10 @@ Fabien Delalondre
 James King
 * Technical lead and coordination for Blue Brain team contribution (from July 2018)
 
-Tristan Carel
+Tristan Carel (from June 2017)
 * Docker image (https://github.com/CNS-OIST/STEPS_Docker)
+* Modernize code base
+* Use strong types to distinguish identifiers in the code
 
 Francesco Casalegno
 * R123 random number generator

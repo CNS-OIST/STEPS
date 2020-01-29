@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -58,181 +58,126 @@ smtos::SDiff::SDiff(ssolver::Diffdef * sdef, smtos::Tri * tri)
 : 
  pSDiffdef(sdef)
 , pTri(tri)
-, localAllUpdVec()
-, remoteAllUpdVec()
-, pEmptyvec()
-, idxEmptyvec()
-, pScaledDcst(0.0)
-, pDcst(0.0)
-, pNonCDFSelector()
-, pDirections()
-, pNdirections(0)
-, pSDiffBndActive()
-, pSDiffBndDirection()
 {
-    AssertLog(pSDiffdef != 0);
-    AssertLog(pTri != 0);
+    AssertLog(pSDiffdef != nullptr);
+    AssertLog(pTri != nullptr);
     type = KP_SDIFF;
-    smtos::Tri * next[3] =
-    {
-        pTri->nextTri(0),
-        pTri->nextTri(1),
-        pTri->nextTri(2),
-    };
-    
-    ligGIdx = pSDiffdef->lig();
-    ssolver::Patchdef * pdef = pTri->patchdef();
-    lidxTri = pdef->specG2L(ligGIdx);
+    std::array<smtos::Tri *, 3> next{pTri->nextTri(0),
+                                    pTri->nextTri(1),
+                                    pTri->nextTri(2)
+                                    };
 
-    for (uint i = 0; i < 3; ++i)
-    {
-        pSDiffBndDirection[i] = pTri->getSDiffBndDirection(i);
-        if (next[i] == nullptr)
-        {
-            pNeighbPatchLidx[i] = -1;
-            continue;
-        }
-        else
-        {
-            pNeighbPatchLidx[i] = next[i]->patchdef()->specG2L(ligGIdx);
-        }
-    }
+    ssolver::Patchdef * pdef = pTri->patchdef();
+    lidxTri = pdef->specG2L(pSDiffdef->lig());
 
     // Precalculate part of the scaled diffusion constant.
     uint ldidx = pTri->patchdef()->surfdiffG2L(pSDiffdef->gidx());
     double dcst = pTri->patchdef()->dcst(ldidx);
     pDcst = dcst;
 
-    double d[3] = { 0.0, 0.0, 0.0};
+    std::array<double, 3> d{0.0, 0.0, 0.0};
+
     for (uint i = 0; i < 3; ++i)
     {
+        pSDiffBndDirection[i] = pTri->getSDiffBndDirection(i);
+        if (next[i] != nullptr) {
+            pNeighbPatchLidx[i] = next[i]->patchdef()->specG2L(pSDiffdef->lig());
+        }
+
         // Compute the scaled diffusion constant.
         // Need to here check if the direction is a diffusion boundary
         double dist = pTri->dist(i);
         if ((dist > 0.0) && (next[i] != nullptr))
         {
-            if (pSDiffBndDirection[i] == true)
-            {
-                if (pSDiffBndActive[i]) {
-                    d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
-                } else { d[i] = 0.0;
-}
-            }
-            else
-            {
-                if (next[i]->patchdef() == pTri->patchdef()) {
-                    d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
-                } else { d[i] = 0.0;
-}
+            if (!pSDiffBndDirection[i] && next[i]->patchdef() == pTri->patchdef()) {
+                d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
+                pScaledDcst += d[i];
             }
         }
-    }
-    // Compute scaled "diffusion constant".
-    for (uint i = 0; i < 3; ++i)
-    {
-        pScaledDcst += d[i];
     }
 
     // Should not be negative!
     AssertLog(pScaledDcst >= 0);
 
     // Setup the selector distribution.
-    if (pScaledDcst == 0.0)
+    if (pScaledDcst > 0.0)
     {
-        pNonCDFSelector[0] = 0.0;
-        pNonCDFSelector[1] = 0.0;
-        pNonCDFSelector[2] = 0.0;
-    }
-    else
-    {
-        pNonCDFSelector[0] = d[0]/pScaledDcst;
-        pNonCDFSelector[1] = d[1]/pScaledDcst;
-        pNonCDFSelector[2] = d[2]/pScaledDcst;
+        pNonCDFSelector = { d[0]/pScaledDcst, 
+                            d[1]/pScaledDcst, 
+                            d[2]/pScaledDcst
+                            };
 
-        if (d[0] > 0.0)
-        {
-			pDirections.push_back(0);
-			pNdirections+=1;
-       	}
-		if (d[1] > 0.0)
-		{
-			pDirections.push_back(1);
-			pNdirections+=1;
-		}
-		if (d[2] > 0.0)
-		{
-			pDirections.push_back(2);
-			pNdirections+=1;
-		}
+        for (uint i = 0; i < 3; ++i) { 
+            if (d[i] > 0.0)
+            {
+			    pDirections.push_back(i);
+			    pNdirections+=1;
+       	    }
+        }
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::SDiff::~SDiff()
-= default;
-
-////////////////////////////////////////////////////////////////////////////////
-
 void smtos::SDiff::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&rExtent, sizeof(uint));
-    cp_file.write((char*)&pFlags, sizeof(uint));
+    cp_file.write(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.write(reinterpret_cast<char*>(&pFlags), sizeof(uint));
 
-    uint n_direct_dcsts = directionalDcsts.size();
-    cp_file.write((char*)&n_direct_dcsts, sizeof(uint));
+    auto n_direct_dcsts = directionalDcsts.size();
+    cp_file.write(reinterpret_cast<char*>(&n_direct_dcsts), sizeof(uint));
     for (auto& item : directionalDcsts) {
-        cp_file.write((char*)&(item.first), sizeof(uint));
-        cp_file.write((char*)&(item.second), sizeof(double));
+        cp_file.write(reinterpret_cast<const char*>(&item.first), sizeof(uint));
+        cp_file.write(reinterpret_cast<char*>(&item.second), sizeof(double));
     }
     
-    cp_file.write((char*)&pScaledDcst, sizeof(double));
-    cp_file.write((char*)&pDcst, sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pScaledDcst), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pDcst), sizeof(double));
 
-    cp_file.write((char*)pNonCDFSelector, sizeof(double) * 3);
-    cp_file.write((char*)pSDiffBndActive, sizeof(bool) * 3);
-    cp_file.write((char*)pSDiffBndDirection, sizeof(bool) * 3);
-    cp_file.write((char*)pNeighbPatchLidx, sizeof(int) * 3);
+    cp_file.write(reinterpret_cast<char*>(pNonCDFSelector.data()), sizeof(double) * 3);
+    cp_file.write(reinterpret_cast<char*>(pSDiffBndActive.data()), sizeof(bool) * 3);
+    cp_file.write(reinterpret_cast<char*>(pSDiffBndDirection.data()), sizeof(bool) * 3);
+    cp_file.write(reinterpret_cast<char*>(pNeighbPatchLidx.data()), sizeof(ssolver::lidxT) * 3);
 
     // Need to add directional stuff here if checkpointing ever implemented
 
-    cp_file.write((char*)&(crData.recorded), sizeof(bool));
-    cp_file.write((char*)&(crData.pow), sizeof(int));
-    cp_file.write((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.write((char*)&(crData.rate), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.write(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.write(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.write(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void smtos::SDiff::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&rExtent, sizeof(uint));
-    cp_file.read((char*)&pFlags, sizeof(uint));
+    cp_file.read(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.read(reinterpret_cast<char*>(&pFlags), sizeof(uint));
 
     uint n_direct_dcsts = 0;
-    cp_file.read((char*)&n_direct_dcsts, sizeof(uint));
+    cp_file.read(reinterpret_cast<char*>(&n_direct_dcsts), sizeof(uint));
     for (uint i = 0; i < n_direct_dcsts; i++) {
         uint id = 0;
         double value = 0.0;
-        cp_file.read((char*)&id, sizeof(uint));
-        cp_file.read((char*)&value, sizeof(double));
+        cp_file.read(reinterpret_cast<char*>(&id), sizeof(uint));
+        cp_file.read(reinterpret_cast<char*>(&value), sizeof(double));
         directionalDcsts[id] = value;
     }
     
-    cp_file.read((char*)&pScaledDcst, sizeof(double));
-    cp_file.read((char*)&pDcst, sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pScaledDcst), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pDcst), sizeof(double));
 
-    cp_file.read((char*)pNonCDFSelector, sizeof(double) * 3);
-    cp_file.read((char*)pSDiffBndActive, sizeof(bool) * 3);
-    cp_file.read((char*)pSDiffBndDirection, sizeof(bool) * 3);
-    cp_file.read((char*)pNeighbPatchLidx, sizeof(int) * 3);
+    cp_file.read(reinterpret_cast<char*>(pNonCDFSelector.data()), sizeof(double) * 3);
+    cp_file.read(reinterpret_cast<char*>(pSDiffBndActive.data()), sizeof(bool) * 3);
+    cp_file.read(reinterpret_cast<char*>(pSDiffBndDirection.data()), sizeof(bool) * 3);
+    cp_file.read(reinterpret_cast<char*>(pNeighbPatchLidx.data()), sizeof(ssolver::lidxT) * 3);
 
     // Need to add directional stuff here if checkpointing ever implemented
     
-    cp_file.read((char*)&(crData.recorded), sizeof(bool));
-    cp_file.read((char*)&(crData.pow), sizeof(int));
-    cp_file.read((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.read((char*)&(crData.rate), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.read(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.read(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.read(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -259,48 +204,48 @@ void smtos::SDiff::setupDeps()
     std::set<smtos::KProc*> local_all;
     
     uint nkprocs = pTri->countKProcs();
-    uint startKProcIdx = pTri->getStartKProcIdx();
     for (uint sk = 0; sk < nkprocs; sk++)
     {
         // Check locally.
-        if (pTri->KProcDepSpecTri(sk, pTri, ligGIdx) == true) {
+        if (pTri->KProcDepSpecTri(sk, pTri, pSDiffdef->lig())) {
             local.insert(pTri->getKProc(sk));
         }
     }
 
     // Check the neighbouring tetrahedrons.
-    smtos::WmVol * itet = pTri->iTet();
-    if (itet != nullptr)
     {
-        if (pTri->getHost() != itet->getHost()) {
-            std::ostringstream os;
-            os << "Patch triangle " << pTri->idx() << " and its compartment tetrahedron " << itet->idx()  << " belong to different hosts.\n";
-            NotImplErrLog(os.str());
-        }
-        nkprocs = itet->countKProcs();
-        startKProcIdx = itet->getStartKProcIdx();
-        for (uint k = 0; k < nkprocs; k++)
+        smtos::WmVol * itet = pTri->iTet();
+        if (itet != nullptr)
         {
-            if (itet->KProcDepSpecTri(k, pTri, ligGIdx) == true) {
-                local.insert(itet->getKProc(k));
+            if (pTri->getHost() != itet->getHost()) {
+                std::ostringstream os;
+                os << "Patch triangle " << pTri->idx() << " and its compartment tetrahedron " << itet->idx()  << " belong to different hosts.\n";
+                NotImplErrLog(os.str());
+            }
+            nkprocs = itet->countKProcs();
+            for (uint k = 0; k < nkprocs; k++)
+            {
+                if (itet->KProcDepSpecTri(k, pTri, pSDiffdef->lig())) {
+                    local.insert(itet->getKProc(k));
+                }
             }
         }
     }
 
-    smtos::WmVol * otet = pTri->oTet();
-    if (otet != nullptr)
     {
-        if (pTri->getHost() != otet->getHost()) {
-            std::ostringstream os;
-            os << "Patch triangle " << pTri->idx() << " and its compartment tetrahedron " << otet->idx()  << " belong to different hosts.\n";
-            NotImplErrLog(os.str());
-        }
-        nkprocs = otet->countKProcs();
-        startKProcIdx = otet->getStartKProcIdx();
-        for (uint k = 0; k < nkprocs; k++)
-        {
-            if (otet->KProcDepSpecTri(k, pTri, ligGIdx) == true) {
-                local.insert(otet->getKProc(k));
+        smtos::WmVol *otet = pTri->oTet();
+        if (otet != nullptr) {
+            if (pTri->getHost() != otet->getHost()) {
+                std::ostringstream os;
+                os << "Patch triangle " << pTri->idx() << " and its compartment tetrahedron " << otet->idx()
+                   << " belong to different hosts.\n";
+                NotImplErrLog(os.str());
+            }
+            nkprocs = otet->countKProcs();
+            for (uint k = 0; k < nkprocs; k++) {
+                if (otet->KProcDepSpecTri(k, pTri, pSDiffdef->lig())) {
+                    local.insert(otet->getKProc(k));
+                }
             }
         }
     }
@@ -326,11 +271,11 @@ void smtos::SDiff::setupDeps()
 
         // Find the ones 'locally' in the next tri.
         nkprocs = next->countKProcs();
-        startKProcIdx = next->getStartKProcIdx();
+        auto startKProcIdx = next->getStartKProcIdx();
         for (uint sk = 0; sk < nkprocs; sk++)
         {
             // Check locally.
-            if (next->KProcDepSpecTri(sk, next, ligGIdx) == true) {
+            if (next->KProcDepSpecTri(sk, next, pSDiffdef->lig())) {
                 if (next->getHost() == pTri->getHost()) {
                     local2.insert(next->getKProc(sk));
                 }
@@ -354,7 +299,7 @@ void smtos::SDiff::setupDeps()
             startKProcIdx = itet->getStartKProcIdx();
             for (uint k = 0; k < nkprocs; k++)
             {
-                if (itet->KProcDepSpecTri(k, next, ligGIdx) == true) {
+                if (itet->KProcDepSpecTri(k, next, pSDiffdef->lig())) {
                     if (itet->getHost() == pTri->getHost()) {
                         local2.insert(itet->getKProc(k));
                     }
@@ -379,7 +324,7 @@ void smtos::SDiff::setupDeps()
             startKProcIdx = otet->getStartKProcIdx();
             for (uint k = 0; k < nkprocs; k++)
             {
-                if (otet->KProcDepSpecTri(k, next, ligGIdx) == true) {
+                if (otet->KProcDepSpecTri(k, next, pSDiffdef->lig())) {
                     if (otet->getHost() == pTri->getHost()) {
                         local2.insert(otet->getKProc(k));
                     }
@@ -404,7 +349,7 @@ void smtos::SDiff::setupDeps()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool smtos::SDiff::depSpecTet(uint gidx, smtos::WmVol * tet)
+bool smtos::SDiff::depSpecTet(uint /*gidx*/, smtos::WmVol * /*tet*/)
 {
     return false;
 }
@@ -415,7 +360,7 @@ bool smtos::SDiff::depSpecTri(uint gidx, smtos::Tri * tri)
 {
     if (pTri != tri) { return false;
 }
-    if (gidx != ligGIdx) { return false;
+    if (gidx != pSDiffdef->lig()) { return false;
 }
     return true;
 }
@@ -426,9 +371,7 @@ void smtos::SDiff::reset()
 {
     resetExtent();
 
-    pSDiffBndActive[0] = false;
-    pSDiffBndActive[1] = false;
-    pSDiffBndActive[2] = false;
+    pSDiffBndActive = {false, false, false};
 
     uint ldidx = pTri->patchdef()->surfdiffG2L(pSDiffdef->gidx());
     double dcst = pTri->patchdef()->dcst(ldidx);
@@ -449,8 +392,9 @@ void smtos::SDiff::reset()
 
 double smtos::SDiff::dcst(int direction)
 {
-    if (directionalDcsts.find(direction) != directionalDcsts.end()) {
-        return directionalDcsts[direction];
+    auto search_result = directionalDcsts.find(direction);
+    if (search_result != directionalDcsts.end()) {
+        return search_result->second;
     }
     else {
         return pDcst;
@@ -465,14 +409,13 @@ void smtos::SDiff::setDcst(double dcst)
     pDcst = dcst;
     directionalDcsts.clear();
 
-    smtos::Tri * next[3] =
-    {
-        pTri->nextTri(0),
-        pTri->nextTri(1),
-        pTri->nextTri(2),
-    };
+    std::array<smtos::Tri *, 3> next{pTri->nextTri(0),
+                                    pTri->nextTri(1),
+                                    pTri->nextTri(2)
+                                    };
 
-    double d[3] = { 0.0, 0.0, 0.0};
+    std::array<double, 3> d{0.0, 0.0, 0.0};
+    pScaledDcst = 0.0;
 
     for (uint i = 0; i < 3; ++i)
     {
@@ -481,30 +424,14 @@ void smtos::SDiff::setDcst(double dcst)
         double dist = pTri->dist(i);
         if ((dist > 0.0) && (next[i] != nullptr))
         {
-            if (pSDiffBndDirection[i] == true)
+            if ((pSDiffBndDirection[i] && pSDiffBndActive[i]) || (!pSDiffBndDirection[i] && next[i]->patchdef() == pTri->patchdef()))
             {
-                if (pSDiffBndActive[i]) {
-                    d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
-                } else { d[i] = 0;
-}
-            }
-            else
-            {
-                if (next[i]->patchdef() == pTri->patchdef()) {
-                    d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
-                } else { d[i] = 0;
-}
+                d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
             }
         }
-    }
-
-    // Compute scaled "diffusion constant".
-    pScaledDcst = 0.0;
-
-    for (uint i = 0; i < 3; ++i)
-    {
         pScaledDcst += d[i];
     }
+
     // Should not be negative!
     AssertLog(pScaledDcst >= 0);
 
@@ -514,31 +441,24 @@ void smtos::SDiff::setDcst(double dcst)
     // Setup the selector distribution.
     if (pScaledDcst == 0.0)
     {
-        pNonCDFSelector[0] = 0.0;
-        pNonCDFSelector[1] = 0.0;
-        pNonCDFSelector[2] = 0.0;
+        pNonCDFSelector = {0.0, 0.0, 0.0};
     }
     else
     {
-        pNonCDFSelector[0] = d[0]/pScaledDcst;
-        pNonCDFSelector[1] = d[1]/pScaledDcst;
-        pNonCDFSelector[2] = d[2]/pScaledDcst;
+        pNonCDFSelector = 
+        { 
+            d[0]/pScaledDcst, 
+            d[1]/pScaledDcst, 
+            d[2]/pScaledDcst
+        };
 
-        if (d[0] > 0.0)
-        {
-			pDirections.push_back(0);
-			pNdirections+=1;
-       	}
-		if (d[1] > 0.0)
-		{
-			pDirections.push_back(1);
-			pNdirections+=1;
-		}
-		if (d[2] > 0.0)
-		{
-			pDirections.push_back(2);
-			pNdirections+=1;
-		}
+        for (uint i = 0; i < 3; ++i) { 
+            if (d[i] > 0.0)
+            {
+			    pDirections.push_back(i);
+			    pNdirections+=1;
+       	    }
+        }
     }
 }
 
@@ -552,18 +472,17 @@ void smtos::SDiff::setDirectionDcst(int direction, double dcst)
     directionalDcsts[direction] = dcst;
     
     // Automatically activate boundary diffusion if necessary
-    if (pSDiffBndDirection[direction] == true) { pSDiffBndActive[direction] = true;
-}
+    if (pSDiffBndDirection[direction] == true) { 
+        pSDiffBndActive[direction] = true;
+    }
 
-    smtos::Tri * next[3] =
-    {
-        pTri->nextTri(0),
-        pTri->nextTri(1),
-        pTri->nextTri(2)
-    };
+    std::array<smtos::Tri *, 3> next{pTri->nextTri(0),
+                                    pTri->nextTri(1),
+                                    pTri->nextTri(2)
+                                    };
     
-    double d[3] = { 0.0, 0.0, 0.0};
-
+    std::array<double, 3> d{0.0, 0.0, 0.0};
+    pScaledDcst = 0.0;
     
     for (uint i = 0; i < 3; ++i)
     {
@@ -571,42 +490,20 @@ void smtos::SDiff::setDirectionDcst(int direction, double dcst)
         double dist = pTri->dist(i);
         if ((dist > 0.0) && (next[i] != nullptr))
         {
-            if (pSDiffBndDirection[i] == true)
-            {
-                if (pSDiffBndActive[i])
-                {
-                    if (directionalDcsts.find(i) != directionalDcsts.end())
-                        d[i] = (pTri->length(i) * directionalDcsts[i]) / (pTri->area() * dist);
-                    else
-                    	// This part must use the default pDcst, not the function argument dcst
-                        d[i] = (pTri->length(i) * pDcst) / (pTri->area() * dist);
+            if ((pSDiffBndDirection[i] && pSDiffBndActive[i]) || (!pSDiffBndDirection[i] && next[i]->patchdef() == pTri->patchdef())) {
+                auto search_result = directionalDcsts.find(i);
+                if (search_result != directionalDcsts.end()) {
+                    d[i] = (pTri->length(i) * search_result->second) / (pTri->area() * dist);
                 }
-                else { d[i] = 0;
-}
-            }
-            else
-            {
-                if (next[i]->patchdef() == pTri->patchdef())
-                {
-                    if (directionalDcsts.find(i) != directionalDcsts.end())
-                        d[i] = (pTri->length(i) * directionalDcsts[i]) / (pTri->area() * dist);
-                    else
-                    	// This part must use the default pDcst, not the function argument dcst
-                        d[i] = (pTri->length(i) * pDcst) / (pTri->area() * dist);
+                else {
+                    // This part must use the default pDcst, not the function argument dcst
+                    d[i] = (pTri->length(i) * pDcst) / (pTri->area() * dist);
                 }
-                else { d[i] = 0;
-}
             }
         }
-    }
-    
-    // Compute scaled "diffusion constant".
-    pScaledDcst = 0.0;
-
-    for (uint i = 0; i < 3; ++i)
-    {
         pScaledDcst += d[i];
     }
+    
     // Should not be negative!
     AssertLog(pScaledDcst >= 0);
 
@@ -616,37 +513,30 @@ void smtos::SDiff::setDirectionDcst(int direction, double dcst)
     // Setup the selector distribution.
     if (pScaledDcst == 0.0)
     {
-        pNonCDFSelector[0] = 0.0;
-        pNonCDFSelector[1] = 0.0;
-        pNonCDFSelector[2] = 0.0;
+        pNonCDFSelector = {0.0, 0.0, 0.0};
     }
     else
     {
-        pNonCDFSelector[0] = d[0]/pScaledDcst;
-        pNonCDFSelector[1] = d[1]/pScaledDcst;
-        pNonCDFSelector[2] = d[2]/pScaledDcst;
+        pNonCDFSelector = 
+        { 
+            d[0]/pScaledDcst, 
+            d[1]/pScaledDcst, 
+            d[2]/pScaledDcst
+        };
 
-        if (d[0] > 0.0)
-        {
-			pDirections.push_back(0);
-			pNdirections+=1;
-       	}
-		if (d[1] > 0.0)
-		{
-			pDirections.push_back(1);
-			pNdirections+=1;
-		}
-		if (d[2] > 0.0)
-		{
-			pDirections.push_back(2);
-			pNdirections+=1;
-		}
+        for (uint i = 0; i < 3; ++i) { 
+            if (d[i] > 0.0)
+            {
+			    pDirections.push_back(i);
+			    pNdirections+=1;
+       	    }
+        }
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::SDiff::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
+double smtos::SDiff::rate(steps::mpi::tetopsplit::TetOpSplitP * /*solver*/)
 {
     if (inactive()) return 0.0;
 
@@ -660,14 +550,14 @@ double smtos::SDiff::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::SDiff::getScaledDcst(steps::mpi::tetopsplit::TetOpSplitP * solver)
+double smtos::SDiff::getScaledDcst(steps::mpi::tetopsplit::TetOpSplitP * /*solver*/) const
 {
     return pScaledDcst;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int smtos::SDiff::apply(steps::rng::RNG * rng)
+int smtos::SDiff::apply(const rng::RNGptr &rng)
 {
     //uint lidxTet = this->lidxTet;
     // Pre-fetch some general info.
@@ -700,7 +590,7 @@ int smtos::SDiff::apply(steps::rng::RNG * rng)
 
     // Direction iSel.
     smtos::Tri * nexttri = pTri->nextTri(iSel);
-    AssertLog(nexttri != 0);
+    AssertLog(nexttri != nullptr);
 
     if (nexttri->clamped(pNeighbPatchLidx[iSel]) == false) {
         nexttri->incCount(pNeighbPatchLidx[iSel],1);
@@ -716,7 +606,7 @@ int smtos::SDiff::apply(steps::rng::RNG * rng)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-int smtos::SDiff::apply(steps::rng::RNG * rng, uint nmolcs)
+int smtos::SDiff::apply(const rng::RNGptr &rng, uint nmolcs)
 {
 	// Apply local change.
     uint * local = pTri->pools() + lidxTri;
@@ -759,8 +649,8 @@ int smtos::SDiff::apply(steps::rng::RNG * rng, uint nmolcs)
 
         	smtos::Tri * nexttri = pTri->nextTri(direction);
 
-            AssertLog(nexttri != 0);
-            AssertLog(pNeighbPatchLidx[direction] > -1);
+            AssertLog(nexttri != nullptr);
+            AssertLog(pNeighbPatchLidx[direction] != ssolver::LIDX_UNDEFINED);
 
             if (nexttri->clamped(pNeighbPatchLidx[direction]) == false)
         	{
@@ -780,8 +670,8 @@ int smtos::SDiff::apply(steps::rng::RNG * rng, uint nmolcs)
     {
     	smtos::Tri * nexttri = pTri->nextTri(direction);
 
-        AssertLog(nexttri != 0);
-        AssertLog(pNeighbPatchLidx[direction] > -1);
+        AssertLog(nexttri != nullptr);
+        AssertLog(pNeighbPatchLidx[direction] != ssolver::LIDX_UNDEFINED);
 
         if (nexttri->clamped(pNeighbPatchLidx[direction]) == false)
     	{
@@ -804,7 +694,7 @@ int smtos::SDiff::apply(steps::rng::RNG * rng, uint nmolcs)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<uint> const & smtos::SDiff::getRemoteUpdVec(int direction)
+std::vector<uint> const & smtos::SDiff::getRemoteUpdVec(int direction) const
 {
     if (direction == -1) return remoteAllUpdVec;
     else if (direction == -2) return idxEmptyvec;
@@ -813,7 +703,7 @@ std::vector<uint> const & smtos::SDiff::getRemoteUpdVec(int direction)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<smtos::KProc*> const & smtos::SDiff::getLocalUpdVec(int direction)
+std::vector<smtos::KProc*> const & smtos::SDiff::getLocalUpdVec(int direction) const
 {
     if (direction == -1) return localAllUpdVec;
     else if (direction == -2) return pEmptyvec;

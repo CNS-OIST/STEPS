@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -50,8 +50,8 @@ sefield::VertexConnection::VertexConnection(sefield::VertexElement * v1, sefield
 , pVert2(v2)
 , pGeomCC(0.0)
 {
-    AssertLog(v1 != 0);
-    AssertLog(v2 != 0);
+    AssertLog(v1 != nullptr);
+    AssertLog(v2 != nullptr);
     pVert1->addConnection(this);
     pVert2->addConnection(this);
 }
@@ -65,14 +65,14 @@ sefield::VertexConnection::~VertexConnection()
 
 void sefield::VertexConnection::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&pGeomCC, sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pGeomCC), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void sefield::VertexConnection::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&pGeomCC, sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pGeomCC), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -90,8 +90,7 @@ sefield::VertexElement * sefield::VertexConnection::getOther(sefield::VertexElem
     }
     else
     {
-        AssertLog(0);
-        ret = nullptr;
+        AssertLog(false);
     }
     return ret;
 }

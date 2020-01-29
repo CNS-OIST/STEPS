@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -70,33 +70,33 @@ sefield::VertexElement::~VertexElement()
 
 void sefield::VertexElement::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&pSurface, sizeof(double));
-    cp_file.write((char*)&pVolume, sizeof(double));
-    cp_file.write((char*)&pCapacitance, sizeof(double));
-    cp_file.write((char*)&pNCon, sizeof(uint));
-    cp_file.write((char*)pCcs, sizeof(double) * pNCon);
+    cp_file.write(reinterpret_cast<char*>(&pSurface), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pVolume), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pCapacitance), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pNCon), sizeof(uint));
+    cp_file.write(reinterpret_cast<char*>(pCcs), sizeof(double) * pNCon);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void sefield::VertexElement::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&pSurface, sizeof(double));
-    cp_file.read((char*)&pVolume, sizeof(double));
-    cp_file.read((char*)&pCapacitance, sizeof(double));
-    cp_file.read((char*)&pNCon, sizeof(uint));
-    cp_file.read((char*)pCcs, sizeof(double) * pNCon);
+    cp_file.read(reinterpret_cast<char*>(&pSurface), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pVolume), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pCapacitance), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pNCon), sizeof(uint));
+    cp_file.read(reinterpret_cast<char*>(pCcs), sizeof(double) * pNCon);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void sefield::VertexElement::fix()
 {
-    pNCon = pConnections.size();
+    pNCon = static_cast<uint>(pConnections.size());
     pNbrs = new VertexElement*[pNCon];
     pCcs = new double[pNCon];
 
-    for (int i = 0; i < pNCon; ++i)
+    for (auto i = 0u; i < pNCon; ++i)
     {
         pNbrs[i] = pConnections[i]->getOther(this);
         pCcs[i] = 0.0;
@@ -112,7 +112,7 @@ void sefield::VertexElement::applyConductance(double a)
     // Iain : what on earth was the following line doing in here?
     // double* uu = new double[pNCon];
 
-    for (int i = 0; i < pNCon; ++i)
+    for (auto i = 0u; i < pNCon; ++i)
     {
         pCcs[i] =  a * pConnections[i]->getGeomCouplingConstant();
     }

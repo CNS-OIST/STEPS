@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -50,18 +50,18 @@
 #include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace stex = steps::tetexact;
-namespace ssolver = steps::solver;
+namespace steps {
+namespace tetexact {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Tet::Tet
-(
-    uint idx, solver::Compdef * cdef, double vol,
+Tet::Tet
+  (
+    tetrahedron_id_t idx, solver::Compdef *cdef, double vol,
     double a0, double a1, double a2, double a3,
     double d0, double d1, double d2, double d3,
-    int tet0, int tet1, int tet2, int tet3
-)
+    tetrahedron_id_t tet0, tetrahedron_id_t tet1, tetrahedron_id_t tet2, tetrahedron_id_t tet3
+  )
 : WmVol(idx, cdef, vol)
 , pTets()
 //, pTris()
@@ -79,7 +79,7 @@ stex::Tet::Tet
     for (uint i=0; i <= 3; ++i)
     {
         pNextTet[i] = nullptr;
-        pNextTris[i] = 0;
+        pNextTris[i] = nullptr;
     }
     pTets[0] = tet0;
     pTets[1] = tet1;
@@ -103,41 +103,41 @@ stex::Tet::Tet
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Tet::~Tet()
+Tet::~Tet()
 = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tet::checkpoint(std::fstream & cp_file)
+void Tet::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)pDiffBndDirection, sizeof(bool) * 4);
+    cp_file.write(reinterpret_cast<char*>(pDiffBndDirection), sizeof(bool) * 4);
     WmVol::checkpoint(cp_file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tet::restore(std::fstream & cp_file)
+void Tet::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)pDiffBndDirection, sizeof(bool) * 4);
+    cp_file.read(reinterpret_cast<char*>(pDiffBndDirection), sizeof(bool) * 4);
     WmVol::restore(cp_file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tet::setNextTet(uint i, stex::Tet * t)
+void Tet::setNextTet(uint i, Tet * t)
 {
 
     // Now adding all tets, even those from other compartments, due to the diffusion boundaries
     pNextTet[i] = t;
 
     //if (pNextTris[i] != 0) CLOG(INFO, "general_log") << "WARNING: writing over nextTri index " << i;
-    pNextTris[i] = 0;
+    pNextTris[i] = nullptr;
 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tet::setDiffBndDirection(uint i)
+void Tet::setDiffBndDirection(uint i)
 {
     AssertLog(i < 4);
 
@@ -146,14 +146,14 @@ void stex::Tet::setDiffBndDirection(uint i)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tet::setNextTri(stex::Tri *t)
+void Tet::setNextTri(Tri */*t*/)
 {
     AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tet::setNextTri(uint i, stex::Tri * t)
+void Tet::setNextTri(uint i, Tri * t)
 {
     AssertLog(pNextTris.size() == 4);
     AssertLog(i <= 3);
@@ -164,7 +164,7 @@ void stex::Tet::setNextTri(uint i, stex::Tri * t)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tet::setupKProcs(stex::Tetexact * tex)
+void Tet::setupKProcs(Tetexact * tex)
 {
     uint j = 0;
 
@@ -172,8 +172,8 @@ void stex::Tet::setupKProcs(stex::Tetexact * tex)
     uint nreacs = compdef()->countReacs();
     for (uint i = 0; i < nreacs; ++i)
     {
-        ssolver::Reacdef * rdef = compdef()->reacdef(i);
-        stex::Reac * r = new stex::Reac(rdef, this);
+        auto * rdef = compdef()->reacdef(i);
+        auto * r = new Reac(rdef, this);
         kprocs()[j++] = r;
         tex->addKProc(r);
     }
@@ -185,8 +185,8 @@ void stex::Tet::setupKProcs(stex::Tetexact * tex)
     uint ndiffs = compdef()->countDiffs();
     for (uint i = 0; i < ndiffs; ++i)
     {
-        ssolver::Diffdef * ddef = compdef()->diffdef(i);
-        auto * d = new stex::Diff(ddef, this);
+        auto * ddef = compdef()->diffdef(i);
+        auto * d = new Diff(ddef, this);
         kprocs()[j++] = d;
         tex->addKProc(d);
     }
@@ -194,15 +194,15 @@ void stex::Tet::setupKProcs(stex::Tetexact * tex)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Diff * stex::Tet::diff(uint lidx) const
+Diff * Tet::diff(uint lidx) const
 {
     AssertLog(lidx < compdef()->countDiffs());
-    return dynamic_cast<stex::Diff*>(pKProcs[compdef()->countReacs() + lidx]);
+    return dynamic_cast<Diff*>(pKProcs[compdef()->countReacs() + lidx]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
- int stex::Tet::getTetDirection(uint tidx)
+ int Tet::getTetDirection(tetrahedron_id_t tidx) const
 {
     for (uint i = 0; i < 4; i++) {
         if (pTets[i] == tidx) {
@@ -214,4 +214,5 @@ stex::Diff * stex::Tet::diff(uint lidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// END
+} // namespace tetexact
+} // namespace steps

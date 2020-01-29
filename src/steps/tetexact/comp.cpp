@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -54,7 +54,7 @@ stex::Comp::Comp(steps::solver::Compdef * compdef)
 , pVol(0.0)
 , pTets()
 {
-    AssertLog(pCompdef != 0);
+    AssertLog(pCompdef != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -64,14 +64,14 @@ stex::Comp::~Comp()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Comp::checkpoint(std::fstream & cp_file)
+void stex::Comp::checkpoint(std::fstream & /*cp_file*/)
 {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Comp::restore(std::fstream & cp_file)
+void stex::Comp::restore(std::fstream & /*cp_file*/)
 {
     // reserve
 }

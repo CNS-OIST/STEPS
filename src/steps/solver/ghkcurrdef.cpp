@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -59,21 +59,9 @@ namespace smod = steps::model;
 ssolver::GHKcurrdef::GHKcurrdef(Statedef * sd, uint gidx, smod::GHKcurr * ghk)
 : pStatedef(sd)
 , pIdx(gidx)
-, pName()
-, pSetupdone(false)
-, pChanState()
-, pIon()
-, pRealFlux()
-, pVirtual_oconc()
-, pPerm(0.0)
-, pValence(0)
-, pSpec_DEP(nullptr)
-, pSpec_CHANSTATE(GIDX_UNDEFINED)
-, pSpec_ION(GIDX_UNDEFINED)
-, pSpec_VOL_DEP(nullptr)
 {
-    AssertLog(pStatedef != 0);
-    AssertLog(ghk != 0);
+    AssertLog(pStatedef != nullptr);
+    AssertLog(ghk != nullptr);
 
     pName = ghk->getID();
     pChanState = ghk->getChanState()->getID();
@@ -151,22 +139,22 @@ ssolver::GHKcurrdef::~GHKcurrdef()
 
 void ssolver::GHKcurrdef::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&pRealFlux, sizeof(bool));
-    cp_file.write((char*)&pVirtual_oconc, sizeof(double));
-    cp_file.write((char*)&pPerm, sizeof(double));
-    cp_file.write((char*)&pValence, sizeof(int));
-    cp_file.write((char*)&pVshift, sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pRealFlux), sizeof(bool));
+    cp_file.write(reinterpret_cast<char*>(&pVirtual_oconc), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pPerm), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pValence), sizeof(int));
+    cp_file.write(reinterpret_cast<char*>(&pVshift), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void ssolver::GHKcurrdef::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&pRealFlux, sizeof(bool));
-    cp_file.read((char*)&pVirtual_oconc, sizeof(double));
-    cp_file.read((char*)&pPerm, sizeof(double));
-    cp_file.read((char*)&pValence, sizeof(int));
-    cp_file.read((char*)&pVshift, sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pRealFlux), sizeof(bool));
+    cp_file.read(reinterpret_cast<char*>(&pVirtual_oconc), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pPerm), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pValence), sizeof(int));
+    cp_file.read(reinterpret_cast<char*>(&pVshift), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////

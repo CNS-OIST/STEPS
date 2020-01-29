@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -29,6 +29,7 @@
 #define STEPS_SOLVER_EFIELD_TETMESH_HPP 1
 
 // STL headers.
+#include <array>
 #include <iostream>
 #include <map>
 #include <set>
@@ -36,6 +37,7 @@
 #include <vector>
 #include <queue>
 #include <fstream>
+#include <steps/geom/fwd.hpp>
 
 // STEPS headers.
 #include "steps/common.h"
@@ -70,11 +72,11 @@ public:
 
     /// Constructor.
     ///
-    TetStub(uint v1, uint v2, uint v3, uint v4);
+    TetStub(vertex_id_t v1, vertex_id_t v2, vertex_id_t v3, vertex_id_t v4);
 
     /// Constructor.
     ///
-    TetStub(uint * v);
+    explicit TetStub(vertex_id_t *v);
 
     /// Comparison operator -- required for storing objects of this
     /// class in a set. Implements strict weak ordering.
@@ -91,7 +93,7 @@ private:
 
     /// Vertices on the edges of the tetrahedron -- sorted from
     /// small to large.
-    uint        pSortedVerts[4];
+    const std::array<vertex_id_t, 4> pSortedVerts;
 
 };
 
@@ -167,8 +169,8 @@ public:
     /// Constructor.
     ///
     TetMesh(uint nv, double * vpos,
-            uint ntr, uint * trivi,
-            uint ntet, uint * tetvi);
+            uint ntr, vertex_id_t * trivi,
+            uint ntet, vertex_id_t * tetvi);
     ~TetMesh();
 
     ////////////////////////////////////////////////////////////////////////
@@ -217,13 +219,13 @@ public:
     ///
     /// Originally from Mesh.
     ///
-    inline uint countVertices() const
-    { return pElements.size(); }
+    inline uint countVertices() const noexcept
+    { return static_cast<uint>(pElements.size()); }
 
     /// Originally from Mesh.
     ///
-    inline VertexElement * getVertex(uint i) const
-    { return pElements[i]; }
+    inline VertexElement * getVertex(vertex_id_t i) const
+    { return pElements[i.get()]; }
 
     /// For a given vertex, it constructs a list of tetrahedrons that
     /// include this vertex. The tetrahedra are returned in a special
@@ -243,7 +245,7 @@ public:
     ///
     /// Originally from TetMesh.
     ///
-    std::vector<std::vector<uint> >  getNeighboringTetrahedra(VertexElement *);
+    std::vector<std::array<uint, 3>>  getNeighboringTetrahedra(VertexElement *) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: TRIANGLES
@@ -251,33 +253,33 @@ public:
 
     /// Originally from TetMesh.
     ///
-    inline uint getNTri() const
+    inline uint getNTri() const noexcept
     { return pNTri; }
 
     /// Originally from TetMesh.
-    ///
-    inline uint * getTriangle(uint i) const
-    { return pTriangles + (3 * i); }
+    /// TODO TCL should return std::array<vertex_id_t, 3> and pTriangles should be a std::vector of it
+    inline vertex_id_t * getTriangle(triangle_id_t i) const noexcept
+    { return pTriangles + (3 * i.get()); }
 
     /// Originally from TetMesh.
     ///
-    inline uint getTriangleVertex(uint itr, uint iv) const
-    { return pTriangles[(3 * itr) + iv]; }
+    inline vertex_id_t getTriangleVertex(triangle_id_t itr, uint iv) const noexcept
+    { return pTriangles[(3 * itr.get()) + iv]; }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: TETRAHEDRONS
     ////////////////////////////////////////////////////////////////////////
 
-    inline uint getNTet() const
+    inline uint getNTet() const noexcept
     { return pNTet; }
 
-    inline uint * getTetrahedron(uint i) const
+    inline vertex_id_t * getTetrahedron(uint i) const noexcept
     { return pTetrahedrons + (4 * i); }
 
     /// Originally from TetMesh.
     ///
-    inline uint getTetrahedronVertex(uint itr, uint iv) const
-    { return pTetrahedrons[(4 * itr) + iv]; }
+    inline vertex_id_t getTetrahedronVertex(tetrahedron_id_t itr, uint iv) const noexcept
+    { return pTetrahedrons[(4 * itr.get()) + iv]; }
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -285,7 +287,7 @@ public:
     ///
     void applySurfaceCapacitance(double);
 
-    void applyTriCapacitance(uint tidx, double cm);
+    void applyTriCapacitance(triangle_id_t tidx, double cm);
 
 
     /// Originally from Mesh.
@@ -311,7 +313,7 @@ public:
 
     /// Originally from Mesh.
     ///
-    std::vector<double> centerOfMass();
+    std::array<double, 3> centerOfMass();
 
     /// Originally from Mesh.
     /// Iain: defunct: replaced by 'walking' method in fill_ve_vec function
@@ -328,7 +330,9 @@ public:
     VertexConnection* getConnection(uint i)
     { return pConnections[i]; }
 
-    std::vector<uint> getVertexPermutation();
+    const std::vector<vertex_id_t>& getVertexPermutation() const noexcept {
+      return pVertexPerm;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // FROM TETMESH
@@ -374,16 +378,16 @@ private:
     VertexElementPVec                   pElements;
     VertexConnectionPVec                pConnections;
 
-    uint                              * pVertexPerm;
+    std::vector<vertex_id_t>            pVertexPerm;
 
     ////////////////////////////////////////////////////////////////////////
     // COPIED FROM TETMESH
     ////////////////////////////////////////////////////////////////////////
 
-    uint                                pNTri;
+    index_t           pNTri;
     uint                                pNTet;
-    uint                              * pTetrahedrons;
-    uint                              * pTriangles;
+    vertex_id_t                       * pTetrahedrons;
+    vertex_id_t                       * pTriangles;
 
     TetStubSet                          pTetLUT;
 

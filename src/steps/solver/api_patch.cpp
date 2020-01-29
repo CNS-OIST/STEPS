@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -252,7 +252,7 @@ double API::getPatchSReacA(string const & p, string const & sr) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint API::getPatchSReacExtent(string const & p, string const & sr) const
+unsigned long long API::getPatchSReacExtent(string const & p, string const & sr) const
 {
     // the following may raise exceptions if strings are unused
     uint pidx = pStatedef->getPatchIdx(p);
@@ -274,56 +274,56 @@ void API::resetPatchSReacExtent(string const & p, string const & sr)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setPatchArea(uint pidx, double area)
+void API::_setPatchArea(uint /*pidx*/, double /*area*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getPatchSReacH(uint pidx, uint ridx) const
+double API::_getPatchSReacH(uint /*pidx*/, uint /*ridx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getPatchSReacC(uint pidx, uint ridx) const
+double API::_getPatchSReacC(uint /*pidx*/, uint /*ridx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getPatchSReacA(uint pidx, uint ridx) const
+double API::_getPatchSReacA(uint /*pidx*/, uint /*ridx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint API::_getPatchSReacExtent(uint pidx, uint ridx) const
+unsigned long long API::_getPatchSReacExtent(uint /*pidx*/, uint /*ridx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_resetPatchSReacExtent(uint pidx, uint ridx)
+void API::_resetPatchSReacExtent(uint /*pidx*/, uint /*ridx*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getPatchVDepSReacActive(uint pidx, uint vsridx) const
+bool API::_getPatchVDepSReacActive(uint /*pidx*/, uint /*vsridx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setPatchVDepSReacActive(uint pidx, uint vsridx, bool a)
+void API::_setPatchVDepSReacActive(uint /*pidx*/, uint /*vsridx*/, bool /*a*/)
 {
     NotImplErrLog("");
 }

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# cython: language_level=2
 ###___license_placeholder___###
 
 # =====================================================================================================================
@@ -13,7 +14,6 @@ from cython.operator cimport dereference as deref
 cimport std
 from libcpp cimport bool
 from libc.stdio cimport printf, sprintf #debug
-from libcpp.limits cimport numeric_limits
 
 include "cysteps__globals.pyx"
 

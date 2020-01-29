@@ -3,7 +3,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -110,22 +110,22 @@ sefield::Matrix::~Matrix()
 
 void sefield::Matrix::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&pN, sizeof(uint));
-    cp_file.write((char*)&pSign, sizeof(int));
-    cp_file.write((char*)pA, sizeof(double) * pN * pN);
-    cp_file.write((char*)pWS, sizeof(double) * pN);
-    cp_file.write((char*)pPerm, sizeof(int) * pN);
+    cp_file.write(reinterpret_cast<char*>(&pN), sizeof(uint));
+    cp_file.write(reinterpret_cast<char*>(&pSign), sizeof(int));
+    cp_file.write(reinterpret_cast<char*>(pA), sizeof(double) * pN * pN);
+    cp_file.write(reinterpret_cast<char*>(pWS), sizeof(double) * pN);
+    cp_file.write(reinterpret_cast<char*>(pPerm), sizeof(int) * pN);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void sefield::Matrix::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&pN, sizeof(uint));
-    cp_file.read((char*)&pSign, sizeof(int));
-    cp_file.read((char*)pA, sizeof(double) * pN * pN);
-    cp_file.read((char*)pWS, sizeof(double) * pN);
-    cp_file.read((char*)pPerm, sizeof(int) * pN);
+    cp_file.read(reinterpret_cast<char*>(&pN), sizeof(uint));
+    cp_file.read(reinterpret_cast<char*>(&pSign), sizeof(int));
+    cp_file.read(reinterpret_cast<char*>(pA), sizeof(double) * pN * pN);
+    cp_file.read(reinterpret_cast<char*>(pWS), sizeof(double) * pN);
+    cp_file.read(reinterpret_cast<char*>(pPerm), sizeof(int) * pN);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -181,7 +181,7 @@ double sefield::Matrix::det()
 
 void sefield::Matrix::LU()
 {
-    int i, imax, j, k;
+    uint i, j, k, imax;
     double big, dum, sum, temp;
     auto * vv = new double[pN];
     double TINY = 1.0e-20;
@@ -297,7 +297,7 @@ double * sefield::Matrix::lubksb(double * b)
     int ii = -1;
     double sum;
 
-    for (int i = 0; i < pN; ++i)
+    for (int i = 0; i < static_cast<int>(pN); ++i)
     {
         ip = pPerm[i];
         sum = b[ip];
@@ -318,7 +318,7 @@ double * sefield::Matrix::lubksb(double * b)
     for (int i = pN - 1; i >= 0; --i)
     {
         sum = b[i];
-        for (int j = i + 1; j < pN; ++j)
+        for (int j = i + 1; j < static_cast<int>(pN); ++j)
         {
             sum -= pA[i][j] * b[j];
         }

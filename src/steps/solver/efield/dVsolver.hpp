@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -61,28 +61,28 @@ public:
     }
 
     /** Retrieve potential at vertex i */
-    double getV(int i) const override { return pV[i]; }
+    double getV(vertex_id_t i) const noexcept override { return pV[i.get()]; }
 
     /** Set potential at vertex i */
-    void setV(int i, double v) override { pV[i]=v; }
+    void setV(vertex_id_t i, double v) noexcept override { pV[i.get()] = v; }
 
     /** Get voltage clamped status for vertex i */
-    bool getClamped(int i) const override { return pVertexClamp[i]; }
+    bool getClamped(vertex_id_t i) const noexcept override { return pVertexClamp[i.get()]; }
 
     /** Set voltage clamped status for vertex i */
-    void setClamped(int i, bool clamped) override { pVertexClamp[i] = clamped; }
+    void setClamped(vertex_id_t i, bool clamped) noexcept override { pVertexClamp[i.get()] = clamped; }
 
     /** Get current through triangle i */
-    double getTriI(int i) const override { return -pTriCur[i]; }
+    double getTriI(triangle_id_t i) const noexcept override { return -pTriCur[i.get()]; }
 
     /** Set current through triangle i to d (pA) */
-    void setTriI(int i,double d) override { pTriCur[i] = -d; }
+    void setTriI(triangle_id_t i, double d) noexcept override { pTriCur[i.get()] = -d; }
 
     /** Set additional current injection for triangle i to c (pA) */
-    void setTriIClamp(int i, double c) override { pTriCurClamp[i] = -c; }
+    void setTriIClamp(triangle_id_t i, double c) noexcept override { pTriCurClamp[i.get()] = -c; }
 
     /** Set additional current injection for area associated with vertex i to c (pA) */
-    void setVertIClamp(int i, double c) override { pVertCurClamp[i] = -c; }
+    void setVertIClamp(vertex_id_t i, double c) noexcept override { pVertCurClamp[i.get()] = -c; }
 
 protected:
     /// Generic populate and solve
@@ -93,10 +93,10 @@ protected:
         for (uint i = 0; i < pNTris; ++i) {
             double c = (pTriCur[i] + pTriCurClamp[i]) / 3.0;
 
-            uint *triv = pMesh->getTriangle(i);
-            pVertCur[triv[0]] += c;
-            pVertCur[triv[1]] += c;
-            pVertCur[triv[2]] += c;
+            const auto *triv = pMesh->getTriangle(i);
+            pVertCur[triv[0].get()] += c;
+            pVertCur[triv[1].get()] += c;
+            pVertCur[triv[2].get()] += c;
         }
 
         typename LinSysImpl::matrix_type &A=L->A();
@@ -117,7 +117,7 @@ protected:
                 double rhs = pVertCur[ind] + pGExt[ind] * (pVExt - pV[ind]);
                 double Aii = ve->getCapacitance()*oodt + pGExt[ind];
 
-                for (int inbr = 0; inbr < ve->getNCon(); ++inbr) {
+                for (auto inbr = 0u; inbr < ve->getNCon(); ++inbr) {
                     int k = ve->nbrIdx(inbr);
                     double cc = ve->getCC(inbr);
 

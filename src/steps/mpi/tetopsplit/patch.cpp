@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -55,27 +55,20 @@ namespace ssolver = steps::solver;
 
 smtos::Patch::Patch(ssolver::Patchdef * patchdef)
 : pPatchdef(patchdef)
-, pTris()
-, pArea(0.0)
 {
-    AssertLog(pPatchdef != 0);
+    AssertLog(pPatchdef != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::Patch::~Patch()
-= default;
-
-////////////////////////////////////////////////////////////////////////////////
-
-void smtos::Patch::checkpoint(std::fstream & cp_file)
+void smtos::Patch::checkpoint(std::fstream & /*cp_file*/)
 {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Patch::restore(std::fstream & cp_file)
+void smtos::Patch::restore(std::fstream & /*cp_file*/)
 {
     // reserve
 }
@@ -94,7 +87,7 @@ void smtos::Patch::addTri(smtos::Tri * tri)
 void smtos::Patch::modCount(uint slidx, double count)
 {
     AssertLog(slidx < def()->countSpecs());
-    double newcount = (def()->pools()[slidx] + count);
+    double newcount = def()->pools()[slidx] + count;
     AssertLog(newcount >= 0.0);
     def()->setCount(slidx, newcount);
 }
@@ -109,14 +102,14 @@ smtos::Tri * smtos::Patch::pickTriByArea(double rand01) const
 
     double accum = 0.0;
     double selector = rand01 * area();
-    TriPVecCI t_end = endTri();
-    for (TriPVecCI t = bgnTri(); t != t_end; ++t)
-    {
-        accum += (*t)->area();
-        if (selector <= accum) return *t;
+    for (auto const& t: pTris) {
+        accum += t->area();
+        if (selector <= accum) {
+            return t;
+        }
     }
 
-    return *(t_end-1);
+    return *(endTri() - 1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

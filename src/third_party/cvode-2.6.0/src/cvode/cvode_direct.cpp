@@ -91,13 +91,13 @@ int CVDlsSetDenseJacFn(void *cvode_mem, CVDlsDenseJacFn jac)
     CVProcessError(NULL, CVDLS_MEM_NULL, "CVDLS", "CVDlsSetDenseJacFn", MSGD_CVMEM_NULL);
     return(CVDLS_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if (lmem == NULL) {
     CVProcessError(cv_mem, CVDLS_LMEM_NULL, "CVDLS", "CVDlsSetDenseJacFn", MSGD_LMEM_NULL);
     return(CVDLS_LMEM_NULL);
   }
-  cvdls_mem = (CVDlsMem) lmem;
+  cvdls_mem = static_cast<CVDlsMem> (lmem);
 
   if (jac != NULL) {
     jacDQ = FALSE;
@@ -122,13 +122,13 @@ int CVDlsSetBandJacFn(void *cvode_mem, CVDlsBandJacFn jac)
     CVProcessError(NULL, CVDLS_MEM_NULL, "CVDLS", "CVDlsSetBandJacFn", MSGD_CVMEM_NULL);
     return(CVDLS_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if (lmem == NULL) {
     CVProcessError(cv_mem, CVDLS_LMEM_NULL, "CVDLS", "CVDlsSetBandJacFn", MSGD_LMEM_NULL);
     return(CVDLS_LMEM_NULL);
   }
-  cvdls_mem = (CVDlsMem) lmem;
+  cvdls_mem = static_cast<CVDlsMem> (lmem);
 
   if (jac != NULL) {
     jacDQ = FALSE;
@@ -154,13 +154,13 @@ int CVDlsGetWorkSpace(void *cvode_mem, long int *lenrwLS, long int *leniwLS)
     CVProcessError(NULL, CVDLS_MEM_NULL, "CVDLS", "CVDlsGetWorkSpace", MSGD_CVMEM_NULL);
     return(CVDLS_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if (lmem == NULL) {
     CVProcessError(cv_mem, CVDLS_LMEM_NULL, "CVDLS", "CVDlsGetWorkSpace", MSGD_LMEM_NULL);
     return(CVDLS_LMEM_NULL);
   }
-  cvdls_mem = (CVDlsMem) lmem;
+  cvdls_mem = static_cast<CVDlsMem> (lmem);
 
   if (mtype == SUNDIALS_DENSE) {
     *lenrwLS = 2*n*n;
@@ -186,13 +186,13 @@ int CVDlsGetNumJacEvals(void *cvode_mem, long int *njevals)
     CVProcessError(NULL, CVDLS_MEM_NULL, "CVDLS", "CVDlsGetNumJacEvals", MSGD_CVMEM_NULL);
     return(CVDLS_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if (lmem == NULL) {
     CVProcessError(cv_mem, CVDLS_LMEM_NULL, "CVDLS", "CVDlsGetNumJacEvals", MSGD_LMEM_NULL);
     return(CVDLS_LMEM_NULL);
   }
-  cvdls_mem = (CVDlsMem) lmem;
+  cvdls_mem = static_cast<CVDlsMem> (lmem);
 
   *njevals = nje;
 
@@ -213,13 +213,13 @@ int CVDlsGetNumRhsEvals(void *cvode_mem, long int *nfevalsLS)
     CVProcessError(NULL, CVDLS_MEM_NULL, "CVDLS", "CVDlsGetNumRhsEvals", MSGD_CVMEM_NULL);
     return(CVDLS_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if (lmem == NULL) {
     CVProcessError(cv_mem, CVDLS_LMEM_NULL, "CVDLS", "CVDlsGetNumRhsEvals", MSGD_LMEM_NULL);
     return(CVDLS_LMEM_NULL);
   }
-  cvdls_mem = (CVDlsMem) lmem;
+  cvdls_mem = static_cast<CVDlsMem> (lmem);
 
   *nfevalsLS = nfeDQ;
 
@@ -234,7 +234,7 @@ char *CVDlsGetReturnFlagName(int flag)
 {
   char *name;
 
-  name = (char *)malloc(30*sizeof(char));
+  name = static_cast<char *>(malloc(30 * sizeof(char)));
 
   switch(flag) {
   case CVDLS_SUCCESS:
@@ -278,13 +278,13 @@ int CVDlsGetLastFlag(void *cvode_mem, int *flag)
     CVProcessError(NULL, CVDLS_MEM_NULL, "CVDLS", "CVDlsGetLastFlag", MSGD_CVMEM_NULL);
     return(CVDLS_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if (lmem == NULL) {
     CVProcessError(cv_mem, CVDLS_LMEM_NULL, "CVDLS", "CVDlsGetLastFlag", MSGD_LMEM_NULL);
     return(CVDLS_LMEM_NULL);
   }
-  cvdls_mem = (CVDlsMem) lmem;
+  cvdls_mem = static_cast<CVDlsMem> (lmem);
 
   *flag = last_flag;
 
@@ -315,7 +315,7 @@ int CVDlsGetLastFlag(void *cvode_mem, int *flag)
 int cvDlsDenseDQJac(int N, realtype t,
                     N_Vector y, N_Vector fy, 
                     DlsMat Jac, void *data,
-                    N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
+                    N_Vector tmp1, N_Vector tmp2, N_Vector /*tmp3*/)
 {
   realtype fnorm, minInc, inc, inc_inv, yjsaved, srur;
   realtype *tmp2_data, *y_data, *ewt_data;
@@ -327,8 +327,8 @@ int cvDlsDenseDQJac(int N, realtype t,
   CVDlsMem cvdls_mem;
 
   /* data points to cvode_mem */
-  cv_mem = (CVodeMem) data;
-  cvdls_mem = (CVDlsMem) lmem;
+  cv_mem = static_cast<CVodeMem> (data);
+  cvdls_mem = static_cast<CVDlsMem> (lmem);
 
   /* Save pointer to the array in tmp2 */
   tmp2_data = N_VGetArrayPointer(tmp2);
@@ -389,9 +389,9 @@ int cvDlsDenseDQJac(int N, realtype t,
  */
 
 int cvDlsBandDQJac(int N, int mupper, int mlower,
-                   realtype t, N_Vector y, N_Vector fy, 
+                   realtype /*t*/, N_Vector y, N_Vector fy,
                    DlsMat Jac, void *data,
-                   N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
+                   N_Vector tmp1, N_Vector tmp2, N_Vector /*tmp3*/)
 {
   N_Vector ftemp, ytemp;
   realtype fnorm, minInc, inc, inc_inv, srur;
@@ -403,8 +403,8 @@ int cvDlsBandDQJac(int N, int mupper, int mlower,
   CVDlsMem cvdls_mem;
 
   /* data points to cvode_mem */
-  cv_mem = (CVodeMem) data;
-  cvdls_mem = (CVDlsMem) lmem;
+  cv_mem = static_cast<CVodeMem> (data);
+  cvdls_mem = static_cast<CVDlsMem> (lmem);
 
   /* Rename work vectors for use as temporary values of y and f */
   ftemp = tmp1;

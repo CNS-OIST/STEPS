@@ -32,15 +32,15 @@ DlsMat NewDenseMat(int M, int N)
   if ( (M <= 0) || (N <= 0) ) return(NULL);
 
   A = NULL;
-  A = (DlsMat) malloc(sizeof *A);
+  A = static_cast<DlsMat> (malloc(sizeof *A));
   if (A==NULL) return (NULL);
   
-  A->data = (realtype *) malloc(M * N * sizeof(realtype));
+  A->data = static_cast<realtype *> (malloc(M * N * sizeof(realtype)));
   if (A->data == NULL) {
     free(A); A = NULL;
     return(NULL);
   }
-  A->cols = (realtype **) malloc(N * sizeof(realtype *));
+  A->cols = static_cast<realtype **> (malloc(N * sizeof(realtype *)));
   if (A->cols == NULL) {
     free(A->data); A->data = NULL;
     free(A); A = NULL;
@@ -67,11 +67,11 @@ realtype **newDenseMat(int m, int n)
   if ( (n <= 0) || (m <= 0) ) return(NULL);
 
   a = NULL;
-  a = (realtype **) malloc(n * sizeof(realtype *));
+  a = static_cast<realtype **> (malloc(n * sizeof(realtype *)));
   if (a == NULL) return(NULL);
 
   a[0] = NULL;
-  a[0] = (realtype *) malloc(m * n * sizeof(realtype));
+  a[0] = static_cast<realtype *> (malloc(m * n * sizeof(realtype)));
   if (a[0] == NULL) {
     free(a); a = NULL;
     return(NULL);
@@ -91,19 +91,19 @@ DlsMat NewBandMat(int N, int mu, int ml, int smu)
   if (N <= 0) return(NULL);
   
   A = NULL;
-  A = (DlsMat) malloc(sizeof *A);
+  A = static_cast<DlsMat> (malloc(sizeof *A));
   if (A == NULL) return (NULL);
 
   colSize = smu + ml + 1;
   A->data = NULL;
-  A->data = (realtype *) malloc(N * colSize * sizeof(realtype));
+  A->data = static_cast<realtype *> (malloc(N * colSize * sizeof(realtype)));
   if (A->data == NULL) {
     free(A); A = NULL;
     return(NULL);
   }
 
   A->cols = NULL;
-  A->cols = (realtype **) malloc(N * sizeof(realtype *));
+  A->cols = static_cast<realtype **> (malloc(N * sizeof(realtype *)));
   if (A->cols == NULL) {
     free(A->data);
     free(A); A = NULL;
@@ -133,12 +133,12 @@ realtype **newBandMat(int n, int smu, int ml)
   if (n <= 0) return(NULL);
 
   a = NULL;
-  a = (realtype **) malloc(n * sizeof(realtype *));
+  a = static_cast<realtype **> (malloc(n * sizeof(realtype *)));
   if (a == NULL) return(NULL);
 
   colSize = smu + ml + 1;
   a[0] = NULL;
-  a[0] = (realtype *) malloc(n * colSize * sizeof(realtype));
+  a[0] = static_cast<realtype *> (malloc(n * colSize * sizeof(realtype)));
   if (a[0] == NULL) {
     free(a); a = NULL;
     return(NULL);
@@ -169,7 +169,7 @@ int *NewIntArray(int N)
   if (N <= 0) return(NULL);
 
   vec = NULL;
-  vec = (int *) malloc(N * sizeof(int));
+  vec = static_cast<int *> (malloc(N * sizeof(int)));
 
   return(vec);
 }
@@ -181,7 +181,7 @@ int *newIntArray(int n)
   if (n <= 0) return(NULL);
 
   v = NULL;
-  v = (int *) malloc(n * sizeof(int));
+  v = static_cast<int *> (malloc(n * sizeof(int)));
 
   return(v);
 }
@@ -193,7 +193,7 @@ realtype *NewRealArray(int N)
   if (N <= 0) return(NULL);
 
   vec = NULL;
-  vec = (realtype *) malloc(N * sizeof(realtype));
+  vec = static_cast<realtype *> (malloc(N * sizeof(realtype)));
 
   return(vec);
 }
@@ -205,7 +205,7 @@ realtype *newRealArray(int m)
   if (m <= 0) return(NULL);
 
   v = NULL;
-  v = (realtype *) malloc(m * sizeof(realtype));
+  v = static_cast<realtype *> (malloc(m * sizeof(realtype)));
 
   return(v);
 }

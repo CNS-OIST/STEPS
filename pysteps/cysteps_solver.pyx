@@ -6,6 +6,7 @@ from steps_wmrssa cimport *
 from steps_tetexact cimport *
 from steps_tetode cimport *
 from steps_solver cimport *
+from steps cimport index_t
 
 # ======================================================================================================================
 # Python bindings to namespace steps::wmrk4
@@ -37,7 +38,7 @@ cdef class _py_Wmrk4(_py_API):
         if g == None:
             raise TypeError('The Geom object is empty.')
 
-        self._ptr = new Wmrk4(m.ptr(), g.ptr(), r.ptr() if r else NULL)
+        self._ptr = new Wmrk4(m.ptr(), g.ptr(), r.ptr() if r else shared_ptr[RNG]())
         _py_API.__init__(self, m, g, r)
 
     def getSolverName(self, ):
@@ -583,7 +584,7 @@ cdef class _py_Wmdirect(_py_API):
         """
         self.ptrd().setTime(time)
 
-    def setNSteps(self, unsigned int nsteps):
+    def setNSteps(self, uint nsteps):
         """
         Set the number of 'realizations' of the SSA, the number of reaction 
         (and diffusion) events in stochastic solvers.
@@ -907,7 +908,7 @@ cdef class _py_Wmrssa(_py_API):
         """
         self.ptrd().setTime(time)
 
-    def setNSteps(self, unsigned int nsteps):
+    def setNSteps(self, uint nsteps):
         """
         Set the number of 'realizations' of the SSA, the number of reaction 
         (and diffusion) events in stochastic solvers.
@@ -1337,7 +1338,7 @@ cdef class _py_Tetexact(_py_API):
         """
         self.ptrx().setTime(time)
 
-    def setNSteps(self, unsigned int nsteps):
+    def setNSteps(self, uint nsteps):
         """
         Set the number of 'realizations' of the SSA, the number of reaction 
         (and diffusion) events in stochastic solvers.
@@ -1355,7 +1356,7 @@ cdef class _py_Tetexact(_py_API):
         """
         self.ptrx().setNSteps(nsteps)
 
-    def getBatchTetCounts(self, std.vector[unsigned int] tets, str s):
+    def getBatchTetCounts(self, std.vector[index_t] tets, str s):
         """
         Get the counts of a species s in a list of tetrahedrons.
 
@@ -1364,16 +1365,16 @@ cdef class _py_Tetexact(_py_API):
             getBatchTetCounts(tets, s)
 
         Arguments:
-        list<int> tets
+        list<index_t> tets
         string s
 
         Return:
-        list<float>
+        list<double>
 
         """
         return self.ptrx().getBatchTetCounts(tets, to_std_string(s))
 
-    def getBatchTriCounts(self, std.vector[unsigned int] tris, str s):
+    def getBatchTriCounts(self, std.vector[index_t] tris, str s):
         """
         Get the counts of a species s in a list of triangles.
 
@@ -1382,16 +1383,16 @@ cdef class _py_Tetexact(_py_API):
             getBatchTriCounts(tris, s)
 
         Arguments:
-        list<int> tris
+        list<index_t> tris
         string s
 
         Return:
-        list<float>
+        list<double>
 
         """
         return self.ptrx().getBatchTriCounts(tris, to_std_string(s))
 
-    def getBatchTetCountsNP(self, uint[:] indices, str s, double[:] counts):
+    def getBatchTetCountsNP(self, index_t[:] indices, str s, double[:] counts):
         """
         Get the counts of a species s in a list of tetrahedrons.
 
@@ -1399,9 +1400,9 @@ cdef class _py_Tetexact(_py_API):
             getBatchTetCountsNP(indices, s, counts)
 
         Arguments:
-        numpy.array<uint> indices
+        numpy.array<index_t> indices
         string s
-        numpy.array<float, length = len(indices)>
+        numpy.array<double, length = len(indices)>
 
         Return:
         None
@@ -1409,7 +1410,7 @@ cdef class _py_Tetexact(_py_API):
         """
         self.ptrx().getBatchTetCountsNP(&indices[0], indices.shape[0], to_std_string(s), &counts[0], counts.shape[0])
 
-    def getBatchTriCountsNP(self, uint[:] indices, str s, double[:] counts):
+    def getBatchTriCountsNP(self, index_t[:] indices, str s, double[:] counts):
         """
         Get the counts of a species s in a list of triangles.
 
@@ -1417,9 +1418,9 @@ cdef class _py_Tetexact(_py_API):
             getBatchTriCountsNP(indices, s, counts)
 
         Arguments:
-        numpy.array<uint> indices
+        numpy.array<index_t> indices
         string s
-        numpy.array<float, length = len(indices)>
+        numpy.array<double, length = len(indices)>
 
         Return:
         None
@@ -1792,7 +1793,7 @@ cdef class _py_Tetexact(_py_API):
         string r
 
         Return:
-        int
+        index_t
 
         """
         return self.ptrx().getROIReacExtent(to_std_string(ROI_id), to_std_string(r))
@@ -1830,7 +1831,7 @@ cdef class _py_Tetexact(_py_API):
         string sr
 
         Return:
-        int
+        index_t
 
         """
         return self.ptrx().getROISReacExtent(to_std_string(ROI_id), to_std_string(sr))
@@ -1868,7 +1869,7 @@ cdef class _py_Tetexact(_py_API):
         string d
 
         Return:
-        int
+        index_t
 
         """
         return self.ptrx().getROIDiffExtent(to_std_string(ROI_id), to_std_string(d))
@@ -1937,7 +1938,7 @@ cdef class _py_TetODE(_py_API):
         if g == None:
             raise TypeError('The Geom object is empty.')
 
-        self._ptr = new TetODE(m.ptr(), g.ptr(), r.ptr() if r else NULL, calcMembPot)
+        self._ptr = new TetODE(m.ptr(), g.ptr(), r.ptr() if r else shared_ptr[RNG](), calcMembPot)
         _py_API.__init__(self, m, g, r)
 
     def getSolverName(self, ):
@@ -2175,7 +2176,7 @@ cdef class _py_TetODE(_py_API):
         """
         self.ptrx().setTolerances(atol, rtol)
 
-    def setMaxNumSteps(self, unsigned int maxn):
+    def setMaxNumSteps(self, uint maxn):
         """
         Sets the maximum number of steps in CVODE per call to run().
         Default is 10000 if this function is not called.
@@ -2221,7 +2222,6 @@ cdef class _py_API(_py__base):
     EF_NONE      = steps_solver.EF_NONE
     EF_DEFAULT   = steps_solver.EF_DEFAULT
     EF_DV_BDSYS  = steps_solver.EF_DV_BDSYS
-    EF_DV_SLUSYS = steps_solver.EF_DV_SLUSYS
     EF_DV_PETSC  = steps_solver.EF_DV_PETSC
 
     cdef API *ptr(self):
@@ -2741,7 +2741,7 @@ cdef class _py_API(_py__base):
         string reac
 
         Return:
-        int
+        index_t
 
         """
         return self.ptr().getCompReacExtent(to_std_string(c), to_std_string(r))
@@ -2768,7 +2768,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().resetCompReacExtent(to_std_string(c), to_std_string(r))
 
-    def getTetVol(self, unsigned int tidx):
+    def getTetVol(self, index_t tidx):
         """
         Returns the volume (in m^3) of the tetrahedral element with index idx.
 
@@ -2777,7 +2777,7 @@ cdef class _py_API(_py__base):
             getTetVol(idx)
             
         Arguments:
-        int idx
+        index_t idx
 
         Return:
         float
@@ -2785,10 +2785,10 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTetVol(tidx)
 
-    #def setTetVol(self, unsigned int tidx, double vol):
+    #def setTetVol(self, index_t tidx, double vol):
     #    self.ptr().setTetVol(tidx, vol)
 
-    def getTetSpecDefined(self, unsigned int tidx, str s):
+    def getTetSpecDefined(self, index_t tidx, str s):
         """
         Returns whether species with identifier string spec is defined
         in the tetrahedral element with index idx.
@@ -2798,7 +2798,7 @@ cdef class _py_API(_py__base):
             getTetSpecDefined(idx, spec)
             
         Arguments:
-        int idx
+        index_t idx
         string spec
 
         Return:
@@ -2807,7 +2807,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTetSpecDefined(tidx, to_std_string(s))
 
-    def getTetCount(self, unsigned int tidx, str s):
+    def getTetCount(self, index_t tidx, str s):
         """
         Returns the number of molecules of species with identifier string spec 
         in the tetrahedral element with index idx.
@@ -2817,7 +2817,7 @@ cdef class _py_API(_py__base):
             getTetCount(idx, spec)
             
         Arguments:
-        int idx
+        index_t idx
         string spec
 
         Return:
@@ -2826,7 +2826,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTetCount(tidx, to_std_string(s))
 
-    def setTetCount(self, unsigned int tidx, str s, double n):
+    def setTetCount(self, index_t tidx, str s, double n):
         """
         Sets the number of molecules of species with identifier string spec in 
         tetrahedral element with index idx to n.
@@ -2836,7 +2836,7 @@ cdef class _py_API(_py__base):
             setTetCount(idx, spec, n)
             
         Arguments:
-        int idx
+        index_t idx
         string spec
         int n
 
@@ -2846,7 +2846,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setTetCount(tidx, to_std_string(s), n)
 
-    def getTetAmount(self, unsigned int tidx, str s):
+    def getTetAmount(self, index_t tidx, str s):
         """
         Returns the amount (in mols) of species with identifier string spec in 
         tetrahedral element with index idx.
@@ -2856,7 +2856,7 @@ cdef class _py_API(_py__base):
             getTetAmount(idx, spec)
             
         Arguments:
-        int idx
+        index_t idx
         string spec
 
         Return:
@@ -2865,7 +2865,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTetAmount(tidx, to_std_string(s))
 
-    def setTetAmount(self, unsigned int tidx, str s, double m):
+    def setTetAmount(self, index_t tidx, str s, double m):
         """
         Sets the amount (in mols) of species with identifier string spec in tetrahedral 
         element with index idx to a. This continuous value must be converted internally 
@@ -2881,7 +2881,7 @@ cdef class _py_API(_py__base):
             setTetAmount(idx, spec, a)
             
         Arguments:
-        int idx
+        index_t idx
         string spec
         float a
 
@@ -2891,7 +2891,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setTetAmount(tidx, to_std_string(s), m)
 
-    def getTetConc(self, unsigned int tidx, str s):
+    def getTetConc(self, index_t tidx, str s):
         """
         Returns the concentration (in Molar units) of species with identifier 
         string spec in a tetrahedral element with index idx.
@@ -2901,7 +2901,7 @@ cdef class _py_API(_py__base):
             getTetConc(idx, spec)
             
         Arguments:
-        int idx
+        index_t idx
         string spec
 
         Return:
@@ -2910,7 +2910,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTetConc(tidx, to_std_string(s))
 
-    def setTetConc(self, unsigned int tidx, str s, double c):
+    def setTetConc(self, index_t tidx, str s, double c):
         """
         Sets the concentration (in Molar units) of species with identifier string spec 
         in a tetrahedral element with index idx to conc.This continuous value must be 
@@ -2924,7 +2924,7 @@ cdef class _py_API(_py__base):
             setTetConc(idx, spec, conc)
             
         Arguments:
-        int idx
+        index_t idx
         string spec
         float conc
 
@@ -2934,7 +2934,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setTetConc(tidx, to_std_string(s), c)
 
-    def getTetClamped(self, unsigned int tidx, str s):
+    def getTetClamped(self, index_t tidx, str s):
         """
         Returns True if concentration of species with identifier string spec in tetrahedral 
         element with index idx is clamped, which means the concentration stays the 
@@ -2947,7 +2947,7 @@ cdef class _py_API(_py__base):
             getTetClamped(idx, spec)
             
         Arguments:
-        int idx
+        index_t idx
         string spec
 
         Return:
@@ -2956,7 +2956,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTetClamped(tidx, to_std_string(s))
 
-    def setTetClamped(self, unsigned int tidx, str s, bool buf):
+    def setTetClamped(self, index_t tidx, str s, bool buf):
         """
         Sets whether the concentration of species spec in tetrahedral element with 
         index idx is clamped (clamped = True) or not (clamped = False). 
@@ -2969,7 +2969,7 @@ cdef class _py_API(_py__base):
             setTetClamped(idx, spec, clamped)
             
         Arguments:
-        int idx
+        index_t idx
         string spec
         bool clamped
 
@@ -2979,7 +2979,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setTetClamped(tidx, to_std_string(s), buf)
 
-    def getTetReacK(self, unsigned int tidx, str r):
+    def getTetReacK(self, index_t tidx, str r):
         """
         Returns the macroscopic reaction constant of reaction with identifier string reac 
         in tetrahedral element with index idx. The unit of the reaction constant depends 
@@ -2990,7 +2990,7 @@ cdef class _py_API(_py__base):
             getTetReacK(idx, reac)
             
         Arguments:
-        int idx
+        index_t idx
         string reac
 
         Return:
@@ -2999,7 +2999,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTetReacK(tidx, to_std_string(r))
 
-    def setTetReacK(self, unsigned int tidx, str r, double kf):
+    def setTetReacK(self, index_t tidx, str r, double kf):
         """
         Sets the macroscopic reaction constant of reaction with identifier string reac 
         in tetrahedral element with index idx to kf. The units of the reaction constant 
@@ -3010,7 +3010,7 @@ cdef class _py_API(_py__base):
             setTetReacK(idx, reac, kf)
             
         Arguments:
-        int idx
+        index_t idx
         string reac
         float kf
 
@@ -3020,7 +3020,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setTetReacK(tidx, to_std_string(r), kf)
 
-    def getTetReacActive(self, unsigned int tidx, str r):
+    def getTetReacActive(self, index_t tidx, str r):
         """
         Returns whether reaction with identifier string reac in tetrahedral element 
         with index idx is active (True) or not (False). If it's not active this means 
@@ -3032,7 +3032,7 @@ cdef class _py_API(_py__base):
             getTetReacActive(idx, reac)
             
         Arguments:
-        int idx
+        index_t idx
         string reac
 
         Return:
@@ -3041,7 +3041,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTetReacActive(tidx, to_std_string(r))
 
-    def setTetReacActive(self, unsigned int tidx, str r, bool act):
+    def setTetReacActive(self, index_t tidx, str r, bool act):
         """
         Activate (active = True) or deactivate (active = False) a reaction with identifier 
         string reac in tetrahedral element with index idx. If it's not active this means 
@@ -3053,7 +3053,7 @@ cdef class _py_API(_py__base):
             setTetReacActive(idx, reac, active)
             
         Arguments:
-        int idx
+        index_t idx
         string reac
         bool active
 
@@ -3063,17 +3063,17 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setTetReacActive(tidx, to_std_string(r), act)
 
-    def getTetDiffD(self, unsigned int tidx, str d, unsigned int direction_tet=numeric_limits[uint].max()):
+    def getTetDiffD(self, index_t tidx, str d, index_t direction_tet=UNKNOWN_TET):
         """
         Returns the diffusion constant of diffusion rule with identifier string diff 
         in tetrahedral element with index idx. This constant is in units m^2/s. If direction_tet is specified, return the diffusion constant towards that direction.
 
         Syntax::
             
-            getTetDiffD(idx, diff, direction_tet = UINT_MAX)
+            getTetDiffD(idx, diff, direction_tet = UNKNOWN_TET)
             
         Arguments:
-        int idx
+        index_t idx
         string diff
         direction_tet
             
@@ -3083,19 +3083,19 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTetDiffD(tidx, to_std_string(d), direction_tet)
 
-    def setTetDiffD(self, unsigned int tidx, str d, double dk, unsigned int direction_tet=numeric_limits[uint].max()):
+    def setTetDiffD(self, index_t tidx, str d, double dk, index_t direction_tet=UNKNOWN_TET):
         """
         Sets the diffusion constant of diffusion rule with identifier string diff in 
         tetrahedral element with index idx to dcst (in m^2/s). Specify direction_tet to set the constant only towards a given tetrahedron direction.
         Syntax::
             
-            setTetDiffD(idx, diff, dcst, direction_tet = UINT_MAX)
+            setTetDiffD(idx, diff, dcst, direction_tet = UNKNOWN_TET)
             
         Arguments:
-        int idx
+        index_t idx
         string diff
         float dcst
-        int direction_tet
+        index_t direction_tet
 
         Return:
         None
@@ -3103,7 +3103,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setTetDiffD(tidx, to_std_string(d), dk, direction_tet)
 
-    def getTetDiffActive(self, unsigned int tidx, str d):
+    def getTetDiffActive(self, index_t tidx, str d):
         """
         Returns whether diffusion with identifier string diff in tetrahedral element 
         with index idx is active (True) or not (False). If diffusion of a species 
@@ -3115,7 +3115,7 @@ cdef class _py_API(_py__base):
             getTetDiffActive(idx, diff)
             
         Arguments:
-        int idx
+        index_t idx
         string diff
 
         Return:
@@ -3124,7 +3124,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTetDiffActive(tidx, to_std_string(d))
 
-    def setTetDiffActive(self, unsigned int tidx, str d, bool act):
+    def setTetDiffActive(self, index_t tidx, str d, bool act):
         """
         Activate (active = True) or deactivate (active = False) diffusion rule with 
         identifier string diff in tetrahedral element with index idx. If diffusion of 
@@ -3136,7 +3136,7 @@ cdef class _py_API(_py__base):
             setTetDiffActive(idx, diff, active)
             
         Arguments:
-        int idx
+        index_t idx
         string diff
         bool active
 
@@ -3146,7 +3146,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setTetDiffActive(tidx, to_std_string(d), act)
 
-    def getTetReacC(self, unsigned int tidx, str r):
+    def getTetReacC(self, index_t tidx, str r):
         """
         Returns the 'stochastic reaction constant' (or 'specific probability rate constant') 
         of reaction with identifier string reac in tetrahedral element with index idx.
@@ -3156,7 +3156,7 @@ cdef class _py_API(_py__base):
             getTetReacC(idx, reac)
             
         Arguments:
-        int idx
+        index_t idx
         string reac
 
         Return:
@@ -3165,7 +3165,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTetReacC(tidx, to_std_string(r))
 
-    def getTetReacH(self, unsigned int tidx, str r):
+    def getTetReacH(self, index_t tidx, str r):
         """
         Returns h_mu, the distinct number of ways in which reaction with identifier string 
         reac can occur in tetrahedral element with index idx, by computing the product of 
@@ -3176,7 +3176,7 @@ cdef class _py_API(_py__base):
             getTetReacH(idx, reac)
             
         Arguments:
-        int idx
+        index_t idx
         string reac
 
         Return:
@@ -3185,7 +3185,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTetReacH(tidx, to_std_string(r))
 
-    def getTetReacA(self, unsigned int tidx, str r):
+    def getTetReacA(self, index_t tidx, str r):
         """
         Returns the propensity of reaction with identifier string reac in tetrahedral 
         element with index idx.
@@ -3195,7 +3195,7 @@ cdef class _py_API(_py__base):
             getTetReacA(idx, reac)
             
         Arguments:
-        int idx
+        index_t idx
         string reac
 
         Return:
@@ -3204,7 +3204,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTetReacA(tidx, to_std_string(r))
 
-    def getTetDiffA(self, unsigned int tidx, str d):
+    def getTetDiffA(self, index_t tidx, str d):
         """
         Returns the propensity of diffusion rule with identifier string diff in 
         tetrahedral element with index idx. 
@@ -3214,7 +3214,7 @@ cdef class _py_API(_py__base):
             getTetDiffA(idx, reac)
             
         Arguments:
-        int idx
+        index_t idx
         string reac
 
         Return:
@@ -3223,7 +3223,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTetDiffA(tidx, to_std_string(d))
 
-    def getTetV(self, unsigned int tidx):
+    def getTetV(self, index_t tidx):
         """
         Returns the potential (in volts) of tetrahedral element with index idx, taken at the barycenter.
         			
@@ -3232,7 +3232,7 @@ cdef class _py_API(_py__base):
         	getTetV(idx)
         			 
         Arguments:
-        int idx
+        index_t idx
         		
         Return:
         float
@@ -3240,7 +3240,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTetV(tidx)
 
-    def setTetV(self, unsigned int tidx, double v):
+    def setTetV(self, index_t tidx, double v):
         """
         Set the potential (in volts) of tetrahedral element with index idx.
         			
@@ -3249,7 +3249,7 @@ cdef class _py_API(_py__base):
         	setTetV(idx, v)
         			 
         Arguments:
-        int idx
+        index_t idx
         float v
         			 
         Return:
@@ -3258,7 +3258,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setTetV(tidx, v)
 
-    def getTetVClamped(self, unsigned int tidx):
+    def getTetVClamped(self, index_t tidx):
         """
         Returns true if the potential of tetrahedral element with index idx is clamped
         to some voltage.
@@ -3268,7 +3268,7 @@ cdef class _py_API(_py__base):
         	getTetVClamped(idx)
         			 
         Arguments:
-        int idx
+        index_t idx
         		
         Return:
         bool
@@ -3276,7 +3276,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTetVClamped(tidx)
 
-    def setTetVClamped(self, unsigned int tidx, bool cl):
+    def setTetVClamped(self, index_t tidx, bool cl):
         """
         Sets whether the potential of tetrahedral element with index idx is clamped
         (clamped = True) or not (clamped = False).
@@ -3286,7 +3286,7 @@ cdef class _py_API(_py__base):
         	setTetVClamped(idx, clamped)
         			 
         Arguments:
-        int idx
+        index_t idx
         bool clamped
         			 
         Return:
@@ -3652,7 +3652,7 @@ cdef class _py_API(_py__base):
         string reac
 
         Return:
-        int
+        index_t
 
         """
         return self.ptr().getPatchSReacExtent(to_std_string(p), to_std_string(r))
@@ -3845,7 +3845,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setSDiffBoundaryDcst(to_std_string(sdb), to_std_string(s), dcst, to_std_string(direction_patch))
 
-    def getTriArea(self, unsigned int tidx):
+    def getTriArea(self, index_t tidx):
         """
         Returns the area (in m^2) of the triangular element with index idx.
 
@@ -3854,7 +3854,7 @@ cdef class _py_API(_py__base):
             getTriArea(idx)
             
         Arguments:
-        int idx
+        index_t idx
 
         Return:
         float
@@ -3862,10 +3862,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTriArea(tidx)
 
-    #def setTriArea(self, unsigned int tidx, double area):
-    #    self.ptr().setTriArea(tidx, area)
-
-    def getTriSpecDefined(self, unsigned int tidx, str s):
+    def getTriSpecDefined(self, index_t tidx, str s):
         """
         Returns whether species with identifier string spec is defined
         in the triangle element with index idx.
@@ -3875,7 +3872,7 @@ cdef class _py_API(_py__base):
             getTriSpecDefined(idx, spec)
             
         Arguments:
-        int idx
+        index_t idx
         string spec
 
         Return:
@@ -3884,7 +3881,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTriSpecDefined(tidx, to_std_string(s))
 
-    def getTriCount(self, unsigned int tidx, str s):
+    def getTriCount(self, index_t tidx, str s):
         """
         Returns the number of molecules of species with identifier string spec 
         in the triangular element with index idx.
@@ -3894,7 +3891,7 @@ cdef class _py_API(_py__base):
             getTriCount(idx, spec)
             
         Arguments:
-        int idx
+        index_t idx
         string spec
 
         Return:
@@ -3903,7 +3900,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTriCount(tidx, to_std_string(s))
 
-    def setTriCount(self, unsigned int tidx, str s, double n):
+    def setTriCount(self, index_t tidx, str s, double n):
         """
         Sets the number of molecules of species with identifier string spec in 
         triangular element with index idx to n. 
@@ -3913,7 +3910,7 @@ cdef class _py_API(_py__base):
             setTriCount(idx, spec, n)
             
         Arguments:
-        int idx
+        index_t idx
         string spec
         int n
 
@@ -3923,7 +3920,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setTriCount(tidx, to_std_string(s), n)
 
-    def getTriAmount(self, unsigned int tidx, str s):
+    def getTriAmount(self, index_t tidx, str s):
         """
         Returns the amount (in mols) of species with identifier string spec in triangular 
         element with index idx.  
@@ -3933,7 +3930,7 @@ cdef class _py_API(_py__base):
             getTriAmount(idx, spec)
             
         Arguments:
-        int idx
+        index_t idx
         string spec
 
         Return:
@@ -3942,7 +3939,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTriAmount(tidx, to_std_string(s))
 
-    def setTriAmount(self, unsigned int tidx, str s, double m):
+    def setTriAmount(self, index_t tidx, str s, double m):
         """
         Sets the amount (in mols) of species with identifier string spec in triangular 
         element with index idx to a. This continuous value must be converted internally 
@@ -3953,7 +3950,7 @@ cdef class _py_API(_py__base):
             setTriAmount(idx, spec, a)
             
         Arguments:
-        int idx
+        index_t idx
         string spec
         float a
 
@@ -3963,7 +3960,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setTriAmount(tidx, to_std_string(s), m)
 
-    def getTriClamped(self, unsigned int tidx, str s):
+    def getTriClamped(self, index_t tidx, str s):
         """
         Returns True if the species with identifier string spec in triangular element 
         with index idx is clamped, which means the number of molecules stays 
@@ -3975,7 +3972,7 @@ cdef class _py_API(_py__base):
             getTriClamped(idx, spec)
             
         Arguments:
-        int idx
+        index_t idx
         string spec
 
         Return:
@@ -3984,7 +3981,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTriClamped(tidx, to_std_string(s))
 
-    def setTriClamped(self, unsigned int tidx, str s, bool buf):
+    def setTriClamped(self, index_t tidx, str s, bool buf):
         """
         Sets whether the concentration of species spec in triangular element with index idx 
         is clamped (clamped = True) or not (clamped = False). If a species is clamped the 
@@ -3996,7 +3993,7 @@ cdef class _py_API(_py__base):
             setTriClamped(idx, spec, clamped)
             
         Arguments:
-        int idx
+        index_t idx
         string spec
         bool clamped
 
@@ -4006,7 +4003,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setTriClamped(tidx, to_std_string(s), buf)
 
-    def getTriSReacK(self, unsigned int tidx, str r):
+    def getTriSReacK(self, index_t tidx, str r):
         """
         Returns the macroscopic reaction constant of surface reaction with identifier 
         string sreac in triangular element with index idx. The units of the reaction 
@@ -4017,7 +4014,7 @@ cdef class _py_API(_py__base):
             getTriSReacK(idx, reac)
             
         Arguments:
-        int idx
+        index_t idx
         string reac
 
         Return:
@@ -4026,7 +4023,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTriSReacK(tidx, to_std_string(r))
 
-    def setTriSReacK(self, unsigned int tidx, str r, double kf):
+    def setTriSReacK(self, index_t tidx, str r, double kf):
         """
         Sets the macroscopic reaction constant of surface reaction with identifier 
         string sreac in triangular element with index idx to kf. The units of the 
@@ -4037,7 +4034,7 @@ cdef class _py_API(_py__base):
             setTriSReacK(idx, reac, kf)
             
         Arguments:
-        int idx
+        index_t idx
         string reac
         float kf
 
@@ -4047,7 +4044,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setTriSReacK(tidx, to_std_string(r), kf)
 
-    def getTriSReacActive(self, unsigned int tidx, str r):
+    def getTriSReacActive(self, index_t tidx, str r):
         """
         Returns whether surface reaction with identifier string sreac in triangular 
         element with index idx is active (True) or not (False). If it's not active 
@@ -4059,7 +4056,7 @@ cdef class _py_API(_py__base):
             getTriSReacActive(idx, reac)
             
         Arguments:
-        int idx
+        index_t idx
         string reac
 
         Return:
@@ -4068,7 +4065,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTriSReacActive(tidx, to_std_string(r))
 
-    def setTriSReacActive(self, unsigned int tidx, str r, bool act):
+    def setTriSReacActive(self, index_t tidx, str r, bool act):
         """
         Activate (active = True) or deactivate (active = False) a surface reaction 
         with identifier string sreac in triangular element with index idx. If it's 
@@ -4080,7 +4077,7 @@ cdef class _py_API(_py__base):
             setTriSReacActive(idx, reac, active)
             
         Arguments:
-        int idx
+        index_t idx
         string reac
         bool active
 
@@ -4090,7 +4087,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setTriSReacActive(tidx, to_std_string(r), act)
 
-    def getTriSReacC(self, unsigned int tidx, str r):
+    def getTriSReacC(self, index_t tidx, str r):
         """
         Returns the 'stochastic reaction constant' (or 'specific probability rate constant') 
         of surface reaction with identifier string sreac in triangular element with index idx.  
@@ -4100,7 +4097,7 @@ cdef class _py_API(_py__base):
             getTriSReacC(idx, reac)
             
         Arguments:
-        int idx
+        index_t idx
         string reac
 
         Return:
@@ -4109,7 +4106,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTriSReacC(tidx, to_std_string(r))
 
-    def getTriSReacH(self, unsigned int tidx, str r):
+    def getTriSReacH(self, index_t tidx, str r):
         """
         Returns h_mu, the distinct number of ways in which surface reaction with identifier 
         string sreac can occur in triangular element with index idx, by computing the product 
@@ -4120,7 +4117,7 @@ cdef class _py_API(_py__base):
             getTriSReacH(idx, reac)
             
         Arguments:
-        int idx
+        index_t idx
         string reac
 
         Return:
@@ -4129,7 +4126,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTriSReacH(tidx, to_std_string(r))
 
-    def getTriSReacA(self, unsigned int tidx, str r):
+    def getTriSReacA(self, index_t tidx, str r):
         """
         Returns the propensity of surface reaction with identifier string sreac 
         in triangular element with index idx. 
@@ -4139,7 +4136,7 @@ cdef class _py_API(_py__base):
             getTriSReacA(idx, reac)
             
         Arguments:
-        int idx
+        index_t idx
         string reac
 
         Return:
@@ -4148,22 +4145,19 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTriSReacA(tidx, to_std_string(r))
 
-    #def getTriDiffD(self, unsigned int tidx, str d, unsigned int direction_tri=numeric_limits[uint].max()):
-    #    return self.ptr().getTriDiffD(tidx, to_std_string(d), direction_tri)
-
-    def getTriSDiffD(self, unsigned int tidx, str d, unsigned int direction_tri=numeric_limits[uint].max()):
+    def getTriSDiffD(self, index_t tidx, str d, index_t direction_tri=UNKNOWN_TRI):
         """
         Returns the diffusion constant of diffusion rule with identifier string diff 
         in triangle element with index idx. If direction_tri is specified, return the diffusion constant towards that direction.
 
         Syntax::
             
-            getTriDiffD(idx, diff, direction_tri = UINT_MAX)
+            getTriDiffD(idx, diff, direction_tri = UNKNOWN_TRI)
             
         Arguments:
-        int idx
+        index_t tidx
         string diff
-        int direction_tri
+        index_t direction_tri
             
         Return:
         float
@@ -4171,22 +4165,19 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTriSDiffD(tidx, to_std_string(d), direction_tri)
 
-    #def setTriDiffD(self, unsigned int tidx, str d, double dk, unsigned int direction_tri=numeric_limits[uint].max()):
-    #    self.ptr().setTriDiffD(tidx, to_std_string(d), dk, direction_tri)
-
-    def setTriSDiffD(self, unsigned int tidx, str d, double dk, unsigned int direction_tri=numeric_limits[uint].max()):
+    def setTriSDiffD(self, index_t tidx, str d, double dk, index_t direction_tri=UNKNOWN_TRI):
         """
         Sets the diffusion constant of diffusion rule with identifier string diff in 
         triangle element with index idx to dcst. Specify direction_tri to set the constant only towards a given triangle direction.
         Syntax::
             
-            setTriSDiffD(idx, diff, dcst, direction_tri = UINT_MAX)
+            setTriSDiffD(idx, diff, dcst, direction_tri = UNKNOWN_TRI)
             
         Arguments:
-        int idx
+        index_t idx
         string diff
         float dcst
-        int direction_tri
+        index_t direction_tri
 
         Return:
         None
@@ -4194,7 +4185,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setTriSDiffD(tidx, to_std_string(d), dk, direction_tri)
 
-    def getTriV(self, unsigned int tidx):
+    def getTriV(self, index_t tidx):
         """
         Returns the potential (in volts) of triangle element with index idx, taken at the barycenter.
         			
@@ -4203,7 +4194,7 @@ cdef class _py_API(_py__base):
         	getTriV(idx)
         			 
         Arguments:
-        int idx
+        index_t idx
         		
         Return:
         float
@@ -4211,7 +4202,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTriV(tidx)
 
-    def setTriV(self, unsigned int tidx, double v):
+    def setTriV(self, index_t tidx, double v):
         """
         Set the potential (in volts) of triangle element with index idx.
         			
@@ -4220,7 +4211,7 @@ cdef class _py_API(_py__base):
         	setTriV(idx, v)
         			 
         Arguments:
-        int idx
+        index_t idx
         float v
         			 
         Return:
@@ -4229,7 +4220,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setTriV(tidx, v)
 
-    def getTriVClamped(self, unsigned int tidx):
+    def getTriVClamped(self, index_t tidx):
         """
         Returns true if the potential of triangle element with index idx is clamped
         to some voltage.
@@ -4239,7 +4230,7 @@ cdef class _py_API(_py__base):
         	getTriVClamped(idx)
         			 
         Arguments:
-        int idx
+        index_t idx
         		
         Return:
         bool
@@ -4247,7 +4238,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTriVClamped(tidx)
 
-    def setTriVClamped(self, unsigned int tidx, bool cl):
+    def setTriVClamped(self, index_t tidx, bool cl):
         """
         Sets whether the potential of triangle element with index idx is clamped
         (clamped = True) or not (clamped = False).
@@ -4257,7 +4248,7 @@ cdef class _py_API(_py__base):
         	setTriVClamped(idx, clamped)
         			 
         Arguments:
-        int idx
+        index_t idx
         bool clamped
         			 
         Return:
@@ -4266,7 +4257,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setTriVClamped(tidx, cl)
 
-    def getTriOhmicI(self, unsigned int tidx, str oc=''):
+    def getTriOhmicI(self, index_t tidx, str oc=''):
         """
         Returns the ohmic current of triangle element with index idx, in amps.
         			
@@ -4275,7 +4266,7 @@ cdef class _py_API(_py__base):
         	getTriOhmicI(idx, oc)
         			 
         Arguments:
-        int idx
+        index_t idx
         string oc (default = '') 
         		
         Return:
@@ -4286,7 +4277,7 @@ cdef class _py_API(_py__base):
             return self.ptr().getTriOhmicI(tidx)
         return self.ptr().getTriOhmicI(tidx, to_std_string(oc))
 
-    def getTriGHKI(self, unsigned int tidx, str ghk=''):
+    def getTriGHKI(self, index_t tidx, str ghk=''):
         """
         Returns the GHK current of triangle element with index idx, in amps.
                      
@@ -4295,7 +4286,7 @@ cdef class _py_API(_py__base):
             getTriGHKI(idx)
         			 
         Arguments:
-        int idx
+        index_t idx
         string ghk (default = '') 
                      
         Return:
@@ -4306,7 +4297,7 @@ cdef class _py_API(_py__base):
             return self.ptr().getTriGHKI(tidx)
         return self.ptr().getTriGHKI(tidx, to_std_string(ghk))
 
-    def getTriI(self, unsigned int tidx):
+    def getTriI(self, index_t tidx):
         """
         Returns the current of triangle element with index idx, in amps, 
         at the last EField calculation step.
@@ -4316,7 +4307,7 @@ cdef class _py_API(_py__base):
             getTriI(idx)
         			 
         Arguments:
-        int idx
+        index_t idx
         			 
         Return:
         float
@@ -4324,7 +4315,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTriI(tidx)
 
-    def setTriIClamp(self, unsigned int tidx, double i):
+    def setTriIClamp(self, index_t tidx, double i):
         """
         Set current clamp to triangle element with index idx to current i (amps).
         NOTE: Convention is maintained that a positive current clamp is depolarizing, a negative current clamp is hyperpolarizing.
@@ -4334,7 +4325,7 @@ cdef class _py_API(_py__base):
         	setTriIClamp(idx, i)
         			 
         Arguments:
-        int idx
+        index_t idx
         float i
         			 
         Return:
@@ -4343,7 +4334,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setTriIClamp(tidx, i)
 
-    def getTriVDepSReacActive(self, unsigned int tidx, str vsr):
+    def getTriVDepSReacActive(self, index_t tidx, str vsr):
         """
         Returns whether voltage-dependent surface reaction with identifier string vsreac in triangular 
         element with index idx is active (True) or not (False). If it's not active 
@@ -4355,7 +4346,7 @@ cdef class _py_API(_py__base):
             getTriVDepSReacActive(idx, reac)
 
         Arguments:
-        int idx
+        index_t idx
         string vsreac
 
         Return:
@@ -4364,7 +4355,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTriVDepSReacActive(tidx, to_std_string(vsr))
 
-    def setTriVDepSReacActive(self, unsigned int tidx, str vsr, bool act):
+    def setTriVDepSReacActive(self, index_t tidx, str vsr, bool act):
         """
         Activate (active = True) or deactivate (active = False) a voltage-dependent surface reaction 
         with identifier string vsreac in triangular element with index idx. If it's 
@@ -4376,7 +4367,7 @@ cdef class _py_API(_py__base):
             setTriVDepSReacActive(idx, vsreac, active)
 
         Arguments:
-        int idx
+        index_t idx
         string vsreac
         bool active
 
@@ -4386,7 +4377,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setTriVDepSReacActive(tidx, to_std_string(vsr), act)
 
-    def setTriCapac(self, unsigned int tidx, double cm):
+    def setTriCapac(self, index_t tidx, double cm):
         """
         Sets the specific membrane capacitance (in farad / m^2) of tri with index tidx.
         			 
@@ -4395,7 +4386,7 @@ cdef class _py_API(_py__base):
             setTriCapac(tidx, cm)
         			 
         Arguments:
-        int tidx
+        index_t tidx
         float cm
         			 
         Return:
@@ -4404,7 +4395,7 @@ cdef class _py_API(_py__base):
         """    
         self.ptr().setTriCapac(tidx, cm)
 
-    def getVertV(self, unsigned int vidx):
+    def getVertV(self, index_t vidx):
         """
         Returns the potential (in volts) of vertex element with index idx.
         			
@@ -4413,7 +4404,7 @@ cdef class _py_API(_py__base):
         	getVertV(idx)
         			 
         Arguments:
-        int idx
+        index_t idx
         		
         Return:
         float
@@ -4421,7 +4412,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getVertV(vidx)
 
-    def setVertV(self, unsigned int vidx, double v):
+    def setVertV(self, index_t vidx, double v):
         """
         Set the potential (in volts) of vertex element with index idx.
         			
@@ -4430,7 +4421,7 @@ cdef class _py_API(_py__base):
         	setVertV(idx, v)
         			 
         Arguments:
-        int idx
+        index_t idx
         float v
         			 
         Return:
@@ -4439,7 +4430,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setVertV(vidx, v)
 
-    def getVertVClamped(self, unsigned int vidx):
+    def getVertVClamped(self, index_t vidx):
         """
         Returns true if the potential of vertex element with index idx is clamped
         to some voltage.
@@ -4449,7 +4440,7 @@ cdef class _py_API(_py__base):
         	getVertVClamped(idx)
         			 
         Arguments:
-        int idx
+        index_t idx
         		
         Return:
         bool
@@ -4457,7 +4448,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getVertVClamped(vidx)
 
-    def setVertVClamped(self, unsigned int vidx, bool cl):
+    def setVertVClamped(self, index_t vidx, bool cl):
         """
         Sets whether the potential of vertex element with index idx is clamped
         (clamped = True) or not (clamped = False).
@@ -4467,7 +4458,7 @@ cdef class _py_API(_py__base):
         	setVertVClamped(idx, clamped)
         			 
         Arguments:
-        int idx
+        index_t idx
         bool clamped
         			 
         Return:
@@ -4476,7 +4467,7 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setVertVClamped(vidx, cl)
 
-    def setVertIClamp(self, unsigned int vidx, double i):
+    def setVertIClamp(self, index_t vidx, double i):
         """
         Set current clamp to vertex element with index idx to current i (Amps). 
         NOTE: Convention is maintained that a positive current clamp is depolarizing, a negative current clamp is hyperpolarizing.
@@ -4486,7 +4477,7 @@ cdef class _py_API(_py__base):
             setVertIClamp(idx, i)
         			 
         Arguments:
-        int idx
+        index_t idx
         float i
         			 
         Return:
@@ -4583,7 +4574,7 @@ cdef class _py_API(_py__base):
         None
 
         Return:
-        int
+        uint
 
         """
         return self.ptr().getNComps()
@@ -4600,12 +4591,12 @@ cdef class _py_API(_py__base):
         None
 
         Return:
-        int
+        uint
 
         """
         return self.ptr().getNPatches()
 
-    def getCompName(self, unsigned int c_idx):
+    def getCompName(self, uint c_idx):
         """
         Return the name of a compartment by its index in the solver.
             
@@ -4614,7 +4605,7 @@ cdef class _py_API(_py__base):
             getCompName(c_idx)
             
         Arguments:
-        int c_idx
+        uint c_idx
             
         Return:
         string
@@ -4622,7 +4613,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getCompName(c_idx)
 
-    def getPatchName(self, unsigned int p_idx):
+    def getPatchName(self, uint p_idx):
         """
         Return the name of a patch by its index in the solver.
 
@@ -4631,7 +4622,7 @@ cdef class _py_API(_py__base):
             getPatchName(p_idx)
 
         Arguments:
-        int p_idx
+        uint p_idx
 
         Return:
         string
@@ -4639,7 +4630,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getPatchName(p_idx)
 
-    def getNCompSpecs(self, unsigned int c_idx):
+    def getNCompSpecs(self, uint c_idx):
         """
         Get number of species in a compartment.
 
@@ -4648,15 +4639,15 @@ cdef class _py_API(_py__base):
             getNCompSpecs(c_idx)
 
         Arguments:
-        int c_idx
+        uint c_idx
 
         Return:
-        int
+        uint
 
         """
         return self.ptr().getNCompSpecs(c_idx)
 
-    def getNPatchSpecs(self, unsigned int p_idx):
+    def getNPatchSpecs(self, uint p_idx):
         """
         Get number of species in a patch.
 
@@ -4665,15 +4656,15 @@ cdef class _py_API(_py__base):
             getNPatchSpecs(p_idx)
 
         Arguments:
-        int p_idx
+        uint p_idx
 
         Return:
-        int
+        uint
 
         """
         return self.ptr().getNPatchSpecs(p_idx)
 
-    def getCompSpecName(self, unsigned int c_idx, unsigned int s_idx):
+    def getCompSpecName(self, uint c_idx, uint s_idx):
         """
         Get the name of a species in a compartment.
 
@@ -4682,8 +4673,8 @@ cdef class _py_API(_py__base):
             getCompSpecName(c_idx, s_idx)
 
         Arguments:
-        int c_idx
-        int s_idx
+        uint c_idx
+        uint s_idx
 
         Return:
         string
@@ -4691,7 +4682,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getCompSpecName(c_idx, s_idx)
 
-    def getPatchSpecName(self, unsigned int p_idx, unsigned int s_idx):
+    def getPatchSpecName(self, uint p_idx, uint s_idx):
         """
         Get the name of a species in a patch.
 
@@ -4700,8 +4691,8 @@ cdef class _py_API(_py__base):
             getPatchSpecName(p_idx, s_idx)
 
         Arguments:
-        int p_idx
-        int s_idx
+        uint p_idx
+        uint s_idx
 
         Return:
         string

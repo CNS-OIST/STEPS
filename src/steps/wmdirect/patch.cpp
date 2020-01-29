@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -51,23 +51,21 @@ namespace ssolver = steps::solver;
 
 swmd::Patch::Patch(steps::solver::Patchdef * patchdef, swmd::Comp * icomp, swmd::Comp * ocomp)
 : pPatchdef(patchdef)
-, pKProcs()
 , pIComp(icomp)
 , pOComp(ocomp)
 {
-    AssertLog(pPatchdef != 0);
+    AssertLog(pPatchdef != nullptr);
     if (iComp() != nullptr) { iComp()->addIPatch(this);
 }
-    if (oComp() != 0) oComp()->addOPatch(this);
+    if (oComp() != nullptr) oComp()->addOPatch(this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 swmd::Patch::~Patch()
 {
-    for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
-    {
-        delete (*k);
+    for (auto const& k : pKProcs) {
+        delete k;
     }
 }
 
@@ -75,9 +73,8 @@ swmd::Patch::~Patch()
 
 void swmd::Patch::checkpoint(std::fstream & cp_file)
 {
-    for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
-    {
-        (*k)->checkpoint(cp_file);
+    for (auto const& k : pKProcs) {
+        k->checkpoint(cp_file);
     }
 }
 
@@ -85,9 +82,8 @@ void swmd::Patch::checkpoint(std::fstream & cp_file)
 
 void swmd::Patch::restore(std::fstream & cp_file)
 {
-    for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
-    {
-        (*k)->restore(cp_file);
+    for (auto const& k : pKProcs) {
+        k->restore(cp_file);
     }
 }
 

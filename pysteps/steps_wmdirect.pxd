@@ -8,48 +8,28 @@ __copyright__ = "Copyright 2016 EPFL BBP-project"
 from cython.operator cimport dereference as deref
 cimport std
 from libcpp cimport bool
+from libcpp.memory cimport shared_ptr
 cimport steps_solver
 cimport steps_rng
 cimport steps_wm
 cimport steps_model
+from steps_common cimport *
 
-# ======================================================================================================================
-#cdef extern from "steps/wmdirect/reac.hpp" namespace "steps::wmdirect":
-# ----------------------------------------------------------------------------------------------------------------------
-
-    ###### Cybinding for Reac ######
-#    cdef cppclass WMDReac "steps::wmdirect::Reac":
-#        WMDReac(steps_solver.Reacdef*, WMDComp*)
-#         void checkpoint(std.fstream)
-#         void restore(std.fstream)
-#         bool active()
-#         bool inactive()
-#         void setupDeps()
-#         bool depSpecComp(unsigned int, DComp*)
-#         bool depSpecPatch(unsigned int, Patch*)
-#         void reset()
-#         double rate()
-#         std.vector[unsigned int] apply()
-#         unsigned int updVecSize()
-#         steps_solver.Reacdef* defr()
-#         void resetCcst()
-#         double c()
-#         double h()
 
 # ======================================================================================================================
 cdef extern from "steps/wmdirect/wmdirect.hpp" namespace "steps::wmdirect":
 # ----------------------------------------------------------------------------------------------------------------------
-    # ctypedef unsigned int SchedIDX
-    # ctypedef std.set[unsigned int] SchedIDXSet
-    # ctypedef std.set[unsigned int].iterator SchedIDXSetI
-    # ctypedef std.set[unsigned int].const_iterator SchedIDXSetCI
-    # ctypedef std.vector[unsigned int] SchedIDXVec
-    # ctypedef std.vector[unsigned int].iterator SchedIDXVecI
-    # ctypedef std.vector[unsigned int].const_iterator SchedIDXVecCI
+    # ctypedef uint SchedIDX
+    # ctypedef std.set[uint] SchedIDXSet
+    # ctypedef std.set[uint].iterator SchedIDXSetI
+    # ctypedef std.set[uint].const_iterator SchedIDXSetCI
+    # ctypedef std.vector[uint] SchedIDXVec
+    # ctypedef std.vector[uint].iterator SchedIDXVecI
+    # ctypedef std.vector[uint].const_iterator SchedIDXVecCI
 
     ###### Cybinding for Wmdirect ######
     cdef cppclass Wmdirect:
-        Wmdirect(steps_model.Model*, steps_wm.Geom*, steps_rng.RNG*) except +
+        Wmdirect(steps_model.Model*, steps_wm.Geom*, shared_ptr[steps_rng.RNG]) except +
         void checkpoint(std.string) except +
         void restore(std.string) except +
         std.string getSolverName() except +
@@ -62,9 +42,9 @@ cdef extern from "steps/wmdirect/wmdirect.hpp" namespace "steps::wmdirect":
         void step() except +
         double getTime() except +
         double getA0() except +
-        unsigned int getNSteps() except +
+        uint getNSteps() except +
         void setTime(double) except +
-        void setNSteps(unsigned int) except +
+        void setNSteps(uint) except +
         double getCompVol(std.string) except +
         void setCompVol(std.string, double) except +
         double getCompCount(std.string, std.string) except +
@@ -82,7 +62,7 @@ cdef extern from "steps/wmdirect/wmdirect.hpp" namespace "steps::wmdirect":
         double getCompReacC(std.string, std.string) except +
         double getCompReacH(std.string, std.string) except +
         double getCompReacA(std.string, std.string) except +
-        unsigned int getCompReacExtent(std.string, std.string) except +
+        unsigned long long getCompReacExtent(std.string, std.string) except +
         void resetCompReacExtent(std.string, std.string) except +
         double getPatchArea(std.string) except +
         void setPatchArea(std.string, double) except +
@@ -99,116 +79,6 @@ cdef extern from "steps/wmdirect/wmdirect.hpp" namespace "steps::wmdirect":
         double getPatchSReacC(std.string, std.string) except +
         double getPatchSReacH(std.string, std.string) except +
         double getPatchSReacA(std.string, std.string) except +
-        unsigned int getPatchSReacExtent(std.string, std.string) except +
-        void resetPatchSReacExtent(std.string, std.string) except +      
-        
+        unsigned long long getPatchSReacExtent(std.string, std.string) except +
+        void resetPatchSReacExtent(std.string, std.string) except +
 
-# ======================================================================================================================
-#cdef extern from "steps/wmdirect/sreac.hpp" namespace "steps::wmdirect":
-# ----------------------------------------------------------------------------------------------------------------------
-
-    ###### Cybinding for SReac ######
-#    cdef cppclass WMDSReac "steps::wmdirect::SReac":
-#        WMDSReac(steps_solver.SReacdef*, WMDPatch*)
-#         void checkpoint(std.fstream)
-#         void restore(std.fstream)
-#         bool active()
-#         bool inactive()
-#         void setupDeps()
-#         bool depSpecComp(unsigned int, DComp*)
-#         bool depSpecPatch(unsigned int, Patch*)
-#         void reset()
-#         double rate()
-#         std.vector[unsigned int] apply()
-#         steps_solver.SReacdef* defsr()
-#         void resetCcst()
-#         double c()
-#         double h()
-#         unsigned int updVecSize()
-#         SReac()
-
-# ======================================================================================================================
-#cdef extern from "steps/wmdirect/patch.hpp" namespace "steps::wmdirect":
-# ----------------------------------------------------------------------------------------------------------------------
-    # ctypedef Patch* PatchP
-    # ctypedef std.vector[Patch*] PatchPVec
-    # ctypedef std.vector[Patch*].iterator PatchPVecI
-    # ctypedef std.vector[Patch*].const_iterator PatchPVecCI
-
-    ###### Cybinding for Patch ######
-#    cdef cppclass WMDPatch "steps::wmdirect::Patch":
-#        WMDPatch(steps_solver.Patchdef*, WMDComp*, WMDComp*)
-#         void checkpoint(std.fstream)
-#         void restore(std.fstream)
-#         void setupKProcs(Wmdirect*)
-#         void setupDeps()
-#         void reset()
-#         steps_solver.Patchdef* def_()
-#         std.vector[KProc*] kprocBegin()
-#         std.vector[KProc*] kprocEnd()
-#         unsigned int countKProcs()
-#         KProc* sreac(unsigned int)
-#         DComp* iComp()
-#         DComp* oComp()
-#         Patch()
-
-# ======================================================================================================================
-#cdef extern from "steps/wmdirect/kproc.hpp" namespace "steps::wmdirect":
-# ----------------------------------------------------------------------------------------------------------------------
-    # ctypedef KProc* KProcP
-    # ctypedef std.vector[KProc*] KProcPVec
-    # ctypedef std.vector[KProc*].iterator KProcPVecI
-    # ctypedef std.vector[KProc*].const_iterator KProcPVecCI
-
-    ###### Cybinding for KProc ######
-#    cdef cppclass KProc:
-#        KProc()
-        # void checkpoint(std.fstream)
-        # void restore(std.fstream)
-        # unsigned int schedIDX()
-        # void setSchedIDX(unsigned int)
-        # void setupDeps()
-        # bool depSpecComp(unsigned int, DComp*)
-        # bool depSpecPatch(unsigned int, Patch*)
-        # void reset()
-        # void resetCcst()
-        # double rate()
-        # double c()
-        # double h()
-        # std.vector[unsigned int] apply()
-        # unsigned int updVecSize()
-        # unsigned int getExtent()
-        # void resetExtent()
-        # steps_solver.Reacdef* defr()
-        # steps_solver.SReacdef* defsr()
-
-
-# ======================================================================================================================
-#cdef extern from "steps/wmdirect/comp.hpp" namespace "steps::wmdirect":
-# ----------------------------------------------------------------------------------------------------------------------
-    # ctypedef DComp* CompP
-    # ctypedef std.vector[DComp*] CompPVec
-    # ctypedef std.vector[DComp*].iterator CompPVecI
-    # ctypedef std.vector[DComp*].const_iterator CompPVecCI
-
-    ###### Cybinding for Comp ######
-#    cdef cppclass WMDComp "steps::wmdirect::Comp":
-#        WMDComp(steps_solver.Compdef*)
-        # void checkpoint(std.fstream)
-        # void restore(std.fstream)
-        # void setupKProcs(Wmdirect*)
-        # void setupDeps()
-        # void reset()
-        # steps_solver.Compdef* def_()
-        # std.vector[KProc*] kprocBegin()
-        # std.vector[KProc*] kprocEnd()
-        # unsigned int countKProcs()
-        # KProc* reac(unsigned int)
-        # void addIPatch(Patch*)
-        # unsigned int countIPatches()
-        # std.vector[WMDPatch*] beginIPatches()
-        # std.vector[WMDPatch*] endIPatches()
-        # void addOPatch(WMDPatch*)
-        # unsigned int countOPatches()
-        # std.vector[WMDPatch*] beginOPatches()
-        # std.vector[WMDPatch*] endOPatches()

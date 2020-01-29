@@ -55,7 +55,7 @@ void N_VSpace(N_Vector v, long int *lrw, long int *liw)
 
 realtype *N_VGetArrayPointer(N_Vector v)
 {
-  return((realtype *) v->ops->nvgetarraypointer(v));
+  return v->ops->nvgetarraypointer(v);
 }
 
 void N_VSetArrayPointer(realtype *v_data, N_Vector v)
@@ -114,37 +114,37 @@ void N_VAddConst(N_Vector x, realtype b, N_Vector z)
 
 realtype N_VDotProd(N_Vector x, N_Vector y)
 {
-  return((realtype) y->ops->nvdotprod(x, y));
+  return y->ops->nvdotprod(x, y);
 }
 
 realtype N_VMaxNorm(N_Vector x)
 {
-  return((realtype) x->ops->nvmaxnorm(x));
+  return x->ops->nvmaxnorm(x);
 }
 
 realtype N_VWrmsNorm(N_Vector x, N_Vector w)
 {
-  return((realtype) x->ops->nvwrmsnorm(x, w));
+  return x->ops->nvwrmsnorm(x, w);
 }
 
 realtype N_VWrmsNormMask(N_Vector x, N_Vector w, N_Vector id)
 {
-  return((realtype) x->ops->nvwrmsnormmask(x, w, id));
+  return x->ops->nvwrmsnormmask(x, w, id);
 }
 
 realtype N_VMin(N_Vector x)
 {
-  return((realtype) x->ops->nvmin(x));
+  return x->ops->nvmin(x);
 }
 
 realtype N_VWL2Norm(N_Vector x, N_Vector w)
 {
-  return((realtype) x->ops->nvwl2norm(x, w));
+  return x->ops->nvwl2norm(x, w);
 }
 
 realtype N_VL1Norm(N_Vector x)
 {
-  return((realtype) x->ops->nvl1norm(x));
+  return x->ops->nvl1norm(x);
 }
 
 void N_VCompare(realtype c, N_Vector x, N_Vector z)
@@ -155,17 +155,17 @@ void N_VCompare(realtype c, N_Vector x, N_Vector z)
 
 booleantype N_VInvTest(N_Vector x, N_Vector z)
 {
-  return((booleantype) z->ops->nvinvtest(x, z));
+  return z->ops->nvinvtest(x, z);
 }
 
 booleantype N_VConstrMask(N_Vector c, N_Vector x, N_Vector m)
 {
-  return((booleantype) x->ops->nvconstrmask(c, x, m));
+  return x->ops->nvconstrmask(c, x, m);
 }
 
 realtype N_VMinQuotient(N_Vector num, N_Vector denom)
 {
-  return((realtype) num->ops->nvminquotient(num, denom));
+  return num->ops->nvminquotient(num, denom);
 }
 
 /*
@@ -184,7 +184,7 @@ N_Vector *N_VCloneEmptyVectorArray(int count, N_Vector w)
 
   if (count <= 0) return(NULL);
 
-  vs = (N_Vector *) malloc(count * sizeof(N_Vector));
+  vs = static_cast<N_Vector *> (malloc(count * sizeof(N_Vector)));
   if(vs == NULL) return(NULL);
 
   for (j = 0; j < count; j++) {
@@ -205,7 +205,7 @@ N_Vector *N_VCloneVectorArray(int count, N_Vector w)
 
   if (count <= 0) return(NULL);
 
-  vs = (N_Vector *) malloc(count * sizeof(N_Vector));
+  vs = static_cast<N_Vector *> (malloc(count * sizeof(N_Vector)));
   if(vs == NULL) return(NULL);
 
   for (j = 0; j < count; j++) {

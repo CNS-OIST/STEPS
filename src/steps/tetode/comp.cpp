@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -46,11 +46,8 @@ namespace ssolver = steps::solver;
 
 stode::Comp::Comp(steps::solver::Compdef * compdef)
 : pCompdef(compdef)
-, pTets()
-, pVol(0.0)
-, pTets_GtoL()
 {
-    AssertLog(pCompdef != 0);
+    AssertLog(pCompdef != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -62,14 +59,14 @@ stode::Comp::~Comp()
 
 void stode::Comp::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&pVol, sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pVol), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void stode::Comp::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&pVol, sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pVol), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -77,27 +74,26 @@ void stode::Comp::restore(std::fstream & cp_file)
 void stode::Comp::addTet(stode::Tet * tet)
 {
     AssertLog(tet->compdef() == def());
-    uint lidx = pTets.size();
+    auto lidx = static_cast<index_t>(pTets.size());
     pTets.push_back(tet);
-    pTets_GtoL.insert(std::pair<uint, uint>(tet->idx(), lidx));
-
+    pTets_GtoL.emplace(tet->idx(), lidx);
     pVol+=tet->vol();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stode::Tet * stode::Comp::getTet(uint lidx)
+stode::Tet * stode::Comp::getTet(tetrahedron_id_t lidx)
 {
-    AssertLog(lidx < pTets.size());
-    return pTets[lidx];
+    AssertLog(lidx < static_cast<index_t>(pTets.size()));
+    return pTets[lidx.get()];
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint stode::Comp::getTet_GtoL(uint gidx)
+steps::tetrahedron_id_t stode::Comp::getTet_GtoL(tetrahedron_id_t gidx)
 {
-    std::map<uint, uint>::const_iterator lidx_it = pTets_GtoL.find(gidx);
+    auto lidx_it = pTets_GtoL.find(gidx);
     AssertLog(lidx_it != pTets_GtoL.end());
     return lidx_it->second;
 }

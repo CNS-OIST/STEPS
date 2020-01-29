@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -44,7 +44,6 @@
 #include "steps/solver/compdef.hpp"
 #include "steps/solver/diffdef.hpp"
 
-#include <iostream>
 #include <mpi.h>
 
 // logging
@@ -61,191 +60,129 @@ smtos::Diff::Diff(ssolver::Diffdef * ddef, smtos::Tet * tet)
 : 
  pDiffdef(ddef)
 , pTet(tet)
-, localAllUpdVec()
-, remoteAllUpdVec()
-, pScaledDcst(0.0)
-, pDcst(0.0)
-, pNonCDFSelector()
-, pNeighbCompLidx()
-, pEmptyvec()
-, idxEmptyvec()
-, pDirections()
-, pNdirections(0)
 {
-    AssertLog(pDiffdef != 0);
-    AssertLog(pTet != 0);
+    AssertLog(pDiffdef != nullptr);
+    AssertLog(pTet != nullptr);
     type = KP_DIFF;
-    smtos::Tet * next[4] =
-    {
-        pTet->nextTet(0),
-        pTet->nextTet(1),
-        pTet->nextTet(2),
-        pTet->nextTet(3)
-    };
-
-    ligGIdx = pDiffdef->lig();
+    std::array<smtos::Tet*, 4> next{pTet->nextTet(0),
+                                    pTet->nextTet(1),
+                                    pTet->nextTet(2),
+                                    pTet->nextTet(3)
+                                    };
+    
     ssolver::Compdef * cdef = pTet->compdef();
-    lidxTet = cdef->specG2L(ligGIdx);
-
-    for (uint i = 0; i < 4; ++i) { pDiffBndDirection[i] = pTet->getDiffBndDirection(i);}
-
-    uint gidx = pDiffdef->lig();
-    for (uint i = 0; i < 4; ++i)
-    {
-        if (next[i] == nullptr)
-        {
-            pNeighbCompLidx[i] = -1;
-            continue;
-        }
-        else
-        {
-            pNeighbCompLidx[i] = next[i]->compdef()->specG2L(ligGIdx);
-        }
-    }
+    lidxTet = cdef->specG2L(pDiffdef->lig());
 
     // Precalculate part of the scaled diffusion constant.
     uint ldidx = pTet->compdef()->diffG2L(pDiffdef->gidx());
     double dcst = pTet->compdef()->dcst(ldidx);
     pDcst = dcst;
 
-    double d[4] = { 0.0, 0.0, 0.0, 0.0 };
-    for (uint i = 0; i < 4; ++i)
-    {
+    std::array<double, 4> d{ 0.0, 0.0, 0.0, 0.0 };
+
+    for (uint i = 0; i < 4; ++i) { 
+        pDiffBndDirection[i] = pTet->getDiffBndDirection(i);
+        if (next[i] != nullptr) {
+            pNeighbCompLidx[i] = next[i]->compdef()->specG2L(pDiffdef->lig());
+        }
+
         // Compute the scaled diffusion constant.
         // Need to here check if the direction is a diffusion boundary
         double dist = pTet->dist(i);
         if ((dist > 0.0) && (next[i] != nullptr))
-        {
-            if (pDiffBndDirection[i] == true)
+        {   
+            // d[i] only need to set if 
+            // 1) not towards a boundary, and
+            // 2) next[i] in the same compartment as pTet
+            // d[i] changes when setDiffBndActive() is called
+            // and pDiffBndActive[i] becomes active
+            if (!pDiffBndDirection[i] && next[i]->compdef() == cdef)
             {
-                if (pDiffBndActive[i]) { d[i] = (pTet->area(i) * dcst) / (pTet->vol() * dist);
-                } else { d[i] = 0.0;
-}
+                d[i] = (pTet->area(i) * dcst) / (pTet->vol() * dist);
+                pScaledDcst += d[i];
             }
-            else
-            {
-                // Bugfix 5/4/2012 IH: neighbouring tets in different compartments
-                // NOT separated by a patch were allowing diffusion, even without diffusion boundary
-                if (next[i]->compdef() == cdef)    d[i] = (pTet->area(i) * dcst) / (pTet->vol() * dist);
-                else d[i] = 0;
-            }
-        }
-    }
-    // Compute scaled "diffusion constant".
-    for (uint i = 0; i < 4; ++i)
-    {
-        pScaledDcst += d[i];
+        }  
     }
 
     // Should not be negative!
     AssertLog(pScaledDcst >= 0);
 
     // Setup the selector distribution.
-    if (pScaledDcst == 0.0)
-    {
-        pNonCDFSelector[0] = 0.0;
-        pNonCDFSelector[1] = 0.0;
-        pNonCDFSelector[2] = 0.0;
-        pNonCDFSelector[3] = 0.0;
-
-    }
-    else
-    {
-        pNonCDFSelector[0] = d[0]/pScaledDcst;
-        pNonCDFSelector[1] = d[1]/pScaledDcst;
-        pNonCDFSelector[2] = d[2]/pScaledDcst;
-        pNonCDFSelector[3] = d[3]/pScaledDcst;
+    if (pScaledDcst > 0.0) {
+        pNonCDFSelector = 
+        { 
+            d[0]/pScaledDcst, 
+            d[1]/pScaledDcst, 
+            d[2]/pScaledDcst, 
+            d[3]/pScaledDcst
+        };
         
-        pNdirections = 0;
         pDirections.clear();
         
-        if (d[0] > 0.0)
-        {
-			pDirections.push_back(0);
-			pNdirections+=1;
-       	}
-		if (d[1] > 0.0)
-		{
-			pDirections.push_back(1);
-			pNdirections+=1;
-		}
-		if (d[2] > 0.0)
-		{
-			pDirections.push_back(2);
-			pNdirections+=1;
-		}
-		if (d[3] > 0.0)
-		{
-			pDirections.push_back(3);
-			pNdirections+=1;
-		}
-
-		//pMulti_n = new uint [pNdirections];
-		//pDirection_prob = new double [pNdirections];
-	    //for (uint i = 0; i < pNdirections; ++i) pDirection_prob[i] = d[pDirections[i]]/pScaledDcst;
-
+        for (uint i = 0; i < 4; ++i) { 
+            if (d[i] > 0.0)
+            {
+			    pDirections.push_back(i);
+			    pNdirections+=1;
+       	    }
+        }
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::Diff::~Diff()
-= default;
-
-////////////////////////////////////////////////////////////////////////////////
-
 void smtos::Diff::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&rExtent, sizeof(uint));
-    cp_file.write((char*)&pFlags, sizeof(uint));
+    cp_file.write(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.write(reinterpret_cast<char*>(&pFlags), sizeof(uint));
 
-    uint n_direct_dcsts = directionalDcsts.size();
-    cp_file.write((char*)&n_direct_dcsts, sizeof(uint));
+    auto n_direct_dcsts = directionalDcsts.size();
+    cp_file.write(reinterpret_cast<char*>(&n_direct_dcsts), sizeof(uint));
     for (auto& item : directionalDcsts) {
-        cp_file.write((char*)&(item.first), sizeof(uint));
-        cp_file.write((char*)&(item.second), sizeof(double));
+        cp_file.write(reinterpret_cast<const char*>(&item.first), sizeof(uint));
+        cp_file.write(reinterpret_cast<char*>(&item.second), sizeof(double));
     }
 
     
-    cp_file.write((char*)&pScaledDcst, sizeof(double));
-    cp_file.write((char*)&pDcst, sizeof(double));
-    cp_file.write((char*)pDiffBndActive, sizeof(bool) * 4);
-    cp_file.write((char*)pDiffBndDirection, sizeof(bool) * 4);
-    cp_file.write((char*)pNeighbCompLidx, sizeof(int) * 4);
-
-    cp_file.write((char*)&(crData.recorded), sizeof(bool));
-    cp_file.write((char*)&(crData.pow), sizeof(int));
-    cp_file.write((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.write((char*)&(crData.rate), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pScaledDcst), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pDcst), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(pDiffBndActive.data()), sizeof(bool) * 4);
+    cp_file.write(reinterpret_cast<char*>(pDiffBndDirection.data()), sizeof(bool) * 4);
+    cp_file.write(reinterpret_cast<char*>(pNeighbCompLidx.data()), sizeof(ssolver::lidxT) * 4);
+    cp_file.write(reinterpret_cast<char*>(pNonCDFSelector.data()), sizeof(double) * 4);
+    cp_file.write(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.write(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.write(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.write(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void smtos::Diff::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&rExtent, sizeof(uint));
-    cp_file.read((char*)&pFlags, sizeof(uint));
+    cp_file.read(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.read(reinterpret_cast<char*>(&pFlags), sizeof(uint));
 
     uint n_direct_dcsts = 0;
-    cp_file.read((char*)&n_direct_dcsts, sizeof(uint));
+    cp_file.read(reinterpret_cast<char*>(&n_direct_dcsts), sizeof(uint));
     for (uint i = 0; i < n_direct_dcsts; i++) {
         uint id = 0;
         double value = 0.0;
-        cp_file.read((char*)&id, sizeof(uint));
-        cp_file.read((char*)&value, sizeof(double));
+        cp_file.read(reinterpret_cast<char*>(&id), sizeof(uint));
+        cp_file.read(reinterpret_cast<char*>(&value), sizeof(double));
         directionalDcsts[id] = value;
     }
 
-    cp_file.read((char*)&pScaledDcst, sizeof(double));
-    cp_file.read((char*)&pDcst, sizeof(double));
-    cp_file.read((char*)pDiffBndActive, sizeof(bool) * 4);
-    cp_file.read((char*)pDiffBndDirection, sizeof(bool) * 4);
-    cp_file.read((char*)pNeighbCompLidx, sizeof(int) * 4);
-
-    cp_file.read((char*)&(crData.recorded), sizeof(bool));
-    cp_file.read((char*)&(crData.pow), sizeof(int));
-    cp_file.read((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.read((char*)&(crData.rate), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pScaledDcst), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pDcst), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(pDiffBndActive.data()), sizeof(bool) * 4);
+    cp_file.read(reinterpret_cast<char*>(pDiffBndDirection.data()), sizeof(bool) * 4);
+    cp_file.read(reinterpret_cast<char*>(pNeighbCompLidx.data()), sizeof(ssolver::lidxT) * 4);
+    cp_file.read(reinterpret_cast<char*>(pNonCDFSelector.data()), sizeof(double) * 4);
+    cp_file.read(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.read(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.read(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.read(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -275,11 +212,10 @@ void smtos::Diff::setupDeps()
     std::set<smtos::KProc*> local_all;
 
     uint nkprocs = pTet->countKProcs();
-    uint startKProcIdx = pTet->getStartKProcIdx();
-    
+
     for (uint k = 0; k < nkprocs; k++)
     {
-        if (pTet->KProcDepSpecTet(k, pTet, ligGIdx) == true) {
+        if (pTet->KProcDepSpecTet(k, pTet, pDiffdef->lig())) {
             local.insert(pTet->getKProc(k));
         }
     }
@@ -299,10 +235,9 @@ void smtos::Diff::setupDeps()
         }
     
         nkprocs = next->countKProcs();
-        startKProcIdx = next->getStartKProcIdx();
         for (uint sk = 0; sk < nkprocs; sk++)
         {
-            if (next->KProcDepSpecTet(sk, pTet, ligGIdx) == true) {
+            if (next->KProcDepSpecTet(sk, pTet, pDiffdef->lig())) {
                 local.insert(next->getKProc(sk));
             }
         }
@@ -313,10 +248,12 @@ void smtos::Diff::setupDeps()
     {
         // Fetch next tetrahedron, if it exists.
         smtos::Tet * next = pTet->nextTet(i);
-        if (next == nullptr) { continue;
-}
-        if (pTet->nextTri(i) != nullptr) { continue;
-}
+        if (next == nullptr) { 
+            continue;
+        }
+        if (pTet->nextTri(i) != nullptr) { 
+            continue;
+        }
 
         // Copy local dependencies.
         std::set<KProc*> local2(local.begin(), local.end());
@@ -324,8 +261,8 @@ void smtos::Diff::setupDeps()
 
         // Find the ones 'locally' in the next tet.
         nkprocs = next->countKProcs();
-        startKProcIdx = next->getStartKProcIdx();
-        
+        auto startKProcIdx = next->getStartKProcIdx();
+
         if (next->getHost() != pTet->getHost()) {
             pTet->solver()->addNeighHost(next->getHost());
             pTet->solver()->registerBoundaryTet(next);
@@ -333,7 +270,7 @@ void smtos::Diff::setupDeps()
         
         for (uint k = 0; k < nkprocs; k++)
         {
-            if (next->KProcDepSpecTet(k, next, ligGIdx) == true) {
+            if (next->KProcDepSpecTet(k, next, pDiffdef->lig())) {
                 // if next tet has different host with pTet, store dependent kp as pointer
                 if (next->getHost() == pTet->getHost()) {
                     local2.insert(next->getKProc(k));
@@ -352,8 +289,9 @@ void smtos::Diff::setupDeps()
         {
             // Fetch next triangle, if it exists.
             smtos::Tri * next2 = next->nextTri(j);
-            if (next2 == nullptr) { continue;
-}
+            if (next2 == nullptr) { 
+                continue;
+            }
 
             if (next2->getHost() != next->getHost()) {
                 std::ostringstream os;
@@ -367,7 +305,7 @@ void smtos::Diff::setupDeps()
             
             for (uint sk = 0; sk < nkprocs; sk++)
             {
-                if (next2->KProcDepSpecTet(sk, next, ligGIdx) == true) {
+                if (next2->KProcDepSpecTet(sk, next, pDiffdef->lig())) {
                     if (next2->getHost() == pTet->getHost()) {
                         local2.insert(next2->getKProc(sk));
                     }
@@ -393,14 +331,12 @@ void smtos::Diff::setupDeps()
 bool smtos::Diff::depSpecTet(uint gidx, smtos::WmVol * tet)
 {
     if (pTet != tet) return false;
-    if (gidx != ligGIdx) { return false;
-}
-    return true;
+    return gidx == pDiffdef->lig();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool smtos::Diff::depSpecTri(uint gidx, smtos::Tri * tri)
+bool smtos::Diff::depSpecTri(uint /*gidx*/, smtos::Tri * /*tri*/)
 {
     return false;
 }
@@ -412,10 +348,7 @@ void smtos::Diff::reset()
     resetExtent();
 
     // NOTE: These must become the dcst calculation for obvious reasons
-    pDiffBndActive[0] = false;
-    pDiffBndActive[1] = false;
-    pDiffBndActive[2] = false;
-    pDiffBndActive[3] = false;
+    pDiffBndActive = {false, false, false, false};
 
     uint ldidx = pTet->compdef()->diffG2L(pDiffdef->gidx());
     double dcst = pTet->compdef()->dcst(ldidx);
@@ -438,7 +371,7 @@ void smtos::Diff::reset()
 void smtos::Diff::setDiffBndActive(uint i, bool active)
 {
     AssertLog(i < 4);
-    AssertLog(pDiffBndDirection[i] == true);
+    AssertLog(pDiffBndDirection[i]);
 
     // Only need to update if the flags are changing
     if (pDiffBndActive[i] != active)
@@ -454,7 +387,7 @@ void smtos::Diff::setDiffBndActive(uint i, bool active)
 bool smtos::Diff::getDiffBndActive(uint i) const
 {
     AssertLog(i < 4);
-    AssertLog(pDiffBndDirection[i] == true);
+    AssertLog(pDiffBndDirection[i]);
 
     return pDiffBndActive[i];
 }
@@ -462,9 +395,10 @@ bool smtos::Diff::getDiffBndActive(uint i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 double smtos::Diff::dcst(int direction)
-{
-    if (directionalDcsts.find(direction) != directionalDcsts.end()) {
-        return directionalDcsts[direction];
+{   
+    auto search_result = directionalDcsts.find(direction);
+    if (search_result != directionalDcsts.end()) {
+        return search_result->second;
     }
     else {
         return pDcst;
@@ -479,19 +413,18 @@ void smtos::Diff::setDcst(double dcst)
     pDcst = dcst;
     directionalDcsts.clear();
     
-    smtos::Tet * next[4] =
-    {
-    pTet->nextTet(0),
-    pTet->nextTet(1),
-    pTet->nextTet(2),
-    pTet->nextTet(3)
-    };
+    std::array<smtos::Tet*, 4> next{pTet->nextTet(0),
+                                    pTet->nextTet(1),
+                                    pTet->nextTet(2),
+                                    pTet->nextTet(3)
+                                    };
     
 	// Reset this stuff- may have been created before, may not have been (if original dcst was 0)
     pNdirections=0;
     pDirections.clear();
     
-    double d[4] = { 0.0, 0.0, 0.0, 0.0 };
+    std::array<double, 4> d{ 0.0, 0.0, 0.0, 0.0 };
+    pScaledDcst = 0.0;
 
     for (uint i = 0; i < 4; ++i)
     {
@@ -500,72 +433,39 @@ void smtos::Diff::setDcst(double dcst)
         double dist = pTet->dist(i);
         if ((dist > 0.0) && (next[i] != nullptr))
         {
-            if (pDiffBndDirection[i] == true)
+            if ((pDiffBndDirection[i] && pDiffBndActive[i]) || (!pDiffBndDirection[i] && next[i]->compdef() == pTet->compdef()))
             {
-                if (pDiffBndActive[i]) { d[i] = (pTet->area(i) * dcst) / (pTet->vol() * dist);
-                } else { d[i] = 0.0;
-}
+                d[i] = (pTet->area(i) * dcst) / (pTet->vol() * dist);
             }
-            else
-            {
-                // Bugfix 5/4/2012 IH: neighbouring tets in different compartments
-                // NOT separated by a patch were allowing diffusion, even without diffusion boundary
-                if (next[i]->compdef() == pTet->compdef())    d[i] = (pTet->area(i) * dcst) / (pTet->vol() * dist);
-                else d[i] = 0;
-            }
-         }
-    }
-
-    // Compute scaled "diffusion constant".
-    pScaledDcst = 0.0;
-
-    for (uint i = 0; i < 4; ++i)
-    {
+        }
         pScaledDcst += d[i];
     }
+
     // Should not be negative!
     AssertLog(pScaledDcst >= 0);
 
     // Setup the selector distribution.
     if (pScaledDcst == 0.0)
     {
-        
-        pNonCDFSelector[0] = 0.0;
-        pNonCDFSelector[1] = 0.0;
-        pNonCDFSelector[2] = 0.0;
-        pNonCDFSelector[3] = 0.0;
+        pNonCDFSelector = {0.0, 0.0, 0.0, 0.0};
     }
     else
     {
-        pNonCDFSelector[0] = d[0]/pScaledDcst;
-        pNonCDFSelector[1] = d[1]/pScaledDcst;
-        pNonCDFSelector[2] = d[2]/pScaledDcst;
-        pNonCDFSelector[3] = d[3]/pScaledDcst;
+        pNonCDFSelector = 
+        { 
+            d[0]/pScaledDcst, 
+            d[1]/pScaledDcst, 
+            d[2]/pScaledDcst, 
+            d[3]/pScaledDcst
+        };
 
-        if (d[0] > 0.0)
-        {
-			pDirections.push_back(0);
-			pNdirections+=1;
-       	}
-		if (d[1] > 0.0)
-		{
-			pDirections.push_back(1);
-			pNdirections+=1;
-		}
-		if (d[2] > 0.0)
-		{
-			pDirections.push_back(2);
-			pNdirections+=1;
-		}
-		if (d[3] > 0.0)
-		{
-			pDirections.push_back(3);
-			pNdirections+=1;
-		}
-
-		//pMulti_n = new uint [pNdirections];
-		//pDirection_prob = new double [pNdirections];
-	    //for (uint i = 0; i < pNdirections; ++i) pDirection_prob[i] = d[pDirections[i]]/pScaledDcst;
+        for (uint i = 0; i < 4; ++i) { 
+            if (d[i] > 0.0)
+            {
+			    pDirections.push_back(i);
+			    pNdirections+=1;
+       	    }
+        }
     }
 }
 
@@ -580,18 +480,17 @@ void smtos::Diff::setDirectionDcst(int direction, double dcst)
     directionalDcsts[direction] = dcst;
     
     // Automatically activate boundary diffusion if necessary
-    if (pDiffBndDirection[direction] == true) { pDiffBndActive[direction] = true;
+    if (pDiffBndDirection[direction]) { pDiffBndActive[direction] = true;
 }
 
-    smtos::Tet * next[4] =
-    {
-        pTet->nextTet(0),
-        pTet->nextTet(1),
-        pTet->nextTet(2),
-        pTet->nextTet(3)
-    };
+    std::array<smtos::Tet*, 4> next{pTet->nextTet(0),
+                                    pTet->nextTet(1),
+                                    pTet->nextTet(2),
+                                    pTet->nextTet(3)
+                                    };
 
-    double d[4] = { 0.0, 0.0, 0.0, 0.0 };
+    std::array<double, 4> d{0.0, 0.0, 0.0, 0.0 };
+    pScaledDcst = 0.0;
     
     for (uint i = 0; i < 4; ++i)
     {
@@ -600,45 +499,21 @@ void smtos::Diff::setDirectionDcst(int direction, double dcst)
         double dist = pTet->dist(i);
         if ((dist > 0.0) && (next[i] != nullptr))
         {
-            if (pDiffBndDirection[i] == true)
+            if ((pDiffBndDirection[i] && pDiffBndActive[i]) || (!pDiffBndDirection[i] && next[i]->compdef() == pTet->compdef()))
             {
-
-                if (pDiffBndActive[i]) {
-                    if (directionalDcsts.find(i) != directionalDcsts.end()) {
-                        d[i] = (pTet->area(i) * directionalDcsts[i]) / (pTet->vol() * dist);
-                    }
-                    else
-                    {
-                        d[i] = (pTet->area(i) * pDcst) / (pTet->vol() * dist);
-                    }
+                auto search_result = directionalDcsts.find(i);
+                if (search_result != directionalDcsts.end()) {
+                    d[i] = (pTet->area(i) * search_result->second) / (pTet->vol() * dist);
                 }
-                else { d[i] = 0.0;
-}
-            }
-            else
-            {
-                // Bugfix 5/4/2012 IH: neighbouring tets in different compartments
-                // NOT separated by a patch were allowing diffusion, even without diffusion boundary
-                if (next[i]->compdef() == pTet->compdef())    {
-                    if (directionalDcsts.find(i) != directionalDcsts.end()) {
-                        d[i] = (pTet->area(i) * directionalDcsts[i]) / (pTet->vol() * dist);
-                    }
-                    else {
-                        d[i] = (pTet->area(i) * pDcst) / (pTet->vol() * dist);
-                    }
+                else
+                {
+                    d[i] = (pTet->area(i) * pDcst) / (pTet->vol() * dist);
                 }
-                else d[i] = 0;
             }
         }
-    }
-    
-    // Compute scaled "diffusion constant".
-    pScaledDcst = 0.0;
-    
-    for (uint i = 0; i < 4; ++i)
-    {
         pScaledDcst += d[i];
     }
+    
     // Should not be negative!
     AssertLog(pScaledDcst >= 0);
     // Reset this stuff- may have been created before, may not have been (if original dcst was 0)
@@ -648,44 +523,31 @@ void smtos::Diff::setDirectionDcst(int direction, double dcst)
     // Setup the selector distribution.
     if (pScaledDcst == 0.0)
     {
-        pNonCDFSelector[0] = 0.0;
-        pNonCDFSelector[1] = 0.0;
-        pNonCDFSelector[2] = 0.0;
-        pNonCDFSelector[3] = 0.0;
+        pNonCDFSelector = {0.0, 0.0, 0.0, 0.0};
     }
     else
     {
-        pNonCDFSelector[0] = d[0]/pScaledDcst;
-        pNonCDFSelector[1] = d[1]/pScaledDcst;
-        pNonCDFSelector[2] = d[2]/pScaledDcst;
-        pNonCDFSelector[3] = d[3]/pScaledDcst;
+        pNonCDFSelector = 
+        { 
+            d[0]/pScaledDcst, 
+            d[1]/pScaledDcst, 
+            d[2]/pScaledDcst, 
+            d[3]/pScaledDcst
+        };
         
-        if (d[0] > 0.0)
-        {
-            pDirections.push_back(0);
-            pNdirections+=1;
-        }
-        if (d[1] > 0.0)
-        {
-            pDirections.push_back(1);
-            pNdirections+=1;
-        }
-        if (d[2] > 0.0)
-        {
-            pDirections.push_back(2);
-            pNdirections+=1;
-        }
-        if (d[3] > 0.0)
-        {
-            pDirections.push_back(3);
-            pNdirections+=1;
+        for (uint i = 0; i < 4; ++i) { 
+            if (d[i] > 0.0)
+            {
+			    pDirections.push_back(i);
+			    pNdirections+=1;
+       	    }
         }
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::Diff::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
+double smtos::Diff::rate(steps::mpi::tetopsplit::TetOpSplitP * /*solver*/)
 {
     if (inactive()) return 0.0;
 
@@ -699,16 +561,7 @@ double smtos::Diff::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-//double smtos::Diff::getScaledDcst(steps::mpi::tetopsplit::TetOpSplitP * solver)
-//{
-//    return pScaledDcst;
-//}
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-int smtos::Diff::apply(steps::rng::RNG * rng)
+int smtos::Diff::apply(const rng::RNGptr &rng)
 {
 
 	// Apply local change.
@@ -738,8 +591,8 @@ int smtos::Diff::apply(steps::rng::RNG * rng)
 
 	smtos::Tet * nexttet = pTet->nextTet(iSel);
 
-    AssertLog(nexttet != 0);
-    AssertLog(pNeighbCompLidx[iSel] > -1);
+    AssertLog(nexttet != nullptr);
+    AssertLog(pNeighbCompLidx[iSel] != ssolver::LIDX_UNDEFINED);
 
     if (nexttet->clamped(pNeighbCompLidx[iSel]) == false)
     {
@@ -754,7 +607,7 @@ int smtos::Diff::apply(steps::rng::RNG * rng)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-int smtos::Diff::apply(steps::rng::RNG * rng, uint nmolcs)
+int smtos::Diff::apply(const rng::RNGptr &rng, uint nmolcs)
 {
 	// Apply local change.
 	uint * local = pTet->pools() + lidxTet;
@@ -796,8 +649,8 @@ int smtos::Diff::apply(steps::rng::RNG * rng, uint nmolcs)
         {
         	smtos::Tet * nexttet = pTet->nextTet(direction);
 
-        	AssertLog(nexttet != 0);
-        	AssertLog(pNeighbCompLidx[direction] > -1);
+        	AssertLog(nexttet != nullptr);
+        	AssertLog(pNeighbCompLidx[direction] != ssolver::LIDX_UNDEFINED);
 
         	if (nexttet->clamped(pNeighbCompLidx[direction]) == false)
         	{
@@ -817,8 +670,8 @@ int smtos::Diff::apply(steps::rng::RNG * rng, uint nmolcs)
     {
         	smtos::Tet * nexttet = pTet->nextTet(direction);
 
-        	AssertLog(nexttet != 0);
-        	AssertLog(pNeighbCompLidx[direction] > -1);
+        	AssertLog(nexttet != nullptr);
+        	AssertLog(pNeighbCompLidx[direction] != ssolver::LIDX_UNDEFINED);
 
         	if (nexttet->clamped(pNeighbCompLidx[direction]) == false)
         	{
@@ -838,7 +691,7 @@ int smtos::Diff::apply(steps::rng::RNG * rng, uint nmolcs)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<uint> const & smtos::Diff::getRemoteUpdVec(int direction)
+std::vector<uint> const & smtos::Diff::getRemoteUpdVec(int direction) const
 {
     if (direction == -1) return remoteAllUpdVec;
     else if (direction == -2) return idxEmptyvec;
@@ -847,7 +700,7 @@ std::vector<uint> const & smtos::Diff::getRemoteUpdVec(int direction)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<smtos::KProc*> const & smtos::Diff::getLocalUpdVec(int direction)
+std::vector<smtos::KProc*> const & smtos::Diff::getLocalUpdVec(int direction) const
 {
     if (direction == -1) return localAllUpdVec;
     else if (direction == -2) return pEmptyvec;

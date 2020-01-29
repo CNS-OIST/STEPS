@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -84,7 +84,7 @@ VDepTrans::VDepTrans(std::string const & id, Surfsys * surfsys,
         ArgErrLog(os.str());
     }
     pModel = pSurfsys->getModel();
-    AssertLog(pModel != 0);
+    AssertLog(pModel != nullptr);
 
     pChan = pSrc->getChan();
 
@@ -92,7 +92,7 @@ VDepTrans::VDepTrans(std::string const & id, Surfsys * surfsys,
 
     // Copy the rate information to local array
     pRate = new double[pTablesize];
-    for (uint i = 0; i < pTablesize; ++i) pRate[i] = rate[i];
+    std::memcpy(pRate, rate.data(), pTablesize * sizeof(double));
 
     pSurfsys->_handleVDepTransAdd(this);
 
@@ -123,7 +123,7 @@ void VDepTrans::_handleSelfDelete()
 
 void VDepTrans::setID(string const & id)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
     // it pass by into the Python layer.
@@ -137,7 +137,7 @@ void VDepTrans::setID(string const & id)
 
 void VDepTrans::setSrc(ChanState * src)
 {
-    AssertLog(src !=0);
+    AssertLog(src != nullptr);
 
     if (src->getChan() != pDst->getChan())
     {
@@ -154,7 +154,7 @@ void VDepTrans::setSrc(ChanState * src)
 
 void VDepTrans::setDst(ChanState * dst)
 {
-    AssertLog(dst !=0);
+    AssertLog(dst != nullptr);
 
     if (dst->getChan() != pSrc->getChan())
     {
@@ -171,8 +171,7 @@ void VDepTrans::setDst(ChanState * dst)
 
 std::vector<double> VDepTrans::getRate() const
 {
-    std::vector<double> rate = std::vector<double>(pTablesize);
-    for (uint i = 0; i < pTablesize; ++i) rate[i] = pRate[i];
+    std::vector<double> rate(pRate, pRate + pTablesize);
     return rate;
 }
 

@@ -123,7 +123,7 @@ typedef struct _N_VectorContent_Serial *N_VectorContent_Serial;
  * -----------------------------------------------------------------
  */
 
-#define NV_CONTENT_S(v)  ( (N_VectorContent_Serial)(v->content) )
+#define NV_CONTENT_S(v)  ( static_cast<N_VectorContent_Serial>(v->content) )
 
 #define NV_LENGTH_S(v)   ( NV_CONTENT_S(v)->length )
 

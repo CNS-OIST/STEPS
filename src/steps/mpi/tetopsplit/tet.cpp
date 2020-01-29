@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -61,15 +61,14 @@ namespace ssolver = steps::solver;
 ////////////////////////////////////////////////////////////////////////////////
 
 smtos::Tet::Tet
-(
-    uint idx, solver::Compdef * cdef, double vol,
+  (
+    tetrahedron_id_t idx, solver::Compdef *cdef, double vol,
     double a0, double a1, double a2, double a3,
     double d0, double d1, double d2, double d3,
-    int tet0, int tet1, int tet2, int tet3, int rank, int host_rank
-)
+    tetrahedron_id_t tet0, tetrahedron_id_t tet1, tetrahedron_id_t tet2, tetrahedron_id_t tet3, int rank, int host_rank
+  )
 : WmVol(idx, cdef, vol, rank, host_rank)
-, pTets()
-//, pTris()
+, pTets({{tet0, tet1, tet2, tet3}})
 , pNextTet()
 , pAreas()
 , pDist()
@@ -86,7 +85,7 @@ smtos::Tet::Tet
     for (uint i=0; i <= 3; ++i)
     {
         pNextTet[i] = nullptr;
-        pNextTris[i] = 0;
+        pNextTris[i] = nullptr;
     }
     pTets[0] = tet0;
     pTets[1] = tet1;
@@ -124,7 +123,7 @@ smtos::Tet::~Tet()
 
 void smtos::Tet::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)pDiffBndDirection, sizeof(bool) * 4);
+    cp_file.write(reinterpret_cast<char*>(pDiffBndDirection), sizeof(bool) * 4);
     WmVol::checkpoint(cp_file);
 }
 
@@ -132,7 +131,7 @@ void smtos::Tet::checkpoint(std::fstream & cp_file)
 
 void smtos::Tet::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)pDiffBndDirection, sizeof(bool) * 4);
+    cp_file.read(reinterpret_cast<char*>(pDiffBndDirection), sizeof(bool) * 4);
     WmVol::restore(cp_file);
 }
 
@@ -159,7 +158,7 @@ void smtos::Tet::setDiffBndDirection(uint i)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Tet::setNextTri(smtos::Tri *t)
+void smtos::Tet::setNextTri(smtos::Tri */*t*/)
 {
     AssertLog(false);
 }
@@ -217,7 +216,7 @@ void smtos::Tet::setupKProcs(smtos::TetOpSplitP * tex)
         
         for (uint i = 0; i < nKProcs; ++i)
         {
-            uint idx = tex->addKProc(NULL);
+            tex->addKProc(nullptr);
         }
     }
 
@@ -232,15 +231,10 @@ void smtos::Tet::setupKProcs(smtos::TetOpSplitP * tex)
 
 void smtos::Tet::setupDeps()
 {
-    if (myRank != hostRank) { return;
-}
-    uint nkprocs = pKProcs.size();
-    for (uint k = 0; k < nkprocs; k++) {
-        pKProcs[k]->setupDeps();
-    }
-    
+    super_type::setupDeps();
+
     bool has_remote_neighbors = false;
-    uint nspecs = compdef()->countSpecs();
+    const uint nspecs = compdef()->countSpecs();
     for (uint i = 0; i < 4; ++i)
     {
         // Fetch next tetrahedron, if it exists.
@@ -263,11 +257,10 @@ void smtos::Tet::setupDeps()
         uint sgidx = compdef()->specL2G(slidx);
         // search dependency for kprocs in this tet
         uint nkprocs = countKProcs();
-        uint startKProcIdx = getStartKProcIdx();
-        
+
         for (uint k = 0; k < nkprocs; k++)
         {
-            if (KProcDepSpecTet(k, this, sgidx) == true) {
+            if (KProcDepSpecTet(k, this, sgidx)) {
                 localSpecUpdKProcs[slidx].push_back(getKProc(k));
             }
         }
@@ -288,10 +281,9 @@ void smtos::Tet::setupDeps()
             }
             
             nkprocs = next->countKProcs();
-            startKProcIdx = next->getStartKProcIdx();
             for (uint sk = 0; sk < nkprocs; sk++)
             {
-                if (next->KProcDepSpecTet(sk, this, sgidx) == true) {
+                if (next->KProcDepSpecTet(sk, this, sgidx)) {
                     localSpecUpdKProcs[slidx].push_back(next->getKProc(sk));
                 }
             }
@@ -316,8 +308,7 @@ bool smtos::Tet::KProcDepSpecTet(uint kp_lidx, smtos::WmVol* kp_container,  uint
     // if kp is  diff
     if (remain < compdef()->countDiffs()) {
         if (kp_container != this) return false;
-        if (spec_gidx != compdef()->diffdef(remain)->lig()) return false;
-        return true;
+        return spec_gidx == compdef()->diffdef(remain)->lig();
     }
     
     AssertLog(false);
@@ -325,7 +316,7 @@ bool smtos::Tet::KProcDepSpecTet(uint kp_lidx, smtos::WmVol* kp_container,  uint
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool smtos::Tet::KProcDepSpecTri(uint kp_lidx, smtos::Tri* kp_container, uint spec_gidx)
+bool smtos::Tet::KProcDepSpecTri(uint /*kp_lidx*/, smtos::Tri* /*kp_container*/, uint /*spec_gidx*/)
 {
     // Reac and Diff never depend on species on triangle
     return false;
@@ -341,7 +332,7 @@ smtos::Diff * smtos::Tet::diff(uint lidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
- int smtos::Tet::getTetDirection(uint tidx)
+ int smtos::Tet::getTetDirection(tetrahedron_id_t tidx)
 {
     for (uint i = 0; i < 4; i++) {
         if (pTets[i] == tidx) {
@@ -394,7 +385,7 @@ void smtos::Tet::incCount(uint lidx, int inc, double period, bool local_change)
             ProgErrLog(os.str());
         }
         
-        bufferLocations[lidx] = pSol->registerRemoteMoleculeChange(hostRank, bufferLocations[lidx], SUB_TET, pIdx, lidx, inc);
+        bufferLocations[lidx] = pSol->registerRemoteMoleculeChange(hostRank, bufferLocations[lidx], SUB_TET, pIdx.get(), lidx, inc);
         // does not need to check sync
     }
     // local change
@@ -416,24 +407,6 @@ void smtos::Tet::incCount(uint lidx, int inc, double period, bool local_change)
 
 
     }
-}
-////////////////////////////////////////////////////////////////////////////////
-
-//double const& smtos::Tet::getPoolOccupancy(uint lidx) const
-//{
-//	AssertLog(lidx < compdef()->countSpecs());
-//
-//	return pPoolOccupancy[lidx];
-//}
-
-////////////////////////////////////////////////////////////////////////////////
-
-double smtos::Tet::getLastUpdate(uint lidx)
-{
-	AssertLog(lidx < compdef()->countSpecs());
-
-	return pLastUpdate[lidx];
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////

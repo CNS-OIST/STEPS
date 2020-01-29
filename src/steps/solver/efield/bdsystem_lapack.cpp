@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -43,8 +43,8 @@ extern void dgbsv_(int *n,int *kl,int *ku,int *nrhs,double *ab,int *ldab,int *ip
 
 void BDSystemLapack::solve()
 {
-    int n=pN;
-    int h=pHalfBW;
+    auto n = static_cast<int>(pN);
+    auto h = static_cast<int>(pHalfBW);
     int nrhs=1;
     int ldab=3*h+1;
     int info=0;

@@ -1,12 +1,66 @@
 Release Notes
 
-Version 3.4.1 (2018-11)
+Version 3.5.0 (2019-10)
 ==========================
-1. Critical bug fix for TetOpSplit solver.
+
+Python API
+----------
+1. values for unknown tetrahedron and triangle identifiers changed from
+   -1 to `steps.geom.UNKNOWN_TET` and `steps.geom.UNKNOWN_TRI`
+   respectively.
+   You may use these 2 constants instead of -1.
+
+    A Python 3 Flake8 extension is available to help you migrate your code.
+
+    ```
+    $ pip3 install flake8 flake8-oist-steps
+    $ cat test.py
+    import steps.utilities.meshio as meshio
+
+    mesh = meshio.loadMesh('axon_cube_L1000um_D866m_1135tets')[0]
+    idx = mesh.findTetByPoint([0, 0, 0])
+    if idx == -1:
+        print('boundary')
+    $ flake8 test.py
+    ./test.py:5:4: E421 consider using steps.geom.UNKNOWN_TET constant instead of -1.
+    ```
+
+    You may use the following snippet in your scripts header to have backward
+    compatible code:
+
+   ```python
+   try:
+       from steps.geom import UNKNOWN_TET, UNKNOWN_TRI
+   except ImportError:
+       UNKNOWN_TET = -1
+       UNKNOWN_TRI = -1
+   ```
+
+2. A new constant `steps.geom.INDEX_DTYPE` provides the proper NumPy datatype according
+to whether STEPS has been built with 32 bits or 64 bits identifiers.
+
+Build and Packaging
+-------------------
+1. New `USE_64_BITS_INDICES` CMake option to use 64bits unsigned integers
+   for identifiers instead of 32bits.
+2. New CMake variables to use either system libraries or bundle code.
+    * `USE_BUNDLE_EASYLOGGINGP`
+    * `USE_BUNDLE_RANDOM123`
+    * `USE_BUNDLE_SUNDIALS`
+3. Improve spack support
+4. Improve support of GCC 7 and higher
+5. Improve support of AppleClang compiler
+
+Internal code base
+------------------
+1. Disable OpenMP instructions in TetOpSplit solver
+2. Modernize code base by using most of C++11
+3. Increase code safety by using strong types to distinguish
+   identifiers from tetrahedrons, triangles, and vertices
 
 Version 3.4.0 (2018-11)
 ==========================
-1. Optimisation of non-spatial deterministic solver Wmrk4. Vast improvement in performance for large models. 
+1. Optimization of non-spatial deterministic solver Wmrk4. Vast improvement in performance for large models.
 2. Various bug fixes and unit tests.
 
 Version 3.3.0 (2018-04)
@@ -48,12 +102,12 @@ Version 3.0.0 (2017-2)
 
 Version 2.2.1 (2014-10)
 ==========================
-1. Bug fixes for CUBIT-STEPS geometry praparation toolkit.
+1. Bug fixes for CUBIT-STEPS geometry preparation toolkit.
 2. Implement directional diffusion constant.
 
 Version 2.2.0 (2014-04-16)
 ==========================
-1. Add CUBIT-STEPS geometry praparation toolkit and visualization toolkit.
+1. Add CUBIT-STEPS geometry preparation toolkit and visualization toolkit.
 2. Add "Region of Interest" dataset in Tetmesh Geometry and related functions in Tetexact solver
 3. Add direct NumPy access functions in Tetmesh geometry and Tetexact solver
 
@@ -69,12 +123,12 @@ first search in E-Field setup.
 Version 2.0.0 (2013-04-22)
 ==========================
 1. First version to include E-Field and related objects. Allows
-simulation of the potential across a membrane specifed as a collection of
+simulation of the potential across a membrane specified as a collection of
 triangles comprising a surface in the tetrahedral mesh. See documentation for
 more information.
 2. Addition of solver TetODE for spatial deterministic simulations. Uses the CVODE
 library for solutions.
-3. Addition of surface diffusion in mesh-based solvers (Tetexct and TetODE), which models a
+3. Addition of surface diffusion in mesh-based solvers (Tetexact and TetODE), which models a
 diffusive flux between triangles that form part of a patch surface, analogous to
 volume diffusion between tetrahedral elements in a compartment.
 4. Several other smaller additions and fixes.
@@ -122,7 +176,7 @@ Version 1.1.1 (2010-04-7)
 
 Version 1.1.0 (2010-03-20)
 ==========================
-1. Replace GNU distrubution system with Python Distutils.
+1. Replace GNU distribution system with Python Distutils.
 2. Provide a visualization toolkit for mesh based simulation
 (steps.utilitis.visual)
 3. Provide checkpointing support for Wmdirect and Tetexact solvers.
@@ -136,10 +190,8 @@ Version 1.0.1 (2010-01-28)
 a pointer to model level objects or access data from those objects,
 instead coping all data during construction and setup.
 Also modified rng.py to be directly created by swig for
-compatability with python3.
+compatibility with python3.
 
 Version 1.0.0 (2010-01-05)
 ==========================
 First release.
-
-

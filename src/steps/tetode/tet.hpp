@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,16 +30,18 @@
 #define STEPS_TETODE_TET_HPP 1
 
 // STL headers.
+#include <array>
 #include <cassert>
 #include <vector>
 
 // STEPS headers.
 #include "steps/common.h"
+#include <steps/geom/fwd.hpp>
 #include "steps/error.hpp"
 #include "steps/solver/types.hpp"
 
 // logging
-#include "third_party/easyloggingpp/src/easylogging++.h"
+#include <easylogging++.h>
 ////////////////////////////////////////////////////////////////////////////////
 
  namespace steps {
@@ -74,12 +76,12 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     Tet
-    (
-        uint idx, steps::solver::Compdef * cdef, double vol,
+      (
+        tetrahedron_id_t idx, steps::solver::Compdef *cdef, double vol,
         double a0, double a1, double a2, double a3,
         double d0, double d1, double d2, double d3,
-        int tet0, int tet1, int tet2, int tet3
-    );
+        tetrahedron_id_t tet0, tetrahedron_id_t tet1, tetrahedron_id_t tet2, tetrahedron_id_t tet3
+      );
     ~Tet() = default;
 
     inline steps::solver::Compdef * compdef() const
@@ -116,11 +118,11 @@ public:
 
     /// Get the volume.
     ///
-    inline double vol() const
+    inline double vol() const noexcept
     { return pVol; }
 
     /// get the index
-    inline uint idx()
+    inline tetrahedron_id_t idx() const  noexcept
     { return pIdx; }
 
     /// Get pointer to the next neighbouring triangle.
@@ -133,18 +135,18 @@ public:
 
     /// Get pointer to the next neighbouring tetrahedron.
     ///
-    inline stode::Tet * nextTet(uint i) const
+    inline stode::Tet * nextTet(uint i) const noexcept
     { return pNextTet[i]; }
 
     /// Get the area of a boundary triangle.
     ///
-    inline double area(uint i) const
+    inline double area(uint i) const noexcept
     { return pAreas[i]; }
 
     /// Get the distance to the centroid of the next neighbouring
     /// tetrahedron.
     ///
-    inline double dist(uint i) const
+    inline double dist(uint i) const noexcept
     { return pDist[i]; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -158,7 +160,7 @@ public:
     */
 
 
-    inline int tet(uint t)
+    inline tetrahedron_id_t tet(uint t) const noexcept
     { return pTets[t]; }
 
     /*
@@ -174,19 +176,19 @@ private:
 
     steps::solver::Compdef            * pCompdef;
 
-    uint                                 pIdx;
+    tetrahedron_id_t                    pIdx;
 
     double                              pVol;
 
     // Indices of neighbouring tetrahedra.
-    int                                 pTets[4];
+    std::array<tetrahedron_id_t, 4>     pTets;
 
     // Indices of neighbouring triangles.
     //uint                                pTris[4];
 
 
 
-    /// POinters to neighbouring triangles
+    /// Pointers to neighbouring triangles
     stode::Tri                         * pNextTri[4];
 
 

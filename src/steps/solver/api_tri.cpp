@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -40,12 +40,12 @@
 #include "easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
-USING(std, string);
-using namespace steps::solver;
+namespace steps {
+namespace solver {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriArea(uint tidx) const
+double API::getTriArea(triangle_id_t tidx) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -68,7 +68,7 @@ double API::getTriArea(uint tidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriArea(uint tidx, double area)
+void API::setTriArea(triangle_id_t tidx, double area)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -92,7 +92,7 @@ void API::setTriArea(uint tidx, double area)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriCount(uint tidx, string const & s) const
+double API::getTriCount(triangle_id_t tidx, const std::string&  s) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -118,7 +118,7 @@ double API::getTriCount(uint tidx, string const & s) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getTriSpecDefined(uint tidx, string const & s) const
+bool API::getTriSpecDefined(triangle_id_t tidx, const std::string&  s) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -143,7 +143,7 @@ bool API::getTriSpecDefined(uint tidx, string const & s) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriCount(uint tidx, string const & s, double n)
+void API::setTriCount(triangle_id_t tidx, const std::string&  s, double n)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -175,7 +175,7 @@ void API::setTriCount(uint tidx, string const & s, double n)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriAmount(uint tidx, string const & s) const
+double API::getTriAmount(triangle_id_t tidx, const std::string&  s) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -201,7 +201,7 @@ double API::getTriAmount(uint tidx, string const & s) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriAmount(uint tidx, string const & s, double m)
+void API::setTriAmount(triangle_id_t tidx, const std::string&  s, double m)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -233,7 +233,7 @@ void API::setTriAmount(uint tidx, string const & s, double m)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getTriClamped(uint tidx, string const & s) const
+bool API::getTriClamped(triangle_id_t tidx, const std::string&  s) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -259,7 +259,7 @@ bool API::getTriClamped(uint tidx, string const & s) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriClamped(uint tidx, string const & s, bool buf)
+void API::setTriClamped(triangle_id_t tidx, const std::string&  s, bool buf)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -285,7 +285,7 @@ void API::setTriClamped(uint tidx, string const & s, bool buf)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriSReacK(uint tidx, string const & r) const
+double API::getTriSReacK(triangle_id_t tidx, const std::string&  r)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -311,7 +311,7 @@ double API::getTriSReacK(uint tidx, string const & r) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriSReacK(uint tidx, string const & r, double kf)
+void API::setTriSReacK(triangle_id_t tidx, const std::string&  r, double kf)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -343,7 +343,7 @@ void API::setTriSReacK(uint tidx, string const & r, double kf)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getTriSReacActive(uint tidx, string const & r) const
+bool API::getTriSReacActive(triangle_id_t tidx, const std::string&  r)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -369,7 +369,7 @@ bool API::getTriSReacActive(uint tidx, string const & r) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriSReacActive(uint tidx, string const & r, bool act)
+void API::setTriSReacActive(triangle_id_t tidx, const std::string&  r, bool act)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -396,7 +396,7 @@ void API::setTriSReacActive(uint tidx, string const & r, bool act)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriSReacH(uint tidx, string const & r) const
+double API::getTriSReacH(triangle_id_t tidx, const std::string&  r)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -422,7 +422,7 @@ double API::getTriSReacH(uint tidx, string const & r) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriSReacC(uint tidx, string const & r) const
+double API::getTriSReacC(triangle_id_t tidx, const std::string&  r)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -448,7 +448,7 @@ double API::getTriSReacC(uint tidx, string const & r) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriSReacA(uint tidx, string const & r) const
+double API::getTriSReacA(triangle_id_t tidx, const std::string&  r)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -474,14 +474,15 @@ double API::getTriSReacA(uint tidx, string const & r) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriDiffD(uint tidx, string const & d, uint direction_tri) const
+double API::getTriDiffD(triangle_id_t tidx, const std::string&  d, uint direction_tri)
 {
     return getTriSDiffD(tidx, d, direction_tri);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriSDiffD(uint tidx, string const & d, uint direction_tri) const
+double API::getTriSDiffD(triangle_id_t tidx, const std::string &d,
+                         triangle_id_t direction_tri)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -508,13 +509,13 @@ double API::getTriSDiffD(uint tidx, string const & d, uint direction_tri) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriDiffD(uint tidx, string const & d, double dk, uint direction_tri) {
+void API::setTriDiffD(triangle_id_t tidx, const std::string&  d, double dk, triangle_id_t direction_tri) {
     setTriSDiffD(tidx, d, dk, direction_tri);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriSDiffD(uint tidx, string const & d, double dk, uint direction_tri)
+void API::setTriSDiffD(triangle_id_t tidx, const std::string&  d, double dk, triangle_id_t direction_tri)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -524,7 +525,7 @@ void API::setTriSDiffD(uint tidx, string const & d, double dk, uint direction_tr
             os << "Tetrahedron index out of range.";
             ArgErrLog(os.str());
         }
-        if (direction_tri != std::numeric_limits<uint>::max() &&direction_tri >= mesh->countTris())
+        if (direction_tri != UNKNOWN_TRI &&direction_tri >= mesh->countTris())
         {
             std::ostringstream os;
             os << "Direction tetrahedron index out of range.";
@@ -551,7 +552,7 @@ void API::setTriSDiffD(uint tidx, string const & d, double dk, uint direction_tr
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriV(uint tidx) const
+double API::getTriV(triangle_id_t tidx) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -575,7 +576,7 @@ double API::getTriV(uint tidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriV(uint tidx, double v)
+void API::setTriV(triangle_id_t tidx, double v)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -599,7 +600,7 @@ void API::setTriV(uint tidx, double v)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getTriVClamped(uint tidx) const
+bool API::getTriVClamped(triangle_id_t tidx) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -623,7 +624,7 @@ bool API::getTriVClamped(uint tidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriVClamped(uint tidx, bool cl)
+void API::setTriVClamped(triangle_id_t tidx, bool cl)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -647,7 +648,7 @@ void API::setTriVClamped(uint tidx, bool cl)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriOhmicI(uint tidx)
+double API::getTriOhmicI(triangle_id_t tidx)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -671,7 +672,7 @@ double API::getTriOhmicI(uint tidx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriOhmicI(uint tidx, string const & oc)
+double API::getTriOhmicI(triangle_id_t tidx, const std::string&  oc)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -697,7 +698,7 @@ double API::getTriOhmicI(uint tidx, string const & oc)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriGHKI(uint tidx)
+double API::getTriGHKI(triangle_id_t tidx)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -721,7 +722,7 @@ double API::getTriGHKI(uint tidx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriGHKI(uint tidx, string const & ghk)
+double API::getTriGHKI(triangle_id_t tidx, const std::string&  ghk)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -746,7 +747,7 @@ double API::getTriGHKI(uint tidx, string const & ghk)
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriI(uint tidx) const
+double API::getTriI(triangle_id_t tidx) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -770,7 +771,7 @@ double API::getTriI(uint tidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriIClamp(uint tidx, double i)
+void API::setTriIClamp(triangle_id_t tidx, double i)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -794,7 +795,7 @@ void API::setTriIClamp(uint tidx, double i)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriCapac(uint tidx, double cm)
+void API::setTriCapac(triangle_id_t tidx, double cm)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -818,7 +819,7 @@ void API::setTriCapac(uint tidx, double cm)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getTriVDepSReacActive(uint tidx, string const & vsr) const
+bool API::getTriVDepSReacActive(triangle_id_t tidx, const std::string&  vsr)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -844,7 +845,7 @@ bool API::getTriVDepSReacActive(uint tidx, string const & vsr) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriVDepSReacActive(uint tidx, string const & vsr, bool act)
+void API::setTriVDepSReacActive(triangle_id_t tidx, const std::string&  vsr, bool act)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -871,217 +872,218 @@ void API::setTriVDepSReacActive(uint tidx, string const & vsr, bool act)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriArea(uint tidx) const
+double API::_getTriArea(triangle_id_t /*tidx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTriArea(uint tidx, double area)
+void API::_setTriArea(triangle_id_t /*tidx*/, double /*area*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getTriSpecDefined(uint tidx, uint sidx) const
+bool API::_getTriSpecDefined(triangle_id_t /*tidx*/, uint /*sidx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriCount(uint tidx, uint sidx) const
+double API::_getTriCount(triangle_id_t /*tidx*/, uint /*sidx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTriCount(uint tidx, uint sidx, double n)
+void API::_setTriCount(triangle_id_t /*tidx*/, uint /*sidx*/, double /*n*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriAmount(uint tidx, uint sidx) const
+double API::_getTriAmount(triangle_id_t /*tidx*/, uint /*sidx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTriAmount(uint tidx, uint sidx, double m)
+void API::_setTriAmount(triangle_id_t /*tidx*/, uint /*sidx*/, double /*m*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getTriClamped(uint tidx, uint sidx) const
+bool API::_getTriClamped(triangle_id_t /*tidx*/, uint /*sidx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTriClamped(uint tidx, uint sidx, bool buf)
+void API::_setTriClamped(triangle_id_t /*tidx*/, uint /*sidx*/, bool /*buf*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriSReacK(uint tidx, uint ridx) const
+double API::_getTriSReacK(triangle_id_t /*tidx*/, uint /*ridx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTriSReacK(uint tidx, uint ridx, double kf)
+void API::_setTriSReacK(triangle_id_t /*tidx*/, uint /*ridx*/, double /*kf*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getTriSReacActive(uint tidx, uint ridx) const
+bool API::_getTriSReacActive(triangle_id_t /*tidx*/, uint /*ridx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTriSReacActive(uint tidx, uint ridx, bool act)
+void API::_setTriSReacActive(triangle_id_t /*tidx*/, uint /*ridx*/, bool /*act*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriSDiffD(uint tidx, uint didx, uint direction_tri) const
+double API::_getTriSDiffD(triangle_id_t /*tidx*/, uint /*didx*/, triangle_id_t /*direction_tri*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTriSDiffD(uint tidx, uint didx, double dk, uint direction_tri)
+void API::_setTriSDiffD(triangle_id_t /*tidx*/, uint /*didx*/, double /*dk*/,
+                        triangle_id_t /*direction_tri*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriSReacH(uint tidx, uint ridx) const
+double API::_getTriSReacH(triangle_id_t /*tidx*/, uint /*ridx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriSReacC(uint tidx, uint ridx) const
+double API::_getTriSReacC(triangle_id_t /*tidx*/, uint /*ridx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriSReacA(uint tidx, uint ridx) const
+double API::_getTriSReacA(triangle_id_t /*tidx*/, uint /*ridx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriV(uint tidx) const
+double API::_getTriV(triangle_id_t /*tidx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTriV(uint tidx, double v)
+void API::_setTriV(triangle_id_t /*tidx*/, double /*v*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getTriVClamped(uint tidx) const
+bool API::_getTriVClamped(triangle_id_t /*tidx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTriVClamped(uint tidx, bool cl)
+void API::_setTriVClamped(triangle_id_t /*tidx*/, bool /*cl*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriOhmicI(uint tidx)
+double API::_getTriOhmicI(triangle_id_t /*tidx*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriOhmicI(uint tidx, uint ocidx)
+double API::_getTriOhmicI(triangle_id_t /*tidx*/, uint /*ocidx*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriGHKI(uint tidx)
+double API::_getTriGHKI(triangle_id_t /*tidx*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriGHKI(uint tidx, uint ghkidx)
+double API::_getTriGHKI(triangle_id_t /*tidx*/, uint /*ghkidx*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriI(uint tidx) const
+double API::_getTriI(triangle_id_t /*tidx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTriIClamp(uint tidx, double i)
+void API::_setTriIClamp(triangle_id_t /*tidx*/, double /*i*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTriCapac(uint tidx, double cm)
+void API::_setTriCapac(triangle_id_t /*tidx*/, double /*cm*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getTriVDepSReacActive(uint tidx, uint vsridx) const
+bool API::_getTriVDepSReacActive(triangle_id_t /*tidx*/, uint /*vsridx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTriVDepSReacActive(uint tidx, uint vsridx, bool act)
+void API::_setTriVDepSReacActive(triangle_id_t /*tidx*/, uint /*vsridx*/, bool /*act*/)
 {
     NotImplErrLog("");
 }
@@ -1089,3 +1091,6 @@ void API::_setTriVDepSReacActive(uint tidx, uint vsridx, bool act)
 ////////////////////////////////////////////////////////////////////////////////
 
 // END
+
+} // namespace solver
+} // namespace steps

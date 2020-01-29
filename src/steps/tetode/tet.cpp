@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -48,19 +48,19 @@ namespace ssolver = steps::solver;
 ////////////////////////////////////////////////////////////////////////////////
 
 stode::Tet::Tet
-(
-    uint idx, solver::Compdef * cdef, double vol,
+  (
+    tetrahedron_id_t idx, solver::Compdef *cdef, double vol,
     double a0, double a1, double a2, double a3,
     double d0, double d1, double d2, double d3,
-    int tet0, int tet1, int tet2, int tet3
-)
+    tetrahedron_id_t tet0, tetrahedron_id_t tet1, tetrahedron_id_t tet2, tetrahedron_id_t tet3
+  )
 : pCompdef(cdef)
 , pIdx(idx)
 , pVol(vol)
 , pTets()
 //, pTris()
-, pNextTet()
 , pNextTri()
+, pNextTet()
 , pAreas()
 , pDist()
 {
@@ -105,7 +105,7 @@ void stode::Tet::setNextTet(uint i, stode::Tet * t)
     else
     {
         pNextTet[i] = t;
-        if (pNextTri[i] != 0) CLOG(INFO, "general_log") << "WARNING: writing over nextTri index " << i;
+        if (pNextTri[i] != nullptr) CLOG(INFO, "general_log") << "WARNING: writing over nextTri index " << i;
         pNextTri[i] = nullptr;
     }
 
@@ -135,13 +135,13 @@ void stode::Tet::setNextTri(uint i, stode::Tri * t)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stode::Tet::checkpoint(std::fstream & cp_file)
+void stode::Tet::checkpoint(std::fstream & /*cp_file*/)
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stode::Tet::restore(std::fstream & cp_file)
+void stode::Tet::restore(std::fstream & /*cp_file*/)
 {
 }
 

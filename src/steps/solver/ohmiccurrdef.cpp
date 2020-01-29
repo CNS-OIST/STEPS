@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -59,8 +59,8 @@ ssolver::OhmicCurrdef::OhmicCurrdef(Statedef * sd, uint gidx, smod::OhmicCurr * 
 , pSpec_DEP(nullptr)
 , pSpec_CHANSTATE(GIDX_UNDEFINED)
 {
-    AssertLog(pStatedef != 0);
-    AssertLog(oc != 0);
+    AssertLog(pStatedef != nullptr);
+    AssertLog(oc != nullptr);
 
     uint nspecs = pStatedef->countSpecs();
     if (nspecs == 0) { return; // Would be weird, but okay.
@@ -86,16 +86,16 @@ ssolver::OhmicCurrdef::~OhmicCurrdef()
 
 void ssolver::OhmicCurrdef::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&pG, sizeof(double));
-    cp_file.write((char*)&pERev, sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pG), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pERev), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void ssolver::OhmicCurrdef::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&pG, sizeof(double));
-    cp_file.read((char*)&pERev, sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pG), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pERev), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -27,6 +27,7 @@
 
 
 // Standard library & STL headers.
+#include <array>
 #include <iostream>
 #include <vector>
 
@@ -58,37 +59,22 @@ stex::SDiff::SDiff(ssolver::Diffdef * sdef, stex::Tri * tri)
 : 
  pSDiffdef(sdef)
 , pTri(tri)
-, pUpdVec()
-, pScaledDcst(0.0)
-, pDcst(0.0)
-, pCDFSelector()
-, pSDiffBndActive()
-, pSDiffBndDirection()
 {
-    AssertLog(pSDiffdef != 0);
-    AssertLog(pTri != 0);
-    stex::Tri * next[3] =
-    {
-        pTri->nextTri(0),
-        pTri->nextTri(1),
-        pTri->nextTri(2),
-    };
+    AssertLog(pSDiffdef != nullptr);
+    AssertLog(pTri != nullptr);
+    std::array<stex::Tri *, 3> next{pTri->nextTri(0),
+                                    pTri->nextTri(1),
+                                    pTri->nextTri(2)
+                                    };
 
-    ligGIdx = pSDiffdef->lig();
     ssolver::Patchdef * pdef = pTri->patchdef();
-    lidxTri = pdef->specG2L(ligGIdx);
+    lidxTri = pdef->specG2L(pSDiffdef->lig());
 
     for (uint i = 0; i < 3; ++i)
     {
         pSDiffBndDirection[i] = pTri->getSDiffBndDirection(i);
-        if (next[i] == nullptr)
-        {
-            pNeighbPatchLidx[i] = -1;
-            continue;
-        }
-        else
-        {
-            pNeighbPatchLidx[i] = next[i]->patchdef()->specG2L(ligGIdx);
+        if (next[i] != nullptr) {
+            pNeighbPatchLidx[i] = next[i]->patchdef()->specG2L(pSDiffdef->lig());
         }
     }
 
@@ -97,7 +83,7 @@ stex::SDiff::SDiff(ssolver::Diffdef * sdef, stex::Tri * tri)
     double dcst = pTri->patchdef()->dcst(ldidx);
     pDcst = dcst;
 
-    double d[3] = { 0.0, 0.0, 0.0};
+    std::array<double, 3> d{0.0, 0.0, 0.0};
     for (uint i = 0; i < 3; ++i)
     {
         // Compute the scaled diffusion constant.
@@ -105,41 +91,22 @@ stex::SDiff::SDiff(ssolver::Diffdef * sdef, stex::Tri * tri)
         double dist = pTri->dist(i);
         if ((dist > 0.0) && (next[i] != nullptr))
         {
-            if (pSDiffBndDirection[i] == true)
+            if (!pSDiffBndDirection[i] && next[i]->patchdef() == pTri->patchdef())
             {
-                if (pSDiffBndActive[i]) {
-                    d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
-                } else { d[i] = 0.0;
-}
-            }
-            else
-            {
-                if (next[i]->patchdef() == pTri->patchdef()) {
-                    d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
-                } else { d[i] = 0.0;
-}
+                d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
+                pScaledDcst += d[i];
             }
         }
-    }
-    // Compute scaled "diffusion constant".
-    for (uint i = 0; i < 3; ++i)
-    {
-        pScaledDcst += d[i];
     }
 
     // Should not be negative!
     AssertLog(pScaledDcst >= 0);
 
     // Setup the selector distribution.
-    if (pScaledDcst == 0.0)
-    {
-        pCDFSelector[0] = 0.0;
-        pCDFSelector[1] = 0.0;
-    }
-    else
+    if (pScaledDcst > 0.0)
     {
         pCDFSelector[0] = d[0] / pScaledDcst;
-        pCDFSelector[1] = pCDFSelector[0] + (d[1] / pScaledDcst);
+        pCDFSelector[1] = pCDFSelector[0] + d[1] / pScaledDcst;
     }
 }
 
@@ -152,58 +119,58 @@ stex::SDiff::~SDiff()
 
 void stex::SDiff::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&rExtent, sizeof(uint));
-    cp_file.write((char*)&pFlags, sizeof(uint));
+    cp_file.write(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.write(reinterpret_cast<char*>(&pFlags), sizeof(uint));
 
-    uint n_direct_dcsts = directionalDcsts.size();
-    cp_file.write((char*)&n_direct_dcsts, sizeof(uint));
+    auto n_direct_dcsts = static_cast<int>(directionalDcsts.size());
+    cp_file.write(reinterpret_cast<char*>(&n_direct_dcsts), sizeof(uint));
     for (auto& item : directionalDcsts) {
-        cp_file.write((char*)&(item.first), sizeof(uint));
-        cp_file.write((char*)&(item.second), sizeof(double));
+        cp_file.write(reinterpret_cast<const char*>(&item.first), sizeof(uint));
+        cp_file.write(reinterpret_cast<char*>(&item.second), sizeof(double));
     }
 
     
-    cp_file.write((char*)&pScaledDcst, sizeof(double));
-    cp_file.write((char*)&pDcst, sizeof(double));
-    cp_file.write((char*)pCDFSelector, sizeof(double) * 2);
-    cp_file.write((char*)pSDiffBndActive, sizeof(bool) * 3);
-    cp_file.write((char*)pSDiffBndDirection, sizeof(bool) * 3);
-    cp_file.write((char*)pNeighbPatchLidx, sizeof(int) * 3);
+    cp_file.write(reinterpret_cast<char*>(&pScaledDcst), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pDcst), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(pCDFSelector.data()), sizeof(double) * 2);
+    cp_file.write(reinterpret_cast<char*>(pSDiffBndActive.data()), sizeof(bool) * 3);
+    cp_file.write(reinterpret_cast<char*>(pSDiffBndDirection.data()), sizeof(bool) * 3);
+    cp_file.write(reinterpret_cast<char*>(pNeighbPatchLidx.data()), sizeof(ssolver::lidxT) * 3);
 
-    cp_file.write((char*)&(crData.recorded), sizeof(bool));
-    cp_file.write((char*)&(crData.pow), sizeof(int));
-    cp_file.write((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.write((char*)&(crData.rate), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.write(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.write(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.write(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void stex::SDiff::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&rExtent, sizeof(uint));
-    cp_file.read((char*)&pFlags, sizeof(uint));
+    cp_file.read(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.read(reinterpret_cast<char*>(&pFlags), sizeof(uint));
 
     uint n_direct_dcsts = 0;
-    cp_file.read((char*)&n_direct_dcsts, sizeof(uint));
+    cp_file.read(reinterpret_cast<char*>(&n_direct_dcsts), sizeof(uint));
     for (uint i = 0; i < n_direct_dcsts; i++) {
         uint id = 0;
         double value = 0.0;
-        cp_file.read((char*)&id, sizeof(uint));
-        cp_file.read((char*)&value, sizeof(double));
+        cp_file.read(reinterpret_cast<char*>(&id), sizeof(uint));
+        cp_file.read(reinterpret_cast<char*>(&value), sizeof(double));
         directionalDcsts[id] = value;
     }
 
-    cp_file.read((char*)&pScaledDcst, sizeof(double));
-    cp_file.read((char*)&pDcst, sizeof(double));
-    cp_file.read((char*)pCDFSelector, sizeof(double) * 2);
-    cp_file.read((char*)pSDiffBndActive, sizeof(bool) * 3);
-    cp_file.read((char*)pSDiffBndDirection, sizeof(bool) * 3);
-    cp_file.read((char*)pNeighbPatchLidx, sizeof(int) * 3);
+    cp_file.read(reinterpret_cast<char*>(&pScaledDcst), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pDcst), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(pCDFSelector.data()), sizeof(double) * 2);
+    cp_file.read(reinterpret_cast<char*>(pSDiffBndActive.data()), sizeof(bool) * 3);
+    cp_file.read(reinterpret_cast<char*>(pSDiffBndDirection.data()), sizeof(bool) * 3);
+    cp_file.read(reinterpret_cast<char*>(pNeighbPatchLidx.data()), sizeof(ssolver::lidxT) * 3);
 
-    cp_file.read((char*)&(crData.recorded), sizeof(bool));
-    cp_file.read((char*)&(crData.pow), sizeof(int));
-    cp_file.read((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.read((char*)&(crData.rate), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.read(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.read(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.read(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -225,27 +192,24 @@ void stex::SDiff::setupDeps()
     // Search for dependencies in the 'source' triangle.
     std::set<stex::KProc*> local;
 
-    KProcPVecCI kprocend = pTri->kprocEnd();
-    for (KProcPVecCI k = pTri->kprocBegin(); k != kprocend; ++k)
-    {
+    for (auto const& k :pTri->kprocs()) {
         // Check locally.
-        if ((*k)->depSpecTri(ligGIdx, pTri) == true) {
-            local.insert(*k);
+        if (k->depSpecTri(pSDiffdef->lig(), pTri)) {
+            local.insert(k);
         }
     }
 
     // Check the neighbouring tetrahedrons.
-    stex::WmVol * itet[2] = {pTri->iTet(), pTri->oTet()};
-    for (uint i = 0; i < 2; ++i)
     {
-        if (itet[i] == nullptr) {
-            continue;
-}
-        kprocend = itet[i]->kprocEnd();
-        for (KProcPVecCI k = itet[i]->kprocBegin(); k != kprocend; ++k)
-        {
-            if ((*k)->depSpecTri(ligGIdx, pTri) == true) {
-                local.insert(*k);
+        stex::WmVol *itet[2] = {pTri->iTet(), pTri->oTet()};
+        for (auto &i : itet) {
+            if (i == nullptr) {
+                continue;
+            }
+            for (auto const& k : i->kprocs()) {
+                if (k->depSpecTri(pSDiffdef->lig(), pTri)) {
+                    local.insert(k);
+                }
             }
         }
     }
@@ -255,35 +219,31 @@ void stex::SDiff::setupDeps()
     {
         // Fetch next triangle, if it exists.
         stex::Tri * next = pTri->nextTri(i);
-        if (next == nullptr) { continue;
-}
+        if (next == nullptr) {
+          continue;
+        }
 
         // Copy local dependencies.
         std::set<stex::KProc*> local2(local.begin(), local.end());
 
         // Find the ones 'locally' in the next tri.
-        kprocend = next->kprocEnd();
-        for (KProcPVecCI k = next->kprocBegin(); k != kprocend; ++k)
-        {
-            if ((*k)->depSpecTri(ligGIdx, next) == true) {
-                local2.insert(*k);
+        for (auto const& k : next->kprocs()) {
+            if (k->depSpecTri(pSDiffdef->lig(), next)) {
+                local2.insert(k);
             }
         }
 
         // Fetch inner tetrahedron, if it exists.
         stex::WmVol * itet[2] = {pTri->iTet(), pTri->oTet()};
-        for (uint j = 0; j < 2; ++j)
-        {
-            if (itet[j] == nullptr) {
+        for (auto &j : itet) {
+            if (j == nullptr) {
                 continue;
-}
+            }
 
             // Find deps.
-            kprocend = itet[j]->kprocEnd();
-            for (KProcPVecCI k = itet[j]->kprocBegin(); k != kprocend; ++k)
-            {
-                if ((*k)->depSpecTri(ligGIdx, next) == true) {
-                    local2.insert(*k);
+            for (auto const & k : j->kprocs()) {
+                if (k->depSpecTri(pSDiffdef->lig(), next)) {
+                    local2.insert(k);
                 }
             }
         }
@@ -296,7 +256,7 @@ void stex::SDiff::setupDeps()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool stex::SDiff::depSpecTet(uint gidx, stex::WmVol * tet)
+bool stex::SDiff::depSpecTet(uint /*gidx*/, stex::WmVol * /*tet*/)
 {
     return false;
 }
@@ -307,7 +267,7 @@ bool stex::SDiff::depSpecTri(uint gidx, stex::Tri * tri)
 {
     if (pTri != tri) { return false;
 }
-    if (gidx != ligGIdx) { return false;
+    if (gidx != pSDiffdef->lig()) { return false;
 }
     return true;
 }
@@ -318,9 +278,7 @@ void stex::SDiff::reset()
 {
     resetExtent();
 
-    pSDiffBndActive[0] = false;
-    pSDiffBndActive[1] = false;
-    pSDiffBndActive[2] = false;
+    pSDiffBndActive = {false, false, false};
 
     uint ldidx = pTri->patchdef()->surfdiffG2L(pSDiffdef->gidx());
     double dcst = pTri->patchdef()->dcst(ldidx);
@@ -340,8 +298,9 @@ void stex::SDiff::reset()
 
 double stex::SDiff::dcst(int direction)
 {
-    if (directionalDcsts.find(direction) != directionalDcsts.end()) {
-        return directionalDcsts[direction];
+    auto search_result = directionalDcsts.find(direction);
+    if (search_result != directionalDcsts.end()) {
+        return search_result->second;
     }
     else {
         return pDcst;
@@ -356,15 +315,13 @@ void stex::SDiff::setDcst(double dcst)
     pDcst = dcst;
     directionalDcsts.clear();
 
-    stex::Tri * next[3] =
-    {
-        pTri->nextTri(0),
-        pTri->nextTri(1),
-        pTri->nextTri(2),
-    };
+    std::array<stex::Tri *, 3> next{pTri->nextTri(0),
+                                    pTri->nextTri(1),
+                                    pTri->nextTri(2)
+                                    };
 
-    double d[3] = { 0.0, 0.0, 0.0};
-
+    std::array<double, 3> d{0.0, 0.0, 0.0};
+    pScaledDcst = 0.0;
     for (uint i = 0; i < 3; ++i)
     {
         // Compute the scaled diffusion constant.
@@ -372,43 +329,26 @@ void stex::SDiff::setDcst(double dcst)
         double dist = pTri->dist(i);
         if ((dist > 0.0) && (next[i] != nullptr))
         {
-            if (pSDiffBndDirection[i] == true)
+            if ((pSDiffBndDirection[i] && pSDiffBndActive[i]) || (!pSDiffBndDirection[i] && next[i]->patchdef() == pTri->patchdef()))
             {
-                if (pSDiffBndActive[i]) {
-                    d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
-                } else { d[i] = 0;
-}
-            }
-            else
-            {
-                if (next[i]->patchdef() == pTri->patchdef()) {
-                    d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
-                } else { d[i] = 0;
-}
+                d[i] = (pTri->length(i) * dcst) / (pTri->area() * dist);
             }
         }
-    }
-
-    // Compute scaled "diffusion constant".
-    pScaledDcst = 0.0;
-
-    for (uint i = 0; i < 3; ++i)
-    {
         pScaledDcst += d[i];
     }
+
     // Should not be negative!
     AssertLog(pScaledDcst >= 0);
 
     // Setup the selector distribution.
     if (pScaledDcst == 0.0)
     {
-        pCDFSelector[0] = 0.0;
-        pCDFSelector[1] = 0.0;
+        pCDFSelector = {0.0, 0.0};
     }
     else
     {
         pCDFSelector[0] = d[0] / pScaledDcst;
-        pCDFSelector[1] = pCDFSelector[0] + (d[1] / pScaledDcst);
+        pCDFSelector[1] = pCDFSelector[0] + d[1] / pScaledDcst;
     }
     
 }
@@ -423,103 +363,63 @@ void stex::SDiff::setDirectionDcst(int direction, double dcst)
     directionalDcsts[direction] = dcst;
     
     // Automatically activate boundary diffusion if necessary
-    if (pSDiffBndDirection[direction] == true) {
+    if (pSDiffBndDirection[direction]) {
         pSDiffBndActive[direction] = true;
     }
 
-    stex::Tri * next[3] =
-    {
-        pTri->nextTri(0),
-        pTri->nextTri(1),
-        pTri->nextTri(2)
-    };
+    std::array<stex::Tri *, 3> next{pTri->nextTri(0),
+                                    pTri->nextTri(1),
+                                    pTri->nextTri(2)
+                                    };
     
-    double d[3] = { 0.0, 0.0, 0.0};
-
+    std::array<double, 3> d{0.0, 0.0, 0.0};
+    pScaledDcst = 0.0;
     
     for (uint i = 0; i < 3; ++i)
     {
         // if directional diffusion dcst exists use directional dcst, else use the standard one
         double dist = pTri->dist(i);
 
-        if ((dist > 0.0) && (next[i] != NULL))
+        if ((dist > 0.0) && (next[i] != nullptr))
         {
-
-            if (pSDiffBndDirection[i] == true)
+            if ((pSDiffBndDirection[i] && pSDiffBndActive[i]) || (!pSDiffBndDirection[i] && next[i]->patchdef() == pTri->patchdef()))
             {
+                auto search_result = directionalDcsts.find(i);
+                if (search_result != directionalDcsts.end()) {
 
-                if (pSDiffBndActive[i])
-                {
-
-                    if (directionalDcsts.find(i) != directionalDcsts.end()) {
-
-                        d[i] = (pTri->length(i) * directionalDcsts[i]) / (pTri->area() * dist);
-                    }
-                    else {
-
-                    	// This part must use the default pDcst, not the function argument dcst
-                        d[i] = (pTri->length(i) * pDcst) / (pTri->area() * dist);
-                    }
+                    d[i] = (pTri->length(i) * search_result->second) / (pTri->area() * dist);
                 }
                 else {
-
-                    d[i] = 0;
-                }
-            }
-            else
-            {
-
-                if (next[i]->patchdef() == pTri->patchdef())
-                {
-
-                    if (directionalDcsts.find(i) != directionalDcsts.end()) {
-
-                        d[i] = (pTri->length(i) * directionalDcsts[i]) / (pTri->area() * dist);
-                    }
-                    else {
-
-                    	// This part must use the default pDcst, not the function argument dcst
-                        d[i] = (pTri->length(i) * pDcst) / (pTri->area() * dist);
-                    }
-                }
-                else {
-
-                    d[i] = 0;
+                    // This part must use the default pDcst, not the function argument dcst
+                    d[i] = (pTri->length(i) * pDcst) / (pTri->area() * dist);
                 }
             }
         }
-    }
-    
-    // Compute scaled "diffusion constant".
-    pScaledDcst = 0.0;
-    
-    for (uint i = 0; i < 3; ++i)
-    {
         pScaledDcst += d[i];
     }
+
     // Should not be negative!
     AssertLog(pScaledDcst >= 0);
     
     // Setup the selector distribution.
     if (pScaledDcst == 0.0)
     {
-        pCDFSelector[0] = 0.0;
-        pCDFSelector[1] = 0.0;
+        pCDFSelector = {0.0, 0.0};
     }
     else
     {
         pCDFSelector[0] = d[0] / pScaledDcst;
-        pCDFSelector[1] = pCDFSelector[0] + (d[1] / pScaledDcst);
+        pCDFSelector[1] = pCDFSelector[0] + d[1] / pScaledDcst;
     }
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-double stex::SDiff::rate(steps::tetexact::Tetexact * solver)
+double stex::SDiff::rate(steps::tetexact::Tetexact * /*solver*/)
 {
     if (inactive()) return 0.0;
 
     // Compute the rate.
-    double rate = (pScaledDcst) * static_cast<double>(pTri->pools()[lidxTri]);
+    double rate = pScaledDcst * static_cast<double>(pTri->pools()[lidxTri]);
     AssertLog(std::isnan(rate) == false);
 
     // Return.
@@ -528,7 +428,7 @@ double stex::SDiff::rate(steps::tetexact::Tetexact * solver)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<stex::KProc*> const & stex::SDiff::apply(steps::rng::RNG * rng, double dt, double simtime)
+std::vector<stex::KProc*> const & stex::SDiff::apply(const rng::RNGptr &rng, double /*dt*/, double /*simtime*/)
 {
     //uint lidxTet = this->lidxTet;
     // Pre-fetch some general info.
@@ -555,7 +455,8 @@ std::vector<stex::KProc*> const & stex::SDiff::apply(steps::rng::RNG * rng, doub
     stex::Tri * nexttri = pTri->nextTri(iSel);
     // If there is no next tet iSel, pCDFSelector[iSel] should be zero
     // So we can assert that nextet 0 does indeed exist
-    AssertLog(nexttri != 0);
+    AssertLog(nexttri != nullptr);
+    AssertLog(pNeighbPatchLidx[iSel] != ssolver::LIDX_UNDEFINED);
 
     if (nexttri->clamped(pNeighbPatchLidx[iSel]) == false)
         nexttri->incCount(pNeighbPatchLidx[iSel],1);
@@ -572,7 +473,7 @@ std::vector<stex::KProc*> const & stex::SDiff::apply(steps::rng::RNG * rng, doub
 
 uint stex::SDiff::updVecSize() const
 {
-    uint maxsize = pUpdVec[0].size();
+    auto maxsize = pUpdVec[0].size();
     for (uint i=1; i <= 2; ++i)
     {
         if (pUpdVec[i].size() > maxsize)

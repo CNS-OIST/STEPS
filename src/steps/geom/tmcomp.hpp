@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -29,6 +29,7 @@
 
 // STEPS headers.
 #include "steps/common.h"
+#include "steps/geom/fwd.hpp"
 #include "steps/math/bbox.hpp"
 #include "steps/geom/comp.hpp"
 #include "steps/model/volsys.hpp"
@@ -71,16 +72,13 @@ public:
     /// \param volsys Pointer to the volume system associated.
     ///
     TmComp(std::string const & id, Tetmesh * container,
-         std::vector<uint> const & tets);
-
-    /// Destructor.
-    ~TmComp() {}
+         std::vector<index_t> const & tets);
 
     ////////////////////////////////////////////////////////////////////////
     // BASE CLASS METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    void setVol(double vol);
+    void setVol(double vol) override;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO PYTHON):
@@ -89,20 +87,20 @@ public:
     /// Return a list of all tetrahedron by indices.
     ///
     /// \return List of indices of the tetrahedrons.
-    inline std::vector<uint> const & getAllTetIndices() const
+    inline const std::vector<index_t>& getAllTetIndices() const noexcept
     { return pTet_indices; }
 
     /// Return the number of tetrahedrons in this TmComp
     ///
     /// \return the number of tetrahedrons in this TmCOmp
-    inline uint countTets() const
+    inline uint countTets() const noexcept
     { return pTetsN; }
 
     // Return whether tetrahedrons (specified by index) are inside this compartment.
     ///
     /// \param tet List of indices of tetrahedrons.
     /// \return List of results of the tetrahedrons are inside the compartment.
-    std::vector<bool> isTetInside(const std::vector<uint> &tets) const;
+    std::vector<bool> isTetInside(const std::vector<index_t> &tets) const;
 
     /// Get the minimal coordinate of the rectangular bounding box.
     ///
@@ -121,15 +119,15 @@ public:
     /// Return all tetrahedrons (by index) in the compartment.
     ///
     /// \return List of indices of tetrahedrons.
-    inline std::vector<uint> const & _getAllTetIndices() const
+    inline std::vector<index_t> const & _getAllTetIndices() const noexcept
     { return pTet_indices; }
 
 private:
 
-    Tetmesh                           * pTetmesh;
-    std::vector<uint>                   pTet_indices;
-    uint                                pTetsN;
-    steps::math::bounding_box           pBBox;
+    Tetmesh                                 * pTetmesh;
+    std::vector<index_t> pTet_indices;
+    std::size_t                               pTetsN{0};
+    steps::math::bounding_box                 pBBox;
 
 };
 

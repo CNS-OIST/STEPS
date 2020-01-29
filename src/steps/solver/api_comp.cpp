@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -309,7 +309,7 @@ double API::getCompReacA(string const & c, string const & r) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint API::getCompReacExtent(string const & c, string const & r) const
+unsigned long long API::getCompReacExtent(string const & c, string const & r) const
 {
     // the following may throw exceptions if strings are unknown
     uint cidx = pStatedef->getCompIdx(c);
@@ -331,70 +331,70 @@ void API::resetCompReacExtent(string const & c, string const & r)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setCompVol(uint cidx, double vol)
+void API::_setCompVol(uint /* cidx */, double /* vol */)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getCompDiffD(uint cidx, uint didx) const
+double API::_getCompDiffD(uint /*cidx*/, uint /*didx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setCompDiffD(uint cidx, uint didx, double dcst)
+void API::_setCompDiffD(uint /*cidx*/, uint /*didx*/, double /*dcst*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getCompDiffActive(uint cidx, uint didx) const
+bool API::_getCompDiffActive(uint /*cidx*/, uint /*didx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setCompDiffActive(uint cidx, uint didx, bool act)
+void API::_setCompDiffActive(uint /*cidx*/, uint /*didx*/, bool /*act*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getCompReacH(uint cidx, uint ridx) const
+double API::_getCompReacH(uint /*cidx*/, uint /*ridx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getCompReacC(uint cidx, uint ridx) const
+double API::_getCompReacC(uint /*cidx*/, uint /*ridx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getCompReacA(uint cidx, uint ridx) const
+long double API::_getCompReacA(uint /*cidx*/, uint /*ridx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint API::_getCompReacExtent(uint cidx, uint ridx) const
+unsigned long long API::_getCompReacExtent(uint /*cidx*/, uint /*ridx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_resetCompReacExtent(uint cidx, uint ridx)
+void API::_resetCompReacExtent(uint /*cidx*/, uint /*ridx*/)
 {
     NotImplErrLog("");
 }

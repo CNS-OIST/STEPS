@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -41,15 +41,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 USING(std, string);
-using namespace steps::solver;
+
+namespace steps {
+namespace solver {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTetVol(uint tidx) const
+double API::getTetVol(tetrahedron_id_t tidx) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -68,11 +70,11 @@ double API::getTetVol(uint tidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetVol(uint tidx, double vol)
+void API::setTetVol(tetrahedron_id_t tidx, double vol)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -91,11 +93,11 @@ void API::setTetVol(uint tidx, double vol)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getTetSpecDefined(uint tidx, string const & s) const
+bool API::getTetSpecDefined(tetrahedron_id_t tidx, string const & s) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -117,11 +119,11 @@ bool API::getTetSpecDefined(uint tidx, string const & s) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double API::getTetCount(uint tidx, string const & s) const
+double API::getTetCount(tetrahedron_id_t tidx, string const & s) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -142,11 +144,11 @@ double API::getTetCount(uint tidx, string const & s) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetCount(uint tidx, string const & s, double n)
+void API::setTetCount(tetrahedron_id_t tidx, string const & s, double n)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -175,11 +177,11 @@ void API::setTetCount(uint tidx, string const & s, double n)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTetAmount(uint tidx, string const & s) const
+double API::getTetAmount(tetrahedron_id_t tidx, string const & s) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -201,11 +203,11 @@ double API::getTetAmount(uint tidx, string const & s) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetAmount(uint tidx, string const & s, double m)
+void API::setTetAmount(tetrahedron_id_t tidx, string const & s, double m)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -233,11 +235,11 @@ void API::setTetAmount(uint tidx, string const & s, double m)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTetConc(uint tidx, string const & s) const
+double API::getTetConc(tetrahedron_id_t tidx, string const & s) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -259,11 +261,11 @@ double API::getTetConc(uint tidx, string const & s) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetConc(uint tidx, string const & s, double c)
+void API::setTetConc(tetrahedron_id_t tidx, string const & s, double c)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -291,11 +293,11 @@ void API::setTetConc(uint tidx, string const & s, double c)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getTetClamped(uint tidx, string const & s) const
+bool API::getTetClamped(tetrahedron_id_t tidx, string const & s) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -317,11 +319,11 @@ bool API::getTetClamped(uint tidx, string const & s) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetClamped(uint tidx, string const & s, bool buf)
+void API::setTetClamped(tetrahedron_id_t tidx, string const & s, bool buf)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -343,11 +345,11 @@ void API::setTetClamped(uint tidx, string const & s, bool buf)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTetReacK(uint tidx, string const & r) const
+double API::getTetReacK(tetrahedron_id_t tidx, string const & r) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -369,11 +371,11 @@ double API::getTetReacK(uint tidx, string const & r) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetReacK(uint tidx, string const & r, double kf)
+void API::setTetReacK(tetrahedron_id_t tidx, string const & r, double kf)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -401,11 +403,11 @@ void API::setTetReacK(uint tidx, string const & r, double kf)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getTetReacActive(uint tidx, string const & r) const
+bool API::getTetReacActive(tetrahedron_id_t tidx, string const & r) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -427,11 +429,11 @@ bool API::getTetReacActive(uint tidx, string const & r) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetReacActive(uint tidx, string const & r, bool act)
+void API::setTetReacActive(tetrahedron_id_t tidx, string const & r, bool act)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -453,11 +455,12 @@ void API::setTetReacActive(uint tidx, string const & r, bool act)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTetDiffD(uint tidx, string const & d, uint direction_tet) const
+double API::getTetDiffD(tetrahedron_id_t tidx, const string &d,
+                        tetrahedron_id_t direction_tet) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -479,17 +482,18 @@ double API::getTetDiffD(uint tidx, string const & d, uint direction_tet) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetDiffD(uint tidx, string const & d, double dk, uint direction_tet)
+void API::setTetDiffD(tetrahedron_id_t tidx, const string &d, double dk,
+                      tetrahedron_id_t direction_tet)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
             ArgErrLog(os.str());
         }
-        if (direction_tet != std::numeric_limits<uint>::max() &&direction_tet >= mesh->countTets())
+        if (direction_tet != UNKNOWN_TET && direction_tet >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Direction tetrahedron index out of range.";
@@ -517,11 +521,11 @@ void API::setTetDiffD(uint tidx, string const & d, double dk, uint direction_tet
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getTetDiffActive(uint tidx, string const & d) const
+bool API::getTetDiffActive(tetrahedron_id_t tidx, string const & d) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -543,12 +547,12 @@ bool API::getTetDiffActive(uint tidx, string const & d) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetDiffActive(uint tidx, string const & d, bool act)
+void API::setTetDiffActive(tetrahedron_id_t tidx, string const & d, bool act)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
 
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -570,12 +574,12 @@ void API::setTetDiffActive(uint tidx, string const & d, bool act)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTetReacH(uint tidx, string const & r) const
+double API::getTetReacH(tetrahedron_id_t tidx, string const & r) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
 
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -597,11 +601,11 @@ double API::getTetReacH(uint tidx, string const & r) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTetReacC(uint tidx, string const & r) const
+double API::getTetReacC(tetrahedron_id_t tidx, string const & r) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -623,12 +627,12 @@ double API::getTetReacC(uint tidx, string const & r) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTetReacA(uint tidx, string const & r) const
+double API::getTetReacA(tetrahedron_id_t tidx, string const & r) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
 
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -650,11 +654,11 @@ double API::getTetReacA(uint tidx, string const & r) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTetDiffA(uint tidx, string const & d) const
+double API::getTetDiffA(tetrahedron_id_t tidx, string const & d) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -676,11 +680,11 @@ double API::getTetDiffA(uint tidx, string const & d) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTetV(uint tidx) const
+double API::getTetV(tetrahedron_id_t tidx) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -699,11 +703,11 @@ double API::getTetV(uint tidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetV(uint tidx, double v)
+void API::setTetV(tetrahedron_id_t tidx, double v)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -722,11 +726,11 @@ void API::setTetV(uint tidx, double v)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getTetVClamped(uint tidx) const
+bool API::getTetVClamped(tetrahedron_id_t tidx) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -746,11 +750,11 @@ bool API::getTetVClamped(uint tidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetVClamped(uint tidx, bool cl)
+void API::setTetVClamped(tetrahedron_id_t tidx, bool cl)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
-        if (tidx >= mesh->countTets())
+        if (tidx >= static_cast<index_t>(mesh->countTets()))
         {
             std::ostringstream os;
             os << "Tetrahedron index out of range.";
@@ -770,194 +774,194 @@ void API::setTetVClamped(uint tidx, bool cl)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetVol(uint tidx) const
+double API::_getTetVol(tetrahedron_id_t /*tidx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTetVol(uint tidx, double vol)
+void API::_setTetVol(tetrahedron_id_t /*tidx*/, double /*vol*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getTetSpecDefined(uint tidx, uint sidx) const
+bool API::_getTetSpecDefined(tetrahedron_id_t /*tidx*/, uint /*sidx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetCount(uint tidx, uint sidx) const
+double API::_getTetCount(tetrahedron_id_t /*tidx*/, uint /*sidx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTetCount(uint tidx, uint sidx, double n)
+void API::_setTetCount(tetrahedron_id_t /*tidx*/, uint /*sidx*/, double /*n*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetAmount(uint tidx, uint sidx) const
+double API::_getTetAmount(tetrahedron_id_t /*tidx*/, uint /*sidx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTetAmount(uint tidx, uint sidx, double m)
+void API::_setTetAmount(tetrahedron_id_t /*tidx*/, uint /*sidx*/, double /*m*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetConc(uint tidx, uint sidx) const
+double API::_getTetConc(tetrahedron_id_t /*tidx*/, uint /*sidx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTetConc(uint tidx, uint sidx, double c)
+void API::_setTetConc(tetrahedron_id_t /*tidx*/, uint /*sidx*/, double /*c*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getTetClamped(uint tidx, uint sidx) const
+bool API::_getTetClamped(tetrahedron_id_t /*tidx*/, uint /*sidx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTetClamped(uint tidx, uint sidx, bool buf)
+void API::_setTetClamped(tetrahedron_id_t /*tidx*/, uint /*sidx*/, bool /*buf*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetReacK(uint tidx, uint ridx) const
+double API::_getTetReacK(tetrahedron_id_t /*tidx*/, uint /*ridx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTetReacK(uint tidx, uint ridx, double kf)
+void API::_setTetReacK(tetrahedron_id_t /*tidx*/, uint /*ridx*/, double /*kf*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getTetReacActive(uint tidx, uint ridx) const
+bool API::_getTetReacActive(tetrahedron_id_t /*tidx*/, uint /*ridx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTetReacActive(uint tidx, uint ridx, bool act)
+void API::_setTetReacActive(tetrahedron_id_t /*tidx*/, uint /*ridx*/, bool /*act*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetDiffD(uint tidx, uint didx, uint direction_tet) const
+double API::_getTetDiffD(tetrahedron_id_t /*tidx*/, uint /*didx*/, tetrahedron_id_t /*direction_tet*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTetDiffD(uint tidx, uint didx, double dk, uint direction_tet)
+void API::_setTetDiffD(tetrahedron_id_t /*tidx*/, uint /*didx*/, double /*dk*/, tetrahedron_id_t /*direction_tet*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getTetDiffActive(uint tidx, uint didx) const
+bool API::_getTetDiffActive(tetrahedron_id_t /*tidx*/, uint /*didx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTetDiffActive(uint tidx, uint didx, bool act)
+void API::_setTetDiffActive(tetrahedron_id_t /*tidx*/, uint /*didx*/, bool /*act*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetReacH(uint tidx, uint ridx) const
+double API::_getTetReacH(tetrahedron_id_t /*tidx*/, uint /*ridx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetReacC(uint tidx, uint ridx) const
+double API::_getTetReacC(tetrahedron_id_t /*tidx*/, uint /*ridx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetReacA(uint tidx, uint ridx) const
+double API::_getTetReacA(tetrahedron_id_t /*tidx*/, uint /*ridx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetDiffA(uint tidx, uint didx) const
+double API::_getTetDiffA(tetrahedron_id_t /*tidx*/, uint /*didx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetV(uint tidx) const
+double API::_getTetV(tetrahedron_id_t /*tidx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTetV(uint tidx, double v)
+void API::_setTetV(tetrahedron_id_t /*tidx*/, double /*v*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getTetVClamped(uint tidx) const
+bool API::_getTetVClamped(tetrahedron_id_t /*tidx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTetVClamped(uint tidx, bool cl)
+void API::_setTetVClamped(tetrahedron_id_t /*tidx*/, bool /*cl*/)
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// END
-
+} // namespace solver
+} // namespace steps

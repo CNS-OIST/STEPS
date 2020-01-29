@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -32,13 +32,14 @@
 #include <cassert>
 #include <vector>
 
+// logging
+#include <easylogging++.h>
+
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/solver/patchdef.hpp"
 #include "steps/mpi/tetopsplit/kproc.hpp"
 #include "steps/solver/types.hpp"
-// logging
-#include "third_party/easyloggingpp/src/easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace steps{
@@ -82,10 +83,11 @@ public:
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
+    Tri(triangle_id_t idx, steps::solver::Patchdef *patchdef, double area,
         double l0, double l1, double l2, double d0, double d1, double d2,
-        int tetinner, int tetouter, int tri0, int tri1, int tri2, int rank, int host_rank);
-    ~Tri();
+        tetrahedron_id_t tetinner, tetrahedron_id_t tetouter,
+        triangle_id_t tri0, triangle_id_t tri1, triangle_id_t tri2, int rank, int host_rank);
+    virtual ~Tri();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -123,23 +125,23 @@ public:
     // DATA ACCESS: GENERAL
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Patchdef * patchdef() const
+    inline steps::solver::Patchdef * patchdef() const noexcept
     { return pPatchdef; }
 
-    inline uint idx() const
+    inline triangle_id_t idx() const noexcept
     { return pIdx; }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SHAPE & CONNECTIVITY
     ////////////////////////////////////////////////////////////////////////
 
-    inline double area() const
+    inline double area() const noexcept
     { return pArea; }
 
-    inline smtos::WmVol * iTet() const
+    inline smtos::WmVol * iTet() const noexcept
     { return pInnerTet; }
 
-    inline smtos::WmVol * oTet() const
+    inline smtos::WmVol * oTet() const noexcept
     { return pOuterTet; }
 
     inline smtos::Tri * nextTri(uint i) const
@@ -148,37 +150,37 @@ public:
         return pNextTri[i];
     }
 
-    inline int tri(uint t)
+    inline triangle_id_t tri(uint t) const noexcept
     { return pTris[t]; }
 
     /// Get the length of a boundary bar.
     ///
-    inline double length(uint i) const
+    inline double length(uint i) const noexcept
     { return pLengths[i]; }
 
     /// Get the distance to the centroid of the next neighbouring
     /// triangle.
     ///
-    inline double dist(uint i) const
+    inline double dist(uint i) const noexcept
     { return pDist[i]; }
 
-    inline int tet(uint t) const
+    inline tetrahedron_id_t tet(uint t) const noexcept
     { return pTets[t]; }
     
     /// Find the direction index towards a neighbor triangle.
     ///
-    int getTriDirection(uint tidx);
+    int getTriDirection(triangle_id_t tidx);
 
     ////////////////////////////////////////////////////////////////////////
 
     // Set whether a direction is a surface diffusion boundary
     void setSDiffBndDirection(uint i);
 
-    inline bool getSDiffBndDirection(uint idx) const
+    inline bool getSDiffBndDirection(uint idx) const noexcept
     { return pSDiffBndDirection[idx]; }
 
     /////////////////////////// Dependency ////////////////////////////////
-    inline uint getStartKProcIdx()
+    inline uint getStartKProcIdx() const noexcept
     {return startKProcIdx;}
     
     // setup dependence for KProcs in this subvolume
@@ -223,7 +225,7 @@ public:
 
     static const uint CLAMPED = 1;
 
-    inline bool clamped(uint lidx) const
+    inline bool clamped(uint lidx) const noexcept
     { return pPoolFlags[lidx] & CLAMPED; }
     void setClamped(uint lidx, bool clamp);
 
@@ -234,20 +236,18 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline std::vector<smtos::KProc *>::const_iterator kprocBegin() const
+    inline std::vector<smtos::KProc *>::const_iterator kprocBegin() const noexcept
     { return pKProcs.begin(); }
-    inline std::vector<smtos::KProc *>::const_iterator kprocEnd() const
+    inline std::vector<smtos::KProc *>::const_iterator kprocEnd() const noexcept
     { return pKProcs.end(); }
-    inline std::vector<smtos::KProc *> & kprocs()
+    inline std::vector<smtos::KProc *> & kprocs() noexcept
     { return pKProcs; }
-    inline uint countKProcs() const
-    {
-        return nKProcs;
-    }
+    inline uint countKProcs() const noexcept
+    { return nKProcs; }
 
-    inline KProc * getKProc(uint lidx)
+    inline KProc * getKProc(uint lidx) const
     {
-        if (hostRank != myRank) return NULL;
+        if (hostRank != myRank) return nullptr;
         AssertLog(lidx < pKProcs.size());
         return pKProcs[lidx];
     }
@@ -280,37 +280,39 @@ private:
 
     ////////////////////////////////////////////////////////////////////////
 
-    uint                                 pIdx;
+    triangle_id_t                       pIdx;
 
     steps::solver::Patchdef           * pPatchdef;
 
-    /// Pointers to neighbouring tetrahedra.
-    smtos::WmVol                       * pInnerTet;
-    smtos::WmVol                       * pOuterTet;
+    double                              pArea;
+
+    double                              pLengths[3];
+    double                              pDist[3];
+
+  /// Pointers to neighbouring tetrahedra.
+    smtos::WmVol                       * pInnerTet{nullptr};
+    smtos::WmVol                       * pOuterTet{nullptr};
 
     // Indices of two neighbouring tets; -1 if surface triangle (if
     // triangle's patch is on the surface of the mesh, quite often the case)
-    int                                 pTets[2];
+    tetrahedron_id_t                     pTets[2];
 
     // Indices of neighbouring triangles.
-    int                                 pTris[3];
+    triangle_id_t                        pTris[3];
 
     /// POinters to neighbouring triangles
     smtos::Tri                         * pNextTri[3];
 
     bool                                hasEfield;
-    double                              pArea;
 
     // Neighbour information- needed for surface diffusion
-    double                              pLengths[3];
-    double                              pDist[3];
 
     bool                                pSDiffBndDirection[3];
 
     /// Numbers of molecules -- stored as machine word integers.
-    uint                              * pPoolCount;
+    uint                              * pPoolCount{nullptr};
     /// Flags on these pools -- stored as machine word flags.
-    uint                              * pPoolFlags;
+    uint                              * pPoolFlags{nullptr};
 
     /// The kinetic processes.
     std::vector<smtos::KProc *>          pKProcs;
@@ -322,10 +324,10 @@ private:
     /// one EField time-step.
     // NOTE: Now arrays so as to separate into different GHK currs,
     // for data access
-    int                                  * pECharge;
+    int                                  * pECharge{nullptr};
 
     // to store the latest ECharge, so that the info is available to solver
-    int                               * pECharge_last;
+    int                               * pECharge_last{nullptr};
 
 
     // Store the Ohmic currents' channel's opening information by OC local indices
@@ -333,9 +335,9 @@ private:
     // The pOCchan_timeintg stores number of channel open * opening time
     // so at the end of the step this number/Efield dt will give the
     // mean number of channels open
-    double                               * pOCchan_timeintg;
+    double                               * pOCchan_timeintg{nullptr};
 
-    double                               * pOCtime_upd;
+    double                               * pOCtime_upd{nullptr};
     ///////////////MPI STUFFS
     int                                     hostRank;
     int                                     myRank;
@@ -345,9 +347,9 @@ private:
 	// of this surface
     std::set<int>                           syncHosts;
 
-    double                            * pPoolOccupancy;
+    double                            * pPoolOccupancy{nullptr};
     /// Structure to store time since last update, used to calculate occupancy
-    double 							  *	pLastUpdate;
+    double 							  *	pLastUpdate{nullptr};
     
     std::vector<uint>                   bufferLocations;
     std::vector<std::vector<smtos::KProc *>> localSpecUpdKProcs;

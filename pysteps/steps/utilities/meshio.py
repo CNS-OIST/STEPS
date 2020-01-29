@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -21,7 +21,7 @@
 #
 #################################################################################   
 ###
-from __future__ import print_function
+from __future__ import  print_function
 
 """
 .. Note::
@@ -266,6 +266,30 @@ class ElementProxy:
 
         Note that element 1 appears twice in "Group2".
 
+        For meshes imported from Abaqus files, the keys of the groups
+        are fetched from the ELSET id.
+
+        For meshes imported from Gmsh2.2 files, the keys of the groups
+        are pairs of (tag_idx, tag_value), where tag_idx is the gmsh tag
+        index position of the element, and tag_value is the 
+        tag value of the element. For example, if a tetrahedron is defined
+        as below in Gmsh
+
+            1 4 2 2 3 16 17 13 18
+
+        It has two tags, tag[0] = 2 and tag[1] = 3, thus the element is 
+        contained in both groups[(0, 2)] and groups[(1, 3)].
+        Note that if a specfic name string is mapped to a value in the 
+        physical tag (tag[0]) in the file, the name string can also be used
+        to access the same group, for example, if the 
+        following is defined in the file
+
+            $PhysicalNames
+            1
+            3 2 "inner"
+            $EndPhysicalNames
+
+        groups[(0, 2)] can also be accessed using groups[(0, "inner")]
         """
 
         return self.groups
@@ -366,7 +390,7 @@ class ElementProxy:
 
 #############################################################################################
 
-def importTetGen(pathroot, scale):
+def importTetGen(pathroot, scale, verbose = False):
     """
     Read a TetGen-generated or refined mesh from a set of files.
 
@@ -540,15 +564,15 @@ def importTetGen(pathroot, scale):
     # Close the file.
     facefile.close()
 
-    print("Read TetGen files succesfully")
+    if (verbose): print("Read TetGen files succesfully")
 
     nodedata = nodeproxy.getAllData()
     tetdata = tetproxy.getAllData()
     tridata = triproxy.getAllData()
 
-    print("creating Tetmesh object in STEPS...")
+    if (verbose): print("creating Tetmesh object in STEPS...")
     mesh = stetmesh.Tetmesh(nodedata, tetdata, tridata)
-    print("Tetmesh object created.")
+    if (verbose): print("Tetmesh object created.")
     return mesh, nodeproxy, tetproxy, triproxy
 
 
@@ -560,6 +584,7 @@ def importTetGen(pathroot, scale):
 
 def parseAbaqusLine(line):
     line = line.replace("\n", "")
+    line = line.replace("\r", "")
     type = "undefined"
     result = {}
     if line == "":
@@ -590,7 +615,7 @@ def parseAbaqusLine(line):
 
 #############################################################################################
 
-def importAbaqus(filename, scale, ebs = None, shadow_mesh = None):
+def importAbaqus(filename, scale, ebs = None, shadow_mesh = None, verbose = False):
     """
     Read a ABAQUS-formated mesh file, return the created steps.geom.Tetmesh object,
     the element mapping for nodes, tetraedrons and triangles.
@@ -621,7 +646,7 @@ def importAbaqus(filename, scale, ebs = None, shadow_mesh = None):
    amount of time to create the Tetmesh object, comparing to the loadTetmesh() method.
 
     """
-    print("Reading Abaqus file...")
+    if (verbose): print("Reading Abaqus file...")
     btime = time.time()
 
     abaqusfile = open(filename, 'r')
@@ -704,7 +729,7 @@ def importAbaqus(filename, scale, ebs = None, shadow_mesh = None):
                 node[1] = nodeproxy.getSTEPSID(int(result["data"][2]))
                 node[2] = nodeproxy.getSTEPSID(int(result["data"][3]))
                 if (node[0], node[1], node[2]) in recorded_tris:
-                    print("Triangle: ", (node[0], node[1], node[2]), " with index ", recorded_tris[(node[0], node[1], node[2])], " has been imported, ignore duplicated triangle ", nodeid)
+                    if (verbose): print("Triangle: ", (node[0], node[1], node[2]), " with index ", recorded_tris[(node[0], node[1], node[2])], " has been imported, ignore duplicated triangle ", nodeid)
                 else:
                     currmap.insert(nodeid, node)
                     recorded_tris[(node[0], node[1], node[2])] = nodeid
@@ -720,21 +745,21 @@ def importAbaqus(filename, scale, ebs = None, shadow_mesh = None):
     tetdata = tetproxy.getAllData()
     tridata = triproxy.getAllData()
 
-    print("Number of nodes imported: ", nodeproxy.getSize())
-    print("Number of tetrahedrons imported: ", tetproxy.getSize())
-    print("Number of triangles imported: ", triproxy.getSize())
+    if (verbose): print("Number of nodes imported: ", nodeproxy.getSize())
+    if (verbose): print("Number of tetrahedrons imported: ", tetproxy.getSize())
+    if (verbose): print("Number of triangles imported: ", triproxy.getSize())
 
-    print("creating Tetmesh object in STEPS...")
+    if (verbose): print("creating Tetmesh object in STEPS...")
     mesh = stetmesh.Tetmesh(nodedata, tetdata, tridata)
-    print("Tetmesh object created.")
+    if (verbose): print("Tetmesh object created.")
 
     if shadow_mesh != None:
         if isinstance(shadow_mesh, str):
             shadow_mesh = ShadowMesh.importFrom(shadow_mesh)
 
-        print("Importing data from shadow mesh.")
+        if (verbose): print("Importing data from shadow mesh.")
         for c in shadow_mesh.comps.values():
-            print("Import compartment ", c.name)
+            if (verbose): print("Import compartment ", c.name)
             steps_indices = [tetproxy.getSTEPSID(i) for i in c.indices]
             comp = stetmesh.TmComp(c.name, mesh, steps_indices)
             for v in c.vsyss:
@@ -745,7 +770,7 @@ def importAbaqus(filename, scale, ebs = None, shadow_mesh = None):
             roi_name = roi[0]
             roi_type = roi[1]["Type"]
             roi_import_indices = roi[1]["Indices"]
-            print("Import ROI data ", roi[0])
+            if (verbose): print("Import ROI data ", roi[0])
             if roi_type == ELEM_VERTEX:
                 steps_indices = [nodeproxy.getSTEPSID(i) for i in roi_import_indices]
             elif roi_type == ELEM_TET:
@@ -758,7 +783,7 @@ def importAbaqus(filename, scale, ebs = None, shadow_mesh = None):
 
     return mesh, nodeproxy, tetproxy,triproxy
 
-def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None):
+def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None, verbose = False):
     """
         Read two ABAQUS-formated mesh files, one with tetrahedron data and the other with triangle data, return the created steps.geom.Tetmesh object,
         the element mapping for nodes, tetraedrons and triangles.
@@ -789,7 +814,7 @@ def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None):
         amount of time to create the Tetmesh object, comparing to the loadTetmesh() method.
 
     """
-    print("Reading Abaqus file...")
+    if (verbose): print("Reading Abaqus file...")
     btime = time.time()
 
     tetfile = open(tetfilename, 'r')
@@ -814,7 +839,7 @@ def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None):
         elif type == "keyword" and (result["keyword"] == "NODE"):
             if (currmap != None):
                 currmap.blockEnd()
-            #print('Found *NODE section, start reading nodes.')
+            #if (verbose): print('Found *NODE section, start reading nodes.')
             if "ELSET" in result.keys():
                 nodeproxy.blockBegin(result["ELSET"])
             else:
@@ -884,7 +909,7 @@ def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None):
         elif type == "keyword" and (result["keyword"] == "NODE"):
             if (currmap != None):
                 currmap.blockEnd()
-            #print('Found *NODE section, start reading nodes.')
+            #if (verbose): print('Found *NODE section, start reading nodes.')
             if "ELSET" in result.keys():
                 nodeproxy.blockBegin(result["ELSET"])
             else:
@@ -924,7 +949,7 @@ def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None):
                 node[1] = nodeproxy.getSTEPSID(int(result["data"][2]))
                 node[2] = nodeproxy.getSTEPSID(int(result["data"][3]))
                 if (node[0], node[1], node[2]) in recorded_tris:
-                    print("Triangle: ", (node[0], node[1], node[2]), " with index ", recorded_tris[(node[0], node[1], node[2])], " has been imported, ignore duplicated triangle ", nodeid)
+                    if (verbose): print("Triangle: ", (node[0], node[1], node[2]), " with index ", recorded_tris[(node[0], node[1], node[2])], " has been imported, ignore duplicated triangle ", nodeid)
                 else:
                     currmap.insert(nodeid, node)
                     recorded_tris[(node[0], node[1], node[2])] = nodeid
@@ -941,29 +966,29 @@ def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None):
     tetdata = tetproxy.getAllData()
     tridata = triproxy.getAllData()
 
-    print("Number of nodes imported: ", nodeproxy.getSize())
-    print("Number of tetrahedrons imported: ", tetproxy.getSize())
-    print("Number of triangles imported: ", triproxy.getSize())
+    if (verbose): print("Number of nodes imported: ", nodeproxy.getSize())
+    if (verbose): print("Number of tetrahedrons imported: ", tetproxy.getSize())
+    if (verbose): print("Number of triangles imported: ", triproxy.getSize())
 
-    print("creating Tetmesh object in STEPS...")
+    if (verbose): print("creating Tetmesh object in STEPS...")
     mesh = stetmesh.Tetmesh(nodedata, tetdata, tridata)
-    print("Tetmesh object created.")
+    if (verbose): print("Tetmesh object created.")
 
     if shadow_mesh != None:
         if isinstance(shadow_mesh, str):
             shadow_mesh = ShadowMesh.importFrom(shadow_mesh)
 
-        print("Importing data from shadow mesh.")
+        if (verbose): print("Importing data from shadow mesh.")
         temp_comps = {}
         for c in shadow_mesh.comps.values():
-            print("Import compartment ", c.name)
+            if (verbose): print("Import compartment ", c.name)
             steps_indices = [tetproxy.getSTEPSID(i) for i in c.indices]
             comp = stetmesh.TmComp(c.name, mesh, steps_indices)
             temp_comps[c] = comp
             for v in c.vsyss:
                 comp.addVolsys(v)
         for p in shadow_mesh.patches.values():
-            print("Import patch ", p.name)
+            if (verbose): print("Import patch ", p.name)
             steps_indices = [triproxy.getSTEPSID(i) for i in p.indices]
             icomp = temp_comps[p.icomp]
             ocomp = None
@@ -976,7 +1001,7 @@ def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None):
             roi_name = roi[0]
             roi_type = roi[1]["Type"]
             roi_import_indices = roi[1]["Indices"]
-            print("Import ROI data ", roi[0])
+            if (verbose): print("Import ROI data ", roi[0])
             if roi_type == ELEM_VERTEX:
                 steps_indices = [nodeproxy.getSTEPSID(i) for i in roi_import_indices]
             elif roi_type == ELEM_TET:
@@ -996,7 +1021,7 @@ def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None):
 
 #############################################################################################
 
-def importGmsh(filename, scale):
+def importGmsh(filename, scale, verbose = False):
     """
     Read a Gmsh-formated mesh file, return the created steps.geom.Tetmesh object,
     the element mapping for nodes, tetraedrons and triangles.
@@ -1025,7 +1050,7 @@ def importGmsh(filename, scale):
    amount of time to create the Tetmesh object, comparing to the loadTetmesh() method.
 
     """
-    print("Reading Gmsh file...")
+    if (verbose): print("Reading Gmsh file...")
     btime = time.time()
 
     meshfile = open(filename, 'r')
@@ -1034,73 +1059,105 @@ def importGmsh(filename, scale):
     tetproxy = ElementProxy('tet', 4)
     triproxy = ElementProxy('tri', 3)
 
-    line = meshfile.readline()
-    assert(line == '$MeshFormat\n')
-    line = meshfile.readline()
-    line = meshfile.readline()
-    assert(line == '$EndMeshFormat\n')
-    line = meshfile.readline()
-    assert(line == '$Nodes\n')
-    line = meshfile.readline()
-    n_nodes = int(line)
-    # read nodes
-    for i in range(n_nodes):
+    physical_name_mapping = {}
+
+    with open(filename, 'r') as meshfile:
         line = meshfile.readline()
-        linesec = line.split()
-        id = int(linesec[0])
-        node = [0.0,0.0,0.0]
-        node[0] = float(linesec[1])*scale
-        node[1] = float(linesec[2])*scale
-        node[2] = float(linesec[3])*scale
-        nodeproxy.insert(id, node)
-    line = meshfile.readline()
-    assert(line == '$EndNodes\n')
-
-    line = meshfile.readline()
-    assert(line == '$Elements\n')
-
-    line = meshfile.readline()
-    n_elems = int(line)
-    # read elem
-    for i in range(n_elems):
-        line = meshfile.readline()
-        linesec = line.split()
-        id = int(linesec[0])
-        type = int(linesec[1])
-        # triangle
-        if type == 2:
-            node = [0,0,0]
-            node[0] = nodeproxy.getSTEPSID(int(linesec[-3]))
-            node[1] = nodeproxy.getSTEPSID(int(linesec[-2]))
-            node[2] = nodeproxy.getSTEPSID(int(linesec[-1]))
-            triproxy.insert(id, node)
-        # tet
-        if type == 4:
-            group_id = linesec[4]
-            node = [0,0,0,0]
-            node[0] = nodeproxy.getSTEPSID(int(linesec[-4]))
-            node[1] = nodeproxy.getSTEPSID(int(linesec[-3]))
-            node[2] = nodeproxy.getSTEPSID(int(linesec[-2]))
-            node[3] = nodeproxy.getSTEPSID(int(linesec[-1]))
-            tetproxy.insert(id, node)
-            tetproxy.addToGroup(group_id, tetproxy.getSTEPSID(id))
-
-    line = meshfile.readline()
-    assert(line == '$EndElements\n')
+        while line:
+            if line == '$MeshFormat\n':
+                line = meshfile.readline()
+                linesec = line.split()
+                if linesec[0] != "2.2" or linesec[1] != "0":
+                    raise Exception('This importer only supports Gmsh 2.2 ASCII format.')
+                line = meshfile.readline()
+                assert(line == '$EndMeshFormat\n')
+            elif line == '$PhysicalNames\n':
+                line = meshfile.readline()
+                nphysical_names = int(line)
+                for n in range(nphysical_names):
+                    line = meshfile.readline()
+                    linesec = line.split()
+                    physical_name_mapping[(int(linesec[0]), int(linesec[1]))] = linesec[2].replace('"', '')
+                line = meshfile.readline()
+                assert(line == '$EndPhysicalNames\n')
+            elif line == '$Nodes\n':
+                line = meshfile.readline()
+                n_nodes = int(line)
+                # read nodes
+                for i in range(n_nodes):
+                    line = meshfile.readline()
+                    linesec = line.split()
+                    id = int(linesec[0])
+                    node = [0.0,0.0,0.0]
+                    node[0] = float(linesec[1])*scale
+                    node[1] = float(linesec[2])*scale
+                    node[2] = float(linesec[3])*scale
+                    nodeproxy.insert(id, node)
+                line = meshfile.readline()
+                assert(line == '$EndNodes\n')
+            elif line == '$Elements\n':
+                line = meshfile.readline()
+                n_elems = int(line)
+                # read elem
+                for i in range(n_elems):
+                    line = meshfile.readline()
+                    linesec = line.split()
+                    id = int(linesec[0])
+                    type = int(linesec[1])
+                    ntags = int(linesec[2])
+                    # triangle
+                    if type == 2:
+                        node = [0,0,0]
+                        node[0] = nodeproxy.getSTEPSID(int(linesec[-3]))
+                        node[1] = nodeproxy.getSTEPSID(int(linesec[-2]))
+                        node[2] = nodeproxy.getSTEPSID(int(linesec[-1]))
+                        triproxy.insert(id, node)
+                        steps_id = triproxy.getSTEPSID(id)
+                        for tag in range(ntags):
+                            tag_id = int(linesec[3+tag])
+                            triproxy.addToGroup((tag, tag_id), steps_id)
+                    # tet
+                    if type == 4:
+                        group_id = linesec[4]
+                        node = [0,0,0,0]
+                        node[0] = nodeproxy.getSTEPSID(int(linesec[-4]))
+                        node[1] = nodeproxy.getSTEPSID(int(linesec[-3]))
+                        node[2] = nodeproxy.getSTEPSID(int(linesec[-2]))
+                        node[3] = nodeproxy.getSTEPSID(int(linesec[-1]))
+                        tetproxy.insert(id, node)
+                        steps_id = tetproxy.getSTEPSID(id)
+                        for tag in range(ntags):
+                            tag_id = int(linesec[3+tag])
+                            tetproxy.addToGroup((tag, tag_id), steps_id)
+                line = meshfile.readline()
+                assert(line == '$EndElements\n')
+            line = meshfile.readline()
     meshfile.close()
-    print("Read Msh file succesfully")
+
+    for physical_tag in physical_name_mapping:
+        dimension = physical_tag[0]
+        tag = physical_tag[1]
+        tag_name = physical_name_mapping[(dimension, tag)]
+        if dimension == 0:
+            nodeproxy.addGroup((0, tag_name), nodeproxy.getGroups()[(0, tag)])
+        elif dimension == 2:
+            triproxy.addGroup((0, tag_name), triproxy.getGroups()[(0, tag)])
+        elif dimension == 3:
+            tetproxy.addGroup((0, tag_name), tetproxy.getGroups()[(0, tag)])
+                                    
+    if (verbose): print("Read Msh file succesfully")
 
     nodedata = nodeproxy.getAllData()
     tetdata = tetproxy.getAllData()
     tridata = triproxy.getAllData()
 
-    print("Number of nodes imported: ", nodeproxy.getSize())
-    print("Number of tetrahedrons imported: ", tetproxy.getSize())
-    print("Number of triangles imported: ", triproxy.getSize())
+    if (verbose): print("Number of nodes imported: ", nodeproxy.getSize())
+    if (verbose): print("Number of tetrahedrons imported: ", tetproxy.getSize())
+    if (verbose): print("Number of triangles imported: ", triproxy.getSize())
 
-    print("creating Tetmesh object in STEPS...")
+    if (verbose): print("creating Tetmesh object in STEPS...")
     mesh = stetmesh.Tetmesh(nodedata, tetdata, tridata)
-    print("Tetmesh object created.")
+    if (verbose): print("Tetmesh object created.")
 
     return mesh, nodeproxy, tetproxy,triproxy
 
@@ -1110,7 +1167,7 @@ def importGmsh(filename, scale):
 
 #############################################################################################
 
-def importVTK(filename, scale):
+def importVTK(filename, scale, verbose = False):
     """
     Read a VTK-formated mesh file, return the created steps.geom.Tetmesh object,
     the element mapping for nodes, tetraedrons and triangles.
@@ -1139,7 +1196,7 @@ def importVTK(filename, scale):
    amount of time to create the Tetmesh object, comparing to the loadTetmesh() method.
 
     """
-    print("Reading VTK file...")
+    if (verbose): print("Reading VTK file...")
     #btime = time.time()
 
     vtkfile = open(filename, 'r')
@@ -1149,7 +1206,7 @@ def importVTK(filename, scale):
     triproxy = ElementProxy('tri', 3)
     elements = []
 
-    warningPrinted = False
+    warningprinted = False
 
     line = vtkfile.readline()
 
@@ -1183,18 +1240,18 @@ def importVTK(filename, scale):
                     triproxy.insert(i, [int(element[1]), int(element[2]), int(element[3])])
                 elif int(line) == 10 and int(element[0]) == 4:
                     tetproxy.insert(i, [int(element[1]), int(element[2]), int(element[3]), int(element[4])])
-                elif not warningPrinted:
+                elif not warningprinted:
                     print("Warning: at least one element is neither a triangle nor a tetrahedron")
-                    warningPrinted = True                 
+                    warningprinted = True                 
             break
     vtkfile.close()
     nodedata = nodeproxy.getAllData()
     tetdata = tetproxy.getAllData()
     tridata = triproxy.getAllData()
 
-    print("creating Tetmesh object in STEPS...")
+    if (verbose): print("creating Tetmesh object in STEPS...")
     mesh = stetmesh.Tetmesh(nodedata, tetdata, tridata)
-    print("Tetmesh object created.")
+    if (verbose): print("Tetmesh object created.")
     return mesh, nodeproxy, tetproxy, triproxy
 
 #############################################################################################

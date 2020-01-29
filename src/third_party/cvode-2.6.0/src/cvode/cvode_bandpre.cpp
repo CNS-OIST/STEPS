@@ -83,14 +83,14 @@ int CVBandPrecInit(void *cvode_mem, int N, int mu, int ml)
     CVProcessError(NULL, CVSPILS_MEM_NULL, "CVBANDPRE", "CVBandPrecInit", MSGBP_MEM_NULL);
     return(CVSPILS_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   /* Test if one of the SPILS linear solvers has been attached */
   if (cv_mem->cv_lmem == NULL) {
     CVProcessError(cv_mem, CVSPILS_LMEM_NULL, "CVBANDPRE", "CVBandPrecInit", MSGBP_LMEM_NULL);
     return(CVSPILS_LMEM_NULL);
   }
-  cvspils_mem = (CVSpilsMem) cv_mem->cv_lmem;
+  cvspils_mem = static_cast<CVSpilsMem> (cv_mem->cv_lmem);
 
   /* Test if the NVECTOR package is compatible with the BAND preconditioner */
   if(vec_tmpl->ops->nvgetarraypointer == NULL) {
@@ -99,7 +99,7 @@ int CVBandPrecInit(void *cvode_mem, int N, int mu, int ml)
   }
 
   pdata = NULL;
-  pdata = (CVBandPrecData) malloc(sizeof *pdata);  /* Allocate data memory */
+  pdata = static_cast<CVBandPrecData> (malloc(sizeof *pdata));  /* Allocate data memory */
   if (pdata == NULL) {
     CVProcessError(cv_mem, CVSPILS_MEM_FAIL, "CVBANDPRE", "CVBandPrecInit", MSGBP_MEM_FAIL);
     return(CVSPILS_MEM_FAIL);
@@ -169,19 +169,19 @@ int CVBandPrecGetWorkSpace(void *cvode_mem, long int *lenrwBP, long int *leniwBP
     CVProcessError(NULL, CVSPILS_MEM_NULL, "CVBANDPRE", "CVBandPrecGetWorkSpace", MSGBP_MEM_NULL);
     return(CVSPILS_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if (cv_mem->cv_lmem == NULL) {
     CVProcessError(cv_mem, CVSPILS_LMEM_NULL, "CVBANDPRE", "CVBandPrecGetWorkSpace", MSGBP_LMEM_NULL);
     return(CVSPILS_LMEM_NULL);
   }
-  cvspils_mem = (CVSpilsMem) cv_mem->cv_lmem;
+  cvspils_mem = static_cast<CVSpilsMem> (cv_mem->cv_lmem);
 
   if (cvspils_mem->s_P_data == NULL) {
     CVProcessError(cv_mem, CVSPILS_PMEM_NULL, "CVBANDPRE", "CVBandPrecGetWorkSpace", MSGBP_PMEM_NULL);
     return(CVSPILS_PMEM_NULL);
   } 
-  pdata = (CVBandPrecData) cvspils_mem->s_P_data;
+  pdata = static_cast<CVBandPrecData> (cvspils_mem->s_P_data);
 
   N   = pdata->N;
   mu  = pdata->mu;
@@ -204,19 +204,19 @@ int CVBandPrecGetNumRhsEvals(void *cvode_mem, long int *nfevalsBP)
     CVProcessError(NULL, CVSPILS_MEM_NULL, "CVBANDPRE", "CVBandPrecGetNumRhsEvals", MSGBP_MEM_NULL);
     return(CVSPILS_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   if (cv_mem->cv_lmem == NULL) {
     CVProcessError(cv_mem, CVSPILS_LMEM_NULL, "CVBANDPRE", "CVBandPrecGetNumRhsEvals", MSGBP_LMEM_NULL);
     return(CVSPILS_LMEM_NULL);
   }
-  cvspils_mem = (CVSpilsMem) cv_mem->cv_lmem;
+  cvspils_mem = static_cast<CVSpilsMem> (cv_mem->cv_lmem);
 
   if (cvspils_mem->s_P_data == NULL) {
     CVProcessError(cv_mem, CVSPILS_PMEM_NULL, "CVBANDPRE", "CVBandPrecGetNumRhsEvals", MSGBP_PMEM_NULL);
     return(CVSPILS_PMEM_NULL);
   } 
-  pdata = (CVBandPrecData) cvspils_mem->s_P_data;
+  pdata = static_cast<CVBandPrecData> (cvspils_mem->s_P_data);
 
   *nfevalsBP = pdata->nfeBP;
 
@@ -284,16 +284,16 @@ int CVBandPrecGetNumRhsEvals(void *cvode_mem, long int *nfevalsBP)
 static int CVBandPrecSetup(realtype t, N_Vector y, N_Vector fy, 
                            booleantype jok, booleantype *jcurPtr, 
                            realtype gamma, void *bp_data,
-                           N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
+                           N_Vector tmp1, N_Vector tmp2, N_Vector /*tmp3*/)
 {
   CVBandPrecData pdata;
   CVodeMem cv_mem;
   int retval;
 
   /* Assume matrix and pivots have already been allocated. */
-  pdata = (CVBandPrecData) bp_data;
+  pdata = static_cast<CVBandPrecData> (bp_data);
 
-  cv_mem = (CVodeMem) pdata->cvode_mem;
+  cv_mem = static_cast<CVodeMem> (pdata->cvode_mem);
 
   if (jok) {
 
@@ -352,16 +352,16 @@ static int CVBandPrecSetup(realtype t, N_Vector y, N_Vector fy,
  * -----------------------------------------------------------------
  */ 
 
-static int CVBandPrecSolve(realtype t, N_Vector y, N_Vector fy, 
+static int CVBandPrecSolve(realtype /*t*/, N_Vector /*y*/, N_Vector /*fy*/,
                            N_Vector r, N_Vector z, 
-                           realtype gamma, realtype delta,
-                           int lr, void *bp_data, N_Vector tmp)
+                           realtype /*gamma*/, realtype /*delta*/,
+                           int /*lr*/, void *bp_data, N_Vector /*tmp*/)
 {
   CVBandPrecData pdata;
   realtype *zd;
 
   /* Assume matrix and pivots have already been allocated. */
-  pdata = (CVBandPrecData) bp_data;
+  pdata = static_cast<CVBandPrecData> (bp_data);
 
   /* Copy r to z. */
   N_VScale(ONE, r, z);
@@ -381,10 +381,10 @@ static void CVBandPrecFree(CVodeMem cv_mem)
   CVBandPrecData pdata;
 
   if (cv_mem->cv_lmem == NULL) return;
-  cvspils_mem = (CVSpilsMem) cv_mem->cv_lmem;
+  cvspils_mem = static_cast<CVSpilsMem> (cv_mem->cv_lmem);
   
   if (cvspils_mem->s_P_data == NULL) return;
-  pdata = (CVBandPrecData) cvspils_mem->s_P_data;
+  pdata = static_cast<CVBandPrecData> (cvspils_mem->s_P_data);
 
   DestroyMat(savedJ);
   DestroyMat(savedP);
@@ -423,7 +423,7 @@ static int CVBandPDQJac(CVBandPrecData pdata,
   realtype *col_j, *ewt_data, *fy_data, *ftemp_data, *y_data, *ytemp_data;
   int retval;
 
-  cv_mem = (CVodeMem) pdata->cvode_mem;
+  cv_mem = static_cast<CVodeMem> (pdata->cvode_mem);
 
   /* Obtain pointers to the data for ewt, fy, ftemp, y, ytemp. */
   ewt_data   = N_VGetArrayPointer(ewt);

@@ -6,8 +6,10 @@
 __copyright__ = "Copyright 2016 EPFL BBP-project"
 # =====================================================================================================================
 from cython.operator cimport dereference as deref
-cimport std
 from libcpp cimport bool
+cimport std
+from steps_common cimport *
+
 
 # ======================================================================================================================
 cdef extern from "steps/model/volsys.hpp" namespace "steps::model":
@@ -25,7 +27,7 @@ cdef extern from "steps/model/volsys.hpp" namespace "steps::model":
         Model* getModel()
         Reac* getReac(std.string) except +
         void delReac(std.string) except +
-        std.vector[Reac*] getAllReacs() 
+        std.vector[Reac*] getAllReacs()
         Diff* getDiff(std.string) except +
         void delDiff(std.string) except +
         std.vector[Diff*] getAllDiffs()
@@ -116,7 +118,7 @@ cdef extern from "steps/model/vdeptrans.hpp" namespace "steps::model":
 
     ###### Cybinding for VDepTrans ######
     cdef cppclass VDepTrans:
-        VDepTrans(std.string, Surfsys*, ChanState*, ChanState*, std.vector[double], double, double, double, unsigned int) except +
+        VDepTrans(std.string, Surfsys*, ChanState*, ChanState*, std.vector[double], double, double, double, uint) except +
         std.string getID()
         void setID(std.string) except +
         Surfsys* getSurfsys()
@@ -141,7 +143,7 @@ cdef extern from "steps/model/vdepsreac.hpp" namespace "steps::model":
 
     ###### Cybinding for VDepSReac ######
     cdef cppclass VDepSReac:
-        VDepSReac(std.string, Surfsys*, std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[double], double, double, double, unsigned int) except +
+        VDepSReac(std.string, Surfsys*, std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[double], double, double, double, uint) except +
         std.string getID()
         void setID(std.string) except +
         Surfsys* getSurfsys()
@@ -160,7 +162,7 @@ cdef extern from "steps/model/vdepsreac.hpp" namespace "steps::model":
         void setSRHS(std.vector[Spec*]) except +
         std.vector[Spec*] getORHS()
         void setORHS(std.vector[Spec*]) except +
-        unsigned int getOrder()
+        uint getOrder()
         std.vector[double] getK()
         std.vector[Spec*] getAllSpecs()
 
@@ -187,10 +189,9 @@ cdef extern from "steps/model/reac.hpp" namespace "steps::model":
         std.vector[Spec*] getRHS()
         void setRHS(std.vector[Spec*]) except +
         std.vector[Spec*] getAllSpecs()
-        unsigned int getOrder()
+        uint getOrder()
         double getKcst()
         void setKcst(double) except +
-        
 
 
 # ======================================================================================================================
@@ -225,7 +226,7 @@ cdef extern from "steps/model/sreac.hpp" namespace "steps::model":
         void setSRHS(std.vector[Spec*]) except +
         std.vector[Spec*] getORHS()
         void setORHS(std.vector[Spec*]) except +
-        unsigned int getOrder()
+        uint getOrder()
         double getKcst()
         std.vector[Spec*] getAllSpecs()
         void setKcst(double kcst) except +

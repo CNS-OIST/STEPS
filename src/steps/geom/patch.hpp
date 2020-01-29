@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -116,7 +116,7 @@ public:
     /// Return the patch id.
     ///
     /// \return ID of the patch.
-    std::string const & getID() const
+    inline std::string const & getID() const noexcept
     { return pID; }
 
     /// Set or change the patch id.
@@ -127,13 +127,13 @@ public:
     /// Return a pointer to the geometry container object.
     ///
     /// \return Pointer to the parent geometry container.
-    steps::wm::Geom * getContainer() const
+    inline steps::wm::Geom * getContainer() const noexcept
     { return pContainer; }
 
     /// Return the area of the patch.
     ///
     /// \return Area of the patch.
-    double getArea() const
+    inline double getArea() const noexcept
     { return pArea; }
 
     /// Set the area of the patch.
@@ -153,7 +153,7 @@ public:
     /// Get a surface system.
     ///
     /// \return List of the surface systems associated to the patch.
-    std::set<std::string> const & getSurfsys() const
+    inline std::set<std::string> const & getSurfsys() const noexcept
     {return pSurfsys; }
 
     /// Delete a surface system with name id.
@@ -165,10 +165,10 @@ public:
     // OPERATIONS (EXPOSED TO PYTHON): MODEL LINKING
     ////////////////////////////////////////////////////////////////////////
     /// Return all spec in the patch giving a model.
-    std::vector<steps::model::Spec*> getAllSpecs(steps::model::Model* model);
+    std::vector<steps::model::Spec*> getAllSpecs(steps::model::Model* model) const;
 
     /// Return all SReac in the patch giving a model.
-    std::vector<steps::model::SReac*> getAllSReacs(steps::model::Model* model);
+    std::vector<steps::model::SReac*> getAllSReacs(steps::model::Model* model) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO PYTHON): COMPARTMENTS
@@ -177,13 +177,13 @@ public:
     /// Return the inner compartment.
     ///
     /// \return Pointer to the inner compartment.
-    steps::wm::Comp * getIComp() const
+    inline steps::wm::Comp * getIComp() const noexcept
     { return pIComp; }
 
     ///Return the outer compartment.
     ///
     /// \return Pointer to the outer compartment.
-    steps::wm::Comp * getOComp() const
+    inline steps::wm::Comp * getOComp() const noexcept
     { return pOComp; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -217,12 +217,12 @@ public:
 private:
 
     ////////////////////////////////////////////////////////////////////////
-    double                              pArea;
 
     std::string                         pID;
     steps::wm::Geom                   * pContainer;
-    steps::wm::Comp                   * pIComp;
-    steps::wm::Comp                   * pOComp;
+    double                              pArea;
+    steps::wm::Comp                   * pIComp{nullptr};
+    steps::wm::Comp                   * pOComp{nullptr};
     std::set<std::string>               pSurfsys;
 
     ////////////////////////////////////////////////////////////////////////
@@ -231,8 +231,8 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-}
-}
+} // namespace wm
+} // namespace steps
 
 #endif
 // STEPS_WM_PATCH_HPP

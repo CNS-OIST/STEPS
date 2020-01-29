@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,7 +30,7 @@
 
 
 // STL headers.
-#include <string>
+#include <memory>
 
 // STEPS headers.
 #include "steps/common.h"
@@ -97,7 +97,7 @@ public:
     inline double getUnfEE()
     {
         // Divided by 2^32.
-        return (((double)get()) + 0.5) * (1.0/4294967296.0);
+        return (static_cast<double>(get()) + 0.5) * (1.0/4294967296.0);
     }
 
     /// Generates a uniform random number on [0,1) with 53-bit resolution.
@@ -147,10 +147,12 @@ private:
 
 };
 
+using RNGptr = std::shared_ptr<RNG>;
+
 ////////////////////////////////////////////////////////////////////////////////
 
-}
-}
+} // namespace rng
+} // namespace steps
 
 #endif
 // STEPS_RNG_RNG_HPP

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -43,37 +43,46 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 USING(std, string);
-using namespace steps::solver;
+namespace steps {
+namespace solver {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> API::getBatchTetCounts(std::vector<uint> const & tets, std::string const & s) const
+std::vector<double> API::getBatchTetCounts(const std::vector<index_t> &/* tets */, std::string const & /* s */) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> API::getBatchTriCounts(std::vector<uint> const & tris, std::string const & s) const
+std::vector<double> API::getBatchTriCounts(const std::vector<index_t> &/* tris */, std::string const & /* s */) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::getBatchTetCountsNP(unsigned int* indices, int input_size, std::string const & s, double* counts, int output_size) const
+void API::getBatchTetCountsNP(const index_t * /* indices */,
+                              int /* input_size */,
+                              std::string const & /* s */,
+                              double * /* counts */,
+                              int /* output_size */) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::getBatchTriCountsNP(unsigned int* indices, int input_size, std::string const & s, double* counts, int output_size) const
+void API::getBatchTriCountsNP(const index_t * /* indices */,
+                              int /* input_size */,
+                              std::string const & /* s */,
+                              double * /* counts */,
+                              int /* output_size */) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// END
-
+} // namespace solver
+} // namespace steps

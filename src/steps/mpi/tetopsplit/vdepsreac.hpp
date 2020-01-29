@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -56,8 +56,7 @@ class TetOpSplitP;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class VDepSReac
-: public steps::mpi::tetopsplit::KProc
+class VDepSReac: public KProc
 {
 
 public:
@@ -66,43 +65,43 @@ public:
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    VDepSReac(steps::solver::VDepSReacdef * vdsrdef, steps::mpi::tetopsplit::Tri * tri);
-    ~VDepSReac();
+    VDepSReac(steps::solver::VDepSReacdef * vdsrdef, Tri * tri);
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream & cp_file) override;
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream & cp_file) override;
 
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    void setupDeps();
-    bool depSpecTet(uint gidx, steps::mpi::tetopsplit::WmVol * tet);
-    bool depSpecTri(uint gidx, steps::mpi::tetopsplit::Tri * tri);
-    void reset();
+    void setupDeps() override;
+    bool depSpecTet(uint gidx, WmVol * tet) override;
+    bool depSpecTri(uint gidx, Tri * tri) override;
+    void reset() override;
 
-    double rate(steps::mpi::tetopsplit::TetOpSplitP * solver = 0);
-    double getScaledDcst(steps::mpi::tetopsplit::TetOpSplitP * solver = 0)
+    double rate(TetOpSplitP * solver = nullptr) override;
+    double getScaledDcst(TetOpSplitP * /*solver*/ = nullptr) const override
     {return 0.0;}
-    
-    void apply(steps::rng::RNG * rng, double dt, double simtime, double period);
 
-    std::vector<KProc*> const & getLocalUpdVec(int direction = -1);
-    std::vector<uint> const & getRemoteUpdVec(int direction = -1);
+    using KProc::apply;
+    void apply(const rng::RNGptr &rng, double dt, double simtime, double period) override;
+
+    std::vector<KProc*> const & getLocalUpdVec(int direction = -1) const override;
+    std::vector<uint> const & getRemoteUpdVec(int direction = -1) const override;
     
-    void resetOccupancies();
+    void resetOccupancies() override;
     
-    bool getInHost() {
+    inline bool getInHost() const noexcept override {
         return pTri->getInHost();
     }
     
-    int getHost() {
+    inline int getHost() const noexcept override {
         return pTri->getHost();
     }
     ////////////////////////////////////////////////////////////////////////
@@ -112,7 +111,7 @@ private:
     ////////////////////////////////////////////////////////////////////////
 
     steps::solver::VDepSReacdef       * pVDepSReacdef;
-    steps::mpi::tetopsplit::Tri       * pTri;
+    Tri       * pTri;
 
     std::vector<KProc*>                 localUpdVec;
     std::vector<uint>                   remoteUpdVec;

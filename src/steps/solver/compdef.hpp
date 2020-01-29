@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -88,14 +88,16 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the volume of this compartment.
-    double vol() const;
+    inline double vol() const noexcept
+    { return pVol; }
 
     /// Return the global index of this compartment
-    inline uint gidx() const
+    inline uint gidx() const noexcept
     { return pIdx; }
 
     /// Return the name of this compartment.
-    std::string const name() const;
+    inline const std::string& name() const noexcept
+    { return pName; }
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: SETUP
@@ -140,23 +142,23 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of species that can occur in this compartment
-    inline uint countSpecs() const
+    inline uint countSpecs() const noexcept
     { return pSpecsN; }
 
     /// Return the local species index for global index argument.
     ///
     /// \param gidx Global index of the species.
-    inline uint specG2L(uint gidx) const
+    inline uint specG2L(uint gidx) const noexcept
     { return pSpec_G2L[gidx]; }
 
     /// Return the global species index for local index argument.
     ///
     /// \param lidx local index of the species.
-    inline uint specL2G(uint lidx) const
+    inline uint specL2G(uint lidx) const noexcept
     { return pSpec_L2G[lidx]; }
     
     /// Returns pointer to flags on species for this compartment.
-    inline uint * flags() const
+    inline uint * flags() const noexcept
     { return pPoolFlags; }
 
     static const uint CLAMPED = 1;
@@ -165,11 +167,11 @@ public:
     /// clamped or not.
     ///
     /// \param sildx Local index of the species.
-    inline bool clamped(uint slidx) const
+    inline bool clamped(uint slidx) const noexcept
     { return pPoolFlags[slidx] & CLAMPED; }
 
     /// Return pointer to species' counts in this compartment.
-    inline double * pools() const
+    inline double * pools() const noexcept
     { return pPoolCount; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -193,13 +195,13 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of reactions that can occur in this compartment.
-    inline uint countReacs() const
+    inline uint countReacs() const noexcept
     { return pReacsN; }
 
     /// Return the local reaction index for global index argument.
     ///
     /// \param gidx Global index of the reaction.
-    uint reacG2L(uint gidx) const
+    uint reacG2L(uint gidx) const noexcept
     { return pReac_G2L[gidx]; }
 
     /// Return the beginning of the lhs array of reaction specified by local
@@ -242,7 +244,7 @@ public:
     Reacdef * reacdef(uint rlidx) const;
 
     /// Return pointer to flags on reactions for this compartment.
-    inline uint * rflags() const
+    inline uint * rflags() const noexcept
     { return pReacFlags; }
 
     static const uint INACTIVATED = 1;
@@ -251,13 +253,13 @@ public:
     /// active or not.
     ///
     /// \param rlidx Local index of the reaction.
-    inline bool active(uint rlidx) const
+    inline bool active(uint rlidx) const noexcept
     { return !(pReacFlags[rlidx] & INACTIVATED); }
 
     /// Return the kcst for a reaction specified by local index
     ///
     /// \param rlidx Local index of the reaction.
-    inline double kcst(uint rlidx) const
+    inline double kcst(uint rlidx) const noexcept
     { return pReacKcst[rlidx]; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -281,7 +283,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of diffusion rules for this compartment.
-    inline uint countDiffs() const
+    inline uint countDiffs() const noexcept
     { return pDiffsN; }
 
     /// Returns a pointer to Diffdef specified by local index.
@@ -292,7 +294,7 @@ public:
     /// Return the local diffusion index for global index argument.
     ///
     /// \param gidx Global index of the diffusion.
-    uint diffG2L(uint gidx) const
+    uint diffG2L(uint gidx) const noexcept
     { return pDiff_G2L[gidx]; }
 
     /// Return the local index of species of diffusion specified by
@@ -306,7 +308,7 @@ public:
     /// Return the rate constant of diffusion by local index argument.
     ///
     /// \param dlidx Local index of the diffusion.
-    inline double dcst(uint dlidx) const
+    inline double dcst(uint dlidx) const noexcept
     { return pDiffDcst[dlidx]; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -407,7 +409,7 @@ private:
     // Table of the D-constants of the diffusion rules in this compartment
     double                            * pDiffDcst;
 
-    inline uint _IDX_Diff_Spec(uint diff, uint spec) const
+    inline uint _IDX_Diff_Spec(uint diff, uint spec) const noexcept
     { return (pSpecsN * diff) + spec; }
     uint                              * pDiff_DEP_Spec;
     uint                              * pDiff_LIG;
@@ -417,8 +419,8 @@ private:
     ////////////////////////////////////////////////////////////////////////
 
     // A list of patches surrounding
-    std::vector<steps::solver::Patchdef *>   pIPatches;
-    std::vector<steps::solver::Patchdef *>   pOPatches;
+    std::vector<Patchdef *>   pIPatches;
+    std::vector<Patchdef *>   pOPatches;
 
     ////////////////////////////////////////////////////////////////////////
 

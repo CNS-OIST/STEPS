@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -58,26 +58,20 @@ namespace ssolver = steps::solver;
 ////////////////////////////////////////////////////////////////////////////////
 
 stex::WmVol::WmVol
-(
-    uint idx, solver::Compdef * cdef, double vol
-)
+  (
+    tetrahedron_id_t idx, solver::Compdef *cdef, double vol
+  )
 : pIdx(idx)
 , pCompdef(cdef)
 , pVol(vol)
-, pPoolCount(nullptr)
-, pPoolFlags(nullptr)
-, pKProcs()
-, pNextTris()
 {
-    AssertLog(pCompdef != 0);
+    AssertLog(pCompdef != nullptr);
     AssertLog(pVol > 0.0);
 
     // Based on compartment definition, build other structures.
-    uint nspecs = compdef()->countSpecs();
-    pPoolCount = new uint[nspecs];
-    pPoolFlags = new uint[nspecs];
-    std::fill_n(pPoolCount, nspecs, 0);
-    std::fill_n(pPoolFlags, nspecs, 0);
+    auto nspecs = compdef()->countSpecs();
+    pPoolCount.resize(nspecs, 0);
+    pPoolFlags.resize(nspecs, 0);
     pKProcs.resize(compdef()->countReacs());
 
 }
@@ -86,31 +80,27 @@ stex::WmVol::WmVol
 
 stex::WmVol::~WmVol()
 {
-    // Delete species pool information.
-    delete[] pPoolCount;
-    delete[] pPoolFlags;
-
     // Delete reaction rules.
-    KProcPVecCI e = pKProcs.end();
-    for (KProcPVecCI i = pKProcs.begin(); i != e; ++i) delete *i;
+    for (auto const& i : pKProcs) {
+      delete i;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void stex::WmVol::checkpoint(std::fstream & cp_file)
 {
-    uint nspecs = compdef()->countSpecs();
-    cp_file.write((char*)pPoolCount, sizeof(uint) * nspecs);
-    cp_file.write((char*)pPoolFlags, sizeof(uint) * nspecs);
+    steps::checkpoint(cp_file, pPoolCount, false /* with_size */);
+    steps::checkpoint(cp_file, pPoolFlags, false /* with_size */);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void stex::WmVol::restore(std::fstream & cp_file)
 {
-    uint nspecs = compdef()->countSpecs();
-    cp_file.read((char*)pPoolCount, sizeof(uint) * nspecs);
-    cp_file.read((char*)pPoolFlags, sizeof(uint) * nspecs);
+    const auto nspecs = compdef()->countSpecs();
+    steps::restore(cp_file, nspecs, pPoolCount);
+    steps::restore(cp_file, nspecs, pPoolFlags);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -145,9 +135,8 @@ void stex::WmVol::setupKProcs(stex::Tetexact * tex)
 
 void stex::WmVol::reset()
 {
-    uint nspecs = compdef()->countSpecs();
-    std::fill_n(pPoolCount, nspecs, 0);
-    std::fill_n(pPoolFlags, nspecs, 0);
+    std::fill(pPoolCount.begin(), pPoolCount.end(), 0);
+    std::fill(pPoolFlags.begin(), pPoolFlags.end(), 0);
     std::for_each(pKProcs.begin(), pKProcs.end(),
             std::mem_fun(&stex::KProc::reset));
 }
@@ -182,7 +171,7 @@ void stex::WmVol::incCount(uint lidx, int inc)
 
 #ifndef NDEBUG
     uint new_count = pPoolCount[lidx];
-    AssertLog(inc>=0 && new_count>=old_count || inc<0 && new_count < old_count);
+    AssertLog((inc >= 0 && new_count >= old_count) || (inc < 0 && new_count < old_count));
 #endif
 }
 
@@ -190,7 +179,7 @@ void stex::WmVol::incCount(uint lidx, int inc)
 
 void stex::WmVol::setClamped(uint lidx, bool clamp)
 {
-    if (clamp == true) { pPoolFlags[lidx] |= CLAMPED;
+    if (clamp) { pPoolFlags[lidx] |= CLAMPED;
     } else { pPoolFlags[lidx] &= ~CLAMPED;
 }
 }

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -73,8 +73,7 @@ public:
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    KProc();
-    virtual ~KProc();
+    virtual ~KProc() = default;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -103,10 +102,10 @@ public:
     */
     ////////////////////////////////////////////////////////////////////////
 
-    uint schedIDX() const
+    inline uint schedIDX() const noexcept
     { return pSchedIDX; }
 
-    void setSchedIDX(uint idx)
+    inline void setSchedIDX(uint idx) noexcept
     { pSchedIDX = idx; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -151,8 +150,12 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    uint getExtent() const;
-    void resetExtent();
+    inline unsigned long long getExtent() const noexcept {
+        return rExtent;
+    }
+    inline void resetExtent() noexcept {
+        rExtent = 0;
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -166,7 +169,7 @@ public:
 
 protected:
 
-    uint                                rExtent;
+    unsigned long long                  rExtent{0};
 
 private:
 
@@ -174,7 +177,7 @@ private:
     /*
     uint                                pFlags;
     */
-    uint                                pSchedIDX;
+    uint                                pSchedIDX{0};
 
     ////////////////////////////////////////////////////////////////////////
 };

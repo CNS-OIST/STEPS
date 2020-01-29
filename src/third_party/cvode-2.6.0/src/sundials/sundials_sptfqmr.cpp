@@ -143,7 +143,7 @@ SptfqmrMem SptfqmrMalloc(int l_max, N_Vector vec_tmpl)
 
   /* Allocate memory for SptfqmrMemRec */
   mem = NULL;
-  mem = (SptfqmrMem) malloc(sizeof(SptfqmrMemRec));
+  mem = static_cast<SptfqmrMem> (malloc(sizeof(SptfqmrMemRec)));
   if (mem == NULL) {
     N_VDestroy(r_star);
     N_VDestroy(q);

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -37,8 +37,10 @@
 #include <unordered_map>
 #include <vector>
 
+#include "steps/geom/fwd.hpp"
 #include "steps/util/fnv_hash.hpp"
 #include "steps/util/type_traits.hpp"
+#include "steps/util/strong_id.hpp"
 
 namespace steps {
 namespace util {
@@ -72,7 +74,6 @@ namespace impl {
 }
 
 struct hash_references_tag {};
-static hash_references_tag hash_references;
 
 /** Return bit vector representing set membership.
  *
@@ -146,19 +147,21 @@ inline std::vector<typename container_traits<C>::value_type> as_vector(const C &
 
 template <typename V, typename Hasher, typename Out>
 struct unique_indexer {
-    std::unordered_map<V, size_t, Hasher> lookup;
+    std::unordered_map<V, index_t, Hasher> lookup;
     Out out;
-    size_t count;
+    index_t count;
 
     explicit unique_indexer(Out out_, Hasher hash = Hasher()):
         lookup(0, hash), out(out_), count(0) {}
 
+    unique_indexer(unique_indexer&&) = default;
+
     /** Return index of item x, allocating a new index if required. */
-    size_t operator[](const V &x) {
+    index_t operator[](const V &x) {
         auto p = lookup.find(x);
         if (p != lookup.end()) return p->second;
 
-        *out++ = x;
+        *out++ = deref_strongid(x);
         lookup.insert(std::pair<V,size_t>(x,count));
         return count++;
     }
@@ -171,7 +174,7 @@ struct unique_indexer {
     void insert(In b,In e) { while (b !=e) insert(*b++); }
 
     /** Return number of assigned indices. */
-    size_t size() const { return count; }
+    index_t size() const { return count; }
 };
 
 /** Construct unique_indexer given value type and output iterator */

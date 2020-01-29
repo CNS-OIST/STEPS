@@ -2,12 +2,6 @@
 
 from libcpp.string cimport string
 
-ctypedef unsigned int uint
-ctypedef unsigned short ushort
-ctypedef unsigned long ulong
-ctypedef unsigned char uchar
-ctypedef unsigned int size_t
-
 
 cdef enum OPERATOR:
     LESS = 0, LESS_EQUAL, EQUAL, DIFF, GREATER, GREATER_EQUAL
@@ -36,7 +30,7 @@ cdef inline string  to_std_string(str s):
     Builds a C++ STL string from a bytes (Python 2) or unicode (Python 3)
     string.
     """
-    cdef string s_new 
+    cdef string s_new
     if isinstance(s, bytes):
         s_new = s
     else:
@@ -52,4 +46,4 @@ cdef inline str from_std_string(string s):
     cdef bytes s_new = s
     return  str(s_new) if bytes is str \
         else s_new.decode()
-    
+

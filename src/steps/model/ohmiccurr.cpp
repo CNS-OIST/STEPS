@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -77,7 +77,7 @@ OhmicCurr::OhmicCurr(string const & id, Surfsys * surfsys,
     }
 
     pModel = pSurfsys->getModel();
-    AssertLog(pModel != 0);
+    AssertLog(pModel != nullptr);
 
     pSurfsys->_handleOhmicCurrAdd(this);
 }
@@ -95,7 +95,7 @@ OhmicCurr::~OhmicCurr()
 
 void OhmicCurr::setID(string const & id)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
     // it pass by into the Python layer.
@@ -109,7 +109,7 @@ void OhmicCurr::setID(string const & id)
 
 void OhmicCurr::setChanState(ChanState * chanstate)
 {
-    AssertLog(chanstate != 0);
+    AssertLog(chanstate != nullptr);
     pChanState = chanstate;
 }
 
@@ -117,7 +117,7 @@ void OhmicCurr::setChanState(ChanState * chanstate)
 
 void OhmicCurr::setERev(double erev)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
     pERev = erev;
 }
 
@@ -125,7 +125,7 @@ void OhmicCurr::setERev(double erev)
 
 void OhmicCurr::setG(double g)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
     if(g < 0.0)
     {
         ostringstream os;
@@ -142,8 +142,8 @@ void OhmicCurr::_handleSelfDelete()
     pSurfsys->_handleOhmicCurrDel(this);
     pG = 0.0;
     pERev = 0;
-    pSurfsys = 0;
-    pModel = 0;
+    pSurfsys = nullptr;
+    pModel = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

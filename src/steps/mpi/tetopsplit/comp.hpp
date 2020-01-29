@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -71,8 +71,7 @@ public:
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    Comp(steps::solver::Compdef * compdef);
-    ~Comp();
+    explicit Comp(steps::solver::Compdef * compdef);
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -98,26 +97,28 @@ public:
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Compdef * def() const
+    inline steps::solver::Compdef * def() const noexcept
     { return pCompdef; }
 
-    inline double vol() const
+    inline double vol() const noexcept
     { return pVol; }
 
-    inline double * pools() const
+    inline double * pools() const noexcept
     { return def()->pools(); }
 
     void modCount(uint slidx, double count);
 
-    inline uint countTets() const
+    inline uint countTets() const noexcept
     { return pTets.size(); }
 
     smtos::WmVol * pickTetByVol(double rand01) const;
 
-    inline WmVolPVecCI bgnTet() const
+    inline WmVolPVecCI bgnTet() const noexcept
     { return pTets.begin(); }
-    inline WmVolPVecCI endTet() const
+    inline WmVolPVecCI endTet() const noexcept
     { return pTets.end(); }
+    inline const WmVolPVec& tets() const noexcept
+    { return pTets; }
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -126,7 +127,7 @@ private:
     ////////////////////////////////////////////////////////////////////////
 
     steps::solver::Compdef                    * pCompdef;
-    double                                     pVol;
+    double                                     pVol{0.0};
 
     WmVolPVec                                pTets;
 

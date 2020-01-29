@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -57,12 +57,6 @@ VDepSReac::VDepSReac(std::string const & id, Surfsys * surfsys,
 , pModel(nullptr)
 , pSurfsys(surfsys)
 , pOuter(false)
-, pOLHS()
-, pILHS()
-, pSLHS()
-, pIRHS()
-, pSRHS()
-, pORHS()
 , pOrder(0)
 , pK(nullptr)
 , pVMin(vmin)
@@ -78,7 +72,7 @@ VDepSReac::VDepSReac(std::string const & id, Surfsys * surfsys,
     }
 
     // Can't have species on the lhs in the inner and outer compartment
-    if (olhs.size() != 0 && ilhs.size() != 0)
+    if (!olhs.empty() && !ilhs.empty())
     {
         ostringstream os;
         os << "Volume lhs species must belong to either inner or outer ";
@@ -93,10 +87,10 @@ VDepSReac::VDepSReac(std::string const & id, Surfsys * surfsys,
         ArgErrLog(os.str());
     }
     pModel = pSurfsys->getModel();
-    AssertLog(pModel != 0);
+    AssertLog(pModel != nullptr);
 
-    if (olhs.size() > 0) setOLHS(olhs);
-    if (ilhs.size() > 0) setILHS(ilhs);
+    if (!olhs.empty()) setOLHS(olhs);
+    if (!ilhs.empty()) setILHS(ilhs);
     setSLHS(slhs);
     setIRHS(irhs);
     setSRHS(srhs);
@@ -106,7 +100,7 @@ VDepSReac::VDepSReac(std::string const & id, Surfsys * surfsys,
 
     // Copy the rate information to local array
     pK = new double[pTablesize];
-    for (uint i = 0; i < pTablesize; ++i) pK[i] = ktab[i];
+    std::memcpy(pK, ktab.data(), pTablesize * sizeof(double));
 
     pSurfsys->_handleVDepSReacAdd(this);
 
@@ -142,7 +136,7 @@ void VDepSReac::_handleSelfDelete()
 
 void VDepSReac::setID(string const & id)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
     // it pass by into the Python layer.
@@ -156,20 +150,18 @@ void VDepSReac::setID(string const & id)
 
 void VDepSReac::setOLHS(vector<Spec *> const & olhs)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
 
-    if (pILHS.size() != 0)
+    if (!pILHS.empty())
     {
         ostringstream os;
         os << "\nWARNING: Removing inner compartment species from lhs stoichiometry for VDepSreac " << getID() <<"\n";
     }
     pILHS.clear();
     pOLHS.clear();
-    SpecPVecCI ol_end = olhs.end();
-    for (SpecPVecCI ol = olhs.begin(); ol != ol_end; ++ol)
-    {
-        AssertLog((*ol)->getModel() == pModel);
-        pOLHS.push_back(*ol);
+    for (auto const& ol: olhs) {
+        AssertLog(ol->getModel() == pModel);
+        pOLHS.push_back(ol);
     }
     pOuter = true;
     pOrder = pOLHS.size() + pSLHS.size();
@@ -179,20 +171,18 @@ void VDepSReac::setOLHS(vector<Spec *> const & olhs)
 
 void VDepSReac::setILHS(vector<Spec *> const & ilhs)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
 
-    if (pOLHS.size() != 0)
+    if (!pOLHS.empty())
     {
         ostringstream os;
         os << "\nWARNING: Removing outer compartment species from lhs stoichiometry for VDepSreac " << getID() <<"\n";
     }
     pOLHS.clear();
     pILHS.clear();
-    SpecPVecCI il_end = ilhs.end();
-    for (SpecPVecCI il = ilhs.begin(); il != il_end; ++il)
-    {
-        AssertLog((*il)->getModel() == pModel);
-        pILHS.push_back(*il);
+    for (auto const& il: ilhs) {
+        AssertLog(il->getModel() == pModel);
+        pILHS.push_back(il);
     }
     pOuter = false;
     pOrder = pILHS.size() + pSLHS.size();
@@ -202,13 +192,11 @@ void VDepSReac::setILHS(vector<Spec *> const & ilhs)
 
 void VDepSReac::setSLHS(vector<Spec *> const & slhs)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
     pSLHS.clear();
-    SpecPVecCI sl_end = slhs.end();
-    for (SpecPVecCI sl = slhs.begin(); sl != sl_end; ++sl)
-    {
-        AssertLog((*sl)->getModel() == pModel);
-        pSLHS.push_back(*sl);
+    for (auto const& sl: slhs) {
+        AssertLog(sl->getModel() == pModel);
+        pSLHS.push_back(sl);
     }
 
     if (pOuter) { pOrder = pOLHS.size() + pSLHS.size(); }
@@ -219,13 +207,11 @@ void VDepSReac::setSLHS(vector<Spec *> const & slhs)
 
 void VDepSReac::setIRHS(vector<Spec *> const & irhs)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
     pIRHS.clear();
-    SpecPVecCI ir_end = irhs.end();
-    for (SpecPVecCI ir = irhs.begin(); ir != ir_end; ++ir)
-    {
-        AssertLog((*ir)->getModel() == pModel);
-        pIRHS.push_back(*ir);
+    for (auto const& ir: irhs) {
+        AssertLog(ir->getModel() == pModel);
+        pIRHS.push_back(ir);
     }
 }
 
@@ -233,13 +219,12 @@ void VDepSReac::setIRHS(vector<Spec *> const & irhs)
 
 void VDepSReac::setSRHS(vector<Spec *> const & srhs)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
     pSRHS.clear();
-    SpecPVecCI sr_end = srhs.end();
-    for (SpecPVecCI sr = srhs.begin(); sr != sr_end; ++sr)
-    {
-        AssertLog((*sr)->getModel() == pModel);
-        pSRHS.push_back(*sr);
+    pSRHS.reserve(srhs.size());
+    for (auto const& sr: srhs) {
+        AssertLog(sr->getModel() == pModel);
+        pSRHS.push_back(sr);
     }
 }
 
@@ -247,13 +232,12 @@ void VDepSReac::setSRHS(vector<Spec *> const & srhs)
 
 void VDepSReac::setORHS(vector<Spec *> const & orhs)
 {
-    AssertLog(pSurfsys != 0);
+    AssertLog(pSurfsys != nullptr);
     pORHS.clear();
-    SpecPVecCI or_end = orhs.end();
-    for (SpecPVecCI ors = orhs.begin(); ors != or_end; ++ors)
-    {
-        AssertLog((*ors)->getModel() == pModel);
-        pORHS.push_back(*ors);
+    pORHS.reserve(orhs.size());
+    for (auto const& ors: orhs) {
+        AssertLog(ors->getModel() == pModel);
+        pORHS.push_back(ors);
     }
 }
 
@@ -261,8 +245,7 @@ void VDepSReac::setORHS(vector<Spec *> const & orhs)
 
 std::vector<double> VDepSReac::getK() const
 {
-    std::vector<double> k = std::vector<double>(pTablesize);
-    for (uint i = 0; i < pTablesize; ++i) k[i] = pK[i];
+    std::vector<double> k(pK, pK + pTablesize);
     return k;
 }
 
@@ -270,110 +253,74 @@ std::vector<double> VDepSReac::getK() const
 
 vector<Spec *> VDepSReac::getAllSpecs() const
 {
-    SpecPVec specs = SpecPVec();
-    bool first_occ = true;
-    AssertLog(pOLHS.size() == 0 || pILHS.size() == 0);
+    SpecPVec specs;
+    bool first_occ;
+    AssertLog(pOLHS.empty() || pILHS.empty());
 
-    SpecPVec olhs = getOLHS();
-    SpecPVecCI ol_end = olhs.end();
-    for (SpecPVecCI ol = olhs.begin(); ol != ol_end; ++ol)
-    {
+    for (auto const& ol: getOLHS()) {
         first_occ = true;
-        SpecPVecCI s_end = specs.end();
-        for (SpecPVecCI s = specs.begin(); s != s_end; ++s)
-        {
-            if ((*s) == (*ol))
-            {
+        for (auto const& s: specs) {
+            if (s == ol) {
                 first_occ = false;
                 break;
             }
         }
-        if (first_occ == true) specs.push_back((*ol));
+        if (first_occ) specs.push_back(ol);
     }
 
-    SpecPVec ilhs = getILHS();
-    SpecPVecCI il_end = ilhs.end();
-    for (SpecPVecCI il = ilhs.begin(); il != il_end; ++il)
-    {
+    for (auto const& il: getILHS()) {
         first_occ = true;
-        SpecPVecCI s_end = specs.end();
-        for (SpecPVecCI s = specs.begin(); s != s_end; ++s)
-        {
-            if ((*s) == (*il))
-            {
+        for (auto const& s: specs) {
+            if (s == il) {
                 first_occ = false;
                 break;
             }
         }
-        if (first_occ == true) specs.push_back((*il));
+        if (first_occ) specs.push_back(il);
     }
 
-    SpecPVec slhs = getSLHS();
-    SpecPVecCI sl_end = slhs.end();
-    for (SpecPVecCI sl = slhs.begin(); sl != sl_end; ++sl)
-    {
+    for (auto const& sl: getSLHS()) {
         first_occ = true;
-        SpecPVecCI s_end = specs.end();
-        for (SpecPVecCI s = specs.begin(); s != s_end; ++s)
-        {
-            if ((*s) == (*sl))
-            {
+        for (auto const& s: specs) {
+            if (s == sl) {
                 first_occ = false;
                 break;
             }
         }
-        if (first_occ == true) specs.push_back((*sl));
+        if (first_occ) specs.push_back(sl);
     }
 
-    SpecPVec irhs = getIRHS();
-    SpecPVecCI ir_end = irhs.end();
-    for (SpecPVecCI ir = irhs.begin(); ir != ir_end; ++ir)
-    {
+    for (auto const& ir: getIRHS()) {
         first_occ = true;
-        SpecPVecCI s_end = specs.end();
-        for (SpecPVecCI s = specs.begin(); s != s_end; ++s)
-        {
-            if ((*s) == (*ir))
-            {
+        for (auto const& s: specs) {
+            if (s == ir) {
                 first_occ = false;
                 break;
             }
         }
-        if (first_occ == true) specs.push_back((*ir));
+        if (first_occ) specs.push_back(ir);
     }
 
-    SpecPVec srhs = getSRHS();
-    SpecPVecCI sr_end = srhs.end();
-    for (SpecPVecCI sr = srhs.begin(); sr != sr_end; ++sr)
-    {
+    for (auto const& sr:getSRHS()) {
         first_occ = true;
-        SpecPVecCI s_end = specs.end();
-        for (SpecPVecCI s = specs.begin(); s != s_end; ++s)
-        {
-            if ((*s) == (*sr))
-            {
+        for (auto const& s: specs) {
+            if (s == sr) {
                 first_occ = false;
                 break;
             }
         }
-        if (first_occ == true) specs.push_back((*sr));
+        if (first_occ) specs.push_back(sr);
     }
 
-    SpecPVec orhs = getORHS();
-    SpecPVecCI ors_end = orhs.end();
-    for (SpecPVecCI ors = orhs.begin(); ors != ors_end; ++ors)
-    {
+    for (auto const& ors: getORHS()) {
         first_occ = true;
-        SpecPVecCI s_end = specs.end();
-        for (SpecPVecCI s = specs.begin(); s != s_end; ++s)
-        {
-            if ((*s) == (*ors))
-            {
+        for (auto const& s: specs) {
+            if (s == ors) {
                 first_occ = false;
                 break;
             }
         }
-        if (first_occ == true) specs.push_back((*ors));
+        if (first_occ) specs.push_back(ors);
     }
 
     return specs;

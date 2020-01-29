@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,6 +30,7 @@
 
 
 // Standard library & STL headers.
+#include <array>
 #include <map>
 #include <string>
 #include <vector>
@@ -39,6 +40,7 @@
 #include "steps/common.h"
 #include "steps/math/constants.hpp"
 #include "steps/solver/diffdef.hpp"
+#include "steps/solver/types.hpp"
 #include "steps/tetexact/kproc.hpp"
 #include "steps/tetexact/tetexact.hpp"
 
@@ -65,39 +67,39 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     SDiff(steps::solver::Diffdef * sdef, steps::tetexact::Tri * tri);
-    ~SDiff();
+    ~SDiff() override;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream & cp_file) override;
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream & cp_file) override;
 
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Diffdef * def() const
+    inline steps::solver::Diffdef * def() const noexcept
     { return pSDiffdef; }
 
     double dcst(int direction = -1);
     void setDcst(double d);
     void setDirectionDcst(int direction, double dcst);
 
-    void setupDeps();
+    void setupDeps() override;
 
-    bool depSpecTet(uint gidx, steps::tetexact::WmVol * tet);
-    bool depSpecTri(uint gidx, steps::tetexact::Tri * tri);
+    bool depSpecTet(uint gidx, steps::tetexact::WmVol * tet) override;
+    bool depSpecTri(uint gidx, steps::tetexact::Tri * tri) override;
 
-    void reset();
-    double rate(steps::tetexact::Tetexact * solver = 0);
+    void reset() override;
+    double rate(steps::tetexact::Tetexact * solver = nullptr) override;
 
-    std::vector<KProc*> const & apply(steps::rng::RNG * rng, double dt, double simtime);
+    std::vector<KProc*> const & apply(const rng::RNGptr &rng, double dt, double simtime) override;
 
-    uint updVecSize() const;
+    uint updVecSize() const override;
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -111,32 +113,29 @@ private:
 
     ////////////////////////////////////////////////////////////////////////
 
-    uint                                ligGIdx;
     uint                                lidxTri;
     steps::solver::Diffdef              * pSDiffdef;
     steps::tetexact::Tri                * pTri;
     std::vector<KProc*>                 pUpdVec[3];
 
     // Storing the species local index for each neighbouring tri: Needed
-    // because neighbours may belong to different patches if we ever
-    // implement diffusion boundary for surfaces
-    // and therefore have different spec indices
-    int                                 pNeighbPatchLidx[3];
+    // because neighbours may belong to different patches for
+    // diffusion boundary for surfaces
+    std::array<solver::lidxT, 3>  pNeighbPatchLidx{{solver::LIDX_UNDEFINED, solver::LIDX_UNDEFINED, solver::LIDX_UNDEFINED}};
 
     /// Properly scaled diffusivity constant.
-    double                              pScaledDcst;
+    double                              pScaledDcst{};
     // Compartmental dcst. Stored for convenience
-    double                              pDcst;
+    double                              pDcst{};
     std::map<uint, double>              directionalDcsts;
 
-    /// Used in selecting which directory the molecule should go.
-    double                              pCDFSelector[2];
+    std::array<double, 2>  				pCDFSelector{0.0, 0.0};
 
     // A flag to see if the species can move between compartments
-    bool                                pSDiffBndActive[3];
+    std::array<bool, 3>     pSDiffBndActive{false, false, false};
 
     // Flags to store if a direction is a diffusion boundary direction
-    bool                                pSDiffBndDirection[3];
+    std::array<bool, 3>     pSDiffBndDirection{false, false, false};
 
     ////////////////////////////////////////////////////////////////////////
 

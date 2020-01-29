@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -131,39 +131,39 @@ class TetODE: public API
 
 public:
 
-    TetODE(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r,
-            int calcMembPot = EF_NONE);
-    ~TetODE();
+    TetODE(steps::model::Model *m, steps::wm::Geom *g, const rng::RNGptr &r,
+           int calcMembPot = EF_NONE);
+    ~TetODE() override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER INFORMATION
     ////////////////////////////////////////////////////////////////////////
 
-    std::string getSolverName() const;
-    std::string getSolverDesc() const;
-    std::string getSolverAuthors() const;
-    std::string getSolverEmail() const;
+    std::string getSolverName() const override;
+    std::string getSolverDesc() const override;
+    std::string getSolverAuthors() const override;
+    std::string getSolverEmail() const override;
 
 
-    void checkpoint(std::string const & file_name);
+    void checkpoint(std::string const & file_name) override;
 
-    void restore(std::string const & file_name);
+    void restore(std::string const & file_name) override;
 
-    double getTime() const;
+    double getTime() const override;
 
-    inline double getTemp() const
+    inline double getTemp() const override
     { return pTemp; }
 
-    void setTemp(double t);
+    void setTemp(double t) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROLS
     ////////////////////////////////////////////////////////////////////////
 
     // Will of course be added- just for compilation purposes
-    void reset();
-    void run(double endtime);
-    void advance(double adv);
+    void reset() override;
+    void run(double endtime) override;
+    void advance(double adv) override;
     //void step();
 
     ////////////////////////////////////////////////////////////////////////
@@ -176,28 +176,28 @@ public:
     //      COMPARTMENT
     ////////////////////////////////////////////////////////////////////////
 
-     double _getCompCount(uint cidx, uint sidx) const;
-     void _setCompCount(uint cidx, uint sidx, double n);
+     double _getCompCount(uint cidx, uint sidx) const override;
+     void _setCompCount(uint cidx, uint sidx, double n) override;
 
-    double _getCompVol(uint cidx) const;
+    double _getCompVol(uint cidx) const override;
 
-    double _getCompAmount(uint cidx, uint sidx) const;
-    void _setCompAmount(uint cidx, uint sidx, double a);
+    double _getCompAmount(uint cidx, uint sidx) const override;
+    void _setCompAmount(uint cidx, uint sidx, double a) override;
 
-    double _getCompConc(uint cidx, uint sidx) const;
-    void _setCompConc(uint cidx, uint sidx, double c);
+    double _getCompConc(uint cidx, uint sidx) const override;
+    void _setCompConc(uint cidx, uint sidx, double c) override;
 
-    bool _getCompClamped(uint cidx, uint sidx) const;
-    void _setCompClamped(uint cidx, uint sidx, bool b);
+    bool _getCompClamped(uint cidx, uint sidx) const override;
+    void _setCompClamped(uint cidx, uint sidx, bool b) override;
 
-    double _getCompReacK(uint cidx, uint ridx) const;
-    void _setCompReacK(uint cidx, uint ridx, double kf);
+    double _getCompReacK(uint cidx, uint ridx) const override;
+    void _setCompReacK(uint cidx, uint ridx, double kf) override;
 
-    bool _getCompReacActive(uint cidx, uint ridx) const;
-    void _setCompReacActive(uint cidx, uint ridx, bool a);
+    bool _getCompReacActive(uint cidx, uint ridx) const override;
+    void _setCompReacActive(uint cidx, uint ridx, bool a) override;
 
      /*
-    uint _getCompReacExtent(uint cidx, uint ridx) const;
+    unsigned long long _getCompReacExtent(uint cidx, uint ridx) const;
     void _resetCompReacExtent(uint cidx, uint ridx);
 
     double _getCompDiffD(uint cidx, uint didx) const;
@@ -212,22 +212,22 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     */
-     double _getPatchCount(uint pidx, uint sidx) const;
-    void _setPatchCount(uint pidx, uint sidx, double n);
+     double _getPatchCount(uint pidx, uint sidx) const override;
+    void _setPatchCount(uint pidx, uint sidx, double n) override;
 
-    double _getPatchArea(uint pidx) const;
+    double _getPatchArea(uint pidx) const override;
 
-    double _getPatchAmount(uint pidx, uint sidx) const;
-    void _setPatchAmount(uint pidx, uint sidx, double a);
+    double _getPatchAmount(uint pidx, uint sidx) const override;
+    void _setPatchAmount(uint pidx, uint sidx, double a) override;
 
-    bool _getPatchClamped(uint pidx, uint sidx) const;
-    void _setPatchClamped(uint pidx, uint sidx, bool buf);
+    bool _getPatchClamped(uint pidx, uint sidx) const override;
+    void _setPatchClamped(uint pidx, uint sidx, bool buf) override;
 
-    double _getPatchSReacK(uint pidx, uint ridx) const;
-    void _setPatchSReacK(uint pidx, uint ridx, double kf);
+    double _getPatchSReacK(uint pidx, uint ridx) const override;
+    void _setPatchSReacK(uint pidx, uint ridx, double kf) override;
 
-    bool _getPatchSReacActive(uint pidx, uint ridx) const;
-    void _setPatchSReacActive(uint pidx, uint ridx, bool a);
+    bool _getPatchSReacActive(uint pidx, uint ridx) const override;
+    void _setPatchSReacActive(uint pidx, uint ridx, bool a) override;
 
     /*
     ////////////////////////////////////////////////////////////////////////
@@ -240,19 +240,19 @@ public:
     bool _getTetSpecDefined(uint tidx, uint sidx) const;
 
     */
-    double _getTetVol(uint tidx) const;
+    double _getTetVol(tetrahedron_id_t tidx) const override;
 
-    double _getTetCount(uint tidx, uint sidx) const;
-    void _setTetCount(uint tidx, uint sidx, double n);
+    double _getTetCount(tetrahedron_id_t tidx, uint sidx) const override;
+    void _setTetCount(tetrahedron_id_t tidx, uint sidx, double n) override;
 
-    double _getTetAmount(uint tidx, uint sidx) const;
-    void _setTetAmount(uint tidx, uint sidx, double m);
+    double _getTetAmount(tetrahedron_id_t tidx, uint sidx) const override;
+    void _setTetAmount(tetrahedron_id_t tidx, uint sidx, double m) override;
 
-    double _getTetConc(uint tidx, uint sidx) const;
-    void _setTetConc(uint tidx, uint sidx, double c);
+    double _getTetConc(tetrahedron_id_t tidx, uint sidx) const override;
+    void _setTetConc(tetrahedron_id_t tidx, uint sidx, double c) override;
 
-    double _getTetReacK(uint tidx, uint ridx) const;
-    void _setTetReacK(uint tidx, uint ridx, double kf);
+    double _getTetReacK(tetrahedron_id_t tidx, uint ridx) const override;
+    void _setTetReacK(tetrahedron_id_t tidx, uint ridx, double kf) override;
 
     /*
     bool _getTetClamped(uint tidx, uint sidx) const;
@@ -270,10 +270,10 @@ public:
 
     ////////////////////////// ADDED FOR EFIELD ////////////////////////////
 
-    double _getTetV(uint tidx) const;
-    void _setTetV(uint tidx, double v);
-    bool _getTetVClamped(uint tidx) const;
-    void _setTetVClamped(uint tidx, bool cl);
+    double _getTetV(tetrahedron_id_t tidx) const override;
+    void _setTetV(tetrahedron_id_t tidx, double v) override;
+    bool _getTetVClamped(tetrahedron_id_t tidx) const override;
+    void _setTetVClamped(tetrahedron_id_t tidx, bool cl) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
@@ -286,16 +286,16 @@ public:
 
     */
 
-    double _getTriArea(uint tidx) const;
+    double _getTriArea(triangle_id_t tidx) const override;
 
-    double _getTriCount(uint tidx, uint sidx) const;
-    void _setTriCount(uint tidx, uint sidx, double n);
+    double _getTriCount(triangle_id_t tidx, uint sidx) const override;
+    void _setTriCount(triangle_id_t tidx, uint sidx, double n) override;
 
-    double _getTriAmount(uint tidx, uint sidx) const;
-    void _setTriAmount(uint tidx, uint sidx, double m);
+    double _getTriAmount(triangle_id_t tidx, uint sidx) const override;
+    void _setTriAmount(triangle_id_t tidx, uint sidx, double m) override;
 
-    double _getTriSReacK(uint tidx, uint ridx) const;
-    void _setTriSReacK(uint tidx, uint ridx, double kf);
+    double _getTriSReacK(triangle_id_t tidx, uint ridx) const override;
+    void _setTriSReacK(triangle_id_t tidx, uint ridx, double kf) override;
 
     /*
     bool _getTriClamped(uint tidx, uint sidx) const;
@@ -308,10 +308,10 @@ public:
 
     ////////////////////////// ADDED FOR EFIELD ////////////////////////////
 
-    double _getTriV(uint tidx) const;
-    void _setTriV(uint tidx, double v);
-    bool _getTriVClamped(uint tidx) const;
-    void _setTriVClamped(uint tidx, bool cl);
+    double _getTriV(triangle_id_t tidx) const override;
+    void _setTriV(triangle_id_t tidx, double v) override;
+    bool _getTriVClamped(triangle_id_t tidx) const override;
+    void _setTriVClamped(triangle_id_t tidx, bool cl) override;
 
     /*
     double _getTriOhmicI(uint tidx) const;
@@ -321,9 +321,9 @@ public:
     double _getTriGHKI(uint tidx, uint ghkidx) const;
     */
 
-    double _getTriI(uint tidx) const;
+    double _getTriI(triangle_id_t tidx) const override;
 
-    void _setTriIClamp(uint tidx, double cur);
+    void _setTriIClamp(triangle_id_t tidx, double cur) override;
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -332,38 +332,61 @@ public:
     //      VERTICES ELEMENTS
     ////////////////////////// ADDED FOR EFIELD ////////////////////////////
 
-    double _getVertV(uint vidx) const;
-    void _setVertV(uint vidx, double v);
-    bool _getVertVClamped(uint vidx) const;
-    void _setVertVClamped(uint vidx, bool cl);
-    void _setVertIClamp(uint tidx, double cur);
+    double _getVertV(vertex_id_t vidx) const override;
+    void _setVertV(vertex_id_t vidx, double v) override;
+    bool _getVertVClamped(vertex_id_t vidx) const override;
+    void _setVertVClamped(vertex_id_t vidx, bool cl) override;
+    void _setVertIClamp(vertex_id_t tidx, double cur) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROL:
     //      MEMBRANE AND VOLUME CONDUCTOR
     ////////////////////////// ADDED FOR EFIELD ////////////////////////////
 
-    void _setMembPotential(uint midx, double v);
-    void _setMembCapac(uint midx, double cm);
-    void _setMembVolRes(uint midx, double ro);
-    void _setMembRes(uint midx, double ro, double vrev);
+    void _setMembPotential(uint midx, double v) override;
+    void _setMembCapac(uint midx, double cm) override;
+    void _setMembVolRes(uint midx, double ro) override;
+    void _setMembRes(uint midx, double ro, double vrev) override;
 
     ////////////////////////////////////////////////////////////////////////
 
 
     void _setup();
 
-    uint _addComp(steps::solver::Compdef * cdef);
+    std::size_t _addComp(steps::solver::Compdef * cdef);
 
-    uint _addPatch(steps::solver::Patchdef * pdef);
+    std::size_t _addPatch(steps::solver::Patchdef * pdef);
 
-    void _addTet(uint tetidx, steps::tetode::Comp * comp, double vol, double a1,
-                 double a2, double a3, double a4, double d1, double d2,
-                 double d3, double d4, int tet0, int tet1, int tet2, int tet3);
+    void _addTet(tetrahedron_id_t tetidx,
+                 steps::tetode::Comp *comp,
+                 double vol,
+                 double a1,
+                 double a2,
+                 double a3,
+                 double a4,
+                 double d1,
+                 double d2,
+                 double d3,
+                 double d4,
+                 tetrahedron_id_t tet0,
+                 tetrahedron_id_t tet1,
+                 tetrahedron_id_t tet2,
+                 tetrahedron_id_t tet3);
 
-    void _addTri(uint triidx, steps::tetode::Patch * patch, double area,
-            double l0, double l1, double l2, double d0, double d1, double d2,
-            int tinner, int touter, int tri0, int tri1, int tri2);
+    void _addTri(triangle_id_t triidx,
+                 steps::tetode::Patch *patch,
+                 double area,
+                 double l0,
+                 double l1,
+                 double l2,
+                 double d0,
+                 double d1,
+                 double d2,
+                 tetrahedron_id_t tinner,
+                 tetrahedron_id_t touter,
+                 triangle_id_t tri0,
+                 triangle_id_t tri1,
+                 triangle_id_t tri2);
 
     /// returns properly scaled reaction constant
     ///
@@ -384,18 +407,18 @@ public:
     ////////////////////////// ADDED FOR EFIELD ////////////////////////////
 
     /// Check the EField flag
-    inline bool efflag() const
+    inline bool efflag() const noexcept
     { return pEFoption != EF_NONE; }
 
     void _setupEField();
 
-    inline uint neftets() const
+    inline uint neftets() const noexcept
     { return pEFNTets; }
 
-    inline uint neftris() const
+    inline uint neftris() const noexcept
     { return pEFNTris; }
 
-    inline uint nefverts() const
+    inline uint nefverts() const noexcept
     { return pEFNVerts; }
 
 
@@ -403,7 +426,7 @@ private:
 
     ////////////////////////////////////////////////////////////////////////
 
-    steps::tetmesh::Tetmesh *                  pMesh;
+    steps::tetmesh::Tetmesh *                  pMesh{nullptr};
 
     std::vector<steps::tetode::Comp *>       pComps;
     //std::map<steps::solver::Compdef *, Comp *> pCompMap;
@@ -421,16 +444,16 @@ private:
     std::vector<std::vector<steps::tetode::structA> >  pSpec_matrixsub;
     */
 
-    uint                                      pSpecs_tot;
-    uint                                      pReacs_tot;
+    uint                                      pSpecs_tot{0};
+    uint                                      pReacs_tot{0};
 
     //double                                    * pCcst;
 
-    bool                                      pInitialised;
-    bool                                     pTolsset;
-    bool                                      pReinit;
+    bool                                      pInitialised{false};
+    bool                                     pTolsset{false};
+    bool                                      pReinit{true};
 
-    CVodeState                              * pCVodeState;
+    CVodeState                              * pCVodeState{nullptr};
 
     ////////////////////////// ADDED FOR EFIELD ////////////////////////////
 
@@ -441,42 +464,44 @@ private:
     //
     EF_solver                                     pEFoption;
 
-    double                                        pTemp;
+    double                                        pTemp{0.0};
 
     // Pointer to the EField object
     std::unique_ptr<steps::solver::efield::EField> pEField;
 
     // The Efield time-step
-    double                                       pEFDT;
+    double                                       pEFDT{1.0e-5};
 
     // The number of vertices
-    uint                                        pEFNVerts;
+    uint                                        pEFNVerts{0};
     // Array of vertices
-    double                                      * pEFVerts;
+    double                                      * pEFVerts{nullptr};
 
     // The number of membrane triangles
-    uint                                        pEFNTris;
+    uint                                        pEFNTris{0};
     // Array of membrane triangles
-    uint                                       * pEFTris;
+    // \TODO use vector<tri_verts> pointer instead
+    vertex_id_t                              * pEFTris{nullptr};
 
     std::vector<steps::tetode::Tri *>        pEFTris_vec;
 
     // The number of tetrahedrons
-    uint                                        pEFNTets;
+    uint                                        pEFNTets{0};
     // Array of tetrahedrons
-    uint                                      * pEFTets;
+    // \TODO use vector<tet_verts> pointer instead
+    vertex_id_t                              * pEFTets{nullptr};
 
     // Table of global vertex index to EField local vertex index (0, 1, ..., pEFNVerts - 1)
-    int                                      * pEFVert_GtoL;
+    vertex_id_t                              * pEFVert_GtoL{0};
 
     // Table of global triangle index to EField local triangle index (0, 1, ..., pEFNTris-1)
-    int                                      * pEFTri_GtoL;
+    triangle_id_t                            * pEFTri_GtoL{0};
 
     // Table of global tetrahedron index to EField local tet index (0, 1, ..., pEFNTets-1)
-    int                                       * pEFTet_GtoL;
+    tetrahedron_id_t                         * pEFTet_GtoL{0};
 
     // Table of EField local triangle index to global triangle index.
-    uint                                      * pEFTri_LtoG;
+    triangle_id_t                                     * pEFTri_LtoG{0};
 
 };
 

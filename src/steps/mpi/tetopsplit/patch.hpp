@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -71,8 +71,7 @@ public:
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    Patch(steps::solver::Patchdef * patchdef);
-    ~Patch();
+    explicit Patch(steps::solver::Patchdef * patchdef);
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
@@ -99,29 +98,31 @@ public:
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Patchdef * def() const
+    inline steps::solver::Patchdef * def() const noexcept
     { return pPatchdef; }
 
-    inline double area() const
+    inline double area() const noexcept
     { return pArea; }
 
     //void setArea(double a);
 
-    inline double * pools() const
+    inline double * pools() const noexcept
     { return def()->pools(); }
 
     void modCount(uint slidx, double count);
 
 
-    inline uint countTris() const
+    inline uint countTris() const noexcept
     { return pTris.size(); }
 
     smtos::Tri * pickTriByArea(double rand01) const;
 
-    inline TriPVecCI bgnTri() const
+    inline TriPVecCI bgnTri() const noexcept
     { return pTris.begin(); }
-    inline TriPVecCI endTri() const
+    inline TriPVecCI endTri() const noexcept
     { return pTris.end(); }
+    inline const TriPVec& tris() const noexcept
+    { return pTris; }
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -130,7 +131,7 @@ private:
     ////////////////////////////////////////////////////////////////////////
 
     steps::solver::Patchdef           * pPatchdef;
-    double                              pArea;
+    double                              pArea{0.0};
 
     TriPVec                             pTris;
 

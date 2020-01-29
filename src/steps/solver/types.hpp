@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -29,6 +29,7 @@
 
 
 // STL headers.
+#include <limits>
 #include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -62,7 +63,7 @@ typedef std::vector<lidxT*>             lidxTPVec;
 typedef lidxTPVec::iterator             lidxTPVecI;
 typedef lidxTPVec::const_iterator       lidxTPVecCI;
 
-static const lidxT LIDX_UNDEFINED = 0xFFFF;
+static const lidxT LIDX_UNDEFINED = std::numeric_limits<lidxT>::max();
 
 ////////////////////////////////////////////////////////////////////////////////
 

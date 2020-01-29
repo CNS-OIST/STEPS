@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -49,24 +49,18 @@ namespace stetmesh = steps::tetmesh;
 ssolver::DiffBoundarydef::DiffBoundarydef(Statedef * sd, uint idx, stetmesh::DiffBoundary * db)
 : pStatedef(sd)
 , pIdx(idx)
-, pName()
 , pTris()
-, pCompA_temp(nullptr)
-, pCompB_temp(nullptr)
-, pCompA(0)
-, pCompB(0)
-, pSetupdone(false)
 {
-    AssertLog(pStatedef != 0);
-    AssertLog(db != 0);
+    AssertLog(pStatedef != nullptr);
+    AssertLog(db != nullptr);
 
     pName = db->getID();
     pTris = db->_getAllTriIndices();
     std::vector<steps::wm::Comp *> comps = db->getComps();
     pCompA_temp = comps[0];
     pCompB_temp = comps[1];
-    AssertLog(pCompA_temp != 0);
-    AssertLog(pCompB_temp != 0);
+    AssertLog(pCompA_temp != nullptr);
+    AssertLog(pCompB_temp != nullptr);
 
 }
 
@@ -77,14 +71,14 @@ ssolver::DiffBoundarydef::~DiffBoundarydef()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::DiffBoundarydef::checkpoint(std::fstream & cp_file)
+void ssolver::DiffBoundarydef::checkpoint(std::fstream & /*cp_file*/)
 {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::DiffBoundarydef::restore(std::fstream & cp_file)
+void ssolver::DiffBoundarydef::restore(std::fstream & /*cp_file*/)
 {
     // reserve
 }
@@ -97,19 +91,8 @@ void ssolver::DiffBoundarydef::setup()
 
     pCompA = pStatedef->getCompIdx(pCompA_temp);
     pCompB = pStatedef->getCompIdx(pCompB_temp);
-    AssertLog(pCompA >= 0);
-    AssertLog(pCompB >= 0);
     pSetupdone = true;
 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-std::string const ssolver::DiffBoundarydef::name() const
-{
-    return pName;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -63,28 +63,20 @@ using steps::util::checkID;
 
 Model::~Model()
 {
-    while (pSpecs.empty() == false)
-    {
-        SpecPMapCI spec = pSpecs.begin();
-        delete(spec->second);
+    while (!pSpecs.empty()) {
+        delete pSpecs.begin()->second;
     }
 
-    while (pChans.empty() == false)
-    {
-        ChanPMapCI chan = pChans.begin();
-        delete(chan->second);
+    while (!pChans.empty()) {
+        delete pChans.begin()->second;
     }
 
-    while (pVolsys.empty() == false)
-    {
-        VolsysPMapCI vsys = pVolsys.begin();
-        delete(vsys->second);
+    while (!pVolsys.empty()) {
+        delete pVolsys.begin()->second;
     }
 
-    while (pSurfsys.empty() == false)
-    {
-        SurfsysPMapCI ssys = pSurfsys.begin();
-        delete(ssys->second);
+    while (!pSurfsys.empty()) {
+        delete pSurfsys.begin()->second;
     }
 }
 
@@ -92,14 +84,14 @@ Model::~Model()
 
 Spec * Model::getSpec(string const & id) const
 {
-    SpecPMapCI spec = pSpecs.find(id);
+    auto spec = pSpecs.find(id);
     if (spec == pSpecs.end())
     {
         ostringstream os;
         os << "Model does not contain species with name '" << id << "'";
         ArgErrLog(os.str());
     }
-    AssertLog(spec->second != 0);
+    AssertLog(spec->second != nullptr);
     return spec->second;
 }
 
@@ -108,18 +100,17 @@ Spec * Model::getSpec(string const & id) const
 void Model::delSpec(string const & id)
 {
     Spec * spec = getSpec(id);
-    delete(spec);
+    delete spec;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 std::vector<Spec *> Model::getAllSpecs() const
 {
-    SpecPVec specs = SpecPVec();
-    SpecPMapCI spec_end = pSpecs.end();
-    for (SpecPMapCI s = pSpecs.begin(); s != spec_end; ++s)
-    {
-        specs.push_back(s->second);
+    SpecPVec specs;
+    specs.reserve(pSpecs.size());
+    for (auto const& s: pSpecs) {
+      specs.push_back(s.second);
     }
     return specs;
 }
@@ -128,11 +119,10 @@ std::vector<Spec *> Model::getAllSpecs() const
 
 std::vector<Volsys *> Model::getAllVolsyss() const
 {
-    VolsysPVec volsyss = VolsysPVec();
-    VolsysPMapCI vsys_end = pVolsys.end();
-    for (VolsysPMapCI vs = pVolsys.begin(); vs != vsys_end; ++vs)
-    {
-        volsyss.push_back(vs->second);
+    VolsysPVec volsyss;
+    volsyss.reserve(pVolsys.size());
+    for (auto const& vs: pVolsys) {
+      volsyss.push_back(vs.second);
     }
     return volsyss;
 }
@@ -141,11 +131,10 @@ std::vector<Volsys *> Model::getAllVolsyss() const
 
 std::vector<Surfsys *> Model::getAllSurfsyss() const
 {
-    SurfsysPVec surfsyss = SurfsysPVec();
-    SurfsysPMapCI ssys_end = pSurfsys.end();
-    for (SurfsysPMapCI ss = pSurfsys.begin(); ss != ssys_end; ++ss)
-    {
-        surfsyss.push_back(ss->second);
+    SurfsysPVec surfsyss;
+    surfsyss.reserve(pSurfsys.size());
+    for (auto const& ss: pSurfsys) {
+      surfsyss.push_back(ss.second);
     }
     return surfsyss;
 }
@@ -154,14 +143,14 @@ std::vector<Surfsys *> Model::getAllSurfsyss() const
 
 Chan * Model::getChan(string const & id) const
 {
-    ChanPMapCI chan = pChans.find(id);
+    auto chan = pChans.find(id);
     if (chan == pChans.end())
     {
         ostringstream os;
         os << "Model does not contain channel with name '" << id << "'";
         ArgErrLog(os.str());
     }
-    AssertLog(chan->second != 0);
+    AssertLog(chan->second != nullptr);
     return chan->second;
 }
 
@@ -169,11 +158,10 @@ Chan * Model::getChan(string const & id) const
 
 std::vector<Chan *> Model::getAllChans() const
 {
-    ChanPVec chans = ChanPVec();
-    ChanPMapCI chan_end = pChans.end();
-    for (ChanPMapCI c = pChans.begin(); c != chan_end; ++c)
-    {
-        chans.push_back(c->second);
+    ChanPVec chans;
+    chans.reserve(pChans.size());
+    for (auto const& c: pChans) {
+      chans.push_back(c.second);
     }
     return chans;
 }
@@ -182,14 +170,14 @@ std::vector<Chan *> Model::getAllChans() const
 
 Volsys * Model::getVolsys(string const & id) const
 {
-    VolsysPMapCI volsys = pVolsys.find(id);
+    auto volsys = pVolsys.find(id);
     if (volsys == pVolsys.end())
     {
         ostringstream os;
         os << "Model does not contain volume system with name '" << id << "'";
         ArgErrLog(os.str());
     }
-    AssertLog(volsys->second != 0);
+    AssertLog(volsys->second != nullptr);
     return volsys->second;
 }
 
@@ -198,7 +186,7 @@ Volsys * Model::getVolsys(string const & id) const
 void Model::delVolsys(string const & id)
 {
     Volsys * volsys = getVolsys(id);
-    delete(volsys);
+    delete volsys;
 }
 
 
@@ -206,14 +194,14 @@ void Model::delVolsys(string const & id)
 
 Surfsys * Model::getSurfsys(string const & id) const
 {
-    SurfsysPMapCI surfsys = pSurfsys.find(id);
+    auto surfsys = pSurfsys.find(id);
     if (surfsys == pSurfsys.end())
     {
         ostringstream os;
         os << "Model does not contain surface system with name '" << id << "'";
         ArgErrLog(os.str());
     }
-    AssertLog(surfsys->second != 0);
+    AssertLog(surfsys->second != nullptr);
     return surfsys->second;
 }
 
@@ -222,7 +210,7 @@ Surfsys * Model::getSurfsys(string const & id) const
 void Model::delSurfsys(string const & id)
 {
     Surfsys * surfsys = getSurfsys(id);
-    delete(surfsys);
+    delete surfsys;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -242,14 +230,14 @@ void Model::_checkSpecID(string const & id) const
 
 void Model::_handleSpecIDChange(string const & o, string const & n)
 {
-    SpecPMapCI s_old = pSpecs.find(o);
+    auto s_old = pSpecs.find(o);
     AssertLog(s_old != pSpecs.end());
 
     if (o == n) return;
     _checkSpecID(n);
 
     Spec * s = s_old->second;
-    AssertLog(s != 0);
+    AssertLog(s != nullptr);
     pSpecs.erase(s->getID());                        // or s_old->first
     pSpecs.insert(SpecPMap::value_type(n, s));
 }
@@ -267,18 +255,12 @@ void Model::_handleSpecAdd(Spec * spec)
 
 void Model::_handleSpecDel(Spec * spec)
 {
-    VolsysPMapCI vsys_end = pVolsys.end();
-    for (VolsysPMapCI vsys = pVolsys.begin(); vsys != vsys_end; ++vsys)
-    {
-        vsys->second->_handleSpecDelete(spec);
+    for (auto const& vsys: pVolsys) {
+        vsys.second->_handleSpecDelete(spec);
     }
-
-    SurfsysPMapCI ssys_end = pSurfsys.end();
-    for (SurfsysPMapCI ssys = pSurfsys.begin(); ssys != ssys_end; ++ssys)
-    {
-        ssys->second->_handleSpecDelete(spec);
+    for (auto const& ssys: pSurfsys) {
+        ssys.second->_handleSpecDelete(spec);
     }
-
     pSpecs.erase(spec->getID());
 }
 
@@ -286,13 +268,9 @@ void Model::_handleSpecDel(Spec * spec)
 
 void Model::_handleChanDel(Chan * chan)
 {
-
-    SurfsysPMapCI ssys_end = pSurfsys.end();
-    for (SurfsysPMapCI ssys = pSurfsys.begin(); ssys != ssys_end; ++ssys)
-    {
-        ssys->second->_handleChanDelete(chan);
+    for (auto const& ssys: pSurfsys) {
+        ssys.second->_handleChanDelete(chan);
     }
-
     pChans.erase(chan->getID());
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -312,16 +290,16 @@ void Model::_checkChanID(string const & id) const
 
 void Model::_handleChanIDChange(string const & o, string const & n)
 {
-    ChanPMapCI c_old = pChans.find(o);
+    auto c_old = pChans.find(o);
     AssertLog(c_old != pChans.end());
 
     if (o == n) return;
     _checkChanID(n);
 
     Chan * c = c_old->second;
-    AssertLog(c != 0);
+    AssertLog(c != nullptr);
     pChans.erase(c->getID());                        // or c_old->first
-    pChans.insert(ChanPMap::value_type(n, c));
+    pChans.emplace(n, c);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -330,7 +308,7 @@ void Model::_handleChanAdd(Chan * chan)
 {
     AssertLog(chan->getModel() == this);
     _checkChanID(chan->getID());
-    pChans.insert(ChanPMap::value_type(chan->getID(), chan));
+    pChans.emplace(chan->getID(), chan);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -350,16 +328,16 @@ void Model::_checkVolsysID(string const & id) const
 
 void Model::_handleVolsysIDChange(string const & o, string const & n)
 {
-    VolsysPMapCI v_old = pVolsys.find(o);
+    auto v_old = pVolsys.find(o);
     AssertLog(v_old != pVolsys.end());
 
     if (o == n) return;
     _checkVolsysID(n);
 
     Volsys * v = v_old->second;
-    AssertLog(v != 0);
+    AssertLog(v != nullptr);
     pVolsys.erase(v->getID());                        // or v_old->first
-    pVolsys.insert(VolsysPMap::value_type(n, v));
+    pVolsys.emplace(n, v);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -368,7 +346,7 @@ void Model::_handleVolsysAdd(Volsys * volsys)
 {
     AssertLog(volsys->getModel() == this);
     _checkVolsysID(volsys->getID());
-    pVolsys.insert(VolsysPMap::value_type(volsys->getID(), volsys));
+    pVolsys.emplace(volsys->getID(), volsys);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -396,16 +374,16 @@ void Model::_checkSurfsysID(string const & id) const
 
 void Model::_handleSurfsysIDChange(string const & o, string const & n)
 {
-    SurfsysPMapCI s_old = pSurfsys.find(o);
+    auto s_old = pSurfsys.find(o);
     AssertLog(s_old != pSurfsys.end());
 
     if (o==n) return;
     _checkSurfsysID(n);
 
     Surfsys * s = s_old->second;
-    AssertLog(s != 0);
+    AssertLog(s != nullptr);
     pSurfsys.erase(s->getID());
-    pSurfsys.insert(SurfsysPMap::value_type(n, s));
+    pSurfsys.emplace(n, s);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -414,7 +392,7 @@ void Model::_handleSurfsysAdd(Surfsys * surfsys)
 {
     AssertLog(surfsys->getModel() == this);
     _checkSurfsysID(surfsys->getID());
-    pSurfsys.insert(SurfsysPMap::value_type(surfsys->getID(), surfsys));
+    pSurfsys.emplace(surfsys->getID(), surfsys);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -431,10 +409,8 @@ uint Model::_countReacs() const
 {
     uint nreacs = 0;
 
-    VolsysPMapCI vs_end = pVolsys.end();
-    for (VolsysPMapCI vs = pVolsys.begin(); vs != vs_end; ++vs)
-    {
-        nreacs += vs->second->_countReacs();
+    for (auto const& vs : pVolsys) {
+        nreacs += vs.second->_countReacs();
     }
     return nreacs;
 }
@@ -445,10 +421,8 @@ uint Model::_countSReacs() const
 {
     uint nsreacs = 0;
 
-    SurfsysPMapCI ss_end = pSurfsys.end();
-    for (SurfsysPMapCI ss = pSurfsys.begin(); ss != ss_end; ++ss)
-    {
-        nsreacs += ss->second->_countSReacs();
+    for (auto const& ss: pSurfsys) {
+        nsreacs += ss.second->_countSReacs();
     }
     return nsreacs;
 }
@@ -459,10 +433,8 @@ uint Model::_countVDiffs() const
 {
     uint ndiffs = 0;
 
-    VolsysPMapCI vs_end = pVolsys.end();
-    for (VolsysPMapCI vs = pVolsys.begin(); vs != vs_end; ++vs)
-    {
-        ndiffs += vs->second->_countDiffs();
+    for (auto const& vs: pVolsys) {
+        ndiffs += vs.second->_countDiffs();
     }
     return ndiffs;
 }
@@ -473,10 +445,8 @@ uint Model::_countSDiffs() const
 {
     uint ndiffs = 0;
 
-    SurfsysPMapCI ss_end = pSurfsys.end();
-    for (SurfsysPMapCI ss = pSurfsys.begin(); ss != ss_end; ++ss)
-    {
-        ndiffs += ss->second->_countDiffs();
+    for (auto const& ss: pSurfsys) {
+        ndiffs += ss.second->_countDiffs();
     }
     return ndiffs;
 }
@@ -487,10 +457,8 @@ uint Model::_countVDepTrans() const
 {
     uint nvdts = 0;
 
-    SurfsysPMapCI ss_end = pSurfsys.end();
-    for (SurfsysPMapCI ss = pSurfsys.begin(); ss != ss_end; ++ss)
-    {
-        nvdts += ss->second->_countVDepTrans();
+    for (auto const& ss: pSurfsys) {
+        nvdts += ss.second->_countVDepTrans();
     }
     return nvdts;
 }
@@ -501,10 +469,8 @@ uint Model::_countVDepSReacs() const
 {
     uint nvdsrs = 0;
 
-    SurfsysPMapCI ss_end = pSurfsys.end();
-    for (SurfsysPMapCI ss = pSurfsys.begin(); ss != ss_end; ++ss)
-    {
-        nvdsrs += ss->second->_countVDepSReacs();
+    for (auto const& ss: pSurfsys) {
+        nvdsrs += ss.second->_countVDepSReacs();
     }
     return nvdsrs;
 }
@@ -515,10 +481,8 @@ uint Model::_countOhmicCurrs() const
 {
     uint nocs = 0;
 
-    SurfsysPMapCI ss_end = pSurfsys.end();
-    for (SurfsysPMapCI ss = pSurfsys.begin(); ss != ss_end; ++ss)
-    {
-        nocs += ss->second->_countOhmicCurrs();
+    for (auto const& ss: pSurfsys) {
+        nocs += ss.second->_countOhmicCurrs();
     }
     return nocs;
 }
@@ -529,10 +493,8 @@ uint Model::_countGHKcurrs() const
 {
     uint nghks = 0;
 
-    SurfsysPMapCI ss_end = pSurfsys.end();
-    for (SurfsysPMapCI ss = pSurfsys.begin(); ss != ss_end; ++ss)
-    {
-        nghks += ss->second->_countGHKcurrs();
+    for (auto const& ss: pSurfsys) {
+        nghks += ss.second->_countGHKcurrs();
     }
     return nghks;
 }
@@ -542,8 +504,8 @@ uint Model::_countGHKcurrs() const
 Spec * Model::_getSpec(uint gidx) const
 {
     AssertLog(gidx < pSpecs.size());
-    std::map<std::string, Spec *>::const_iterator sp_it = pSpecs.begin();
-    for (uint i=0; i< gidx; ++i) ++sp_it;
+    auto sp_it = pSpecs.begin();
+    std::advance(sp_it, gidx);
     return sp_it->second;
 }
 
@@ -552,8 +514,8 @@ Spec * Model::_getSpec(uint gidx) const
 Chan * Model::_getChan(uint gidx) const
 {
     AssertLog(gidx < pChans.size());
-    std::map<std::string, Chan *>::const_iterator ch_it = pChans.begin();
-    for (uint i=0; i< gidx; ++i) ++ch_it;
+    auto ch_it = pChans.begin();
+    std::advance(ch_it, gidx);
     return ch_it->second;
 }
 
@@ -563,12 +525,12 @@ Reac * Model::_getReac(uint gidx) const
 {
     // first find which volsys this reac (by global index) belongs to
     uint lidx = gidx;
-    VolsysPMapCI vs_end = pVolsys.end();
-    for (VolsysPMapCI vs = pVolsys.begin(); vs != vs_end; ++vs)
-    {
-        uint reacs_tot = vs->second->_countReacs();
-        if (reacs_tot > lidx) return vs->second->_getReac(lidx);
-        lidx -=reacs_tot;
+    for (auto const& vs: pVolsys) {
+        uint reacs_tot = vs.second->_countReacs();
+        if (reacs_tot > lidx) {
+          return vs.second->_getReac(lidx);
+        }
+        lidx -= reacs_tot;
     }
 
     // we shouldn't have gotten here
@@ -581,12 +543,12 @@ SReac * Model::_getSReac(uint gidx) const
 {
     // first find which surfsys this sreac (by global index) belongs to
     uint lidx = gidx;
-    SurfsysPMapCI ss_end = pSurfsys.end();
-    for (SurfsysPMapCI ss = pSurfsys.begin(); ss != ss_end; ++ss)
-    {
-        uint sreacs_tot = ss->second->_countSReacs();
-        if (sreacs_tot > lidx) return ss->second->_getSReac(lidx);
-        lidx -=sreacs_tot;
+    for (auto const& ss: pSurfsys) {
+        uint sreacs_tot = ss.second->_countSReacs();
+        if (sreacs_tot > lidx) {
+          return ss.second->_getSReac(lidx);
+        }
+        lidx -= sreacs_tot;
     }
 
     // we shouldn't have gotten here
@@ -599,12 +561,12 @@ Diff * Model::_getVDiff(uint gidx) const
 {
     // first find which volsys this diff (by global index) belongs to
     uint lidx = gidx;
-    VolsysPMapCI vs_end = pVolsys.end();
-    for (VolsysPMapCI vs = pVolsys.begin(); vs != vs_end; ++vs)
-    {
-        uint diffs_tot = vs->second->_countDiffs();
-        if (diffs_tot > lidx) return vs->second->_getDiff(lidx);
-        lidx -=diffs_tot;
+    for (auto const& vs: pVolsys) {
+        uint diffs_tot = vs.second->_countDiffs();
+        if (diffs_tot > lidx) {
+          return vs.second->_getDiff(lidx);
+        }
+        lidx -= diffs_tot;
     }
     // we shouldn't have gotten to the end
     AssertLog(false);
@@ -616,12 +578,12 @@ Diff * Model::_getSDiff(uint gidx) const
 {
     // first find which surfsys this diff (by global index) belongs to
     uint lidx = gidx;
-    SurfsysPMapCI ss_end = pSurfsys.end();
-    for (SurfsysPMapCI ss = pSurfsys.begin(); ss != ss_end; ++ss)
-    {
-        uint diffs_tot = ss->second->_countDiffs();
-        if (diffs_tot > lidx) return ss->second->_getDiff(lidx);
-        lidx -=diffs_tot;
+    for (auto const& ss: pSurfsys) {
+        uint diffs_tot = ss.second->_countDiffs();
+        if (diffs_tot > lidx) {
+          return ss.second->_getDiff(lidx);
+        }
+        lidx -= diffs_tot;
     }
     // we shouldn't have gotten to the end
     AssertLog(false);
@@ -633,12 +595,12 @@ VDepTrans * Model::_getVDepTrans(uint gidx) const
 {
     // first find which surfsys this v-dep-trans (by global index) belongs to
     uint lidx = gidx;
-    SurfsysPMapCI ss_end = pSurfsys.end();
-    for (SurfsysPMapCI ss = pSurfsys.begin(); ss != ss_end; ++ss)
-    {
-        uint vdts_tot = ss->second->_countVDepTrans();
-        if (vdts_tot > lidx) return ss->second->_getVDepTrans(lidx);
-        lidx -=vdts_tot;
+    for (auto const& ss: pSurfsys) {
+        uint vdts_tot = ss.second->_countVDepTrans();
+        if (vdts_tot > lidx) {
+          return ss.second->_getVDepTrans(lidx);
+        }
+        lidx -= vdts_tot;
     }
 
     // we shouldn't have gotten here
@@ -651,11 +613,11 @@ VDepSReac * Model::_getVDepSReac(uint gidx) const
 {
     // first find which surfsys this v-dep-sreac (by global index) belongs to
     uint lidx = gidx;
-    SurfsysPMapCI ss_end = pSurfsys.end();
-    for (SurfsysPMapCI ss = pSurfsys.begin(); ss != ss_end; ++ss)
-    {
-        uint vdsrs_tot = ss->second->_countVDepSReacs();
-        if (vdsrs_tot > lidx) return ss->second->_getVDepSReac(lidx);
+    for (auto const& ss: pSurfsys) {
+        uint vdsrs_tot = ss.second->_countVDepSReacs();
+        if (vdsrs_tot > lidx) {
+          return ss.second->_getVDepSReac(lidx);
+        }
         lidx -=vdsrs_tot;
     }
 
@@ -669,12 +631,12 @@ OhmicCurr * Model::_getOhmicCurr(uint gidx) const
 {
     // first find which surfsys this ohmic current (by global index) belongs to
     uint lidx = gidx;
-    SurfsysPMapCI ss_end = pSurfsys.end();
-    for (SurfsysPMapCI ss = pSurfsys.begin(); ss != ss_end; ++ss)
-    {
-        uint ocs_tot = ss->second->_countOhmicCurrs();
-        if (ocs_tot > lidx) return ss->second->_getOhmicCurr(lidx);
-        lidx -=ocs_tot;
+    for (auto const& ss: pSurfsys) {
+        uint ocs_tot = ss.second->_countOhmicCurrs();
+        if (ocs_tot > lidx) {
+          return ss.second->_getOhmicCurr(lidx);
+        }
+        lidx -= ocs_tot;
     }
 
     // we shouldn't have gotten here
@@ -687,12 +649,12 @@ GHKcurr * Model::_getGHKcurr(uint gidx) const
 {
     // first find which surfsys this ghk current (by global index) belongs to
     uint lidx = gidx;
-    SurfsysPMapCI ss_end = pSurfsys.end();
-    for (SurfsysPMapCI ss = pSurfsys.begin(); ss != ss_end; ++ss)
-    {
-        uint ghks_tot = ss->second->_countGHKcurrs();
-        if (ghks_tot > lidx) return ss->second->_getGHKcurr(lidx);
-        lidx -=ghks_tot;
+    for (auto const& ss: pSurfsys) {
+        uint ghks_tot = ss.second->_countGHKcurrs();
+        if (ghks_tot > lidx) {
+          return ss.second->_getGHKcurr(lidx);
+        }
+        lidx -= ghks_tot;
     }
 
     // we shouldn't have gotten here

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -56,10 +56,10 @@ swmrssa::Patch::Patch(steps::solver::Patchdef * patchdef, swmrssa::Comp * icomp,
 , pIComp(icomp)
 , pOComp(ocomp)
 {
-    AssertLog(pPatchdef != 0);
+    AssertLog(pPatchdef != nullptr);
     if (iComp() != nullptr) { iComp()->addIPatch(this);
 }
-    if (oComp() != 0) oComp()->addOPatch(this);
+    if (oComp() != nullptr) oComp()->addOPatch(this);
     uint nspecs = patchdef->countSpecs();
     pPoolLB = new double[nspecs]();
     pPoolUB = new double[nspecs]();
@@ -69,9 +69,8 @@ swmrssa::Patch::Patch(steps::solver::Patchdef * patchdef, swmrssa::Comp * icomp,
 
 swmrssa::Patch::~Patch()
 {
-    for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
-    {
-        delete (*k);
+    for (auto const& k : pKProcs) {
+        delete k;
     }
 }
 
@@ -79,9 +78,8 @@ swmrssa::Patch::~Patch()
 
 void swmrssa::Patch::checkpoint(std::fstream & cp_file)
 {
-    for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
-    {
-        (*k)->checkpoint(cp_file);
+    for (auto const& k : pKProcs) {
+        k->checkpoint(cp_file);
     }
 }
 
@@ -89,9 +87,8 @@ void swmrssa::Patch::checkpoint(std::fstream & cp_file)
 
 void swmrssa::Patch::restore(std::fstream & cp_file)
 {
-    for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
-    {
-        (*k)->restore(cp_file);
+    for (auto const& k : pKProcs) {
+        k->restore(cp_file);
     }
 }
 
@@ -189,6 +186,8 @@ double* swmrssa::Patch::pools(steps::wmrssa::PropensityRSSA prssa) const
             return pPoolLB;
         case steps::wmrssa::BOUNDS:
             return pPoolUB;
+        default:
+            AssertLog(false);
     }
 }
 
@@ -200,38 +199,28 @@ void swmrssa::Patch::setupSpecDeps()
     localSpecUpdKProcs.resize(nspecs);
     for (uint slidx = 0; slidx < nspecs; slidx++) {
         uint sgidx = def()->specL2G(slidx);
-        for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
-        {
-            if ((*k)->depSpecPatch(sgidx, this) == true) {
-                localSpecUpdKProcs[slidx].push_back(*k);
+        for (auto const& k : pKProcs) {
+            if (k->depSpecPatch(sgidx, this)) {
+                localSpecUpdKProcs[slidx].push_back(k);
             }
         }
         if (pIComp != nullptr)
         {
-            KProcPVecCI kprocend = pIComp->kprocEnd();
-            for (KProcPVecCI k = pIComp->kprocBegin(); k != kprocend; ++k) {
-                if ((*k)->depSpecPatch(sgidx, this) == true) {
-                    localSpecUpdKProcs[slidx].push_back(*k);
+            for (auto const& k : pIComp->kprocs()) {
+                if (k->depSpecPatch(sgidx, this)) {
+                    localSpecUpdKProcs[slidx].push_back(k);
                 }
             }
         }
         if (pOComp != nullptr)
         {
-            KProcPVecCI kprocend = pOComp->kprocEnd();
-            for (KProcPVecCI k = pOComp->kprocBegin(); k != kprocend; ++k) {
-                if ((*k)->depSpecPatch(sgidx, this) == true) {
-                    localSpecUpdKProcs[slidx].push_back(*k);
+            for (auto const& k : pOComp->kprocs()) {
+                if (k->depSpecPatch(sgidx, this)) {
+                    localSpecUpdKProcs[slidx].push_back(k);
                 }
             }
         }
     }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-std::vector<swmrssa::KProc*> const & swmrssa::Patch::getSpecUpdKProcs(uint slidx)
-{
-    return localSpecUpdKProcs[slidx];
 }
 
 // END

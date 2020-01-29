@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -81,7 +81,7 @@ void Chan::_handleSelfDelete()
     ChanStatePVecCI cstate_end = allstates.end();
     for(ChanStatePVecCI cstate = allstates.begin(); cstate != cstate_end; ++cstate)
     {
-        delete(*cstate);
+        delete *cstate;
     }
 
     pModel->_handleChanDel(this);
@@ -93,7 +93,7 @@ void Chan::_handleSelfDelete()
 
 void Chan::setID(string const & id)
 {
-    AssertLog(pModel != 0);
+    AssertLog(pModel != nullptr);
     if (id == pID) return;
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
@@ -108,14 +108,14 @@ void Chan::setID(string const & id)
 
 ChanState * Chan::getChanState(string const & id) const
 {
-    ChanStatePMapCI cstate = pChanStates.find(id);
+    auto cstate = pChanStates.find(id);
     if (cstate == pChanStates.end())
     {
         ostringstream os;
         os << "Model does not contain channel state with name '" << id << "'";
         ArgErrLog(os.str());
     }
-    AssertLog(cstate->second != 0);
+    AssertLog(cstate->second != nullptr);
     return cstate->second;
 }
 
@@ -123,11 +123,10 @@ ChanState * Chan::getChanState(string const & id) const
 
 std::vector<ChanState *> Chan::getAllChanStates() const
 {
-    ChanStatePVec cstates = ChanStatePVec();
-    ChanStatePMapCI cs_end = pChanStates.end();
-    for (ChanStatePMapCI cs = pChanStates.begin(); cs != cs_end; ++cs)
-    {
-        cstates.push_back(cs->second);
+    ChanStatePVec cstates;
+    cstates.reserve(pChanStates.size());
+    for (auto const& cs: pChanStates) {
+        cstates.push_back(cs.second);
     }
     return cstates;
 }
@@ -149,14 +148,14 @@ void Chan::_checkChanStateID(string const & id) const
 
 void Chan::_handleChanStateIDChange(string const & o, string const & n)
 {
-    ChanStatePMapCI cs_old = pChanStates.find(o);
+    auto cs_old = pChanStates.find(o);
     AssertLog(cs_old != pChanStates.end());
 
     if(o==n) return;
     _checkChanStateID(n);
 
     ChanState * cs = cs_old->second;
-    AssertLog(cs != 0);
+    AssertLog(cs != nullptr);
     pChanStates.erase(cs->getID());
     pChanStates.insert(ChanStatePMap::value_type(n,cs));
 }

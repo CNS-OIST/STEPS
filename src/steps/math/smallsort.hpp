@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -63,12 +63,12 @@ namespace impl {
 
     template <typename A>
     struct small_sort_inplace<0,A> {
-        static void run(A &a) {}
+        static void run(A &/*a*/) {}
     };
 
     template <typename A>
     struct small_sort_inplace<1,A> {
-        static void run(A &a) {}
+        static void run(A &/*a*/) {}
     };
 
     template <typename A>

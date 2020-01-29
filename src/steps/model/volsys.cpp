@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -65,8 +65,6 @@ using steps::util::checkID;
 Volsys::Volsys(string const & id, Model * model)
 : pID(id)
 , pModel(model)
-, pReacs()
-, pDiffs()
 {
     if (pModel == nullptr)
     {
@@ -90,18 +88,12 @@ Volsys::~Volsys()
 
 void Volsys::_handleSelfDelete()
 {
-    std::vector<steps::model::Reac *> allreacs = getAllReacs();
-    ReacPVecCI reac_end = allreacs.end();
-    for(ReacPVecCI reac = allreacs.begin(); reac != reac_end; ++reac)
-    {
-        delete(*reac);
+    for (auto const& reac: getAllReacs()) {
+        delete reac;
     }
 
-    std::vector<steps::model::Diff *> alldiffs = getAllDiffs();
-    DiffPVecCI diff_end = alldiffs.end();
-    for (DiffPVecCI diff = alldiffs.begin(); diff != diff_end; ++diff)
-    {
-        delete(*diff);
+    for (auto const& diff: getAllDiffs()) {
+        delete diff;
     }
     pModel->_handleVolsysDel(this);
     pReacs.clear();
@@ -113,7 +105,7 @@ void Volsys::_handleSelfDelete()
 
 void Volsys::setID(string const & id)
 {
-    AssertLog(pModel != 0);
+    AssertLog(pModel != nullptr);
     if (id == pID) return;
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
@@ -128,14 +120,14 @@ void Volsys::setID(string const & id)
 
 Reac * Volsys::getReac(string const & id) const
 {
-    ReacPMapCI reac = pReacs.find(id);
+    auto reac = pReacs.find(id);
     if (reac == pReacs.end())
     {
         ostringstream os;
         os << "Model does not contain reaction with name '" << id << "'";
         ArgErrLog(os.str());
     }
-    AssertLog(reac->second != 0);
+    AssertLog(reac->second != nullptr);
     return reac->second;
 }
 
@@ -143,20 +135,19 @@ Reac * Volsys::getReac(string const & id) const
 
 void Volsys::delReac(string const & id)
 {
-    Reac * reac = getReac(id);
+    auto reac = getReac(id);
     // Delete reac object since it is owned by c++, not python
-    delete(reac);
+    delete reac;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 std::vector<Reac *> Volsys::getAllReacs() const
 {
-    ReacPVec reacs = ReacPVec();
-    ReacPMapCI r_end = pReacs.end();
-    for (ReacPMapCI r = pReacs.begin(); r != r_end; ++r)
-    {
-        reacs.push_back(r->second);
+    ReacPVec reacs;
+    reacs.reserve(pReacs.size());
+    for (auto const& r: pReacs) {
+      reacs.push_back(r.second);
     }
     return reacs;
 }
@@ -165,14 +156,14 @@ std::vector<Reac *> Volsys::getAllReacs() const
 
 Diff * Volsys::getDiff(string const & id) const
 {
-    DiffPMapCI diff = pDiffs.find(id);
+    auto diff = pDiffs.find(id);
     if (diff == pDiffs.end())
     {
         ostringstream os;
         os << "Model does not contain diffusion with name '" << id << "'";
         ArgErrLog(os.str());
     }
-    AssertLog(diff->second != 0);
+    AssertLog(diff->second != nullptr);
     return diff->second;
 }
 
@@ -180,20 +171,19 @@ Diff * Volsys::getDiff(string const & id) const
 
 void Volsys::delDiff(string const & id)
 {
-    Diff * diff = getDiff(id);
+    auto diff = getDiff(id);
     // delete diff object since it is owned by c++, not python
-    delete(diff);
+    delete diff;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 std::vector<Diff *> Volsys::getAllDiffs() const
 {
-    DiffPVec diffs = DiffPVec();
-    DiffPMapCI d_end = pDiffs.end();
-    for (DiffPMapCI d = pDiffs.begin(); d != d_end; ++d)
-    {
-        diffs.push_back(d->second);
+    DiffPVec diffs;
+    diffs.reserve(pDiffs.size());
+    for (auto const& d: pDiffs) {
+      diffs.push_back(d.second);
     }
     return diffs;
 }
@@ -202,54 +192,31 @@ std::vector<Diff *> Volsys::getAllDiffs() const
 
 std::vector<Spec *> Volsys::getAllSpecs() const
 {
-    SpecPVec specs = SpecPVec();
-    bool first_occ = true;
+    SpecPVec specs;
 
-    ReacPVec reacs = getAllReacs();
-    ReacPVecCI reac_end = reacs.end();
-    for(ReacPVecCI reac = reacs.begin(); reac != reac_end; ++reac)
-    {
-        SpecPVec r_specs = (*reac)->getAllSpecs();
-        SpecPVecCI r_spec_end = r_specs.end();
-        for (SpecPVecCI r_spec = r_specs.begin();
-             r_spec != r_spec_end; ++r_spec)
-        {
-            first_occ = true;
-            SpecPVecCI allspecs_end = specs.end();
-            for (SpecPVecCI allspecs = specs.begin();
-                allspecs != allspecs_end; ++allspecs)
-            {
-                if ((*r_spec) == (*allspecs))
-                {
+    for (auto const& reac: getAllReacs()) {
+        for (auto const& r_spec: reac->getAllSpecs()) {
+            bool first_occ = true;
+            for (auto const& allspecs: specs) {
+                if (r_spec == allspecs) {
                     first_occ = false;
                     break;
                 }
             }
-            if (first_occ == true) specs.push_back(*r_spec);
+            if (first_occ) specs.push_back(r_spec);
         }
     }
 
-    DiffPVec diffs = getAllDiffs();
-    DiffPVecCI diff_end = diffs.end();
-    for(DiffPVecCI diff = diffs.begin();diff != diff_end; ++diff)
-    {
-        SpecPVec d_specs = (*diff)->getAllSpecs();
-        SpecPVecCI d_spec_end = d_specs.end();
-        for (SpecPVecCI d_spec = d_specs.begin();
-            d_spec != d_spec_end; ++d_spec)
-        {
-            first_occ = true;
-            SpecPVecCI allspecs_end = specs.end();
-            for (SpecPVecCI allspecs = specs.begin();
-                allspecs != allspecs_end; ++allspecs)
-            {
-                if ((*d_spec) == (*allspecs))
-                {
+    for (auto const& diff: getAllDiffs()) {
+        for (auto const & d_spec: diff->getAllSpecs()) {
+            bool first_occ = true;
+            for (auto const& allspecs: specs) {
+                if (d_spec == allspecs) {
                     first_occ = false;
                     break;
                 }
             }
-            if (first_occ == true) specs.push_back(*d_spec);
+            if (first_occ) specs.push_back(d_spec);
         }
     }
 
@@ -273,14 +240,14 @@ void Volsys::_checkReacID(string const & id) const
 
 void Volsys::_handleReacIDChange(string const & o, string const & n)
 {
-    ReacPMapCI r_old = pReacs.find(o);
+    auto r_old = pReacs.find(o);
     AssertLog(r_old != pReacs.end());
 
     if(o==n) return;
     _checkReacID(n);
 
     Reac * r = r_old->second;
-    AssertLog(r != 0);
+    AssertLog(r != nullptr);
     pReacs.erase(r->getID());
     pReacs.insert(ReacPMap::value_type(n,r));
 }
@@ -319,14 +286,14 @@ void Volsys::_checkDiffID(string const & id) const
 
 void Volsys::_handleDiffIDChange(string const & o, string const & n)
 {
-    DiffPMapCI d_old = pDiffs.find(o);
+    auto d_old = pDiffs.find(o);
     AssertLog(d_old != pDiffs.end());
 
     if (o==n) return;
     _checkDiffID(n);
 
     Diff * d = d_old->second;
-    AssertLog(d != 0);
+    AssertLog(d != nullptr);
     pDiffs.erase(d->getID());
     pDiffs.insert(DiffPMap::value_type(n,d));
 }
@@ -352,53 +319,34 @@ void Volsys::_handleDiffDel(Diff * diff)
 
 void Volsys::_handleSpecDelete(Spec * spec)
 {
-    std::vector<std::string> reacs_del = std::vector<std::string>();
-    ReacPMapCI reac_end = pReacs.end();
-    for (ReacPMapCI reac = pReacs.begin(); reac != reac_end; ++reac)
-    {
-        SpecPVec specs = (reac->second->getAllSpecs());
-        SpecPVecCI r_spec_end = specs.end();
-        for (SpecPVecCI r_spec = specs.begin();
-             r_spec != r_spec_end; ++r_spec)
-        {
-            if ((*r_spec) == spec)
-            {
-                reacs_del.push_back(reac->second->getID());
+  {
+    std::vector<std::string> reacs_del;
+    for (auto const& reac: pReacs) {
+      for (auto const& r_spec: reac.second->getAllSpecs()) {
+        if (r_spec == spec) {
+          reacs_del.push_back(reac.second->getID());
+          break;
+        }
+      }
+    }
+    for (auto const &r_del: reacs_del) {
+      delReac(r_del);
+    }
+  }
+  {
+    std::vector<std::string> diffs_del;
+    for (auto const& diff: pDiffs) {
+        for (auto const& d_spec: diff.second->getAllSpecs()) {
+            if (d_spec == spec) {
+                diffs_del.push_back(diff.second->getID());
                 break;
             }
         }
     }
-
-    std::vector<std::string> diffs_del = std::vector<std::string>();
-    DiffPMapCI diff_end = pDiffs.end();
-    for (DiffPMapCI diff = pDiffs.begin(); diff != diff_end; ++diff)
-    {
-        SpecPVec specs = (diff->second->getAllSpecs());
-        SpecPVecCI d_spec_end = specs.end();
-        for (SpecPVecCI d_spec = specs.begin();
-             d_spec != d_spec_end; ++d_spec)
-        {
-            if ((*d_spec) == spec)
-            {
-                diffs_del.push_back(diff->second->getID());
-                break;
-            }
-        }
+    for (auto const& d_del: diffs_del) {
+        delDiff(d_del);
     }
-
-    std::vector<std::string>::const_iterator r_del_end = reacs_del.end();
-    for (std::vector<std::string>::const_iterator r_del = reacs_del.begin();
-         r_del != r_del_end; ++r_del)
-    {
-        delReac(*r_del);
-    }
-
-    std::vector<std::string>::const_iterator d_del_end = diffs_del.end();
-    for (std::vector<std::string>::const_iterator d_del = diffs_del.begin();
-         d_del != d_del_end; ++d_del)
-    {
-        delDiff(*d_del);
-    }
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -406,8 +354,8 @@ void Volsys::_handleSpecDelete(Spec * spec)
 Reac * Volsys::_getReac(uint lidx) const
 {
     AssertLog(lidx < pReacs.size());
-    std::map<std::string, Reac *>::const_iterator rc_it = pReacs.begin();
-    for (uint i=0; i< lidx; ++i) ++rc_it;
+    auto rc_it = pReacs.begin();
+    std::advance(rc_it, lidx);
     return rc_it->second;
 }
 
@@ -416,8 +364,8 @@ Reac * Volsys::_getReac(uint lidx) const
 Diff * Volsys::_getDiff(uint lidx) const
 {
     AssertLog(lidx < pDiffs.size());
-    std::map<std::string, Diff *>::const_iterator df_it = pDiffs.begin();
-    for (uint i=0; i< lidx; ++i) ++df_it;
+    auto df_it = pDiffs.begin();
+    std::advance(df_it, lidx);
     return df_it->second;
 }
 

@@ -43,17 +43,13 @@
 // logging
 #include "easylogging++.h"
 
-namespace stetmesh = steps::tetmesh;
+namespace steps {
+namespace tetmesh {
 
-////////////////////////////////////////////////////////////////////////////////
-
-stetmesh::DiffBoundary::DiffBoundary(std::string id, Tetmesh * container,
-            std::vector<uint> const & tris)
+DiffBoundary::DiffBoundary(std::string id, Tetmesh * container,
+            std::vector<index_t> const & tris)
 : pID(std::move(id))
 , pTetmesh(container)
-, pIComp(nullptr)
-, pOComp(nullptr)
-, pTrisN(0)
 {
     if (pTetmesh == nullptr) {
         ArgErrLog("No mesh provided to Diffusion Boundary initializer function.");
@@ -64,11 +60,11 @@ stetmesh::DiffBoundary::DiffBoundary(std::string id, Tetmesh * container,
     }
 
     // The maximum triangle index in tetrahedral mesh
-    uint maxidx = (pTetmesh->countTris() -1);
+    const auto maxidx = (pTetmesh->countTris() -1);
 
-    std::unordered_set<uint> visited_tris(tris.size());
-    for (uint tri: tris) {
-        if (visited_tris.count(tri) != 0u) {
+    std::unordered_set<index_t> visited_tris(tris.size());
+    for (auto tri: tris) {
+        if (visited_tris.find(tri) != visited_tris.end()) {
             continue;
         }
         visited_tris.insert(tri);
@@ -85,14 +81,14 @@ stetmesh::DiffBoundary::DiffBoundary(std::string id, Tetmesh * container,
             ArgErrLog("Triangle with index " + std::to_string(tri) + " already belongs to a diffusion boundary.");
         }
 
-        const int *tri_tets = pTetmesh->_getTriTetNeighb(tri);
+        const auto *tri_tets = pTetmesh->_getTriTetNeighb(tri);
 
-        if (tri_tets[0] == -1 || tri_tets[1] == -1) {
+        if (tri_tets[0] == UNKNOWN_TET || tri_tets[1] == UNKNOWN_TET) {
             ArgErrLog("Triangle with index " + std::to_string(tri) + " is on mesh surface.");
         }
 
-        stetmesh::TmComp *tri_icomp = pTetmesh->getTetComp(tri_tets[0]);
-        stetmesh::TmComp *tri_ocomp = pTetmesh->getTetComp(tri_tets[1]);
+        auto *tri_icomp = pTetmesh->getTetComp(tri_tets[0]);
+        auto *tri_ocomp = pTetmesh->getTetComp(tri_tets[1]);
 
         if (tri_icomp == nullptr || tri_ocomp == nullptr) {
             ArgErrLog(
@@ -125,7 +121,7 @@ stetmesh::DiffBoundary::DiffBoundary(std::string id, Tetmesh * container,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stetmesh::DiffBoundary::setID(std::string const & id)
+void DiffBoundary::setID(std::string const & id)
 {
     AssertLog(pTetmesh != nullptr);
     if (id == pID) {
@@ -142,12 +138,10 @@ void stetmesh::DiffBoundary::setID(std::string const & id)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<bool> stetmesh::DiffBoundary::isTriInside(std::vector<uint> const &tris) const
+std::vector<bool> DiffBoundary::isTriInside(std::vector<index_t> const &tris) const
 {
     return steps::util::map_membership(tris, pTri_indices);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-
-// END
+} // namespace tetmesh
+} // namespace steps

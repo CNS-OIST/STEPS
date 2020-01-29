@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -64,11 +64,9 @@ swmd::Reac::Reac(ssolver::Reacdef * rdef, swmd::Comp * comp)
 : 
  pReacdef(rdef)
 , pComp(comp)
-, pUpdVec()
-, pCcst(0.0)
 {
-    AssertLog(pReacdef != 0);
-    AssertLog(pComp != 0);
+    AssertLog(pReacdef != nullptr);
+    AssertLog(pComp != nullptr);
     uint lridx = pComp->def()->reacG2L(pReacdef->gidx());
     double kcst = pComp->def()->kcst(lridx);
     pCcst = comp_ccst(kcst, pComp->def()->vol(), pReacdef->order());
@@ -77,21 +75,20 @@ swmd::Reac::Reac(ssolver::Reacdef * rdef, swmd::Comp * comp)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmd::Reac::~Reac()
-= default;
+swmd::Reac::~Reac() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void swmd::Reac::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&pCcst, sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pCcst), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void swmd::Reac::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&pCcst, sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pCcst), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -128,42 +125,29 @@ void swmd::Reac::resetCcst()
 void swmd::Reac::setupDeps()
 {
     SchedIDXSet updset;
-    ssolver::gidxTVecCI sbgn = defr()->bgnUpdColl();
-    ssolver::gidxTVecCI send = defr()->endUpdColl();
 
     // Search in local compartment.
-    KProcPVecCI kprocend = pComp->kprocEnd();
-    for (KProcPVecCI k = pComp->kprocBegin(); k != kprocend; ++k)
-    {
-        for (ssolver::gidxTVecCI s = sbgn; s != send; ++s)
-        {
-            if ((*k)->depSpecComp(*s, pComp) == true)
-                updset.insert((*k)->schedIDX());
+    for (auto const& k : pComp->kprocs()) {
+        for (auto const& s : defr()->updColl()) {
+            if (k->depSpecComp(s, pComp))
+                updset.insert(k->schedIDX());
         }
     }
 
     // Search in neighbouring patches.
-    for (PatchPVecCI p = pComp->beginIPatches(); p != pComp->endIPatches(); ++p)
-    {
-        kprocend = (*p)->kprocEnd();
-        for (KProcPVecCI k = (*p)->kprocBegin(); k != kprocend; ++k)
-        {
-            for (ssolver::gidxTVecCI s = sbgn; s != send; ++s)
-            {
-                if ((*k)->depSpecComp(*s, pComp) == true)
-                    updset.insert((*k)->schedIDX());
+    for (auto const& p : pComp->ipatches()) {
+        for (auto const& k : p->kprocs()) {
+            for (auto const& s : defr()->updColl()) {
+                if (k->depSpecComp(s, pComp))
+                    updset.insert(k->schedIDX());
             }
         }
     }
-    for (PatchPVecCI p = pComp->beginOPatches(); p != pComp->endOPatches(); ++p)
-    {
-        kprocend = (*p)->kprocEnd();
-        for (KProcPVecCI k = (*p)->kprocBegin(); k != kprocend; ++k)
-        {
-            for (ssolver::gidxTVecCI s = sbgn; s != send; ++s)
-            {
-                if ((*k)->depSpecComp(*s, pComp) == true)
-                    updset.insert((*k)->schedIDX());
+    for (auto const& p : pComp->opatches()) {
+        for (auto const& k : p->kprocs()) {
+            for (auto const& s : defr()->updColl()) {
+                if (k->depSpecComp(s, pComp))
+                    updset.insert(k->schedIDX());
             }
         }
     }
@@ -182,7 +166,7 @@ bool swmd::Reac::depSpecComp(uint gidx, swmd::Comp * comp)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool swmd::Reac::depSpecPatch(uint gidx, swmd::Patch * patch)
+bool swmd::Reac::depSpecPatch(uint /*gidx*/, swmd::Patch * /*patch*/)
 {
     return false;
 }
@@ -234,8 +218,7 @@ double swmd::Reac::rate() const
                 }
                 default:
                 {
-                    AssertLog(0);
-                    return 0.0;
+                    AssertLog(false);
                 }
             }
         }
@@ -256,7 +239,7 @@ std::vector<uint> const & swmd::Reac::apply()
     uint nspecs = cdef->countSpecs();
     for (uint i=0; i < nspecs; ++i)
     {
-        if (cdef->clamped(i) == true) continue;
+        if (cdef->clamped(i)) continue;
         int j = upd_vec[i];
         if (j == 0) continue;
         int nc = static_cast<int>(local[i]) + j;

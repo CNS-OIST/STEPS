@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -33,14 +33,28 @@
 // STEPS headers.
 #include "steps/common.h"
 
- namespace steps {
- namespace mpi {
+namespace steps {
+namespace mpi {
 
-enum MsgTag{OPSPLIT_MOLECULE_CHANGE = 10000, OPSPLIT_MOLECULE_CHANGE_COMPLETE = 10001, OPSPLIT_COUNT_SYNC_INFO = 10100,
-OPSPLIT_COUNT_SYNC_DATA = 10101, OPSPLIT_SYNC_COMPLETE = 10102, OPSPLIT_KPROC_UPD = 10200, OPSPLIT_UPD_COMPLETE = 10201};
+extern bool internally_initialized;
 
+enum MsgTag {
+  OPSPLIT_MOLECULE_CHANGE = 10000,
+  OPSPLIT_MOLECULE_CHANGE_COMPLETE = 10001,
+  OPSPLIT_COUNT_SYNC_INFO = 10100,
+  OPSPLIT_COUNT_SYNC_DATA = 10101,
+  OPSPLIT_SYNC_COMPLETE = 10102,
+  OPSPLIT_KPROC_UPD = 10200,
+  OPSPLIT_UPD_COMPLETE = 10201
+};
 
-}
-}
+#ifdef STEPS_USE_64BITS_INDICES
+#define MPI_STEPS_INDEX MPI_UNSIGNED_LONG
+#else
+#define MPI_STEPS_INDEX MPI_UNSIGNED
+#endif
+
+} // namespace mpi
+} // namespace steps
 
 #endif

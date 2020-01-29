@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -28,6 +28,9 @@ import numpy as np
 import random
 
 import steps.geom
+from steps.geom import INDEX_DTYPE
+from steps.geom import UNKNOWN_TET
+from steps.geom import UNKNOWN_TRI
 import steps.utilities.meshctrl as smeshctrl
 
 class VisualCompMesh(gl.GLMeshItem):
@@ -62,12 +65,12 @@ class VisualCompMesh(gl.GLMeshItem):
         for p in patches:
             surface_tris.extend(steps.geom.castToTmPatch(p).getAllTriIndices())
         
-        surface_tris = np.array(surface_tris, dtype = np.uint32)
+        surface_tris = np.array(surface_tris, dtype = INDEX_DTYPE)
         
         
         v_set_size = steps_mesh.getTriVerticesSetSizeNP(surface_tris)
-        tris_data = np.zeros(surface_tris.size * 3, dtype = np.uint32)
-        v_set = np.zeros(v_set_size, dtype = np.uint32)
+        tris_data = np.zeros(surface_tris.size * 3, dtype = INDEX_DTYPE)
+        v_set = np.zeros(v_set_size, dtype = INDEX_DTYPE)
         verts_data = np.zeros(v_set_size * 3)
         steps_mesh.getTriVerticesMappingSetNP(surface_tris, tris_data, v_set)
         steps_mesh.getBatchVerticesNP(v_set, verts_data)
@@ -109,10 +112,10 @@ class VisualPatchMesh(gl.GLMeshItem):
         self.bound_min = [v * display.scale for v in tmpatch.getBoundMin()]
         
         patch_surface = tmpatch.getAllTriIndices()
-        patch_surface = np.array(patch_surface, dtype = np.uint32)
+        patch_surface = np.array(patch_surface, dtype = INDEX_DTYPE)
         v_set_size = steps_mesh.getTriVerticesSetSizeNP(patch_surface)
-        tris_data = np.zeros(patch_surface.size * 3, dtype = np.uint32)
-        v_set = np.zeros(v_set_size, dtype = np.uint32)
+        tris_data = np.zeros(patch_surface.size * 3, dtype = INDEX_DTYPE)
+        v_set = np.zeros(v_set_size, dtype = INDEX_DTYPE)
         verts_data = np.zeros(v_set_size * 3)
         steps_mesh.getTriVerticesMappingSetNP(patch_surface, tris_data, v_set)
         steps_mesh.getBatchVerticesNP(v_set, verts_data)

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -50,27 +50,24 @@ namespace ssolver = steps::solver;
 
 stex::Patch::Patch(ssolver::Patchdef * patchdef)
 : pPatchdef(patchdef)
-, pTris()
-, pArea(0.0)
 {
-    AssertLog(pPatchdef != 0);
+    AssertLog(pPatchdef != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Patch::~Patch()
-= default;
+stex::Patch::~Patch() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Patch::checkpoint(std::fstream & cp_file)
+void stex::Patch::checkpoint(std::fstream & /*cp_file*/)
 {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Patch::restore(std::fstream & cp_file)
+void stex::Patch::restore(std::fstream & /*cp_file*/)
 {
     // reserve
 }
@@ -98,20 +95,21 @@ void stex::Patch::modCount(uint slidx, double count)
 
 stex::Tri * stex::Patch::pickTriByArea(double rand01) const
 {
-    if (countTris() == 0) { return nullptr;
-}
+    if (countTris() == 0) {
+        return nullptr;
+    }
     if (countTris() == 1) return pTris[0];
 
     double accum = 0.0;
     double selector = rand01 * area();
-    TriPVecCI t_end = endTri();
-    for (TriPVecCI t = bgnTri(); t != t_end; ++t)
-    {
-        accum += (*t)->area();
-        if (selector <= accum) return *t;
+    for (auto const &t : tris()) {
+        accum += t->area();
+        if (selector <= accum) {
+            return t;
+        }
     }
 
-    return *(t_end-1);
+    return *(endTri() - 1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

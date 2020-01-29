@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -90,7 +90,7 @@ public:
     /// Return the channel ID.
     ///
     /// \return ID of the channel.
-    std::string getID() const
+    inline const std::string& getID() const noexcept
     { return pID; }
 
     /// Set or change the species ID.
@@ -101,7 +101,7 @@ public:
     /// Return a pointer to the parent model.
     ///
     /// \return Pointer to the parent model.
-    Model * getModel() const
+    inline Model * getModel() const noexcept
     { return pModel; }
 
     ////////////////////////////////////////////////////////////////////////

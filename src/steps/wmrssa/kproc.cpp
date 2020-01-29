@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -32,53 +32,28 @@
 #include "steps/common.h"
 #include "steps/wmrssa/kproc.hpp"
 
+// logging
+#include "easylogging++.h"
+#include "steps/error.hpp"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace swmrssa = steps::wmrssa;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmrssa::KProc::KProc()
-: rExtent(0)
-// , pFlags(0)
-, pSchedIDX(0)
-{
-
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-swmrssa::KProc::~KProc()
-= default;
-
-////////////////////////////////////////////////////////////////////////////////
-
-uint swmrssa::KProc::getExtent() const
-{
-    return rExtent;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void swmrssa::KProc::resetExtent()
-{
-    rExtent = 0;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 steps::solver::Reacdef * swmrssa::KProc::defr() const
 {
     // Should only be called on derived object
-    assert (false);
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 steps::solver::SReacdef * swmrssa::KProc::defsr() const
 {
-    // Should olny be called on derived object
-    assert (false);
+    // Should only be called on derived object
+    AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

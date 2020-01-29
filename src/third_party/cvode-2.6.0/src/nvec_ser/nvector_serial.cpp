@@ -67,12 +67,12 @@ N_Vector N_VNewEmpty_Serial(long int length)
 
   /* Create vector */
   v = NULL;
-  v = (N_Vector) malloc(sizeof *v);
+  v = static_cast<N_Vector> (malloc(sizeof *v));
   if (v == NULL) return(NULL);
   
   /* Create vector operation structure */
   ops = NULL;
-  ops = (N_Vector_Ops) malloc(sizeof(struct _generic_N_Vector_Ops));
+  ops = static_cast<N_Vector_Ops> (malloc(sizeof(struct _generic_N_Vector_Ops)));
   if (ops == NULL) { free(v); return(NULL); }
 
   ops->nvclone           = N_VClone_Serial;
@@ -103,7 +103,7 @@ N_Vector N_VNewEmpty_Serial(long int length)
 
   /* Create content */
   content = NULL;
-  content = (N_VectorContent_Serial) malloc(sizeof(struct _N_VectorContent_Serial));
+  content = static_cast<N_VectorContent_Serial> (malloc(sizeof(struct _N_VectorContent_Serial)));
   if (content == NULL) { free(ops); free(v); return(NULL); }
 
   content->length   = length;
@@ -135,7 +135,7 @@ N_Vector N_VNew_Serial(long int length)
 
     /* Allocate memory */
     data = NULL;
-    data = (realtype *) malloc(length * sizeof(realtype));
+    data = static_cast<realtype *> (malloc(length * sizeof(realtype)));
     if(data == NULL) { N_VDestroy_Serial(v); return(NULL); }
 
     /* Attach data */
@@ -180,7 +180,7 @@ N_Vector *N_VCloneVectorArray_Serial(int count, N_Vector w)
   if (count <= 0) return(NULL);
 
   vs = NULL;
-  vs = (N_Vector *) malloc(count * sizeof(N_Vector));
+  vs = static_cast<N_Vector *> (malloc(count * sizeof(N_Vector)));
   if(vs == NULL) return(NULL);
 
   for (j = 0; j < count; j++) {
@@ -207,7 +207,7 @@ N_Vector *N_VCloneVectorArrayEmpty_Serial(int count, N_Vector w)
   if (count <= 0) return(NULL);
 
   vs = NULL;
-  vs = (N_Vector *) malloc(count * sizeof(N_Vector));
+  vs = static_cast<N_Vector *> (malloc(count * sizeof(N_Vector)));
   if(vs == NULL) return(NULL);
 
   for (j = 0; j < count; j++) {
@@ -281,12 +281,12 @@ N_Vector N_VCloneEmpty_Serial(N_Vector w)
 
   /* Create vector */
   v = NULL;
-  v = (N_Vector) malloc(sizeof *v);
+  v = static_cast<N_Vector> (malloc(sizeof *v));
   if (v == NULL) return(NULL);
 
   /* Create vector operation structure */
   ops = NULL;
-  ops = (N_Vector_Ops) malloc(sizeof(struct _generic_N_Vector_Ops));
+  ops = static_cast<N_Vector_Ops> (malloc(sizeof(struct _generic_N_Vector_Ops)));
   if (ops == NULL) { free(v); return(NULL); }
   
   ops->nvclone           = w->ops->nvclone;
@@ -317,7 +317,7 @@ N_Vector N_VCloneEmpty_Serial(N_Vector w)
 
   /* Create content */
   content = NULL;
-  content = (N_VectorContent_Serial) malloc(sizeof(struct _N_VectorContent_Serial));
+  content = static_cast<N_VectorContent_Serial> (malloc(sizeof(struct _N_VectorContent_Serial)));
   if (content == NULL) { free(ops); free(v); return(NULL); }
 
   content->length   = NV_LENGTH_S(w);
@@ -348,7 +348,7 @@ N_Vector N_VClone_Serial(N_Vector w)
 
     /* Allocate memory */
     data = NULL;
-    data = (realtype *) malloc(length * sizeof(realtype));
+    data = static_cast<realtype *> (malloc(length * sizeof(realtype)));
     if(data == NULL) { N_VDestroy_Serial(v); return(NULL); }
 
     /* Attach data */
@@ -383,7 +383,7 @@ void N_VSpace_Serial(N_Vector v, long int *lrw, long int *liw)
 
 realtype *N_VGetArrayPointer_Serial(N_Vector v)
 {
-  return((realtype *) NV_DATA_S(v));
+  return NV_DATA_S(v);
 }
 
 void N_VSetArrayPointer_Serial(realtype *v_data, N_Vector v)

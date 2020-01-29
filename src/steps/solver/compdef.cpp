@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -52,34 +52,34 @@ namespace ssolver=steps::solver;
 
 ssolver::Compdef::Compdef(Statedef * sd, uint idx, steps::wm::Comp * c)
 : pStatedef(sd)
-, pIdx(idx)
 , pName()
 , pVol()
+, pIdx(idx)
 , pCvsys()
 , pSetupRefsdone(false)
 , pSetupIndsdone(false)
-, pPoolFlags(nullptr)
-, pPoolCount(nullptr)
-, pReacKcst(nullptr)
-, pDiffDcst(nullptr)
-, pReacFlags(nullptr)
 , pSpecsN(0)
 , pSpec_G2L(nullptr)
 , pSpec_L2G(nullptr)
+, pPoolCount(nullptr)
+, pPoolFlags(nullptr)
 , pReacsN(0)
 , pReac_G2L(nullptr)
 , pReac_L2G(nullptr)
+, pReacKcst(nullptr)
+, pReacFlags(nullptr)
 , pReac_DEP_Spec(nullptr)
 , pReac_LHS_Spec(nullptr)
 , pReac_UPD_Spec(nullptr)
 , pDiffsN(0)
 , pDiff_G2L(nullptr)
 , pDiff_L2G(nullptr)
+, pDiffDcst(nullptr)
 , pDiff_DEP_Spec(nullptr)
 , pDiff_LIG(nullptr)
 {
-    AssertLog(pStatedef != 0);
-    AssertLog(c != 0);
+    AssertLog(pStatedef != nullptr);
+    AssertLog(c != nullptr);
 
     pName = c->getID();
     pVol = c->getVol();
@@ -149,20 +149,20 @@ ssolver::Compdef::~Compdef()
 
 void ssolver::Compdef::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)pPoolCount, sizeof(double) * pSpecsN);
-    cp_file.write((char*)pPoolFlags, sizeof(uint) * pSpecsN);
-    cp_file.write((char*)pReacKcst, sizeof(double) * pReacsN);
-    cp_file.write((char*)pReacFlags, sizeof(uint) * pReacsN);
+    cp_file.write(reinterpret_cast<char*>(pPoolCount), sizeof (double) * pSpecsN);
+    cp_file.write(reinterpret_cast<char*>(pPoolFlags), sizeof (uint) * pSpecsN);
+    cp_file.write(reinterpret_cast<char*>(pReacKcst), sizeof (double) * pReacsN);
+    cp_file.write(reinterpret_cast<char*>(pReacFlags), sizeof (uint) * pReacsN);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void ssolver::Compdef::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)pPoolCount, sizeof(double) * pSpecsN);
-    cp_file.read((char*)pPoolFlags, sizeof(uint) * pSpecsN);
-    cp_file.read((char*)pReacKcst, sizeof(double) * pReacsN);
-    cp_file.read((char*)pReacFlags, sizeof(uint) * pReacsN);
+    cp_file.read(reinterpret_cast<char*>(pPoolCount), sizeof (double) * pSpecsN);
+    cp_file.read(reinterpret_cast<char*>(pPoolFlags), sizeof (uint) * pSpecsN);
+    cp_file.read(reinterpret_cast<char*>(pReacKcst), sizeof (double) * pReacsN);
+    cp_file.read(reinterpret_cast<char*>(pReacFlags), sizeof (uint) * pReacsN);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -176,9 +176,9 @@ void ssolver::Compdef::setup_references()
     const uint ngreacs = pStatedef->countReacs();
     const uint ngdiffs = pStatedef->countDiffs();
 
-    if (ngspecs == 0) AssertLog(pSpec_G2L == 0);
-    if (ngreacs == 0) AssertLog(pReac_G2L == 0);
-    if (ngdiffs == 0) AssertLog(pDiff_G2L == 0);
+    if (ngspecs == 0) AssertLog(pSpec_G2L == nullptr);
+    if (ngreacs == 0) AssertLog(pReac_G2L == nullptr);
+    if (ngdiffs == 0) AssertLog(pDiff_G2L == nullptr);
 
 
     // Importantly  assumes that all species from patch sreacs have
@@ -187,26 +187,19 @@ void ssolver::Compdef::setup_references()
 
     // set up local reac indices ////vsys also has _countReacs and Reac * _getReac(lidx)
     // The local reacs index count (pReacsN) starts at 0.
-    std::set<std::string>::const_iterator v_end = pCvsys.end();
-    for(std::set<std::string>::const_iterator v = pCvsys.begin();
-        v != v_end; ++v)
-    {
-        std::map<std::string, steps::model::Reac *> vreacs = pStatedef->model()->getVolsys(*v)->_getAllReacs();
+    for (auto const& v: pCvsys) {
+        auto vreacs = pStatedef->model()->getVolsys(v)->_getAllReacs();
         if (ngreacs == 0) AssertLog(vreacs.empty() == true);
-        std::map<std::string, steps::model::Reac*>::const_iterator r_end = vreacs.end();
-           for (std::map<std::string, steps::model::Reac*>::const_iterator r = vreacs.begin(); r != r_end; ++r)
-           {
-               uint gidx = pStatedef->getReacIdx((r->second));
-               AssertLog(gidx < ngreacs);
-               if (pReac_G2L[gidx] != LIDX_UNDEFINED) continue;
-               pReac_G2L[gidx] = pReacsN++;
-          }
-           std::map<std::string, steps::model::Diff *> vdiffs = pStatedef->model()->getVolsys(*v)->_getAllDiffs();
+        for (auto const& r: vreacs) {
+            uint gidx = pStatedef->getReacIdx(r.second);
+            AssertLog(gidx < ngreacs);
+            if (pReac_G2L[gidx] != LIDX_UNDEFINED) continue;
+            pReac_G2L[gidx] = pReacsN++;
+        }
+        auto const& vdiffs = pStatedef->model()->getVolsys(v)->_getAllDiffs();
         if (ngdiffs == 0) AssertLog(vdiffs.empty() == true);
-           std::map<std::string, steps::model::Diff*>::const_iterator d_end = vdiffs.end();
-           for (std::map<std::string, steps::model::Diff*>::const_iterator d = vdiffs.begin(); d != d_end; ++d)
-           {
-               uint gidx = pStatedef->getDiffIdx((d->second));
+           for (auto const& d: vdiffs) {
+               uint gidx = pStatedef->getDiffIdx(d.second);
                AssertLog(gidx < ngdiffs);
                if (pDiff_G2L[gidx] != LIDX_UNDEFINED) continue;
                pDiff_G2L[gidx] = pDiffsN++;
@@ -222,7 +215,7 @@ void ssolver::Compdef::setup_references()
         if (pReac_G2L[r] == LIDX_UNDEFINED) { continue;
 }
         Reacdef * rdef = pStatedef->reacdef(r);
-        AssertLog(rdef != 0);
+        AssertLog(rdef != nullptr);
         for (uint s = 0; s < ngspecs; ++s)
         {
             if (rdef->reqspec(s) == true) { addSpec(s);
@@ -286,7 +279,7 @@ void ssolver::Compdef::setup_indices()
         std::fill_n(pReac_DEP_Spec, arrsize, 0);
         std::fill_n(pReac_LHS_Spec, arrsize, 0);
         std::fill_n(pReac_UPD_Spec, arrsize, 0);
-        for(uint ri = 0; ri < pReacsN; ++ri)
+        for (uint ri = 0; ri < pReacsN; ++ri)
         {
             Reacdef * rdef = reacdef(ri);
             for (uint si = 0; si < ngspecs; ++si)
@@ -378,12 +371,12 @@ void ssolver::Compdef::setup_indices()
 void ssolver::Compdef::addIPatchdef(ssolver::Patchdef * p)
 {
     // Make some checks.
-    AssertLog(p != 0);
+    AssertLog(p != nullptr);
     AssertLog(p->ocompdef() == this);
     // Check whether it's already included.
-    ssolver::PatchDefPVecI ip_end = pIPatches.end();
+    auto ip_end = pIPatches.end();
     if (std::find(pIPatches.begin(), ip_end, p) != ip_end) return;
-    ssolver::PatchDefPVecI op_end = pOPatches.end();
+    auto op_end = pOPatches.end();
     AssertLog(std::find(pOPatches.begin(), op_end, p) == op_end);
     // Include.
     pIPatches.push_back(p);
@@ -394,12 +387,12 @@ void ssolver::Compdef::addIPatchdef(ssolver::Patchdef * p)
 void ssolver::Compdef::addOPatchdef(ssolver::Patchdef * p)
 {
     // Make some checks.
-    AssertLog(p != 0);
+    AssertLog(p != nullptr);
     AssertLog(p->icompdef() == this);
     // Check whether it's already included.
-    ssolver::PatchDefPVecI op_end = pOPatches.end();
+    auto op_end = pOPatches.end();
     if (std::find(pOPatches.begin(), op_end, p) != op_end) return;
-    ssolver::PatchDefPVecI ip_end = pIPatches.end();
+    auto ip_end = pIPatches.end();
     AssertLog(std::find(pIPatches.begin(), ip_end, p) == ip_end);
     // Include.
     pOPatches.push_back(p);
@@ -410,25 +403,10 @@ void ssolver::Compdef::addOPatchdef(ssolver::Patchdef * p)
 void ssolver::Compdef::addSpec(uint gidx)
 {
     AssertLog(pSetupIndsdone == false);
-    AssertLog(pStatedef->specdef(gidx) != 0);
+    AssertLog(pStatedef->specdef(gidx) != nullptr);
     if (pSpec_G2L[gidx] != LIDX_UNDEFINED) { return;
 }
     pSpec_G2L[gidx] = pSpecsN++;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-double ssolver::Compdef::vol() const
-{
-    return pVol;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-std::string const ssolver::Compdef::name() const
-{
-    return pName;
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -505,7 +483,7 @@ uint * ssolver::Compdef::reac_lhs_end(uint rlidx) const
 int * ssolver::Compdef::reac_upd_bgn(uint rlidx) const
 {
     AssertLog(rlidx < pReacsN);
-    return pReac_UPD_Spec + ((rlidx) * pSpecsN);
+    return pReac_UPD_Spec + (rlidx * pSpecsN);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -514,20 +492,20 @@ int * ssolver::Compdef::reac_upd_bgn(uint rlidx) const
 int * ssolver::Compdef::reac_upd_end(uint rlidx) const
 {
     AssertLog(rlidx < pReacsN);
-    return pReac_UPD_Spec + ((rlidx+1) * pSpecsN);
+    return pReac_UPD_Spec + ((rlidx + 1) * pSpecsN);
 }
 ////////////////////////////////////////////////////////////////////////////////
 
 int ssolver::Compdef::reac_dep(uint rlidx, uint slidx) const
 {
-    return pReac_DEP_Spec[slidx + ((rlidx) * pSpecsN)];
+    return pReac_DEP_Spec[slidx + (rlidx * pSpecsN)];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint ssolver::Compdef::diff_dep(uint dlidx, uint slidx) const
 {
-    return pDiff_DEP_Spec[slidx + ((dlidx) * pSpecsN)];
+    return pDiff_DEP_Spec[slidx + (dlidx * pSpecsN)];
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -112,7 +112,7 @@ public:
     /// Return the GHK current ID.
     ///
     /// \return ID of the GHK current.
-    std::string getID() const
+    const std::string& getID() const
     { return pID; }
 
     /// Set or change the GHK current ID.
@@ -198,7 +198,7 @@ public:
     /// Return whether user has supplied conductance information or not.
     ///
     /// \Return Conductance information supplied bool
-    bool _infosupplied() const
+    bool _infosupplied() const noexcept
     { return pInfoSupplied; }
 
     double _G() const;
@@ -214,13 +214,13 @@ public:
     // INTERNAL (NON-EXPOSED) OPERATIONS
     ////////////////////////////////////////////////////////////////////////
     // Real flux flag
-    bool _realflux() const
+    bool _realflux() const noexcept
     { return pRealFlux; }
 
-    double _voconc() const
+    double _voconc() const noexcept
     { return pVirtual_conc; }
 
-    double _vshift() const
+    double _vshift() const noexcept
     { return pVshift; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -230,7 +230,7 @@ private:
     ////////////////////////////////////////////////////////////////////////
 
     std::string                         pID;
-    Model                             * pModel;
+    Model                             * pModel{nullptr};
     Surfsys                           * pSurfsys;
     ChanState                         * pChanState;
     Spec                              * pIon;

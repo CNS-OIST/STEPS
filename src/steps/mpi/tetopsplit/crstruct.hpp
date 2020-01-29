@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -33,7 +33,7 @@
 #include "steps/error.hpp"
 #include "steps/mpi/tetopsplit/kproc.hpp"
 // logging
-#include "third_party/easyloggingpp/src/easylogging++.h"
+#include <easylogging++.h>
 ////////////////////////////////////////////////////////////////////////////////
 
  namespace steps {
@@ -43,13 +43,12 @@
 class KProc;
 
 struct CRGroup {
-    CRGroup(int power, uint init_size = 1024) {
-        max = pow(2, power);
-        sum = 0.0;
-        capacity = init_size;
-        size = 0;
-        indices = (KProc**)malloc(sizeof(KProc*) * init_size);
-        if (indices == NULL)
+    explicit CRGroup(int power, uint init_size = 1024)
+    : capacity(init_size),
+      max(std::pow(2, power))
+    {
+        indices = static_cast<KProc**> (malloc(sizeof (KProc *) * init_size));
+        if (indices == nullptr)
             SysErrLog("DirectCR: unable to allocate memory for SSA group.");
 
         #ifdef SSA_DEBUG
@@ -63,28 +62,21 @@ struct CRGroup {
 
     void free_indices() {
         free(indices);
-        indices = 0;
+        indices = nullptr;
     }
 
     unsigned                                capacity;
-    unsigned                                size;
+    unsigned                                size{0};
     double                                  max;
-    double                                  sum;
+    double                                  sum{0};
     KProc**                                 indices;
 };
 
 struct CRKProcData {
-    CRKProcData() {
-        recorded = false;
-        pow = 0;
-        pos = 0;
-        rate = 0.0;
-    }
-
-    bool                                    recorded;
-    int                                     pow;
-    unsigned                                pos;
-    double                                  rate;
+    bool                                    recorded{false};
+    int                                     pow{0};
+    unsigned                                pos{0};
+    double                                  rate{0.0};
 };
 
 ////////////////////////////////////////////////////////////////////////////////

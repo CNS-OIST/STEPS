@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,7 +30,6 @@ from steps import stepslib
 EF_NONE = stepslib._py_API.EF_NONE
 EF_DEFAULT = stepslib._py_API.EF_DEFAULT
 EF_DV_BDSYS = stepslib._py_API.EF_DV_BDSYS
-EF_DV_SLUSYS = stepslib._py_API.EF_DV_SLUSYS
 EF_DV_PETSC  = stepslib._py_API.EF_DV_PETSC
 
 

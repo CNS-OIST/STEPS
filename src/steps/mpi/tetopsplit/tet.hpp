@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -32,14 +32,15 @@
 #include <cassert>
 #include <vector>
 
+// logging
+#include <easylogging++.h>
+
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/solver/compdef.hpp"
 #include "steps/mpi/tetopsplit/kproc.hpp"
 #include "steps/mpi/tetopsplit/wmvol.hpp"
 #include "steps/solver/types.hpp"
-// logging
-#include "third_party/easyloggingpp/src/easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
  namespace steps {
@@ -77,22 +78,35 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     Tet
-    (
-        uint idx, steps::solver::Compdef * cdef, double vol,
-        double a0, double a1, double a2, double a3,
-        double d0, double d1, double d2, double d3,
-        int tet0, int tet1, int tet2, int tet3, int rank, int host_rank
-    );
-    ~Tet();
+      (
+        tetrahedron_id_t idx,
+        steps::solver::Compdef *cdef,
+        double vol,
+        double a0,
+        double a1,
+        double a2,
+        double a3,
+        double d0,
+        double d1,
+        double d2,
+        double d3,
+        tetrahedron_id_t tet0,
+        tetrahedron_id_t tet1,
+        tetrahedron_id_t tet2,
+        tetrahedron_id_t tet3,
+        int rank,
+        int host_rank
+      );
+    ~Tet() override;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream & cp_file) override;
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream & cp_file) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SETUP
@@ -110,12 +124,12 @@ public:
     void setNextTri(uint i, smtos::Tri *t);
 
     // This method only asserts this method is not called on derived object
-    void setNextTri(smtos::Tri *t);
+    void setNextTri(smtos::Tri *t) override;
 
     /// Create the kinetic processes -- to be called when all tetrahedrons
     /// and triangles have been fully declared and connected.
     ///
-    void setupKProcs(smtos::TetOpSplitP * tex);
+    void setupKProcs(smtos::TetOpSplitP * tex) override;
 
 
     ////////////////////////////////////////////////////////////////////////
@@ -132,71 +146,76 @@ public:
 
     /// Get pointer to the next neighbouring tetrahedron.
     ///
-    inline smtos::Tet * nextTet(uint i) const
+    inline smtos::Tet * nextTet(uint i) const noexcept
     { return pNextTet[i]; }
 
     /// Get the area of a boundary triangle.
     ///
-    inline double area(uint i) const
+    inline double area(uint i) const noexcept
     { return pAreas[i]; }
 
     /// Get the distance to the centroid of the next neighbouring
     /// tetrahedron.
     ///
-    inline double dist(uint i) const
+    inline double dist(uint i) const noexcept
     { return pDist[i]; }
     
     /// Find the direction index towards a neighbor tetrahedron.
     ///
-    int getTetDirection(uint tidx);
+    int getTetDirection(tetrahedron_id_t tidx);
 
     ////////////////////////////////////////////////////////////////////////
 
     // Set whether a direction is a diffusion boundary
     void setDiffBndDirection(uint i);
 
-    inline bool getDiffBndDirection(uint idx) const
+    inline bool getDiffBndDirection(uint idx) const noexcept
     { return pDiffBndDirection[idx]; }
 
 
     smtos::Diff * diff(uint lidx) const;
 
-    inline int tet(uint t)
+    inline tetrahedron_id_t tet(uint t) const noexcept
     { return pTets[t]; }
 
     /////////////////////////// Dependency ////////////////////////////////
     // setup dependence for KProcs in this subvolume
-    void setupDeps();
+    void setupDeps() override;
     
     // check if kp_lidx in this vol depends on spec_gidx in WMVol kp_container
-    virtual bool KProcDepSpecTet(uint kp_lidx, WmVol* kp_container, uint spec_gidx);
+    virtual bool KProcDepSpecTet(uint kp_lidx, WmVol* kp_container, uint spec_gidx) override;
     // check if kp_lidx in this vol depends on spec_gidx in Tri kp_container
-    virtual bool KProcDepSpecTri(uint kp_lidx, Tri* kp_container, uint spec_gidx);
+    virtual bool KProcDepSpecTri(uint kp_lidx, Tri* kp_container, uint spec_gidx) override;
     
     ///////////////////////////////////////////////////////////////////
 
-    void setCount(uint lidx, uint count, double period = 0.0);
-	void incCount(uint lidx, int inc, double period = 0.0, bool local_change = false);
+    void setCount(uint lidx, uint count, double period = 0.0) override;
+	  void incCount(uint lidx, int inc, double period = 0.0, bool local_change = false) override;
 
-	inline double getPoolOccupancy(uint lidx) {
+	  inline double getPoolOccupancy(uint lidx) const override {
 	    AssertLog(lidx < compdef()->countSpecs());
 	    return pPoolOccupancy[lidx];
-	}
-    double getLastUpdate(uint lidx);
-	void resetPoolOccupancy();
+	  }
+    double getLastUpdate(uint lidx) const override {
+      AssertLog(lidx < compdef()->countSpecs());
+      return pLastUpdate[lidx];
+    }
+	  void resetPoolOccupancy() override;
     
     std::vector<smtos::KProc*> const & getSpecUpdKProcs(uint slidx);
 
     ////////////////////////////////////////////////////////////
-    void repartition(smtos::TetOpSplitP * tex, int rank, int host_rank);
+    void repartition(smtos::TetOpSplitP * tex, int rank, int host_rank) override;
     void setupBufferLocations();
+
+    using super_type = smtos::WmVol;
 
 private:
 
     ////////////////////////////////////////////////////////////////////////
 
     // Indices of neighbouring tetrahedra.
-    int                                 pTets[4];
+    std::array<tetrahedron_id_t, 4>     pTets;
 
     /*
     // Indices of neighbouring triangles.

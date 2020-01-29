@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -55,20 +55,20 @@ stex::VDepSReac::VDepSReac(ssolver::VDepSReacdef * vdsrdef, stex::Tri * tri)
 , pUpdVec()
 , pScaleFactor(0.0)
 {
-    AssertLog(pVDepSReacdef != 0);
-    AssertLog(pTri != 0);
+    AssertLog(pVDepSReacdef != nullptr);
+    AssertLog(pTri != nullptr);
 
     if (pVDepSReacdef->surf_surf() == false)
     {
         double vol;
-        if (pVDepSReacdef->inside() == true)
+        if (pVDepSReacdef->inside())
         {
-            AssertLog(pTri->iTet() != 0);
+            AssertLog(pTri->iTet() != nullptr);
             vol = pTri->iTet()->vol();
         }
         else
         {
-            AssertLog(pTri->oTet() != 0);
+            AssertLog(pTri->oTet() != nullptr);
             vol = pTri->oTet()->vol();
         }
         double vscale = 1.0e3 * vol * smath::AVOGADRO;
@@ -99,30 +99,30 @@ stex::VDepSReac::~VDepSReac()
 
 void stex::VDepSReac::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&rExtent, sizeof(uint));
-    cp_file.write((char*)&pFlags, sizeof(uint));
+    cp_file.write(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.write(reinterpret_cast<char*>(&pFlags), sizeof(uint));
 
-    cp_file.write((char*)&pScaleFactor, sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pScaleFactor), sizeof(double));
 
-    cp_file.write((char*)&(crData.recorded), sizeof(bool));
-    cp_file.write((char*)&(crData.pow), sizeof(int));
-    cp_file.write((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.write((char*)&(crData.rate), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.write(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.write(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.write(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void stex::VDepSReac::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&rExtent, sizeof(uint));
-    cp_file.read((char*)&pFlags, sizeof(uint));
+    cp_file.read(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.read(reinterpret_cast<char*>(&pFlags), sizeof(uint));
 
-    cp_file.read((char*)&pScaleFactor, sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pScaleFactor), sizeof(double));
 
-    cp_file.read((char*)&(crData.recorded), sizeof(bool));
-    cp_file.read((char*)&(crData.pow), sizeof(int));
-    cp_file.read((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.read((char*)&(crData.rate), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.read(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.read(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.read(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -164,51 +164,32 @@ void stex::VDepSReac::setupDeps()
     WmVol * itet = pTri->iTet();
     WmVol * otet = pTri->oTet();
 
-    ssolver::gidxTVecCI s_beg = pVDepSReacdef->beginUpdColl_S();
-    ssolver::gidxTVecCI s_end = pVDepSReacdef->endUpdColl_S();
-    ssolver::gidxTVecCI i_beg = pVDepSReacdef->beginUpdColl_I();
-    ssolver::gidxTVecCI i_end = pVDepSReacdef->endUpdColl_I();
-    ssolver::gidxTVecCI o_beg = pVDepSReacdef->beginUpdColl_O();
-    ssolver::gidxTVecCI o_end = pVDepSReacdef->endUpdColl_O();
-
     std::set<stex::KProc*> updset;
 
-    KProcPVecCI kprocend = pTri->kprocEnd();
-    for (KProcPVecCI k = pTri->kprocBegin(); k != kprocend; ++k)
-    {
-        for (ssolver::gidxTVecCI spec = s_beg; spec != s_end; ++spec)
-        {
-            if ((*k)->depSpecTri(*spec, pTri) == true)
-                updset.insert(*k);
+    for (auto const& k : pTri->kprocs()) {
+        for (auto const& spec : pVDepSReacdef->updcoll_S()) {
+            if (k->depSpecTri(spec, pTri))
+                updset.insert(k);
         }
     }
 
     if (itet != nullptr)
     {
-        kprocend = itet->kprocEnd();
-        for (KProcPVecCI k = itet->kprocBegin(); k != kprocend; ++k)
-        {
-            for (ssolver::gidxTVecCI spec = i_beg; spec != i_end; ++spec)
-            {
-                if ((*k)->depSpecTet(*spec, itet) == true)
-                    updset.insert(*k);
+        for (auto const& k : itet->kprocs()) {
+            for (auto const& spec : pVDepSReacdef->updcoll_I()) {
+                if (k->depSpecTet(spec, itet))
+                    updset.insert(k);
             }
         }
 
 
-        std::vector<stex::Tri *>::const_iterator tri_end = itet->nexttriEnd();
-        for (std::vector<stex::Tri *>::const_iterator tri = itet->nexttriBegin();
-                 tri != tri_end; ++tri)
-        {
-            if ((*tri) == 0) continue;
+        for (auto const& tri : itet->nexttris()) {
+            if (tri == nullptr) continue;
 
-            kprocend = (*tri)->kprocEnd();
-            for (KProcPVecCI k = (*tri)->kprocBegin(); k != kprocend; ++k)
-            {
-                for (ssolver::gidxTVecCI spec = i_beg; spec != i_end; ++spec)
-                {
-                    if ((*k)->depSpecTet(*spec, itet) == true)
-                        updset.insert(*k);
+            for (auto const& k : tri->kprocs()) {
+                for (auto const& spec : pVDepSReacdef->updcoll_I()) {
+                    if (k->depSpecTet(spec, itet))
+                        updset.insert(k);
                 }
             }
         }
@@ -216,31 +197,22 @@ void stex::VDepSReac::setupDeps()
 
     if (otet != nullptr)
     {
-        kprocend = otet->kprocEnd();
-        for (KProcPVecCI k = otet->kprocBegin(); k != kprocend; ++k)
-        {
-            for (ssolver::gidxTVecCI spec = o_beg; spec != o_end; ++spec)
-            {
-                if ((*k)->depSpecTet(*spec, otet) == true)
-                    updset.insert(*k);
+        for (auto const& k : otet->kprocs()) {
+            for (auto const& spec : pVDepSReacdef->updcoll_O()) {
+                if (k->depSpecTet(spec, otet))
+                    updset.insert(k);
             }
         }
 
 
 
-        std::vector<stex::Tri *>::const_iterator tri_end = otet->nexttriEnd();
-        for (std::vector<stex::Tri *>::const_iterator tri = otet->nexttriBegin();
-                 tri != tri_end; ++tri)
-        {
-            if ((*tri) == 0) continue;
+        for (auto const& tri : otet->nexttris()) {
+            if (tri == nullptr) continue;
 
-            kprocend = (*tri)->kprocEnd();
-            for (KProcPVecCI k = (*tri)->kprocBegin(); k != kprocend; ++k)
-            {
-                for (ssolver::gidxTVecCI spec = o_beg; spec != o_end; ++spec)
-                {
-                    if ((*k)->depSpecTet(*spec, otet) == true)
-                        updset.insert(*k);
+            for (auto const& k : tri->kprocs()) {
+                for (auto const& spec : pVDepSReacdef->updcoll_O()) {
+                    if (k->depSpecTet(spec, otet))
+                        updset.insert(k);
                 }
             }
         }
@@ -331,8 +303,7 @@ double stex::VDepSReac::rate(steps::tetexact::Tetexact * solver)
                 }
                 default:
                 {
-                    AssertLog(0);
-                    return 0.0;
+                    AssertLog(false);
                 }
             }
         }
@@ -340,7 +311,7 @@ double stex::VDepSReac::rate(steps::tetexact::Tetexact * solver)
         if (pVDepSReacdef->inside())
         {
             uint * lhs_i_vec = pdef->vdepsreac_lhs_I_bgn(lidx);
-            uint * cnt_i_vec = pTri->iTet()->pools();
+            auto const& cnt_i_vec = pTri->iTet()->pools();
             uint nspecs_i = pdef->countSpecs_I();
             for (uint s = 0; s < nspecs_i; ++s)
             {
@@ -373,8 +344,7 @@ double stex::VDepSReac::rate(steps::tetexact::Tetexact * solver)
                     }
                     default:
                     {
-                        AssertLog(0);
-                        return 0.0;
+                        AssertLog(false);
                     }
                 }
             }
@@ -382,7 +352,7 @@ double stex::VDepSReac::rate(steps::tetexact::Tetexact * solver)
         else if (pVDepSReacdef->outside())
         {
             uint * lhs_o_vec = pdef->vdepsreac_lhs_O_bgn(lidx);
-            uint * cnt_o_vec = pTri->oTet()->pools();
+            auto const& cnt_o_vec = pTri->oTet()->pools();
             uint nspecs_o = pdef->countSpecs_O();
             for (uint s = 0; s < nspecs_o; ++s)
             {
@@ -415,8 +385,7 @@ double stex::VDepSReac::rate(steps::tetexact::Tetexact * solver)
                     }
                     default:
                     {
-                        AssertLog(0);
-                        return 0.0;
+                        AssertLog(false);
                     }
                 }
             }
@@ -431,7 +400,7 @@ double stex::VDepSReac::rate(steps::tetexact::Tetexact * solver)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<stex::KProc*> const & stex::VDepSReac::apply(steps::rng::RNG * rng, double dt, double simtime)
+std::vector<stex::KProc*> const & stex::VDepSReac::apply(const rng::RNGptr &/*rng*/, double dt, double simtime)
 {
     // NOTE: simtime is BEFORE the update has taken place
 
@@ -451,7 +420,7 @@ std::vector<stex::KProc*> const & stex::VDepSReac::apply(steps::rng::RNG * rng, 
     {
         // Patchdef returns local index
         uint cs_lidx = pdef->ohmiccurr_chanstate(oc);
-        if (pTri->clamped(cs_lidx) == true) continue;
+        if (pTri->clamped(cs_lidx)) continue;
         int upd = upd_s_vec[cs_lidx];
         if (upd == 0) continue;
         // Now here a channel state related to an ohmic current has changed
@@ -463,7 +432,7 @@ std::vector<stex::KProc*> const & stex::VDepSReac::apply(steps::rng::RNG * rng, 
     uint nspecs_s = pdef->countSpecs();
     for (uint s = 0; s < nspecs_s; ++s)
     {
-        if (pTri->clamped(s) == true) continue;
+        if (pTri->clamped(s)) continue;
         int upd = upd_s_vec[s];
         if (upd == 0) continue;
         int nc = static_cast<int>(cnt_s_vec[s]) + upd;
@@ -473,14 +442,14 @@ std::vector<stex::KProc*> const & stex::VDepSReac::apply(steps::rng::RNG * rng, 
 
     // Update inner tet pools.
     stex::WmVol * itet = pTri->iTet();
-    if (itet != 0)
+    if (itet != nullptr)
     {
         int * upd_i_vec = pdef->vdepsreac_upd_I_bgn(lidx);
-        uint * cnt_i_vec = itet->pools();
+        auto const& cnt_i_vec = itet->pools();
         uint nspecs_i = pdef->countSpecs_I();
         for (uint s = 0; s < nspecs_i; ++s)
         {
-            if (itet->clamped(s) == true) continue;
+            if (itet->clamped(s)) continue;
             int upd = upd_i_vec[s];
             if (upd == 0) continue;
             int nc = static_cast<int>(cnt_i_vec[s]) + upd;
@@ -491,14 +460,14 @@ std::vector<stex::KProc*> const & stex::VDepSReac::apply(steps::rng::RNG * rng, 
 
     // Update outer tet pools.
     stex::WmVol * otet = pTri->oTet();
-    if (otet != 0)
+    if (otet != nullptr)
     {
         int * upd_o_vec = pdef->vdepsreac_upd_O_bgn(lidx);
-        uint * cnt_o_vec = otet->pools();
+        auto const& cnt_o_vec = otet->pools();
         uint nspecs_o = pdef->countSpecs_O();
         for (uint s = 0; s < nspecs_o; ++s)
         {
-            if (otet->clamped(s) == true) continue;
+            if (otet->clamped(s)) continue;
             int upd = upd_o_vec[s];
             if (upd == 0) continue;
             int nc = static_cast<int>(cnt_o_vec[s]) + upd;

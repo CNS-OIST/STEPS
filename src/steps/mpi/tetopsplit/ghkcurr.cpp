@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -63,42 +63,37 @@ smtos::GHKcurr::GHKcurr(ssolver::GHKcurrdef * ghkdef, smtos::Tri * tri)
 , remoteUpdVec()
 , pEffFlux(true)
 {
-    AssertLog(pGHKcurrdef != 0);
-    AssertLog(pTri != 0);
+    AssertLog(pGHKcurrdef != nullptr);
+    AssertLog(pTri != nullptr);
     type = KP_GHK;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::GHKcurr::~GHKcurr()
-= default;
-
-////////////////////////////////////////////////////////////////////////////////
-
 void smtos::GHKcurr::checkpoint(std::fstream & cp_file)
 {
-    cp_file.write((char*)&rExtent, sizeof(uint));
-    cp_file.write((char*)&pFlags, sizeof(uint));
-    cp_file.write((char*)&pEffFlux, sizeof(bool));
+    cp_file.write(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.write(reinterpret_cast<char*>(&pFlags), sizeof(uint));
+    cp_file.write(reinterpret_cast<char*>(&pEffFlux), sizeof(bool));
 
-    cp_file.write((char*)&(crData.recorded), sizeof(bool));
-    cp_file.write((char*)&(crData.pow), sizeof(int));
-    cp_file.write((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.write((char*)&(crData.rate), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.write(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.write(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.write(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void smtos::GHKcurr::restore(std::fstream & cp_file)
 {
-    cp_file.read((char*)&rExtent, sizeof(uint));
-    cp_file.read((char*)&pFlags, sizeof(uint));
-    cp_file.read((char*)&pEffFlux, sizeof(bool));
+    cp_file.read(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
+    cp_file.read(reinterpret_cast<char*>(&pFlags), sizeof(uint));
+    cp_file.read(reinterpret_cast<char*>(&pEffFlux), sizeof(bool));
 
-    cp_file.read((char*)&(crData.recorded), sizeof(bool));
-    cp_file.read((char*)&(crData.pow), sizeof(int));
-    cp_file.read((char*)&(crData.pos), sizeof(unsigned));
-    cp_file.read((char*)&(crData.rate), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
+    cp_file.read(reinterpret_cast<char*>(&crData.pow), sizeof(int));
+    cp_file.read(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
+    cp_file.read(reinterpret_cast<char*>(&crData.rate), sizeof(double));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -127,7 +122,7 @@ void smtos::GHKcurr::setupDeps()
 
     WmVol * itet = pTri->iTet();
     WmVol * otet = pTri->oTet();
-    AssertLog(itet != 0);
+    AssertLog(itet != nullptr);
     
     if (itet->getHost() != pTri->getHost()) {
         std::ostringstream os;
@@ -140,33 +135,27 @@ void smtos::GHKcurr::setupDeps()
 
     // First check KProcs in the inner tetrahedron
     uint nkprocs = itet->countKProcs();
-    uint startKProcIdx = itet->getStartKProcIdx();
     for (uint k = 0; k < nkprocs; k++)
     {
-        if (itet->KProcDepSpecTet(k, itet, gidxion) == true) {
+        if (itet->KProcDepSpecTet(k, itet, gidxion)) {
             local.insert(itet->getKProc(k));
         }
-
     }
 
-    std::vector<smtos::Tri *>::const_iterator tri_end = itet->nexttriEnd();
-    for (std::vector<smtos::Tri *>::const_iterator tri = itet->nexttriBegin();
-             tri != tri_end; ++tri)
-    {
-        if ((*tri) == 0) continue;
+    for (auto const& tri : itet->nexttris()) {
+        if (tri == nullptr) continue;
         
-        if (itet->getHost() != (*tri)->getHost()) {
+        if (itet->getHost() != tri->getHost()) {
             std::ostringstream os;
-            os << "Patch triangle " << (*tri)->idx() << " and its compartment tetrahedron " << itet->idx()  << " belong to different hosts.\n";
+            os << "Patch triangle " << tri->idx() << " and its compartment tetrahedron " << itet->idx()  << " belong to different hosts.\n";
             NotImplErrLog(os.str());
         }
 
-        nkprocs = (*tri)->countKProcs();
-        startKProcIdx = (*tri)->getStartKProcIdx();;
+        nkprocs = tri->countKProcs();
         for (uint sk = 0; sk < nkprocs; sk++)
         {
-            if ((*tri)->KProcDepSpecTet(sk, itet, gidxion) == true)
-                local.insert((*tri)->getKProc(sk));
+            if (tri->KProcDepSpecTet(sk, itet, gidxion))
+                local.insert(tri->getKProc(sk));
         }
     }
 
@@ -180,30 +169,25 @@ void smtos::GHKcurr::setupDeps()
         
         // Now check KProcs in the outer tetrahedron
         nkprocs = otet->countKProcs();
-        startKProcIdx = otet->getStartKProcIdx();
         for (uint k = 0; k < nkprocs; k++)
         {
-            if (otet->KProcDepSpecTet(k, otet, gidxion) == true) {
+            if (otet->KProcDepSpecTet(k, otet, gidxion)) {
                 local.insert(otet->getKProc(k));
             }
         }
 
-        tri_end = otet->nexttriEnd();
-        for (std::vector<smtos::Tri *>::const_iterator tri = otet->nexttriBegin();
-            tri != tri_end; ++tri)
-        {
-            if ((*tri) == 0) continue;
-            if (otet->getHost() != (*tri)->getHost()) {
+        for (auto const& tri : otet->nexttris()) {
+            if (tri == nullptr) continue;
+            if (otet->getHost() != tri->getHost()) {
                 std::ostringstream os;
-                os << "Patch triangle " << (*tri)->idx() << " and its compartment tetrahedron " << otet->idx()  << " belong to different hosts.\n";
+                os << "Patch triangle " << tri->idx() << " and its compartment tetrahedron " << otet->idx()  << " belong to different hosts.\n";
                 NotImplErrLog(os.str());
             }
-            nkprocs = (*tri)->countKProcs();
-            startKProcIdx = (*tri)->getStartKProcIdx();;
+            nkprocs = tri->countKProcs();
             for (uint sk = 0; sk < nkprocs; sk++)
             {
-                if ((*tri)->KProcDepSpecTet(sk, otet, gidxion) == true)
-                    local.insert((*tri)->getKProc(sk));
+                if (tri->KProcDepSpecTet(sk, otet, gidxion))
+                    local.insert(tri->getKProc(sk));
             }
         }
     }
@@ -328,7 +312,21 @@ double smtos::GHKcurr::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::GHKcurr::apply(steps::rng::RNG * rng, double dt, double simtime, double period) {
+std::vector<uint> const & smtos::GHKcurr::getRemoteUpdVec(int /*direction*/) const
+{
+    return remoteUpdVec;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<smtos::KProc*> const & smtos::GHKcurr::getLocalUpdVec(int /*direction*/) const
+{
+    return localUpdVec;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void smtos::GHKcurr::apply(const rng::RNGptr &/*rng*/, double /*dt*/, double /*simtime*/, double period) {
     smtos::WmVol * itet = pTri->iTet();
     smtos::WmVol * otet = pTri->oTet();
 
@@ -388,22 +386,6 @@ void smtos::GHKcurr::apply(steps::rng::RNG * rng, double dt, double simtime, dou
 
     rExtent++;
 }
-
-////////////////////////////////////////////////////////////////////////////////
-
-std::vector<uint> const & smtos::GHKcurr::getRemoteUpdVec(int direction)
-{
-    return remoteUpdVec;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-std::vector<smtos::KProc*> const & smtos::GHKcurr::getLocalUpdVec(int direction)
-{
-    return localUpdVec;
-}
-
-////////////////////////////////////////////////////////////////////////////////
 
 void smtos::GHKcurr::resetOccupancies()
 {

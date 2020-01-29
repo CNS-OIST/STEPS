@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -47,30 +47,24 @@ namespace ssolver = steps::solver;
 
 stex::DiffBoundary::DiffBoundary(steps::solver::DiffBoundarydef * dbdef)
 : pDiffBoundarydef(dbdef)
-, pCompA(nullptr)
-, pCompB(nullptr)
-, pTets()
-, pTetDirection()
-, pSetComps(false)
 {
-    AssertLog(dbdef != 0);
+    AssertLog(dbdef != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::DiffBoundary::~DiffBoundary()
-= default;
+stex::DiffBoundary::~DiffBoundary() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::DiffBoundary::checkpoint(std::fstream & cp_file)
+void stex::DiffBoundary::checkpoint(std::fstream & /*cp_file*/)
 {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::DiffBoundary::restore(std::fstream & cp_file)
+void stex::DiffBoundary::restore(std::fstream & /*cp_file*/)
 {
     // reserve
 }
@@ -80,8 +74,8 @@ void stex::DiffBoundary::restore(std::fstream & cp_file)
 void stex::DiffBoundary::setComps(stex::Comp * compa, stex::Comp * compb)
 {
     AssertLog(pSetComps == false);
-    AssertLog(compa != 0);
-    AssertLog(compb != 0);
+    AssertLog(compa != nullptr);
+    AssertLog(compb != nullptr);
     AssertLog(compa != compb);
 
     pCompA = compa;
@@ -107,7 +101,7 @@ stex::Comp * stex::DiffBoundary::compB()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::DiffBoundary::setTetDirection(uint tet, uint direction)
+void stex::DiffBoundary::setTetDirection(tetrahedron_id_t tet, uint direction)
 {
     AssertLog(direction < 4);
 

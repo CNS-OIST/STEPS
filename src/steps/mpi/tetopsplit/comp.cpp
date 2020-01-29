@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -49,27 +49,20 @@ namespace ssolver = steps::solver;
 
 smtos::Comp::Comp(steps::solver::Compdef * compdef)
 : pCompdef(compdef)
-, pVol(0.0)
-, pTets()
 {
-    AssertLog(pCompdef != 0);
+    AssertLog(pCompdef != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::Comp::~Comp()
-= default;
-
-////////////////////////////////////////////////////////////////////////////////
-
-void smtos::Comp::checkpoint(std::fstream & cp_file)
+void smtos::Comp::checkpoint(std::fstream & /*cp_file*/)
 {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Comp::restore(std::fstream & cp_file)
+void smtos::Comp::restore(std::fstream & /*cp_file*/)
 {
     // reserve
 }
@@ -103,14 +96,13 @@ smtos::WmVol * smtos::Comp::pickTetByVol(double rand01) const
 
     double accum = 0.0;
     double selector = rand01 * vol();
-    WmVolPVecCI t_end = endTet();
-    for (WmVolPVecCI t = bgnTet(); t != t_end; ++t)
-    {
-        accum += (*t)->vol();
-        if (selector < accum) return (*t);
+    for (auto const& t: pTets) {
+        accum += t->vol();
+        if (selector < accum) {
+            return t;
+        }
     }
     AssertLog(false);
-    return nullptr;
 }
 
 ///////////////////////////////////////////////////////////////////////////

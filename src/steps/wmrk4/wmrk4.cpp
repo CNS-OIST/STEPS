@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -55,7 +55,7 @@ namespace ssolver = steps::solver;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmrk4::Wmrk4::Wmrk4(steps::model::Model * m, steps::wm::Geom * g, steps::rng::RNG * r)
+swmrk4::Wmrk4::Wmrk4(steps::model::Model *m, steps::wm::Geom *g, const rng::RNGptr &r)
 : API(m, g, r)
 , pSpecs_tot(0)
 , pReacs_tot(0)
@@ -68,21 +68,17 @@ swmrk4::Wmrk4::Wmrk4(steps::model::Model * m, steps::wm::Geom * g, steps::rng::R
 , dyt()
 , dym()
 {
-    AssertLog(statedef() != 0);
-    AssertLog(model() != 0);
-    AssertLog(geom() != 0);
-
     uint nspecstot = 0;
     uint nreacstot = 0;
-    for(uint i=0; i< statedef()->countComps(); ++i)
+    for(uint i=0; i< statedef().countComps(); ++i)
     {
-        nspecstot += statedef()->compdef(i)->countSpecs();
-        nreacstot += statedef()->compdef(i)->countReacs();
+        nspecstot += statedef().compdef(i)->countSpecs();
+        nreacstot += statedef().compdef(i)->countReacs();
     }
-    for(uint i=0; i< statedef()->countPatches(); ++i)
+    for(uint i=0; i< statedef().countPatches(); ++i)
     {
-        nspecstot += statedef()->patchdef(i)->countSpecs();
-        nreacstot += statedef()->patchdef(i)->countSReacs();
+        nspecstot += statedef().patchdef(i)->countSpecs();
+        nreacstot += statedef().patchdef(i)->countSReacs();
     }
 
     _setup();
@@ -126,11 +122,11 @@ std::string swmrk4::Wmrk4::getSolverEmail() const
 
 void swmrk4::Wmrk4::reset()
 {
-    uint comps = statedef()->countComps();
-    for (uint i=0; i < comps; ++i) statedef()->compdef(i)->reset();
-    uint patches = statedef()->countPatches();
-    for (uint i=0; i < patches; ++i) statedef()->patchdef(i)->reset();
-    statedef()->resetTime();
+    uint comps = statedef().countComps();
+    for (uint i=0; i < comps; ++i) statedef().compdef(i)->reset();
+    uint patches = statedef().countPatches();
+    for (uint i=0; i < patches; ++i) statedef().patchdef(i)->reset();
+    statedef().resetTime();
     // recompute flags and counts vectors in Wmrk4 object
     _refill();
 
@@ -140,14 +136,14 @@ void swmrk4::Wmrk4::reset()
 
 void swmrk4::Wmrk4::run(double endtime)
 {
-    if (endtime < statedef()->time())
+    if (endtime < statedef().time())
     {
         std::ostringstream os;
         os << "Endtime is before current simulation time";
         ArgErrLog(os.str());
     }
-    _rksteps(statedef()->time(), endtime);
-    statedef()->setTime(endtime);
+    _rksteps(statedef().time(), endtime);
+    statedef().setTime(endtime);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -161,7 +157,7 @@ void swmrk4::Wmrk4::advance(double adv)
         ArgErrLog(os.str());
     }
 
-    double endtime = statedef()->time() + adv;
+    double endtime = statedef().time() + adv;
     run(endtime);
 }
 
@@ -170,8 +166,8 @@ void swmrk4::Wmrk4::advance(double adv)
 void swmrk4::Wmrk4::step()
 {
     AssertLog(pDT > 0.0);
-    _rksteps(statedef()->time(), statedef()->time() + pDT);
-    statedef()->setTime(statedef()->time() + pDT);
+    _rksteps(statedef().time(), statedef().time() + pDT);
+    statedef().setTime(statedef().time() + pDT);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -191,7 +187,7 @@ void swmrk4::Wmrk4::setRk4DT(double dt)
 
 double swmrk4::Wmrk4::getTime() const
 {
-    return statedef()->time();
+    return statedef().time();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -207,23 +203,23 @@ void swmrk4::Wmrk4::checkpoint(std::string const & file_name)
     state_buffer[1] = static_cast<double>(pReacs_tot);
     state_buffer[2] = pDT;
 
-    cp_file.write((char*)&state_buffer, sizeof(double) * 3);
+    cp_file.write(reinterpret_cast<char*>(&state_buffer), sizeof(double) * 3);
 
-    cp_file.write((char*)&pVals.front(), sizeof(double) * pVals.size());
+    cp_file.write(reinterpret_cast<char*>(&pVals.front()), sizeof(double) * pVals.size());
 
-    cp_file.write((char*)&pSFlags.front(), sizeof(uint) * pSFlags.size());
+    cp_file.write(reinterpret_cast<char*>(&pSFlags.front()), sizeof(uint) * pSFlags.size());
 
-    cp_file.write((char*)&pNewVals.front(), sizeof(double) * pNewVals.size());
+    cp_file.write(reinterpret_cast<char*>(&pNewVals.front()), sizeof(double) * pNewVals.size());
 
-    cp_file.write((char*)&pDyDx.front(), sizeof(double) * pDyDx.size());
+    cp_file.write(reinterpret_cast<char*>(&pDyDx.front()), sizeof(double) * pDyDx.size());
 
-    cp_file.write((char*)&yt.front(), sizeof(double) * yt.size());
+    cp_file.write(reinterpret_cast<char*>(&yt.front()), sizeof(double) * yt.size());
 
-    cp_file.write((char*)&dyt.front(), sizeof(double) * dyt.size());
+    cp_file.write(reinterpret_cast<char*>(&dyt.front()), sizeof(double) * dyt.size());
 
-    cp_file.write((char*)&dym.front(), sizeof(double) * dym.size());
+    cp_file.write(reinterpret_cast<char*>(&dym.front()), sizeof(double) * dym.size());
 
-    statedef()->checkpoint(cp_file);
+    statedef().checkpoint(cp_file);
 
     cp_file.close();
 }
@@ -239,7 +235,7 @@ void swmrk4::Wmrk4::restore(std::string const & file_name)
 
     cp_file.seekg(0);
     double state_buffer[3];
-    cp_file.read((char*)&state_buffer, sizeof(double) * 3);
+    cp_file.read(reinterpret_cast<char*>(&state_buffer), sizeof(double) * 3);
 
     if (static_cast<uint>(state_buffer[0]) != pSpecs_tot) {
         std::ostringstream os;
@@ -255,21 +251,21 @@ void swmrk4::Wmrk4::restore(std::string const & file_name)
 
     pDT = state_buffer[2];
 
-    cp_file.read((char*)&pVals.front(), sizeof(double) * pVals.size());
+    cp_file.read(reinterpret_cast<char*>(&pVals.front()), sizeof(double) * pVals.size());
 
-    cp_file.read((char*)&pSFlags.front(), sizeof(uint) * pSFlags.size());
+    cp_file.read(reinterpret_cast<char*>(&pSFlags.front()), sizeof(uint) * pSFlags.size());
 
-    cp_file.read((char*)&pNewVals.front(), sizeof(double) * pNewVals.size());
+    cp_file.read(reinterpret_cast<char*>(&pNewVals.front()), sizeof(double) * pNewVals.size());
 
-    cp_file.read((char*)&pDyDx.front(), sizeof(double) * pDyDx.size());
+    cp_file.read(reinterpret_cast<char*>(&pDyDx.front()), sizeof(double) * pDyDx.size());
 
-    cp_file.read((char*)&yt.front(), sizeof(double) * yt.size());
+    cp_file.read(reinterpret_cast<char*>(&yt.front()), sizeof(double) * yt.size());
 
-    cp_file.read((char*)&dyt.front(), sizeof(double) * dyt.size());
+    cp_file.read(reinterpret_cast<char*>(&dyt.front()), sizeof(double) * dyt.size());
 
-    cp_file.read((char*)&dym.front(), sizeof(double) * dym.size());
+    cp_file.read(reinterpret_cast<char*>(&dym.front()), sizeof(double) * dym.size());
 
-    statedef()->restore(cp_file);
+    statedef().restore(cp_file);
 
     cp_file.close();
 }
@@ -278,9 +274,9 @@ void swmrk4::Wmrk4::restore(std::string const & file_name)
 
 double swmrk4::Wmrk4::_getCompVol(uint cidx) const
 {
-    AssertLog(cidx < statedef()->countComps());
-    Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     return comp->vol();
 }
 
@@ -288,9 +284,9 @@ double swmrk4::Wmrk4::_getCompVol(uint cidx) const
 
 void swmrk4::Wmrk4::_setCompVol(uint cidx, double vol)
 {
-    AssertLog(cidx < statedef()->countComps());
-    Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     comp->setVol(vol);
 
     // recompute the scaled reaction constants
@@ -301,10 +297,10 @@ void swmrk4::Wmrk4::_setCompVol(uint cidx, double vol)
 
 double swmrk4::Wmrk4::_getCompCount(uint cidx, uint sidx) const
 {
-    AssertLog(cidx < statedef()->countComps());
-    AssertLog(sidx < statedef()->countSpecs());
-    Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(sidx < statedef().countSpecs());
+    Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     uint slidx = comp->specG2L(sidx);
     if (slidx == ssolver::LIDX_UNDEFINED)
     {
@@ -319,11 +315,11 @@ double swmrk4::Wmrk4::_getCompCount(uint cidx, uint sidx) const
 
 void swmrk4::Wmrk4::_setCompCount(uint cidx, uint sidx, double n)
 {
-    AssertLog(cidx < statedef()->countComps());
-    AssertLog(sidx < statedef()->countSpecs());
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(sidx < statedef().countSpecs());
     AssertLog(n >= 0.0);
-    Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     uint slidx = comp->specG2L(sidx);
     if (slidx == ssolver::LIDX_UNDEFINED)
     {
@@ -362,8 +358,8 @@ double swmrk4::Wmrk4::_getCompConc(uint cidx, uint sidx) const
 {
     // the following method does all the necessary argument checking
     double count = _getCompCount(cidx, sidx);
-    Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     double vol = comp->vol();
     return count/ (1.0e3 * vol * steps::math::AVOGADRO);
 }
@@ -373,9 +369,9 @@ double swmrk4::Wmrk4::_getCompConc(uint cidx, uint sidx) const
 void swmrk4::Wmrk4::_setCompConc(uint cidx, uint sidx, double c)
 {
     AssertLog(c >= 0.0);
-    AssertLog(cidx < statedef()->countComps());
-    Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     double count = c * (1.0e3 * comp->vol() * steps::math::AVOGADRO);
     // the following method does all the necessary argument checking
     _setCompCount(cidx, sidx, count);
@@ -385,10 +381,10 @@ void swmrk4::Wmrk4::_setCompConc(uint cidx, uint sidx, double c)
 
 bool swmrk4::Wmrk4::_getCompClamped(uint cidx, uint sidx) const
 {
-    AssertLog(cidx < statedef()->countComps());
-    AssertLog(sidx < statedef()->countSpecs());
-    Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(sidx < statedef().countSpecs());
+    Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     uint lsidx = comp->specG2L(sidx);
     if (lsidx == ssolver::LIDX_UNDEFINED)
     {
@@ -404,10 +400,10 @@ bool swmrk4::Wmrk4::_getCompClamped(uint cidx, uint sidx) const
 
 void swmrk4::Wmrk4::_setCompClamped(uint cidx, uint sidx, bool b)
 {
-    AssertLog(cidx < statedef()->countComps());
-    AssertLog(sidx < statedef()->countSpecs());
-    Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(sidx < statedef().countSpecs());
+    Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     uint lsidx = comp->specG2L(sidx);
     if (lsidx == ssolver::LIDX_UNDEFINED)
     {
@@ -426,10 +422,10 @@ void swmrk4::Wmrk4::_setCompClamped(uint cidx, uint sidx, bool b)
 
 double swmrk4::Wmrk4::_getCompReacK(uint cidx, uint ridx) const
 {
-    AssertLog(cidx < statedef()->countComps());
-    AssertLog(ridx < statedef()->countReacs());
-    Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(ridx < statedef().countReacs());
+    Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     uint lridx = comp->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -445,11 +441,11 @@ double swmrk4::Wmrk4::_getCompReacK(uint cidx, uint ridx) const
 
 void swmrk4::Wmrk4::_setCompReacK(uint cidx, uint ridx, double kf)
 {
-    AssertLog(cidx < statedef()->countComps());
-    AssertLog(ridx < statedef()->countReacs());
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(ridx < statedef().countReacs());
     AssertLog(kf >= 0.0);
-    Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     uint lridx = comp->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -468,10 +464,10 @@ void swmrk4::Wmrk4::_setCompReacK(uint cidx, uint ridx, double kf)
 
 bool swmrk4::Wmrk4::_getCompReacActive(uint cidx, uint ridx) const
 {
-    AssertLog(cidx < statedef()->countComps());
-    AssertLog(ridx < statedef()->countReacs());
-    Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(ridx < statedef().countReacs());
+    Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     uint lridx = comp->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -487,10 +483,10 @@ bool swmrk4::Wmrk4::_getCompReacActive(uint cidx, uint ridx) const
 
 void swmrk4::Wmrk4::_setCompReacActive(uint cidx, uint ridx, bool a)
 {
-    AssertLog(cidx < statedef()->countComps());
-    AssertLog(ridx < statedef()->countReacs());
-    Compdef * comp = statedef()->compdef(cidx);
-    AssertLog(comp != 0);
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(ridx < statedef().countReacs());
+    Compdef * comp = statedef().compdef(cidx);
+    AssertLog(comp != nullptr);
     uint lridx = comp->reacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -509,9 +505,9 @@ void swmrk4::Wmrk4::_setCompReacActive(uint cidx, uint ridx, bool a)
 
 double swmrk4::Wmrk4::_getPatchArea(uint pidx) const
 {
-    AssertLog(pidx < statedef()->countPatches());
-    Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    AssertLog(pidx < statedef().countPatches());
+    Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     return patch->area();
 }
 
@@ -519,9 +515,9 @@ double swmrk4::Wmrk4::_getPatchArea(uint pidx) const
 
 void swmrk4::Wmrk4::_setPatchArea(uint pidx, double area)
 {
-    AssertLog(pidx < statedef()->countPatches());
-    Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    AssertLog(pidx < statedef().countPatches());
+    Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     patch->setArea(area);
 }
 
@@ -529,10 +525,10 @@ void swmrk4::Wmrk4::_setPatchArea(uint pidx, double area)
 
 double swmrk4::Wmrk4::_getPatchCount(uint pidx, uint sidx) const
 {
-    AssertLog(pidx < statedef()->countPatches());
-    AssertLog(sidx < statedef()->countSpecs());
-    Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(sidx < statedef().countSpecs());
+    Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     uint slidx = patch->specG2L(sidx);
     if (slidx == ssolver::LIDX_UNDEFINED)
     {
@@ -548,10 +544,10 @@ double swmrk4::Wmrk4::_getPatchCount(uint pidx, uint sidx) const
 
 void swmrk4::Wmrk4::_setPatchCount(uint pidx, uint sidx, double n)
 {
-    AssertLog(pidx < statedef()->countPatches());
-    AssertLog(sidx< statedef()->countSpecs());
-    Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(sidx< statedef().countSpecs());
+    Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     uint slidx = patch->specG2L(sidx);
     if (slidx == ssolver::LIDX_UNDEFINED)
     {
@@ -588,10 +584,10 @@ void swmrk4::Wmrk4::_setPatchAmount(uint pidx, uint sidx, double a)
 
 bool swmrk4::Wmrk4::_getPatchClamped(uint pidx, uint sidx) const
 {
-    AssertLog(pidx < statedef()->countPatches());
-    AssertLog(sidx < statedef()->countSpecs());
-    Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(sidx < statedef().countSpecs());
+    Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     uint lsidx = patch->specG2L(sidx);
     if (lsidx == ssolver::LIDX_UNDEFINED)
     {
@@ -607,10 +603,10 @@ bool swmrk4::Wmrk4::_getPatchClamped(uint pidx, uint sidx) const
 
 void swmrk4::Wmrk4::_setPatchClamped(uint pidx, uint sidx, bool buf)
 {
-    AssertLog(pidx < statedef()->countComps());
-    AssertLog(sidx < statedef()->countSpecs());
-    Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    AssertLog(pidx < statedef().countComps());
+    AssertLog(sidx < statedef().countSpecs());
+    Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     uint lsidx = patch->specG2L(sidx);
     if (lsidx == ssolver::LIDX_UNDEFINED)
     {
@@ -629,10 +625,10 @@ void swmrk4::Wmrk4::_setPatchClamped(uint pidx, uint sidx, bool buf)
 
 double swmrk4::Wmrk4::_getPatchSReacK(uint pidx, uint ridx) const
 {
-    AssertLog(pidx < statedef()->countPatches());
-    AssertLog(ridx < statedef()->countSReacs());
-    Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(ridx < statedef().countSReacs());
+    Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     uint lridx = patch->sreacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -648,11 +644,11 @@ double swmrk4::Wmrk4::_getPatchSReacK(uint pidx, uint ridx) const
 
 void swmrk4::Wmrk4::_setPatchSReacK(uint pidx, uint ridx, double kf)
 {
-    AssertLog(pidx < statedef()->countPatches());
-    AssertLog(ridx < statedef()->countSReacs());
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(ridx < statedef().countSReacs());
     AssertLog(kf >= 0.0);
-    Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     uint lridx = patch->sreacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -671,10 +667,10 @@ void swmrk4::Wmrk4::_setPatchSReacK(uint pidx, uint ridx, double kf)
 
 bool swmrk4::Wmrk4::_getPatchSReacActive(uint pidx, uint ridx) const
 {
-    AssertLog(pidx < statedef()->countPatches());
-    AssertLog(ridx < statedef()->countSReacs());
-    Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(ridx < statedef().countSReacs());
+    Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     uint lridx = patch->sreacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -690,10 +686,10 @@ bool swmrk4::Wmrk4::_getPatchSReacActive(uint pidx, uint ridx) const
 
 void swmrk4::Wmrk4::_setPatchSReacActive(uint pidx, uint ridx, bool a)
 {
-    AssertLog(pidx < statedef()->countPatches());
-    AssertLog(ridx < statedef()->countSReacs());
-    Patchdef * patch = statedef()->patchdef(pidx);
-    AssertLog(patch != 0);
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(ridx < statedef().countSReacs());
+    Patchdef * patch = statedef().patchdef(pidx);
+    AssertLog(patch != nullptr);
     uint lridx = patch->sreacG2L(ridx);
     if (lridx == ssolver::LIDX_UNDEFINED)
     {
@@ -743,18 +739,18 @@ void swmrk4::Wmrk4::_setup()
     /// cumulative number of reacs from each compartment and patch
     pReacs_tot = 0;
 
-    uint Comps_N = statedef()->countComps();
-    uint Patches_N = statedef()->countPatches();
+    uint Comps_N = statedef().countComps();
+    uint Patches_N = statedef().countPatches();
 
     for(uint i=0; i< Comps_N; ++i)
     {
-        pSpecs_tot += statedef()->compdef(i)->countSpecs();
-        pReacs_tot += statedef()->compdef(i)->countReacs();
+        pSpecs_tot += statedef().compdef(i)->countSpecs();
+        pReacs_tot += statedef().compdef(i)->countReacs();
     }
     for(uint i=0; i< Patches_N; ++i)
     {
-        pSpecs_tot += statedef()->patchdef(i)->countSpecs();
-        pReacs_tot += statedef()->patchdef(i)->countSReacs();
+        pSpecs_tot += statedef().patchdef(i)->countSpecs();
+        pReacs_tot += statedef().patchdef(i)->countSReacs();
     }
     AssertLog(pSpecs_tot > 0);
     AssertLog(pReacs_tot > 0);
@@ -781,22 +777,22 @@ void swmrk4::Wmrk4::_setup()
 
     for (uint i=0; i< Comps_N; ++i)
     {
-        uint compReacs_N = statedef()->compdef(i)->countReacs();
-        uint compSpecs_N = statedef()->compdef(i)->countSpecs();
+        uint compReacs_N = statedef().compdef(i)->countReacs();
+        uint compSpecs_N = statedef().compdef(i)->countSpecs();
 
         for(uint j=0; j< compReacs_N; ++j)
         {
             Reaction reaction;
             for(uint k=0; k< compSpecs_N; ++k)
             {
-                uint lhs = statedef()->compdef(i)->reac_lhs_bgn(j)[k];
-                int upd = statedef()->compdef(i)->reac_upd_bgn(j)[k];
+                uint lhs = statedef().compdef(i)->reac_lhs_bgn(j)[k];
+                int upd = statedef().compdef(i)->reac_upd_bgn(j)[k];
                 reaction.addSpecies(colp + k, lhs, upd);
             }
             /// set scaled reaction constant
-            double reac_kcst = statedef()->compdef(i)->kcst(j);
-            double comp_vol = statedef()->compdef(i)->vol();
-            uint reac_order = statedef()->compdef(i)->reacdef(j)->order();
+            double reac_kcst = statedef().compdef(i)->kcst(j);
+            double comp_vol = statedef().compdef(i)->vol();
+            uint reac_order = statedef().compdef(i)->reacdef(j)->order();
             reaction.c = _ccst(reac_kcst, comp_vol, reac_order);
             reactions.push_back(reaction);
         }
@@ -809,79 +805,82 @@ void swmrk4::Wmrk4::_setup()
     /// then sreacs, filling for correct inner and outer compartments
     for(uint i=0; i< Patches_N; ++i)
     {
-        uint patchReacs_N = statedef()->patchdef(i)->countSReacs();
-        uint patchSpecs_N_S = statedef()->patchdef(i)->countSpecs();
-        uint patchSpecs_N_I = statedef()->patchdef(i)->countSpecs_I();
-        uint patchSpecs_N_O = statedef()->patchdef(i)->countSpecs_O();
+        const auto patch = statedef().patchdef(i);
+        uint patchReacs_N = patch->countSReacs();
+        uint patchSpecs_N_S = patch->countSpecs();
+        uint patchSpecs_N_I = patch->countSpecs_I();
+        uint patchSpecs_N_O = patch->countSpecs_O();
 
         for (uint j=0; j< patchReacs_N; ++j)
         {
             Reaction reaction;
             for(uint k=0; k< patchSpecs_N_S; ++k)
-            {   uint slhs = statedef()->patchdef(i)->sreac_lhs_S_bgn(j)[k];
-                int supd = statedef()->patchdef(i)->sreac_upd_S_bgn(j)[k];
+            {   uint slhs = patch->sreac_lhs_S_bgn(j)[k];
+                int supd = patch->sreac_upd_S_bgn(j)[k];
                 reaction.addSpecies(colp + k, slhs, supd);
             }
 
             /// fill for inner and outer compartments involved in sreac j
             /// only perform if inner comp exists, similarly for outer comp
-            if (statedef()->patchdef(i)->icompdef() != 0)
+            if (patch->icompdef() != nullptr)
             {
                 /// fetch global index of inner compartment
-                uint icompidx = statedef()->patchdef(i)->icompdef()->gidx();
+                uint icompidx = patch->icompdef()->gidx();
                 // marker for correct position of inner compartment in matrix
                 uint mtx_icompidx = 0;
                 /// step up marker to correct comp
                 for (uint l=0; l< icompidx; ++l)
                 {
-                    mtx_icompidx += statedef()->compdef(l)->countSpecs();
+                    mtx_icompidx += statedef().compdef(l)->countSpecs();
                 }
                 for(uint k=0; k< patchSpecs_N_I; ++k)
                 {
-                    uint ilhs = statedef()->patchdef(i)->sreac_lhs_I_bgn(j)[k];
-                    int iupd = statedef()->patchdef(i)->sreac_upd_I_bgn(j)[k];
+                    uint ilhs = patch->sreac_lhs_I_bgn(j)[k];
+                    int iupd = patch->sreac_upd_I_bgn(j)[k];
                     reaction.addSpecies(mtx_icompidx + k, ilhs, iupd);
                 }
             }
-            if (statedef()->patchdef(i)->ocompdef() != 0)
+            if (patch->ocompdef() != nullptr)
             {
-                uint ocompidx = statedef()->patchdef(i)->ocompdef()->gidx();
+                uint ocompidx = patch->ocompdef()->gidx();
                 uint mtx_ocompidx =0;
                 for (uint l=0; l< ocompidx; ++l)
                 {
-                    mtx_ocompidx += statedef()->compdef(l)->countSpecs();
+                    mtx_ocompidx += statedef().compdef(l)->countSpecs();
                 }
                 for(uint k=0; k< patchSpecs_N_O; ++k)
                 {
-                    uint olhs = statedef()->patchdef(i)->sreac_lhs_O_bgn(j)[k];
-                    int oupd = statedef()->patchdef(i)->sreac_upd_O_bgn(j)[k];
+                    uint olhs = patch->sreac_lhs_O_bgn(j)[k];
+                    int oupd = patch->sreac_upd_O_bgn(j)[k];
                     reaction.addSpecies(mtx_ocompidx + k, olhs, oupd);
                 }
             }
-            if (statedef()->patchdef(i)->sreacdef(j)->surf_surf() == false)
+            if (patch->sreacdef(j)->surf_surf() == false)
             {    /// set scaled reaction constant
                 /// depends on volume of lhs reaction compartment
                 double vol;
-                if (statedef()->patchdef(i)->sreacdef(j)->inside() == true)
+                if (patch->sreacdef(j)->inside())
                 {
-                    AssertLog(statedef()->patchdef(i)->icompdef() != 0);
-                    vol = statedef()->patchdef(i)->icompdef()->vol();
+                  const auto comp = patch->icompdef();
+                  AssertLog(comp != nullptr);
+                  vol = comp->vol();
                 }
                 else
                 {
-                    AssertLog(statedef()->patchdef(i)->ocompdef() != 0);
-                    vol = statedef()->patchdef(i)->ocompdef()->vol();
+                    const auto comp = patch->ocompdef();
+                    AssertLog(comp != nullptr);
+                    vol = comp->vol();
                 }
-                double sreac_kcst = statedef()->patchdef(i)->kcst(j);
-                uint sreac_order = statedef()->patchdef(i)->sreacdef(j)->order();
+                double sreac_kcst = patch->kcst(j);
+                uint sreac_order = patch->sreacdef(j)->order();
                 reaction.c = _ccst(sreac_kcst, vol, sreac_order);
             }
             else
             {
                 /// 2D reaction
-                double area = statedef()->patchdef(i)->area();
-                double sreac_kcst = statedef()->patchdef(i)->kcst(j);
-                uint sreac_order = statedef()->patchdef(i)->sreacdef(j)->order();
+                double area = patch->area();
+                double sreac_kcst = patch->kcst(j);
+                uint sreac_order = patch->sreacdef(j)->order();
                 reaction.c = _ccst2D(sreac_kcst, area, sreac_order);
             }
             reactions.push_back(reaction);
@@ -901,8 +900,8 @@ void swmrk4::Wmrk4::_setup()
 
 void swmrk4::Wmrk4::_refill()
 {
-    uint Comps_N = statedef()->countComps();
-    uint Patches_N = statedef()->countPatches();
+    uint Comps_N = statedef().countComps();
+    uint Patches_N = statedef().countPatches();
     AssertLog(Comps_N > 0);
 
     uint c_marker = 0;
@@ -910,10 +909,10 @@ void swmrk4::Wmrk4::_refill()
 
     for(uint i=0; i< Comps_N; ++i)
     {
-        uint comp_Specs_N = statedef()->compdef(i)->countSpecs();
-        uint comp_Reacs_N = statedef()->compdef(i)->countReacs();
-        Compdef * comp = statedef()->compdef(i);
-        AssertLog(comp != 0);
+        uint comp_Specs_N = statedef().compdef(i)->countSpecs();
+        uint comp_Reacs_N = statedef().compdef(i)->countReacs();
+        Compdef * comp = statedef().compdef(i);
+        AssertLog(comp != nullptr);
         for (uint j=0; j < comp_Specs_N; ++j)
         {
             pVals[c_marker + j] = comp->pools()[j];
@@ -929,10 +928,10 @@ void swmrk4::Wmrk4::_refill()
 
     for(uint i=0; i< Patches_N; ++i)
     {
-        uint patch_Specs_N = statedef()->patchdef(i)->countSpecs();
-        uint patch_Reacs_N = statedef()->patchdef(i)->countSReacs();
-        Patchdef * patch = statedef()->patchdef(i);
-        AssertLog(patch != 0);
+        uint patch_Specs_N = statedef().patchdef(i)->countSpecs();
+        uint patch_Reacs_N = statedef().patchdef(i)->countSReacs();
+        Patchdef * patch = statedef().patchdef(i);
+        AssertLog(patch != nullptr);
         for (uint j=0; j< patch_Specs_N; ++j)
         {
             pVals[c_marker +j] = patch->pools()[j];
@@ -955,25 +954,25 @@ void swmrk4::Wmrk4::_refill()
 
 void swmrk4::Wmrk4::_refillCcst()
 {
-    uint Comps_N = statedef()->countComps();
-    uint Patches_N = statedef()->countPatches();
+    uint Comps_N = statedef().countComps();
+    uint Patches_N = statedef().countPatches();
     AssertLog(Comps_N > 0);
 
     uint r_marker = 0;
 
     for (uint i=0; i< Comps_N; ++i)
     {
-        uint compReacs_N = statedef()->compdef(i)->countReacs();
-        // uint compSpecs_N = statedef()->compdef(i)->countSpecs();
+        uint compReacs_N = statedef().compdef(i)->countReacs();
+        // uint compSpecs_N = statedef().compdef(i)->countSpecs();
 
         for(uint j=0; j< compReacs_N; ++j)
         {
             /// set scaled reaction constant
             // DEBUG 8/4/09: reaction constants were found from model level objects
             // so didn't take into account sim-level changes
-            double reac_kcst = statedef()->compdef(i)->kcst(j);
-            double comp_vol = statedef()->compdef(i)->vol();
-            uint reac_order = statedef()->compdef(i)->reacdef(j)->order();
+            double reac_kcst = statedef().compdef(i)->kcst(j);
+            double comp_vol = statedef().compdef(i)->vol();
+            uint reac_order = statedef().compdef(i)->reacdef(j)->order();
             reactions[r_marker + j].c = _ccst(reac_kcst, comp_vol, reac_order);
         }
         r_marker += compReacs_N;
@@ -983,37 +982,37 @@ void swmrk4::Wmrk4::_refillCcst()
     /// then sreacs, filling for correct inner and outer compartments
     for(uint i=0; i< Patches_N; ++i)
     {
-        uint patchReacs_N = statedef()->patchdef(i)->countSReacs();
+        uint patchReacs_N = statedef().patchdef(i)->countSReacs();
 
         for (uint j=0; j< patchReacs_N; ++j)
         {
-            if (statedef()->patchdef(i)->sreacdef(j)->surf_surf() == false)
+            if (statedef().patchdef(i)->sreacdef(j)->surf_surf() == false)
             {
                 /// set scaled reaction constant
                 /// depends on volume of lhs reaction compartment
                 double vol;
-                if (statedef()->patchdef(i)->sreacdef(j)->inside() == true)
+                if (statedef().patchdef(i)->sreacdef(j)->inside())
                 {
-                    AssertLog(statedef()->patchdef(i)->icompdef() != 0);
-                    vol = statedef()->patchdef(i)->icompdef()->vol();
+                    AssertLog(statedef().patchdef(i)->icompdef() != nullptr);
+                    vol = statedef().patchdef(i)->icompdef()->vol();
                 }
                 else
                 {
-                    AssertLog(statedef()->patchdef(i)->ocompdef() != 0);
-                    vol = statedef()->patchdef(i)->ocompdef()->vol();
+                    AssertLog(statedef().patchdef(i)->ocompdef() != nullptr);
+                    vol = statedef().patchdef(i)->ocompdef()->vol();
                 }
                 // DEBUG 8/4/09: reaction constants were found from model level objects
                 // so didn't take into account sim-level changes
-                double sreac_kcst = statedef()->patchdef(i)->kcst(j);
-                uint sreac_order = statedef()->patchdef(i)->sreacdef(j)->order();
+                double sreac_kcst = statedef().patchdef(i)->kcst(j);
+                uint sreac_order = statedef().patchdef(i)->sreacdef(j)->order();
                 reactions[r_marker + j].c = _ccst(sreac_kcst, vol, sreac_order);
                 }
             else
             {
                 /// 2D reaction
-                double area = statedef()->patchdef(i)->area();
-                double sreac_kcst = statedef()->patchdef(i)->kcst(j);
-                uint sreac_order = statedef()->patchdef(i)->sreacdef(j)->order();
+                double area = statedef().patchdef(i)->area();
+                double sreac_kcst = statedef().patchdef(i)->kcst(j);
+                uint sreac_order = statedef().patchdef(i)->sreacdef(j)->order();
                 reactions[r_marker + j].c = _ccst2D(sreac_kcst, area, sreac_order);
             }
         }
@@ -1152,26 +1151,26 @@ void swmrk4::Wmrk4::_update()
     }
 
     /// update pools with computed values
-    uint Comps_N = statedef()->countComps();
-    uint Patches_N = statedef()->countPatches();
+    uint Comps_N = statedef().countComps();
+    uint Patches_N = statedef().countPatches();
     uint c_marker = 0;
 
     for(uint i=0; i< Comps_N; ++i)
     {
-        uint comp_Specs_N = statedef()->compdef(i)->countSpecs();
+        uint comp_Specs_N = statedef().compdef(i)->countSpecs();
         for (uint j=0; j< comp_Specs_N; ++j)
         {
-            statedef()->compdef(i)->setCount(j, pVals[c_marker + j]);
+            statedef().compdef(i)->setCount(j, pVals[c_marker + j]);
         }
         c_marker += comp_Specs_N;
     }
 
     for(uint i=0; i< Patches_N; ++i)
     {
-        uint patch_Specs_N = statedef()->patchdef(i)->countSpecs();
+        uint patch_Specs_N = statedef().patchdef(i)->countSpecs();
         for (uint j=0; j< patch_Specs_N; ++j)
         {
-            statedef()->patchdef(i)->setCount(j, pVals[c_marker + j]);
+            statedef().patchdef(i)->setCount(j, pVals[c_marker + j]);
         }
         c_marker += patch_Specs_N;
     }

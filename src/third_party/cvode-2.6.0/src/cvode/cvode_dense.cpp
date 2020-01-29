@@ -109,7 +109,7 @@ int CVDense(void *cvode_mem, int N)
     CVProcessError(NULL, CVDLS_MEM_NULL, "CVDENSE", "CVDense", MSGD_CVMEM_NULL);
     return(CVDLS_MEM_NULL);
   }
-  cv_mem = (CVodeMem) cvode_mem;
+  cv_mem = static_cast<CVodeMem> (cvode_mem);
 
   /* Test if the NVECTOR package is compatible with the DENSE solver */
   if (vec_tmpl->ops->nvgetarraypointer == NULL ||
@@ -128,7 +128,7 @@ int CVDense(void *cvode_mem, int N)
 
   /* Get memory for CVDlsMemRec */
   cvdls_mem = NULL;
-  cvdls_mem = (CVDlsMem) malloc(sizeof(struct CVDlsMemRec));
+  cvdls_mem = static_cast<CVDlsMem> (malloc(sizeof(struct CVDlsMemRec)));
   if (cvdls_mem == NULL) {
     CVProcessError(cv_mem, CVDLS_MEM_FAIL, "CVDENSE", "CVDense", MSGD_MEM_FAIL);
     return(CVDLS_MEM_FAIL);
@@ -195,7 +195,7 @@ static int cvDenseInit(CVodeMem cv_mem)
 {
   CVDlsMem cvdls_mem;
 
-  cvdls_mem = (CVDlsMem) lmem;
+  cvdls_mem = static_cast<CVDlsMem> (lmem);
   
   nje   = 0;
   nfeDQ = 0;
@@ -236,7 +236,7 @@ static int cvDenseSetup(CVodeMem cv_mem, int convfail, N_Vector ypred,
   CVDlsMem cvdls_mem;
   int retval;
 
-  cvdls_mem = (CVDlsMem) lmem;
+  cvdls_mem = static_cast<CVDlsMem> (lmem);
  
   /* Use nst, gamma/gammap, and convfail to set J eval. flag jok */
  
@@ -297,13 +297,13 @@ static int cvDenseSetup(CVodeMem cv_mem, int convfail, N_Vector ypred,
  * -----------------------------------------------------------------
  */
 
-static int cvDenseSolve(CVodeMem cv_mem, N_Vector b, N_Vector weight,
-                        N_Vector ycur, N_Vector fcur)
+static int cvDenseSolve(CVodeMem cv_mem, N_Vector b, N_Vector /*weight*/,
+                        N_Vector /*ycur*/, N_Vector /*fcur*/)
 {
   CVDlsMem cvdls_mem;
   realtype *bd;
 
-  cvdls_mem = (CVDlsMem) lmem;
+  cvdls_mem = static_cast<CVDlsMem> (lmem);
   
   bd = N_VGetArrayPointer(b);
 
@@ -330,7 +330,7 @@ static void cvDenseFree(CVodeMem cv_mem)
 {
   CVDlsMem  cvdls_mem;
 
-  cvdls_mem = (CVDlsMem) lmem;
+  cvdls_mem = static_cast<CVDlsMem> (lmem);
   
   DestroyMat(M);
   DestroyMat(savedJ);

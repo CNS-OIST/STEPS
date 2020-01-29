@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -21,6 +21,8 @@
 #
 #################################################################################   
 ###
+
+import numpy as np
 
 from steps import stepslib
 castToTmComp = stepslib.castToTmComp
@@ -88,14 +90,14 @@ class Tetmesh(stepslib._py_Tetmesh):
     
     Auxiliary data is also stored for each tetrahedron:
         * Volume of the tetrahedron.
-        * Indices of the 4 neighbouring tetrahedrons. If there is no neighbour (i.e. if the tetrahedron lies on the border), this index will be -1. The sequence of neighbours is determined by the following common boundary triangles: (0,1,2), (0,1,3), (0,2,3), (1,2,3).
+        * Indices of the 4 neighbouring tetrahedrons. If there is no neighbour (i.e. if the tetrahedron lies on the border), this index will be UNKNOWN_TET. The sequence of neighbours is determined by the following common boundary triangles: (0,1,2), (0,1,3), (0,2,3), (1,2,3).
         * Indices of the 4 neighbouring boundary triangles. The sequence of neighbours is also determined by (0,1,2), (0,1,3), (0,2,3), (1,2,3).
         * Compartment (steps.geom.TmComp object) that the tetrahedron belongs to. Stores zero pointer if the tetrahedron has not been assigned to a compartment.
     
     And for each triangle:
         * Area of the triangle.
         * Normal vector of the triangle, normalized to length 1.0.
-        * Indices of the 2 neighbouring tetrahedrons. If one tetrahedron does not exist (because the triangle lies on the outer boundary), this index will be -1.
+        * Indices of the 2 neighbouring tetrahedrons. If one tetrahedron does not exist (because the triangle lies on the outer boundary), this index will be UNKNOWN_TET.
         * Patch (steps.geom.TmPatch object) that a triangle belongs to. Stores zero pointer if triangle has not been assigned to a patch.
     """
     pass
@@ -171,7 +173,11 @@ class Memb(stepslib._py_Memb):
 
 
 #Do we want to extract them module level?
-ELEM_VERTEX    = stepslib._py_ElementType.ELEM_VERTEX
-ELEM_TRI       = stepslib._py_ElementType.ELEM_TRI
-ELEM_TET       = stepslib._py_ElementType.ELEM_TET
-ELEM_UNDEFINED = stepslib._py_ElementType.ELEM_UNDEFINED
+ELEM_VERTEX     = stepslib._py_ElementType.ELEM_VERTEX
+ELEM_TRI        = stepslib._py_ElementType.ELEM_TRI
+ELEM_TET        = stepslib._py_ElementType.ELEM_TET
+ELEM_UNDEFINED  = stepslib._py_ElementType.ELEM_UNDEFINED
+UNKNOWN_TET     = stepslib.UNKNOWN_TET
+UNKNOWN_TRI     = stepslib.UNKNOWN_TRI
+INDEX_NUM_BYTES = stepslib.INDEX_NUM_BYTES
+INDEX_DTYPE     = np.uint32 if INDEX_NUM_BYTES == 4 else np.uint64

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -53,7 +53,7 @@ swmrssa::Comp::Comp(steps::solver::Compdef * compdef)
 , pIPatches()
 , pOPatches()
 {
-    assert (pCompdef != 0);
+    assert (pCompdef != nullptr);
     uint nspecs = compdef->countSpecs();
     pPoolLB = new double[nspecs]();
     pPoolUB = new double[nspecs]();
@@ -63,9 +63,8 @@ swmrssa::Comp::Comp(steps::solver::Compdef * compdef)
 
 swmrssa::Comp::~Comp()
 {
-    for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
-    {
-        delete (*k);
+    for (auto const& k :pKProcs) {
+        delete k;
     }
     delete[] pPoolLB;
     delete[] pPoolUB;
@@ -75,9 +74,8 @@ swmrssa::Comp::~Comp()
 
 void swmrssa::Comp::checkpoint(std::fstream & cp_file)
 {
-    for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
-    {
-        (*k)->checkpoint(cp_file);
+    for (auto const& k : pKProcs) {
+        k->checkpoint(cp_file);
     }
 }
 
@@ -85,9 +83,8 @@ void swmrssa::Comp::checkpoint(std::fstream & cp_file)
 
 void swmrssa::Comp::restore(std::fstream & cp_file)
 {
-    for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
-    {
-        (*k)->restore(cp_file);
+    for (auto const& k : pKProcs) {
+        k->restore(cp_file);
     }
 }
 
@@ -95,7 +92,9 @@ void swmrssa::Comp::restore(std::fstream & cp_file)
 
 void swmrssa::Comp::reset()
 {
-    std::for_each(pKProcs.begin(), pKProcs.end(), std::mem_fun(&swmrssa::KProc::reset));
+    for (auto const& k: pKProcs) {
+        k->reset();
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -126,8 +125,9 @@ steps::wmrssa::KProc * swmrssa::Comp::reac(uint lridx) const
 
 void swmrssa::Comp::setupDeps()
 {
-    std::for_each(pKProcs.begin(), pKProcs.end(),
-        std::mem_fun(&KProc::setupDeps));
+    for (auto const& k: pKProcs) {
+        k->setupDeps();
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -172,8 +172,8 @@ void swmrssa::Comp::setBounds(uint i, int nc)
     }
     pPoolLB[i] -= delta;
     pPoolUB[i] += delta;
-    /*pPoolLB[i] = std::max(std::min(nc*(1 - delta), nc - 3.), 0.); // nc/(7 - delta - 2*(3 - delta)/(1 + 2./(nc+1))); //*(1 - delta);//
-    pPoolUB[i] = nc > 0 ? nc*(7 - delta - 2*(3 - delta)/(1 + 2./(nc+1))) : 3; //std::max(nc*(1 + delta), nc + 3.); // (1 + delta);/*/
+    //pPoolLB[i] = std::max(std::min(nc*(1 - delta), nc - 3.), 0.); // nc/(7 - delta - 2*(3 - delta)/(1 + 2./(nc+1))); //*(1 - delta);//
+    //pPoolUB[i] = nc > 0 ? nc*(7 - delta - 2*(3 - delta)/(1 + 2./(nc+1))) : 3; //std::max(nc*(1 + delta), nc + 3.); // (1 + delta);//
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -197,6 +197,8 @@ double* swmrssa::Comp::pools(steps::wmrssa::PropensityRSSA prssa) const
             return pPoolLB;
         case steps::wmrssa::BOUNDS:
             return pPoolUB;
+        default:
+            AssertLog(false);
     }
 }
 
@@ -206,33 +208,21 @@ void swmrssa::Comp::setupSpecDeps()
     localSpecUpdKProcs.resize(nspecs);
     for (uint slidx = 0; slidx < nspecs; slidx++) {
         uint sgidx = def()->specL2G(slidx);
-        for (KProcPVecCI k = pKProcs.begin(); k != pKProcs.end(); ++k)
-        {
-            if ((*k)->depSpecComp(sgidx, this) == true) {
-                localSpecUpdKProcs[slidx].push_back(*k);
+        for (auto const& k : pKProcs) {
+            if (k->depSpecComp(sgidx, this)) {
+                localSpecUpdKProcs[slidx].push_back(k);
             }
         }
-        PatchPVecCI ip_bgn = beginIPatches();
-        PatchPVecCI ip_end = endIPatches();
-        KProcPVecCI kprocend;
-        for (PatchPVecCI ip = ip_bgn; ip != ip_end; ++ip)
-        {
-            kprocend = (*ip)->kprocEnd();
-            for (KProcPVecCI k = (*ip)->kprocBegin(); k != kprocend; ++k)
-            {
-                if ((*k)->depSpecComp(sgidx, this) == true)
-                    localSpecUpdKProcs[slidx].push_back(*k);
+        for (auto const& ip : pIPatches) {
+            for (auto const& k : ip->kprocs()) {
+                if (k->depSpecComp(sgidx, this))
+                    localSpecUpdKProcs[slidx].push_back(k);
             }
         }
-        ip_bgn = beginOPatches();
-        ip_end = endOPatches();
-        for (PatchPVecCI ip = ip_bgn; ip != ip_end; ++ip)
-        {
-            kprocend = (*ip)->kprocEnd();
-            for (KProcPVecCI k = (*ip)->kprocBegin(); k != kprocend; ++k)
-            {
-                if ((*k)->depSpecComp(sgidx, this) == true)
-                    localSpecUpdKProcs[slidx].push_back(*k);
+        for (auto const& ip: pOPatches) {
+            for (auto const& k : ip->kprocs()) {
+                if (k->depSpecComp(sgidx, this))
+                    localSpecUpdKProcs[slidx].push_back(k);
             }
         }
     }

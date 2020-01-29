@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2018 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -32,14 +32,14 @@
 #include <cassert>
 #include <vector>
 
+// logging
+#include <easylogging++.h>
+
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/solver/patchdef.hpp"
 #include "steps/tetexact/kproc.hpp"
 #include "steps/solver/types.hpp"
-
-// logging
-#include "third_party/easyloggingpp/src/easylogging++.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace steps{
@@ -82,9 +82,10 @@ public:
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    Tri(uint idx, steps::solver::Patchdef * patchdef, double area,
+    Tri(triangle_id_t idx, steps::solver::Patchdef * patchdef, double area,
         double l0, double l1, double l2, double d0, double d1, double d2,
-        int tetinner, int tetouter, int tri0, int tri1, int tri2);
+        tetrahedron_id_t tetinner, tetrahedron_id_t tetouter,
+        triangle_id_t tri0, triangle_id_t tri1, triangle_id_t tri2);
     ~Tri();
 
     ////////////////////////////////////////////////////////////////////////
@@ -127,7 +128,7 @@ public:
     inline steps::solver::Patchdef * patchdef() const
     { return pPatchdef; }
 
-    inline uint idx() const
+    inline triangle_id_t idx() const
     { return pIdx; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -149,7 +150,7 @@ public:
         return pNextTri[i];
     }
 
-    inline int tri(uint t)
+    inline triangle_id_t tri(uint t)
     { return pTris[t]; }
 
     /// Get the length of a boundary bar.
@@ -163,12 +164,12 @@ public:
     inline double dist(uint i) const
     { return pDist[i]; }
 
-    inline int tet(uint t) const
+    inline tetrahedron_id_t tet(uint t) const
     { return pTets[t]; }
     
     /// Find the direction index towards a neighbor triangle.
     ///
-    int getTriDirection(uint tidx);
+    int getTriDirection(triangle_id_t tidx);
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -204,7 +205,7 @@ public:
     // MAIN FUNCTIONALITY
     ////////////////////////////////////////////////////////////////////////
 
-    inline uint * pools() const
+    inline uint * pools() const noexcept
     { return pPoolCount; }
     void setCount(uint lidx, uint count);
     void incCount(uint lidx, int inc);
@@ -212,7 +213,7 @@ public:
 
     static const uint CLAMPED = 1;
 
-    inline bool clamped(uint lidx) const
+    inline bool clamped(uint lidx) const noexcept
     { return pPoolFlags[lidx] & CLAMPED; }
     void setClamped(uint lidx, bool clamp);
 
@@ -223,13 +224,15 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline std::vector<stex::KProc *>::const_iterator kprocBegin() const
+    inline std::vector<stex::KProc *>::const_iterator kprocBegin() const noexcept
     { return pKProcs.begin(); }
-    inline std::vector<stex::KProc *>::const_iterator kprocEnd() const
+    inline std::vector<stex::KProc *>::const_iterator kprocEnd() const noexcept
     { return pKProcs.end(); }
-    inline std::vector<stex::KProc *> & kprocs()
+    inline std::vector<stex::KProc *> & kprocs() noexcept
     { return pKProcs; }
-    inline uint countKProcs() const
+    inline const std::vector<stex::KProc *> & kprocs() const noexcept
+    { return pKProcs; }
+    inline uint countKProcs() const noexcept
     { return pKProcs.size(); }
 
     stex::SReac * sreac(uint lidx) const;
@@ -244,7 +247,7 @@ private:
 
     ////////////////////////////////////////////////////////////////////////
 
-    uint                                 pIdx;
+    triangle_id_t                                 pIdx;
 
     steps::solver::Patchdef           * pPatchdef;
 
@@ -254,10 +257,10 @@ private:
 
     // Indices of two neighbouring tets; -1 if surface triangle (if
     // triangle's patch is on the surface of the mesh, quite often the case)
-    int                                 pTets[2];
+    tetrahedron_id_t                    pTets[2];
 
     // Indices of neighbouring triangles.
-    int                                 pTris[3];
+    triangle_id_t                       pTris[3];
 
     /// POinters to neighbouring triangles
     stex::Tri                         * pNextTri[3];
