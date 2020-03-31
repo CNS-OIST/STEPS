@@ -1,0 +1,6 @@
+additional_commands:
+  add_mpi_test:
+    kwargs:
+      NAME: 1
+      NUM_PROCS: 1
+      COMMAND: '*'

@@ -1,0 +1,59 @@
+add_definitions(-DPETSC_HAVE_BROKEN_RECURSIVE_MACRO)
+add_library(
+  zee_common
+  ${CMAKE_CURRENT_BINARY_DIR}/include/version.hpp
+  debug.cpp
+  include/collection.hpp
+  include/debug.hpp
+  include/distributions.hpp
+  include/flat_multimap.hpp
+  include/math.hpp
+  include/memutils.hpp
+  include/mpitools.hpp
+  include/strong_ids.hpp
+  include/opsplit/compdef.hpp
+  include/opsplit/diffdef.hpp
+  include/opsplit/fwd.hpp
+  include/opsplit/mesh.hpp
+  include/opsplit/patchdef.hpp
+  include/opsplit/reacdef.hpp
+  include/opsplit/sreacdef.hpp
+  include/opsplit/statedef.hpp
+  include/opsplit/test/scenario.hpp
+  include/opsplit/test/simdef.hpp
+  include/opsplit/test/simulation.hpp
+  include/opsplit/type_traits.hpp
+  include/opsplit/vocabulary.hpp
+  include/strong_id.hpp
+  include/strong_string.hpp
+  include/vec3.hpp
+  memutils.cpp
+  opsplit/compdef.cpp
+  opsplit/diffdef.cpp
+  opsplit/mesh.cpp
+  opsplit/patchdef.cpp
+  opsplit/reacdef.cpp
+  opsplit/sreacdef.cpp
+  opsplit/statedef.cpp
+  opsplit/test/Ca_burst_background.cpp
+  opsplit/test/Ca_burst_background.hpp
+  opsplit/test/diff_sim.cpp
+  opsplit/test/diff_sim.hpp
+  opsplit/test/multi_comp.cpp
+  opsplit/test/multi_comp.hpp
+  opsplit/test/scenario.cpp
+  opsplit/test/simdef.cpp
+  opsplit/test/simple_model.cpp
+  opsplit/test/simple_model.hpp
+  opsplit/test/simulation.cpp
+  opsplit/test/sreac_unittest.cpp
+  opsplit/test/sreac_unittest.hpp
+  opsplit/test/sreac_validation.cpp
+  opsplit/test/sreac_validation.hpp
+  opsplit/test/validation.cpp
+  opsplit/test/validation.hpp)
+
+install(TARGETS zee_common LIBRARY DESTINATION lib)
+configure_file(include/version.hpp.in include/version.hpp @ONLY)
+target_link_libraries(zee_common PUBLIC Omega_h::omega_h ${PETSC_LIBRARIES}
+                                        ${PETSC_STATIC_LIBRARIES} ${Boost_TIMER_LIBRARY_RELEASE})

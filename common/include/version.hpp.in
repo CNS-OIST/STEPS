@@ -1,0 +1,6 @@
+#pragma once
+
+#define Zee_MAJOR @Zee_VERSION_MAJOR@
+#define Zee_MINOR @Zee_VERSION_MINOR@
+#define Zee_PATCH @Zee_VERSION_PATCH@
+#define Zee_COMMIT "@Zee_COMMIT@"

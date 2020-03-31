@@ -1,0 +1,36 @@
+*build*
+.idea
+
+1d_float_on_vertices/quads\.vtu
+
+1d_float_on_vertices/test\.pvtu
+
+1d_float_on_vertices/tris\.vtu
+
+LaplacianPETSc/eightTris\.msh
+
+LaplacianPETSc/fourTris\.msh
+
+LaplacianPETSc/thirtyTwoTris\.msh
+
+LaplacianPETSc/twoTris\.msh
+
+LeakFiniteVolume/square\.geo
+
+Rallpack1/cylinder\.geo
+
+Rallpack1/cylinder\.msh
+
+Rallpack1/cylinder2\.msh
+
+Rallpack1/twoTets\.geo
+spconfig.py
+
+# HPC coding conventions
+.clang-format
+.clang-tidy
+.cmake-format.yaml
+
+# Pre-commit settings
+.pre-commit-config.yaml
+*.vtk

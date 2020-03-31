@@ -1,0 +1,6 @@
+[submodule "hpc-coding-conventions"]
+	path = hpc-coding-conventions
+	url = git@github.com:BlueBrain/hpc-coding-conventions.git
+[submodule "third_party/hadoken"]
+	path = third_party/hadoken
+	url = git@github.com:adevress/hadoken.git
