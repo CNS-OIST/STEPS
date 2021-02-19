@@ -28,5 +28,21 @@ endif()
 
 include_directories(${inc_dirs})
 
+# Check Python dependencies
+set(PYMODS matplotlib nose numpy scipy)
+set(PYMODS_FOUND "TRUE")
+include(FindPythonModule)
+foreach(MOD ${PYMODS})
+  find_python_module(${MOD})
+  string(TOUPPER ${MOD} MODU)
+  if(NOT ${MODU}_FOUND)
+    set(PYMODS_FOUND "FALSE")
+  endif()
+endforeach()
+if(NOT PYMODS_FOUND)
+  message(WARNING "One or more python module is missing, some tests might fail.")
+  message(STATUS "Consider installing the missing python module or disabling tests \"cmake -DBUILD_TESTING=OFF ..\".")
+endif()
+
 add_subdirectory(unit)
 add_subdirectory(validation)

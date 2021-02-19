@@ -10,9 +10,9 @@
 namespace steps {
 
 #ifdef STEPS_USE_64BITS_INDICES
-using index_t = unsigned long;
+using index_t = std::uint64_t;
 #else
-using index_t = unsigned int;
+using index_t = std::uint32_t;
 #endif
 
 using tetrahedron_id_t = strong_id<index_t, struct tetrahedron_id_trait>;

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -136,6 +136,28 @@ void API::setVertVClamped(vertex_id_t vidx, bool cl)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+double API::getVertIClamp(vertex_id_t vidx) const
+{
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    {
+        if (vidx >= mesh->countVertices())
+        {
+            std::ostringstream os;
+            os << "Vertex index out of range.";
+            ArgErrLog(os.str());
+        }
+        return _getVertIClamp(vidx);
+    }
+    else
+    {
+        std::ostringstream os;
+        os << "Method not available for this solver.";
+        NotImplErrLog("");
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void API::setVertIClamp(vertex_id_t vidx, double i)
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
@@ -181,6 +203,13 @@ bool API::_getVertVClamped(vertex_id_t /*vidx*/) const
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setVertVClamped(vertex_id_t /*vidx*/, bool /*cl*/)
+{
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::_getVertIClamp(vertex_id_t /*vidx*/) const
 {
     NotImplErrLog("");
 }

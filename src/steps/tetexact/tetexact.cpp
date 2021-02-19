@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -75,6 +75,7 @@
 #include "steps/tetexact/vdepsreac.hpp"
 #include "steps/tetexact/vdeptrans.hpp"
 #include "steps/tetexact/wmvol.hpp"
+#include "steps/util/collections.hpp"
 #include "steps/util/distribute.hpp"
 
 #include "steps/solver/efield/dVsolver.hpp"
@@ -1362,8 +1363,12 @@ void Tetexact::_addTri(triangle_id_t triidx,
 
 void Tetexact::reset()
 {
-    std::for_each(pComps.begin(), pComps.end(), std::mem_fun(&Comp::reset));
-    std::for_each(pPatches.begin(), pPatches.end(), std::mem_fun(&Patch::reset));
+    for (auto comp: pComps) {
+        comp->reset();
+    }
+    for (auto patch: pPatches) {
+        patch->reset();
+    }
 
     for (auto const& tet : pTets) {
         if (tet != nullptr) {
@@ -1439,6 +1444,10 @@ void Tetexact::run(double endtime)
         // SSA before reaching the EField dt.
         while (statedef().time() < endtime)
         {
+            if(steps::util::almost_equal(statedef().time(), endtime)) {
+                statedef().setTime(endtime);
+                break;
+            }
             // The zero propensity
             double a0 = getA0();
             // We need a bool to check if the SSA contains no possible events. In
@@ -1450,7 +1459,9 @@ void Tetexact::run(double endtime)
             // Set the actual efield dt. This value will take a maximum pEFDT.
             double ef_dt = 0.0;
 
-            while (ssa_on && (ef_dt + ssa_dt) < pEFDT )
+            double maxDt = std::min(endtime - statedef().time(), pEFDT);
+
+            while (ssa_on && (ef_dt + ssa_dt) < maxDt)
             {
                 KProc * kp = _getNext();
                 if (kp == nullptr) break;
@@ -1462,7 +1473,7 @@ void Tetexact::run(double endtime)
                 else (ssa_on = false);
 
             }
-            AssertLog(ef_dt < pEFDT);
+            AssertLog(ef_dt < maxDt);
 
             // It's possible that ef_dt is zero here: ssa_dt is large, or has become large.
             // In that case print a warning but continue, running the EField simulation for EFDT
@@ -1476,9 +1487,9 @@ void Tetexact::run(double endtime)
             if (ef_dt == 0.0)
             {
                 // This means that tau is larger than EField dt. We have no choice but to
-                // increase the state time by pEFDT.
-                ef_dt = pEFDT;
-                statedef().incTime(pEFDT);
+                // increase the state time by maxDt.
+                ef_dt = maxDt;
+                statedef().incTime(maxDt);
             }
 
             // Now to perform the EField calculation. This means finding ohmic and GHK
@@ -1490,7 +1501,7 @@ void Tetexact::run(double endtime)
 
             for (auto const& eft : pEFTris_vec) {
                 double v = pEField->getTriV(tlidx);
-                double cur = eft->computeI(v, ef_dt, sttime);
+                double cur = eft->computeI(v, ef_dt, sttime, efdt());
                 pEField->setTriI(tlidx, cur);
                 tlidx++;
             }
@@ -1617,7 +1628,7 @@ void Tetexact::_setCompCount(uint cidx, uint sidx, double n)
     steps::util::distribute_quantity(n, comp->bgnTet(), comp->endTet(),
         weight, set_count, inc_count, *rng(), comp->def()->vol());
 
-    for (auto &tet: comp->tets()) _updateSpec(tet, slidx);
+    for (auto &tet: comp->tets()) _updateSpec(tet);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1849,7 +1860,7 @@ void Tetexact::_setPatchCount(uint pidx, uint sidx, double n)
     steps::util::distribute_quantity(n, patch->bgnTri(), patch->endTri(),
         weight, set_count, inc_count, *rng(), patch->def()->area());
 
-    for (auto &tri: patch->tris()) _updateSpec(tri, slidx);
+    for (auto &tri: patch->tris()) _updateSpec(tri);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2428,7 +2439,7 @@ void Tetexact::_executeStep(steps::tetexact::KProc * kp, double dt)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Tetexact::_updateSpec(steps::tetexact::WmVol * tet, uint /*spec_lidx*/)
+void Tetexact::_updateSpec(steps::tetexact::WmVol * tet)
 {
     std::set<KProc*> updset;
 
@@ -2450,7 +2461,7 @@ void Tetexact::_updateSpec(steps::tetexact::WmVol * tet, uint /*spec_lidx*/)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Tetexact::_updateSpec(steps::tetexact::Tri * tri, uint /*spec_lidx*/)
+void Tetexact::_updateSpec(steps::tetexact::Tri * tri)
 {
     _update(tri->kprocBegin(), tri->kprocEnd());
 }
@@ -2692,7 +2703,7 @@ void Tetexact::_setTetCount(tetrahedron_id_t tidx, uint sidx, double n)
 
     // Tet object updates def level Comp object counts
     tet->setCount(lsidx, c);
-    _updateSpec(tet, lsidx);
+    _updateSpec(tet);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3265,7 +3276,7 @@ void Tetexact::_setTriCount(triangle_id_t tidx, uint sidx, double n)
 
     // Tri object updates counts in def level Comp object
     tri->setCount(lsidx, c);
-    _updateSpec(tri, lsidx);
+    _updateSpec(tri);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3880,7 +3891,7 @@ void Tetexact::_setTriVClamped(triangle_id_t tidx, bool cl)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double Tetexact::_getTriOhmicI(triangle_id_t tidx)
+double Tetexact::_getTriOhmicI(triangle_id_t tidx) const
 {
     if (!efflag())
     {
@@ -3904,7 +3915,7 @@ double Tetexact::_getTriOhmicI(triangle_id_t tidx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double Tetexact::_getTriOhmicI(triangle_id_t tidx, uint ocidx)
+double Tetexact::_getTriOhmicI(triangle_id_t tidx, uint ocidx) const
 {
     AssertLog(tidx < static_cast<index_t>(pTris.size()));
     AssertLog(ocidx < statedef().countOhmicCurrs());
@@ -3932,7 +3943,7 @@ double Tetexact::_getTriOhmicI(triangle_id_t tidx, uint ocidx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double Tetexact::_getTriGHKI(triangle_id_t tidx)
+double Tetexact::_getTriGHKI(triangle_id_t tidx) const
 {
     if (!efflag())
     {
@@ -3943,12 +3954,12 @@ double Tetexact::_getTriGHKI(triangle_id_t tidx)
 
     Tri * tri = pTris[tidx.get()];
 
-    return tri->getGHKI(efdt());
+    return tri->getGHKI();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double Tetexact::_getTriGHKI(triangle_id_t tidx, uint ghkidx)
+double Tetexact::_getTriGHKI(triangle_id_t tidx, uint ghkidx) const
 {
     if (!efflag())
     {
@@ -3967,12 +3978,19 @@ double Tetexact::_getTriGHKI(triangle_id_t tidx, uint ghkidx)
         ArgErrLog(os.str());
     }
 
-    return tri->getGHKI(locidx, efdt());
+    return tri->getGHKI(locidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double Tetexact::_getTriI(triangle_id_t tidx) const
+{
+    return _getTriGHKI(tidx) + _getTriOhmicI(tidx);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double Tetexact::_getVertIClamp(vertex_id_t vidx) const
 {
     if (!efflag())
     {
@@ -3980,17 +3998,15 @@ double Tetexact::_getTriI(triangle_id_t tidx) const
         os << "Method not available: EField calculation not included in simulation.";
         ArgErrLog(os.str());
     }
-
-    const auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    const auto locvidx = pEFVert_GtoL[vidx.get()];
+    if (locvidx == UNKNOWN_VER)
     {
         std::ostringstream os;
-        os << "Triangle index " << tidx << " not assigned to a membrane.";
+        os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
         ArgErrLog(os.str());
     }
 
-    // EField object should convert to required units
-    return pEField->getTriI(loctidx);
+    return pEField->getVertIClamp(locvidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -4017,6 +4033,27 @@ void Tetexact::_setVertIClamp(vertex_id_t vidx, double cur)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+double Tetexact::_getTriIClamp(triangle_id_t tidx) const
+{
+    if (!efflag())
+    {
+        std::ostringstream os;
+        os << "Method not available: EField calculation not included in simulation.";
+        ArgErrLog(os.str());
+    }
+    const auto loctidx = pEFTri_GtoL[tidx.get()];
+    if (loctidx == UNKNOWN_TRI)
+    {
+        std::ostringstream os;
+        os << "Triangle index " << tidx << " not assigned to a membrane.";
+        ArgErrLog(os.str());
+    }
+
+    return pEField->getTriIClamp(loctidx);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void Tetexact::_setTriIClamp(triangle_id_t tidx, double cur)
 {
     if (!efflag())
@@ -4035,6 +4072,28 @@ void Tetexact::_setTriIClamp(triangle_id_t tidx, double cur)
 
     // EField object should convert to required units
     pEField->setTriIClamp(loctidx, cur);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Tetexact::_setTriCapac(triangle_id_t tidx, double cap)
+{
+    if (!efflag())
+    {
+        std::ostringstream os;
+        os << "Method not available: EField calculation not included in simulation.";
+        ArgErrLog(os.str());
+    }
+    auto loctidx = pEFTri_GtoL[tidx.get()];
+    if (loctidx == UNKNOWN_TRI)
+    {
+        std::ostringstream os;
+        os << "Triangle index " << tidx << " not assigned to a membrane.";
+        ArgErrLog(os.str());
+    }
+
+    // EField object should convert to required units
+    pEField->setTriCapac(loctidx, cap);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -4464,10 +4523,10 @@ std::vector<double> Tetexact::getBatchTriCounts(const std::vector<index_t> &tris
 ////////////////////////////////////////////////////////////////////////////////
 
 void Tetexact::getBatchTetCountsNP(const index_t *indices,
-                                   int input_size,
+                                   size_t input_size,
                                    std::string const &s,
                                    double *counts,
-                                   int output_size) const
+                                   size_t output_size) const
 {
     if (input_size != output_size)
     {
@@ -4483,7 +4542,7 @@ void Tetexact::getBatchTetCountsNP(const index_t *indices,
 
     uint sgidx = statedef().getSpecIdx(s);
 
-    for (int t = 0; t < input_size; t++) {
+    for (uint t = 0; t < input_size; t++) {
         const auto tidx = indices[t];
 
         if (tidx >= pTets.size())
@@ -4526,10 +4585,10 @@ void Tetexact::getBatchTetCountsNP(const index_t *indices,
 ////////////////////////////////////////////////////////////////////////////////
 
 void Tetexact::getBatchTriCountsNP(const index_t *indices,
-                                   int input_size,
+                                   size_t input_size,
                                    std::string const &s,
                                    double *counts,
-                                   int output_size) const
+                                   size_t output_size) const
 {
     if (input_size != output_size)
     {
@@ -4546,7 +4605,7 @@ void Tetexact::getBatchTriCountsNP(const index_t *indices,
 
     uint sgidx = statedef().getSpecIdx(s);
 
-    for (int t = 0; t < input_size; t++) {
+    for (uint t = 0; t < input_size; t++) {
         const auto tidx = indices[t];
 
         if (tidx >= pTris.size())
@@ -4623,7 +4682,7 @@ std::vector<double> Tetexact::getROITriCounts(const std::string& ROI_id, std::st
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Tetexact::getROITetCountsNP(const std::string& ROI_id, std::string const & s, double* counts, int output_size) const
+void Tetexact::getROITetCountsNP(const std::string& ROI_id, std::string const & s, double* counts, size_t output_size) const
 {
   auto const& roi = mesh().rois.get<tetmesh::ROI_TET>(ROI_id);
   if (roi == mesh().rois.end<tetmesh::ROI_TET>()) {
@@ -4634,7 +4693,7 @@ void Tetexact::getROITetCountsNP(const std::string& ROI_id, std::string const & 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Tetexact::getROITriCountsNP(const std::string& ROI_id, std::string const & s, double* counts, int output_size) const
+void Tetexact::getROITriCountsNP(const std::string& ROI_id, std::string const & s, double* counts, size_t output_size) const
 {
   auto const& roi = mesh().rois.get<tetmesh::ROI_TRI>(ROI_id);
   if (roi == mesh().rois.end<tetmesh::ROI_TRI>()) {
@@ -4688,7 +4747,7 @@ double Tetexact::getROITriCount(const std::vector<triangle_id_t>& indices, const
 
     uint sgidx = statedef().getSpecIdx(s);
 
-    for (auto const tidx: indices) {
+    for (const auto& tidx: indices) {
         if (tidx >= static_cast<index_t>(pTris.size()))
         {
             std::ostringstream os;
@@ -4736,7 +4795,7 @@ double Tetexact::getROITetCount(const std::vector<tetrahedron_id_t>& indices, co
 
     uint sgidx = statedef().getSpecIdx(s);
 
-    for (auto const tidx: indices) {
+    for (const auto& tidx: indices) {
         if (tidx >= static_cast<index_t>(pTets.size()))
         {
             std::ostringstream os;
@@ -4804,16 +4863,16 @@ void Tetexact::setROITriCount(const std::vector<triangle_id_t>& indices, std::st
   const uint sgidx = statedef().getSpecIdx(s);
   std::vector<Tri *> apply;
 
-  for (auto const tidx: indices) {
-    if (tidx >= static_cast<index_t>(pTris.size()))
-      ArgErrLog("ROI refers to nonexistent triangle "+std::to_string(tidx));
+  for (const auto& tidx: indices) {
+      if (tidx >= static_cast<index_t>(pTris.size()))
+          ArgErrLog("ROI refers to nonexistent triangle " + std::to_string(tidx));
 
-    Tri *tri = pTris[tidx.get()];
-    if (!tri || tri->patchdef()->specG2L(sgidx) == ssolver::LIDX_UNDEFINED)
-      continue;
+      Tri* tri = pTris[tidx.get()];
+      if (!tri || tri->patchdef()->specG2L(sgidx) == ssolver::LIDX_UNDEFINED)
+          continue;
 
-    apply.push_back(tri);
-    total_weight += tri->area();
+      apply.push_back(tri);
+      total_weight += tri->area();
   }
 
   steps::util::distribute_quantity(count, apply.begin(), apply.end(),
@@ -4824,7 +4883,7 @@ void Tetexact::setROITriCount(const std::vector<triangle_id_t>& indices, std::st
                                    total_weight);
 
   for (auto &tri: apply) {
-      _updateSpec(tri, tri->patchdef()->specG2L(sgidx));
+      _updateSpec(tri);
   }
 }
 
@@ -4834,7 +4893,7 @@ void Tetexact::setROITetCount(const std::vector<tetrahedron_id_t>& indices, std:
     const uint sgidx = statedef().getSpecIdx(s);
     std::vector<Tet *> apply;
 
-    for (auto const tidx: indices) {
+    for (const auto& tidx: indices) {
         if (tidx >= static_cast<index_t>(pTets.size()))
             ArgErrLog("ROI refers to nonexistent tetrahedron "+std::to_string(tidx));
 
@@ -4854,14 +4913,14 @@ void Tetexact::setROITetCount(const std::vector<tetrahedron_id_t>& indices, std:
                                      total_weight);
 
     for (auto &tet: apply) {
-        _updateSpec(tet, tet->compdef()->specG2L(sgidx));
+        _updateSpec(tet);
     }
 }
 
 void Tetexact::setROICount(const std::string& ROI_id, std::string const & s, double count)
 {
   {
-    auto const& roi = mesh().rois.get<tetmesh::ROI_TRI>(ROI_id);
+    auto const& roi = mesh().rois.get<tetmesh::ROI_TRI>(ROI_id, 0, false);
     if (roi != mesh().rois.end<tetmesh::ROI_TRI>()) {
       setROITriCount(roi->second, s, count);
       return;
@@ -4888,6 +4947,14 @@ double Tetexact::getROIAmount(const std::string& ROI_id, std::string const & s) 
 
 ////////////////////////////////////////////////////////////////////////////////
 
+
+void Tetexact::setROIAmount(const std::string& ROI_id, std::string const & s, double amount)
+{
+    setROICount(ROI_id, s, amount * smath::AVOGADRO);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 double Tetexact::getROIConc(const std::string& ROI_id, std::string const & s) const
 {
   auto const& roi = mesh().rois.get<tetmesh::ROI_TET>(ROI_id);
@@ -4903,7 +4970,7 @@ double Tetexact::getROIConc(const std::string& ROI_id, std::string const & s) co
 
 void Tetexact::setROIConc(const std::string& ROI_id, std::string const & s, double conc)
 {
-    auto const& roi = mesh().rois.get<tetmesh::ROI_TET>(ROI_id);
+    auto const& roi = mesh().rois.get<tetmesh::ROI_TET>(ROI_id, 0, false);
     if (roi == mesh().rois.end<tetmesh::ROI_TET>()) {
       ArgErrLog("can only set concentrations in tetrahedra ROIs");
     }
@@ -4912,7 +4979,7 @@ void Tetexact::setROIConc(const std::string& ROI_id, std::string const & s, doub
     uint sgidx = statedef().getSpecIdx(s);
 
     std::vector<Tet *> apply;
-    for (auto const tidx: roi->second) {
+    for (const auto& tidx: roi->second) {
         if (tidx >= static_cast<index_t>(pTets.size()))
             ArgErrLog("ROI refers to nonexistent tetrahedron "+std::to_string(tidx));
 
@@ -4933,7 +5000,7 @@ void Tetexact::setROIConc(const std::string& ROI_id, std::string const & s, doub
         *rng(),
         total_weight);
 
-    for (auto &tet: apply) _updateSpec(tet, tet->compdef()->specG2L(sgidx));
+    for (auto &tet: apply) _updateSpec(tet);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -4946,7 +5013,7 @@ void Tetexact::setROITriClamped(const std::vector<triangle_id_t>& indices, std::
 
     uint sgidx = statedef().getSpecIdx(s);
 
-    for (auto const tidx: indices) {
+    for (const auto& tidx: indices) {
         if (tidx >= static_cast<index_t>(pTris.size()))
         {
             std::ostringstream os;
@@ -5033,21 +5100,21 @@ void Tetexact::setROITetClamped(const std::vector<tetrahedron_id_t>& indices, st
 void Tetexact::setROIClamped(const std::string& ROI_id, std::string const & s, bool b)
 {
     {
-        auto const& roi = mesh().rois.get<tetmesh::ROI_TRI>(ROI_id);
+        auto const& roi = mesh().rois.get<tetmesh::ROI_TRI>(ROI_id, 0, false);
         if (roi != mesh().rois.end<tetmesh::ROI_TRI>()) {
             setROITriClamped(roi->second, s, b);
-            return;
+            return ;
         }
     }
     {
-        auto const& roi = mesh().rois.get<tetmesh::ROI_TET>(ROI_id);
+        auto const& roi = mesh().rois.get<tetmesh::ROI_TET>(ROI_id, 0, false);
         if (roi != mesh().rois.end<tetmesh::ROI_TET>()) {
             setROITetClamped(roi->second, s, b);
             return;
         }
     }
     std::ostringstream os;
-    os << "Error: Cannot find suitable ROI for the function call getROICount.\n";
+    os << "Error: Cannot find suitable ROI for the function call setROICount.\n";
     ArgErrLog(os.str());
 }
 
@@ -5067,7 +5134,7 @@ void Tetexact::setROIReacK(const std::string& ROI_id, std::string const & r, dou
 
     const uint rgidx = statedef().getReacIdx(r);
 
-    for (auto const tidx: roi->second) {
+    for (const auto& tidx: roi->second) {
         if (tidx >= static_cast<index_t>(pTets.size()))
         {
             std::ostringstream os;
@@ -5123,7 +5190,7 @@ void Tetexact::setROISReacK(const std::string& ROI_id, std::string const & sr, d
 
     uint srgidx = statedef().getSReacIdx(sr);
 
-    for (const auto tidx: roi->second) {
+    for (const auto& tidx: roi->second) {
         if (tidx >= static_cast<index_t>(pTris.size()))
         {
             std::ostringstream os;
@@ -5179,7 +5246,7 @@ void Tetexact::setROIDiffD(const std::string& ROI_id, std::string const & d, dou
 
     uint dgidx = statedef().getDiffIdx(d);
 
-    for (auto const tidx: roi->second) {
+    for (const auto& tidx: roi->second) {
         if (tidx >= static_cast<index_t>(pTets.size()))
         {
             std::ostringstream os;
@@ -5235,7 +5302,7 @@ void Tetexact::setROIReacActive(const std::string& ROI_id, std::string const & r
 
     uint rgidx = statedef().getReacIdx(r);
 
-    for (auto const tidx: roi->second) {
+    for (const auto& tidx: roi->second) {
         if (tidx >= static_cast<index_t>(pTets.size()))
         {
             std::ostringstream os;
@@ -5291,7 +5358,7 @@ void Tetexact::setROISReacActive(const std::string& ROI_id, std::string const & 
 
     uint srgidx = statedef().getSReacIdx(sr);
 
-    for (auto const tidx: roi->second) {
+    for (const auto& tidx: roi->second) {
         if (tidx >= static_cast<index_t>(pTris.size()))
         {
             std::ostringstream os;
@@ -5347,7 +5414,7 @@ void Tetexact::setROIDiffActive(const std::string& ROI_id, std::string const & d
 
     uint dgidx = statedef().getDiffIdx(d);
 
-    for (auto const tidx: roi->second) {
+    for (const auto& tidx: roi->second) {
         if (tidx >= static_cast<index_t>(pTets.size()))
         {
             std::ostringstream os;
@@ -5403,7 +5470,7 @@ void Tetexact::setROIVDepSReacActive(const std::string& ROI_id, std::string cons
 
     uint vsrgidx = statedef().getVDepSReacIdx(vsr);
 
-    for (auto const tidx: roi->second) {
+    for (const auto& tidx: roi->second) {
         if (tidx >= static_cast<index_t>(pTris.size()))
         {
             std::ostringstream os;
@@ -5460,7 +5527,7 @@ unsigned long long Tetexact::getROIReacExtent(const std::string& ROI_id, std::st
 
     unsigned long long sum = 0;
 
-    for (auto const tidx: roi->second) {
+    for (const auto& tidx: roi->second) {
         if (tidx >= static_cast<index_t>(pTets.size()))
         {
             std::ostringstream os;
@@ -5516,7 +5583,7 @@ void Tetexact::resetROIReacExtent(const std::string& ROI_id, std::string const &
 
     uint rgidx = statedef().getReacIdx(r);
 
-    for (auto const tidx: roi->second) {
+    for (const auto& tidx: roi->second) {
         if (tidx >= static_cast<index_t>(pTets.size()))
         {
             std::ostringstream os;
@@ -5572,7 +5639,7 @@ unsigned long long Tetexact::getROISReacExtent(const std::string& ROI_id, std::s
 
     unsigned long long sum = 0;
 
-    for (auto const tidx: roi->second) {
+    for (const auto& tidx: roi->second) {
         if (tidx >= static_cast<index_t>(pTris.size()))
         {
             std::ostringstream os;
@@ -5628,7 +5695,7 @@ void Tetexact::resetROISReacExtent(const std::string& ROI_id, std::string const 
 
     uint srgidx = statedef().getSReacIdx(sr);
 
-    for (auto const tidx: roi->second) {
+    for (const auto& tidx: roi->second) {
         if (tidx >= static_cast<index_t>(pTris.size()))
         {
             std::ostringstream os;
@@ -5684,7 +5751,7 @@ unsigned long long Tetexact::getROIDiffExtent(const std::string& ROI_id, std::st
 
     unsigned long long sum = 0;
 
-    for (auto const tidx: roi->second) {
+    for (const auto& tidx: roi->second) {
         if (tidx >= static_cast<index_t>(pTets.size()))
         {
             std::ostringstream os;
@@ -5740,7 +5807,7 @@ void Tetexact::resetROIDiffExtent(const std::string& ROI_id, std::string const &
 
     uint dgidx = statedef().getDiffIdx(d);
 
-    for (auto const tidx: roi->second) {
+    for (const auto& tidx: roi->second) {
         if (tidx >= static_cast<index_t>(pTets.size()))
         {
             std::ostringstream os;

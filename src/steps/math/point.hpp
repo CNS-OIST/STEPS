@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -29,9 +29,16 @@
 
 #include <array>
 #include <cmath>
+#include <limits>
 
 namespace steps {
 namespace math {
+
+// maximum linear geometric scale expected
+// ideally this should be set as max(abs(x,y,z)) from the mesh
+static constexpr double max_lenght_scale = 1000.0;
+// linear tolerance (4 ULP)
+static constexpr double tol_lin = 4*max_lenght_scale*std::numeric_limits<double>::epsilon();
 
 /** Array of 3 double values representing 3-d point.
  *
@@ -94,16 +101,15 @@ struct point3d: public std::array<double,3> {
     }
 
     bool almostEqual(const point3d &x) const {
-        static const double EPSILON = 1e-9;
         if (*this == x){
             return true;
         }
         const point3d d(std::abs((*this)[0] - x[0]),
                         std::abs((*this)[1] - x[1]),
                         std::abs((*this)[2] - x[2]));
-        return d[0] < std::abs(x[0]) * EPSILON &&
-               d[1] < std::abs(x[1]) * EPSILON &&
-               d[2] < std::abs(x[2]) * EPSILON;
+        return d[0] < tol_lin &&
+               d[1] < tol_lin &&
+               d[2] < tol_lin;
     }
 
     bool operator!=(const point3d &x) const {
@@ -157,10 +163,26 @@ inline point3d operator/(point3d p, double x) {
     return p/=x;
 }
 
-
 // Compat. point3d overload
 inline double distance(const point3d &a, const point3d &b) {
     return a.distance(b);
+}
+
+inline double squared_norm(const point3d &p)
+{
+    return p.dot(p);
+}
+
+// L2-norm
+inline double norm(const point3d &p)
+{
+    return std::sqrt(squared_norm(p));
+}
+
+// L1-norm, aka manhattan distance
+inline double normL1(const point3d &p)
+{
+    return std::abs(p[0]) + std::abs(p[1]) + std::abs(p[2]);
 }
 
 }} // namespace steps::math

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -63,10 +63,10 @@ std::vector<double> API::getBatchTriCounts(const std::vector<index_t> &/* tris *
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::getBatchTetCountsNP(const index_t * /* indices */,
-                              int /* input_size */,
+                              size_t /* input_size */,
                               std::string const & /* s */,
                               double * /* counts */,
-                              int /* output_size */) const
+                              size_t /* output_size */) const
 {
     NotImplErrLog("");
 }
@@ -74,10 +74,10 @@ void API::getBatchTetCountsNP(const index_t * /* indices */,
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::getBatchTriCountsNP(const index_t * /* indices */,
-                              int /* input_size */,
+                              size_t /* input_size */,
                               std::string const & /* s */,
                               double * /* counts */,
-                              int /* output_size */) const
+                              size_t /* output_size */) const
 {
     NotImplErrLog("");
 }

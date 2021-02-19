@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -2131,7 +2131,7 @@ void TetODE::_setPatchSReacK(uint pidx, uint ridx, double kf)
     Patch * patch = pPatches[pidx];
     AssertLog(patch != nullptr);
 
-    for (auto const& tri: pTris) {
+    for (auto const& tri: patch->tris()) {
         // The following method will check the ridx argument
         _setTriSReacK(tri->idx(), ridx, kf);
     }

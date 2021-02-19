@@ -167,10 +167,10 @@ cdef extern from "steps/geom/tetmesh.hpp" namespace "steps::tetmesh":
         std.vector[double] getBoundMax() except +
         double getMeshVolume() except +
         std.vector[steps.index_t] getSurfTris() except +
-        std.vector[double] getBatchTetBarycentres(std.vector[steps.index_t]) except +
-        void getBatchTetBarycentresNP(steps.index_t*, int, double*, int) except +
-        std.vector[double] getBatchTriBarycentres(std.vector[steps.index_t]) except +
-        void getBatchTriBarycentresNP(steps.index_t*, int, double*, int) except +
+        std.vector[double] getBatchTetBarycenters(std.vector[steps.index_t]) except +
+        void getBatchTetBarycentersNP(steps.index_t*, int, double*, int) except +
+        std.vector[double] getBatchTriBarycenters(std.vector[steps.index_t]) except +
+        void getBatchTriBarycentersNP(steps.index_t*, int, double*, int) except +
         std.vector[double] getBatchVertices(std.vector[steps.index_t]) except +
         void getBatchVerticesNP(steps.index_t*, int, double*, int) except +
         std.vector[steps.index_t] getBatchTris(std.vector[steps.index_t]) except +
@@ -199,10 +199,10 @@ cdef extern from "steps/geom/tetmesh.hpp" namespace "steps::tetmesh":
         ROISet getROI(std.string) except +
         std.vector[std.string] getAllROINames() except +
         bool checkROI(std.string, ElementType, steps.index_t, bool) except +
-        std.vector[double] getROITetBarycentres(std.string) except +
-        void getROITetBarycentresNP(std.string, double*, int) except +
-        std.vector[double] getROITriBarycentres(std.string) except +
-        void getROITriBarycentresNP(std.string, double*, int) except +
+        std.vector[double] getROITetBarycenters(std.string) except +
+        void getROITetBarycentersNP(std.string, double*, int) except +
+        std.vector[double] getROITriBarycenters(std.string) except +
+        void getROITriBarycentersNP(std.string, double*, int) except +
         std.vector[double] getROIVertices(std.string) except +
         void getROIVerticesNP(std.string, double*, int) except +
         std.vector[steps.index_t] getROITris(std.string) except +

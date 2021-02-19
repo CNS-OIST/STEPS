@@ -10,6 +10,7 @@ of these objects (see cpp/geom/geom.cpp class destructor).
 
 from steps_wm cimport *
 from steps_tetmesh cimport *
+import warnings
 
 # ======================================================================================================================
 # Python Wrappers to namespace steps::wm
@@ -824,6 +825,42 @@ cdef class _py_Tetmesh(_py_Geom):
         index_t ntris
         """
         self._ptr = new Tetmesh( verts, tets, tris )
+
+    def getAllComps(self, ):
+        """
+        Returns a list of references to all steps.geom.TmComp compartment objects in the
+        tetmesh container.
+
+        Syntax::
+
+            getAllComps()
+
+        Arguments:
+        None
+
+        Return:
+        list<steps.geom.TmComp>
+
+        """
+        return _py_TmComp.vector2list(self.ptr().getAllComps())
+
+    def getAllPatches(self, ):
+        """
+        Returns a list of references to all steps.geom.TmPatch patch objects in the
+        tetmesh container.
+
+        Syntax::
+
+            getAllPatches()
+
+        Arguments:
+        None
+
+        Return:
+        list<steps.geom.TmPatch>
+
+        """
+        return _py_TmPatch.vector2list(self.ptr().getAllPatches())
 
     def getVertex(self, index_t vidx):
         """
@@ -1928,11 +1965,14 @@ cdef class _py_Tetmesh(_py_Geom):
 
     def getROITetBarycentres(self, str ROI_id):
         """
-        Get barycentres of elements stored in a tetrahedral ROI.
+        Get barycenters of elements stored in a tetrahedral ROI.
+
+        This function has been renamed by replacing "centre" with "center".
+        It will be deprecated in the next release.
 
         Syntax::
 
-            getROITetBarycentres(ROI_id)
+            getROITetBarycenters(ROI_id)
 
         Arguments:
         string ROI_id
@@ -1941,34 +1981,80 @@ cdef class _py_Tetmesh(_py_Geom):
         list<float>
 
         """
-        return self.ptrx().getROITetBarycentres(to_std_string(ROI_id))
+        warnings.warn('This function has been renamed by replacing "centre" with "center".\n')
+        warnings.warn('The original function will be deprecated in the next release.\n')
+        return self.ptrx().getROITetBarycenters(to_std_string(ROI_id))
 
-    def getROITetBarycentresNP(self, str ROI_id, double[:] centres):
+    def getROITetBarycenters(self, str ROI_id):
         """
-        Get barycentres of elements stored in a tetrahedral ROI and write to a NumPy array centres.
-        The size of centres should be the same as the number of elements stored in the ROI.
+        Get barycenters of elements stored in a tetrahedral ROI.
 
         Syntax::
 
-            getROITetBarycentresNP(ROI_id, centres)
+            getROITetBarycenters(ROI_id)
 
         Arguments:
         string ROI_id
-        numpy.array<float> centres
+
+        Return:
+        list<float>
+
+        """
+        return self.ptrx().getROITetBarycenters(to_std_string(ROI_id))
+
+    def getROITetBarycentresNP(self, str ROI_id, double[:] centers):
+        """
+        Get barycenters of elements stored in a tetrahedral ROI and write to a NumPy array centers.
+        The size of centers should be the same as the number of elements stored in the ROI.
+
+        This function has been renamed by replacing "centre" with "center".
+        It will be deprecated in the next release.
+
+        Syntax::
+
+            getROITetBarycentersNP(ROI_id, centers)
+
+        Arguments:
+        string ROI_id
+        numpy.array<float> centers
 
         Return:
         None
 
         """
-        return self.ptrx().getROITetBarycentresNP(to_std_string(ROI_id), &centres[0], centres.shape[0])
+        warnings.warn('This function has been renamed by replacing "centre" with "center".\n')
+        warnings.warn('The original function will be deprecated in the next release.\n')
+        return self.ptrx().getROITetBarycentersNP(to_std_string(ROI_id), &centers[0], centers.shape[0])
+
+    def getROITetBarycentersNP(self, str ROI_id, double[:] centers):
+        """
+        Get barycenters of elements stored in a tetrahedral ROI and write to a NumPy array centers.
+        The size of centers should be the same as the number of elements stored in the ROI.
+
+        Syntax::
+
+            getROITetBarycentersNP(ROI_id, centers)
+
+        Arguments:
+        string ROI_id
+        numpy.array<float> centers
+
+        Return:
+        None
+
+        """
+        return self.ptrx().getROITetBarycentersNP(to_std_string(ROI_id), &centers[0], centers.shape[0])
 
     def getROITriBarycentres(self, str ROI_id):
         """
-        Get barycentres of elements stored in a triangular ROI.
+        Get barycenters of elements stored in a triangular ROI.
+
+        This function has been renamed by replacing "centre" with "center".
+        It will be deprecated in the next release.
 
         Syntax::
 
-            getROITriBarycentres(ROI_id)
+            getROITriBarycenters(ROI_id)
 
         Arguments:
         string ROI_id
@@ -1977,26 +2063,69 @@ cdef class _py_Tetmesh(_py_Geom):
         list<float>
 
         """
-        return self.ptrx().getROITriBarycentres(to_std_string(ROI_id))
+        warnings.warn('This function has been renamed by replacing "centre" with "center".\n')
+        warnings.warn('The original function will be deprecated in the next release.\n')
+        return self.ptrx().getROITriBarycenters(to_std_string(ROI_id))
 
-    def getROITriBarycentresNP(self, str ROI_id, double[:] centres):
+    def getROITriBarycenters(self, str ROI_id):
         """
-        Get barycentres of elements stored in a triangular ROI and write to a NumPy array centres.
-        The size of centres should be the same as the number of elements stored in the ROI.
+        Get barycenters of elements stored in a triangular ROI.
 
         Syntax::
 
-            getROITriBarycentresNP(ROI_id, centres)
+            getROITriBarycenters(ROI_id)
 
         Arguments:
         string ROI_id
-        numpy.array<float> centres
+
+        Return:
+        list<float>
+
+        """
+        return self.ptrx().getROITriBarycenters(to_std_string(ROI_id))
+        
+    def getROITriBarycentresNP(self, str ROI_id, double[:] centers):
+        """
+        Get barycenters of elements stored in a triangular ROI and write to a NumPy array centers.
+        The size of centers should be the same as the number of elements stored in the ROI.
+
+        This function has been renamed by replacing "centre" with "center".
+        It will be deprecated in the next release.
+
+        Syntax::
+
+            getROITriBarycentersNP(ROI_id, centers)
+
+        Arguments:
+        string ROI_id
+        numpy.array<float> centers
 
         Return:
         None
 
         """
-        return self.ptrx().getROITriBarycentresNP(to_std_string(ROI_id), &centres[0], centres.shape[0])
+        warnings.warn('This function has been renamed by replacing "centre" with "center".\n')
+        warnings.warn('The original function will be deprecated in the next release.\n')
+        return self.ptrx().getROITriBarycentersNP(to_std_string(ROI_id), &centers[0], centers.shape[0])
+
+    def getROITriBarycentersNP(self, str ROI_id, double[:] centers):
+        """
+        Get barycenters of elements stored in a triangular ROI and write to a NumPy array centers.
+        The size of centers should be the same as the number of elements stored in the ROI.
+        
+        Syntax::
+
+            getROITriBarycentersNP(ROI_id, centers)
+
+        Arguments:
+        string ROI_id
+        numpy.array<float> centers
+
+        Return:
+        None
+
+        """
+        return self.ptrx().getROITriBarycentersNP(to_std_string(ROI_id), &centers[0], centers.shape[0])
 
     def getROIVertices(self, str ROI_id):
         """
@@ -2300,19 +2429,23 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return self.ptrx().reduceROITriPointCountsNP(to_std_string(ROI_id), &point_counts[0], point_counts.shape[0], max_density)
 
-    def intersect(self, double[:, :] point_coords):
+    def intersect(self, double[:, :] point_coords, int sampling=-1):
         """
         Computes the intersection of line segment(s) given the vertices with the current mesh
 
         Args:
             points: A 2-D numpy array (/memview), where each position contains the 3 point
                     coordinates
+            int sampling: not specified or sampling < 1 --> use deterministic method
+                          sampling > 0 --> use montecarlo method with sampling points
 
         Returns:
             A list where each position contains the list of intersected tets (and respective
             intersection ratio) of each line segment.
         """
-        return self.ptrx().intersect(&point_coords[0][0], point_coords.shape[0])
+        if (point_coords.strides[0] != 24 or point_coords.strides[1] != 8):
+            raise Exception("Wrong memory layout for point_coords, np array should be [pts,3] and row major")
+        return self.ptrx().intersect(&point_coords[0][0], point_coords.shape[0], sampling)
 
     @staticmethod
     cdef _py_Tetmesh from_ptr(Tetmesh *ptr):
@@ -2461,6 +2594,10 @@ cdef class _py_TmComp(_py_Comp):
     cdef _py_TmComp from_ref(const TmComp &ref):
         return _py_TmComp.from_ptr(<TmComp*>&ref)
 
+    @staticmethod
+    cdef list vector2list(std.vector[Comp*] vec):
+        return [ _py_TmComp.from_ptr(<TmComp*?>elem) for elem in vec ]
+
     ## properties ##
     tets = property(getAllTetIndices, doc="List of indices of tetrahedrons associated to the compartment.")
 
@@ -2575,6 +2712,10 @@ cdef class _py_TmPatch(_py_Patch):
     @staticmethod
     cdef _py_TmPatch from_ref(const TmPatch &ref):
         return _py_TmPatch.from_ptr(<TmPatch*>&ref)
+
+    @staticmethod
+    cdef list vector2list(std.vector[Patch*] patches):
+        return [ _py_TmPatch.from_ptr(<TmPatch*?>p) for p in patches ]
 
     ## properties ##
     tris = property(getAllTriIndices, doc="List of indices of triangles associated to the patch.")

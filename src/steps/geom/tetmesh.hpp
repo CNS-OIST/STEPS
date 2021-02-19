@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -195,6 +195,13 @@ public:
     /// \return Coordinates of the vertex.
     std::vector<double> getVertex(vertex_id_t vidx) const;
 
+
+    /// Return the id of tets sharing a vertex with index vidx.
+    ///
+    /// \param vidx Index of the vertex.
+    /// \return tets ids.
+    std::vector<tetrahedron_id_t> getVertexTetNeighbs(vertex_id_t vidx) const;
+
     /// Count the vertices in the Tetmesh.
     ///
     /// \return Number of the vertices.
@@ -271,10 +278,10 @@ public:
     /// \return Bars of the triangle
     std::vector<index_t> getTriBars(triangle_id_t tidx) const;
 
-    /// Return the barycentre of triangle with index tidx
+    /// Return the barycenter of triangle with index tidx
     ///
     /// \param tidx Index of the triangle.
-    /// \return Barycentre of the triangle.
+    /// \return Barycenter of the triangle.
     std::vector<double> getTriBarycenter(triangle_id_t tidx) const;
 
     /// Return the normalised triangle with index tidx
@@ -283,7 +290,6 @@ public:
     /// \return Coordinate of the normalised vertices form the triangle.
     std::vector<double> getTriNorm(triangle_id_t tidx) const;
 
-    //getTriBarycentre
     /// Return the patch which a triangle associated to.
     ///
     /// \param tidx Index of the triangle.
@@ -391,9 +397,9 @@ public:
     /// \return Quality RER of the tetrahedron.
     double getTetQualityRER(tetrahedron_id_t tidx) const;
 
-    /// Return the barycentre of the tetrahedron in x,y,z coordinates
+    /// Return the barycenter of the tetrahedron in x,y,z coordinates
     /// \param tidx Index of the tetrahedron
-    /// \return Barycentre of the tetrahedron
+    /// \return Barycenter of the tetrahedron
     std::vector<double> getTetBarycenter(tetrahedron_id_t tidx) const;
 
     /// Return the compartment which a tetrahedron with index tidx belongs to.
@@ -487,54 +493,54 @@ public:
     ////////////////////////////////////////////////////////////////////////
     // Batch Data Access
     ////////////////////////////////////////////////////////////////////////
-    
-    /// Get barycentres of a list of tetrahedrons
-    std::vector<double> getBatchTetBarycentres(std::vector<tetrahedron_id_t> const & tets) const;
-    
-    /// Get barycentres of a list of tetrahedrons
-    void getBatchTetBarycentresNP(const tetrahedron_id_t* indices, int input_size, double* centres, int output_size) const;
-    
-    /// Get barycentres of a list of triangles
-    std::vector<double> getBatchTriBarycentres(std::vector<triangle_id_t> const & tris) const;
-    
-    /// Get barycentres of a list of triangles
-    void getBatchTriBarycentresNP(const triangle_id_t* indices, int input_size, double* centres, int output_size) const;
-    
+
+    /// Get barycenters of a list of tetrahedrons
+    std::vector<double> getBatchTetBarycenters(std::vector<tetrahedron_id_t> const & tets) const;
+
+    /// Get barycenters of a list of tetrahedrons
+    void getBatchTetBarycentersNP(const tetrahedron_id_t* indices, int input_size, double* centers, int output_size) const;
+
+    /// Get barycenters of a list of triangles
+    std::vector<double> getBatchTriBarycenters(std::vector<triangle_id_t> const & tris) const;
+
+    /// Get barycenters of a list of triangles
+    void getBatchTriBarycentersNP(const triangle_id_t* indices, int input_size, double* centers, int output_size) const;
+
     /// Get coordinates of a list of vertices
     std::vector<double> getBatchVertices(std::vector<index_t> const & verts) const;
-    
+
     /// Get coordinates of a list of vertices
     void getBatchVerticesNP(const index_t* indices, int input_size, double* coordinates, int output_size) const;
-    
+
     /// Get vertex indices of a list of triangles
     std::vector<index_t> getBatchTris(std::vector<index_t> const & tris) const;
-    
+
     /// Get vertex indices of a list of triangles
     void getBatchTrisNP(const index_t* t_indices, int input_size, index_t* v_indices, int output_size) const;
 
     /// Get vertex indices of a list of tetrahedrons
     std::vector<index_t> getBatchTets(std::vector<index_t> const & tets) const;
-    
+
     /// Get vertex indices of a list of tetrahedrons
     void getBatchTetsNP(const index_t* t_indices, int input_size, index_t* v_indices, int output_size) const;
-    
+
     /// Return the size of a set with unique vertex indices of a list of triangles
     /// preparation function for future numpy data access
     uint getTriVerticesSetSizeNP(const index_t* t_indices, int input_size) const;
-    
+
     /// Return the size of a set with unique vertex indices of a list of tetrahedrons
     /// preparation function for future numpy data access
     uint getTetVerticesSetSizeNP(const index_t* t_indices, int input_size) const;
-    
+
     /// Get the set with unique vertex indices of a list of triangles, write into given 1D array
     void getTriVerticesMappingSetNP(const index_t* t_indices, int input_size, index_t* t_vertices, int t_vertices_size, index_t* v_set, int v_set_size) const;
-    
+
     /// Get the set with unique vertex indices of a list of tetrahedrons, write into given 1D array
     void getTetVerticesMappingSetNP(const index_t* t_indices, int input_size, index_t* t_vertices, int t_vertices_size, index_t* v_set, int v_set_size) const;
-    
+
     /// Generate npnts random points inside tetrahedron t_idx and write the coordinates to coords
     void genPointsInTet(tetrahedron_id_t tidx, unsigned npnts, double *coords, unsigned int coord_size) const;
-    
+
     /// Generate npnts random points on triangle t_idx and write the coordinates to coords
     void genPointsInTri(triangle_id_t tidx, unsigned npnts, double *coords, unsigned int coord_size) const;
 
@@ -545,7 +551,7 @@ public:
                               unsigned int count_size,
                               double *coords,
                               unsigned int coord_size) const;
-    
+
     /// Generate the random points required in point_counts for tris in indices and store them in coords
     void genTriVisualPointsNP(const index_t *indices,
                               unsigned int index_size,
@@ -553,42 +559,42 @@ public:
                               unsigned int count_size,
                               double *coords,
                               unsigned int coord_size) const;
-    
+
     /// get the volumes of a list of tetrahedrons
     void getBatchTetVolsNP(const index_t* indices, int index_size, double* volumes, int volume_size) const;
-    
+
     /// get the areas of a list of triangles
     void getBatchTriAreasNP(const index_t* indices, int index_size, double* areas, int area_size) const;
-    
+
     /// reduce the number of points required to be generated in a list of tets based on maximum point density
     void reduceBatchTetPointCountsNP(const index_t* indices,
                                      unsigned int index_size,
                                      unsigned int *point_counts,
                                      unsigned int count_size,
                                      double max_density);
-    
+
     /// reduce the number of points required to be generated in a list of tris based on maximum point density
     void reduceBatchTriPointCountsNP(const index_t* indices,
                                      unsigned int index_size,
                                      unsigned int *point_counts,
                                      unsigned int count_size,
                                      double max_density);
-    
+
     ////////////////////////////////////////////////////////////////////////
     // ROI (Region of Interest) Data
     ////////////////////////////////////////////////////////////////////////
-    
+
     /// Add a ROI data
     void addROI(std::string const &id, ElementType type, const ROISet::set_data_type& indices);
-    
+
     /// Remove a ROI data
     [[gnu::deprecated("ROI type will be part of its identifier in future version")]]
     void removeROI(std::string const &id);
     void removeROI(std::string const &id, ElementType type);
-    
+
     /// Replace a ROI data with a new set with the same name
     void replaceROI(std::string const &id, ElementType type, const ROISet::set_data_type& indices);
-    
+
     /// Return the type of a ROI data
     [[gnu::deprecated("ROI type will be part of its identifier in future version")]]
     ElementType getROIType(std::string const &id) const;
@@ -601,11 +607,11 @@ public:
     /// Return the data size of a ROI
     [[gnu::deprecated("usage lead to bad pattern")]]
     uint getROIDataSize(std::string const &id) const;
-    
+
     /// get the total number of ROI recorded
     /// get the total number of ROI recorded
     uint getNROIs() const;
-    
+
     /// Return a ROI
     ROISet getROI(std::string const &id) const;
 
@@ -618,75 +624,75 @@ public:
   ////////////////////////////////////////////////////////////////////////
     // ROI Data Access
     ////////////////////////////////////////////////////////////////////////
-    
-    /// get barycentres of a list of tetrahedrons
-    std::vector<double> getROITetBarycentres(std::string const &ROI_id) const;
-    
-    /// get barycentres of a list of tetrahedrons
-    void getROITetBarycentresNP(std::string const &ROI_id, double* centres, int output_size) const;
-    
-    /// get barycentres of a list of triangles
-    std::vector<double> getROITriBarycentres(std::string const &ROI_id) const;
-    
-    /// get barycentres of a list of triangles
-    void getROITriBarycentresNP(std::string const &ROI_id, double* centres, int output_size) const;
-    
+
+    /// get barycenters of a list of tetrahedrons
+    std::vector<double> getROITetBarycenters(std::string const &ROI_id) const;
+
+    /// get barycenters of a list of tetrahedrons
+    void getROITetBarycentersNP(std::string const &ROI_id, double* centers, int output_size) const;
+
+    /// get barycenters of a list of triangles
+    std::vector<double> getROITriBarycenters(std::string const &ROI_id) const;
+
+    /// get barycenters of a list of triangles
+    void getROITriBarycentersNP(std::string const &ROI_id, double* centers, int output_size) const;
+
     /// get coordinates of a list of vertices
     std::vector<double> getROIVertices(std::string const & ROI_id) const;
-    
+
     /// get coordinates of a list of vertices
     void getROIVerticesNP(std::string const &ROI_id, double* coordinates, int output_size) const;
-    
+
     /// get vertex indices of a list of triangles
     std::vector<index_t> getROITris(std::string const &ROI_id) const;
-    
+
     /// get vertex indices of a list of triangles
     void getROITrisNP(std::string const &ROI_id, index_t* v_indices, int output_size) const;
-    
+
     /// get vertex indices of a list of tetrahedrons
     std::vector<index_t> getROITets(std::string const &ROI_id) const;
-    
+
     /// get vertex indices of a list of tetrahedrons
     void getROITetsNP(std::string const &ROI_id, index_t* v_indices, int output_size) const;
-    
+
     /// return the size of a set with unique vertex indices of a list of triangles
     /// preparation function for future numpy data access
     uint getROITriVerticesSetSizeNP(std::string const &ROI_id) const;
-    
+
     /// return the size of a set with unique vertex indices of a list of tetrahedrons
     /// preparation function for future numpy data access
     uint getROITetVerticesSetSizeNP(std::string const &ROI_id) const;
-    
+
     /// Get the set with unique vertex indices of a list of triangles, write into given 1D array
     void getROITriVerticesMappingSetNP(std::string const &ROI_id, index_t* t_vertices, int t_vertices_size, index_t* v_set, int v_set_size) const;
-    
+
     /// Get the set with unique vertex indices of a list of tetrahedrons, write into given 1D array
     void getROITetVerticesMappingSetNP(std::string const &ROI_id, index_t* t_vertices, int t_vertices_size, index_t* v_set, int v_set_size) const;
-    
+
     /// Generate the random points required in point_counts for tets in indices and store them in coords
     void genROITetVisualPointsNP(std::string const &ROI_id, unsigned int* point_counts, int count_size, double* coords, int coord_size) const;
-    
+
     /// Generate the random points required in point_counts for tris in indices and store them in coords
     void genROITriVisualPointsNP(std::string const &ROI_id, unsigned int* point_counts, int count_size, double* coords, int coord_size) const;
-    
+
     /// get the volumes of a list of tetrahedrons
     void getROITetVolsNP(std::string const &ROI_id, double* volumes, int volume_size) const;
-    
+
     /// get the areas of a list of triangles
     void getROITriAreasNP(std::string const &ROI_id, double* areas, int area_size) const;
-    
+
     /// get the total volume of a tetrahedral roi
     double getROIVol(std::string const &ROI_id) const;
-    
+
     /// get the total area of a triangular roi
     double getROIArea(std::string const &ROI_id) const;
-    
+
     /// reduce the number of points required to be generated in a list of tets based on maximum point density
     void reduceROITetPointCountsNP(std::string const &ROI_id, unsigned int* point_counts, int count_size, double max_density);
-    
+
     /// reduce the number of points required to be generated in a list of tris based on maximum point density
     void reduceROITriPointCountsNP(std::string const &ROI_id, unsigned int* point_counts, int count_size, double max_density);
-    
+
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (C++ INTERNAL)
     ////////////////////////////////////////////////////////////////////////
@@ -764,7 +770,7 @@ public:
     ///
     /// \param tidx Index of the tetrahedron.
     /// \return Barycenter of tetrahedron.
-    inline const point3d &_getTetBarycenter(tetrahedron_id_t tidx) const noexcept { return pTet_barycentres[tidx.get()]; }
+    inline const point3d &_getTetBarycenter(tetrahedron_id_t tidx) const noexcept { return pTet_barycenters[tidx.get()]; }
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -915,7 +921,7 @@ private:
     std::vector<tri_bars>               pTri_bars;
     /// The areas of the triangles
     std::vector<double>                 pTri_areas;
-    /// The triangle barycentres
+    /// The triangle barycenters
     std::vector<point3d>                pTri_barycs;
     /// The triangle normals
     std::vector<point3d>                pTri_norms;
@@ -936,8 +942,8 @@ private:
     std::vector<tet_verts>              pTets;
     /// The volume of the tetrahedron
     std::vector<double>                 pTet_vols;
-    /// The barycentres of the tetrahedra
-    std::vector<point3d>                pTet_barycentres;
+    /// The barycenters of the tetrahedra
+    std::vector<point3d>                pTet_barycenters;
     /// The compartment a tetrahedron belongs to
     std::vector<TmComp  *> pTet_comps;
     /// The triangle neighbours of each tetrahedron (by index)
@@ -957,7 +963,7 @@ private:
     MembPMap       pMembs;
     std::map<std::string, DiffBoundary *> pDiffBoundaries;
     std::map<std::string, SDiffBoundary *> pSDiffBoundaries;
-    
+
     ////////////////////////// ROI Dataset /////////////////////////////////
     //std::map<std::string, ROISet>                       mROI;
 

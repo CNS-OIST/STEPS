@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -154,7 +154,11 @@ public:
     /// \param cl Clamped (true) or unclamped (false)
     void    setVertVClamped(vertex_id_t vidx, bool cl);
 
-    /// Set the current clamp for a vertex  eleemnt.
+    /// Get the current clamp for a vertex element.
+    /// \param vidx Index of the vertex
+    double  getVertIClamp(vertex_id_t vidx);
+
+    /// Set the current clamp for a vertex element.
     /// \param vidx Index of the vertex
     /// \param cur Current clamp for the vertex
     void     setVertIClamp(vertex_id_t vidx, double cur);
@@ -191,7 +195,11 @@ public:
     /// \param cur Current across the triangle (amps)
     void    setTriI(triangle_id_t tidx, double cur);
 
-    /// Set the current clamp for a triangle surface eleemnt.
+    /// Get the current clamp for a triangle surface element.
+    /// \param tidx Index of the triangle surface element
+    double   getTriIClamp(triangle_id_t tidx);
+
+    /// Set the current clamp for a triangle surface element.
     /// \param tidx Index of the triangle surface element
     /// \param cur Current clamp for the triangle surface element
     void     setTriIClamp(triangle_id_t tidx, double cur);

@@ -1,5 +1,29 @@
 Release Notes
 
+Version 3.6.0 (2021-02)
+==========================
+
+Python API
+----------
+1. Added a new python API (see [documentation](http://steps.sourceforge.net/manual/manual_index.html))
+   Scripts written for older STEPS version should still work without any modifications.
+   The new python API can be used by adding the following line at the top of a STEPS script:
+
+   ```python
+   import steps.interface
+   ```
+
+2. Dropped support for python 2.7. The minimum python version is now 3.6.
+
+Build and Packaging
+-------------------
+1. Added support for OpenMP and AppleClang compiler
+2. Improved CMake structure to allow for faster compilation
+
+Internal code base
+------------------
+1. Code fixes for segment-tetrahedron intersection
+
 Version 3.5.0 (2019-10)
 ==========================
 

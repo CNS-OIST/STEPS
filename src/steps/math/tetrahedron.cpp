@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -25,12 +25,14 @@
  */
 
 #include <cmath>
+#include <limits>
 
 // STEPS headers.
 #include "steps/common.h"
 #include "steps/error.hpp"
 #include "steps/math/linsolve.hpp"
 #include "steps/math/point.hpp"
+#include "steps/math/triangle.hpp"
 #include "steps/math/tetrahedron.hpp"
 
 // logging
@@ -70,12 +72,20 @@ static inline bool same_direction(const point3d &center, const point3d& opposite
     // FIXME: the normal of a face is alreay computed by TetMesh, but I don't see how to use it.
     auto normal = (p1 - center).cross(p2 - center);
     auto A = (opposite - center).dot(normal);
-
     auto B = (pi - center).dot(normal);
-    if (A * B < 0) return false;
+
+    // 4 ULP
+    constexpr auto epsilon = 4*std::numeric_limits<point3d::value_type>::epsilon();
+    auto tol = std::max(std::abs(A), std::abs(B)) * epsilon;
+
+    // same sign with tolerance
+    if (A < -tol && B > tol) return false;
+    if (A > tol && B < -tol) return false;
+
     return true;
 }
 
+// TODO: try barycentic coordinates, it might be faster
 bool tet_inside(const point3d &p0, const point3d &p1,
                 const point3d &p2, const point3d &p3,
                 const point3d &pi)
@@ -110,11 +120,11 @@ point3d tet_ranpnt(const point3d &p0, const point3d &p1,
     else if (s + t + u > 1.0) {
         double tmp = u;
         u = s + t + u - 1.0;
-        s = 1 - t - tmp;
+        s = 1.0 - t - tmp;
     }
 
     // a,s,t,u are the barycentric coordinates of the random point.
-    double a = 1 - s - t - u;
+    double a = 1.0 - s - t - u;
     return a*p0 + s*p1 + t*p2 + u*p3;
 }
 

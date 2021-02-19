@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -949,30 +949,34 @@ public:
     /// Returns the ohmic current of triangle in amperes.
     ///
     /// \param tidx Index of the triangle.
-    double getTriOhmicI(triangle_id_t tidx);
+    double getTriOhmicI(triangle_id_t tidx) const;
 
     /// Returns the ohmic current of triangle in amperes.
     ///
     /// \param tidx Index of the triangle.
     /// \param oc name of the ohmic current
-    double getTriOhmicI(triangle_id_t tidx, std::string const & oc);
+    double getTriOhmicI(triangle_id_t tidx, std::string const & oc) const;
 
     /// Returns the GHK current of triangle in amperes.
     ///
     /// \param tidx Index of the triangle.
-    double getTriGHKI(triangle_id_t tidx);
+    double getTriGHKI(triangle_id_t tidx) const;
 
     /// Returns the GHK current of triangle in amperes.
     ///
     /// \param tidx Index of the triangle.
     /// \param ghk name of the ghk current
-    double getTriGHKI(triangle_id_t tidx, std::string const & ghk);
+    double getTriGHKI(triangle_id_t tidx, std::string const & ghk) const;
 
     /// Returns the current of a triangle in amperes from the last EField
     /// calculation step.
     ///
     /// \param tidx Index of the triangle
     double getTriI(triangle_id_t tidx) const;
+
+    /// Gets current injection to triangle.
+    /// \param tidx Index of the triangle
+    double getTriIClamp(triangle_id_t tidx) const;
 
     /// Sets current injection to triangle.
     /// Will be assumed to be constant for one EField DT
@@ -1026,6 +1030,10 @@ public:
     /// \param vidx Index of the vertex
     /// \param cl Flag to turn the clamping on or off.
     void setVertVClamped(vertex_id_t vidx, bool cl);
+
+    /// Gets current injection to vertex.
+    /// \param vidx Index of the vertex
+    double getVertIClamp(vertex_id_t vidx) const;
 
     /// Sets current injection to vertex.
     /// Will be assumed to be constant for one EField DT
@@ -1103,17 +1111,17 @@ public:
     
     /// Get species counts of a list of tetrahedrons
     virtual void getBatchTetCountsNP(const index_t *indices,
-                                     int input_size,
+                                     size_t input_size,
                                      std::string const &s,
                                      double *counts,
-                                     int output_size) const;
+                                     size_t output_size) const;
 
     /// Get species counts of a list of triangles
     virtual void getBatchTriCountsNP(const index_t *indices,
-                                     int input_size,
+                                     size_t input_size,
                                      std::string const &s,
                                      double *counts,
-                                     int output_size) const;
+                                     size_t output_size) const;
     
 
     ////////////////////////////////////////////////////////////////////////
@@ -1127,29 +1135,31 @@ public:
     virtual std::vector<double> getROITriCounts(const std::string& ROI_id, std::string const & s) const;
     
     /// Get species counts of a list of tetrahedrons
-    virtual void getROITetCountsNP(const std::string& ROI_id, std::string const & s, double* counts, int output_size) const;
+    virtual void getROITetCountsNP(const std::string& ROI_id, std::string const & s, double* counts, size_t output_size) const;
     
     /// Get species counts of a list of triangles
-    virtual void getROITriCountsNP(const std::string& ROI_id, std::string const & s, double* counts, int output_size) const;
+    virtual void getROITriCountsNP(const std::string& ROI_id, std::string const & s, double* counts, size_t output_size) const;
 
-     virtual double getROIVol(const std::string& ROI_id) const;
+    virtual double getROIVol(const std::string& ROI_id) const;
     virtual double getROIArea(const std::string& ROI_id) const;
     
-     virtual double getROICount(const std::string& ROI_id, std::string const & s) const;
+    virtual double getROICount(const std::string& ROI_id, std::string const & s) const;
     virtual void setROICount(const std::string& ROI_id, std::string const & s, double count);
     
-     virtual double getROIAmount(const std::string& ROI_id, std::string const & s) const;
+    virtual double getROIAmount(const std::string& ROI_id, std::string const & s) const;
+    virtual void setROIAmount(const std::string& ROI_id, std::string const & s, double);
+
     virtual double getROIConc(const std::string& ROI_id, std::string const & s) const;
     virtual void setROIConc(const std::string& ROI_id, std::string const & s, double conc);
     
     virtual void setROIClamped(const std::string& ROI_id, std::string const & s, bool b);
     
     virtual void setROIReacK(const std::string& ROI_id, std::string const & r, double kf);
-      virtual void setROISReacK(const std::string& ROI_id, std::string const & sr, double kf);
+    virtual void setROISReacK(const std::string& ROI_id, std::string const & sr, double kf);
     virtual void setROIDiffD(const std::string& ROI_id, std::string const & d, double dk);
     
     virtual void setROIReacActive(const std::string& ROI_id, std::string const & r, bool a);
-     virtual void setROISReacActive(const std::string& ROI_id, std::string const & sr, bool a);
+    virtual void setROISReacActive(const std::string& ROI_id, std::string const & sr, bool a);
     virtual void setROIDiffActive(const std::string& ROI_id, std::string const & d, bool act);
     virtual void setROIVDepSReacActive(const std::string& ROI_id, std::string const & vsr, bool a);
     
@@ -1348,13 +1358,15 @@ protected:
     virtual void _setTriV(triangle_id_t tidx, double v);
     virtual bool _getTriVClamped(triangle_id_t tidx) const;
     virtual void _setTriVClamped(triangle_id_t tidx, bool cl);
-    virtual double _getTriOhmicI(triangle_id_t tidx);
-    virtual double _getTriOhmicI(triangle_id_t tidx, uint ocidx);
+    virtual double _getTriOhmicI(triangle_id_t tidx) const;
+    virtual double _getTriOhmicI(triangle_id_t tidx, uint ocidx) const;
     virtual double _getTriI(triangle_id_t tidx) const;
+
+    virtual double _getTriIClamp(triangle_id_t tidx) const;
     virtual void _setTriIClamp(triangle_id_t tidx, double i);
 
-    virtual double _getTriGHKI(triangle_id_t tidx);
-    virtual double _getTriGHKI(triangle_id_t tidx, uint ocidx);
+    virtual double _getTriGHKI(triangle_id_t tidx) const;
+    virtual double _getTriGHKI(triangle_id_t tidx, uint ocidx) const;
 
     virtual bool _getTriVDepSReacActive(triangle_id_t tidx, uint vsridx) const;
     virtual void _setTriVDepSReacActive(triangle_id_t tidx, uint vsridx, bool act);
@@ -1369,8 +1381,11 @@ protected:
 
     virtual double _getVertV(vertex_id_t vidx) const;
     virtual void _setVertV(vertex_id_t vidx, double v);
+
     virtual bool _getVertVClamped(vertex_id_t vidx) const;
     virtual void _setVertVClamped(vertex_id_t vidx, bool cl);
+
+    virtual double _getVertIClamp(vertex_id_t vidx) const;
     virtual void _setVertIClamp(vertex_id_t vidx, double i);
 
     ////////////////////////////////////////////////////////////////////////

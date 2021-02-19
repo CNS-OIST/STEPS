@@ -852,27 +852,6 @@ cdef class _py_Wmrssa(_py_API):
         """
         return self.ptrd().getTime()
 
-    def getA0(self, ):
-        """
-        Returns the total propensity of the current simulation state 
-        (the total propensity multiplied by an infinitesimally small 
-        time dt gives the probability that a reaction will occur in that dt). 
-        For Tetexact this includes the propensity from the extension of the SSA 
-        for diffusive flux between tetrahedral elements in the mesh.
-
-        Syntax::
-            
-            getA0()
-            
-        Arguments:
-        None
-
-        Return:
-        float
-
-        """
-        return self.ptrd().getA0()
-
     def getNSteps(self, ):
         """
         Return the number of 'realizations' of the SSA, the number of reaction 
@@ -1573,7 +1552,7 @@ cdef class _py_Tetexact(_py_API):
         Get the amount of a species in a ROI.
 
         Syntax::
-            getROIAmount(ROI_id, s, count)
+            getROIAmount(ROI_id, s)
 
         Arguments:
         string ROI_id
@@ -1584,6 +1563,24 @@ cdef class _py_Tetexact(_py_API):
 
         """
         return self.ptrx().getROIAmount(to_std_string(ROI_id), to_std_string(s))
+
+    def setROIAmount(self, str ROI_id, str s, double amount):
+        """
+        Set the amount of a species in a ROI.
+
+        Syntax::
+            setROIAmount(ROI_id, s, amount)
+
+        Arguments:
+        string ROI_id
+        string s
+        float amount
+
+        Return:
+        None
+
+        """
+        return self.ptrx().setROIAmount(to_std_string(ROI_id), to_std_string(s), amount)
 
     def getROIConc(self, str ROI_id, str s):
         """
@@ -4315,6 +4312,24 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getTriI(tidx)
 
+    def getTriIClamp(self, index_t tidx):
+        """
+        Get current clamp to triangle element with index tidx.
+        NOTE: Convention is maintained that a positive current clamp is depolarizing, a negative current clamp is hyperpolarizing.
+        			
+        Syntax::
+        			 
+        	getTriIClamp(tidx)
+        			 
+        Arguments:
+        index_t tidx
+        			 
+        Return:
+        float
+
+        """
+        return self.ptr().getTriIClamp(tidx)
+
     def setTriIClamp(self, index_t tidx, double i):
         """
         Set current clamp to triangle element with index idx to current i (amps).
@@ -4466,6 +4481,24 @@ cdef class _py_API(_py__base):
 
         """
         self.ptr().setVertVClamped(vidx, cl)
+
+    def getVertIClamp(self, index_t vidx):
+        """
+        Get current clamp to vertex element with index vidx (Amps). 
+        NOTE: Convention is maintained that a positive current clamp is depolarizing, a negative current clamp is hyperpolarizing.
+
+        Syntax::
+
+            getVertIClamp(vidx)
+        			 
+        Arguments:
+        index_t vidx
+        			 
+        Return:
+        float
+
+        """
+        return self.ptr().getVertIClamp(vidx)
 
     def setVertIClamp(self, index_t vidx, double i):
         """

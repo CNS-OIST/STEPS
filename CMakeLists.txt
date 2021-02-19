@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.10.2)
 if(POLICY CMP0042)
   # Use rpath on Mac OS X
   cmake_policy(SET CMP0042 NEW)
@@ -9,11 +9,12 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMake)
 project(STEPS)
 
 set(VERSION_MAJOR 3)
-set(VERSION_MINOR 5)
+set(VERSION_MINOR 6)
 set(VERSION_PATCH 0)
 set(STEPS_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
 # OPTIONS
+option(BUILD_STOCHASTIC_TESTS "Build stochastic tests" ON)
 option(TARGET_NATIVE_ARCH "Generate non-portable arch-specific code" ON)
 option(USE_BDSYSTEM_LAPACK "Use new BDSystem/Lapack code for E-Field solver"
        OFF)
@@ -24,18 +25,11 @@ option(USE_BUNDLE_SUNDIALS "Use bundled version of cvode" ON)
 option(USE_64_BITS_INDICES "Use 64bits indices instead of 32" OFF)
 
 set(USE_MPI "Default" CACHE STRING "Use MPI for parallel solvers")
+# Toggleable options
+set_property(CACHE USE_MPI PROPERTY STRINGS "Default;True;False")
 set(USE_PETSC "Default"
     CACHE STRING "Use PETSC library for parallel E-Field solver")
-if(NOT USE_MPI MATCHES "^(Default|True|False)$")
-  message(
-    FATAL_ERROR
-      "Acceptable values for USE_MPI are: \"Default\", \"True\", \"False\"!")
-endif()
-if(NOT USE_PETSC MATCHES "^(Default|True|False)$")
-  message(
-    FATAL_ERROR
-      "Acceptable values for USE_PETSC are: \"Default\", \"True\", \"False\"!")
-endif()
+set_property(CACHE USE_PETSC PROPERTY STRINGS "Default;True;False")
 
 if(USE_BUNDLE_EASYLOGGINGPP)
   set(EASYLOGGINGPP_INCLUDE_DIRS
@@ -125,6 +119,10 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
               "-Wpedantic")
 endif()
 
+if(CMAKE_CXX_COMPILER_ID MATCHES Clang)
+  add_options(ALL_LANGUAGES ALL_BUILDS -Wloop-analysis)
+endif()
+
 # FIXME TCL: compile with 2 flags below "-Wconversion" "-Wsign-conversion"
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
@@ -162,7 +160,9 @@ endif()
 
 # Requirements
 # -------------------------------------------------------------------
-find_package(PythonInterpLibs REQUIRED)
+find_package(PythonInterp 3.6 REQUIRED)
+find_package(PythonInterpLibs)
+
 find_package(Threads REQUIRED)
 
 # if USE_MPI is
@@ -189,21 +189,23 @@ endif()
 
 # see USE_MPI options above
 if(USE_PETSC MATCHES "^(Default|True)$")
+  include(FindPkgConfig)
   if(USE_PETSC STREQUAL "True")
     if(NOT MPI_FOUND)
       message(FATAL_ERROR "PETSC reqires MPI!")
     endif()
-    find_package(PETSC REQUIRED)
+    pkg_search_module(PETSC REQUIRED PETSc)
   elseif(USE_PETSC STREQUAL "Default")
     if(NOT MPI_FOUND)
       message(
         WARNING
           "Building without PETSC. If desired enable finding MPI libs as well!")
     else()
-      find_package(PETSC)
+      pkg_search_module(PETSC QUIET PETSc)
     endif()
   endif()
   if(PETSC_FOUND)
+    message(STATUS "PETSc found: ${PETSC_LIBRARY_DIRS}")
     add_definitions(-DUSE_PETSC)
   endif()
 endif()
@@ -220,10 +222,15 @@ endif()
 
 # OpenMP
 find_package(OpenMP)
+if(${CMAKE_CXX_COMPILER_ID} STREQUAL "AppleClang")
+  include(AppleClangPatch)
+endif()
 if(OPENMP_FOUND)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   set(CMAKE_FLAGS "${CMAKE_FLAGS} ${OpenMP_FLAGS}")
+  include_directories(SYSTEM ${OpenMP_CXX_INCLUDE_DIR})
+  list(APPEND libsteps_link_libraries ${OpenMP_libomp_LIBRARY})
 endif()
 
 # Linking Libs - required in src and pysteps
@@ -236,6 +243,9 @@ if(LAPACK_FOUND)
   list(APPEND libsteps_link_libraries ${LAPACK_LIBRARIES})
 endif()
 if(PETSC_FOUND)
+  include_directories(SYSTEM ${PETSC_INCLUDE_DIRS})
+  link_directories(${PETSC_LIBRARY_DIRS})
+  link_directories(${PETSC_STATIC_LIBRARY_DIRS})
   list(APPEND libsteps_link_libraries ${PETSC_LIBRARIES})
 endif()
 
@@ -259,18 +269,34 @@ endif()
 
 set(PYTHON_INSTALL_PREFIX ${_py_install_prefix}
     CACHE PATH "Path to install steps Python package")
-message(
-  STATUS
-    "PYTHON packages being installed to ${PYTHON_INSTALL_PREFIX}. To change use -DPYTHON_INSTALL_PREFIX=<dir>"
-  )
+
+# Python dependencies
+include(FindPythonModule)
+find_python_module(numpy REQUIRED)
 
 # Python bindings tech Makes steps Python bindings based on Cython
-find_package(Cython 0.25.1 REQUIRED)
-add_subdirectory(pysteps)
+if(PYTHONINTERP_FOUND)
+  find_package(Cython 0.25.1 REQUIRED)
+  add_subdirectory(pysteps)
+endif()
 
 # Makes libsteps-obj, libsteps.so
 add_subdirectory(src)
 
 # Make testing targets
-enable_testing()
-add_subdirectory(test)
+include(CTest)
+if(BUILD_TESTING)
+  add_subdirectory(test)
+endif()
+
+message(
+  STATUS
+    "STEPS PYTHON packages will be installed to ${PYTHON_INSTALL_PREFIX}\nTo change use -DPYTHON_INSTALL_PREFIX=<dir>"
+  )
+
+# Check whether a steps version < 3.6 is already installed
+find_python_module(steps)
+if(STEPS_FOUND AND (STEPS_LOCATION STREQUAL "${PYTHON_INSTALL_PREFIX}/steps") AND (STEPS_VERSION_STRING VERSION_LESS 3.6.0))
+    message(WARNING "STEPS ${STEPS_VERSION_STRING} is already installed in:\n${STEPS_LOCATION}\nSince STEPS 3.6.0, the layout of files in the python package has changed. It is advised to remove the previous installation before installing STEPS ${STEPS_VERSION} there. This can be done with:\n[sudo] rm -rf ${STEPS_LOCATION}")
+endif()
+

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -45,10 +45,10 @@ namespace math {
 double tet_vol(const point3d &p0, const point3d &p1,
                const point3d &p2, const point3d &p3);
 
-/** Calculate tetrahedron barycentre.
+/** Calculate tetrahedron barycenter.
  *
  * \param p0,p1,p2,p3 Vertices of tetrahedron.
- * \return Barycentre.
+ * \return Barycenter.
  */
 point3d tet_barycenter(const point3d &p0, const point3d &p1,
                        const point3d &p2, const point3d &p3);

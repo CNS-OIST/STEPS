@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -31,8 +31,12 @@
 /** \file Interface to common functionality across geom classes
  */
 
+#include <algorithm>
+#include <cmath>
 #include <functional>
 #include <iterator>
+#include <limits>
+#include <type_traits>
 #include <unordered_set>
 #include <unordered_map>
 #include <vector>
@@ -183,6 +187,26 @@ template <typename V, typename Out, typename H = steps::util::fnv_hash<V>>
 static unique_indexer<V, H, Out> make_unique_indexer(Out out, H hasher = H()) {
     return unique_indexer<V,H,Out>(out, hasher);
 }
+
+/** Check if two given floating point values almost equal.
+ * This function checks if the given floating point values x and y are almost equal, with 4 ulps as default precision
+ * The choice of 4 ulps is according to googletest, but may need adjustment for special cases
+ * https://github.com/google/googletest/blob/472cd8fd8b1c665bddfd021ad0f62d6747fe8e72/googletest/include/gtest/internal/gtest-internal.h#L290
+ *
+ * \param x       the first value for comaprison
+ * \param y       the second value for comaprison
+ * \param ulp     the desired precision in ULPs (units in the last place)
+ * \return        true of x and y are almost equal, false if they are not.
+ */
+
+template<class T>
+typename std::enable_if<!std::numeric_limits<T>::is_integer, bool>::type
+    almost_equal(T x, T y, int ulp = 4)
+{
+    return std::fabs(x-y) <= std::numeric_limits<T>::epsilon() * std::fabs(x+y) * ulp
+        || std::fabs(x-y) < std::numeric_limits<T>::min();
+}
+ 
 
 }} // namespace steps::util
 

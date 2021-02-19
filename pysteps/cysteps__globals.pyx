@@ -1,7 +1,7 @@
 ###___license_placeholder___###
 
 from libcpp.string cimport string
-
+from libcpp.vector cimport vector
 
 cdef enum OPERATOR:
     LESS = 0, LESS_EQUAL, EQUAL, DIFF, GREATER, GREATER_EQUAL
@@ -25,25 +25,28 @@ cdef class _py__base:
         return b"_cPtr_" + mems
 
 
-cdef inline string  to_std_string(str s):
+cdef inline string to_std_string(str s):
     """
-    Builds a C++ STL string from a bytes (Python 2) or unicode (Python 3)
-    string.
+    Builds a C++ STL string from a unicode string.
     """
     cdef string s_new
-    if isinstance(s, bytes):
-        s_new = s
-    else:
-        s_new = s.encode()
+    s_new = s.encode()
     return s_new
 
 
 cdef inline str from_std_string(string s):
     """
-    Returns a bytes string (Python 2) or unicode string (Python 3) from a C++
-    STL string.
+    Returns a unicode string (Python 3) from a C++ STL string.
     """
     cdef bytes s_new = s
-    return  str(s_new) if bytes is str \
-        else s_new.decode()
+    return s_new.decode()
 
+cdef inline vector[string] to_vec_std_strings(str_list):
+    """
+    Builds a C++ STL vector of STL strings from a list of unicode strings.
+    """
+    cdef vector[string] str_vec
+    str_vec.reserve(len(str_list))
+    for s in str_list:
+        str_vec.push_back(to_std_string(s))    
+    return str_vec

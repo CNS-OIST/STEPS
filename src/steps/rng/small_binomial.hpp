@@ -2,7 +2,7 @@
    #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -43,15 +43,19 @@ public:
 	explicit small_binomial_distribution(IntType t = 1, double p = 0.5) : t_(t), p_(p) {}
 
 	template< class Generator >
-	result_type operator()( Generator& g ) { 
-		result_type tot(0);
-		for (IntType tt=0; tt<t_; ++tt) {
-			const auto val_g =  g();
+	result_type operator()( Generator& g ) {
+
+            result_type tot(0);
+        // limits are inclusive, we add 1 to the right one so that "<" produces the correct output
+            const double s(static_cast<double>(g.max()) - static_cast<double>(g.min()) + 1.0);
+
+            for (IntType tt=0; tt<t_; ++tt) {
+                const auto val_g =  g();
 			
-            if ((val_g - g.min()) < p_ * (g.max()-g.min()))
-                ++tot;
-		}   
-		return tot;
+                if (static_cast<double>(val_g - g.min())  < p_ * s)
+                  ++tot;
+            }
+            return tot;
 	}   
 
 	double p() const { return p_;};

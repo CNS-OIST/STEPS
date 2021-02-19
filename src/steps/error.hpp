@@ -2,7 +2,7 @@
 #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -39,12 +39,12 @@
 CLOG(ERROR, "general_log") << "Assertion failed, please send the log files under .logs/ to developer.", \
 throw steps::AssertErr("Assertion failed, please send the log files under .logs/ to developer.")
 #else
-#define AssertLog(condition) 
+#define AssertLog(condition) {}
 #endif
 
 #define ErrLog(msg) \
 CLOG(ERROR, "general_log") << std::string("GeneralErr: ") + (msg), \
-throw steps::ErrLog(std::string("GeneralErr: ") + (msg))
+throw steps::Err(std::string("GeneralErr: ") + (msg))
 
 
 #define NotImplErrLog(msg) \

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -81,8 +81,14 @@ public:
     /** Set additional current injection for triangle i to c (pA) */
     void setTriIClamp(triangle_id_t i, double c) noexcept override { pTriCurClamp[i.get()] = -c; }
 
+    /** Get additional current injection for triangle i (pA) */
+    double getTriIClamp(triangle_id_t i) const noexcept override { return pTriCurClamp[i.get()]; }
+
     /** Set additional current injection for area associated with vertex i to c (pA) */
     void setVertIClamp(vertex_id_t i, double c) noexcept override { pVertCurClamp[i.get()] = -c; }
+
+    /** Get additional current injection for area associated with vertex i (pA) */
+    double getVertIClamp(vertex_id_t i) const noexcept override { return pVertCurClamp[i.get()]; }
 
 protected:
     /// Generic populate and solve

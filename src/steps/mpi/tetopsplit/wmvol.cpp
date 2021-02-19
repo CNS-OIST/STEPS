@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -188,8 +188,9 @@ void smtos::WmVol::reset()
     uint nspecs = compdef()->countSpecs();
     std::fill_n(pPoolCount, nspecs, 0);
     std::fill_n(pPoolFlags, nspecs, 0);
-    std::for_each(pKProcs.begin(), pKProcs.end(),
-            std::mem_fun(&smtos::KProc::reset));
+    for (auto kproc: pKProcs) {
+        kproc->reset();
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

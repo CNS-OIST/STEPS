@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -137,8 +137,9 @@ void stex::WmVol::reset()
 {
     std::fill(pPoolCount.begin(), pPoolCount.end(), 0);
     std::fill(pPoolFlags.begin(), pPoolFlags.end(), 0);
-    std::for_each(pKProcs.begin(), pKProcs.end(),
-            std::mem_fun(&stex::KProc::reset));
+    for (auto kproc: pKProcs) {
+        kproc->reset();
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

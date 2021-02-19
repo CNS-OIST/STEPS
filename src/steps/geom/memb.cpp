@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -244,7 +244,7 @@ void Memb::verifyMemb() {
         while (!tet_queue.empty()) {
             auto tetidx = tet_queue.front();
             const auto *tetneighbs = pTetmesh->_getTetTetNeighb(tetidx);
-            for (const auto t : pTet_indices) {
+            for (const auto& t: pTet_indices) {
                 // continue if this is the same tet
                 if (t == tetidx) {
                     continue;
@@ -288,8 +288,7 @@ void Memb::verifyMemb() {
             // 'virtual surface'
             //std::array<bool, 4> gotneighb{false, false, false, false};
             bool gotneighb[4] = {false, false, false, false};
-            for (const auto tettemp : pTet_indices)
-            {
+            for (const auto& tettemp: pTet_indices) {
                 if (tettemp == tet) {
                   continue;
                 }
@@ -345,8 +344,7 @@ void Memb::verifyMemb() {
             auto triidx = tri_queue.front();
             auto const& trineighbs = pTetmesh->getTriTriNeighbs(triidx);
 
-            for (const auto t : pTri_indices)
-            {
+            for (const auto& t: pTri_indices) {
                 // continue if this is the same triangle
                 if (t == triidx) {
                   continue;
@@ -361,8 +359,7 @@ void Memb::verifyMemb() {
                     }
                 }
             }
-            for (const auto tv : trivirttemp)
-            {
+            for (const auto& tv: trivirttemp) {
                 if (tv == triidx) {
                   continue;
                 }

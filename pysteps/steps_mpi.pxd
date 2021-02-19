@@ -180,6 +180,7 @@ cdef extern from "steps/mpi/tetopsplit/tetopsplit.hpp" namespace "steps::mpi::te
         double getTriGHKI(uint) except +
         double getTriGHKI(uint, std.string) except +
         double getTriI(uint) except +
+        double getTriIClamp(uint) except +
         void setTriIClamp(uint, double) except +
         bool getTriVDepSReacActive(uint, std.string) except +
         void setTriVDepSReacActive(uint, std.string, bool) except +
@@ -188,6 +189,7 @@ cdef extern from "steps/mpi/tetopsplit/tetopsplit.hpp" namespace "steps::mpi::te
         void setVertV(uint, double) except +
         bool getVertVClamped(uint) except +
         void setVertVClamped(uint, bool) except +
+        double getVertIClamp(uint) except +
         void setVertIClamp(uint, double) except +
         void setMembPotential(std.string, double) except +
         void setMembCapac(std.string, double) except +
@@ -199,6 +201,8 @@ cdef extern from "steps/mpi/tetopsplit/tetopsplit.hpp" namespace "steps::mpi::te
         std.vector[double] getBatchTetConcs(std.vector[steps.index_t], std.string) except +
         void getBatchTetCountsNP(steps.index_t*, int, std.string, double*, int) except +
         void getBatchTriCountsNP(steps.index_t*, int, std.string, double*, int) except +
+        void setBatchTetConcsNP(steps.index_t*, size_t, std.string, double*, size_t) except +
+        void getBatchTetConcsNP(steps.index_t*, size_t, std.string, double*, size_t) except +
         std.vector[double] getROITetCounts(std.string, std.string) except +
         std.vector[double] getROITriCounts(std.string, std.string) except +
         void getROITetCountsNP(std.string, std.string, double*, int) except +
@@ -208,6 +212,7 @@ cdef extern from "steps/mpi/tetopsplit/tetopsplit.hpp" namespace "steps::mpi::te
         double getROICount(std.string, std.string) except +
         void setROICount(std.string, std.string, double) except +
         double getROIAmount(std.string, std.string) except +
+        void setROIAmount(std.string, std.string, double) except +
         double getROIConc(std.string, std.string) except +
         void setROIConc(std.string, std.string, double) except +
         void setROIClamped(std.string, std.string, bool) except +
@@ -225,10 +230,16 @@ cdef extern from "steps/mpi/tetopsplit/tetopsplit.hpp" namespace "steps::mpi::te
         unsigned long long getROIDiffExtent(std.string, std.string) except +
         void resetROIDiffExtent(std.string, std.string) except +
         void saveMembOpt(std.string) except +
-        double sumBatchTetCountsNP(unsigned int*, int, std.string) except +
-        double sumBatchTriCountsNP(unsigned int*, int, std.string) except +
-        double sumBatchTriGHKIsNP(unsigned int*, int, std.string) except +
-        double sumBatchTriOhmicIsNP(unsigned int*, int, std.string) except +
+        double sumBatchTetCountsNP(steps.index_t*, int, std.string) except +
+        double sumBatchTriCountsNP(steps.index_t*, int, std.string) except +
+        double sumBatchTriGHKIsNP(steps.index_t*, int, std.string) except +
+        double sumBatchTriOhmicIsNP(steps.index_t*, int, std.string) except +
+        void getBatchTriOhmicIsNP(steps.index_t*, int, std.string, double*, int) except +
+        void getBatchTriGHKIsNP(steps.index_t*, int, std.string, double*, int) except +
+        void getBatchTriVsNP(steps.index_t*, int, double*, int) except +
+        void getBatchTetVsNP(steps.index_t*, int, double*, int) except +
+        void getBatchTriBatchOhmicIsNP(steps.index_t*, int, std.vector[std.string], double*, int) except +
+        void getBatchTriBatchGHKIsNP(steps.index_t*, int, std.vector[std.string], double*, int) except +
         void setDiffApplyThreshold(int) except +
         unsigned long long getReacExtent(bool) except +
         unsigned long long getDiffExtent(bool) except +

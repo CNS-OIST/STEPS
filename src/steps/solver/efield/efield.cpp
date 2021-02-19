@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -222,6 +222,20 @@ void sefield::EField::setSurfaceResistivity(uint /*midx*/,double rspec, double v
 
 ////////////////////////////////////////////////////////////////////////////////
 
+double sefield::EField::getVertIClamp(vertex_id_t vidx)
+{
+    // vidx argument converted to local index in Tetexact.
+    AssertLog(vidx < pNVerts);
+
+    //Convert the index to one that makes sense to vprop
+    vidx = pCPerm[vidx.get()];
+
+    // let VProp do any further necessary argument checking (should be less than number of vertices)
+    return pVProp->getVertIClamp(vidx) / 1.0e12;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void sefield::EField::setVertIClamp(vertex_id_t vidx, double cur)
 {
     // vidx argument converted to local index in Tetexact.
@@ -378,6 +392,16 @@ void    sefield::EField::setTriI(triangle_id_t tidx, double cur)
     AssertLog(tidx < pNTris);
 
     pVProp->setTriI(tidx, cur*1.0e12);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double sefield::EField::getTriIClamp(triangle_id_t tidx)
+{
+    // tidx argument converted to local index in Tetexact
+    AssertLog(tidx < pNTris);
+    // maintain convention that positive applied current is depolarising
+    return pVProp->getTriIClamp(tidx) / 1.0e12;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

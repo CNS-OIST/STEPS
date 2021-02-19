@@ -3,7 +3,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -23,17 +23,21 @@
 #
 #################################################################################   
 ###
-from __future__ import print_function, absolute_import
 
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-import glob
 import atexit
+import glob
+import importlib.abc
+import importlib.machinery
 import os.path
+import sys
+import types
+import warnings
 
 __name__      = 'steps'
 __longname__  = 'STochastic Engine for Pathway Simulation'
-__version__   = '3.5.0'
+__version__   = '3.6.0'
 __author__    = 'STEPS Development Team'
 __url__       = 'steps.sourceforge.net'
 __license__   = 'GPL2.0'
@@ -66,6 +70,69 @@ def _greet():
         print("CXX Binding:", __binding__)
 
     _suppress_greet = True
+
+###############################
+# Custom importing mechanisms #
+###############################
+
+class _CustomVirtualLoader(importlib.abc.Loader):
+    def create_module(self, spec):
+        return types.ModuleType(spec.name)
+
+    def exec_module(self, module):
+        pass
+
+
+class _CustomActualLoader(importlib.abc.Loader):
+
+    def create_module(self, spec):
+        return importlib.import_module(spec._actualname)
+
+    # No need for exec since importlib.import_module already takes care of it.
+    def exec_module(self, module):
+        pass
+
+
+class _CustomMetaPathFinder(importlib.abc.MetaPathFinder):
+    _API_DIRS = [
+        'API_1',
+        'API_2',
+    ]
+    _VIRTUAL_IMPORT_PATHS = {
+        'steps.interface': 'API_2',
+    }
+    _DEFAULT_API = 'API_1'
+
+    def __init__(self):
+        self._currAPI = _CustomMetaPathFinder._DEFAULT_API
+        self._virtualLoader = _CustomVirtualLoader()
+        self._actualLoader = _CustomActualLoader()
+
+    def find_spec(self, fullname, path, target=None):
+        if fullname in _CustomMetaPathFinder._VIRTUAL_IMPORT_PATHS:
+            self._currAPI = _CustomMetaPathFinder._VIRTUAL_IMPORT_PATHS[fullname]
+            return importlib.machinery.ModuleSpec(fullname, self._virtualLoader)
+
+        if fullname.startswith(__name__):
+            splt = fullname.split('.')
+            # If we are trying to load a module from a specific API directory, it means the 
+            # default path finders did not succeed loading it, i.e. it does not exist.
+            if len(splt) > 1 and splt[1] in _CustomMetaPathFinder._API_DIRS:
+                raise ModuleNotFoundError(f'Could not import {fullname}, check that you are '
+                                          f'importing modules from the correct API version.')
+            newName = '.'.join([splt[0], self._currAPI] + splt[1:])
+            # The name of the spec corresponds to the user name (e.g. steps.model) but the actual
+            # package to be imported is set in _actualName (e.g. steps.API_1.model). Using directly
+            # the actual package path would create issues because the user package path would not
+            # be added to sys.modules.
+            spec = importlib.machinery.ModuleSpec(fullname, self._actualLoader)
+            spec._actualname = newName
+            return spec
+
+        return None
+
+sys.meta_path.append(_CustomMetaPathFinder())
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # END
