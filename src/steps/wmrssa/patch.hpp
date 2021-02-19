@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -101,10 +101,12 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline std::vector<steps::wmrssa::KProc *>::const_iterator kprocBegin() const
-    { return pKProcs.begin(); }
-    inline std::vector<steps::wmrssa::KProc *>::const_iterator kprocEnd() const
-    { return pKProcs.end(); }
+    inline std::vector<steps::wmrssa::KProc*>::const_iterator begin() const {
+        return pKProcs.begin();
+    }
+    inline std::vector<steps::wmrssa::KProc*>::const_iterator end() const {
+        return pKProcs.end();
+    }
     inline uint countKProcs() const
     { return pKProcs.size(); }
     inline const std::vector<steps::wmrssa::KProc*>& kprocs() const noexcept

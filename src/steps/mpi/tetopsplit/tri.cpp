@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -76,6 +76,10 @@ smtos::Tri::Tri(triangle_id_t idx, steps::solver::Patchdef *patchdef, double are
 , pDist()
 , pTets()
 , pNextTri()
+, pECharge_last(nullptr)
+, pECharge_accum(nullptr)
+, pECharge_last_dt(0)
+, pECharge_accum_dt(0)
 , hostRank(host_rank)
 , myRank(rank)
 {
@@ -117,6 +121,9 @@ smtos::Tri::Tri(triangle_id_t idx, steps::solver::Patchdef *patchdef, double are
     pECharge_last = new int[nghkcurrs];
     std::fill_n(pECharge_last, nghkcurrs, 0);
 
+    pECharge_accum = new int[nghkcurrs];
+    std::fill_n(pECharge_accum, nghkcurrs, 0);
+
     uint nohmcurrs = pPatchdef->countOhmicCurrs();
     pOCchan_timeintg = new double[nohmcurrs];
     std::fill_n(pOCchan_timeintg, nohmcurrs, 0.0);
@@ -138,6 +145,8 @@ smtos::Tri::~Tri()
     delete[] pPoolCount;
     delete[] pPoolFlags;
     delete[] pECharge;
+    delete[] pECharge_last;
+    delete[] pECharge_accum;
     delete[] pOCchan_timeintg;
     delete[] pOCtime_upd;
     delete[] pPoolOccupancy;
@@ -159,6 +168,9 @@ void smtos::Tri::checkpoint(std::fstream & cp_file)
     uint nghkcurrs = pPatchdef->countGHKcurrs();
     cp_file.write(reinterpret_cast<char*>(pECharge), sizeof(int) * nghkcurrs);
     cp_file.write(reinterpret_cast<char*>(pECharge_last), sizeof(int) * nghkcurrs);
+    cp_file.write(reinterpret_cast<char*>(pECharge_accum), sizeof(int) * nghkcurrs);
+    cp_file.write(reinterpret_cast<char*>(&pECharge_last_dt), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pECharge_accum_dt), sizeof(double));
 
     uint nohmcurrs = pPatchdef->countOhmicCurrs();
     cp_file.write(reinterpret_cast<char*>(pOCchan_timeintg), sizeof(double) * nohmcurrs);
@@ -179,6 +191,9 @@ void smtos::Tri::restore(std::fstream & cp_file)
     uint nghkcurrs = pPatchdef->countGHKcurrs();
     cp_file.read(reinterpret_cast<char*>(pECharge), sizeof(int) * nghkcurrs);
     cp_file.read(reinterpret_cast<char*>(pECharge_last), sizeof(int) * nghkcurrs);
+    cp_file.read(reinterpret_cast<char*>(pECharge_accum), sizeof(int) * nghkcurrs);
+    cp_file.read(reinterpret_cast<char*>(&pECharge_last_dt), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pECharge_accum_dt), sizeof(double));
 
     uint nohmcurrs = pPatchdef->countOhmicCurrs();
     cp_file.read(reinterpret_cast<char*>(pOCchan_timeintg), sizeof(double) * nohmcurrs);
@@ -525,13 +540,17 @@ void smtos::Tri::reset()
     std::fill_n(pPoolCount, nspecs, 0);
     std::fill_n(pPoolFlags, nspecs, 0);
 
-    std::for_each(pKProcs.begin(), pKProcs.end(),
-        std::mem_fun(&smtos::KProc::reset));
+    for (auto kproc: pKProcs) {
+        kproc->reset();
+    }
 
 
     uint nghkcurrs = pPatchdef->countGHKcurrs();
     std::fill_n(pECharge, nghkcurrs, 0);
     std::fill_n(pECharge_last, nghkcurrs, 0);
+    std::fill_n(pECharge_accum, nghkcurrs, 0);
+    pECharge_last_dt = 0;
+    pECharge_accum_dt = 0;
 
     uint nohmcurrs = pPatchdef->countOhmicCurrs();
     std::fill_n(pOCchan_timeintg, nohmcurrs, 0.0);
@@ -540,16 +559,27 @@ void smtos::Tri::reset()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Tri::resetECharge()
+void smtos::Tri::resetECharge(double dt, double efdt)
 {
     uint nghkcurrs = pPatchdef->countGHKcurrs();
 
-    for (uint i=0; i < nghkcurrs; ++i)
-    {
-        pECharge_last[i] = pECharge[i];
+    for (uint i=0; i < nghkcurrs; ++i) {
+        pECharge_accum[i] += pECharge[i];
     }
-    std::fill_n(pECharge, nghkcurrs, 0);
+    pECharge_accum_dt += dt;
 
+    if (pECharge_accum_dt >= efdt) {
+        // Swap arrays
+        std::swap(pECharge_last, pECharge_accum);
+
+        // reset accumulation array and dt values
+        std::fill_n(pECharge_accum, nghkcurrs, 0);
+
+        pECharge_last_dt = pECharge_accum_dt;
+        pECharge_accum_dt = 0;
+    }
+
+    std::fill_n(pECharge, nghkcurrs, 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -638,10 +668,7 @@ void smtos::Tri::setOCchange(uint oclidx, uint slidx, double dt, double simtime)
     // A channel state relating to an ohmic current has changed it's
     // number.
     double integral = pPoolCount[slidx]*((simtime+dt) - pOCtime_upd[oclidx]);
-    //if (integral < 0.0) {
-    //    CLOG(INFO, "general_log") << "setOCchange, OCtime upd: " << pOCtime_upd[oclidx] << " sim time: " << simtime << " dt: " << dt << " integral: " << integral << "\n";
-    //}
-    
+
     AssertLog(integral >= 0.0);
 
     pOCchan_timeintg[oclidx] += integral;
@@ -712,21 +739,27 @@ smtos::GHKcurr * smtos::Tri::ghkcurr(uint lidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::Tri::getGHKI(uint lidx, double dt) const
+double smtos::Tri::getGHKI(uint lidx) const
 {
+    if (pECharge_last_dt == 0)
+        return 0;
+
     uint nghkcurrs = pPatchdef->countGHKcurrs();
     AssertLog(lidx < nghkcurrs);
 
     int efcharge = pECharge_last[lidx];
     auto efcharged = static_cast<double>(efcharge);
 
-    return ((efcharged*steps::math::E_CHARGE)/dt);
+    return ((efcharged*steps::math::E_CHARGE)/pECharge_last_dt);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::Tri::getGHKI(double dt) const
+double smtos::Tri::getGHKI() const
 {
+    if (pECharge_last_dt == 0)
+        return 0;
+
     uint nghkcurrs = pPatchdef->countGHKcurrs();
     int efcharge=0;
     for (uint i =0; i < nghkcurrs; ++i)
@@ -736,12 +769,12 @@ double smtos::Tri::getGHKI(double dt) const
 
     auto efcharged = static_cast<double>(efcharge);
 
-    return ((efcharged*steps::math::E_CHARGE)/dt);
+    return ((efcharged*steps::math::E_CHARGE)/pECharge_last_dt);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::Tri::computeI(double v, double dt, double simtime)
+double smtos::Tri::computeI(double v, double dt, double simtime, double efdt)
 {
     /*
     double current = 0.0;
@@ -783,7 +816,7 @@ double smtos::Tri::computeI(double v, double dt, double simtime)
     
     // Convert charge to coulombs and find mean current
     current += ((efcharged*steps::math::E_CHARGE)/dt);
-    resetECharge();
+    resetECharge(dt, efdt);
     resetOCintegrals();
 
     return current;

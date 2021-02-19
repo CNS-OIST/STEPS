@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -69,8 +69,14 @@ struct EFieldSolver {
     /** Set additional current injection for triangle i to c (pA) */
     virtual void setTriIClamp(triangle_id_t i, double c) =0;
 
+    /** Get additional current injection for triangle i (pA) */
+    virtual double getTriIClamp(triangle_id_t i) const =0;
+
     /** Set additional current injection for area associated with vertex i to c (pA) */
     virtual void setVertIClamp(vertex_id_t i, double c) =0;
+
+    /** Get additional current injection for area associated with vertex i (pA) */
+    virtual double getVertIClamp(vertex_id_t i) const =0;
 
     /** Solve for voltage with given dt */
     virtual void advance(double dt) =0;

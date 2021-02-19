@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -60,14 +60,14 @@ std::vector<double> API::getROITriCounts(const std::string& /*ROI_id*/, std::str
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::getROITetCountsNP(const std::string& /*ROI_id*/, std::string const & /*s*/, double* /*counts*/, int /*output_size*/) const
+void API::getROITetCountsNP(const std::string& /*ROI_id*/, std::string const & /*s*/, double* /*counts*/, size_t /*output_size*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::getROITriCountsNP(const std::string& /*ROI_id*/, std::string const & /*s*/, double* /*counts*/, int /*output_size*/) const
+void API::getROITriCountsNP(const std::string& /*ROI_id*/, std::string const & /*s*/, double* /*counts*/, size_t /*output_size*/) const
 {
     NotImplErrLog("");
 }
@@ -103,6 +103,13 @@ void API::setROICount(const std::string& /*ROI_id*/, std::string const & /*s*/, 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::getROIAmount(const std::string& /*ROI_id*/, std::string const & /*s*/) const
+{
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void API::setROIAmount(const std::string& /*ROI_id*/, std::string const & /*s*/, double /*amount*/)
 {
     NotImplErrLog("");
 }

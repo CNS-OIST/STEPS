@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -86,7 +86,9 @@ void swmd::Comp::restore(std::fstream & cp_file)
 
 void swmd::Comp::reset()
 {
-    std::for_each(pKProcs.begin(), pKProcs.end(), std::mem_fun(&swmd::KProc::reset));
+    for (auto kproc: pKProcs) {
+        kproc->reset();
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -117,8 +119,9 @@ steps::wmdirect::KProc * swmd::Comp::reac(uint lridx) const
 
 void swmd::Comp::setupDeps()
 {
-    std::for_each(pKProcs.begin(), pKProcs.end(),
-        std::mem_fun(&KProc::setupDeps));
+    for (auto kproc: pKProcs) {
+        kproc->setupDeps();
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

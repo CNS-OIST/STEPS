@@ -41,7 +41,6 @@ cdef extern from "steps/wmrssa/wmrssa.hpp" namespace "steps::wmrssa":
         void advance(double) except +
         void step() except +
         double getTime() except +
-        double getA0() except +
         uint getNSteps() except +
         void setTime(double) except +
         void setNSteps(uint) except +

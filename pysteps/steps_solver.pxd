@@ -321,6 +321,7 @@ cdef extern from "steps/solver/api.hpp" namespace "steps::solver":
         double getTriGHKI(uint) except +
         double getTriGHKI(uint, std.string) except +
         double getTriI(uint) except +
+        double getTriIClamp(uint) except +
         void setTriIClamp(uint, double) except +
         bool getTriVDepSReacActive(uint, std.string) except +
         void setTriVDepSReacActive(uint, std.string, bool) except +
@@ -329,6 +330,7 @@ cdef extern from "steps/solver/api.hpp" namespace "steps::solver":
         void setVertV(uint, double) except +
         bool getVertVClamped(uint) except +
         void setVertVClamped(uint, bool) except +
+        double getVertIClamp(uint) except +
         void setVertIClamp(uint, double) except +
         void setMembPotential(std.string, double) except +
         void setMembCapac(std.string, double) except +

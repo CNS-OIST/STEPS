@@ -177,6 +177,7 @@ cdef extern from "steps/tetexact/tetexact.hpp" namespace "steps::tetexact":
         double getROICount(std.string, std.string) except +
         void setROICount(std.string, std.string, double) except +
         double getROIAmount(std.string, std.string) except +
+        void setROIAmount(std.string, std.string, double) except +
         double getROIConc(std.string, std.string) except +
         void setROIConc(std.string, std.string, double) except +
         void setROIClamped(std.string, std.string, bool) except +

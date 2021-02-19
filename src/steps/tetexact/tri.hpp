@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -187,19 +187,19 @@ public:
     void incECharge(uint lidx, int charge);
 
     // Should be called at the beginning of every EField time-step
-    void resetECharge();
+    void resetECharge(double dt, double efdt);
 
     // reset the Ohmic current opening time integral info, also should be
     // called just before commencing or just after completing an EField dt
     void resetOCintegrals();
 
-    double computeI(double v, double dt, double simtime);
+    double computeI(double v, double dt, double simtime, double efdt);
 
     double getOhmicI(double v, double dt) const;
     double getOhmicI(uint lidx, double v,double dt) const;
 
-    double getGHKI( double dt) const;
-    double getGHKI(uint lidx, double dt) const;
+    double getGHKI() const;
+    double getGHKI(uint lidx) const;
 
     ////////////////////////////////////////////////////////////////////////
     // MAIN FUNCTIONALITY
@@ -252,8 +252,8 @@ private:
     steps::solver::Patchdef           * pPatchdef;
 
     /// Pointers to neighbouring tetrahedra.
-    stex::WmVol                       * pInnerTet;
-    stex::WmVol                       * pOuterTet;
+    stex::WmVol                       * pInnerTet{nullptr};
+    stex::WmVol                       * pOuterTet{nullptr};
 
     // Indices of two neighbouring tets; -1 if surface triangle (if
     // triangle's patch is on the surface of the mesh, quite often the case)
@@ -275,9 +275,9 @@ private:
     bool                                pSDiffBndDirection[3];
 
     /// Numbers of molecules -- stored as machine word integers.
-    uint                              * pPoolCount;
+    uint                              * pPoolCount{nullptr};
     /// Flags on these pools -- stored as machine word flags.
-    uint                              * pPoolFlags;
+    uint                              * pPoolFlags{nullptr};
 
     /// The kinetic processes.
     std::vector<stex::KProc *>          pKProcs;
@@ -288,10 +288,13 @@ private:
     /// one EField time-step.
     // NOTE: Now arrays so as to separate into different GHK currs,
     // for data access
-    int                                  * pECharge;
+    int                                  * pECharge{nullptr};
 
     // to store the latest ECharge, so that the info is available to solver
-    int                               * pECharge_last;
+    int                               * pECharge_last{nullptr};
+    int                               * pECharge_accum{nullptr};
+    double                              pECharge_last_dt;
+    double                              pECharge_accum_dt;
 
 
     // Store the Ohmic currents' channel's opening information by OC local indices
@@ -299,9 +302,9 @@ private:
     // The pOCchan_timeintg stores number of channel open * opening time
     // so at the end of the step this number/Efield dt will give the
     // mean number of channels open
-    double                               * pOCchan_timeintg;
+    double                               * pOCchan_timeintg{nullptr};
 
-    double                               * pOCtime_upd;
+    double                               * pOCtime_upd{nullptr};
 
     ////////////////////////////////////////////////////////////////////////
 

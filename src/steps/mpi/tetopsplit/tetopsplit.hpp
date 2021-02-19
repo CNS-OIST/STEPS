@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -343,14 +343,15 @@ public:
     bool _getTriVClamped(triangle_id_t tidx) const override;
     void _setTriVClamped(triangle_id_t tidx, bool cl) override;
 
-    double _getTriOhmicI(triangle_id_t tidx) override;
-    double _getTriOhmicI(triangle_id_t tidx, uint ocidx) override;
+    double _getTriOhmicI(triangle_id_t tidx) const override;
+    double _getTriOhmicI(triangle_id_t tidx, uint ocidx) const override;
 
-    double _getTriGHKI(triangle_id_t tidx) override;
-    double _getTriGHKI(triangle_id_t tidx, uint ghkidx) override;
+    double _getTriGHKI(triangle_id_t tidx) const override;
+    double _getTriGHKI(triangle_id_t tidx, uint ghkidx) const override;
 
     double _getTriI(triangle_id_t tidx) const override;
 
+    double _getTriIClamp(triangle_id_t tidx) const override;
     void _setTriIClamp(triangle_id_t tidx, double cur) override;
 
     bool _getTriVDepSReacActive(triangle_id_t tidx, uint vsridx) const override;
@@ -365,8 +366,11 @@ public:
 
     double _getVertV(vertex_id_t vidx) const override;
     void _setVertV(vertex_id_t vidx, double v) override;
+
     bool _getVertVClamped(vertex_id_t vidx) const override;
     void _setVertVClamped(vertex_id_t vidx, bool cl) override;
+
+    double _getVertIClamp(vertex_id_t tidx) const override;
     void _setVertIClamp(vertex_id_t tidx, double cur) override;
 
     ////////////////////////////////////////////////////////////////////////
@@ -538,24 +542,70 @@ public:
     std::vector<double> getBatchTetConcs(const std::vector<index_t> &tets, std::string const &s) const;
 
     void getBatchTetCountsNP(const index_t *indices,
-                             int input_size,
+                             size_t input_size,
                              std::string const &s,
                              double *counts,
-                             int output_size) const override;
+                             size_t output_size) const override;
 
     void getBatchTriCountsNP(const index_t *indices,
-                             int input_size,
+                             size_t input_size,
                              std::string const &s,
                              double *counts,
-                             int output_size) const override;
+                             size_t output_size) const override;
 
-    double sumBatchTetCountsNP(unsigned int* indices, int input_size, std::string const & s);
+    void setBatchTetConcsNP(const index_t *indices,
+                            size_t ntets,
+                            std::string const &s,
+                            const double *concs,
+                            size_t output_size);
 
-    double sumBatchTriCountsNP(unsigned int* indices, int input_size, std::string const & s);
+    void getBatchTetConcsNP(const index_t *indices,
+                            size_t ntets,
+                            std::string const &s,
+                            double *concs,
+                            size_t output_size) const;
 
-    double sumBatchTriGHKIsNP(unsigned int* indices, uint input_size, std::string const & ghk);
+    double sumBatchTetCountsNP(const index_t *indices, size_t input_size, std::string const & s);
 
-    double sumBatchTriOhmicIsNP(unsigned int* indices, uint input_size, std::string const & oc);
+    double sumBatchTriCountsNP(const index_t *indices, size_t input_size, std::string const & s);
+
+    double sumBatchTriGHKIsNP(const index_t *indices, size_t input_size, std::string const & ghk);
+
+    double sumBatchTriOhmicIsNP(const index_t *indices, size_t input_size, std::string const & oc);
+
+    void getBatchTriOhmicIsNP(const index_t *indices,
+                             size_t input_size,
+                             std::string const &oc,
+                             double *counts,
+                             size_t output_size) const;
+
+    void getBatchTriGHKIsNP(const index_t *indices,
+                             size_t input_size,
+                             std::string const &ghk,
+                             double *counts,
+                             size_t output_size) const;
+
+    void getBatchTriVsNP(const index_t *indices,
+                             size_t input_size,
+                             double *counts,
+                             size_t output_size) const;
+
+    void getBatchTetVsNP(const index_t *indices,
+                             size_t input_size,
+                             double *counts,
+                             size_t output_size) const;
+
+    void getBatchTriBatchOhmicIsNP(const index_t *indices,
+                             size_t input_size,
+                             std::vector<std::string> & ocs,
+                             double *counts,
+                             size_t output_size) const;
+
+    void getBatchTriBatchGHKIsNP(const index_t *indices,
+                             size_t input_size,
+                             std::vector<std::string> & ghks,
+                             double *counts,
+                             size_t output_size) const;
 
     ////////////////////////////////////////////////////////////////////////
     // ROI Data Access
@@ -568,10 +618,10 @@ public:
     std::vector<double> getROITriCounts(const std::string& ROI_id, std::string const & s) const override;
 
     /// Get species counts of a list of tetrahedrons
-    void getROITetCountsNP(const std::string& ROI_id, std::string const & s, double* counts, int output_size) const override;
+    void getROITetCountsNP(const std::string& ROI_id, std::string const & s, double* counts, size_t output_size) const override;
 
     /// Get species counts of a list of triangles
-    void getROITriCountsNP(const std::string& ROI_id, std::string const & s, double* counts, int output_size) const override;
+    void getROITriCountsNP(const std::string& ROI_id, std::string const & s, double* counts, size_t output_size) const override;
 
     double getROIVol(const std::string& ROI_id) const override;
     double getROIArea(const std::string& ROI_id) const override;
@@ -580,6 +630,8 @@ public:
     void setROICount(const std::string& ROI_id, std::string const & s, double count) override;
 
     double getROIAmount(const std::string& ROI_id, std::string const & s) const override;
+    void setROIAmount(const std::string& ROI_id, std::string const & s, double amount) override;
+
     double getROIConc(const std::string& ROI_id, std::string const & s) const override;
     void setROIConc(const std::string& ROI_id, std::string const & s, double conc) override;
 
@@ -792,9 +844,6 @@ private:
 
     // Table of EField local triangle index to global triangle index.
     triangle_id_t                             * pEFTri_LtoG{nullptr};
-
-    // True if our copy of tri voltages from EField solver is out of date.
-    bool                                        pEFTrisVStale{true};
 
 
     ////////////////////////// MPI STUFFS ////////////////////////////

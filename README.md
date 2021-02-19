@@ -12,7 +12,7 @@ in previous releases. Please follow the instructions below.
 Minimum Prerequisites
 ---------------------
 1. C++ compiler supporting c++11 (e.g. gcc 4.8, clang 3.3)
-2. Python2/3 (2.7.x / 3.3.x or above)
+2. Python3 (3.6.x or above)
 3. NumPy (http://www.numpy.org/)
 4. CMake (https://cmake.org/)
 5. Cython (http://www.cython.org/)
@@ -25,29 +25,6 @@ Optional Prerequisites
 1. To use the parallel SSA solver TetOpSplit: MPI libraries (e.g. MPICH https://www.mpich.org/)
 2. To use the parallel EField solver: PETSc (https://www.mcs.anl.gov/petsc/)
 
-
-Removing Previous STEPS Installation
-------------------------------------
-Due to potential conflict, please remove any previous installed version
-below version 3.0.0, to check and remove previous release,
-enter the following commands in a terminal:
-
-```
-python -c "import steps; print steps.__file__"
-```
-
-The commands will provide you the path of your current STEPS installation, for example
-
-```
-/usr/local/lib/python2.7/site-packages/steps/__init__.pyc
-```
-
-you can remove the STEPS installation in the above location via terminal command:
-
-```
-[sudo] rm -rf /usr/local/lib/python2.7/site-packages/steps
-```
-
 Installation From Source code
 -----------------------------
 _please avoid using the "Download ZIP" feature, as submodules are currently not packed in the zip file.
@@ -58,9 +35,9 @@ This includes the master branch as well as all previous releases in https://gith
 git clone --recursive https://github.com/CNS-OIST/STEPS.git
 cd STEPS
 ```
-(optional): To checkout a previous release, for example release with tag `3.4.0` (Release tags can be found [here](https://github.com/CNS-OIST/STEPS/tags), type in
+(optional): To checkout a previous release, for example release with tag `3.5.0` (Release tags can be found [here](https://github.com/CNS-OIST/STEPS/tags), type in
 ```
-git checkout tags/3.4.0 -b steps_3.4.0
+git checkout tags/3.5.0 -b steps_3.5.0
 git submodule update --recursive
 ```
 2. run the following commands to compile the source code and install
@@ -72,6 +49,22 @@ cd build
 cmake ..
 make
 [sudo] make install
+```
+
+After installation, you can check the STEPS installation with the following commands
+
+```
+python3 -c "import steps; steps._greet()"
+```
+
+If STEPS is installed successfully, you should be able to see similar information as below
+
+```
+STochastic Engine for Pathway Simulation
+Version:  3.6.0
+License:  GPL2.0
+Website:  steps.sourceforge.net
+CXX Binding: Cython
 ```
 
 You can change the installation location by changing the prefix in CMake
@@ -90,22 +83,6 @@ cmake -DUSE_MPI=[True|False] -DUSE_PETSC=[True|False] ..
 Please refer to [CMAKE documentation](https://cmake.org/documentation/) for customizing your installation
 
 
-After installation, you can check the STEPS installation with the following commands
-
-```
-python -c "import steps; steps._greet()"
-```
-
-If STEPS is installed successfully, you should be able to see similar information as below
-
-```
-STochastic Engine for Pathway Simulation
-Version:  3.4.0
-License:  GPL2.0
-Website:  steps.sourceforge.net
-CXX Binding: Cython
-```
-
 Simulation with serial solvers
 ------------------------------
 STEPS 3.0 and above contain all serial solvers in previous releases,
@@ -118,44 +95,15 @@ import steps
 Scripts of serial STEPS simulations can be executed in terminal
 
 ```
-python sim_script.py
+python3 sim_script.py
 ```
 
-Script migration in 3.5
+Script migration in 3.6
 -----------------------
 
-The data type of mesh entities like tetrahedrons and triangles has changed in STEPS 3.5. There are
-now unsigned integers and a new CMake option controls their size: 32 bits (the default) or 64 bits.
-A few macros have been introduced in the Python API to keep the simulation code independent of
-the STEPS installation.
+A new python API is available but scripts that worked with STEPS 3.5 should still work without any modification in STEPS 3.6.
 
-1. Use `steps.geom.UNKNOWN_TET` and `steps.geom.UNKNOWN_TRI` instead of -1, for instance:
-
-   ```python
-   if mesh.findTetByPoint(a_point) == steps.UNKNOWN_TET:
-       raise RuntimeError("Point is not in the mesh")
-   ```
-
-   instead of
-
-   ```python
-   if mesh.findTetByPoint(a_point) == -1:
-       raise RuntimeError("Point is not in the mesh")
-   ```
-
-A Flake8 extension allows you to track these cases in your code, see [RELEASES]((./RELEASES.md)) document.
-
-1. Use `steps.geom.INDEX_DTYPE` to instantiate NumPy arrays. for instance:
-
-   ```python
-   tetrahedrons = np.array(num_tets, dtype=steps.geom.INDEX_DTYPE)
-   ```
-
-   instead of
-
-   ```python
-   tetrahedrons = np.array(num_tets, dtype=np.uint32)
-   ```
+Detailed guides for the new API can be found in the [documentation](http://steps.sourceforge.net/manual/manual_index.html).
 
 More details in [RELEASES](./RELEASES.md) document.
 
@@ -165,7 +113,7 @@ At the moment STEPS does not provide the interactive interface for parallel TetO
 thus parallel simulations need to be executed via scripts in terminal with "mpirun" command
 
 ```
-mpirun -n N_PROCS python parallel_sim_script.py
+mpirun -n N_PROCS python3 parallel_sim_script.py
 ```
 
 N_PROCS is the number of MPI processes to be created for the parallel simulation.
@@ -176,13 +124,13 @@ Please refer to the documentation of your MPI solution for further customization
 Dependencies
 -------------
 Linux Debian based:
- `apt-get install g++ gcc cmake libopenblas-dev libmpich-dev python-numpy cython python-scipy`
+ `apt-get install g++ gcc cmake libopenblas-dev libmpich-dev python3-numpy cython python3-scipy`
 
 OSX:
- `brew install openblas mpich`
+ `brew install openblas mpich libomp`
 
 If you use Anaconda:
-`conda install scipy numpy matplotlib cmake cython openblas openmpi`
+`conda install scipy numpy matplotlib cmake cython openblas openmpi llvm-openmp`
 
 Validation and Examples
 -----------------------

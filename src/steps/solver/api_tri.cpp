@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -648,7 +648,7 @@ void API::setTriVClamped(triangle_id_t tidx, bool cl)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriOhmicI(triangle_id_t tidx)
+double API::getTriOhmicI(triangle_id_t tidx) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -672,7 +672,7 @@ double API::getTriOhmicI(triangle_id_t tidx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriOhmicI(triangle_id_t tidx, const std::string&  oc)
+double API::getTriOhmicI(triangle_id_t tidx, const std::string&  oc) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -698,7 +698,7 @@ double API::getTriOhmicI(triangle_id_t tidx, const std::string&  oc)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriGHKI(triangle_id_t tidx)
+double API::getTriGHKI(triangle_id_t tidx) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -722,7 +722,7 @@ double API::getTriGHKI(triangle_id_t tidx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriGHKI(triangle_id_t tidx, const std::string&  ghk)
+double API::getTriGHKI(triangle_id_t tidx, const std::string&  ghk) const
 {
     if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
     {
@@ -761,6 +761,29 @@ double API::getTriI(triangle_id_t tidx) const
         return _getTriI(tidx);
     }
 
+    else
+    {
+        std::ostringstream os;
+        os << "Method not available for this solver.";
+        NotImplErrLog("");
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::getTriIClamp(triangle_id_t tidx) const
+{
+    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
+    {
+        if (tidx >= mesh->countTris())
+        {
+            std::ostringstream os;
+            os << "Triangle index out of range.";
+            ArgErrLog(os.str());
+        }
+
+        return _getTriIClamp(tidx);
+    }
     else
     {
         std::ostringstream os;
@@ -1027,28 +1050,28 @@ void API::_setTriVClamped(triangle_id_t /*tidx*/, bool /*cl*/)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriOhmicI(triangle_id_t /*tidx*/)
+double API::_getTriOhmicI(triangle_id_t /*tidx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriOhmicI(triangle_id_t /*tidx*/, uint /*ocidx*/)
+double API::_getTriOhmicI(triangle_id_t /*tidx*/, uint /*ocidx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriGHKI(triangle_id_t /*tidx*/)
+double API::_getTriGHKI(triangle_id_t /*tidx*/) const
 {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriGHKI(triangle_id_t /*tidx*/, uint /*ghkidx*/)
+double API::_getTriGHKI(triangle_id_t /*tidx*/, uint /*ghkidx*/) const
 {
     NotImplErrLog("");
 }
@@ -1056,6 +1079,13 @@ double API::_getTriGHKI(triangle_id_t /*tidx*/, uint /*ghkidx*/)
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTriI(triangle_id_t /*tidx*/) const
+{
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::_getTriIClamp(triangle_id_t /*tidx*/) const
 {
     NotImplErrLog("");
 }

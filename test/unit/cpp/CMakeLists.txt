@@ -1,15 +1,23 @@
 foreach(test_name
-        point3d
+        # point3d
         bbox
-        tetmesh
+        # tetmesh
         membership
         checkid
-        rng
+        # rng
         sample
         small_binomial)
   add_executable("test_${test_name}" "test_${test_name}.cpp")
   list(APPEND tests ${test_name})
 endforeach()
+
+if(BUILD_STOCHASTIC_TESTS)
+    foreach(test_name
+            small_binomial_stochastic)
+        add_executable("test_${test_name}" "test_${test_name}.cpp")
+        list(APPEND tests ${test_name})
+    endforeach()
+endif()
 
 # if Lapack is used, add test for it
 if(LAPACK_FOUND)
@@ -42,3 +50,18 @@ foreach(test_name IN LISTS tests)
   add_test(NAME "${test_name}" COMMAND ${test_str})
   add_dependencies(tests "${test_target}")
 endforeach()
+
+# math unit test
+add_executable(stepsmathTest test_point3d.cpp)
+target_link_libraries(stepsmathTest stepsmath gtest_main)
+add_test(NAME mathTest COMMAND stepsmathTest)
+
+# geo unit test
+add_executable(stepsgeoTest test_tetmesh.cpp)
+target_link_libraries(stepsgeoTest stepsgeo gtest_main)
+add_test(NAME geoTest COMMAND stepsgeoTest)
+
+# rng unit test
+add_executable(stepsrngTest test_tetmesh.cpp)
+target_link_libraries(stepsrngTest stepsgeo stepsrng gtest_main)
+add_test(NAME rngTest COMMAND stepsrngTest)

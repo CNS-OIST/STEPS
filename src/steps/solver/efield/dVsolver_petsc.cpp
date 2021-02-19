@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -185,7 +185,7 @@ void dVSolverPETSC::advance(double dt) {
         VertexElement *ve = pIdxToVert[i];
         // case 1: vertex is on Clamp
         if (pVertexClamp[i]) {
-            values_rhs[i] = 0.;
+            values_rhs.at(i-prbegin) = 0.;
             MatSetValue(pA,i,i,1.,INSERT_VALUES);    
         }
         // case 2: no clamp, get all Current Contributions

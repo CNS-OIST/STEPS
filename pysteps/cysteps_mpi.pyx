@@ -41,14 +41,14 @@ cdef class _py_TetOpSplitP(_py_API):
         return <TetOpSplitP*> self._ptr
 
     def __init__(self, _py_Model model, _py_Geom geom, _py_RNG rng, int calcMembPot=0, std.vector[uint] tet_hosts = [], dict tri_hosts = {}, std.vector[uint] wm_hosts = []):
-        """        
+        """
         Construction::
-        
+
             sim = steps.solver.TetOpSplit(model, geom, rng, tet_hosts=[], tri_hosts={}, wm_hosts=[], calcMembPot=0)
-        
-        Create a spatial stochastic solver based on operator splitting, that is that reaction events are partitioned and diffusion is approximated. 
-        If voltage is to be simulated, argument calcMembPot specifies the solver e.g. calcMembPot=steps.solver.EF_DV_PETSC will utilise the PETSc library. calcMembPot=0 means voltage will not be simulated. 
-        
+
+        Create a spatial stochastic solver based on operator splitting: reaction events are partitioned and diffusion is approximated.
+        If voltage is to be simulated, argument calcMembPot specifies the solver. E.g. calcMembPot=steps.solver.EF_DV_PETSC will utilise the PETSc library. calcMembPot=0 means that voltage will not be simulated.
+
         Arguments:
         steps.model.Model model
         steps.geom.Geom geom
@@ -57,7 +57,7 @@ cdef class _py_TetOpSplitP(_py_API):
         dict<index_t, int> tri_hosts (default={})
         list<int> wm_hosts (default=[])
         int calcMemPot (default=0)
-        
+
         """
         cdef std.map[steps.triangle_id_t, uint] _tri_hosts
         for key, elem in tri_hosts.items():
@@ -74,14 +74,14 @@ cdef class _py_TetOpSplitP(_py_API):
     def getSolverName(self, ):
         """
         Returns a string of the solver's name.
-        
+
         Syntax::
-            
+
             getSolverName()
-            
+
         Arguments:
         None
-        
+
         Return:
         string
         """
@@ -90,14 +90,14 @@ cdef class _py_TetOpSplitP(_py_API):
     def getSolverDesc(self, ):
         """
         Returns a string giving a short description of the solver.
-        
+
         Syntax::
-            
+
             getSolverDesc()
-            
+
         Arguments:
         None
-        
+
         Return:
         string
         """
@@ -106,14 +106,14 @@ cdef class _py_TetOpSplitP(_py_API):
     def getSolverAuthors(self, ):
         """
         Returns a string of the solver authors names.
-        
+
         Syntax::
-            
+
             getSolverAuthors()
-            
+
         Arguments:
         None
-        
+
         Return:
         string
         """
@@ -124,9 +124,9 @@ cdef class _py_TetOpSplitP(_py_API):
         Returns a string giving the author's email address.
 
         Syntax::
-            
+
             getSolverEmail()
-            
+
         Arguments:
         None
 
@@ -139,14 +139,14 @@ cdef class _py_TetOpSplitP(_py_API):
     def reset(self, ):
         """
         Reset the simulation to the state the solver was initialised to.
-        
+
         Syntax::
-            
+
             reset()
-            
+
         Arguments:
         None
-        
+
         Return:
         None
         """
@@ -154,16 +154,16 @@ cdef class _py_TetOpSplitP(_py_API):
 
     def run(self, double endtime):
         """
-        Advance the simulation until endtime (given in seconds) is reached. 
+        Advance the simulation until endtime (given in seconds) is reached.
         The endtime must be larger or equal to the current simulation time.
-        
+
         Syntax::
-            
+
             run(endtime)
-            
+
         Arguments:
         float endtime
-        
+
         Return:
         None
         """
@@ -171,12 +171,12 @@ cdef class _py_TetOpSplitP(_py_API):
 
     def advance(self, double adv):
         """
-        Advance the simulation for secs seconds. 
+        Advance the simulation for adv seconds.
 
         Syntax::
-            
+
             advance(adv)
-            
+
         Arguments:
         float adv
 
@@ -188,15 +188,15 @@ cdef class _py_TetOpSplitP(_py_API):
 
     def step(self, ):
         """
-        Advance the simulation for one 'step'. In stochastic solvers this is one 
-        'realization' of the Gillespie SSA (one reaction 'event'). 
-        In numerical solvers (currently Wmrk4) this is one time-step, with the 
+        Advance the simulation for one 'step'. In stochastic solvers this is one
+        'realization' of the Gillespie SSA (one reaction 'event').
+        In numerical solvers (currently Wmrk4) this is one time-step, with the
         stepsize defined with the setDT method.
 
         Syntax::
-            
+
             step()
-            
+
         Arguments:
         None
 
@@ -209,53 +209,47 @@ cdef class _py_TetOpSplitP(_py_API):
     def checkpoint(self, str file_name):
         """
         Checkpoint data to a file.
-            
+
         Syntax::
-            
+
             checkpoint(file_name)
-            
+
         Arguments:
         string file_name
-            
+
         Return:
         None
 
         """
-        if not isinstance(file_name, bytes):
-            file_name = file_name.encode()
-
-        self.ptrx().checkpoint(file_name)
+        self.ptrx().checkpoint(to_std_string(file_name))
 
     def restore(self, str file_name):
         """
         Restore data from a file.
-            
+
         Syntax::
-            
+
             restore(file_name)
-            
+
         Arguments:
         string file_name
-            
+
         Return:
         None
         """
-        if not isinstance(file_name, bytes):
-            file_name = file_name.encode()
-
-        self.ptrx().restore(file_name)
+        self.ptrx().restore(to_std_string(file_name))
 
     def setEfieldDT(self, double efdt):
         """
         Set the stepsize for membrane potential solver (default 1us).
         This is the time for each voltage calculation step. The SSA will
-        run until passing this stepsize, so in fact each membrane potential 
+        run until passing this stepsize, so in fact each membrane potential
         time step will vary slightly around the dt so as to be aligned with the SSA.
 
         Syntax::
-            
+
             setEFieldDT(dt)
-            
+
         Arguments:
         float dt
 
@@ -270,16 +264,16 @@ cdef class _py_TetOpSplitP(_py_API):
         Get the stepsize for the membrane potential solver.
 
         Syntax::
-            
+
             getEFieldDT(dt)
-            
+
         Arguments:
         None
 
         Return:
         float
 
-        """    
+        """
         return self.ptrx().getEfieldDT()
 
     def setTemp(self, double t):
@@ -287,11 +281,11 @@ cdef class _py_TetOpSplitP(_py_API):
         Set the simulation temperature. Currently, this will only
         influence the GHK flux rate, so will only influence simulations
         including membrane potential calculation.
-        	
+
         Syntax::
-        	
+
         	setTemp(temp)
-        	
+
         Arguments:
         float temp
 
@@ -304,14 +298,14 @@ cdef class _py_TetOpSplitP(_py_API):
     def getTemp(self, ):
         """
         Return the simulation temperature.
-        			 
+
         Syntax::
-        			 
+
         	getTemp()
-        		
+
         Arguments:
         None
-        	
+
         Return:
         float
 
@@ -321,33 +315,30 @@ cdef class _py_TetOpSplitP(_py_API):
     def saveMembOpt(self, str opt_file_name):
         """
         Save the membrane optimisation.
-        
+
         Syntax::
-            
+
             saveMembOpt(opt_file_name)
-            
+
         Arguments:
         string opt_file_name
-        
+
         Return:
         None
         """
-        if not isinstance(opt_file_name, bytes):
-            opt_file_name = opt_file_name.encode()
-
-        self.ptrx().saveMembOpt(opt_file_name)
+        self.ptrx().saveMembOpt(to_std_string(opt_file_name))
 
     def getTime(self, ):
         """
         Returns the current simulation time in seconds.
-        
+
         Syntax::
-            
+
             getTime()
-            
+
         Arguments:
         None
-        
+
         Return:
         float
         """
@@ -355,16 +346,16 @@ cdef class _py_TetOpSplitP(_py_API):
 
     def getA0(self, ):
         """
-        Returns the total propensity of the current simulation state 
-        (the total propensity multiplied by an infinitesimally small 
-        time dt gives the probability that a reaction will occur in that dt). 
-        For Tetexact this includes the propensity from the extension of the SSA 
+        Returns the total propensity of the current simulation state
+        (the total propensity multiplied by an infinitesimally small
+        time dt gives the probability that a reaction will occur in that dt).
+        For Tetexact this includes the propensity from the extension of the SSA
         for diffusive flux between tetrahedral elements in the mesh.
 
         Syntax::
-            
+
             getA0()
-            
+
         Arguments:
         None
 
@@ -376,13 +367,13 @@ cdef class _py_TetOpSplitP(_py_API):
 
     def getNSteps(self, ):
         """
-        Return the number of 'realizations' of the SSA, the number of reaction 
+        Return the number of 'realizations' of the SSA, the number of reaction
         (and diffusion) events in stochastic solvers.
 
         Syntax::
-            
+
             getNSteps()
-            
+
         Arguments:
         None
 
@@ -397,9 +388,9 @@ cdef class _py_TetOpSplitP(_py_API):
         Set the current simulation time.
 
         Syntax::
-            
+
             setTime(time)
-            
+
         Arguments:
         float time
 
@@ -411,13 +402,13 @@ cdef class _py_TetOpSplitP(_py_API):
 
     def setNSteps(self, uint nsteps):
         """
-        Set the number of 'realizations' of the SSA, the number of reaction 
+        Set the number of 'realizations' of the SSA, the number of reaction
         (and diffusion) events in stochastic solvers.
 
         Syntax::
-            
+
             setNSteps(nsteps)
-            
+
         Arguments:
         uint nsteps
 
@@ -444,10 +435,7 @@ cdef class _py_TetOpSplitP(_py_API):
         list<double>
 
         """
-        if not isinstance(s, bytes):
-            s = s.encode()
-
-        return self.ptrx().getBatchTetCounts(tets, s)
+        return self.ptrx().getBatchTetCounts(tets, to_std_string(s))
 
     def getBatchTriCounts(self, std.vector[index_t] tris, str s):
         """
@@ -465,10 +453,7 @@ cdef class _py_TetOpSplitP(_py_API):
         list<double>
 
         """
-        if not isinstance(s, bytes):
-            s = s.encode()
-
-        return self.ptrx().getBatchTriCounts(tris, s)
+        return self.ptrx().getBatchTriCounts(tris, to_std_string(s))
 
     def setBatchTetConcs(self, std.vector[index_t] tets, str s, std.vector[double] concs):
         """
@@ -487,11 +472,7 @@ cdef class _py_TetOpSplitP(_py_API):
         None
 
         """
-        t = s
-        if not isinstance(s, bytes):
-            t = s.encode()
-
-        self.ptrx().setBatchTetConcs(tets, t, concs)
+        self.ptrx().setBatchTetConcs(tets, to_std_string(s), concs)
 
     def getBatchTetConcs(self, std.vector[index_t] tets, str s):
         """
@@ -509,11 +490,7 @@ cdef class _py_TetOpSplitP(_py_API):
         list<double>
 
         """
-        t = s
-        if not isinstance(s, bytes):
-            t = s.encode()
-
-        return self.ptrx().getBatchTetConcs(tets, t)
+        return self.ptrx().getBatchTetConcs(tets, to_std_string(s))
 
     # ---------------------------------------------------------------------------------
     # NUMPY section - we accept numpy arrays and generically typed memory-views
@@ -528,16 +505,31 @@ cdef class _py_TetOpSplitP(_py_API):
         Arguments:
         numpy.array<index_t> indices
         string s
-        numpy.array<double, length = len(indices)>
+        numpy.array<double, length = len(indices)> counts
 
         Return:
         None
 
         """
-        if not isinstance(s, bytes):
-            s = s.encode()
+        self.ptrx().getBatchTetCountsNP(&index_array[0], index_array.shape[0], to_std_string(s), &counts[0], counts.shape[0])
 
-        self.ptrx().getBatchTetCountsNP(&index_array[0], index_array.shape[0], s, &counts[0], counts.shape[0])
+    def getBatchTetConcsNP(self, index_t[:] index_array, str s, double[:] concs):
+        """
+        Get the individual concentrations of a species s in a list of tetrahedrons.
+
+        Syntax::
+            getBatchTetConcsNP(indices, s, concs)
+
+        Arguments:
+        numpy.array<index_t> indices
+        string s
+        numpy.array<double, length = len(indices)> concs
+
+        Return:
+        None
+
+        """
+        self.ptrx().getBatchTetConcsNP(&index_array[0], index_array.shape[0], to_std_string(s), &concs[0], concs.shape[0])
 
     def getBatchTriCountsNP(self, index_t[:] index_array, str s, double[:] counts):
         """
@@ -549,104 +541,238 @@ cdef class _py_TetOpSplitP(_py_API):
         Arguments:
         numpy.array<index_t> indices
         string s
-        numpy.array<double, length = len(indices)>
+        numpy.array<double, length = len(indices)> counts
 
         Return:
             None
 
         """
-        if not isinstance(s, bytes):
-            s = s.encode()
+        self.ptrx().getBatchTriCountsNP(&index_array[0], index_array.shape[0], to_std_string(s), &counts[0], counts.shape[0])
 
-        self.ptrx().getBatchTriCountsNP(&index_array[0], index_array.shape[0], s, &counts[0], counts.shape[0])
+    def setBatchTetConcsNP(self, index_t[:] index_array, str s, double[:] concs):
+        """
+        Set the concetration of a species s in a list of tetrahedrons.
 
-    def sumBatchTetCountsNP(self, uint[:] tet_array, str s):
+        Syntax::
+            setBatchTetConcsNP(indices, s, concs)
+
+        Arguments:
+        numpy.array<index_t> indices
+        string s
+        numpy.array<double, length = len(indices)> concs
+
+        Return:
+        None
+
+        """
+        self.ptrx().setBatchTetConcsNP(&index_array[0], index_array.shape[0], to_std_string(s), &concs[0], concs.shape[0])
+
+
+    def getBatchTetConcsNP(self, index_t[:] index_array, str s, double[:] concs):
+        """
+        Get the concetration of a species s in a list of tetrahedrons.
+
+        Syntax::
+            getBatchTetConcsNP(indices, s, concs)
+
+        Arguments:
+        numpy.array<index_t> indices
+        string s
+        numpy.array<double, length = len(indices)>
+
+        Return:
+        None
+
+        """
+        self.ptrx().getBatchTetConcsNP(&index_array[0], index_array.shape[0], to_std_string(s), &concs[0], concs.shape[0])
+
+    def sumBatchTetCountsNP(self, index_t[:] tet_array, str s):
         """
         Return the accumulated sum of species s in a batch of tetrahedrons.
-        
+
         This function requires NumPy array as input, and called globally in all processes.
-        
+
         Syntax::
-            
-            sumBatchTetCountsNP(tet_list, s)
-            
+
+            sumBatchTetCountsNP(tet_array, s)
+
         Arguments:
-        numpy.array<uint> tet_list
+        numpy.array<index_t> tet_array
         string s
-        
+
         Return:
         float
         """
-        if not isinstance(s, bytes):
-            s = s.encode()
+        return self.ptrx().sumBatchTetCountsNP(&tet_array[0], tet_array.shape[0], to_std_string(s))
 
-        return self.ptrx().sumBatchTetCountsNP(&tet_array[0], tet_array.shape[0], s)
-
-    def sumBatchTriCountsNP(self, uint[:] tri_array, str s):
+    def sumBatchTriCountsNP(self, index_t[:] tri_array, str s):
         """
         Return the accumulated sum of species s in a batch of triangles.
-        
+
         This function requires NumPy array as input, and called globally in all processes.
-        
+
         Syntax::
-            
-            sumBatchTriCountsNP(tri_list, s)
-            
+
+            sumBatchTriCountsNP(tri_array, s)
+
         Arguments:
-        numpy.array<uint> tri_list
+        numpy.array<index_t> tri_array
         string s
-        
+
         Return:
         float
         """
-        if not isinstance(s, bytes):
-            s = s.encode()
+        return self.ptrx().sumBatchTriCountsNP(&tri_array[0], tri_array.shape[0], to_std_string(s))
 
-        return self.ptrx().sumBatchTriCountsNP(&tri_array[0], tri_array.shape[0], s)
-
-    def sumBatchTriGHKIsNP(self, uint[:] tri_array, str ghk):
+    def sumBatchTriGHKIsNP(self, index_t[:] tri_array, str ghk):
         """
         Return the accumulated sum of GHK currents in a batch of triangles.
-        
+
         This function requires NumPy array as input, and called globally in all processes.
-        
+
         Syntax::
-            
-            sumBatchTriGHKIsNP(tri_list, ghk)
-            
+
+            sumBatchTriGHKIsNP(tri_array, ghk)
+
         Arguments:
-        numpy.array<uint> tri_list
+        numpy.array<index_t> tri_array
         string ghk
-        
+
         Return:
         float
         """
-        if not isinstance(ghk, bytes):
-            ghk = ghk.encode()
+        return self.ptrx().sumBatchTriGHKIsNP(&tri_array[0], tri_array.shape[0], to_std_string(ghk))
 
-        return self.ptrx().sumBatchTriGHKIsNP(&tri_array[0], tri_array.shape[0], ghk)
-
-    def sumBatchTriOhmicIsNP(self, uint[:] tri_array, str ghk):
+    def sumBatchTriOhmicIsNP(self, index_t[:] tri_array, str ghk):
         """
         Return the accumulated sum of Ohmic currents in a batch of triangles.
-        
+
         This function requires NumPy array as input, and called globally in all processes.
-        
+
         Syntax::
-            
-            sumBatchTriOhmicIsNP(tri_list, oc)
-            
+
+            sumBatchTriOhmicIsNP(tri_array, oc)
+
         Arguments:
-        numpy.array<uint> tri_list
+        numpy.array<index_t> tri_array
         string oc
-        
+
         Return:
         float
         """
-        if not isinstance(ghk, bytes):
-            ghk = ghk.encode()
+        return self.ptrx().sumBatchTriOhmicIsNP(&tri_array[0], tri_array.shape[0], to_std_string(ghk))
 
-        return self.ptrx().sumBatchTriOhmicIsNP(&tri_array[0], tri_array.shape[0], ghk)
+    def getBatchTriOhmicIsNP(self, index_t[:] index_array, str oc, double[:] counts):
+        """
+        Get the Ohmic currents in a list of triangles.
+
+        Syntax::
+            getBatchTriOhmicIsNP(indices, oc, counts)
+
+        Arguments:
+        numpy.array<index_t> indices
+        string oc
+        numpy.array<double, length = len(indices)> counts
+
+        Return:
+            None
+
+        """
+        self.ptrx().getBatchTriOhmicIsNP(&index_array[0], index_array.shape[0], to_std_string(oc), &counts[0], counts.shape[0])
+
+    def getBatchTriGHKIsNP(self, index_t[:] index_array, str ghk, double[:] counts):
+        """
+        Get the GHK currents in a list of triangles.
+
+        Syntax::
+            getBatchTriGHKIsNP(indices, ghk, counts)
+
+        Arguments:
+        numpy.array<index_t> indices
+        string ghk
+        numpy.array<double, length = len(indices)> counts
+
+        Return:
+            None
+
+        """
+        self.ptrx().getBatchTriGHKIsNP(&index_array[0], index_array.shape[0], to_std_string(ghk), &counts[0], counts.shape[0])
+
+    def getBatchTriVsNP(self, index_t[:] index_array, double[:] counts):
+        """
+        Get the Voltages in a list of triangles.
+
+        Syntax::
+            getBatchTriVsNP(indices, counts)
+
+        Arguments:
+        numpy.array<index_t> indices
+        numpy.array<double, length = len(indices)> counts
+
+        Return:
+            None
+
+        """
+        self.ptrx().getBatchTriVsNP(&index_array[0], index_array.shape[0], &counts[0], counts.shape[0])
+
+    def getBatchTetVsNP(self, index_t[:] index_array, double[:] counts):
+        """
+        Get the Voltages in a list of tetrahedrons.
+
+        Syntax::
+            getBatchTetVsNP(indices, counts)
+
+        Arguments:
+        numpy.array<index_t> indices
+        numpy.array<double, length = len(indices)> counts
+
+        Return:
+            None
+
+        """
+        self.ptrx().getBatchTetVsNP(&index_array[0], index_array.shape[0], &counts[0], counts.shape[0])
+
+    def getBatchTriBatchOhmicIsNP(self, index_t[:] index_array, ocs, double[:] counts):
+        """
+        Get the values of a list of Ohmic currents in a list of triangles, 
+        store in a flatten 2d array. 
+        The value of current ocs[j] of triangle index_array[i] is stored in counts[i * len(ocs) + j]
+
+        Syntax::
+            getBatchTriBatchOhmicIsNP(indices, ocs, counts)
+
+        Arguments:
+        numpy.array<index_t> indices
+        std.vector[string] ocs
+        numpy.array<double, length = len(indices) * len(ocs)> counts
+
+        Return:
+            None
+
+        """
+        cdef std.vector[string] std_ocs = to_vec_std_strings(ocs)
+        self.ptrx().getBatchTriBatchOhmicIsNP(&index_array[0], index_array.shape[0], std_ocs, &counts[0], counts.shape[0])
+
+    def getBatchTriBatchGHKIsNP(self, index_t[:] index_array, list[str] ghks, double[:] counts):
+        """
+        Get the values of a list of GHK currents in a list of triangles, 
+        store in a flatten 2d array. 
+        The value of current ghks[j] of triangle index_array[i] is stored in counts[i * len(ghks) + j]
+
+        Syntax::
+            getBatchTriBatchGHKIsNP(indices, ghks, counts)
+
+        Arguments:
+        numpy.array<index_t> indices
+        std.vector[string] ghks
+        numpy.array<double, length = len(indices) * len(ghks)> counts
+
+        Return:
+            None
+
+        """
+        cdef std.vector[string] std_ghks = to_vec_std_strings(ghks)
+        self.ptrx().getBatchTriBatchGHKIsNP(&index_array[0], index_array.shape[0], std_ghks, &counts[0], counts.shape[0])
 
     # ---------------------------------------------------------------------------------
     # ROI section
@@ -808,6 +934,24 @@ cdef class _py_TetOpSplitP(_py_API):
         """
         return self.ptrx().getROIAmount(to_std_string(ROI_id), to_std_string(s))
 
+    def setROIAmount(self, str ROI_id, str s, double amount):
+        """
+        Set the amount of a species in a ROI.
+
+        Syntax::
+            setROIAmount(ROI_id, s, amount)
+
+        Arguments:
+        string ROI_id
+        string s
+        float amount
+
+        Return:
+        None
+
+        """
+        return self.ptrx().setROIAmount(to_std_string(ROI_id), to_std_string(s), amount)
+
     def getROIConc(self, str ROI_id, str s):
         """
         Get the concentration of a species in a ROI.
@@ -840,7 +984,7 @@ cdef class _py_TetOpSplitP(_py_API):
         Return:
         None
 
-        """   
+        """
         self.ptrx().setROIConc(to_std_string(ROI_id), to_std_string(s), conc)
 
     def setROIClamped(self, str ROI_id, str s, bool b):
@@ -868,7 +1012,7 @@ cdef class _py_TetOpSplitP(_py_API):
         in a ROI with identifier string ROI_id to kf. The unit of the reaction constant
         depends on the order of the reaction.
 
-        Note: The default value still comes from the steps.model description, so 
+        Note: The default value still comes from the steps.model description, so
         calling reset() will return the reaction constant to that value.
 
         Syntax::
@@ -891,7 +1035,7 @@ cdef class _py_TetOpSplitP(_py_API):
         in a ROI with identifier string ROI_id to kf. The unit of the reaction constant
         depends on the order of the reaction.
 
-        Note: The default value still comes from the steps.model description, so 
+        Note: The default value still comes from the steps.model description, so
         calling reset() will return the reaction constant to that value.
 
         Syntax::
@@ -913,7 +1057,7 @@ cdef class _py_TetOpSplitP(_py_API):
         Sets the macroscopic diffusion constant of diffusion with identifier string d
         in a ROI with identifier string ROI_id to dk.
 
-        Note: The default value still comes from the steps.model description, so 
+        Note: The default value still comes from the steps.model description, so
         calling reset() will return the diffusion constant to that value.
 
         Syntax::
@@ -1123,20 +1267,20 @@ cdef class _py_TetOpSplitP(_py_API):
         """
         Set the threshold for using binomial distribution for molecule diffusion instead of
         single molecule diffusion.
-        
+
         If the number of molecules in a tetrahedron await for diffusion is higher than this
         threshold, the solver will use binomial function to distribute these molecules to
         each neighboring tetrahedron. Otherwise the molecules will diffuse one by one.
-        
+
         The default threshold is 10.
-        
+
         Syntax::
-            
+
             setDiffApplyThreshold(threshold)
-            
+
         Arguments:
         int threshold
-        
+
         Return:
         None
         """
@@ -1145,20 +1289,20 @@ cdef class _py_TetOpSplitP(_py_API):
     def getReacExtent(self, bool local=False):
         """
         Return the number of reaction events that have happened in the simulation.
-        
+
         if all processes call this function, it will return the accumulated
         result across all processes. It can also be called in individual process with
         the local argument set to true, in which case it returns the local result of this process.
-        
+
         By default it is called globally and return the accumulated result.
-        
+
         Syntax::
-            
+
             getReacExtent(local)
-            
+
         Arguments:
         bool local (default = False)
-        
+
         Return:
         index_t
         """
@@ -1167,20 +1311,20 @@ cdef class _py_TetOpSplitP(_py_API):
     def getDiffExtent(self, bool local=False):
         """
         Return the number of diffusion events that have happened in the simulation.
-        
+
         if all processes call this function, it will return the accumulated
         result accross all processes. It can also be called in individual process with
         the local argument set to true, in which case it returns the local result of this process.
-        
+
         By default it is called globally and return the accumlated result.
-        
+
         Syntax::
-            
+
             getDiffExtent(local)
-            
+
         Arguments:
         bool local (default = False)
-        
+
         Return:
         index_t
         """
@@ -1189,18 +1333,18 @@ cdef class _py_TetOpSplitP(_py_API):
     def getNIteration(self, ):
         """
         Return the number of Operator-Splitting iterations that have happened in the simulation.
-        
+
         See (Hepburn et al, 2016) and (Chen et al, 2017) for more detail.
-        
+
         This function can be called locally.
-        
+
         Syntax::
-            
+
             getNIteration()
-            
+
         Arguments:
         None
-        
+
         Return:
         float
         """
@@ -1211,14 +1355,14 @@ cdef class _py_TetOpSplitP(_py_API):
         """
         Return the update period tau of the Operator-Splitting solution.
         See (Hepburn et al, 2016) and (Chen et al, 2017) for more detail.
-        
+
         Syntax::
-            
+
             getUpdPeriod()
-            
+
         Arguments:
         None
-        
+
         Return:
         float
         """
@@ -1227,19 +1371,19 @@ cdef class _py_TetOpSplitP(_py_API):
     def getCompTime(self, ):
         """
         Return the accumulated computation time of the process.
-        
+
         To use the funtion, it is necessary to enable the add_definitions(-DMPI_PROFILING=1)
         line in the src/CmakeLists.txt file. This function is always called and return result locally.
-        
+
         See (Chen, 2017) for more detail.
-        
+
         Syntax::
-            
+
             getCompTime()
-            
+
         Arguments:
         None
-            
+
         Return:
         float
         """
@@ -1248,19 +1392,19 @@ cdef class _py_TetOpSplitP(_py_API):
     def getSyncTime(self, ):
         """
         Return the accumulated synchronization time of the process.
-        
+
         To use the funtion, it is necessary to enable the add_definitions(-DMPI_PROFILING=1)
         line in the src/CmakeLists.txt file. This function is always called and return result locally.
-        
+
         See (Chen, 2017) for more detail.
-        
+
         Syntax::
-            
+
             getSyncTime()
-            
+
         Arguments:
         None
-            
+
         Return:
         float
         """
@@ -1269,19 +1413,19 @@ cdef class _py_TetOpSplitP(_py_API):
     def getIdleTime(self, ):
         """
         Return the accumulated idle time of the process.
-        
+
         To use the funtion, it is necessary to enable the add_definitions(-DMPI_PROFILING=1)
         line in the src/CmakeLists.txt file. This function is always called and return result locally.
-        
+
         See (Chen, 2017) for more detail.
-        
+
         Syntax::
-            
+
             getSyncTime()
-            
+
         Arguments:
         None
-            
+
         Return:
         float
         """
@@ -1290,18 +1434,18 @@ cdef class _py_TetOpSplitP(_py_API):
     def getEFieldTime(self, ):
         """
         Return the accumulated EField run time of the process.
-        
+
         To use the funtion, it is necessary to enable the add_definitions(-DMPI_PROFILING=1)
         line in the src/CmakeLists.txt file. This function is always called and return result locally.
-        
-        
+
+
         Syntax::
-            
+
             getEFieldTime()
-            
+
         Arguments:
         None
-            
+
         Return:
         float
         """
@@ -1310,17 +1454,17 @@ cdef class _py_TetOpSplitP(_py_API):
     def getRDTime(self, ):
         """
         Return the accumulated reaction-diffusion run time of the process.
-        
+
         To use the funtion, it is necessary to enable the add_definitions(-DMPI_PROFILING=1)
         line in the src/CmakeLists.txt file. This function is always called and return result locally.
-        
+
         Syntax::
-            
+
             getRDTime()
-            
+
         Arguments:
         None
-            
+
         Return:
         float
         """
@@ -1329,17 +1473,17 @@ cdef class _py_TetOpSplitP(_py_API):
     def getDataExchangeTime(self, ):
         """
         Return the accumulated data exchanging time between RD and EField solvers of the process.
-        
+
         To use the funtion, it is necessary to enable the add_definitions(-DMPI_PROFILING=1)
         line in the src/CmakeLists.txt file. This function is always called and return result locally.
-        
+
         Syntax::
-            
+
             getDataExchangeTime()
-            
+
         Arguments:
         None
-            
+
         Return:
         float
         """
@@ -1348,19 +1492,19 @@ cdef class _py_TetOpSplitP(_py_API):
     def repartitionAndReset(self, std.vector[uint] tet_hosts=(), dict tri_hosts=None, std.vector[uint] wm_hosts=()):
         """
         Repartition and reset the simulation.
-        
+
         Note: It is possible to repartitioning the mesh using any subset of the processes,
         in which case processes with no assigned subvolumes will mostly idle for the working processes.
-        
+
         Syntax::
-            
+
             repartitionAndReset(tet_hosts, tri_hosts, wm_hosts)
-            
+
         Arguments:
         list tet_hosts
         dict tri_hosts (default = {})
         dict wm_hosts (default = {})
-        
+
         Return:
             None
         """

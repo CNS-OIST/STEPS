@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -187,6 +187,10 @@ void swmd::Wmdirect::restore(std::string const & file_name)
 
     statedef().restore(cp_file);
 
+    if (cp_file.fail()) {
+        ArgErrLog("Checkpoint restoration failed.");
+    }
+
     cp_file.close();
 
     _reset();
@@ -283,8 +287,12 @@ void swmd::Wmdirect::reset()
     uint patches = statedef().countPatches();
     for (uint i=0; i < patches; ++i) statedef().patchdef(i)->reset();
 
-    std::for_each(pComps.begin(), pComps.end(), std::mem_fun(&Comp::reset));
-    std::for_each(pPatches.begin(), pPatches.end(), std::mem_fun(&Patch::reset));
+    for (auto comp: pComps) {
+        comp->reset();
+    }
+    for (auto patch: pPatches) {
+        patch->reset();
+    }
 
     statedef().resetTime();
     statedef().resetNSteps();
@@ -393,7 +401,18 @@ void swmd::Wmdirect::_setCompVol(uint cidx, double vol)
     // Reset the reaction C constants
     swmd::Comp * lcomp = pComps[cidx];
     AssertLog(lcomp->def() == comp);
-    std::for_each(lcomp->kprocBegin(), lcomp->kprocEnd(), std::mem_fun(&KProc::resetCcst));
+    for (auto kproc: *lcomp) {
+        kproc->resetCcst();
+    }
+    for (auto& patch: lcomp->ipatches()) {
+        for (auto kproc: *patch)
+            kproc->resetCcst();
+    }
+    for (auto& patch: lcomp->opatches()) {
+        for (auto kproc: *patch) {
+            kproc->resetCcst();
+        }
+    }
     // Rates have changed
     _reset();
 }

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -117,7 +117,7 @@ public:
 
     void setEfieldDT(double efdt) override;
 
-    inline double efdt() noexcept
+    inline double efdt() const noexcept
     { return pEFDT; }
 
     inline double getEfieldDT() const noexcept override
@@ -163,16 +163,16 @@ public:
      std::vector<double> getBatchTriCounts(const std::vector<index_t> &tris, std::string const &s) const override;
 
      void getBatchTetCountsNP(const index_t *indices,
-                              int input_size,
+                              size_t input_size,
                               std::string const &s,
                               double *counts,
-                              int output_size) const override;
+                              size_t output_size) const override;
 
      void getBatchTriCountsNP(const index_t *indices,
-                              int input_size,
+                              size_t input_size,
                               std::string const &s,
                               double *counts,
-                              int output_size) const override;
+                              size_t output_size) const override;
 
      ////////////////////////////////////////////////////////////////////////
      // ROI Data Access
@@ -185,10 +185,10 @@ public:
      std::vector<double> getROITriCounts(const std::string& ROI_id, std::string const & s) const override;
 
      /// Get species counts of a list of tetrahedrons
-     void getROITetCountsNP(const std::string& ROI_id, std::string const & s, double* counts, int output_size) const override;
+     void getROITetCountsNP(const std::string& ROI_id, std::string const & s, double* counts, size_t output_size) const override;
 
      /// Get species counts of a list of triangles
-     void getROITriCountsNP(const std::string& ROI_id, std::string const & s, double* counts, int output_size) const override;
+     void getROITriCountsNP(const std::string& ROI_id, std::string const & s, double* counts, size_t output_size) const override;
 
      double getROIVol(const std::string& ROI_id) const override;
      double getROIArea(const std::string& ROI_id) const override;
@@ -197,6 +197,8 @@ public:
      void setROICount(const std::string& ROI_id, std::string const & s, double count) override;
 
      double getROIAmount(const std::string& ROI_id, std::string const & s) const override;
+     void setROIAmount(const std::string& ROI_id, std::string const & s, double amount) override;
+
      double getROIConc(const std::string& ROI_id, std::string const & s) const override;
      void setROIConc(const std::string& ROI_id, std::string const & s, double conc) override;
 
@@ -401,18 +403,21 @@ public:
     bool _getTriVClamped(triangle_id_t tidx) const override;
     void _setTriVClamped(triangle_id_t tidx, bool cl) override;
 
-    double _getTriOhmicI(triangle_id_t tidx) override;
-    double _getTriOhmicI(triangle_id_t tidx, uint ocidx) override;
+    double _getTriOhmicI(triangle_id_t tidx) const override;
+    double _getTriOhmicI(triangle_id_t tidx, uint ocidx) const override;
 
-    double _getTriGHKI(triangle_id_t tidx) override;
-    double _getTriGHKI(triangle_id_t tidx, uint ghkidx) override;
+    double _getTriGHKI(triangle_id_t tidx) const override;
+    double _getTriGHKI(triangle_id_t tidx, uint ghkidx) const override;
 
     double _getTriI(triangle_id_t tidx) const override;
 
+    double _getTriIClamp(triangle_id_t tidx) const override;
     void _setTriIClamp(triangle_id_t tidx, double cur) override;
 
     bool _getTriVDepSReacActive(triangle_id_t tidx, uint vsridx) const override;
     void _setTriVDepSReacActive(triangle_id_t tidx, uint vsridx, bool act) override;
+
+    void _setTriCapac(triangle_id_t tidx, double cap) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROL:
@@ -421,8 +426,11 @@ public:
 
     double _getVertV(vertex_id_t vidx) const override;
     void _setVertV(vertex_id_t vidx, double v) override;
+
     bool _getVertVClamped(vertex_id_t vidx) const override;
     void _setVertVClamped(vertex_id_t vidx, bool cl) override;
+
+    double _getVertIClamp(vertex_id_t tidx) const override;
     void _setVertIClamp(vertex_id_t tidx, double cur) override;
 
     ////////////////////////////////////////////////////////////////////////
@@ -577,7 +585,7 @@ public:
     ///
     /// Currently doesn't care about the species.
     ///
-    void _updateSpec(steps::tetexact::WmVol * tet, uint spec_lidx);
+    void _updateSpec(steps::tetexact::WmVol * tet);
 
     /// Update the kproc's of a triangle, after a species has been changed.
     /// This does not need to update the kproc's of any neighbouring
@@ -585,7 +593,7 @@ public:
     ///
     /// Currently doesn't care about the species.
     ///
-    void _updateSpec(steps::tetexact::Tri * tri, uint spec_lidx);
+    void _updateSpec(steps::tetexact::Tri * tri);
 
 
     ////////////////////////// ADDED FOR EFIELD ////////////////////////////

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -77,6 +77,9 @@ stex::Tri::Tri(triangle_id_t idx, steps::solver::Patchdef * patchdef, double are
 , pKProcs()
 , pECharge(nullptr)
 , pECharge_last(nullptr)
+, pECharge_accum(nullptr)
+, pECharge_last_dt(0)
+, pECharge_accum_dt(0)
 , pOCchan_timeintg(nullptr)
 , pOCtime_upd(nullptr)
 {
@@ -118,6 +121,9 @@ stex::Tri::Tri(triangle_id_t idx, steps::solver::Patchdef * patchdef, double are
     pECharge_last = new int[nghkcurrs];
     std::fill_n(pECharge_last, nghkcurrs, 0);
 
+    pECharge_accum = new int[nghkcurrs];
+    std::fill_n(pECharge_accum, nghkcurrs, 0);
+
     uint nohmcurrs = pPatchdef->countOhmicCurrs();
     pOCchan_timeintg = new double[nohmcurrs];
     std::fill_n(pOCchan_timeintg, nohmcurrs, 0.0);
@@ -134,6 +140,8 @@ stex::Tri::~Tri()
     delete[] pPoolCount;
     delete[] pPoolFlags;
     delete[] pECharge;
+    delete[] pECharge_last;
+    delete[] pECharge_accum;
     delete[] pOCchan_timeintg;
     delete[] pOCtime_upd;
 
@@ -153,6 +161,9 @@ void stex::Tri::checkpoint(std::fstream & cp_file)
     uint nghkcurrs = pPatchdef->countGHKcurrs();
     cp_file.write(reinterpret_cast<char*>(pECharge), sizeof(int) * nghkcurrs);
     cp_file.write(reinterpret_cast<char*>(pECharge_last), sizeof(int) * nghkcurrs);
+    cp_file.write(reinterpret_cast<char*>(pECharge_accum), sizeof(int) * nghkcurrs);
+    cp_file.write(reinterpret_cast<char*>(&pECharge_last_dt), sizeof(double));
+    cp_file.write(reinterpret_cast<char*>(&pECharge_accum_dt), sizeof(double));
 
     uint nohmcurrs = pPatchdef->countOhmicCurrs();
     cp_file.write(reinterpret_cast<char*>(pOCchan_timeintg), sizeof(double) * nohmcurrs);
@@ -173,6 +184,9 @@ void stex::Tri::restore(std::fstream & cp_file)
     uint nghkcurrs = pPatchdef->countGHKcurrs();
     cp_file.read(reinterpret_cast<char*>(pECharge), sizeof(int) * nghkcurrs);
     cp_file.read(reinterpret_cast<char*>(pECharge_last), sizeof(int) * nghkcurrs);
+    cp_file.read(reinterpret_cast<char*>(pECharge_accum), sizeof(int) * nghkcurrs);
+    cp_file.read(reinterpret_cast<char*>(&pECharge_last_dt), sizeof(double));
+    cp_file.read(reinterpret_cast<char*>(&pECharge_accum_dt), sizeof(double));
 
     uint nohmcurrs = pPatchdef->countOhmicCurrs();
     cp_file.read(reinterpret_cast<char*>(pOCchan_timeintg), sizeof(double) * nohmcurrs);
@@ -289,13 +303,16 @@ void stex::Tri::reset()
     std::fill_n(pPoolCount, nspecs, 0);
     std::fill_n(pPoolFlags, nspecs, 0);
 
-    std::for_each(pKProcs.begin(), pKProcs.end(),
-        std::mem_fun(&stex::KProc::reset));
-
+    for (auto kproc: pKProcs) {
+        kproc->reset();
+    }
 
     uint nghkcurrs = pPatchdef->countGHKcurrs();
     std::fill_n(pECharge, nghkcurrs, 0);
     std::fill_n(pECharge_last, nghkcurrs, 0);
+    std::fill_n(pECharge_accum, nghkcurrs, 0);
+    pECharge_last_dt = 0;
+    pECharge_accum_dt = 0;
 
     uint nohmcurrs = pPatchdef->countOhmicCurrs();
     std::fill_n(pOCchan_timeintg, nohmcurrs, 0.0);
@@ -304,16 +321,27 @@ void stex::Tri::reset()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tri::resetECharge()
+void stex::Tri::resetECharge(double dt, double efdt)
 {
     uint nghkcurrs = pPatchdef->countGHKcurrs();
 
-    for (uint i=0; i < nghkcurrs; ++i)
-    {
-        pECharge_last[i] = pECharge[i];
+    for (uint i=0; i < nghkcurrs; ++i) {
+        pECharge_accum[i] += pECharge[i];
     }
-    std::fill_n(pECharge, nghkcurrs, 0);
+    pECharge_accum_dt += dt;
 
+    if (pECharge_accum_dt >= efdt) {
+        // Swap arrays
+        std::swap(pECharge_last, pECharge_accum);
+
+        // reset accumulation array and dt values
+        std::fill_n(pECharge_accum, nghkcurrs, 0);
+
+        pECharge_last_dt = pECharge_accum_dt;
+        pECharge_accum_dt = 0;
+    }
+
+    std::fill_n(pECharge, nghkcurrs, 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -439,21 +467,27 @@ stex::GHKcurr * stex::Tri::ghkcurr(uint lidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stex::Tri::getGHKI(uint lidx, double dt) const
+double stex::Tri::getGHKI(uint lidx) const
 {
+    if (pECharge_last_dt == 0)
+        return 0;
+
     uint nghkcurrs = pPatchdef->countGHKcurrs();
     AssertLog(lidx < nghkcurrs);
 
     int efcharge = pECharge_last[lidx];
     auto efcharged = static_cast<double>(efcharge);
 
-    return ((efcharged*steps::math::E_CHARGE)/dt);
+    return ((efcharged*steps::math::E_CHARGE)/pECharge_last_dt);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stex::Tri::getGHKI(double dt) const
+double stex::Tri::getGHKI() const
 {
+    if (pECharge_last_dt == 0)
+        return 0;
+
     uint nghkcurrs = pPatchdef->countGHKcurrs();
     int efcharge=0;
     for (uint i =0; i < nghkcurrs; ++i)
@@ -463,12 +497,12 @@ double stex::Tri::getGHKI(double dt) const
 
     auto efcharged = static_cast<double>(efcharge);
 
-    return ((efcharged*steps::math::E_CHARGE)/dt);
+    return ((efcharged*steps::math::E_CHARGE)/pECharge_last_dt);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stex::Tri::computeI(double v, double dt, double simtime)
+double stex::Tri::computeI(double v, double dt, double simtime, double efdt)
 {
     double current = 0.0;
     uint nocs = patchdef()->countOhmicCurrs();
@@ -497,7 +531,7 @@ double stex::Tri::computeI(double v, double dt, double simtime)
 
     // Convert charge to coulombs and find mean current
     current += ((efcharged*steps::math::E_CHARGE)/dt);
-    resetECharge();
+    resetECharge(dt, efdt);
     resetOCintegrals();
 
     return current;

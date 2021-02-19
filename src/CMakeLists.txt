@@ -1,7 +1,7 @@
 # #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2020 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -22,6 +22,8 @@
 #################################################################################   
 ###
 
+add_options(ALL_LANGUAGES ALL_BUILDS -Werror)
+
 set(lib_soversion "${VERSION_MAJOR}.${VERSION_MINOR}")
 set(lib_version "${lib_soversion}.${VERSION_PATCH}")
 
@@ -32,19 +34,12 @@ if(NOT EXISTS "${EASYLOGGINGPP_INCLUDE_DIRS}/easylogging++.cc")
     )
 endif()
 
+add_subdirectory(steps/util)
+add_subdirectory(steps/math)
+add_subdirectory(steps/geom)
+add_subdirectory(steps/rng)
+
 set(lib_sources
-    "steps/init.cpp"
-    "steps/error.cpp"
-    "steps/finish.cpp"
-    "steps/geom/tetmesh.cpp"
-    "steps/geom/comp.cpp"
-    "steps/geom/geom.cpp"
-    "steps/geom/patch.cpp"
-    "steps/geom/tmcomp.cpp"
-    "steps/geom/tmpatch.cpp"
-    "steps/geom/sdiffboundary.cpp"
-    "steps/geom/memb.cpp"
-    "steps/geom/diffboundary.cpp"
     "steps/model/model.cpp"
     "steps/model/diff.cpp"
     "steps/model/chan.cpp"
@@ -58,11 +53,6 @@ set(lib_sources
     "steps/model/ghkcurr.cpp"
     "steps/model/vdeptrans.cpp"
     "steps/model/vdepsreac.cpp"
-    "steps/math/tetrahedron.cpp"
-    "steps/math/tools.cpp"
-    "steps/math/linsolve.cpp"
-    "steps/math/triangle.cpp"
-    "steps/math/ghk.cpp"
     "steps/tetode/comp.cpp"
     "steps/tetode/patch.cpp"
     "steps/tetode/tet.cpp"
@@ -126,19 +116,14 @@ set(lib_sources
     "steps/wmdirect/sreac.cpp"
     "steps/wmdirect/wmdirect.cpp"
     "steps/wmrk4/wmrk4.cpp"
-    "steps/rng/rng.cpp"
-    "steps/rng/mt19937.cpp"
     "steps/wmrssa/comp.cpp"
     "steps/wmrssa/kproc.cpp"
     "steps/wmrssa/patch.cpp"
     "steps/wmrssa/reac.cpp"
     "steps/wmrssa/sreac.cpp"
     "steps/wmrssa/wmrssa.cpp"
-    "steps/rng/r123.cpp"
-    "steps/rng/create.cpp"
-    "steps/util/checkid.cpp"
     #
-    "${EASYLOGGINGPP_INCLUDE_DIRS}/easylogging++.cc")
+    )
 
 if(USE_BUNDLE_SUNDIALS)
   list(APPEND lib_sources
@@ -173,68 +158,11 @@ if(USE_BUNDLE_SUNDIALS)
                               "-Wno-format-nonliteral")
 endif(USE_BUNDLE_SUNDIALS)
 
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-  set(
-    easyloggingpp_flags
-    "-Wno-double-promotion -Wno-shadow -Wno-unused-parameter -Wno-useless-cast -Wno-null-dereference"
-    )
-else()
-  set(
-    easyloggingpp_flags
-    "-Wno-double-promotion -Wno-shadow -Wno-unused-parameter -Wno-null-dereference"
-    )
-endif()
-set_source_files_properties("${EASYLOGGINGPP_INCLUDE_DIRS}/easylogging++.cc"
-                            PROPERTIES
-                            COMPILE_FLAGS
-                            ${easyloggingpp_flags})
-
-if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"
-   AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "9.0"
-   OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU"
-   AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "7.0")
-  set_source_files_properties(steps/rng/r123.cpp
-                              steps/rng/create.cpp
-                              PROPERTIES
-                              COMPILE_FLAGS
-                              "-Wno-old-style-cast -Wno-expansion-to-defined")
-else()
-  set_source_files_properties(steps/rng/r123.cpp
-                              steps/rng/create.cpp
-                              PROPERTIES
-                              COMPILE_FLAGS
-                              "-Wno-old-style-cast")
-endif()
-
 set(lib_public_headers
     "steps/common.h"
     "steps/error.hpp"
     "steps/init.hpp"
     "steps/finish.hpp"
-    #
-    "steps/geom/comp.hpp"
-    "steps/geom/diffboundary.hpp"
-    "steps/geom/geom.hpp"
-    "steps/geom/memb.hpp"
-    "steps/geom/patch.hpp"
-    "steps/geom/sdiffboundary.hpp"
-    "steps/geom/tetmesh.hpp"
-    "steps/geom/tmcomp.hpp"
-    "steps/geom/tmpatch.hpp"
-    #
-    "steps/util/collections.hpp"
-    "steps/util/fnv_hash.hpp"
-    "steps/util/type_traits.hpp"
-    "steps/util/checkid.hpp"
-    #
-    "steps/math/constants.hpp"
-    "steps/math/ghk.hpp"
-    "steps/math/linsolve.hpp"
-    "steps/math/tetrahedron.hpp"
-    "steps/math/tools.hpp"
-    "steps/math/triangle.hpp"
-    "steps/math/point.hpp"
-    "steps/math/bbox.hpp"
     #
     "steps/model/chan.hpp"
     "steps/model/chanstate.hpp"
@@ -249,11 +177,6 @@ set(lib_public_headers
     "steps/model/vdepsreac.hpp"
     "steps/model/vdeptrans.hpp"
     "steps/model/volsys.hpp"
-    #
-    "steps/rng/mt19937.hpp"
-    "steps/rng/rng.hpp"
-    "steps/rng/r123.hpp"
-    "steps/rng/create.hpp"
     #
     "steps/solver/api.hpp"
     "steps/solver/chandef.hpp"
@@ -425,9 +348,10 @@ set_target_properties(libsteps-obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 add_library(libsteps_static STATIC $<TARGET_OBJECTS:libsteps-obj>)
 set_target_properties(libsteps_static PROPERTIES OUTPUT_NAME steps)
+target_link_libraries(libsteps_static stepsutil stepsmath stepsgeo stepsrng)
 
 add_library(libsteps SHARED $<TARGET_OBJECTS:libsteps-obj>)
-target_link_libraries(libsteps ${libsteps_link_libraries})
+target_link_libraries(libsteps stepsutil stepsmath stepsgeo stepsrng ${libsteps_link_libraries})
 set_target_properties(libsteps
                       PROPERTIES VERSION
                                  "${lib_version}"
