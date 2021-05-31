@@ -1,6 +1,4 @@
-nose==1.3.1
-nose_xunitmp
-nose_testconfig
+pytest
 python-dateutil
 pyparsing
 matplotlib

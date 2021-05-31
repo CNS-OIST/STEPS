@@ -24,7 +24,7 @@
 
 import sys
 import unittest
-import nose
+import pytest
 import parallel_diff_sel_test
 import parallel_setget_count_test
 import parallel_std_string_bugfix_test
@@ -43,4 +43,4 @@ if __name__ == "__main__":
     result = unittest.TextTestRunner(verbosity=2, buffer=True).run(suite())
     if not result.wasSuccessful():
         sys.exit(1)
-    #nose.run(argv=['test.py', '-v', '-w', 'parallel_diff_sel_test', '--all-modules'])
+    #pytest.main(args=['test.py', '-v', '-w', 'parallel_diff_sel_test', '--all-modules'])

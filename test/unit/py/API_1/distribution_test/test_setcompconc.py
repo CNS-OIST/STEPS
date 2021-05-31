@@ -25,7 +25,6 @@
 #################################################################################   
 ###
 
-import nose
 import steps.quiet
 import steps.geom
 import steps.rng

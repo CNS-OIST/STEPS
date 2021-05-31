@@ -29,7 +29,7 @@ endif()
 include_directories(${inc_dirs})
 
 # Check Python dependencies
-set(PYMODS matplotlib nose numpy scipy)
+set(PYMODS matplotlib pytest numpy scipy)
 set(PYMODS_FOUND "TRUE")
 include(FindPythonModule)
 foreach(MOD ${PYMODS})
