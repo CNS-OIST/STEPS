@@ -22,7 +22,7 @@
 #################################################################################   
 ###
 
-from pyqtgraph.Qt import QtCore, QtGui, QtOpenGL
+from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph.opengl as gl
 import numpy as np
 import random
@@ -32,6 +32,8 @@ from steps.API_1.geom import INDEX_DTYPE
 from steps.API_1.geom import UNKNOWN_TET
 from steps.API_1.geom import UNKNOWN_TRI
 import steps.API_1.utilities.meshctrl as smeshctrl
+
+QtCore.QCoreApplication.setAttribute(QtCore.Qt.ApplicationAttribute.AA_ShareOpenGLContexts)
 
 class VisualCompMesh(gl.GLMeshItem):
     """

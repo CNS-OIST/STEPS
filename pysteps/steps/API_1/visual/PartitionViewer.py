@@ -24,13 +24,16 @@
 from __future__ import print_function
 
 import pyqtgraph as pg
-from pyqtgraph.Qt import QtCore, QtGui, QtOpenGL
+from pyqtgraph.Qt import QtCore, QtGui
 import numpy as np
 import pyqtgraph.opengl as gl
 import random
 from steps.API_1.geom import INDEX_DTYPE
 from steps.API_1.geom import UNKNOWN_TET
 from steps.API_1.geom import UNKNOWN_TRI
+
+QtCore.QCoreApplication.setAttribute(QtCore.Qt.ApplicationAttribute.AA_ShareOpenGLContexts)
+
 def createColorMap(partitions):
     """
     Genrate a random color map for a partition.

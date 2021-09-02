@@ -22,13 +22,15 @@
 #################################################################################   
 ###
 
-from pyqtgraph.Qt import QtCore, QtGui, QtOpenGL
+from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph.opengl as gl
 import numpy as np
 import random
 
 import steps.API_1.geom as sgeom
 from steps.API_1.geom import INDEX_DTYPE
+
+QtCore.QCoreApplication.setAttribute(QtCore.Qt.ApplicationAttribute.AA_ShareOpenGLContexts)
 
 class VisualTetsSpec(gl.GLScatterPlotItem):
     """

@@ -23,12 +23,12 @@
 ###
 
 import pyqtgraph as pg
-from pyqtgraph.Qt import QtCore, QtGui, QtOpenGL
+from pyqtgraph.Qt import QtCore, QtGui
 import numpy as np
 import pyqtgraph.opengl as gl
-
-
 import time
+
+QtCore.QCoreApplication.setAttribute(QtCore.Qt.ApplicationAttribute.AA_ShareOpenGLContexts)
 
 class SimDisplay(QtGui.QMainWindow):
     """
