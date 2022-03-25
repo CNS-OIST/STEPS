@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -293,6 +293,22 @@ class ElementProxy:
         """
 
         return self.groups
+
+    def getGroup(self, group_key):
+        """
+        Return the group stored in the Element Map object with key = group_key.
+        If the key is not present in the Element Map object, an empty list is
+        returned.
+
+        Example:
+            g1 = getGroup("Group1")
+            g2 = getGroup("Group2")
+        """
+
+        if group_key not in self.groups.keys():
+            return []
+        else:
+            return self.groups[group_key]
 
     def blockBegin(self, block_name):
         """
@@ -1139,11 +1155,11 @@ def importGmsh(filename, scale, verbose = False):
         tag = physical_tag[1]
         tag_name = physical_name_mapping[(dimension, tag)]
         if dimension == 0:
-            nodeproxy.addGroup((0, tag_name), nodeproxy.getGroups()[(0, tag)])
+            nodeproxy.addGroup((0, tag_name), nodeproxy.getGroup((0, tag)))
         elif dimension == 2:
-            triproxy.addGroup((0, tag_name), triproxy.getGroups()[(0, tag)])
+            triproxy.addGroup((0, tag_name), triproxy.getGroup((0, tag)))
         elif dimension == 3:
-            tetproxy.addGroup((0, tag_name), tetproxy.getGroups()[(0, tag)])
+            tetproxy.addGroup((0, tag_name), tetproxy.getGroup((0, tag)))
                                     
     if (verbose): print("Read Msh file succesfully")
 
@@ -1693,6 +1709,8 @@ def loadMesh(pathname, scale=1, strict=False):
             mesh.addROI(id, type, indices)
         assert(xmlfile.readline().strip() == '</ROI_records>')
         info = xmlfile.readline().strip()
+
+    xmlfile.close()
 
     assert(info == '</tetmesh>')
     return (mesh,comps_out,patches_out)

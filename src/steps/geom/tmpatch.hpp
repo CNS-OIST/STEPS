@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,26 +30,23 @@
  *  Last Changed By:   $Author$
  */
 
-#ifndef STEPS_TETMESH_TMPATCH_HPP
-#define STEPS_TETMESH_TMPATCH_HPP 1
+#pragma once
 
+#include "comp.hpp"
+#include "patch.hpp"
+#include "tetmesh.hpp"
+#include "tmcomp.hpp"
 
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/geom/patch.hpp"
-#include "steps/geom/tetmesh.hpp"
-#include "steps/geom/tmcomp.hpp"
-#include "steps/geom/comp.hpp"
-#include "steps/math/bbox.hpp"
-#include "steps/model/surfsys.hpp"
+#include "math/bbox.hpp"
+#include "model/surfsys.hpp"
+#include "util/common.h"
 
-// STL headers
 #include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace steps {
- namespace tetmesh {
+namespace steps {
+namespace tetmesh {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -114,7 +111,7 @@ public:
     ///
     /// \return Maximal coordinate of the rectangular bounding box or a plane.
     std::vector<double> getBoundMax() const;
-    
+
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO C++)
     ////////////////////////////////////////////////////////////////////////
@@ -132,14 +129,9 @@ private:
     Tetmesh                           * pTetmesh;
     std::vector<triangle_id_t>          pTri_indices;
     std::size_t                         pTrisN;
-    
+
     steps::math::bounding_box           pBBox;
 };
 
-}
-}
-
-#endif
-// STEPS_TETMESH_TMPATCH_HPP
-
-// END
+} // namespace tetmesh
+} // namespace steps

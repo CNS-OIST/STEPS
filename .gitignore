@@ -1,12 +1,15 @@
 test/.logs/*
 test/unit_test/.logs/*
 test/validation/.logs/*
+test/unit/py/API_1/*
+test/validation/API_*
 .noseids
 *.orig
 .gitignore~
 
 pysteps/steps/cysteps_mpi.so
 pysteps/steps/cysteps.cpp
+pysteps/steps/cysteps_dist.cpp
 
 .logs/*
 .project
@@ -30,13 +33,16 @@ doc/user_manual/.logs
 doc/user_manual/build
 build/
 _build*/
+cmake-build-*
 
 README
 
 *.so
 pysteps/steps/cysteps_mpi.cpp
+pysteps/steps/cy_steps_dist.cpp
 
 .idea
+.vscode
 
 .python-version
 Pipfile
@@ -44,4 +50,14 @@ Pipfile.lock
 
 .ipynb_checkpoints
 
-spconfig.py
+# hpc coding conventions
+.clang-format
+.clang-tidy
+.cmake-format.yaml
+.pre-commit-config.yaml
+
+spconfig.*
+
+# ignore checkpoints created by UT
+test/unit/py/*.cp
+Testing/*

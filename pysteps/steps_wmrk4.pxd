@@ -15,7 +15,7 @@ cimport steps_model
 
 
 # ======================================================================================================================
-cdef extern from "steps/wmrk4/wmrk4.hpp" namespace "steps::wmrk4":
+cdef extern from "wmrk4/wmrk4.hpp" namespace "steps::wmrk4":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef std.vector[double] dVec
     # ctypedef std.vector[double].iterator dVecI

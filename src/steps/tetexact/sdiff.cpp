@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -32,19 +32,14 @@
 #include <vector>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/math/constants.hpp"
-#include "steps/solver/diffdef.hpp"
-#include "steps/solver/patchdef.hpp"
-#include "steps/tetexact/kproc.hpp"
-#include "steps/tetexact/sdiff.hpp"
-#include "steps/tetexact/tetexact.hpp"
-#include "steps/tetexact/tri.hpp"
+#include "sdiff.hpp"
+#include "tri.hpp"
+#include "solver/patchdef.hpp"
 
 
 // logging
-#include "easylogging++.h"
+#include <easylogging++.h>
+#include "util/error.hpp"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -56,7 +51,7 @@ namespace smath = steps::math;
 ////////////////////////////////////////////////////////////////////////////////
 
 stex::SDiff::SDiff(ssolver::Diffdef * sdef, stex::Tri * tri)
-: 
+:
  pSDiffdef(sdef)
 , pTri(tri)
 {
@@ -129,7 +124,7 @@ void stex::SDiff::checkpoint(std::fstream & cp_file)
         cp_file.write(reinterpret_cast<char*>(&item.second), sizeof(double));
     }
 
-    
+
     cp_file.write(reinterpret_cast<char*>(&pScaledDcst), sizeof(double));
     cp_file.write(reinterpret_cast<char*>(&pDcst), sizeof(double));
     cp_file.write(reinterpret_cast<char*>(pCDFSelector.data()), sizeof(double) * 2);
@@ -282,7 +277,7 @@ void stex::SDiff::reset()
 
     uint ldidx = pTri->patchdef()->surfdiffG2L(pSDiffdef->gidx());
     double dcst = pTri->patchdef()->dcst(ldidx);
-    
+
     setDcst(dcst);
 
     setActive(true);
@@ -350,7 +345,7 @@ void stex::SDiff::setDcst(double dcst)
         pCDFSelector[0] = d[0] / pScaledDcst;
         pCDFSelector[1] = pCDFSelector[0] + d[1] / pScaledDcst;
     }
-    
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -361,7 +356,7 @@ void stex::SDiff::setDirectionDcst(int direction, double dcst)
     AssertLog(direction >= 0);
     AssertLog(dcst >= 0.0);
     directionalDcsts[direction] = dcst;
-    
+
     // Automatically activate boundary diffusion if necessary
     if (pSDiffBndDirection[direction]) {
         pSDiffBndActive[direction] = true;
@@ -371,10 +366,10 @@ void stex::SDiff::setDirectionDcst(int direction, double dcst)
                                     pTri->nextTri(1),
                                     pTri->nextTri(2)
                                     };
-    
+
     std::array<double, 3> d{0.0, 0.0, 0.0};
     pScaledDcst = 0.0;
-    
+
     for (uint i = 0; i < 3; ++i)
     {
         // if directional diffusion dcst exists use directional dcst, else use the standard one
@@ -400,7 +395,7 @@ void stex::SDiff::setDirectionDcst(int direction, double dcst)
 
     // Should not be negative!
     AssertLog(pScaledDcst >= 0);
-    
+
     // Setup the selector distribution.
     if (pScaledDcst == 0.0)
     {
@@ -493,7 +488,7 @@ void stex::SDiff::setSDiffBndActive(uint i, bool active)
     // Only need to update if the flags are changing
     if (pSDiffBndActive[i] != active)
     {
-       
+
         pSDiffBndActive[i] = active;
         setDcst(pDcst);
     }

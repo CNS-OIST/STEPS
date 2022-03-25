@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -23,9 +23,8 @@
 #################################################################################   
 
  */
+#include "tetexact.hpp"
 
-
-// Standard library & STL headers.
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -33,56 +32,34 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
-#include <map>
-#include <memory>
 #include <queue>
 #include <sstream>
-#include <vector>
 
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/geom/tetmesh.hpp"
-#include "steps/math/constants.hpp"
-#include "steps/math/point.hpp"
-#include "steps/solver/chandef.hpp"
-#include "steps/solver/compdef.hpp"
-#include "steps/solver/diffboundarydef.hpp"
-#include "steps/solver/diffdef.hpp"
-#include "steps/solver/ghkcurrdef.hpp"
-#include "steps/solver/ohmiccurrdef.hpp"
-#include "steps/solver/patchdef.hpp"
-#include "steps/solver/reacdef.hpp"
-#include "steps/solver/sdiffboundarydef.hpp"
-#include "steps/solver/sreacdef.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/types.hpp"
-#include "steps/solver/vdepsreacdef.hpp"
-#include "steps/solver/vdeptransdef.hpp"
-#include "steps/tetexact/comp.hpp"
-#include "steps/tetexact/diff.hpp"
-#include "steps/tetexact/diffboundary.hpp"
-#include "steps/tetexact/ghkcurr.hpp"
-#include "steps/tetexact/kproc.hpp"
-#include "steps/tetexact/patch.hpp"
-#include "steps/tetexact/reac.hpp"
-#include "steps/tetexact/sdiff.hpp"
-#include "steps/tetexact/sdiffboundary.hpp"
-#include "steps/tetexact/sreac.hpp"
-#include "steps/tetexact/tet.hpp"
-#include "steps/tetexact/tetexact.hpp"
-#include "steps/tetexact/tri.hpp"
-#include "steps/tetexact/vdepsreac.hpp"
-#include "steps/tetexact/vdeptrans.hpp"
-#include "steps/tetexact/wmvol.hpp"
-#include "steps/util/collections.hpp"
-#include "steps/util/distribute.hpp"
+#include "diff.hpp"
+#include "ghkcurr.hpp"
+#include "reac.hpp"
+#include "sdiff.hpp"
+#include "sreac.hpp"
+#include "vdepsreac.hpp"
+#include "vdeptrans.hpp"
+#include "wmvol.hpp"
 
-#include "steps/solver/efield/dVsolver.hpp"
-#include "steps/solver/efield/efield.hpp"
-
-// logging
-#include "easylogging++.h"
+#include "geom/tetmesh.hpp"
+#include "math/constants.hpp"
+#include "math/point.hpp"
+#include "solver/chandef.hpp"
+#include "solver/compdef.hpp"
+#include "solver/diffboundarydef.hpp"
+#include "solver/diffdef.hpp"
+#include "solver/ghkcurrdef.hpp"
+#include "solver/ohmiccurrdef.hpp"
+#include "solver/patchdef.hpp"
+#include "solver/sdiffboundarydef.hpp"
+#include "solver/types.hpp"
+#include "solver/efield/dVsolver.hpp"
+#include "util/collections.hpp"
+#include "util/distribute.hpp"
+#include "util/error.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -128,6 +105,7 @@ Tetexact::~Tetexact()
     for (auto const& c: pComps) delete c;
     for (auto const& p: pPatches) delete p;
     for (auto const& db: pDiffBoundaries) delete db;
+    for (auto const& sdb: pSDiffBoundaries) delete sdb;
     for (auto const& wvol: pWmVols) delete wvol;
     for (auto const& t: pTets) delete t;
     for (auto const& t: pTris) delete t;
@@ -525,7 +503,7 @@ void Tetexact::_setup()
             // std::vector<int> tris = pMesh->getTriTriNeighb(tri);
 
 
-            std::array<triangle_id_t, 3> tris {{ UNKNOWN_TRI, UNKNOWN_TRI, UNKNOWN_TRI}};
+            std::array<triangle_id_t, 3> tris {{ boost::none, boost::none, boost::none}};
             for (int j = 0; j < 3; ++j)
             {
                 const auto& neighb_tris = bar2tri[tri_bars[j]];
@@ -541,7 +519,7 @@ void Tetexact::_setup()
 
             double d[3] = {0, 0, 0};
             for (uint j = 0; j < 3; ++j) {
-                if (tris[j] == UNKNOWN_TRI) {
+                if (tris[j].unknown()) {
                   continue;
                 }
                 d[j] = distance(baryc, pMesh->_getTriBarycenter(tris[j]));
@@ -586,7 +564,7 @@ void Tetexact::_setup()
 
                  double d[4] = {0, 0, 0, 0};
                  for (uint j = 0; j < 4; ++j) {
-                     if (tets[j] == UNKNOWN_TET) {
+                     if (tets[j].unknown()) {
                          continue;
                      }
                      d[j] = distance(baryc, pMesh->_getTetBarycenter(tets[j]));
@@ -665,7 +643,7 @@ void Tetexact::_setup()
 
         for (uint j = 0; j < 4; ++j) {
             const auto tet = pTets[t]->tet(j);
-            if (tet != UNKNOWN_TET && pTets[tet.get()] != nullptr) {
+            if (tet.valid() && pTets[tet.get()] != nullptr) {
                 pTets[t]->setNextTet(j, pTets[tet.get()]);
             }
         }
@@ -681,7 +659,7 @@ void Tetexact::_setup()
 
         for (uint j = 0; j < 3; ++j) {
             const auto tri = pTris[t]->tri(j);
-            if (tri != UNKNOWN_TRI && pTris[tri.get()] != nullptr) {
+            if (tri.valid() && pTris[tri.get()] != nullptr) {
                 pTris[t]->setNextTri(j, pTris[tri.get()]);
             }
         }
@@ -699,8 +677,7 @@ void Tetexact::_setup()
         // well-mixed compartment with multiple triangle connections.
 
 
-        if (tetinner != UNKNOWN_TET)
-        {
+        if (tetinner.valid()) {
             // NEW FOR THIS VERSION: Tris store index of inner and outer tet (outer may not exist if on
             // surface) but tets may not belong to a compartment, even inner tets now
             // since they may be well-mixed compartments
@@ -745,8 +722,7 @@ void Tetexact::_setup()
 
         // DEBUG 18/03/09:
         // Now correct check, previously didn't allow for tet index == 0
-        if (tetouter != UNKNOWN_TET)
-        {
+        if (tetouter.valid()) {
             if (pTets[tetouter.get()] != nullptr)
             {
                 // A triangle may already have an inner tet defined as a well-mixed
@@ -798,7 +774,7 @@ void Tetexact::_setup()
             auto tetAidx = tri_tets[0];
             auto tetBidx = tri_tets[1];
 
-            AssertLog(tetAidx != UNKNOWN_TET && tetBidx != UNKNOWN_TET);
+            AssertLog(tetAidx.valid() && tetBidx.valid());
 
             const auto * tetA = _tet(tetAidx);
             const auto * tetB = _tet(tetBidx);
@@ -892,7 +868,7 @@ void Tetexact::_setup()
 
             const auto triAidx = bar_tris[0];
             const auto triBidx = bar_tris[1];
-            AssertLog(triAidx != UNKNOWN_TRI && triBidx != UNKNOWN_TRI);
+            AssertLog(triAidx.valid() && triBidx.valid());
 
             const auto * triA = _tri(triAidx);
             const auto * triB = _tri(triBidx);
@@ -1056,15 +1032,15 @@ void Tetexact::_setupEField()
 
     pEFVert_GtoL = new vertex_id_t[nverts];
     for (uint i=0; i < nverts; ++i) {
-      pEFVert_GtoL[i] = UNKNOWN_VER;
+      pEFVert_GtoL[i] = boost::none;
     }
     pEFTri_GtoL = new triangle_id_t[ntris];
     for (uint i=0; i< ntris; ++i) {
-      pEFTri_GtoL[i] = UNKNOWN_TRI;
+      pEFTri_GtoL[i] = boost::none;
     }
     pEFTet_GtoL = new tetrahedron_id_t[ntets];
     for (uint i=0; i < ntets; ++i) {
-      pEFTet_GtoL[i] = UNKNOWN_TET;
+      pEFTet_GtoL[i] = boost::none;
     }
 
     pEFTri_LtoG = new triangle_id_t[neftris()];
@@ -1101,7 +1077,7 @@ void Tetexact::_setupEField()
         const auto tv1 = pEFVert_GtoL[tettemp[1].get()];
         const auto tv2 = pEFVert_GtoL[tettemp[2].get()];
         const auto tv3 = pEFVert_GtoL[tettemp[3].get()];
-        if  (tv0 == UNKNOWN_VER || tv1 == UNKNOWN_VER || tv2 == UNKNOWN_VER || tv3 == UNKNOWN_VER)
+        if  (tv0.unknown() || tv1.unknown() || tv2.unknown() || tv3.unknown())
         {
             std::ostringstream os;
             os << "Failed to create EField structures.";
@@ -1131,7 +1107,7 @@ void Tetexact::_setupEField()
         const auto tv0 =  pEFVert_GtoL[tritemp[0].get()];
         const auto tv1 = pEFVert_GtoL[tritemp[1].get()];
         const auto tv2 = pEFVert_GtoL[tritemp[2].get()];
-        if  (tv0 == UNKNOWN_VER || tv1 == UNKNOWN_VER || tv2 == UNKNOWN_VER)
+        if  (tv0.unknown() || tv1.unknown() || tv2.unknown())
         {
             std::ostringstream os;
             os << "Failed to create EField structures.";
@@ -1448,6 +1424,7 @@ void Tetexact::run(double endtime)
                 statedef().setTime(endtime);
                 break;
             }
+            double starttime = statedef().time();
             // The zero propensity
             double a0 = getA0();
             // We need a bool to check if the SSA contains no possible events. In
@@ -1459,7 +1436,7 @@ void Tetexact::run(double endtime)
             // Set the actual efield dt. This value will take a maximum pEFDT.
             double ef_dt = 0.0;
 
-            double maxDt = std::min(endtime - statedef().time(), pEFDT);
+            double maxDt = std::min(endtime - starttime, pEFDT);
 
             while (ssa_on && (ef_dt + ssa_dt) < maxDt)
             {
@@ -1484,12 +1461,11 @@ void Tetexact::run(double endtime)
                 //CLOG(INFO, "general_log") << os << std::endl;
             }
 
-            if (ef_dt == 0.0)
-            {
-                // This means that tau is larger than EField dt. We have no choice but to
-                // increase the state time by maxDt.
-                ef_dt = maxDt;
-                statedef().incTime(maxDt);
+            // Align to efdt or endtime
+            if (endtime - starttime > pEFDT) {
+                statedef().setTime(starttime + maxDt);
+            } else {
+                statedef().setTime(endtime);
             }
 
             // Now to perform the EField calculation. This means finding ohmic and GHK
@@ -1501,12 +1477,12 @@ void Tetexact::run(double endtime)
 
             for (auto const& eft : pEFTris_vec) {
                 double v = pEField->getTriV(tlidx);
-                double cur = eft->computeI(v, ef_dt, sttime, efdt());
+                double cur = eft->computeI(v, maxDt, sttime, efdt());
                 pEField->setTriI(tlidx, cur);
                 tlidx++;
             }
 
-            pEField->advance(ef_dt);
+            pEField->advance(maxDt);
 
             // TODO: Replace this with something that only resets voltage-dependent things
             _update();
@@ -1623,7 +1599,7 @@ void Tetexact::_setCompCount(uint cidx, uint sidx, double n)
     // functions for distribution:
     auto set_count = [slidx](WmVol *tet, uint c) { tet->setCount(slidx, c); };
     auto inc_count = [slidx](WmVol *tet, int c) { tet->incCount(slidx, c); };
-    auto weight = [](WmVol *tet) { return tet->vol(); };
+    auto weight = [](const WmVolPVecCI& tet) { return (*tet)->vol(); };
 
     steps::util::distribute_quantity(n, comp->bgnTet(), comp->endTet(),
         weight, set_count, inc_count, *rng(), comp->def()->vol());
@@ -1855,7 +1831,7 @@ void Tetexact::_setPatchCount(uint pidx, uint sidx, double n)
     // functions for distribution:
     auto set_count = [slidx](Tri *tri, uint c) { tri->setCount(slidx, c); };
     auto inc_count = [slidx](Tri *tri, int c) { tri->incCount(slidx, c); };
-    auto weight = [](Tri *tri) { return tri->area(); };
+    auto weight = [](const TriPVecCI& tri) { return (*tri)->area(); };
 
     steps::util::distribute_quantity(n, patch->bgnTri(), patch->endTri(),
         weight, set_count, inc_count, *rng(), patch->def()->area());
@@ -2949,7 +2925,7 @@ double Tetexact::_getTetDiffD(tetrahedron_id_t tidx, uint didx,
         ArgErrLog(os.str());
     }
 
-    if (direction_tet == UNKNOWN_TET) {
+    if (direction_tet.unknown()) {
         return tet->diff(ldidx)->dcst();
     }
     else {
@@ -2988,7 +2964,7 @@ void Tetexact::_setTetDiffD(tetrahedron_id_t tidx, uint didx, double dk,
         ArgErrLog(os.str());
     }
 
-    if (direction_tet == UNKNOWN_TET) {
+    if (direction_tet.unknown()) {
         tet->diff(ldidx)->setDcst(dk);
     }
     else {
@@ -3490,7 +3466,7 @@ double Tetexact::_getTriSDiffD(triangle_id_t tidx, uint didx, triangle_id_t dire
         ArgErrLog(os.str());
     }
 
-    if (direction_tri == UNKNOWN_TRI) {
+    if (direction_tri.unknown()) {
         return tri->sdiff(ldidx)->dcst();
 
     }
@@ -3534,7 +3510,7 @@ void Tetexact::_setTriSDiffD(triangle_id_t tidx, uint didx, double dk,
         ArgErrLog(os.str());
     }
 
-    if (direction_tri == UNKNOWN_TRI) {
+    if (direction_tri.unknown()) {
         tri->sdiff(ldidx)->setDcst(dk);
 
     }
@@ -3722,7 +3698,7 @@ double Tetexact::_getTetV(tetrahedron_id_t tidx) const
         ArgErrLog(os.str());
     }
     const auto loctidx = pEFTet_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TET)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Tetrahedron index " << tidx << " not assigned to a conduction volume.";
@@ -3745,7 +3721,7 @@ void Tetexact::_setTetV(tetrahedron_id_t tidx, double v)
         ArgErrLog(os.str());
     }
     const auto loctidx = pEFTet_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TET)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Tetrahedron index " << tidx << " not assigned to a conduction volume.";
@@ -3770,7 +3746,7 @@ bool Tetexact::_getTetVClamped(tetrahedron_id_t tidx) const
         ArgErrLog(os.str());
     }
     const auto loctidx = pEFTet_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TET)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Tetrahedron index " << tidx << " not assigned to a conduction volume.";
@@ -3791,7 +3767,7 @@ void Tetexact::_setTetVClamped(tetrahedron_id_t tidx, bool cl)
         ArgErrLog(os.str());
     }
     const auto loctidx = pEFTet_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TET)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Tetrahedron index " << tidx << " not assigned to a conduction volume.";
@@ -3812,7 +3788,7 @@ double Tetexact::_getTriV(triangle_id_t tidx) const
         ArgErrLog(os.str());
     }
     const auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -3833,7 +3809,7 @@ void Tetexact::_setTriV(triangle_id_t tidx, double v)
         ArgErrLog(os.str());
     }
     const auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -3858,7 +3834,7 @@ bool Tetexact::_getTriVClamped(triangle_id_t tidx) const
         ArgErrLog(os.str());
     }
     const auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -3879,7 +3855,7 @@ void Tetexact::_setTriVClamped(triangle_id_t tidx, bool cl)
         ArgErrLog(os.str());
     }
     const auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -3903,7 +3879,7 @@ double Tetexact::_getTriOhmicI(triangle_id_t tidx) const
     Tri * tri = pTris[tidx.get()];
 
     const auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -3921,7 +3897,7 @@ double Tetexact::_getTriOhmicI(triangle_id_t tidx, uint ocidx) const
     AssertLog(ocidx < statedef().countOhmicCurrs());
 
     const auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -3999,7 +3975,7 @@ double Tetexact::_getVertIClamp(vertex_id_t vidx) const
         ArgErrLog(os.str());
     }
     const auto locvidx = pEFVert_GtoL[vidx.get()];
-    if (locvidx == UNKNOWN_VER)
+    if (locvidx.unknown())
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
@@ -4020,7 +3996,7 @@ void Tetexact::_setVertIClamp(vertex_id_t vidx, double cur)
         ArgErrLog(os.str());
     }
     const auto locvidx = pEFVert_GtoL[vidx.get()];
-    if (locvidx == UNKNOWN_VER)
+    if (locvidx.unknown())
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
@@ -4042,7 +4018,7 @@ double Tetexact::_getTriIClamp(triangle_id_t tidx) const
         ArgErrLog(os.str());
     }
     const auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -4063,7 +4039,7 @@ void Tetexact::_setTriIClamp(triangle_id_t tidx, double cur)
         ArgErrLog(os.str());
     }
     const auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -4085,7 +4061,7 @@ void Tetexact::_setTriCapac(triangle_id_t tidx, double cap)
         ArgErrLog(os.str());
     }
     auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -4107,7 +4083,7 @@ double Tetexact::_getVertV(vertex_id_t vidx) const
         ArgErrLog(os.str());
     }
     const auto locvidx = pEFVert_GtoL[vidx.get()];
-    if (locvidx == UNKNOWN_VER)
+    if (locvidx.unknown())
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
@@ -4128,7 +4104,7 @@ void Tetexact::_setVertV(vertex_id_t vidx, double v)
         ArgErrLog(os.str());
     }
     const auto locvidx = pEFVert_GtoL[vidx.get()];
-    if (locvidx == UNKNOWN_VER)
+    if (locvidx.unknown())
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
@@ -4153,7 +4129,7 @@ bool Tetexact::_getVertVClamped(vertex_id_t vidx) const
         ArgErrLog(os.str());
     }
     const auto locvidx = pEFVert_GtoL[vidx.get()];
-    if (locvidx == UNKNOWN_VER)
+    if (locvidx.unknown())
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
@@ -4174,7 +4150,7 @@ void Tetexact::_setVertVClamped(vertex_id_t vidx, bool cl)
         ArgErrLog(os.str());
     }
     const auto locvidx = pEFVert_GtoL[vidx.get()];
-    if (locvidx == UNKNOWN_VER)
+    if (locvidx.unknown())
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
@@ -4875,12 +4851,15 @@ void Tetexact::setROITriCount(const std::vector<triangle_id_t>& indices, std::st
       total_weight += tri->area();
   }
 
-  steps::util::distribute_quantity(count, apply.begin(), apply.end(),
-                                   [](Tri *tri) { return tri->area(); },
-                                   [sgidx](Tri *tri, uint c) { tri->setCount(tri->patchdef()->specG2L(sgidx), c); },
-                                   [sgidx](Tri *tri, int c)  { tri->incCount(tri->patchdef()->specG2L(sgidx), c); },
-                                   *rng(),
-                                   total_weight);
+  steps::util::distribute_quantity(
+      count,
+      apply.begin(),
+      apply.end(),
+      [](const std::vector<Tri*>::iterator& tri) { return (*tri)->area(); },
+      [sgidx](Tri* tri, uint c) { tri->setCount(tri->patchdef()->specG2L(sgidx), c); },
+      [sgidx](Tri* tri, int c) { tri->incCount(tri->patchdef()->specG2L(sgidx), c); },
+      *rng(),
+      total_weight);
 
   for (auto &tri: apply) {
       _updateSpec(tri);
@@ -4905,12 +4884,15 @@ void Tetexact::setROITetCount(const std::vector<tetrahedron_id_t>& indices, std:
         total_weight += tet->vol();
     }
 
-    steps::util::distribute_quantity(count, apply.begin(), apply.end(),
-                                     [](Tet *tet) { return tet->vol(); },
-                                     [sgidx](Tet *tet, uint c) { tet->setCount(tet->compdef()->specG2L(sgidx), c); },
-                                     [sgidx](Tet *tet, int c)  { tet->incCount(tet->compdef()->specG2L(sgidx), c); },
-                                     *rng(),
-                                     total_weight);
+    steps::util::distribute_quantity(
+        count,
+        apply.begin(),
+        apply.end(),
+        [](const std::vector<Tet*>::iterator& tet) { return (*tet)->vol(); },
+        [sgidx](Tet* tet, uint c) { tet->setCount(tet->compdef()->specG2L(sgidx), c); },
+        [sgidx](Tet* tet, int c) { tet->incCount(tet->compdef()->specG2L(sgidx), c); },
+        *rng(),
+        total_weight);
 
     for (auto &tet: apply) {
         _updateSpec(tet);
@@ -4993,10 +4975,13 @@ void Tetexact::setROIConc(const std::string& ROI_id, std::string const & s, doub
 
     double count = conc * (1.0e3 * total_weight * steps::math::AVOGADRO);
 
-    steps::util::distribute_quantity(count, apply.begin(), apply.end(),
-        [](Tet *tet) { return tet->vol(); },
-        [sgidx](Tet *tet, uint c) { tet->setCount(tet->compdef()->specG2L(sgidx), c); },
-        [sgidx](Tet *tet, int c)  { tet->incCount(tet->compdef()->specG2L(sgidx), c); },
+    steps::util::distribute_quantity(
+        count,
+        apply.begin(),
+        apply.end(),
+        [](const std::vector<Tet*>::iterator& tet) { return (*tet)->vol(); },
+        [sgidx](Tet* tet, uint c) { tet->setCount(tet->compdef()->specG2L(sgidx), c); },
+        [sgidx](Tet* tet, int c) { tet->incCount(tet->compdef()->specG2L(sgidx), c); },
         *rng(),
         total_weight);
 

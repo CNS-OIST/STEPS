@@ -32,17 +32,16 @@
 #include <vector>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/mpi/tetopsplit/patch.hpp"
-//#include "tri.hpp"
-#include "steps/solver/types.hpp"
-#include "steps/solver/sdiffboundarydef.hpp"
+#include "patch.hpp"
+#include "util/common.h"
+#include "solver/types.hpp"
+#include "solver/sdiffboundarydef.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace steps {
- namespace mpi {
- namespace tetopsplit {
+namespace steps {
+namespace mpi {
+namespace tetopsplit {
 
 ////////////////////////////////////////////////////////////////////////////////
 

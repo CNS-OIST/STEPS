@@ -30,6 +30,8 @@ def _py_init():
 def _py_finish():
     finish()
 
+_USE_PETSC = USE_PETSC
+_STEPS_USE_DIST_MESH = STEPS_USE_DIST_MESH
 
 # ======================================================================================================================
 # Bindings to module namespace

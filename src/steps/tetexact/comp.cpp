@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,17 +30,14 @@
 #include <vector>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/solver/compdef.hpp"
-#include "steps/tetexact/comp.hpp"
-#include "steps/tetexact/kproc.hpp"
-#include "steps/tetexact/reac.hpp"
-#include "steps/tetexact/tet.hpp"
-#include "steps/tetexact/wmvol.hpp"
+#include "comp.hpp"
+#include "kproc.hpp"
+#include "model/reac.hpp"
+#include "tet.hpp"
 
 // logging
-#include "easylogging++.h"
+#include <easylogging++.h>
+#include "util/error.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 

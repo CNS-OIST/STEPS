@@ -3,7 +3,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -37,14 +37,17 @@ import warnings
 
 __name__      = 'steps'
 __longname__  = 'STochastic Engine for Pathway Simulation'
-__version__   = '3.6.0'
+__version__   = '4.0.0'
 __author__    = 'STEPS Development Team'
 __url__       = 'steps.sourceforge.net'
 __license__   = 'GPL2.0'
 __binding__   = 'Cython'
 
 #Try importing mpi version if file exists. Avoids catching exception for the wrong reason
-if glob.glob(os.path.join(os.path.dirname(__file__),'cysteps_mpi.*')):
+if glob.glob(os.path.join(os.path.dirname(__file__),'cysteps_dist.*')):
+    from . import cysteps_dist
+    from . import cysteps_dist as stepslib
+elif glob.glob(os.path.join(os.path.dirname(__file__),'cysteps_mpi.*')):
     from . import cysteps_mpi
     from . import cysteps_mpi as stepslib
 elif glob.glob(os.path.join(os.path.dirname(__file__),'cysteps.*')):

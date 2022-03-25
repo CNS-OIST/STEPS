@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,210 +24,239 @@
 
  */
 
-// STL headers.
+#include "comp.hpp"
+
 #include <cassert>
 #include <sstream>
-#include <string>
 
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/geom/comp.hpp"
-#include "steps/geom/geom.hpp"
-#include "steps/geom/patch.hpp"
+#include <easylogging++.h>
 
-#include "steps/model/model.hpp"
+#include "geom.hpp"
+#include "patch.hpp"
 
-// logging
-#include "easylogging++.h"
+#include "model/ghkcurr.hpp"
+#include "model/model.hpp"
+#include "model/sreac.hpp"
+#include "model/vdepsreac.hpp"
+#include "util/error.hpp"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace steps {
 namespace wm {
 
-Comp::Comp(std::string id, Geom * container, double vol)
-: pVol(vol)
-, pID(std::move(id))
-, pContainer(container)
-{
-    if (pContainer == nullptr)
-    {
-        ArgErrLog("No container provided to Comp initializer function.");
+Comp::Comp(std::string id, Geom *container, double vol)
+    : pVol(vol), pID(std::move(id)), pContainer(container) {
+  ArgErrLogIf(pContainer == nullptr,
+              "No container provided to Comp initializer function.");
+  ArgErrLogIf(pVol < 0.0, "Compartment volume can't be negative.");
+  pContainer->_handleCompAdd(this);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+Comp::~Comp() {
+  if (pContainer == nullptr) {
+    return;
+  }
+  _handleSelfDelete();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Comp::setID(std::string const &id) {
+  AssertLog(pContainer != nullptr);
+  if (id == pID) {
+    return;
+  }
+  // The following might raise an exception, e.g. if the new ID is not
+  // valid or not unique. If this happens, we don't catch but simply let
+  // it pass by into the Python layer.
+  pContainer->_handleCompIDChange(pID, id);
+  // This line will only be executed if the previous call didn't raise
+  // an exception.
+  pID = id;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Comp::setVol(double vol) {
+  AssertLog(pContainer != nullptr);
+  ArgErrLogIf(vol < 0.0, "Compartment volume can't be negative.");
+  pVol = vol;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Comp::addVolsys(std::string const &id) {
+  // string identifier is only added to set if it is not already included
+  pVolsys.insert(id);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Comp::delVolsys(std::string const &id) {
+  // string identifier is only removed from set if it is included
+  pVolsys.erase(id);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<steps::model::Spec *>
+Comp::getAllSpecs(const steps::model::Model *model) const {
+  std::set<steps::model::Spec *> specs;
+  std::set<std::string>::iterator it;
+
+  // Add those from reacs and diffs, in volsys
+  for (it = pVolsys.begin(); it != pVolsys.end(); it++) {
+    steps::model::Volsys *volsys = model->getVolsys(*it);
+    std::vector<steps::model::Spec *> volsys_specs = volsys->getAllSpecs();
+    specs.insert(volsys_specs.begin(), volsys_specs.end());
+  }
+
+  for (auto const &ipatch : getIPatches()) {
+    for (auto const &ssys_id : ipatch->getSurfsys()) {
+      steps::model::Surfsys *surfsys = model->getSurfsys(ssys_id);
+
+      for (auto const &sreac : surfsys->getAllSReacs()) {
+        // Since this is known as inner patch, patch knows this comp as OUTER
+        auto sreac_specs_olhs = sreac->getOLHS();
+        specs.insert(sreac_specs_olhs.begin(), sreac_specs_olhs.end());
+        auto sreac_specs_orhs = sreac->getORHS();
+        specs.insert(sreac_specs_orhs.begin(), sreac_specs_orhs.end());
+      }
+      for (auto const &vdepsreac : surfsys->getAllVDepSReacs()) {
+        // Since this is known as inner patch, patch knows this comp as OUTER
+        auto vdepsreac_specs_olhs = vdepsreac->getOLHS();
+        specs.insert(vdepsreac_specs_olhs.begin(), vdepsreac_specs_olhs.end());
+        auto vdepsreac_specs_orhs = vdepsreac->getORHS();
+        specs.insert(vdepsreac_specs_orhs.begin(), vdepsreac_specs_orhs.end());
+      }
+      for (auto const &ghk : surfsys->getAllGHKcurrs()) {
+        // This is OUTER so only add if not virtual outer conc
+        if (ghk->_voconc() < 0.0) {
+          specs.insert(ghk->getIon());
+        }
+      }
     }
+  }
 
-    if (pVol < 0.0)
-    {
-        ArgErrLog("Compartment volume can't be negative.");
+  for (auto const &opatch : getOPatches()) {
+    for (auto const &ssys_id : opatch->getSurfsys()) {
+      steps::model::Surfsys *surfsys = model->getSurfsys(ssys_id);
+
+      for (auto const &sreac : surfsys->getAllSReacs()) {
+        // Since this is known as outer patch, patch knows this comp as INNER
+        auto sreac_specs_ilhs = sreac->getILHS();
+        specs.insert(sreac_specs_ilhs.begin(), sreac_specs_ilhs.end());
+        auto sreac_specs_irhs = sreac->getIRHS();
+        specs.insert(sreac_specs_irhs.begin(), sreac_specs_irhs.end());
+      }
+      for (auto const &vdepsreac : surfsys->getAllVDepSReacs()) {
+        // Since this is known as outer patch, patch knows this comp as INNER
+        auto vdepsreac_specs_ilhs = vdepsreac->getILHS();
+        specs.insert(vdepsreac_specs_ilhs.begin(), vdepsreac_specs_ilhs.end());
+        auto vdepsreac_specs_irhs = vdepsreac->getIRHS();
+        specs.insert(vdepsreac_specs_irhs.begin(), vdepsreac_specs_irhs.end());
+      }
+      for (auto const &ghk : surfsys->getAllGHKcurrs()) {
+        if (ghk->_realflux()) {
+          specs.insert(ghk->getIon());
+        }
+      }
     }
-    pContainer->_handleCompAdd(this);
+  }
+
+  return {specs.begin(), specs.end()};
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Comp::~Comp()
-{
-    if (pContainer == nullptr) {
-      return;
-    }
-    _handleSelfDelete();
+std::vector<steps::model::Reac *>
+Comp::getAllReacs(const steps::model::Model *model) const {
+  std::set<steps::model::Reac *> pReacs;
+  std::set<std::string>::iterator it;
+  for (it = pVolsys.begin(); it != pVolsys.end(); it++) {
+    steps::model::Volsys *volsys = model->getVolsys(*it);
+    std::vector<steps::model::Reac *> reacs = volsys->getAllReacs();
+    pReacs.insert(reacs.begin(), reacs.end());
+  }
+
+  return {pReacs.begin(), pReacs.end()};
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Comp::setID(std::string const & id)
-{
-    AssertLog(pContainer != nullptr);
-    if (id == pID) {
-      return;
-    }
-    // The following might raise an exception, e.g. if the new ID is not
-    // valid or not unique. If this happens, we don't catch but simply let
-    // it pass by into the Python layer.
-    pContainer->_handleCompIDChange(pID, id);
-    // This line will only be executed if the previous call didn't raise
-    // an exception.
-    pID = id;
+std::vector<steps::model::Diff *>
+Comp::getAllDiffs(const steps::model::Model *model) const {
+  std::set<steps::model::Diff *> pDiffs;
+  std::set<std::string>::iterator it;
+  for (it = pVolsys.begin(); it != pVolsys.end(); it++) {
+    steps::model::Volsys *volsys = model->getVolsys(*it);
+    std::vector<steps::model::Diff *> diffs = volsys->getAllDiffs();
+    pDiffs.insert(diffs.begin(), diffs.end());
+  }
+
+  return {pDiffs.begin(), pDiffs.end()};
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Comp::setVol(double vol)
-{
-    AssertLog(pContainer != nullptr);
-    if (vol < 0.0)
-    {
-        ArgErrLog("Compartment volume can't be negative.");
-    }
-    pVol = vol;
+void Comp::_addIPatch(Patch *patch) {
+  AssertLog(patch->getOComp() == this);
+  // patch pointer is only added to set if it is not already included
+  pIPatches.insert(patch);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Comp::addVolsys(std::string const & id)
-{
-    // string identifier is only added to set if it is not already included
-    pVolsys.insert(id);
+void Comp::_delIPatch(Patch *patch) {
+  AssertLog(patch->getOComp() == this);
+  pIPatches.erase(patch);
+}
+////////////////////////////////////////////////////////////////////////////////
+
+void Comp::_addOPatch(Patch *patch) {
+  AssertLog(patch->getIComp() == this);
+  // patch pointer is only added to set if it is not already included
+  pOPatches.insert(patch);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Comp::delVolsys(std::string const & id)
-{
-    // string identifier is only removed from set if it is included
-    pVolsys.erase(id);
+void Comp::_delOPatch(Patch *patch) {
+  AssertLog(patch->getIComp() == this);
+  pOPatches.erase(patch);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<steps::model::Spec*> Comp::getAllSpecs(steps::model::Model* model) const
-{
-    std::set<steps::model::Spec*> pSpecs;
-    std::set<std::string>::iterator it;
-    for (it = pVolsys.begin(); it != pVolsys.end(); it++) {
-        steps::model::Volsys* volsys = model->getVolsys(*it);
-        std::vector<steps::model::Spec*> specs = volsys->getAllSpecs();
-        pSpecs.insert(specs.begin(), specs.end());
-    }
-
-    return {pSpecs.begin(), pSpecs.end()};
+void Comp::_handleSelfDelete() {
+  pContainer->_handleCompDel(this);
+  pVol = 0.0;
+  pVolsys.clear();
+  pIPatches.clear();
+  pOPatches.clear();
+  pContainer = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<steps::model::Reac*> Comp::getAllReacs(steps::model::Model* model) const
-{
-    std::set<steps::model::Reac*> pReacs;
-    std::set<std::string>::iterator it;
-    for (it = pVolsys.begin(); it != pVolsys.end(); it++) {
-        steps::model::Volsys* volsys = model->getVolsys(*it);
-        std::vector<steps::model::Reac*> reacs = volsys->getAllReacs();
-        pReacs.insert(reacs.begin(), reacs.end());
-    }
-
-    return {pReacs.begin(), pReacs.end()};
+steps::wm::Patch *Comp::_getIPatch(uint lidx) const {
+  AssertLog(lidx < pIPatches.size());
+  auto pit = pIPatches.begin();
+  std::advance(pit, lidx);
+  return *pit;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<steps::model::Diff*> Comp::getAllDiffs(steps::model::Model* model) const
-{
-    std::set<steps::model::Diff*> pDiffs;
-    std::set<std::string>::iterator it;
-    for (it = pVolsys.begin(); it != pVolsys.end(); it++) {
-        steps::model::Volsys* volsys = model->getVolsys(*it);
-        std::vector<steps::model::Diff*> diffs = volsys->getAllDiffs();
-        pDiffs.insert(diffs.begin(), diffs.end());
-    }
-
-    return {pDiffs.begin(), pDiffs.end()};
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-void Comp::_addIPatch(Patch * patch)
-{
-    AssertLog(patch->getOComp() == this);
-    // patch pointer is only added to set if it is not already included
-    pIPatches.insert(patch);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void Comp::_delIPatch(Patch * patch)
-{
-    AssertLog(patch->getOComp() == this);
-    pIPatches.erase(patch);
-}
-////////////////////////////////////////////////////////////////////////////////
-
-void Comp::_addOPatch(Patch * patch)
-{
-    AssertLog(patch->getIComp() == this);
-    // patch pointer is only added to set if it is not already included
-    pOPatches.insert(patch);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void Comp::_delOPatch(Patch * patch)
-{
-    AssertLog(patch->getIComp() == this);
-    pOPatches.erase(patch);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void Comp::_handleSelfDelete()
-{
-    pContainer->_handleCompDel(this);
-    pVol = 0.0;
-    pVolsys.clear();
-    pIPatches.clear();
-    pOPatches.clear();
-    pContainer = nullptr;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-steps::wm::Patch * Comp::_getIPatch(uint lidx) const
-{
-    AssertLog(lidx < pIPatches.size());
-    auto pit = pIPatches.begin();
-    std::advance(pit, lidx);
-    return *pit;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-steps::wm::Patch * Comp::_getOPatch(uint lidx) const
-{
-    AssertLog(lidx < pOPatches.size());
-    auto pit = pOPatches.begin();
-    std::advance(pit, lidx);
-    return *pit;
+steps::wm::Patch *Comp::_getOPatch(uint lidx) const {
+  AssertLog(lidx < pOPatches.size());
+  auto pit = pOPatches.begin();
+  std::advance(pit, lidx);
+  return *pit;
 }
 
 } // namespace wm
 } // namespace steps
-

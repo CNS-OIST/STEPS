@@ -939,7 +939,7 @@ cdef class _py_Wmrssa(_py_API):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-cdef class _py_Tetexact(_py_API):
+cdef class _py_Tetexact(_py_TetAPI):
     "Python wrapper class for Tetexact"
 # ----------------------------------------------------------------------------------------------------------------------
     #cdef unique_ptr[Tetexact] _autodealoc
@@ -1907,7 +1907,7 @@ cdef class _py_Tetexact(_py_API):
 # ======================================================================================================================
 
 # ----------------------------------------------------------------------------------------------------------------------
-cdef class _py_TetODE(_py_API):
+cdef class _py_TetODE(_py_TetAPI):
     "Python wrapper class for TetODE"
 # ----------------------------------------------------------------------------------------------------------------------
     #cdef unique_ptr[TetODE] _autodealoc
@@ -2212,14 +2212,8 @@ cimport steps_solver
 cdef class _py_API(_py__base):
     "Python wrapper class for API"
 # ----------------------------------------------------------------------------------------------------------------------
-    model = None
-    geom = None
-
-    #Constants
-    EF_NONE      = steps_solver.EF_NONE
-    EF_DEFAULT   = steps_solver.EF_DEFAULT
-    EF_DV_BDSYS  = steps_solver.EF_DV_BDSYS
-    EF_DV_PETSC  = steps_solver.EF_DV_PETSC
+    cdef _py_Model model
+    cdef _py_Geom geom
 
     cdef API *ptr(self):
         return <API*> self._ptr
@@ -2765,6 +2759,603 @@ cdef class _py_API(_py__base):
         """
         self.ptr().resetCompReacExtent(to_std_string(c), to_std_string(r))
 
+    def getPatchArea(self, str p):
+        """
+        Returns the area of patch with identifier string pat (in m^2).
+
+        Syntax::
+            
+            getPatchArea(pat)
+            
+        Arguments:
+        string pat
+
+        Return:
+        float
+
+        """
+        return self.ptr().getPatchArea(to_std_string(p))
+
+    def setPatchArea(self, str p, double area):
+        """
+        Sets the area of patch with identifier string pat to area a (in m^2).
+
+        Syntax::
+            
+            setPatchArea(pat, area)
+            
+        Arguments:
+        string pat
+        float area
+
+        Return:
+        None
+
+        """
+        self.ptr().setPatchArea(to_std_string(p), area)
+
+    def getPatchCount(self, str p, str s):
+        """
+        Returns the number of molecules of species with identifier string spec in patch 
+        with identifier string pat.Note: in a mesh-based simulation this 
+        is the combined count from all triangular elements in the patch. 
+
+        Syntax::
+            
+            getPatchCount(pat, spec)
+            
+        Arguments:
+        string pat
+        string spec
+
+        Return:
+        float
+
+        """
+        return self.ptr().getPatchCount(to_std_string(p), to_std_string(s))
+
+    def setPatchCount(self, str p, str s, double n):
+        """
+        Sets the number of molecules of species with identifier string spec in patch 
+        with identifier string pat to n. Note: in a mesh-based simulation the molecules 
+        are divided as equally as possible over all triangular elements in 
+        the patch (i.e. a uniform distribution). 
+
+        Syntax::
+            
+            setPatchCount(pat, spec, n)
+            
+        Arguments:
+        string pat
+        string spec
+        int n
+
+        Return:
+        float
+
+        """
+        self.ptr().setPatchCount(to_std_string(p), to_std_string(s), n)
+
+    def getPatchAmount(self, str p, str s):
+        """
+        Returns the amount (in mols) of species with identifier string spec in patch 
+        with identifier string pat.
+
+        Note: in a mesh-based simulation this is the combined amount 
+        from all triangular elements in the patch. 
+
+        Syntax::
+            
+            getPatchAmount(pat, spec)
+            
+        Arguments:
+        string pat
+        string spec
+
+        Return:
+        float
+
+        """
+        return self.ptr().getPatchAmount(to_std_string(p), to_std_string(s))
+
+    def setPatchAmount(self, str p, str s, double a):
+        """
+        Sets the amount (in mols) of species with identifier string spec in patch with 
+        identifier string pat to a. In a discrete solver, such as Wmdirect and Tetexact, 
+        this continuous value is converted internally into a discrete number of molecules 
+        by multiplication with Avogadro's number. 
+
+        Note: in a mesh-based simulation the molecules are divided as 
+        equally as possible over all triangular elements in the patch (i.e. a uniform 
+        distribution).
+
+        Syntax::
+            
+            setPatchAmount(pat, spec, a)
+            
+        Arguments:
+        string pat
+        string spec
+        float a
+
+        Return:
+        None
+
+        """
+        self.ptr().setPatchAmount(to_std_string(p), to_std_string(s), a)
+
+    def getPatchClamped(self, str p, str s):
+        """
+        Sets the amount (in mols) of species with identifier string spec in patch with 
+        identifier string pat to a. In a discrete solver, such as Wmdirect and Tetexact, 
+        this continuous value is converted internally into a discrete number of molecules 
+        by multiplication with Avogadro's number. 
+
+        Note: in a mesh-based simulation the molecules are divided as equally 
+        as possible over all triangular elements in the patch (i.e. a uniform distribution).
+
+        Syntax::
+            
+            getPatchClamped(pat, spec)
+            
+        Arguments:
+        string pat
+        string spec
+
+        Return:
+        bool
+
+        """
+        return self.ptr().getPatchClamped(to_std_string(p), to_std_string(s))
+
+    def setPatchClamped(self, str p, str s, bool buf):
+        """
+        Sets whether the species with identifier string spec in patch with identifier 
+        string pat is clamped (clamped = True) or not (clamped = False). If a species 
+        is clamped the number of molecules stays the same regardless of surface reactions 
+        that consume or produce molecules of the species.
+
+        Note: in a mesh-based simulation this will set the species to be clamped in all 
+        triangular elements of the patch.
+
+        Syntax::
+            
+            setPatchClamped(pat, spec, clamped)
+            
+        Arguments:
+        string pat
+        string spec
+        bool clamped
+
+        Return:
+        None
+
+        """
+        self.ptr().setPatchClamped(to_std_string(p), to_std_string(s), buf)
+
+    def getPatchSReacK(self, str p, str r):
+        """
+        Returns the macroscopic reaction constant of surface reaction with identifier 
+        string sreac in patch with identifier string pat. The unit of the reaction constant 
+        depends on the order of the reaction.
+
+        Note: In a mesh-based solver the value for the patch is returned, 
+        although individual triangle elements may have different values 
+        (set with setTriSReacK).
+
+        Syntax::
+            
+            getPatchSReacK(pat, reac)
+            
+        Arguments:
+        string pat
+        string reac
+
+        Return:
+        float
+
+        """
+        return self.ptr().getPatchSReacK(to_std_string(p), to_std_string(r))
+
+    def setPatchSReacK(self, str p, str r, double kf):
+        """
+        Sets the macroscopic reaction constant of surface reaction with identifier 
+        string sreac in patch with identifier string pat to kf. The unit of the reaction 
+        constant depends on the order of the reaction. 
+
+        Note: In a mesh-based simulation this method sets the surface 
+        reaction constant in all triangular elements of the patch to kf.
+
+        Note: The default value still comes from the steps.model description, so calling 
+        reset() will return the surface reaction constant to that value.
+
+        Syntax::
+            
+            setPatchSReacK(pat, reac, kf)
+            
+        Arguments:
+        string pat
+        string reac
+        float kf
+
+        Return:
+        None
+
+        """
+        self.ptr().setPatchSReacK(to_std_string(p), to_std_string(r), kf)
+
+    def getPatchSReacActive(self, str p, str r):
+        """
+        Returns whether a surface reaction with identifier string sreac in patch with 
+        identifier string pat is active (True) or not (False). If it's not active this means 
+        that a surface reaction will never occur regardless of whether the reactants are 
+        present in sufficient numbers or not. 
+
+        Note: In a mesh-based simulation this method will return True only 
+        if the surface reaction is active in all triangular elements in the patch.
+
+        Syntax::
+            
+            getPatchSReacActive(pat, reac)
+            
+        Arguments:
+        string pat
+        string reac
+
+        Return:
+        bool
+
+        """
+        return self.ptr().getPatchSReacActive(to_std_string(p), to_std_string(r))
+
+    def setPatchSReacActive(self, str p, str r, bool a):
+        """
+        Activate (active = True) or deactivate (active = False) a surface reaction with 
+        identifier string sreac in patch with identifier string pat. If a surface reaction 
+        is not active this means that a reaction will never occur regardless of whether the 
+        reactants are present in sufficient numbers or not.
+
+        Note: In a mesh-based simulation this will activate/ deactivate the 
+        reaction in all triangular elements in the patch.
+
+        Syntax::
+            
+            setPatchSReacActive(pat, reac, active)
+            
+        Arguments:
+        string pat
+        string reac
+        bool active
+
+        Return:
+        None
+
+        """
+        self.ptr().setPatchSReacActive(to_std_string(p), to_std_string(r), a)
+
+    def getPatchSReacC(self, str p, str r):
+        """
+        Returns the 'stochastic reaction constant' (or 'specific probability rate constant') 
+        of surface reaction with identifier string sreac in patch with identifier string pat.
+
+        Note: in a mesh-based simulation (i.e. Tetexact), the stochastic reaction constant is 
+        computed as the weighted mean of the stochastic reaction constants in all triangular 
+        elements of the patch.
+
+        Syntax::
+            
+            getPatchSReacC(pat, reac)
+            
+        Arguments:
+        string pat
+        string reac
+
+        Return:
+        float
+
+        """
+        return self.ptr().getPatchSReacC(to_std_string(p), to_std_string(r))
+
+    def getPatchSReacH(self, str p, str r):
+        """
+        Returns h_mu, the distinct number of ways in which surface reaction with identifier 
+        string sreac can occur in patch with identifier string pat, by computing the product 
+        of its reactants. Note: in a mesh-based simulation (i.e. Tetexact), returns the sum 
+        of the h_mu's over all triangular elements in the patch. 
+
+        Syntax::
+            
+            getPatchSReacH(pat, reac)
+            
+        Arguments:
+        string pat
+        string reac
+
+        Return:
+        float
+
+        """
+        return self.ptr().getPatchSReacH(to_std_string(p), to_std_string(r))
+
+    def getPatchSReacA(self, str p, str r):
+        """
+        Returns the propensity of surface reaction with identifier string sreac in patch 
+        with identifier string pat. Note: in a mesh-based simulation (i.e. Tetexact), 
+        the propensity of a surface reaction in a patch is computed as the sum of the 
+        propensities in all triangular elements of the patch.
+
+        Syntax::
+            
+            getPatchSReacA(pat, reac)
+            
+        Arguments:
+        string pat
+        string reac
+
+        Return:
+        float
+
+        """
+        return self.ptr().getPatchSReacA(to_std_string(p), to_std_string(r))
+
+    def getPatchSReacExtent(self, str p, str r):
+        """
+        Returns the extent of surface reaction with identifier string sreac in patch 
+        with identifier string pat, that is the number of times the surface reaction 
+        has occurred up to the current simulation time. 
+
+        Note: in a mesh-based simulation (i.e. Tetexact), returns the sum of the reaction 
+        extents in all triangular elements of the patch.
+
+        Syntax::
+            
+            getPatchSReacExtent(pat,reac)
+            
+        Arguments:
+        string pat
+        string reac
+
+        Return:
+        index_t
+
+        """
+        return self.ptr().getPatchSReacExtent(to_std_string(p), to_std_string(r))
+
+    def resetPatchSReacExtent(self, str p, str r):
+        """
+        Resets the extent of reaction with identifier string sreac in patch with identifier 
+        string pat to zero. 
+
+        Note: in a mesh-based simulation (i.e. Tetexact), resets the extents of the reaction 
+        in all triangular elements of the patch.
+
+        Syntax::
+            
+            resetPatchSReacExtent(pat, reac)
+            
+        Arguments:
+        string pat
+        string reac
+
+        Return:
+        None
+
+        """
+        self.ptr().resetPatchSReacExtent(to_std_string(p), to_std_string(r))
+
+    def getPatchVDepSReacActive(self, str p, str vsr):
+        """
+        Returns whether a voltage-dependent surface reaction with identifier string vsreac in patch with 
+        identifier string pat is active (True) or not (False). If it's not active this means 
+        that the voltage-dependent surface reaction will never occur regardless of whether the reactants are 
+        present in sufficient numbers or not. 
+
+        Note: In a mesh-based simulation this method will return True only 
+        if the voltage-dependent surface reaction is active in all triangular elements in the patch.
+
+        Syntax::
+
+            getPatchVDepSReacActive(pat, vsreac)
+
+        Arguments:
+        string pat
+        string vsreac
+
+        Return:
+        bool
+
+        """
+        return self.ptr().getPatchVDepSReacActive(to_std_string(p), to_std_string(vsr))
+
+    def setPatchVDepSReacActive(self, str p, str vsr, bool a):
+        """
+        Activate (active = True) or deactivate (active = False) a voltage-dependent surface reaction with 
+        identifier string vsreac in patch with identifier string pat. If a voltage-dependent surface reaction 
+        is not active this means that a reaction will never occur regardless of whether the 
+        reactants are present in sufficient numbers or not.
+
+        Note: In a mesh-based simulation this will activate/ deactivate the 
+        reaction in all triangular elements in the patch.
+
+        Syntax::
+
+            setPatchVDepSReacActive(pat, vsreac, active)
+
+        Arguments:
+        string pat
+        string vsreac
+        bool active
+
+        Return:
+        None
+
+        """
+        self.ptr().setPatchVDepSReacActive(to_std_string(p), to_std_string(vsr), a)
+
+    def getNComps(self, ):
+        """
+        Return the number of compartments in the solver.
+
+        Syntax::
+
+            getNComps()
+
+        Arguments:
+        None
+
+        Return:
+        uint
+
+        """
+        return self.ptr().getNComps()
+
+    def getNPatches(self, ):
+        """
+        Return the number of patches in the solver.
+
+        Syntax::
+
+            getNPatches()
+
+        Arguments:
+        None
+
+        Return:
+        uint
+
+        """
+        return self.ptr().getNPatches()
+
+    def getCompName(self, uint c_idx):
+        """
+        Return the name of a compartment by its index in the solver.
+            
+        Syntax::
+            
+            getCompName(c_idx)
+            
+        Arguments:
+        uint c_idx
+            
+        Return:
+        string
+
+        """
+        return self.ptr().getCompName(c_idx)
+
+    def getPatchName(self, uint p_idx):
+        """
+        Return the name of a patch by its index in the solver.
+
+        Syntax::
+
+            getPatchName(p_idx)
+
+        Arguments:
+        uint p_idx
+
+        Return:
+        string
+
+        """
+        return self.ptr().getPatchName(p_idx)
+
+    def getNCompSpecs(self, uint c_idx):
+        """
+        Get number of species in a compartment.
+
+        Syntax::
+
+            getNCompSpecs(c_idx)
+
+        Arguments:
+        uint c_idx
+
+        Return:
+        uint
+
+        """
+        return self.ptr().getNCompSpecs(c_idx)
+
+    def getNPatchSpecs(self, uint p_idx):
+        """
+        Get number of species in a patch.
+
+        Syntax::
+
+            getNPatchSpecs(p_idx)
+
+        Arguments:
+        uint p_idx
+
+        Return:
+        uint
+
+        """
+        return self.ptr().getNPatchSpecs(p_idx)
+
+    def getCompSpecName(self, uint c_idx, uint s_idx):
+        """
+        Get the name of a species in a compartment.
+
+        Syntax::
+
+            getCompSpecName(c_idx, s_idx)
+
+        Arguments:
+        uint c_idx
+        uint s_idx
+
+        Return:
+        string
+
+        """
+        return self.ptr().getCompSpecName(c_idx, s_idx)
+
+    def getPatchSpecName(self, uint p_idx, uint s_idx):
+        """
+        Get the name of a species in a patch.
+
+        Syntax::
+
+            getPatchSpecName(p_idx, s_idx)
+
+        Arguments:
+        uint p_idx
+        uint s_idx
+
+        Return:
+        string
+
+        """
+        return self.ptr().getPatchSpecName(p_idx, s_idx)
+
+
+    @staticmethod
+    cdef _py_API from_ptr(API *ptr):
+        cdef _py_API obj = _py_API.__new__(_py_API )
+        obj._ptr = ptr
+        return obj
+
+    @staticmethod
+    cdef _py_API from_ref(const API &ref):
+        return _py_API.from_ptr(<API*>&ref)
+
+# ----------------------------------------------------------------------------------------------------------------------
+cdef class _py_TetAPI(_py_API):
+    "Python wrapper class for tetrahedron solvers API"
+# ----------------------------------------------------------------------------------------------------------------------
+
+    #Constants
+    EF_NONE      = steps_solver.EF_NONE
+    EF_DEFAULT   = steps_solver.EF_DEFAULT
+    EF_DV_BDSYS  = steps_solver.EF_DV_BDSYS
+    EF_DV_PETSC  = steps_solver.EF_DV_PETSC
+
+    # ---- VIRTUAL - doesnt call original constructor ------
+    def __init__(self, _py_Model m, _py_Geom g, _py_RNG r):
+        _py_API.__init__(m, g, r)
+
     def getTetVol(self, index_t tidx):
         """
         Returns the volume (in m^3) of the tetrahedral element with index idx.
@@ -2781,9 +3372,6 @@ cdef class _py_API(_py__base):
 
         """
         return self.ptr().getTetVol(tidx)
-
-    #def setTetVol(self, index_t tidx, double vol):
-    #    self.ptr().setTetVol(tidx, vol)
 
     def getTetSpecDefined(self, index_t tidx, str s):
         """
@@ -3291,439 +3879,6 @@ cdef class _py_API(_py__base):
 
         """
         self.ptr().setTetVClamped(tidx, cl)
-
-    def getPatchArea(self, str p):
-        """
-        Returns the area of patch with identifier string pat (in m^2).
-
-        Syntax::
-            
-            getPatchArea(pat)
-            
-        Arguments:
-        string pat
-
-        Return:
-        float
-
-        """
-        return self.ptr().getPatchArea(to_std_string(p))
-
-    def setPatchArea(self, str p, double area):
-        """
-        Sets the area of patch with identifier string pat to area a (in m^2).
-
-        Syntax::
-            
-            setPatchArea(pat, area)
-            
-        Arguments:
-        string pat
-        float area
-
-        Return:
-        None
-
-        """
-        self.ptr().setPatchArea(to_std_string(p), area)
-
-    def getPatchCount(self, str p, str s):
-        """
-        Returns the number of molecules of species with identifier string spec in patch 
-        with identifier string pat.Note: in a mesh-based simulation this 
-        is the combined count from all triangular elements in the patch. 
-
-        Syntax::
-            
-            getPatchCount(pat, spec)
-            
-        Arguments:
-        string pat
-        string spec
-
-        Return:
-        float
-
-        """
-        return self.ptr().getPatchCount(to_std_string(p), to_std_string(s))
-
-    def setPatchCount(self, str p, str s, double n):
-        """
-        Sets the number of molecules of species with identifier string spec in patch 
-        with identifier string pat to n. Note: in a mesh-based simulation the molecules 
-        are divided as equally as possible over all triangular elements in 
-        the patch (i.e. a uniform distribution). 
-
-        Syntax::
-            
-            setPatchCount(pat, spec, n)
-            
-        Arguments:
-        string pat
-        string spec
-        int n
-
-        Return:
-        float
-
-        """
-        self.ptr().setPatchCount(to_std_string(p), to_std_string(s), n)
-
-    def getPatchAmount(self, str p, str s):
-        """
-        Returns the amount (in mols) of species with identifier string spec in patch 
-        with identifier string pat.
-
-        Note: in a mesh-based simulation this is the combined amount 
-        from all triangular elements in the patch. 
-
-        Syntax::
-            
-            getPatchAmount(pat, spec)
-            
-        Arguments:
-        string pat
-        string spec
-
-        Return:
-        float
-
-        """
-        return self.ptr().getPatchAmount(to_std_string(p), to_std_string(s))
-
-    def setPatchAmount(self, str p, str s, double a):
-        """
-        Sets the amount (in mols) of species with identifier string spec in patch with 
-        identifier string pat to a. In a discrete solver, such as Wmdirect and Tetexact, 
-        this continuous value is converted internally into a discrete number of molecules 
-        by multiplication with Avogadro's number. 
-
-        Note: in a mesh-based simulation the molecules are divided as 
-        equally as possible over all triangular elements in the patch (i.e. a uniform 
-        distribution).
-
-        Syntax::
-            
-            setPatchAmount(pat, spec, a)
-            
-        Arguments:
-        string pat
-        string spec
-        float a
-
-        Return:
-        None
-
-        """
-        self.ptr().setPatchAmount(to_std_string(p), to_std_string(s), a)
-
-    def getPatchClamped(self, str p, str s):
-        """
-        Sets the amount (in mols) of species with identifier string spec in patch with 
-        identifier string pat to a. In a discrete solver, such as Wmdirect and Tetexact, 
-        this continuous value is converted internally into a discrete number of molecules 
-        by multiplication with Avogadro's number. 
-
-        Note: in a mesh-based simulation the molecules are divided as equally 
-        as possible over all triangular elements in the patch (i.e. a uniform distribution).
-
-        Syntax::
-            
-            getPatchClamped(pat, spec)
-            
-        Arguments:
-        string pat
-        string spec
-
-        Return:
-        bool
-
-        """
-        return self.ptr().getPatchClamped(to_std_string(p), to_std_string(s))
-
-    def setPatchClamped(self, str p, str s, bool buf):
-        """
-        Sets whether the species with identifier string spec in patch with identifier 
-        string pat is clamped (clamped = True) or not (clamped = False). If a species 
-        is clamped the number of molecules stays the same regardless of surface reactions 
-        that consume or produce molecules of the species.
-
-        Note: in a mesh-based simulation this will set the species to be clamped in all 
-        triangular elements of the patch.
-
-        Syntax::
-            
-            setPatchClamped(pat, spec, clamped)
-            
-        Arguments:
-        string pat
-        string spec
-        bool clamped
-
-        Return:
-        None
-
-        """
-        self.ptr().setPatchClamped(to_std_string(p), to_std_string(s), buf)
-
-    def getPatchSReacK(self, str p, str r):
-        """
-        Returns the macroscopic reaction constant of surface reaction with identifier 
-        string sreac in patch with identifier string pat. The unit of the reaction constant 
-        depends on the order of the reaction.
-
-        Note: In a mesh-based solver the value for the patch is returned, 
-        although individual triangle elements may have different values 
-        (set with setTriSReacK).
-
-        Syntax::
-            
-            getPatchSReacK(pat, reac)
-            
-        Arguments:
-        string pat
-        string reac
-
-        Return:
-        float
-
-        """
-        return self.ptr().getPatchSReacK(to_std_string(p), to_std_string(r))
-
-    def setPatchSReacK(self, str p, str r, double kf):
-        """
-        Sets the macroscopic reaction constant of surface reaction with identifier 
-        string sreac in patch with identifier string pat to kf. The unit of the reaction 
-        constant depends on the order of the reaction. 
-
-        Note: In a mesh-based simulation this method sets the surface 
-        reaction constant in all triangular elements of the patch to kf.
-
-        Note: The default value still comes from the steps.model description, so calling 
-        reset() will return the surface reaction constant to that value.
-
-        Syntax::
-            
-            setPatchSReacK(pat, reac, kf)
-            
-        Arguments:
-        string pat
-        string reac
-        float kf
-
-        Return:
-        None
-
-        """
-        self.ptr().setPatchSReacK(to_std_string(p), to_std_string(r), kf)
-
-    def getPatchSReacActive(self, str p, str r):
-        """
-        Returns whether a surface reaction with identifier string sreac in patch with 
-        identifier string pat is active (True) or not (False). If it's not active this means 
-        that a surface reaction will never occur regardless of whether the reactants are 
-        present in sufficient numbers or not. 
-
-        Note: In a mesh-based simulation this method will return True only 
-        if the surface reaction is active in all triangular elements in the patch.
-
-        Syntax::
-            
-            getPatchSReacActive(pat, reac)
-            
-        Arguments:
-        string pat
-        string reac
-
-        Return:
-        bool
-
-        """
-        return self.ptr().getPatchSReacActive(to_std_string(p), to_std_string(r))
-
-    def setPatchSReacActive(self, str p, str r, bool a):
-        """
-        Activate (active = True) or deactivate (active = False) a surface reaction with 
-        identifier string sreac in patch with identifier string pat. If a surface reaction 
-        is not active this means that a reaction will never occur regardless of whether the 
-        reactants are present in sufficient numbers or not.
-
-        Note: In a mesh-based simulation this will activate/ deactivate the 
-        reaction in all triangular elements in the patch.
-
-        Syntax::
-            
-            setPatchSReacActive(pat, reac, active)
-            
-        Arguments:
-        string pat
-        string reac
-        bool active
-
-        Return:
-        None
-
-        """
-        self.ptr().setPatchSReacActive(to_std_string(p), to_std_string(r), a)
-
-    def getPatchSReacC(self, str p, str r):
-        """
-        Returns the 'stochastic reaction constant' (or 'specific probability rate constant') 
-        of surface reaction with identifier string sreac in patch with identifier string pat.
-
-        Note: in a mesh-based simulation (i.e. Tetexact), the stochastic reaction constant is 
-        computed as the weighted mean of the stochastic reaction constants in all triangular 
-        elements of the patch.
-
-        Syntax::
-            
-            getPatchSReacC(pat, reac)
-            
-        Arguments:
-        string pat
-        string reac
-
-        Return:
-        float
-
-        """
-        return self.ptr().getPatchSReacC(to_std_string(p), to_std_string(r))
-
-    def getPatchSReacH(self, str p, str r):
-        """
-        Returns h_mu, the distinct number of ways in which surface reaction with identifier 
-        string sreac can occur in patch with identifier string pat, by computing the product 
-        of its reactants. Note: in a mesh-based simulation (i.e. Tetexact), returns the sum 
-        of the h_mu's over all triangular elements in the patch. 
-
-        Syntax::
-            
-            getPatchSReacH(pat, reac)
-            
-        Arguments:
-        string pat
-        string reac
-
-        Return:
-        float
-
-        """
-        return self.ptr().getPatchSReacH(to_std_string(p), to_std_string(r))
-
-    def getPatchSReacA(self, str p, str r):
-        """
-        Returns the propensity of surface reaction with identifier string sreac in patch 
-        with identifier string pat. Note: in a mesh-based simulation (i.e. Tetexact), 
-        the propensity of a surface reaction in a patch is computed as the sum of the 
-        propensities in all triangular elements of the patch.
-
-        Syntax::
-            
-            getPatchSReacA(pat, reac)
-            
-        Arguments:
-        string pat
-        string reac
-
-        Return:
-        float
-
-        """
-        return self.ptr().getPatchSReacA(to_std_string(p), to_std_string(r))
-
-    def getPatchSReacExtent(self, str p, str r):
-        """
-        Returns the extent of surface reaction with identifier string sreac in patch 
-        with identifier string pat, that is the number of times the surface reaction 
-        has occurred up to the current simulation time. 
-
-        Note: in a mesh-based simulation (i.e. Tetexact), returns the sum of the reaction 
-        extents in all triangular elements of the patch.
-
-        Syntax::
-            
-            getPatchSReacExtent(pat,reac)
-            
-        Arguments:
-        string pat
-        string reac
-
-        Return:
-        index_t
-
-        """
-        return self.ptr().getPatchSReacExtent(to_std_string(p), to_std_string(r))
-
-    def resetPatchSReacExtent(self, str p, str r):
-        """
-        Resets the extent of reaction with identifier string sreac in patch with identifier 
-        string pat to zero. 
-
-        Note: in a mesh-based simulation (i.e. Tetexact), resets the extents of the reaction 
-        in all triangular elements of the patch.
-
-        Syntax::
-            
-            resetPatchSReacExtent(pat, reac)
-            
-        Arguments:
-        string pat
-        string reac
-
-        Return:
-        None
-
-        """
-        self.ptr().resetPatchSReacExtent(to_std_string(p), to_std_string(r))
-
-    def getPatchVDepSReacActive(self, str p, str vsr):
-        """
-        Returns whether a voltage-dependent surface reaction with identifier string vsreac in patch with 
-        identifier string pat is active (True) or not (False). If it's not active this means 
-        that the voltage-dependent surface reaction will never occur regardless of whether the reactants are 
-        present in sufficient numbers or not. 
-
-        Note: In a mesh-based simulation this method will return True only 
-        if the voltage-dependent surface reaction is active in all triangular elements in the patch.
-
-        Syntax::
-
-            getPatchVDepSReacActive(pat, vsreac)
-
-        Arguments:
-        string pat
-        string vsreac
-
-        Return:
-        bool
-
-        """
-        return self.ptr().getPatchVDepSReacActive(to_std_string(p), to_std_string(vsr))
-
-    def setPatchVDepSReacActive(self, str p, str vsr, bool a):
-        """
-        Activate (active = True) or deactivate (active = False) a voltage-dependent surface reaction with 
-        identifier string vsreac in patch with identifier string pat. If a voltage-dependent surface reaction 
-        is not active this means that a reaction will never occur regardless of whether the 
-        reactants are present in sufficient numbers or not.
-
-        Note: In a mesh-based simulation this will activate/ deactivate the 
-        reaction in all triangular elements in the patch.
-
-        Syntax::
-
-            setPatchVDepSReacActive(pat, vsreac, active)
-
-        Arguments:
-        string pat
-        string vsreac
-        bool active
-
-        Return:
-        None
-
-        """
-        self.ptr().setPatchVDepSReacActive(to_std_string(p), to_std_string(vsr), a)
 
     def setDiffBoundaryDiffusionActive(self, str db, str s, bool act):
         """
@@ -4595,151 +4750,12 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setMembRes(to_std_string(m), ro, vrev)
 
-    def getNComps(self, ):
-        """
-        Return the number of compartments in the solver.
-
-        Syntax::
-
-            getNComps()
-
-        Arguments:
-        None
-
-        Return:
-        uint
-
-        """
-        return self.ptr().getNComps()
-
-    def getNPatches(self, ):
-        """
-        Return the number of patches in the solver.
-
-        Syntax::
-
-            getNPatches()
-
-        Arguments:
-        None
-
-        Return:
-        uint
-
-        """
-        return self.ptr().getNPatches()
-
-    def getCompName(self, uint c_idx):
-        """
-        Return the name of a compartment by its index in the solver.
-            
-        Syntax::
-            
-            getCompName(c_idx)
-            
-        Arguments:
-        uint c_idx
-            
-        Return:
-        string
-
-        """
-        return self.ptr().getCompName(c_idx)
-
-    def getPatchName(self, uint p_idx):
-        """
-        Return the name of a patch by its index in the solver.
-
-        Syntax::
-
-            getPatchName(p_idx)
-
-        Arguments:
-        uint p_idx
-
-        Return:
-        string
-
-        """
-        return self.ptr().getPatchName(p_idx)
-
-    def getNCompSpecs(self, uint c_idx):
-        """
-        Get number of species in a compartment.
-
-        Syntax::
-
-            getNCompSpecs(c_idx)
-
-        Arguments:
-        uint c_idx
-
-        Return:
-        uint
-
-        """
-        return self.ptr().getNCompSpecs(c_idx)
-
-    def getNPatchSpecs(self, uint p_idx):
-        """
-        Get number of species in a patch.
-
-        Syntax::
-
-            getNPatchSpecs(p_idx)
-
-        Arguments:
-        uint p_idx
-
-        Return:
-        uint
-
-        """
-        return self.ptr().getNPatchSpecs(p_idx)
-
-    def getCompSpecName(self, uint c_idx, uint s_idx):
-        """
-        Get the name of a species in a compartment.
-
-        Syntax::
-
-            getCompSpecName(c_idx, s_idx)
-
-        Arguments:
-        uint c_idx
-        uint s_idx
-
-        Return:
-        string
-
-        """
-        return self.ptr().getCompSpecName(c_idx, s_idx)
-
-    def getPatchSpecName(self, uint p_idx, uint s_idx):
-        """
-        Get the name of a species in a patch.
-
-        Syntax::
-
-            getPatchSpecName(p_idx, s_idx)
-
-        Arguments:
-        uint p_idx
-        uint s_idx
-
-        Return:
-        string
-
-        """
-        return self.ptr().getPatchSpecName(p_idx, s_idx)
-
-
     @staticmethod
-    cdef _py_API from_ptr(API *ptr):
-        cdef _py_API obj = _py_API.__new__(_py_API )
+    cdef _py_TetAPI from_ptr(API *ptr):
+        cdef _py_TetAPI obj = _py_TetAPI.__new__(_py_TetAPI )
         obj._ptr = ptr
         return obj
 
     @staticmethod
-    cdef _py_API from_ref(const API &ref):
-        return _py_API.from_ptr(<API*>&ref)
+    cdef _py_TetAPI from_ref(const API &ref):
+        return _py_TetAPI.from_ptr(<API*>&ref)

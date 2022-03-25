@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -34,68 +34,48 @@
 #include <iomanip>
 #include <iostream>
 #include <iterator>
-#include <climits>
-#include <map>
 #include <numeric>
 #include <queue>
 #include <sstream>
-#include <vector>
 
 #include <mpi.h>
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
+#include "tetopsplit.hpp"
+#include "diff.hpp"
+#include "ghkcurr.hpp"
+#include "reac.hpp"
+#include "sdiff.hpp"
+#include "sreac.hpp"
+#include "vdepsreac.hpp"
+#include "vdeptrans.hpp"
 
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/geom/tetmesh.hpp"
-#include "steps/math/constants.hpp"
-#include "steps/math/point.hpp"
-#include "steps/mpi/mpi_common.hpp"
-#include "steps/mpi/tetopsplit/comp.hpp"
-#include "steps/mpi/tetopsplit/diff.hpp"
-#include "steps/mpi/tetopsplit/diffboundary.hpp"
-#include "steps/mpi/tetopsplit/ghkcurr.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-#include "steps/mpi/tetopsplit/patch.hpp"
-#include "steps/mpi/tetopsplit/reac.hpp"
-#include "steps/mpi/tetopsplit/sdiff.hpp"
-#include "steps/mpi/tetopsplit/sdiffboundary.hpp"
-#include "steps/mpi/tetopsplit/sreac.hpp"
-#include "steps/mpi/tetopsplit/tet.hpp"
-#include "steps/mpi/tetopsplit/tetopsplit.hpp"
-#include "steps/mpi/tetopsplit/tri.hpp"
-#include "steps/mpi/tetopsplit/vdepsreac.hpp"
-#include "steps/mpi/tetopsplit/vdeptrans.hpp"
-#include "steps/mpi/tetopsplit/wmvol.hpp"
-#include "steps/solver/chandef.hpp"
-#include "steps/solver/compdef.hpp"
-#include "steps/solver/diffboundarydef.hpp"
-#include "steps/solver/diffdef.hpp"
-#include "steps/solver/ghkcurrdef.hpp"
-#include "steps/solver/ohmiccurrdef.hpp"
-#include "steps/solver/patchdef.hpp"
-#include "steps/solver/reacdef.hpp"
-#include "steps/solver/sdiffboundarydef.hpp"
-#include "steps/solver/sreacdef.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/types.hpp"
-#include "steps/solver/vdepsreacdef.hpp"
-#include "steps/solver/vdeptransdef.hpp"
+#include "mpi/mpi_common.hpp"
+#include "math/constants.hpp"
+#include "math/point.hpp"
+#include "solver/chandef.hpp"
+#include "solver/compdef.hpp"
+#include "solver/diffboundarydef.hpp"
+#include "solver/diffdef.hpp"
+#include "solver/ghkcurrdef.hpp"
+#include "solver/ohmiccurrdef.hpp"
+#include "solver/patchdef.hpp"
+#include "solver/reacdef.hpp"
+#include "solver/sdiffboundarydef.hpp"
+#include "solver/sreacdef.hpp"
+#include "solver/types.hpp"
+#include "solver/vdepsreacdef.hpp"
+#include "solver/vdeptransdef.hpp"
 
-#include "steps/solver/efield/dVsolver.hpp"
-#include "steps/solver/efield/efield.hpp"
+#include "solver/efield/dVsolver.hpp"
+#include "solver/efield/efield.hpp"
 #ifdef USE_PETSC
-#include "steps/solver/efield/dVsolver_petsc.hpp"
+#include "solver/efield/dVsolver_petsc.hpp"
 #endif
-#include "steps/util/collections.hpp"
-#include "steps/util/distribute.hpp"
 
-// logging
-#include "easylogging++.h"
-
+#include "util/collections.hpp"
+#include "util/distribute.hpp"
+#include "util/error.hpp"
+#include "util/profile/profiler_interface.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace ssolver = steps::solver;
@@ -158,6 +138,7 @@ TetOpSplitP::~TetOpSplitP()
     for (auto& c: pComps) delete c;
     for (auto& p: pPatches) delete p;
     for (auto& db: pDiffBoundaries) delete db;
+    for (auto& sdb: pSDiffBoundaries) delete sdb;
     for (auto& wvol: pWmVols) delete wvol;
     for (auto& t: pTets) delete t;
     for (auto& t: pTris) delete t;
@@ -344,7 +325,7 @@ void TetOpSplitP::_setup()
             }
 
             // Get neighboring tris
-            std::array<triangle_id_t, 3> tris{{UNKNOWN_TRI, UNKNOWN_TRI, UNKNOWN_TRI}};
+            std::array<triangle_id_t, 3> tris{{boost::none, boost::none, boost::none}};
             for (auto j = 0u; j < tri_bars.size(); ++j)
             {
                 const std::vector<triangle_id_t>& neighb_tris = bar2tri[tri_bars[j]];
@@ -360,7 +341,7 @@ void TetOpSplitP::_setup()
             const point3d& baryc = pMesh->_getTriBarycenter(tri);
             point3d d;
             for (uint j = 0; j < 3; ++j) {
-                if (tris[j] == UNKNOWN_TRI) continue;
+                if (tris[j].unknown()) continue;
                 d[j] = distance(baryc, pMesh->_getTriBarycenter(tris[j]));
             }
 
@@ -400,7 +381,7 @@ void TetOpSplitP::_setup()
 
                  double d[4] = {0, 0, 0, 0};
                  for (uint j = 0; j < 4; ++j) {
-                     if (tets[j] == UNKNOWN_TET) continue;
+                     if (tets[j].unknown()) continue;
                      d[j] = distance(baryc, pMesh->_getTetBarycenter(tets[j]));
                  }
 
@@ -477,7 +458,8 @@ void TetOpSplitP::_setup()
 
         for (uint j = 0; j < 4; ++j) {
             auto tet = pTets[t]->tet(j);
-            if (tet != UNKNOWN_TET && pTets[tet.get()] != nullptr) pTets[t]->setNextTet(j, pTets[tet.get()]);
+            if (tet.valid() && pTets[tet.get()] != nullptr)
+                pTets[t]->setNextTet(j, pTets[tet.get()]);
         }
         // Not setting Tet triangles at this point- only want to set
         // for surface triangles
@@ -491,7 +473,7 @@ void TetOpSplitP::_setup()
 
         for (uint j = 0; j < 3; ++j) {
             auto tri = pTris[t]->tri(j);
-            if (tri != UNKNOWN_TRI && pTris[tri.get()] != nullptr) {
+            if (tri.valid() && pTris[tri.get()] != nullptr) {
                 pTris[t]->setNextTri(j, pTris[tri.get()]);
             }
         }
@@ -510,8 +492,7 @@ void TetOpSplitP::_setup()
         // well-mixed compartment with multiple triangle connections.
 
 
-        if (tetinner != UNKNOWN_TET)
-        {
+        if (tetinner.valid()) {
             // NEW FOR THIS VERSION: Tris store index of inner and outer tet (outer may not exist if on
             // surface) but tets may not belong to a compartment, even inner tets now
             // since they may be well-mixed compartments
@@ -554,8 +535,7 @@ void TetOpSplitP::_setup()
             }
         }
 
-        if (tetouter != UNKNOWN_TET)
-        {
+        if (tetouter.valid()) {
             if (pTets[tetouter.get()] != nullptr)
             {
                 // A triangle may already have an inner tet defined as a well-mixed
@@ -606,7 +586,7 @@ void TetOpSplitP::_setup()
 
             auto tetAidx = tri_tets[0];
             auto tetBidx = tri_tets[1];
-            AssertLog(tetAidx != UNKNOWN_TET && tetBidx != UNKNOWN_TET);
+            AssertLog(tetAidx.valid() && tetBidx.valid());
 
             steps::mpi::tetopsplit::Tet * tetA = _tet(tetAidx);
             steps::mpi::tetopsplit::Tet * tetB = _tet(tetBidx);
@@ -699,7 +679,7 @@ void TetOpSplitP::_setup()
 
             auto triAidx = bar_tris[0];
             auto triBidx = bar_tris[1];
-            AssertLog(triAidx != UNKNOWN_TRI && triBidx != UNKNOWN_TRI);
+            AssertLog(triAidx.valid() && triBidx.valid());
 
             steps::mpi::tetopsplit::Tri * triA = _tri(triAidx);
             steps::mpi::tetopsplit::Tri * triB = _tri(triBidx);
@@ -876,13 +856,13 @@ void TetOpSplitP::_setupEField()
     auto ntets= mesh()->countTets();
 
     pEFVert_GtoL = new vertex_id_t[nverts];
-    for (uint i=0; i < nverts; ++i) { pEFVert_GtoL[i] = UNKNOWN_VER;
+    for (uint i=0; i < nverts; ++i) { pEFVert_GtoL[i] = boost::none;
 }
     pEFTri_GtoL = new triangle_id_t[ntris];
-    for (uint i=0; i< ntris; ++i) { pEFTri_GtoL[i] = UNKNOWN_TRI;
+    for (uint i=0; i< ntris; ++i) { pEFTri_GtoL[i] = boost::none;
 }
     pEFTet_GtoL = new tetrahedron_id_t[ntets];
-    for (uint i=0; i < ntets; ++i) { pEFTet_GtoL[i] = UNKNOWN_TET;
+    for (uint i=0; i < ntets; ++i) { pEFTet_GtoL[i] = boost::none;
 }
 
     pEFTri_LtoG = new triangle_id_t[neftris()];
@@ -919,7 +899,7 @@ void TetOpSplitP::_setupEField()
         auto tv1 = pEFVert_GtoL[tettemp[1].get()];
         auto tv2 = pEFVert_GtoL[tettemp[2].get()];
         auto tv3 = pEFVert_GtoL[tettemp[3].get()];
-        if  (tv0 == UNKNOWN_VER || tv1 == UNKNOWN_VER || tv2 == UNKNOWN_VER || tv3 == UNKNOWN_VER)
+        if  (tv0.unknown() || tv1.unknown() || tv2.unknown() || tv3.unknown())
         {
             std::ostringstream os;
             os << "Failed to create EField structures.";
@@ -957,7 +937,7 @@ void TetOpSplitP::_setupEField()
         auto tv0 =  pEFVert_GtoL[tritemp[0].get()];
         auto tv1 = pEFVert_GtoL[tritemp[1].get()];
         auto tv2 = pEFVert_GtoL[tritemp[2].get()];
-        if  (tv0 == UNKNOWN_VER || tv1 == UNKNOWN_VER || tv2 == UNKNOWN_VER)
+        if  (tv0.unknown() || tv1.unknown() || tv2.unknown())
         {
             std::ostringstream os;
             os << "Failed to create EField structures.";
@@ -1235,6 +1215,7 @@ void TetOpSplitP::_runWithoutEField(double endtime)
         #ifdef MPI_PROFILING
         double timing_start = MPI_Wtime();
         #endif
+        Instrumentor::phase_begin("runWithoutEField -> Operator Split: SSA");
 
         double pre_ssa_time = statedef().time();
         // Update period may take us past the endtime- adjust if so
@@ -1244,7 +1225,6 @@ void TetOpSplitP::_runWithoutEField(double endtime)
         }
 
         // *********************** Operator Split: SSA *********************************
-
         // Run SSA for the update period
 
         double cumulative_dt=0.0;
@@ -1278,7 +1258,8 @@ void TetOpSplitP::_runWithoutEField(double endtime)
 
         // Apply diffusion after the update period
 
-        #ifdef MPI_PROFILING
+        Instrumentor::phase_end("runWithoutEField -> Operator Split: SSA");
+#ifdef MPI_PROFILING
         double timing_end = MPI_Wtime();
         compTime += (timing_end - timing_start);
         timing_start = MPI_Wtime();
@@ -1302,6 +1283,7 @@ void TetOpSplitP::_runWithoutEField(double endtime)
         idleTime += (timing_end - timing_start);
         timing_start = MPI_Wtime();
         #endif
+        Instrumentor::phase_begin("runWithoutEField -> Operator Split: Diffusion");
 
         // Track how many diffusion 'steps' we do, simply for bookkeeping
         uint nsteps=0;
@@ -1460,23 +1442,27 @@ void TetOpSplitP::_runWithoutEField(double endtime)
             diffExtent += nmolcs;
         }
 
-        #ifdef MPI_PROFILING
+        Instrumentor::phase_end("runWithoutEField -> Operator Split: Diffusion");
+#ifdef MPI_PROFILING
         timing_end = MPI_Wtime();
         compTime += (timing_end - timing_start);
         #endif
 
+        Instrumentor::phase_begin("runWithoutEField -> _remoteSyncAndUpdate");
         _remoteSyncAndUpdate(requests, applied_diffs, directions);
+        Instrumentor::phase_end("runWithoutEField -> _remoteSyncAndUpdate");
 
         // *********************** Operator Split: SSA *********************************
         #ifdef MPI_PROFILING
         starttime = MPI_Wtime();
         #endif
+        Instrumentor::phase_begin("runWithoutEField -> Operator Split: SSA");
 
         for (auto const& akp : applied_ssa_kprocs) {
             akp->resetOccupancies();
         }
 
-        // by the end of the ssa iteration, 
+        // by the end of the ssa iteration,
         // force the state time to be aligned with the user-defined endtime
         if (aligned) {
             statedef().setTime(endtime);
@@ -1488,7 +1474,8 @@ void TetOpSplitP::_runWithoutEField(double endtime)
 
         nIteration += 1;
 
-        #ifdef MPI_PROFILING
+        Instrumentor::phase_end("runWithoutEField -> Operator Split: SSA");
+#ifdef MPI_PROFILING
         timing_end = MPI_Wtime();
         compTime += (timing_end - timing_start);
         #endif
@@ -1525,6 +1512,7 @@ void TetOpSplitP::_runWithEField(double endtime)
         #ifdef MPI_PROFILING
         timing_start = MPI_Wtime();
         #endif
+        Instrumentor::phase_begin("runWithEField -> rd");
 
         double t0 = statedef().time();
 
@@ -1534,7 +1522,8 @@ void TetOpSplitP::_runWithEField(double endtime)
         }
         _runWithoutEField(t1);
 
-        #ifdef MPI_PROFILING
+        Instrumentor::phase_end("runWithEField -> rd");
+#ifdef MPI_PROFILING
         timing_end = MPI_Wtime();
         rdTime += (timing_end - timing_start);
         #endif
@@ -1542,6 +1531,7 @@ void TetOpSplitP::_runWithEField(double endtime)
         #ifdef MPI_PROFILING
         timing_start = MPI_Wtime();
         #endif
+        Instrumentor::phase_begin("runWithEField -> efield");
         // update host-local currents
         int i_begin = EFTrisI_offset[myRank];
         int i_end = i_begin + EFTrisI_count[myRank];
@@ -1553,7 +1543,8 @@ void TetOpSplitP::_runWithEField(double endtime)
             EFTrisI_permuted[i] = pEFTris_vec[tlidx.get()]->computeI(EFTrisV[tlidx.get()], real_ef_dt, sttime, efdt());
         }
 
-        #ifdef MPI_PROFILING
+        Instrumentor::phase_end("runWithEField -> efield");
+#ifdef MPI_PROFILING
         timing_end = MPI_Wtime();
         efieldTime += (timing_end - timing_start);
         #endif
@@ -1572,6 +1563,7 @@ void TetOpSplitP::_runWithEField(double endtime)
         #ifdef MPI_PROFILING
         timing_start = MPI_Wtime();
         #endif
+        Instrumentor::phase_begin("runWithEField -> efield");
 
         for (uint i = 0; i < pEFNTris; i++)
                 pEField->setTriI(EFTrisI_idx[i], EFTrisI_permuted[i]);
@@ -1579,7 +1571,8 @@ void TetOpSplitP::_runWithEField(double endtime)
         pEField->advance(real_ef_dt);
         _refreshEFTrisV();
 
-        #ifdef MPI_PROFILING
+        Instrumentor::phase_end("runWithEField -> efield");
+#ifdef MPI_PROFILING
         timing_end = MPI_Wtime();
         efieldTime += (timing_end - timing_start);
         #endif
@@ -1588,10 +1581,12 @@ void TetOpSplitP::_runWithEField(double endtime)
         #ifdef MPI_PROFILING
         timing_start = MPI_Wtime();
         #endif
+        Instrumentor::phase_begin("runWithEField -> rd");
 
         _updateLocal();
 
-        #ifdef MPI_PROFILING
+        Instrumentor::phase_end("runWithEField -> rd");
+#ifdef MPI_PROFILING
         timing_end = MPI_Wtime();
         rdTime += (timing_end - timing_start);
         #endif
@@ -1732,7 +1727,7 @@ void TetOpSplitP::_setCompCount(uint cidx, uint sidx, double n)
         // functions for distribution:
         auto set_count = [slidx](WmVol *tet, uint c) { tet->setCount(slidx, c); };
         auto inc_count = [slidx](WmVol *tet, int c) { tet->incCount(slidx, c, 0.0, true); };
-        auto weight = [](WmVol *tet) { return tet->vol(); };
+        auto weight = [](const WmVolPVecCI& tet) { return (*tet)->vol(); };
 
         steps::util::distribute_quantity(n, comp->bgnTet(), comp->endTet(), weight, set_count, inc_count, *rng(), comp->def()->vol());
 
@@ -2196,7 +2191,7 @@ void TetOpSplitP::_setPatchCount(uint pidx, uint sidx, double n)
         // functions for distribution:
         auto set_count = [slidx](Tri *tri, uint c) { tri->setCount(slidx, c); };
         auto inc_count = [slidx](Tri *tri, int c) { tri->incCount(slidx, c, 0.0, true); };
-        auto weight = [](Tri *tri) { return tri->area(); };
+        auto weight = [](const TriPVecCI& tri) { return (*tri)->area(); };
 
         steps::util::distribute_quantity(n, patch->bgnTri(), patch->endTri(), weight, set_count, inc_count, *rng(), patch->def()->area());
     }
@@ -3779,7 +3774,7 @@ double TetOpSplitP::_getTetDiffD(tetrahedron_id_t tidx, uint didx, tetrahedron_i
     }
     double dcst = 0.0;
     if (tet->getInHost()) {
-        if (direction_tet == UNKNOWN_TET) {
+        if (direction_tet.unknown()) {
             dcst = tet->diff(ldidx)->dcst();
         }
         else {
@@ -3824,7 +3819,7 @@ void TetOpSplitP::_setTetDiffD(tetrahedron_id_t tidx, uint didx, double dk,
 
     if (!tet->getInHost()) return;
 
-    if (direction_tet == UNKNOWN_TET) {
+    if (direction_tet.unknown()) {
         tet->diff(ldidx)->setDcst(dk);
     }
     else {
@@ -4409,7 +4404,7 @@ double TetOpSplitP::_getTriSDiffD(triangle_id_t tidx, uint didx, triangle_id_t d
     }
     double dcst = 0.0;
     if (tri->getInHost()) {
-        if (direction_tri == UNKNOWN_TRI) {
+        if (direction_tri.unknown()) {
             dcst = tri->sdiff(ldidx)->dcst();
 
         }
@@ -4460,7 +4455,7 @@ void TetOpSplitP::_setTriSDiffD(triangle_id_t tidx, uint didx, double dk,
     recomputeUpdPeriod = true;
     if (!tri->getInHost()) return;
 
-    if (direction_tri == UNKNOWN_TRI) {
+    if (direction_tri.unknown()) {
         tri->sdiff(ldidx)->setDcst(dk);
 
     }
@@ -4690,7 +4685,7 @@ double TetOpSplitP::_getTetV(tetrahedron_id_t tidx) const
         ArgErrLog(os.str());
     }
     auto loctidx = pEFTet_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TET)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Tetrahedron index " << tidx << " not assigned to a conduction volume.";
@@ -4712,7 +4707,7 @@ void TetOpSplitP::_setTetV(tetrahedron_id_t tidx, double v)
         ArgErrLog(os.str());
     }
     auto loctidx = pEFTet_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TET)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Tetrahedron index " << tidx << " not assigned to a conduction volume.";
@@ -4740,7 +4735,7 @@ bool TetOpSplitP::_getTetVClamped(tetrahedron_id_t tidx) const
         ArgErrLog(os.str());
     }
     auto loctidx = pEFTet_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TET)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Tetrahedron index " << tidx << " not assigned to a conduction volume.";
@@ -4761,7 +4756,7 @@ void TetOpSplitP::_setTetVClamped(tetrahedron_id_t tidx, bool cl)
         ArgErrLog(os.str());
     }
     auto loctidx = pEFTet_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TET)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Tetrahedron index " << tidx << " not assigned to a conduction volume.";
@@ -4782,7 +4777,7 @@ double TetOpSplitP::_getTriV(triangle_id_t tidx) const
         ArgErrLog(os.str());
     }
     auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -4803,7 +4798,7 @@ void TetOpSplitP::_setTriV(triangle_id_t tidx, double v)
         ArgErrLog(os.str());
     }
     auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -4830,7 +4825,7 @@ bool TetOpSplitP::_getTriVClamped(triangle_id_t tidx) const
         ArgErrLog(os.str());
     }
     auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -4851,7 +4846,7 @@ void TetOpSplitP::_setTriVClamped(triangle_id_t tidx, bool cl)
         ArgErrLog(os.str());
     }
     auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -4875,7 +4870,7 @@ double TetOpSplitP::_getTriOhmicI(triangle_id_t tidx) const
     Tri * tri = pTris[tidx.get()];
 
     auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -4899,7 +4894,7 @@ double TetOpSplitP::_getTriOhmicI(triangle_id_t tidx, uint ocidx) const
     AssertLog(ocidx < statedef().countOhmicCurrs());
 
     auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -4997,7 +4992,7 @@ double TetOpSplitP::_getVertIClamp(vertex_id_t vidx) const
         ArgErrLog(os.str());
     }
     auto locvidx = pEFVert_GtoL[vidx.get()];
-    if (locvidx == UNKNOWN_VER)
+    if (locvidx.unknown())
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
@@ -5019,7 +5014,7 @@ void TetOpSplitP::_setVertIClamp(vertex_id_t vidx, double cur)
         ArgErrLog(os.str());
     }
     auto locvidx = pEFVert_GtoL[vidx.get()];
-    if (locvidx == UNKNOWN_VER)
+    if (locvidx.unknown())
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
@@ -5042,7 +5037,7 @@ double TetOpSplitP::_getTriIClamp(triangle_id_t tidx) const
         ArgErrLog(os.str());
     }
     auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -5064,7 +5059,7 @@ void TetOpSplitP::_setTriIClamp(triangle_id_t tidx, double cur)
         ArgErrLog(os.str());
     }
     auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -5086,7 +5081,7 @@ void TetOpSplitP::_setTriCapac(triangle_id_t tidx, double cap)
         ArgErrLog(os.str());
     }
     auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -5108,7 +5103,7 @@ double TetOpSplitP::_getVertV(vertex_id_t vidx) const
         ArgErrLog(os.str());
     }
     auto locvidx = pEFVert_GtoL[vidx.get()];
-    if (locvidx == UNKNOWN_VER)
+    if (locvidx.unknown())
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
@@ -5128,7 +5123,7 @@ void TetOpSplitP::_setVertV(vertex_id_t vidx, double v)
         ArgErrLog(os.str());
     }
     auto locvidx = pEFVert_GtoL[vidx.get()];
-    if (locvidx == UNKNOWN_VER)
+    if (locvidx.unknown())
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
@@ -5155,7 +5150,7 @@ bool TetOpSplitP::_getVertVClamped(vertex_id_t vidx) const
         ArgErrLog(os.str());
     }
     auto locvidx = pEFVert_GtoL[vidx.get()];
-    if (locvidx == UNKNOWN_VER)
+    if (locvidx.unknown())
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
@@ -5176,7 +5171,7 @@ void TetOpSplitP::_setVertVClamped(vertex_id_t vidx, bool cl)
         ArgErrLog(os.str());
     }
     auto locvidx = pEFVert_GtoL[vidx.get()];
-    if (locvidx == UNKNOWN_VER)
+    if (locvidx.unknown())
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
@@ -6251,7 +6246,7 @@ void TetOpSplitP::getBatchTriVsNP(const index_t *indices,
             ArgErrLog(os.str());
         }
         auto loctidx = pEFTri_GtoL[tidx];
-        if (loctidx == UNKNOWN_TRI)
+        if (loctidx.unknown())
         {
             tri_not_assign << tidx << " ";
             has_tri_warning = true;
@@ -6292,7 +6287,7 @@ void TetOpSplitP::getBatchTetVsNP(const index_t *indices,
 
     for (uint t = 0; t < input_size; t++) {
         uint tidx = indices[t];
-    
+
         if (tidx >= pTets.size())
         {
             std::ostringstream os;
@@ -6301,8 +6296,8 @@ void TetOpSplitP::getBatchTetVsNP(const index_t *indices,
         }
 
         auto loctidx = pEFTet_GtoL[tidx];
-        
-        if (loctidx == UNKNOWN_TET)
+
+        if (loctidx.unknown())
         {
             tet_not_assign << tidx << " ";
             has_tet_warning = true;
@@ -8260,7 +8255,6 @@ unsigned long long TetOpSplitP::getReacExtent(bool local)
     if (local) {
         return reacExtent;
     }
-    
     unsigned long long sum = 0;
     MPI_Allreduce(&reacExtent, &sum, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
     return sum;

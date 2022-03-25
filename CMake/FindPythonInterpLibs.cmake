@@ -35,7 +35,19 @@ execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig
                         print('%s;%s' % (sysconfig.get_config_var('LDLIBRARY'), sysconfig.get_config_var('LIBRARY')))"
                 OUTPUT_VARIABLE PYTHON_LIB_NAMES
                 OUTPUT_STRIP_TRAILING_WHITESPACE)
-                
+
+if(APPLE)
+    # force addition of the .dylib library name to PYTHON_LIB_NAMES
+    # that can be missing in some miniconda installation
+    foreach(name ${PYTHON_LIB_NAMES})
+        if(name MATCHES "lib.*")
+            get_filename_component(basename ${name} NAME_WLE)
+            set(PYTHON_LIB_NAMES "${basename}.dylib;${PYTHON_LIB_NAMES}")
+            unset(basename)
+            break()
+        endif()
+    endforeach()
+endif()
 
 find_library(PYTHON_LIBRARY
     #NAMES ${_lib_name} ${_lib_name}mu ${_lib_name}m ${_lib_name}u

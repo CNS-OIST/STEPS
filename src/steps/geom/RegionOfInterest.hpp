@@ -1,9 +1,6 @@
-#ifndef STEPS_REGIONOFINTEREST_HPP
-#define STEPS_REGIONOFINTEREST_HPP
+#pragma once
 
 #include <easylogging++.h>
-
-#include <steps/geom/fwd.hpp>
 
 namespace steps {
 namespace tetmesh {
@@ -134,5 +131,3 @@ struct RegionOfInterest {
 
 } // namespace tetmesh
 } // namespace steps
-
-#endif //STEPS_REGIONOFINTEREST_HPP

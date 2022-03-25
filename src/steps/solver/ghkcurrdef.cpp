@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -27,7 +27,7 @@
 
 // Autotools definitions.
 #ifdef HAVE_CONFIG_H
-#include <steps/config.h>
+#include "config.h"
 #endif
 
 // STL headers.
@@ -38,18 +38,14 @@
 #include <string>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/math/ghk.hpp"
-#include "steps/model/chanstate.hpp"
-#include "steps/model/ghkcurr.hpp"
-#include "steps/model/spec.hpp"
-#include "steps/solver/ghkcurrdef.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/types.hpp"
+#include "util/error.hpp"
+#include "ghkcurrdef.hpp"
+#include "math/ghk.hpp"
+#include "model/chanstate.hpp"
+#include "model/spec.hpp"
 
 // logging
-#include "easylogging++.h"
+#include <easylogging++.h>
 
 namespace ssolver = steps::solver;
 namespace smod = steps::model;

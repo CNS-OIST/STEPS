@@ -1,0 +1,18 @@
+Simulation	Run #	Time	Simulation Path	Value Parameter	Value	Value Units
+nsim	0	0	comp1.S1.Count	initC1S1	500	
+nsim	0	0	comp1.S2.Count		900	
+nsim	0	0	comp1.CC_sus1_sus1.Count	initC1CCsus11	30	
+nsim	0	0	comp1.CC_sus1_sus2.Count		15	
+nsim	0	0	patch.ExS2.Count		15	
+nsim	0	0	comp1.CC_sus2_sus2.Count		60	
+nsim	0	0	comp2.S1.Count		1000	
+nsim	0	0	comp1.S3.Count		1000	
+nsim	0	0	comp2.S2.Count		500	
+nsim	0	0	patch.Ex.Count	initP1Ex	1000	
+nsim	0	0	patch.ExS1.Count		11	
+nsim	0	0	patch.ExS1S2.Count		17	
+nsim	0	0	comp2.S3.Count		10	
+nsim	0	0	patch.Chan1_chancl.Count		10	
+nsim	0	0	membrane.Potential		-0.065	V
+nsim	0	0	membrane.Capac		0.01	F m⁻²
+nsim	0	0	membrane.VolRes		1	ohm m

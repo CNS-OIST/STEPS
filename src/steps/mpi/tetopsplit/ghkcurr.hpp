@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -35,18 +35,17 @@
 #include <vector>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/math/constants.hpp"
-#include "steps/solver/ghkcurrdef.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-//#include "tetopsplit.hpp"
-#include "steps/mpi/tetopsplit/tri.hpp"
+#include "kproc.hpp"
+#include "tri.hpp"
+#include "util/common.h"
+#include "math/constants.hpp"
+#include "solver/ghkcurrdef.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace steps {
- namespace mpi {
- namespace tetopsplit {
+namespace steps {
+namespace mpi {
+namespace tetopsplit {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -94,19 +93,19 @@ public:
     void apply(const rng::RNGptr &rng, double dt, double simtime, double period) override;
     std::vector<KProc*> const & getLocalUpdVec(int direction = -1) const override;
     std::vector<uint> const & getRemoteUpdVec(int direction = -1) const override;
-    
+
     void resetOccupancies() override;
-    
+
     inline bool efflux() const noexcept
     { return pEffFlux; }
 
     void setEffFlux(bool efx) noexcept
     { pEffFlux = efx; }
-    
+
     bool getInHost() const noexcept override {
         return pTri->getInHost();
     }
-    
+
     int getHost() const noexcept override {
         return pTri->getHost();
     }
@@ -118,7 +117,7 @@ private:
 
     steps::solver::GHKcurrdef         * pGHKcurrdef;
     steps::mpi::tetopsplit::Tri              * pTri;
-    
+
     std::vector<KProc*>                 localUpdVec;
     std::vector<uint>                   remoteUpdVec;
     // Flag if flux is outward, positive flux (true) or inward, negative flux (false)

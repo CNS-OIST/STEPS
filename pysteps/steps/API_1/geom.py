@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -107,7 +107,29 @@ class Tetmesh(stepslib._py_Tetmesh):
     pass
 
 
-class Patch(stepslib._py_Patch): 
+try:
+    class Library(stepslib._py_Library):
+        def __init__(self, comm=None):
+            if comm is None:
+                import mpi4py
+                comm = mpi4py.MPI.COMM_WORLD
+            super().__init__(comm)
+
+    class DistMesh(stepslib._py_DistMesh):
+        pass
+
+    class DistComp(stepslib._py_DistComp):
+        pass
+
+    class DistPatch(stepslib._py_DistPatch):
+        pass
+
+    class DistMemb(stepslib._py_DistMemb):
+        pass
+except AttributeError:
+    pass
+
+class Patch(stepslib._py_Patch):
     """
     Base class for patch objects. A patch is a piece of 2D surface surrounding
     (part of) a 3D compartment, which may be connected to another compartment.
@@ -185,3 +207,4 @@ UNKNOWN_TET     = stepslib.UNKNOWN_TET
 UNKNOWN_TRI     = stepslib.UNKNOWN_TRI
 INDEX_NUM_BYTES = stepslib.INDEX_NUM_BYTES
 INDEX_DTYPE     = np.uint32 if INDEX_NUM_BYTES == 4 else np.uint64
+DIST_INDEX_DTYPE= np.int64

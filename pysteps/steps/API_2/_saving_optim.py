@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -26,7 +26,7 @@ import itertools
 
 import numpy
 
-from steps.API_1.geom import INDEX_DTYPE
+from .geom import INDEX_DTYPE
 
 from . import saving as nsaving
 from . import utils as nutils
@@ -108,7 +108,11 @@ class _OptimizedNPSolverCall:
     on it.
     """
 
-    def __init__(self, func, args, kwargs, sz):
+    # Custom index type for solvers, defaults to INDEX_DTYPE
+    _SOLVER_INDEX_DTYPE = {'disttetopsplit': numpy.int64}
+
+    def __init__(self, solver, func, args, kwargs, sz):
+        self._solver = solver
         self._func = func
         self._args = self._processArgs(args)
         self._kwargs = kwargs
@@ -119,8 +123,14 @@ class _OptimizedNPSolverCall:
     def _processArgs(self, args):
         new_args = []
         for arg in args:
-            if isinstance(arg, _TrueParamList) and isinstance(arg[0], int):
-                new_args.append(numpy.array(arg, dtype=INDEX_DTYPE))
+            if isinstance(arg, _TrueParamList):
+                if len(arg) > 0 and isinstance(arg[0], int):
+                    tpe = _OptimizedNPSolverCall._SOLVER_INDEX_DTYPE.get(
+                        self._solver.getSolverName(), INDEX_DTYPE
+                    )
+                    new_args.append(numpy.array(arg, dtype=tpe))
+                else:
+                    new_args.append(list(arg))
             else:
                 new_args.append(arg)
         return new_args
@@ -209,15 +219,6 @@ class _OptimGroupedCallNodes:
     def _evaluate(self, solvStateId):
         return self._call._evaluate(solvStateId)[self._slc]
 
-    # def __init__(self, optimNPcall, start, end, step):
-    # self._call = optimNPcall
-    # self._start = start
-    # self._end = end
-    # self._step = step
-
-    # def _evaluate(self, solvStateId):
-    # return self._call._evaluate(solvStateId)[self._start:self._end:self._step]
-
 
 class _OptimFuncNode:
     def __init__(self, func, indices, allValues):
@@ -247,22 +248,6 @@ class _OptimFuncNode:
 
 ##########
 
-
-class _ParamList:
-    def __init__(self, lst):
-        self.lst = lst
-
-    def __iter__(self):
-        return iter(self.lst)
-
-    def __hash__(self):
-        return hash(frozenset(self.lst))
-
-    def __eq__(self, other):
-        return isinstance(other, _ParamList) and frozenset(self.lst) == frozenset(other.lst)
-
-    def __repr__(self):
-        return 'PL' + str(self.lst)
 
 
 class _TrueParamList(list):
@@ -297,14 +282,14 @@ class _OptimValuesList:
         for (name, endName, kwargs), nodes in key2Nodes.items():
             kwargs = dict(kwargs)
             params = [node.args for node in nodes]
-            groupings = self.groupParams(params)
+            groupings = nutils._groupParams(params)
             for group in groupings:
                 for funcName, args, corresCalls in self.getFunctions(group, name, endName):
                     # Retrieve the indexes of the corresponding single solver calls in allValues
                     func = getattr(self.solver, funcName)
                     if len(corresCalls) > 1:
                         # If we are calling a batch function, map all original call to the optimized one
-                        optCall = _OptimizedNPSolverCall(func, args, kwargs, len(corresCalls))
+                        optCall = _OptimizedNPSolverCall(self.solver, func, args, kwargs, len(corresCalls))
                         for i, corrArgs in enumerate(corresCalls):
                             node = _OptimCallNode(name, corrArgs, kwargs, endName)
                             self.lst[self.node2Ind[node]].call = (optCall, i)
@@ -322,7 +307,7 @@ class _OptimValuesList:
     def getFunctions(self, group, name, endName):
         """Take a group as parameter and output a list of function and their arguments"""
         maskGenerator = itertools.product(
-            *[[True, False] if isinstance(val, _ParamList) else [False] for val in group]
+            *[[True, False] if isinstance(val, nutils._ParamList) else [False] for val in group]
         )
 
         allCalls = []
@@ -332,7 +317,7 @@ class _OptimValuesList:
             nbCalls = 1
             batchCall = False
             for subName, useBatch, val in zip(name, mask, group):
-                if isinstance(val, _ParamList):
+                if isinstance(val, nutils._ParamList):
                     if useBatch:
                         funcName += 'Batch' + subName
                         funcArgs += (_TrueParamList(val.lst),)
@@ -355,33 +340,11 @@ class _OptimValuesList:
             raise Exception(f'The solver does not implement get{"".join(name)}{endName}(...).')
 
         _, funcName, funcArgs = min(allCalls, key=lambda x: x[0])
-        combargs = [arg.lst if isinstance(arg, _ParamList) else [arg] for arg in funcArgs]
+        combargs = [arg.lst if isinstance(arg, nutils._ParamList) else [arg] for arg in funcArgs]
         for args in itertools.product(*combargs):
             combSingleCall = [a if isinstance(a, _TrueParamList) else [a] for a in args]
             correspondingCallArgs = list(itertools.product(*combSingleCall))
             yield funcName, args, correspondingCallArgs
-
-    @staticmethod
-    def groupParams(params):
-        """
-        Take a list of parameter tuples as input and outputs a list of tuples of _ParamLists
-        whose cartesian product yields the orginal parameter tuples.
-        """
-        n = len(params[0])
-        groupings = [params]
-        for i in range(n):
-            # group by n-1 column
-            val2Lst = {}
-            grouped = False
-            for row in params:
-                val = (row[:i], row[i + 1 :])
-                val2Lst.setdefault(val, []).append(row[i])
-                if len(val2Lst[val]) > 1:
-                    grouped = True
-            if grouped:
-                newParams = [val[0] + (_ParamList(lst),) + val[1] for val, lst in val2Lst.items()]
-                groupings.append(_OptimValuesList.groupParams(newParams))
-        return min(groupings, key=lambda x: len(x))
 
 
 def _ExtractOptimValuesFromPath(path, rs, allValues, rs2IndLst):

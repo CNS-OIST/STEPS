@@ -1,0 +1,8 @@
+Name	Value	Units	DOI	otherComment	DOI2
+initC1S1	500		test DOI	comment with spaces	
+initC1CCsus11	30				other DOI
+initP1Ex	1000				
+r01f	0.002	μM⁻¹ s⁻¹			
+r02f	0.0025	μM⁻¹ s⁻¹			
+Chan1_G	2e-08	μS			
+Chan1_rev	-77	mV			

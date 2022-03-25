@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -26,7 +26,6 @@ import numpy as np
 import pyqtgraph as pg
 
 import steps.API_1.visual as svisual
-from steps.API_1.geom import INDEX_DTYPE
 
 from . import utils as nutils
 from . import model as nmodel
@@ -95,10 +94,10 @@ class SimControl(nutils.UsableObject):
                                               # elements should appear in the SimDisplay.
 
                 ElementDisplay(               # All compartment and patches should be displayed
-                    rs.ALL(Comp, Patch)
+                    rs.ALL(Compartment, Patch)
                 )
                 ElementDisplay(               # The S1 species in all compartments should be plotted
-                    rs.ALL(Comp).S1,          # in yellow
+                    rs.ALL(Compartment).S1,   # in yellow
                     color=(0, 0.5, 0.5, 1)
                 )
                 ElementDisplay(               # The S2 species in all patches should be plotted in
@@ -789,10 +788,10 @@ class _GenericSurfElem(pg.opengl.GLMeshItem):
         self.bound_max = tris.mesh.bbox.max * self.display.scale
 
         steps_mesh = tris.mesh._getStepsObjects()[0]
-        surface_tris = np.array([tri.idx for tri in tris], dtype=INDEX_DTYPE)
+        surface_tris = np.array([tri.idx for tri in tris], dtype=ngeom.INDEX_DTYPE)
         v_set_size = steps_mesh.getTriVerticesSetSizeNP(surface_tris)
-        tris_data = np.zeros(surface_tris.size * 3, dtype=INDEX_DTYPE)
-        v_set = np.zeros(v_set_size, dtype=INDEX_DTYPE)
+        tris_data = np.zeros(surface_tris.size * 3, dtype=ngeom.INDEX_DTYPE)
+        v_set = np.zeros(v_set_size, dtype=ngeom.INDEX_DTYPE)
         verts_data = np.zeros(v_set_size * 3)
         steps_mesh.getTriVerticesMappingSetNP(surface_tris, tris_data, v_set)
         steps_mesh.getBatchVerticesNP(v_set, verts_data)
@@ -855,7 +854,7 @@ class _GenericScatterElem(pg.opengl.GLScatterPlotItem):
         self.max_density = max_density
         self.auto_adjust = auto_adjust
 
-        self.elems = np.array([tet.idx for tet in elems], dtype=INDEX_DTYPE)
+        self.elems = np.array([tet.idx for tet in elems], dtype=ngeom.INDEX_DTYPE)
         self.rspath = self._getResSelect(path)
 
         data = self._getData()

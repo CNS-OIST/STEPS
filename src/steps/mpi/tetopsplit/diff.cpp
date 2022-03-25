@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -34,20 +34,15 @@
 #include <mpi.h>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/math/constants.hpp"
-#include "steps/mpi/tetopsplit/diff.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-#include "steps/mpi/tetopsplit/tet.hpp"
-#include "steps/mpi/tetopsplit/tetopsplit.hpp"
-#include "steps/solver/compdef.hpp"
-#include "steps/solver/diffdef.hpp"
-
-#include <mpi.h>
+#include "diff.hpp"
+#include "tet.hpp"
+#include "math/constants.hpp"
+#include "solver/compdef.hpp"
+#include "solver/diffdef.hpp"
 
 // logging
-#include "easylogging++.h"
+#include "util/error.hpp"
+#include <easylogging++.h>
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace smtos = steps::mpi::tetopsplit;
@@ -57,7 +52,7 @@ namespace smath = steps::math;
 ////////////////////////////////////////////////////////////////////////////////
 
 smtos::Diff::Diff(ssolver::Diffdef * ddef, smtos::Tet * tet)
-: 
+:
  pDiffdef(ddef)
 , pTet(tet)
 {
@@ -69,7 +64,7 @@ smtos::Diff::Diff(ssolver::Diffdef * ddef, smtos::Tet * tet)
                                     pTet->nextTet(2),
                                     pTet->nextTet(3)
                                     };
-    
+
     ssolver::Compdef * cdef = pTet->compdef();
     lidxTet = cdef->specG2L(pDiffdef->lig());
 
@@ -80,7 +75,7 @@ smtos::Diff::Diff(ssolver::Diffdef * ddef, smtos::Tet * tet)
 
     std::array<double, 4> d{ 0.0, 0.0, 0.0, 0.0 };
 
-    for (uint i = 0; i < 4; ++i) { 
+    for (uint i = 0; i < 4; ++i) {
         pDiffBndDirection[i] = pTet->getDiffBndDirection(i);
         if (next[i] != nullptr) {
             pNeighbCompLidx[i] = next[i]->compdef()->specG2L(pDiffdef->lig());
@@ -90,8 +85,8 @@ smtos::Diff::Diff(ssolver::Diffdef * ddef, smtos::Tet * tet)
         // Need to here check if the direction is a diffusion boundary
         double dist = pTet->dist(i);
         if ((dist > 0.0) && (next[i] != nullptr))
-        {   
-            // d[i] only need to set if 
+        {
+            // d[i] only need to set if
             // 1) not towards a boundary, and
             // 2) next[i] in the same compartment as pTet
             // d[i] changes when setDiffBndActive() is called
@@ -101,7 +96,7 @@ smtos::Diff::Diff(ssolver::Diffdef * ddef, smtos::Tet * tet)
                 d[i] = (pTet->area(i) * dcst) / (pTet->vol() * dist);
                 pScaledDcst += d[i];
             }
-        }  
+        }
     }
 
     // Should not be negative!
@@ -109,17 +104,17 @@ smtos::Diff::Diff(ssolver::Diffdef * ddef, smtos::Tet * tet)
 
     // Setup the selector distribution.
     if (pScaledDcst > 0.0) {
-        pNonCDFSelector = 
-        { 
-            d[0]/pScaledDcst, 
-            d[1]/pScaledDcst, 
-            d[2]/pScaledDcst, 
+        pNonCDFSelector =
+        {
+            d[0]/pScaledDcst,
+            d[1]/pScaledDcst,
+            d[2]/pScaledDcst,
             d[3]/pScaledDcst
         };
-        
+
         pDirections.clear();
-        
-        for (uint i = 0; i < 4; ++i) { 
+
+        for (uint i = 0; i < 4; ++i) {
             if (d[i] > 0.0)
             {
 			    pDirections.push_back(i);
@@ -143,7 +138,7 @@ void smtos::Diff::checkpoint(std::fstream & cp_file)
         cp_file.write(reinterpret_cast<char*>(&item.second), sizeof(double));
     }
 
-    
+
     cp_file.write(reinterpret_cast<char*>(&pScaledDcst), sizeof(double));
     cp_file.write(reinterpret_cast<char*>(&pDcst), sizeof(double));
     cp_file.write(reinterpret_cast<char*>(pDiffBndActive.data()), sizeof(bool) * 4);
@@ -207,7 +202,7 @@ void smtos::Diff::setupDeps()
     AssertLog(pTet->getInHost());
     std::set<uint> remote;
     std::set<uint> remote_all;
-    
+
     std::set<smtos::KProc*> local;
     std::set<smtos::KProc*> local_all;
 
@@ -225,7 +220,7 @@ void smtos::Diff::setupDeps()
         smtos::Tri * next = pTet->nextTri(i);
         if (next == nullptr) { continue;
 }
-        
+
         // next tri has to be in the same host to prevent
         // cross process surface reaction
         if (next->getHost() != pTet->getHost()) {
@@ -233,7 +228,7 @@ void smtos::Diff::setupDeps()
             os << "Patch triangle " << next->idx() << " and its compartment tetrahedron " << pTet->idx()  << " belong to different hosts.\n";
             NotImplErrLog(os.str());
         }
-    
+
         nkprocs = next->countKProcs();
         for (uint sk = 0; sk < nkprocs; sk++)
         {
@@ -248,10 +243,10 @@ void smtos::Diff::setupDeps()
     {
         // Fetch next tetrahedron, if it exists.
         smtos::Tet * next = pTet->nextTet(i);
-        if (next == nullptr) { 
+        if (next == nullptr) {
             continue;
         }
-        if (pTet->nextTri(i) != nullptr) { 
+        if (pTet->nextTri(i) != nullptr) {
             continue;
         }
 
@@ -264,10 +259,12 @@ void smtos::Diff::setupDeps()
         auto startKProcIdx = next->getStartKProcIdx();
 
         if (next->getHost() != pTet->getHost()) {
-            pTet->solver()->addNeighHost(next->getHost());
-            pTet->solver()->registerBoundaryTet(next);
+            if(pDiffBndDirection[i] || next->compdef() == pTet->compdef()) {
+                pTet->solver()->addNeighHost(next->getHost());
+                pTet->solver()->registerBoundaryTet(next);
+            }
         }
-        
+
         for (uint k = 0; k < nkprocs; k++)
         {
             if (next->KProcDepSpecTet(k, next, pDiffdef->lig())) {
@@ -289,7 +286,7 @@ void smtos::Diff::setupDeps()
         {
             // Fetch next triangle, if it exists.
             smtos::Tri * next2 = next->nextTri(j);
-            if (next2 == nullptr) { 
+            if (next2 == nullptr) {
                 continue;
             }
 
@@ -298,11 +295,11 @@ void smtos::Diff::setupDeps()
                 os << "Patch triangle " << next2->idx() << " and its compartment tetrahedron " << next->idx()  << " belong to different hosts.\n";
                 NotImplErrLog(os.str());
             }
-            
+
             // Find deps.
             nkprocs = next2->countKProcs();
             startKProcIdx = next2->getStartKProcIdx();
-            
+
             for (uint sk = 0; sk < nkprocs; sk++)
             {
                 if (next2->KProcDepSpecTet(sk, next, pDiffdef->lig())) {
@@ -352,7 +349,7 @@ void smtos::Diff::reset()
 
     uint ldidx = pTet->compdef()->diffG2L(pDiffdef->gidx());
     double dcst = pTet->compdef()->dcst(ldidx);
-    
+
     // directional dcst will also be clear by setDcst
     setDcst(dcst);
 
@@ -395,7 +392,7 @@ bool smtos::Diff::getDiffBndActive(uint i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 double smtos::Diff::dcst(int direction)
-{   
+{
     auto search_result = directionalDcsts.find(direction);
     if (search_result != directionalDcsts.end()) {
         return search_result->second;
@@ -412,17 +409,17 @@ void smtos::Diff::setDcst(double dcst)
     AssertLog(dcst >= 0.0);
     pDcst = dcst;
     directionalDcsts.clear();
-    
+
     std::array<smtos::Tet*, 4> next{pTet->nextTet(0),
                                     pTet->nextTet(1),
                                     pTet->nextTet(2),
                                     pTet->nextTet(3)
                                     };
-    
+
 	// Reset this stuff- may have been created before, may not have been (if original dcst was 0)
     pNdirections=0;
     pDirections.clear();
-    
+
     std::array<double, 4> d{ 0.0, 0.0, 0.0, 0.0 };
     pScaledDcst = 0.0;
 
@@ -451,15 +448,15 @@ void smtos::Diff::setDcst(double dcst)
     }
     else
     {
-        pNonCDFSelector = 
-        { 
-            d[0]/pScaledDcst, 
-            d[1]/pScaledDcst, 
-            d[2]/pScaledDcst, 
+        pNonCDFSelector =
+        {
+            d[0]/pScaledDcst,
+            d[1]/pScaledDcst,
+            d[2]/pScaledDcst,
             d[3]/pScaledDcst
         };
 
-        for (uint i = 0; i < 4; ++i) { 
+        for (uint i = 0; i < 4; ++i) {
             if (d[i] > 0.0)
             {
 			    pDirections.push_back(i);
@@ -478,7 +475,7 @@ void smtos::Diff::setDirectionDcst(int direction, double dcst)
     AssertLog(direction >= 0);
     AssertLog(dcst >= 0.0);
     directionalDcsts[direction] = dcst;
-    
+
     // Automatically activate boundary diffusion if necessary
     if (pDiffBndDirection[direction]) { pDiffBndActive[direction] = true;
 }
@@ -491,7 +488,7 @@ void smtos::Diff::setDirectionDcst(int direction, double dcst)
 
     std::array<double, 4> d{0.0, 0.0, 0.0, 0.0 };
     pScaledDcst = 0.0;
-    
+
     for (uint i = 0; i < 4; ++i)
     {
         // Compute the scaled diffusion constant.
@@ -513,13 +510,13 @@ void smtos::Diff::setDirectionDcst(int direction, double dcst)
         }
         pScaledDcst += d[i];
     }
-    
+
     // Should not be negative!
     AssertLog(pScaledDcst >= 0);
     // Reset this stuff- may have been created before, may not have been (if original dcst was 0)
     pNdirections=0;
     pDirections.clear();
-    
+
     // Setup the selector distribution.
     if (pScaledDcst == 0.0)
     {
@@ -527,15 +524,15 @@ void smtos::Diff::setDirectionDcst(int direction, double dcst)
     }
     else
     {
-        pNonCDFSelector = 
-        { 
-            d[0]/pScaledDcst, 
-            d[1]/pScaledDcst, 
-            d[2]/pScaledDcst, 
+        pNonCDFSelector =
+        {
+            d[0]/pScaledDcst,
+            d[1]/pScaledDcst,
+            d[2]/pScaledDcst,
             d[3]/pScaledDcst
         };
-        
-        for (uint i = 0; i < 4; ++i) { 
+
+        for (uint i = 0; i < 4; ++i) {
             if (d[i] > 0.0)
             {
 			    pDirections.push_back(i);
@@ -587,7 +584,7 @@ int smtos::Diff::apply(const rng::RNGptr &rng)
         if(sel < pCDFSelector) {
             break;
         }
-    }        
+    }
 
 	smtos::Tet * nexttet = pTet->nextTet(iSel);
 
@@ -642,9 +639,9 @@ int smtos::Diff::apply(const rng::RNGptr &rng, uint nmolcs)
         // cycles to the largest unsigned int
         if (chance >= 1.0) { chance=1.0;
 }
-        
+
         uint molcsthisdir = rng->getBinom(max_molcs, chance);
-        
+
         if (molcsthisdir != 0u)
         {
         	smtos::Tet * nexttet = pTet->nextTet(direction);

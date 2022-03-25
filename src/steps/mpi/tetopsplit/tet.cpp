@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -32,26 +32,22 @@
 #include <functional>
 #include <iostream>
 #include <iostream>
-#include <limits> 
+#include <limits>
 #include <sstream>
 #include <vector>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/mpi/tetopsplit/diff.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-#include "steps/mpi/tetopsplit/reac.hpp"
-#include "steps/mpi/tetopsplit/tet.hpp"
-#include "steps/mpi/tetopsplit/tetopsplit.hpp"
-#include "steps/mpi/tetopsplit/tri.hpp"
-#include "steps/mpi/tetopsplit/wmvol.hpp"
-#include "steps/solver/compdef.hpp"
-#include "steps/solver/diffdef.hpp"
-#include "steps/solver/reacdef.hpp"
+#include "tet.hpp"
+#include "diff.hpp"
+#include "reac.hpp"
+#include "tetopsplit.hpp"
+#include "tri.hpp"
+#include "solver/diffdef.hpp"
+#include "solver/reacdef.hpp"
 
 // logging
-#include "easylogging++.h"
+#include "util/error.hpp"
+#include <easylogging++.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -189,7 +185,7 @@ void smtos::Tet::setupKProcs(smtos::TetOpSplitP * tex)
     // if in host create KProc
     if (hostRank == myRank) {
         // Create reaction kproc's.
-        
+
         pKProcs.resize(nreacs + ndiffs);
         for (uint i = 0; i < nreacs; ++i)
         {
@@ -199,7 +195,7 @@ void smtos::Tet::setupKProcs(smtos::TetOpSplitP * tex)
             uint idx = tex->addKProc(r);
             r->setSchedIDX(idx);
         }
-        
+
         for (uint i = 0; i < ndiffs; ++i)
         {
             ssolver::Diffdef * ddef = compdef()->diffdef(i);
@@ -213,7 +209,7 @@ void smtos::Tet::setupKProcs(smtos::TetOpSplitP * tex)
     // else just record the idx
     else {
         pKProcs.resize(0);
-        
+
         for (uint i = 0; i < nKProcs; ++i)
         {
             tex->addKProc(nullptr);
@@ -246,12 +242,12 @@ void smtos::Tet::setupDeps()
             break;
         }
     }
-    
+
     if (has_remote_neighbors == false) {
         localSpecUpdKProcs.clear();
         return;
     }
-    
+
     localSpecUpdKProcs.resize(nspecs);
     for (uint slidx = 0; slidx < nspecs; slidx++) {
         uint sgidx = compdef()->specL2G(slidx);
@@ -264,14 +260,14 @@ void smtos::Tet::setupDeps()
                 localSpecUpdKProcs[slidx].push_back(getKProc(k));
             }
         }
-        
+
         // search dependency for kprocs in neighboring tris
         for (uint i = 0; i < 4; ++i)
         {
             smtos::Tri * next = nextTri(i);
             if (next == nullptr) { continue;
 }
-            
+
             // next tri has to be in the same host to prevent
             // cross process surface reaction
             if (next->getHost() != getHost()) {
@@ -279,7 +275,7 @@ void smtos::Tet::setupDeps()
                 os << "Patch triangle " << next->idx() << " and its compartment tetrahedron " << idx()  << " belong to different hosts.\n";
                 NotImplErrLog(os.str());
             }
-            
+
             nkprocs = next->countKProcs();
             for (uint sk = 0; sk < nkprocs; sk++)
             {
@@ -289,7 +285,7 @@ void smtos::Tet::setupDeps()
             }
         }
     }
-    
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -310,7 +306,7 @@ bool smtos::Tet::KProcDepSpecTet(uint kp_lidx, smtos::WmVol* kp_container,  uint
         if (kp_container != this) return false;
         return spec_gidx == compdef()->diffdef(remain)->lig();
     }
-    
+
     AssertLog(false);
 }
 
@@ -347,7 +343,7 @@ smtos::Diff * smtos::Tet::diff(uint lidx) const
 void smtos::Tet::setCount(uint lidx, uint count, double period)
 {
 	// Count has changed, need to correct pool factor
-	
+
 
     // This function only apply global molecule change, i.e., called by sim.setTetCount,
 	// thus skips _applyRemoteMoleculeChanges routing,
@@ -355,17 +351,17 @@ void smtos::Tet::setCount(uint lidx, uint count, double period)
     AssertLog(lidx < compdef()->countSpecs());
     uint oldcount = pPoolCount[lidx];
 	pPoolCount[lidx] = count;
-	
+
 	if (period == 0.0) { return;
 }
-	
+
 	// Count has changed,
 	double lastupdate = pLastUpdate[lidx];
 	AssertLog(period >= lastupdate);
 	pPoolOccupancy[lidx] += oldcount*(period-lastupdate);
 
 	pLastUpdate[lidx] = period;
-	
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -373,8 +369,8 @@ void smtos::Tet::setCount(uint lidx, uint count, double period)
 void smtos::Tet::incCount(uint lidx, int inc, double period, bool local_change)
 {
     AssertLog(lidx < compdef()->countSpecs());
-	
-    
+
+
     // remote change caused by diffusion
     if (hostRank != myRank && !local_change)
     {
@@ -384,7 +380,7 @@ void smtos::Tet::incCount(uint lidx, int inc, double period, bool local_change)
             os << "Fail because molecule change of receiving end should always be non-negative.\n";
             ProgErrLog(os.str());
         }
-        
+
         bufferLocations[lidx] = pSol->registerRemoteMoleculeChange(hostRank, bufferLocations[lidx], SUB_TET, pIdx.get(), lidx, inc);
         // does not need to check sync
     }
@@ -393,8 +389,8 @@ void smtos::Tet::incCount(uint lidx, int inc, double period, bool local_change)
         double oldcount = pPoolCount[lidx];
 		AssertLog(oldcount + inc >= 0.0);
 		pPoolCount[lidx] += inc;
-		
-		
+
+
 		if (period == 0.0 || local_change) { return;
 }
 		// Count has changed,
@@ -403,7 +399,7 @@ void smtos::Tet::incCount(uint lidx, int inc, double period, bool local_change)
 		pPoolOccupancy[lidx] += oldcount*(period-lastupdate);
 
 		pLastUpdate[lidx] = period;
-		
+
 
 
     }
@@ -431,11 +427,11 @@ void smtos::Tet::repartition(smtos::TetOpSplitP * tex, int rank, int host_rank)
 {
     myRank = rank;
     hostRank = host_rank;
-    
+
     // Delete reaction rules.
     KProcPVecCI e = pKProcs.end();
     for (KProcPVecCI i = pKProcs.begin(); i != e; ++i) delete *i;
-    
+
     setupKProcs(tex);
     localSpecUpdKProcs.clear();
     bufferLocations.clear();

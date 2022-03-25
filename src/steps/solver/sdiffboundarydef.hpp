@@ -32,14 +32,14 @@
 #include <fstream>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/solver/statedef.hpp"
-#include "steps/geom/sdiffboundary.hpp"
+#include "util/common.h"
+#include "statedef.hpp"
+#include "geom/sdiffboundary.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace steps {
- namespace solver {
+namespace steps {
+namespace solver {
 
 // Forwards declarations
 class   SDiffBoundarydef;

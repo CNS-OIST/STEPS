@@ -1,0 +1,9 @@
+Diffusion	Defined in	Dcst	Dcst Units
+DiffpatchEx	ssys, membrane, patch, patch2, patchROI, sdiffb	2.1e-13	m² s⁻¹
+Diffc1CC	vsys1, comp1, comp1ROI, comp1bis, diffb	c1DCC	m² s⁻¹
+Diffc1S1	vsys1, comp1, comp1ROI, comp1bis, diffb	1.2e-12	m² s⁻¹
+Diffc1S2	vsys1, comp1, comp1ROI, comp1bis, diffb	2.5e-12	m² s⁻¹
+Diffc1S3	vsys1, comp1, comp1ROI, comp1bis, diffb	9e-13	m² s⁻¹
+Diffc2S1	vsys2, comp2	1.9e-12	m² s⁻¹
+Diffc2S2	vsys2, comp2	2.1e-12	m² s⁻¹
+Diffc2S3	vsys2, comp2	8e-13	m² s⁻¹

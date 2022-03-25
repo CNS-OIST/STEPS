@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,14 +24,12 @@
 
  */
 
-#ifndef STEPS_MATH_GHK_HPP
-#define STEPS_MATH_GHK_HPP 1
+#pragma once
 
-// STEPS headers.
-#include "steps/common.h"
+#include "util/common.h"
 
- namespace steps {
- namespace math {
+namespace steps {
+namespace math {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -62,10 +60,5 @@ STEPS_EXTERN double GHKcurrent
 
 ////////////////////////////////////////////////////////////////////////////////
 
-}
-}
-
-#endif
-// STEPS_MATH_GHK_HPP
-
-// END
+} // namespace math
+} // namespace steps

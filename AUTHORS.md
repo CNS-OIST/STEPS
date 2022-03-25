@@ -18,6 +18,7 @@ Iain Hepburn (OIST, UA, since 2008)
 Weiliang Chen (OIST, since 2009)
 * Development of STEPS since version 1.0.0: Well-mixed and spatial stochastic solver development
 * Parallel TetOpSplit implementation
+* STEPS 4.0 TetOpSplit development
 * Implementation of visualization toolkit
 * Assertion and Exception logging overhaul
 * Meshio utilities
@@ -49,11 +50,12 @@ Tristan Carel (from June 2017)
 * Docker image (https://github.com/CNS-OIST/STEPS_Docker)
 * Modernize code base
 * Use strong types to distinguish identifiers in the code
+* STEPS 4.0 TetOpSplit architecture and development
 
 Francesco Casalegno
 * R123 random number generator
 * parallel PETSc EField solver
-* python 2/3 compatibility
+* Python 2/3 compatibility
 * new version of manual as jupyter notebooks (https://github.com/CNS-OIST/STEPS_Example/tree/master/user_manual)
 
 Samuel Melchior
@@ -80,10 +82,24 @@ Giacomo Castiglioni (from October 2020)
 * Support for OpenMP and AppleClang
 * Code fixes related to segment-tetrahedron intersection
 
+Christos Kotsalos (from April 2021)
+* Profiling/Instrumentation of STEPS3/STEPS4 (Instrumentor Interface)
+* STEPS4 Performance Optimizations
+* Coupling STEPS & NEURON
+
+Alessandro Cattabiani (since December 2020)
+* STEPS 4.0 validation tests
+* STEPS 4.0 performance optimizations
+* STEPS 4.0 reworked time integration loops, SSA and efeld operators, and occupancy mechanism
+
+Baudouin del Marmol (from November 2019 to March 2021)
+* STEPS 4.0 contributions to the design of the SSA Operator (graph construction, independent graph extraction, initial version of Gibson-Bruck)
+* STEPS 4.0 initial work on the EField operator
+* STEPS 4.0 improved occupancy calculation and alternative initial distribution of molecules proposal    
 
 ACKNOWLEDGEMENT
 
-Ivan Raikov (OIST): Configuration of subversion archive and autotools.
+Ivan Raikov (OIST): Configuration of subversion archive and autotools for STEPS 1.x.
 
 Michele Mattioni: Contributed towards the SBML importer.
 

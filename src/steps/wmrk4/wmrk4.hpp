@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -34,14 +34,14 @@
 #include <vector>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/solver/api.hpp"
-#include "steps/solver/statedef.hpp"
+#include "util/common.h"
+#include "solver/api.hpp"
+#include "solver/statedef.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace steps {
- namespace wmrk4  {
+namespace steps {
+namespace wmrk4  {
 using namespace steps::solver;
 
 ////////////////////////////////////////////////////////////////////////////////

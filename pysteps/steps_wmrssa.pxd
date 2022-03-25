@@ -17,7 +17,7 @@ from steps_common cimport *
 
 
 # ======================================================================================================================
-cdef extern from "steps/wmrssa/wmrssa.hpp" namespace "steps::wmrssa":
+cdef extern from "wmrssa/wmrssa.hpp" namespace "steps::wmrssa":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef uint SchedIDX
     # ctypedef std.set[uint] SchedIDXSet

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,18 +30,16 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/math/constants.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-#include "steps/mpi/tetopsplit/tet.hpp"
-#include "steps/mpi/tetopsplit/tetopsplit.hpp"
-#include "steps/mpi/tetopsplit/tri.hpp"
-#include "steps/mpi/tetopsplit/vdeptrans.hpp"
+#include "vdeptrans.hpp"
+#include "tet.hpp"
+#include "tetopsplit.hpp"
+#include "math/constants.hpp"
 
 // logging
-#include "easylogging++.h"
+#include "util/error.hpp"
+#include <easylogging++.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -51,7 +49,7 @@ namespace ssolver = steps::solver;
 ////////////////////////////////////////////////////////////////////////////////
 
 smtos::VDepTrans::VDepTrans(ssolver::VDepTransdef * vdtdef, smtos::Tri * tri)
-: 
+:
  pVDepTransdef(vdtdef)
 , pTri(tri)
 , localUpdVec()
@@ -215,7 +213,7 @@ std::vector<smtos::KProc*> const & smtos::VDepTrans::getLocalUpdVec(int /*direct
 
 void smtos::VDepTrans::resetOccupancies()
 {
-    
+
     pTri->resetPoolOccupancy();
 }
 

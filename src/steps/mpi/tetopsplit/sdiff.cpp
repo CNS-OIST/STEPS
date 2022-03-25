@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -33,18 +33,17 @@
 #include <vector>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/math/constants.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-#include "steps/mpi/tetopsplit/sdiff.hpp"
-#include "steps/mpi/tetopsplit/tetopsplit.hpp"
-#include "steps/mpi/tetopsplit/tri.hpp"
-#include "steps/solver/diffdef.hpp"
-#include "steps/solver/patchdef.hpp"
+#include "sdiff.hpp"
+#include "kproc.hpp"
+#include "tetopsplit.hpp"
+#include "tri.hpp"
+#include "math/constants.hpp"
+#include "solver/diffdef.hpp"
+#include "solver/patchdef.hpp"
 
 // logging
-#include "easylogging++.h"
+#include "util/error.hpp"
+#include <easylogging++.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -55,7 +54,7 @@ namespace smath = steps::math;
 ////////////////////////////////////////////////////////////////////////////////
 
 smtos::SDiff::SDiff(ssolver::Diffdef * sdef, smtos::Tri * tri)
-: 
+:
  pSDiffdef(sdef)
 , pTri(tri)
 {
@@ -102,12 +101,12 @@ smtos::SDiff::SDiff(ssolver::Diffdef * sdef, smtos::Tri * tri)
     // Setup the selector distribution.
     if (pScaledDcst > 0.0)
     {
-        pNonCDFSelector = { d[0]/pScaledDcst, 
-                            d[1]/pScaledDcst, 
+        pNonCDFSelector = { d[0]/pScaledDcst,
+                            d[1]/pScaledDcst,
                             d[2]/pScaledDcst
                             };
 
-        for (uint i = 0; i < 3; ++i) { 
+        for (uint i = 0; i < 3; ++i) {
             if (d[i] > 0.0)
             {
 			    pDirections.push_back(i);
@@ -130,7 +129,7 @@ void smtos::SDiff::checkpoint(std::fstream & cp_file)
         cp_file.write(reinterpret_cast<const char*>(&item.first), sizeof(uint));
         cp_file.write(reinterpret_cast<char*>(&item.second), sizeof(double));
     }
-    
+
     cp_file.write(reinterpret_cast<char*>(&pScaledDcst), sizeof(double));
     cp_file.write(reinterpret_cast<char*>(&pDcst), sizeof(double));
 
@@ -163,7 +162,7 @@ void smtos::SDiff::restore(std::fstream & cp_file)
         cp_file.read(reinterpret_cast<char*>(&value), sizeof(double));
         directionalDcsts[id] = value;
     }
-    
+
     cp_file.read(reinterpret_cast<char*>(&pScaledDcst), sizeof(double));
     cp_file.read(reinterpret_cast<char*>(&pDcst), sizeof(double));
 
@@ -173,7 +172,7 @@ void smtos::SDiff::restore(std::fstream & cp_file)
     cp_file.read(reinterpret_cast<char*>(pNeighbPatchLidx.data()), sizeof(ssolver::lidxT) * 3);
 
     // Need to add directional stuff here if checkpointing ever implemented
-    
+
     cp_file.read(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
     cp_file.read(reinterpret_cast<char*>(&crData.pow), sizeof(int));
     cp_file.read(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
@@ -199,10 +198,10 @@ void smtos::SDiff::setupDeps()
     // Search for dependencies in the 'source' triangle.
     std::set<uint> remote;
     std::set<uint> remote_all;
-    
+
     std::set<smtos::KProc*> local;
     std::set<smtos::KProc*> local_all;
-    
+
     uint nkprocs = pTri->countKProcs();
     for (uint sk = 0; sk < nkprocs; sk++)
     {
@@ -250,7 +249,6 @@ void smtos::SDiff::setupDeps()
         }
     }
 
-
     // Search for dependencies in neighbouring triangles.
     // which can be in different host
     for (uint i = 0; i < 3; ++i)
@@ -259,12 +257,14 @@ void smtos::SDiff::setupDeps()
         smtos::Tri * next = pTri->nextTri(i);
         if (next == nullptr) { continue;
 }
-        
+
         if (next->getHost() != pTri->getHost()) {
-            pTri->solver()->addNeighHost(next->getHost());
-            pTri->solver()->registerBoundaryTri(next);
+            if(pSDiffBndDirection[i] || next->patchdef() == pTri->patchdef()) {
+                pTri->solver()->addNeighHost(next->getHost());
+                pTri->solver()->registerBoundaryTri(next);
+            }
         }
-        
+
         // Copy local dependencies.
         std::set<smtos::KProc*> local2(local.begin(), local.end());
         std::set<uint> remote2;
@@ -293,7 +293,7 @@ void smtos::SDiff::setupDeps()
                 os << "Patch triangle " << pTri->idx() << " and its compartment tetrahedron " << itet->idx()  << " belong to different hosts.\n";
                 NotImplErrLog(os.str());
             }
-            
+
             // Find deps.
             nkprocs = itet->countKProcs();
             startKProcIdx = itet->getStartKProcIdx();
@@ -344,7 +344,7 @@ void smtos::SDiff::setupDeps()
     }
     localAllUpdVec.assign(local_all.begin(), local_all.end());
     remoteAllUpdVec.assign(remote_all.begin(), remote_all.end());
-    
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -375,7 +375,7 @@ void smtos::SDiff::reset()
 
     uint ldidx = pTri->patchdef()->surfdiffG2L(pSDiffdef->gidx());
     double dcst = pTri->patchdef()->dcst(ldidx);
-    
+
     setDcst(dcst);
 
     setActive(true);
@@ -437,7 +437,7 @@ void smtos::SDiff::setDcst(double dcst)
 
     pNdirections = 0;
     pDirections.clear();
-    
+
     // Setup the selector distribution.
     if (pScaledDcst == 0.0)
     {
@@ -445,14 +445,14 @@ void smtos::SDiff::setDcst(double dcst)
     }
     else
     {
-        pNonCDFSelector = 
-        { 
-            d[0]/pScaledDcst, 
-            d[1]/pScaledDcst, 
+        pNonCDFSelector =
+        {
+            d[0]/pScaledDcst,
+            d[1]/pScaledDcst,
             d[2]/pScaledDcst
         };
 
-        for (uint i = 0; i < 3; ++i) { 
+        for (uint i = 0; i < 3; ++i) {
             if (d[i] > 0.0)
             {
 			    pDirections.push_back(i);
@@ -470,9 +470,9 @@ void smtos::SDiff::setDirectionDcst(int direction, double dcst)
     AssertLog(direction >= 0);
     AssertLog(dcst >= 0.0);
     directionalDcsts[direction] = dcst;
-    
+
     // Automatically activate boundary diffusion if necessary
-    if (pSDiffBndDirection[direction] == true) { 
+    if (pSDiffBndDirection[direction] == true) {
         pSDiffBndActive[direction] = true;
     }
 
@@ -480,10 +480,10 @@ void smtos::SDiff::setDirectionDcst(int direction, double dcst)
                                     pTri->nextTri(1),
                                     pTri->nextTri(2)
                                     };
-    
+
     std::array<double, 3> d{0.0, 0.0, 0.0};
     pScaledDcst = 0.0;
-    
+
     for (uint i = 0; i < 3; ++i)
     {
         // if directional diffusion dcst exists use directional dcst, else use the standard one
@@ -503,13 +503,13 @@ void smtos::SDiff::setDirectionDcst(int direction, double dcst)
         }
         pScaledDcst += d[i];
     }
-    
+
     // Should not be negative!
     AssertLog(pScaledDcst >= 0);
 
     pNdirections = 0;
     pDirections.clear();
-    
+
     // Setup the selector distribution.
     if (pScaledDcst == 0.0)
     {
@@ -517,14 +517,14 @@ void smtos::SDiff::setDirectionDcst(int direction, double dcst)
     }
     else
     {
-        pNonCDFSelector = 
-        { 
-            d[0]/pScaledDcst, 
-            d[1]/pScaledDcst, 
+        pNonCDFSelector =
+        {
+            d[0]/pScaledDcst,
+            d[1]/pScaledDcst,
             d[2]/pScaledDcst
         };
 
-        for (uint i = 0; i < 3; ++i) { 
+        for (uint i = 0; i < 3; ++i) {
             if (d[i] > 0.0)
             {
 			    pDirections.push_back(i);
@@ -586,7 +586,7 @@ int smtos::SDiff::apply(const rng::RNGptr &rng)
         if(sel < pCDFSelector) {
             break;
         }
-    }       
+    }
 
     // Direction iSel.
     smtos::Tri * nexttri = pTri->nextTri(iSel);

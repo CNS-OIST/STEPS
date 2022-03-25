@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -42,9 +42,9 @@ extern "C" {
 
 #include <mpi.h>
 
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/solver/efield/linsystem.hpp"
+#include "util/common.h"
+#include "util/error.hpp"
+#include "linsystem.hpp"
 
 
 // logging
@@ -96,7 +96,7 @@ struct SLU_NCMatrix: public AMatrix {
 
             int next_offset = offset + scol.size();
             std::sort(ridx+offset, ridx+next_offset);
-            
+
             if (ridx[offset]<0 || static_cast<size_t>(ridx[next_offset - 1]) >= pN)
                 ProgErrLog("out of range element in sparsity matrix");
 
@@ -187,7 +187,7 @@ public:
     const vector_type &x() const { return px_view; }
 
     void solve();
-    
+
     // query solver stats, error
     double berr() const { return pBerr; }
 

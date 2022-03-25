@@ -22,24 +22,19 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef STEPS_TETMESH_SDIFFBOUNDARY_HPP
-#define STEPS_TETMESH_SDIFFBOUNDARY_HPP 1
+#pragma once
 
-// STL headers
-#include <vector>
+#include "geom.hpp"
+#include "tetmesh.hpp"
+#include "tmpatch.hpp"
 
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/geom/sdiffboundary.hpp"
-#include "steps/geom/tetmesh.hpp"
-#include "steps/model/surfsys.hpp"
-#include "steps/geom/tmpatch.hpp"
-#include "steps/geom/geom.hpp"
+#include "model/surfsys.hpp"
+#include "util/common.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace steps {
- namespace tetmesh {
+namespace steps {
+namespace tetmesh {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -160,10 +155,5 @@ private:
 
 };
 
-}
-}
-
-#endif
-// STEPS_TETMESH_SDIFFBOUNDARY_HPP
-
-// END
+} // namespace tetmesh
+} // namespace steps

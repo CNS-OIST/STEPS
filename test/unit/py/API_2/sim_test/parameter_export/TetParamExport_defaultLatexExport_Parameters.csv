@@ -1,0 +1,5 @@
+\textbf{Name}	\textbf{Value}	\textbf{Units}
+r01f	\num{0.002}	\si{\micro M^{-1}.s^{-1}}
+r02f	\num{0.0025}	\si{\micro M^{-1}.s^{-1}}
+Chan1\_G	\num{2e-08}	\si{\micro S}
+Chan1\_rev	\num{-77}	\si{mV}

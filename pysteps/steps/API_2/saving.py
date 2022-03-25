@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -35,11 +35,10 @@ import sys
 import warnings
 
 import numpy
+import steps
 
 from . import utils as nutils
 from . import sim as nsim
-
-from steps.API_1.geom import INDEX_DTYPE
 
 
 __all__ = [
@@ -436,7 +435,7 @@ class ResultSelector:
                     rs1.save() # Saving values manually
         """
         self._checkAddedToSim()
-        self._save(self.sim.Time, self.sim.Time)
+        self._save(self.sim.Time, (self.sim.Time, self.sim._runId))
 
     def _toDB(self, dbhanlder):
         """
@@ -818,6 +817,54 @@ class ResultSelector:
             strDescr=f'SUM({sel._strDescr()})',
         )
 
+    @classmethod
+    def MIN(cls, sel):
+        """Minimum of all values from a result selector
+
+        :param sel: Result selector whose values should be used
+        :type sel: :py:class:`ResultSelector`
+
+        :returns: A result selector with a single value that corresponds to the minimum of the values
+            in ``sel``.
+        :rtype: :py:class:`ResultSelector`
+
+        Usage::
+
+            rs3 = rs.MIN(rs.TETS(tetLst).S1.Count) # The minimum number of S1 in tetLst
+        """
+        return _ResultCombiner(
+            lambda x: [min(x)],
+            lambda x: 1,
+            [sel],
+            sel.sim,
+            labelFunc=lambda _, d: f"MIN({' + '.join(c._strDescr() for c in d)})",
+            strDescr=f'MIN({sel._strDescr()})',
+        )
+
+    @classmethod
+    def MAX(cls, sel):
+        """Maximum of all values from a result selector
+
+        :param sel: Result selector whose values should be used
+        :type sel: :py:class:`ResultSelector`
+
+        :returns: A result selector with a single value that corresponds to the maximum of the values
+            in ``sel``.
+        :rtype: :py:class:`ResultSelector`
+
+        Usage::
+
+            rs3 = rs.MAX(rs.TETS(tetLst).S1.Count) # The maximum number of S1 in tetLst
+        """
+        return _ResultCombiner(
+            lambda x: [max(x)],
+            lambda x: 1,
+            [sel],
+            sel.sim,
+            labelFunc=lambda _, d: f"MAX({' + '.join(c._strDescr() for c in d)})",
+            strDescr=f'MAX({sel._strDescr()})',
+        )
+
 
 class _ResultPath(ResultSelector):
     """
@@ -931,12 +978,9 @@ class _ResultList(ResultSelector):
 
         self.children = lst
 
-        self._childrenSlices = []
-        ind = 0
+        self._evalLen = 0
         for c in self.children:
-            self._childrenSlices.append((c, slice(ind, ind + c._getEvalLen())))
-            ind += c._getEvalLen()
-        self._evalLen = ind
+            self._evalLen += c._getEvalLen()
 
         # concatenate labels
         self._labels = []
@@ -952,12 +996,10 @@ class _ResultList(ResultSelector):
 
     def _evaluate(self, solvStateId=None):
         """Return a list of the values to save."""
-        res = numpy.zeros(self._evalLen, dtype=numpy.float64)
-        for c, slc in self._childrenSlices:
-            res[slc] = c._evaluate(solvStateId)
-        # TODO Later release: Temp, cast to list to avoid numpy array issues while saving.py is
-        # not fully converted to numpy
-        return list(res)
+        res = []
+        for c in self.children:
+            res += list(c._evaluate(solvStateId))
+        return res
 
     def _getEvalLen(self):
         """Return the number of values that _evaluate() will return."""
@@ -1181,7 +1223,7 @@ class _MemoryDataHandler(_DataHandler):
         self.saveData[-1].append(copy.copy(row))
 
 
-class _FileDataHandler(_DataHandler):
+class _FileDataHandler(_DataHandler, nutils.Versioned):
     """
     Data handler for saving data to files.
     """
@@ -1190,6 +1232,9 @@ class _FileDataHandler(_DataHandler):
     DATA_FORMAT = '>d'
     DEFAULT_BUFFER_SIZE = 4096
     INT_SIZE = 4
+
+    FILE_FORMAT_STR = '__steps_version__'
+    FILE_FORMAT_OLDEST_VERSION = '3.6.0'
 
     def __init__(self, parent, path, evalLen=None, buffering=-1, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
@@ -1210,8 +1255,16 @@ class _FileDataHandler(_DataHandler):
         # TODO Not urgent: make labels and metadata readonly
         self._labelEndPos = None
 
+        # If we are reading from a file, we need to set the version
+        if self._readOnly:
+            version = self.metaData()._dict.get(
+                _FileDataHandler.FILE_FORMAT_STR,
+                _FileDataHandler.FILE_FORMAT_OLDEST_VERSION
+            )
+            self._setVersion(version)
+
     def __del__(self):
-        if self._saveFile is not None:
+        if hasattr(self, '_saveFile') and self._saveFile is not None:
             self._finalizeFile()
 
     def time(self):
@@ -1259,7 +1312,7 @@ class _FileDataHandler(_DataHandler):
     def save(self, t, row):
         """Save the data."""
         self.saveTime[-1].append(t)
-        self.saveData.append(copy.copy(row))
+        self.saveData.append(list(row))
         if nsim.MPI._shouldWrite:
             self._writeToFile(t, self.saveData[-1])
 
@@ -1302,6 +1355,12 @@ class _FileDataHandler(_DataHandler):
 
         # MetaData
         mtdt = self._parent.metaData._dict
+        if _FileDataHandler.FILE_FORMAT_STR in mtdt:
+            raise Exception(
+                f'The metadata contains the reserved key name "{_FileDataHandler.FILE_FORMAT_STR}"'
+            )
+        mtdt[_FileDataHandler.FILE_FORMAT_STR] = steps.__version__
+
         data = pickle.dumps(mtdt)
         self._writeInt(len(data))
         self._saveFile.write(data)
@@ -1316,34 +1375,44 @@ class _FileDataHandler(_DataHandler):
         self._writeInt(len(bs))
         self._saveFile.write(bs)
 
-    def _readInt(self, f):
+    @staticmethod
+    def _readInt(f):
         """Read an int from binary file f."""
         return int.from_bytes(f.read(_FileDataHandler.INT_SIZE), byteorder='big')
 
-    def _readStr(self, f):
+    @staticmethod
+    def _readStr(f):
         """Read a string from binary file f."""
-        strLen = self._readInt(f)
+        strLen = _FileDataHandler._readInt(f)
         return f.read(strLen).decode('ascii')
 
     def _readLabelsAndMetaData(self):
         """Open the file and read labels."""
         with open(self._savePath, 'rb') as f:
             # Labels
-            nbLbls = self._readInt(f)
+            nbLbls = _FileDataHandler._readInt(f)
             self._labels = []
             for i in range(nbLbls):
-                self._labels.append(self._readStr(f))
+                self._labels.append(_FileDataHandler._readStr(f))
 
-            mtdtSz = self._readInt(f)
+            mtdtSz = _FileDataHandler._readInt(f)
             # TODO Not urgent: make the dict readonly
             self._metaData = pickle.loads(f.read(mtdtSz))
 
             self._labelEndPos = f.seek(0, 1)
 
+    @nutils.Versioned._versionRange(belowOrEq=FILE_FORMAT_OLDEST_VERSION)
     def _writeToFile(self, t, vals):
         """Write the data to file."""
         self._openFile()
         self._saveFile.write(struct.pack('>d' + 'd' * len(vals), t, *vals))
+        self._fileHeaderInfo[1] += 1
+
+    @nutils.Versioned._versionRange(above=FILE_FORMAT_OLDEST_VERSION)
+    def _writeToFile(self, t, vals):
+        """Write the data to file."""
+        self._openFile()
+        pickle.dump((t, vals), self._saveFile)
         self._fileHeaderInfo[1] += 1
 
     def _finalizeFile(self):
@@ -1524,7 +1593,7 @@ class _MemoryDataAccessor:
         return len(self._data)
 
 
-class _FileDataAccessor:
+class _FileDataAccessor(nutils.Versioned):
     """
     Data accessor for _FileDataHandler
     """
@@ -1532,6 +1601,9 @@ class _FileDataAccessor:
     HEADER_SIZE = struct.calcsize(_FileDataHandler.HEADER_FORMAT)
     DATA_SIZE = struct.calcsize(_FileDataHandler.DATA_FORMAT)
     DEFAULT_MAXRUNID = sys.maxsize
+
+    class UnexpectedEnd(Exception):
+        pass
 
     # TODO Optimization: save the number of runs and related data and only update it if the file
     # was changed
@@ -1546,8 +1618,10 @@ class _FileDataAccessor:
         self._fileInfo = {}
         self._nbDims = 2 if saveTime else 3
 
+        self._setVersion(self._parentHandler._version)
+
     def __del__(self):
-        if self._file is not None:
+        if hasattr(self, '_file') and self._file is not None:
             self._file.close()
 
     def __len__(self):
@@ -1629,8 +1703,6 @@ class _FileDataAccessor:
                     raise IndexError(f'Run {ind} is not in the file.')
                 else:
                     break
-            datFormat = _FileDataHandler.DATA_FORMAT[0] + _FileDataHandler.DATA_FORMAT[1] * nbCols
-            res.append([])
             # handle the cases in which the file was only partially written and nbRows == 0
             if nxt == 0 and nbRows == 0:
                 warnings.warn(
@@ -1646,31 +1718,20 @@ class _FileDataAccessor:
                     )
                 ):
                     raise IndexError('Cannot access partially written data using negative indices.')
-            # Read actual data
-            pos = self._file.seek(0, 1)
-            unexpectedEnd = False
+
             if nbRows is None:
                 nbRows = _FileDataAccessor.DEFAULT_MAXRUNID
-            for ti in nutils.getSliceIds(key[1], sz=nbRows):
-                self._file.seek(pos + ti * nbCols * _FileDataAccessor.DATA_SIZE)
-                try:
+            rowInds = nutils.getSliceIds(key[1], sz=nbRows)
+            res.append([])
+            # Read actual data
+            try:
+                for t, line in self._readRows(rowInds, nbCols):
                     if self._saveTime:
-                        (t,) = struct.unpack(
-                            _FileDataHandler.DATA_FORMAT, self._file.read(_FileDataAccessor.DATA_SIZE)
-                        )
+                        res[-1].append(t)
                     else:
-                        t, *line = struct.unpack(
-                            datFormat, self._file.read(_FileDataAccessor.DATA_SIZE * nbCols)
-                        )
-                except struct.error:
-                    unexpectedEnd = True
-                    break
-                if self._saveTime:
-                    res[-1].append(t)
-                else:
-                    line = line[key[2]] if isinstance(key[2], slice) else [line[key[2]]]
-                    res[-1].append(line)
-            if unexpectedEnd:
+                        line = line[key[2]] if isinstance(key[2], slice) else [line[key[2]]]
+                        res[-1].append(line)
+            except UnexpectedEnd:
                 if nxt == 0:
                     break
                 else:
@@ -1683,6 +1744,40 @@ class _FileDataAccessor:
             return numpy.array(res)
         mk = tuple(slice(None) if isinstance(k, slice) else 0 for k in key)
         return numpy.array(_sliceData(res, mk))
+
+    @nutils.Versioned._versionRange(belowOrEq=_FileDataHandler.FILE_FORMAT_OLDEST_VERSION)
+    def _readRows(self, rowInds, nbCols):
+        datFormat = _FileDataHandler.DATA_FORMAT[0] + _FileDataHandler.DATA_FORMAT[1] * nbCols
+        pos = self._file.seek(0, 1)
+        try:
+            for ti in rowInds:
+                self._file.seek(pos + ti * nbCols * _FileDataAccessor.DATA_SIZE)
+                if self._saveTime:
+                    t, *line = struct.unpack(
+                        _FileDataHandler.DATA_FORMAT, self._file.read(_FileDataAccessor.DATA_SIZE)
+                    )
+                else:
+                    t, *line = struct.unpack(
+                        datFormat, self._file.read(_FileDataAccessor.DATA_SIZE * nbCols)
+                    )
+
+                yield t, line
+        except (EOFError, struct.error):
+            raise UnexpectedEnd()
+
+    @nutils.Versioned._versionRange(above=_FileDataHandler.FILE_FORMAT_OLDEST_VERSION)
+    def _readRows(self, rowInds, nbCols):
+        currti = -1
+        try:
+            for ti in rowInds:
+                # Find desired row
+                while currti < ti:
+                    t, line = pickle.load(self._file)
+                    currti += 1
+                yield t, line
+
+        except (EOFError, pickle.UnpicklingError):
+            raise UnexpectedEnd()
 
     def __array__(self):
         return self.__getitem__(slice(None, None, None), forceArray=True)

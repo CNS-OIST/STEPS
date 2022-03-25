@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -38,15 +38,15 @@
 #include <easylogging++.h>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/solver/compdef.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-#include "steps/solver/types.hpp"
+#include "kproc.hpp"
+#include "util/common.h"
+#include "solver/compdef.hpp"
+#include "solver/types.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace steps {
- namespace mpi {
- namespace tetopsplit {
+namespace steps {
+namespace mpi {
+namespace tetopsplit {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -171,7 +171,7 @@ public:
     { return nKProcs; }
     inline std::vector<smtos::KProc *> & kprocs() noexcept
     { return pKProcs; }
-    
+
     inline KProc * getKProc(uint lidx)
     {
         if (hostRank != myRank) return nullptr;
@@ -180,13 +180,13 @@ public:
     }
 
     smtos::Reac * reac(uint lidx) const;
-    
+
     virtual double getPoolOccupancy(uint lidx) const;
     virtual double getLastUpdate(uint lidx) const;
     virtual void resetPoolOccupancy();
 
     ////////////////////////////////////////////////////////////////////////
-    
+
     // MPISTEPS
     bool getInHost() const;
     inline int getHost() const { return hostRank; }
@@ -194,22 +194,22 @@ public:
     //void addSyncHost(int host);
     void setSolver(steps::mpi::tetopsplit::TetOpSplitP* solver);
     steps::mpi::tetopsplit::TetOpSplitP* solver() const;
-    
+
     //virtual void sendSyncPools();
     //void recvSyncPools(int source);
     // MPISTEPS
-    
+
     /////////////////////////// Dependency ////////////////////////////////
     // setup dependence for KProcs in this subvolume
     virtual void setupDeps();
-    
+
     // check if kp_lidx in this vol depends on spec_gidx in WMVol kp_container
     virtual bool KProcDepSpecTet(uint kp_lidx, WmVol* kp_container, uint spec_gidx);
     // check if kp_lidx in this vol depends on spec_gidx in Tri kp_container
     virtual bool KProcDepSpecTri(uint kp_lidx, Tri* kp_container, uint spec_gidx);
-    
+
     virtual void repartition(smtos::TetOpSplitP * tex, int rank, int host_rank);
-    
+
 protected:
 
     /// Use to store inprocess KProcs.
@@ -240,7 +240,7 @@ protected:
     int                                 myRank;
     int                                 hostRank;
     steps::mpi::tetopsplit::TetOpSplitP         * pSol;
-    
+
 };
 
 ////////////////////////////////////////////////////////////////////////////////

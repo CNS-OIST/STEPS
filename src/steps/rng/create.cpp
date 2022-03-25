@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,14 +30,13 @@
 #include <string>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/rng/create.hpp"
-#include "steps/rng/mt19937.hpp"
-#include "steps/rng/r123.hpp"
-
+#include "create.hpp"
+#include "mt19937.hpp"
+#include "r123.hpp"
+// util
+#include "util/error.hpp"
 // logging
-#include "easylogging++.h"
+#include <easylogging++.h>
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace steps {

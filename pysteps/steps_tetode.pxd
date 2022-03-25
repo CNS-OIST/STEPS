@@ -18,7 +18,7 @@ from steps_common cimport *
 
 
 # ======================================================================================================================
-cdef extern from "steps/tetode/tetode.hpp" namespace "steps::tetode":
+cdef extern from "tetode/tetode.hpp" namespace "steps::tetode":
 # ----------------------------------------------------------------------------------------------------------------------
 
     ###### Cybinding for TetODE ######

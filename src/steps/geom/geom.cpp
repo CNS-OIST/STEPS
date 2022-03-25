@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,21 +24,18 @@
 
  */
 
-// STL headers.
+#include "geom.hpp"
+
 #include <cassert>
 #include <sstream>
 #include <string>
 
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/geom/comp.hpp"
-#include "steps/geom/geom.hpp"
-#include "steps/geom/patch.hpp"
-#include "steps/util/checkid.hpp"
+#include <easylogging++.h>
 
-// logging
-#include "easylogging++.h"
+#include "comp.hpp"
+#include "patch.hpp"
+#include "util/checkid.hpp"
+#include "util/error.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -104,7 +101,7 @@ std::vector<Comp *> Geom::getAllComps() const
 Patch * Geom::getPatch(std::string const & id) const
 {
     auto patch = pPatches.find(id);
-    
+
     if (patch == pPatches.end())
     {
         std::ostringstream os;

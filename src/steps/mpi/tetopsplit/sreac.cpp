@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -31,18 +31,15 @@
 #include <sstream>
 #include <vector>
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/math/constants.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-#include "steps/mpi/tetopsplit/sreac.hpp"
-#include "steps/mpi/tetopsplit/tet.hpp"
-#include "steps/mpi/tetopsplit/tetopsplit.hpp"
-#include "steps/mpi/tetopsplit/tri.hpp"
-#include "steps/mpi/tetopsplit/wmvol.hpp"
+#include "sreac.hpp"
+#include "tet.hpp"
+#include "tetopsplit.hpp"
+#include "wmvol.hpp"
+#include "math/constants.hpp"
 
 // logging
-#include "easylogging++.h"
+#include "util/error.hpp"
+#include <easylogging++.h>
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace smtos = steps::mpi::tetopsplit;
@@ -87,15 +84,15 @@ static inline double comp_ccst_area(double kcst, double area, uint order)
 ////////////////////////////////////////////////////////////////////////////////
 
 smtos::SReac::SReac(ssolver::SReacdef * srdef, smtos::Tri * tri)
-: 
+:
  pSReacdef(srdef)
 , pTri(tri)
 {
     AssertLog(pSReacdef != nullptr);
     AssertLog(pTri != nullptr);
-    
+
     type = KP_SREAC;
-    
+
     uint lsridx = pTri->patchdef()->sreacG2L(pSReacdef->gidx());
     double kcst = pTri->patchdef()->kcst(lsridx);
     pKcst = kcst;
@@ -286,14 +283,14 @@ void smtos::SReac::setupDeps()
             os << "Patch triangle " << pTri->idx() << " and its compartment tetrahedron " << itet->idx()  << " belong to different hosts.\n";
             NotImplErrLog(os.str());
         }
-        
+
         nkprocs = itet->countKProcs();
         for (uint k = 0; k < nkprocs; k++)
         {
             for (auto const& spec : pSReacdef->updColl_I()) {
                 if (itet->KProcDepSpecTet(k, itet, spec)) {
                     updset.insert(itet->getKProc(k));
-                    
+
                 }
             }
         }
@@ -325,7 +322,7 @@ void smtos::SReac::setupDeps()
             os << "Patch triangle " << pTri->idx() << " and its compartment tetrahedron " << otet->idx()  << " belong to different hosts.\n";
             NotImplErrLog(os.str());
         }
-        
+
         // check if sk KProc in pTri depends on spec in otet
         nkprocs = otet->countKProcs();
         for (uint k = 0; k < nkprocs; k++)
@@ -425,14 +422,17 @@ double smtos::SReac::rate(steps::mpi::tetopsplit::TetOpSplitP * /*solver*/)
                 {
                     h_mu *= static_cast<double>(cnt - 3);
                 }
+                STEPS_FALLTHROUGH;
                 case 3:
                 {
                     h_mu *= static_cast<double>(cnt - 2);
                 }
+                STEPS_FALLTHROUGH;
                 case 2:
                 {
                     h_mu *= static_cast<double>(cnt - 1);
                 }
+                STEPS_FALLTHROUGH;
                 case 1:
                 {
                     h_mu *= static_cast<double>(cnt);
@@ -466,14 +466,17 @@ double smtos::SReac::rate(steps::mpi::tetopsplit::TetOpSplitP * /*solver*/)
                     {
                         h_mu *= static_cast<double>(cnt - 3);
                     }
+                    STEPS_FALLTHROUGH;
                     case 3:
                     {
                         h_mu *= static_cast<double>(cnt - 2);
                     }
+                    STEPS_FALLTHROUGH;
                     case 2:
                     {
                         h_mu *= static_cast<double>(cnt - 1);
                     }
+                    STEPS_FALLTHROUGH;
                     case 1:
                     {
                         h_mu *= static_cast<double>(cnt);
@@ -507,14 +510,17 @@ double smtos::SReac::rate(steps::mpi::tetopsplit::TetOpSplitP * /*solver*/)
                     {
                         h_mu *= static_cast<double>(cnt - 3);
                     }
+                    STEPS_FALLTHROUGH;
                     case 3:
                     {
                         h_mu *= static_cast<double>(cnt - 2);
                     }
+                    STEPS_FALLTHROUGH;
                     case 2:
                     {
                         h_mu *= static_cast<double>(cnt - 1);
                     }
+                    STEPS_FALLTHROUGH;
                     case 1:
                     {
                         h_mu *= static_cast<double>(cnt);

@@ -24,8 +24,8 @@ double estimate_condition(const double *A,size_t n) {
     double *T=new double[n*n];
     transpose_copy(A,T,n,n);
 
-    int lda=(int)n;
-    int n_=(int)n;
+    auto lda= static_cast<int>(n);
+    auto n_= static_cast<int>(n);
     int info=0;
     double anorm=0;
     double *work=new double[4*n];

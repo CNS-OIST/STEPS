@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,26 +24,22 @@
 
  */
 
+#include "reac.hpp"
 
-
-// Standard library & STL headers.
-#include <fstream>
 #include <iostream>
 #include <sstream>
-#include <vector>
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/math/constants.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-#include "steps/mpi/tetopsplit/reac.hpp"
-#include "steps/mpi/tetopsplit/tet.hpp"
-#include "steps/mpi/tetopsplit/tetopsplit.hpp"
-#include "steps/mpi/tetopsplit/wmvol.hpp"
-#include "steps/solver/reacdef.hpp"
 
-// logging
-#include "easylogging++.h"
+#include <easylogging++.h>
+
+#include "kproc.hpp"
+#include "tet.hpp"
+#include "tetopsplit.hpp"
+#include "wmvol.hpp"
+
+#include "math/constants.hpp"
+#include "solver/reacdef.hpp"
+#include "util/error.hpp"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace smtos = steps::mpi::tetopsplit;
@@ -69,7 +65,7 @@ static inline double comp_ccst(double kcst, double vol, uint order, double /*com
 ////////////////////////////////////////////////////////////////////////////////
 
 smtos::Reac::Reac(ssolver::Reacdef * rdef, smtos::WmVol * tet)
-: 
+:
  pReacdef(rdef)
 , pTet(tet)
 , localUpdVec()
@@ -239,35 +235,38 @@ double smtos::Reac::rate(smtos::TetOpSplitP * /*solver*/)
         if (lhs == 0) { continue;
         }
         uint cnt = cnt_vec[pool];
-        if (lhs > cnt)	  
-        {	
-            h_mu = 0.0;	
+        if (lhs > cnt)
+        {
+            h_mu = 0.0;
             break;
-        }	      
+        }
         switch (lhs)
         {
-            case 4:	
-            {	
-                h_mu *= static_cast<double>(cnt - 3);	
-            }	
-            case 3:	
-            {	
-                h_mu *= static_cast<double>(cnt - 2);	
-            }	
-            case 2:	
-            {	
-                h_mu *= static_cast<double>(cnt - 1);	
-            }	
-            case 1:	
-            {	
-                h_mu *= static_cast<double>(cnt);	
-                break;	
-            }	
-            default:	
-            {	
-                AssertLog(0);	
-                return 0.0;	
-            }	
+            case 4:
+            {
+                h_mu *= static_cast<double>(cnt - 3);
+            }
+            STEPS_FALLTHROUGH;
+            case 3:
+            {
+                h_mu *= static_cast<double>(cnt - 2);
+            }
+            STEPS_FALLTHROUGH;
+            case 2:
+            {
+                h_mu *= static_cast<double>(cnt - 1);
+            }
+            STEPS_FALLTHROUGH;
+            case 1:
+            {
+                h_mu *= static_cast<double>(cnt);
+                break;
+            }
+            default:
+            {
+                AssertLog(0);
+                return 0.0;
+            }
         }
     }
 

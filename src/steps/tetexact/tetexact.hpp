@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -23,12 +23,8 @@
 #################################################################################   
 
  */
+#pragma once
 
-
-#ifndef STEPS_TETEXACT_TETEXACT_HPP
-#define STEPS_TETEXACT_TETEXACT_HPP 1
-
-// STL headers.
 #include <iostream>
 #include <map>
 #include <memory>
@@ -36,24 +32,23 @@
 #include <string>
 #include <vector>
 
-// logging
 #include <easylogging++.h>
 
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/solver/api.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/geom/tetmesh.hpp"
-#include "steps/tetexact/tri.hpp"
-#include "steps/tetexact/tet.hpp"
-#include "steps/tetexact/wmvol.hpp"
-#include "steps/tetexact/kproc.hpp"
-#include "steps/tetexact/comp.hpp"
-#include "steps/tetexact/patch.hpp"
-#include "steps/tetexact/diffboundary.hpp"
-#include "steps/tetexact/sdiffboundary.hpp"
-#include "steps/tetexact/crstruct.hpp"
-#include "steps/solver/efield/efield.hpp"
+#include "tri.hpp"
+#include "tet.hpp"
+#include "wmvol.hpp"
+#include "kproc.hpp"
+#include "comp.hpp"
+#include "patch.hpp"
+#include "diffboundary.hpp"
+#include "sdiffboundary.hpp"
+#include "crstruct.hpp"
+
+#include "geom/tetmesh.hpp"
+#include "solver/api.hpp"
+#include "solver/statedef.hpp"
+#include "solver/efield/efield.hpp"
+#include "util/common.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace steps {
@@ -338,9 +333,9 @@ public:
     bool _getTetReacActive(tetrahedron_id_t tidx, uint ridx) const override;
     void _setTetReacActive(tetrahedron_id_t tidx, uint ridx, bool act) override;
 
-    double _getTetDiffD(tetrahedron_id_t tidx, uint didx, tetrahedron_id_t direction_tet = UNKNOWN_TET) const override;
+    double _getTetDiffD(tetrahedron_id_t tidx, uint didx, tetrahedron_id_t direction_tet = boost::none) const override;
     void _setTetDiffD(tetrahedron_id_t tidx, uint didx, double dk,
-                      tetrahedron_id_t direction_tet = UNKNOWN_TET) override;
+                      tetrahedron_id_t direction_tet = boost::none) override;
 
     bool _getTetDiffActive(tetrahedron_id_t tidx, uint didx) const override;
     void _setTetDiffActive(tetrahedron_id_t tidx, uint didx, bool act) override;
@@ -384,9 +379,9 @@ public:
 
     bool _getTriSReacActive(triangle_id_t tidx, uint ridx) const override;
     void _setTriSReacActive(triangle_id_t tidx, uint ridx, bool act) override;
-    
+
     double _getTriSDiffD(triangle_id_t tidx, uint didx, triangle_id_t direction_tri) const override;
-    
+
     void _setTriSDiffD(triangle_id_t tidx, uint didx, double dk,
                        triangle_id_t direction_tri) override;
 
@@ -502,7 +497,7 @@ public:
     { return pA0; }
 
     // Checked global to local index translations
- 
+
     uint specG2L_or_throw(Comp *comp, uint gidx) const;
     uint specG2L_or_throw(Patch *patch, uint gidx) const;
 #if 0
@@ -613,7 +608,7 @@ public:
     inline uint nefverts() const
     { return pEFNVerts; }
 
-        
+
     ////////////////////////////////////////////////////////////////////////
 private:
 
@@ -839,7 +834,3 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 }} // namespace steps::tetexact
-
-#endif
-// STEPS_TETEXACT_TETEXACT_HPP
-

@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -58,13 +58,13 @@ def neuron2morph(h):
             children.append(child.name())
 
         sections[sec.name()]["children"] = children
-        n3d = int(h.n3d())
+        n3d = int(h.n3d(sec=sec))
         sections[sec.name()]["points"] = []
-        for i in range(n3d):
-            sections[sec.name()]["points"].append([h.x3d(i),
-                                                   h.y3d(i),
-                                                   h.z3d(i),
-                                                   h.diam3d(i)])
+        for i in range(0, n3d):
+            sections[sec.name()]["points"].append([h.x3d(i, sec=sec),
+                                                   h.y3d(i, sec=sec),
+                                                   h.z3d(i, sec=sec),
+                                                   h.diam3d(i, sec=sec)])
     return sections
 
 

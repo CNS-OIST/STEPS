@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -31,9 +31,9 @@
 #include <utility>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/solver/efield/dVsolver.hpp"
-#include "steps/solver/efield/tetmesh.hpp"
+#include "util/common.h"
+#include "dVsolver.hpp"
+#include "geom/tetmesh.hpp"
 
 namespace steps {
 namespace solver {

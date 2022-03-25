@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -38,15 +38,15 @@
 #endif
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/solver/efield/matrix.hpp"
-#include "steps/solver/efield/tetcoupler.hpp"
-#include "steps/solver/efield/tetmesh.hpp"
-#include "steps/solver/efield/vertexconnection.hpp"
-#include "steps/solver/efield/vertexelement.hpp"
+#include "util/common.h"
+#include "matrix.hpp"
+#include "tetcoupler.hpp"
+#include "geom/tetmesh.hpp"
+#include "vertexconnection.hpp"
+#include "vertexelement.hpp"
 
 // logging
-#include "easylogging++.h"
+#include <easylogging++.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -206,10 +206,10 @@ void sefield::TetCoupler::coupleMesh()
         {
 #pragma omp atomic
             ndif += 1;
-#ifdef _OPENMP            
+#ifdef _OPENMP
             auto tid = omp_get_thread_num();
-            if (!tid) CLOG_N_TIMES(100, DEBUG, "general_log") << "symmetry miscount " << wab << " " << wba; 
-#endif 
+            if (!tid) CLOG_N_TIMES(100, DEBUG, "general_log") << "symmetry miscount " << wab << " " << wba;
+#endif
 }
         else
         {
@@ -241,37 +241,7 @@ void sefield::TetCoupler::coupleMesh()
 
 bool sefield::TetCoupler::dblsDiffer(double a, double b)
 {
-// Old code:
-//
-//    bool ret = false;
-//    if (a == 0 && b == 0)
-//    {
-//        // ok, same
-//    }
-//    else if (a + b == 0)
-//    {
-//        ret = true;
-//    }
-//    else if (abs((a - b) / (a + b)) > 1.e-12)
-//    {
-//        ret = true;
-//    }
-//    return ret;
-
-    bool ret = false;
-    if ((a == 0.0) && (b == 0.0))
-    {
-        // ok, same
-    }
-    else if ((a + b) == 0.0)
-    {
-        ret = true;
-    }
-    else if (fabs((a - b) / (a + b)) > 1.e-7)
-    {
-        ret = true;
-    }
-    return ret;
+    return std::fabs(a - b) > (std::fabs(a + b)*1.e-12) && std::fabs(a-b) > (4*std::numeric_limits<double>::epsilon());
 }
 
 ////////////////////////////////////////////////////////////////////////////////

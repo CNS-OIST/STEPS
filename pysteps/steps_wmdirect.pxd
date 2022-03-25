@@ -17,7 +17,7 @@ from steps_common cimport *
 
 
 # ======================================================================================================================
-cdef extern from "steps/wmdirect/wmdirect.hpp" namespace "steps::wmdirect":
+cdef extern from "wmdirect/wmdirect.hpp" namespace "steps::wmdirect":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef uint SchedIDX
     # ctypedef std.set[uint] SchedIDXSet

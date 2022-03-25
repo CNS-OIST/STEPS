@@ -12,7 +12,7 @@ from steps_common cimport *
 
 
 # ======================================================================================================================
-cdef extern from "steps/model/volsys.hpp" namespace "steps::model":
+cdef extern from "model/volsys.hpp" namespace "steps::model":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef Volsys* VolsysP
     # ctypedef std.map[std.string, Volsys*] VolsysPMap
@@ -34,7 +34,7 @@ cdef extern from "steps/model/volsys.hpp" namespace "steps::model":
         std.vector[Spec*] getAllSpecs()
 
 # ======================================================================================================================
-cdef extern from "steps/model/chanstate.hpp" namespace "steps::model":
+cdef extern from "model/chanstate.hpp" namespace "steps::model":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef ChanState* ChanStateP
     # ctypedef std.map[std.string,ChanState*] ChanStatePMap
@@ -51,7 +51,7 @@ cdef extern from "steps/model/chanstate.hpp" namespace "steps::model":
         void setID(std.string) except +
 
 # ======================================================================================================================
-cdef extern from "steps/model/ghkcurr.hpp" namespace "steps::model":
+cdef extern from "model/ghkcurr.hpp" namespace "steps::model":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef GHKcurr* GHKcurrP
     # ctypedef std.map[std.string,GHKcurr*] GHKcurrPMap
@@ -79,7 +79,7 @@ cdef extern from "steps/model/ghkcurr.hpp" namespace "steps::model":
 
 
 # ======================================================================================================================
-cdef extern from "steps/model/diff.hpp" namespace "steps::model":
+cdef extern from "model/diff.hpp" namespace "steps::model":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef Diff* DiffP
     # ctypedef std.map[std.string,Diff*] DiffPMap
@@ -106,7 +106,7 @@ cdef extern from "steps/model/diff.hpp" namespace "steps::model":
 
 
 # ======================================================================================================================
-cdef extern from "steps/model/vdeptrans.hpp" namespace "steps::model":
+cdef extern from "model/vdeptrans.hpp" namespace "steps::model":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef VDepTrans* VDepTransP
     # ctypedef std.map[std.string,VDepTrans*] VDepTransPMap
@@ -131,7 +131,7 @@ cdef extern from "steps/model/vdeptrans.hpp" namespace "steps::model":
         void setDst(ChanState * dst) except +
 
 # ======================================================================================================================
-cdef extern from "steps/model/vdepsreac.hpp" namespace "steps::model":
+cdef extern from "model/vdepsreac.hpp" namespace "steps::model":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef VDepSReac* VDepSReacP
     # ctypedef std.map[std.string,VDepSReac*] VDepSReacPMap
@@ -167,7 +167,7 @@ cdef extern from "steps/model/vdepsreac.hpp" namespace "steps::model":
         std.vector[Spec*] getAllSpecs()
 
 # ======================================================================================================================
-cdef extern from "steps/model/reac.hpp" namespace "steps::model":
+cdef extern from "model/reac.hpp" namespace "steps::model":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef Reac* ReacP
     # ctypedef std.map[std.string,Reac*] ReacPMap
@@ -195,7 +195,7 @@ cdef extern from "steps/model/reac.hpp" namespace "steps::model":
 
 
 # ======================================================================================================================
-cdef extern from "steps/model/sreac.hpp" namespace "steps::model":
+cdef extern from "model/sreac.hpp" namespace "steps::model":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef SReac* SReacP
     # ctypedef std.map[std.string,SReac*] SReacPMap
@@ -232,7 +232,7 @@ cdef extern from "steps/model/sreac.hpp" namespace "steps::model":
         void setKcst(double kcst) except +
 
 # ======================================================================================================================
-cdef extern from "steps/model/chan.hpp" namespace "steps::model":
+cdef extern from "model/chan.hpp" namespace "steps::model":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef Chan* ChanP
     # ctypedef std.map[std.string,Chan*] ChanPMap
@@ -252,7 +252,7 @@ cdef extern from "steps/model/chan.hpp" namespace "steps::model":
         std.vector[ChanState*] getAllChanStates()
 
 # ======================================================================================================================
-cdef extern from "steps/model/ohmiccurr.hpp" namespace "steps::model":
+cdef extern from "model/ohmiccurr.hpp" namespace "steps::model":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef OhmicCurr* OhmicCurrP
     # ctypedef std.map[std.string,OhmicCurr*] OhmicCurrPMap
@@ -277,7 +277,7 @@ cdef extern from "steps/model/ohmiccurr.hpp" namespace "steps::model":
         void setG(double g) except +
 
 # ======================================================================================================================
-cdef extern from "steps/model/spec.hpp" namespace "steps::model":
+cdef extern from "model/spec.hpp" namespace "steps::model":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef Spec* SpecP
     # ctypedef std.map[std.string,Spec*] SpecPMap
@@ -299,7 +299,7 @@ cdef extern from "steps/model/spec.hpp" namespace "steps::model":
 
 
 # ======================================================================================================================
-cdef extern from "steps/model/surfsys.hpp" namespace "steps::model":
+cdef extern from "model/surfsys.hpp" namespace "steps::model":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef Surfsys* SurfsysP
     # ctypedef std.map[std.string, Surfsys*] SurfsysPMap
@@ -334,7 +334,7 @@ cdef extern from "steps/model/surfsys.hpp" namespace "steps::model":
 
 
 # ======================================================================================================================
-cdef extern from "steps/model/model.hpp" namespace "steps::model":
+cdef extern from "model/model.hpp" namespace "steps::model":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef Spec* SpecP
     # ctypedef std.vector[Spec*] SpecPVec

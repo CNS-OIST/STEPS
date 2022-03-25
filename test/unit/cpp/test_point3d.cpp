@@ -1,11 +1,12 @@
 #include <limits>
 #include <cmath>
 
-#include "steps/math/point.hpp"
-#include "steps/math/tetrahedron.hpp"
-#include "steps/math/triangle.hpp"
+#include <gtest/gtest.h>
 
-#include "gtest/gtest.h"
+#include "math/point.hpp"
+#include "math/tetrahedron.hpp"
+#include "math/triangle.hpp"
+
 
 using namespace steps::math;
 

@@ -16,13 +16,15 @@ import warnings
 # Python Wrappers to namespace steps::wm
 # ======================================================================================================================
 
-cdef extern from "steps/geom/fwd.hpp":
-    cdef index_t _UNKNOWN_TET "steps::UNKNOWN_TET.get()"
-    cdef index_t _UNKNOWN_TRI "steps::UNKNOWN_TRI.get()"
+cdef extern from "util/vocabulary.hpp":
+    cdef index_t _UNKNOWN_TET "steps::tetrahedron_id_t::unknown_value()"
+    cdef index_t _UNKNOWN_TRI "steps::triangle_id_t::unknown_value()"
+    cdef index_t _UNKNOWN_VERT "steps::vertex_id_t::unknown_value()"
     cdef int _INDEX_NUM_BYTES "sizeof(steps::index_t)";
 
 UNKNOWN_TET = _UNKNOWN_TET
 UNKNOWN_TRI = _UNKNOWN_TRI
+UNKNOWN_VERT = _UNKNOWN_VERT
 INDEX_NUM_BYTES = _INDEX_NUM_BYTES
 
 #Functions previously defined in the .i Swig files(!!)
@@ -226,8 +228,9 @@ cdef class _py_Patch(_py__base):
         steps.geom.Comp ocomp (default = None)
         float area (default = 0.0)
 
-        .. note: "Inner" compartment and "outer" compartment are purely defined
-        by their order to the class constructor.
+        .. note::
+            "Inner" compartment and "outer" compartment are purely defined
+            by their order to the class constructor.
 
         """
         self._ptr = new Patch(to_std_string(id), container.ptr(), icomp.ptr(), ocomp.ptr() if ocomp else NULL, area )
@@ -372,7 +375,10 @@ cdef class _py_Patch(_py__base):
 
     def getAllSpecs(self, _py_Model model):
         """
-        Giving a steps.model.Model, return all species in the compartment.
+        Given a steps.model.Model, return all species in the patch. That
+        is, all 'surface' species referenced in surface system surface
+        reactions, voltage-dependent surface reactions and surface diffusion.
+        This also includes ohmic current and ghk current 'channel states'.
 
         Syntax::
 
@@ -389,7 +395,7 @@ cdef class _py_Patch(_py__base):
 
     def getAllSReacs(self, _py_Model model):
         """
-        Giving a steps.model.Model, return all surface reactions in the compartment.
+        Given a steps.model.Model, return all surface reactions in the compartment.
 
         Syntax::
 
@@ -645,7 +651,11 @@ cdef class _py_Comp(_py__base):
 
     def getAllSpecs(self, _py_Model model):
         """
-        Giving a steps.model.Model, return all species in the compartment.
+        Given a steps.model.Model, return all species in the compartment. That
+        is, all species that appear in the compartment due to volume system
+        reaction and diffusion rules, plus surface system surface reactions,
+        voltage-dependent surface reactions etc where reactants or products
+        reference this compartment as 'inner' or 'outer' compartment.
 
         Syntax::
 
@@ -662,7 +672,7 @@ cdef class _py_Comp(_py__base):
 
     def getAllReacs(self, _py_Model model):
         """
-        Giving a steps.model.Model, return all reactions in the compartment.
+        Given a steps.model.Model, return all reactions in the compartment.
 
         Syntax::
 
@@ -679,7 +689,7 @@ cdef class _py_Comp(_py__base):
 
     def getAllDiffs(self, _py_Model model):
         """
-        Giving a steps.model.Model, return all diffusions in the compartment.
+        Given a steps.model.Model, return all diffusions in the compartment.
 
         Syntax::
 
@@ -755,7 +765,6 @@ cdef class _py_Comp(_py__base):
     ipatches = property(getIPatches, doc="List of reference to inner patches.")
     opatches = property(getOPatches, doc="List of reference to outer patches.")
 
-
 # ======================================================================================================================
 # Python bindings to namespace steps::tetmesh
 # ======================================================================================================================
@@ -787,7 +796,7 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         Construction1::
 
-        mesh = steps.geom.Tetmesh(verts, tets, tris)
+            mesh = steps.geom.Tetmesh(verts, tets, tris)
 
         Construct a Tetmesh container by the "first" method: Supply a list of all
         vertices verts (by Cartesian coordinates), supply a list of all tetrahedrons
@@ -809,7 +818,8 @@ cdef class _py_Tetmesh(_py_Geom):
         list<index_t> tris
 
         Construction2::
-        mesh = steps.geom.Tetmesh(nverts, ntets, ntris)
+
+            mesh = steps.geom.Tetmesh(nverts, ntets, ntris)
 
         Construct a Tetmesh container by the "second" method: Supply only the
         number of vertices nverts, the number of tetrahedrons ntets and the number
@@ -2043,6 +2053,7 @@ cdef class _py_Tetmesh(_py_Geom):
         None
 
         """
+
         return self.ptrx().getROITetBarycentersNP(to_std_string(ROI_id), &centers[0], centers.shape[0])
 
     def getROITriBarycentres(self, str ROI_id):
@@ -2082,8 +2093,9 @@ cdef class _py_Tetmesh(_py_Geom):
         list<float>
 
         """
+
         return self.ptrx().getROITriBarycenters(to_std_string(ROI_id))
-        
+
     def getROITriBarycentresNP(self, str ROI_id, double[:] centers):
         """
         Get barycenters of elements stored in a triangular ROI and write to a NumPy array centers.
@@ -2112,20 +2124,19 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         Get barycenters of elements stored in a triangular ROI and write to a NumPy array centers.
         The size of centers should be the same as the number of elements stored in the ROI.
-        
+
         Syntax::
 
-            getROITriBarycentersNP(ROI_id, centers)
+            getROITriBarycenters(ROI_id)
 
         Arguments:
         string ROI_id
-        numpy.array<float> centers
 
         Return:
-        None
+        list<float>
 
         """
-        return self.ptrx().getROITriBarycentersNP(to_std_string(ROI_id), &centers[0], centers.shape[0])
+        return self.ptrx().getROITriBarycenters(to_std_string(ROI_id))
 
     def getROIVertices(self, str ROI_id):
         """

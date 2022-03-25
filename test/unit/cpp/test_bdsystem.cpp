@@ -2,9 +2,9 @@
 #include <limits>
 #include <cmath>
 
-#include "steps/solver/efield/linsystem.hpp"
-#include "steps/solver/efield/bdsystem.hpp"
-#include "steps/solver/efield/bdsystem_lapack.hpp"
+#include <steps/solver/efield/linsystem.hpp>
+#include <steps/solver/efield/bdsystem.hpp>
+#include <steps/solver/efield/bdsystem_lapack.hpp>
 
 #include "gtest/gtest.h"
 
@@ -27,17 +27,17 @@ TEST(LinSystem,VVector) {
     ASSERT_EQ(a.get(1),-1.0);
 
     // direct access through operator[]
-    
+
     ASSERT_EQ(v[0],2.0);
     ASSERT_EQ(v[1],-1.0);
 }
-    
+
 
 TEST(LinSystem,BDMatrix) {
     BDMatrix m(7,2); // 7x7 with half bw 2
 
     // direct access through operator[]
-    
+
     m[0][0]=1.0;
     m[0][2]=2.0;
     m[2][0]=3.0;
@@ -78,7 +78,7 @@ TYPED_TEST(LinSystemImplTest,Diagonal) {
     typedef typename Impl::vector_type vector_type;
 
     // diagonal-only test (halfbw=0)
-    constexpr size_t n=6;
+    constexpr int n=6;
     double diag[n]={8,2,4,32,16,64};
     double y[n]={3,5,7,9,11,13};
 
@@ -92,7 +92,7 @@ TYPED_TEST(LinSystemImplTest,Diagonal) {
 
     vector_type &b=B.b();
     for (int i=0;i<n;++i) b.set(i,y[i]);
-    
+
     B.solve();
 
     const vector_type &x=B.x();
@@ -108,7 +108,7 @@ TYPED_TEST(LinSystemImplTest,Bw7) {
     typedef typename Impl::matrix_type matrix_type;
     typedef typename Impl::vector_type vector_type;
 
-    constexpr size_t n=8;
+    constexpr int n=8;
     constexpr int h=3; // half-bandwidth
     double A_full[n][n]={
         {   2,  -1,  -2,   .1,    0,   0,   0,  0},
@@ -127,7 +127,7 @@ TYPED_TEST(LinSystemImplTest,Bw7) {
     // forward calculate y = A x0;
     for (int i=0;i<n;++i) {
         y[i]=0;
-        for (size_t j=0;j<n;++j) 
+        for (size_t j=0;j<n;++j)
             y[i]+=A_full[i][j]*x0[j];
     }
 
@@ -136,20 +136,20 @@ TYPED_TEST(LinSystemImplTest,Bw7) {
     matrix_type &A=B.A();
     for (int i=0;i<n;++i) {
         int jmin=std::max(0,i-h);
-        int jmax=std::min((int)n-1,i+h);
+        int jmax=std::min(n - 1,i+h);
 
-        for (int j=jmin;j<=jmax;++j) 
+        for (int j=jmin;j<=jmax;++j)
             A.set(i,j,A_full[i][j]);
     }
 
     vector_type &b=B.b();
     for (int i=0;i<n;++i) b.set(i,y[i]);
-    
+
     B.solve();
 
     const vector_type &x=B.x();
 
-    double k=estimate_condition((const double *)A_full,n);
+    double k=estimate_condition(reinterpret_cast<const double *>(A_full),n);
     double eta=std::numeric_limits<double>::epsilon()*k;
 
     ASSERT_LT(eta,0.25); // our matrix should not be that ill-conditioned!

@@ -2,8 +2,8 @@
 #include <numeric>
 #include <cmath>
 
-#include "steps/math/point.hpp"
-#include "steps/math/bbox.hpp"
+#include "math/point.hpp"
+#include "math/bbox.hpp"
 
 #include "gtest/gtest.h"
 

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -35,24 +35,17 @@
 #include <vector>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/math/constants.hpp"
-#include "steps/solver/compdef.hpp"
-#include "steps/solver/patchdef.hpp"
-#include "steps/solver/reacdef.hpp"
-#include "steps/solver/sreacdef.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/types.hpp"
-#include "steps/wmrssa/comp.hpp"
-#include "steps/wmrssa/kproc.hpp"
-#include "steps/wmrssa/patch.hpp"
-#include "steps/wmrssa/reac.hpp"
-#include "steps/wmrssa/sreac.hpp"
-#include "steps/wmrssa/wmrssa.hpp"
+#include "wmrssa.hpp"
+#include "model/reac.hpp"
+#include "sreac.hpp"
+#include "math/constants.hpp"
+#include "solver/reacdef.hpp"
+#include "solver/sreacdef.hpp"
+#include "solver/types.hpp"
 
 // logging
-#include "easylogging++.h"
+#include <easylogging++.h>
+#include "util/error.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
 #define SCHEDULEWIDTH 32

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,20 +24,17 @@
 
  */
 
-
 // STL headers.
 #include <sstream>
 #include <string>
 
-
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/geom/tetmesh.hpp"
-#include "steps/solver/api.hpp"
-#include "steps/solver/statedef.hpp"
+#include "api.hpp"
+#include "statedef.hpp"
+#include "geom/tetmesh.hpp"
+#include "util/error.hpp"
 // logging
-#include "easylogging++.h"
+#include <easylogging++.h>
 ////////////////////////////////////////////////////////////////////////////////
 
 USING(std, string);
@@ -47,918 +44,590 @@ namespace solver {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTetVol(tetrahedron_id_t tidx) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
+double API::getTetVol(tetrahedron_id_t tidx) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
 
-        return _getTetVol(tidx);
-    }
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTetVol(tidx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetVol(tetrahedron_id_t tidx, double vol)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        // NOTE: the following method may never be implemented
-        _setTetVol(tidx, vol);
-    }
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+void API::setTetVol(tetrahedron_id_t tidx, double vol) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
+
+    // NOTE: the following method may never be implemented
+    _setTetVol(tidx, vol);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getTetSpecDefined(tetrahedron_id_t tidx, string const & s) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint sidx = pStatedef->getSpecIdx(s);
+bool API::getTetSpecDefined(tetrahedron_id_t tidx, string const &s) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
 
-        return _getTetSpecDefined(tidx, sidx);
-    }
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    // the following may throw exception if string is unknown
+    uint sidx = pStatedef->getSpecIdx(s);
+
+    return _getTetSpecDefined(tidx, sidx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
+double API::getTetCount(tetrahedron_id_t tidx, string const &s) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
 
-double API::getTetCount(tetrahedron_id_t tidx, string const & s) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint sidx = pStatedef->getSpecIdx(s);
+    // the following may throw exception if string is unknown
+    uint sidx = pStatedef->getSpecIdx(s);
 
-        return _getTetCount(tidx, sidx);
-    }
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTetCount(tidx, sidx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetCount(tetrahedron_id_t tidx, string const & s, double n)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        if (n < 0.0)
-        {
-            std::ostringstream os;
-            os << "Number of molecules cannot be negative.";
-            ArgErrLog(os.str());
-        }
+void API::setTetCount(tetrahedron_id_t tidx, string const &s, double n) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
+    ArgErrLogIf(n < 0.0, "Number of molecules cannot be negative.");
 
     // the following may throw exception if string is unknown
     uint sidx = pStatedef->getSpecIdx(s);
 
     _setTetCount(tidx, sidx, n);
-    }
-
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTetAmount(tetrahedron_id_t tidx, string const & s) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint sidx = pStatedef->getSpecIdx(s);
+double API::getTetAmount(tetrahedron_id_t tidx, string const &s) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
+    // the following may throw exception if string is unknown
+    uint sidx = pStatedef->getSpecIdx(s);
 
-        return _getTetAmount(tidx, sidx);
-    }
-
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTetAmount(tidx, sidx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetAmount(tetrahedron_id_t tidx, string const & s, double m)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        if (m < 0.0)
-        {
-            std::ostringstream os;
-            os << "Amount of mols cannot be negative.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint sidx = pStatedef->getSpecIdx(s);
+void API::setTetAmount(tetrahedron_id_t tidx, string const &s, double m) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
+    ArgErrLogIf(m < 0.0, "Amount of mols cannot be negative.");
 
-        _setTetAmount(tidx, sidx, m);
-    }
+    // the following may throw exception if string is unknown
+    uint sidx = pStatedef->getSpecIdx(s);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    _setTetAmount(tidx, sidx, m);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTetConc(tetrahedron_id_t tidx, string const & s) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint sidx = pStatedef->getSpecIdx(s);
+double API::getTetConc(tetrahedron_id_t tidx, string const &s) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
 
-        return _getTetConc(tidx, sidx);
-    }
+    // the following may throw exception if string is unknown
+    uint sidx = pStatedef->getSpecIdx(s);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTetConc(tidx, sidx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetConc(tetrahedron_id_t tidx, string const & s, double c)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        if (c < 0.0)
-        {
-            std::ostringstream os;
-            os << "Concentration cannot be negative.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint sidx = pStatedef->getSpecIdx(s);
+void API::setTetConc(tetrahedron_id_t tidx, string const &s, double c) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
+    ArgErrLogIf(c < 0.0, "Concentration cannot be negative.");
 
-        _setTetConc(tidx, sidx, c);
-    }
+    // the following may throw exception if string is unknown
+    uint sidx = pStatedef->getSpecIdx(s);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    _setTetConc(tidx, sidx, c);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getTetClamped(tetrahedron_id_t tidx, string const & s) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint sidx = pStatedef->getSpecIdx(s);
+bool API::getTetClamped(tetrahedron_id_t tidx, string const &s) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
 
-        return _getTetClamped(tidx, sidx);
-    }
+    // the following may throw exception if string is unknown
+    uint sidx = pStatedef->getSpecIdx(s);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTetClamped(tidx, sidx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetClamped(tetrahedron_id_t tidx, string const & s, bool buf)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint sidx = pStatedef->getSpecIdx(s);
+void API::setTetClamped(tetrahedron_id_t tidx, string const &s, bool buf) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
 
-        _setTetClamped(tidx, sidx, buf);
-    }
+    // the following may throw exception if string is unknown
+    uint sidx = pStatedef->getSpecIdx(s);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    _setTetClamped(tidx, sidx, buf);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTetReacK(tetrahedron_id_t tidx, string const & r) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint ridx = pStatedef->getReacIdx(r);
+double API::getTetReacK(tetrahedron_id_t tidx, string const &r) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
 
-        return _getTetReacK(tidx, ridx);
-    }
+    // the following may throw exception if string is unknown
+    uint ridx = pStatedef->getReacIdx(r);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTetReacK(tidx, ridx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetReacK(tetrahedron_id_t tidx, string const & r, double kf)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        if (kf < 0.0)
-        {
-            std::ostringstream os;
-            os << "Reaction constant cannot be negative.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint ridx = pStatedef->getReacIdx(r);
+void API::setTetReacK(tetrahedron_id_t tidx, string const &r, double kf) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
+    ArgErrLogIf(kf < 0.0, "Reaction constant cannot be negative.");
 
-        _setTetReacK(tidx, ridx, kf);
-    }
+    // the following may throw exception if string is unknown
+    uint ridx = pStatedef->getReacIdx(r);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    _setTetReacK(tidx, ridx, kf);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getTetReacActive(tetrahedron_id_t tidx, string const & r) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint ridx = pStatedef->getReacIdx(r);
+bool API::getTetReacActive(tetrahedron_id_t tidx, string const &r) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
 
-        return _getTetReacActive(tidx, ridx);
-    }
+    // the following may throw exception if string is unknown
+    uint ridx = pStatedef->getReacIdx(r);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTetReacActive(tidx, ridx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetReacActive(tetrahedron_id_t tidx, string const & r, bool act)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint ridx = pStatedef->getReacIdx(r);
+void API::setTetReacActive(tetrahedron_id_t tidx, string const &r, bool act) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
 
-        _setTetReacActive(tidx, ridx, act);
-    }
+    // the following may throw exception if string is unknown
+    uint ridx = pStatedef->getReacIdx(r);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    _setTetReacActive(tidx, ridx, act);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::getTetDiffD(tetrahedron_id_t tidx, const string &d,
-                        tetrahedron_id_t direction_tet) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint didx = pStatedef->getDiffIdx(d);
+                        tetrahedron_id_t direction_tet) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
 
-        return _getTetDiffD(tidx, didx, direction_tet);
-    }
+    // the following may throw exception if string is unknown
+    uint didx = pStatedef->getDiffIdx(d);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTetDiffD(tidx, didx, direction_tet);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::setTetDiffD(tetrahedron_id_t tidx, const string &d, double dk,
-                      tetrahedron_id_t direction_tet)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        if (direction_tet != UNKNOWN_TET && direction_tet >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Direction tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        if (dk < 0.0)
-        {
-            std::ostringstream os;
-            os << "Diffusion constant cannot be negative.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint didx = pStatedef->getDiffIdx(d);
+                      tetrahedron_id_t direction_tet) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
+    ArgErrLogIf(direction_tet.valid() && direction_tet >= static_cast<index_t>(mesh->countTets()),
+                "Direction tetrahedron index out of range.");
+    ArgErrLogIf(dk < 0.0, "Diffusion constant cannot be negative.");
 
-        _setTetDiffD(tidx, didx, dk, direction_tet);
-    }
+    // the following may throw exception if string is unknown
+    uint didx = pStatedef->getDiffIdx(d);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    _setTetDiffD(tidx, didx, dk, direction_tet);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getTetDiffActive(tetrahedron_id_t tidx, string const & d) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint didx = pStatedef->getDiffIdx(d);
+bool API::getTetDiffActive(tetrahedron_id_t tidx, string const &d) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
 
-        return _getTetDiffActive(tidx, didx);
-    }
+    // the following may throw exception if string is unknown
+    uint didx = pStatedef->getDiffIdx(d);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTetDiffActive(tidx, didx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetDiffActive(tetrahedron_id_t tidx, string const & d, bool act)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
+void API::setTetDiffActive(tetrahedron_id_t tidx, string const &d, bool act) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
 
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint didx = pStatedef->getDiffIdx(d);
+    // the following may throw exception if string is unknown
+    uint didx = pStatedef->getDiffIdx(d);
 
-        _setTetDiffActive(tidx, didx, act);
-    }
-
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    _setTetDiffActive(tidx, didx, act);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTetReacH(tetrahedron_id_t tidx, string const & r) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
+double API::getTetReacH(tetrahedron_id_t tidx, string const &r) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
 
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint ridx = pStatedef->getReacIdx(r);
+    // the following may throw exception if string is unknown
+    uint ridx = pStatedef->getReacIdx(r);
 
-        return _getTetReacH(tidx, ridx);
-    }
-
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTetReacH(tidx, ridx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTetReacC(tetrahedron_id_t tidx, string const & r) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint ridx = pStatedef->getReacIdx(r);
+double API::getTetReacC(tetrahedron_id_t tidx, string const &r) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
 
-        return _getTetReacC(tidx, ridx);
-    }
+    // the following may throw exception if string is unknown
+    uint ridx = pStatedef->getReacIdx(r);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTetReacC(tidx, ridx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTetReacA(tetrahedron_id_t tidx, string const & r) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
+double API::getTetReacA(tetrahedron_id_t tidx, string const &r) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
 
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint ridx = pStatedef->getReacIdx(r);
+    // the following may throw exception if string is unknown
+    uint ridx = pStatedef->getReacIdx(r);
 
-        return _getTetReacA(tidx, ridx);
-    }
-
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTetReacA(tidx, ridx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTetDiffA(tetrahedron_id_t tidx, string const & d) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint didx = pStatedef->getDiffIdx(d);
+double API::getTetDiffA(tetrahedron_id_t tidx, string const &d) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
 
-        return _getTetDiffA(tidx, didx);
-    }
+    // the following may throw exception if string is unknown
+    uint didx = pStatedef->getDiffIdx(d);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTetDiffA(tidx, didx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTetV(tetrahedron_id_t tidx) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
+double API::getTetV(tetrahedron_id_t tidx) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
 
-        return _getTetV(tidx);
-    }
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTetV(tidx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetV(tetrahedron_id_t tidx, double v)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
+void API::setTetV(tetrahedron_id_t tidx, double v) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
 
-        _setTetV(tidx, v);
-    }
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    _setTetV(tidx, v);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getTetVClamped(tetrahedron_id_t tidx) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
+bool API::getTetVClamped(tetrahedron_id_t tidx) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
 
-        return _getTetVClamped(tidx);
-    }
-
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTetVClamped(tidx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetVClamped(tetrahedron_id_t tidx, bool cl)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= static_cast<index_t>(mesh->countTets()))
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
+void API::setTetVClamped(tetrahedron_id_t tidx, bool cl) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                "Tetrahedron index out of range.");
 
-        _setTetVClamped(tidx, cl);
-    }
-
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    _setTetVClamped(tidx, cl);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetVol(tetrahedron_id_t /*tidx*/) const
-{
-    NotImplErrLog("");
+double API::_getTetVol(tetrahedron_id_t /*tidx*/) const { NotImplErrLog(""); }
+
+////////////////////////////////////////////////////////////////////////////////
+
+void API::_setTetVol(tetrahedron_id_t /*tidx*/, double /*vol*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTetVol(tetrahedron_id_t /*tidx*/, double /*vol*/)
-{
-    NotImplErrLog("");
+bool API::_getTetSpecDefined(tetrahedron_id_t /*tidx*/, uint /*sidx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getTetSpecDefined(tetrahedron_id_t /*tidx*/, uint /*sidx*/) const
-{
-    NotImplErrLog("");
+double API::_getTetCount(tetrahedron_id_t /*tidx*/, uint /*sidx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetCount(tetrahedron_id_t /*tidx*/, uint /*sidx*/) const
-{
-    NotImplErrLog("");
+void API::_setTetCount(tetrahedron_id_t /*tidx*/, uint /*sidx*/, double /*n*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTetCount(tetrahedron_id_t /*tidx*/, uint /*sidx*/, double /*n*/)
-{
-    NotImplErrLog("");
+double API::_getTetAmount(tetrahedron_id_t /*tidx*/, uint /*sidx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetAmount(tetrahedron_id_t /*tidx*/, uint /*sidx*/) const
-{
-    NotImplErrLog("");
+void API::_setTetAmount(tetrahedron_id_t /*tidx*/, uint /*sidx*/,
+                        double /*m*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTetAmount(tetrahedron_id_t /*tidx*/, uint /*sidx*/, double /*m*/)
-{
-    NotImplErrLog("");
+double API::_getTetConc(tetrahedron_id_t /*tidx*/, uint /*sidx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetConc(tetrahedron_id_t /*tidx*/, uint /*sidx*/) const
-{
-    NotImplErrLog("");
+void API::_setTetConc(tetrahedron_id_t /*tidx*/, uint /*sidx*/, double /*c*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTetConc(tetrahedron_id_t /*tidx*/, uint /*sidx*/, double /*c*/)
-{
-    NotImplErrLog("");
+bool API::_getTetClamped(tetrahedron_id_t /*tidx*/, uint /*sidx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getTetClamped(tetrahedron_id_t /*tidx*/, uint /*sidx*/) const
-{
-    NotImplErrLog("");
+void API::_setTetClamped(tetrahedron_id_t /*tidx*/, uint /*sidx*/,
+                         bool /*buf*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTetClamped(tetrahedron_id_t /*tidx*/, uint /*sidx*/, bool /*buf*/)
-{
-    NotImplErrLog("");
+double API::_getTetReacK(tetrahedron_id_t /*tidx*/, uint /*ridx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetReacK(tetrahedron_id_t /*tidx*/, uint /*ridx*/) const
-{
-    NotImplErrLog("");
+void API::_setTetReacK(tetrahedron_id_t /*tidx*/, uint /*ridx*/,
+                       double /*kf*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTetReacK(tetrahedron_id_t /*tidx*/, uint /*ridx*/, double /*kf*/)
-{
-    NotImplErrLog("");
+bool API::_getTetReacActive(tetrahedron_id_t /*tidx*/, uint /*ridx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getTetReacActive(tetrahedron_id_t /*tidx*/, uint /*ridx*/) const
-{
-    NotImplErrLog("");
+void API::_setTetReacActive(tetrahedron_id_t /*tidx*/, uint /*ridx*/,
+                            bool /*act*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTetReacActive(tetrahedron_id_t /*tidx*/, uint /*ridx*/, bool /*act*/)
-{
-    NotImplErrLog("");
+double API::_getTetDiffD(tetrahedron_id_t /*tidx*/, uint /*didx*/,
+                         tetrahedron_id_t /*direction_tet*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetDiffD(tetrahedron_id_t /*tidx*/, uint /*didx*/, tetrahedron_id_t /*direction_tet*/) const
-{
-    NotImplErrLog("");
+void API::_setTetDiffD(tetrahedron_id_t /*tidx*/, uint /*didx*/, double /*dk*/,
+                       tetrahedron_id_t /*direction_tet*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTetDiffD(tetrahedron_id_t /*tidx*/, uint /*didx*/, double /*dk*/, tetrahedron_id_t /*direction_tet*/)
-{
-    NotImplErrLog("");
+bool API::_getTetDiffActive(tetrahedron_id_t /*tidx*/, uint /*didx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getTetDiffActive(tetrahedron_id_t /*tidx*/, uint /*didx*/) const
-{
-    NotImplErrLog("");
+void API::_setTetDiffActive(tetrahedron_id_t /*tidx*/, uint /*didx*/,
+                            bool /*act*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTetDiffActive(tetrahedron_id_t /*tidx*/, uint /*didx*/, bool /*act*/)
-{
-    NotImplErrLog("");
+double API::_getTetReacH(tetrahedron_id_t /*tidx*/, uint /*ridx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetReacH(tetrahedron_id_t /*tidx*/, uint /*ridx*/) const
-{
-    NotImplErrLog("");
+double API::_getTetReacC(tetrahedron_id_t /*tidx*/, uint /*ridx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetReacC(tetrahedron_id_t /*tidx*/, uint /*ridx*/) const
-{
-    NotImplErrLog("");
+double API::_getTetReacA(tetrahedron_id_t /*tidx*/, uint /*ridx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetReacA(tetrahedron_id_t /*tidx*/, uint /*ridx*/) const
-{
-    NotImplErrLog("");
+double API::_getTetDiffA(tetrahedron_id_t /*tidx*/, uint /*didx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetDiffA(tetrahedron_id_t /*tidx*/, uint /*didx*/) const
-{
-    NotImplErrLog("");
+double API::_getTetV(tetrahedron_id_t /*tidx*/) const { NotImplErrLog(""); }
+
+////////////////////////////////////////////////////////////////////////////////
+
+void API::_setTetV(tetrahedron_id_t /*tidx*/, double /*v*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTetV(tetrahedron_id_t /*tidx*/) const
-{
-    NotImplErrLog("");
+bool API::_getTetVClamped(tetrahedron_id_t /*tidx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTetV(tetrahedron_id_t /*tidx*/, double /*v*/)
-{
-    NotImplErrLog("");
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-bool API::_getTetVClamped(tetrahedron_id_t /*tidx*/) const
-{
-    NotImplErrLog("");
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void API::_setTetVClamped(tetrahedron_id_t /*tidx*/, bool /*cl*/)
-{
-    NotImplErrLog("");
+void API::_setTetVClamped(tetrahedron_id_t /*tidx*/, bool /*cl*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////

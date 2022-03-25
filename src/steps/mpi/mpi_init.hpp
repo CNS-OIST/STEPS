@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -27,20 +27,22 @@
 // Rationale:
 // We need a function to initialize stuffs such as logs
 // before other STEPS object being created.
-// The main function may also be used to fetch arguements
+// The main function may also be used to fetch arguments
 // passed from Python command.
 
 // STEPS headers.
-#include "steps/common.h"
+#include "util/common.h"
+
+#include <mpi.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace steps {
- namespace mpi {
+namespace steps {
+namespace mpi {
 
 void mpiInit();
-int getRank();
-int getNHosts();
+int getRank(MPI_Comm comm = MPI_COMM_WORLD);
+int getNHosts(MPI_Comm comm = MPI_COMM_WORLD);
 
-}
-}
+} // namespace mpi
+} // namespace steps

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,7 +30,7 @@
 
 #include <cinttypes>
 
-#include "steps/util/type_traits.hpp"
+#include "type_traits.hpp"
 
 /** /file Hashing support for aggregates, containers, based
  * on the Fowler-Noll-Vo FNV-1a hash function.

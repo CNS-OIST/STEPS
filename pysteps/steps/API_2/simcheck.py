@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,7 +24,7 @@
 
 import numpy
 
-import steps.API_1.model as smodel
+from steps import stepslib
 
 from . import model as nmodel
 from . import geom as ngeom
@@ -81,12 +81,12 @@ def Check(sim, printmsgs=True):
             # Check reaction rates
             for stepsReac in reac['fwd']:
                 stepsReac = stepsReac._stepsReac
-                if isinstance(stepsReac, (smodel.Reac, smodel.SReac)):
+                if isinstance(stepsReac, (stepslib._py_Reac, stepslib._py_SReac)):
                     reacRates.append((reac, stepsReac, stepsReac.getKcst()))
             if reac._bidir:
                 for stepsReac in reac['bkw']:
                     stepsReac = stepsReac._stepsReac
-                    if isinstance(stepsReac, (smodel.Reac, smodel.SReac)):
+                    if isinstance(stepsReac, (stepslib._py_Reac, stepslib._py_SReac)):
                         reacRates.append((reac, stepsReac, stepsReac.getKcst()))
         else:
             errors.append(f'Reaction {reac} was not added to STEPS.')

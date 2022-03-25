@@ -11,21 +11,21 @@ cimport std
 from steps_common cimport *
 
 # ======================================================================================================================
-cdef extern from "steps/init.hpp" namespace "steps":
+cdef extern from "util/init.hpp" namespace "steps":
 # ----------------------------------------------------------------------------------------------------------------------
     ###### Static funcs ######
     void init()
 
 
 # ======================================================================================================================
-cdef extern from "steps/finish.hpp" namespace "steps":
+cdef extern from "util/finish.hpp" namespace "steps":
 # ----------------------------------------------------------------------------------------------------------------------
     ###### Static funcs ######
     void finish()
 
 
 # ======================================================================================================================
-cdef extern from "steps/error.hpp" namespace "steps":
+cdef extern from "util/error.hpp" namespace "steps":
 # ----------------------------------------------------------------------------------------------------------------------
 
     ###### Cybinding for Err ######
@@ -55,7 +55,7 @@ cdef extern from "steps/error.hpp" namespace "steps":
 
 
 # ======================================================================================================================
-cdef extern from "steps/util/checkid.hpp" namespace "steps::util":
+cdef extern from "util/checkid.hpp" namespace "steps::util":
 # ----------------------------------------------------------------------------------------------------------------------
 
         void checkID(char *) except +
@@ -63,7 +63,7 @@ cdef extern from "steps/util/checkid.hpp" namespace "steps::util":
 
 
 # ======================================================================================================================
-cdef extern from "steps/geom/fwd.hpp" namespace "steps":
+cdef extern from "util/vocabulary.hpp" namespace "steps":
 # ----------------------------------------------------------------------------------------------------------------------
 
     cdef cppclass triangle_id_t:
@@ -73,3 +73,4 @@ cdef extern from "steps/geom/fwd.hpp" namespace "steps":
     cdef cppclass tetrahedron_id_t:
         tetrahedron_id_t(index_t)
         index_t get()
+

@@ -4,7 +4,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -25,17 +25,17 @@
 #################################################################################   
 ###
 
-import nose
+import unittest
 import steps.quiet
 import steps.geom
 import steps.rng
 import steps.model
 import steps.solver
 from functools import partial
-import distribution_common as D
+from . import distribution_common as D
             
-class TestSetConc:
-    def setup(self):
+class TestSetConc(unittest.TestCase):
+    def setUp(self):
         self.rng = steps.rng.create('r123', 512)
         self.rng.initialize(12345)
 
@@ -58,7 +58,7 @@ class TestSetConc:
         solver.setCompConc('interior','A', molarity)
         m2 = solver.getCompConc('interior','A')
 
-        assert abs(molarity-m2)<=1, "failed setCompConc/getCompConc round trip"
+        self.assertTrue(abs(molarity-m2)<=1)
 
     # Produce x, mu pair from calling setCompConc() on
     # a given mesh.
@@ -89,10 +89,17 @@ class TestSetConc:
     def test_distribution(self):
         # even volumes
 
-        D.run_distribution_check(self.set_conc_kernel, alpha = 0.005, verbose = True)
+        D.run_distribution_check(self.set_conc_kernel, alpha=0.005, verbose=False)
 
         # uneven volumes
 
-        D.run_distribution_check(self.set_conc_kernel, alpha = 0.005, ratio = 0.1, verbose = True)
-        D.run_distribution_check(self.set_conc_kernel, alpha = 0.005, ratio = 10, verbose = True)
+        D.run_distribution_check(self.set_conc_kernel, alpha=0.005, ratio=0.1, verbose=False)
+        D.run_distribution_check(self.set_conc_kernel, alpha=0.005, ratio=10, verbose=False)
 
+def suite():
+    all_tests = []
+    all_tests.append(unittest.makeSuite(TestSetConc, "test"))
+    return unittest.TestSuite(all_tests)
+
+if __name__ == "__main__":
+    unittest.TextTestRunner(verbosity=2).run(suite())

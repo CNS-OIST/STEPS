@@ -7,9 +7,7 @@ add_library(stepsrng STATIC
 
 set_property(TARGET stepsrng PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-target_include_directories(stepsrng
-    PUBLIC .
-    PUBLIC ../../)
+target_include_directories(stepsrng PUBLIC "${PROJECT_SOURCE_DIR}/src/steps")
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"
    AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "9.0"
@@ -27,3 +25,5 @@ else()
                               COMPILE_FLAGS
                               "-Wno-old-style-cast")
 endif()
+
+target_link_libraries(stepsrng stepsutil stepsmath)

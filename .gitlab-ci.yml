@@ -1,0 +1,105 @@
+include:
+- project: hpc/gitlab-pipelines
+  file:
+    - github-project-pipelines.gitlab-ci.yml
+    - spack-build-ctest.gitlab-ci.yml
+- project: hpc/gitlab-upload-logs
+  file: enable-upload.yml
+
+default:
+  tags: [bb5_map]
+
+spack_setup:
+  except:
+    - schedules
+
+spack_build:
+  except:
+    - schedules
+
+steps4_simple_model:
+  extends: .spack_test
+  except:
+    - schedules
+
+ctest:
+  except:
+    - schedules
+
+variables:
+  GIT_SUBMODULE_STRATEGY: normal
+  SPACK_EXTRA_MODULES: llvm
+  SPACK_PACKAGE: steps
+  SPACK_PACKAGE_SPEC: +distmesh build_type=RelWithDebInfoAndAssert
+
+.basic_ci:
+  variables:
+    GIT_STRATEGY: fetch
+    KUBERNETES_CPU_LIMIT: 4500m  # Add a bit more for 4 build process + management overhead
+    KUBERNETES_CPU_REQUEST: 4
+    KUBERNETES_MEMORY_LIMIT: 8Gi
+    KUBERNETES_MEMORY_REQUEST: 8Gi
+    BUILD_DIR: _build_ubuntu
+  tags: [kubernetes]
+  stage: build
+  before_script:
+    - free -m | grep -v "Swap" # RAM
+    - df -h| grep -E "Filesystem|overlay" # storage
+    - lscpu | grep -E "^CPU\(s\)" # CPUs
+    - rm -rf _build_ubuntu
+
+.ubuntu/20.04:
+  extends: [.basic_ci]
+  only:
+    - external_pull_requests
+  except:
+    - schedules
+  image:
+    name: cnsoist/steps:gitlab-20211022
+  script:
+    - cmake -B $BUILD_DIR -S . -DUSE_BUNDLE_SUNDIALS:BOOL=FALSE
+    - cmake --build $BUILD_DIR -v -j$KUBERNETES_CPU_REQUEST
+    - cd $BUILD_DIR
+    - ctest --verbose
+
+.ubuntu/18.04:
+  extends: [.basic_ci]
+  only:
+    - external_pull_requests
+  except:
+    - schedules
+  image:
+    name: cnsoist/steps:gitlab-1804-20210705
+  script:
+    - cmake -B $BUILD_DIR -S . -DUSE_BUNDLE_SUNDIALS:BOOL=FALSE
+    - cmake --build $BUILD_DIR -v -j$KUBERNETES_CPU_REQUEST
+
+.bundle-ubuntu/20.04:
+  extends: [.basic_ci]
+  image:
+    name: cnsoist/steps:gitlab
+  only:
+    - master
+    - schedules
+  script:
+    - apt-get update
+    - apt-get install -y libboost-dev libboost-chrono-dev libboost-system-dev libboost-timer-dev
+    - cmake -B $BUILD_DIR -S . -DUSE_BUNDLE_SUNDIALS=ON -DUSE_BUNDLE_OMEGA_H=ON
+    - cmake --build $BUILD_DIR -v -j$KUBERNETES_CPU_REQUEST
+    - cd $BUILD_DIR
+    - ctest --verbose
+
+.bundle-ubuntu/18.04:
+  extends: [.basic_ci]
+  image:
+     name: cnsoist/steps:gitlab-18.04
+  only:
+    - master
+    - schedules
+  script:
+    - apt-get update
+    - apt-get install -y libboost-dev libboost-chrono-dev libboost-system-dev libboost-timer-dev
+    - cmake -B $BUILD_DIR -S . -DUSE_BUNDLE_SUNDIALS=ON -DUSE_BUNDLE_OMEGA_H=ON
+    - cmake --build $BUILD_DIR -v -j$KUBERNETES_CPU_REQUEST
+    - cd $BUILD_DIR
+    - ctest --verbose -E parallel-python # 18.04 docker image has issues with mpi

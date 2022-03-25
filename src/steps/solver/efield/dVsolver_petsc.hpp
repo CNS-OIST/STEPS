@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -25,19 +25,15 @@
  */
 
 
-#ifndef STEPS_SOLVER_EFIELD_DVSOLVER_PETSC_HPP
-#define STEPS_SOLVER_EFIELD_DVSOLVER_PETSC_HPP 1
+#pragma once
 
-#include <algorithm>
-#include <memory>
 #include <vector>
-#include <numeric>
 
 #include <petscksp.h>
 
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/solver/efield/dVsolver.hpp"
+#include "dVsolver.hpp"
+
+#include "util/common.h"
 
 namespace steps {
 namespace solver {
@@ -45,7 +41,7 @@ namespace efield {
 
 class dVSolverPETSC: public dVSolverBase {
 public:
-   
+
     /// c-tor (*calls PetscInitialize*)
     explicit dVSolverPETSC();
 
@@ -54,21 +50,21 @@ public:
 
     /// Initialize mesh and sparsity pattern
     void initMesh(TetMesh *mesh) override final;
-    
-    /// Assemble and solve linear system to get potential at time t(n+1) 
+
+    /// Assemble and solve linear system to get potential at time t(n+1)
     void advance(double dt) override final;
     // Delete previous implementation in dVSolverBase for safety reasons
-    void _advance() = delete; 
+    void _advance() = delete;
 
     /// Init function, here for debugging, remove later
     void init();
 
 private:
-    PetscInt prbegin, prend;
-    PetscInt pNlocal;     // number of rows handled by this processor
+    PetscInt prbegin{}, prend{};
+    PetscInt pNlocal{};     // number of rows handled by this processor
     std::vector<VertexElement*> pIdxToVert;  // map each idx to relative vertex
     std::vector<uint> loc_tris; // vector with all the idxs of triangles on this petsc partition
-    std::vector<int> petsc_locsizes;             
+    std::vector<int> petsc_locsizes;
     std::vector<int> petsc_displ;
     Mat pA;             // lhs
     Vec pb, px;         // rhs and approximate solution : pA * px = pb
@@ -80,6 +76,3 @@ private:
 
 
 }}} // namespace steps::efield::solver
-
-#endif //STEPS_SIM_EFIELD_DVSOLVER_PETSC_HPP
-

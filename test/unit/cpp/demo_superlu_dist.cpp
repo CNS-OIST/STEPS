@@ -16,13 +16,13 @@ extern "C" {
 #include "third_party/superlu_dist-4.1/src/superlu_ddefs.h"
 }
 
-#include "steps/solver/efield/bdsystem.hpp"
+#include "bdsystem.hpp"
 using namespace steps::solver::efield;
 
 /*
 
-#include "steps/solver/efield/linsystem.hpp"
-#include "steps/solver/efield/bdsystem_lapack.hpp"
+#include "linsystem.hpp"
+#include "bdsystem_lapack.hpp"
 
 #include "gtest/gtest.h"
 */
@@ -54,7 +54,7 @@ struct laplace_coeffs {
         b[k]=0;
         clamped[k]=false;
     }
-        
+
     void unclamp_all() {
         clamped.assign(N,false);
         b.assign(N,0);
@@ -95,7 +95,7 @@ struct laplace_coeffs {
                 entries[diag_count]={r,r,(double)(e_count-1)};
             }
         }
- 
+
         double operator[](int s) const {
             for (size_t k=0;k<e_count;++k)
                 if (entries[k].s==s) return entries[k].value;
@@ -124,7 +124,7 @@ struct laplace_coeffs {
         bool operator==(const row_iterator &them) const {
             return L==them.L && (!L || r==them.r);
         }
-    
+
         bool operator!=(const row_iterator &them) const {
             return !(*this==them);
         }
@@ -217,10 +217,10 @@ int main(int argc, char **argv) {
         for (int j=i-h;j<=i+h;++j)
             A.set(i,j,L[i][j]);
 
-        
+
     vector_type &b=S.b();
     for (int i=0;i<N;++i) b.set(i,L.b[i]);
-    
+
     S.solve();
 
     if (rank==0) {
@@ -286,7 +286,7 @@ int main(int argc, char **argv) {
     SuperLUStat_t slu_stats;
     int slu_info;
     PStatInit(&slu_stats);
-    
+
     double berr;
     pdgssvx(&slu_options,&slu_A,&perm_data,&slu_b[0],loc_m,1,&grid,&lu_data,&solve_data,&berr,&slu_stats,&slu_info);
     PStatPrint(&slu_options,&slu_stats,&grid);
@@ -323,5 +323,5 @@ int main(int argc, char **argv) {
     MPI_Finalize();
 }
 
-            
-        
+
+

@@ -6,9 +6,9 @@
 #include <iterator>
 #include <algorithm>
 
-#include "steps/rng/create.hpp"
-#include "steps/error.hpp"
-#include "steps/math/tools.hpp"
+#include "rng/create.hpp"
+#include "util/error.hpp"
+#include "math/tools.hpp"
 
 #include "gtest/gtest.h"
 
@@ -54,7 +54,6 @@ inline double cdf_chi_squared_distribution(double x,
 
 /// Chi-squared goodness of fit test for binomial distribution
 void binomial_check(const std::string &str, uint t, double p, uint t_test, double p_test, const uint n_sample, double level_confidence) {
-    const uint n_dof = n_sample - 1;
     std::vector<uint> vec_rng(n_sample);
 
     auto rng = create(str, n_sample);
@@ -75,27 +74,29 @@ void binomial_check(const std::string &str, uint t, double p, uint t_test, doubl
     /// Compute chi-squared statistic
     double chi = 0.0;
     for (uint k = 0; k <= t; ++k)
-        chi += (vec_expected[k]-vec_observed[k]) * (vec_expected[k]-vec_observed[k]) / static_cast<double>(vec_expected[k]);
+        chi += (vec_expected[k]-vec_observed[k]) * (vec_expected[k]-vec_observed[k]) / vec_expected[k];
 
-    std::pair<double, uint> qpair = std::make_pair(level_confidence, n_sample-1);
+    double p_value = 1 - cdf_chi_squared_distribution(chi, n_sample - 1);
 
-    double p_value = cdf_chi_squared_distribution(chi, n_sample - 1);
     if ((t == t_test) && (fabs(p - p_test) < 1e-14*p))
     {
-        ASSERT_LE(p_value, 1 - level_confidence) << "FAILED Goodness of Fit test (chi-squared) with level of confidence "
+        ASSERT_GE(p_value, 1 - level_confidence) << "FAILED Goodness of Fit test (chi-squared) with level of confidence "
                                                  << level_confidence << ": p_value is " << p_value
-                                                 << " which is not small enough to support the hypothesis of binomial distribution" << std::endl;
+                                                 << " which is not big enough to support the hypothesis of binomial distribution" << std::endl;
     }
     else
     {
-        ASSERT_GT(p_value, level_confidence) << "This test was supposed to FAIL goodness of Fit test (chi-squared) with level of confidence "
+        ASSERT_LE(p_value, level_confidence) << "This test was supposed to FAIL goodness of Fit test (chi-squared) with level of confidence "
                                              << level_confidence << ": p_value is " << p_value
-                                             << " which is not large enough to reject the hypothesis of binomial distribution" << std::endl;
+                                             << " which is not small enough to reject the hypothesis that the sample follows the theoretical distribution" 
+                                             << std::endl;
     }
 }
 
-/// Kendall rank correlation test for the independency of streams
-void kendall_rank_correlation_check(const std::string &str, const uint n_sample, double level_confidence, ulong seed1, ulong seed2) {
+/// Kendall (type A) test to verify the independency of streams.
+//  If p-value < (1-level_confidence) then the streams are correlated, and our test fails.
+//  The p-value expression is that of a two-tailed statistical test.
+double kendall_rank_correlation_check(const std::string &str, const uint n_sample, ulong seed1, ulong seed2) {
     std::vector<uint>  samples1(n_sample);
     std::vector<uint>  samples2(n_sample);
 
@@ -112,15 +113,22 @@ void kendall_rank_correlation_check(const std::string &str, const uint n_sample,
     long nc_nd = 0;
     for (uint i = 1; i < n_sample; ++i)
         for (uint j = 0; j < i; ++j)
-            nc_nd +=  sgn((int)samples1[i] - (int)samples1[j]) * sgn((int)samples2[i] - (int)samples2[j]);
+            nc_nd +=  sgn(static_cast<long long>(samples1[i]) - static_cast<long long>(samples1[j])) * sgn(static_cast<long long>(samples2[i]) - static_cast<long long>(samples2[j]));
 
     const double tau    = nc_nd / (n_sample*(n_sample-1.)/2.);
     const double sigma  = std::sqrt( 2.*(2.*n_sample+5.) / (9.*n_sample*(n_sample-1.)) );
+    const double p_value = 2. * ( 1 - cdf_normal_distribution( std::abs(tau/sigma) ) );
 
-    const double p_value = 2. * cdf_normal_distribution(tau/sigma) - 1.;
+    return p_value;
+}
 
-    ASSERT_LE(p_value, 1. - level_confidence) << "Failed Kendall correlation test with the level of confidence " << level_confidence
-                                              << ". p_value " << p_value << " is not large enough to reject the hypothesis of correlated streams" << std::endl;
+
+void assert_pvalue(const double p_value, const double level_confidence){
+    ASSERT_GE(p_value, 0.) << "Negative p-value" << std::endl;
+    ASSERT_LE(p_value, 1.0) << "P-value is bigger than one." << std::endl;                
+    ASSERT_GE(p_value, 1. - level_confidence) << "Kendall correlation test has p_value = " << p_value 
+                                              << " below the threshold = " << (1. - level_confidence) 
+                                              << ". This indicates correlation in the streams" << std::endl;
 }
 
 
@@ -139,13 +147,13 @@ TEST(rng, class_create_r123) {
 }
 
 TEST(rng, binomial_true_mt) {
-    binomial_check("mt19937", 10, 0.3, 10, 0.3, 10000, 0.999); 
-    binomial_check("mt19937", 8, 0.4, 8, 0.4, 10000, 0.999); 
+    binomial_check("mt19937", 10, 0.3, 10, 0.3, 10000, 0.999);
+    binomial_check("mt19937", 8, 0.4, 8, 0.4, 10000, 0.999);
 }
 
 TEST(rng, binomial_true_r123) {
-    binomial_check("r123", 10, 0.3, 10, 0.3, 10000, 0.999); 
-    binomial_check("r123", 8, 0.4, 8, 0.4, 10000, 0.999); 
+    binomial_check("r123", 10, 0.3, 10, 0.3, 10000, 0.999);
+    binomial_check("r123", 8, 0.4, 8, 0.4, 10000, 0.999);
 }
 
 TEST(rng, binomial_false_mt) {
@@ -160,11 +168,20 @@ TEST(rng, binomial_false_r123) {
 
 
 TEST(rng, kendall_mt) {
-    kendall_rank_correlation_check("mt19937", 1000, 0.95, 1, 2);
+    const uint n_sample = 10000; 
+    const double level_confidence = 0.95;  
+    const ulong seed1 = 1;
+    const ulong seed2 = 2;
+    const double p_value = kendall_rank_correlation_check("mt19937", n_sample, seed1, seed2);
+    assert_pvalue(p_value, level_confidence);
 }
 
 
 TEST(rng, kendall_r123) {
-    kendall_rank_correlation_check("r123", 1000, 0.95, 1, 2);
+    const uint n_sample = 10000; 
+    const double level_confidence = 0.95;  
+    const ulong seed1 = 1;
+    const ulong seed2 = 2;
+    const double p_value = kendall_rank_correlation_check("r123", n_sample, seed1, seed2);
+    assert_pvalue(p_value, level_confidence);
 }
-

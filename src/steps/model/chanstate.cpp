@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,25 +24,22 @@
 
  */
 
+#include "chanstate.hpp"
+
 // Autotools definitions.
 #ifdef HAVE_CONFIG_H
-#include <steps/config.h>
+#include "config.h"
 #endif
 
-// STL headers.
 #include <cassert>
 #include <sstream>
 #include <string>
 
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/model/chan.hpp"
-#include "steps/model/chanstate.hpp"
-#include "steps/model/spec.hpp"
+#include <easylogging++.h>
 
-// logging
-#include "easylogging++.h"
+#include "chan.hpp"
+
+#include "util/error.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -51,61 +48,48 @@ using namespace steps::model;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ChanState::ChanState(string const & id, Model * model, Chan * chan)
-: Spec(id, model)
-, pChan(chan)
-{
-    if (pChan == nullptr)
-    {
-        ostringstream os;
-        os << "No channel provided to ChanState initializer function";
-        ArgErrLog(os.str());
-    }
-    if (model != chan->getModel())
-    {
-        ostringstream os;
-        os << "Channel is unknown in this model.";
-        ArgErrLog(os.str());
-    }
+ChanState::ChanState(string const &id, Model *model, Chan *chan)
+    : Spec(id, model), pChan(chan) {
 
-    pChan->_handleChanStateAdd(this);
+  ArgErrLogIf(pChan == nullptr,
+              "No channel provided to ChanState initializer function");
+  ArgErrLogIf(model != chan->getModel(), "Channel is unknown in this model.");
+
+  pChan->_handleChanStateAdd(this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ChanState::~ChanState()
-{
-    if (pChan == nullptr) { return;
-}
-    _handleSelfDelete();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void ChanState::_handleSelfDelete()
-{
-    // Base method
-    Spec::_handleSelfDelete();
-
-    pChan->_handleChanStateDel(this);
-    pChan = nullptr;
+ChanState::~ChanState() {
+  if (pChan == nullptr) {
+    return;
+  }
+  _handleSelfDelete();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ChanState::setID(string const & id)
-{
-    AssertLog(pChan != nullptr);
-    if (id == getID()) return;
-    // The following might raise an exception, e.g. if the new ID is not
-    // valid or not unique. If this happens, we don't catch but simply let
-    // it pass by into the Python layer.
-    pChan->_handleChanStateIDChange(getID(), id);
-    // This line will only be executed if the previous call didn't raise
-    // an exception.
-    Spec::setID(id);
+void ChanState::_handleSelfDelete() {
+  // Base method
+  Spec::_handleSelfDelete();
+
+  pChan->_handleChanStateDel(this);
+  pChan = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// END
+void ChanState::setID(string const &id) {
+  AssertLog(pChan != nullptr);
+  if (id == getID())
+    return;
+  // The following might raise an exception, e.g. if the new ID is not
+  // valid or not unique. If this happens, we don't catch but simply let
+  // it pass by into the Python layer.
+  pChan->_handleChanStateIDChange(getID(), id);
+  // This line will only be executed if the previous call didn't raise
+  // an exception.
+  Spec::setID(id);
+}
+
+////////////////////////////////////////////////////////////////////////////////

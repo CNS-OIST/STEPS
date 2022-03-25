@@ -15,7 +15,7 @@ from steps_common cimport *
 
 
 # ======================================================================================================================
-cdef extern from "steps/solver/patchdef.hpp" namespace "steps::solver":
+cdef extern from "solver/patchdef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef Patchdef* PatchDefP
     # ctypedef std.vector[Patchdef*] PatchDefPVec
@@ -28,7 +28,7 @@ cdef extern from "steps/solver/patchdef.hpp" namespace "steps::solver":
 
 
 # ======================================================================================================================
-cdef extern from "steps/solver/diffdef.hpp" namespace "steps::solver":
+cdef extern from "solver/diffdef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
 
     ###### Cybinding for Diffdef ######
@@ -37,7 +37,7 @@ cdef extern from "steps/solver/diffdef.hpp" namespace "steps::solver":
 
 
 # ======================================================================================================================
-cdef extern from "steps/solver/ohmiccurrdef.hpp" namespace "steps::solver":
+cdef extern from "solver/ohmiccurrdef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
     ctypedef OhmicCurrdef* OhmicCurrDefP
     ctypedef std.vector[OhmicCurrdef*] OhmicCurrDefPVec
@@ -50,7 +50,7 @@ cdef extern from "steps/solver/ohmiccurrdef.hpp" namespace "steps::solver":
 
 
 # ======================================================================================================================
-cdef extern from "steps/solver/sreacdef.hpp" namespace "steps::solver":
+cdef extern from "solver/sreacdef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
 
     ###### Cybinding for SReacdef ######
@@ -59,7 +59,7 @@ cdef extern from "steps/solver/sreacdef.hpp" namespace "steps::solver":
 
 
 # ======================================================================================================================
-cdef extern from "steps/solver/statedef.hpp" namespace "steps::solver":
+cdef extern from "solver/statedef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
 
     ###### Cybinding for Statedef ######
@@ -68,7 +68,7 @@ cdef extern from "steps/solver/statedef.hpp" namespace "steps::solver":
 
 
 # ======================================================================================================================
-cdef extern from "steps/solver/compdef.hpp" namespace "steps::solver":
+cdef extern from "solver/compdef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
     ctypedef Compdef* CompDefP
     ctypedef std.vector[Compdef*] CompDefPVec
@@ -81,7 +81,7 @@ cdef extern from "steps/solver/compdef.hpp" namespace "steps::solver":
 
 
 # ======================================================================================================================
-cdef extern from "steps/solver/vdepsreacdef.hpp" namespace "steps::solver":
+cdef extern from "solver/vdepsreacdef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
     ctypedef VDepSReacdef* VDepSReacDefP
     ctypedef std.vector[VDepSReacdef*] VDepSReacDefPVec
@@ -94,7 +94,7 @@ cdef extern from "steps/solver/vdepsreacdef.hpp" namespace "steps::solver":
 
 
 # ======================================================================================================================
-cdef extern from "steps/solver/specdef.hpp" namespace "steps::solver":
+cdef extern from "solver/specdef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
 
     ###### Cybinding for Specdef ######
@@ -103,7 +103,7 @@ cdef extern from "steps/solver/specdef.hpp" namespace "steps::solver":
 
 
 # ======================================================================================================================
-cdef extern from "steps/solver/vdeptransdef.hpp" namespace "steps::solver":
+cdef extern from "solver/vdeptransdef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
     ctypedef VDepTransdef* VDepTransDefP
     ctypedef std.vector[VDepTransdef*] VDepTransDefPVec
@@ -116,7 +116,7 @@ cdef extern from "steps/solver/vdeptransdef.hpp" namespace "steps::solver":
 
 
 # ======================================================================================================================
-cdef extern from "steps/solver/ghkcurrdef.hpp" namespace "steps::solver":
+cdef extern from "solver/ghkcurrdef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
     ctypedef GHKcurrdef* GHKcurrDefP
     ctypedef std.vector[GHKcurrdef*] GHKcurrDefPVec
@@ -129,7 +129,7 @@ cdef extern from "steps/solver/ghkcurrdef.hpp" namespace "steps::solver":
 
 
 # ======================================================================================================================
-cdef extern from "steps/solver/reacdef.hpp" namespace "steps::solver":
+cdef extern from "solver/reacdef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
 
     ###### Cybinding for Reacdef ######
@@ -138,7 +138,7 @@ cdef extern from "steps/solver/reacdef.hpp" namespace "steps::solver":
 
 
 # ======================================================================================================================
-cdef extern from "steps/solver/chandef.hpp" namespace "steps::solver":
+cdef extern from "solver/chandef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
 
     ###### Cybinding for Chandef ######
@@ -147,7 +147,7 @@ cdef extern from "steps/solver/chandef.hpp" namespace "steps::solver":
 
 
 # ======================================================================================================================
-cdef extern from "steps/solver/diffboundarydef.hpp" namespace "steps::solver":
+cdef extern from "solver/diffboundarydef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
     ctypedef DiffBoundarydef* DiffBoundaryDefP
     ctypedef std.vector[DiffBoundarydef*] DiffBoundaryDefPVec
@@ -161,7 +161,7 @@ cdef extern from "steps/solver/diffboundarydef.hpp" namespace "steps::solver":
 
 
 # ======================================================================================================================
-cdef extern from "steps/solver/sdiffboundarydef.hpp" namespace "steps::solver":
+cdef extern from "solver/sdiffboundarydef.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
     ctypedef SDiffBoundarydef* SDiffBoundaryDefP
     ctypedef std.vector[SDiffBoundarydef*] SDiffBoundaryDefPVec
@@ -175,7 +175,7 @@ cdef extern from "steps/solver/sdiffboundarydef.hpp" namespace "steps::solver":
 
 
 # ======================================================================================================================
-cdef extern from "steps/solver/api.hpp" namespace "steps::solver::API":
+cdef extern from "solver/api.hpp" namespace "steps::solver::API":
 # ----------------------------------------------------------------------------------------------------------------------
     enum EF_solver:
         EF_NONE
@@ -185,7 +185,7 @@ cdef extern from "steps/solver/api.hpp" namespace "steps::solver::API":
 
 
 # ======================================================================================================================
-cdef extern from "steps/solver/api.hpp" namespace "steps::solver":
+cdef extern from "solver/api.hpp" namespace "steps::solver":
 # ----------------------------------------------------------------------------------------------------------------------
 #
     ###### Cybinding for API ######

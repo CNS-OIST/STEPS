@@ -11,7 +11,7 @@ cimport steps_model
 
 
 # ======================================================================================================================
-cdef extern from "steps/geom/comp.hpp" namespace "steps::wm":
+cdef extern from "geom/comp.hpp" namespace "steps::wm":
 # ----------------------------------------------------------------------------------------------------------------------
     ctypedef Comp* CompP
     ctypedef std.map[std.string,Comp*] CompPMap
@@ -39,7 +39,7 @@ cdef extern from "steps/geom/comp.hpp" namespace "steps::wm":
         void setVol(double vol) except +
 
 # ======================================================================================================================
-cdef extern from "steps/geom/patch.hpp" namespace "steps::wm":
+cdef extern from "geom/patch.hpp" namespace "steps::wm":
 # ----------------------------------------------------------------------------------------------------------------------
     ctypedef Patch* PatchP
     ctypedef std.map[std.string,Patch*] PatchPMap
@@ -66,7 +66,7 @@ cdef extern from "steps/geom/patch.hpp" namespace "steps::wm":
         Comp* getOComp()
 
 # ======================================================================================================================
-cdef extern from "steps/geom/geom.hpp" namespace "steps::wm":
+cdef extern from "geom/geom.hpp" namespace "steps::wm":
 # ----------------------------------------------------------------------------------------------------------------------
 
     ###### Cybinding for Geom ######

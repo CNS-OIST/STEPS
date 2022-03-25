@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,23 +24,21 @@
 
  */
 
-#ifndef STEPS_TETMESH_DIFFBOUNDARY_HPP
-#define STEPS_TETMESH_DIFFBOUNDARY_HPP 1
+#pragma once
 
-// STL headers
 #include <vector>
 
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/geom/tetmesh.hpp"
-#include "steps/model/surfsys.hpp"
-#include "steps/geom/tmcomp.hpp"
-#include "steps/geom/geom.hpp"
+#include "geom.hpp"
+#include "tetmesh.hpp"
+#include "tmcomp.hpp"
+
+#include "model/surfsys.hpp"
+#include "util/common.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace steps {
- namespace tetmesh {
+namespace steps {
+namespace tetmesh {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -157,10 +155,5 @@ private:
 
 };
 
-}
-}
-
-#endif
-// STEPS_TETMESH_DIFFBOUNDARY_HPP
-
-// END
+} // namespace tetemesh
+} // namespace steps

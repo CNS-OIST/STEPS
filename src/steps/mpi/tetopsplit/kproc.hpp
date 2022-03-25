@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -44,13 +44,12 @@
 #include <random>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/solver/types.hpp"
-#include "steps/rng/rng.hpp"
-//#include "tetopsplit.hpp"
+#include "util/common.h"
+#include "solver/types.hpp"
+#include "rng/rng.hpp"
 
 // TetOpSplitP CR header
-#include "steps/mpi/tetopsplit/crstruct.hpp"
+#include "crstruct.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -126,7 +125,7 @@ public:
 
     void setSchedIDX(uint idx) noexcept
     { pSchedIDX = idx; }
-    
+
     uint getType() const noexcept { return type; }
 
     ////////////////////////////////////////////////////////////////////////
@@ -192,10 +191,10 @@ public:
     // Surface reaction can open or close an ohmic current channel
 
     virtual void resetOccupancies();
-    
+
     virtual bool getInHost() const = 0;
     virtual int getHost() const = 0;
-	
+
 	//virtual std::vector<KProc*> const & getSharedUpd();
     ////////////////////////////////////////////////////////////////////////
 
@@ -226,7 +225,7 @@ protected:
     uint                                pFlags;
 
     uint                                pSchedIDX;
-    
+
     uint                                 type;
 
     ////////////////////////////////////////////////////////////////////////

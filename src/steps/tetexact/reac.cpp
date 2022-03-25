@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -29,19 +29,17 @@
 // Standard library & STL headers.
 #include <iostream>
 #include <vector>
+
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/math/constants.hpp"
-#include "steps/solver/reacdef.hpp"
-#include "steps/tetexact/kproc.hpp"
-#include "steps/tetexact/reac.hpp"
-#include "steps/tetexact/tet.hpp"
-#include "steps/tetexact/tetexact.hpp"
-#include "steps/tetexact/wmvol.hpp"
+#include "reac.hpp"
+#include "tet.hpp"
+#include "tetexact.hpp"
+#include "wmvol.hpp"
+#include "math/constants.hpp"
 
 // logging
-#include "easylogging++.h"
+#include <easylogging++.h>
+#include "util/error.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -68,7 +66,7 @@ static inline double comp_ccst(double kcst, double vol, uint order, double /*com
 ////////////////////////////////////////////////////////////////////////////////
 
 stex::Reac::Reac(ssolver::Reacdef * rdef, stex::WmVol * tet)
-: 
+:
  pReacdef(rdef)
 , pTet(tet)
 , pUpdVec()
@@ -237,14 +235,17 @@ double stex::Reac::rate(steps::tetexact::Tetexact * /*solver*/)
             {
                 h_mu *= static_cast<double>(cnt - 3);
             }
+            STEPS_FALLTHROUGH;
             case 3:
             {
                 h_mu *= static_cast<double>(cnt - 2);
             }
+            STEPS_FALLTHROUGH;
             case 2:
             {
                 h_mu *= static_cast<double>(cnt - 1);
             }
+            STEPS_FALLTHROUGH;
             case 1:
             {
                 h_mu *= static_cast<double>(cnt);

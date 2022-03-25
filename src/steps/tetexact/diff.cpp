@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -29,18 +29,14 @@
 #include <iostream>
 #include <vector>
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/math/constants.hpp"
-#include "steps/solver/compdef.hpp"
-#include "steps/solver/diffdef.hpp"
-#include "steps/tetexact/diff.hpp"
-#include "steps/tetexact/kproc.hpp"
-#include "steps/tetexact/tet.hpp"
-#include "steps/tetexact/tetexact.hpp"
+#include "diff.hpp"
+#include "tet.hpp"
+#include "tri.hpp"
+#include "solver/compdef.hpp"
 
 // logging
-#include "easylogging++.h"
+#include <easylogging++.h>
+#include "util/common.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace stex = steps::tetexact;
@@ -61,7 +57,7 @@ pDiffdef(ddef)
                                     pTet->nextTet(2),
                                     pTet->nextTet(3)
                                     };
-    
+
     ssolver::Compdef * cdef = pTet->compdef();
     lidxTet = cdef->specG2L(pDiffdef->lig());
 
@@ -72,7 +68,7 @@ pDiffdef(ddef)
 
     std::array<double, 4> d{ 0.0, 0.0, 0.0, 0.0 };
 
-    for (uint i = 0; i < 4; ++i) { 
+    for (uint i = 0; i < 4; ++i) {
         pDiffBndDirection[i] = pTet->getDiffBndDirection(i);
         if (next[i] != nullptr) {
             pNeighbCompLidx[i] = next[i]->compdef()->specG2L(pDiffdef->lig());
@@ -82,8 +78,8 @@ pDiffdef(ddef)
         // Need to here check if the direction is a diffusion boundary
         double dist = pTet->dist(i);
         if ((dist > 0.0) && (next[i] != nullptr))
-        {   
-            // d[i] only need to set if 
+        {
+            // d[i] only need to set if
             // 1) not towards a boundary, and
             // 2) next[i] in the same compartment as pTet
             // d[i] changes when setDiffBndActive() is called
@@ -93,7 +89,7 @@ pDiffdef(ddef)
                 d[i] = (pTet->area(i) * dcst) / (pTet->vol() * dist);
                 pScaledDcst += d[i];
             }
-        }  
+        }
     }
 
     // Should not be negative!
@@ -126,7 +122,7 @@ void stex::Diff::checkpoint(std::fstream & cp_file)
         cp_file.write(reinterpret_cast<char*>(&item.second), sizeof(double));
     }
 
-    
+
     cp_file.write(reinterpret_cast<char*>(&pScaledDcst), sizeof(double));
     cp_file.write(reinterpret_cast<char*>(&pDcst), sizeof(double));
     cp_file.write(reinterpret_cast<char*>(pDiffBndActive.data()), sizeof(bool) * 4);
@@ -199,7 +195,7 @@ void stex::Diff::setupDeps()
     for (uint i = 0; i < 4; ++i)
     {
         stex::Tri * next = pTet->nextTri(i);
-        if (next == nullptr) { 
+        if (next == nullptr) {
             continue;
         }
         for (auto const& k: next->kprocs()) {
@@ -282,7 +278,7 @@ void stex::Diff::reset()
 
     uint ldidx = pTet->compdef()->diffG2L(pDiffdef->gidx());
     double dcst = pTet->compdef()->dcst(ldidx);
-    
+
     // directional dcst will also be clear by setDcst
     setDcst(dcst);
 
@@ -341,7 +337,7 @@ void stex::Diff::setDcst(double dcst)
     AssertLog(dcst >= 0.0);
     pDcst = dcst;
     directionalDcsts.clear();
-    
+
     std::array<stex::Tet *, 4> next{pTet->nextTet(0),
                                         pTet->nextTet(1),
                                         pTet->nextTet(2),
@@ -392,10 +388,10 @@ void stex::Diff::setDirectionDcst(int direction, double dcst)
     directionalDcsts[direction] = dcst;
 
     // Automatically activate boundary diffusion if necessary
-    if (pDiffBndDirection[direction] == true) { 
+    if (pDiffBndDirection[direction] == true) {
         pDiffBndActive[direction] = true;
     }
-    
+
     std::array<stex::Tet *, 4> next{pTet->nextTet(0),
                                         pTet->nextTet(1),
                                         pTet->nextTet(2),
@@ -423,10 +419,10 @@ void stex::Diff::setDirectionDcst(int direction, double dcst)
         }
         pScaledDcst += d[i];
     }
-    
+
     // Should not be negative!
     AssertLog(pScaledDcst >= 0);
-    
+
     // Setup the selector distribution.
     if (pScaledDcst == 0.0)
     {

@@ -12,7 +12,7 @@ from steps_common cimport *
 
 
 # ======================================================================================================================
-cdef extern from "steps/rng/create.hpp" namespace "steps::rng":
+cdef extern from "rng/create.hpp" namespace "steps::rng":
 # ----------------------------------------------------------------------------------------------------------------------
     # Create a random number generator with name rng_name and return as RNG object.
     shared_ptr[RNG] create(std.string rng_name, uint bufsize) except +
@@ -22,7 +22,7 @@ cdef extern from "steps/rng/create.hpp" namespace "steps::rng":
 
 
 # ======================================================================================================================
-cdef extern from "steps/rng/r123.hpp" namespace "steps::rng":
+cdef extern from "rng/r123.hpp" namespace "steps::rng":
 # ----------------------------------------------------------------------------------------------------------------------
 
     ###### Cybinding for R123 ######
@@ -31,7 +31,7 @@ cdef extern from "steps/rng/r123.hpp" namespace "steps::rng":
 
 
 # ======================================================================================================================
-cdef extern from "steps/rng/rng.hpp" namespace "steps::rng":
+cdef extern from "rng/rng.hpp" namespace "steps::rng":
 # ----------------------------------------------------------------------------------------------------------------------
 
     ###### Cybinding for RNG ######
@@ -54,7 +54,7 @@ cdef extern from "steps/rng/rng.hpp" namespace "steps::rng":
 
 
 # ======================================================================================================================
-cdef extern from "steps/rng/mt19937.hpp" namespace "steps::rng":
+cdef extern from "rng/mt19937.hpp" namespace "steps::rng":
 # ----------------------------------------------------------------------------------------------------------------------
 
     ###### Cybinding for MT19937 ######

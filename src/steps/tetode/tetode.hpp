@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -35,22 +35,22 @@
 #include <vector>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/solver/api.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/geom/tetmesh.hpp"
-#include "steps/tetode/comp.hpp"
-#include "steps/tetode/patch.hpp"
-#include "steps/tetode/tet.hpp"
-#include "steps/tetode/tri.hpp"
+#include "comp.hpp"
+#include "patch.hpp"
+#include "tet.hpp"
+#include "tri.hpp"
 
-#include "steps/solver/efield/efield.hpp"
+#include "util/common.h"
+#include "geom/tetmesh.hpp"
+#include "solver/api.hpp"
+#include "solver/statedef.hpp"
+#include "solver/efield/efield.hpp"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace steps {
- namespace tetode {
+namespace steps {
+namespace tetode {
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -117,8 +117,8 @@ struct structA
 
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace steps {
- namespace tetode {
+namespace steps {
+namespace tetode {
 using namespace steps::solver;
 
 ////////////////////////////////////////////////////////////////////////////////

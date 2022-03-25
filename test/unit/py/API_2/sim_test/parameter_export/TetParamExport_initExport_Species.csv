@@ -1,0 +1,8 @@
+Species	Defined in	valence	valence Units
+S1	comp1, comp1ROI, comp1bis, comp2, diffb		
+S2	comp1, comp1ROI, comp1bis, comp2, diffb		
+S3	comp1, comp1ROI, comp1bis, comp2, diffb	1	
+Ex	membrane, patch, patch2, patchROI, sdiffb		
+ExS1	membrane, patch, patch2, patchROI, sdiffb		
+ExS1S2	membrane, patch, patch2, patchROI, sdiffb		
+ExS2	membrane, patch, patch2, patchROI, sdiffb		

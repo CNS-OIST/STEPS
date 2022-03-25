@@ -1,8 +1,6 @@
 #ifndef STEPS_UNIT_SAMPLE_MESHDATA
 #define STEPS_UNIT_SAMPLE_MESHDATA 1
 
-#include <steps/geom/fwd.hpp>
-
 double COORDS[][3] = {
     {0.0, 0.0, 0.0},
     {1.0, 0.0, 0.0},

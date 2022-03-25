@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -33,17 +33,16 @@
 #include <vector>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/mpi/tetopsplit/comp.hpp"
-//#include "tri.hpp"
-#include "steps/solver/types.hpp"
-#include "steps/solver/diffboundarydef.hpp"
+#include "comp.hpp"
+#include "util/common.h"
+#include "solver/types.hpp"
+#include "solver/diffboundarydef.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace steps {
- namespace mpi {
- namespace tetopsplit {
+namespace steps {
+namespace mpi {
+namespace tetopsplit {
 
 ////////////////////////////////////////////////////////////////////////////////
 

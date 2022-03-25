@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -35,23 +35,22 @@
 #include <mpi.h>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/math/constants.hpp"
-#include "steps/mpi/mpi_common.hpp"
-#include "steps/mpi/tetopsplit/diff.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-#include "steps/mpi/tetopsplit/reac.hpp"
-#include "steps/mpi/tetopsplit/tet.hpp"
-#include "steps/mpi/tetopsplit/tetopsplit.hpp"
-#include "steps/mpi/tetopsplit/tri.hpp"
-#include "steps/mpi/tetopsplit/wmvol.hpp"
-#include "steps/solver/compdef.hpp"
-#include "steps/solver/diffdef.hpp"
-#include "steps/solver/reacdef.hpp"
+#include "wmvol.hpp"
+#include "diff.hpp"
+#include "reac.hpp"
+#include "tet.hpp"
+#include "tetopsplit.hpp"
+#include "tri.hpp"
+
+#include "mpi/mpi_common.hpp"
+#include "math/constants.hpp"
+#include "solver/compdef.hpp"
+#include "solver/diffdef.hpp"
+#include "solver/reacdef.hpp"
 
 // logging
-#include "easylogging++.h"
+#include "util/error.hpp"
+#include <easylogging++.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -143,7 +142,7 @@ void smtos::WmVol::setupKProcs(smtos::TetOpSplitP * tex)
     // else just record the idx
     else {
         pKProcs.resize(0);
-        
+
         for (uint i = 0; i < nKProcs; ++i)
         {
             tex->addKProc(nullptr);
@@ -216,8 +215,8 @@ void smtos::WmVol::setCount(uint lidx, uint count, double /*period*/)
 void smtos::WmVol::incCount(uint lidx, int inc, double /*period*/, bool local_change)
 {
     AssertLog(lidx < compdef()->countSpecs());
-    
-    
+
+
     // remote change
     if (hostRank != myRank && ! local_change)
     {
@@ -306,11 +305,11 @@ void smtos::WmVol::repartition(smtos::TetOpSplitP * tex, int rank, int host_rank
 {
     myRank = rank;
     hostRank = host_rank;
-    
+
     // Delete reaction rules.
     KProcPVecCI e = pKProcs.end();
     for (KProcPVecCI i = pKProcs.begin(); i != e; ++i) delete *i;
-    
+
     setupKProcs(tex);
 }
 

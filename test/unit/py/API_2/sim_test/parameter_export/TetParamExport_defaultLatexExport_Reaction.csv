@@ -1,0 +1,18 @@
+\textbf{Reaction}	\textbf{Defined in}	\textbf{Reaction ID}	\textbf{K}	\textbf{K Units}	\textbf{Complex}	\textbf{K Parameter}
+\detokenize{S1.i + Ex.s} $\rightarrow$~\detokenize{ExS1.s}	nmdl	ss1R3['fwd']	\num{4000000}	\si{M^{-1}.s^{-1}}		
+\detokenize{ExS1.s} $\rightarrow$~\detokenize{S1.i + Ex.s}	nmdl	ss1R3['bkw']	\num{1}	\si{s^{-1}}		
+\detokenize{ExS1.s + S2.o} $\rightarrow$~\detokenize{ExS1S2.s}	nmdl	ss1R4['fwd']	\num{5100000}	\si{M^{-1}.s^{-1}}		
+\detokenize{ExS1S2.s} $\rightarrow$~\detokenize{ExS1.s + S2.o}	nmdl	ss1R4['bkw']	\num{1.5}	\si{s^{-1}}		
+\detokenize{S2.o + Ex.s} $\rightarrow$~\detokenize{ExS2.s}	nmdl	ss1R5['fwd']	\num{4200000}	\si{M^{-1}.s^{-1}}		
+\detokenize{ExS2.s} $\rightarrow$~\detokenize{S2.o + Ex.s}	nmdl	ss1R5['bkw']	\num{1.1}	\si{s^{-1}}		
+\detokenize{ExS2.s + S1.i} $\rightarrow$~\detokenize{ExS1S2.s}	nmdl	ss1R6['fwd']	\num{5300000}	\si{M^{-1}.s^{-1}}		
+\detokenize{ExS1S2.s} $\rightarrow$~\detokenize{ExS2.s + S1.i}	nmdl	ss1R6['bkw']	\num{1.4}	\si{s^{-1}}		
+\detokenize{ExS1S2.s} $\rightarrow$~\detokenize{S1.o + S2.i + Ex.s}	nmdl	ss1R7['fwd']	\num{10}	\si{s^{-1}}		
+\detokenize{chancl.s} $\rightarrow$~\detokenize{chanop.s}	nmdl	ss1RVDep01['fwd']	rvdep01f	\si{s^{-1}}	Chan1[:]	
+\detokenize{chanop.s} $\rightarrow$~\detokenize{chancl.s}	nmdl	ss1RVDep01['bkw']	rvdep01b	\si{s^{-1}}	Chan1[:]	
+\detokenize{sus1 + S1} $\rightarrow$~\detokenize{sus2}	nmdl	vs1CR1['fwd']	\num{2451}	\si{M^{-1}.s^{-1}}	CC[:, :]	
+\detokenize{sus2} $\rightarrow$~\detokenize{sus1 + S1}	nmdl	vs1CR1['bkw']	\num{152}	\si{s^{-1}}	CC[:, :]	
+\detokenize{S1 + S2} $\rightarrow$~\detokenize{2S1}	nmdl	vs1R1['fwd']	\num{0.002}	\si{\micro M^{-1}.s^{-1}}		$\mathrm{\detokenize{r01f}}$
+\detokenize{2S1} $\rightarrow$~\detokenize{S1 + S2}	nmdl	vs1R1['bkw']	\num{100}	\si{M^{-1}.s^{-1}}		
+\detokenize{S1 + S2} $\rightarrow$~\detokenize{2S2}	nmdl	vs2R2['fwd']	\num{0.005}	\si{\micro M^{-1}.s^{-1}}		$\mathrm{\detokenize{r02f}} \times 2 + \mathrm{\detokenize{r01f}} - \mathrm{\detokenize{r01f}}$
+\detokenize{2S2} $\rightarrow$~\detokenize{S1 + S2}	nmdl	vs2R2['bkw']	\num{2500}	\si{M^{-1}.s^{-1}}		

@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -25,18 +25,1665 @@
 import steps
 
 import collections
+import copy
+import functools
 import inspect
+import itertools
 import linecache
 import numbers
+import numpy
+import os
 import re
+import shutil
+import subprocess
+import tempfile
+import types
 import warnings
 
 VERBOSITY = 1
 
-__all__ = ['NamedObject', 'Params', 'SetVerbosity']
+__all__ = ['Parameter', 'ExportParameters', 'NamedObject', 'Params', 'SetVerbosity']
 
 ###################################################################################################
-# Utility classes
+# Parameter and related utility classes
+
+
+class Units:
+    """Represent a physical unit along with a scale
+
+    An object of this class basically consists of a vector of integers of length 7. Each value corresponds
+    to a physical dimension in the SI unit system.
+    A unit object is also associated with a scale, representing a multiplying factor.
+    """
+
+    _SI_PREFIXES = {
+        'Y' : (24 , 'yotta-'),
+        'Z' : (21 , 'zetta-'),
+        'E' : (18 , 'exa-'  ),
+        'P' : (15 , 'peta-' ),
+        'T' : (12 , 'tera-' ),
+        'G' : (9  , 'giga-' ),
+        'M' : (6  , 'mega-' ),
+        'k' : (3  , 'kilo-' ),
+        'h' : (2  , 'hecto-'),
+        'da': (1  , 'deca-' ),
+        ''  : (0  , ''      ),
+        'd' : (-1 , 'deci-' ),
+        'c' : (-2 , 'centi-'),
+        'm' : (-3 , 'milli-'),
+        'u' : (-6 , 'micro-'),
+        'n' : (-9 , 'nano-' ),
+        'p' : (-12, 'pico-' ),
+        'f' : (-15, 'femto-'),
+        'a' : (-18, 'atto-' ),
+        'z' : (-21, 'zepto-'),
+        'y' : (-24, 'yocto-'),
+    }
+    _SI_UNITS = {
+        # Base units
+        's': (
+            numpy.array([1, 0, 0, 0, 0, 0, 0], numpy.intc), # Exponent
+            0, # Scale in the form 10^x so 0 means 1, 1 means 10, etc
+            'second',
+            'time',
+        ),
+        'm': (
+            numpy.array([0, 1, 0, 0, 0, 0, 0], numpy.intc),
+            0,
+            'meter',
+            'length',
+        ),
+        'g': (
+            numpy.array([0, 0,  1, 0, 0, 0, 0], numpy.intc),
+            -3, # Should be kg but 'k' is already part of the prefixes
+            'gram',
+            'mass',
+        ),
+        'A': (
+            numpy.array([0, 0, 0, 1, 0, 0, 0], numpy.intc),
+            0,
+            'ampere',
+            'electric current',
+        ),
+        'K': (
+            numpy.array([0, 0, 0, 0, 1, 0, 0], numpy.intc),
+            0,
+            'kelvin',
+            'thermodynamic temperature',
+        ),
+        'mol': (
+            numpy.array([0, 0, 0, 0, 0, 1, 0], numpy.intc),
+            0,
+            'mole',
+            'amount of substance',
+        ),
+        'cd': (
+            numpy.array([0, 0, 0, 0, 0, 0, 1], numpy.intc),
+            0,
+            'candela',
+            'luminous intensity',
+        ),
+        # Derived units
+        'V': (
+            numpy.array([-3, 2, 1, -1, 0, 0, 0], numpy.intc),
+            0,
+            'volt',
+            'electrical potential difference',
+        ),
+        'F': (
+            numpy.array([4, -2, -1, 2, 0, 0, 0], numpy.intc),
+            0,
+            'farad',
+            'capacitance',
+        ),
+        'ohm': (
+            numpy.array([-3, 2, 1, -2, 0, 0, 0], numpy.intc),
+            0,
+            'ohm',
+            'electrical resistance',
+        ),
+        'S': (
+            numpy.array([3, -2, -1, 2, 0, 0, 0], numpy.intc),
+            0,
+            'siemens',
+            'electrical conductance'
+        ),
+        'L': (
+            numpy.array([0, 3, 0, 0, 0, 0, 0], numpy.intc),
+            -3,
+            'litre',
+            'volume',
+        ),
+        'M': (
+            numpy.array([0, -3, 0, 0, 0, 1, 0], numpy.intc),
+            3,
+            'molar',
+            'concentration (mol L\ :sup:`-1`)',
+        ),
+        'C': (
+            numpy.array([1, 0, 0, 1, 0, 0, 0], numpy.intc),
+            0,
+            'coulomb',
+            'electric charge'
+        ),
+        'J': (
+            numpy.array([-2, 2, 1, 0, 0, 0, 0], numpy.intc),
+            0,
+            'joule',
+            'energy, work, heat'
+        )
+    }
+
+    _SPACER_RE = re.compile('\s+')
+    _SCALED_UNIT_RE = re.compile(
+        '({pref})({dim})([\s\)\^]|$)'.format(
+            pref='|'.join(sorted(_SI_PREFIXES.keys(), key=lambda x:-len(x))),
+            dim='|'.join(sorted(_SI_UNITS.keys(), key=lambda x:-len(x))),
+        )
+    )
+    _SCALED_GROUP_RE = re.compile(
+        '({pref})\('.format(
+            pref='|'.join(sorted(_SI_PREFIXES.keys(), key=lambda x:-len(x))),
+        )
+    )
+    _EXPONENT_RE = re.compile('\^(-?\d+)')
+
+    _SPACE_SIMPLIF_1 = re.compile('\s+')
+    _SPACE_SIMPLIF_2 = re.compile('\(\s+')
+    _SPACE_SIMPLIF_3 = re.compile('\s+\)')
+
+    __slots__ = ['_str', '_scale', '_exponents']
+
+    @staticmethod
+    def _parseUnitString(s):
+        exponents = numpy.array([0] * 7, numpy.intc)
+        scale = 0
+
+        i = 0
+        while i < len(s):
+            # Match one of the three tokens
+            m_spacer = Units._SPACER_RE.match(s[i:])
+            m_unit = Units._SCALED_UNIT_RE.match(s[i:])
+            m_group = Units._SCALED_GROUP_RE.match(s[i:])
+            if m_spacer is not None:
+                # Spaces
+                i += m_spacer.end()
+                continue
+            elif m_unit is not None:
+                # SI Unit with prefix
+                pref, unit, _ = m_unit.groups()
+
+                tmp_exp, tmp_scale = Units._SI_UNITS[unit][:2]
+                tmp_scale += Units._SI_PREFIXES[pref][0]
+
+                i += m_unit.end(2)
+            elif m_group is not None:
+                # Parentheses group with prefix
+                cnt = 1
+                for j in range(i + m_group.end(), len(s)):
+                    cnt += 1 if s[j] == '(' else (-1 if s[j] == ')' else 0)
+                    if cnt == 0:
+                        break
+                if cnt > 0:
+                    raise Exception(f'Unmatched parenthesis in {s}')
+
+                tmp_exp, tmp_scale = Units._parseUnitString(s[i + m_group.end():j])
+                tmp_scale += Units._SI_PREFIXES[m_group.group(1)][0]
+
+                i = j+1
+            else:
+                raise Exception(f'Could not parse "{s[i:]}" in "{s}".')
+
+            # Check for exponents
+            expo = 1
+            if i < len(s):
+                m_expo = Units._EXPONENT_RE.match(s[i:])
+                if m_expo is not None:
+                    expo = int(m_expo.group(1))
+
+                    i+= m_expo.end()
+            
+            # Add to current values
+            exponents += tmp_exp * expo
+            scale += tmp_scale * expo
+
+        return exponents, scale
+
+    def __init__(self, units):
+        """Create the Units from a formatted string."""
+
+        if not isinstance(units, str):
+            raise TypeError(f'Expected a string, got {units} instead.')
+
+        self._str = units.strip()
+        if len(self._str) > 0:
+            # Remove extra spaces
+            self._str = Units._SPACE_SIMPLIF_1.sub(' ', self._str)
+            self._str = Units._SPACE_SIMPLIF_2.sub('(', self._str)
+            self._str = Units._SPACE_SIMPLIF_3.sub(')', self._str)
+
+            self._exponents, self._scale = Units._parseUnitString(self._str)
+        else:
+            self._exponents = numpy.array([0] * 7, numpy.intc)
+            self._scale = 0
+
+    def _multiplyWith(self, other):
+        """Combine self with an other Units object by multiplication"""
+        res = Units('')
+        res._exponents += self._exponents
+        res._exponents += other._exponents
+        res._scale = self._scale + other._scale
+        res._str = f'{self._str} {other._str}'.strip()
+        return res
+
+    def _raiseToPower(self, other):
+        """Raise self to an integer power"""
+        res = Units('')
+        res._exponents = self._exponents * other
+        res._scale = self._scale * other
+        res._str = Units._strRaiseToPower(self._str, other)
+        return res
+
+    def _divideWith(self, other):
+        """Combine self with an other Units object by division"""
+        res = Units('')
+        res._exponents += self._exponents
+        res._exponents -= other._exponents
+        res._scale = self._scale - other._scale
+        res._str = f'{self._str} {Units._strRaiseToPower(other._str, -1)}'.strip()
+        return res
+
+    @staticmethod
+    def _strRaiseToPower(sstr, power):
+        if len(sstr) > 0:
+            if ' ' in sstr or '(' in sstr:
+                return f'({sstr})^{power}'
+            else:
+                if '^' in sstr:
+                    powind = sstr.index('^')
+                    newpow = int(sstr[powind+1:]) * power
+                    return f'{sstr[:powind]}^{newpow}'
+                else:
+                    return f'{sstr}^{power}'
+        else:
+            return ''
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, Units) and
+            (self._exponents == other._exponents).all() and
+            self._scale == other._scale
+        )
+
+    def __hash__(self):
+        return hash((self._str, self._scale, tuple(self._exponents)))
+
+    def __repr__(self):
+        return self._str
+
+    def _compatibleWith(self, other):
+        if not isinstance(other, Units):
+            raise TypeError(f'Expected a Units object, got {other} instead.')
+        return (self._exponents == other._exponents).all()
+
+    def _isDimensionless(self):
+        return (self._exponents == 0).all() and self._scale == 0
+
+    def _toUnicode(self):
+        """Return a unicode string representing the unit."""
+        _SUPER_CHAR_MAP = {str(i): c for i, c in enumerate('⁰¹²³⁴⁵⁶⁷⁸⁹')}
+        _SUPER_CHAR_MAP['-'] = '⁻'
+
+        def prefix(val):
+            if val == 'u':
+                return 'μ'
+            else:
+                return val
+
+        res = Units._SCALED_UNIT_RE.sub(
+            lambda m: prefix(m.group(1)) + m.group(2) + m.group(3),
+            self._str,
+        )
+        res = Units._EXPONENT_RE.sub(
+            lambda m: ''.join(_SUPER_CHAR_MAP[c] for c in m.group(0)[1:]),
+            res,
+        )
+        return res
+
+    def _toLatex(self):
+        """Return a LateX formated string representing the unit.
+        Uses the siunitx latex package"""
+
+        def prefix(val):
+            if val == 'u':
+                return '\micro '
+            else:
+                return val
+
+        res = Units._EXPONENT_RE.sub(
+            lambda m: '^{' + m.group(1) + '}',
+            self._str,
+        )
+        res = Units._SCALED_UNIT_RE.sub(
+            lambda m: prefix(m.group(1)) + m.group(2) + m.group(3),
+            res,
+        )
+        res = '\si{' + res + '}'
+        res = res.replace(' ', '.')
+        res = res.replace('\micro.', '\micro ')
+        return res
+
+
+class ParameterizedObject:
+    """Base class for all objects holding Parameter objects
+
+    Classes that inherit from ParameterizedObject can declare parameters that will then be used to
+    construct parameter tables. The simplest way to declare parameters is to decorate properties getter
+    and setter with RegisterGetter and RegisterSetter respectively (see examples in geom.Compartment
+    e.g.). This allows custom code to be executed during the calls to getter and setters.
+
+    It is also possible to declare parameters that are not associated to custom code by using
+    cls._registerParameter(...). It will simply add the corresponding property along with its getter
+    and setter.
+
+    Note that if the setter is never called, the parameter is never added to self._parameters and will
+    thus not be part of parameter tables. This is the desired behavior as we do not want to consider that
+    e.g. 'Vol' is a parameter for tetrahedral compartments. Since it is never set, it will not be treated as
+    a parameter but simply as a property.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Simple static parameters
+        self._parameters = {}
+        # "parameters" whose description is more complex than just a string name
+        # The key in the dict should be a tuple with the following format:
+        # (('prop1', val1), ('prop2', 'val2'), ...)
+        self._advancedParameters = {}
+
+    def _getAllParams(self):
+        """Return all parameters"""
+        return (
+            [param for name, param in self._parameters.items()] +
+            [param for key, param in self._advancedParameters.items()]
+        )
+
+    def _getSubParameterizedObjects(self):
+        """Return all subobjects that can hold parameters."""
+        return []
+
+    def _setParameter(self, key, param, units=None):
+        """Set a parameter"""
+        if not isinstance(param, Parameter):
+            param = Parameter(param, units, name='')
+        self._parameters[key] = param
+
+    def _setAdvancedParameter(self, key, param):
+        """Set an advanced parameter"""
+        if not isinstance(param, Parameter):
+            param = Parameter(param, name='')
+        self._advancedParameters[key] = param
+
+    def _includeinParamTables(self):
+        """Whether the object should be included in parameter tables"""
+        return True
+
+    @classmethod
+    def _getDisplayName(cls):
+        """Name that will be used as column title during parameter export
+        Defaults to class name.
+        """
+        return cls.__name__
+
+    @classmethod
+    def _getGroupedAdvParams(cls):
+        """Return a list of advanced parameter property that should be grouped
+        """
+        return []
+
+    @staticmethod
+    def RegisterGetter(units=Units('')):
+        """
+        Decorator for wrapping the getter of a property so that the correct parameter value is
+        returned. Since parameters are kept on the python side, this means that the cython bindings
+        do not need to implement the corresponding getters.
+
+        :meta private:
+        """
+        def wrapper(func, name=None):
+            def getter(self):
+                propName = func.__name__ if name is None else name
+                if propName in self._parameters:
+                    # Get expected units
+                    # It needs to be done here because the unit can depend on the object.
+                    if hasattr(units, '__call__'):
+                        _units = units(self)
+                    else:
+                        _units = units
+
+                    if _units is None:
+                        return self._parameters[propName].value
+                    else:
+                        return self._parameters[propName].valueIn(_units)
+                else:
+                    # If the property was not set, call the getter. This means that properties
+                    # that were not explicitely set will not be listed as aparameters in parameter
+                    # tables.
+                    return func(self)
+            getter.__doc__ = func.__doc__
+            return getter
+        return wrapper
+
+    @staticmethod
+    def RegisterSetter(units=Units('')):
+        """
+        Decorator for wrapping the setter of a property so that parameter objects are
+        automatically added to self._parameters dict.
+
+        :meta private:
+        """
+        def wrapper(func, name=None):
+            def setter(self, val):
+                # Get expected units
+                # It needs to be done here because the unit can depend on the object.
+                if hasattr(units, '__call__'):
+                    _units = units(self)
+                else:
+                    _units = units
+
+                # Handle parameter
+                if not isinstance(val, Parameter):
+                    val = Parameter(val, name='', units=_units)
+                elif val._units is None:
+                    val._units = _units
+
+                if val._units is not None and not val._units._compatibleWith(_units):
+                    raise Exception(
+                        f'Expected a value in "{_units}", got a value in "{val._units}" instead'
+                    )
+
+                # Call the actual setter (if RegisterSetter was used as decorator)
+                if func is not None:
+                    func(self, val.valueIn(_units))
+
+                # Only add the property if the setter did not raise an exception
+                propName = func.__name__ if name is None else name
+                self._parameters[propName] = val
+            setter.__doc__ = func.__doc__
+            return setter
+        return wrapper
+
+    @classmethod
+    def RegisterParameter(cls, name, units, defVal=None, addSetter=True):
+        """
+        Register a simple parameter that does not require custom code execution for setting or getting.
+        If custom code execution is needed, RegisterGetter and RegisterSetter should instead be used as
+        decorators of properties.
+        Optionally supply a default value that will be returned if the parameter is not set.
+
+        :meta private:
+        """
+        fget = ParameterizedObject.RegisterGetter(units=units)(lambda x: defVal, name=name)
+        fset = ParameterizedObject.RegisterSetter(units=units)(None, name=name) if addSetter else None
+
+        # Add the parameter as a property
+        setattr(cls, name, property(fget, fset))
+
+    @staticmethod
+    def SpecifyUnits(*units, **kwunits):
+        """
+        Wrapper decorator for specifying units of parameters.
+
+        :meta private:
+        """
+        def wrapper(func):
+            def newFunc(*args, **kwargs):
+                newArgs = []
+                for arg, unit in itertools.zip_longest(args, units):
+                    if isinstance(arg, Parameter):
+                        if unit is not None:
+                            newArgs.append(arg.valueIn(unit))
+                        elif arg._units is None or arg._units._isDimensionless():
+                            newArgs.append(arg._value)
+                        else:
+                            raise Exception(
+                                f'Expected a non-dimensional value, got a value in {arg.units} '
+                                f'instead.'
+                            )
+                    else:
+                        newArgs.append(arg)
+
+                newKwargs = {}
+                for key, arg in kwargs.items():
+                    unit = kwunits.get(key, None)
+                    if isinstance(arg, Parameter):
+                        if unit is not None:
+                            newKwargs[key] = arg.valueIn(units)
+                        elif arg._units is None or arg._units._isDimensionless():
+                            newKwargs[key] = arg._value
+                        else:
+                            raise Exception(
+                                f'Expected a non-dimensional value, got a value in {arg.units} '
+                                f'instead.'
+                            )
+                    else:
+                        newKwargs[key] = arg
+
+                return func(*newArgs, **newKwargs)
+
+            return newFunc
+        return wrapper
+
+
+class Parameter:
+    """Class to describe a parameter in a STEPS script
+
+    This class allows the user to declare values as parameters of the script. Parameter objects
+    can have units (see example below) and are used to create STEPS objects or to set some of
+    their properties. Declaring Parameter objects makes it possible for the user to do automatic
+    unit conversions and to give a name to a parameter that is used with several STEPS objects.
+    When parameter tables are automatically generated using :py:func:`ExportParameters`, the
+    informations that the user supplied to the ``Parameter`` objects will be displayed in the tables.
+
+    :param value: The value of the parameter
+    :type value: Any but will mostly be used with float
+    :param units: A string describing the unit of the parameter (see below for more explanations).
+        If it is not supplied, the parameter will infer its units when used with a STEPS object.
+    :type units: str
+    :param name: A user-supplied name for the parameter. If it is not given, the Parameter object
+        will try to take its name from the name of the variable it is assigned to.
+    :type name: str
+    :param \*\*kwargs: Keyword arguments that will be displayed in parameter tables.
+
+    Usage::
+
+        k_on  = Parameter(2, 'uM^-1 s^-1')
+        k_off = Parameter(1, 's^-1', comment='Comment about the k_off parameter')
+
+        ...
+
+        with mdl, vsys:
+            SA + SB <r[1]> SC
+            r[1].K = k_on, k_off
+
+    In the above example, ``k_on`` will internally be converted to the appropriate STEPS unit (M^-1 s^-1)
+    and both ``k_on`` and ``k_off`` will appear in the parameter tables generated from
+    :py:func:`ExportParameters` with their name and associated units. In addition, any other keyword
+    arguments (``comment=...`` here) will also be shown in the parameter tables.
+
+    When given to a STEPS object, if a Parameter is declared with a unit, a test will be performed to
+    check whether the given unit is of the expected physical dimension. If not, an exception will be
+    raised. It is thus good practise to specify the units of parameters as a sanity check.
+
+    Note that Parameters can be combined using standard arithmetic operators ``+``, ``-``, ``*``, ``/``,
+    ``**`` (see :py:func:`Parameter.__add__`, etc.) to create new Parameters. These operations will then
+    be visible in the exported parameter tables (see :py:func:`ExportParameters`).
+
+    .. warning::
+        Converting between units should be done by calling the :py:func:`convertTo` method. For example,
+        to convert a Parameter in V to mV, one should use::
+
+            pot = Parameter(-0.07, 'V')
+            potInmV = pot.convertTo('mV')
+
+        One should never use arithmetic operations like ``pot * 1e3`` which would yield a parameter of
+        -70 V instead.
+
+    Finally, note that when a Parameter is explicitely converted to a number, it will yield its value in SI
+    units::
+
+        >>> pot = Parameter(-70, 'mV')
+        >>> float(pot)
+        -0.07
+
+    Units specification:
+
+        The string that specifies the units should be composed of physical units (see available units below)
+        optionally raised to some integer power and optionally prefixed with a scale (``'u'`` for micro,
+        ``'k'`` for kilo, etc. see list below).
+
+        Examples::
+            
+            'mm^2'               # Square millimeters
+            'uM^-1 s^-1'         # Per micromolar per second
+            '(mol m^-2)^-1 s^-1' # Per (moles per square meters) per second
+            'mV'                 # Millivolts
+
+        Note that groups of units can be wrapped in parentheses and raised to a power. This enhances
+        the readability of some units. Reaction rates for surface-surface reactions of order 2 thus have
+        units of ``'(mol m^-2)^-1 s^-1'`` which is equivalent to ``'mol^-1 m^2 s^-1'`` but the former
+        makes it clear that a surface 'concentration' is involved.
+
+        Available prefixes:
+
+        {prefixTable}
+
+        Available units:
+
+        {unitTable}
+
+
+    """
+
+    _NAME_EXTRACT_RE = re.compile('(?:(?:^\s*(\w+)\s*=\s*)|.*)Parameter(\(.*$)')
+
+    __slots__ = ['_defLoc', '_name', '_fullname', '_value', '_units', '_kwargs', '_composedPrio', '_dependencies']
+
+    _PARAMETER_USAGE_RECORD = None
+
+    def __init__(self, value, units=None, name=None, _composedPrio=0, _dependencies=[], **kwargs):
+        self._defLoc = None
+        self._fullname = None
+
+        if name is None:
+            # Call from user, try to infer name from variable name
+            frameInfo = inspect.stack()[1]
+            fname, lineno = frameInfo.filename, frameInfo.lineno
+            fullLine = ''
+            line = linecache.getline(fname, lineno)
+            match = None
+            # Discard lines that correspond only to arguments to Parameter()
+            while lineno >= 0 and (line.endswith('\\\n') or match is None):
+                fullLine = line.rstrip('\\\n') + fullLine
+                match = Parameter._NAME_EXTRACT_RE.match(fullLine)
+                lineno -= 1
+                line = linecache.getline(fname, lineno)
+            if match is not None and match.group(1) is not None:
+                # Check that there is only one parameter object on the rhs
+                pcount = 0
+                ind = 0
+                parStr = match.group(2)
+                for i, c in enumerate(parStr):
+                    if c == '(':
+                        pcount += 1
+                    elif c == ')':
+                        pcount -= 1
+                    if pcount == 0:
+                        ind = i
+                        break
+
+                if re.match('^(\s*[;#].*|\s*)$', parStr[ind+1:]) is not None:
+                    # If there is indeed only one parameter on the rhs
+                    self._name = match.group(1)
+                    self._defLoc = (fname, lineno + 1)
+                else:
+                    self._name = None
+            else:
+                # If it fails, keep None
+                self._name = None
+        elif isinstance(name, str):
+            self._name = name if len(name) > 0 else None
+        else:
+            raise TypeError(f'Expected a string, got {name} instead')
+
+        if isinstance(units, str):
+            units = Units(units)
+        elif units is not None and not isinstance(units, Units):
+            raise TypeError(f'Expected a string or None, got {units} instead.')
+
+        if isinstance(value, Parameter):
+            # If we are creating a new parameter from some combination of parameters
+            self._fullname = value._name
+            _dependencies = _dependencies + [value]
+            if units is not None:
+                value = value.valueIn(units)
+            else:
+                units = value._units
+                value = value._value
+
+        self._value = value
+        self._units = units
+
+        self._kwargs = {}
+        for key in kwargs.keys():
+            if hasattr(self, key):
+                raise Exception(f'Cannot use a keyword parameter named {key}.')
+        self._kwargs = kwargs
+
+        self._composedPrio = _composedPrio
+        self._dependencies = _dependencies
+
+    @property
+    def name(self):
+        """Name of the parameter
+
+        :type: str, read-only
+        """
+        return self._name
+
+    @property
+    def value(self):
+        """Value of the parameter (in its units)
+
+        :type: Any (usually float), read-only
+        """
+        return self._value
+
+    @property
+    def units(self):
+        """Units of the parameter
+
+        :type: Union[str, None], read-only
+        """
+        return str(self._units) if self._units is not None else None
+
+    def convertTo(self, unit):
+        """Convert a parameter to the specified unit
+
+        :param unit: The unit to be converted to, it needs to be compatible with the units
+            of the parameter.
+        :type unit: str
+
+        :returns: The converted parameter.
+        :rtype: :py:class:`Parameter`
+        """
+        return self._convertTo(Units(unit))
+
+    def valueIn(self, unit):
+        """Return the value of the parameter in the specified unit.
+
+        If the parameter is itself a parameterized object, do not attempt any conversion.
+        :meta private:
+        """
+        if self.value is None:
+            return None
+        elif isinstance(self.value, ParameterizedObject):
+            return self.value
+        elif self._units is not None:
+            if not self._units._compatibleWith(unit):
+                raise Exception(f'Expected "{unit}", got "{self._units}" instead.')
+            multiplier = 10**int(self._units._scale - unit._scale)
+            # Avoid extending lists and tuples, apply the multiplication to each element
+            if isinstance(self.value, (list, tuple)):
+                return self.value.__class__(v * multiplier for v in self.value)
+            else:
+                return self.value * multiplier
+        elif unit is None:
+            return self.value
+        else:
+            raise Exception(f'Expected a nondimensional unit, got {unit} instead.')
+
+    def _valueInSI(self):
+        """Return the value of the parameter in SI unit system
+
+        Beware that STEPS uses M (molar) for concentration while SI uses mol m^-3
+        """
+        if self._units is not None:
+            return self._value * 10**self._units._scale
+        return self._value
+
+    def _convertTo(self, unit):
+        """Return a new parameter with the specified unit
+        Take a Unit object instead of a string.
+        """
+        return Parameter(
+            self.valueIn(unit),
+            unit,
+            name=self._name if self._isNamed() else '',
+            _composedPrio=self._composedPrio,
+            _dependencies=self._dependencies,
+        )
+
+    def _isNamed(self):
+        return self._name is not None
+
+    def _isUserDefined(self):
+        return self._composedPrio == 0
+
+    def _checkUsableInOp(self):
+        """Return whether self can be used in an arithmetic operation"""
+        if self._units is None:
+            raise Exception(f'Cannot use a parameter with undefined units in arithmetic operations.')
+
+        # Record parameter usage, useful for knowing which parameters are used in e.g. VDepRate.
+        if Parameter._PARAMETER_USAGE_RECORD is not None:
+            Parameter._PARAMETER_USAGE_RECORD.append(self)
+
+    def _getAllDependencies(self, alreadyUsed=None):
+        """Recursively return all Parameters dependencies"""
+        if alreadyUsed is None:
+            alreadyUsed = set()
+
+        for param in self._dependencies:
+            if param not in alreadyUsed:
+                alreadyUsed.add(param)
+                yield param
+                yield from param._getAllDependencies(alreadyUsed=alreadyUsed)
+
+    def __getattr__(self, name):
+        """Access properties of the parameter as if they were attributes
+
+        Keywords arguments passed to the constructor of Parameter can then be accessed as if they were
+        attributes::
+
+            >>> k_on = Parameter(2, 'uM^-1 s^-1', comment='Comment about k_on')
+            >>> k_on.comment
+            'Comment about k_on'
+
+        Note that the properties can only be defined at object creation and are all read-only.
+
+        :meta public:
+        """
+        if name in self._kwargs:
+            return self._kwargs[name]
+        else:
+            raise AttributeError(f'Attribute "{name}" was not declared for the Parameter.')
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, Parameter) and
+            (self._name, self._value, self._units, tuple(self._kwargs.items())) == 
+            (other._name, other._value, other._units, tuple(other._kwargs.items()))
+        )
+
+    def __hash__(self):
+        return hash((self._name, self._value, self._units, tuple(self._kwargs.items())))
+
+    def __add__(self, other, _inv=False):
+        """Add Parameters with the ``+`` operator
+
+        :param other: The other Parameter or a number
+        :type other: Union[:py:class:`Parameter`, float]
+        :returns: The Parameter resulting from the addition of both operands. If both
+            operands are Parameters, the units of the result matches the units of the leftmost
+            named parameter. If one operand is a number, it implicitely takes the units of the other
+            operand. The name of the returned Parameter describes the operation.
+        :rtype: :py:class:`Parameter`
+
+        Usage::
+
+            >>> param1 = Parameter(1, 'uM s^-1')
+            >>> param2 = Parameter(2, 'nM ms^-1')
+            >>> param3 = param1 + param2
+            >>> param3.units
+            'uM s^-1'
+            >>> param3.value
+            3
+            >>> param3.name
+            'param1 + param2'
+
+        :meta public:
+        """
+        if isinstance(other, numbers.Number):
+            other = Parameter(other, self._units, name='')
+        elif not isinstance(other, Parameter):
+            raise TypeError(f'Expected a Parameter or a number, got {other} instead.')
+
+        self._checkUsableInOp()
+        other._checkUsableInOp()
+
+        deps = [obj for obj in [self, other] if obj._isNamed()]
+
+        if not self._isNamed() and other._isNamed():
+            units = other._units
+            self = self._convertTo(units)
+        else:
+            units = self._units
+            other = other._convertTo(units)
+
+        val = self._value + other._value
+
+        if not self._isNamed() and not other._isNamed():
+            name = ''
+        else:
+            name = f'{other} + {self}' if _inv else f'{self} + {other}'
+
+        return Parameter(val, units, name=name, _composedPrio=3, _dependencies=deps)
+
+    def __sub__(self, other, _inv=False):
+        """Subtract Parameters with the ``-`` operator
+
+        :param other: The other Parameter or a number
+        :type other: Union[:py:class:`Parameter`, float]
+        :returns: The Parameter resulting from the subtraction of both operands. If both
+            operands are Parameters, the units of the result matches the units of the leftmost
+            named parameter. If one operand is a number, it implicitely takes the units of the other
+            operand. The name of the returned Parameter describes the operation.
+        :rtype: :py:class:`Parameter`
+
+        Usage::
+
+            >>> param1 = Parameter(1, 'uM')
+            >>> param2 = Parameter(100, 'nM')
+            >>> param3 = param1 - param2
+            >>> param3.units
+            'uM'
+            >>> param3.value
+            0.9
+            >>> param3.name
+            'param1 - param2'
+
+        :meta public:
+        """
+        if isinstance(other, numbers.Number):
+            other = Parameter(other, self._units, name='')
+        elif not isinstance(other, Parameter):
+            raise TypeError(f'Expected a Parameter or a number, got {other} instead.')
+
+        self._checkUsableInOp()
+        other._checkUsableInOp()
+
+        deps = [obj for obj in [self, other] if obj._isNamed()]
+
+        if not self._isNamed() and other._isNamed():
+            units = other._units
+            self = self._convertTo(units)
+        else:
+            units = self._units
+            other = other._convertTo(units)
+
+        val = (other._value - self._value) if _inv else (self._value - other._value)
+
+        if not self._isNamed() and not other._isNamed():
+            name = ''
+        else:
+            selfStr = f'({self})' if self._composedPrio >= 3 else str(self)
+            otherStr = f'({other})' if other._composedPrio >= 3 else str(other)
+            name = f'{other} - {selfStr}' if _inv else f'{self} - {otherStr}'
+
+        return Parameter(val, units, name=name, _composedPrio=3, _dependencies=deps)
+
+    def __mul__(self, other, _inv=False):
+        """Multiply Parameters with the ``*`` operator
+
+        :param other: The other Parameter or a number
+        :type other: Union[:py:class:`Parameter`, float]
+        :returns: The Parameter resulting from the multiplication of both operands. If both
+            operands are Parameters, the units of the result consists in the product of the units
+            of the operands. If one operand is a number, it is implicitely treated as dimensionless.
+            The name of the returned Parameter describes the operation.
+        :rtype: :py:class:`Parameter`
+
+        Usage::
+
+            >>> param1 = Parameter(1, 'uM')
+            >>> param2 = Parameter(5, 's^-1')
+            >>> param3 = param1 * param2
+            >>> param3.units
+            'uM s^-1'
+            >>> param3.value
+            5
+            >>> param3.name
+            'param1 * param2'
+
+        :meta public:
+        """
+        if isinstance(other, numbers.Number):
+            other = Parameter(other, '', name='')
+        elif not isinstance(other, Parameter):
+            raise TypeError(f'Expected a Parameter or a number, got {other} instead.')
+
+        self._checkUsableInOp()
+        other._checkUsableInOp()
+
+        deps = [obj for obj in [self, other] if obj._isNamed()]
+
+        if _inv:
+            units = other._units._multiplyWith(self._units)
+        else:
+            units = self._units._multiplyWith(other._units)
+
+        val = self._value * other.value
+
+        if not self._isNamed() and not other._isNamed():
+            name = ''
+        else:
+            selfStr = f'({self})' if self._composedPrio > 2 else str(self)
+            if not self._isNamed() and self._units is not None and len(self.units) > 0:
+                selfStr = f'({selfStr} {self.units})'
+            otherStr = f'({other})' if other._composedPrio > 2 else str(other)
+            if not other._isNamed() and other._units is not None and len(other.units) > 0:
+                otherStr = f'({otherStr} {other.units})'
+            name = f'{otherStr} * {selfStr}' if _inv else f'{selfStr} * {otherStr}'
+
+        return Parameter(val, units, name=name, _composedPrio=2, _dependencies=deps)
+
+    def __truediv__(self, other, _inv=False):
+        """Divide Parameters with the ``/`` operator
+
+        :param other: The other Parameter or a number
+        :type other: Union[:py:class:`Parameter`, float]
+        :returns: The Parameter resulting from the division of both operands. If both
+            operands are Parameters, the units of the result consists in the division of the units
+            of the operands. If one operand is a number, it is implicitely treated as dimensionless.
+            The name of the returned Parameter describes the operation.
+        :rtype: :py:class:`Parameter`
+
+        Usage::
+
+            >>> param1 = Parameter(1, 'uM')
+            >>> param2 = Parameter(5, 's')
+            >>> param3 = param1 / param2
+            >>> param3.units
+            'uM s^-1'
+            >>> param3.value
+            0.2
+            >>> param3.name
+            'param1 / param2'
+
+        :meta public:
+        """
+        if isinstance(other, numbers.Number):
+            other = Parameter(other, '', name='')
+        elif not isinstance(other, Parameter):
+            raise TypeError(f'Expected a Parameter or a number, got {other} instead.')
+
+        self._checkUsableInOp()
+        other._checkUsableInOp()
+
+        deps = [obj for obj in [self, other] if obj._isNamed()]
+
+        if _inv:
+            units = other._units._divideWith(self._units)
+            val = other._value / self.value
+        else:
+            units = self._units._divideWith(other._units)
+            val = self._value / other.value
+
+        if not self._isNamed() and not other._isNamed():
+            name = ''
+        else:
+            selfStr = f'({self})' if self._composedPrio > 2 else str(self)
+            if not self._isNamed() and self._units is not None and len(self.units) > 0:
+                selfStr = f'({selfStr} {self.units})'
+            otherStr = f'({other})' if other._composedPrio > 2 else str(other)
+            if not other._isNamed() and other._units is not None and len(other.units) > 0:
+                otherStr = f'({otherStr} {other.units})'
+            name = f'{otherStr} / {selfStr}' if _inv else f'{selfStr} / {otherStr}'
+
+        return Parameter(val, units, name=name, _composedPrio=2, _dependencies=deps)
+
+    def __pow__(self, power):
+        """Raise to an integer power with the ``**`` operator
+
+        :param power: The integer power
+        :type power: int
+        :returns: The Parameter resulting from raising self to the given power. The units of the
+            result are the units of self raised to power. The name of the returned Parameter
+            describes the operation.
+        :rtype: :py:class:`Parameter`
+
+        Usage::
+
+            >>> param1 = Parameter(2, 'um')
+            >>> param2 = param1 ** 3
+            >>> param3.units
+            'um^3'
+            >>> param3.value
+            8
+            >>> param3.name
+            'param1 ** 3'
+
+        :meta public:
+        """
+        if not isinstance(power, int):
+            raise TypeError(f'Expected an integer, got {power} instead.')
+
+        self._checkUsableInOp()
+
+        deps = [self] if self._isNamed() else []
+
+        units = self._units._raiseToPower(power)
+        val = self._value ** power
+
+        if self._isNamed():
+            name = f'({self}) ** {power}' if self._composedPrio > 1 else f'{self} ** {power}'
+        else:
+            name = ''
+
+        return Parameter(val, units, name=name, _composedPrio=1, _dependencies=deps)
+
+    def __radd__(self, other):
+        return self.__add__(other, _inv=True)
+
+    def __rsub__(self, other):
+        return self.__sub__(other, _inv=True)
+
+    def __rmul__(self, other):
+        return self.__mul__(other, _inv=True)
+
+    def __rtruediv__(self, other):
+        return self.__truediv__(other, _inv=True)
+
+    def __float__(self):
+        return float(self._valueInSI())
+
+    def __int__(self):
+        return int(self._valueInSI())
+
+    def __bool__(self):
+        return bool(self._value)
+
+    def __round__(self):
+        return round(self._valueInSI())
+
+    def __repr__(self):
+        if self._isNamed():
+            return self._name
+        else:
+            return f'{self.value}'
+
+    @classmethod
+    def _startRecording(cls):
+        cls._PARAMETER_USAGE_RECORD = []
+
+    @classmethod
+    def _endRecordingAndGetUsage(cls):
+        res = cls._PARAMETER_USAGE_RECORD
+        cls._PARAMETER_USAGE_RECORD = None
+        return res
+
+
+def _extractParameterized(obj, pre=tuple(), exploredObjs=None):
+    """Yield tuples that describe a path to parameterized objects."""
+    if exploredObjs is None:
+        exploredObjs = set()
+
+    if isinstance(obj, ParameterizedObject):
+        # Only yield obj if it should be included in param tables
+        if obj._includeinParamTables():
+            yield pre + (obj,)
+        
+        if obj not in exploredObjs:
+            # Check subobjects
+            for subObj in obj._getSubParameterizedObjects():
+                yield from _extractParameterized(subObj, pre, exploredObjs)
+
+            # Check Parameters that are themselves Parameterized
+            for param in obj._getAllParams():
+                if isinstance(param, Parameter) and isinstance(param._value, ParameterizedObject):
+                    yield from _extractParameterized(param._value, pre, exploredObjs)
+
+    if isinstance(obj, NamedObject) and obj not in exploredObjs:
+        # Handle children
+        for subObj in obj._getChildrenOfType(ParameterizedObject, NamedObject):
+            yield from _extractParameterized(subObj, pre + (obj,), exploredObjs)
+
+    exploredObjs.add(obj)
+
+
+def _dictRowsToTable(rowList):
+    """
+    Take a list of rows in which each row is a list of key-value pair and output a
+    list of column name and a list of rows in which rows just contain the value associated
+    with the column or None if it is not defined for this row.
+    Discard columns that only contain None.
+    """
+    colNames = {}
+    ind = 0
+    for row in rowList:
+        for cname, val in row.items():
+            if cname not in colNames and val is not None:
+                colNames[cname] = ind
+                ind += 1
+
+    table = []
+    for row in rowList:
+        values = [None] * len(colNames)
+        for cname, val in row.items():
+            if val is not None:
+                values[colNames[cname]] = val
+        table.append(tuple(values))
+
+    return colNames, table
+
+
+def _tableToCSV(rowList, filename, sep='\t', **kwargs):
+    """Export a single table to a CSV file
+    Return the path to the exported file.
+    """
+
+    colNames, table = _dictRowsToTable(rowList)
+    filePath = f'{filename}.csv'
+
+    with open(filePath, 'w') as f:
+        f.write(sep.join(_formatValue(cn, bold=True, **kwargs) for cn in colNames) + '\n')
+        for row in table:
+            f.write(sep.join(map(str, [val if val is not None else '' for val in row])) + '\n')
+
+    return filePath
+
+
+_TEXT_FORMAT_UNICODE = 'unicode'
+_TEXT_FORMAT_LATEX = 'latex'
+
+def _formatValue(value, **kwargs):
+    """Return a formated string to be used in parameter tables"""
+
+    textFormat = kwargs.get('textFormat', _TEXT_FORMAT_UNICODE)
+    numPrecision = kwargs.get('numPrecision', 10)
+    isComputation = kwargs.get('isComputation', False)
+    bold = kwargs.get('bold', False)
+
+    if isinstance(value, Parameter):
+        # Do not modify Parameter objects, they will be expanded later
+        return value
+    elif hasattr(value, '__code__'):
+        filename = value.__code__.co_filename
+        m = re.match('<ipython-input-(\d)+-', filename)
+        if m is not None:
+            filename = f'ipython-{m.group(1)}'
+        if textFormat == _TEXT_FORMAT_LATEX:
+            qualName = _formatValue(value.__qualname__, **kwargs)
+            filename = _formatValue(filename, **kwargs)
+            return f'\\texttt{{{qualName}(...)}} at \\texttt{{{filename}}}:{value.__code__.co_firstlineno}'
+        else:
+            return f'{value.__qualname__}(...) at {filename}:{value.__code__.co_firstlineno}'
+    elif isinstance(value, _ParamList):
+        # Try to match simple patterns
+        if len(value) > 2:
+            if isinstance(value[0], numbers.Number):
+                srtList = sorted(value)
+                step = srtList[1] - srtList[0]
+                if srtList == list(numpy.arange(srtList[0], srtList[-1] + step, step)):
+                    start = _formatValue(srtList[0], **kwargs)
+                    finish = _formatValue(srtList[-1], **kwargs)
+                    stp = _formatValue(step, **kwargs)
+                    return f'{start} to {finish}' + (f' step {stp}' if step != 1 else '')
+        return ', '.join(_formatValue(v, **kwargs) for v in value)
+    elif isinstance(value, steps.API_2.model._SubReactionList):
+        if textFormat == _TEXT_FORMAT_LATEX:
+            if value._isFwd:
+                return f'\\detokenize{{{value._parent.lhs}}} $\\rightarrow$~\\detokenize{{{value._parent.rhs}}}'
+            else:
+                return f'\\detokenize{{{value._parent.rhs}}} $\\rightarrow$~\\detokenize{{{value._parent.lhs}}}'
+        else:
+            return str(value)
+    elif isinstance(value, Units):
+        if textFormat == _TEXT_FORMAT_UNICODE:
+            return value._toUnicode()
+        elif textFormat == _TEXT_FORMAT_LATEX:
+            return value._toLatex()
+        else:
+            return value._str
+    elif isinstance(value, numbers.Number):
+        if textFormat == _TEXT_FORMAT_LATEX:
+            return f'\\num{{{value:.{numPrecision}g}}}'
+        else:
+            return f'{value:.{numPrecision}g}'
+    elif value is None:
+        return None
+    else:
+        if textFormat == _TEXT_FORMAT_LATEX:
+            ret = str(value)
+            if isComputation:
+                ret = re.sub(' \*\* ([0-9]+)', lambda m: f'^{{{m.group(1)}}}', ret)
+                ret = re.sub('([a-zA-Z]\w+)', lambda m: f'\\mathrm{{\\detokenize{{{m.group(1)}}}}}', ret)
+                ret = re.sub('([0-9]+\.[0-9]+)', lambda m: f'{float(m.group(1)):{numPrecision}g}', ret)
+                ret = re.sub('([^\s]+) / ([^\s]+)', lambda m: f'\\frac{{{m.group(1)}}}{{{m.group(2)}}}', ret)
+                ret = ret.replace('*', '\\times')
+                ret = f'${ret}$'
+            else:
+                toEscape = '#_^&%${}'
+                for c in toEscape:
+                    ret = ret.replace(c, f'\\{c}')
+            if bold:
+                ret = f'\\textbf{{{ret}}}'
+            return ret
+        else:
+            return str(value)
+
+
+class _ParamList:
+    """Utility class for parameter grouping"""
+    def __init__(self, lst):
+        self.lst = lst
+
+    def __iter__(self):
+        return iter(self.lst)
+
+    def __getitem__(self, i):
+        return self.lst[i]
+
+    def __hash__(self):
+        return hash(frozenset(self.lst))
+
+    def __eq__(self, other):
+        return isinstance(other, _ParamList) and frozenset(self.lst) == frozenset(other.lst)
+
+    def __repr__(self):
+        return 'PL' + str(self.lst)
+
+    def __len__(self):
+        return len(self.lst)
+
+
+def _groupParams(params, groupingInds=None):
+    """
+    Take a list of parameter tuples as input and outputs a list of tuples of _ParamLists
+    whose cartesian product yields the orginal parameter tuples.
+    """
+    n = len(params[0])
+    if groupingInds is None:
+        groupingInds = list(range(n))
+
+    groupings = [params]
+    for i in range(n):
+        if i in groupingInds:
+            # group by n-1 column
+            val2Lst = {}
+            grouped = False
+            for row in params:
+                val = (row[:i], row[i + 1 :])
+                val2Lst.setdefault(val, []).append(row[i])
+                if len(val2Lst[val]) > 1:
+                    grouped = True
+            if grouped:
+                newParams = [val[0] + (_ParamList(lst),) + val[1] for val, lst in val2Lst.items()]
+                groupings.append(_groupParams(newParams))
+    return min(groupings, key=lambda x: len(x))
+
+
+def _exportToCSV(cls2Tables, cls2NamedParams, filename, **kwargs):
+    """Export parameter data to a series of CSV files
+    One table per file, separate file for named parameters.
+    Return a list of paths to exported files
+    """
+
+    allPaths = []
+
+    for cls, rowList in cls2Tables.items():
+        allPaths.append(_tableToCSV(rowList, f'{filename}_{cls._getDisplayName()}', **kwargs))
+
+    rowList = []
+    names = set()
+    for cls, rows in cls2NamedParams.items():
+        for row in rows:
+            if row['Name'] not in names:
+                rowList.append(row)
+                names.add(row['Name'])
+    if len(rowList) > 0:
+        allPaths.append(_tableToCSV(rowList, f'{filename}_Parameters', **kwargs))
+
+    return allPaths
+
+
+def _exportToTEX(
+        cls2Tables, cls2NamedParams, filename,
+        csv2latexArgs = '-l 99999 -s t -x -r 2 -z -c 0.9 -e', **kwargs
+    ):
+    """Export parameter data to a series of TEX files
+    One table per file, separate file for named parameters.
+    Requires csv2latex to be installed.
+    Return a list of paths to exported files.
+    """
+    allPaths = []
+
+    tmpPath = os.path.join(tempfile.gettempdir(), os.path.basename(filename))
+    csvPaths = _exportToCSV(cls2Tables, cls2NamedParams, tmpPath, **kwargs)
+    for path in csvPaths:
+        out = subprocess.check_output(
+            f'csv2latex {csv2latexArgs} {path}',
+            shell=True, universal_newlines=True
+        )
+
+        texPath = filename + path[len(tmpPath):-4] + '.tex'
+        with open(texPath, 'w') as f:
+            for line in out.split('\n'):
+                if 'documentclass' in line:
+                    f.write('\documentclass{standalone}\n')
+                    continue
+                if line == '\\begin{document}':
+                    f.write('\\usepackage{siunitx}\n')
+                f.write(line+'\n')
+
+        allPaths.append(texPath)
+        os.remove(path)
+
+    return allPaths
+
+
+def _exportToPDF(
+        cls2Tables, cls2NamedParams, filename,
+        **kwargs
+    ):
+    """Export parameter data to a series of PDF files
+    One table per file, separate file for named parameters.
+    Requires csv2latex and pdflatex to be installed.
+    Return a list of paths to exported files.
+    """
+    allPaths = []
+
+    tmpPath = os.path.join(tempfile.gettempdir(), os.path.basename(filename))
+    texPaths = _exportToTEX(cls2Tables, cls2NamedParams, tmpPath, **kwargs)
+    for path in texPaths:
+        tmpDirPath = os.path.dirname(os.path.abspath(path))
+        outDir = os.path.dirname(os.path.abspath(filename))
+        subprocess.call(f'pdflatex {path}', shell=True, cwd=tmpDirPath)
+        shutil.copy(path[:-4] + '.pdf', outDir)
+
+        allPaths.append(os.path.join(outDir, os.path.basename(path[:-4]) + '.pdf'))
+        os.remove(path)
+
+    return allPaths
+
+
+def ExportParameters(container, filename, method='csv', hideComputations=False, hideColumns=[], unitsToSimplify=[], **kwargs):
+    """Export container parameters to tables
+
+    Extracts all parameters that are used in the container and its contained objects. Parameter
+    tables are then created for each object type.
+
+    :param container: The container whose parameters are going to be exported. Most of the time,
+        this will be the :py:class:`steps.API_2.sim.Simulation` object.
+    :type container: Any STEPS object
+    :param filename: Path and prefix for the exported table files (e.g. './parameter/Sim1' would
+        yield files like './parameter/Sim1_Parameters.csv', etc.).
+    :type filename: str
+    :param method: Specify which file format should be used. Available options are 'csv', 'tex',
+        and 'pdf'.
+    :type method: str
+    :param hideComputations: If true, arithmetic combinations of parameters will not be displayed
+        in the tables.
+    :type hideComputations: bool
+    :param hideColumns: List of column names that should not be displayed in the tables.
+    :type hideColumns: List[str]
+    :param unitsToSimplify: List of units that should always be displayed in this specific way if
+        equivalent units appear in the table. For example, some surface reaction rate constants are
+        better expressed as '(mol m^-2)^-1 s^-1' so we would give this string in the list to avoid
+        seeing e.g. 'mol^-1 m^2 s^-1' (which is equivalent but harder to read) in the parameter tables.
+    :type unitsToSimplify: List[str]
+    :param \*\*kwargs: Additional keyword arguments specified below.
+
+    Keyword arguements depend on the `method` used but some of them are common to all methods.
+
+    Common additional keyword arguments:
+
+    :param numPrecision: Number of significant digits to be displayed for floating point numbers.
+    :type numPrecision: int
+
+    The 'csv' export method will export parameters as tab-separated values in a text file. Since some
+    cells can contain commas, the separator has been chosen to be tabs instead of the more common comma.
+
+    Additional keyword arguments for the 'csv' format:
+
+    :param textFormat: Either 'unicode' or 'latex', defaults to 'unicode'. 'latex' will introduce
+        latex formating in the cells, in case other csv to latex conversion programs need to be used.
+    :type textFormat: str
+
+    Both the 'tex' and 'pdf' export methods are experimental. The 'tex' method will export the parameters
+    to independent .tex files each containing one table. It requires the installation of the `csv2latex`
+    conversion program. The 'pdf' method will siply call `pdflatex` on the tex files resulting from the
+    'tex' method.
+
+    Additional keyword arguments for the 'tex' and 'pdf' formats:
+
+    :param csv2latexArgs: A string of command line arguments to be passed to `csv2latex`, see the 
+        `manual page <http://manpages.ubuntu.com/manpages/bionic/man1/csv2latex.1.html>`_ for details.
+        Defaults to ``-l 99999 -s t -x -r 2 -z -c 0.9 -e``
+    :type csv2latexArgs: str
+    """
+    # TODO improvement: Add param to restrict value setting to t=0 or maybe a function that takes time
+    # and returns whether it should be considered ?
+
+    # Force latex text format if needed
+    if method in ['tex', 'pdf']:
+        kwargs['textFormat'] = _TEXT_FORMAT_LATEX
+
+    # Insert the simplification of non-dimensional units
+    unitsToSimplify = [Units('')] + [Units(unitstr) for unitstr in unitsToSimplify]
+
+    # Extract all parameterized objects
+    allParameterizedPaths = list(_extractParameterized(container))
+
+    # If several paths end on the same object, only keep the longest
+    # If several paths have the same maximum length, keep track of all of them
+    uniquePaths = {}
+    for path in allParameterizedPaths:
+        key = id(path[-1])
+        if key in uniquePaths:
+            currLen = len(uniquePaths[key][0])
+            if len(path) < currLen:
+                continue
+            if len(path) > currLen:
+                del uniquePaths[key]
+        uniquePaths.setdefault(key, []).append(path)
+
+    # Group paths by class to establish tables
+    cls2Path = {}
+    for _, paths in uniquePaths.items():
+        cls2Path.setdefault(paths[0][-1].__class__, []).append(paths)
+
+    # Generate tables per class
+    cls2Tables = {}
+    cls2NamedParams = {}
+    for cls, allPathLists in cls2Path.items():
+        rowList = cls2Tables.setdefault(cls, [])
+        for pathsList in allPathLists:
+            # Get the corresponding object, they all end on the same
+            *_, obj = pathsList[0]
+
+            row = {}
+            row[cls._getDisplayName()] = _formatValue(obj, **kwargs)
+
+            if any(len(path) > 0 for *path, _ in pathsList):
+                defList = _ParamList(
+                    [path[-2] for path in pathsList if len(path) > 1 and path[-2] is not container]
+                )
+                row['Defined in'] = _formatValue(defList, **kwargs)
+
+            advParams = obj._advancedParameters
+            if len(advParams) > 0:
+                param2Tuples = {}
+                for tuples, param in advParams.items():
+                    param2Tuples.setdefault(param, []).append(tuples)
+
+                newRows = []
+                for param, tuples in param2Tuples.items():
+                    propNames, propTable = _dictRowsToTable([{key:val for key, val in tples} for tples in  tuples])
+
+                    groupingInds = [i for i, pn in enumerate(propNames) if pn in cls._getGroupedAdvParams()]
+                    groups = _groupParams(propTable, groupingInds=groupingInds)
+                    for prod in groups:
+                        newProd = {**row}
+                        for lst, prop in zip(prod, propNames.keys()):
+                            if not isinstance(lst, _ParamList):
+                                lst = _ParamList([lst])
+                            newProd[prop] = _formatValue(lst, **kwargs)
+                        newRows.append({**newProd, 'Value': _formatValue(param, **kwargs)})
+
+                rowList += newRows
+            else:
+                rowList.append({
+                    **row,
+                    **{key: _formatValue(val, **kwargs) for key, val in obj._parameters.items()},
+                })
+
+        # Expand Parameters into more columns and keep track of named parameters
+        namedParams = []
+        for i, row in enumerate(rowList):
+            newRow = {}
+            for name, param in row.items():
+                if isinstance(param, Parameter):
+                    if param._isNamed():
+                        namedParams.append(param)
+                    # Also add named parameters in dependency tree
+                    namedParams += [dep for dep in param._getAllDependencies() if dep._isNamed()]
+
+                    if not hideComputations or (param._isNamed() and param._isUserDefined()):
+                        newRow[f'{name} Parameter'] = _formatValue(param._name, isComputation=True, **kwargs)
+                    # Convert to standard units if available
+                    value = param._value
+                    units = param._units
+                    if param._units is not None:
+                        for u in unitsToSimplify:
+                            if param._units._compatibleWith(u):
+                                value = param.valueIn(u)
+                                units = u
+                                break
+
+                    if value is not None:
+                        newRow[f'{name}'] = _formatValue(value, **kwargs)
+                        if units is not None:
+                            newRow[f'{name} Units'] = _formatValue(units, **kwargs)
+                        if not param._isNamed():
+                            for pname, pval in param._kwargs.items():
+                                newRow[f'{name} {pname}'] = _formatValue(pval, **kwargs)
+                else:
+                    newRow[name] = param
+            rowList[i] = newRow
+
+        # Only keep named params that are not dependent on other params
+        # and add the missing params
+        expand = True
+        dontExpand = []
+        while expand:
+            newNamedParams = []
+            expand = False
+            for param in namedParams:
+                if len(param._dependencies) > 0 and param not in dontExpand:
+                    for dep in param._dependencies:
+                        if dep not in newNamedParams:
+                            newNamedParams.append(dep)
+
+                    if param._fullname is not None:
+                        # Add the parameter itself if it was declared as a parameter explicitely
+                        newNamedParams.append(param)
+                        # But prevent it from being expanded in subsequent iterations
+                        dontExpand.append(param)
+
+                    expand = True
+                elif param not in newNamedParams:
+                    newNamedParams.append(param)
+            namedParams = newNamedParams
+
+        cls2NamedParams[cls] = [
+            {
+                'Name':_formatValue(np._name, **kwargs),
+                'Value':_formatValue(np._value, **kwargs),
+                'Units':_formatValue(np._units, **kwargs) if np._units is not None else '',
+                'Computed From':_formatValue(np._fullname, isComputation=True, **kwargs),
+                **{key: _formatValue(val, **kwargs) for key, val in np._kwargs.items()}
+            } for np in namedParams
+        ]
+
+    # Hide columns
+    for hc in hideColumns:
+        for clsmap in [cls2Tables, cls2NamedParams]:
+            for cls, table in cls2Tables.items():
+                for row in table:
+                    try:
+                        del row[hc]
+                    except:
+                        continue
+
+    if method == 'csv':
+        return _exportToCSV(cls2Tables, cls2NamedParams, filename, **kwargs)
+    elif method == 'tex':
+        return _exportToTEX(cls2Tables, cls2NamedParams, filename, **kwargs)
+    elif method == 'pdf':
+        return _exportToPDF(cls2Tables, cls2NamedParams, filename, **kwargs)
+    else:
+        raise NotImplementedError(f'Unknown export method "{method}".')
+
+
+
+###################################################################################################
+
+# The prefix used for naming classes in the cython bindings
+_CYTHON_PREFIX = '_py_'
+
+###################################################################################################
+# STEPS objects utility classes
 
 
 class SolverPathObject:
@@ -61,7 +1708,7 @@ class SolverPathObject:
         """Return None or a function that will modify the output from the solver."""
         return None
 
-    def _solverSetValue(self, v):
+    def _solverSetValue(self, valName, v):
         """
         Return the value that should actually be set in the solver when value 'v' is given by
         the user.
@@ -88,7 +1735,7 @@ class StepsWrapperObject:
     """Base class for all objects that are wrappers for steps objects."""
 
     def __init__(self, *args, **kwargs):
-        super().__init__()
+        super().__init__(*args, **kwargs)
 
     def _getStepsObjects(self):
         """Return a list of the steps objects that this named object holds. Should be overloaded."""
@@ -100,6 +1747,43 @@ class StepsWrapperObject:
         raise NotImplementedError()
 
 
+class KeyOrderedDict:
+    """Utility class: dict in which iteration is ordered based on key values"""
+    def __init__(self):
+        self._dict = {}
+        self._keys = []
+        self._sorted = True
+
+    def keys(self):
+        return iter(self)
+
+    def items(self):
+        for key in self:
+            yield (key, self._dict[key])
+
+    def __contains__(self, key):
+        return key in self._dict
+
+    def __getitem__(self, key):
+        return self._dict[key]
+
+    def __setitem__(self, key, v):
+        if key not in self._dict:
+            self._keys.append(key)
+            self._sorted = False
+        self._dict[key] = v
+
+    def __delitem__(self, key):
+        del self._dict[key]
+        self._keys.remove(key)
+
+    def __iter__(self):
+        if not self._sorted:
+            self._keys.sort()
+            self._sorted = True
+        return iter(self._keys)
+
+
 class NamedObject(SolverPathObject):
     """Base class for all objects that are named and can have children
 
@@ -108,13 +1792,12 @@ class NamedObject(SolverPathObject):
     :type name: str
 
     All classes that inherit from :py:class:`NamedObject` can be built with a ``name`` keyword
-    parameter. For steps objects, it corresponds to the identifiers used in
-    :py:mod:`steps.API_1`. Note that some names are forbidden because they correspond to names
-    of attributes or methods of classes defined in this interface. Since most objects implement
-    ``__getattr__`` attribute style access to children, the names of these methods / attributes
-    could clash with object names. It is thus possible that the contructor of
-    :py:class:`NamedObject` raises an exception when trying to name an object with one of these
-    forbidden names.
+    parameter. For steps objects, it corresponds to the identifiers used in STEPS. Note that some
+    names are forbidden because they correspond to names of attributes or methods of classes
+    defined in this interface. Since most objects implement ``__getattr__`` attribute style access
+    to children, the names of these methods / attributes could clash with object names. It is thus
+    possible that the contructor of :py:class:`NamedObject` raises an exception when trying to
+    name an object with one of these forbidden names.
 
     In addition to a name, this class holds a list of children objects that can be accessed with
     :py:func:`__getattr__` and :py:func:`ALL`.
@@ -127,6 +1810,7 @@ class NamedObject(SolverPathObject):
     _nameInds = {}  # TODO Not urgent: use threading local?
     _forbiddenNames = set()
     _allowForbNames = False
+    _children = {} # Use default empty value to avoid infinite recursion in __getattr__
 
     def __init__(self, *args, name=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -145,7 +1829,7 @@ class NamedObject(SolverPathObject):
             else:
                 raise Exception(f"Cannot call an element '{self.name}', this name is reserved")
 
-        self._children = collections.OrderedDict()
+        self._children = KeyOrderedDict()
         self._parents = {}
 
     def _addChildren(self, e):
@@ -168,7 +1852,9 @@ class NamedObject(SolverPathObject):
 
         :meta public:
         """
-        if name.startswith('__'):
+        # TODO revert this temporary change for split meshes
+        # if name.startswith('__'):
+        if name.startswith('__') and not name.startswith('__MESH'):
             raise AttributeError
         elif name in self.children:
             return self.children[name]
@@ -327,11 +2013,7 @@ class NamedObject(SolverPathObject):
             )
 
     def __repr__(self):
-        return self.name
-
-    def _exitCallback(self, parent):
-        """Method to be called when we get out of the context manager that used the parent object."""
-        pass
+        return self.name if self._children is not NamedObject._children else super().__repr__()
 
 
 class Params:
@@ -352,21 +2034,49 @@ class UsableObject(NamedObject):
         if self.__class__ not in UsableObject._currUsed:
             UsableObject._currUsed[self.__class__] = self._getDefaultCurrUsedVal()
 
+        self._currentUsers = []
+
     def _getDefaultCurrUsedVal(self):
         return None
+
+    def _registerUser(self, cls, user, addAsElement):
+        self._currentUsers.append(user)
+        if addAsElement:
+            self._addChildren(user)
+            user._parents[cls] = self
+            for chld in user._getAdditionalChildren():
+                self._addChildren(chld)
+                chld._parents[cls] = self
 
     def __enter__(self):
         if UsableObject._currUsed[self.__class__] is None:
             UsableObject._currUsed[self.__class__] = self
         else:
             raise Exception(f'Cannot use two {self.__class__.__name__} objects simultaneously.')
+        self._currentUsers = []
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         UsableObject._currUsed[self.__class__] = None
         if (exc_type, exc_val, exc_tb) == (None, None, None):
-            for name, c in self.children.items():
-                c._exitCallback(self)
+            for user in self._currentUsers:
+                user._exiting(self)
+
+    @staticmethod
+    def _getUsedObjectOfClass(cls):
+        isMulti = MultiUsable in cls.__mro__
+        allCls = collections.deque([cls])
+        while len(allCls) > 0:
+            uc = allCls.popleft()
+            allCls.extend(uc.__subclasses__())
+            if uc in UsableObject._currUsed and UsableObject._currUsed[uc] is not None:
+                if isMulti:
+                    # Return a copy of the list, it would otherwise create problems
+                    # when objects keep track of the values returned by _getUsedObjects()
+                    return copy.copy(UsableObject._currUsed[uc])
+                else:
+                    return UsableObject._currUsed[uc]
+        return [] if isMulti else None
 
 
 class MultiUsable(UsableObject):
@@ -380,13 +2090,14 @@ class MultiUsable(UsableObject):
 
     def __enter__(self):
         UsableObject._currUsed[self.__class__].append(self)
+        self._currentUsers = []
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         UsableObject._currUsed[self.__class__].remove(self)
         if (exc_type, exc_val, exc_tb) == (None, None, None):
-            for name, c in self.children.items():
-                c._exitCallback(self)
+            for user in self._currentUsers:
+                user._exiting(self)
 
 
 class Optional:
@@ -449,24 +2160,15 @@ def UsingObjects(*usedCls):
     class ObjectUser(NamedObject):
         def __init__(self, *args, addAsElement=True, **kwargs):
             super().__init__(*args, **kwargs)
+            self._exited = set()
             # Register the object as child of the used objects
             list(self._getUsedObjects(addAsElement=addAsElement, **kwargs))
 
         def _getObjOfClass(self, cls, addAsElement=True):
-            allCls = collections.deque([cls])
-            while len(allCls) > 0:
-                uc = allCls.popleft()
-                allCls.extend(uc.__subclasses__())
-                if uc in UsableObject._currUsed and UsableObject._currUsed[uc] is not None:
-                    if not isinstance(UsableObject._currUsed[uc], list) and addAsElement:
-                        UsableObject._currUsed[uc]._addChildren(self)
-                        self._parents[cls] = UsableObject._currUsed[uc]
-                        for chld in self._getAdditionalChildren():
-                            UsableObject._currUsed[uc]._addChildren(chld)
-                            chld._parents[cls] = UsableObject._currUsed[uc]
-
-                    return UsableObject._currUsed[uc]
-            return [] if MultiUsable in cls.__mro__ else None
+            obj = UsableObject._getUsedObjectOfClass(cls)
+            if obj is not None and not isinstance(obj, list):
+                obj._registerUser(cls, self, addAsElement)
+            return obj
 
         def _getUsedObjects(self, addAsElement=True, **kwargs):
             """
@@ -505,6 +2207,26 @@ def UsingObjects(*usedCls):
 
         def _getParentOfType(self, cls):
             return self._parents[cls]
+
+        def _exiting(self, parent):
+            """The callback should only be called once"""
+            if parent not in self._exited:
+                self._exited.add(parent)
+                self._exitCallback(parent)
+
+        def _exitCallback(self, parent):
+            """
+            Method to be called the first time we get out of a context manager in which the object as been
+            declared.
+            """
+            pass
+
+        def _decl(self):
+            """
+            Return a string that describes the declaration of the object. It returns its name by default
+            but it can contain e.g. the file and line at which it was declared.
+            """
+            return self.name
 
     return ObjectUser
 
@@ -545,6 +2267,119 @@ class classproperty:
 
     def __get__(self, obj, objtype):
         return self.func(objtype)
+
+
+def FreezeAfterInit(cls):
+    """Class decorator for preventing dynamical attribute creation outside __init__"""
+
+    def _setattr(self, name, val):
+        if self.__freezeCounter > 0 or hasattr(self, name):
+            object.__setattr__(self, name, val)
+        else:
+            raise AttributeError(f'There is no attribute named {name} in {self}.')
+
+    oldInit = cls.__init__
+    def newInit(self, *args, **kwargs):
+        self.__freezeCounter += 1
+        oldInit(self, *args, **kwargs)
+        self.__freezeCounter -= 1
+
+    cls.__freezeCounter = 0
+    cls.__setattr__ = _setattr
+    cls.__init__ = functools.wraps(cls.__init__)(newInit)
+
+    return cls
+
+
+###################################################################################################
+# File version management utilities
+
+class Versioned:
+    """Base class for objects that can come in more than one version
+
+    The main use case for this is when behavior changes with different STEPS versions but we still need
+    to have code that is compatible with previous STEPS versions.
+
+    Several methods sharing the same name can be defined and the `_versionRange` decorator should be
+    used to associate a version range to each of them. Once the `_setVersion` method is called on an
+    object of this class, the methods corresponding to the supplied version will be used by the object.
+
+    The `_setVersion` method is called at construction with STEPS current version.
+    """
+
+    _methods = {}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._setVersion(steps.__version__)
+
+    @staticmethod
+    def _versionRange(above=None, belowOrEq=None):
+        """
+        Decorator that helps selecting the correct version of a method
+
+        When a method is decorated with this, it will only be used if the version passed to
+        `_setVersion` method is inside the range specified here (above < version <= belowOrEq).
+        """
+        minVersion = Versioned._parseVersion(above)
+        maxVersion = Versioned._parseVersion(belowOrEq)
+        class decorator:
+            def __init__(self, func):
+                Versioned._methods.setdefault(func.__name__, []).append((minVersion, maxVersion, func))
+                self.func = func
+            def __set_name__(self, owner, name):
+                if not hasattr(owner, '_versionedMethods'):
+                    setattr(owner, '_versionedMethods', {})
+                for funcTuple in Versioned._methods[name]:
+                    owner._versionedMethods.setdefault(name, []).append(funcTuple)
+                del Versioned._methods[name]
+                setattr(owner, name, self.func)
+
+        return decorator
+
+    def _setVersion(self, version):
+        """Set the version of a versioned object
+
+        It will check all methods that were registered with the `_versionRange` decorator.
+        If the version parameter is inside the version range of a specific method, this method will be
+        monkey patched to the object.
+        """
+        version = Versioned._parseVersion(version)
+        self._version = version
+        cls = self.__class__
+        for name, versions in cls._versionedMethods.items():
+            res = None
+            for minv, maxv, func in versions:
+                if (minv is None or minv < version) and (maxv is None or version <= maxv):
+                    if res is not None:
+                        raise Exception(
+                            f'Several methods could be used for method {name} with version {version}.'
+                        )
+                    res = func
+            if res is None:
+                raise Exception(f'No methods were found for {name} with version {version}.')
+            setattr(self, name, types.MethodType(res, self))
+
+    @staticmethod
+    def _parseVersion(versionStr):
+        """Parse a version string to a tuple of integers
+
+        `packaging.version.parse` would be preferable but in order to not add another dependency, we will use
+        this simple parsing method.
+        """
+        if versionStr is None:
+            return None
+        if isinstance(versionStr, tuple):
+            return versionStr
+        try:
+            return tuple(map(int, versionStr.split('.')))
+        except:
+            raise Exception(f'Invalid version string "{versionStr}".')
+
+
+###################################################################################################
+# Various utilities
 
 
 def limitReprLength(func):
@@ -628,6 +2463,45 @@ def args2str(*args, **kwargs):
     return ', '.join(lst)
 
 
+def extractArgs(args, kwargs, lst, raiseIfMoreArgs=True):
+    """
+    Extract arguments from args and kwargs based on name and type.
+
+    This function also removes arguments from args and kwargs if they got extracted.
+
+    :param args: Tuple of arguments
+    :type args: Tuple[Any, ...]
+    :param kwargs: Keyword arguments
+    :type kwargs: Dict[str, Any]
+    :param lst: The list of name, type and default value
+    :type lst: List[Tuple[str, Union[Type, Tuple[Type, ...]], Any]]
+    :param raiseIfMoreArgs: If True, raise an exception if some positional arguments were not extracted
+    :type raiseIfMoreArgs: bool
+
+    :return: Tuple of values of size n + 2 with n the length of the `lst` parameter. The two last
+        elements are the updated `args` and `kwargs` after extraction
+    :rtype: Tuple[Any, ..., Tuple[Any, ...], Dict[str, Any]]
+    """
+    args = list(args)
+    kwargs = dict(kwargs)
+    res = []
+    for name, tpe, default in lst:
+        val = default
+        if name in kwargs:
+            val = kwargs[name]
+            del kwargs[name]
+        else:
+            for i, arg in enumerate(args):
+                if isinstance(arg, tpe) or arg == default:
+                    val = arg
+                    del args[i]
+                    break
+        res.append(val)
+    if raiseIfMoreArgs and len(args) > 0:
+        raise Exception(f'Unused arguments: {args}')
+    return tuple(res) + (args, kwargs)
+
+
 def SetVerbosity(v):
     """
     Set verbosity to the specified level.
@@ -652,3 +2526,55 @@ def _print(msg, prio):
     from . import sim as nsim
     if prio <= VERBOSITY and nsim.MPI._shouldWrite:
         print(msg)
+
+###################################################################################################
+# Docstrings utilities
+
+
+def _paddedStringsfromRow(row, colLengths):
+    return ' '.join(val + ' '*(cl - len(val)) for val, cl in zip(row, colLengths))
+
+
+def GetDocstringTable(colNames, rows, indentStr=''):
+    lines = []
+    colLengths = []
+    for c, cname in enumerate(colNames):
+        colLengths.append(max(len(cname), max(len(row[c]) for row in rows)))
+    sepLine = ' '.join('='*cl for cl in colLengths)
+    lines.append(sepLine)
+    lines.append(indentStr + _paddedStringsfromRow(colNames, colLengths))
+    lines.append(indentStr + sepLine)
+    for row in rows:
+        lines.append(indentStr + _paddedStringsfromRow(row, colLengths))
+    lines.append(indentStr + sepLine)
+
+    return '\n'.join(lines)
+
+
+class Facade:
+    """Base class for classes that are exposed to the user but can instantiate objects from their
+    subclasses. For example, ``Compartment`` is a facade to _DistCompartment, etc.
+    Subclasses can define the ``_FACADE_TITLE_STR`` class attribute to give a section title in the
+    documentation.
+    """
+    _FACADE_ATTR_NAME = '_FACADE_TITLE_STR'
+
+###################################################################################################
+# Docstring editing
+
+
+# Insert Prefix and Units information into the Parameter docstring
+prefixTable = GetDocstringTable(
+    ['Prefix', 'Name', 'Base 10'], 
+    [(f"``'{pref}'``", name, f'10\ :sup:`{exp}`') for pref, (exp, name) in Units._SI_PREFIXES.items()],
+    '        '
+)
+unitTable = GetDocstringTable(
+    ['Unit', 'Name', 'Quantity'],
+    [(f"``'{unit}'``", name, quant) for unit, (_, _, name, quant) in Units._SI_UNITS.items()],
+    '        '
+)
+Parameter.__doc__ = Parameter.__doc__.format(
+    prefixTable=prefixTable,
+    unitTable=unitTable,
+)

@@ -3,7 +3,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -43,10 +43,10 @@ from steps import stepslib
 from steps.API_1.solver import _Base_Solver
 
 # Constants aliases (yep, must be hand coded)
-EF_NONE = stepslib._py_API.EF_NONE
-EF_DEFAULT = stepslib._py_API.EF_DEFAULT
-EF_DV_BDSYS = stepslib._py_API.EF_DV_BDSYS
-EF_DV_PETSC  = stepslib._py_API.EF_DV_PETSC
+EF_NONE = stepslib._py_TetAPI.EF_NONE
+EF_DEFAULT = stepslib._py_TetAPI.EF_DEFAULT
+EF_DV_BDSYS = stepslib._py_TetAPI.EF_DV_BDSYS
+EF_DV_PETSC  = stepslib._py_TetAPI.EF_DV_PETSC
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Tetrahedral Direct SSA
@@ -93,3 +93,49 @@ class TetOpSplit(stepslib._py_TetOpSplitP, _Base_Solver) :
         and their indices in the solver.
         """
         return self._getIndexMapping()
+
+
+try:
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    # Tetrahedral Direct SSA with distributed mesh
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    class DistTetOpSplit(stepslib._py_DistTetOpSplitP, _Base_Solver):
+        """
+        Construction::
+
+            sim = steps.solver.DistTetOpSplit(model, geom, rng)
+
+        Create a spatial stochastic solver based on operator splitting, that is that reaction
+        events are partitioned and diffusion is approximated.
+
+        Arguments:
+        steps.model.Model model
+        steps.geom.Geom geom
+        steps.rng.RNG rng
+
+        """
+        def run(self, end_time, cp_interval=0.0, prefix=""):
+            """
+            Run the simulation until <end_time>,
+            automatically checkpoint at each <cp_interval>.
+            Prefix can be added using prefix=<prefix_string>.
+            """
+            self._advance_checkpoint_run(end_time, cp_interval, prefix, 'tetopsplitP' )
+
+        def advance(self, advance_time, cp_interval=0.0, prefix=""):
+            """
+            Advance the simulation for <advance_time>,
+            automatically checkpoint at each <cp_interval>.
+            Prefix can be added using prefix=<prefix_string>.
+            """
+            end_time = self.getTime() + advance_time
+            self._advance_checkpoint_run(end_time, cp_interval, prefix, 'tetopsplitP')
+
+        def getIndexMapping(self):
+            """
+            Get a mapping between compartments/patches/species
+            and their indices in the solver.
+            """
+            return self._getIndexMapping()
+except AttributeError:
+    pass

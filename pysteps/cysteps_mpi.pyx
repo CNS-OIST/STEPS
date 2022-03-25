@@ -29,12 +29,12 @@ def getNHosts():
 
 def mpiFinish():
     """
-    Finalsie the MPI solver. NOTE: handled automatically, should not be called by user.
+    Finalise the MPI solver. NOTE: handled automatically, should not be called by user.
     """
     steps_mpi.mpiFinish()
 
 # ----------------------------------------------------------------------------------------------------------------------
-cdef class _py_TetOpSplitP(_py_API):
+cdef class _py_TetOpSplitP(_py_TetAPI):
     """Bindings for MPI TetOpSplitP"""
 # ----------------------------------------------------------------------------------------------------------------------
     cdef TetOpSplitP *ptrx(self):
@@ -734,8 +734,8 @@ cdef class _py_TetOpSplitP(_py_API):
 
     def getBatchTriBatchOhmicIsNP(self, index_t[:] index_array, ocs, double[:] counts):
         """
-        Get the values of a list of Ohmic currents in a list of triangles, 
-        store in a flatten 2d array. 
+        Get the values of a list of Ohmic currents in a list of triangles,
+        store in a flatten 2d array.
         The value of current ocs[j] of triangle index_array[i] is stored in counts[i * len(ocs) + j]
 
         Syntax::
@@ -755,8 +755,8 @@ cdef class _py_TetOpSplitP(_py_API):
 
     def getBatchTriBatchGHKIsNP(self, index_t[:] index_array, list[str] ghks, double[:] counts):
         """
-        Get the values of a list of GHK currents in a list of triangles, 
-        store in a flatten 2d array. 
+        Get the values of a list of GHK currents in a list of triangles,
+        store in a flatten 2d array.
         The value of current ghks[j] of triangle index_array[i] is stored in counts[i * len(ghks) + j]
 
         Syntax::

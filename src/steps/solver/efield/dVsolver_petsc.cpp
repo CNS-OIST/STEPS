@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,14 +24,13 @@
 
  */
 
+#include "dVsolver_petsc.hpp"
 
 #include <algorithm>
+#include <numeric>
 #include <fstream>
 #include <mpi.h>
 
-#ifdef USE_PETSC
-#include "steps/solver/efield/dVsolver_petsc.hpp"
-#endif
 
 namespace steps {
 namespace solver {
@@ -56,11 +55,11 @@ dVSolverPETSC::dVSolverPETSC() {
 //    KSPSetInitialGuessNonzero(pKsp,PETSC_TRUE);
 //    PetscViewerCreate(PETSC_COMM_WORLD, &viewer);
 //    PetscViewerSetType(viewer, PETSCVIEWERASCII);
-//    PetscLogDefaultBegin(); 
+//    PetscLogDefaultBegin();
 
     int mpi_sz;
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_sz);
-    petsc_locsizes.resize(mpi_sz); 
+    petsc_locsizes.resize(mpi_sz);
     petsc_displ.resize(mpi_sz);
 
 }
@@ -69,8 +68,8 @@ dVSolverPETSC::dVSolverPETSC() {
 dVSolverPETSC::~dVSolverPETSC(){
 //   PetscLogView(viewer);
    // Destroy all objects
-   VecDestroy(&px); 
-   VecDestroy(&pb); 
+   VecDestroy(&px);
+   VecDestroy(&pb);
    MatDestroy(&pA);
    KSPDestroy(&pKsp);
    // Finalize PETSc
@@ -80,39 +79,39 @@ dVSolverPETSC::~dVSolverPETSC(){
 
 /// Initialize mesh and sparsity pattern
 void dVSolverPETSC::initMesh(TetMesh *mesh) {
-    
+
     dVSolverBase::initMesh(mesh);
 
 //deltaV.resize(pNVerts);
 
     pIdxToVert.reserve(pNVerts);
-    
+
     // Setup Vectors
     VecSetSizes(px,PETSC_DECIDE, pNVerts);
     VecSetType(px, VECMPI);
     VecGetOwnershipRange(px, &prbegin, &prend);
     VecDuplicate(px, &pb);
-    VecGetLocalSize(px, &pNlocal);       
-    
+    VecGetLocalSize(px, &pNlocal);
+
     // Setup Matrix
     MatSetSizes(pA, pNlocal, pNlocal, pNVerts, pNVerts);
     MatSetType(pA, MATMPIAIJ);
-    
-    uint idx, jdx, n_con; 
+
+    PetscInt idx, jdx, n_con;
     std::vector<PetscInt> d_nnz(pNlocal,0); // # nnz in rows of DIAGONAL portion of local submatrix
     std::vector<PetscInt> o_nnz(pNlocal,0); // # nnz in rows of OFF-DIAG portion of local submatrix
 
     for (uint i=0; i<pNVerts; ++i) {
         VertexElement* ve = mesh->getVertex(i);
         idx = ve->getIDX();     // get idx of vertex
-        // NONOPTIMAL! In future 1) check if rbegin<=idx<rend 2) if yes pushback 
+        // NONOPTIMAL! In future 1) check if rbegin<=idx<rend 2) if yes pushback
         pIdxToVert.push_back(ve);    // now we know how is vertex number idx
         n_con = ve->getNCon();  // get how many neighbours
 
         //fill sparsity template
         if (idx>=prbegin && idx<prend) {
             ++d_nnz.at(idx-prbegin);
-            for (uint j=0; j<n_con; ++j) {
+            for (PetscInt j=0; j<n_con; ++j) {
                 jdx = ve->nbrIdx(j);
                 if (jdx>=prbegin && jdx<prend)
                     ++d_nnz.at(idx-prbegin);
@@ -122,7 +121,7 @@ void dVSolverPETSC::initMesh(TetMesh *mesh) {
         }
     }
 
-    MatMPIAIJSetPreallocation(pA,0,d_nnz.data(),0,o_nnz.data()); 
+    MatMPIAIJSetPreallocation(pA,0,d_nnz.data(),0,o_nnz.data());
     MatSetUp(pA);
 
     /// First, Allgather to get all the solution vector sizes
@@ -137,7 +136,7 @@ void dVSolverPETSC::initMesh(TetMesh *mesh) {
 
 //    // Compute load imbalance
 //    double avg_load = pNVerts / double(petsc_locsizes.size());
-//    double max_imbalance = std::abs(petsc_locsizes[0] - avg_load); 
+//    double max_imbalance = std::abs(petsc_locsizes[0] - avg_load);
 //    if (petsc_locsizes.size()>1) {
 //        for (idx = 1; idx<petsc_locsizes.size(); ++idx) {
 //            double imbalance_i = std::abs(petsc_locsizes[idx] - avg_load);
@@ -152,9 +151,9 @@ void dVSolverPETSC::initMesh(TetMesh *mesh) {
     // This is necessary to have scalable assembly time
     for (uint tri_idx=0; tri_idx<pNTris; ++tri_idx) {
         auto *triv = pMesh->getTriangle(tri_idx);
-        if (std::any_of(triv, triv + 3, [this](vertex_id_t i){return i.get() >= prbegin && i.get() < prend ;}))
+        if (std::any_of(triv, triv + 3, [this](vertex_id_t i){return i.get() >= static_cast<vertex_id_t::value_type>(prbegin) && i.get() < static_cast<vertex_id_t::value_type>(prend) ;}))
             loc_tris.push_back(tri_idx);
-    } 
+    }
 }
 
 
@@ -170,29 +169,29 @@ void dVSolverPETSC::advance(double dt) {
     }
 
     double oodt = 1.0/dt;
-    
+
 
     MatZeroEntries(pA);
 //    VecSet(pb,0.0);
-//    VecSet(px,0.0); 
+//    VecSet(px,0.0);
 
     std::vector<PetscInt>    idx_rhs(pNlocal);   std::iota(idx_rhs.begin(), idx_rhs.end(), prbegin);
-    std::vector<double> values_rhs(pNlocal); 
-    
+    std::vector<double> values_rhs(pNlocal);
 
-    // iterate over vertices in local range 
+
+    // iterate over vertices in local range
     for (PetscInt i=prbegin; i<prend; ++i) {
         VertexElement *ve = pIdxToVert[i];
         // case 1: vertex is on Clamp
         if (pVertexClamp[i]) {
             values_rhs.at(i-prbegin) = 0.;
-            MatSetValue(pA,i,i,1.,INSERT_VALUES);    
+            MatSetValue(pA,i,i,1.,INSERT_VALUES);
         }
         // case 2: no clamp, get all Current Contributions
         else {
             double rhs = pVertCur[i] + pGExt[i] * (pVExt - pV[i]);
             double Aii = ve->getCapacitance()*oodt + pGExt[i];
-            // indexes of columns j for row i where we want to insert 
+            // indexes of columns j for row i where we want to insert
             std::vector<PetscInt> idx_columns(ve->getNCon()+1);
             // respective values we want to insert
             std::vector<double> val_columns(ve->getNCon()+1);
@@ -210,41 +209,37 @@ void dVSolverPETSC::advance(double dt) {
             values_rhs.at(i-prbegin) = rhs;
         }
     }
-    
-    
+
+
     // set rhs all at once to optimize
     VecSetValues(pb, pNlocal, idx_rhs.data(), values_rhs.data(), INSERT_VALUES);
 
 // Set inital guess (???)
-//VecSetValues(px, pNlocal, idx_rhs.data(), &deltaV[prbegin], INSERT_VALUES); 
+//VecSetValues(px, pNlocal, idx_rhs.data(), &deltaV[prbegin], INSERT_VALUES);
 
     // Assemble LHS, rhs, intial guess
     MatAssemblyBegin(pA,MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(pA,MAT_FINAL_ASSEMBLY); 
+    MatAssemblyEnd(pA,MAT_FINAL_ASSEMBLY);
     VecAssemblyBegin(pb);
-    VecAssemblyEnd(pb); 
+    VecAssemblyEnd(pb);
     VecAssemblyBegin(px);
-    VecAssemblyEnd(px); 
-    
+    VecAssemblyEnd(px);
+
 
     // LHS used for preconditioning
     KSPSetOperators(pKsp, pA, pA);
-    // Solver: Conjugate Gradient 
-    KSPSetType(pKsp, KSPCG);
-    // Preconditioner: Jacobi
+    // Solver: Conjugate Gradient
+    KSPSetType(pKsp, KSPPIPECG);
+    // Preconditioner
     KSPGetPC(pKsp, &pPc);
-    PCSetType(pPc, PCGAMG);
+    PCSetType(pPc, PCPBJACOBI);
 
     // Tolerances for iterative solver
-//   KSPSetTolerances(pKsp, 1.e-1, 1.e-10, PETSC_DEFAULT, PETSC_DEFAULT);
+    // KSPSetTolerances(pKsp, 1.e-1, 1.e-10, PETSC_DEFAULT, PETSC_DEFAULT);
 
-    long int n_levels = 10;
-    PCGAMGSetNlevels(pPc, n_levels); 
-    PCMGSetLevels(pPc, n_levels, nullptr);
-
-    // Call solver and print statistics   
+    // Call solver and print statistics
     KSPSolve(pKsp, pb, px);
-    
+
 
     double *larr;
     VecGetArray(px, &larr);
@@ -253,10 +248,10 @@ void dVSolverPETSC::advance(double dt) {
     MPI_Allgatherv(larr, pNlocal, MPI_DOUBLE, &deltaV[0], &petsc_locsizes[0], &petsc_displ[0], MPI_DOUBLE, PETSC_COMM_WORLD);
 
 
-    // update membrane potential 
+    // update membrane potential
     for (auto i = 0u; i < pNVerts; ++i)
-        if (pVertexClamp[i] == false) 
-            pV[i] += deltaV[i];    
+        if (pVertexClamp[i] == false)
+            pV[i] += deltaV[i];
 
     VecRestoreArray(px, &larr);
 

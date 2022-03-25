@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,12 +24,11 @@
 
  */
 
+#include "triangle.hpp"
+
 #include <cassert>
 #include <cmath>
 #include <limits>
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/math/triangle.hpp"
 
 namespace steps {
 namespace math {
@@ -130,5 +129,3 @@ bool tri_intersect_line(const point3d &v0, const point3d &v1, const point3d &v2,
 
 }  // namespace math
 }  // namespace steps
-
-// END

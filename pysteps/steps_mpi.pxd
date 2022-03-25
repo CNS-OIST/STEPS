@@ -18,7 +18,7 @@ from steps_common cimport *
 
 
 # ======================================================================================================================
-cdef extern from "steps/mpi/mpi_common.hpp" namespace "steps::mpi":
+cdef extern from "mpi/mpi_common.hpp" namespace "steps::mpi":
 # ----------------------------------------------------------------------------------------------------------------------
     enum MsgTag:
         OPSPLIT_MOLECULE_CHANGE
@@ -30,20 +30,20 @@ cdef extern from "steps/mpi/mpi_common.hpp" namespace "steps::mpi":
         OPSPLIT_UPD_COMPLETE
 
 # ======================================================================================================================
-cdef extern from "steps/mpi/mpi_init.hpp" namespace "steps::mpi":
+cdef extern from "mpi/mpi_init.hpp" namespace "steps::mpi":
 # ----------------------------------------------------------------------------------------------------------------------
     void mpiInit()
     int getRank()
     int getNHosts()
 
 # ======================================================================================================================
-cdef extern from "steps/mpi/mpi_finish.hpp" namespace "steps::mpi":
+cdef extern from "mpi/mpi_finish.hpp" namespace "steps::mpi":
 # ----------------------------------------------------------------------------------------------------------------------
     void mpiFinish()
 
 
 # ======================================================================================================================
-cdef extern from "steps/mpi/tetopsplit/tetopsplit.hpp" namespace "steps::mpi::tetopsplit":
+cdef extern from "mpi/tetopsplit/tetopsplit.hpp" namespace "steps::mpi::tetopsplit":
 # ----------------------------------------------------------------------------------------------------------------------
 #     # ctypedef uint SchedIDX
 #     # ctypedef std.set[uint] SchedIDXSet

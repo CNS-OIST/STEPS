@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -35,17 +35,17 @@
 #include <fstream>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/solver/patchdef.hpp"
-#include "steps/wmdirect/kproc.hpp"
-#include "steps/wmdirect/comp.hpp"
-#include "steps/wmdirect/sreac.hpp"
-#include "steps/solver/types.hpp"
+#include "kproc.hpp"
+#include "comp.hpp"
+#include "sreac.hpp"
+#include "util/common.h"
+#include "solver/patchdef.hpp"
+#include "solver/types.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace steps {
- namespace wmdirect {
+namespace steps {
+namespace wmdirect {
 
 ////////////////////////////////////////////////////////////////////////////////
 
