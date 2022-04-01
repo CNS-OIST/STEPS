@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -23,9 +23,8 @@
 #################################################################################   
 
  */
+#include "tri.hpp"
 
-
-// Standard library & STL headers.
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -33,30 +32,25 @@
 #include <functional>
 #include <iostream>
 #include <sstream>
-#include <vector>
 
+#include <easylogging++.h>
 #include <mpi.h>
 
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/math/constants.hpp"
-#include "steps/mpi/mpi_common.hpp"
-#include "steps/mpi/tetopsplit/ghkcurr.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-#include "steps/mpi/tetopsplit/sdiff.hpp"
-#include "steps/mpi/tetopsplit/sreac.hpp"
-#include "steps/mpi/tetopsplit/tet.hpp"
-#include "steps/mpi/tetopsplit/tetopsplit.hpp"
-#include "steps/mpi/tetopsplit/tri.hpp"
-#include "steps/mpi/tetopsplit/vdepsreac.hpp"
-#include "steps/mpi/tetopsplit/vdeptrans.hpp"
-#include "steps/solver/ohmiccurrdef.hpp"
-#include "steps/solver/patchdef.hpp"
-#include "steps/solver/sreacdef.hpp"
+#include "ghkcurr.hpp"
+#include "sdiff.hpp"
+#include "sreac.hpp"
+#include "tet.hpp"
+#include "tetopsplit.hpp"
+#include "vdepsreac.hpp"
+#include "vdeptrans.hpp"
 
-// logging
-#include "easylogging++.h"
+#include "mpi/mpi_common.hpp"
+#include "math/constants.hpp"
+#include "solver/ohmiccurrdef.hpp"
+#include "solver/patchdef.hpp"
+#include "solver/sreacdef.hpp"
+#include "util/error.hpp"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace smtos = steps::mpi::tetopsplit;
@@ -242,16 +236,16 @@ void smtos::Tri::setupKProcs(smtos::TetOpSplitP * tex, bool efield)
     hasEfield = efield;
     startKProcIdx = tex->countKProcs();
     uint j = 0;
-    
+
     nKProcs = pPatchdef->countSReacs()+pPatchdef->countSurfDiffs();
     if (hasEfield) {
         nKProcs += (pPatchdef->countVDepTrans() + pPatchdef->countVDepSReacs() + pPatchdef->countGHKcurrs());
 }
-    
+
     if (hostRank == myRank) {
         pKProcs.resize(nKProcs);
 
-        
+
         // Create surface reaction kprocs
         uint nsreacs = patchdef()->countSReacs();
         for (uint i=0; i < nsreacs; ++i)
@@ -329,7 +323,7 @@ void smtos::Tri::setupDeps()
     for (auto& kp : pKProcs) {
         kp->setupDeps();
     }
-    
+
     bool has_remote_neighbors = false;
     uint nspecs = patchdef()->countSpecs();
     for (uint i = 0; i < 3; ++i)
@@ -348,7 +342,7 @@ void smtos::Tri::setupDeps()
         return;
     }
     localSpecUpdKProcs.resize(nspecs);
-    
+
     for (uint slidx = 0; slidx < nspecs; slidx++) {
         uint sgidx = patchdef()->specL2G(slidx);
         // check dependency of kprocs in the same tri
@@ -360,7 +354,7 @@ void smtos::Tri::setupDeps()
                 localSpecUpdKProcs[slidx].push_back(getKProc(sk));
             }
         }
-        
+
         // Check the neighbouring tetrahedrons.
         smtos::WmVol * itet = iTet();
         if (itet != nullptr)
@@ -378,7 +372,7 @@ void smtos::Tri::setupDeps()
                 }
             }
         }
-        
+
         smtos::WmVol * otet = oTet();
         if (otet != nullptr)
         {
@@ -423,7 +417,7 @@ bool smtos::Tri::KProcDepSpecTet(uint kp_lidx, smtos::WmVol* kp_container,  uint
         return false;
     }
     remain -= pPatchdef->countSurfDiffs();
-    
+
     // REMINDER: hasEfield not ready
     if (hasEfield)
     {
@@ -432,7 +426,7 @@ bool smtos::Tri::KProcDepSpecTet(uint kp_lidx, smtos::WmVol* kp_container,  uint
             return false;
         }
         remain -= pPatchdef->countVDepTrans();
-        
+
         // VDepSReac
         if (remain < pPatchdef->countVDepSReacs()) {
             ssolver::VDepSReacdef * vdsrdef = patchdef()->vdepsreacdef(remain);
@@ -447,7 +441,7 @@ bool smtos::Tri::KProcDepSpecTet(uint kp_lidx, smtos::WmVol* kp_container,  uint
             return false;
         }
         remain -= pPatchdef->countVDepSReacs();
-        
+
         // GHK
         if (remain < pPatchdef->countGHKcurrs()) {
             ssolver::GHKcurrdef * ghkdef = patchdef()->ghkcurrdef(remain);
@@ -466,11 +460,11 @@ bool smtos::Tri::KProcDepSpecTet(uint kp_lidx, smtos::WmVol* kp_container,  uint
                     return false;
                 }
             }
-            
+
             return false;
         }
     }
-    
+
     AssertLog(false);
 }
 
@@ -488,7 +482,7 @@ bool smtos::Tri::KProcDepSpecTri(uint kp_lidx, smtos::Tri* kp_container, uint sp
         return (srdef->dep_S(spec_gidx) != ssolver::DEP_NONE);
     }
     remain -= pPatchdef->countSReacs();
-    
+
     // if kp is surface diff
     if (remain < pPatchdef->countSurfDiffs()) {
         if (kp_container != this) { return false;
@@ -496,9 +490,9 @@ bool smtos::Tri::KProcDepSpecTri(uint kp_lidx, smtos::Tri* kp_container, uint sp
         ssolver::Diffdef * sddef = patchdef()->surfdiffdef(remain);
         return spec_gidx == sddef->lig();
     }
-    
+
     remain -= pPatchdef->countSurfDiffs();
-    
+
     // REMINDER: hasEfield not ready
     if (hasEfield)
     {
@@ -510,7 +504,7 @@ bool smtos::Tri::KProcDepSpecTri(uint kp_lidx, smtos::Tri* kp_container, uint sp
             return (vdtdef->dep(spec_gidx) != ssolver::DEP_NONE);
         }
         remain -= pPatchdef->countVDepTrans();
-        
+
         // VDepSReac
         if (remain < pPatchdef->countVDepSReacs()) {
             ssolver::VDepSReacdef * vdsrdef = patchdef()->vdepsreacdef(remain);
@@ -519,7 +513,7 @@ bool smtos::Tri::KProcDepSpecTri(uint kp_lidx, smtos::Tri* kp_container, uint sp
             return (vdsrdef->dep_S(spec_gidx) != ssolver::DEP_NONE);
         }
         remain -= pPatchdef->countVDepSReacs();
-        
+
         // GHK
         if (remain < pPatchdef->countGHKcurrs()) {
             ssolver::GHKcurrdef * ghkdef = patchdef()->ghkcurrdef(remain);
@@ -528,7 +522,7 @@ bool smtos::Tri::KProcDepSpecTri(uint kp_lidx, smtos::Tri* kp_container, uint sp
             return (ghkdef->dep(spec_gidx) != ssolver::DEP_NONE);
         }
     }
-    
+
     AssertLog(false);
 }
 
@@ -559,7 +553,7 @@ void smtos::Tri::reset()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Tri::resetECharge(double dt, double efdt)
+void smtos::Tri::resetECharge(double dt, double efdt, double t)
 {
     uint nghkcurrs = pPatchdef->countGHKcurrs();
 
@@ -568,7 +562,9 @@ void smtos::Tri::resetECharge(double dt, double efdt)
     }
     pECharge_accum_dt += dt;
 
-    if (pECharge_accum_dt >= efdt) {
+    if (pECharge_accum_dt >= efdt or
+        (efdt - pECharge_accum_dt) <=
+            std::numeric_limits<double>::epsilon() * t * 8) {
         // Swap arrays
         std::swap(pECharge_last, pECharge_accum);
 
@@ -625,7 +621,7 @@ void smtos::Tri::incCount(uint lidx, int inc, double period, bool local_change)
     // if change remotely, register the change in pSol, sync of remote change will be register when
     // the change is applied in remote host via this function
     AssertLog(lidx < patchdef()->countSpecs());
-    
+
 	// count changed by diffusion
     if (hostRank != myRank && !local_change)
     {
@@ -643,7 +639,7 @@ void smtos::Tri::incCount(uint lidx, int inc, double period, bool local_change)
 		double oldcount = pPoolCount[lidx];
 		AssertLog(oldcount + inc >= 0.0);
 		pPoolCount[lidx] += inc;
-    
+
 		if (period == 0.0 || local_change) { return;
 }
 		// Count has changed,
@@ -652,7 +648,7 @@ void smtos::Tri::incCount(uint lidx, int inc, double period, bool local_change)
 		pPoolOccupancy[lidx] += oldcount*(period-lastupdate);
 
 		pLastUpdate[lidx] = period;
-	
+
     }
 }
 
@@ -813,10 +809,10 @@ double smtos::Tri::computeI(double v, double dt, double simtime, double efdt)
 
     // The contribution from GHK charge movement.
     auto efcharged = static_cast<double>(efcharge);
-    
+
     // Convert charge to coulombs and find mean current
     current += ((efcharged*steps::math::E_CHARGE)/dt);
-    resetECharge(dt, efdt);
+    resetECharge(dt, efdt, simtime);
     resetOCintegrals();
 
     return current;
@@ -916,13 +912,13 @@ void smtos::Tri::repartition(smtos::TetOpSplitP * tex, int rank, int host_rank)
 {
     myRank = rank;
     hostRank = host_rank;
-    
+
     // Delete reaction rules.
     KProcPVecCI e = pKProcs.end();
     for (KProcPVecCI i = pKProcs.begin(); i != e; ++i) delete *i;
-    
+
     setupKProcs(tex);
-    
+
     localSpecUpdKProcs.clear();
     bufferLocations.clear();
 }

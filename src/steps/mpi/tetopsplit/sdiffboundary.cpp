@@ -26,14 +26,10 @@
 #include <vector>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/mpi/tetopsplit/patch.hpp"
-#include "steps/mpi/tetopsplit/sdiffboundary.hpp"
-#include "steps/solver/sdiffboundarydef.hpp"
-
+#include "sdiffboundary.hpp"
 // logging
-#include "easylogging++.h"
+#include "util/error.hpp"
+#include <easylogging++.h>
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace smtos = steps::mpi::tetopsplit;

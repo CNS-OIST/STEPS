@@ -1,4 +1,4 @@
-add_library(stepsgeo STATIC
+add_library(stepsgeom STATIC
     tetmesh.cpp
     comp.cpp
     geom.cpp
@@ -10,10 +10,12 @@ add_library(stepsgeo STATIC
     diffboundary.cpp
 )
 
-set_property(TARGET stepsgeo PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_property(TARGET stepsgeom PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-target_include_directories(stepsgeo
-    PUBLIC .
-    PUBLIC ../../)
+target_include_directories(stepsgeom PUBLIC "${PROJECT_SOURCE_DIR}/src/steps")
 
-target_link_libraries(stepsgeo stepsmath stepsutil)
+target_link_libraries(stepsgeom stepsmath stepsutil stepsmodel)
+
+if(STEPS_USE_DIST_MESH)
+    add_subdirectory(dist)
+endif()

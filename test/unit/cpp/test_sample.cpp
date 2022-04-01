@@ -1,8 +1,8 @@
 #include <random>
 #include <iterator>
 
-#include "steps/math/sample.hpp"
-#include "steps/util/distribute.hpp"
+#include "math/sample.hpp"
+#include "util/distribute.hpp"
 #include "gtest/gtest.h"
 
 using namespace steps::math;
@@ -26,7 +26,7 @@ TEST(Sample, adjpareto_allpop) {
     using namespace std;
     minstd_rand R;
     double weights[] = {1,1,1,1};
-    
+
     adjusted_pareto_sampler<double> S(4, begin(weights), end(weights));
 
     const char *pop = "abcd";
@@ -69,14 +69,14 @@ TEST(Sample, adjpareto_fair) {
     int N=10000;
     for (int i=0; i<N; ++i) {
         S(population.begin(),population.end(),sample.begin(),R);
-        for (auto i: sample) ++histogram.at(i);
+        for (auto j: sample) ++histogram.at(j);
     }
 
     for (auto &x: histogram) x/=N;
 
     // Check that each observed mean is within (say) 4 standard deviations of
     // inclusion probability pi. sd = sqrt(pi(1-pi)/N)
-    
+
     for (size_t i=0; i<histogram.size(); ++i) {
         double z = std::abs(histogram[i]-weights[i])/std::sqrt(weights[i]*(1-weights[i])/N);
         EXPECT_LT(z,4);
@@ -99,20 +99,23 @@ TEST(Sample,distribute_close) {
 
     double total_volume = 0;
     for (const auto &v: volumes) total_volume += v.volume;
- 
+
     double test_x[] = { 3000, 3000.3, 7, 0 };
 
     for (auto x: test_x) {
-        distribute_quantity(x, volumes.begin(), volumes.end(),
-                [](vol &v) -> double  { return v.volume; }, // weight
-                [](vol &v,unsigned c) { v.count=c; },  // setter
-                [](vol &v,int c)      { v.count+=c; },  // incrementer
-                R);
+        distribute_quantity(
+            x,
+            volumes.begin(),
+            volumes.end(),
+            [](const vector<vol>::iterator& v) -> double { return v->volume; },  // weight
+            [](vol& v, unsigned c) { v.count = c; },                             // setter
+            [](vol& v, int c) { v.count += c; },                                 // incrementer
+            R);
 
         unsigned total_count = 0;
-        for (auto &v: volumes) {
-            double min_count = floor(floor(x)*v.volume/total_volume);
-            double max_count = ceil(ceil(x)*v.volume/total_volume);
+        for (auto& v: volumes) {
+            double min_count = floor(floor(x) * v.volume / total_volume);
+            double max_count = ceil(ceil(x) * v.volume / total_volume);
 
             EXPECT_GE(v.count, min_count);
             EXPECT_LE(v.count, max_count);

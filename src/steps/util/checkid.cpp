@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -26,42 +26,45 @@
 
 #include <string>
 
-#include "steps/error.hpp"
-#include "steps/util/checkid.hpp"
+#include "error.hpp"
+#include "checkid.hpp"
 // logging
-#include "easylogging++.h"
+#include <easylogging++.h>
 namespace steps {
 namespace util {
 
 static inline bool ascii_is_alpha(char c) {
-    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c=='_';
+  return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_';
 }
 
 static inline bool ascii_is_alphanum(char c) {
-    return ascii_is_alpha(c) || (c >= '0' && c <= '9');
+  //return ascii_is_alpha(c) || (c >= '0' && c <= '9');
+  // TODO revert this temporary change for split meshes
+  return ascii_is_alpha(c) || (c >= '0' && c <= '9') || c == '.';
 }
 
 bool isValidID(const char *s) {
-    if (!ascii_is_alpha(*s)) { return false;
-}
-    while (*++s != 0) { if (!ascii_is_alphanum(*s)) { return false;
-}
+  if (!ascii_is_alpha(*s)) {
+    return false;
+  }
+  while (*++s != 0) {
+    if (!ascii_is_alphanum(*s)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
-    return true;
-}
-
-bool isValidID(const std::string &s) {
-    return isValidID(s.c_str());
-}
+bool isValidID(const std::string &s) { return isValidID(s.c_str()); }
 
 void checkID(const char *s) {
-    if (!isValidID(s)) {ArgErrLog("'"+std::string(s)+"' is not a valid id.");}
+  ArgErrLogIf(!isValidID(s), "'" + std::string(s) + "' is not a valid id.");
 }
 
 void checkID(const std::string &s) {
-    if (!isValidID(s)) {ArgErrLog("'"+s+"' is not a valid id.");}
+  ArgErrLogIf(!isValidID(s), "'" + s + "' is not a valid id.");
 }
 
-}  // namespace util
-}  // namespace steps
+} // namespace util
+} // namespace steps

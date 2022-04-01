@@ -1,0 +1,3 @@
+VDepRate	Defined in	vrange	vrange Units	Depends on
+rvdep01f	nmdl	[-0.2, 0.2, 0.001]	V	
+rvdep01b	nmdl	[-0.2, 0.2, 0.001]	V	

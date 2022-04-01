@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -31,7 +31,7 @@
 /** \file Abstract interface for solver implementations
  * used by EField objects. */
 
-#include "steps/solver/efield/tetmesh.hpp"
+#include "tetmesh.hpp"
 
 namespace steps {
 namespace solver {
@@ -44,7 +44,7 @@ struct EFieldSolver {
 
     /** Set membrane conductance and reversal potential (for leak current) */
     virtual void setSurfaceConductance(double g_surface, double v_rev) =0;
-    
+
     /** Set all vertex potentials to v */
     virtual void setPotential(double v) =0;
 

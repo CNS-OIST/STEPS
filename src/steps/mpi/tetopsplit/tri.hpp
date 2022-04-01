@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,22 +24,17 @@
 
  */
 
+#pragma once
 
-#ifndef STEPS_MPI_TETOPSPLIT_TRI_HPP
-#define STEPS_MPI_TETOPSPLIT_TRI_HPP 1
-
-// STL headers.
-#include <cassert>
 #include <vector>
 
-// logging
 #include <easylogging++.h>
 
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/solver/patchdef.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-#include "steps/solver/types.hpp"
+#include "kproc.hpp"
+
+#include "solver/patchdef.hpp"
+#include "solver/types.hpp"
+#include "util/common.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace steps{
@@ -112,7 +107,7 @@ public:
 
     /// Set pointer to the next neighbouring triangle.
     void setNextTri(uint i, smtos::Tri * t);
-    
+
     /// Create the kinetic processes -- to be called when all tetrahedrons
     /// and triangles have been fully declared and connected.
     ///
@@ -166,7 +161,7 @@ public:
 
     inline tetrahedron_id_t tet(uint t) const noexcept
     { return pTets[t]; }
-    
+
     /// Find the direction index towards a neighbor triangle.
     ///
     int getTriDirection(triangle_id_t tidx);
@@ -182,15 +177,15 @@ public:
     /////////////////////////// Dependency ////////////////////////////////
     inline uint getStartKProcIdx() const noexcept
     {return startKProcIdx;}
-    
+
     // setup dependence for KProcs in this subvolume
     void setupDeps();
-    
+
     // check if kp_lidx in this vol depends on spec_gidx in WMVol kp_container
     virtual bool KProcDepSpecTet(uint kp_lidx, WmVol* kp_container, uint spec_gidx);
     // check if kp_lidx in this vol depends on spec_gidx in Tri kp_container
     virtual bool KProcDepSpecTri(uint kp_lidx, Tri* kp_container, uint spec_gidx);
-    
+
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: EFIELD
     ////////////////////////////////////////////////////////////////////////
@@ -199,7 +194,7 @@ public:
     void incECharge(uint lidx, int charge);
 
     // Should be called at the beginning of every EField time-step
-    void resetECharge(double dt, double efdt);
+    void resetECharge(double dt, double efdt, double t);
 
     // reset the Ohmic current opening time integral info, also should be
     // called just before commencing or just after completing an EField dt
@@ -251,7 +246,7 @@ public:
         AssertLog(lidx < pKProcs.size());
         return pKProcs[lidx];
     }
-    
+
     smtos::SReac * sreac(uint lidx) const;
     smtos::SDiff * sdiff(uint lidx) const;
     smtos::VDepTrans * vdeptrans(uint lidx) const;
@@ -265,7 +260,7 @@ public:
     int getHost() {return hostRank;}
     void setSolver(steps::mpi::tetopsplit::TetOpSplitP* sol);
     steps::mpi::tetopsplit::TetOpSplitP* solver();
-    
+
     //void sendSyncPools();
     //void recvSyncPools(int source);
 	double getPoolOccupancy(uint lidx);
@@ -273,7 +268,7 @@ public:
 	void resetPoolOccupancy();
 
     std::vector<smtos::KProc*> const & getSpecUpdKProcs(uint slidx);
-    
+
     void repartition(smtos::TetOpSplitP * tex, int rank, int host_rank);
     void setupBufferLocations();
 private:
@@ -345,7 +340,7 @@ private:
     int                                     hostRank;
     int                                     myRank;
     steps::mpi::tetopsplit::TetOpSplitP   * pSol;
-    
+
 	// there is no need for sync tri, because no kproc in other surface or volume depends on molecule changes
 	// of this surface
     std::set<int>                           syncHosts;
@@ -353,10 +348,10 @@ private:
     double                            * pPoolOccupancy{nullptr};
     /// Structure to store time since last update, used to calculate occupancy
     double 							  *	pLastUpdate{nullptr};
-    
+
     std::vector<uint>                   bufferLocations;
     std::vector<std::vector<smtos::KProc *>> localSpecUpdKProcs;
-    
+
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -364,14 +359,6 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-}
-}
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-#endif
-
-// STEPS_MPI_TETOPSPLIT_TRI_HPP
-
-// END
+} // namespace tetopsplit
+} // namespace mpi
+} // namespace steps

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -34,12 +34,12 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace steps {
- namespace solver {
+namespace steps {
+namespace solver {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-typedef uint                            gidxT;
+typedef unsigned int                    gidxT;
 
 typedef std::vector<gidxT>              gidxTVec;
 typedef gidxTVec::iterator              gidxTVecI;
@@ -53,7 +53,7 @@ static const gidxT GIDX_UNDEFINED = 0xFFFF;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-typedef uint                            lidxT;
+typedef unsigned int                    lidxT;
 
 typedef std::vector<lidxT>              lidxTVec;
 typedef lidxTVec::iterator              lidxTVecI;

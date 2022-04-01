@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -32,12 +32,12 @@
 // STL headers.
 #include <string>
 #include <fstream>
+#include <set>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/api.hpp"
-#include "steps/geom/comp.hpp"
+#include "util/common.h"
+#include "api.hpp"
+#include "diffdef.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -156,7 +156,7 @@ public:
     /// \param lidx local index of the species.
     inline uint specL2G(uint lidx) const noexcept
     { return pSpec_L2G[lidx]; }
-    
+
     /// Returns pointer to flags on species for this compartment.
     inline uint * flags() const noexcept
     { return pPoolFlags; }

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,15 +30,12 @@
 #include <algorithm>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/solver/compdef.hpp"
-#include "steps/wmdirect/comp.hpp"
-#include "steps/wmdirect/kproc.hpp"
-#include "steps/wmdirect/reac.hpp"
-#include "steps/wmdirect/wmdirect.hpp"
+#include "comp.hpp"
+#include "reac.hpp"
+#include "wmdirect.hpp"
 // logging
-#include "easylogging++.h"
+#include "util/error.hpp"
+#include <easylogging++.h>
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace swmd = steps::wmdirect;

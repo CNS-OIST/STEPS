@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,8 +24,7 @@
 
  */
 
-#ifndef STEPS_MATH_POINT_HPP
-#define STEPS_MATH_POINT_HPP 1
+#pragma once
 
 #include <array>
 #include <cmath>
@@ -185,6 +184,5 @@ inline double normL1(const point3d &p)
     return std::abs(p[0]) + std::abs(p[1]) + std::abs(p[2]);
 }
 
-}} // namespace steps::math
-
-#endif // ndef STEPS_MATH_POINT_HPP
+} // namespace math
+} // namespace steps

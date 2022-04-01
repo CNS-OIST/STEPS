@@ -19,7 +19,7 @@ from steps cimport index_t
 
 
 # ======================================================================================================================
-cdef extern from "steps/tetexact/tetexact.hpp" namespace "steps::tetexact":
+cdef extern from "tetexact/tetexact.hpp" namespace "steps::tetexact":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef uint SchedIDX
     # ctypedef std.set[uint] SchedIDXSet

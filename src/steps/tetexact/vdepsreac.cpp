@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -29,17 +29,15 @@
 #include <vector>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/math/constants.hpp"
-#include "steps/tetexact/kproc.hpp"
-#include "steps/tetexact/tet.hpp"
-#include "steps/tetexact/tetexact.hpp"
-#include "steps/tetexact/tri.hpp"
-#include "steps/tetexact/vdepsreac.hpp"
+#include "vdepsreac.hpp"
+#include "tet.hpp"
+#include "tetexact.hpp"
+#include "tri.hpp"
+#include "math/constants.hpp"
 
 // logging
-#include "easylogging++.h"
+#include <easylogging++.h>
+#include "util/error.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace stex = steps::tetexact;
@@ -49,7 +47,7 @@ namespace smath = steps::math;
 ////////////////////////////////////////////////////////////////////////////////
 
 stex::VDepSReac::VDepSReac(ssolver::VDepSReacdef * vdsrdef, stex::Tri * tri)
-: 
+:
  pVDepSReacdef(vdsrdef)
 , pTri(tri)
 , pUpdVec()
@@ -288,14 +286,17 @@ double stex::VDepSReac::rate(steps::tetexact::Tetexact * solver)
                 {
                     h_mu *= static_cast<double>(cnt - 3);
                 }
+                STEPS_FALLTHROUGH;
                 case 3:
                 {
                     h_mu *= static_cast<double>(cnt - 2);
                 }
+                STEPS_FALLTHROUGH;
                 case 2:
                 {
                     h_mu *= static_cast<double>(cnt - 1);
                 }
+                STEPS_FALLTHROUGH;
                 case 1:
                 {
                     h_mu *= static_cast<double>(cnt);
@@ -329,14 +330,17 @@ double stex::VDepSReac::rate(steps::tetexact::Tetexact * solver)
                     {
                         h_mu *= static_cast<double>(cnt - 3);
                     }
+                    STEPS_FALLTHROUGH;
                     case 3:
                     {
                         h_mu *= static_cast<double>(cnt - 2);
                     }
+                    STEPS_FALLTHROUGH;
                     case 2:
                     {
                         h_mu *= static_cast<double>(cnt - 1);
                     }
+                    STEPS_FALLTHROUGH;
                     case 1:
                     {
                         h_mu *= static_cast<double>(cnt);
@@ -370,14 +374,17 @@ double stex::VDepSReac::rate(steps::tetexact::Tetexact * solver)
                     {
                         h_mu *= static_cast<double>(cnt - 3);
                     }
+                    STEPS_FALLTHROUGH;
                     case 3:
                     {
                         h_mu *= static_cast<double>(cnt - 2);
                     }
+                    STEPS_FALLTHROUGH;
                     case 2:
                     {
                         h_mu *= static_cast<double>(cnt - 1);
                     }
+                    STEPS_FALLTHROUGH;
                     case 1:
                     {
                         h_mu *= static_cast<double>(cnt);

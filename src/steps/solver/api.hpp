@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -32,20 +32,18 @@
 // STL headers.
 #include <string>
 #include <limits>
-#include <steps/geom/fwd.hpp>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/geom/fwd.hpp"
-#include "steps/geom/geom.hpp"
-#include "steps/model/model.hpp"
-#include "steps/rng/rng.hpp"
-
+#include "geom/geom.hpp"
+#include "model/model.hpp"
+#include "rng/rng.hpp"
+#include "util/common.h"
+#include "util/vocabulary.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace steps {
- namespace solver {
+namespace steps {
+namespace solver {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -749,7 +747,7 @@ public:
     /// \param db Name of the diffusion boundary.
     /// \param s Name of the species.
     bool getDiffBoundaryDiffusionActive(std::string const & db, std::string const & s) const;
-    
+
     /// Set the diffusion constant across a diffusion boundary.
     ///
     /// \param db Name of the diffusion boundary.
@@ -907,12 +905,12 @@ public:
     /// \param d Name of the diffusion.
     /// \param direction_tet Triangle index which specifies diffusion direction.
     double getTriSDiffD(triangle_id_t tidx, std::string const & d, triangle_id_t direction_tri);
-    
+
     /// outdated function
     void setTriDiffD(triangle_id_t tidx, std::string const & d, double dk,
                       triangle_id_t direction_tri);
-    
-    
+
+
     /// Sets the diffusion constant of diffusion rule d on a triangle.
     ///
     /// \param tidx Index of the triangle.
@@ -1097,18 +1095,18 @@ public:
 
     /// Get species name of a patch
     std::string getPatchSpecName(uint p_idx, uint s_idx) const;
-    
-    
+
+
     ////////////////////////////////////////////////////////////////////////
     // Batch Data Access
     ////////////////////////////////////////////////////////////////////////
-    
+
     /// Get species counts of a list of tetrahedrons
     virtual std::vector<double> getBatchTetCounts(const std::vector<index_t> &tets, std::string const &s) const;
 
     /// Get species counts of a list of triangles
     virtual std::vector<double> getBatchTriCounts(const std::vector<index_t> &tris, std::string const &s) const;
-    
+
     /// Get species counts of a list of tetrahedrons
     virtual void getBatchTetCountsNP(const index_t *indices,
                                      size_t input_size,
@@ -1122,56 +1120,55 @@ public:
                                      std::string const &s,
                                      double *counts,
                                      size_t output_size) const;
-    
 
     ////////////////////////////////////////////////////////////////////////
     // ROI Data Access
     ////////////////////////////////////////////////////////////////////////
-    
+
     /// Get species counts of a list of tetrahedrons
     virtual std::vector<double> getROITetCounts(const std::string& ROI_id, std::string const & s) const;
-    
+
     /// Get species counts of a list of triangles
     virtual std::vector<double> getROITriCounts(const std::string& ROI_id, std::string const & s) const;
-    
+
     /// Get species counts of a list of tetrahedrons
     virtual void getROITetCountsNP(const std::string& ROI_id, std::string const & s, double* counts, size_t output_size) const;
-    
+
     /// Get species counts of a list of triangles
     virtual void getROITriCountsNP(const std::string& ROI_id, std::string const & s, double* counts, size_t output_size) const;
 
     virtual double getROIVol(const std::string& ROI_id) const;
     virtual double getROIArea(const std::string& ROI_id) const;
-    
+
     virtual double getROICount(const std::string& ROI_id, std::string const & s) const;
     virtual void setROICount(const std::string& ROI_id, std::string const & s, double count);
-    
+
     virtual double getROIAmount(const std::string& ROI_id, std::string const & s) const;
     virtual void setROIAmount(const std::string& ROI_id, std::string const & s, double);
 
     virtual double getROIConc(const std::string& ROI_id, std::string const & s) const;
     virtual void setROIConc(const std::string& ROI_id, std::string const & s, double conc);
-    
+
     virtual void setROIClamped(const std::string& ROI_id, std::string const & s, bool b);
-    
+
     virtual void setROIReacK(const std::string& ROI_id, std::string const & r, double kf);
     virtual void setROISReacK(const std::string& ROI_id, std::string const & sr, double kf);
     virtual void setROIDiffD(const std::string& ROI_id, std::string const & d, double dk);
-    
+
     virtual void setROIReacActive(const std::string& ROI_id, std::string const & r, bool a);
     virtual void setROISReacActive(const std::string& ROI_id, std::string const & sr, bool a);
     virtual void setROIDiffActive(const std::string& ROI_id, std::string const & d, bool act);
     virtual void setROIVDepSReacActive(const std::string& ROI_id, std::string const & vsr, bool a);
-    
+
     virtual unsigned long long getROIReacExtent(const std::string& ROI_id, std::string const & r) const;
     virtual void resetROIReacExtent(const std::string& ROI_id, std::string const & r);
-    
+
     virtual unsigned long long getROISReacExtent(const std::string& ROI_id, std::string const & sr) const;
     virtual void resetROISReacExtent(const std::string& ROI_id, std::string const & sr);
-    
+
     virtual unsigned long long getROIDiffExtent(const std::string& ROI_id, std::string const & d) const;
     virtual void resetROIDiffExtent(const std::string& ROI_id, std::string const & s);
-    
+
 protected:
 
     ////////////////////////////////////////////////////////////////////////
@@ -1243,8 +1240,8 @@ protected:
     virtual bool _getTetReacActive(tetrahedron_id_t tidx, uint ridx) const;
     virtual void _setTetReacActive(tetrahedron_id_t tidx, uint ridx, bool act);
 
-    virtual double _getTetDiffD(tetrahedron_id_t tidx, uint didx, tetrahedron_id_t direction_tet = UNKNOWN_TET) const;
-    virtual void _setTetDiffD(tetrahedron_id_t tidx, uint didx, double dk, tetrahedron_id_t direction_tet = UNKNOWN_TET);
+    virtual double _getTetDiffD(tetrahedron_id_t tidx, uint didx, tetrahedron_id_t direction_tet = boost::none) const;
+    virtual void _setTetDiffD(tetrahedron_id_t tidx, uint didx, double dk, tetrahedron_id_t direction_tet = boost::none);
 
     virtual bool _getTetDiffActive(tetrahedron_id_t tidx, uint didx) const;
     virtual void _setTetDiffActive(tetrahedron_id_t tidx, uint didx, bool act);
@@ -1340,9 +1337,9 @@ protected:
     virtual void _setTriSReacK(triangle_id_t tidx, uint ridx, double kf);
 
     virtual double _getTriSDiffD(triangle_id_t tidx, uint didx, triangle_id_t direction_tri) const;
-    
+
     virtual void _setTriSDiffD(triangle_id_t , uint , double , triangle_id_t);
-    
+
     virtual bool _getTriSReacActive(triangle_id_t tidx, uint ridx) const;
     virtual void _setTriSReacActive(triangle_id_t tidx, uint ridx, bool act);
 

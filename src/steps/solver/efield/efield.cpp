@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,14 +30,14 @@
 #include <sstream>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/solver/efield/efield.hpp"
-#include "steps/solver/efield/tetcoupler.hpp"
-#include "steps/solver/efield/tetmesh.hpp"
+#include "util/common.h"
+#include "util/error.hpp"
+#include "efield.hpp"
+#include "tetcoupler.hpp"
+#include "geom/tetmesh.hpp"
 
 // logging
-#include "easylogging++.h"
+#include <easylogging++.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -71,7 +71,7 @@ void sefield::EField::initMesh(uint nverts, double *verts,
     pNTris = ntris;
     pNTets = ntets;
 
-    
+
 
     // First, the mesh is constructed -- VertexElements are created
     // and triangle and tetrahedron arrays are copied
@@ -115,8 +115,8 @@ void sefield::EField::initMesh(uint nverts, double *verts,
 
     //pTritoVert = new uint[pNTris*3];
     pTritoVert.resize(pNTris*3);
-    for (uint i=0, j=0; i< pNTris; ++i, j+=3) 
-        for (uint v=0; v<3; ++v) 
+    for (uint i=0, j=0; i< pNTris; ++i, j+=3)
+        for (uint v=0; v<3; ++v)
             pTritoVert[j+v] = pMesh->getTriangleVertex(i,v);
 }
 

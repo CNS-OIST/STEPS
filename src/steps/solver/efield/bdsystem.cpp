@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -29,10 +29,10 @@
 #include <cmath>
 #include <utility>
 
-#include "steps/common.h"
-#include "steps/solver/efield/bdsystem.hpp"
+#include "util/common.h"
+#include "bdsystem.hpp"
 
-#include "easylogging++.h"
+#include <easylogging++.h>
 
 #include <iostream>
 
@@ -85,7 +85,7 @@ void BDSystem::solve()
     {
         // find pivot in the following h rows
         auto p = std::min(k + h + 1, n);
- 
+
         double dum = std::abs(ak[0]);
         auto ipiv = k;
         double *aj = ak;
@@ -124,7 +124,7 @@ void BDSystem::solve()
                 aij[-1] =  aij[0] - ak[j]*dum;
             }
             aij[0] = 0.0; // aij == a + i*w + (w-1)
-            ++aij; // aij == a + (i+1)*w 
+            ++aij; // aij == a + (i+1)*w
         }
         ak += w;
         lk += h;
@@ -142,7 +142,7 @@ void BDSystem::solve()
         if (i != static_cast<int>(k)) {
             std::swap(xk[0], x[i]);
         }
-        
+
         auto p = std::min(h + 1, n - k);
         for (auto j = 1u; j < p; ++j) {
             xk[j] -= lk[j-1]*xk[0];

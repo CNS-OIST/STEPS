@@ -15,7 +15,7 @@ from steps_common cimport *
 
 
 # ======================================================================================================================
-cdef extern from "steps/math/point.hpp" namespace "steps::math":
+cdef extern from "math/point.hpp" namespace "steps::math":
 # ----------------------------------------------------------------------------------------------------------------------
     cdef cppclass point3d:
         point3d()
@@ -25,7 +25,7 @@ cdef extern from "steps/math/point.hpp" namespace "steps::math":
 
 
 # ======================================================================================================================
-cdef extern from "steps/geom/tmpatch.hpp" namespace "steps::tetmesh":
+cdef extern from "geom/tmpatch.hpp" namespace "steps::tetmesh":
 # ----------------------------------------------------------------------------------------------------------------------
 
     ###### Cybinding for TmPatch ######
@@ -38,7 +38,7 @@ cdef extern from "steps/geom/tmpatch.hpp" namespace "steps::tetmesh":
 
 
 # ======================================================================================================================
-cdef extern from "steps/geom/memb.hpp" namespace "steps::tetmesh":
+cdef extern from "geom/memb.hpp" namespace "steps::tetmesh":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef Memb* MembP
     # ctypedef std.map[std.string,Memb*] MembPMap
@@ -66,7 +66,7 @@ cdef extern from "steps/geom/memb.hpp" namespace "steps::tetmesh":
 
 
 # ======================================================================================================================
-cdef extern from "steps/geom/tmcomp.hpp" namespace "steps::tetmesh":
+cdef extern from "geom/tmcomp.hpp" namespace "steps::tetmesh":
 # ----------------------------------------------------------------------------------------------------------------------
 
     ###### Cybinding for TmComp ######
@@ -80,7 +80,7 @@ cdef extern from "steps/geom/tmcomp.hpp" namespace "steps::tetmesh":
         std.vector[double] getBoundMax()
 
 # ======================================================================================================================
-cdef extern from "steps/geom/diffboundary.hpp" namespace "steps::tetmesh":
+cdef extern from "geom/diffboundary.hpp" namespace "steps::tetmesh":
 # ----------------------------------------------------------------------------------------------------------------------
     # ctypedef DiffBoundary* DiffBoundaryP
     # ctypedef std.map[std.string,DiffBoundary*] DiffBoundaryPMap
@@ -101,7 +101,7 @@ cdef extern from "steps/geom/diffboundary.hpp" namespace "steps::tetmesh":
         std.vector[steps_wm.Comp*] getComps()
 
 # ======================================================================================================================
-cdef extern from "steps/geom/sdiffboundary.hpp" namespace "steps::tetmesh":
+cdef extern from "geom/sdiffboundary.hpp" namespace "steps::tetmesh":
 # ----------------------------------------------------------------------------------------------------------------------
 
     ###### Cybinding for SDiffBoundary ######
@@ -115,7 +115,7 @@ cdef extern from "steps/geom/sdiffboundary.hpp" namespace "steps::tetmesh":
         std.vector[steps_wm.Patch*] getPatches()
 
 # ======================================================================================================================
-cdef extern from "steps/geom/tetmesh.hpp" namespace "steps::tetmesh":
+cdef extern from "geom/tetmesh.hpp" namespace "steps::tetmesh":
 # ----------------------------------------------------------------------------------------------------------------------
     cdef enum ElementType:
         ELEM_VERTEX

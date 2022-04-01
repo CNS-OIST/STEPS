@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,18 +24,15 @@
 
  */
 
-#ifndef STEPS_MATH_TOOLS_HPP
-#define STEPS_MATH_TOOLS_HPP 1
+#pragma once
 
-
-// Standard library & STL headers.
 #include <cmath>
 #include <cstdlib>
+#include <random>
 #include <vector>
 
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/math/constants.hpp"
+#include "util/common.h"
+#include "constants.hpp"
 
 namespace steps {
 namespace math {
@@ -188,10 +185,34 @@ inline uint binom_coeff(uint n, uint k)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-}
+/**
+ * Function that rounds a double value to one of the closest straddling integers
+ * with a probability dependent on the proximity \tparam T the type of the
+ * integer returned \tparam RNG random number generator \param value to round to
+ * one of the closest integer
+ */
+
+template <typename T, class RNG> T stochastic_round(double value, RNG &rng) {
+  std::uniform_real_distribution<double> uniform(0.0, 1.0);
+  const auto floored_value = std::floor(value);
+  return static_cast<T>(floored_value) +
+         ((value - floored_value) > uniform(rng) ? 1 : 0);
 }
 
-#endif
-// STEPS_MATH_TOOLS_HPP
+/**
+ * Function that rounds a double value to one of the closest straddling integers
+ * with a probability dependent on the proximity \tparam T the type of the
+ * integer returned \tparam RNG random number generator \param value to round to
+ * one of the closest integer \param upper_bound is the maximum value allowed
+ * for the rounded value
+ */
 
-// END
+template <typename T, class RNG>
+T stochastic_round(double value, RNG &rng, T upper_bound) {
+  return std::min(upper_bound, stochastic_round<T>(value, rng));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+} // namespace math
+} // namespace steps

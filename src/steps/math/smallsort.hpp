@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,11 +24,11 @@
 
  */
 
-#ifndef STEPS_MATH_SMALLSORT_HPP
-#define STEPS_MATH_SMALLSORT_HPP 1
+/* \brief math/smallsort.hpp
+ *  Inline sorting of small, fixed-size random-access sequences.
+ */
 
-/// Inline sorting of small, fixed-size
-/// random-access sequences.
+#pragma once
 
 #include <utility>
 #include <algorithm>
@@ -142,8 +142,5 @@ GNU_FORCE_INLINE inline A small_sort(A a) {
     return a;
 }
 
-}} // namespace steps::math
-
-#endif // ndef STEPS_MATH_SMALLSORT_HPP
-
-
+} // namespace math
+} // namespace steps

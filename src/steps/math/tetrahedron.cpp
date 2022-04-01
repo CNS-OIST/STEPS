@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,19 +24,18 @@
 
  */
 
+#include "tetrahedron.hpp"
+
 #include <cmath>
 #include <limits>
 
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/math/linsolve.hpp"
-#include "steps/math/point.hpp"
-#include "steps/math/triangle.hpp"
-#include "steps/math/tetrahedron.hpp"
+#include <easylogging++.h>
 
-// logging
-#include "easylogging++.h"
+#include "linsolve.hpp"
+#include "point.hpp"
+#include "triangle.hpp"
+
+#include "util/error.hpp"
 
 namespace steps {
 namespace math {
@@ -209,6 +208,3 @@ double tet_longestedge2(const point3d &p0, const point3d &p1,
 
 }  // namespace math
 }  // namespace steps
-
-// END
-

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -41,10 +41,22 @@
 #include <unordered_map>
 #include <vector>
 
-#include "steps/geom/fwd.hpp"
-#include "steps/util/fnv_hash.hpp"
-#include "steps/util/type_traits.hpp"
-#include "steps/util/strong_id.hpp"
+#include <boost/bind/bind.hpp>
+#include <boost/functional/value_factory.hpp>
+#include <boost/iterator/counting_iterator.hpp>
+#include <boost/iterator/transform_iterator.hpp>
+#include <gsl>
+
+#ifdef STEPS_USE_DIST_MESH
+#include <Omega_h_array.hpp>
+#endif // STEPS_USE_DIST_MESH
+
+#include "fnv_hash.hpp"
+#include "strong_id.hpp"
+#include "type_traits.hpp"
+#include "util/vocabulary.hpp"
+
+using namespace boost::placeholders;
 
 namespace steps {
 namespace util {
@@ -75,7 +87,7 @@ namespace impl {
 
         return r;
     }
-}
+} // namespace impl
 
 struct hash_references_tag {};
 
@@ -206,10 +218,120 @@ typename std::enable_if<!std::numeric_limits<T>::is_integer, bool>::type
     return std::fabs(x-y) <= std::numeric_limits<T>::epsilon() * std::fabs(x+y) * ulp
         || std::fabs(x-y) < std::numeric_limits<T>::min();
 }
- 
 
-}} // namespace steps::util
+namespace impl {
+
+// sink to consume expanded arguments
+struct sink {
+    template <typename T>
+    sink(T const& /*v*/) {}
+};
+
+template <int... Values>
+struct integer_sequence {};
+
+template <std::size_t Size, int... Accu>
+struct ones_traits {
+    using type = typename ones_traits<Size - 1, 1, Accu...>::type;
+};
+
+template <int... Accu>
+struct ones_traits<0, Accu...> {
+    using type = integer_sequence<Accu...>;
+};
+
+template <typename T, int... Ones>
+std::initializer_list<T> initializer_list_impl(T value, const integer_sequence<Ones...>&) {
+    static auto array = {(sink{Ones}, value)...};
+    return array;
+}
+
+}  // namespace impl
+
+template <std::size_t Size, typename T>
+std::initializer_list<T> initializer_list(T value) {
+    return impl::initializer_list_impl<T>(value, typename impl::ones_traits<Size>::type());
+}
+
+/**
+ * Generate a class providing \c begin() and \c end() methods
+ * to iterate over instances of type \c Entity accepting an integer in
+ * constructor
+ * @tparam Entity Type manipulated by the iterators
+ */
+template <typename Entity, typename Int = int> struct EntityIterator {
+  /// Construct a range from 0 to \a num_entities
+  explicit EntityIterator(Int num_entities) noexcept
+      : num_entities_(num_entities) {}
+
+  /// get an iterator at the beginning of the range providing \c Entity(Int{})
+  auto begin() const noexcept {
+    const auto ctor = boost::bind(boost::value_factory<Entity>(), _1);
+    return boost::make_transform_iterator(boost::make_counting_iterator(Int{}),
+                                          ctor);
+  }
+
+  /// get an iterator at the end of the range providing \c Entity(num_entities)
+  auto end() const noexcept {
+    const auto ctor = boost::bind(boost::value_factory<Entity>(), _1);
+    return boost::make_transform_iterator(
+        boost::make_counting_iterator(num_entities_), ctor);
+  }
+
+private:
+  /// Right bound of the range
+  const Int num_entities_;
+};
+
+/**
+ * A type traits useful to write generic code using either
+ * a std::vector or Omega_h::Read<T> arrays.
+ */
+template <typename Container> struct sequence_container_traits {};
+
+template <typename T> struct sequence_container_traits<std::vector<T>> {
+  using container_type = std::vector<T>;
+  using value_type = typename container_type::value_type;
+  using size_type = typename container_type::size_type;
+  template <typename U> using write_type = std::vector<U>;
+};
+
+template <typename T> struct sequence_container_traits<gsl::span<T>> {
+  using container_type = gsl::span<T>;
+  using value_type = T;
+  using size_type = typename container_type::index_type;
+  template <typename U> using write_type = gsl::span<U>;
+};
+
+#ifdef STEPS_USE_DIST_MESH
+
+template <> struct sequence_container_traits<Omega_h::Reals> {
+  using container_type = Omega_h::Reals;
+  using value_type = Omega_h::Real;
+  using size_type = Omega_h::LO;
+  template <typename T> using write_type = Omega_h::Write<T>;
+};
+
+template <> struct sequence_container_traits<Omega_h::LOs> {
+  using container_type = Omega_h::LOs;
+  using value_type = Omega_h::LO;
+  using size_type = Omega_h::LO;
+  template <typename T> using write_type = Omega_h::Write<T>;
+};
+
+template <> struct sequence_container_traits<Omega_h::GOs> {
+  using container_type = Omega_h::GOs;
+  using value_type = Omega_h::GO;
+  using size_type = Omega_h::LO;
+  template <typename T> using write_type = Omega_h::Write<T>;
+};
+
+template <typename T> Omega_h::Read<T> createRead(Omega_h::Write<T> array) {
+  return {array};
+}
+#endif // STEPS_USE_DIST_MESH
+
+} // namespace util
+} // namespace steps
 
 #endif // ndef STEPS_UTIL_COLLECTIONS_HPP
-
-

@@ -2,7 +2,12 @@
 
 """A setuptools based setup module."""
 import os.path
+import sys
 from distutils.core import setup
+
+# Python 3.9 needs the path given to --libdir option
+# to be in PYTHONPATH
+sys.path.insert(0, '${libdir}')
 
 def find_packages(where="."):
     """Short version of setuptools.find_packages"""

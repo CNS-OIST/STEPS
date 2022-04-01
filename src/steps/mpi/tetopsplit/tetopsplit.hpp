@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,39 +24,31 @@
 
  */
 
+#pragma once
 
-#ifndef STEPS_MPI_TETOPSPLIT_TETOPSPLITP_HPP
-#define STEPS_MPI_TETOPSPLIT_TETOPSPLITP_HPP 1
-
-
-// STL headers.
-#include <iostream>
+#include <map>
+#include <random>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
-#include <map>
-#include <fstream>
-#include <memory>
-#include <random>
 
-// logging
 #include <easylogging++.h>
 
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/solver/api.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/geom/tetmesh.hpp"
-#include "steps/mpi/tetopsplit/tri.hpp"
-#include "steps/mpi/tetopsplit/tet.hpp"
-#include "steps/mpi/tetopsplit/wmvol.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-#include "steps/mpi/tetopsplit/comp.hpp"
-#include "steps/mpi/tetopsplit/patch.hpp"
-#include "steps/mpi/tetopsplit/diffboundary.hpp"
-#include "steps/mpi/tetopsplit/sdiffboundary.hpp"
-#include "steps/mpi/tetopsplit/crstruct.hpp"
-#include "steps/solver/efield/efield.hpp"
+#include "comp.hpp"
+#include "crstruct.hpp"
+#include "diffboundary.hpp"
+#include "kproc.hpp"
+#include "patch.hpp"
+#include "sdiffboundary.hpp"
+#include "tri.hpp"
+#include "tet.hpp"
+#include "wmvol.hpp"
+
+#include "geom/tetmesh.hpp"
+#include "solver/api.hpp"
+#include "solver/statedef.hpp"
+#include "solver/efield/efield.hpp"
+#include "util/common.h"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace steps{
@@ -278,9 +270,9 @@ public:
     bool _getTetReacActive(tetrahedron_id_t tidx, uint ridx) const override;
     void _setTetReacActive(tetrahedron_id_t tidx, uint ridx, bool act) override;
 
-    double _getTetDiffD(tetrahedron_id_t tidx, uint didx, tetrahedron_id_t direction_tet = UNKNOWN_TET) const override;
+    double _getTetDiffD(tetrahedron_id_t tidx, uint didx, tetrahedron_id_t direction_tet = boost::none) const override;
     void _setTetDiffD(tetrahedron_id_t tidx, uint didx, double dk,
-                      tetrahedron_id_t direction_tet = UNKNOWN_TET) override;
+                      tetrahedron_id_t direction_tet = boost::none) override;
 
     bool _getTetDiffActive(tetrahedron_id_t tidx, uint didx) const override;
     void _setTetDiffActive(tetrahedron_id_t tidx, uint didx, bool act) override;
@@ -893,11 +885,6 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-}
-}
-}
-
-#endif
-// STEPS_MPI_TETOPSPLIT_TETAPPROX_HPP
-
-// END
+} // namespace tetopsplit
+} // namespace mpi
+} // namespace steps

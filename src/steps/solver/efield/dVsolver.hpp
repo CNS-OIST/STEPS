@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -34,12 +34,12 @@
 #include <vector>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/solver/efield/bdsystem.hpp"
-#include "steps/solver/efield/efieldsolver.hpp"
-#include "steps/solver/efield/tetmesh.hpp"
-#include "steps/solver/efield/vertexconnection.hpp"
-#include "steps/solver/efield/vertexelement.hpp"
+#include "util/common.h"
+#include "bdsystem.hpp"
+#include "efieldsolver.hpp"
+#include "tetmesh.hpp"
+#include "vertexconnection.hpp"
+#include "vertexelement.hpp"
 
 namespace steps {
 namespace solver {
@@ -54,7 +54,7 @@ public:
 
     /** Set membrane conductance and reversal potential (for leak current) */
     void setSurfaceConductance(double g_surface, double v_rev) override;
-    
+
     /** Set all vertex potentials to v */
     void setPotential(double v) override {
         std::fill(pV.begin(),pV.end(),v);
@@ -135,7 +135,7 @@ protected:
                 A.set(ind,ind,Aii);
             }
         }
-        
+
         L->solve();
 
         const typename LinSysImpl::vector_type DV=L->x();
@@ -182,7 +182,7 @@ protected:
     /// Current clamp through each vertex (adds to any triangle clamps.)
     std::vector<double>         pVertCurClamp;
 };
-    
+
 class dVSolverBanded: public dVSolverBase {
 public:
     void initMesh(TetMesh *mesh) override {

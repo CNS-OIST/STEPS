@@ -1,0 +1,2 @@
+OhmicCurr	Defined in	G Parameter	G	G Units	ERev Parameter	ERev	ERev Units
+Chan1_Ohm_I	ssys, comp1, comp1ROI, comp2, diffb, membrane, patch, patch2, patchROI, sdiffb	Chan1_G	2e-08	μS	Chan1_rev	-77	mV

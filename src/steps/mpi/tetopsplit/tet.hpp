@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -36,16 +36,16 @@
 #include <easylogging++.h>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/solver/compdef.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-#include "steps/mpi/tetopsplit/wmvol.hpp"
-#include "steps/solver/types.hpp"
+#include "kproc.hpp"
+#include "wmvol.hpp"
+#include "util/common.h"
+#include "solver/compdef.hpp"
+#include "solver/types.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace steps {
- namespace mpi {
- namespace tetopsplit {
+namespace steps {
+namespace mpi {
+namespace tetopsplit {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -159,7 +159,7 @@ public:
     ///
     inline double dist(uint i) const noexcept
     { return pDist[i]; }
-    
+
     /// Find the direction index towards a neighbor tetrahedron.
     ///
     int getTetDirection(tetrahedron_id_t tidx);
@@ -181,12 +181,12 @@ public:
     /////////////////////////// Dependency ////////////////////////////////
     // setup dependence for KProcs in this subvolume
     void setupDeps() override;
-    
+
     // check if kp_lidx in this vol depends on spec_gidx in WMVol kp_container
     virtual bool KProcDepSpecTet(uint kp_lidx, WmVol* kp_container, uint spec_gidx) override;
     // check if kp_lidx in this vol depends on spec_gidx in Tri kp_container
     virtual bool KProcDepSpecTri(uint kp_lidx, Tri* kp_container, uint spec_gidx) override;
-    
+
     ///////////////////////////////////////////////////////////////////
 
     void setCount(uint lidx, uint count, double period = 0.0) override;
@@ -201,7 +201,7 @@ public:
       return pLastUpdate[lidx];
     }
 	  void resetPoolOccupancy() override;
-    
+
     std::vector<smtos::KProc*> const & getSpecUpdKProcs(uint slidx);
 
     ////////////////////////////////////////////////////////////
@@ -240,7 +240,7 @@ private:
     double                            * pPoolOccupancy;
     /// Structure to store time since last update, used to calculate occupancy
     double 							  *	pLastUpdate;
-    
+
     /// location of where the change of this species is stored in  the solver buffer
     std::vector<uint>                   bufferLocations;
     // local kprocs update list when spec is changed

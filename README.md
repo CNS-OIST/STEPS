@@ -11,7 +11,7 @@ in previous releases. Please follow the instructions below.
 
 Minimum Prerequisites
 ---------------------
-1. C++ compiler supporting c++11 (e.g. gcc 4.8, clang 3.3)
+1. C++ compiler supporting c++17 (e.g. gcc 7.4, clang 6)
 2. Python3 (3.6.x or above)
 3. NumPy (http://www.numpy.org/)
 4. CMake (https://cmake.org/)
@@ -121,22 +121,83 @@ N_PROCS is the number of MPI processes to be created for the parallel simulation
 Please refer to the documentation of your MPI solution for further customization.
 
 
-Dependencies
--------------
-Linux Debian based:
- `apt-get install g++ gcc cmake libopenblas-dev libmpich-dev python3-numpy cython python3-scipy`
+Dependencies and build instructions
+-----------------------------------
 
-OSX:
- `brew install openblas mpich libomp`
+### Linux Debian based:
+You can follow the installation procedure performed by the [Docker image recipe](https://github.com/CNS-OIST/STEPS_Docker/blob/329b5aaeb4f714f1bfd6fde045addbf3a338dd68/recipe/Dockerfile)
 
-If you use Anaconda:
+### OSX:
+Use Anaconda or Miniconda:
 `conda install scipy numpy matplotlib cmake cython openblas openmpi llvm-openmp`
+
+
+#### Full example to build STEPS on Apple M1 Silicon with Python 3.8 through Miniconda
+
+Prerequisites:
+* Install latest XCode
+* Install [Miniconda3](https://docs.conda.io/en/latest/miniconda.html) _macOS Apple M1 64-bit_
+
+```bash
+CONDA_DIR=/path/to/miniconda
+export PATH=$CONDA_DIR/bin:$PATH
+conda install -c conda-forge \
+  boost-cpp   \
+  cmake       \
+  cython      \
+  gfortran    \
+  gmsh        \
+  llvm-openmp \
+  matplotlib  \
+  mpi4py      \
+  mpich       \
+  nose        \
+  numpy       \
+  openblas    \
+  pkg-config  \
+  scipy
+export MPICH_FC=$CONDA_DIR/bin/gfortran
+export MPICH_CC=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc
+export MPICH_CXX=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++
+
+# Fetch and build PETSc
+cd /path/to/src
+git clone -b release https://gitlab.com/petsc/petsc.git petsc
+pushd petsc
+./configure --prefix=/path/to/petsc/installation --with-64-bit-indices=1 --with-debugging=0 \
+            --with-scalar-type=real --with-x=0 --CC=mpicc --CXX=mpicxx --F77=mpif77 --FC=mpif90 \
+            "MAKEFLAGS=$MAKEFLAGS"
+make
+make install
+export PKG_CONFIG_PATH="/path/to/petsc/installation/lib/pkgconfig:$PKG_CONFIG_PATH"
+popd
+
+cd /path/to/src
+git clone -b tags/4.0.0 --recursive https://github.com/CNS-OIST/STEPS.git
+cd STEPS
+mkdir __build
+cd __build
+export CC=mpicc
+export CXX=mpicxx
+cmake ..
+make
+make install
+```
 
 Validation and Examples
 -----------------------
  - Short validation tests (running in a few minutes, using serial solvers only) can be found in this repository, under `test/validation`
  - Longer validation tests (using serial and parallel solvers) can be found in the [STEPS_Validation](https://github.com/CNS-OIST/STEPS_Validation) repository
  - Examples scripts (including tutorials and papers models) can be found in the [STEPS_Example](https://github.com/CNS-OIST/STEPS_Example) repository
+
+Code Formatting and Static Analysis
+-----------------------
+The [hpc-coding-conventions](https://github.com/BlueBrain/hpc-coding-conventions) submodule is responsible for the code formatting and static analysis.
+
+1. To activate code formatting of both C/C++ and CMake files, enable the CMake variable `STEPS_FORMATTING` (`-DSTEPS_FORMATTING:BOOL=ON`). This will add the following make targets: `clang-format, check-clang-format, cmake-format, check-cmake-format`.
+2. To activate static analysis of C++ files with clang-tidy, enable the CMake variable `STEPS_STATIC_ANALYSIS` (`-DSTEPS_STATIC_ANALYSIS:BOOL=ON`). This will add the following make target: `clang-tidy`.
+
+Thorough [instructions](https://github.com/BlueBrain/hpc-coding-conventions/blob/master/cpp/README.md) on how to perform code formatting and static analysis can be found in the submodule's repository.
 
 Documentation
 -------------

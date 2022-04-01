@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,10 +30,10 @@ import itertools
 import numbers
 import warnings
 
-import steps.API_1.model as smodel
+from steps import stepslib
 
-from . import utils as nutils
 from . import geom as ngeom
+from . import utils as nutils
 
 try:
     from steps.API_1.model import (
@@ -45,10 +45,8 @@ try:
 except ImportError:
     # If the installed STEPS version does not support complexes
     COMPLEX_REAC_UPDATE, COMPLEX_REAC_CREATE, COMPLEX_REAC_DELETE, COMPLEX_FILTER_MAX_VALUE = 0, 0, 0, 0
-    smodel.Complex = None
-    smodel.ComplexReac = None
-    smodel.stepslib._py_Complex = None
-    smodel.stepslib._py_ComplexReac = None
+    stepslib._py_Complex = None
+    stepslib._py_ComplexReac = None
 
 __all__ = [
     'Model',
@@ -92,6 +90,7 @@ __all__ = [
 # Model
 
 
+@nutils.FreezeAfterInit
 class Model(nutils.UsableObject, nutils.StepsWrapperObject):
     """Top-level container for the objects in a kinetic model
 
@@ -114,6 +113,11 @@ class Model(nutils.UsableObject, nutils.StepsWrapperObject):
         super().__init__(*args, **kwargs)
         self.stepsModel = self._createStepsObj() if _createObj else None
         self.volSysConstraints = []
+
+    def _SetUpMdlDeps(self):
+        """Set up structures that depend on objects declared in the model."""
+        # Start with vesicles because they can update rafts
+        pass
 
     def _getStepsObjects(self):
         """Return a list of the steps objects that this named object holds."""
@@ -139,13 +143,14 @@ class Model(nutils.UsableObject, nutils.StepsWrapperObject):
         self.volSysConstraints.append((reac, volSys, surfSys, loc))
 
     def _createStepsObj(self):
-        return smodel.Model()
+        return stepslib._py_Model()
 
 
 ###################################################################################################
 # Space systems
 
 
+@nutils.FreezeAfterInit
 class SpaceSystem(nutils.UsableObject, nutils.UsingObjects(Model), nutils.StepsWrapperObject):
     """Base class for volume and surface system classes
 
@@ -166,6 +171,7 @@ class SpaceSystem(nutils.UsableObject, nutils.UsingObjects(Model), nutils.StepsW
         return [self.stepsSys]
 
 
+@nutils.FreezeAfterInit
 class VolumeSystem(SpaceSystem):
     """A container that groups reactions and diffusion rules located in a volume
 
@@ -190,7 +196,7 @@ class VolumeSystem(SpaceSystem):
         super().__init__(*args, **kwargs)
 
     def _createStepsObj(self, mdl):
-        return smodel.Volsys(self.name, mdl.stepsModel)
+        return stepslib._py_Volsys(self.name, mdl.stepsModel)
 
     @classmethod
     def _FromStepsObject(cls, obj, mdl):
@@ -206,6 +212,7 @@ class VolumeSystem(SpaceSystem):
         return vsys
 
 
+@nutils.FreezeAfterInit
 class SurfaceSystem(SpaceSystem):
     """A container that groups reactions and diffusion rules located in a surface
 
@@ -231,7 +238,7 @@ class SurfaceSystem(SpaceSystem):
         super().__init__(*args, **kwargs)
 
     def _createStepsObj(self, mdl):
-        return smodel.Surfsys(self.name, mdl.stepsModel)
+        return stepslib._py_Surfsys(self.name, mdl.stepsModel)
 
     def _addLocation(self, l):
         super()._addLocation(l)
@@ -337,6 +344,7 @@ def RotationalSymmetryOrdering(state):
 # Complexes
 
 
+@nutils.FreezeAfterInit
 class Complex(nutils.UsingObjects(Model)):
     """Multi-state complex class
 
@@ -395,6 +403,8 @@ class Complex(nutils.UsingObjects(Model)):
 
     _elemStr = 'Complex'
 
+    _SIMPATH_ONLY_CHILDREN = True
+
     def __init__(self, subUnits, *args, statesAsSpecies=False, order=NoOrdering, **kwargs):
         """
         Declare a complex from a list of subunits.
@@ -426,7 +436,7 @@ class Complex(nutils.UsingObjects(Model)):
                 f'Steps complexes need to be declared with "order=NoOrdering", no '
                 f'other orders are accepted.'
             )
-        if not statesAsSpecies and smodel.Complex is None:
+        if not statesAsSpecies and stepslib._py_Complex is None:
             warnings.warn(
                 f'Your version of STEPS does not support multi-state complexes, '
                 f'Complex {self.name} will instead be declared with '
@@ -476,7 +486,7 @@ class Complex(nutils.UsingObjects(Model)):
 
     def _createStepsObj(self, mdl):
         # Not implemented in steps yet
-        return smodel.Complex(self.name, mdl.stepsModel, len(self._subUnits), len(self._poolElems))
+        return stepslib._py_Complex(self.name, mdl.stepsModel, len(self._subUnits), len(self._poolElems))
 
     def _getStepsObjects(self):
         """Return a list of the steps objects that this named object holds."""
@@ -497,7 +507,7 @@ class Complex(nutils.UsingObjects(Model)):
         for comb in itertools.product(*[su._states for su in self._subUnits]):
             cs = ComplexState(self, comb)
             if cs not in self._compStates:
-                spec = smodel.Spec(cs.name, mdl.stepsModel)
+                spec = stepslib._py_Spec(cs.name, mdl.stepsModel)
                 cs._setStepsObjects(spec)
                 self._compStates[cs] = spec
         return None
@@ -654,6 +664,7 @@ class Complex(nutils.UsingObjects(Model)):
         return Complex._elemStr
 
 
+@nutils.FreezeAfterInit
 class SubUnit(nutils.NamedObject):
     """Class for representing complex subunits
 
@@ -741,6 +752,7 @@ class _ComplexSelectorSpawner:
 # Channels
 
 
+@nutils.FreezeAfterInit
 class Channel(Complex):
     """Ion channel class
 
@@ -759,12 +771,12 @@ class Channel(Complex):
 
     def _createStepsStates(self, mdl):
         """Create steps ChanState objects for each channel state."""
-        chan = smodel.Chan(self.name, mdl.stepsModel)
+        chan = stepslib._py_Chan(self.name, mdl.stepsModel)
         # Compute the channel state from the subunit states
         for comb in itertools.product(*[su._states for su in self._subUnits]):
             cs = ComplexState(self, comb)
             if cs not in self._compStates:
-                chanState = smodel.ChanState(cs.name, mdl.stepsModel, chan)
+                chanState = stepslib._py_ChanState(cs.name, mdl.stepsModel, chan)
                 cs._setStepsObjects(chanState)
                 self._compStates[cs] = chanState
         return chan
@@ -774,6 +786,7 @@ class Channel(Complex):
 # Reaction elements
 
 
+@nutils.FreezeAfterInit
 class ReactionElement(nutils.NamedObject):
     """Base class for objects that can be included in a reaction
 
@@ -884,6 +897,7 @@ class ReactionElement(nutils.NamedObject):
         return Surf(self)
 
 
+@nutils.FreezeAfterInit
 class ReactingElement(ReactionElement):
     """A reaction element with a stoichiometric coefficient and a location
 
@@ -918,8 +932,11 @@ class ReactingElement(ReactionElement):
         if self.loc is None:
             return '{}{}'.format(self.stoich if self.stoich > 1 else '', str(self._elem))
         else:
-            s = self.stoich if self.stoich > 1 else ''
-            return f'{self.loc}({s}{self._elem})'
+            s = f'{self.stoich} ' if self.stoich > 1 else ''
+            pos = {
+                Location.IN: 'i', Location.OUT: 'o', Location.SURF: 's'
+            }[self.loc]
+            return f'{s}{self._elem}.{pos}'
 
     def _getStepsObjects(self):
         """Return a list of the steps objects that this named object holds."""
@@ -949,6 +966,7 @@ class Location(Enum):
 
 
 ALL_LOCATIONS = [None, Location.IN, Location.SURF, Location.OUT]
+ALL_SURF_LOCATIONS = [Location.SURF]
 
 
 def _locSpecifier(elem, loc):
@@ -1001,7 +1019,13 @@ def Surf(elem):
 ####################################
 
 
-class Species(nutils.UsingObjects(Model), ReactionElement, nutils.StepsWrapperObject):
+@nutils.FreezeAfterInit
+class Species(
+        nutils.UsingObjects(Model),
+        ReactionElement,
+        nutils.StepsWrapperObject,
+        nutils.ParameterizedObject
+    ):
     """A chemical species
 
     Species can be involved in :py:class:`Reaction`, :py:class:`Diffusion`, or other transport
@@ -1011,10 +1035,12 @@ class Species(nutils.UsingObjects(Model), ReactionElement, nutils.StepsWrapperOb
     :type valence: int
     """
 
+    _elemStr = ''
+
     def __init__(self, *args, valence=0, _createObj=True, **kwargs):
         super().__init__(*args, **kwargs)
         (mdl,) = self._getUsedObjects()
-        self.stepsSpecies = smodel.Spec(self.name, mdl.stepsModel) if _createObj else None
+        self.stepsSpecies = stepslib._py_Spec(self.name, mdl.stepsModel) if _createObj else None
         if valence != 0:
             self.valence = valence
 
@@ -1027,24 +1053,34 @@ class Species(nutils.UsingObjects(Model), ReactionElement, nutils.StepsWrapperOb
         """Create the interface object from a STEPS object."""
         spec = cls(_createObj=False, name=obj.getID())
         spec.stepsSpecies = obj
+        val = obj.getValence()
+        if val != 0:
+            spec.valence = val
         return spec
 
     @property
+    @nutils.ParameterizedObject.RegisterGetter()
     def valence(self):
         """The valence of the species (defaults to 0)
 
-        :type: int
+        :type: Union[int, :py:class:`steps.API_2.utils.Parameter`]
         """
         return self.stepsSpecies.getValence()
 
     @valence.setter
+    @nutils.ParameterizedObject.RegisterSetter()
     def valence(self, val):
-        return self.stepsSpecies.setValence(val)
+        self.stepsSpecies.setValence(val)
 
     def __repr__(self):
         return self.name
 
+    def _solverStr(self):
+        """Return the string that is used as part of method names for this specific object."""
+        return Species._elemStr
 
+
+@nutils.FreezeAfterInit
 class SubUnitState(ReactionElement):
     """State of a :py:class:`SubUnit`
 
@@ -1187,6 +1223,7 @@ class SubUnitState(ReactionElement):
             return None
 
 
+@nutils.FreezeAfterInit
 class SubUnitSelector(ReactionElement):
     """Set of :py:class:`SubUnitState` associated to a :py:class:`SubUnit`
 
@@ -1459,6 +1496,7 @@ class SubUnitSelector(ReactionElement):
         return copy.copy(self)
 
 
+@nutils.FreezeAfterInit
 class ComplexState(ReactionElement):
     """Fully specified state of a complex
 
@@ -1473,6 +1511,8 @@ class ComplexState(ReactionElement):
 
         See :py:func:`Complex.__getitem__` for details.
     """
+
+    _SIMPATH_ONLY_CHILDREN = True
 
     def __init__(
         self, comp, state, *args, _stepsObj=None, _parentCompSel=None, _parentSelName=None, **kwargs
@@ -1654,7 +1694,7 @@ class ComplexState(ReactionElement):
     def _solverStr(self):
         """Return the string that is used as part of method names for this specific object."""
         if self._areStatesAsSpecies():
-            return ''
+            return Species._elemStr
         else:
             return Complex._elemStr
 
@@ -1688,6 +1728,7 @@ class _ComplexReactionElement(ReactionElement):
         pass
 
 
+@nutils.FreezeAfterInit
 class ComplexSelector(_ComplexReactionElement, nutils.MultiUsable):
     """Partially specified state of a complex
 
@@ -2204,7 +2245,7 @@ class ComplexSelector(_ComplexReactionElement, nutils.MultiUsable):
     def _solverStr(self):
         """Return the string that is used as part of method names for this specific object."""
         if self._areStatesAsSpecies():
-            return ''
+            return Species._elemStr
         else:
             return Complex._elemStr
 
@@ -2218,6 +2259,7 @@ class ComplexSelector(_ComplexReactionElement, nutils.MultiUsable):
         )
 
 
+@nutils.FreezeAfterInit
 class _ComplexReactants(_ComplexReactionElement):
     """
     Represents the combination of a complex selectors and a list of reactants involved in a
@@ -2510,6 +2552,7 @@ class _ComplexReactants(_ComplexReactionElement):
 # Reactions
 
 
+@nutils.FreezeAfterInit
 class ReactionSide:
     """Unordered collection of reactants
 
@@ -2565,7 +2608,7 @@ class ReactionSide:
                 'parentheses when used in reactions.'
             )
         else:
-            raise SyntaxError('Cannot use "|" operator in reactions except for combining ' 'SubUnitStates.')
+            raise SyntaxError('Cannot use "|" operator in reactions except for combining SubUnitStates.')
 
     def _SetLoc(self, loc):
         for s in self.reacElems:
@@ -2622,7 +2665,7 @@ class ReactionSide:
         return len(set(s.loc for s in self.reacElems)) < 2
 
     def _hasVolumeLocation(self):
-        return all(s.loc != Location.SURF for s in self.reacElems)
+        return all(s.loc not in ALL_SURF_LOCATIONS for s in self.reacElems)
 
     def _hasLocation(self):
         return any(s.loc is not None for s in self.reacElems)
@@ -2641,6 +2684,19 @@ class ReactionSide:
 
     def __iter__(self):
         return iter(self.reacElems)
+
+    def __len__(self):
+        return len(self.reacElems)
+
+    def _toReactionSide(self):
+        return self
+
+    def _getFlatList(self):
+        """Return an equivalent list of reacting elements that all have stoich = 1"""
+        res = []
+        for re in self:
+            res += [ReactingElement(re._elem, 1, re.loc)] * re.stoich
+        return res
 
     def _makeCopy(self):
         """Make a copy of the reaction side."""
@@ -2736,24 +2792,22 @@ class ReactionSide:
         return finalSide
 
 
+@nutils.FreezeAfterInit
 class _SubReaction(nutils.NamedObject):
     """
     Wrapper for a single steps reaction object.
     """
 
     _elemStrDict = {
-        smodel.Reac: 'Reac',
-        smodel.SReac: 'SReac',
-        smodel.VDepSReac: 'VDepSReac',
-        smodel.ComplexReac: 'ComplexReac',
-        smodel.stepslib._py_Reac: 'Reac',
-        smodel.stepslib._py_SReac: 'SReac',
-        smodel.stepslib._py_VDepSReac: 'VDepSReac',
-        smodel.stepslib._py_ComplexReac: 'ComplexReac',
+        stepslib._py_Reac: 'Reac',
+        stepslib._py_SReac: 'SReac',
+        stepslib._py_VDepSReac: 'VDepSReac',
+        stepslib._py_ComplexReac: 'ComplexReac',
     }
 
-    def __init__(self, stepsReac, lhs=None, rateMult=1, *args, **kwargs):
+    def __init__(self, parent, stepsReac, lhs=None, rateMult=1, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._parent = parent
         self._stepsReac = stepsReac
         cls = stepsReac.__class__
         if cls not in _SubReaction._elemStrDict:
@@ -2761,6 +2815,10 @@ class _SubReaction(nutils.NamedObject):
         self._elemStr = _SubReaction._elemStrDict[cls]
         self._lhs = lhs
         self._rateMult = rateMult
+
+    def _getRateUnits(self):
+        """Return rate units of the reaction"""
+        return self._parent._getRateUnits()
 
     def _getStepsObjects(self):
         """Return a list of the steps objects that this named object holds."""
@@ -2770,7 +2828,7 @@ class _SubReaction(nutils.NamedObject):
         """Return the string that is used as part of method names for this specific object."""
         return self._elemStr
 
-    def _solverSetValue(self, v):
+    def _solverSetValue(self, valName, v):
         """
         Return the value that should actually be set in the solver when value 'v' is given by
         the user.
@@ -2778,26 +2836,37 @@ class _SubReaction(nutils.NamedObject):
         if isinstance(v, CompDepFunc):
             if self._lhs is None:
                 raise NotImplementedError()
-            else:
-                return self._rateMult * v(self._lhs)
-        else:
+            v = v(self._lhs)
+
+        if valName == 'K':
             return self._rateMult * v
+        else:
+            return v
 
 
-class _SubReactionList(nutils.SolverPathObject, list):
+@nutils.FreezeAfterInit
+class _SubReactionList(nutils.SolverPathObject, nutils.ParameterizedObject, list):
     """
     Represents a unidirectional reaction consisting in a list of single steps reaction objects.
     """
 
-    def __init__(self, parent, reacName, LRP, compEvs, *args, **kwargs):
+    def __init__(self, parent, reacName, LRP, compEvs, isFwd=True, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._parent = parent
         self._reacName = reacName
         self._LRP = LRP
         self._compEvs = compEvs
+        self._isFwd = isFwd
 
-        # Properties
-        self._rate = 0
+        # Add the reaction name as parameter if the reaction is not anonymous
+        if not isinstance(self._parent, AnonymousReaction):
+            self._setParameter('Reaction ID', self._parent.name + ("['fwd']" if self._isFwd else "['bkw']"))
+        # Add the complex selector as parameter, if any
+        _, compSels, *_ = self._parent._usedObjects
+        if len(compSels) > 0:
+            self._setParameter('Complex', nutils._ParamList(compSels))
+
+        self.K = 0
 
         self._reacElems = {loc: set() for loc in ALL_LOCATIONS}
 
@@ -2806,7 +2875,32 @@ class _SubReactionList(nutils.SolverPathObject, list):
             raise TypeError('Only _SubReaction objects can be added to _SubReactionList.')
         super().append(item)
 
+    def _getRateUnits(self):
+        """Return rate units of the reaction"""
+        units = set()
+
+        # some reactions are volume-volume regardless of their content
+        isVolVolReac = False
+
+        for l, r, rm in self._LRP:
+            l = l._getFlatList()
+            molExp = 1 - len(l)
+            unit = ''
+            if molExp != 0:
+                if isVolVolReac or len(l) == 0 or any(s.loc != Location.SURF for s in l):
+                    unit = f'M'
+                else:
+                    unit = f'(mol m^-2)'
+                unit += f'^{molExp} ' if molExp != 1 else ' '
+            units.add(unit + 's^-1')
+
+        if len(units) > 1:
+            raise Exception(f'Inconsistent rate units in reaction {self}: {units}')
+
+        return nutils.Units(list(units)[0])
+
     @property
+    @nutils.ParameterizedObject.RegisterGetter(units=_getRateUnits)
     def K(self):
         """Reaction rate(s)
 
@@ -2826,15 +2920,28 @@ class _SubReactionList(nutils.SolverPathObject, list):
 
         The reaction rate(s) default(s) to 0.
 
-        :type: Union[float, :py:class:`XDepFunc`]
+        :type: Union[float, :py:class:`steps.API_2.utils.Parameter`, :py:class:`XDepFunc`]
         """
-        return self._rate
+        pass
 
     @K.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=_getRateUnits)
     def K(self, rate):
         if not isinstance(rate, (numbers.Number, XDepFunc)):
             raise TypeError(f'{rate} cannot be used as a rate.')
-        self._rate = rate
+
+    def __repr__(self):
+        if self._isFwd:
+            return f'{self._parent.lhs} → {self._parent.rhs}'
+        else:
+            return f'{self._parent.rhs} → {self._parent.lhs}'
+
+    @classmethod
+    def _getDisplayName(cls):
+        """Name that will be used as column title during parameter export
+        Defaults to class name.
+        """
+        return Reaction._getDisplayName()
 
     def _getStepsObjects(self):
         """Return a list of the steps objects that this named object holds."""
@@ -2850,8 +2957,14 @@ class _SubReactionList(nutils.SolverPathObject, list):
     def _getAllElems(self, loc):
         return self._reacElems[loc]
 
+    def _decl(self):
+        """
+        Return a string that describes the declaration of the object. It returns its name by default
+        but it can contain e.g. the file and line at which it was declared.
+        """
+        return self._parent._decl()
+
     def _addToSteps(self):
-        """Add all the reactions to steps."""
         """
         Declare and add all steps reactions corresponding to the (lhs, rhs) pairs in LRP.
         """
@@ -2875,16 +2988,22 @@ class _SubReactionList(nutils.SolverPathObject, list):
                 if len(compEvents) > 0:
                     name_c = name + (f'_{j}' if len(self._compEvs) > 1 else '')
                     res = self._declareComplexReac(
-                        name_c, l, r, compEvents, mdl, volSys, surfSys, rm * self._rate, rm
+                        name_c, l, r, compEvents, mdl, volSys, surfSys, rm * self.K, rm
                     )
                 else:
-                    res = self._declareSimpleReac(name, l, r, mdl, volSys, surfSys, rm * self._rate, rm)
+                    res = self._declareSimpleReac(
+                        name, l, r, mdl, volSys, surfSys, rm * self.K, rm
+                    )
 
                 # Add the subreactions to self
                 self.append(res)
 
-    def _declareComplexReac(self, name, simpLHS, simpRHS, compEvents, mdl, volSys, surfSys, rate, rateMult):
+    def _declareComplexReac(self, name, simpLHS, simpRHS, compEvents, mdl, volSys, surfSys,
+            rate, rateMult):
         """Declare complex reaction involving real complexes."""
+
+        if deps is not None:
+            raise Exception(f'Cannot use dependencies with complex reactions.')
 
         # TMP Only implement volume reactions for now
         lhs = simpLHS._GetStepsElems()
@@ -2895,14 +3014,14 @@ class _SubReactionList(nutils.SolverPathObject, list):
 
         if isinstance(rate, CompDepRate):
             raise NotImplementedError(
-                f'{self._parent._getDeclarationDescr()}: Cannot use CompDepRate with STEPS complex '
+                f'{self._decl()}: Cannot use CompDepRate with STEPS complex '
                 f'reactions.'
             )
 
         nutils._print(f'Adding STEPS complex reaction {name}.', 2)
 
-        stepsReac = smodel.ComplexReac(name, volSys.stepsSys, lhs=lhs, rhs=rhs, compEvs=compEvs, kcst=rate)
-        return _SubReaction(stepsReac, rateMult=rateMult, name=name)
+        stepsReac = stepslib._py_ComplexReac(name, volSys.stepsSys, lhs=lhs, rhs=rhs, compEvs=compEvs, kcst=rate)
+        return _SubReaction(self, stepsReac, rateMult=rateMult, name=name)
         # END TMP
 
     def _declareSimpleReac(self, name, lhs, rhs, mdl, volSys, surfSys, rate, rateMult):
@@ -2910,7 +3029,7 @@ class _SubReactionList(nutils.SolverPathObject, list):
 
         nutils._print(f'Adding STEPS reaction {name}: {lhs} --> {rhs}, rate = {rate}', 3)
 
-        # Compute rates in case of complex dependent rates
+        # Compute rates and other parameters in case of complex dependencies
         if isinstance(rate, CompDepRate):
             rate = rate(lhs)
 
@@ -2922,8 +3041,11 @@ class _SubReactionList(nutils.SolverPathObject, list):
             irhs = rhs._GetStepsElems(Location.IN)
             srhs = rhs._GetStepsElems(Location.SURF)
             orhs = rhs._GetStepsElems(Location.OUT)
+
+            # Normal surface reaction
             if isinstance(rate, VDepRate):
-                stepsReac = smodel.VDepSReac(
+                # Voltage dependent surface reaction
+                stepsReac = stepslib._py_VDepSReac(
                     name,
                     surfSys.stepsSys,
                     ilhs=ilhs,
@@ -2932,11 +3054,10 @@ class _SubReactionList(nutils.SolverPathObject, list):
                     irhs=irhs,
                     srhs=srhs,
                     orhs=orhs,
-                    k=rate._func,
-                    vrange=rate._vrange,
+                    **rate._getVDepSReacParams(self._getRateUnits())
                 )
             else:
-                stepsReac = smodel.SReac(
+                stepsReac = stepslib._py_SReac(
                     name,
                     surfSys.stepsSys,
                     ilhs=ilhs,
@@ -2947,7 +3068,6 @@ class _SubReactionList(nutils.SolverPathObject, list):
                     orhs=orhs,
                     kcst=rate,
                 )
-            return _SubReaction(stepsReac, lhs=lhs, rateMult=rateMult, name=name)
         else:
             # Volume system reaction
             elhs = lhs._GetStepsElems()
@@ -2955,19 +3075,23 @@ class _SubReactionList(nutils.SolverPathObject, list):
             if isinstance(rate, VDepRate):
                 # Undeclare the parent reaction to avoid further exception raising when exiting context
                 # managers
-                self._parent._declared = False
+                # TODO
+                # self._parent._declared = False
                 raise NotImplementedError(
-                    f'{self._parent._getDeclarationDescr()}: Cannot declare a voltage-dependent volume '
+                    f'{self._decl()}: Cannot declare a voltage-dependent volume '
                     f'reaction.'
                 )
             else:
-                stepsReac = smodel.Reac(name, volSys.stepsSys, lhs=elhs, rhs=erhs, kcst=rate)
-                return _SubReaction(stepsReac, lhs=lhs, rateMult=rateMult, name=name)
+                stepsReac = stepslib._py_Reac(name, volSys.stepsSys, lhs=elhs, rhs=erhs, kcst=rate)
+
+        return _SubReaction(self, stepsReac, lhs=lhs, rateMult=rateMult, name=name)
 
 
-
+@nutils.FreezeAfterInit
 class Reaction(
-    nutils.UsingObjects((Model, ComplexSelector), (VolumeSystem, SurfaceSystem)), nutils.StepsWrapperObject
+    nutils.UsingObjects((Model, ComplexSelector), (VolumeSystem, SurfaceSystem)),
+    nutils.StepsWrapperObject,
+    nutils.ParameterizedObject,
 ):
     """A (possibly bidirectional) reaction.
 
@@ -3033,13 +3157,14 @@ class Reaction(
         """Create the interface object from a STEPS object."""
         reac = cls(name=obj.getID())
 
+        # Reaction sides
         lhs, rhs = ReactionSide([]), ReactionSide([])
-        if isinstance(obj, smodel.stepslib._py_Reac):
+        if isinstance(obj, stepslib._py_Reac):
             for lhsSpec in obj.getLHS():
                 lhs += getattr(mdl, lhsSpec.getID())
             for rhsSpec in obj.getRHS():
                 rhs += getattr(mdl, rhsSpec.getID())
-        elif isinstance(obj, smodel.stepslib._py_SReac):
+        elif isinstance(obj, stepslib._py_SReac):
             for lhsSpec in obj.getILHS():
                 lhs += getattr(mdl, lhsSpec.getID()).i
             for lhsSpec in obj.getSLHS():
@@ -3056,13 +3181,18 @@ class Reaction(
             raise NotImplementedError(f'Cannot import from STEPS reaction {obj}')
 
         lhs > reac > rhs
-        reac.K = obj.getKcst()
+
         subreacLst = _SubReactionList(reac, obj.getID(), [(lhs, rhs, 1)], None)
-        subreacLst.append(_SubReaction(obj, lhs=lhs, rateMult=1.0, name=obj.getID()))
+        subreacLst.append(_SubReaction(subreacLst, obj, lhs=lhs, rateMult=1.0, name=obj.getID()))
         reac._subReactions[Reaction._FwdSpecifier] = subreacLst
+
+        # Rate
+        reac.K = obj.getKcst()
+
         reac._added = True
         for loc in ALL_LOCATIONS:
             subreacLst._reacElems[loc] |= lhs._getAllElems(loc) | rhs._getAllElems(loc)
+
         return reac
 
     @staticmethod
@@ -3284,17 +3414,21 @@ class Reaction(
         fwdCompEvs = self._expandComplexReactions(lhs, rhs)
         nameFwd = self.name + Reaction._FwdSpecifier if self._bidir else self.name
 
-        self._subReactions[Reaction._FwdSpecifier] = _SubReactionList(self, nameFwd, fwdLRP, fwdCompEvs)
+        self._subReactions[Reaction._FwdSpecifier] = _SubReactionList(self, nameFwd, fwdLRP, fwdCompEvs, True)
 
         if self._bidir:
             bkwLRP = self._expandSimpleReactions(rhs, lhs)
             bkwCompEvs = self._expandComplexReactions(rhs, lhs)
             nameBkw = self.name + Reaction._BkwSpecifier
 
-            self._subReactions[Reaction._BkwSpecifier] = _SubReactionList(self, nameBkw, bkwLRP, bkwCompEvs)
+            self._subReactions[Reaction._BkwSpecifier] = _SubReactionList(self, nameBkw, bkwLRP, bkwCompEvs, False)
 
         # Retrieve filename and line number for easier debugging
-        frameInfo = inspect.stack()[3]
+        for i, fi in enumerate(inspect.stack()):
+            if fi.function in ['__lt__', '__gt__']:
+                i += 1
+                break
+        frameInfo =  inspect.stack()[i]
         self._declarationInfo = (frameInfo.filename, frameInfo.lineno)
 
         self._declared = True
@@ -3381,8 +3515,12 @@ class Reaction(
     def __repr__(self):
         return '{} {}-> {}'.format(self.lhs, '-' if not self._bidir else '<', self.rhs)
 
-    def _getDeclarationDescr(self):
-        return f'{self._declarationInfo[0]}: {self._declarationInfo[1]}'
+    def _decl(self):
+        """
+        Return a string that describes the declaration of the object. It returns its name by default
+        but it can contain e.g. the file and line at which it was declared.
+        """
+        return f'{self.name} ({self._declarationInfo[0]}: {self._declarationInfo[1]})'
 
     def _getStepsObjects(self):
         """Return a list of the steps objects that this named object holds."""
@@ -3398,15 +3536,29 @@ class Reaction(
             *[srl._simPathWalkExpand() for specif, srl in self._subReactions.items() if srl is not None]
         )
 
-    def _exitCallback(self, parent):
-        """Method to be called when we get out of a context manager."""
-        if self._declared and not self._added:
-            nutils._print(f'Adding pysteps reaction {self.name}: {self}', 2)
+    def _getSubParameterizedObjects(self):
+        """Return all subobjects that can hold parameters."""
+        return [srl for specif, srl in self._subReactions.items() if srl is not None]
 
-            self._subReactions[Reaction._FwdSpecifier]._addToSteps()
-            if self._bidir:
-                self._subReactions[Reaction._BkwSpecifier]._addToSteps()
-            self._added = True
+    def _includeinParamTables(self):
+        """Whether the object should be included in parameter tables"""
+        # Only directed reactions should be included in parameter tables
+        return False
+
+    def _exitCallback(self, parent):
+        """
+        Method to be called the first time we get out of a context manager in which the object as been
+        declared.
+        """
+        # Only declare the reaction if we are exiting the volume / surface system
+        if isinstance(parent, SpaceSystem):
+            if self._declared and not self._added:
+                nutils._print(f'Adding pysteps reaction {self.name}: {self}', 2)
+
+                self._added = True
+                self._subReactions[Reaction._FwdSpecifier]._addToSteps()
+                if self._bidir:
+                    self._subReactions[Reaction._BkwSpecifier]._addToSteps()
 
     @staticmethod
     def _getProperty(prop):
@@ -3455,6 +3607,7 @@ for propName in dir(_SubReactionList):
         setattr(Reaction, propName, newProp)
 
 
+@nutils.FreezeAfterInit
 class AnonymousReaction(Reaction):
     """
     :meta private:
@@ -3464,6 +3617,7 @@ class AnonymousReaction(Reaction):
         super().__init__(*args, **kwargs)
 
 
+@nutils.FreezeAfterInit
 class ReactionManager:
     """Class used to instantiate reactions
 
@@ -3533,7 +3687,8 @@ class ReactionManager:
 # State-dependent rates
 
 
-class XDepFunc:
+@nutils.FreezeAfterInit
+class XDepFunc(nutils.NamedObject):
     """Base class for functions depending on some simulation or object state
 
     This is a wrapper around a function that adds some functionalities.
@@ -3549,21 +3704,22 @@ class XDepFunc:
             raise TypeError(f'Expected a callable, got {func} instead.')
         self._func = func
         self._args = []
+        self._mult = 1
 
     def __mul__(self, m):
         """Multiplication with a constant or another function of the same class
 
         :param m: Constant number or another :py:class:`XDepFunc` of the same type
-        :type m: Union[Number, :py:class:`XDepFunc`]
+        :type m: Union[Number]
 
         :returns: A new function, which corresponds to the multiplication of both operands
         :rtype: :py:class:`XDepFunc`
         :meta public:
         """
         if isinstance(m, numbers.Number):
-            return self.__class__(lambda *lst: m * self._func(*lst), *self._args)
-        elif isinstance(m, self.__class__):
-            return self.__class__(lambda *lst: m(*lst) * self._func(*lst), *self._args)
+            ret = copy.copy(self)
+            ret._mult *= m
+            return ret
         else:
             raise TypeError(f'Cannot multiply {self} with {m}.')
 
@@ -3589,10 +3745,11 @@ class XDepFunc:
 
         :meta public:
         """
-        return self._func(*lst)
+        return self._mult * self._func(*lst)
 
 
-class VDepFunc(XDepFunc):
+@nutils.FreezeAfterInit
+class VDepFunc(XDepFunc, nutils.ParameterizedObject):
     """Hold a function and a voltage range for computing e.g. voltage-dependent reaction rates
 
     For efficiency reasons, the values of these functions are pre-computed for specific voltage
@@ -3608,24 +3765,40 @@ class VDepFunc(XDepFunc):
 
     See :py:class:`VDepRate` for an example.
     """
+    _DEFAULT_VMIN = -150e-3
+    _DEFAULT_VMAX = 100e-3
+    _DEFAULT_DV   = 1e-4
 
     def __init__(self, func, vrange=None, *args, **kwargs):
         super().__init__(func=func, *args, **kwargs)
         if vrange is None:
-            vrange = [smodel._VoltageTable.vmin, smodel._VoltageTable.vmax, smodel._VoltageTable.dv]
-        self._vrange = vrange
+            vrange = [VDepFunc._DEFAULT_VMIN, VDepFunc._DEFAULT_VMAX, VDepFunc._DEFAULT_DV]
+        if vrange[0] >= vrange[1]:
+            raise Exception(f'The maximum voltage of the range is lower than the minimum.')
+        if vrange[2] > vrange[1] - vrange[0]:
+            raise Exception(f'The voltage step is greater than the voltage range.')
 
-        self._args = [self._vrange]
+        self.vrange = vrange
+        self._setParameter('Function', self._func)
+
+        self._args = [self.vrange]
 
     @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('V'))
     def vrange(self):
-        """Access the voltage range
+        """The associated voltage range
 
-        :type: Tuple[float, float, float], read-only
+        :type: Tuple[float, float, float]
         """
-        return self._vrange
+        pass
+
+    @vrange.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('V'))
+    def vrange(self, val):
+        pass
 
 
+@nutils.FreezeAfterInit
 class CompDepFunc(XDepFunc):
     """Hold a function that depends on the fully specified state of a complex
 
@@ -3705,6 +3878,7 @@ class CompDepFunc(XDepFunc):
             raise NotImplementedError()
 
 
+@nutils.FreezeAfterInit
 class VDepRate(VDepFunc):
     """Voltage dependent reaction rate
 
@@ -3734,9 +3908,29 @@ class VDepRate(VDepFunc):
             # when declaring reactions.
     """
 
-    pass
+    def _getVDepSReacParams(self, units):
+        """Return the parameters that are actually needed by the cython constructor"""
+        vmin, vmax, dv = self.vrange
+        tablesize = int((vmax - vmin) / dv) + 1
+
+        # Retrieve the parameters used when the function is called with vmin
+        # This can possibly miss some parameters if they are only involved in the computation
+        # for some specific values of the membrane potential
+        nutils.Parameter._startRecording()
+        self(vmin)
+        allParams = [param for param in nutils.Parameter._endRecordingAndGetUsage() if param._isNamed() and param._isUserDefined()]
+        nameList = nutils._ParamList([param.name for param in allParams])
+        self._setParameter('Depends on', nutils.Parameter(nameList, _dependencies=allParams))
+
+        ktab = []
+        for i in range(tablesize):
+            ret = self(vmin + i * dv)
+            ktab.append(ret.valueIn(units) if isinstance(ret, nutils.Parameter) else ret)
+
+        return dict(ktab=ktab, vmin=vmin, vmax=vmax, dv=dv, tablesize=tablesize)
 
 
+@nutils.FreezeAfterInit
 class CompDepRate(CompDepFunc):
     """Complex state dependent reaction rate
 
@@ -3770,6 +3964,7 @@ class CompDepRate(CompDepFunc):
     pass
 
 
+@nutils.FreezeAfterInit
 class CompDepCond(CompDepFunc):
     """Complex state dependent conductance
 
@@ -3779,6 +3974,7 @@ class CompDepCond(CompDepFunc):
     pass
 
 
+@nutils.FreezeAfterInit
 class CompDepP(CompDepFunc):
     """Complex state dependent permeability
 
@@ -3788,6 +3984,7 @@ class CompDepP(CompDepFunc):
     pass
 
 
+@nutils.FreezeAfterInit
 class CompDepDcst(CompDepFunc):
     """Complex state dependent diffusion constant
 
@@ -3842,12 +4039,12 @@ class _SubDiffusion(nutils.NamedObject):
         sd._direc = direc
         return sd
 
-    def _solverSetValue(self, v):
+    def _solverSetValue(self, valName, v):
         """
         Return the value that should actually be set in the solver when value 'v' is given by
         the user.
         """
-        if isinstance(v, CompDepDcst):
+        if valName == 'D' and isinstance(v, CompDepDcst):
             return v(self._keyElem)
         else:
             return v
@@ -3871,7 +4068,11 @@ class _SubDiffusionList(nutils.SolverPathObject):
         return _SubDiffusionList([d.__call__(direc) for d in self._diffLst])
 
 
-class Diffusion(nutils.UsingObjects(Model, (VolumeSystem, SurfaceSystem)), nutils.StepsWrapperObject):
+@nutils.FreezeAfterInit
+class Diffusion(
+        nutils.UsingObjects(Model, (VolumeSystem, SurfaceSystem)),
+        nutils.StepsWrapperObject, nutils.ParameterizedObject
+    ):
     """A diffusion rule for a chemical species in a volume or on a surface
 
     :param elem: The element that subject to diffusion
@@ -3902,26 +4103,34 @@ class Diffusion(nutils.UsingObjects(Model, (VolumeSystem, SurfaceSystem)), nutil
             raise Exception(
                 'A diffusion rule should only apply to a volume or a surface system, but not both.'
             )
+
+        if not isinstance(elem, nutils.NamedObject):
+            raise TypeError(f'Expected a named ligand, got {elem} instead.')
+
         self.sys = volSys if surfSys is None else surfSys
         self._stepsDiffs = {}
         self._elem = elem._getReferenceObject()
-        self._Dcst = Dcst
 
         if _createObj:
+            if self.sys.__class__ in [VolumeSystem, SurfaceSystem]:
+                cls = stepslib._py_Diff
+            else:
+                raise Exception(f'Cannot declare a diffusion rule in {self.sys}')
+
             if (
                 isinstance(elem, (Complex, ComplexSelector))
             ) and elem._areStatesAsSpecies():
                 for state in elem:
                     name = f'{self.name}_{state.name}'
                     self._stepsDiffs[state] = _SubDiffusion(
-                        smodel.Diff(name, self.sys.stepsSys, state._getStepsObjects()[0]),
+                        cls(name, self.sys._getStepsObjects()[0], state._getStepsObjects()[0]),
                         self,
                         keyElem=state,
                         name=name,
                     )
             elif isinstance(elem, (Species, ComplexState)):
                 self._stepsDiffs[elem] = _SubDiffusion(
-                    smodel.Diff(self.name, self.sys.stepsSys, elem._getStepsObjects()[0]),
+                    cls(self.name, self.sys._getStepsObjects()[0], elem._getStepsObjects()[0]),
                     self,
                     keyElem=elem,
                     name=self.name,
@@ -3929,15 +4138,8 @@ class Diffusion(nutils.UsingObjects(Model, (VolumeSystem, SurfaceSystem)), nutil
             else:
                 raise TypeError(f'Cannot declare a diffusion rule for {elem}.')
 
-            # Setting diffusion constant
-            if isinstance(Dcst, numbers.Number):
-                for _, sd in self._stepsDiffs.items():
-                    sd._stepsDiff.setDcst(Dcst)
-            elif isinstance(Dcst, CompDepFunc):
-                for cs, sd in self._stepsDiffs.items():
-                    sd._stepsDiff.setDcst(Dcst(cs))
-            else:
-                raise TypeError(f'{Dcst} is not a valid diffusion constant.')
+        # Setting diffusion constant
+        self.Dcst = Dcst
 
     def _getStepsObjects(self):
         """Return a list of the steps objects that this named object holds."""
@@ -4008,6 +4210,27 @@ class Diffusion(nutils.UsingObjects(Model, (VolumeSystem, SurfaceSystem)), nutil
         for _, sd in self._stepsDiffs.items():
             yield sd
 
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('m^2 s^-1'))
+    def Dcst(self):
+        """Diffusion constant (in m^2 s^-1)
+
+        :type: Union[float, :py:class:`steps.API_2.nutils.Parameter`]
+        """
+        pass
+
+    @Dcst.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('m^2 s^-1'))
+    def Dcst(self, val):
+        if isinstance(val, numbers.Number):
+            for _, sd in self._stepsDiffs.items():
+                sd._stepsDiff.setDcst(val)
+        elif isinstance(val, CompDepFunc):
+            for cs, sd in self._stepsDiffs.items():
+                sd._stepsDiff.setDcst(val(cs))
+        else:
+            raise TypeError(f'{val} is not a valid diffusion constant.')
+
 
 ###################################################################################################
 # Currents
@@ -4049,6 +4272,7 @@ class _SubCurrentList:
         return nutils.SumSimPathComb
 
 
+@nutils.FreezeAfterInit
 class Current(nutils.UsingObjects(SurfaceSystem), nutils.StepsWrapperObject):
     """Base class representing a current associated with one or more channel states
 
@@ -4063,6 +4287,8 @@ class Current(nutils.UsingObjects(SurfaceSystem), nutils.StepsWrapperObject):
         super().__init__(*args, **kwargs)
         self._currents = {}
         self._complex = None
+        self._added = False
+        self._declared = False
 
     def _getAllElems(self, loc):
         return (
@@ -4127,18 +4353,36 @@ class Current(nutils.UsingObjects(SurfaceSystem), nutils.StepsWrapperObject):
 
     def _getStepsObjects(self):
         """Return a list of the steps objects that this named object holds."""
-        return [obj for state, obj in self._currents.items()]
+        return [obj.stepsCurrent for state, obj in self._currents.items()]
+
+    def _createStepsObj(self):
+        """Create the actual STEPS objects and populate self._currents"""
+        raise NotImplementedError()
+
+    def _exitCallback(self, parent):
+        """
+        Method to be called the first time we get out of a context manager in which the object as been
+        declared.
+        """
+        self._added = True
+        self._createStepsObj()
+
+    def _checkNotAdded(self):
+        """Raise an exception if the currents were already added"""
+        if self._added:
+            raise Exception(f'Cannot modify the properties of a current that was already added to STEPS.')
 
 
-class OhmicCurr(Current):
+@nutils.FreezeAfterInit
+class OhmicCurr(Current, nutils.ParameterizedObject):
     """An ohmic current through a channel in one or more conducting states
 
     :param states: The conducting state(s) of the channel
     :type states: Union[:py:class:`ComplexState`, :py:class:`ComplexSelector`]
     :param conduct: A constant conductance in Siemens or a :py:class:`CompDepCond` function that
-        returns a conductance in Siemens as a function of a complex state.
+        returns a conductance in Siemens as a function of a complex state. Defaults to 0 Siemens.
     :type conduct: Union[float, :py:class:`CompDepCond`]
-    :param rev_pot: Reversal potential in Volts
+    :param rev_pot: Reversal potential in Volts. Defaults to 0 Volts.
     :type rev_pot: float
 
     An ohmic current object is a simple current based on a (possibly state specific) fixed value
@@ -4168,33 +4412,88 @@ class OhmicCurr(Current):
             # on the specific states of the other subunits. In this case, there is a basal
             # conductance k1 and this conductance is increased by k2 for each subunit in state S1A.
 
+    .. warning::
+        The corresponding currents are only truly added to steps after the `with ssys:` block
+        is exited.
+
     """
 
     _currStr = 'Ohmic'
 
-    def __init__(self, states, conduct, rev_pot, *args, **kwargs):
+    def __init__(self, states, conduct=0, rev_pot=0, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        (surfSys,) = self._getUsedObjects()
+        self._complex, self._states = self._getComplexStates(states)
 
-        self._complex, states = self._getComplexStates(states)
+        # Properties
+        self.G = conduct
+        self.ERev = rev_pot
+
+        self._declared = True
+
+    def _createStepsObj(self):
+        """Create the actual STEPS objects and populate self._currents"""
+        if not self._declared:
+            return
+
+        surfSys = self._getParentOfType(SurfaceSystem)
+        conduct = self.G
+        rev_pot = self.ERev
+
         if isinstance(conduct, CompDepFunc):
             if len(conduct._complexes) != 1 or conduct._complexes[0] is not self._complex:
                 raise Exception('The CompDepFunc used as conductance is not compatible with the channel.')
-            condStates = [(s, conduct(s)) for s in states]
+            condStates = [(s, conduct(s)) for s in self._states]
         else:
-            condStates = [(s, conduct) for s in states]
+            condStates = [(s, conduct) for s in self._states]
 
         for state, g in condStates:
             chanState = self._complex._compStates[state]
             self._currents[state] = _SubCurrent(
                 self,
-                smodel.OhmicCurr(
+                stepslib._py_OhmicCurr(
                     f'{self.name}_{state.name}', surfSys.stepsSys, chanstate=chanState, g=g, erev=rev_pot
                 ),
             )
 
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('V'))
+    def ERev(self):
+        """Reversal potential in Volts
 
-class GHKCurr(Current):
+        Can only be set in the `with ssys:` block in which the current has been declared.
+
+        :type: Union[float, :py:class:`steps.API_2.nutils.Parameter`]
+        """
+        pass
+
+    @ERev.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('V'))
+    def ERev(self, val):
+        self._checkNotAdded()
+        if not isinstance(val, numbers.Number):
+            raise TypeError(f'Expected a float, got {val} instead')
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('S'))
+    def G(self):
+        """Conductance in Siemens
+
+        Can only be set in the `with ssys:` block in which the current has been declared.
+
+        :type: Union[float, :py:class:`CompDepCond`]
+        """
+        pass
+
+    @G.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('S'))
+    def G(self, val):
+        self._checkNotAdded()
+        if not isinstance(val, (numbers.Number, CompDepCond)):
+            raise TypeError(f'Expected a float or a CompDepCond object, got {val} instead')
+
+
+@nutils.FreezeAfterInit
+class GHKCurr(Current, nutils.ParameterizedObject):
     """A Goldman-Hodgkin-Katz current through a channel in one or more conducting states
 
     :param states: The conducting state(s) of the channel.
@@ -4210,7 +4509,7 @@ class GHKCurr(Current):
         ion flux.
     :type computeflux: bool
     :param virtual_oconc: A 'virtual outer concentration' that can be specified so that the outer
-        compartment does not have to be explicitly simulated (if it retains default negative
+        compartment does not have to be explicitly simulated (if it retains default `None`
         value then the outer concentration of ion must be simulated).
     :type virtual_oconc: float
     :param vshift:
@@ -4257,45 +4556,75 @@ class GHKCurr(Current):
 
     _currStr = 'GHK'
 
-    class _GHKCurrPInfo:
+    class _GHKCurrPInfo(nutils.ParameterizedObject):
         """Simple wrapper for providing Pinfo instead of permeability"""
 
-        def __init__(self, *args):
-            self.args = args
+        def __init__(self, g, V, T, oconc, iconc, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.g = g
+            self.V = V
+            self.T = T
+            self.oconc = oconc
+            self.iconc = iconc
 
-    def __init__(self, states, spec, P, computeflux=True, virtual_oconc=-1, vshift=0, *args, **kwargs):
+    _GHKCurrPInfo.RegisterParameter('g', nutils.Units('S'))
+    _GHKCurrPInfo.RegisterParameter('V', nutils.Units('V'))
+    _GHKCurrPInfo.RegisterParameter('T', nutils.Units('K'))
+    _GHKCurrPInfo.RegisterParameter('oconc', nutils.Units('M'))
+    _GHKCurrPInfo.RegisterParameter('iconc', nutils.Units('M'))
+
+    def __init__(self, states, spec, P, computeflux=True, virtual_oconc=None, vshift=0, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        (surfSys,) = self._getUsedObjects()
+
         if not isinstance(spec, Species):
             raise TypeError(f'Expected a Species, got {spec} instead.')
         self._spec = spec
+        self._complex, self._states = self._getComplexStates(states)
+        self._computeflux = computeflux
+        self._vshift = vshift
 
-        self._complex, states = self._getComplexStates(states)
+        # Properties
+        self.P = P
+        self.VOConc = virtual_oconc
+
+        self._declared = True
+
+    def _createStepsObj(self):
+        """Create the actual STEPS objects and populate self._currents"""
+        if not self._declared:
+            return
+
+        surfSys = self._getParentOfType(SurfaceSystem)
+        P = self.P
+        virtual_oconc = self.VOConc if self.VOConc is not None else -1
+
         if isinstance(P, CompDepFunc):
             if len(P._complexes) != 1 or P._complexes[0] is not self._complex:
                 raise Exception('The CompDepFunc used as permeability is not compatible with the channel.')
-            condStates = [(s, P(s)) for s in states]
+            condStates = [(s, P(s)) for s in self._states]
         else:
-            condStates = [(s, P) for s in states]
+            condStates = [(s, P) for s in self._states]
 
         for state, perm in condStates:
             chanState = self._complex._compStates[state]
             self._currents[state] = _SubCurrent(
                 self,
-                smodel.GHKcurr(
+                stepslib._py_GHKcurr(
                     f'{self.name}_{state.name}',
                     surfSys.stepsSys,
                     chanState,
                     self._spec.stepsSpecies,
-                    computeflux=computeflux,
+                    computeflux=self._computeflux,
                     virtual_oconc=virtual_oconc,
-                    vshift=vshift,
+                    vshift=self._vshift,
                 ),
             )
             if isinstance(perm, numbers.Number):
                 self._currents[state].stepsCurrent.setP(perm)
             elif isinstance(perm, GHKCurr._GHKCurrPInfo):
-                self._currents[state].stepsCurrent.setPInfo(*perm.args)
+                self._currents[state].stepsCurrent.setPInfo(
+                    perm.g, perm.V, perm.T, perm.oconc, perm.iconc
+                )
             else:
                 raise TypeError(f'Expected a permeability, got {perm} instead.')
 
@@ -4304,16 +4633,16 @@ class GHKCurr(Current):
         """Provide information from channel measurement instead of permeability
 
         :param g: A measured single-channel conductance in Siemens
-        :type g: float
+        :type g: Union[float, :py:class:`steps.API_2.nutils.Parameter`]
         :param V: The potential in Volts
-        :type V: float
+        :type V: Union[float, :py:class:`steps.API_2.nutils.Parameter`]
         :param T: The temperature in Kelvin (may be different from the STEPS simulation
             temperature)
-        :type T: float
+        :type T: Union[float, :py:class:`steps.API_2.nutils.Parameter`]
         :param oconc: The 'outer' concentration of the ion in molar units
-        :type oconc: float
+        :type oconc: Union[float, :py:class:`steps.API_2.nutils.Parameter`]
         :param iconc: The 'inner' concentration of the ion in molar units
-        :type iconc: float
+        :type iconc: Union[float, :py:class:`steps.API_2.nutils.Parameter`]
 
         :returns: An aggregate object. Does not return the permeability.
 
@@ -4330,3 +4659,36 @@ class GHKCurr(Current):
             return super()._getAllElems(loc) + [self._spec]
         else:
             return super()._getAllElems(loc)
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('M'))
+    def VOConc(self):
+        """Virtual outer concentration, in Molars
+
+        Can only be set in the `with ssys:` block in which the current has been declared.
+
+        :type: Union[float, :py:class:`steps.API_2.nutils.Parameter`]
+        """
+        pass
+
+    @VOConc.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('M'))
+    def VOConc(self, val):
+        self._checkNotAdded()
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('m^3 s^-1'))
+    def P(self):
+        """Single channel permeability in m^3 s^-1
+
+        Can only be set in the `with ssys:` block in which the current has been declared.
+
+        :type: Union[float, :py:class:`steps.API_2.nutils.Parameter`, :py:class:`PInfo`, :py:class:`CompDepP`]
+        """
+        pass
+
+    @P.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('m^3 s^-1'))
+    def P(self, val):
+        self._checkNotAdded()
+

@@ -1,5 +1,4 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# -*- coding: utf-8 -*-
+###___license_placeholder___###
 #
 # Rallpack1 model
 # Author Iain Hepburn
@@ -19,8 +18,6 @@ import numpy as np
 import numpy.linalg as la
 import sys
 
-SetVerbosity(0)
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 sim_parameters = {
@@ -35,7 +32,6 @@ sim_parameters = {
 # STEPS
     'sim_end':  0.25,         # simulation stop time s
     'EF_dt':    1.0e-5,        # E-field evaluation time step s
-    'EF_solver': MPI.EF_DV_BDSYS, # E-field lin algebra solver
     'SSA_solver': 'Tetexact'
 }
 
@@ -87,11 +83,11 @@ def build_model(mesh, param):
 def create_sim(model, mesh, seed, param):
     # Create the solver objects
     if param['SSA_solver'] == 'TetODE':
-        sim = Simulation('TetODE', model, mesh, calcMembPot=sim_parameters['EF_solver'])
+        sim = Simulation('TetODE', model, mesh, calcMembPot=MPI.EF_DV_BDSYS)
         sim.setTolerances(1.0e-6, 1e-6)
     elif param['SSA_solver'] == 'Tetexact':
         rng = RNG('mt19937', 512, seed)
-        sim = Simulation('Tetexact', model, mesh, rng, calcMembPot=sim_parameters['EF_solver'])
+        sim = Simulation('Tetexact', model, mesh, rng, calcMembPot=MPI.EF_DV_BDSYS)
         sim.EfieldDT = param['EF_dt']
     else :
         raise ValueError('SSA solver ' + param['SSA_solver'] + 'not available')
@@ -102,6 +98,7 @@ def create_sim(model, mesh, seed, param):
 
 
 def init_sim(sim, model, mesh, param):
+    SetVerbosity(0)
 
     # Correction factor for deviation between mesh and model cylinder:
     area_cylinder = np.pi * param['diameter'] * param['length']

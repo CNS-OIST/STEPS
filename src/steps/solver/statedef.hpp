@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -41,14 +41,13 @@
 #include <fstream>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/geom/geom.hpp"
-#include "steps/model/model.hpp"
-#include "steps/rng/rng.hpp"
-#include "steps/solver/api.hpp"
-#include "steps/geom/patch.hpp"
-#include "steps/geom/diffboundary.hpp"
-#include "steps/geom/sdiffboundary.hpp"
+#include "util/common.h"
+#include "api.hpp"
+#include "rng/rng.hpp"
+#include "model/model.hpp"
+#include "geom/geom.hpp"
+#include "geom/diffboundary.hpp"
+#include "geom/sdiffboundary.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 

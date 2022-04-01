@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -36,8 +36,8 @@
 // logging
 #include <easylogging++.h>
 
-#include "steps/error.hpp"
-#include "steps/math/sample.hpp"
+#include "error.hpp"
+#include "math/sample.hpp"
 
 namespace steps {
 namespace util {
@@ -102,8 +102,9 @@ void distribute_quantity(double x, FwdIter b, FwdIter e, Weight weight, SetCount
         return;
     }
 
-    if (total_weight==0) 
-        for (auto i=b; i!=e; ++i) total_weight += weight(*i);
+    if (total_weight==0)
+        for (auto i = b; i != e; ++i)
+            total_weight += weight(i);
 
     if (total_weight<=0)
         ArgErrLog("non-positive total weight for distribution");
@@ -119,18 +120,18 @@ void distribute_quantity(double x, FwdIter b, FwdIter e, Weight weight, SetCount
 
     std::vector<double> pi;
     for (auto i=b; i!=e; ++i) {
-        double xi = x_o_total*weight(*i);
+        double xi = x_o_total * weight(i);
         double xi_floor = std::floor(xi);
-        pi.push_back(xi-xi_floor);
+        pi.push_back(xi - xi_floor);
 
-        if (xi_floor-1>std::numeric_limits<uint>::max())
+        if (xi_floor - 1 > std::numeric_limits<uint>::max())
             ArgErrLog("quantity too large to distribute (integer limit)");
 
         uint ni = static_cast<uint>(xi_floor);
         set_count(*i, ni);
         allocated += ni;
     }
-    
+
     if (allocated>x)
         ProgErrLog("internal error in count rounding");
     auto remainder = static_cast<uint>(x-allocated);

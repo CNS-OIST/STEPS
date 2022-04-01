@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,23 +24,21 @@
 
  */
 
-// STL headers.
+#include "chan.hpp"
+
 #include <cassert>
 #include <map>
 #include <sstream>
 #include <string>
 
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/model/chan.hpp"
-#include "steps/model/chanstate.hpp"
-#include "steps/model/model.hpp"
-#include "steps/model/spec.hpp"
-#include "steps/util/checkid.hpp"
+#include <easylogging++.h>
 
-// logging
-#include "easylogging++.h"
+#include "chanstate.hpp"
+#include "model.hpp"
+#include "spec.hpp"
+
+#include "util/error.hpp"
+#include "util/checkid.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
@@ -50,133 +48,115 @@ using steps::util::checkID;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Chan::Chan(string const & id, Model * model)
-: pID(id)
-, pModel(model)
-, pChanStates()
-{
-    if (pModel == nullptr)
-    {
-        ostringstream os;
-        os << "No model provided to Channel initializer function.";
-        ArgErrLog(os.str());
-    }
-    pModel->_handleChanAdd(this);
+Chan::Chan(string const &id, Model *model)
+    : pID(id), pModel(model), pChanStates() {
+
+  ArgErrLogIf(pModel == nullptr,
+              "No model provided to Channel initializer function.");
+
+  pModel->_handleChanAdd(this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Chan::~Chan()
-{
-    if (pModel == nullptr) { return;
-}
-    _handleSelfDelete();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void Chan::_handleSelfDelete()
-{
-    std::vector<steps::model::ChanState *> allstates = getAllChanStates();
-    ChanStatePVecCI cstate_end = allstates.end();
-    for(ChanStatePVecCI cstate = allstates.begin(); cstate != cstate_end; ++cstate)
-    {
-        delete *cstate;
-    }
-
-    pModel->_handleChanDel(this);
-    pChanStates.clear();
-    pModel = nullptr;
+Chan::~Chan() {
+  if (pModel == nullptr) {
+    return;
+  }
+  _handleSelfDelete();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Chan::setID(string const & id)
-{
-    AssertLog(pModel != nullptr);
-    if (id == pID) return;
-    // The following might raise an exception, e.g. if the new ID is not
-    // valid or not unique. If this happens, we don't catch but simply let
-    // it pass by into the Python layer.
-    pModel->_handleChanIDChange(pID, id);
-    // This line will only be executed if the previous call didn't raise
-    // an exception.
-    pID = id;
+void Chan::_handleSelfDelete() {
+  std::vector<steps::model::ChanState *> allstates = getAllChanStates();
+  ChanStatePVecCI cstate_end = allstates.end();
+  for (ChanStatePVecCI cstate = allstates.begin(); cstate != cstate_end;
+       ++cstate) {
+    delete *cstate;
+  }
+
+  pModel->_handleChanDel(this);
+  pChanStates.clear();
+  pModel = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ChanState * Chan::getChanState(string const & id) const
-{
-    auto cstate = pChanStates.find(id);
-    if (cstate == pChanStates.end())
-    {
-        ostringstream os;
-        os << "Model does not contain channel state with name '" << id << "'";
-        ArgErrLog(os.str());
-    }
-    AssertLog(cstate->second != nullptr);
-    return cstate->second;
+void Chan::setID(string const &id) {
+  AssertLog(pModel != nullptr);
+  if (id == pID)
+    return;
+  // The following might raise an exception, e.g. if the new ID is not
+  // valid or not unique. If this happens, we don't catch but simply let
+  // it pass by into the Python layer.
+  pModel->_handleChanIDChange(pID, id);
+  // This line will only be executed if the previous call didn't raise
+  // an exception.
+  pID = id;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<ChanState *> Chan::getAllChanStates() const
-{
-    ChanStatePVec cstates;
-    cstates.reserve(pChanStates.size());
-    for (auto const& cs: pChanStates) {
-        cstates.push_back(cs.second);
-    }
-    return cstates;
+ChanState *Chan::getChanState(string const &id) const {
+  auto cstate = pChanStates.find(id);
+
+  ArgErrLogIf(cstate == pChanStates.end(),
+              "Model does not contain channel state with name '" + id + "'");
+
+  AssertLog(cstate->second != nullptr);
+  return cstate->second;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Chan::_checkChanStateID(string const & id) const
-{
-    checkID(id);
-    if (pChanStates.find(id) != pChanStates.end())
-    {
-        ostringstream os;
-        os << "'" << id << "' is already in use";
-        ArgErrLog(os.str());
-    }
+std::vector<ChanState *> Chan::getAllChanStates() const {
+  ChanStatePVec cstates;
+  cstates.reserve(pChanStates.size());
+  for (auto const &cs : pChanStates) {
+    cstates.push_back(cs.second);
+  }
+  return cstates;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Chan::_handleChanStateIDChange(string const & o, string const & n)
-{
-    auto cs_old = pChanStates.find(o);
-    AssertLog(cs_old != pChanStates.end());
+void Chan::_checkChanStateID(string const &id) const {
+  checkID(id);
 
-    if(o==n) return;
-    _checkChanStateID(n);
-
-    ChanState * cs = cs_old->second;
-    AssertLog(cs != nullptr);
-    pChanStates.erase(cs->getID());
-    pChanStates.insert(ChanStatePMap::value_type(n,cs));
+  ArgErrLogIf(pChanStates.find(id) != pChanStates.end(),
+              "'" + id + "' is already in use");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Chan::_handleChanStateAdd(ChanState * cstate)
-{
-    AssertLog(cstate->getChan() == this);
-    _checkChanStateID(cstate->getID());
-    pChanStates.insert(ChanStatePMap::value_type(cstate->getID(), cstate));
+void Chan::_handleChanStateIDChange(string const &o, string const &n) {
+  auto cs_old = pChanStates.find(o);
+  AssertLog(cs_old != pChanStates.end());
+
+  if (o == n)
+    return;
+  _checkChanStateID(n);
+
+  ChanState *cs = cs_old->second;
+  AssertLog(cs != nullptr);
+  pChanStates.erase(cs->getID());
+  pChanStates.insert(ChanStatePMap::value_type(n, cs));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Chan::_handleChanStateDel(ChanState * cstate)
-{
-    AssertLog(cstate->getChan() == this);
-    pChanStates.erase(cstate->getID());
+void Chan::_handleChanStateAdd(ChanState *cstate) {
+  AssertLog(cstate->getChan() == this);
+  _checkChanStateID(cstate->getID());
+  pChanStates.insert(ChanStatePMap::value_type(cstate->getID(), cstate));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// END
+void Chan::_handleChanStateDel(ChanState *cstate) {
+  AssertLog(cstate->getChan() == this);
+  pChanStates.erase(cstate->getID());
+}
+
+////////////////////////////////////////////////////////////////////////////////

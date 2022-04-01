@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -36,10 +36,10 @@
 #include <easylogging++.h>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/solver/patchdef.hpp"
-#include "steps/tetexact/kproc.hpp"
-#include "steps/solver/types.hpp"
+#include "util/common.h"
+#include "kproc.hpp"
+#include "solver/patchdef.hpp"
+#include "solver/types.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace steps{
@@ -166,7 +166,7 @@ public:
 
     inline tetrahedron_id_t tet(uint t) const
     { return pTets[t]; }
-    
+
     /// Find the direction index towards a neighbor triangle.
     ///
     int getTriDirection(triangle_id_t tidx);
@@ -187,7 +187,7 @@ public:
     void incECharge(uint lidx, int charge);
 
     // Should be called at the beginning of every EField time-step
-    void resetECharge(double dt, double efdt);
+    void resetECharge(double dt, double efdt, double t);
 
     // reset the Ohmic current opening time integral info, also should be
     // called just before commencing or just after completing an EField dt

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -31,13 +31,13 @@
 #include <sstream>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/solver/efield/vertexconnection.hpp"
-#include "steps/solver/efield/vertexelement.hpp"
+#include "util/common.h"
+#include "util/error.hpp"
+#include "vertexconnection.hpp"
+#include "vertexelement.hpp"
 
 // logging
-#include "easylogging++.h"
+#include <easylogging++.h>
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace sefield = steps::solver::efield;

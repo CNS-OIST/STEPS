@@ -4,8 +4,8 @@
 
 #include <mpi.h>
 
-#include "steps/solver/efield/linsystem.hpp"
-#include "steps/solver/efield/slusystem.hpp"
+#include "linsystem.hpp"
+#include "slusystem.hpp"
 
 #include "gtest/gtest.h"
 
@@ -66,7 +66,7 @@ TEST(LinSystem,SLUMatrixRedundantSparsity) {
             if (AA[i][j]) ++nnz,S.insert(std::make_pair(i,j));
 
     ASSERT_EQ(nnz,S.size());
-            
+
     bool insert_again=true;
     for (int i=0; i<Adim; ++i)
         for (int j=0; j<Adim; ++j) {

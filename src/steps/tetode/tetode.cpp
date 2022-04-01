@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -31,38 +31,24 @@
 #include <sstream>
 
 #include <cvode/cvode.h>                 /* prototypes for CVODE fcts., consts. */
-#include <cvode/cvode_dense.h>          /* prototype for CVDense */
 #include <nvector/nvector_serial.h>      /* serial N_Vector types, fcts., macros */
 #include <sundials/sundials_dense.h>     /* definitions DlsMat DENSE_ELEM */
 #include <sundials/sundials_nvector.h>
 #include <sundials/sundials_types.h>     /* definition of type realtype */
 
-#include "steps/tetode/tetode.hpp"
+#include "tetode.hpp"
 
-#include "steps/tetode/comp.hpp"
-#include "steps/tetode/patch.hpp"
-#include "steps/tetode/tet.hpp"
-#include "steps/tetode/tri.hpp"
-
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/math/constants.hpp"
-#include "steps/math/point.hpp"
-
-#include "steps/solver/compdef.hpp"
-#include "steps/solver/patchdef.hpp"
-#include "steps/solver/reacdef.hpp"
-#include "steps/solver/sreacdef.hpp"
-#include "steps/solver/vdepsreacdef.hpp"
-
-#include "steps/geom/tetmesh.hpp"
-
-#include "steps/error.hpp"
-
-#include "steps/solver/efield/dVsolver.hpp"
-#include "steps/solver/efield/efield.hpp"
+#include "math/constants.hpp"
+#include "math/point.hpp"
+#include "solver/compdef.hpp"
+#include "solver/patchdef.hpp"
+#include "solver/reacdef.hpp"
+#include "solver/sreacdef.hpp"
+#include "solver/vdepsreacdef.hpp"
+#include "solver/efield/dVsolver.hpp"
 
 // logging
+#include "util/error.hpp"
 #include <easylogging++.h>
 
 // CVODE definitions
@@ -116,8 +102,8 @@ static int f_cvode(realtype /*t*/, N_Vector y, N_Vector ydot, void */*user_data*
 
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace steps {
- namespace tetode {
+namespace steps {
+namespace tetode {
 
  // CVODE stuff
  struct CVodeState {
@@ -202,7 +188,11 @@ CVodeState::CVodeState(uint N_, uint maxn, realtype atol, realtype rtol) {
     // and causes segmentation faults
 
     // ADAMS and FUNCTIONAL are a much much better choice
-    cvode_mem_cvode = CVodeCreate(CV_ADAMS, CV_FUNCTIONAL) ;
+    #if STEPS_SUNDIALS_VERSION_MAJOR >= 4
+        cvode_mem_cvode = CVodeCreate(CV_ADAMS);
+    #else
+        cvode_mem_cvode = CVodeCreate(CV_ADAMS, CV_FUNCTIONAL);
+    #endif
 
     check_flag(cvode_mem_cvode, "CVodeCreate", 0);
 
@@ -568,7 +558,7 @@ void TetODE::_setup()
                 l[j] = distance(pMesh->_getVertex(v[0]), pMesh->_getVertex(v[1]));
             }
 
-            std::vector<triangle_id_t> tris(3, UNKNOWN_TRI);
+            std::vector<triangle_id_t> tris(3, boost::none);
             for (int j = 0; j < 3; ++j)
             {
                 const auto& neighb_tris = bar2tri[tri_bars[j]];
@@ -583,7 +573,7 @@ void TetODE::_setup()
 
             double d[3] = {0, 0, 0};
             for (uint j = 0; j < 3; ++j) {
-                if (tris[j] == UNKNOWN_TRI) continue;
+                if (tris[j].unknown()) continue;
                 d[j] = distance(baryc, pMesh->_getTriBarycenter(tris[j]));
             }
 
@@ -604,7 +594,7 @@ void TetODE::_setup()
         auto *tmcomp = dynamic_cast<steps::tetmesh::TmComp*>(wmcomp);
         if (!tmcomp)
             ArgErrLog("Well-mixed compartments not supported in steps::solver::TetODE solver.");
-        
+
         steps::tetode::Comp *localcomp = pComps[c];
         for (auto tet: tmcomp->_getAllTetIndices())
         {
@@ -624,7 +614,7 @@ void TetODE::_setup()
 
             double d[4] = {0, 0, 0, 0};
             for (uint j = 0; j < 4; ++j) {
-                if (tets[j] == UNKNOWN_TET) continue;
+                if (tets[j].unknown()) continue;
                 d[j] = distance(baryc, pMesh->_getTetBarycenter(tets[j]));
             }
 
@@ -649,7 +639,8 @@ void TetODE::_setup()
 
         for (uint j = 0; j < 4; ++j) {
             auto tet = pTets[t]->tet(j);
-            if (tet != UNKNOWN_TET && pTets[tet.get()] != nullptr) pTets[t]->setNextTet(j, pTets[tet.get()]);
+            if (tet.valid() && pTets[tet.get()] != nullptr)
+                pTets[t]->setNextTet(j, pTets[tet.get()]);
         }
         // Not setting Tet triangles at this point- only want to set
         // for surface triangles
@@ -663,7 +654,8 @@ void TetODE::_setup()
 
         for (uint j = 0; j < 3; ++j) {
             auto tri = pTris[t]->tri(j);
-            if (tri != UNKNOWN_TRI && pTris[tri.get()] != nullptr) pTris[t]->setNextTri(j, pTris[tri.get()]);
+            if (tri.valid() && pTris[tri.get()] != nullptr)
+                pTris[t]->setNextTri(j, pTris[tri.get()]);
         }
 
         // By convention, triangles in a patch should have an inner tetrahedron defined
@@ -675,7 +667,7 @@ void TetODE::_setup()
         auto tetouter = pTris[t]->tet(1);
 
         // Now correct check, previously didn't allow for tet index == 0
-        AssertLog(tetinner != UNKNOWN_TET);
+        AssertLog(tetinner.valid());
         AssertLog(pTets[tetinner.get()] != nullptr);
 
 
@@ -711,8 +703,7 @@ void TetODE::_setup()
             }
         }
 
-        if (tetouter != UNKNOWN_TET)
-        {
+        if (tetouter.valid()) {
             if (pTets[tetouter.get()] != nullptr)
             {
                 // A triangle may already have an inner tet defined as a well-mixed
@@ -1480,15 +1471,15 @@ void TetODE::_setupEField()
 
     pEFVert_GtoL = new vertex_id_t[nverts];
     for (uint i=0; i < nverts; ++i) {
-        pEFVert_GtoL[i] = UNKNOWN_VER;
+        pEFVert_GtoL[i] = boost::none;
     }
     pEFTri_GtoL = new triangle_id_t[ntris];
     for (uint i=0; i< ntris; ++i) {
-        pEFTri_GtoL[i] = UNKNOWN_TRI;
+        pEFTri_GtoL[i] = boost::none;
     }
     pEFTet_GtoL = new tetrahedron_id_t[ntets];
     for (uint i=0; i < ntets; ++i) {
-        pEFTet_GtoL[i] = UNKNOWN_TET;
+        pEFTet_GtoL[i] = boost::none;
     }
 
     pEFTri_LtoG = new triangle_id_t[neftris()];
@@ -1525,7 +1516,7 @@ void TetODE::_setupEField()
         auto tv1 = pEFVert_GtoL[tettemp[1].get()];
         auto tv2 = pEFVert_GtoL[tettemp[2].get()];
         auto tv3 = pEFVert_GtoL[tettemp[3].get()];
-        if  (tv0 == UNKNOWN_VER || tv1 == UNKNOWN_VER || tv2 == UNKNOWN_VER || tv3 == UNKNOWN_VER)
+        if  (tv0.unknown() || tv1.unknown() || tv2.unknown() || tv3.unknown())
         {
             std::ostringstream os;
             os << "Failed to create EField structures.";
@@ -1555,7 +1546,7 @@ void TetODE::_setupEField()
         auto tv0 =  pEFVert_GtoL[tritemp[0].get()];
         auto tv1 = pEFVert_GtoL[tritemp[1].get()];
         auto tv2 = pEFVert_GtoL[tritemp[2].get()];
-        if  (tv0 == UNKNOWN_VER || tv1 == UNKNOWN_VER || tv2 == UNKNOWN_VER)
+        if  (tv0.unknown() || tv1.unknown() || tv2.unknown())
         {
             std::ostringstream os;
             os << "Failed to create EField structures.";
@@ -2904,7 +2895,7 @@ double TetODE::_getTetV(tetrahedron_id_t tidx) const
         ArgErrLog(os.str());
     }
     auto loctidx = pEFTet_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TET)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Tetrahedron index " << tidx << " not assigned to a conduction volume.";
@@ -2927,7 +2918,7 @@ void TetODE::_setTetV(tetrahedron_id_t tidx, double v)
         ArgErrLog(os.str());
     }
     auto loctidx = pEFTet_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TET)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Tetrahedron index " << tidx << " not assigned to a conduction volume.";
@@ -2949,7 +2940,7 @@ bool TetODE::_getTetVClamped(tetrahedron_id_t tidx) const
         ArgErrLog(os.str());
     }
     auto loctidx = pEFTet_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TET)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Tetrahedron index " << tidx << " not assigned to a conduction volume.";
@@ -2970,7 +2961,7 @@ void TetODE::_setTetVClamped(tetrahedron_id_t tidx, bool cl)
         ArgErrLog(os.str());
     }
     auto loctidx = pEFTet_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TET)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Tetrahedron index " << tidx << " not assigned to a conduction volume.";
@@ -2991,7 +2982,7 @@ double TetODE::_getTriV(triangle_id_t tidx) const
         ArgErrLog(os.str());
     }
     auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -3012,7 +3003,7 @@ void TetODE::_setTriV(triangle_id_t tidx, double v)
         ArgErrLog(os.str());
     }
     auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -3034,7 +3025,7 @@ bool TetODE::_getTriVClamped(triangle_id_t tidx) const
         ArgErrLog(os.str());
     }
     auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -3055,7 +3046,7 @@ void TetODE::_setTriVClamped(triangle_id_t tidx, bool cl)
         ArgErrLog(os.str());
     }
     auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -3077,7 +3068,7 @@ double TetODE::_getTriI(triangle_id_t tidx) const
     }
 
     auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -3099,7 +3090,7 @@ void TetODE::_setVertIClamp(vertex_id_t vidx, double cur)
         ArgErrLog(os.str());
     }
     auto locvidx = pEFVert_GtoL[vidx.get()];
-    if (locvidx == UNKNOWN_VER)
+    if (locvidx.unknown())
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
@@ -3121,7 +3112,7 @@ void TetODE::_setTriIClamp(triangle_id_t tidx, double cur)
         ArgErrLog(os.str());
     }
     auto loctidx = pEFTri_GtoL[tidx.get()];
-    if (loctidx == UNKNOWN_TRI)
+    if (loctidx.unknown())
     {
         std::ostringstream os;
         os << "Triangle index " << tidx << " not assigned to a membrane.";
@@ -3143,7 +3134,7 @@ double TetODE::_getVertV(vertex_id_t vidx) const
         ArgErrLog(os.str());
     }
     auto locvidx = pEFVert_GtoL[vidx.get()];
-    if (locvidx == UNKNOWN_VER)
+    if (locvidx.unknown())
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
@@ -3164,7 +3155,7 @@ void TetODE::_setVertV(vertex_id_t vidx, double v)
         ArgErrLog(os.str());
     }
     auto locvidx = pEFVert_GtoL[vidx.get()];
-    if (locvidx == UNKNOWN_VER)
+    if (locvidx.unknown())
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
@@ -3185,7 +3176,7 @@ bool TetODE::_getVertVClamped(vertex_id_t vidx) const
         ArgErrLog(os.str());
     }
     auto locvidx = pEFVert_GtoL[vidx.get()];
-    if (locvidx == UNKNOWN_VER)
+    if (locvidx.unknown())
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";
@@ -3206,7 +3197,7 @@ void TetODE::_setVertVClamped(vertex_id_t vidx, bool cl)
         ArgErrLog(os.str());
     }
     auto locvidx = pEFVert_GtoL[vidx.get()];
-    if (locvidx == UNKNOWN_VER)
+    if (locvidx.unknown())
     {
         std::ostringstream os;
         os << "Vertex index " << vidx << " not assigned to a conduction volume or membrane.";

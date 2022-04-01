@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -37,29 +37,27 @@
 #include <string>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/geom/geom.hpp"
-#include "steps/model/model.hpp"
-#include "steps/rng/rng.hpp"
-#include "steps/solver/chandef.hpp"
-#include "steps/solver/compdef.hpp"
-#include "steps/solver/diffboundarydef.hpp"
-#include "steps/solver/diffdef.hpp"
-#include "steps/solver/diffdef.hpp"
-#include "steps/solver/ghkcurrdef.hpp"
-#include "steps/solver/ohmiccurrdef.hpp"
-#include "steps/solver/patchdef.hpp"
-#include "steps/solver/reacdef.hpp"
-#include "steps/solver/sdiffboundarydef.hpp"
-#include "steps/solver/specdef.hpp"
-#include "steps/solver/sreacdef.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/vdepsreacdef.hpp"
-#include "steps/solver/vdeptransdef.hpp"
-
+#include "statedef.hpp"
+#include "chandef.hpp"
+#include "compdef.hpp"
+#include "diffboundarydef.hpp"
+#include "diffdef.hpp"
+#include "ghkcurrdef.hpp"
+#include "ohmiccurrdef.hpp"
+#include "patchdef.hpp"
+#include "reacdef.hpp"
+#include "sdiffboundarydef.hpp"
+#include "specdef.hpp"
+#include "sreacdef.hpp"
+#include "vdepsreacdef.hpp"
+#include "vdeptransdef.hpp"
+#include "model/reac.hpp"
+#include "model/sreac.hpp"
+#include "model/diff.hpp"
+// util
+#include "util/error.hpp"
 // logging
-#include "easylogging++.h"
+#include <easylogging++.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 

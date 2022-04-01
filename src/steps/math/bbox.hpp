@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,12 +24,11 @@
 
  */
 
-#ifndef STEPS_MATH_BBOX_HPP
-#define STEPS_MATH_BBOX_HPP 1
+#pragma once
 
 #include <utility>
 
-#include "steps/math/point.hpp"
+#include "point.hpp"
 
 namespace steps {
 namespace math {
@@ -109,7 +108,6 @@ private:
     }
 };
 
-    
-}} // namespace steps::math
 
-#endif // ndef STEPS_MATH_BBOX_HPP
+} // namespace math
+} // namespace steps

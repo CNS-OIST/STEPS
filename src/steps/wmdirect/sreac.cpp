@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -29,15 +29,14 @@
 // #include <vector>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/math/constants.hpp"
-#include "steps/wmdirect/comp.hpp"
-#include "steps/wmdirect/patch.hpp"
-#include "steps/wmdirect/sreac.hpp"
-#include "steps/wmdirect/wmdirect.hpp"
+#include "sreac.hpp"
+#include "comp.hpp"
+#include "patch.hpp"
+#include "wmdirect.hpp"
+#include "math/constants.hpp"
 // logging
-#include "easylogging++.h"
+#include "util/error.hpp"
+#include <easylogging++.h>
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace swmd = steps::wmdirect;
@@ -69,7 +68,7 @@ static inline double comp_ccst_area(double kcst, double area, uint order)
 ////////////////////////////////////////////////////////////////////////////////
 
 swmd::SReac::SReac(ssolver::SReacdef * srdef, swmd::Patch * patch)
-: 
+:
  pSReacdef(srdef)
 , pPatch(patch)
 , pUpdVec()
@@ -309,14 +308,17 @@ double swmd::SReac::rate() const
             {
                 h_mu *= static_cast<double>(cnt - 3);
             }
+            STEPS_FALLTHROUGH;
             case 3:
             {
                 h_mu *= static_cast<double>(cnt - 2);
             }
+            STEPS_FALLTHROUGH;
             case 2:
             {
                 h_mu *= static_cast<double>(cnt - 1);
             }
+            STEPS_FALLTHROUGH;
             case 1:
             {
                 h_mu *= static_cast<double>(cnt);
@@ -351,14 +353,17 @@ double swmd::SReac::rate() const
                 {
                     h_mu *= static_cast<double>(cnt - 3);
                 }
+                STEPS_FALLTHROUGH;
                 case 3:
                 {
                     h_mu *= static_cast<double>(cnt - 2);
                 }
+                STEPS_FALLTHROUGH;
                 case 2:
                 {
                     h_mu *= static_cast<double>(cnt - 1);
                 }
+                STEPS_FALLTHROUGH;
                 case 1:
                 {
                     h_mu *= static_cast<double>(cnt);
@@ -392,14 +397,17 @@ double swmd::SReac::rate() const
                 {
                     h_mu *= static_cast<double>(cnt - 3);
                 }
+                STEPS_FALLTHROUGH;
                 case 3:
                 {
                     h_mu *= static_cast<double>(cnt - 2);
                 }
+                STEPS_FALLTHROUGH;
                 case 2:
                 {
                     h_mu *= static_cast<double>(cnt - 1);
                 }
+                STEPS_FALLTHROUGH;
                 case 1:
                 {
                     h_mu *= static_cast<double>(cnt);

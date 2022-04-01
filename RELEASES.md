@@ -1,5 +1,24 @@
 Release Notes
 
+Version 4.0.0 (2022-03)
+==========================
+
+Python API
+----------
+
+Introduce a new parallel stochastic reaction-diffusion solver and a deterministic
+membrane potential solver named `DistTetOpSplit`. The solver is based on a 
+distributed mesh named `DistMesh`.
+
+Build and Packaging
+-------------------
+1. STEPS requires a C++ compiler compatible with C++ 17.
+1. New CMake variables to enable profiling of the simulation:
+   `STEPS_USE_LIWKID_PROFLING`, `STEPS_USE_CALIPER_PROFILING`, and `STEPS_USE_NATIVE_PROFILING`
+   see [doc/dev/README.md] for more details on how to use it.
+1. Add support to Apple M1
+1. Add support to compilers GCC 11, LLVM 13, and Apple Clang 13
+
 Version 3.6.0 (2021-02)
 ==========================
 

@@ -2,9 +2,11 @@
 #include <cmath>
 #include <random>
 #include <iostream>
-#include "steps/rng/small_binomial.hpp"
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
+
+#include "rng/small_binomial.hpp"
+
 
 using namespace steps::rng;
 

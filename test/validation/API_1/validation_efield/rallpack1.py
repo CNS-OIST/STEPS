@@ -31,9 +31,9 @@ sim_parameters = {
     'diameter': 1.0e-6,       # cylinder diameter m
     'length':   1.0e-3,       # cylinder length m
 # STEPS
-    'sim_end':  0.25,         # simulation stop time s
-    'EF_dt':    1.0e-5,        # E-field evaluation time step s
-    'EF_solver': ssolver.EF_DV_BDSYS, # E-field lin algebra solver
+    'sim_end':  0.25,           # simulation stop time s
+    'EF_dt':    1.0e-5,         # E-field evaluation time step s
+    'EF_solver': 'EF_DV_BDSYS', # E-field lin algebra solver
     'SSA_solver': 'Tetexact'
 }
 
@@ -146,13 +146,14 @@ def init_sim(model, mesh, seed, param):
     # sim = ssolver.Tetexact(model, mesh, rng, True)
 
     # Create the solver objects
+    EFSolver = getattr(ssolver, sim_parameters['EF_solver'])
     if param['SSA_solver'] == 'TetODE':
-        sim = ssolver.TetODE(model, mesh, calcMembPot=sim_parameters['EF_solver'])
+        sim = ssolver.TetODE(model, mesh, calcMembPot=EFSolver)
         sim.setTolerances(1.0e-6, 1e-6)
     elif param['SSA_solver'] == 'Tetexact':
         rng = srng.create('mt19937', 512)
         rng.initialize(seed)
-        sim = ssolver.Tetexact(model, mesh, rng, calcMembPot=sim_parameters['EF_solver'])
+        sim = ssolver.Tetexact(model, mesh, rng, calcMembPot=EFSolver)
         sim.reset()
         sim.setEfieldDT(param['EF_dt'])
     else :

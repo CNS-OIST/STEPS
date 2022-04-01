@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -35,18 +35,17 @@
 #include <vector>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/math/constants.hpp"
-#include "steps/solver/vdeptransdef.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-//#include "tetopsplit.hpp"
-#include "steps/mpi/tetopsplit/tri.hpp"
+#include "kproc.hpp"
+#include "tri.hpp"
+#include "util/common.h"
+#include "math/constants.hpp"
+#include "solver/vdeptransdef.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace steps {
- namespace mpi {
- namespace tetopsplit {
+namespace steps {
+namespace mpi {
+namespace tetopsplit {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -106,10 +105,10 @@ public:
     std::vector<uint> const & getRemoteUpdVec(int direction = -1) const override;
 
     void resetOccupancies() override;
-    
+
     inline bool getInHost() const noexcept override
     { return pTri->getInHost(); }
-    
+
     inline int getHost() const noexcept override
     { return pTri->getHost(); }
     ////////////////////////////////////////////////////////////////////////
@@ -120,7 +119,7 @@ private:
 
     steps::solver::VDepTransdef       * pVDepTransdef;
     steps::mpi::tetopsplit::Tri       * pTri;
-    
+
     std::vector<KProc*>                 localUpdVec;
     std::vector<uint>                   remoteUpdVec;
 

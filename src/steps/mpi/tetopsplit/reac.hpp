@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,30 +24,24 @@
 
  */
 
+#pragma once
 
-#ifndef STEPS_MPI_TETOPSPLIT_REAC_HPP
-#define STEPS_MPI_TETOPSPLIT_REAC_HPP 1
-
-
-// Standard library & STL headers.
-#include <map>
-#include <string>
 #include <vector>
 #include <fstream>
 
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/math/constants.hpp"
-#include "steps/solver/reacdef.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
+#include "kproc.hpp"
 #include "wmvol.hpp"
+
+#include "math/constants.hpp"
+#include "util/common.h"
+#include "solver/reacdef.hpp"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace steps {
- namespace mpi {
- namespace tetopsplit {
+namespace steps {
+namespace mpi {
+namespace tetopsplit {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -107,16 +101,16 @@ public:
     double rate(steps::mpi::tetopsplit::TetOpSplitP * solver = nullptr) override;
     inline double getScaledDcst(steps::mpi::tetopsplit::TetOpSplitP * /*solver*/ = nullptr) const noexcept override
     {return 0.0;}
-    
+
 	// at the moment we assume that reactions are applied globally so no sync is required
 	using KProc::apply;
     void apply(const rng::RNGptr &rng, double dt, double simtime, double period) override;
-    
+
     std::vector<KProc*> const & getLocalUpdVec(int direction = -1) const override;
     std::vector<uint> const & getRemoteUpdVec(int direction = -1) const override;
-	
+
     void resetOccupancies() override;
-	
+
     /// MPI
     inline bool getInHost() const noexcept override {
         return pTet->getInHost();
@@ -125,7 +119,7 @@ public:
     inline int getHost() const noexcept override {
         return pTet->getHost();
     }
-    
+
     inline steps::mpi::tetopsplit::WmVol* container() const noexcept {
         return pTet;
     }
@@ -138,10 +132,10 @@ private:
 
     steps::solver::Reacdef                              * pReacdef;
     steps::mpi::tetopsplit::WmVol                       * pTet;
-    
+
     std::vector<KProc*>                 localUpdVec;
     std::vector<uint>                   remoteUpdVec;
-  
+
     /// Properly scaled reaction constant.
     double                                                pCcst;
     // Also store the K constant for convenience
@@ -153,12 +147,6 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-}
-}
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-#endif
-
-// STEPS_MPI_TETOPSPLIT_REAC_HPP
+} // namespace tetopsplit
+} // namespace mpi
+} // namespace steps

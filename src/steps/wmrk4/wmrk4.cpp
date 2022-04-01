@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -36,19 +36,18 @@
 
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/math/constants.hpp"
-#include "steps/solver/compdef.hpp"
-#include "steps/solver/patchdef.hpp"
-#include "steps/solver/reacdef.hpp"
-#include "steps/solver/sreacdef.hpp"
-#include "steps/solver/statedef.hpp"
-#include "steps/solver/types.hpp"
-#include "steps/wmrk4/wmrk4.hpp"
+#include "wmrk4.hpp"
+#include "solver/compdef.hpp"
+#include "solver/patchdef.hpp"
+#include "solver/reacdef.hpp"
+#include "solver/sreacdef.hpp"
+#include "solver/statedef.hpp"
+#include "solver/types.hpp"
+#include "math/constants.hpp"
 
 // logging
-#include "easylogging++.h"
+#include <easylogging++.h>
+#include "util/error.hpp"
 
 namespace swmrk4 = steps::wmrk4;
 namespace ssolver = steps::solver;
@@ -1037,9 +1036,13 @@ void swmrk4::Wmrk4::_setderivs(dVec & vals, dVec & dydx)
                 switch (reactant.order)
                 {
                     case 4: numberOfReactionFirings *= population;
+                    STEPS_FALLTHROUGH;
                     case 3: numberOfReactionFirings *= population;
+                    STEPS_FALLTHROUGH;
                     case 2: numberOfReactionFirings *= population;
+                    STEPS_FALLTHROUGH;
                     case 1: numberOfReactionFirings *= population;
+                    STEPS_FALLTHROUGH;
                     case 0: break;
                     /// allow maximum 4 molecules of one species in reaction
                     default: AssertLog(0);

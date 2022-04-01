@@ -4,3 +4,6 @@
 [submodule "src/third_party/easyloggingpp"]
 	path = src/third_party/easyloggingpp
 	url = https://github.com/zuhd-org/easyloggingpp.git
+[submodule "CMake/hpc-coding-conventions"]
+	path = CMake/hpc-coding-conventions
+	url = https://github.com/BlueBrain/hpc-coding-conventions.git

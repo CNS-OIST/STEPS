@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,20 +24,18 @@
 
  */
 
-
 // STL headers.
 #include <sstream>
 #include <string>
 
-
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/geom/tetmesh.hpp"
-#include "steps/solver/api.hpp"
-#include "steps/solver/statedef.hpp"
+#include "api.hpp"
+#include "util/common.h"
+#include "util/error.hpp"
+#include "geom/tetmesh.hpp"
+#include "statedef.hpp"
 // logging
-#include "easylogging++.h"
+#include <easylogging++.h>
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace steps {
@@ -45,1077 +43,654 @@ namespace solver {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriArea(triangle_id_t tidx) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
-        return _getTriArea(tidx);
-    }
+double API::getTriArea(triangle_id_t tidx) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTriArea(tidx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriArea(triangle_id_t tidx, double area)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
-        // NOTE: the following method may never be implemented
-        _setTriArea(tidx, area);
-    }
+void API::setTriArea(triangle_id_t tidx, double area) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
+
+    // NOTE: the following method may never be implemented
+    _setTriArea(tidx, area);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriCount(triangle_id_t tidx, const std::string&  s) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may raise exceptions if strings are unused
-        uint sidx = pStatedef->getSpecIdx(s);
+double API::getTriCount(triangle_id_t tidx, const std::string &s) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
 
-        return _getTriCount(tidx, sidx);
-    }
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    // the following may raise exceptions if strings are unused
+    uint sidx = pStatedef->getSpecIdx(s);
+
+    return _getTriCount(tidx, sidx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getTriSpecDefined(triangle_id_t tidx, const std::string&  s) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint sidx = pStatedef->getSpecIdx(s);
+bool API::getTriSpecDefined(triangle_id_t tidx, const std::string &s) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-        return _getTriSpecDefined(tidx, sidx);
-    }
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    // the following may throw exception if string is unknown
+    uint sidx = pStatedef->getSpecIdx(s);
+
+    return _getTriSpecDefined(tidx, sidx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriCount(triangle_id_t tidx, const std::string&  s, double n)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
-        if (n < 0.0)
-        {
-            std::ostringstream os;
-            os << "Number of molecules cannot be negative.";
-            ArgErrLog(os.str());
-        }
-        // the following may raise exception if string is uknown
-        uint sidx = pStatedef->getSpecIdx(s);
+void API::setTriCount(triangle_id_t tidx, const std::string &s, double n) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
 
-        _setTriCount(tidx, sidx, n);
-    }
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
+    ArgErrLogIf(n < 0.0, "Number of molecules cannot be negative.");
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    // the following may raise exception if string is uknown
+    uint sidx = pStatedef->getSpecIdx(s);
+
+    _setTriCount(tidx, sidx, n);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriAmount(triangle_id_t tidx, const std::string&  s) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint sidx = pStatedef->getSpecIdx(s);
+double API::getTriAmount(triangle_id_t tidx, const std::string &s) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-        return _getTriAmount(tidx, sidx);
-    }
+    // the following may throw exception if string is unknown
+    uint sidx = pStatedef->getSpecIdx(s);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTriAmount(tidx, sidx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriAmount(triangle_id_t tidx, const std::string&  s, double m)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
-        if (m < 0.0)
-        {
-            std::ostringstream os;
-            os << "Amount of mols cannot be negative.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint sidx = pStatedef->getSpecIdx(s);
+void API::setTriAmount(triangle_id_t tidx, const std::string &s, double m) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
+    ArgErrLogIf(m < 0.0, "Amount of mols cannot be negative.");
 
-        _setTriAmount(tidx, sidx, m);
-    }
+    // the following may throw exception if string is unknown
+    uint sidx = pStatedef->getSpecIdx(s);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    _setTriAmount(tidx, sidx, m);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getTriClamped(triangle_id_t tidx, const std::string&  s) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may raise exception if string is unknown
-        uint sidx = pStatedef->getSpecIdx(s);
+bool API::getTriClamped(triangle_id_t tidx, const std::string &s) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-        return _getTriClamped(tidx, sidx);
-    }
+    // the following may raise exception if string is unknown
+    uint sidx = pStatedef->getSpecIdx(s);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTriClamped(tidx, sidx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriClamped(triangle_id_t tidx, const std::string&  s, bool buf)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may raise exception if string is unknown
-        uint sidx = pStatedef->getSpecIdx(s);
+void API::setTriClamped(triangle_id_t tidx, const std::string &s, bool buf) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-        _setTriClamped(tidx, sidx, buf);
-    }
+    // the following may raise exception if string is unknown
+    uint sidx = pStatedef->getSpecIdx(s);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    _setTriClamped(tidx, sidx, buf);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriSReacK(triangle_id_t tidx, const std::string&  r)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may raise exception if string is unknown
-        uint sridx = pStatedef->getSReacIdx(r);
+double API::getTriSReacK(triangle_id_t tidx, const std::string &r) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-        return _getTriSReacK(tidx, sridx);
-    }
+    // the following may raise exception if string is unknown
+    uint sridx = pStatedef->getSReacIdx(r);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTriSReacK(tidx, sridx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriSReacK(triangle_id_t tidx, const std::string&  r, double kf)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
-        if (kf < 0.0)
-        {
-            std::ostringstream os;
-            os << "Reaction constant cannot be negative.";
-            ArgErrLog(os.str());
-        }
-        // the following may raise exception if string is unknown
-        uint sridx = pStatedef->getSReacIdx(r);
+void API::setTriSReacK(triangle_id_t tidx, const std::string &r, double kf) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
+    ArgErrLogIf(kf < 0.0, "Reaction constant cannot be negative.");
 
-        _setTriSReacK(tidx, sridx, kf);
-    }
+    // the following may raise exception if string is unknown
+    uint sridx = pStatedef->getSReacIdx(r);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    _setTriSReacK(tidx, sridx, kf);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getTriSReacActive(triangle_id_t tidx, const std::string&  r)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may raise exception if string is unknown
-        uint sridx = pStatedef->getSReacIdx(r);
+bool API::getTriSReacActive(triangle_id_t tidx, const std::string &r) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-        return _getTriSReacActive(tidx, sridx);
-    }
+    // the following may raise exception if string is unknown
+    uint sridx = pStatedef->getSReacIdx(r);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTriSReacActive(tidx, sridx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriSReacActive(triangle_id_t tidx, const std::string&  r, bool act)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
+void API::setTriSReacActive(triangle_id_t tidx, const std::string &r,
+                            bool act) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-        // the following may raise exception if string is unknown
-        uint sridx = pStatedef->getSReacIdx(r);
+    // the following may raise exception if string is unknown
+    uint sridx = pStatedef->getSReacIdx(r);
 
-        _setTriSReacActive(tidx, sridx, act);
-    }
-
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    _setTriSReacActive(tidx, sridx, act);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriSReacH(triangle_id_t tidx, const std::string&  r)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may raise exception if string is unknown
-        uint sridx = pStatedef->getSReacIdx(r);
+double API::getTriSReacH(triangle_id_t tidx, const std::string &r) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-        return _getTriSReacH(tidx, sridx);
-    }
+    // the following may raise exception if string is unknown
+    uint sridx = pStatedef->getSReacIdx(r);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTriSReacH(tidx, sridx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriSReacC(triangle_id_t tidx, const std::string&  r)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may raise exception if string is unknown
-        uint sridx = pStatedef->getSReacIdx(r);
+double API::getTriSReacC(triangle_id_t tidx, const std::string &r) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-        return _getTriSReacC(tidx, sridx);
-    }
+    // the following may raise exception if string is unknown
+    uint sridx = pStatedef->getSReacIdx(r);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTriSReacC(tidx, sridx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriSReacA(triangle_id_t tidx, const std::string&  r)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may raise exception if string is unknown
-        uint sridx = pStatedef->getSReacIdx(r);
+double API::getTriSReacA(triangle_id_t tidx, const std::string &r) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-        return _getTriSReacA(tidx, sridx);
-    }
+    // the following may raise exception if string is unknown
+    uint sridx = pStatedef->getSReacIdx(r);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTriSReacA(tidx, sridx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriDiffD(triangle_id_t tidx, const std::string&  d, uint direction_tri)
-{
-    return getTriSDiffD(tidx, d, direction_tri);
+double API::getTriDiffD(triangle_id_t tidx, const std::string &d,
+                        uint direction_tri) {
+  return getTriSDiffD(tidx, d, direction_tri);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::getTriSDiffD(triangle_id_t tidx, const std::string &d,
-                         triangle_id_t direction_tri)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint didx = pStatedef->getSurfDiffIdx(d);
-        
-        return _getTriSDiffD(tidx, didx, direction_tri);
-    }
-    
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
-}
+                         triangle_id_t direction_tri) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
+    // the following may throw exception if string is unknown
+    uint didx = pStatedef->getSurfDiffIdx(d);
 
-////////////////////////////////////////////////////////////////////////////////
-
-void API::setTriDiffD(triangle_id_t tidx, const std::string&  d, double dk, triangle_id_t direction_tri) {
-    setTriSDiffD(tidx, d, dk, direction_tri);
+    return _getTriSDiffD(tidx, didx, direction_tri);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriSDiffD(triangle_id_t tidx, const std::string&  d, double dk, triangle_id_t direction_tri)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        if (direction_tri != UNKNOWN_TRI &&direction_tri >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Direction tetrahedron index out of range.";
-            ArgErrLog(os.str());
-        }
-        if (dk < 0.0)
-        {
-            std::ostringstream os;
-            os << "Diffusion constant cannot be negative.";
-            ArgErrLog(os.str());
-        }
-        // the following may throw exception if string is unknown
-        uint didx = pStatedef->getSurfDiffIdx(d);
-        
-        _setTriSDiffD(tidx, didx, dk, direction_tri);
-    }
-    
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
-}
-////////////////////////////////////////////////////////////////////////////////
-
-double API::getTriV(triangle_id_t tidx) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
-
-        return _getTriV(tidx);
-    }
-
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+void API::setTriDiffD(triangle_id_t tidx, const std::string &d, double dk,
+                      triangle_id_t direction_tri) {
+  setTriSDiffD(tidx, d, dk, direction_tri);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriV(triangle_id_t tidx, double v)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
+void API::setTriSDiffD(triangle_id_t tidx, const std::string &d, double dk,
+                       triangle_id_t direction_tri) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Tetrahedron index out of range.");
+    ArgErrLogIf(direction_tri.valid() && direction_tri >= mesh->countTris(),
+                "Direction tetrahedron index out of range.");
+    ArgErrLogIf(dk < 0.0, "Diffusion constant cannot be negative.");
 
-        _setTriV(tidx, v);
-    }
+    // the following may throw exception if string is unknown
+    uint didx = pStatedef->getSurfDiffIdx(d);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    _setTriSDiffD(tidx, didx, dk, direction_tri);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
+}
+////////////////////////////////////////////////////////////////////////////////
+
+double API::getTriV(triangle_id_t tidx) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
+
+    return _getTriV(tidx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getTriVClamped(triangle_id_t tidx) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
+void API::setTriV(triangle_id_t tidx, double v) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-        return _getTriVClamped(tidx);
-    }
-
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    _setTriV(tidx, v);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriVClamped(triangle_id_t tidx, bool cl)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
+bool API::getTriVClamped(triangle_id_t tidx) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-        _setTriVClamped(tidx, cl);
-    }
-
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTriVClamped(tidx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriOhmicI(triangle_id_t tidx) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
+void API::setTriVClamped(triangle_id_t tidx, bool cl) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-        return _getTriOhmicI(tidx);
-    }
-
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    _setTriVClamped(tidx, cl);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriOhmicI(triangle_id_t tidx, const std::string&  oc) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may raise exception if string is unknown
-        uint ocidx = pStatedef->getOhmicCurrIdx(oc);
+double API::getTriOhmicI(triangle_id_t tidx) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-        return _getTriOhmicI(tidx, ocidx);
-    }
-
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTriOhmicI(tidx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriGHKI(triangle_id_t tidx) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
+double API::getTriOhmicI(triangle_id_t tidx, const std::string &oc) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-        return _getTriGHKI(tidx);
-    }
+    // the following may raise exception if string is unknown
+    uint ocidx = pStatedef->getOhmicCurrIdx(oc);
 
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTriOhmicI(tidx, ocidx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriGHKI(triangle_id_t tidx, const std::string&  ghk) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may raise exception if string is unknown
-        uint ghkidx = pStatedef->getGHKcurrIdx(ghk);
+double API::getTriGHKI(triangle_id_t tidx) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-        return _getTriGHKI(tidx, ghkidx);
-    }
-
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
-}
-////////////////////////////////////////////////////////////////////////////////
-
-double API::getTriI(triangle_id_t tidx) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
-
-        return _getTriI(tidx);
-    }
-
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTriGHKI(tidx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTriIClamp(triangle_id_t tidx) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
+double API::getTriGHKI(triangle_id_t tidx, const std::string &ghk) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-        return _getTriIClamp(tidx);
-    }
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    // the following may raise exception if string is unknown
+    uint ghkidx = pStatedef->getGHKcurrIdx(ghk);
+
+    return _getTriGHKI(tidx, ghkidx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
+}
+////////////////////////////////////////////////////////////////////////////////
+
+double API::getTriI(triangle_id_t tidx) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
+
+    return _getTriI(tidx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriIClamp(triangle_id_t tidx, double i)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
+double API::getTriIClamp(triangle_id_t tidx) const {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-        _setTriIClamp(tidx, i);
-    }
-
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTriIClamp(tidx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriCapac(triangle_id_t tidx, double cm)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
+void API::setTriIClamp(triangle_id_t tidx, double i) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-        _setTriCapac(tidx, cm);
-    }
-
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    _setTriIClamp(tidx, i);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getTriVDepSReacActive(triangle_id_t tidx, const std::string&  vsr)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
-        // the following may raise exception if string is unknown
-        uint vsridx = pStatedef->getVDepSReacIdx(vsr);
+void API::setTriCapac(triangle_id_t tidx, double cm) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-        return _getTriVDepSReacActive(tidx, vsridx);
-    }
-
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    _setTriCapac(tidx, cm);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTriVDepSReacActive(triangle_id_t tidx, const std::string&  vsr, bool act)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (tidx >= mesh->countTris())
-        {
-            std::ostringstream os;
-            os << "Triangle index out of range.";
-            ArgErrLog(os.str());
-        }
+bool API::getTriVDepSReacActive(triangle_id_t tidx, const std::string &vsr) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
-        // the following may raise exception if string is unknown
-        uint vsridx = pStatedef->getVDepSReacIdx(vsr);
+    // the following may raise exception if string is unknown
+    uint vsridx = pStatedef->getVDepSReacIdx(vsr);
 
-        _setTriVDepSReacActive(tidx, vsridx, act);
-    }
-
-    else
-    {
-        std::ostringstream os;
-        os << "Method not available for this solver.";
-        NotImplErrLog("");
-    }
+    return _getTriVDepSReacActive(tidx, vsridx);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriArea(triangle_id_t /*tidx*/) const
-{
-    NotImplErrLog("");
+void API::setTriVDepSReacActive(triangle_id_t tidx, const std::string &vsr,
+                                bool act) {
+  if (auto *mesh = dynamic_cast<steps::tetmesh::Tetmesh *>(geom())) {
+    ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
+
+    // the following may raise exception if string is unknown
+    uint vsridx = pStatedef->getVDepSReacIdx(vsr);
+
+    _setTriVDepSReacActive(tidx, vsridx, act);
+  } else {
+    NotImplErrLog("Method not available for this solver.");
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTriArea(triangle_id_t /*tidx*/, double /*area*/)
-{
-    NotImplErrLog("");
+double API::_getTriArea(triangle_id_t /*tidx*/) const { NotImplErrLog(""); }
+
+////////////////////////////////////////////////////////////////////////////////
+
+void API::_setTriArea(triangle_id_t /*tidx*/, double /*area*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getTriSpecDefined(triangle_id_t /*tidx*/, uint /*sidx*/) const
-{
-    NotImplErrLog("");
+bool API::_getTriSpecDefined(triangle_id_t /*tidx*/, uint /*sidx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriCount(triangle_id_t /*tidx*/, uint /*sidx*/) const
-{
-    NotImplErrLog("");
+double API::_getTriCount(triangle_id_t /*tidx*/, uint /*sidx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTriCount(triangle_id_t /*tidx*/, uint /*sidx*/, double /*n*/)
-{
-    NotImplErrLog("");
+void API::_setTriCount(triangle_id_t /*tidx*/, uint /*sidx*/, double /*n*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriAmount(triangle_id_t /*tidx*/, uint /*sidx*/) const
-{
-    NotImplErrLog("");
+double API::_getTriAmount(triangle_id_t /*tidx*/, uint /*sidx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTriAmount(triangle_id_t /*tidx*/, uint /*sidx*/, double /*m*/)
-{
-    NotImplErrLog("");
+void API::_setTriAmount(triangle_id_t /*tidx*/, uint /*sidx*/, double /*m*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getTriClamped(triangle_id_t /*tidx*/, uint /*sidx*/) const
-{
-    NotImplErrLog("");
+bool API::_getTriClamped(triangle_id_t /*tidx*/, uint /*sidx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTriClamped(triangle_id_t /*tidx*/, uint /*sidx*/, bool /*buf*/)
-{
-    NotImplErrLog("");
+void API::_setTriClamped(triangle_id_t /*tidx*/, uint /*sidx*/, bool /*buf*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriSReacK(triangle_id_t /*tidx*/, uint /*ridx*/) const
-{
-    NotImplErrLog("");
+double API::_getTriSReacK(triangle_id_t /*tidx*/, uint /*ridx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTriSReacK(triangle_id_t /*tidx*/, uint /*ridx*/, double /*kf*/)
-{
-    NotImplErrLog("");
+void API::_setTriSReacK(triangle_id_t /*tidx*/, uint /*ridx*/, double /*kf*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getTriSReacActive(triangle_id_t /*tidx*/, uint /*ridx*/) const
-{
-    NotImplErrLog("");
+bool API::_getTriSReacActive(triangle_id_t /*tidx*/, uint /*ridx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTriSReacActive(triangle_id_t /*tidx*/, uint /*ridx*/, bool /*act*/)
-{
-    NotImplErrLog("");
+void API::_setTriSReacActive(triangle_id_t /*tidx*/, uint /*ridx*/,
+                             bool /*act*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriSDiffD(triangle_id_t /*tidx*/, uint /*didx*/, triangle_id_t /*direction_tri*/) const
-{
-    NotImplErrLog("");
+double API::_getTriSDiffD(triangle_id_t /*tidx*/, uint /*didx*/,
+                          triangle_id_t /*direction_tri*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void API::_setTriSDiffD(triangle_id_t /*tidx*/, uint /*didx*/, double /*dk*/,
-                        triangle_id_t /*direction_tri*/)
-{
-    NotImplErrLog("");
+                        triangle_id_t /*direction_tri*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriSReacH(triangle_id_t /*tidx*/, uint /*ridx*/) const
-{
-    NotImplErrLog("");
+double API::_getTriSReacH(triangle_id_t /*tidx*/, uint /*ridx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriSReacC(triangle_id_t /*tidx*/, uint /*ridx*/) const
-{
-    NotImplErrLog("");
+double API::_getTriSReacC(triangle_id_t /*tidx*/, uint /*ridx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriSReacA(triangle_id_t /*tidx*/, uint /*ridx*/) const
-{
-    NotImplErrLog("");
+double API::_getTriSReacA(triangle_id_t /*tidx*/, uint /*ridx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriV(triangle_id_t /*tidx*/) const
-{
-    NotImplErrLog("");
+double API::_getTriV(triangle_id_t /*tidx*/) const { NotImplErrLog(""); }
+
+////////////////////////////////////////////////////////////////////////////////
+
+void API::_setTriV(triangle_id_t /*tidx*/, double /*v*/) { NotImplErrLog(""); }
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool API::_getTriVClamped(triangle_id_t /*tidx*/) const { NotImplErrLog(""); }
+
+////////////////////////////////////////////////////////////////////////////////
+
+void API::_setTriVClamped(triangle_id_t /*tidx*/, bool /*cl*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTriV(triangle_id_t /*tidx*/, double /*v*/)
-{
-    NotImplErrLog("");
+
+double API::_getTriOhmicI(triangle_id_t /*tidx*/) const { NotImplErrLog(""); }
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::_getTriOhmicI(triangle_id_t /*tidx*/, uint /*ocidx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getTriVClamped(triangle_id_t /*tidx*/) const
-{
-    NotImplErrLog("");
+double API::_getTriGHKI(triangle_id_t /*tidx*/) const { NotImplErrLog(""); }
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::_getTriGHKI(triangle_id_t /*tidx*/, uint /*ghkidx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setTriVClamped(triangle_id_t /*tidx*/, bool /*cl*/)
-{
-    NotImplErrLog("");
+double API::_getTriI(triangle_id_t /*tidx*/) const { NotImplErrLog(""); }
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::_getTriIClamp(triangle_id_t /*tidx*/) const { NotImplErrLog(""); }
+
+////////////////////////////////////////////////////////////////////////////////
+
+void API::_setTriIClamp(triangle_id_t /*tidx*/, double /*i*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriOhmicI(triangle_id_t /*tidx*/) const
-{
-    NotImplErrLog("");
+void API::_setTriCapac(triangle_id_t /*tidx*/, double /*cm*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriOhmicI(triangle_id_t /*tidx*/, uint /*ocidx*/) const
-{
-    NotImplErrLog("");
+bool API::_getTriVDepSReacActive(triangle_id_t /*tidx*/,
+                                 uint /*vsridx*/) const {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getTriGHKI(triangle_id_t /*tidx*/) const
-{
-    NotImplErrLog("");
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-double API::_getTriGHKI(triangle_id_t /*tidx*/, uint /*ghkidx*/) const
-{
-    NotImplErrLog("");
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-double API::_getTriI(triangle_id_t /*tidx*/) const
-{
-    NotImplErrLog("");
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-double API::_getTriIClamp(triangle_id_t /*tidx*/) const
-{
-    NotImplErrLog("");
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void API::_setTriIClamp(triangle_id_t /*tidx*/, double /*i*/)
-{
-    NotImplErrLog("");
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void API::_setTriCapac(triangle_id_t /*tidx*/, double /*cm*/)
-{
-    NotImplErrLog("");
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-bool API::_getTriVDepSReacActive(triangle_id_t /*tidx*/, uint /*vsridx*/) const
-{
-    NotImplErrLog("");
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void API::_setTriVDepSReacActive(triangle_id_t /*tidx*/, uint /*vsridx*/, bool /*act*/)
-{
-    NotImplErrLog("");
+void API::_setTriVDepSReacActive(triangle_id_t /*tidx*/, uint /*vsridx*/,
+                                 bool /*act*/) {
+  NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////

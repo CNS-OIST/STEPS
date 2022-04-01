@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,22 +24,20 @@
 
  */
 
-// STL headers.
+#include "ohmiccurr.hpp"
+
 #include <cassert>
 #include <iostream>
 #include <sstream>
 #include <string>
 
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/model/chanstate.hpp"
-#include "steps/model/model.hpp"
-#include "steps/model/ohmiccurr.hpp"
-#include "steps/model/surfsys.hpp"
+#include <easylogging++.h>
 
-// logging
-#include "easylogging++.h"
+#include "chanstate.hpp"
+#include "model.hpp"
+#include "surfsys.hpp"
+
+#include "util/error.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -48,105 +46,78 @@ using namespace steps::model;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-OhmicCurr::OhmicCurr(string const & id, Surfsys * surfsys,
-          ChanState * chanstate, double erev, double g)
-: pID(id)
-, pModel(nullptr)
-, pSurfsys(surfsys)
-, pChanState(chanstate)
-, pERev(erev)
-, pG(g)
-{
-    if (pSurfsys == nullptr)
-    {
-        ostringstream os;
-        os << "No surfsys provided to OhmicCurr initializer function";
-        ArgErrLog(os.str());
-    }
-    if (pChanState == nullptr)
-    {
-        ostringstream os;
-        os << "No channel state provided to OhmicCurr initializer function";
-        ArgErrLog(os.str());
-    }
-    if (pG < 0.0)
-    {
-        ostringstream os;
-        os << "Channel conductance can't be negative";
-        ArgErrLog(os.str());
-    }
+OhmicCurr::OhmicCurr(string const &id, Surfsys *surfsys, ChanState *chanstate,
+                     double erev, double g)
+    : pID(id), pModel(nullptr), pSurfsys(surfsys), pChanState(chanstate),
+      pERev(erev), pG(g) {
 
-    pModel = pSurfsys->getModel();
-    AssertLog(pModel != nullptr);
+  ArgErrLogIf(pSurfsys == nullptr,
+              "No surfsys provided to OhmicCurr initializer function");
+  ArgErrLogIf(pChanState == nullptr,
+              "No channel state provided to OhmicCurr initializer function");
+  ArgErrLogIf(pG < 0.0, "Channel conductance can't be negative");
 
-    pSurfsys->_handleOhmicCurrAdd(this);
+  pModel = pSurfsys->getModel();
+  AssertLog(pModel != nullptr);
+
+  pSurfsys->_handleOhmicCurrAdd(this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-OhmicCurr::~OhmicCurr()
-{
-    if (pSurfsys == nullptr) { return;
-}
-    _handleSelfDelete();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void OhmicCurr::setID(string const & id)
-{
-    AssertLog(pSurfsys != nullptr);
-    // The following might raise an exception, e.g. if the new ID is not
-    // valid or not unique. If this happens, we don't catch but simply let
-    // it pass by into the Python layer.
-    pSurfsys->_handleOhmicCurrIDChange(pID, id);
-    // This line will only be executed if the previous call didn't raise
-    // an exception.
-    pID = id;
+OhmicCurr::~OhmicCurr() {
+  if (pSurfsys == nullptr) {
+    return;
+  }
+  _handleSelfDelete();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void OhmicCurr::setChanState(ChanState * chanstate)
-{
-    AssertLog(chanstate != nullptr);
-    pChanState = chanstate;
+void OhmicCurr::setID(string const &id) {
+  AssertLog(pSurfsys != nullptr);
+  // The following might raise an exception, e.g. if the new ID is not
+  // valid or not unique. If this happens, we don't catch but simply let
+  // it pass by into the Python layer.
+  pSurfsys->_handleOhmicCurrIDChange(pID, id);
+  // This line will only be executed if the previous call didn't raise
+  // an exception.
+  pID = id;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void OhmicCurr::setERev(double erev)
-{
-    AssertLog(pSurfsys != nullptr);
-    pERev = erev;
+void OhmicCurr::setChanState(ChanState *chanstate) {
+  AssertLog(chanstate != nullptr);
+  pChanState = chanstate;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void OhmicCurr::setG(double g)
-{
-    AssertLog(pSurfsys != nullptr);
-    if(g < 0.0)
-    {
-        ostringstream os;
-        os << "Conductance provided to OhmicCurr::setG function can't be negative";
-        ArgErrLog(os.str());
-    }
-    pG = g;
+void OhmicCurr::setERev(double erev) {
+  AssertLog(pSurfsys != nullptr);
+  pERev = erev;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void OhmicCurr::_handleSelfDelete()
-{
-    pSurfsys->_handleOhmicCurrDel(this);
-    pG = 0.0;
-    pERev = 0;
-    pSurfsys = nullptr;
-    pModel = nullptr;
+void OhmicCurr::setG(double g) {
+  AssertLog(pSurfsys != nullptr);
+
+  ArgErrLogIf(
+      g < 0.0,
+      "Conductance provided to OhmicCurr::setG function can't be negative");
+  pG = g;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// END
+void OhmicCurr::_handleSelfDelete() {
+  pSurfsys->_handleOhmicCurrDel(this);
+  pG = 0.0;
+  pERev = 0;
+  pSurfsys = nullptr;
+  pModel = nullptr;
+}
 
+////////////////////////////////////////////////////////////////////////////////

@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,27 +24,23 @@
 
  */
 
-#ifndef STEPS_WM_PATCH_HPP
-#define STEPS_WM_PATCH_HPP 1
+#pragma once
 
-
-// STL headers.
-#include <cassert>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
 
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/model/surfsys.hpp"
-#include "steps/geom/geom.hpp"
-#include "steps/geom/comp.hpp"
+#include "comp.hpp"
+#include "geom.hpp"
+
+#include "model/surfsys.hpp"
+#include "util/common.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace steps {
- namespace wm {
+namespace steps {
+namespace wm {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -165,10 +161,12 @@ public:
     // OPERATIONS (EXPOSED TO PYTHON): MODEL LINKING
     ////////////////////////////////////////////////////////////////////////
     /// Return all spec in the patch giving a model.
-    std::vector<steps::model::Spec*> getAllSpecs(steps::model::Model* model) const;
+    std::vector<steps::model::Spec *>
+    getAllSpecs(const steps::model::Model *model) const;
 
     /// Return all SReac in the patch giving a model.
-    std::vector<steps::model::SReac*> getAllSReacs(steps::model::Model* model) const;
+    std::vector<steps::model::SReac *>
+    getAllSReacs(const steps::model::Model *model) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO PYTHON): COMPARTMENTS
@@ -214,13 +212,15 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
+  protected:
+    double pArea;
+
+  private:
 
     ////////////////////////////////////////////////////////////////////////
 
     std::string                         pID;
     steps::wm::Geom                   * pContainer;
-    double                              pArea;
     steps::wm::Comp                   * pIComp{nullptr};
     steps::wm::Comp                   * pOComp{nullptr};
     std::set<std::string>               pSurfsys;
@@ -233,6 +233,3 @@ private:
 
 } // namespace wm
 } // namespace steps
-
-#endif
-// STEPS_WM_PATCH_HPP

@@ -48,12 +48,11 @@ if(SUNDIALS_DIR)
 
     find_library(SUNDIALS_LIB
                  NAMES ${TEST_LIB}
-                 HINTS ${SUNDIALS_LIBRARY_DIR}
-                 NO_DEFAULT_PATH)
+                 HINTS ${SUNDIALS_LIBRARY_DIR})
 
     message(STATUS "SUNDIALS_LIB=${SUNDIALS_LIB}")
     if(SUNDIALS_LIB)
-      list(APPEND SUNDIALS_LIBRARIES ${TEST_LIB})
+      list(APPEND SUNDIALS_LIBRARIES ${SUNDIALS_LIB})
     else(SUNDIALS_LIB)
       message(
         FATAL_ERROR "Could not find required Sundials library : ${TEST_LIB}")
@@ -67,11 +66,62 @@ if(SUNDIALS_DIR)
   message(STATUS "SUNDIALS_INCLUDE_DIR=${SUNDIALS_INCLUDE_DIR}")
   message(STATUS "SUNDIALS_LIBRARIES=${SUNDIALS_LIBRARIES}")
 
+  # Extract version
+  set(SUNDIALS_GET_VERSION_FILE "${CMAKE_CURRENT_BINARY_DIR}/sundials_get_version.cpp")
+  file(WRITE ${SUNDIALS_GET_VERSION_FILE}
+    "
+    #include <iostream>
+    #include <sundials/sundials_config.h>
+    #ifndef SUNDIALS_VERSION
+    # define SUNDIALS_VERSION SUNDIALS_PACKAGE_VERSION
+    #endif
+    int main() {
+        std::cout << SUNDIALS_VERSION;
+    }")
+
+  try_run(SUNDIALS_RUN_RESULT
+    SUNDIALS_COMPILE_RESULT
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${SUNDIALS_GET_VERSION_FILE}
+    CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${SUNDIALS_INCLUDE_DIR}"
+    COMPILE_OUTPUT_VARIABLE SUNDIALS_COMPILE_OUTPUT
+    RUN_OUTPUT_VARIABLE SUNDIALS_VERSION
+    )
+
+  if(NOT SUNDIALS_COMPILE_RESULT)
+    message(SEND_ERROR "Could not compile ${SUNDIALS_GET_VERSION_FILE}:\n${SUNDIALS_COMPILE_OUTPUT}")
+  else()
+    # Cleanup
+    file(REMOVE ${SUNDIALS_GET_VERSION_FILE})
+
+    message(STATUS "SUNDIALS_VERSION=${SUNDIALS_VERSION}")
+
+    # Split version
+    string(REPLACE "." ";" VERSION_LIST ${SUNDIALS_VERSION})
+    list(GET VERSION_LIST 0 SUNDIALS_VERSION_MAJOR)
+    list(GET VERSION_LIST 1 SUNDIALS_VERSION_MINOR)
+    list(GET VERSION_LIST 2 SUNDIALS_VERSION_PATCH)
+  endif()
+
+  if(CMAKE_VERSION VERSION_LESS 3.12.0)
+    add_definitions(-DSTEPS_SUNDIALS_VERSION_MAJOR=${SUNDIALS_VERSION_MAJOR})
+  else()
+    add_compile_definitions(STEPS_SUNDIALS_VERSION_MAJOR=${SUNDIALS_VERSION_MAJOR})
+  endif()
+
 else(SUNDIALS_DIR)
   set(SUNDIALS_FOUND NO)
 endif(SUNDIALS_DIR)
 
-find_package_handle_standard_args(SUNDIALS
-                                  DEFAULT_MSG
-                                  SUNDIALS_LIBRARIES
-                                  SUNDIALS_INCLUDE_DIR)
+if(CMAKE_VERSION VERSION_LESS 3.19.0)
+  find_package_handle_standard_args(SUNDIALS
+                                    FOUND_VAR SUNDIALS_FOUND
+                                    REQUIRED_VARS SUNDIALS_LIBRARIES SUNDIALS_INCLUDE_DIR
+                                    VERSION_VAR SUNDIALS_VERSION)
+else()
+  find_package_handle_standard_args(SUNDIALS
+                                    FOUND_VAR SUNDIALS_FOUND
+                                    REQUIRED_VARS SUNDIALS_LIBRARIES SUNDIALS_INCLUDE_DIR
+                                    VERSION_VAR SUNDIALS_VERSION
+                                    HANDLE_VERSION_RANGE)
+endif()

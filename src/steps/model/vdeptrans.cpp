@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,22 +24,21 @@
 
  */
 
-// STL headers.
+#include "vdeptrans.hpp"
+
 #include <cassert>
 #include <sstream>
 #include <string>
 
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/model/chan.hpp"
-#include "steps/model/chanstate.hpp"
-#include "steps/model/model.hpp"
-#include "steps/model/surfsys.hpp"
-#include "steps/model/vdeptrans.hpp"
+#include <easylogging++.h>
 
-// logging
-#include "easylogging++.h"
+#include "chan.hpp"
+#include "chanstate.hpp"
+#include "model.hpp"
+#include "surfsys.hpp"
+
+#include "util/error.hpp"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
@@ -47,134 +46,97 @@ using namespace steps::model;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-VDepTrans::VDepTrans(std::string const & id, Surfsys * surfsys,
-                     ChanState * src, ChanState * dst,
-                     std::vector<double> rate, double vmin, double vmax,
-                     double dv, uint tablesize)
-: pID(id)
-, pModel(nullptr)
-, pSurfsys(surfsys)
-, pChan(nullptr)
-, pSrc(src)
-, pDst(dst)
-, pRate()
-, pVMin(vmin)
-, pVMax(vmax)
-, pDV(dv)
-, pTablesize(tablesize)
-{
-    if (pSurfsys == nullptr)
-    {
-        ostringstream os;
-        os << "No surfsys provided to VDepTrans initializer function";
-        ArgErrLog(os.str());
-    }
-    if (pSrc->getChan() != pDst->getChan())
-    {
-        ostringstream os;
-        os << "Source channel state and destination channel state do not ";
-        os << "belong to the same channel";
-        ArgErrLog(os.str());
-    }
+VDepTrans::VDepTrans(std::string const &id, Surfsys *surfsys, ChanState *src,
+                     ChanState *dst, std::vector<double> rate, double vmin,
+                     double vmax, double dv, uint tablesize)
+    : pID(id), pModel(nullptr), pSurfsys(surfsys), pChan(nullptr), pSrc(src),
+      pDst(dst), pRate(), pVMin(vmin), pVMax(vmax), pDV(dv),
+      pTablesize(tablesize) {
+  ArgErrLogIf(pSurfsys == nullptr,
+              "No surfsys provided to VDepTrans initializer function");
 
-    if (rate.size() != pTablesize)
-    {
-        ostringstream os;
-        os << "Table of transition rates is not of expected size";
-        ArgErrLog(os.str());
-    }
-    pModel = pSurfsys->getModel();
-    AssertLog(pModel != nullptr);
+  ArgErrLogIf(pSrc->getChan() != pDst->getChan(),
+              "Source channel state and destination channel state do not "
+              "belong to the same channel");
+  ArgErrLogIf(rate.size() != pTablesize,
+              "Table of transition rates is not of expected size");
 
-    pChan = pSrc->getChan();
+  pModel = pSurfsys->getModel();
+  AssertLog(pModel != nullptr);
 
-    AssertLog(pDV > 0.0);
+  pChan = pSrc->getChan();
 
-    // Copy the rate information to local array
-    pRate = new double[pTablesize];
-    std::memcpy(pRate, rate.data(), pTablesize * sizeof(double));
+  AssertLog(pDV > 0.0);
 
-    pSurfsys->_handleVDepTransAdd(this);
+  // Copy the rate information to local array
+  pRate = new double[pTablesize];
+  std::memcpy(pRate, rate.data(), pTablesize * sizeof(double));
 
+  pSurfsys->_handleVDepTransAdd(this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-VDepTrans::~VDepTrans()
-{
-    if (pSurfsys == nullptr) { return;
-}
-    _handleSelfDelete();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void VDepTrans::_handleSelfDelete()
-{
-    pSurfsys->_handleVDepTransDel(this);
-    delete[] pRate;
-    pSrc = nullptr;
-    pDst = nullptr;
-    pSurfsys = nullptr;
-    pModel = nullptr;
+VDepTrans::~VDepTrans() {
+  if (pSurfsys == nullptr) {
+    return;
+  }
+  _handleSelfDelete();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void VDepTrans::setID(string const & id)
-{
-    AssertLog(pSurfsys != nullptr);
-    // The following might raise an exception, e.g. if the new ID is not
-    // valid or not unique. If this happens, we don't catch but simply let
-    // it pass by into the Python layer.
-    pSurfsys->_handleVDepTransIDChange(pID, id);
-    // This line will only be executed if the previous call didn't raise
-    // an exception.
-    pID = id;
+void VDepTrans::_handleSelfDelete() {
+  pSurfsys->_handleVDepTransDel(this);
+  delete[] pRate;
+  pSrc = nullptr;
+  pDst = nullptr;
+  pSurfsys = nullptr;
+  pModel = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void VDepTrans::setSrc(ChanState * src)
-{
-    AssertLog(src != nullptr);
-
-    if (src->getChan() != pDst->getChan())
-    {
-        ostringstream os;
-        os << "Source channel state and destination channel state do not ";
-        os << "belong to the same channel";
-        ArgErrLog(os.str());
-    }
-
-    pSrc = src;
+void VDepTrans::setID(string const &id) {
+  AssertLog(pSurfsys != nullptr);
+  // The following might raise an exception, e.g. if the new ID is not
+  // valid or not unique. If this happens, we don't catch but simply let
+  // it pass by into the Python layer.
+  pSurfsys->_handleVDepTransIDChange(pID, id);
+  // This line will only be executed if the previous call didn't raise
+  // an exception.
+  pID = id;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void VDepTrans::setDst(ChanState * dst)
-{
-    AssertLog(dst != nullptr);
+void VDepTrans::setSrc(ChanState *src) {
+  AssertLog(src != nullptr);
 
-    if (dst->getChan() != pSrc->getChan())
-    {
-        ostringstream os;
-        os << "Source channel state and destination channel state do not ";
-        os << "belong to the same channel";
-        ArgErrLog(os.str());
-    }
+  ArgErrLogIf(src->getChan() != pDst->getChan(),
+              "Source channel state and destination channel state do not "
+              "belong to the same channel");
 
-    pDst = dst;
+  pSrc = src;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<double> VDepTrans::getRate() const
-{
-    std::vector<double> rate(pRate, pRate + pTablesize);
-    return rate;
+void VDepTrans::setDst(ChanState *dst) {
+  AssertLog(dst != nullptr);
+
+  ArgErrLogIf(dst->getChan() != pSrc->getChan(),
+              "Source channel state and destination channel state do not "
+              "belong to the same channel");
+
+  pDst = dst;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// END
+std::vector<double> VDepTrans::getRate() const {
+  std::vector<double> rate(pRate, pRate + pTablesize);
+  return rate;
+}
+
+////////////////////////////////////////////////////////////////////////////////

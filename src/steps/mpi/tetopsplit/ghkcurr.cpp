@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -34,19 +34,16 @@
 #include <vector>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/math/constants.hpp"
-#include "steps/math/ghk.hpp"
-#include "steps/mpi/tetopsplit/ghkcurr.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-#include "steps/mpi/tetopsplit/tet.hpp"
-#include "steps/mpi/tetopsplit/tetopsplit.hpp"
-#include "steps/mpi/tetopsplit/tri.hpp"
-#include "steps/mpi/tetopsplit/wmvol.hpp"
+#include "ghkcurr.hpp"
+#include "tet.hpp"
+#include "tetopsplit.hpp"
+#include "wmvol.hpp"
+#include "math/constants.hpp"
+#include "math/ghk.hpp"
 
 // logging
-#include "easylogging++.h"
+#include "util/error.hpp"
+#include <easylogging++.h>
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace smtos = steps::mpi::tetopsplit;
@@ -56,7 +53,7 @@ namespace sm = steps::math;
 ////////////////////////////////////////////////////////////////////////////////
 
 smtos::GHKcurr::GHKcurr(ssolver::GHKcurrdef * ghkdef, smtos::Tri * tri)
-: 
+:
  pGHKcurrdef(ghkdef)
 , pTri(tri)
 , localUpdVec()
@@ -123,13 +120,13 @@ void smtos::GHKcurr::setupDeps()
     WmVol * itet = pTri->iTet();
     WmVol * otet = pTri->oTet();
     AssertLog(itet != nullptr);
-    
+
     if (itet->getHost() != pTri->getHost()) {
         std::ostringstream os;
         os << "Patch triangle " << pTri->idx() << " and its compartment tetrahedron " << itet->idx()  << " belong to different hosts.\n";
         NotImplErrLog(os.str());
     }
-    
+
     // The global species of the ion
     const uint gidxion = pGHKcurrdef->ion();
 
@@ -144,7 +141,7 @@ void smtos::GHKcurr::setupDeps()
 
     for (auto const& tri : itet->nexttris()) {
         if (tri == nullptr) continue;
-        
+
         if (itet->getHost() != tri->getHost()) {
             std::ostringstream os;
             os << "Patch triangle " << tri->idx() << " and its compartment tetrahedron " << itet->idx()  << " belong to different hosts.\n";
@@ -166,7 +163,7 @@ void smtos::GHKcurr::setupDeps()
             os << "Patch triangle " << pTri->idx() << " and its compartment tetrahedron " << otet->idx()  << " belong to different hosts.\n";
             NotImplErrLog(os.str());
         }
-        
+
         // Now check KProcs in the outer tetrahedron
         nkprocs = otet->countKProcs();
         for (uint k = 0; k < nkprocs; k++)
@@ -389,22 +386,22 @@ void smtos::GHKcurr::apply(const rng::RNGptr &/*rng*/, double /*dt*/, double /*s
 
 void smtos::GHKcurr::resetOccupancies()
 {
-    
+
     pTri->resetPoolOccupancy();
-    
+
     // Update inner tet pools.
     smtos::WmVol * itet = pTri->iTet();
     if (itet != nullptr)
     {
         itet->resetPoolOccupancy();
     }
-    
+
     smtos::WmVol * otet = pTri->oTet();
     if (otet != nullptr)
     {
         otet->resetPoolOccupancy();
     }
-    
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////

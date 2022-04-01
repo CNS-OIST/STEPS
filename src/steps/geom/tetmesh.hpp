@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,32 +24,28 @@
 
  */
 
-#ifndef STEPS_TETMESH_TETMESH_HPP
-#define STEPS_TETMESH_TETMESH_HPP 1
+#pragma once
 
-
-// STEPS headers.
-#include "steps/common.h"
-#include "steps/geom/RegionOfInterest.hpp"
-#include "steps/math/point.hpp"
-#include "steps/math/bbox.hpp"
-#include "steps/geom/fwd.hpp"
-#include "steps/geom/geom.hpp"
-#include "steps/geom/tmpatch.hpp"
-#include "steps/geom/tmcomp.hpp"
-#include "steps/geom/memb.hpp"
-#include "steps/geom/diffboundary.hpp"
-#include "steps/geom/sdiffboundary.hpp"
-
-// STL headers
-#include <vector>
 #include <map>
 #include <set>
+#include <vector>
+
+#include "diffboundary.hpp"
+#include "geom.hpp"
+#include "memb.hpp"
+#include "RegionOfInterest.hpp"
+#include "sdiffboundary.hpp"
+#include "tmcomp.hpp"
+#include "tmpatch.hpp"
+
+#include "math/bbox.hpp"
+#include "math/point.hpp"
+#include "util/common.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
- namespace steps {
- namespace tetmesh {
+namespace steps {
+namespace tetmesh {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -471,13 +467,13 @@ public:
     /// \param sampling Number of point to test for monte-carlo method.
     /// \return A vector where each position contains pairs <tet, intersection ratio>.
     std::vector<std::pair<tetrahedron_id_t, double>>
-    intersectMontecarlo(const point3d &p_start, const point3d &p_end, const tetrahedron_id_t &tet_start= UNKNOWN_TET, unsigned int sampling = 100)
+    intersectMontecarlo(const point3d &p_start, const point3d &p_end, const tetrahedron_id_t &tet_start = boost::none, unsigned int sampling = 100)
     const;
 
     /// Computes the percentage of intersection of a segment with the mesh tets
     ///
     /// \return A vector where each position contains pairs <tet, intersection ratio>
-    std::vector<std::pair<tetrahedron_id_t, double>> intersectDeterministic(const point3d &p_start, const point3d &p_end, const tetrahedron_id_t &tet_start= UNKNOWN_TET)
+    std::vector<std::pair<tetrahedron_id_t, double>> intersectDeterministic(const point3d &p_start, const point3d &p_end, const tetrahedron_id_t &tet_start= boost::none)
     const;
 
     // public alias type for segment intersections
@@ -975,8 +971,3 @@ public:
 
 } // namespace tetmesh
 } // namespace steps
-
-#endif
-
-// STEPS_TETMESH_TETMESH_HPP
-// END

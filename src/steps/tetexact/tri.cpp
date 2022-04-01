@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -33,24 +33,21 @@
 #include <iostream>
 
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/math/constants.hpp"
-#include "steps/solver/ohmiccurrdef.hpp"
-#include "steps/solver/patchdef.hpp"
-#include "steps/solver/sreacdef.hpp"
-#include "steps/tetexact/ghkcurr.hpp"
-#include "steps/tetexact/kproc.hpp"
-#include "steps/tetexact/sdiff.hpp"
-#include "steps/tetexact/sreac.hpp"
-#include "steps/tetexact/tet.hpp"
-#include "steps/tetexact/tetexact.hpp"
-#include "steps/tetexact/tri.hpp"
-#include "steps/tetexact/vdepsreac.hpp"
-#include "steps/tetexact/vdeptrans.hpp"
+#include "tri.hpp"
+#include "ghkcurr.hpp"
+#include "sdiff.hpp"
+#include "sreac.hpp"
+#include "tet.hpp"
+#include "tetexact.hpp"
+#include "vdepsreac.hpp"
+#include "vdeptrans.hpp"
+#include "math/constants.hpp"
+#include "solver/ohmiccurrdef.hpp"
+#include "solver/sreacdef.hpp"
 
 // logging
-#include "easylogging++.h"
+#include <easylogging++.h>
+#include "util/error.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -321,7 +318,7 @@ void stex::Tri::reset()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tri::resetECharge(double dt, double efdt)
+void stex::Tri::resetECharge(double dt, double efdt, double t)
 {
     uint nghkcurrs = pPatchdef->countGHKcurrs();
 
@@ -330,7 +327,9 @@ void stex::Tri::resetECharge(double dt, double efdt)
     }
     pECharge_accum_dt += dt;
 
-    if (pECharge_accum_dt >= efdt) {
+    if (pECharge_accum_dt >= efdt or
+        (efdt - pECharge_accum_dt) <=
+            std::numeric_limits<double>::epsilon() * t * 8) {
         // Swap arrays
         std::swap(pECharge_last, pECharge_accum);
 
@@ -525,13 +524,13 @@ double stex::Tri::computeI(double v, double dt, double simtime, double efdt)
     {
         efcharge += pECharge[i];
     }
-    
+
     // The contribution from GHK charge movement.
     auto efcharged = static_cast<double>(efcharge);
 
     // Convert charge to coulombs and find mean current
     current += ((efcharged*steps::math::E_CHARGE)/dt);
-    resetECharge(dt, efdt);
+    resetECharge(dt, efdt, simtime);
     resetOCintegrals();
 
     return current;

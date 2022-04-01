@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -24,8 +24,7 @@
 
  */
 
-#ifndef STEPS_MATH_SAMPLE_HPP
-#define STEPS_MATH_SAMPLE_HPP
+#pragma once
 
 #include <numeric>
 #include <cstddef>
@@ -143,7 +142,5 @@ struct adjusted_pareto_sampler {
 };
 
 
-}} // namespace steps::math
-
-
-#endif // ndef STEPS_MATH_SAMPLE_HPP
+} // namespace math
+} // namespace steps

@@ -3,7 +3,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -25,10 +25,25 @@
 ###
 from __future__ import print_function
 
-try:
-    from ... import cysteps_mpi as stepslib
-except Exception as e:
-    raise Exception("[ERROR] Could not load cysteps_mpi.so. Please verify it exists and system steps was built with MPI support.\n Details: " + str(e))
+import sys
+
+from steps import stepslib
+
+_mpiSuffixes = ['mpi', 'dist']
+if not any(stepslib.__name__.endswith(suff) for suff in _mpiSuffixes):
+    raise ImportError(
+        f'[ERROR] Could not load cysteps_mpi.so. Please verify it exists and system steps was '
+        f'built with MPI support.'
+    )
+
+# Force stderr flush when an exception is raised.
+# Without this, under some conditions, if one process raises a python exception,
+# the corresponding message is not always printed out as it should be.
+def customHook(tpe, val, bt):
+    sys.__excepthook__(tpe, val, bt)
+    sys.stderr.flush()
+
+sys.excepthook = customHook
 
 stepslib.mpiInit()
 import atexit

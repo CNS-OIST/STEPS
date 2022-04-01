@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -22,15 +22,18 @@
 #################################################################################   
 ###
 
+import contextlib
 import copy
+import functools
 import numbers
 import pickle
+import types
 import warnings
 
 import numpy
 
-import steps.API_1.geom as sgeom
-from steps.API_1.geom import UNKNOWN_TET, UNKNOWN_TRI
+from steps import stepslib
+
 import steps.API_1.utilities.meshio as smeshio
 import steps.API_1.utilities.geom_decompose as sgdecomp
 import steps.API_1.utilities.metis_support as smetis
@@ -46,11 +49,13 @@ __all__ = [
     'Membrane',
     'ROI',
     'TetMesh',
+    'DistMesh',
     'DiffBoundary',
     'SDiffBoundary',
     'MeshPartition',
     'LinearMeshPartition',
     'MetisPartition',
+    'GmshPartition',
     'MorphPartition',
     'Reference',
     'TetReference',
@@ -63,12 +68,28 @@ __all__ = [
     'BarList',
     'VertList',
     'Point',
+    'BoundingBox',
     'Morph',
 ]
+
+
+###################################################################################################
+
+ELEM_VERTEX     = stepslib._py_ElementType.ELEM_VERTEX
+ELEM_TRI        = stepslib._py_ElementType.ELEM_TRI
+ELEM_TET        = stepslib._py_ElementType.ELEM_TET
+ELEM_UNDEFINED  = stepslib._py_ElementType.ELEM_UNDEFINED
+
+UNKNOWN_TET     = stepslib.UNKNOWN_TET
+UNKNOWN_TRI     = stepslib.UNKNOWN_TRI
+UNKNOWN_VERT    = stepslib.UNKNOWN_VERT
+INDEX_NUM_BYTES = stepslib.INDEX_NUM_BYTES
+INDEX_DTYPE     = numpy.uint32 if INDEX_NUM_BYTES == 4 else numpy.uint64
 
 ###################################################################################################
 
 
+@nutils.FreezeAfterInit
 class Geometry(nutils.UsableObject, nutils.StepsWrapperObject):
     """Top-level geometry container
 
@@ -90,7 +111,7 @@ class Geometry(nutils.UsableObject, nutils.StepsWrapperObject):
 
     def __init__(self, *args, _createObj=True, **kwargs):
         super().__init__(*args, **kwargs)
-        self.stepsGeom = sgeom.Geom() if _createObj else None
+        self.stepsGeom = stepslib._py_Geom() if _createObj else None
 
     def _SetUpMdlDeps(self, mdl):
         """Set up structures that depend on objects declared in the model."""
@@ -144,10 +165,10 @@ class _PhysicalLocation(nutils.UsingObjects(Geometry), nutils.StepsWrapperObject
         elif isinstance(sys, str):
             self.sysNames.append((sys, _loc))
         else:
-            raise TypeError(f'Expected a VolumeSystem or a SurfaceSystem, got a {type(sys)} ' f'instead.')
+            raise TypeError(f'Expected a VolumeSystem or a SurfaceSystem, got a {type(sys)} instead.')
 
     def _SetUpMdlDeps(self, mdl):
-        """Set up the structures that will allow specie or reaction access from locations."""
+        """Set up the structures that will allow species or reaction access from locations."""
         for sname, loc in self.sysNames:
             s = getattr(mdl, sname)
             self.systems.append((s, loc))
@@ -164,7 +185,9 @@ class _PhysicalLocation(nutils.UsingObjects(Geometry), nutils.StepsWrapperObject
 
     def _canBeChild(self, c):
         """Return wether c can be a child of self."""
-        return isinstance(c, (nmodel.Reaction, nmodel.Diffusion, nmodel.Current, nmodel.Complex))
+        return isinstance(c, (
+            nmodel.Reaction, nmodel.Diffusion, nmodel.Current, nmodel.Complex
+        ))
 
     def _createStepsObj(self, geom):
         pass
@@ -174,7 +197,8 @@ class _PhysicalLocation(nutils.UsingObjects(Geometry), nutils.StepsWrapperObject
         return {'loc_type': self.__class__._locStr, 'loc_id': self.name}
 
 
-class Compartment(_PhysicalLocation):
+@nutils.FreezeAfterInit
+class Compartment(_PhysicalLocation, nutils.ParameterizedObject, nutils.Facade):
     """Base class for compartment objects
 
     The same class is used to declare compartments in well-mixed models and in 3D tetrahedral
@@ -183,10 +207,10 @@ class Compartment(_PhysicalLocation):
     Compartments in well-mixed geometry can be declared in the following ways::
 
         with geom:
-            comp1 = Compartment.Create()
-            comp2 = Compartment.Create(vsys)
-            comp3 = Compartment.Create(None, vol)
-            comp4 = Compartment.Create(vsys, vol)
+            wmComp1 = Compartment.Create()
+            wmComp2 = Compartment.Create(vsys)
+            wmComp3 = Compartment.Create(vol=volume)
+            wmComp4 = Compartment.Create(vsys, volume)
 
     :param vsys: Optional, the volume system associated with this compartment.
     :type vsys: :py:class:`steps.API_2.model.VolumeSystem` or :py:class:`str`
@@ -196,8 +220,8 @@ class Compartment(_PhysicalLocation):
     Compartments in a tetrahedral mesh can be declared in the following ways::
 
         with mesh:
-            comp1 = Compartment.Create(tetLst)
-            comp2 = Compartment.Create(tetLst, vsys)
+            tetComp1 = Compartment.Create(tetLst)
+            tetComp2 = Compartment.Create(tetLst, vsys)
 
     :param tetLst: List of tetrahedrons associated with the compartment.
     :type tetLst: :py:class:`TetList` or any argument that can be used to build one
@@ -206,51 +230,99 @@ class Compartment(_PhysicalLocation):
 
     The volume of a compartment in a tetrahedral mesh is the total volume of the encapsulated
     tetrahedrons.
+
+    Compartments in a distributed tetrahedral mesh can be declared in the following ways::
+
+        with mesh:
+            distComp1 = Compartment.Create()
+            distComp2 = Compartment.Create(vsys, conductivity=g)
+            distComp3 = Compartment.Create(physicalTag=10)
+            distComp4 = Compartment.Create(tetLst, vsys)
+
+    :param vsys: Optional, the volume system associated with this compartment.
+    :type vsys: :py:class:`steps.API_2.model.VolumeSystem` or :py:class:`str`
+    :param conductivity: Optional, the volume conductivity of the compartment.
+    :type conductivity: float
+    :param physicalTag: Optional, the index of the physical tag used to build the compartment
+        (see :py:class:`DistMesh`).
+    :type physicalTag: int
+    :param tetLst: Optional, List of tetrahedrons associated with the compartment. If it is ommited
+        or an empty list is given, the compartment name will be used to find tetrahedrons tagged with it.
+    :type tetLst: :py:class:`TetList` or any argument that can be used to build one
+
+    Some of the methods documented below are only available for tetrahedral compartments, they are
+    grouped accordingly.
     """
 
     _locStr = 'Comp'
 
-    def __init__(self, *args, _createObj=True, **kwargs):
-        super().__init__(*args, **kwargs)
-        (geom,) = self._getUsedObjects()
-        self._isTmComp = isinstance(geom, TetMesh)
+    def __new__(cls, *args, **kwargs):
+        # Compartment is a facade to its subclasses, the user always uses the Compartment class
+        # but the appropriate subclass is used for object instantiation.
 
-        if len(args) > 2:
-            raise Exception(f'Unused parameters: {args[2:]}')
-        elif len(args) < 2:
-            args += (None,) * (2 - len(args))
+        if cls is not Compartment:
+            return super(Compartment, cls).__new__(cls)
 
-        if self._isTmComp:
-            tetLst, vsys, *args = args
-            vol = None
+        geom = nutils.UsableObject._getUsedObjectOfClass(Geometry)
+        if geom is None:
+            raise Exception(f'Compartments need to be declared in a geometry.')
+
+        if geom.__class__ == Geometry:
+            return _WmCompartment.__new__(_WmCompartment, *args, **kwargs)
+        elif geom.__class__ == TetMesh:
+            return _TetCompartment.__new__(_TetCompartment, *args, **kwargs)
+        elif geom.__class__ == DistMesh:
+            return _DistCompartment.__new__(_DistCompartment, *args, **kwargs)
         else:
-            vsys, vol, *args = args
-            tetLst = None
+            raise NotImplementedError(f'Compartments cannot be created in {type(geom)}')
 
-        self._tetLst = tetLst
+    @classmethod
+    def _getDisplayName(cls):
+        return Compartment.__name__
+
+    @classmethod
+    def _FromStepsObject(cls, obj, geom):
+        if stepslib._STEPS_USE_DIST_MESH and isinstance(obj, stepslib._py_DistComp):
+            return _DistCompartment._FromStepsObject(obj, geom)
+        elif isinstance(obj, stepslib._py_TmComp):
+            return _TetCompartment._FromStepsObject(obj, geom)
+        elif isinstance(obj, stepslib._py_Comp):
+            return _WmCompartment._FromStepsObject(obj, geom)
+        else:
+            raise NotImplementedError(f'Cannot create API2 version of {type(obj)}')
+
+    def __init__(self, vsys, _createObj=True, **kwargs):
+        super().__init__(**kwargs)
+        (geom,) = self._getUsedObjects()
+
         self.stepsComp = self._createStepsObj(geom) if _createObj else None
         if vsys is not None:
             self.addSystem(vsys)
-        if vol is not None:
-            self.Vol = vol
 
     def _getStepsObjects(self):
         """Return a list of the steps objects that this named object holds."""
         return [self.stepsComp]
 
-    @classmethod
-    def _FromStepsObject(cls, obj, geom):
-        """Create the interface object from a STEPS object."""
-        comp = cls(_createObj=False, name=obj.getID())
-        comp.stepsComp = obj
-        # setup volume systems
-        for vsysname in comp.stepsComp.getVolsys():
-            comp.addSystem(vsysname)
+    def _createStepsObj(self, geom):
+        raise NotImplementedError()
 
-        comp._isTmComp = isinstance(geom, TetMesh)
-        comp._tetLst = TetList(obj.getAllTetIndices(), geom) if comp._isTmComp else None
+    def _SetUpMdlDeps(self, mdl):
+        """Set up the structures that will allow species or reaction access from locations."""
+        super()._SetUpMdlDeps(mdl)
 
-        return comp
+    def _canBeChild(self, c):
+        """Return wether c can be a child of self."""
+        if not super()._canBeChild(c):
+            return False
+        if ((isinstance(c, nmodel.Reaction) and c._isSurfaceReac()) or
+            (isinstance(c, nmodel.Diffusion) and c._isSurfaceDiff())
+        ):
+            return False
+        return True
+
+    def _solverStr(self):
+        """Return the string that is used as part of method names for this specific object."""
+        return Compartment._locStr
 
     def addSystem(self, vsys, _loc=None):
         """Add a volume system to the compartment
@@ -266,79 +338,143 @@ class Compartment(_PhysicalLocation):
                 vsys = vsys.name
             self.stepsComp.addVolsys(vsys)
 
-    def _createStepsObj(self, geom):
-        if self._isTmComp:
-            self._tetLst = TetList._toRefList(self._tetLst, geom)
-            return sgeom.TmComp(self.name, geom.stepsMesh, self._tetLst.indices)
-        else:
-            return sgeom.Comp(self.name, geom.stepsGeom)
-
-    def _canBeChild(self, c):
-        """Return wether c can be a child of self."""
-        if not super()._canBeChild(c):
-            return False
-        if (isinstance(c, nmodel.Reaction) and c._isSurfaceReac()) or (
-            isinstance(c, nmodel.Diffusion) and c._isSurfaceDiff()
-        ):
-            return False
-        return True
-
-    def _solverStr(self):
-        """Return the string that is used as part of method names for this specific object."""
-        return Compartment._locStr
-
     @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('m^3'))
     def Vol(self):
         """Volume of the compartment
 
-        :type: float
+        :type: Union[float, :py:class:`steps.API_2.utils.Parameter`], read-only for tetrahedral compartments
         """
         return self.stepsComp.getVol()
 
-    @Vol.setter
+
+@nutils.FreezeAfterInit
+class _WmCompartment(Compartment):
+
+    def __init__(self, vsys=None, vol=None, **kwargs):
+        super().__init__(vsys=vsys, **kwargs)
+        if vol is not None:
+            self.Vol = vol
+
+    def _createStepsObj(self, geom):
+        return stepslib._py_Comp(self.name, geom.stepsGeom)
+
+    @classmethod
+    def _FromStepsObject(cls, obj, geom):
+        """Create the interface object from a STEPS object."""
+        comp = cls(_createObj=False, name=obj.getID())
+        comp.stepsComp = obj
+        # setup volume systems
+        for vsysname in comp.stepsComp.getVolsys():
+            comp.addSystem(vsysname)
+
+        return comp
+
+    @Compartment.Vol.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('m^3'))
     def Vol(self, v):
-        if self._isTmComp:
-            raise Exception(f'Cannot set the volume of a Tetmesh compartment.')
         self.stepsComp.setVol(v)
 
-    @property
-    def bbox(self):
-        """The bounding box of the compartment
 
-        Only available for compartments in tetrahedral meshes.
+@nutils.FreezeAfterInit
+class _BaseTetCompartment(Compartment):
+    _FACADE_TITLE_STR = 'Only available for compartments defined in tetrahedral meshes'
 
-        :type: :py:class:`BoundingBox`, read-only
-        """
-        if not self._isTmComp:
-            raise Exception(f'Well-mixed compartment do not have bounding boxes.')
-        return BoundingBox(Point(*self.stepsComp.getBoundMin()), Point(*self.stepsComp.getBoundMax()))
-
-    @property
-    def tets(self):
-        """All tetrahedrons in the compartment
-
-        Only available for compartments in tetrahedral meshes.
-
-        :type: :py:class:`TetList`, read-only
-        """
-        if not self._isTmComp:
-            raise Exception(f'Well-mixed compartment do not have tetrahedrons.')
-        return self._tetLst
+    def __init__(self, tetLst, *args, **kwargs):
+        self._tetLst = tetLst
+        super().__init__(*args, **kwargs)
 
     @property
     def surface(self):
         """All triangles in the surface of the compartment
 
-        Only available for compartments in tetrahedral meshes.
-
         :type: :py:class:`TriList`, read-only
         """
-        if not self._isTmComp:
-            raise Exception(f'Well-mixed compartment do not have tetrahedrons.')
-        return self._tetLst.surface
+        return self.tets.surface
+
+    @property
+    def tets(self):
+        """All tetrahedrons in the compartment
+
+        :type: :py:class:`TetList`, read-only
+        """
+        return self._tetLst
+
+    @property
+    def bbox(self):
+        """The bounding box of the compartment
+
+        :type: :py:class:`steps.API_2.geom.BoundingBox`, read-only
+        """
+        return BoundingBox(Point(*self.stepsComp.getBoundMin()), Point(*self.stepsComp.getBoundMax()))
 
 
-class Patch(_PhysicalLocation):
+@nutils.FreezeAfterInit
+class _TetCompartment(_BaseTetCompartment):
+    _FACADE_TITLE_STR = None
+
+    def __init__(self, tetLst, vsys=None, **kwargs):
+        super().__init__(tetLst, vsys=vsys, **kwargs)
+
+    def _createStepsObj(self, geom):
+        self._tetLst = TetList._toRefList(self._tetLst, geom)
+        return stepslib._py_TmComp(self.name, geom.stepsMesh, self._tetLst.indices)
+
+    @classmethod
+    def _FromStepsObject(cls, obj, geom):
+        """Create the interface object from a STEPS object."""
+        tetLst = TetList(obj.getAllTetIndices(), geom)
+
+        comp = cls(tetLst, _createObj=False, name=obj.getID())
+        comp.stepsComp = obj
+        # setup volume systems
+        for vsysname in comp.stepsComp.getVolsys():
+            comp.addSystem(vsysname)
+
+        return comp
+
+
+@nutils.FreezeAfterInit
+class _DistCompartment(_BaseTetCompartment):
+    _FACADE_TITLE_STR = 'Only available for compartments defined in distributed tetrahedral meshes'
+
+    def __init__(self, *args, conductivity=0, physicalTag=None, **kwargs):
+        self._physicalTag = physicalTag
+
+        # Allow any ordering of vsys and tetLst
+        vsys, tetLst, args, kwargs = nutils.extractArgs(args, kwargs, [
+            ('vsys', (nmodel.VolumeSystem, str), None),
+            ('tetLst', (TetList, list, tuple), []),
+        ])
+
+        super().__init__(tetLst, vsys=vsys, **kwargs)
+
+        self.Conductivity = conductivity
+
+    def _createStepsObj(self, geom):
+        self._tetLst = TetList._toRefList(self._tetLst, geom)
+        comp = stepslib._py_DistComp(self.name, geom.stepsMesh, self._tetLst.indices, self._physicalTag)
+        if len(self._tetLst) == 0:
+            self._tetLst = TetList(comp.getAllTetIndices(), mesh=geom)
+        return comp
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('S m^-1'))
+    def Conductivity(self):
+        """Conductivity of the compartment
+
+        :type: Union[float, :py:class:`steps.API_2.utils.Parameter`]
+        """
+        return self.stepsComp.getConductivity()
+
+    @Conductivity.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('S m^-1'))
+    def Conductivity(self, v):
+        self.stepsComp.setConductivity(v)
+
+
+@nutils.FreezeAfterInit
+class Patch(_PhysicalLocation, nutils.UsableObject, nutils.ParameterizedObject, nutils.Facade):
     """Base class for patch objects
 
     A patch is a piece of 2D surface surrounding (part of) a 3D compartment, which may be
@@ -382,6 +518,28 @@ class Patch(_PhysicalLocation):
     :param ssys: Optional, the surface system associated with this patch.
     :type ssys: :py:class:`steps.API_2.model.SurfaceSystem` or :py:class:`str`
 
+    Patches in a distributed tetrahedral mesh can be declared in the following ways::
+
+        with mesh:
+            comp1 = Patch.Create(inner)
+            comp2 = Patch.Create(inner, ssys=ssys)
+            comp3 = Patch.Create(inner, outer, ssys)
+            comp4 = Patch.Create(inner, physicalTag=10)
+            comp5 = Patch.Create(triList, inner, ssys=ssys)
+
+    :param inner: Inner compartment, see below
+    :type inner: :py:class:`steps.API_2.geom.Compartment`
+    :param outer: Optional, Outer compartment, see below
+    :type outer: :py:class:`steps.API_2.geom.Compartment`
+    :param ssys: Optional, the surface system associated with this patch.
+    :type ssys: :py:class:`steps.API_2.model.SurfaceSystem` or :py:class:`str`
+    :param physicalTag: Optional, the index of the physical tag used to build the patch
+        (see :py:class:`DistMesh`).
+    :type physicalTag: int
+    :param triLst: Optional, list of triangles associated with the patch. If an empy list is given
+        the patch will be created from triangles that are tagged with the patch name.
+    :type triLst: :py:class:`TriList` or any argument that can be used to build one
+
     **Relationship between Compartments and Patches**
 
     It is necessary to explain the inner/outer relationship between compartments
@@ -397,58 +555,70 @@ class Patch(_PhysicalLocation):
     with these objects.
 
     For patches in tetrahedral meshes, the area is the total area of the encapsulated triangles.
+
+    Some of the methods documented below are only available for tetrahedral patches, they are
+    grouped accordingly.
     """
 
     _locStr = 'Patch'
 
-    def __init__(self, *args, _createObj=True, **kwargs):
-        super().__init__(*args, **kwargs)
-        (geom,) = self._getUsedObjects()
-        self._isTmPatch = isinstance(geom, TetMesh)
+    def __new__(cls, *args, **kwargs):
+        # Patch is a facade to its subclasses, the user always uses the Patch class
+        # but the appropriate subclass is used for object instantiation.
 
-        if len(args) > 4:
-            raise Exception(f'Unused parameters: {args[4:]}')
-        elif len(args) < 4:
-            args += (None, ) * (4 - len(args))
+        if cls is not Patch:
+            return super(Patch, cls).__new__(cls)
 
-        if self._isTmPatch:
-            triLst, inner, outer, ssys, *_ = args
-            area = None
+        geom = nutils.UsableObject._getUsedObjectOfClass(Geometry)
+        if geom is None:
+            raise Exception(f'Patches need to be declared in a geometry.')
+
+        if geom.__class__ == Geometry:
+            return _WmPatch.__new__(_WmPatch, *args, **kwargs)
+        elif geom.__class__ == TetMesh:
+            return _TetPatch.__new__(_TetPatch, *args, **kwargs)
+        elif geom.__class__ == DistMesh:
+            return _DistPatch.__new__(_DistPatch, *args, **kwargs)
         else:
-            inner, outer, ssys, area, *_ = args
-            triLst = None
+            raise NotImplementedError(f'Patches cannot be created in {type(geom)}')
 
-        self._triLst = triLst
+    @classmethod
+    def _getDisplayName(cls):
+        return Patch.__name__
+
+    @classmethod
+    def _FromStepsObject(cls, obj, geom):
+        if stepslib._STEPS_USE_DIST_MESH and isinstance(obj, stepslib._py_DistPatch):
+            return _DistPatch._FromStepsObject(obj, geom)
+        elif isinstance(obj, stepslib._py_TmPatch):
+            return _TetPatch._FromStepsObject(obj, geom)
+        elif isinstance(obj, stepslib._py_Patch):
+            return _WmPatch._FromStepsObject(obj, geom)
+        else:
+            raise NotImplementedError(f'Cannot create API2 version of {type(obj)}')
+
+    def __init__(self, inner, outer=None, ssys=None, _createObj=True, **kwargs):
+        super().__init__(**kwargs)
+        (geom,) = self._getUsedObjects()
+
+        if not isinstance(inner, Compartment):
+            raise TypeError(f'Expected an inner Compartment, got {inner} instead.')
+        if outer is not None and not isinstance(outer, Compartment):
+            raise TypeError(f'Expected a Compartment, got {outer} instead.')
+
         self._innerComp = inner
         self._outerComp = outer
-        self.stepsPatch = self._createStepsObj(geom) if _createObj else None
+
+        icomp = self._innerComp.stepsComp if isinstance(self._innerComp, Compartment) else None
+        ocomp = self._outerComp.stepsComp if isinstance(self._outerComp, Compartment) else None
+        self.stepsPatch = self._createStepsObj(icomp, ocomp, geom) if _createObj else None
+
         if ssys is not None:
             self.addSystem(ssys)
-        if area is not None:
-            self.Area = area
 
     def _getStepsObjects(self):
         """Return a list of the steps objects that this named object holds."""
         return [self.stepsPatch]
-
-    @classmethod
-    def _FromStepsObject(cls, obj, geom):
-        """Create the interface object from a STEPS object."""
-        patch = cls(_createObj=False, name=obj.getID())
-        patch.stepsPatch = obj
-        if obj.icomp is not None:
-            patch._innerComp = getattr(geom, obj.icomp.getID())
-        if obj.ocomp is not None:
-            patch._outerComp = getattr(geom, obj.ocomp.getID())
-
-        # setup surface systems
-        for ssysname in patch.stepsPatch.getSurfsys():
-            patch.addSystem(ssysname)
-
-        patch._isTmPatch = isinstance(geom, TetMesh)
-        patch._triLst = TriList(obj.getAllTriIndices(), geom) if patch._isTmPatch else None
-
-        return patch
 
     def addSystem(self, ssys):
         """Add a surface system to the patch
@@ -463,51 +633,35 @@ class Patch(_PhysicalLocation):
             ssys = ssys.name
         self.stepsPatch.addSurfsys(ssys)
 
-    def _createStepsObj(self, geom):
-        if not isinstance(self._innerComp, Compartment):
-            raise TypeError(f'Expected an inner Compartment, got {self._innerComp} instead.')
-        if self._outerComp is not None and not isinstance(self._outerComp, Compartment):
-            raise TypeError(f'Expected a Compartment, got {self._outerComp} instead.')
-
-        icomp = self._innerComp.stepsComp if isinstance(self._innerComp, Compartment) else None
-        ocomp = self._outerComp.stepsComp if isinstance(self._outerComp, Compartment) else None
-        if self._isTmPatch:
-            if icomp is None and ocomp is None:
-                raise Exception(
-                    f'Cannot declare a Patch in a tetrahedral mesh with no neighboring compartment.'
-                )
-            self._triLst = TriList._toRefList(self._triLst, geom)
-            return sgeom.TmPatch(self.name, geom.stepsMesh, self._triLst.indices, icomp, ocomp)
-        else:
-            return sgeom.Patch(self.name, geom.stepsGeom, icomp, ocomp)
+    def _createStepsObj(self, icomp, ocomp, geom):
+        raise NotImplementedError()
 
     def _canBeChild(self, c):
         """Return wether c can be a child of self."""
         if not super()._canBeChild(c):
             return False
-        if (isinstance(c, nmodel.Reaction) and not c._isSurfaceReac()) or (
-            isinstance(c, nmodel.Diffusion) and not c._isSurfaceDiff()
+        if ((isinstance(c, nmodel.Reaction) and not c._isSurfaceReac()) or
+            (isinstance(c, nmodel.Diffusion) and not c._isSurfaceDiff())
         ):
             return False
         return True
+
+    def _SetUpMdlDeps(self, mdl):
+        """Set up the structures that will allow species or reaction access from locations."""
+        super()._SetUpMdlDeps(mdl)
 
     def _solverStr(self):
         """Return the string that is used as part of method names for this specific object."""
         return Patch._locStr
 
     @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('m^2'))
     def Area(self):
         """Surface area of the patch
 
-        :type: float
+        :type: Union[float, :py:class:`steps.API_2.utils.Parameter`], read-only for tetrahedral patches
         """
         return self.stepsPatch.getArea()
-
-    @Area.setter
-    def Area(self, v):
-        if self._isTmPatch:
-            raise Exception(f'Cannot set the area of a Tetmesh patch.')
-        self.stepsPatch.setArea(v)
 
     @property
     def innerComp(self):
@@ -525,28 +679,67 @@ class Patch(_PhysicalLocation):
         """
         return self._outerComp
 
+
+@nutils.FreezeAfterInit
+class _BasePatch(Patch):
+    @classmethod
+    def _FromStepsObject(cls, obj, geom):
+        """Create the interface object from a STEPS object."""
+        args = cls._ArgsFromStepsObject(obj, geom)
+        patch = cls(*args, _createObj=False, name=obj.getID())
+        patch.stepsPatch = obj
+
+        # setup surface systems
+        for ssysname in patch.stepsPatch.getSurfsys():
+            patch.addSystem(ssysname)
+
+        return patch
+
+    @classmethod
+    def _ArgsFromStepsObject(cls, obj, geom):
+        icomp = getattr(geom, obj.icomp.getID())
+        ocomp = getattr(geom, obj.ocomp.getID())
+        return (icomp, ocomp)
+
+
+@nutils.FreezeAfterInit
+class _WmPatch(_BasePatch):
+    def __init__(self, inner, outer=None, ssys=None, area=None, **kwargs):
+        super().__init__(inner, outer, ssys=ssys, **kwargs)
+        if area is not None:
+            self.Area = area
+
+    def _createStepsObj(self, icomp, ocomp, geom):
+        return stepslib._py_Patch(self.name, geom.stepsGeom, icomp, ocomp)
+
+    @Patch.Area.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('m^2'))
+    def Area(self, v):
+        self.stepsPatch.setArea(v)
+
+
+@nutils.FreezeAfterInit
+class _BaseTetPatch(_BasePatch):
+    _FACADE_TITLE_STR = 'Only available for patches defined in tetrahedral meshes'
+
+    def __init__(self, triLst, *args, **kwargs):
+        self._triLst = triLst
+        super().__init__(*args, **kwargs)
+
     @property
     def bbox(self):
         """The bounding box of the patch
 
-        Only available for patches in tetrahedral meshes.
-
-        :type: :py:class:`BoundingBox`, read-only
+        :type: :py:class:`steps.API_2.geom.BoundingBox`, read-only
         """
-        if not self._isTmPatch:
-            raise Exception(f'Well-mixed patches do not have bounding boxes.')
         return BoundingBox(Point(*self.stepsPatch.getBoundMin()), Point(*self.stepsPatch.getBoundMax()))
 
     @property
     def tris(self):
         """All triangles in the patch
 
-        Only available for patches in tetrahedral meshes.
-
         :type: :py:class:`TriList`, read-only
         """
-        if not self._isTmPatch:
-            raise Exception(f'Well-mixed patches do not have triangles.')
         return self._triLst
 
     @property
@@ -555,16 +748,64 @@ class Patch(_PhysicalLocation):
 
         I.e. all bars that are not shared by two triangles in the patch.
 
-        Only available for patches in tetrahedral meshes.
-
         :type: :py:class:`BarList`, read-only
         """
-        if not self._isTmPatch:
-            raise Exception(f'Well-mixed patches do not have triangles.')
         return self._triLst.edges
 
 
-class Membrane(_PhysicalLocation):
+@nutils.FreezeAfterInit
+class _TetPatch(_BaseTetPatch):
+    _FACADE_TITLE_STR = None
+
+    def __init__(self, triLst, inner, outer=None, ssys=None, **kwargs):
+        super().__init__(triLst, inner, outer, ssys=ssys, **kwargs)
+
+    def _createStepsObj(self, icomp, ocomp, geom):
+        if icomp is None and ocomp is None:
+            raise Exception(
+                f'Cannot declare a Patch in a tetrahedral mesh with no neighboring compartment.'
+            )
+        self._triLst = TriList._toRefList(self._triLst, geom)
+        return stepslib._py_TmPatch(self.name, geom.stepsMesh, self._triLst.indices, icomp, ocomp)
+
+    @classmethod
+    def _FromStepsObject(cls, obj, geom):
+        """Create the interface object from a STEPS object."""
+        patch = super()._FromStepsObject(obj, geom)
+        return patch
+
+    @classmethod
+    def _ArgsFromStepsObject(cls, obj, geom):
+        return (TriList(obj.getAllTriIndices(), geom), ) + _BasePatch._ArgsFromStepsObject(obj, geom)
+
+
+@nutils.FreezeAfterInit
+class _DistPatch(_BaseTetPatch):
+    _FACADE_TITLE_STR = None
+
+    def __init__(self, *args, physicalTag=None, **kwargs):
+        self._physicalTag = physicalTag
+
+        # Allow any ordering of inner, outer, ssys and triLst
+        inner, outer, ssys, triLst, args, kwargs = nutils.extractArgs(args, kwargs, [
+            ('inner', Compartment, None),
+            ('outer', Compartment, None),
+            ('ssys', (nmodel.SurfaceSystem, str), None),
+            ('triLst', (TriList, list, tuple), []),
+        ])
+
+        super().__init__(triLst, inner, outer, ssys=ssys, **kwargs)
+
+    def _createStepsObj(self, icomp, ocomp, geom):
+        self._triLst = TriList._toRefList(self._triLst, geom)
+        patch = stepslib._py_DistPatch(self.name, geom.stepsMesh, self._triLst.indices, icomp, ocomp, self._physicalTag)
+        if len(self._triLst) == 0:
+            self._triLst = TriList(patch.getAllTriIndices(), mesh=geom)
+        return patch
+
+
+@nutils.FreezeAfterInit
+class Membrane(_PhysicalLocation, nutils.Facade):
     """A set of patches on which membrane potential will be computed
 
     This class provides annotation for a group of triangles that comprise
@@ -575,6 +816,7 @@ class Membrane(_PhysicalLocation):
     performed.
 
     :param patches: List of patches whose triangles will be added to the membrane
+        (only one patch for distributed meshes)
     :type patches: :py:class:`list`
     :param verify: Perform some checks on suitability of membrane (see below)
     :type verify: :py:class:`bool`
@@ -603,14 +845,40 @@ class Membrane(_PhysicalLocation):
 
     _locStr = 'Memb'
 
+    def __new__(cls, *args, **kwargs):
+        # Membrane is a facade to its subclasses, the user always uses the Membrane class
+        # but the appropriate subclass is used for object instantiation.
+
+        if cls is not Membrane:
+            return super(Membrane, cls).__new__(cls)
+
+        geom = nutils.UsableObject._getUsedObjectOfClass(Geometry)
+        if geom is None:
+            raise Exception(f'Membranes need to be declared in a geometry.')
+
+        if geom.__class__ == TetMesh:
+            return _TetMembrane.__new__(_TetMembrane, *args, **kwargs)
+        elif geom.__class__ == DistMesh:
+            return _DistMembrane.__new__(_DistMembrane, *args, **kwargs)
+        else:
+            raise NotImplementedError(f'Membranes cannot be created in {type(geom)}')
+
+    @classmethod
+    def _getDisplayName(cls):
+        return Membrane.__name__
+
+    @classmethod
+    def _FromStepsObject(cls, obj, geom):
+        raise NotImplementedError(f'Cannot create API2 version of {type(obj)}')
+
     def __init__(
-        self, patches, verify=False, opt_method=1, search_percent=100.0, opt_file_name='', *args, **kwargs
+        self, patches, *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
         (geom,) = self._getUsedObjects()
         self.mesh = geom
         self.patches = patches
-        self.stepsMemb = self._createStepsObj(geom, verify, opt_method, search_percent, opt_file_name)
+        self.stepsMemb = self._createStepsObj(geom)
 
     def addSystem(self, _):
         """
@@ -621,7 +889,7 @@ class Membrane(_PhysicalLocation):
         raise NotImplementedError(f'Cannot add space systems to a Membrane.')
 
     def _SetUpMdlDeps(self, mdl):
-        """Set up the structures that will allow specie or reaction access from locations."""
+        """Set up the structures that will allow species or reaction access from locations."""
         for p in self.patches:
             self.sysNames += p.sysNames
         self.sysNames = list(set(self.sysNames))
@@ -632,18 +900,8 @@ class Membrane(_PhysicalLocation):
         """Return a list of the steps objects that this named object holds."""
         return [self.stepsMemb]
 
-    def _createStepsObj(self, geom, verify, opt_method, search_percent, opt_file_name):
-        (geomObj,) = geom._getStepsObjects()
-        patches = [p._getStepsObjects()[0] for p in self.patches]
-        return sgeom.Memb(
-            self.name,
-            geomObj,
-            patches,
-            verify=verify,
-            opt_method=opt_method,
-            search_percent=search_percent,
-            opt_file_name=opt_file_name,
-        )
+    def _createStepsObj(self, geom):
+        raise NotImplementedError()
 
     @property
     def open(self):
@@ -677,6 +935,61 @@ class Membrane(_PhysicalLocation):
         return Membrane._locStr
 
 
+@nutils.FreezeAfterInit
+class _TetMembrane(Membrane):
+
+    def __init__(
+        self, patches, verify=False, opt_method=1, search_percent=100.0, opt_file_name='', *args, **kwargs
+    ):
+        self._tmpParams = dict(
+            verify=verify,
+            opt_method=opt_method,
+            search_percent=search_percent,
+            opt_file_name=opt_file_name
+        )
+        super().__init__(patches, *args, **kwargs)
+
+    def _createStepsObj(self, geom):
+        (geomObj,) = geom._getStepsObjects()
+        patches = [p._getStepsObjects()[0] for p in self.patches]
+        return stepslib._py_Memb(
+            self.name,
+            geomObj,
+            patches,
+            **self._tmpParams,
+        )
+
+
+@nutils.FreezeAfterInit
+class _DistMembrane(Membrane, nutils.ParameterizedObject):
+    _FACADE_TITLE_STR = 'Only available for membranes defined in distributed tetrahedral meshes'
+
+    def __init__(self, patches, capacitance=0, **kwargs):
+        super().__init__(patches, **kwargs)
+        if len(patches) != 1:
+            raise ValueError(f'Membranes in distributed meshes can only have a single patch.')
+        self.Capacitance = capacitance
+
+    def _createStepsObj(self, geom):
+        patches = [p._getStepsObjects()[0] for p in self.patches]
+        return stepslib._py_DistMemb(self.name, geom.stepsMesh, patches)
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('F m^-2'))
+    def Capacitance(self):
+        """Capacitance of the compartment
+
+        :type: Union[float, :py:class:`steps.API_2.utils.Parameter`]
+        """
+        return self.stepsMemb.getCapacitance()
+
+    @Capacitance.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('F m^-2'))
+    def Capacitance(self, v):
+        self.stepsMemb.setCapacitance(v)
+
+
+@nutils.FreezeAfterInit
 class Point(numpy.ndarray):
     """Convenience class for representing 3D points
 
@@ -693,7 +1006,12 @@ class Point(numpy.ndarray):
     """
 
     def __new__(cls, x, y, z):
-        return numpy.asarray([x, y, z]).view(cls)
+        arr = numpy.zeros(3)
+        arr[0:3] = x, y, z
+        return arr.view(cls)
+
+    def __init__(self, *args, **kwargs):
+        pass
 
     @property
     def x(self):
@@ -720,6 +1038,7 @@ class Point(numpy.ndarray):
         return self[2]
 
 
+@nutils.FreezeAfterInit
 class BoundingBox:
     """Convenience class for holding bounding box information"""
 
@@ -743,8 +1062,105 @@ class BoundingBox:
         """
         return self._max
 
+    @property
+    def center(self):
+        """Center point of the bounding box
 
-class TetMesh(Geometry):
+        :type: :py:class:`Point`, read-only
+        """
+        return (self._max - self._min) / 2 + self._min
+
+
+class _BaseTetMesh(Geometry):
+    """Base class for tetrahedral meshes"""
+
+    def __init__(self, *args, _createObj=True, **kwargs):
+        super().__init__(*args, _createObj=False, **kwargs)
+
+        self.stepsMesh = self._createStepsObj() if _createObj else None
+
+        self._callKwargs = {}
+        self._lstArgs = {}
+
+    def _createStepsObj(self):
+        raise NotImplementedError()
+
+    def _getStepsObjects(self):
+        """Return a list of the steps objects that this named object holds."""
+        return [self.stepsMesh]
+
+    @property
+    def tets(self):
+        """All tetrahedrons in the mesh
+
+        :type: :py:class:`TetList`, read-only
+        """
+        return TetList(
+            range(self.stepsMesh.countTets(**self._callKwargs)), self, _immutable=True, **self._lstArgs
+        )
+
+    @property
+    def tris(self):
+        """All triangles in the mesh
+
+        :type: :py:class:`TriList`, read-only
+        """
+        return TriList(
+            range(self.stepsMesh.countTris(**self._callKwargs)), self, _immutable=True, **self._lstArgs
+        )
+
+    @property
+    def surface(self):
+        """All triangles in the surface of the mesh
+
+        :type: :py:class:`TriList`, read-only
+        """
+        return TriList(
+            self.stepsMesh.getSurfTris(**self._callKwargs), self, _immutable=True, **self._lstArgs
+        )
+
+    @property
+    def verts(self):
+        """All vertices in the mesh
+
+        :type: :py:class:`VertList`, read-only
+        """
+        return VertList(
+            range(self.stepsMesh.countVertices(**self._callKwargs)), self, _immutable=True, **self._lstArgs
+        )
+
+    @property
+    def bars(self):
+        """All bars in the mesh
+
+        :type: :py:class:`BarList`, read-only
+        """
+        return BarList(
+            range(self.stepsMesh.countBars(**self._callKwargs)), self, _immutable=True, **self._lstArgs
+        )
+
+    @property
+    def bbox(self):
+        """The bounding box of the mesh
+
+        :type: :py:class:`steps.API_2.geom.BoundingBox`, read-only
+        """
+        return BoundingBox(
+            Point(*self.stepsMesh.getBoundMin(**self._callKwargs)),
+            Point(*self.stepsMesh.getBoundMax(**self._callKwargs))
+        )
+
+    @property
+    def Vol(self):
+        """Total volume of the mesh
+
+        :type: float, read-only
+        """
+        return self.stepsMesh.getMeshVolume(**self._callKwargs)
+
+
+@nutils.FreezeAfterInit
+class TetMesh(_BaseTetMesh):
     """Container class for static tetrahedral meshes
 
     This class stores the vertices points, 3D tetrahedral and 2D triangular elements that comprise
@@ -772,33 +1188,20 @@ class TetMesh(Geometry):
     """
 
     def __init__(self, *args, _createObj=True, **kwargs):
-        self.stepsMesh = None
-        self.meshInfo = {
-            'vertBlocks': {},
-            'tetBlocks': {},
-            'triBlocks': {},
-            'vertGroups': {},
-            'tetGroups': {},
-            'triGroups': {},
-        }
+        self._vertGroups = {}
+        self._triGroups = {}
+        self._tetGroups = {}
+        self._vertProxy = None
+        self._triProxy = None
+        self._tetProxy = None
         if _createObj:
             raise Exception('Cannot create a bare TetMesh, use one of the class methods.')
         super().__init__(*args, _createObj=False, **kwargs)
 
-        self._verts = None
-        self._bars = None
-        self._tris = None
-        self._tets = None
-        self._surface = None
-
-    def _getStepsObjects(self):
-        """Return a list of the steps objects that this named object holds."""
-        return [self.stepsMesh]
-
     @classmethod
-    def _FromStepsObject(cls, obj, comps=None, patches=None):
+    def _FromStepsObject(cls, obj, comps=None, patches=None, name=None):
         """Create the interface object from a STEPS object."""
-        mesh = cls(_createObj=False)
+        mesh = cls(_createObj=False, name=name)
         mesh.stepsMesh = obj
         mesh.stepsGeom = obj
         comps = obj.getAllComps() if comps is None else comps
@@ -813,7 +1216,7 @@ class TetMesh(Geometry):
         return mesh
 
     @classmethod
-    def FromData(cls, verts, tets, tris=[]):
+    def FromData(cls, verts, tets, tris=[], name=None):
         """Create a mesh from geometrical data
 
         Construct a Tetmesh container with the folowing method: Supply a list of all
@@ -836,18 +1239,20 @@ class TetMesh(Geometry):
         :type tets: `List[int]`
         :param tris: Optional triangle data
         :type tris: `List[int]`
+        :param name: Optional name for the mesh
+        :type name: str
 
         :returns: The constructed TetMesh
         :rtype: :py:class:`TetMesh`
         """
-        mesh = cls(_createObj=False)
-        obj = sgeom.Tetmesh(verts, tets, tris)
+        mesh = cls(_createObj=False, name=name)
+        obj = stepslib._py_Tetmesh(verts, tets, tris)
         mesh.stepsMesh = obj
         mesh.stepsGeom = obj
         return mesh
 
     @classmethod
-    def Load(cls, path, scale=1, strict=False):
+    def Load(cls, path, scale=1, strict=False, name=None):
         """Load a mesh in STEPS
 
         The mesh is loaded from an XML file that was previously generated by the
@@ -860,15 +1265,18 @@ class TetMesh(Geometry):
         :type scale: float
         :param strict: Apply strict(-er) checking to the input XML
         :type strict: bool
+        :param name: Optional name for the mesh
+        :type name: str
 
         :returns: The loaded TetMesh
         :rtype: :py:class:`TetMesh`
         """
         smesh, scomps, spatches = smeshio.loadMesh(path, scale, strict)
-        return TetMesh._FromStepsObject(smesh, comps=scomps, patches=spatches)
+        return TetMesh._FromStepsObject(smesh, comps=scomps, patches=spatches, name=name)
 
     def _loadElementProxys(self, ndprx, tetprx, triprx):
         """Load the blocks and groups from ElementProxy objects."""
+        self._vertProxy, self._triProxy, self._tetProxy = ndprx, triprx, tetprx
         tmp = []
         for prx, lstCls in zip([ndprx, triprx, tetprx], [VertList, TriList, TetList]):
             # Merge blocks and groups
@@ -886,7 +1294,7 @@ class TetMesh(Geometry):
     # The shadow_mesh keyword parameter is left here for compatibility but is not documented since the
     # STEPS-CUBIT toolkit is deprecated.
     @classmethod
-    def LoadAbaqus(cls, filename, scale=1, ebs=None, shadow_mesh=None):
+    def LoadAbaqus(cls, filename, scale=1, ebs=None, shadow_mesh=None, name=None):
         """Load a mesh from an ABAQUS-formated mesh file
 
         If blocks or groups of elements are present in the file, they will also be loaded.
@@ -899,6 +1307,8 @@ class TetMesh(Geometry):
         :param ebs: Names of selected element blocks which are included in the mesh (does not apply
             if a 2-tuple is given as filename)
         :type ebs: `List[str]`
+        :param name: Optional name for the mesh
+        :type name: str
 
         :returns: The loaded TetMesh
         :rtype: :py:class:`TetMesh`
@@ -915,12 +1325,12 @@ class TetMesh(Geometry):
         else:
             raise TypeError(f'Expected a string or a 2-tuple of strings, got {filename} instead.')
 
-        mesh = TetMesh._FromStepsObject(stepsMesh)
+        mesh = TetMesh._FromStepsObject(stepsMesh, name=name)
         mesh._loadElementProxys(ndprx, tetprx, triprx)
         return mesh
 
     @classmethod
-    def LoadGmsh(cls, filename, scale=1):
+    def LoadGmsh(cls, filename, scale=1, name=None):
         """Load a mesh from a Gmsh (2.2 ASCII)-formated mesh file
 
         If blocks or groups of elements are present in the file, they will also be loaded.
@@ -929,17 +1339,19 @@ class TetMesh(Geometry):
         :type filename: str
         :param scale: Optionally rescale the mesh on loading by given factor
         :type scale: float
+        :param name: Optional name for the mesh
+        :type name: str
 
         :returns: The loaded TetMesh
         :rtype: :py:class:`TetMesh`
         """
         stepsMesh, ndprx, tetprx, triprx = smeshio.importGmsh(filename, scale)
-        mesh = TetMesh._FromStepsObject(stepsMesh)
+        mesh = TetMesh._FromStepsObject(stepsMesh, name=name)
         mesh._loadElementProxys(ndprx, tetprx, triprx)
         return mesh
 
     @classmethod
-    def LoadVTK(cls, filename, scale=1):
+    def LoadVTK(cls, filename, scale=1, name=None):
         """Load a mesh from a VTK (legacy ASCII)-formated mesh file
 
         If blocks or groups of elements are present in the file, they will also be loaded.
@@ -948,17 +1360,19 @@ class TetMesh(Geometry):
         :type filename: str
         :param scale: Optionally rescale the mesh on loading by given factor
         :type scale: float
+        :param name: Optional name for the mesh
+        :type name: str
 
         :returns: The loaded TetMesh
         :rtype: :py:class:`TetMesh`
         """
         stepsMesh, ndprx, tetprx, triprx = smeshio.importVTK(filename, scale)
-        mesh = TetMesh._FromStepsObject(stepsMesh)
+        mesh = TetMesh._FromStepsObject(stepsMesh, name=name)
         mesh._loadElementProxys(ndprx, tetprx, triprx)
         return mesh
 
     @classmethod
-    def LoadTetGen(cls, pathroot, scale):
+    def LoadTetGen(cls, pathroot, scale, name=None):
         """Load a mesh from a TetGen-formated set of files
 
         If blocks or groups of elements are present, they will also be loaded.
@@ -968,6 +1382,8 @@ class TetMesh(Geometry):
         :type pathroot: str
         :param scale: Optionally rescale the mesh on loading by given factor
         :type scale: float
+        :param name: Optional name for the mesh
+        :type name: str
 
         :returns: The loaded TetMesh
         :rtype: :py:class:`TetMesh`
@@ -996,7 +1412,7 @@ class TetMesh(Geometry):
         tetgen.berlios.de/files/tetgen-manual.pdf
         """
         stepsMesh, ndprx, tetprx, triprx = smeshio.importTetGen(pathroot, scale)
-        mesh = TetMesh._FromStepsObject(stepsMesh)
+        mesh = TetMesh._FromStepsObject(stepsMesh, name=name)
         mesh._loadElementProxys(ndprx, tetprx, triprx)
         return mesh
 
@@ -1043,72 +1459,6 @@ class TetMesh(Geometry):
         smetis.tetmesh2metis(self.stepsMesh, path)
 
     @property
-    def tets(self):
-        """All tetrahedrons in the mesh
-
-        :type: :py:class:`TetList`, read-only
-        """
-        if self._tets is None:
-            self._tets = TetList(range(self.stepsMesh.countTets()), self, _immutable=True)
-        return self._tets
-
-    @property
-    def tris(self):
-        """All triangles in the mesh
-
-        :type: :py:class:`TriList`, read-only
-        """
-        if self._tris is None:
-            self._tris = TriList(range(self.stepsMesh.countTris()), self, _immutable=True)
-        return self._tris
-
-    @property
-    def surface(self):
-        """All triangles in the surface of the mesh
-
-        :type: :py:class:`TriList`, read-only
-        """
-        if self._surface is None:
-            self._surface = TriList(self.stepsMesh.getSurfTris(), self, _immutable=True)
-        return self._surface
-
-    @property
-    def verts(self):
-        """All vertices in the mesh
-
-        :type: :py:class:`VertList`, read-only
-        """
-        if self._verts is None:
-            self._verts = VertList(range(self.stepsMesh.countVertices()), self, _immutable=True)
-        return self._verts
-
-    @property
-    def bars(self):
-        """All bars in the mesh
-
-        :type: :py:class:`BarList`, read-only
-        """
-        if self._bars is None:
-            self._bars = BarList(range(self.stepsMesh.countBars()), self, _immutable=True)
-        return self._bars
-
-    @property
-    def bbox(self):
-        """The bounding box of the mesh
-
-        :type: :py:class:`BoundingBox`, read-only
-        """
-        return BoundingBox(Point(*self.stepsMesh.getBoundMin()), Point(*self.stepsMesh.getBoundMax()))
-
-    @property
-    def Vol(self):
-        """Total volume of the mesh
-
-        :type: float, read-only
-        """
-        return self.stepsMesh.getMeshVolume()
-
-    @property
     def vertGroups(self):
         """Groups of vertices defined in the loaded mesh
 
@@ -1141,14 +1491,211 @@ class TetMesh(Geometry):
         """
         return self._tetGroups
 
+    @property
+    def vertProxy(self):
+        """Element proxy object for vertices (see :py:class:`steps.API_1.utilities.meshio.ElementProxy`)
 
-class Reference(nutils.UsingObjects(nutils.Optional(TetMesh)), nutils.SolverPathObject):
+        :type: :py:class:`steps.API_1.utilities.meshio.ElementProxy`
+
+        .. note::
+            Only available with some import methods.
+        """
+        return self._vertProxy
+
+    @property
+    def triProxy(self):
+        """Element proxy object for triangles (see :py:class:`steps.API_1.utilities.meshio.ElementProxy`)
+
+        :type: :py:class:`steps.API_1.utilities.meshio.ElementProxy`
+
+        .. note::
+            Only available with some import methods.
+        """
+        return self._triProxy
+
+    @property
+    def tetProxy(self):
+        """Element proxy object for tetrahedrons (see :py:class:`steps.API_1.utilities.meshio.ElementProxy`)
+
+        :type: :py:class:`steps.API_1.utilities.meshio.ElementProxy`
+
+        .. note::
+            Only available with some import methods.
+        """
+        return self._tetProxy
+
+
+class _DistElemGroupsProxy:
+    """Utility class for calling methods like DistMesh::getTaggedTetrahedrons"""
+    def __init__(self, mesh, lstCls, method):
+        self._mesh = mesh
+        self._lstCls = lstCls
+        self._method = method
+
+    def keys(self):
+        return self._mesh.stepsMesh.getTags(self._lstCls._dim)
+
+    def __getitem__(self, tag):
+        return self._lstCls(self._method(tag), mesh=self._mesh)
+
+    def __setitem__(self, n, v):
+        raise NotImplementedError(f'Cannot add group of elements to distributed meshes.')
+
+    def __delitem__(self, n):
+        raise NotImplementedError(f'Cannot remove group of elements from distributed meshes.')
+
+
+@nutils.FreezeAfterInit
+class DistMesh(_BaseTetMesh):
+    """Container class for distributed tetrahedral meshes
+
+    In contrast to :py:class:`TetMesh`, only gmsh mesh files are accepted.
+
+    :param filename: The Gmsh filename (or path) including any suffix.
+    :type filename: str
+    :param scale: Optionally rescale the mesh on loading by given factor
+    :type scale: float
+    :param mpiComm: mpi4py MPI communicator, defaults to COMM_WORLD
+    :type mpiComm: :py:class:`mpi4py.MPI.Intracomm`
+
+    ``filename`` should either be a full path to a single gmsh mesh or a path prefix for
+    pre-partitioned meshes. If a single gmsh file is provided, it will be partitioned automatically.
+    Pre-partitioned meshes can be loaded by providing a path prefix e.g. ``'path/to/meshName'`` and
+    individual partition files should be named ``'path/to/meshName_1.msh'``, ``'path/to/meshName_2.msh'``,
+    etc. The numbering of files starts at 1 and goes up to :py:attr:`steps.API_2.sim.MPI.nhosts`.
+
+    Note that, for pre-partitioned meshes, elements are not necessarily numbered between ``0`` and ``n``
+    (with ``n`` the number of elements).
+    """
+    def __init__(self, filename, scale=1, mpiComm=None, _createObj=True, **kwargs):
+        self._filename = filename
+        if _createObj:
+            if mpiComm is None:
+                # Only import mpi4py when necessary
+                import mpi4py.MPI
+                mpiComm = mpi4py.MPI.COMM_WORLD
+            self._comm = mpiComm
+        # In dist steps, scale == 0 means no scaling 
+        self._scale = 0 if scale == 1 else scale
+        self._local = False
+        
+        # Temporarily necessary to explicitely querry all tetrahedron ids
+        # TODO Remove this when Omega_h::gmsh::read_parallel follows the 0 to n_tet numbering convention
+        self._isSplitMesh = not filename.endswith('.msh')
+
+        super().__init__(_createObj=_createObj, **kwargs)
+
+        self._callKwargs['local'] = self._local
+        self._lstArgs['local'] = self._local
+
+    def _getStepsObjects(self):
+        """Return a list of the steps objects that this named object holds."""
+        return [self.stepsMesh]
+
+    def _createStepsObj(self):
+        library = stepslib._py_Library(self._comm)
+        return stepslib._py_DistMesh(library, self._filename, self._scale)
+
+    @contextlib.contextmanager
+    def asLocal(self):
+        """Context manager method to use the mesh locally
+
+        This should be used with the `with` statement in the following way::
+
+            with mesh.asLocal():
+                lst1 = mesh.tets    # Returns a local list of tetrahedron indices
+                lst2 = mesh.surface # Returns a local list of boundary triangles
+
+        All properties and methods that would usually return lists of global indices will return local
+        lists instead when wrapped with this context manager.
+
+        In the above example, ``lst1`` would end up having the same value as ``mesh.tets.toLocal()``
+        but the latter is less efficient since it first queries the full list of all tetrahedrons
+        and then restricts it to only the local ones.
+
+        .. note::
+            This only affects the behavior of the mesh object, other lists or compartments used
+            in the context manager will still behave normally. For example ``comp.tets`` will still
+            return a list of global indices.
+
+        :rtype: :py:class:`DistMesh`
+        """
+        self._local = True
+        self._callKwargs['local'] = self._local
+        self._lstArgs['local'] = self._local
+        try:
+            yield self
+        finally:
+            self._local = False
+            self._callKwargs['local'] = self._local
+            self._lstArgs['local'] = self._local
+
+    @_BaseTetMesh.tets.getter
+    def tets(self):
+        """All tetrahedrons in the mesh
+
+        :type: :py:class:`TetList`, read-only
+        """
+        # TODO Remove _isSplitMesh when Omega_h::gmsh::read_parallel follows the 0 to n_tet numbering convention
+        if self._local or self._isSplitMesh:
+            return TetList(
+                self.stepsMesh.getAllTetIndices(**self._callKwargs), self, _immutable=True, **self._lstArgs
+            )
+        else:
+            return _BaseTetMesh.tets.fget(self)
+
+    @_BaseTetMesh.tris.getter
+    def tris(self):
+        """All triangles in the mesh
+
+        :type: :py:class:`TriList`, read-only
+        """
+        # TODO Remove _isSplitMesh when Omega_h::gmsh::read_parallel follows the 0 to n_tet numbering convention
+        if self._local or self._isSplitMesh:
+            return TriList(
+                self.stepsMesh.getAllTriIndices(**self._callKwargs), self, _immutable=True, **self._lstArgs
+            )
+        else:
+            return _BaseTetMesh.tris.fget(self)
+
+    @_BaseTetMesh.verts.getter
+    def verts(self):
+        """All vertices in the mesh
+
+        :type: :py:class:`VertList`, read-only
+        """
+        # TODO Remove _isSplitMesh when Omega_h::gmsh::read_parallel follows the 0 to n_tet numbering convention
+        if self._local or self._isSplitMesh:
+            return VertList(
+                self.stepsMesh.getAllVertIndices(**self._callKwargs), self, _immutable=True, **self._lstArgs
+            )
+        else:
+            return _BaseTetMesh.verts.fget(self)
+
+    @property
+    def tetGroups(self):
+        return _DistElemGroupsProxy(self, TetList, self.stepsMesh.getTaggedTetrahedrons)
+
+    @property
+    def triGroups(self):
+        return _DistElemGroupsProxy(self, TriList, self.stepsMesh.getTaggedTriangles)
+
+    @property
+    def vertGroups(self):
+        return _DistElemGroupsProxy(self, VertList, self.stepsMesh.getTaggedVertices)
+
+    @staticmethod
+    def _use_gmsh():
+        return stepslib._py_DistMesh._use_gmsh()
+
+
+class Reference(nutils.UsingObjects(nutils.Optional(_BaseTetMesh)), nutils.SolverPathObject, nutils.Facade):
     """Base class for all element references.
 
     :param idx: Index of the element
     :type idx: int
     :param mesh: Mesh object that contains the element
-    :type mesh: :py:class:`TetMesh` or None
+    :type mesh: Union[:py:class:`TetMesh`, :py:class:`DistMesh`, None]
 
     If mesh is not provided, it will be inferred, if possible, from context managers
     (see :py:class:`TetMesh`).
@@ -1156,20 +1703,29 @@ class Reference(nutils.UsingObjects(nutils.Optional(TetMesh)), nutils.SolverPath
     The actual index of the element can be accessed with the idx attribute.
     """
 
+    def __new__(cls, idx, mesh=None, _newCalled=False, **kwargs):
+        # TetReference, TriReference, etc. are facades to their subclasses, the user always uses
+        # the main class but the appropriate subclass is used for object instantiation.
+
+        if cls not in Reference.__subclasses__() + _DistReference.__subclasses__() or _newCalled:
+            return super(Reference, cls).__new__(cls)
+
+        idx, mesh = cls._getIdxAndMeshFromParams(idx, mesh)
+
+        if mesh.__class__ == DistMesh:
+            return cls._distCls.__new__(cls._distCls, idx, mesh=mesh, _newCalled=True, **kwargs)
+        else:
+            return cls.__new__(cls, idx, mesh=mesh, _newCalled=True, **kwargs)
+
     def __init__(self, idx, mesh=None, anonymous=False, *args, **kwargs):
         if not anonymous:
             # Only call parent __init__ if we need the reference to be named
             super().__init__(*args, addAsElement=False, **kwargs)
-        if mesh is None:
-            (mesh,) = self._getUsedObjects(addAsElement=False)
-        if not isinstance(mesh, TetMesh):
-            raise TypeError(f'Expected a TetMesh object, got {mesh} instead.')
+        idx, mesh = self._getIdxAndMeshFromParams(idx, mesh)
         self.mesh = mesh
-        self.idx = self._getActualIdx(idx, mesh)
-        """Index of the element
-
-        :Type: int, read-only
-        """
+        self._idx = idx
+        self._callKwargs = {}
+        self._cloneArgs = dict(mesh=self.mesh)
 
     def toList(self):
         """Get a list holding only this element
@@ -1177,17 +1733,41 @@ class Reference(nutils.UsingObjects(nutils.Optional(TetMesh)), nutils.SolverPath
         :returns: A list with only this element
         :rtype: :py:class:`RefList`
         """
-        return self.__class__._lstCls([self], mesh=self.mesh)
+        return self.__class__._lstCls([self], **self._cloneArgs)
+
+    @property
+    def idx(self):
+        """Index of the element
+
+        :Type: int, read-only
+        """
+        return self._idx
+
+    @classmethod
+    def _getIdxAndMeshFromParams(cls, idx, mesh):
+        if mesh is None:
+            # Try to infer the mesh from context-managers
+            mesh = nutils.UsableObject._getUsedObjectOfClass(_BaseTetMesh)
+            if mesh is None:
+                # Try to infer the mesh from the idx argument
+                if isinstance(idx, Reference):
+                    mesh = idx.mesh
+                else:
+                    raise Exception('Cannot infer which mesh is associated with the reference.')
+        if not isinstance(mesh, _BaseTetMesh):
+            raise TypeError(f'Expected a TetMesh or DistMesh object, got {mesh} instead.')
+        idx = cls._getActualIdx(idx, mesh)
+        return idx, mesh
 
     @classmethod
     def _getActualIdx(cls, idx, mesh):
         """Return the integer idx."""
-        if isinstance(idx, Reference) and idx.__class__ == cls:
+        if isinstance(idx, cls):
             if mesh != idx.mesh:
                 raise Exception(
                     f'Cannot create a reference from a reference related to a different mesh.'
                 )
-            idx = idx.idx
+            idx = idx._idx
         if not isinstance(idx, numbers.Integral):
             raise TypeError(f'Expected an integer index, got {idx} instead.')
         return idx
@@ -1197,21 +1777,21 @@ class Reference(nutils.UsingObjects(nutils.Optional(TetMesh)), nutils.SolverPath
         pass
 
     def __hash__(self):
-        return hash((id(self.mesh), self.idx))
+        return hash((id(self.mesh), self._idx))
 
     def __eq__(self, other):
-        return isinstance(other, self.__class__) and self.mesh == other.mesh and self.idx == other.idx
+        return isinstance(other, self.__class__) and self.mesh == other.mesh and self._idx == other._idx
 
     def __repr__(self):
-        return f'{self.__class__._locStr}({self.idx})'
+        return f'{self.__class__._locStr}({self._idx})'
 
     def _solverId(self):
         """Return the id that is used to identify an object in the solver."""
-        return (self.idx,)
+        return (self._idx,)
 
     def _simPathAutoMetaData(self):
         """Return a dictionary with string keys and string or numbers values."""
-        mtdt = {'loc_type': self.__class__._locStr, 'loc_id': self.idx}
+        mtdt = {'loc_type': self.__class__._locStr, 'loc_id': self._idx}
         # Add information about parent comp or patch
         parent = self._getPhysicalLocation()
         if parent is not None:
@@ -1220,13 +1800,76 @@ class Reference(nutils.UsingObjects(nutils.Optional(TetMesh)), nutils.SolverPath
         return mtdt
 
 
+class _DistReference(Reference):
+    _FACADE_TITLE_STR = 'Only available for references defined in distributed tetrahedral meshes'
+
+    def __init__(self, *args, local=False, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._local = local
+        self._callKwargs['local'] = self._local
+        self._cloneArgs['local'] = self._local
+
+    def isLocal(self):
+        """Return whether the reference uses a local index
+
+        :rtype: bool
+        """
+        return self._local
+
+    def toLocal(self):
+        """Get the local version of the reference
+
+        If the reference is local, it returns itself. If the reference is global, and if the element
+        exists in the current MPI process, a local reference to it is returned. Otherwise, 
+        `None` is returned. The returned reference is thus different for each MPI process.
+
+        :rtype: :py:class:`Reference`
+        """
+        if self._local:
+            return self
+        method = getattr(self.mesh.stepsMesh, f'get{self._locStr}LocalIndex')
+        ind = method(self._idx)
+        if ind is None:
+            return None
+        else:
+            return self.__class__(ind, mesh=self.mesh, local=True)
+
+    def toGlobal(self):
+        """Get the global version of the reference
+
+        If the reference is not local, it returns itself. Otherwise, the local index of the original
+        reference is converted to global mesh index and the corresponding global reference is returned.
+
+        :rtype: :py:class:`Reference`
+        """
+        if not self._local:
+            return self
+        method = getattr(self.mesh.stepsMesh, f'get{self._locStr}GlobalIndex')
+        return self.__class__(method(self._idx), mesh=self.mesh, local=False)
+
+    def __hash__(self):
+        return hash((id(self.mesh), self._idx, self._local))
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and\
+            (self.mesh, self._idx, self._local) == (other.mesh, other._idx, other._local)
+
+    def __repr__(self):
+        if self._local:
+            return f'Local{self.__class__._locStr}({self._idx})'
+        else:
+            return super().__repr__()
+
+
+@nutils.FreezeAfterInit
 class TetReference(Reference):
     """Convenience class for accessing properties of a tetrahedron
 
     :param idx: Index of the tetrahedron
     :type idx: int
     :param mesh: Mesh object that contains the tetrahedron
-    :type mesh: :py:class:`TetMesh` or None
+    :type mesh: Union[:py:class:`TetMesh`, :py:class:`DistMesh`, None]
 
     If mesh is not provided, it will be inferred, if possible, from context managers
     (see :py:class:`TetMesh`).
@@ -1235,11 +1878,21 @@ class TetReference(Reference):
     _locStr = 'Tet'
 
     def __init__(self, idx, mesh=None, *args, **kwargs):
-        if mesh is None:
-            (mesh,) = self._getUsedObjects(addAsElement=False)
-        if hasattr(idx, '__iter__') and len(idx) == 3:
-            idx = mesh.stepsMesh.findTetByPoint(list(idx))
         super().__init__(idx, mesh=mesh, *args, **kwargs)
+
+    @classmethod
+    def _getActualIdx(cls, idx, mesh):
+        """Return the integer idx."""
+        try:
+            idx = super()._getActualIdx(idx, mesh)
+        except TypeError as ex:
+            if hasattr(idx, '__iter__') and len(idx) == 3:
+                idx = mesh.stepsMesh.findTetByPoint(list(idx))
+                if idx == UNKNOWN_TET:
+                    raise Exception(f'No tetrahedron at position {idx}.')
+            else:
+                raise ex
+        return idx
 
     def __getattr__(self, name):
         """Handle the references to species, reactions, or diffusion rules."""
@@ -1261,8 +1914,8 @@ class TetReference(Reference):
 
         :type: :py:class:`TetList`, read-only
         """
-        inds = self.mesh.stepsMesh.getTetTetNeighb(self.idx)
-        return TetList([ind for ind in inds if ind != UNKNOWN_TET], mesh=self.mesh)
+        inds = self.mesh.stepsMesh.getTetTetNeighb(self._idx, **self._callKwargs)
+        return TetList([ind for ind in inds if ind != UNKNOWN_TET], **self._cloneArgs)
 
     @property
     def faces(self):
@@ -1270,7 +1923,7 @@ class TetReference(Reference):
 
         :type: :py:class:`TriList`, read-only
         """
-        return TriList(self.mesh.stepsMesh.getTetTriNeighb(self.idx), mesh=self.mesh)
+        return TriList(self.mesh.stepsMesh.getTetTriNeighb(self._idx, **self._callKwargs), **self._cloneArgs)
 
     @property
     def center(self):
@@ -1278,7 +1931,7 @@ class TetReference(Reference):
 
         :type: :py:class:`Point`, read-only
         """
-        return Point(*self.mesh.stepsMesh.getTetBarycenter(self.idx))
+        return Point(*self.mesh.stepsMesh.getTetBarycenter(self._idx, **self._callKwargs))
 
     @property
     def verts(self):
@@ -1286,7 +1939,7 @@ class TetReference(Reference):
 
         :type: :py:class:`VertList`, read-only
         """
-        return VertList(self.mesh.stepsMesh.getTet(self.idx), mesh=self.mesh)
+        return VertList(self.mesh.stepsMesh.getTet(self._idx, **self._callKwargs), **self._cloneArgs)
 
     @property
     def comp(self):
@@ -1294,11 +1947,16 @@ class TetReference(Reference):
 
         :type: :py:class:`Comp` or None, read-only
         """
-        c = self.mesh.stepsMesh.getTetComp(self.idx)
-        if c is None:
-            return None
-        else:
-            return getattr(self.mesh, c.getID())
+        try:
+            c = self.mesh.stepsMesh.getTetComp(self._idx, **self._callKwargs)
+            if c is None:
+                return None
+            else:
+                return getattr(self.mesh, c.getID())
+        except AttributeError as ex:
+            # Since comp is called in __getattr__, raising an AttributeError here can lead to
+            # infinite recursion.
+            raise Exception(ex)
 
     @property
     def Vol(self):
@@ -1306,7 +1964,7 @@ class TetReference(Reference):
 
         :type: float, read-only
         """
-        return self.mesh.stepsMesh.getTetVol(self.idx)
+        return self.mesh.stepsMesh.getTetVol(self._idx, **self._callKwargs)
 
     @property
     def qualityRER(self):
@@ -1314,7 +1972,7 @@ class TetReference(Reference):
 
         :type: float, read-only
         """
-        return self.mesh.stepsMesh.getTetQualityRER(self.idx)
+        return self.mesh.stepsMesh.getTetQualityRER(self._idx, **self._callKwargs)
 
     def _getPhysicalLocation(self):
         """Return the location associated with the reference (comp for tet, patch for tri)."""
@@ -1325,13 +1983,21 @@ class TetReference(Reference):
         return TetReference._locStr
 
 
+class _DistTetReference(TetReference, _DistReference):
+    pass
+
+
+TetReference._distCls = _DistTetReference
+
+
+@nutils.FreezeAfterInit
 class TriReference(Reference):
     """Convenience class for accessing properties of a triangle
 
     :param idx: Index of the triangle
     :type idx: int
     :param mesh: Mesh object that contains the triangle
-    :type mesh: :py:class:`TetMesh` or None
+    :type mesh: Union[:py:class:`TetMesh`, :py:class:`DistMesh`, None]
 
     If mesh is not provided, it will be inferred, if possible, from context managers
     (see :py:class:`TetMesh`).
@@ -1362,7 +2028,7 @@ class TriReference(Reference):
 
         :type: :py:class:`VertList`, read-only
         """
-        return VertList(self.mesh.stepsMesh.getTri(self.idx), mesh=self.mesh)
+        return VertList(self.mesh.stepsMesh.getTri(self._idx, **self._callKwargs), **self._cloneArgs)
 
     @property
     def center(self):
@@ -1370,7 +2036,7 @@ class TriReference(Reference):
 
         :type: :py:class:`Point`, read-only
         """
-        return Point(*self.mesh.stepsMesh.getTriBarycenter(self.idx))
+        return Point(*self.mesh.stepsMesh.getTriBarycenter(self._idx, **self._callKwargs))
 
     @property
     def Area(self):
@@ -1378,7 +2044,7 @@ class TriReference(Reference):
 
         :type: float, read-only
         """
-        return self.mesh.stepsMesh.getTriArea(self.idx)
+        return self.mesh.stepsMesh.getTriArea(self._idx, **self._callKwargs)
 
     @property
     def tetNeighbs(self):
@@ -1386,8 +2052,8 @@ class TriReference(Reference):
 
         :type: :py:class:`TetList`, read-only
         """
-        inds = self.mesh.stepsMesh.getTriTetNeighb(self.idx)
-        return TetList([ind for ind in inds if ind != UNKNOWN_TRI], mesh=self.mesh)
+        inds = self.mesh.stepsMesh.getTriTetNeighb(self._idx, **self._callKwargs)
+        return TetList([ind for ind in inds if ind != UNKNOWN_TRI], **self._cloneArgs)
 
     @property
     def patch(self):
@@ -1395,7 +2061,7 @@ class TriReference(Reference):
 
         :type: :py:class:`Patch` or None, read-only
         """
-        p = self.mesh.stepsMesh.getTriPatch(self.idx)
+        p = self.mesh.stepsMesh.getTriPatch(self._idx, **self._callKwargs)
         if p is None:
             return None
         else:
@@ -1407,7 +2073,7 @@ class TriReference(Reference):
 
         :type: :py:class:`VertList`, read-only
         """
-        return BarList(self.mesh.stepsMesh.getTriBars(self.idx), mesh=self.mesh)
+        return BarList(self.mesh.stepsMesh.getTriBars(self._idx, **self._callKwargs), **self._cloneArgs)
 
     @property
     def norm(self):
@@ -1415,7 +2081,7 @@ class TriReference(Reference):
 
         :type: :py:class:`Point`, read-only
         """
-        return Point(*self.mesh.stepsMesh.getTriNorm(self.idx))
+        return Point(*self.mesh.stepsMesh.getTriNorm(self._idx, **self._callKwargs))
 
     def _getPhysicalLocation(self):
         """Return the location associated with the reference (comp for tet, patch for tri)."""
@@ -1426,13 +2092,21 @@ class TriReference(Reference):
         return TriReference._locStr
 
 
+class _DistTriReference(TriReference, _DistReference):
+    pass
+
+
+TriReference._distCls = _DistTriReference
+
+
+@nutils.FreezeAfterInit
 class BarReference(Reference):
     """Convenience class for accessing properties of a bar
 
     :param idx: Index of the bar
     :type idx: int
     :param mesh: Mesh object that contains the bar
-    :type mesh: :py:class:`TetMesh` or None
+    :type mesh: Union[:py:class:`TetMesh`, :py:class:`DistMesh`, None]
 
     If mesh is not provided, it will be inferred, if possible, from context managers
     (see :py:class:`TetMesh`).
@@ -1449,7 +2123,7 @@ class BarReference(Reference):
 
         :type: :py:class:`VertList`, read-only
         """
-        return VertList(self.mesh.stepsMesh.getBar(self.idx), mesh=self.mesh)
+        return VertList(self.mesh.stepsMesh.getBar(self._idx, **self._callKwargs), **self._cloneArgs)
 
     @property
     def center(self):
@@ -1457,6 +2131,14 @@ class BarReference(Reference):
         return Point(*((v1 + v2) / 2))
 
 
+class _DistBarReference(BarReference, _DistReference):
+    pass
+
+
+BarReference._distCls = _DistBarReference
+
+
+@nutils.FreezeAfterInit
 class VertReference(Reference, Point):
     """Convenience class for accessing properties of a vertex
 
@@ -1465,7 +2147,7 @@ class VertReference(Reference, Point):
     :param idx: Index of the vertex
     :type idx: int
     :param mesh: Mesh object that contains the vertex
-    :type mesh: :py:class:`TetMesh`
+    :type mesh: Union[:py:class:`TetMesh`, :py:class:`DistMesh`, None]
 
     .. note::
         In contrast to other references, VertReference can only be created by explicitely
@@ -1475,38 +2157,55 @@ class VertReference(Reference, Point):
 
     _locStr = 'Vert'
 
-    def __new__(cls, idx, mesh, anonymous=False):
-        if not isinstance(mesh, TetMesh):
-            raise TypeError(f'Expected a TetMesh object, got {mesh} instead.')
+    def __new__(cls, idx, mesh, anonymous=False, *args, _newCalled=False, **kwargs):
+        if not _newCalled:
+            return Reference.__new__(cls, idx, mesh, anonymous=anonymous, *args, **kwargs)
+
+        if not isinstance(mesh, _BaseTetMesh):
+            raise TypeError(f'Expected a TetMesh or DistMesh object, got {mesh} instead.')
         idx = cls._getActualIdx(idx, mesh)
-        return Point.__new__(cls, *mesh.stepsMesh.getVertex(idx))
+        return Point.__new__(cls, 0, 0, 0)
 
     def __init__(self, idx, mesh=None, *args, **kwargs):
         super().__init__(idx, mesh=mesh, *args, **kwargs)
+        self[0:3] = self.mesh.stepsMesh.getVertex(self._idx, **self._callKwargs)
 
     # Need to redefine __hash__ and __eq__ to be sure the Reference version of these methods
     # is called.
     def __hash__(self):
-        return Reference.__hash__(self)
+        return super().__hash__()
 
     def __eq__(self, other):
-        return Reference.__eq__(self, other)
+        return super().__eq__(other)
 
     def __ne__(self, other):
-        return not Reference.__eq__(self, other)
+        return not super().__eq__(other)
+
+    def __repr__(self):
+        return super().__repr__()
+
+    def __str__(self):
+        return super().__repr__()
 
     def _solverStr(self):
         """Return the string that is used as part of method names for this specific object."""
         return VertReference._locStr
 
 
-class RefList(nutils.UsingObjects(nutils.Optional(TetMesh)), nutils.SolverPathObject):
+class _DistVertReference(VertReference, _DistReference):
+    pass
+
+
+VertReference._distCls = _DistVertReference
+
+
+class RefList(nutils.UsingObjects(nutils.Optional(_BaseTetMesh)), nutils.SolverPathObject, nutils.Facade):
     """Base convenience class for geometrical element lists
 
     :param lst: The list of elements
     :type lst: Iterable[int] or range or Iterable[:py:class:`Reference`] or :py:class:`RefList`
     :param mesh: Mesh object that contains the elements
-    :type mesh: :py:class:`TetMesh` or None
+    :type mesh: Union[:py:class:`TetMesh`, :py:class:`DistMesh`, None]
 
     If mesh is not provided, it will be inferred, if possible, from context managers
     (see :py:class:`TetMesh`).
@@ -1550,51 +2249,84 @@ class RefList(nutils.UsingObjects(nutils.Optional(TetMesh)), nutils.SolverPathOb
         def __contains__(self, key):
             return key in self._optimData
 
+    def __new__(cls, lst=None, mesh=None, _immutable=False, _newCalled=False, **kwargs):
+        # TetList, TriList, etc. are facades to their subclasses, the user always uses the main class
+        # but the appropriate subclass is used for object instantiation.
+
+        if cls not in RefList.__subclasses__() or _newCalled:
+            return super(RefList, cls).__new__(cls)
+
+        if mesh is None:
+            # Try to infer the mesh from context-managers
+            mesh = nutils.UsableObject._getUsedObjectOfClass(_BaseTetMesh)
+            # Try to infer the mesh from the lst argument
+            if mesh is None:
+                # If lst is a generator, do not consume it by trying to infer the mesh
+                lst = None if isinstance(lst, types.GeneratorType) else lst
+                lst, mesh = cls._getLstAndMeshFromParams(lst, mesh)
+
+        if mesh.__class__ == DistMesh:
+            return cls._distCls.__new__(
+                cls._distCls, lst, mesh=mesh, _immutable=_immutable, _newCalled=True, **kwargs
+            )
+        else:
+            return cls.__new__(cls, lst, mesh=mesh, _immutable=_immutable, _newCalled=True, **kwargs)
+
     def __init__(self, lst, mesh=None, _immutable=False, *args, **kwargs):
         super().__init__(*args, addAsElement=False, **kwargs)
         if mesh is None:
             (mesh,) = self._getUsedObjects(addAsElement=False)
-        elif not isinstance(mesh, TetMesh):
-            raise TypeError(f'Expected a TetMesh object, got a {type(mesh)} instead.')
-        self.mesh = mesh
+        elif not isinstance(mesh, _BaseTetMesh):
+            raise TypeError(f'Expected a TetMesh or DistMesh object, got a {type(mesh)} instead.')
 
-        if lst.__class__ == self.__class__:
-            self.lst = copy.copy(lst.lst)
-            self.mesh = lst.mesh
-        elif isinstance(lst, range):
-            self.lst = lst
-        elif hasattr(lst, '__iter__'):
-            lst = list(lst)
-            self.lst = self._getIdxLst(lst)
-            if len(lst) > 0 and isinstance(lst[0], self.__class__._refCls):
-                self.mesh = lst[0].mesh
-        else:
-            raise TypeError(f'Cannot create an element list from a {type(lst)}')
+        self.lst, self.mesh = self._getLstAndMeshFromParams(lst, mesh)
+
         self._immutable = _immutable
         # Optimization data wrapper, used as a context manager when modifying the list
         self._optimCM = RefList._OptimizationCM(self)
-
-        if self.mesh is None:
-            raise Exception(f'Unable to identify which mesh should the list be bound to.')
+        # Keyword dict to initialize a list with the same parameters as this one
+        self._cloneArgs = dict(mesh=self.mesh)
 
     @classmethod
     def _getIdxLst(cls, lst):
         lst = list(lst)
         if all(isinstance(e, numbers.Integral) for e in lst):
             return lst
-        if all(isinstance(e, cls._refCls) for e in lst):
-            return [e.idx for e in lst]
+        elif all(isinstance(e, cls._refCls) for e in lst):
+            return [e._idx for e in lst]
         else:
             raise TypeError(f'Cannot use {lst} to initialize a list of {cls._refCls}.')
 
     @classmethod
     def _toRefList(cls, lst, mesh):
         if isinstance(lst, RefList):
-            if lst.__class__ != cls:
+            if not isinstance(lst, cls):
                 raise TypeError(f'Expected a {cls}, got a {lst.__class__} instead.')
             return lst
         else:
             return cls(lst, mesh)
+
+    @classmethod
+    def _getLstAndMeshFromParams(cls, lst, mesh):
+        actualLst = []
+        actualMesh = mesh
+        if cls in lst.__class__.__mro__:
+            actualMesh = lst.mesh
+            actualLst = copy.copy(lst.lst)
+        elif isinstance(lst, range):
+            actualLst = lst
+        elif hasattr(lst, '__iter__'):
+            lst = list(lst)
+            actualLst = cls._getIdxLst(lst)
+            if len(lst) > 0 and isinstance(lst[0], cls._refCls):
+                actualMesh = lst[0].mesh
+        elif lst is not None:
+            raise TypeError(f'Cannot create an element list from a {type(lst)}')
+
+        if actualMesh is None:
+            raise Exception(f'Unable to identify which mesh should the list be bound to.')
+
+        return actualLst, actualMesh
 
     def _modify(self):
         """Return a context manager and signal that the wrapped statements will modify the list"""
@@ -1627,9 +2359,9 @@ class RefList(nutils.UsingObjects(nutils.Optional(TetMesh)), nutils.SolverPathOb
         """
         idxres = self.lst[key]
         if isinstance(idxres, (list, range)):
-            return self.__class__(idxres, mesh=self.mesh)
+            return self.__class__(idxres, **self._cloneArgs)
         else:
-            return self.__class__._refCls(idxres, mesh=self.mesh)
+            return self.__class__._refCls(idxres, **self._cloneArgs)
 
     def __iter__(self):
         """Get an iterator over the list elements
@@ -1653,7 +2385,7 @@ class RefList(nutils.UsingObjects(nutils.Optional(TetMesh)), nutils.SolverPathOb
         :meta public:
         """
         for idx in self.lst:
-            yield self.__class__._refCls(idx, mesh=self.mesh, anonymous=True)
+            yield self.__class__._refCls(idx, **self._cloneArgs, anonymous=True)
 
     def append(self, e):
         """Append an element to the list
@@ -1670,7 +2402,7 @@ class RefList(nutils.UsingObjects(nutils.Optional(TetMesh)), nutils.SolverPathOb
         self.lst = self._getLst()
         # Modifying the list
         with self._modify():
-            self.lst.append(e.idx)
+            self.lst.append(e._idx)
 
     _ElemsAsSet_K = 'ElemsAsSet'
 
@@ -1693,13 +2425,11 @@ class RefList(nutils.UsingObjects(nutils.Optional(TetMesh)), nutils.SolverPathOb
 
         :meta public:
         """
-        if isinstance(elem, Reference):
-            if not isinstance(elem, self.__class__._refCls):
-                return False
+        if isinstance(elem, self.__class__._refCls):
             # Optimization
             if RefList._ElemsAsSet_K not in self._optimCM:
                 self._optimCM[RefList._ElemsAsSet_K] = set(self.lst)
-            return elem.idx in self._optimCM[RefList._ElemsAsSet_K]
+            return elem._idx in self._optimCM[RefList._ElemsAsSet_K]
         else:
             return False
 
@@ -1733,12 +2463,12 @@ class RefList(nutils.UsingObjects(nutils.Optional(TetMesh)), nutils.SolverPathOb
                 raise Exception(
                     f'Cannot retrieve the index of an element that is associated to a different mesh.'
                 )
-            return self.lst.index(elem.idx)
+            return self.lst.index(elem._idx)
         else:
             raise TypeError(f'Expected a {self.__class__._refCls}, got {elem} instead.')
 
     def _checkSameType(self, other):
-        if not isinstance(other, self.__class__):
+        if other.__class__ != self.__class__:
             raise TypeError('Cannot combine lists of different types.')
         if self.mesh is not other.mesh:
             raise Exception('Cannot combine lists associated to different meshes.')
@@ -1765,7 +2495,7 @@ class RefList(nutils.UsingObjects(nutils.Optional(TetMesh)), nutils.SolverPathOb
         self._checkSameType(other)
         s2 = set(other.lst)
         res = [i for i in self.lst if i in s2]
-        return self.__class__(res, mesh=self.mesh)
+        return self.__class__(res, **self._cloneArgs)
 
     def __or__(self, other):
         """Compute the union of two lists
@@ -1787,7 +2517,7 @@ class RefList(nutils.UsingObjects(nutils.Optional(TetMesh)), nutils.SolverPathOb
         self._checkSameType(other)
         s1 = set(self.lst)
         res = self._getLst() + [j for j in other.lst if j not in s1]
-        return self.__class__(res, mesh=self.mesh)
+        return self.__class__(res, **self._cloneArgs)
 
     def __sub__(self, other):
         """Compute the substraction of one list from another
@@ -1811,7 +2541,7 @@ class RefList(nutils.UsingObjects(nutils.Optional(TetMesh)), nutils.SolverPathOb
         self._checkSameType(other)
         s2 = set(other.lst)
         res = [i for i in self.lst if i not in s2]
-        return self.__class__(res, mesh=self.mesh)
+        return self.__class__(res, **self._cloneArgs)
 
     def __xor__(self, other):
         """Compute the symetric difference of two lists
@@ -1836,7 +2566,7 @@ class RefList(nutils.UsingObjects(nutils.Optional(TetMesh)), nutils.SolverPathOb
         self._checkSameType(other)
         s1, s2 = set(self.lst), set(other.lst)
         res = [i for i in self.lst if i not in s2] + [j for j in other.lst if j not in s1]
-        return self.__class__(res, mesh=self.mesh)
+        return self.__class__(res, **self._cloneArgs)
 
     def __add__(self, other):
         """Concatenate two lists
@@ -1858,7 +2588,7 @@ class RefList(nutils.UsingObjects(nutils.Optional(TetMesh)), nutils.SolverPathOb
         :meta public:
         """
         self._checkSameType(other)
-        return self.__class__(self._getLst() + other._getLst(), mesh=self.mesh)
+        return self.__class__(self._getLst() + other._getLst(), **self._cloneArgs)
 
     def __eq__(self, other):
         """Test for the equality of two lists
@@ -1910,13 +2640,86 @@ class RefList(nutils.UsingObjects(nutils.Optional(TetMesh)), nutils.SolverPathOb
         return iter(self)
 
 
+class _DistRefList(RefList):
+    """Base class for distributed element lists
+
+    Distributed lists can either be constituted of local or global indices
+    """
+
+    _FACADE_TITLE_STR = 'Only available for lists defined in distributed tetrahedral meshes'
+
+    _LocalList = 'LocalList'
+    _GlobalList = 'GlobalList'
+
+    def __init__(self, *args, local=False, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._local = local
+        self._cloneArgs['local'] = self._local
+
+    def isLocal(self):
+        """Return whether the list is composed of local element indices
+
+        :returns: ``True`` if the list is local
+        :rtype: bool
+        """
+        return self._local
+
+    def toLocal(self):
+        """Get the local version of a distributed list
+
+        If the list is local, it returns itself. Otherwise, the orginal list is filtered and only
+        the elements that are hosted by the current MPI process are added to the local list, with
+        their local index. The returned list is thus different for each MPI process.
+
+        :returns: A local version of the list
+        :rtype: :py:class:`RefList`
+        """
+        if self._local:
+            return self
+        if _DistRefList._LocalList not in self._optimCM:
+            method = getattr(self.mesh.stepsMesh, f'get{self._refCls._locStr}LocalIndex')
+            self._optimCM[_DistRefList._LocalList] = self.__class__(
+                [ind for ind in map(method, self.indices) if ind is not None],
+                mesh=self.mesh,
+                local=True
+            )
+        return self._optimCM[_DistRefList._LocalList]
+
+    def toGlobal(self):
+        """Get the global version of a distributed list
+
+        If the list is not local, it returns itself. Otherwise, the local indices of the original
+        list are converted to global mesh indices and the list of these global indices is returned.
+
+        :returns: A global version of the list
+        :rtype: :py:class:`RefList`
+        """
+        if not self._local:
+            return self
+        if _DistRefList._GlobalList not in self._optimCM:
+            method = getattr(self.mesh.stepsMesh, f'get{self._refCls._locStr}GlobalIndex')
+            self._optimCM[_DistRefList._GlobalList] = self.__class__(
+                [ind for ind in map(method, self.indices) if ind is not None],
+                mesh=self.mesh,
+                local=False
+            )
+        return self._optimCM[_DistRefList._GlobalList]
+
+    def _checkSameType(self, other):
+        if self._local != other._local:
+            raise TypeError('Cannot combine local and global index lists.')
+        return super()._checkSameType(other)
+
+
+@nutils.FreezeAfterInit
 class TetList(RefList):
     """Convenience class for tetrahedron lists
 
     :param lst: The list of tetrahedrons
     :type lst: Iterable[int] or range or Iterable[:py:class:`TetReference`] or :py:class:`TetList`
     :param mesh: Mesh object that contains the elements
-    :type mesh: :py:class:`TetMesh` or None
+    :type mesh: Union[:py:class:`TetMesh`, :py:class:`DistMesh`, None]
 
     If `lst` is omitted, the list will be initialized to an empty list.
 
@@ -1929,9 +2732,10 @@ class TetList(RefList):
     """
 
     _refCls = TetReference
+    _dim = 3
 
     def __init__(self, lst=None, mesh=None, _immutable=False, *args, **kwargs):
-        super().__init__(lst if lst is not None else [], mesh, _immutable, *args, **kwargs)
+        super().__init__(lst, mesh, _immutable, *args, **kwargs)
 
     def __getitem__(self, key):
         """Access one or several tetrahedron(s) from the list
@@ -1966,8 +2770,9 @@ class TetList(RefList):
         except TypeError:
             if hasattr(key, '__iter__') and len(key) == 3:
                 idx = self.mesh.stepsMesh.findTetByPoint(list(key))
-                if idx != UNKNOWN_TET and idx in self.lst:
-                    return TetReference(idx, mesh=self.mesh)
+                # TODO revert this temporary change for split meshes
+                if idx != UNKNOWN_TET:# and idx in self.lst:
+                    return TetReference(idx, **self._cloneArgs)
                 else:
                     raise KeyError(f'No Tetrahedron exists at position {key} in this list.')
             else:
@@ -2026,7 +2831,8 @@ class TetList(RefList):
 
         if TetList._CurrShell_K not in self._optimCM:
             self._optimCM[TetList._CurrShell_K] = TetList(
-                [tet for tet in self if any(neighb not in self for neighb in tet.neighbs)], mesh=self.mesh
+                [tet for tet in self if any(neighb not in self for neighb in tet.neighbs)],
+                **self._cloneArgs
             )
         shell = self._optimCM[TetList._CurrShell_K]
 
@@ -2034,12 +2840,12 @@ class TetList(RefList):
             newShell = set()
             for tet in shell:
                 for neighb in tet.neighbs:
-                    if neighb.idx not in prevShell:
-                        newShell.add(neighb.idx)
+                    if neighb._idx not in prevShell:
+                        newShell.add(neighb._idx)
             prevShell.update(newShell)
-            newShell = list(newShell)
+            newShell = sorted(newShell)
             self.lst = self._getLst() + newShell
-            shell = TetList(newShell, mesh=self.mesh)
+            shell = TetList(newShell, **self._cloneArgs)
 
         with self._modify():
             self._optimCM[TetList._CurrShell_K] = shell
@@ -2061,11 +2867,11 @@ class TetList(RefList):
                 for tet in self
                 if any(neighb not in self for neighb in tet.neighbs) or len(tet.neighbs) < 4
             ],
-            mesh=self.mesh,
+            **self._cloneArgs,
         )
         shell.dilate(d - 1)
         with self._modify():
-            self.lst = [tet.idx for tet in self if tet not in shell]
+            self.lst = [tet._idx for tet in self if tet not in shell]
 
     _CurrSurface_K = 'CurrSurface'
     _LastSurface_K = 'LastSurface'
@@ -2079,23 +2885,21 @@ class TetList(RefList):
         :type: :py:class:`TriList`, read-only
         """
         if TetList._CurrSurface_K not in self._optimCM:
-            if hasattr(self, TetList._LastSurface_K):
+            if TetList._LastSurface_K in self._optimCM:
                 # Only compute the changes due to the addition or removal of tetrahedrons
-                oldLst, oldSurf = getattr(self, TetList._LastSurface_K)
+                oldLst, oldSurf = self._optimCM[TetList._LastSurface_K]
                 surf = set(oldSurf)
-                for tet in TetList(oldLst, mesh=self.mesh) ^ self:
+                for tet in TetList(oldLst, **self._cloneArgs) ^ self:
                     surf ^= set(tet.faces)
             else:
                 # Compute the surface from scratch
                 surf = set()
-                for tet in set(self):
+                for tet in sorted(set(self), key=lambda x:x._idx):
                     surf ^= set(tet.faces)
             # Keep the surface until next list change
-            self._optimCM[TetList._CurrSurface_K] = TriList(sorted(surf, key=lambda x: x.idx), mesh=self.mesh)
+            self._optimCM[TetList._CurrSurface_K] = TriList(sorted(surf, key=lambda x: x._idx), **self._cloneArgs)
             # Keep a version of the current list and surface, for diff computation later
-            setattr(
-                self, TetList._LastSurface_K, (copy.copy(self.lst), self._optimCM[TetList._CurrSurface_K])
-            )
+            self._optimCM[TetList._LastSurface_K] = (copy.copy(self.lst), self._optimCM[TetList._CurrSurface_K])
         return self._optimCM[TetList._CurrSurface_K]
 
     @property
@@ -2106,9 +2910,9 @@ class TetList(RefList):
             If the list contains duplicate elements, they will be counted only once in the
             total volume.
 
-        :type: float
+        :type: float, read-only
         """
-        return sum(tet.Vol for tet in set(self))
+        return sum(tet.Vol for tet in sorted(set(self), key=lambda t: t._idx))
 
     @property
     def tris(self):
@@ -2116,7 +2920,7 @@ class TetList(RefList):
 
         :type: :py:class:`TriList`, read-only
         """
-        tris = TriList([], mesh=self.mesh)
+        tris = TriList([], **self._cloneArgs)
         for tet in self:
             tris |= tet.faces
         return tris
@@ -2139,24 +2943,63 @@ class TetList(RefList):
 
     @nutils.NamedObject.children.getter
     def children(self):
-        allComps = set()
-        for elem in self:
-            c = elem.comp
-            if c is not None:
-                allComps.add(c)
-        allChildren = {}
-        for c in allComps:
-            allChildren.update(c.children)
-        return allChildren
+        try:
+            allComps = set()
+            for elem in self:
+                c = elem.comp
+                if c is not None:
+                    allComps.add(c)
+            allChildren = {}
+            for c in allComps:
+                allChildren.update(c.children)
+            return allChildren
+        except AttributeError as ex:
+            # Since children is called in __getattr__, raising an AttributeError here can lead to
+            # infinite recursion.
+            raise Exception(ex)
 
 
+class _DistTetList(TetList, _DistRefList):
+    """Convenience class for distributed tetrahedron list
+    """
+
+    @TetList.surface.getter
+    def surface(self):
+        if self._local:
+            return TetList.surface.fget(self)
+        else:
+            surf = self.toLocal().surface
+
+            lists = self.mesh._comm.gather(surf.toGlobal().indices, root=0)
+
+            allIdx = TriList([], mesh=self.mesh, local=False)
+            if self.mesh._comm.Get_rank() == 0:
+                for lst in lists:
+                    allIdx ^= TriList(lst, mesh=self.mesh, local=False)
+
+            lst = self.mesh._comm.bcast(allIdx.indices, root=0)
+
+            return TriList(lst, mesh=self.mesh, local=False)
+
+    @TetList.verts.getter
+    def verts(self):
+        verts = VertList([], **self._cloneArgs)
+        for tet in self:
+            verts |= tet.verts
+        return verts
+
+
+TetList._distCls = _DistTetList
+
+
+@nutils.FreezeAfterInit
 class TriList(RefList):
     """Convenience class for triangle lists
 
     :param lst: The list of triangles
     :type lst: Iterable[int] or range or Iterable[:py:class:`TriReference`] or :py:class:`TriList`
     :param mesh: Mesh object that contains the elements
-    :type mesh: :py:class:`TetMesh` or None
+    :type mesh: Union[:py:class:`TetMesh`, :py:class:`DistMesh`, None]
 
     If `lst` is omitted, the list will be initialized to an empty list.
 
@@ -2167,6 +3010,7 @@ class TriList(RefList):
     """
 
     _refCls = TriReference
+    _dim = 2
 
     def __init__(self, lst=None, mesh=None, _immutable=False, *args, **kwargs):
         super().__init__(lst if lst is not None else [], mesh, _immutable, *args, **kwargs)
@@ -2182,7 +3026,7 @@ class TriList(RefList):
         edg = set()
         for tri in self:
             edg ^= set(tri.bars)
-        return BarList(sorted(edg, key=lambda x: x.idx), mesh=self.mesh)
+        return BarList(sorted(edg, key=lambda x: x._idx), **self._cloneArgs)
 
     @property
     def bars(self):
@@ -2190,7 +3034,7 @@ class TriList(RefList):
 
         :type: :py:class:`BarList`, read-only
         """
-        bars = BarList([], mesh=self.mesh)
+        bars = BarList([], **self._cloneArgs)
         for tri in self:
             bars |= tri.bars
         return bars
@@ -2211,30 +3055,49 @@ class TriList(RefList):
             If the list contains duplicate elements, they will be counted only once in the
             total area.
 
-        :type: float
+        :type: float, read-only
         """
-        return sum(tri.Area for tri in set(self))
+        return sum(tri.Area for tri in sorted(set(self), key=lambda t: t._idx))
 
     @nutils.NamedObject.children.getter
     def children(self):
-        allPatches = set()
-        for elem in self:
-            p = elem.patch
-            if p is not None:
-                allPatches.add(p)
-        allChildren = {}
-        for p in allPatches:
-            allChildren.update(p.children)
-        return allChildren
+        try:
+            allPatches = set()
+            for elem in self:
+                p = elem.patch
+                if p is not None:
+                    allPatches.add(p)
+            allChildren = {}
+            for p in allPatches:
+                allChildren.update(p.children)
+            return allChildren
+        except AttributeError as ex:
+            # Since children is called in __getattr__, raising an AttributeError here can lead to
+            # infinite recursion.
+            raise Exception(ex)
 
 
+class _DistTriList(TriList, _DistRefList):
+
+    @TriList.verts.getter
+    def verts(self):
+        verts = VertList([], **self._cloneArgs)
+        for tri in self:
+            verts |= tri.verts
+        return verts
+
+
+TriList._distCls = _DistTriList
+
+
+@nutils.FreezeAfterInit
 class BarList(RefList):
     """Convenience class for bar lists
 
     :param lst: The list of bars
     :type lst: Iterable[int] or range or Iterable[:py:class:`BarReference`] or :py:class:BarList`
     :param mesh: Mesh object that contains the elements
-    :type mesh: :py:class:`TetMesh` or None
+    :type mesh: Union[:py:class:`TetMesh`, :py:class:`DistMesh`, None]
 
     If `lst` is omitted, the list will be initialized to an empty list.
 
@@ -2245,6 +3108,7 @@ class BarList(RefList):
     """
 
     _refCls = BarReference
+    _dim = 1
 
     def __init__(self, lst=None, mesh=None, _immutable=False, *args, **kwargs):
         super().__init__(lst if lst is not None else [], mesh, _immutable, *args, **kwargs)
@@ -2255,19 +3119,27 @@ class BarList(RefList):
 
         :type: :py:class:`VertList`, read-only
         """
-        verts = VertList([], mesh=self.mesh)
+        verts = VertList([], **self._cloneArgs)
         for bar in self:
             verts |= bar.verts
         return verts
 
 
+class _DistBarList(BarList, _DistRefList):
+    pass
+
+
+BarList._distCls = _DistBarList
+
+
+@nutils.FreezeAfterInit
 class VertList(RefList):
     """Convenience class for vertex lists
 
     :param lst: The list of vertices
     :type lst: Iterable[int] or range or Iterable[:py:class:`VertReference`] or :py:class:VertList`
     :param mesh: Mesh object that contains the elements
-    :type mesh: :py:class:`TetMesh` or None
+    :type mesh: Union[:py:class:`TetMesh`, :py:class:`DistMesh`, None]
 
     If `lst` is omitted, the list will be initialized to an empty list.
 
@@ -2278,19 +3150,29 @@ class VertList(RefList):
     """
 
     _refCls = VertReference
+    _dim = 0
 
     def __init__(self, lst=None, mesh=None, _immutable=False, *args, **kwargs):
         super().__init__(lst if lst is not None else [], mesh, _immutable, *args, **kwargs)
 
 
+class _DistVertList(VertList, _DistRefList):
+    pass
+
+
+VertList._distCls = _DistVertList
+
+
 # Add a link from the reference classes to the list class
 for cls in RefList.__subclasses__():
-    cls._refCls._lstCls = cls
+    if cls != _DistRefList:
+        cls._refCls._lstCls = cls
 # Do not leave cls as a global variable
 del cls
 
 
-class ROI(nutils.UsingObjects(TetMesh), nutils.StepsWrapperObject):
+@nutils.FreezeAfterInit
+class ROI(nutils.UsingObjects(_BaseTetMesh), nutils.StepsWrapperObject):
     """Region of Interest class
 
     :param lst: Element list
@@ -2330,9 +3212,9 @@ class ROI(nutils.UsingObjects(TetMesh), nutils.StepsWrapperObject):
     def _FromStepsObject(cls, obj, mesh, name):
         """Create the interface object from a STEPS object."""
         revTypeMap = {
-            sgeom.ELEM_TET: TetReference,
-            sgeom.ELEM_TRI: TriReference,
-            sgeom.ELEM_VERTEX: VertReference,
+            ELEM_TET: TetReference,
+            ELEM_TRI: TriReference,
+            ELEM_VERTEX: VertReference,
         }
         region = cls(_createObj=False, name=name)
         region.stepsROI = obj
@@ -2342,9 +3224,9 @@ class ROI(nutils.UsingObjects(TetMesh), nutils.StepsWrapperObject):
 
     def _createStepsObj(self, mesh, lst):
         typeMap = {
-            TetReference: sgeom.ELEM_TET,
-            TriReference: sgeom.ELEM_TRI,
-            VertReference: sgeom.ELEM_VERTEX,
+            TetReference: ELEM_TET,
+            TriReference: ELEM_TRI,
+            VertReference: ELEM_VERTEX,
         }
         if len(lst) == 0:
             raise Exception('An empty list was given.')
@@ -2352,7 +3234,7 @@ class ROI(nutils.UsingObjects(TetMesh), nutils.StepsWrapperObject):
         if elem.__class__ not in typeMap:
             raise TypeError('Unsupported element type for creating an ROI.')
         tpe = typeMap[elem.__class__]
-        mesh.stepsMesh.addROI(self.name, tpe, [elem.idx for elem in lst])
+        mesh.stepsMesh.addROI(self.name, tpe, [elem._idx for elem in lst])
         return mesh.stepsMesh.getROI(self.name), elem.__class__
 
     def __getitem__(self, key):
@@ -2439,7 +3321,8 @@ class ROI(nutils.UsingObjects(TetMesh), nutils.StepsWrapperObject):
         return {'loc_type': self.__class__._locStr, 'loc_id': self.name}
 
 
-class DiffBoundary(nutils.UsingObjects(TetMesh), nutils.StepsWrapperObject):
+@nutils.FreezeAfterInit
+class DiffBoundary(nutils.UsingObjects(_BaseTetMesh), nutils.StepsWrapperObject):
     """Diffusion Boundary class
 
     Annotation of a group of triangles in a Tetmesh. The triangles form a boundary between two
@@ -2467,7 +3350,14 @@ class DiffBoundary(nutils.UsingObjects(TetMesh), nutils.StepsWrapperObject):
         return [self.stepsDiffBound]
 
     def _createStepsObj(self, mesh):
-        return sgeom.DiffBoundary(self.name, mesh.stepsMesh, [tri.idx for tri in self.lst])
+        if isinstance(mesh, TetMesh):
+            return stepslib._py_DiffBoundary(self.name, mesh.stepsMesh, [tri._idx for tri in self.lst])
+        elif isinstance(mesh, DistMesh):
+            tet1, tet2 = self.lst[0].tetNeighbs
+            comp1 = tet1.comp.name
+            comp2 = tet2.comp.name
+            mesh._getStepsObjects()[0].addDiffusionBoundary(self.name, comp1, comp2, self.lst.indices)
+            return None
 
     def _solverStr(self):
         """Return the string that is used as part of method names for this specific object."""
@@ -2526,6 +3416,7 @@ class DiffBoundary(nutils.UsingObjects(TetMesh), nutils.StepsWrapperObject):
         return {}
 
 
+@nutils.FreezeAfterInit
 class SDiffBoundary(DiffBoundary):
     """Surface Diffusion Boundary class
 
@@ -2551,8 +3442,8 @@ class SDiffBoundary(DiffBoundary):
         super().__init__(lst, *args, **kwargs)
 
     def _createStepsObj(self, mesh):
-        return sgeom.SDiffBoundary(
-            self.name, mesh.stepsMesh, [bar.idx for bar in self.lst], [p.stepsPatch for p in self.patches]
+        return stepslib._py_SDiffBoundary(
+            self.name, mesh.stepsMesh, [bar._idx for bar in self.lst], [p.stepsPatch for p in self.patches]
         )
 
     def _solverStr(self):
@@ -2596,6 +3487,7 @@ class SDiffBoundary(DiffBoundary):
 # Mesh partitioning
 
 
+@nutils.FreezeAfterInit
 class MeshPartition(nutils.Params):
     """Mesh element partition for parallel simulations
 
@@ -2745,6 +3637,41 @@ def MetisPartition(mesh, path, default_tris=None):
     tri_hosts = _getTriPartitionFromTet(mesh, tet_hosts, default_tris)
     return MeshPartition(mesh, tet_hosts=tet_hosts, tri_hosts=tri_hosts)
 
+def GmshPartition(mesh, default_tris=None):
+    """Retrive partition information stored in a pre-partitioned gmsh.
+
+    The mesh needs to be pre-partitioned and stored in a single 
+    Gmsh file with format version 2.2 ascii.
+
+    :param mesh: The mesh to be partitioned
+    :type mesh: :py:class:`TetMesh`
+    :param default_tris: Optional list of triangles that should be partitioned even if they are
+        not part of any patch
+    :type default_tris: :py:class:`TriList`
+
+    :returns: The partition object
+    :rtype: :py:class:`MeshPartition`
+
+    .. note::
+        The triangle partition only takes into account triangles that are part of a
+        :py:class:`Patch`.
+    """
+    tet_hosts = [None] * len(mesh.tets)
+    for k, v in mesh.tetGroups.items():
+        # partitioning tag is the forth one in gmsh v2.2 format
+        # starting from 0
+        if k[0] == 3:
+            # gmsh partition indices start from 1
+            # mpi ranks start from 0
+            partition_rank = k[1] - 1
+            partition_tets = v
+            for tet_ref in partition_tets:
+                tet_hosts[tet_ref._idx] = partition_rank
+    if None in tet_hosts:
+        raise Exception("Partition information not available for one or more tets.")
+
+    tri_hosts = _getTriPartitionFromTet(mesh, tet_hosts, default_tris)
+    return MeshPartition(mesh, tet_hosts=tet_hosts, tri_hosts=tri_hosts)
 
 def MorphPartition(mesh, morph, scale=1e-6, default_tris=None):
     """Partition the mesh using morphological sectioning data
@@ -2788,6 +3715,7 @@ def MorphPartition(mesh, morph, scale=1e-6, default_tris=None):
 # Morph sectioning
 
 
+@nutils.FreezeAfterInit
 class Morph:
     """Morphological sectioning data
 

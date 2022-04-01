@@ -1,7 +1,7 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -22,15 +22,19 @@
 #################################################################################   
 ###
 
+import atexit
+import copy
+import enum
 import heapq
 import importlib
 import math
 import numbers
+import numpy
 import os
 import re
+import sys
 import warnings
 
-import steps.API_1.solver as ssolver
 from steps import stepslib
 
 from . import model as nmodel
@@ -41,7 +45,39 @@ from . import _saving_optim as nsaving_optim
 from . import simcheck as nsimcheck
 
 
-__all__ = ['Simulation', 'SBMLSimulation', 'SimPath', 'MPI']
+__all__ = [
+    'Simulation',
+    'SBMLSimulation',
+    'SimPath',
+    'MPI',
+]
+
+
+###################################################################################################
+# Enums
+
+
+if stepslib._STEPS_USE_DIST_MESH:
+    class KSPNorm(enum.IntEnum):
+        DEFAULT = stepslib._py_KSPNormType.KSP_NORM_DEFAULT
+        NONE = stepslib._py_KSPNormType.KSP_NORM_NONE
+        PRECONDITIONED = stepslib._py_KSPNormType.KSP_NORM_PRECONDITIONED
+        UNPRECONDITIONED = stepslib._py_KSPNormType.KSP_NORM_UNPRECONDITIONED
+        NATURAL = stepslib._py_KSPNormType.KSP_NORM_NATURAL
+
+
+    class SSAMethod(enum.IntEnum):
+        SSA = stepslib._py_SSAMethod.SSA
+        RSSA = stepslib._py_SSAMethod.RSSA
+
+
+    class NextEventSearchMethod(enum.IntEnum):
+        DIRECT = stepslib._py_SearchMethod.DIRECT
+        GIBSON_BRUCK = stepslib._py_SearchMethod.GIBSON_BRUCK
+
+
+    __all__ +=  ['KSPNorm', 'SSAMethod', 'NextEventSearchMethod']
+
 
 ###################################################################################################
 # Exceptions
@@ -65,7 +101,15 @@ class SimPathSolverMissingMethod(Exception):
     pass
 
 
-class SimPathInvalidPath(Exception):
+class SimPathInvalidPath(AttributeError):
+    """
+    :meta private:
+    """
+
+    pass
+
+
+class SolverCallError(Exception):
     """
     :meta private:
     """
@@ -90,6 +134,7 @@ class _SimPathDescr:
             return self
 
         res = [self._getPathValue(path) for path in inst]
+
         return res[0] if len(res) == 1 else res
 
     def __set__(self, inst, val):
@@ -98,7 +143,10 @@ class _SimPathDescr:
             raise SimPathInvalidPath(f'Empty path.')
 
         if hasattr(val, '__iter__'):
-            if len(val) == len(paths):
+            if len(paths) == 1:
+                # The value to be assigned is multidimensional
+                self._setPathValue(paths[0], val)
+            elif len(val) == len(paths):
                 # Assign potentially different values to each path
                 for path, v in zip(paths, val):
                     self._setPathValue(path, v)
@@ -113,7 +161,7 @@ class _SimPathDescr:
             for path in paths:
                 self._setPathValue(path, val)
 
-    def _getFinalPathsFunction(self, finalPaths):
+    def _getFinalPathsFunction(self, finalPaths, prefix='get'):
         """
         Return a function that, when called with no arguments, generates the values associated
         to the paths in finalPaths.
@@ -131,7 +179,7 @@ class _SimPathDescr:
                 fpf = self._getFinalPathsFunction(path)
                 subFuncs.append((noArgWrap(path, fpf), [], {}))
             else:
-                subFuncs.append(self._getFunction(True, path))
+                subFuncs.append(self._getFunction(prefix, path))
 
         return subFuncs
 
@@ -140,8 +188,11 @@ class _SimPathDescr:
         if isinstance(path, nutils.SimPathCombiner):
             return path.func([self._getPathValue(p) for p in path])
         else:
-            fun, params, kwparams = self._getFunction(True, path)
-            return fun(*params, **kwparams)
+            fun, params, kwparams = self._getFunction('get', path)
+            try:
+                return fun(*params, **kwparams)
+            except Exception as e:
+                raise SolverCallError(f'Exception raised during call to solver: {e}')
 
     def _setPathValue(self, path, val):
         """
@@ -151,27 +202,60 @@ class _SimPathDescr:
         if isinstance(path, nutils.SimPathCombiner):
             raise Exception(f'Cannot set simulation paths that involve value combining.')
 
-        fun, params, kwparams = self._getFunction(False, path)
+        # Parameter checks and potential conversions
+        if isinstance(val, nutils.Parameter):
+            param = val
+        else:
+            param = nutils.Parameter(val, name='')
+
+        if self.name in SimPath._PATH_END_UNITS:
+            units = SimPath._PATH_END_UNITS[self.name]
+            if hasattr(units, '__call__'):
+                units = units(path)
+
+            if param._units is not None:
+                # Check units and convert value to appropriate unit
+                val = param.valueIn(units)
+            else:
+                # Set the correct unit to the Parameter and get value
+                param._units = units
+                val = param.value
+        else:
+            if param._units is not None:
+                raise Exception(
+                    f'Parameter {param} with units {param.units} was used to set a value with '
+                    f'no units.'
+                )
+            else:
+                # "Default" behavior
+                val = param.value
+        # Keep track of values that were set with a Parameter
+        path[0]._parameterSimPathCallback(path + (self.name, ), param)
+
+        fun, params, kwparams = self._getFunction('set', path)
         if isinstance(val, nutils.Params):
             args = [a.name if isinstance(a, nutils.NamedObject) else a for a in val.args]
             kwargs = {k: a.name if isinstance(a, nutils.NamedObject) else a for k, a in val.kwargs.items()}
-            fun(*params, *args, **kwparams, **kwargs)
         else:
-            val = path[-1]._solverSetValue(val)
-            fun(*params, val, **kwparams)
+            args = [path[-1]._solverSetValue(self.name, val)]
+            kwargs = {}
+        try:
+            fun(*params, *args, **kwparams, **kwargs)
+        except Exception as e:
+            raise SolverCallError(f'Exception raised during call to solver: {e}')
 
-    def _getFunction(self, isGetter, path):
+    def _getFunction(self, prefix, path):
         """
         Return a pair of function and parameters necessary to get or set values in the solver
         for a specific path.
         """
-
         def wrap(acc, f):
             return lambda x: acc(f(x))
 
         sim, path = path[0], path[1:]
 
-        funcName = 'get' if isGetter else 'set'
+        funcName = prefix
+        isGetter = prefix == 'get'
         params = tuple()
         kwparams = {}
         modifier = None
@@ -278,6 +362,28 @@ class SimPath:
             or (a) vert(ex/ices)""",
         'VClamped': """Whether the potential is clamped at the location (same possible location
             as for ``V``)""",
+    }
+
+    # Declare units associated to some path endings
+    _PATH_END_UNITS = {
+        'Vol': nutils.Units('m^3'),
+        'Area': nutils.Units('m^2'),
+        'K': lambda path: path[2]._getRateUnits(),
+        'D': nutils.Units('m^2 s^-1'),
+        'Count': nutils.Units(''),
+        'Conc': nutils.Units('M'),
+        'Amount': nutils.Units('mol'),
+        'Dcst': nutils.Units('m^2 s^-1'),
+        'Potential': nutils.Units('V'),
+        # TODO upon modifications: If methods for setting capacitance of a triangle are implemented,
+        # check that their units are also F m^-2
+        'Capac': nutils.Units('F m^-2'), 
+        # 'Res': No units for Res because it corresponds to a call with resistance and reversal
+        #        potential
+        'VolRes': nutils.Units('ohm m'),
+        'I': nutils.Units('A'),
+        'IClamp': nutils.Units('A'),
+        'V': nutils.Units('V'),
     }
 
     def __init__(self, _sim, _elems=None):
@@ -591,6 +697,9 @@ class SimPath:
                 for name in names:
                     if name in e.children:
                         res[e][e.children[name]] = {}
+                    elif not hasattr(e.__class__, '_SIMPATH_ONLY_CHILDREN') \
+                            and name in self._sim.model.children:
+                        res[e][self._sim.model.children[name]] = {}
                     else:
                         raise SimPathExtensionError(e, name)
             else:
@@ -630,6 +739,23 @@ class SimPath:
                 res[newElem] = {}
             else:
                 res[e] = self._callElemsTips(subs, params)
+        return res
+
+    def _getTipsAttribute(self, elems, attrName):
+        """
+        Return a list of attribute values from the 'elems' tree
+        """
+        res = []
+        for e, subs in elems.items():
+            if len(subs) == 0:
+                try:
+                    res.append(getattr(e, attrName))
+                except:
+                    raise SimPathInvalidPath(
+                        f'Element {e} does not have any attribute named {attrName}'
+                    )
+            else:
+                res += self._getTipsAttribute(subs, attrName)
         return res
 
     def _walk(self, pre=tuple(), elems=None, expand=True, combine=True):
@@ -702,10 +828,14 @@ class SimPath:
         try:
             return SimPath(self._sim, self._namesExtendElems(self._elems, [name]))
         except SimPathExtensionError as ex:
-            raise SimPathInvalidPath(
-                f'{ex.elem.__class__.__name__} {ex.elem} has no children '
-                f'named {name}, it is not possible to extend the path.'
-            )
+            try:
+                res = self._getTipsAttribute(self._elems, name)
+                return res[0] if len(res) == 1 else res
+            except SimPathExtensionError as ex2:
+                raise SimPathInvalidPath(
+                    f'{ex.elem.__class__.__name__} {ex.elem} has no children or attribute'
+                    f'named {name}, it is not possible to extend the path.'
+                )
 
     def __setattr__(self, name, value):
         """
@@ -807,33 +937,50 @@ class MPI:
     them manually, changing the solver to an MPI-based one does it automatically.
     """
 
-    EF_NONE = stepslib._py_API.EF_NONE
+    EF_NONE = stepslib._py_TetAPI.EF_NONE
     """Possible value for the calcMembPot parameter of solvers that implement EField.
     Means that no EField solver is needed."""
-    EF_DEFAULT = stepslib._py_API.EF_DEFAULT
+    EF_DEFAULT = stepslib._py_TetAPI.EF_DEFAULT
     """Possible value for the calcMembPot parameter of solvers that implement EField.
     Means that serial EField simulation (Tetexact version) should be run on process 0."""
-    EF_DV_BDSYS = stepslib._py_API.EF_DV_BDSYS
+    EF_DV_BDSYS = stepslib._py_TetAPI.EF_DV_BDSYS
     """Possible value for the calcMembPot parameter of solvers that implement EField.
     Means that parallel SuperLU EField solver should be used."""
-    EF_DV_PETSC = stepslib._py_API.EF_DV_PETSC
+    EF_DV_PETSC = stepslib._py_TetAPI.EF_DV_PETSC
     """Possible value for the calcMembPot parameter of solvers that implement EField.
     Means that parallel PETSc EField solver should be used."""
 
-    _rank = None
-    _nhosts = None
-    _smpi = None
-    _smpisolv = None
-    _usingMPI = False
+    _usingMPI = None
     _shouldWrite = True
+
+    _solverNameMapping = {
+        'TetOpSplit': nutils._CYTHON_PREFIX + 'TetOpSplitP',
+        'DistTetOpSplit': nutils._CYTHON_PREFIX + 'DistTetOpSplitP',
+    }
 
     @classmethod
     def _loadInfos(cls):
-        if cls._smpi is None:
-            cls._smpi = importlib.import_module('steps.API_1.mpi')
-            cls._smpisolv = importlib.import_module('steps.API_1.mpi.solver')
-            cls._usingMPI = True
-            cls._shouldWrite = cls._smpi.rank == 0
+        if cls._usingMPI is None:
+            if hasattr(stepslib, 'mpiInit'):
+                stepslib.mpiInit()
+                atexit.register(stepslib.mpiFinish)
+                cls._usingMPI = True
+                cls._shouldWrite = stepslib.getRank() == 0
+
+                # Force stderr flush when an exception is raised.
+                # Without this, under some conditions, if one process raises a python exception,
+                # the corresponding message is not always printed out as it should be.
+                def customHook(tpe, val, bt):
+                    sys.__excepthook__(tpe, val, bt)
+                    sys.stderr.flush()
+                    stepslib.mpiAbort()
+
+                sys.excepthook = customHook
+            else:
+                raise ImportError(
+                    f'Could not load cysteps_mpi.so. Please check that STEPS was built with MPI '
+                    f'support.'
+                )
 
     @nutils.classproperty
     def rank(cls):
@@ -845,7 +992,7 @@ class MPI:
             Accessing this property triggers the importing of MPI related packages
         """
         cls._loadInfos()
-        return cls._smpi.rank
+        return stepslib.getRank()
 
     @nutils.classproperty
     def nhosts(cls):
@@ -857,12 +1004,17 @@ class MPI:
             Accessing this property triggers the importing of MPI related packages
         """
         cls._loadInfos()
-        return cls._smpi.nhosts
+        return stepslib.getNHosts()
 
-    @nutils.classproperty
-    def _solver(cls):
+    @classmethod
+    def _getSolver(cls, name):
         cls._loadInfos()
-        return cls._smpisolv
+        # Solvers that require special mapping
+        if name in cls._solverNameMapping:
+            return getattr(stepslib, cls._solverNameMapping[name])
+        else:
+            # Default case
+            return getattr(stepslib, nutils._CYTHON_PREFIX + name)
 
 
 class _SimulationCheckpointer:
@@ -902,7 +1054,7 @@ class _SimulationCheckpointer:
         self._updateNextSaveTime()
 
     def _save(self, time, _):
-        newName = f'{self._prefix}_{self._sim._runId}_{time}_{self._sim.solver.__class__.__name__}_cp'
+        newName = f'{self._prefix}_{self._sim._runId}_{time}_{self._sim._solverStr}_cp'
         self._sim.checkpoint(newName)
         if self._onlyLast and self._lastName is not None and MPI._shouldWrite:
             os.remove(self._lastName)
@@ -917,7 +1069,8 @@ class _SimulationCheckpointer:
             self._nextTime = self._startTime + self._tind * self._period
 
 
-class Simulation(nutils.NamedObject, nutils.StepsWrapperObject):
+@nutils.FreezeAfterInit
+class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.ParameterizedObject):
     """The main simulation class
 
     A simulation is defined from a model, a geometry, a solver and a random number generator. Once
@@ -928,31 +1081,37 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject):
     :py:func:`toSave` method. The simulation is advanced by calling either :py:func:`step` or
     :py:func:`run`.
 
-    :param solverStr: Name of the solver to be used for the simulation (see below).
-    :type solverStr: str
+    :param solverName: Name of the solver to be used for the simulation (see SERIAL_SOLVERS and
+        PARALLEL_SOLVERS below).
+    :type solverName: str
     :param mdl: The model to be used in the simulation
     :type mdl: :py:class:`steps.API_2.model.Model`
     :param geom: The geometry to be used in the simulation
-    :type geom: Union[:py:class:`steps.API_2.geom.Geometry`, :py:class:`steps.API_2.geom.TetMesh`]
+    :type geom: Union[:py:class:`steps.API_2.geom.Geometry`, :py:class:`steps.API_2.geom.TetMesh`,
+        :py:class:`steps.API_2.geom.DistMesh`]
     :param rng: The random number generator to be used in the simulation
     :type rng: :py:class:`steps.API_2.rng.RNG`
     :param \*args: Positional arguments forwarded to the solver constructor, see
         :py:mod:`steps.API_1.solver` or :py:mod:`steps.API_1.mpi.solver`.
     :param \*\*kwargs: Keyword arguments forwarded to the solver constructor, see
         :py:mod:`steps.API_1.solver` or :py:mod:`steps.API_1.mpi.solver`.
-
-    Available solvers: ``'Wmdirect'``, ``'Wmrssa'``, ``'Wmrk4'``, ``'Tetexact'``, ``'TetODE'``,
-    ``'TetOpSplit'``
     """
 
-    def __init__(self, solverStr, mdl, geom, rng=None, *args, **kwargs):
-        super().__init__()
+    SERIAL_SOLVERS = ['Wmdirect', 'Wmrssa', 'Wmrk4', 'Tetexact', 'TetODE']
+    """Available serial solvers"""
+
+    PARALLEL_SOLVERS = ['TetOpSplit', 'DistTetOpSplit']
+    """Available parallel solvers"""
+
+    def __init__(self, solverName, mdl, geom, rng=None, *args, name=None, **kwargs):
+        super().__init__(name=name)
 
         self._model = mdl
         self._geom = geom
         self._rng = rng
 
-        self.stepsSolver = self._createSolver(solverStr, *args, **kwargs)
+        self._solverStr = solverName
+        self.stepsSolver = self._createSolver(solverName, *args, **kwargs)
 
         self._resultSelectors = []
         self._nextSave = None
@@ -974,8 +1133,8 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject):
     def geom(self):
         """The geometry associated to the simulation
 
-        :type: Union[:py:class:`steps.API_2.geom.Geometry`, :py:class:`steps.API_2.geom.TetMesh`],
-            read-only
+        :type: Union[:py:class:`steps.API_2.geom.Geometry`, :py:class:`steps.API_2.geom.TetMesh`,
+            :py:class:`steps.API_2.geom.DistMesh`] read-only
         """
         return self._geom
 
@@ -1074,12 +1233,13 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject):
         .. note::
             The ``'tetODE'`` solver cannot be reset.
         """
-        if self.stepsSolver.__class__ != ssolver.TetODE:
+        if self.stepsSolver.__class__ != stepslib._py_TetODE:
             self.stepsSolver.reset()
         else:
             warnings.warn(
                 f'Cannot reset a TetODE solver, a new run was started but the solver was not reset.'
             )
+
         # Update data saving structures
         self._newRun()
 
@@ -1198,6 +1358,10 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject):
         # Use geom children as the simulation children
         return self.geom
 
+    def _getSubParameterizedObjects(self):
+        """Return all subobjects that can hold parameters."""
+        return [self.model, self.geom]
+
     def _getStepsObjects(self):
         """Return a list of the steps objects that this named object holds."""
         return [self.stepsSolver]
@@ -1221,18 +1385,22 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject):
     def _createSolver(self, solverStr, *args, **kwargs):
         """Create and return a new solver."""
         # Set up structures depending on model
+        self.model._SetUpMdlDeps()
         self.geom._SetUpMdlDeps(self.model)
 
         stepsGeom = self.geom._getStepsObjects()[0]
 
         # Get the solver class
+        # Check if it is available in cysteps (not cysteps_mpi)
         try:
-            solverCls = getattr(ssolver, solverStr)
+            if solverStr in Simulation.SERIAL_SOLVERS:
+                solverCls = getattr(stepslib, nutils._CYTHON_PREFIX + solverStr)
+            elif solverStr in Simulation.PARALLEL_SOLVERS:
+                solverCls = MPI._getSolver(solverStr)
+            else:
+                raise AttributeError()
         except AttributeError:
-            try:
-                solverCls = getattr(MPI._solver, solverStr)
-            except AttributeError:
-                raise Exception(f'Unknown solver: f{solverStr}')
+            raise Exception(f'Unknown solver: {solverStr}')
 
         # Process arguments
         # Iterate through arguments and unpack nutils.Params if any is present.
@@ -1252,13 +1420,37 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject):
                 rkwargs[key] = arg
 
         stepsRng = self.rng.stepsrng if self.rng is not None else None
-        return solverCls(self.model.stepsModel, stepsGeom, stepsRng, *rargs, **rkwargs)
+        solver = solverCls(self.model.stepsModel, stepsGeom, stepsRng, *rargs, **rkwargs)
+
+        return solver
+
+    # Advanced parameters column names
+    _ADV_PARAMS_RUN_NUMBER = 'Run #'
+    _ADV_PARAMS_RUN_TIME = 'Time'
+    _ADV_PARAMS_SIM_PATH = 'Simulation Path'
+
+    def _parameterSimPathCallback(self, path, param):
+        """Keep track of solver setter calls when used with Parameter objects"""
+        pathStr = '.'.join(str(v) for v in path[1:])
+        key = (
+            (self._ADV_PARAMS_RUN_NUMBER, self._runId),
+            (self._ADV_PARAMS_RUN_TIME, self.Time),
+            (self._ADV_PARAMS_SIM_PATH, pathStr)
+        )
+        self._setAdvancedParameter(key, param)
+
+    @classmethod
+    def _getGroupedAdvParams(cls):
+        """Return a list of advanced parameter property that should be grouped
+        """
+        return [cls._ADV_PARAMS_RUN_NUMBER, cls._ADV_PARAMS_RUN_TIME]
 
     #####################
     # Solver properties #
     #####################
 
     @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('s'))
     def EfieldDT(self):
         """The stepsize for membrane potential solver
 
@@ -1273,12 +1465,14 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject):
         return self.stepsSolver.getEfieldDT()
 
     @EfieldDT.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('s'))
     def EfieldDT(self, val):
         self.stepsSolver.setEfieldDT(val)
 
     @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('K'))
     def Temp(self):
-        """The simulation temperature
+        """The simulation temperature in Kelvins
 
         Currently, this will only influence the GHK flux rate, so will only influence simulations
         including membrane potential calculation.
@@ -1289,6 +1483,7 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject):
         return self.stepsSolver.getTemp()
 
     @Temp.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('K'))
     def Temp(self, val):
         self.stepsSolver.setTemp(val)
 
@@ -1327,16 +1522,18 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject):
     # Solver methods    #
     #####################
 
+    @nutils.ParameterizedObject.SpecifyUnits(None, nutils.Units('s'))
     def setDT(self, dt):
         """Set the stepsize for numerical solvers
 
         Superceded by setRk4DT, but Included for backwards compatability.
 
         :param dt: The step size in seconds
-        :type dt: float
+        :type dt: Union[float, :py:class:`steps.API_2.nutils.Parameter`]
         """
         self.stepsSolver.setDT(dt)
 
+    @nutils.ParameterizedObject.SpecifyUnits(None, nutils.Units('s'))
     def setRk4DT(self, dt):
         """Set the stepsize for numerical solvers
 
@@ -1346,9 +1543,21 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject):
         simulation with this method.
 
         :param dt: The step size in seconds
-        :type dt: float
+        :type dt: Union[float, :py:class:`steps.API_2.nutils.Parameter`]
         """
         self.stepsSolver.setRk4DT(dt)
+
+    def setEfieldTolerances(self, atol=1e-50, rtol=1e-5):
+        """Set the absolute and relative tolerances for the Efield solver
+
+        See https://petsc.org/release/docs/manual/ksp/#convergence-tests
+
+        :param atol: Absolute tolerance
+        :type atol: float
+        :param rtol: Relative tolerance
+        :type rtol:
+        """
+        self.stepsSolver.setEfieldTolerances(atol, rtol)
 
     def setTolerances(self, atol, rtol):
         """Set the absolute tolerance and the relative tolerance for CVODE
@@ -1400,11 +1609,12 @@ for _name in dir(Simulation) + dir(SimPath):
 # SBML Import
 
 
+@nutils.FreezeAfterInit
 class SBMLSimulation(Simulation):
     """Simulation loaded from an SBML model
 
-    :param solverStr: Name of the solver to be used for the simulation (see :py:class:`Simulation`).
-    :type solverStr: str
+    :param solverName: Name of the solver to be used for the simulation (see :py:class:`Simulation`).
+    :type solverName: str
     :param filepath: Path to the SBML file
     :type filepath: str
     :param rng: The random number generator to be used in the simulation
@@ -1455,7 +1665,7 @@ class SBMLSimulation(Simulation):
 
     def __init__(
         self,
-        solverStr,
+        solverName,
         filepath,
         rng,
         maxDt,
@@ -1470,7 +1680,7 @@ class SBMLSimulation(Simulation):
         **kwargs,
     ):
 
-        self._solvStr = solverStr
+        self._solvStr = solverName
         self._solvArgs = args
         self._solvKwargs = kwargs
         try:
@@ -1527,9 +1737,9 @@ class SBMLSimulation(Simulation):
         mdl = nmodel.Model._FromStepsObject(self._sbml.getModel())
 
         sgeom = self._sbml.getGeom()
-        if isinstance(sgeom, ngeom.sgeom.Tetmesh):
+        if isinstance(sgeom, stepslib._py_Tetmesh):
             geom = ngeom.TetMesh._FromStepsObject(sgeom)
-        elif isinstance(sgeom, ngeom.sgeom.Geom):
+        elif isinstance(sgeom, stepslib._py_Geom):
             geom = ngeom.Geometry._FromStepsObject(sgeom)
         else:
             raise NotImplementedError()

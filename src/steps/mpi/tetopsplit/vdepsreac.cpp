@@ -2,7 +2,7 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2021 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
@@ -30,18 +30,16 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+
 // STEPS headers.
-#include "steps/common.h"
-#include "steps/error.hpp"
-#include "steps/math/constants.hpp"
-#include "steps/mpi/tetopsplit/kproc.hpp"
-#include "steps/mpi/tetopsplit/tet.hpp"
-#include "steps/mpi/tetopsplit/tetopsplit.hpp"
-#include "steps/mpi/tetopsplit/tri.hpp"
-#include "steps/mpi/tetopsplit/vdepsreac.hpp"
+#include "vdepsreac.hpp"
+#include "tet.hpp"
+#include "tetopsplit.hpp"
+#include "math/constants.hpp"
 
 // logging
-#include "easylogging++.h"
+#include "util/error.hpp"
+#include <easylogging++.h>
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace smtos = steps::mpi::tetopsplit;
@@ -51,7 +49,7 @@ namespace smath = steps::math;
 ////////////////////////////////////////////////////////////////////////////////
 
 smtos::VDepSReac::VDepSReac(ssolver::VDepSReacdef * vdsrdef, smtos::Tri * tri)
-: 
+:
  pVDepSReacdef(vdsrdef)
 , pTri(tri)
 , localUpdVec()
@@ -184,7 +182,7 @@ void smtos::VDepSReac::setupDeps()
         }
         nkprocs = itet->countKProcs();
         for (uint k = 0; k < nkprocs; k++)
-        {            
+        {
             for (auto const& spec : pVDepSReacdef->updcoll_I()) {
                 if (itet->KProcDepSpecTet(k, itet, spec)) {
                     updset.insert(itet->getKProc(k));
@@ -228,7 +226,7 @@ void smtos::VDepSReac::setupDeps()
                 }
             }
         }
-        
+
         for (auto const& tri : otet->nexttris()) {
             if (tri == nullptr) continue;
             if (tri->getHost() != otet->getHost()) {
@@ -317,14 +315,17 @@ double smtos::VDepSReac::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
                 {
                     h_mu *= static_cast<double>(cnt - 3);
                 }
+                STEPS_FALLTHROUGH;
                 case 3:
                 {
                     h_mu *= static_cast<double>(cnt - 2);
                 }
+                STEPS_FALLTHROUGH;
                 case 2:
                 {
                     h_mu *= static_cast<double>(cnt - 1);
                 }
+                STEPS_FALLTHROUGH;
                 case 1:
                 {
                     h_mu *= static_cast<double>(cnt);
@@ -358,14 +359,17 @@ double smtos::VDepSReac::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
                     {
                         h_mu *= static_cast<double>(cnt - 3);
                     }
+                    STEPS_FALLTHROUGH;
                     case 3:
                     {
                         h_mu *= static_cast<double>(cnt - 2);
                     }
+                    STEPS_FALLTHROUGH;
                     case 2:
                     {
                         h_mu *= static_cast<double>(cnt - 1);
                     }
+                    STEPS_FALLTHROUGH;
                     case 1:
                     {
                         h_mu *= static_cast<double>(cnt);
@@ -399,14 +403,17 @@ double smtos::VDepSReac::rate(steps::mpi::tetopsplit::TetOpSplitP * solver)
                     {
                         h_mu *= static_cast<double>(cnt - 3);
                     }
+                    STEPS_FALLTHROUGH;
                     case 3:
                     {
                         h_mu *= static_cast<double>(cnt - 2);
                     }
+                    STEPS_FALLTHROUGH;
                     case 2:
                     {
                         h_mu *= static_cast<double>(cnt - 1);
                     }
+                    STEPS_FALLTHROUGH;
                     case 1:
                     {
                         h_mu *= static_cast<double>(cnt);
@@ -535,22 +542,22 @@ std::vector<smtos::KProc*> const & smtos::VDepSReac::getLocalUpdVec(int /*direct
 
 void smtos::VDepSReac::resetOccupancies()
 {
-    
+
     pTri->resetPoolOccupancy();
-    
+
     // Update inner tet pools.
     smtos::WmVol * itet = pTri->iTet();
     if (itet != nullptr)
     {
         itet->resetPoolOccupancy();
     }
-    
+
     smtos::WmVol * otet = pTri->oTet();
     if (otet != nullptr)
     {
         otet->resetPoolOccupancy();
     }
-    
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
