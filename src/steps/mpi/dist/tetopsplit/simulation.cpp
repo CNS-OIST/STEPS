@@ -786,7 +786,7 @@ void OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::setMembPotential(
         if (icomp == nullptr) {
             continue;
         }
-        for (const auto &tet : icomp->getLocalTetIndices()) {
+        for (const auto& tet: icomp->getLocalTetIndices(false)) {
             const auto verts = osh::gather_verts<4>(mesh.ask_elem_verts(), tet.get());
             for (const auto &vert : verts) {
                 input->potential_on_vertices_w[vert] = value;
@@ -814,7 +814,7 @@ template <SSAMethod SSA, typename RNG, typename NumMolecules, NextEventSearchMet
 void OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::setVertIClamp(
     const mesh::vertex_global_id_t vertex,
     const osh::Real current) {
-    auto localInd = mesh.getLocalIndex(vertex);
+    auto localInd = mesh.getLocalIndex(vertex, false);
     if (localInd.valid()) {
         input->current_on_vertices_w[localInd.get()] = current;
     }
