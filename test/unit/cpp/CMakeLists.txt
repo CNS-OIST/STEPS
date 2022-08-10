@@ -68,6 +68,10 @@ test_unit(TARGETS rng
           DEPENDENCIES stepsrng
                          gtest_main)
 
+test_unit(TARGETS efield_tetmesh
+          DEPENDENCIES stepssolver
+                         gtest_main)
+
 if(BUILD_STOCHASTIC_TESTS)
     test_unit(TARGETS small_binomial_stochastic
               DEPENDENCIES stepsrng

@@ -814,7 +814,7 @@ template <SSAMethod SSA, typename RNG, typename NumMolecules, NextEventSearchMet
 void OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::setVertIClamp(
     const mesh::vertex_global_id_t vertex,
     const osh::Real current) {
-    auto localInd = mesh.getLocalIndex(vertex, false);
+    auto localInd = mesh.getLocalIndex(vertex);
     if (localInd.valid()) {
         input->current_on_vertices_w[localInd.get()] = current;
     }

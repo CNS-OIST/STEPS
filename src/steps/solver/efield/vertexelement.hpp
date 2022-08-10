@@ -134,6 +134,10 @@ public:
     inline void applySurfaceCapacitance(double c) noexcept
     { pCapacitance = c * pSurface; }
 
+    inline void updateCapacitance(double c) noexcept {
+        pCapacitance += c;
+    }
+
     void applyConductance(double);
 
     ////////////////////////////////////////////////////////////////////////
