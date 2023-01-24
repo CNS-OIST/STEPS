@@ -1,6 +1,7 @@
 #ifndef STEPS_GEOM_FWD_HPP
 #define STEPS_GEOM_FWD_HPP
 
+#include <cstdint>
 #include <limits>
 #include <iosfwd>
 #include <type_traits>
