@@ -131,6 +131,14 @@ You can follow the installation procedure performed by the [Docker image recipe]
 Use Anaconda or Miniconda:
 `conda install scipy numpy matplotlib cmake cython openblas openmpi llvm-openmp`
 
+you may need to export following environment variables for the compilation.
+```
+export MPICH_CC=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc
+export MPICH_CXX=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++
+export CC=mpicc
+export CXX=mpicxx
+```
+
 
 #### Full example to build STEPS on Apple M1 Silicon with Python 3.8 through Miniconda
 
@@ -173,7 +181,7 @@ export PKG_CONFIG_PATH="/path/to/petsc/installation/lib/pkgconfig:$PKG_CONFIG_PA
 popd
 
 cd /path/to/src
-git clone -b tags/4.0.0 --recursive https://github.com/CNS-OIST/STEPS.git
+git clone -b tags/4.1.0 --recursive https://github.com/CNS-OIST/STEPS.git
 cd STEPS
 mkdir __build
 cd __build
