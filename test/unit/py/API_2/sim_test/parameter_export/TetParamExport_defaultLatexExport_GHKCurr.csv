@@ -1,2 +1,2 @@
-\textbf{GHKCurr}	\textbf{Defined in}	\textbf{P}	\textbf{P Units}
-Chan1\_GHK\_I	ssys, comp1, comp1ROI, comp2, diffb, membrane, patch, patch2, patchROI, sdiffb	\num{2.5e-15}	\si{m^{3}.s^{-1}}
+\textbf{GHKCurr}	\textbf{Defined in}	\textbf{Opened state}	\textbf{P}	\textbf{P Units}
+Chan1\_GHK\_I	ssys, comp1, comp1ROI, comp2, diffb, membrane, patch, patch2, patchROI, sdiffb	Chan1[chanop1]	\num{2.5e-15}	\si{m^{3}.s^{-1}}

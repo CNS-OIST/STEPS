@@ -42,7 +42,7 @@ void MultipleCompartmentDiff::fill_compartments(
 void MultipleCompartmentDiff::run_simulation_impl(simulation_t &simulation) {
   osh::Real interval = 0.00001;
   simulation.getMesh().addDiffusionBoundary("0", "comp_i", "comp_o",
-                                            boost::none);
+                                            std::nullopt);
   C_i_init = simulation.getCompCount("comp_i", "C");
   C_o_init = simulation.getCompCount("comp_o", "C");
   simulation.run(interval);

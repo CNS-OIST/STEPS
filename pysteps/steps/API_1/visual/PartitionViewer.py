@@ -1,14 +1,14 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -24,7 +24,8 @@
 from __future__ import print_function
 
 import pyqtgraph as pg
-from pyqtgraph.Qt import QtCore, QtGui, QtOpenGL
+from pyqtgraph.Qt import QtCore, QtGui
+from PyQt5.QtWidgets import QMainWindow
 import numpy as np
 import pyqtgraph.opengl as gl
 import random
@@ -64,7 +65,7 @@ def createColorMap(partitions):
     print("Unknown partitioning data, no color map is generated.")
     return None
 
-class TetPartitionDisplay(QtGui.QMainWindow):
+class TetPartitionDisplay(QMainWindow):
     """
     Partition Display
     Parameters:
@@ -256,7 +257,7 @@ class TetPartitionMesh(gl.GLMeshItem):
         gl.GLMeshItem.__init__(self, meshdata=mesh_data, smooth=False, computeNormals =True, shader='balloon', glOptions='additive')
         self.setColor(color)
 
-class TriPartitionDisplay(QtGui.QMainWindow):
+class TriPartitionDisplay(QMainWindow):
     """
     Partition Display
     Parameters:

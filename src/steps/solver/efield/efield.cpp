@@ -2,14 +2,14 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -111,7 +111,7 @@ void sefield::EField::initMesh(uint nverts, double *verts,
     // solver method setPotential
     AssertLog(static_cast<bool>(pVProp));
     pVProp->initMesh(pMesh);
-    pVProp->setPotential(-65);
+    setMembPotential(0, DEFAULT_MEMB_POT);
 
     //pTritoVert = new uint[pNTris*3];
     pTritoVert.resize(pNTris*3);
@@ -209,15 +209,14 @@ void sefield::EField::setMembVolRes(uint /*midx*/, double ro)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::EField::setSurfaceResistivity(uint /*midx*/,double rspec, double vrev)
-{
-    // arguments in ohm_m^2 and V
-    // want Gohm_um^2, so divide by 10^9 for Gohm, multiply by 10^12 for um^2
+void sefield::EField::setSurfaceResistivity(uint /*midx*/, double rspec, double vrev) {
+    // arguments in ohm.m^2 and V
+    // want Gohm.um^2, so divide by 10^9 for Gohm, multiply by 10^12 for um^2
 
     double rs = 1.0e3*rspec;
     double vext = vrev*1.0e3;
 
-    pVProp->setSurfaceConductance(1.0/rs, vext);
+    pVProp->setSurfaceConductance(1.0 / rs, vext);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

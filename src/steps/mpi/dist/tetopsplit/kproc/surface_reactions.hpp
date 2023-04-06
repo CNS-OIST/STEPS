@@ -6,23 +6,21 @@
 
 #include <cmath>
 #include <random>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include <Omega_h_adj.hpp>
 
 #include "../mol_state.hpp"
+#include "geom/dist/distmesh.hpp"
+#include "mpi/dist/tetopsplit/definition/compdef.hpp"
+#include "mpi/dist/tetopsplit/definition/diffdef.hpp"
+#include "mpi/dist/tetopsplit/definition/patchdef.hpp"
+#include "mpi/dist/tetopsplit/definition/reacdef.hpp"
+#include "mpi/dist/tetopsplit/definition/sreacdef.hpp"
+#include "mpi/dist/tetopsplit/definition/statedef.hpp"
+#include "mpi/dist/tetopsplit/kproc/surface_reactions.hpp"
 #include "reactions.hpp"
 #include "reactions_iterator.hpp"
-#include "geom/dist/distmesh.hpp"
-#include "mpi/dist/tetopsplit/definition//compdef.hpp"
-#include "mpi/dist/tetopsplit/definition//diffdef.hpp"
-#include "mpi/dist/tetopsplit/definition//patchdef.hpp"
-#include "mpi/dist/tetopsplit/definition//reacdef.hpp"
-#include "mpi/dist/tetopsplit/definition//sreacdef.hpp"
-#include "mpi/dist/tetopsplit/definition//statedef.hpp"
-#include "mpi/dist/tetopsplit/kproc/surface_reactions.hpp"
 #include "util/vocabulary.hpp"
 
 namespace steps {

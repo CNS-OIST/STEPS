@@ -458,30 +458,41 @@ OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::getElemCount(
 
 template <SSAMethod SSA, typename RNG, typename NumMolecules, NextEventSearchMethod SearchMethod>
 void OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::getBatchElemValsNP(
-    const osh::GO* indices,
-    size_t input_size,
-    const model::species_name& species,
-    osh::Real* vals,
-    bool useConc) const {
+    const osh::GO *indices, size_t input_size,
+    const model::species_name &species, osh::Real *vals, bool useConc,
+    bool local) const {
     const auto spec_model_idx = statedef->getSpecModelIdx(species);
 
-    std::vector<osh::Real> local_vals(input_size);
+    if (not local) {
+        std::fill(vals, vals + input_size, 0);
+    }
     for (size_t i = 0; i < input_size; ++i) {
-        auto localInd = mesh.getLocalIndex(mesh::tetrahedron_global_id_t(indices[i]));
+        osh::LO ind{static_cast<osh::LO>(indices[i])};
+        if (not local) {
+            ind = mesh.getLocalIndex(mesh::tetrahedron_global_id_t(indices[i]))
+                      .get();
+        }
+        mesh::tetrahedron_id_t localInd(ind);
         if (localInd.valid()) {
             // TODO Maybe getting the spec_id could be faster
             const auto compartment_id = mesh.getCompartment(localInd);
             const auto comp_model_idx = statedef->getCompModelIdx(compartment_id);
             const auto spec_id = statedef->compdefs()[static_cast<size_t>(comp_model_idx.get())]
                                      ->getSpecContainerIdx(spec_model_idx);
-            local_vals[i] = data->pools(mesh::tetrahedron_id_t(localInd), spec_id);
+            vals[i] = data->pools(localInd, spec_id);
             if (useConc) {
-                local_vals[i] /= mesh.getTet(localInd).vol * 1.0e3 * math::AVOGADRO;
+                vals[i] /= mesh.getTet(localInd).vol * 1.0e3 * math::AVOGADRO;
             }
         }
     }
 
-    MPI_Reduce(local_vals.data(), vals, input_size, MPI_DOUBLE, MPI_SUM, 0, this->comm());
+    if (not local) {
+        if (this->comm_rank == 0) {
+            MPI_Reduce(MPI_IN_PLACE, vals, input_size, MPI_DOUBLE, MPI_SUM, 0, this->comm());
+        } else {
+            MPI_Reduce(vals, vals, input_size, MPI_DOUBLE, MPI_SUM, 0, this->comm());
+        }
+    }
 }
 
 template <SSAMethod SSA, typename RNG, typename NumMolecules, NextEventSearchMethod SearchMethod>
@@ -490,11 +501,16 @@ void OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::setBatchElemValsNP(
     size_t input_size,
     const model::species_name& species,
     osh::Real* vals,
-    bool useConc) const {
+    bool useConc, bool local) const {
     const auto spec_model_idx = statedef->getSpecModelIdx(species);
 
     for (size_t i = 0; i < input_size; ++i) {
-        auto localInd = mesh.getLocalIndex(mesh::tetrahedron_global_id_t(indices[i]));
+        osh::LO ind{static_cast<osh::LO>(indices[i])};
+        if (not local) {
+            ind = mesh.getLocalIndex(mesh::tetrahedron_global_id_t(indices[i]))
+                      .get();
+        }
+        mesh::tetrahedron_id_t localInd(ind);
         if (localInd.valid()) {
             // TODO Maybe getting the spec_id could be faster
             const auto compartment_id = mesh.getCompartment(localInd);
@@ -527,22 +543,35 @@ void OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::getBatchBoundCountN
     const osh::GO* indices,
     size_t input_size,
     const model::species_name& species,
-    osh::Real* counts) const {
+    osh::Real* counts, bool local) const {
     const auto spec_model_idx = statedef->getSpecModelIdx(species);
     const auto& molecules = data->pools.moleculesOnPatchBoundaries();
 
-    std::vector<osh::Real> local_counts(input_size);
+    if (not local) {
+        std::fill(counts, counts + input_size, 0);
+    }
     for (size_t i = 0; i < input_size; ++i) {
-        auto localInd = mesh.getLocalIndex(mesh::triangle_global_id_t(indices[i]));
+        osh::LO ind{static_cast<osh::LO>(indices[i])};
+        if (not local) {
+            ind = mesh.getLocalIndex(mesh::triangle_global_id_t(indices[i]))
+                      .get();
+        }
+        mesh::triangle_id_t localInd(ind);
         if (localInd.valid()) {
             const auto patch_id = model::patch_id(
                 mesh.getTriPatch(mesh::triangle_id_t(localInd))->getID());
             auto spec_id = statedef->getPatchdef(patch_id).getSpecPatchIdx(spec_model_idx);
-            local_counts[i] = molecules(localInd, spec_id);
+            counts[i] = molecules(localInd, spec_id);
         }
     }
 
-    MPI_Reduce(local_counts.data(), counts, input_size, MPI_DOUBLE, MPI_SUM, 0, this->comm());
+    if (not local) {
+        if (this->comm_rank == 0) {
+            MPI_Reduce(MPI_IN_PLACE, counts, input_size, MPI_DOUBLE, MPI_SUM, 0, this->comm());
+        } else {
+            MPI_Reduce(counts, counts, input_size, MPI_DOUBLE, MPI_SUM, 0, this->comm());
+        }
+    }
 }
 
 template <SSAMethod SSA, typename RNG, typename NumMolecules, NextEventSearchMethod SearchMethod>
@@ -550,11 +579,16 @@ void OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::setBatchBoundCountN
     const osh::GO* indices,
     size_t input_size,
     const model::species_name& species,
-    osh::Real* counts) const {
+    osh::Real* counts, bool local) const {
     const auto spec_model_idx = statedef->getSpecModelIdx(species);
 
     for (size_t i = 0; i < input_size; ++i) {
-        auto localInd = mesh.getLocalIndex(mesh::triangle_global_id_t(indices[i]));
+        osh::LO ind{static_cast<osh::LO>(indices[i])};
+        if (not local) {
+            ind = mesh.getLocalIndex(mesh::triangle_global_id_t(indices[i]))
+                      .get();
+        }
+        mesh::triangle_id_t localInd(ind);
         if (localInd.valid()) {
             const auto patch_id = model::patch_id(
                 mesh.getTriPatch(mesh::triangle_id_t(localInd))->getID());
@@ -568,55 +602,90 @@ template <SSAMethod SSA, typename RNG, typename NumMolecules, NextEventSearchMet
 void OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::getBatchVertVsNP(
     const osh::GO* indices,
     size_t input_size,
-    osh::Real* voltages) const {
-    std::vector<osh::Real> local_vals(input_size);
+    osh::Real* voltages, bool local) const {
+    if (not local) {
+        std::fill(voltages, voltages + input_size, 0);
+    }
     for (size_t i = 0; i < input_size; ++i) {
-        auto localInd = mesh.getLocalIndex(mesh::vertex_global_id_t(indices[i]));
+        osh::LO ind{static_cast<osh::LO>(indices[i])};
+        if (not local) {
+            ind = mesh.getLocalIndex(mesh::vertex_global_id_t(indices[i]))
+                      .get();
+        }
+        mesh::vertex_id_t localInd(ind);
         if (localInd.valid()) {
-            local_vals[i] = input->potential_on_vertices_w[localInd.get()];
+            voltages[i] = input->potential_on_vertices_w[localInd.get()];
         }
     }
 
-    MPI_Reduce(local_vals.data(), voltages, input_size, MPI_DOUBLE, MPI_SUM, 0, this->comm());
+    if (not local) {
+        if (this->comm_rank == 0) {
+            MPI_Reduce(MPI_IN_PLACE, voltages, input_size, MPI_DOUBLE, MPI_SUM, 0, this->comm());
+        } else {
+            MPI_Reduce(voltages, voltages, input_size, MPI_DOUBLE, MPI_SUM, 0, this->comm());
+        }
+    }
 }
 
 template <SSAMethod SSA, typename RNG, typename NumMolecules, NextEventSearchMethod SearchMethod>
 void OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::getBatchTriVsNP(
     const osh::GO* indices,
     size_t input_size,
-    osh::Real* voltages) const {
-    std::vector<osh::Real> local_vals(input_size);
+    osh::Real* voltages, bool local) const {
+    std::fill(voltages, voltages + input_size, 0);
     for (size_t i = 0; i < input_size; ++i) {
-        auto localInd = mesh.getLocalIndex(mesh::triangle_global_id_t(indices[i]));
+        osh::LO ind{static_cast<osh::LO>(indices[i])};
+        if (not local) {
+            ind = mesh.getLocalIndex(mesh::triangle_global_id_t(indices[i]))
+                      .get();
+        }
+        mesh::triangle_id_t localInd(ind);
         if (localInd.valid()) {
             const auto tri2verts = osh::gather_verts<3>(mesh.ask_verts_of(osh::FACE),
                                                         localInd.get());
             for (auto vert: tri2verts) {
-                local_vals[i] += input->potential_on_vertices_w[vert] / 3.0;
+                voltages[i] += input->potential_on_vertices_w[vert] / 3.0;
             }
         }
     }
 
-    MPI_Reduce(local_vals.data(), voltages, input_size, MPI_DOUBLE, MPI_SUM, 0, this->comm());
+    if (not local) {
+        if (this->comm_rank == 0) {
+            MPI_Reduce(MPI_IN_PLACE, voltages, input_size, MPI_DOUBLE, MPI_SUM, 0, this->comm());
+        } else {
+            MPI_Reduce(voltages, voltages, input_size, MPI_DOUBLE, MPI_SUM, 0, this->comm());
+        }
+    }
 }
 
 template <SSAMethod SSA, typename RNG, typename NumMolecules, NextEventSearchMethod SearchMethod>
 void OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::getBatchTetVsNP(
     const osh::GO* indices,
     size_t input_size,
-    osh::Real* voltages) const {
-    std::vector<osh::Real> local_vals(input_size);
+    osh::Real* voltages, bool local) const {
+    std::fill(voltages, voltages + input_size, 0);
     for (size_t i = 0; i < input_size; ++i) {
-        auto localInd = mesh.getLocalIndex(mesh::tetrahedron_global_id_t(indices[i]));
+        osh::LO ind{static_cast<osh::LO>(indices[i])};
+        if (not local) {
+            ind = mesh.getLocalIndex(mesh::tetrahedron_global_id_t(indices[i]))
+                      .get();
+        }
+        mesh::tetrahedron_id_t localInd(ind);
         if (localInd.valid()) {
             const auto tet2verts = osh::gather_verts<4>(mesh.ask_elem_verts(), localInd.get());
             for (auto vert: tet2verts) {
-                local_vals[i] += input->potential_on_vertices_w[vert] / 4.0;
+                voltages[i] += input->potential_on_vertices_w[vert] / 4.0;
             }
         }
     }
 
-    MPI_Reduce(local_vals.data(), voltages, input_size, MPI_DOUBLE, MPI_SUM, 0, this->comm());
+    if (not local) {
+        if (this->comm_rank == 0) {
+            MPI_Reduce(MPI_IN_PLACE, voltages, input_size, MPI_DOUBLE, MPI_SUM, 0, this->comm());
+        } else {
+            MPI_Reduce(voltages, voltages, input_size, MPI_DOUBLE, MPI_SUM, 0, this->comm());
+        }
+    }
 }
 
 #ifdef USE_PETSC
@@ -626,7 +695,7 @@ template <SSAMethod SSA, typename RNG, typename NumMolecules,
 void OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::
     getBatchTriOhmicIsNP(const osh::GO *indices, size_t input_size,
                          const model::ohmic_current_id curr,
-                         osh::Real *currents) const {
+                         osh::Real *currents, bool local) const {
     const auto &currs = statedef->ohmicCurrents();
     const auto curr_it = currs.find(curr);
     if (curr_it == currs.end()) {
@@ -634,15 +703,19 @@ void OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::
     }
     const auto &h = *curr_it->second;
 
-    std::vector<osh::Real> local_vals(input_size);
+    std::fill(currents, currents + input_size, 0);
     for (size_t i = 0; i < input_size; ++i) {
-        auto localInd =
-            mesh.getLocalIndex(mesh::triangle_global_id_t(indices[i]));
+        osh::LO ind{static_cast<osh::LO>(indices[i])};
+        if (not local) {
+            ind = mesh.getLocalIndex(mesh::triangle_global_id_t(indices[i]))
+                      .get();
+        }
+        mesh::triangle_id_t localInd(ind);
         if (localInd.valid()) {
             const auto &face_bf2verts = osh::gather_verts<3>(
                 mesh.ask_verts_of(osh::FACE), localInd.get());
             for (const auto &vert_id : face_bf2verts) {
-                local_vals[i] += h.template getTriCurrentOnVertex<NumMolecules>(
+                currents[i] += h.template getTriCurrentOnVertex<NumMolecules>(
                     input->potential_on_vertices_w[vert_id],
                     localInd,
                     input->pools,
@@ -652,8 +725,13 @@ void OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::
         }
     }
 
-    MPI_Reduce(local_vals.data(), currents, input_size, MPI_DOUBLE, MPI_SUM, 0,
-               this->comm());
+    if (not local) {
+        if (this->comm_rank == 0) {
+            MPI_Reduce(MPI_IN_PLACE, currents, input_size, MPI_DOUBLE, MPI_SUM, 0, this->comm());
+        } else {
+            MPI_Reduce(currents, currents, input_size, MPI_DOUBLE, MPI_SUM, 0, this->comm());
+        }
+    }
 }
 
 #else
@@ -663,7 +741,7 @@ template <SSAMethod SSA, typename RNG, typename NumMolecules,
 void OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::
     getBatchTriOhmicIsNP(const osh::GO * /*indices*/,
                          size_t /*input_size*/, const model::ohmic_current_id /*curr*/,
-                         osh::Real * /*currents*/) const {
+                         osh::Real * /*currents*/, bool /*local*/) const {
     throw std::logic_error("PETSc is required to compute ohmic current");
 }
 
@@ -675,24 +753,35 @@ void OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::getBatchTriGHKIsNP(
     const osh::GO* indices,
     size_t input_size,
     const model::ghk_current_id curr,
-    osh::Real* currents) const {
+    osh::Real* currents, bool local) const {
     const auto& surfReacs = data->kproc_state.ghkSurfaceReactions();
-    const osh::Write<osh::GO>& tri2Curr = data->kproc_state.ghkSurfaceReactions().getTri2Curr(curr);
 
-    std::vector<osh::Real> local_vals(input_size);
+    std::fill(currents, currents + input_size, 0);
     for (size_t i = 0; i < input_size; ++i) {
-        auto localInd = mesh.getLocalIndex(mesh::triangle_global_id_t(indices[i]));
+        osh::LO ind{static_cast<osh::LO>(indices[i])};
+        if (not local) {
+            ind = mesh.getLocalIndex(mesh::triangle_global_id_t(indices[i]))
+                      .get();
+        }
+        mesh::triangle_id_t localInd(ind);
         if (localInd.valid()) {
+            const osh::Write<osh::GO>& tri2Curr = surfReacs.getTri2Curr(curr);
             for (uint k = 0; k < surfReacs.rpt(); ++k) {
                 const auto& ridx = tri2Curr[localInd.get() * surfReacs.rpt() + k];
                 if (ridx != -1) {
-                    local_vals[i] += surfReacs.currents()[ridx];
+                    currents[i] += surfReacs.currents()[ridx];
                 }
             }
         }
     }
 
-    MPI_Reduce(local_vals.data(), currents, input_size, MPI_DOUBLE, MPI_SUM, 0, this->comm());
+    if (not local) {
+        if (this->comm_rank == 0) {
+            MPI_Reduce(MPI_IN_PLACE, currents, input_size, MPI_DOUBLE, MPI_SUM, 0, this->comm());
+        } else {
+            MPI_Reduce(currents, currents, input_size, MPI_DOUBLE, MPI_SUM, 0, this->comm());
+        }
+    }
 }
 
 template <SSAMethod SSA, typename RNG, typename NumMolecules,
@@ -786,7 +875,7 @@ void OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::setMembPotential(
         if (icomp == nullptr) {
             continue;
         }
-        for (const auto &tet : icomp->getLocalTetIndices()) {
+        for (const auto &tet : icomp->getLocalTetIndices(false)) {
             const auto verts = osh::gather_verts<4>(mesh.ask_elem_verts(), tet.get());
             for (const auto &vert : verts) {
                 input->potential_on_vertices_w[vert] = value;
@@ -797,24 +886,35 @@ void OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::setMembPotential(
 
 template <SSAMethod SSA, typename RNG, typename NumMolecules, NextEventSearchMethod SearchMethod>
 osh::Real OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::getVertIClamp(
-    const mesh::vertex_global_id_t vertex) const {
+    const osh::GO vertex, bool local) const {
     osh::Real local_val(0.0);
 
-    auto localInd = mesh.getLocalIndex(vertex);
+    osh::LO ind{static_cast<osh::LO>(vertex)};
+    if (not local) {
+        ind = mesh.getLocalIndex(mesh::vertex_global_id_t(vertex)).get();
+    }
+    mesh::vertex_id_t localInd(ind);
     if (localInd.valid()) {
         local_val = input->current_on_vertices_w[localInd.get()];
     }
-    osh::Real res(0.0);
-    MPI_Reduce(&local_val, &res, 1, MPI_DOUBLE, MPI_SUM, 0, this->comm());
-
-    return res;
+    if (local) {
+        return local_val;
+    } else {
+        osh::Real res(0.0);
+        MPI_Reduce(&local_val, &res, 1, MPI_DOUBLE, MPI_SUM, 0, this->comm());
+        return res;
+    }
 }
 
 template <SSAMethod SSA, typename RNG, typename NumMolecules, NextEventSearchMethod SearchMethod>
 void OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::setVertIClamp(
-    const mesh::vertex_global_id_t vertex,
-    const osh::Real current) {
-    auto localInd = mesh.getLocalIndex(vertex);
+    const osh::GO vertex,
+    const osh::Real current, bool local) {
+    osh::LO ind{static_cast<osh::LO>(vertex)};
+    if (not local) {
+        ind = mesh.getLocalIndex(mesh::vertex_global_id_t(vertex), false).get();
+    }
+    mesh::vertex_id_t localInd(ind);
     if (localInd.valid()) {
         input->current_on_vertices_w[localInd.get()] = current;
     }
@@ -969,7 +1069,7 @@ template <SSAMethod SSA, typename RNG, typename NumMolecules,
 void OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::reset() {
   this->num_iterations = 0;
   this->state_time = 0;
-  setPotential(0);
+  setPotential(DEFAULT_MEMB_POT);
   data->reset(this->state_time);
 }
 
@@ -1047,14 +1147,14 @@ template <SSAMethod SSA, typename RNG, typename NumMolecules,
           NextEventSearchMethod SearchMethod>
 void OmegaHSimulation<SSA, RNG, NumMolecules, SearchMethod>::run_rd(
     const osh::Real end_time) {
-  data->ssaOp.updateMaxTime(end_time);
-  // number of standard steps
-  const auto rd_dt_std = data->time_delta;
-  // this can be negative
-  const int n_steps_std = std::floor((end_time - state_time) / rd_dt_std) - 1;
-  // std steps loop -1. n_steps_std can be negative so int is the correct type
-  for (int i_rd = 0; i_rd < n_steps_std; ++i_rd) {
-      evolve_rd(std::min(rd_dt_std, end_time - state_time));
+    data->ssaOp.resetAndUpdateAll(state_time, end_time);
+    // number of standard steps
+    const auto rd_dt_std = data->time_delta;
+    // this can be negative
+    const int n_steps_std = std::floor((end_time - state_time) / rd_dt_std) - 1;
+    // std steps loop -1. n_steps_std can be negative so int is the correct type
+    for (int i_rd = 0; i_rd < n_steps_std; ++i_rd) {
+        evolve_rd(std::min(rd_dt_std, end_time - state_time));
   }
 
   // sync time steps

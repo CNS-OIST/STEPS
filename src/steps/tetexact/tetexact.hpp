@@ -2,14 +2,14 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -333,9 +333,9 @@ public:
     bool _getTetReacActive(tetrahedron_id_t tidx, uint ridx) const override;
     void _setTetReacActive(tetrahedron_id_t tidx, uint ridx, bool act) override;
 
-    double _getTetDiffD(tetrahedron_id_t tidx, uint didx, tetrahedron_id_t direction_tet = boost::none) const override;
+    double _getTetDiffD(tetrahedron_id_t tidx, uint didx, tetrahedron_id_t direction_tet = std::nullopt) const override;
     void _setTetDiffD(tetrahedron_id_t tidx, uint didx, double dk,
-                      tetrahedron_id_t direction_tet = boost::none) override;
+                      tetrahedron_id_t direction_tet = std::nullopt) override;
 
     bool _getTetDiffActive(tetrahedron_id_t tidx, uint didx) const override;
     void _setTetDiffActive(tetrahedron_id_t tidx, uint didx, bool act) override;

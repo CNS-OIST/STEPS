@@ -1,14 +1,14 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -405,13 +405,12 @@ class tetMeshTests(unittest.TestCase):
         lst2.append(self.mesh.tets[0, 0, 0])
         lst1 -= lst2
 
-        # TODO revert this temporary change for split meshes
-        # with self.assertRaises(KeyError):
-            # lst1[0, 0, 0]
-        # self.assertNotIn((0, 0, 0), lst1)
-        # self.assertIn((0, 0, 0), lst2)
-        # self.assertNotIn(Point(0, 0, 0), lst1)
-        # self.assertIn(Point(0, 0, 0), lst2)
+        with self.assertRaises(KeyError):
+            lst1[0, 0, 0]
+        self.assertNotIn((0, 0, 0), lst1)
+        self.assertIn((0, 0, 0), lst2)
+        self.assertNotIn(Point(0, 0, 0), lst1)
+        self.assertIn(Point(0, 0, 0), lst2)
 
         tetSurf = TriList(sorted(tri.idx for tri in self.mesh.tets.surface), self.mesh)
         meshSurf = TriList(sorted(tri.idx for tri in self.mesh.surface), self.mesh)
@@ -584,9 +583,9 @@ class tetMeshTests(unittest.TestCase):
             self.assertIsNone(tetLsts[notAttrInd][0].comp)
 
         # accessing tets from a comp
-        self.assertEqual(comp1.tets, TetList(tetLsts[1], self.mesh))
-        self.assertEqual(comp2.tets, TetList(tetLsts[2], self.mesh))
-        self.assertNotEqual(comp2.tets, TetList(tetLsts[3], self.mesh))
+        self.assertCountEqual(comp1.tets, TetList(tetLsts[1], self.mesh))
+        self.assertCountEqual(comp2.tets, TetList(tetLsts[2], self.mesh))
+        self.assertEqual(len(set(comp2.tets.indices) & set(tetLsts[3])), 0)
 
         # Declare simulation to allow species access from patch
         sim = self.getSimulation()

@@ -4,6 +4,7 @@ namespace steps {
 namespace dist {
 namespace kproc {
 
+template <typename NumMolecules>
 class KProcState;
 
 enum class KProcType : unsigned {

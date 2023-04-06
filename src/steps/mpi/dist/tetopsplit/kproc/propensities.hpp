@@ -3,7 +3,6 @@
 #include <array>
 #include <iosfwd>
 #include <random>
-#include <set>
 #include <vector>
 
 #include "event_queue.hpp"
@@ -110,7 +109,8 @@ using Event = std::pair<EventTime, kproc::KProcID>;
 using kproc_groups_t = util::flat_multimap<osh::LO, 1>;
 using kproc_group_t = kproc_groups_t::const_element_type;
 
-/// Hold all dependencies of a given kinetic process
+/// Hold all dependenc
+/// ies of a given kinetic process
 using dependencies_t = util::flat_multimap<osh::LO, 1>;
 /// the kinetic processes that depend on a change of propensity
 using KProcDeps = dependencies_t::const_element_type;
@@ -120,120 +120,123 @@ using KProcDeps = dependencies_t::const_element_type;
  * \tparam Policy mask
  *   * propgpr_with_next_event: if true, propensities groups can generate a next event.
  */
-template <typename NumMolecules = default_molecules_t,
-          unsigned int Policy = PropensitiesPolicy::default_policy>
+template <typename NumMolecules, unsigned int Policy = PropensitiesPolicy::default_policy>
 class Propensities {
-public:
-  friend struct PropensitiesGroup<NumMolecules, Policy>;
-  friend class KProcState;
+  public:
+    friend struct PropensitiesGroup<NumMolecules, Policy>;
+    friend class KProcState<NumMolecules>;
 
-  static_assert(std::is_same<unsigned, typename std::underlying_type<
-                                           kproc::KProcType>::type>::value,
-                "KProcType needs to be unsigned.");
+    static_assert(
+        std::is_same<unsigned, typename std::underlying_type<kproc::KProcType>::type>::value,
+        "KProcType needs to be unsigned.");
 
-  Propensities();
+    Propensities();
 
-  /**
-   * \brief Initialize the propensities of classes of kprocs.
-   *
-   * \param k_proc_ty a vector of kprocs types handled alongside number of such kprocs
-   * \param propensities_fun a function to compute the propensity of a kproc
-   */
-  void init(const std::array<unsigned, kproc::num_kproc_types()> &k_proc_ty,
-            const typename propensity_function_traits<NumMolecules>::value
-                &propensities_fun,
-            const kproc_groups_t &groups);
+    /**
+     * \brief Initialize the propensities of classes of kprocs.
+     *
+     * \param k_proc_ty a vector of kprocs types handled alongside number of such kprocs
+     * \param propensities_fun a function to compute the propensity of a kproc
+     */
+    void init(const std::array<unsigned, kproc::num_kproc_types()>& k_proc_ty,
+              const typename propensity_function_traits<NumMolecules>::value& propensities_fun,
+              const kproc_groups_t& groups);
 
-  /**
-   * \brief Query the propensity of a given index.
-   *
-   * \param idx an index
-   * \return the propensity of the kproc idx
-   */
-  inline osh::Real operator[](size_t idx) const noexcept { return v_[idx]; }
-
-  /**
-   * \brief Query the propensity of a given kproc.
-   *
-   * \param id kroc id
-   * \return the propensity of the kproc
-   */
-  inline osh::Real operator[](KProcID id) const noexcept { return v_[ab(id)]; }
-
-  /**
-   * \brief Query the kproc id associated with a propensity index.
-   *
-   * \param idx propensity index
-   * \return the kproc id
-   */
-  KProcID kProcId(size_t idx) const {
-    auto idx_l = std::distance(
-        a2ab_.begin(), std::upper_bound(a2ab_.begin(), a2ab_.end(), idx));
-    assert(idx_l >= 0);
-    auto idx_ul = static_cast<unsigned>(idx_l);
-    assert(idx_ul < a2ab_.size());
-    if (idx_ul > 0) {
-      return {KProcType(idx_ul),
-              static_cast<unsigned>(idx - a2ab_[idx_ul - 1])};
-    } else {
-      return {KProcType(0), static_cast<unsigned>(idx)};
+    /**
+     * \brief Query the propensity of a given index.
+     *
+     * \param idx an index
+     * \return the propensity of the kproc idx
+     */
+    inline osh::Real operator[](size_t idx) const noexcept {
+        return v_[idx];
     }
-  }
 
-  /**
-   *
-   * \return the number of all kprocs
-   */
-  inline size_t size() const noexcept { return a2ab_.back(); }
-
-  /**
-   * \return all propensities groups
-   */
-  const auto& groups() const noexcept {
-    return propensities_groups_;
-  }
-
-  /**
-   * \return all propensities groups
-   */
-  auto& groups() noexcept {
-    return propensities_groups_;
-  }
-
-private:
-  /**
-   * \brief Setup the flat multimap structure of propensities across the various
-   * kinetic processes.
-   *
-   * \param k_proc_ty a vector of kprocs types handled alongside number of such
-   * kprocs
-   */
-  void init(const std::array<unsigned, num_kproc_types()> &k_proc_ty);
-
-  /**
-   * \brief Propensity index of a given kproc.
-   *
-   * \param kp a proc id
-   * \return the index of the propensity
-   */
-  inline size_t ab(KProcID kp) const noexcept {
-    auto kpt = static_cast<size_t>(kp.type());
-    assert(kpt < a2ab_.size());
-    assert(kp.id() < a2ab_[kpt]);
-    if (kpt > 0) {
-      return a2ab_[static_cast<size_t>(kp.type()) - 1] + kp.id();
-    } else {
-      return kp.id();
+    /**
+     * \brief Query the propensity of a given kproc.
+     *
+     * \param id kroc id
+     * \return the propensity of the kproc
+     */
+    inline osh::Real operator[](KProcID id) const noexcept {
+        return v_[ab(id)];
     }
-  }
 
-  std::vector<osh::Real> v_;
-  std::vector<size_t> local_indices_;
-  std::array<unsigned, num_kproc_types()> a2ab_;
-  std::array<unsigned, num_kproc_types()> k_proc_ty_2_num_k_proc_;
-  typename propensity_function_traits<NumMolecules>::value fun_;
-  std::uniform_real_distribution<double> uniform_;
-  std::vector<PropensitiesGroup<NumMolecules, Policy>> propensities_groups_;
+    /**
+     * \brief Query the kproc id associated with a propensity index.
+     *
+     * \param idx propensity index
+     * \return the kproc id
+     */
+    KProcID kProcId(size_t idx) const {
+        auto idx_l = std::distance(a2ab_.begin(),
+                                   std::upper_bound(a2ab_.begin(), a2ab_.end(), idx));
+        assert(idx_l >= 0);
+        auto idx_ul = static_cast<unsigned>(idx_l);
+        assert(idx_ul < a2ab_.size());
+        if (idx_ul > 0) {
+            return {KProcType(idx_ul), static_cast<unsigned>(idx - a2ab_[idx_ul - 1])};
+        } else {
+            return {KProcType(0), static_cast<unsigned>(idx)};
+        }
+    }
+
+    /**
+     *
+     * \return the number of all kprocs
+     */
+    inline size_t size() const noexcept {
+        return a2ab_.back();
+    }
+
+    /**
+     * \return all propensities groups
+     */
+    const auto& groups() const noexcept {
+        return propensities_groups_;
+    }
+
+    /**
+     * \return all propensities groups
+     */
+    auto& groups() noexcept {
+        return propensities_groups_;
+    }
+
+  private:
+    /**
+     * \brief Setup the flat multimap structure of propensities across the various
+     * kinetic processes.
+     *
+     * \param k_proc_ty a vector of kprocs types handled alongside number of such
+     * kprocs
+     */
+    void init(const std::array<unsigned, num_kproc_types()>& k_proc_ty);
+
+    /**
+     * \brief Propensity index of a given kproc.
+     *
+     * \param kp a proc id
+     * \return the index of the propensity
+     */
+    inline size_t ab(KProcID kp) const noexcept {
+        auto kpt = static_cast<size_t>(kp.type());
+        assert(kpt < a2ab_.size());
+        assert(kp.id() < a2ab_[kpt]);
+        if (kpt > 0) {
+            return a2ab_[static_cast<size_t>(kp.type()) - 1] + kp.id();
+        } else {
+            return kp.id();
+        }
+    }
+
+    std::vector<osh::Real> v_;
+    std::vector<size_t> local_indices_;
+    std::array<unsigned, num_kproc_types()> a2ab_;
+    std::array<unsigned, num_kproc_types()> k_proc_ty_2_num_k_proc_;
+    typename propensity_function_traits<NumMolecules>::value fun_;
+    std::uniform_real_distribution<double> uniform_;
+    std::vector<PropensitiesGroup<NumMolecules, Policy>> propensities_groups_;
 };
 
 //--------------------------------------------------------
@@ -312,19 +315,35 @@ struct PropensitiesGroup<
     }
 
     /**
-     * \brief Update the state of propensities of a selected number of kprocs
-     * and next_event structure following Gibson Bruck algorithm
+     * \brief Update the state of all the propensities and next_event structure following Gibson
+     * Bruck algorithm.
      *
      * \param mol_state molecular state
      * \param rng random number generator
      */
     template <typename RNG>
-    void update(const MolState<NumMolecules> &mol_state, RNG &rng,
-                const osh::Real state_time) {
-        for (auto kp : kprocs_) {
+    void update_all(MolState<NumMolecules>& mol_state, RNG& rng, const osh::Real state_time) {
+        for (auto kp: kprocs_) {
             KProcID kid{static_cast<unsigned>(kp)};
             adjust_existing_events(kid, mol_state, rng, state_time);
         }
+    }
+
+    /**
+     * \brief Update the state of a selected number of propensities (only tets with diffusing
+     * molecules need to update propensities) and next_event structure following Gibson Bruck
+     * algorithm.
+     *
+     * \param mol_state molecular state
+     * \param rng random number generator
+     */
+    template <typename RNG>
+    void update_outdated(MolState<NumMolecules>& mol_state, RNG& rng, const osh::Real state_time) {
+        for (auto kp: mol_state.outdated_kprocs()) {
+            KProcID kid{kp};
+            adjust_existing_events(kid, mol_state, rng, state_time);
+        }
+        mol_state.outdated_kprocs().clear();
     }
 
     /**
@@ -485,7 +504,31 @@ struct PropensitiesGroup<NumMolecules,
      * \param mol_state molecular state
      */
     template <typename RNG>
-    void update(const MolState<NumMolecules>& mol_state, RNG& /*rng*/, const osh::Real /*state_time*/) {
+    void update_all(const MolState<NumMolecules>& mol_state,
+                    RNG& /*rng*/,
+                    const osh::Real /*state_time*/) {
+        size_t k{};
+        for (auto it = ids_.begin(); it != ids_.end(); it++, k++) {
+            propensities_.v_[idx_[k]] = propensities_.fun_(KProcID(static_cast<unsigned>(*it)),
+                                                           mol_state);
+        }
+        if constexpr (handle_next_event()) {
+            updatePartialSums(0);
+        }
+    }
+
+    /**
+     * \brief Update only the outdated propensities and state of the class.
+     *
+     * \param mol_state molecular state
+     */
+    template <typename RNG>
+    void update_outdated(const MolState<NumMolecules>& mol_state,
+                         RNG& /*rng*/,
+                         const osh::Real /*state_time*/) {
+        /* TODO : Follow the same approach as in Gibson Bruck, i.e. update outdated propensities
+           only (test needed). For now go with the original version, i.e. update all propensities.
+         */
         size_t k{};
         for (auto it = ids_.begin(); it != ids_.end(); it++, k++) {
             propensities_.v_[idx_[k]] = propensities_.fun_(KProcID(static_cast<unsigned>(*it)),

@@ -290,7 +290,7 @@ model::species_id
 Statedef::getSpecModelIdx(const model::species_name &name) const {
   auto result = specModelIdxs.find(name);
   if (result == specModelIdxs.end()) {
-    return boost::none;
+    return std::nullopt;
   }
   return result->second;
 }
@@ -548,7 +548,7 @@ container::compartment_id Statedef::getCompModelIdx(const model::compartment_id&
     noexcept {
   const auto id = compModelIdxs.find(compartment);
   if (id == compModelIdxs.end()) {
-    return boost::none;
+    return std::nullopt;
   }
     return id->second;
 }
@@ -735,7 +735,7 @@ void Statedef::addOhmicCurrent(
     if (curr_it == ohmicCurrPtrs.end()) {
         auto spec = species_name ? std::optional<container::species_id>(
                                        patch.getSpecPatchIdx(getSpecModelIdx(*species_name)))
-                                 : boost::none;
+                                 : std::nullopt;
         curr_it =
             ohmicCurrPtrs
                 .emplace(curr_id, std::make_unique<OhmicCurrent>(

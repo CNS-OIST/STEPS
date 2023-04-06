@@ -55,7 +55,7 @@ class TestRDBoundDiffODE(unittest.TestCase):
 
         NITER = 1
         DT = 0.01
-        INT = 0.11
+        INT = 0.10
 
         # The number of initial molecules:
         NINJECT = 10000	

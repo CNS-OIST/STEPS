@@ -2,14 +2,14 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -503,7 +503,7 @@ void Tetexact::_setup()
             // std::vector<int> tris = pMesh->getTriTriNeighb(tri);
 
 
-            std::array<triangle_id_t, 3> tris {{ boost::none, boost::none, boost::none}};
+            std::array<triangle_id_t, 3> tris {{ std::nullopt, std::nullopt, std::nullopt}};
             for (int j = 0; j < 3; ++j)
             {
                 const auto& neighb_tris = bar2tri[tri_bars[j]];
@@ -1032,15 +1032,15 @@ void Tetexact::_setupEField()
 
     pEFVert_GtoL = new vertex_id_t[nverts];
     for (uint i=0; i < nverts; ++i) {
-      pEFVert_GtoL[i] = boost::none;
+      pEFVert_GtoL[i] = std::nullopt;
     }
     pEFTri_GtoL = new triangle_id_t[ntris];
     for (uint i=0; i< ntris; ++i) {
-      pEFTri_GtoL[i] = boost::none;
+      pEFTri_GtoL[i] = std::nullopt;
     }
     pEFTet_GtoL = new tetrahedron_id_t[ntets];
     for (uint i=0; i < ntets; ++i) {
-      pEFTet_GtoL[i] = boost::none;
+      pEFTet_GtoL[i] = std::nullopt;
     }
 
     pEFTri_LtoG = new triangle_id_t[neftris()];
@@ -1346,7 +1346,11 @@ void Tetexact::reset()
         patch->reset();
     }
 
-    for (auto const& tet : pTets) {
+    if (efflag()) {
+        pEField->setMembPotential(0, DEFAULT_MEMB_POT);
+    }
+
+    for (auto const& tet: pTets) {
         if (tet != nullptr) {
             tet->reset();
         }

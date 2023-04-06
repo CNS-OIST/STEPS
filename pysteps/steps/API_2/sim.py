@@ -1,14 +1,14 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -76,7 +76,12 @@ if stepslib._STEPS_USE_DIST_MESH:
         GIBSON_BRUCK = stepslib._py_SearchMethod.GIBSON_BRUCK
 
 
-    __all__ +=  ['KSPNorm', 'SSAMethod', 'NextEventSearchMethod']
+    class DistributionMethod(enum.IntEnum):
+        UNIFORM = stepslib._py_DistributionMethod.UNIFORM
+        MULTINOMIAL = stepslib._py_DistributionMethod.MULTINOMIAL
+
+
+    __all__ +=  ['KSPNorm', 'SSAMethod', 'NextEventSearchMethod', 'DistributionMethod']
 
 
 ###################################################################################################
@@ -230,7 +235,8 @@ class _SimPathDescr:
                 # "Default" behavior
                 val = param.value
         # Keep track of values that were set with a Parameter
-        path[0]._parameterSimPathCallback(path + (self.name, ), param)
+        pathStr = '.'.join(str(v) for v in path[1:]) + f'.{self.name}'
+        path[0]._setParameter(pathStr, param)
 
         fun, params, kwparams = self._getFunction('set', path)
         if isinstance(val, nutils.Params):
@@ -408,9 +414,9 @@ class SimPath:
 
         Examples::
 
-            sim.ALL(Compartment).S1.Count        # The number of S1 Species in all compartments, it
-                                                 # returns a list of length equal to the number of
-                                                 # compartments in the simulation.
+            sim.ALL(Compartment).S1.Count        # The number of S1 Species in all compartments,
+                                                 # it returns a list of length equal to the number
+                                                 # of compartments in the simulation.
             sim.ALL(Patch).ALL(Species).Count    # The number of each species in each compartment,
                                                  # it returns a list with length equal to the sum
                                                  # of the number of different Species defined in
@@ -419,9 +425,9 @@ class SimPath:
                                                  # returns a list of booleans of length equal to
                                                  # the total number of reactions in comp1 (forward
                                                  # and backward).
-            sim.ALL(Compartment, Patch).S1.Count # The number of S1 Species in all compartments and
-                                                 # patches, it returns a list of length equal to the
-                                                 # number of compartment and patches.
+            sim.ALL(Compartment, Patch).S1.Count # The number of S1 Species in all compartments
+                                                 # and patches, it returns a list of length equal
+                                                 # to the number of compartment and patches.
         """
         if len(cls) == 0:
             cls = [object]
@@ -460,7 +466,8 @@ class SimPath:
                                                        # instead of the elements themselves.
             sim.LIST(comp1, patch1).LIST(S1, S2).Count # Number of S1 and S2 Species in comp1 and
                                                        # patch1. The resulting order is:
-                                                       # [comp1.S1, comp1.S2, patch1.S1, patch1.S2].
+                                                       # [comp1.S1, comp1.S2, patch1.S1,
+                                                       #  patch1.S2].
 
         .. note::
             While the order of elements with :py:func:`ALL` depends on the order of addition of the
@@ -884,7 +891,7 @@ class SimPath:
         return SimPath(self._sim, self._specifyElemsTips(self._elems, key))
 
     def __call__(self, *args, **kwargs):
-        """Give additional information about the last path element
+        r"""Give additional information about the last path element
 
         All objects that implement the `__call__` special method can receive additional information.
         The arguments are just passed to the corresponding object's `__call__` method.
@@ -915,6 +922,54 @@ class SimPath:
         for path in self._walk():
             yield path
 
+    def _distribute(self):
+        """Distribute the path across MPI ranks if it involves mesh elements of a distributed meshes
+        Return the path (None if not present in this rank), a list of indices in the original path,
+        a list of indices of the local path to be saved, and a boolean representing whether the path
+        changed.
+        """
+        changed = False
+        if self._sim._isDistributed():
+            distrDict = {}
+            globalInd = 0
+            allDistrInds = [] # Map from savedInd to globalInd
+            spMask = [] # Mask determining which part of the simpath should actually be saved
+            for locElem, subElems in self._elems[self._sim].items():
+                # Compute length of subElems and locElem
+                nbSubPaths = max(1, len(list(self._walk(elems=subElems))))
+                locElemLen = len(list(locElem._simPathWalkExpand()))
+                # Distribute References and RefLists
+                if isinstance(locElem, ngeom.Reference):
+                    locElem = locElem.toList()
+                if isinstance(locElem, ngeom.RefList):
+                    distrElem, listInds = locElem.toLocal(_returnInds=True)
+                    changed = True
+                else:
+                    # locElem is not distributable
+                    distrElem = locElem
+                    listInds = range(locElemLen)
+                # If the elements are not distributable or are in the current rank, add them to the
+                # new path and keep track of their indices in the original path.
+                if not isinstance(distrElem, ngeom.RefList) or len(distrElem) > 0:
+                    distrDict[distrElem] = subElems
+                    if isinstance(distrElem, ngeom.RefList) or MPI._shouldWrite:
+                        # Compute the indices of the distributed saved values in the original path
+                        for lind in listInds:
+                            allDistrInds += range(globalInd + lind * nbSubPaths, globalInd + (lind + 1) * nbSubPaths)
+                        spMask += [True] * nbSubPaths * len(listInds)
+                    else:
+                        changed = True
+                        spMask += [False] * nbSubPaths * locElemLen
+
+                globalInd += nbSubPaths * locElemLen
+
+            if len(distrDict) == 0:
+                return None, [], [], changed
+            else:
+                return SimPath(self._sim, {self._sim: distrDict}), allDistrInds, spMask, changed
+        else:
+            return self, None, None, changed
+
     @nutils.limitReprLength
     def __repr__(self):
         return ', '.join('.'.join(str(v) for v in path) for path in self._walk())
@@ -925,9 +980,6 @@ for _name, _docstr in SimPath._endNames.items():
     _descrobj = _SimPathDescr(_name)
     _descrobj.__doc__ = _docstr
     setattr(SimPath, _name, _descrobj)
-    # Forbid the creation of objects that would have the same name because they would then be
-    # inaccessible through a SimPath (descriptors have priority over __getattr__).
-    nutils.NamedObject._forbiddenNames.add(_name)
 
 
 class MPI:
@@ -1070,8 +1122,8 @@ class _SimulationCheckpointer:
 
 
 @nutils.FreezeAfterInit
-class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.ParameterizedObject):
-    """The main simulation class
+class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedParameterizedObject):
+    r"""The main simulation class
 
     A simulation is defined from a model, a geometry, a solver and a random number generator. Once
     a :py:class:`Simulation` object is created, users can access and set simulated values through
@@ -1103,6 +1155,9 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.Parameter
     PARALLEL_SOLVERS = ['TetOpSplit', 'DistTetOpSplit']
     """Available parallel solvers"""
 
+    DISTRIBUTED_SOLVERS = ['DistTetOpSplit']
+    """Available distributed solvers"""
+
     def __init__(self, solverName, mdl, geom, rng=None, *args, name=None, **kwargs):
         super().__init__(name=name)
 
@@ -1116,6 +1171,7 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.Parameter
         self._resultSelectors = []
         self._nextSave = None
         self._runId = -1
+        self._rsOptimGroupId = -1
 
         self._checkpointer = _SimulationCheckpointer(self)
 
@@ -1177,7 +1233,7 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.Parameter
         if self._nextSave is None:
             raise Exception(f'Cannot call step before calling newRun on the simulation.')
 
-        self._discardPastSaves(currTime)
+        self._discardPastSaves(self.Time)
 
         self.stepsSolver.step()
         currTime = self.Time
@@ -1256,19 +1312,24 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.Parameter
             be saved.
         :type timePoints: List[float]
         """
+        self._rsOptimGroupId += 1
         # Only optimize calls that will be called together, other selectors should be optimized independently
         if dt is not None or timePoints is not None:
             selectors = nsaving_optim.OptimizeSelectors(self, selectors)
         else:
             selectors = [nsaving_optim.OptimizeSelectors(self, [sel])[0] for sel in selectors]
 
+        lastRsInd = len(self._resultSelectors)
         for i, rs in enumerate(selectors):
             if isinstance(rs, nsaving.ResultSelector):
                 if dt is not None:
                     rs._saveWithDt(dt)
-                if timePoints is not None:
+                elif timePoints is not None:
                     rs._saveWithTpnts(timePoints)
-                rs._addedToSimulation(i)
+                elif i > 0:
+                    # Each result selector is part of a different optimization group
+                    self._rsOptimGroupId += 1
+                rs._addedToSimulation(lastRsInd + i, self._rsOptimGroupId)
                 self._resultSelectors.append(rs)
             else:
                 raise Exception(f'Expected a ResultSelector object, got {rs} instead.')
@@ -1297,10 +1358,10 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.Parameter
         """
         if not isinstance(dbh, nsaving.DatabaseHandler):
             raise TypeError(f'Expected a DatabaseHandler, got {dbh} instead.')
-        if MPI._shouldWrite:
-            dbh._newGroup(uid, self._resultSelectors, **kwargs)
-            for rs in self._resultSelectors:
-                rs._toDB(dbh)
+        # The list of result selectors can be modified if the mesh is distributed
+        self._resultSelectors = dbh._newGroup(self, uid, self._resultSelectors, **kwargs)
+        for rs in self._resultSelectors:
+            rs._toDB(dbh)
 
     def autoCheckpoint(self, period, prefix='', onlyLast=False):
         """Activates automatic checkpointing
@@ -1424,20 +1485,20 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.Parameter
 
         return solver
 
+    def _isDistributed(self):
+        return isinstance(self.geom, ngeom.DistMesh)
+
     # Advanced parameters column names
     _ADV_PARAMS_RUN_NUMBER = 'Run #'
     _ADV_PARAMS_RUN_TIME = 'Time'
-    _ADV_PARAMS_SIM_PATH = 'Simulation Path'
+    _ADV_PARAMS_DEFAULT_NAME = 'Simulation Path'
 
-    def _parameterSimPathCallback(self, path, param):
-        """Keep track of solver setter calls when used with Parameter objects"""
-        pathStr = '.'.join(str(v) for v in path[1:])
-        key = (
-            (self._ADV_PARAMS_RUN_NUMBER, self._runId),
-            (self._ADV_PARAMS_RUN_TIME, self.Time),
-            (self._ADV_PARAMS_SIM_PATH, pathStr)
+    def _getCurrentParamKey(self):
+        """Return a key representing the current state of the object"""
+        return (
+            (self._ADV_PARAMS_RUN_NUMBER, self._runId if self._runId > -1 else None),
+            (self._ADV_PARAMS_RUN_TIME, self.Time if self._runId > -1 else None)
         )
-        self._setAdvancedParameter(key, param)
 
     @classmethod
     def _getGroupedAdvParams(cls):
@@ -1450,7 +1511,7 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.Parameter
     #####################
 
     @property
-    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('s'))
+    @nutils.AdvancedParameterizedObject.RegisterGetter(units=nutils.Units('s'))
     def EfieldDT(self):
         """The stepsize for membrane potential solver
 
@@ -1465,12 +1526,12 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.Parameter
         return self.stepsSolver.getEfieldDT()
 
     @EfieldDT.setter
-    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('s'))
+    @nutils.AdvancedParameterizedObject.RegisterSetter(units=nutils.Units('s'))
     def EfieldDT(self, val):
         self.stepsSolver.setEfieldDT(val)
 
     @property
-    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('K'))
+    @nutils.AdvancedParameterizedObject.RegisterGetter(units=nutils.Units('K'))
     def Temp(self):
         """The simulation temperature in Kelvins
 
@@ -1479,11 +1540,10 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.Parameter
 
         :type: float
         """
-
         return self.stepsSolver.getTemp()
 
     @Temp.setter
-    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('K'))
+    @nutils.AdvancedParameterizedObject.RegisterSetter(units=nutils.Units('K'))
     def Temp(self, val):
         self.stepsSolver.setTemp(val)
 
@@ -1522,7 +1582,7 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.Parameter
     # Solver methods    #
     #####################
 
-    @nutils.ParameterizedObject.SpecifyUnits(None, nutils.Units('s'))
+    @nutils.AdvancedParameterizedObject.SpecifyUnits(None, nutils.Units('s'))
     def setDT(self, dt):
         """Set the stepsize for numerical solvers
 
@@ -1533,7 +1593,7 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.Parameter
         """
         self.stepsSolver.setDT(dt)
 
-    @nutils.ParameterizedObject.SpecifyUnits(None, nutils.Units('s'))
+    @nutils.AdvancedParameterizedObject.SpecifyUnits(None, nutils.Units('s'))
     def setRk4DT(self, dt):
         """Set the stepsize for numerical solvers
 
@@ -1598,20 +1658,13 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.Parameter
         self.stepsSolver.saveMembOpt(fname)
 
 
-# Forbid the creation of objects that would have the name of a Simulation method or property
-# because they would then be inaccessible through a SimPath (methods and attributes have priority
-# over __getattr__).
-for _name in dir(Simulation) + dir(SimPath):
-    nutils.NamedObject._forbiddenNames.add(_name)
-
-
 ###################################################################################################
 # SBML Import
 
 
 @nutils.FreezeAfterInit
 class SBMLSimulation(Simulation):
-    """Simulation loaded from an SBML model
+    r"""Simulation loaded from an SBML model
 
     :param solverName: Name of the solver to be used for the simulation (see :py:class:`Simulation`).
     :type solverName: str

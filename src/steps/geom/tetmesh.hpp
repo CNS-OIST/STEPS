@@ -2,14 +2,14 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -467,13 +467,13 @@ public:
     /// \param sampling Number of point to test for monte-carlo method.
     /// \return A vector where each position contains pairs <tet, intersection ratio>.
     std::vector<std::pair<tetrahedron_id_t, double>>
-    intersectMontecarlo(const point3d &p_start, const point3d &p_end, const tetrahedron_id_t &tet_start = boost::none, unsigned int sampling = 100)
+    intersectMontecarlo(const point3d &p_start, const point3d &p_end, const tetrahedron_id_t &tet_start = std::nullopt, unsigned int sampling = 100)
     const;
 
     /// Computes the percentage of intersection of a segment with the mesh tets
     ///
     /// \return A vector where each position contains pairs <tet, intersection ratio>
-    std::vector<std::pair<tetrahedron_id_t, double>> intersectDeterministic(const point3d &p_start, const point3d &p_end, const tetrahedron_id_t &tet_start= boost::none)
+    std::vector<std::pair<tetrahedron_id_t, double>> intersectDeterministic(const point3d &p_start, const point3d &p_end, const tetrahedron_id_t &tet_start= std::nullopt)
     const;
 
     // public alias type for segment intersections

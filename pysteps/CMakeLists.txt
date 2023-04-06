@@ -56,12 +56,16 @@ if(PETSC_FOUND AND USE_PETSC)
 else()
   set(cython_use_petsc False)
 endif()
+if(STEPS_USE_DIST_MESH)
+  set(cython_use_dist_mesh True)
+else()
+  set(cython_use_dist_mesh False)
+endif()
 add_custom_command(
   OUTPUT ${cython_outputs}
   COMMAND
-    ${CYTHON_EXECUTABLE} --fast-fail --cplus -I ${steps_include_dir}
-    --compile-time-env USE_PETSC=${cython_use_petsc}
-    --compile-time-env STEPS_USE_DIST_MESH=${STEPS_USE_DIST_MESH}
+    ${CYTHON_EXECUTABLE} --fast-fail --cplus -I ${steps_include_dir} --compile-time-env
+    USE_PETSC=${cython_use_petsc} --compile-time-env STEPS_USE_DIST_MESH=${cython_use_dist_mesh}
     --output-file ${cython_outputs} ${cython_src} -X embedsignature=True
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   DEPENDS libsteps ${cy_srcs}

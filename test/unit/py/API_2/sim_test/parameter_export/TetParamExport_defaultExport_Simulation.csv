@@ -1,2 +1,2 @@
-Simulation	EfieldDT	EfieldDT Units
-nsim	0.001	s
+Simulation	Simulation Path	Value	Value Units
+nsim	EfieldDT	0.001	s

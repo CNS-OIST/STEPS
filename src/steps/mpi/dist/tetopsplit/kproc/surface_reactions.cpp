@@ -8,12 +8,9 @@
 #include <Omega_h_shape.hpp>
 #include <boost/optional/optional.hpp>
 
-#include "diffusions.hpp"
-#include "kproc_state.hpp"
 #include "geom/dist/distmesh.hpp"
 #include "math/constants.hpp"
 #include "mpi/dist/tetopsplit/definition/sreacdef.hpp"
-#include "mpi/dist/tetopsplit/kproc/surface_reactions.hpp"
 #include "util/vocabulary.hpp"
 
 namespace steps {

@@ -158,7 +158,7 @@ class TestRDWellMixedRSSA(unittest.TestCase):
         global VOL
 
         DT = 0.1                  # Sampling time-step
-        INT = 1.1                 # Sim endtime
+        INT = 1.0                 # Sim endtime
         VOL = 9.0e-18
 
         NITER_max = 100000

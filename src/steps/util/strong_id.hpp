@@ -2,11 +2,11 @@
 
 #include <algorithm>
 #include <functional>
+#include <optional>
 #include <string>
 #include <typeinfo>
 #include <vector>
 
-#include <boost/none.hpp>
 #include <boost/functional/hash.hpp>
 
 namespace steps {
@@ -47,17 +47,13 @@ class strong_id final {
 public:
   using value_type = T;
 
-  constexpr strong_id() noexcept : m_value() {}
+  constexpr strong_id() noexcept : m_value(unknown_value()) {}
+  constexpr strong_id(std::nullopt_t) noexcept : m_value(unknown_value()) {}
 
   template <typename U,
             typename = typename std::enable_if<std::is_same<T, U>::value ||
                                                is_promotion<U, T>::value>::type>
   constexpr strong_id(U const &value) noexcept : m_value(value) {}
-
-  template <typename U,
-            typename = typename std::enable_if<is_promotion<U, T>::value>::type>
-  constexpr strong_id(strong_id<U, Parameter> const &other) noexcept
-      : m_value(other.get()) {}
 
   template <typename U, typename = typename std::enable_if<
                             is_conversion<U, T>::value>::type>
@@ -70,8 +66,6 @@ public:
 
   strong_id &operator=(strong_id const &) = default;
   strong_id &operator=(strong_id &&) = default;
-
-  strong_id(boost::none_t) noexcept : m_value(std::numeric_limits<T>::max()) {}
 
   /**
    * \return special constant meaning that the identifier is unknown

@@ -1,14 +1,14 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -568,10 +568,10 @@ class Complex(nutils.UsingObjects(Model)):
         Valid examples::
 
             Comp[S1A, S1B, S2A] # Valid, returns the corresponding ComplexState
-            Comp[S1A, :, :]     # Valid, returns a ComplexSelector in which the first SubUnit is in
-                                # state S1A and the other subunits are in any state
-            Comp[S1A, ...]      # Valid, the ellipsis operator ('...') is equivalent to filling the
-                                # remaining subUnits with ':'
+            Comp[S1A, :, :]     # Valid, returns a ComplexSelector in which the first SubUnit is
+                                # in state S1A and the other subunits are in any state
+            Comp[S1A, ...]      # Valid, the ellipsis operator ('...') is equivalent to filling
+                                # the remaining subUnits with ':'
             Comp[..., S2A]      # Valid, returns a ComplexSelector in which the last SubUnit is in
                                 # state S2A and the other subunits are in any state
             Comp[S1A|S1B, :, :] # Valid, first subunit is either in state S1A or S1B and the other
@@ -895,6 +895,10 @@ class ReactionElement(nutils.NamedObject):
         :type: :py:class:`ReactingElement`, read-only
         """
         return Surf(self)
+
+    def _simPathAutoMetaData(self):
+        """Return a dictionary with string keys and string or numbers values."""
+        return {'obj_type': self._solverStr(), 'obj_id': self.name}
 
 
 @nutils.FreezeAfterInit
@@ -1690,6 +1694,9 @@ class ComplexState(ReactionElement):
             return self._toComplexSelector().__or__(other)
         else:
             raise TypeError('ComplexStates can only be combined with ComplexSelectors or ' 'ComplexStates.')
+
+    def __repr__(self):
+        return f'{self._comp.name}[' + ', '.join(map(str, self)) + ']'
 
     def _solverStr(self):
         """Return the string that is used as part of method names for this specific object."""
@@ -2904,7 +2911,7 @@ class _SubReactionList(nutils.SolverPathObject, nutils.ParameterizedObject, list
     def K(self):
         """Reaction rate(s)
 
-        If the reaction is bidirectional, this value corresponds to a tuple composed of the forward
+        If the reaction is reversible, this value corresponds to a tuple composed of the forward
         and backward rate. The rate can be a special function that depends e.g. on membrane potential
         (:py:class:`VDepRate`) or on complex states (:py:class:`CompDepRate`).
 
@@ -3075,7 +3082,6 @@ class _SubReactionList(nutils.SolverPathObject, nutils.ParameterizedObject, list
             if isinstance(rate, VDepRate):
                 # Undeclare the parent reaction to avoid further exception raising when exiting context
                 # managers
-                # TODO
                 # self._parent._declared = False
                 raise NotImplementedError(
                     f'{self._decl()}: Cannot declare a voltage-dependent volume '
@@ -3093,7 +3099,7 @@ class Reaction(
     nutils.StepsWrapperObject,
     nutils.ParameterizedObject,
 ):
-    """A (possibly bidirectional) reaction.
+    """A (possibly reversible) reaction.
 
     A reaction needs to be declared within a :py:class:`Model` and within a
     :py:class:`VolumeSystem` or a :py:class:`SurfaceSystem` (i.e. inside a ``with`` block,
@@ -3504,7 +3510,7 @@ class Reaction(
 
         :returns: The querried reaction(s).
 
-        See :ref:`/API_2/Interface_Tutorial_1_wm.ipynb` for usage example.
+        See :ref:`/API_2/STEPS_Tutorial_wm.ipynb` for usage example.
 
         :meta public:
         """
@@ -3584,7 +3590,7 @@ class Reaction(
             if self._bidir:
                 if not (isinstance(val, tuple) and len(val) == 2):
                     raise Exception(
-                        f'The reaction is bidirectional, two properties should be set, got {val} instead.'
+                        f'The reaction is reversible, two properties should be set, got {val} instead.'
                     )
                 prop.fset(self._subReactions[Reaction._FwdSpecifier], val[0])
                 prop.fset(self._subReactions[Reaction._BkwSpecifier], val[1])
@@ -3628,7 +3634,8 @@ class ReactionManager:
 
         S1 + S2 >r['R01']> S3  # String identifier for permanently naming the reaction
 
-        S1 + S2 >r[1]> S3      # Integer identifier for reactions that do not need explicit naming
+        S1 + S2 >r[1]> S3      # Integer identifier for reactions that do not need explicit
+                               # naming
 
     String identifiers are used when the reaction will need to be accessed during simulation (see
     :py:class:`steps.API_2.sim.SimPath` for usage), they cannot be reused for different reactions.
@@ -3688,8 +3695,8 @@ class ReactionManager:
 
 
 @nutils.FreezeAfterInit
-class XDepFunc(nutils.NamedObject):
-    """Base class for functions depending on some simulation or object state
+class XDepFunc(nutils.NamedObject, nutils.ParameterizedObject):
+    r"""Base class for functions depending on some simulation or object state
 
     This is a wrapper around a function that adds some functionalities.
 
@@ -3698,6 +3705,8 @@ class XDepFunc(nutils.NamedObject):
     :type func: Callable[[Any, ...], Number]
     """
 
+    _DEPENDS_ON_NAME = 'Depends on'
+
     def __init__(self, func, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if not hasattr(func, '__call__'):
@@ -3705,6 +3714,13 @@ class XDepFunc(nutils.NamedObject):
         self._func = func
         self._args = []
         self._mult = 1
+
+        self._setParameter('Function', self._func)
+        self._subParamObjs = set()
+
+    def _getSubParameterizedObjects(self):
+        """Return all subobjects that can hold parameters."""
+        return sorted(self._subParamObjs, key=lambda x: x.name)
 
     def __mul__(self, m):
         """Multiplication with a constant or another function of the same class
@@ -3740,16 +3756,36 @@ class XDepFunc(nutils.NamedObject):
         """
         return self._func
 
-    def __call__(self, *lst):
+    def __call__(self, *lst, _recParams=True):
         """Call the wrapped function
 
         :meta public:
         """
-        return self._mult * self._func(*lst)
+        if _recParams:
+            nutils.Parameter._startRecording()
+
+        ret = self._mult * self._func(*lst)
+
+        if _recParams:
+            # Retrieve the parameters used when the function was called
+            allParams = [param for param in nutils.Parameter._endRecordingAndGetUsage() if param._isNamed() and param._isUserDefined()]
+            if len(allParams) > 0:
+                depon = self._getParameter(XDepFunc._DEPENDS_ON_NAME)
+                names = set([param.name for param in allParams])
+                if depon is not None:
+                    names |= set(depon.value.lst)
+                    allParams = list(set(depon._dependencies) | set(allParams))
+                nameList = nutils._ParamList(list(names))
+                self._setParameter(XDepFunc._DEPENDS_ON_NAME, nutils.Parameter(nameList, _dependencies=allParams))
+
+        if isinstance(ret, XDepFunc):
+            self._subParamObjs.add(ret)
+
+        return ret
 
 
 @nutils.FreezeAfterInit
-class VDepFunc(XDepFunc, nutils.ParameterizedObject):
+class VDepFunc(XDepFunc):
     """Hold a function and a voltage range for computing e.g. voltage-dependent reaction rates
 
     For efficiency reasons, the values of these functions are pre-computed for specific voltage
@@ -3779,7 +3815,6 @@ class VDepFunc(XDepFunc, nutils.ParameterizedObject):
             raise Exception(f'The voltage step is greater than the voltage range.')
 
         self.vrange = vrange
-        self._setParameter('Function', self._func)
 
         self._args = [self.vrange]
 
@@ -3830,6 +3865,8 @@ class CompDepFunc(XDepFunc):
         self._compsOrCompSels = compsOrCompSels
 
         self._args = [self._compsOrCompSels]
+
+        self._setParameter('Complex', self._compsOrCompSels)
 
     def _getStatesFromReacSide(self, lhs):
         lhsCompStates = list(lhs._getElemsOfType(ComplexState))
@@ -3916,15 +3953,11 @@ class VDepRate(VDepFunc):
         # Retrieve the parameters used when the function is called with vmin
         # This can possibly miss some parameters if they are only involved in the computation
         # for some specific values of the membrane potential
-        nutils.Parameter._startRecording()
         self(vmin)
-        allParams = [param for param in nutils.Parameter._endRecordingAndGetUsage() if param._isNamed() and param._isUserDefined()]
-        nameList = nutils._ParamList([param.name for param in allParams])
-        self._setParameter('Depends on', nutils.Parameter(nameList, _dependencies=allParams))
 
         ktab = []
         for i in range(tablesize):
-            ret = self(vmin + i * dv)
+            ret = self(vmin + i * dv, _recParams=False)
             ktab.append(ret.valueIn(units) if isinstance(ret, nutils.Parameter) else ret)
 
         return dict(ktab=ktab, vmin=vmin, vmax=vmax, dv=dv, tablesize=tablesize)
@@ -3954,10 +3987,10 @@ class CompDepRate(CompDepFunc):
             rate = CompDepRate(lambda s1, s2: k3 + k4 * s1.Count(S2A) * s2.Count(S4A), [C1, C2])
 
             r[1].K = rate
-            # The above reaction takes place between a subunit of Comp1 in state S1A and a subunit
-            # of Comp2 in state S3A. It takes place with a basal rate k3 and this rate is increased
-            # by a value that depends on the number of subunits in state S2A in Comp1 and the
-            # number of subunits in state S4A in Comp2.
+            # The above reaction takes place between a subunit of Comp1 in state S1A and a
+            # subunit of Comp2 in state S3A. It takes place with a basal rate k3 and this rate
+            # is increased by a value that depends on the number of subunits in state S2A in
+            # Comp1 and the number of subunits in state S4A in Comp2.
 
     """
 
@@ -4252,6 +4285,14 @@ class _SubCurrent(nutils.NamedObject):
         """Return the string that is used as part of method names for this specific object."""
         return self._parent.__class__._currStr
 
+    def _simPathAutoMetaData(self):
+        """Return a dictionary with string keys and string or numbers values."""
+        mtdt = {'obj_type': self._parent.__class__._currStr, 'obj_id': self.name}
+        # Add information about parent comp or patch
+        for key, val in self._parent._simPathAutoMetaData().items():
+            mtdt['parent_' + key] = val
+        return mtdt
+
 
 class _SubCurrentList:
     """List of _SubCurrent objects"""
@@ -4273,7 +4314,7 @@ class _SubCurrentList:
 
 
 @nutils.FreezeAfterInit
-class Current(nutils.UsingObjects(SurfaceSystem), nutils.StepsWrapperObject):
+class Current(nutils.UsingObjects(SurfaceSystem), nutils.StepsWrapperObject, nutils.ParameterizedObject):
     """Base class representing a current associated with one or more channel states
 
     All :py:class:`Current` objects need to be declared inside a :py:class:`SurfaceSystem`.
@@ -4298,6 +4339,7 @@ class Current(nutils.UsingObjects(SurfaceSystem), nutils.StepsWrapperObject):
         )
 
     def _getComplexStates(self, states):
+        self._setParameter('Opened state', states)
         if isinstance(states, Complex):
             return states, states[...]._getAllStates()
         if isinstance(states, ComplexSelector):
@@ -4372,9 +4414,13 @@ class Current(nutils.UsingObjects(SurfaceSystem), nutils.StepsWrapperObject):
         if self._added:
             raise Exception(f'Cannot modify the properties of a current that was already added to STEPS.')
 
+    def _simPathAutoMetaData(self):
+        """Return a dictionary with string keys and string or numbers values."""
+        return {'obj_type': self.__class__._currStr, 'obj_id': self.name}
+
 
 @nutils.FreezeAfterInit
-class OhmicCurr(Current, nutils.ParameterizedObject):
+class OhmicCurr(Current):
     """An ohmic current through a channel in one or more conducting states
 
     :param states: The conducting state(s) of the channel
@@ -4407,10 +4453,11 @@ class OhmicCurr(Current, nutils.ParameterizedObject):
 
             OC_Chan1 = OhmicCurr.Create(Chan1[:, :, S2A], cond, e_rev)
 
-            # The above 2 lines declare an ohmic current from channel Chan1 when its 3rd subunit is
-            # in state S2A. Thanks to the CompDepCond function, the conductance changes depending
-            # on the specific states of the other subunits. In this case, there is a basal
-            # conductance k1 and this conductance is increased by k2 for each subunit in state S1A.
+            # The above 2 lines declare an ohmic current from channel Chan1 when its 3rd subunit
+            # is in state S2A. Thanks to the CompDepCond function, the conductance changes 
+            # depending on the specific states of the other subunits. In this case, there is a
+            # basal conductance k1 and this conductance is increased by k2 for each subunit in
+            # state S1A.
 
     .. warning::
         The corresponding currents are only truly added to steps after the `with ssys:` block
@@ -4493,7 +4540,7 @@ class OhmicCurr(Current, nutils.ParameterizedObject):
 
 
 @nutils.FreezeAfterInit
-class GHKCurr(Current, nutils.ParameterizedObject):
+class GHKCurr(Current):
     """A Goldman-Hodgkin-Katz current through a channel in one or more conducting states
 
     :param states: The conducting state(s) of the channel.

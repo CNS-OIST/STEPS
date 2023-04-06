@@ -8,10 +8,12 @@ ExS2.s → S2.o + Ex.s	nmdl	ss1R5['bkw']	1.1	s⁻¹
 ExS2.s + S1.i → ExS1S2.s	nmdl	ss1R6['fwd']	5300000	M⁻¹ s⁻¹		
 ExS1S2.s → ExS2.s + S1.i	nmdl	ss1R6['bkw']	1.4	s⁻¹		
 ExS1S2.s → S1.o + S2.i + Ex.s	nmdl	ss1R7['fwd']	10	s⁻¹		
-chancl.s → chanop.s	nmdl	ss1RVDep01['fwd']	rvdep01f	s⁻¹	Chan1[:]	
-chanop.s → chancl.s	nmdl	ss1RVDep01['bkw']	rvdep01b	s⁻¹	Chan1[:]	
+chancl.s → chanop1.s	nmdl	ss1RVDep01['fwd']	rvdep01f	s⁻¹	Chan1[:]	
+chanop1.s → chancl.s	nmdl	ss1RVDep01['bkw']	rvdep01b	s⁻¹	Chan1[:]	
 sus1 + S1 → sus2	nmdl	vs1CR1['fwd']	2451	M⁻¹ s⁻¹	CC[:, :]	
 sus2 → sus1 + S1	nmdl	vs1CR1['bkw']	152	s⁻¹	CC[:, :]	
+sus1 + S1 → sus2	nmdl	vs1CR2['fwd']	2451	M⁻¹ s⁻¹	CC[:, :]	
+sus2 → sus1 + S1	nmdl	vs1CR2['bkw']	152	s⁻¹	CC[:, :]	
 S1 + S2 → 2S1	nmdl	vs1R1['fwd']	0.002	μM⁻¹ s⁻¹		r01f
 2S1 → S1 + S2	nmdl	vs1R1['bkw']	100	M⁻¹ s⁻¹		
 S1 + S2 → 2S2	nmdl	vs2R2['fwd']	0.005	μM⁻¹ s⁻¹		r02f * 2 + r01f - r01f

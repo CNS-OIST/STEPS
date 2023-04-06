@@ -77,8 +77,8 @@ public:
    * \param is_uniform_distribution true: uniform distribution, false:
    * multinomial
    */
-  void setPatchCount(const model::patch_id& patch,
-                     const model::species_name& species,
+  void setPatchCount(const model::patch_id &patch,
+                     const model::species_name &species,
                      osh::Real num_molecules,
                      const math::DistributionMethod distribution =
                          math::DistributionMethod::DIST_UNIFORM) override;
@@ -87,7 +87,7 @@ public:
    *
    * \param counts list of molecules assignments on patches
    */
-  void setPatchCount(const Simdef::patch_counts_t& counts,
+  void setPatchCount(const Simdef::patch_counts_t &counts,
                      const math::DistributionMethod distribution =
                          math::DistributionMethod::DIST_UNIFORM) override;
 
@@ -111,43 +111,38 @@ public:
   std::pair<std::vector<mesh::tetrahedron_global_id_t>, std::vector<osh::LO>>
   getElemCount(const model::species_name &species) const override;
 
-  void getBatchElemValsNP(const osh::GO* indices,
-                          size_t input_size,
-                          const model::species_name& species,
-                          osh::Real* counts,
-                          bool useConc = false) const;
+  void getBatchElemValsNP(const osh::GO *indices, size_t input_size,
+                          const model::species_name &species, osh::Real *counts,
+                          bool useConc = false, bool local = false) const;
 
-  void setBatchElemValsNP(const osh::GO* indices,
-                          size_t input_size,
-                          const model::species_name& species,
-                          osh::Real* counts,
-                          bool useConc = false) const;
+  void setBatchElemValsNP(const osh::GO *indices, size_t input_size,
+                          const model::species_name &species, osh::Real *counts,
+                          bool useConc = false, bool local = false) const;
 
-  void getBatchBoundCountNP(const osh::GO* indices,
-                            size_t input_size,
-                            const model::species_name& species,
-                            osh::Real* counts) const;
+  void getBatchBoundCountNP(const osh::GO *indices, size_t input_size,
+                            const model::species_name &species,
+                            osh::Real *counts, bool local = false) const;
 
-  void setBatchBoundCountNP(const osh::GO* indices,
-                            size_t input_size,
-                            const model::species_name& species,
-                            osh::Real* counts) const;
+  void setBatchBoundCountNP(const osh::GO *indices, size_t input_size,
+                            const model::species_name &species,
+                            osh::Real *counts, bool local = false) const;
 
-  void getBatchVertVsNP(const osh::GO* indices, size_t input_size, osh::Real* voltages) const;
+  void getBatchVertVsNP(const osh::GO *indices, size_t input_size,
+                        osh::Real *voltages, bool local = false) const;
 
-  void getBatchTriVsNP(const osh::GO* indices, size_t input_size, osh::Real* voltages) const;
+  void getBatchTriVsNP(const osh::GO *indices, size_t input_size,
+                       osh::Real *voltages, bool local = false) const;
 
-  void getBatchTetVsNP(const osh::GO* indices, size_t input_size, osh::Real* voltages) const;
+  void getBatchTetVsNP(const osh::GO *indices, size_t input_size,
+                       osh::Real *voltages, bool local = false) const;
 
-  void getBatchTriOhmicIsNP(const osh::GO* indices,
-                            size_t input_size,
+  void getBatchTriOhmicIsNP(const osh::GO *indices, size_t input_size,
                             const model::ohmic_current_id curr,
-                            osh::Real* currents) const;
+                            osh::Real *currents, bool local = false) const;
 
-  void getBatchTriGHKIsNP(const osh::GO* indices,
-                          size_t input_size,
-                          const model::ghk_current_id curr,
-                          osh::Real* currents) const;
+  void getBatchTriGHKIsNP(const osh::GO *indices, size_t input_size,
+                          const model::ghk_current_id curr, osh::Real *currents,
+                          bool local = false) const;
 
   void setDiffOpBinomialThreshold(osh::Real threshold) override;
   osh::Real getIterationTimeStep() const noexcept override;
@@ -166,16 +161,16 @@ public:
    *
    * Every time run is called its results are checkpointed at state_time. This
    * function decides the time step for evolve (which moves the simulation one
-   * time step further and updates state_time). If end_time-state_time is not a
-   * multiple of the time step we reduce the last time step to align it with
+   * time step further and updates state_time). If end_time-state_time is not
+   * a multiple of the time step we reduce the last time step to align it with
    * end_time.
    *
    * end_time-state_time is usually the sampling frequency of  the simulation.
    * In other words, for every recording point at time rt = i*dt we call
-   * simulation.run(rt) and we record results. In this sense it is the sampling
-   * frequency. Internally the simulation proceeds with its own time steps
-   * (efield_dt and reaction-diffusion dt). As explaine,d time steps can be
-   * reduced to align the simulation to the recordings.
+   * simulation.run(rt) and we record results. In this sense it is the
+   * sampling frequency. Internally the simulation proceeds with its own time
+   * steps (efield_dt and reaction-diffusion dt). As explaine,d time steps can
+   * be reduced to align the simulation to the recordings.
    *
    * @param end_time : run up to end_time from state_time.
    */
@@ -186,14 +181,11 @@ public:
   SSAMethod ssaMethod() const noexcept override { return SSA; }
 
   /// Get temperature
-  inline osh::Real getTemp() const noexcept {
-      return statedef->getTemp();
-  }
+  inline osh::Real getTemp() const noexcept { return statedef->getTemp(); }
   /// Set temperature
   inline void setTemp(const osh::Real temp) noexcept {
-      statedef->setTemp(temp);
+    statedef->setTemp(temp);
   }
-
 
   /**
    * Fill vectors with the number of species per elements, owned elements, and
@@ -214,7 +206,8 @@ public:
   }
 
   /**
-   * \brief Set the potential of a membrane and its associated conductor volume
+   * \brief Set the potential of a membrane and its associated conductor
+   * volume
    *
    * \param memb membrane identifier
    * \param value potential in Volts
@@ -226,14 +219,14 @@ public:
    * \param vertex: global vertex identifier
    * \return current (Amps)
    */
-  osh::Real getVertIClamp(mesh::vertex_global_id_t vertex) const;
+  osh::Real getVertIClamp(osh::GO vertex, bool local = false) const;
 
   /** Set current on vertex
    *
    * /param vertex: global vertex index
    * /param current: current (Amps)
    */
-  void setVertIClamp(mesh::vertex_global_id_t vertex, osh::Real current);
+  void setVertIClamp(osh::GO vertex, osh::Real current, bool local = false);
 
   /** \brief Return GHK boundaries */
   const std::vector<mesh::triangle_id_t> &getGHKBoundaries() const override;
@@ -278,8 +271,7 @@ public:
     auto vals = getPotentialOnVertices(patch);
     if (!vals.size()) {
       return std::numeric_limits<osh::Real>::quiet_NaN();
-    }
-    else {
+    } else {
       return *std::max_element(vals.begin(), vals.end());
     }
   }
@@ -289,8 +281,7 @@ public:
     auto vals = getPotentialOnVertices(patch);
     if (!vals.size()) {
       return std::numeric_limits<osh::Real>::quiet_NaN();
-    }
-    else {
+    } else {
       return *std::min_element(vals.begin(), vals.end());
     }
   }
@@ -331,8 +322,7 @@ public:
    * \param membrane membrane identifier
    * \param current stimulus to apply (Amps)
    */
-  void setMembIClamp(const model::membrane_id& membrane, osh::Real current);
-
+  void setMembIClamp(const model::membrane_id &membrane, osh::Real current);
 
 private:
   /**
@@ -343,20 +333,21 @@ private:
    * V_elem is the volume of an element and V_rank is the volume of all the
    * elements owned by the rank
    *
-   * In case is_uniform is true molecules are evenly split following the partial
-   * volume ratio: V_elem/V_rank with stochastic rounding
+   * In case is_uniform is true molecules are evenly split following the
+   * partial volume ratio: V_elem/V_rank with stochastic rounding
    *
    * \param molecules Molecules pool instance
    * \param comp_id compartment identifier
    * \param species species identifier
    * \param num_molecules number of molecules to set
-   * \param distribution distribution type. Check distributions.hpp for more information
+   * \param distribution distribution type. Check distributions.hpp for more
+   * information
    */
-  void setOwnedCompCount(
-      const model::compartment_id& compartment,
-      const model::species_name& species,
-      osh::Real num_molecules,
-      const math::DistributionMethod distribution = math::DistributionMethod::DIST_UNIFORM);
+  void setOwnedCompCount(const model::compartment_id &compartment,
+                         const model::species_name &species,
+                         osh::Real num_molecules,
+                         const math::DistributionMethod distribution =
+                             math::DistributionMethod::DIST_UNIFORM);
 
   /**
    * Evolve the system by the efield time step ef_dt.

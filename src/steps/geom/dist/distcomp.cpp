@@ -41,14 +41,16 @@ DistComp::DistComp(const mesh::compartment_name &compartment, DistMesh &mesh,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-DistComp::DistComp(
-    const mesh::compartment_name &compartment, DistMesh &mesh,
-    const std::vector<mesh::tetrahedron_global_id_t> &global_indices,
-    double cond)
-    : steps::wm::Comp(compartment, &mesh, 0.0), meshRef(mesh), ownedVol(0.0),
-      pConductivity(cond) {
-    for (const auto &tet_global_index : global_indices) {
-        const auto tet_local_index = mesh.getLocalIndex(tet_global_index);
+DistComp::DistComp(const mesh::compartment_name& compartment,
+                   DistMesh& mesh,
+                   const std::vector<mesh::tetrahedron_global_id_t>& global_indices,
+                   double cond)
+    : wm::Comp(compartment, &mesh, 0.0)
+    , meshRef(mesh)
+    , ownedVol(0.0)
+    , pConductivity(cond) {
+    for (const auto& tet_global_index: global_indices) {
+        const auto tet_local_index = mesh.getLocalIndex(tet_global_index, false);
         if (tet_local_index.valid()) {
             _addTet(tet_local_index);
         }
@@ -60,35 +62,33 @@ DistComp::DistComp(
 
 ////////////////////////////////////////////////////////////////////////////////
 
+DistComp::DistComp(const mesh::compartment_name& compartment,
+                   DistMesh& mesh,
+                   const std::vector<mesh::tetrahedron_local_id_t>& local_indices,
+                   double cond)
+    : wm::Comp(compartment, &mesh, 0.0)
+    , meshRef(mesh)
+    , ownedVol(0.0)
+    , pConductivity(cond) {
+    for (const auto& tet_local_index: local_indices) {
+        if (mesh.isOwned(tet_local_index)) {
+            _addTet(tet_local_index);
+        }
+    }
+    _computeTotalVol();
+    _computeBBox();
+    mesh.addComp(model::compartment_id(compartment), local_indices, this);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 std::vector<mesh::tetrahedron_global_id_t> DistComp::getAllTetIndices() const {
-    int local_size = ownedTetLocalIndices.size();
-    std::vector<int> sizes(steps::util::mpi_comm_size(meshRef.comm_impl()));
-
-    auto err = MPI_Allgather(&local_size, 1, MPI_INT, sizes.data(), 1, MPI_INT,
-                             meshRef.comm_impl());
-    if (err != MPI_SUCCESS) {
-        MPI_Abort(meshRef.comm_impl(), err);
+    std::vector<mesh::tetrahedron_global_id_t> tets_global;
+    tets_global.reserve(ownedTetLocalIndices.size());
+    for (const auto& tet: ownedTetLocalIndices) {
+        tets_global.push_back(meshRef.getGlobalIndex(tet));
     }
-
-    std::vector<int> offsets(sizes.size() + 1);
-    std::partial_sum(sizes.begin(), sizes.end(), offsets.begin() + 1);
-
-    std::vector<osh::GO> global_indices;
-    global_indices.reserve(ownedTetLocalIndices.size());
-    for (auto &ind : ownedTetLocalIndices) {
-        global_indices.emplace_back(meshRef.getGlobalIndex(ind));
-    }
-
-    std::vector<osh::GO> all_indices(offsets.back());
-
-    err = MPI_Allgatherv(global_indices.data(), global_indices.size(),
-                         MPI_INT64_T, all_indices.data(), sizes.data(),
-                         offsets.data(), MPI_INT64_T, meshRef.comm_impl());
-    if (err != MPI_SUCCESS) {
-        MPI_Abort(meshRef.comm_impl(), err);
-    }
-
-    return {all_indices.begin(), all_indices.end()};
+    return meshRef.allGatherEntities(tets_global, MPI_INT64_T);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -100,6 +100,49 @@ DistComp::getLocalTetIndices(bool owned) const {
     } else {
         return tetLocalIndices;
     }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<mesh::triangle_global_id_t> DistComp::getSurfTris() {
+    auto surface_local = getSurfLocalTris();
+    std::vector<mesh::triangle_global_id_t> surface_global;
+    surface_global.reserve(surface_local.size());
+    for (const auto& tri: surface_local) {
+        surface_global.push_back(meshRef.getGlobalIndex(tri));
+    }
+    return meshRef.allGatherEntities(surface_global, MPI_INT64_T);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<mesh::triangle_local_id_t> DistComp::getSurfLocalTris() {
+    std::unordered_set<osh::LO> entss;
+    for (auto e: tetLocalIndices) {
+        entss.insert(e.get());
+    }
+    const auto& bound_owned = meshRef.owned_bounds_mask();
+    const auto& bound2elems_a2ab = meshRef.bounds2elems_a2ab(meshRef.dim() - 1, meshRef.dim());
+    const auto& bound2elems_ab2b = meshRef.bounds2elems_ab2b(meshRef.dim() - 1, meshRef.dim());
+    std::vector<mesh::triangle_local_id_t> surface;
+    for (osh::LO boundary = 0; boundary < bound_owned.size(); boundary++) {
+        if (!bound_owned[boundary]) {
+            continue;
+        }
+        const auto num_elems = bound2elems_a2ab[boundary + 1] - bound2elems_a2ab[boundary];
+        const auto el1 = bound2elems_ab2b[bound2elems_a2ab[boundary]];
+        if (num_elems == 1) {
+            if (entss.find(el1) != entss.end()) {
+                surface.emplace_back(boundary);
+            }
+        } else {
+            const auto el2 = bound2elems_ab2b[bound2elems_a2ab[boundary] + 1];
+            if ((entss.find(el1) != entss.end()) xor (entss.find(el2) != entss.end())) {
+                surface.emplace_back(boundary);
+            }
+        }
+    }
+    return surface;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -157,9 +200,9 @@ void DistComp::_computeTotalVol() {
 
 void DistComp::_computeBBox() {
     ownedBBoxMin.fill(std::numeric_limits<osh::Real>::max());
-    ownedBBoxMax.fill(std::numeric_limits<osh::Real>::min());
-    const auto &tets2verts = meshRef.ask_elem_verts();
-    for (const auto elem : ownedTetLocalIndices) {
+    ownedBBoxMax.fill(std::numeric_limits<osh::Real>::lowest());
+    const auto& tets2verts = meshRef.ask_elem_verts();
+    for (const auto elem: ownedTetLocalIndices) {
         const auto tet2verts = osh::gather_verts<4>(tets2verts, elem.get());
         const auto tet2x = osh::gather_vectors<4, mesh_dimensions()>(
             meshRef.coords(), tet2verts);

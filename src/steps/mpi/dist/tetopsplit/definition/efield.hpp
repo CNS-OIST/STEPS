@@ -3,6 +3,8 @@
 #include <optional>
 #include <utility>
 #include <vector>
+#include <array>
+#include <map>
 
 #ifdef USE_PETSC
 #include <Omega_h_few.hpp>

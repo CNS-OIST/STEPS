@@ -4,7 +4,6 @@
 
 #include <Omega_h_for.hpp>
 
-#include "../mol_state.hpp"
 #include "geom/dist/distmesh.hpp"
 #include "math/distributions.hpp"
 #include "math/tools.hpp"
@@ -16,10 +15,17 @@ namespace dist {
 
 template <typename RNG, typename NumMolecules>
 DiffusionOperator<RNG, NumMolecules>::DiffusionOperator(
-    DistMesh &t_mesh, RNG &t_rng, MolState<NumMolecules> &t_pools,
-    kproc::Diffusions<RNG, NumMolecules> &t_diffusions)
-    : mesh(t_mesh), rng(t_rng), pools(t_pools), diffusions_(t_diffusions),
-      ur_distribution(0, 1) {}
+    DistMesh& t_mesh,
+    RNG& t_rng,
+    MolState<NumMolecules>& t_pools,
+    kproc::Diffusions<RNG, NumMolecules>& t_diffusions,
+    kproc::KProcState<NumMolecules>& t_kproc_state)
+    : mesh(t_mesh)
+    , rng(t_rng)
+    , pools(t_pools)
+    , diffusions_(t_diffusions)
+    , kproc_state_(t_kproc_state)
+    , ur_distribution(0, 1) {}
 
 template <typename RNG, typename NumMolecules>
 void DiffusionOperator<RNG, NumMolecules>::operator()(const osh::Real opsplit_period,
@@ -70,6 +76,10 @@ void DiffusionOperator<RNG, NumMolecules>::species_leaving_element(mesh::tetrahe
         // no need to update occupancy here because channels cannot diffuse and rd occupancy should
         // not track diffusion changes
         pools.add(element, species, -delta_pool_total);
+        const auto& dep_map = kproc_state_.get_dependency_map_elems();
+        auto ab = pools.moleculesOnElements().ab(element, species);
+        const auto& kprocs = dep_map[ab];
+        pools.outdated_kprocs().insert(pools.outdated_kprocs().end(), kprocs.begin(), kprocs.end());
         if (delta_pool_total <= diffusion_threshold_) {
             species_leaving_element_standard(element, species, delta_pool_total, rates_sum);
         } else {
@@ -138,55 +148,72 @@ void DiffusionOperator<RNG, NumMolecules>::species_leaving_element_binomial(
  */
 
 template <typename NumMolecules> struct SpeciesEnteringElement {
-  SpeciesEnteringElement(
-      const DistMesh &t_mesh, MolState<NumMolecules> &t_pools,
-      kproc::PoolsIncrements<NumMolecules> &t_leaving_molecules)
-      : mesh(t_mesh), pools(t_pools), leaving_molecules(t_leaving_molecules) {}
+    SpeciesEnteringElement(const DistMesh& t_mesh,
+                           MolState<NumMolecules>& t_pools,
+                           kproc::PoolsIncrements<NumMolecules>& t_leaving_molecules,
+                           kproc::KProcState<NumMolecules>& t_kproc_state)
+        : mesh(t_mesh)
+        , pools(t_pools)
+        , leaving_molecules(t_leaving_molecules)
+        , kproc_state_(t_kproc_state) {}
 
-  inline void operator()(mesh::tetrahedron_id_t elem) const {
-    auto num_elements = mesh.tet_neighbors_int_data().size(elem.get());
-    auto elem_comp_id = mesh.getCompartmentMeshID(elem);
-    for (auto face_id = 0; face_id < num_elements; face_id++) {
-      const auto &neighbor = mesh.tet_neighbors_int_data()(elem.get(), face_id);
-      const auto neighbor_id = mesh::tetrahedron_id_t(neighbor[0]);
-      auto comp_id = mesh.getCompartmentMeshID(neighbor_id);
-      const auto neighbour_face_id = neighbor[1];
-      const auto triangle_id = mesh::triangle_id_t(neighbor[2]);
-      if (comp_id == elem_comp_id) {
-        // Careful, pools.species is only defined for an owned element.
-        for (osh::LO sp = 0; sp < leaving_molecules.size(neighbor_id.get());
-             ++sp) {
-          container::species_id species(sp);
-          auto num_mols = leaving_molecules.ith_delta_pool(
-              mesh::tetrahedron_id_t(neighbor_id), species, neighbour_face_id);
-          // no need to update occupancy here because channels cannot diffuse and rd occupancy
-          // should not track diffusion changes
-          pools.add(elem, species, num_mols);
-        }
-      } else {
-        for (osh::LO sp = 0; sp < leaving_molecules.size(neighbor_id.get());
-             ++sp) {
-          container::species_id species(sp);
-          auto num_mols = leaving_molecules.ith_delta_pool(
-              mesh::tetrahedron_id_t(neighbor_id), species, neighbour_face_id);
-          if (num_mols > 0) {
-            if (mesh.isActiveDiffusionBoundary(triangle_id, comp_id, species)) {
-                // no need to update occupancy here because channels cannot diffuse and rd occupancy
-                // should not track diffusion changes
-                pools.add(elem, mesh.convertSpeciesID(triangle_id, comp_id, species), num_mols);
+    inline void operator()(mesh::tetrahedron_id_t elem) const {
+        const auto& dep_map = kproc_state_.get_dependency_map_elems();
+        auto num_elements = mesh.tet_neighbors_int_data().size(elem.get());
+        auto elem_comp_id = mesh.getCompartmentMeshID(elem);
+        for (auto face_id = 0; face_id < num_elements; face_id++) {
+            const auto& neighbor = mesh.tet_neighbors_int_data()(elem.get(), face_id);
+            const auto neighbor_id = mesh::tetrahedron_id_t(neighbor[0]);
+            auto comp_id = mesh.getCompartmentMeshID(neighbor_id);
+            const auto neighbour_face_id = neighbor[1];
+            const auto triangle_id = mesh::triangle_id_t(neighbor[2]);
+            if (comp_id == elem_comp_id) {
+                // Careful, pools.species is only defined for an owned element.
+                for (osh::LO sp = 0; sp < leaving_molecules.size(neighbor_id.get()); ++sp) {
+                    container::species_id species(sp);
+                    auto num_mols = leaving_molecules.ith_delta_pool(
+                        mesh::tetrahedron_id_t(neighbor_id), species, neighbour_face_id);
+                    // no need to update occupancy here because channels cannot diffuse and rd
+                    // occupancy should not track diffusion changes
+                    pools.add(elem, species, num_mols);
+                    if (num_mols > 0) {
+                        auto ab = pools.moleculesOnElements().ab(elem, species);
+                        const auto& kprocs = dep_map[ab];
+                        pools.outdated_kprocs().insert(pools.outdated_kprocs().end(),
+                                                       kprocs.begin(),
+                                                       kprocs.end());
+                    }
+                }
             } else {
-              throw std::logic_error("Something is wrong here.");
+                for (osh::LO sp = 0; sp < leaving_molecules.size(neighbor_id.get()); ++sp) {
+                    container::species_id species(sp);
+                    auto num_mols = leaving_molecules.ith_delta_pool(
+                        mesh::tetrahedron_id_t(neighbor_id), species, neighbour_face_id);
+                    if (num_mols > 0) {
+                        if (mesh.isActiveDiffusionBoundary(triangle_id, comp_id, species)) {
+                            auto sID = mesh.convertSpeciesID(triangle_id, comp_id, species);
+                            // no need to update occupancy here because channels cannot diffuse and
+                            // rd occupancy should not track diffusion changes
+                            pools.add(elem, sID, num_mols);
+                            auto ab = pools.moleculesOnElements().ab(elem, sID);
+                            const auto& kprocs = dep_map[ab];
+                            pools.outdated_kprocs().insert(pools.outdated_kprocs().end(),
+                                                           kprocs.begin(),
+                                                           kprocs.end());
+                        } else {
+                            throw std::logic_error("Something is wrong here.");
+                        }
+                    }
+                }
             }
-          }
         }
-      }
-    }
   }
 
 private:
   const DistMesh &mesh;
   MolState<NumMolecules> &pools;
   const kproc::PoolsIncrements<NumMolecules> &leaving_molecules;
+  kproc::KProcState<NumMolecules>& kproc_state_;
 };
 
 template <typename RNG, typename NumMolecules>
@@ -196,7 +223,8 @@ void DiffusionOperator<RNG, NumMolecules>::species_entering_elements() {
 
   const SpeciesEnteringElement<NumMolecules> func_per_element(mesh,
                                                               pools,
-                                                              diffusions_.leaving_molecules());
+                                                              diffusions_.leaving_molecules(),
+                                                              kproc_state_);
 
   const auto lambda = [this, &func_per_element](osh::LO ownedElemIdx)
       __attribute__((always_inline, flatten)) {

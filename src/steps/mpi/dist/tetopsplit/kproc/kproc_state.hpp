@@ -2,7 +2,6 @@
 
 #include <array>
 #include <ostream>
-#include <set>
 #include <sstream>
 #include <vector>
 
@@ -19,6 +18,7 @@ namespace steps {
 namespace dist {
 namespace kproc {
 
+template <typename NumMolecules>
 class KProcState {
 public:
   /**
@@ -31,7 +31,6 @@ public:
    * processes independently
    */
   // TODO(BDM): OmegaHMesh should be warmed up and made const.
-  template <typename NumMolecules>
   KProcState(const Statedef& statedef,
              DistMesh& mesh,
              MolState<NumMolecules>& mol_state,
@@ -53,7 +52,6 @@ public:
    * \brief A function which computes the propensity of a kproc given the
    * molecular state.
    */
-  template <typename NumMolecules>
   typename propensity_function_traits<NumMolecules>::value
   propensityFun() const;
 
@@ -70,7 +68,6 @@ public:
    * \return list of
    * molecular state updates
    */
-  template <typename NumMolecules>
   const std::vector<MolStateElementID>& updateMolStateAndOccupancy(
       MolState<NumMolecules>& mol_state,
       const osh::Real event_time,
@@ -232,9 +229,9 @@ public:
    * \tparam SearchMethod search method for the next event
    * \param propensities to be initialized
    */
-  template <typename NumMolecules, unsigned int Policy>
+  template <unsigned int Policy>
   void initPropensities(Propensities<NumMolecules, Policy>& propensities) {
-      propensities.init(handledKProcsClassesAndSizes(), propensityFun<NumMolecules>(), groups());
+    propensities.init(handledKProcsClassesAndSizes(), propensityFun(), groups());
   }
 
   /**
@@ -256,7 +253,17 @@ public:
  */
 std::ostream& write_dependency_graph(std::ostream& ostr) const;
 
+const auto& get_dependency_map_elems() const noexcept {
+    return dependency_map_elems_;
+}
+
+const auto& get_dependency_map_bnds() const noexcept {
+    return dependency_map_bnds_;
+}
+
 private:
+  MolState<NumMolecules>& mol_state_;
+
   /**
    * \brief Setup dependencies of all kprocs handled by KProcState.
    * \param use_rssa true if RSSA operator is used for the simulation, false
@@ -264,6 +271,18 @@ private:
    * processes independently
    */
   void setupDependencies(bool use_rssa, bool independent_kprocs);
+
+  /**
+   * \brief Helper function to populate dependency_map_elems_ & dependency_map_bnds_ from the
+   * dependency_map.
+   */
+  void helperSetupDependencies(const DependenciesMap& dependency_map);
+
+  /**
+   * \brief Containers relating the (element,species) pair with the corresponding KProcIDs. Built
+   * from the dependency_map.
+   */
+  steps::util::flat_multimap<osh::LO, 1> dependency_map_elems_, dependency_map_bnds_;
 
   /**
    * \brief Extract groups of independent kprocs.
@@ -298,7 +317,7 @@ private:
    *
    * \return the undirected Gibson-Bruck dependencies graph
    */
-  Graph getDependenciesGraph(const Propensities<>& propensities) const;
+  Graph getDependenciesGraph(const Propensities<NumMolecules>& propensities) const;
 
   dependencies_t reactions_dependencies_;
   dependencies_t surface_reactions_dependencies_;
@@ -316,41 +335,37 @@ private:
 //--------------------------------------------------------
 
 // explicit template instantiation declarations
-extern template void
-KProcState::collateDependencies(const Reactions &processes,
-                                DependenciesMap &dependency_map) const;
+extern template void KProcState<osh::I32>::collateDependencies(
+    const Reactions& processes,
+    DependenciesMap& dependency_map) const;
 
-extern template void KProcState::collateDependencies(const SurfaceReactions& processes,
-                                                     DependenciesMap& dependency_map) const;
-extern template void KProcState::collateDependencies(const VDepSurfaceReactions& processes,
-                                                     DependenciesMap& dependency_map) const;
-extern template void
-KProcState::collateDependencies(const GHKSurfaceReactions &processes,
-                                DependenciesMap &dependency_map) const;
-extern template propensity_function_traits<osh::I32>::value
-KProcState::propensityFun<osh::I32>() const;
-extern template propensity_function_traits<osh::I64>::value
-KProcState::propensityFun<osh::I64>() const;
+extern template void KProcState<osh::I32>::collateDependencies(
+    const SurfaceReactions& processes,
+    DependenciesMap& dependency_map) const;
+extern template void KProcState<osh::I32>::collateDependencies(
+    const VDepSurfaceReactions& processes,
+    DependenciesMap& dependency_map) const;
+extern template void KProcState<osh::I32>::collateDependencies(
+    const GHKSurfaceReactions& processes,
+    DependenciesMap& dependency_map) const;
 
-extern template const std::vector<MolStateElementID>& KProcState::updateMolStateAndOccupancy(
-    MolState<osh::I32>& mol_state,
-    const osh::Real event_time,
-    const KProcID& event) const;
-extern template const std::vector<MolStateElementID>& KProcState::updateMolStateAndOccupancy(
-    MolState<osh::I64>& mol_state,
-    const osh::Real event_time,
-    const KProcID& event) const;
+extern template void KProcState<osh::I64>::collateDependencies(
+    const Reactions& processes,
+    DependenciesMap& dependency_map) const;
 
-extern template KProcState::KProcState(const Statedef& statedef,
-                                       DistMesh& mesh,
-                                       MolState<osh::I32>& mol_state,
-                                       bool use_rssa,
-                                       bool independent_kprocs);
-extern template KProcState::KProcState(const Statedef& statedef,
-                                       DistMesh& mesh,
-                                       MolState<osh::I64>& mol_state,
-                                       bool use_rssa,
-                                       bool independent_kprocs);
+extern template void KProcState<osh::I64>::collateDependencies(
+    const SurfaceReactions& processes,
+    DependenciesMap& dependency_map) const;
+extern template void KProcState<osh::I64>::collateDependencies(
+    const VDepSurfaceReactions& processes,
+    DependenciesMap& dependency_map) const;
+extern template void KProcState<osh::I64>::collateDependencies(
+    const GHKSurfaceReactions& processes,
+    DependenciesMap& dependency_map) const;
+
+
+extern template class KProcState<osh::I32>;
+extern template class KProcState<osh::I64>;
 
 } // namespace kproc
 } // namespace dist

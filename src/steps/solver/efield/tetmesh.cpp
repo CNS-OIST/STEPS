@@ -2,14 +2,14 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -297,12 +297,13 @@ void sefield::TetMesh::allocateSurface()
 {
     AssertLog(pTriangles != nullptr);
 
-    auto * itr = pTriangles;
-    for (uint iitr = 0; iitr < pNTri; ++iitr, itr += 3)
-    {
-        VertexElement * v0 = getVertex(itr[0]);
-        VertexElement * v1 = getVertex(itr[1]);
-        VertexElement * v2 = getVertex(itr[2]);
+    pTriAreas.resize(pNTri);
+    pTriPrevCapac.resize(pNTri);
+    auto* itr = pTriangles;
+    for (uint iitr = 0; iitr < pNTri; ++iitr, itr += 3) {
+        VertexElement* v0 = getVertex(itr[0]);
+        VertexElement* v1 = getVertex(itr[1]);
+        VertexElement* v2 = getVertex(itr[2]);
 
         double a0 = v1->getX() - v0->getX();
         double a1 = v1->getY() - v0->getY();
@@ -318,6 +319,8 @@ void sefield::TetMesh::allocateSurface()
 
         double area = 0.5 * sqrt(cx * cx + cy * cy + cz * cz);
         double area3 = area / 3.0;
+        pTriAreas[iitr] = area;
+        pTriPrevCapac[iitr] = 0;
 
         v0->incrementSurfaceArea(area3);
         v1->incrementSurfaceArea(area3);
@@ -379,6 +382,9 @@ void sefield::TetMesh::applySurfaceCapacitance(double d)
     for (auto &pElement : pElements) {
       pElement->applySurfaceCapacitance(d);
     }
+    for (auto& capac: pTriPrevCapac) {
+        capac = d;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -387,10 +393,12 @@ void sefield::TetMesh::applyTriCapacitance(triangle_id_t tidx, double cm)
 {
 	AssertLog(tidx < pNTri);
 
-    pElements[getTriangleVertex(tidx, 0).get()]->applySurfaceCapacitance(cm);
-    pElements[getTriangleVertex(tidx, 1).get()]->applySurfaceCapacitance(cm);
-    pElements[getTriangleVertex(tidx, 2).get()]->applySurfaceCapacitance(cm);
+    double cap = (cm - pTriPrevCapac[tidx.get()]) * pTriAreas[tidx.get()] / 3.0;
+    pTriPrevCapac[tidx.get()] = cm;
 
+    pElements[getTriangleVertex(tidx, 0).get()]->updateCapacitance(cap);
+    pElements[getTriangleVertex(tidx, 1).get()]->updateCapacitance(cap);
+    pElements[getTriangleVertex(tidx, 2).get()]->updateCapacitance(cap);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

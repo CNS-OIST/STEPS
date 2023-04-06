@@ -56,6 +56,7 @@ test_unit(TARGETS checkid
 test_unit(TARGETS bbox
                   point3d
                   sample
+                  ghkcurr
           DEPENDENCIES stepsmath
                          gtest_main)
 
@@ -67,6 +68,8 @@ test_unit(TARGETS rng
                   small_binomial
           DEPENDENCIES stepsrng
                          gtest_main)
+
+test_unit(TARGETS efield_tetmesh DEPENDENCIES stepssolver gtest_main)
 
 if(BUILD_STOCHASTIC_TESTS)
     test_unit(TARGETS small_binomial_stochastic

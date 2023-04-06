@@ -422,6 +422,14 @@ class Occupancy {
                 num_species);
         }
 
+        inline auto ab(Entity entity, container::species_id species) const noexcept {
+            return pools_.ab(entity.get(), species.get());
+        }
+
+        inline auto num_data() const noexcept {
+            return pools_.num_data();
+        }
+
       private:
         /** Number of molecules/channels per element and species **/
         util::flat_multimap<molecules_t, 1> pools_;
@@ -789,6 +797,10 @@ public:
     return molecules_on_elements_.numEntities();
   }
 
+  inline osh::LO numBoundaries() const noexcept {
+      return molecules_on_patch_boundaries_.numEntities();
+  }
+
   inline osh::LO numSpecies(mesh::tetrahedron_id_t element) const noexcept {
     return molecules_on_elements_.numSpecies(element);
   }
@@ -823,6 +835,10 @@ public:
     return moleculesOnPatchBoundaries().species(boundary);
   }
 
+  inline std::vector<unsigned>& outdated_kprocs() noexcept {
+      return outdated_kprocs_;
+  }
+
 private:
   /**
    * \brief Container providing the number of molecules of every specie
@@ -835,6 +851,13 @@ private:
    * within the boundaries of the local mesh that belong to a patch.
    */
   BoundariesMolecules<NumMolecules> molecules_on_patch_boundaries_;
+
+  /**
+   * \brief Vector storing the KProcIDs for which we are going to update the propensities (involved
+   * in diffusion). It is filled in the Diffusion Operator by elements that have diffusing
+   * molecules. The updating of the selected propensities happens in the SSA Operator.
+   */
+  std::vector<unsigned> outdated_kprocs_{};
 
 public:
   const util::EntityIterator<mesh::tetrahedron_id_t, osh::LO> elements;

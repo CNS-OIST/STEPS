@@ -1,14 +1,14 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -77,6 +77,57 @@ class VariousUtilities(unittest.TestCase):
             mdl = model.Model(test=5)
         with self.assertRaises(Exception):
             mdl = model.Model('unused')
+
+    def testReservedNames(self):
+        for validName in ['SA', 'B', '_convolutEdN4m3']:
+            SA = utils.NamedObject(name=validName)
+            self.assertEqual(SA.name, validName)
+        for invalidName in ['A', 'rng', 'A0', 'Temp', 'V', 'K', 'D', 'I']:
+            with self.assertRaises(Exception):
+                utils.NamedObject(name=invalidName)
+
+    def testAutoNamingOverride(self):
+        objA, objB, objC = utils.NamedObject.Create()
+        self.assertEqual(objA.name, 'objA')
+        self.assertEqual(objB.name, 'objB')
+        self.assertEqual(objC.name, 'objC')
+
+        objA, objB, objC = utils.NamedObject.Create(
+            utils.Params(),
+            utils.Params(name='newObjB'),
+            utils.Params(),
+        )
+        self.assertEqual(objA.name, 'objA')
+        self.assertEqual(objB.name, 'newObjB')
+        self.assertEqual(objC.name, 'objC')
+
+        objA, objB, objC = utils.NamedObject.Create(
+            utils.Params(name='newObjA'),
+            utils.Params(name='newObjB'),
+            utils.Params(name='newObjC'),
+        )
+        self.assertEqual(objA.name, 'newObjA')
+        self.assertEqual(objB.name, 'newObjB')
+        self.assertEqual(objC.name, 'newObjC')
+
+    def testAPIControl(self):
+        import steps
+        import steps.interface
+        import steps.model as model
+
+        self.assertEqual(steps.getAPI(), 'API_2')
+        self.assertTrue('ReactionManager' in dir(model))
+        self.assertFalse('SReac' in dir(model))
+
+        steps.setAPI('API_1')
+        import steps.model as model
+
+        self.assertEqual(steps.getAPI(), 'API_1')
+        self.assertFalse('ReactionManager' in dir(model))
+        self.assertTrue('SReac' in dir(model))
+
+        with self.assertRaises(ValueError):
+            steps.setAPI('API_3')
 
 
 def suite():

@@ -5,11 +5,14 @@
 #include <iostream>
 #include <map>
 #include <set>
+#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
+#include <variant>
 #include <vector>
 
 #include "flat_multimap.hpp"
+#include "type_id.hpp"
 
 #if USE_PETSC
 #include <petscmat.h>
@@ -181,6 +184,27 @@ ostream& operator<<(ostream& os, const steps::util::flat_multimap<T, Size, Polic
         }
     }
     return os << ']';
+}
+
+/// Pretty print of CompactTypeId
+template <class Enum, int EnumBits, class Id>
+ostream& operator<<(ostream& os, const steps::util::CompactTypeId<Enum, EnumBits, Id>& p) {
+    return os << "(type: " << static_cast<int>(p.type()) << ", id: " << p.id() << ')';
+}
+
+/// Pretty print of tuple
+template <class... Args>
+std::ostream& operator<<(std::ostream& os, std::tuple<Args...> const& t) {
+    os << '(';
+    std::apply([&os](auto&&... args) { ((os << args << ", "), ...); }, t);
+    return os << ')';
+}
+
+/// Pretty print of variant
+template <class T, class... Args>
+std::ostream& operator<<(std::ostream& os, std::variant<T, Args...> const& t) {
+    std::visit([&os](auto q) { os << q; }, t);
+    return os;
 }
 
 #ifdef STEPS_USE_DIST_MESH

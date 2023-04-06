@@ -77,6 +77,11 @@ class DistComp : public steps::wm::Comp {
              const std::vector<mesh::tetrahedron_global_id_t> &global_indices,
              double cond = 0.0);
 
+    DistComp(const mesh::compartment_name& compartment,
+             DistMesh& mesh,
+             const std::vector<mesh::tetrahedron_local_id_t>& local_indices,
+             double cond = 0.0);
+
     /**
      * \brief Get the list of all tetrahedron indices of the compartment.
      *
@@ -96,6 +101,24 @@ class DistComp : public steps::wm::Comp {
      */
     const std::vector<mesh::tetrahedron_local_id_t> &
     getLocalTetIndices(bool owned = true) const;
+
+    /**
+     * \brief Get all the triangles on the surface of the compartment.
+     *
+     * \attention Parallelism: Collective
+     *
+     * \return Vector of triangle global indices.
+     */
+    std::vector<mesh::triangle_global_id_t> getSurfTris();
+
+    /**
+     * \brief Get the triangles on the surface of the compartment.
+     *
+     * \attention Parallelism: Local
+     *
+     * \return Vector of triangle local indices.
+     */
+    std::vector<mesh::triangle_local_id_t> getSurfLocalTris();
 
     /**
      * \brief Get the volume of compartment segment owned by the process.

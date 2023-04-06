@@ -1,2 +1,2 @@
-\textbf{OhmicCurr}	\textbf{Defined in}	\textbf{G Parameter}	\textbf{G}	\textbf{G Units}	\textbf{ERev Parameter}	\textbf{ERev}	\textbf{ERev Units}
-Chan1\_Ohm\_I	ssys, comp1, comp1ROI, comp2, diffb, membrane, patch, patch2, patchROI, sdiffb	$\mathrm{\detokenize{Chan1_G}}$	\num{2e-08}	\si{\micro S}	$\mathrm{\detokenize{Chan1_rev}}$	\num{-77}	\si{mV}
+\textbf{OhmicCurr}	\textbf{Defined in}	\textbf{Opened state}	\textbf{G Parameter}	\textbf{G}	\textbf{G Units}	\textbf{ERev Parameter}	\textbf{ERev}	\textbf{ERev Units}
+Chan1\_Ohm\_I	ssys, comp1, comp1ROI, comp2, diffb, membrane, patch, patch2, patchROI, sdiffb	Chan1[~chancl]	$\mathrm{\detokenize{Chan1_G}}$	\num{2e-08}	\si{\micro S}	$\mathrm{\detokenize{Chan1_rev}}$	\num{-77}	\si{mV}

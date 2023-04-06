@@ -146,7 +146,7 @@ class TestRDSpatialTetexact(unittest.TestCase):
         NITER_so2d = 1000         # The number of iterations
 
         # In tests fewer than 0.1% fail with tolerance of 2%
-        tolerance_so2d = 1.0/100
+        tolerance_so2d = 2.0/100
 
         ############################ Common parameters ########################
 

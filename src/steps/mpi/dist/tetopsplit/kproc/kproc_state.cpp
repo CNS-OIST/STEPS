@@ -20,12 +20,13 @@ namespace kproc {
 
 //------------------------------------------------------------------
 template <typename NumMolecules>
-KProcState::KProcState(const Statedef& statedef,
-                       DistMesh& mesh,
-                       MolState<NumMolecules>& mol_state,
-                       bool use_rssa,
-                       bool independent_kprocs)
-    : reactions_(statedef, mesh, mol_state)
+KProcState<NumMolecules>::KProcState(const Statedef& statedef,
+                                     DistMesh& mesh,
+                                     MolState<NumMolecules>& mol_state,
+                                     bool use_rssa,
+                                     bool independent_kprocs)
+    : mol_state_(mol_state)
+    , reactions_(statedef, mesh, mol_state)
     , surface_reactions_(statedef, mesh, mol_state)
     , vdep_surface_reactions_(statedef, mesh, mol_state)
     , ghk_surface_reactions_(statedef, mesh, mol_state) {
@@ -39,8 +40,8 @@ KProcState::KProcState(const Statedef& statedef,
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wreturn-type"
 template <typename NumMolecules>
-typename propensity_function_traits<NumMolecules>::value
-KProcState::propensityFun() const {
+typename propensity_function_traits<NumMolecules>::value KProcState<NumMolecules>::propensityFun()
+    const {
   return [this](KProcID k_id, const MolState<NumMolecules> &mol_state) {
     switch (k_id.type()) {
     case KProcType::Reac:
@@ -60,9 +61,10 @@ KProcState::propensityFun() const {
 
 //------------------------------------------------------------------
 
+template <typename NumMolecules>
 template <typename KineticProcesses>
-void KProcState::collateDependencies(const KineticProcesses &processes,
-                                     DependenciesMap &dependency_map) const {
+void KProcState<NumMolecules>::collateDependencies(const KineticProcesses& processes,
+                                                   DependenciesMap& dependency_map) const {
   for (const auto &process : processes) {
     for (const auto &dependency : process.getPropensityDependency()) {
       dependency_map[dependency].emplace_back(processes.getKProcType(),
@@ -73,10 +75,11 @@ void KProcState::collateDependencies(const KineticProcesses &processes,
 
 //------------------------------------------------------------------
 
+template <typename NumMolecules>
 template <typename KineticProcesses>
-void KProcState::cacheDependencies(const KineticProcesses &processes,
-                                   const DependenciesMap &dependency_map,
-                                   dependencies_t &dependencies) {
+void KProcState<NumMolecules>::cacheDependencies(const KineticProcesses& processes,
+                                                 const DependenciesMap& dependency_map,
+                                                 dependencies_t& dependencies) {
   std::vector<std::set<KProcID>> unique_deps(processes.size());
   osh::Write<osh::LO> sizes(static_cast<osh::LO>(processes.size()));
 
@@ -108,48 +111,108 @@ void KProcState::cacheDependencies(const KineticProcesses &processes,
 
 //------------------------------------------------------------------
 
-std::ostream& KProcState::write_dependency_graph(std::ostream& ostr) const {
-    // print dependency graph only if we have a filename
-    kproc::KProcState::Graph grd;
-    std::vector<std::string> labels;
-    std::tie(grd, labels) = getDependenciesGraphAndLabels();
-    boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, boost::vecS> gd;
-    boost::copy_graph(grd, gd);
-    std::vector<unsigned> color(boost::num_vertices(grd));
-    auto it = boost::make_iterator_property_map(color.begin(), get(boost::vertex_index, grd));
-    boost::connected_components(grd, it);
-    std::vector<std::string> col_vals{"red", "blue", "green", "yellow", "magenta", "grey"};
-    auto node_fmt = [labels, color, col_vals](std::ostream& out, unsigned v) {
-        out << " [label=\"" << labels[v] << "\"]" << std::endl;
-        out << " [color=" << col_vals[color[v] % col_vals.size()] << "]" << std::endl;
-    };
-    boost::write_graphviz(ostr, gd, node_fmt);
-    return ostr;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+
+template <typename NumMolecules>
+std::ostream& KProcState<NumMolecules>::write_dependency_graph(std::ostream& ostr) const {
+  // print dependency graph only if we have a filename
+  kproc::KProcState<NumMolecules>::Graph grd;
+  std::vector<std::string> labels;
+  std::tie(grd, labels) = getDependenciesGraphAndLabels();
+  boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, boost::vecS> gd;
+  boost::copy_graph(grd, gd);
+  std::vector<unsigned> color(boost::num_vertices(grd));
+  auto it = boost::make_iterator_property_map(color.begin(), get(boost::vertex_index, grd));
+  boost::connected_components(grd, it);
+  std::vector<std::string> col_vals{"red", "blue", "green", "yellow", "magenta", "grey"};
+  auto node_fmt = [labels, color, col_vals](std::ostream& out, unsigned v) {
+    out << " [label=\"" << labels[v] << "\"]" << std::endl;
+    out << " [color=" << col_vals[color[v] % col_vals.size()] << "]" << std::endl;
+  };
+  boost::write_graphviz(ostr, gd, node_fmt);
+  return ostr;
 }
+
+#pragma GCC diagnostic pop
 
 //------------------------------------------------------------------
 
-void KProcState::setupDependencies(bool use_rssa, bool independent_kprocs) {
+template <typename NumMolecules>
+void KProcState<NumMolecules>::setupDependencies(bool use_rssa, bool independent_kprocs) {
   if (independent_kprocs || !use_rssa) {
-    DependenciesMap dependency_map(
-        reactions().size() + surfaceReactions().size() +
-        vDepSurfaceReactions().size() + ghkSurfaceReactions().size());
-    // collate kinetic processes dependencies
-    collateAllDependencies(dependency_map);
-    // caching the kinetic processes dependencies
-    cacheDependencies(reactions(), dependency_map, reactions_dependencies_);
-    cacheDependencies(surfaceReactions(), dependency_map,
-                      surface_reactions_dependencies_);
-    cacheDependencies(vDepSurfaceReactions(), dependency_map,
-                      vdep_surface_reactions_dependencies_);
-    cacheDependencies(ghkSurfaceReactions(), dependency_map,
-                      ghk_surface_reactions_dependencies_);
+      DependenciesMap dependency_map(reactions().size() + surfaceReactions().size() +
+                                     vDepSurfaceReactions().size() + ghkSurfaceReactions().size());
+      // collate kinetic processes dependencies
+      collateAllDependencies(dependency_map);
+      // caching the kinetic processes dependencies
+      cacheDependencies(reactions(), dependency_map, reactions_dependencies_);
+      cacheDependencies(surfaceReactions(), dependency_map, surface_reactions_dependencies_);
+      cacheDependencies(vDepSurfaceReactions(),
+                        dependency_map,
+                        vdep_surface_reactions_dependencies_);
+      cacheDependencies(ghkSurfaceReactions(), dependency_map, ghk_surface_reactions_dependencies_);
+
+      helperSetupDependencies(dependency_map);
   }
 }
 
 //------------------------------------------------------------------
 
-KProcState::Graph KProcState::getDependenciesGraph(const Propensities<> &propensities) const {
+template <typename NumMolecules>
+void KProcState<NumMolecules>::helperSetupDependencies(const DependenciesMap& dependency_map) {
+    osh::Write<osh::LO> tmp_vec_elems(mol_state_.moleculesOnElements().num_data(), 0);
+    osh::Write<osh::LO> tmp_vec_bnds(mol_state_.moleculesOnPatchBoundaries().num_data(), 0);
+    for (auto& val: dependency_map) {
+        auto species = std::get<1>(val.first);
+        std::visit(
+            [&](auto& entity) {
+                using T = std::decay_t<decltype(entity)>;
+                if constexpr (std::is_same_v<T, mesh::tetrahedron_id_t>) {
+                    tmp_vec_elems[mol_state_.moleculesOnElements().ab(entity, species)] =
+                        static_cast<osh::LO>(val.second.size());
+                } else if constexpr (std::is_same_v<T, mesh::triangle_id_t>) {
+                    tmp_vec_bnds[mol_state_.moleculesOnPatchBoundaries().ab(entity, species)] =
+                        static_cast<osh::LO>(val.second.size());
+                } else {
+                    static_assert(always_false_v<T>, "unmanaged entity type");
+                }
+            },
+            std::get<0>(val.first));
+    }
+
+    dependency_map_elems_ = steps::util::flat_multimap<osh::LO, 1>(tmp_vec_elems);
+    dependency_map_bnds_ = steps::util::flat_multimap<osh::LO, 1>(tmp_vec_bnds);
+
+    for (auto& val: dependency_map) {
+        auto species = std::get<1>(val.first);
+        std::visit(
+            [&](auto& entity) {
+                using T = std::decay_t<decltype(entity)>;
+                if constexpr (std::is_same_v<T, mesh::tetrahedron_id_t>) {
+                    auto ab = mol_state_.moleculesOnElements().ab(entity, species);
+                    for (size_t el = 0; el < val.second.size(); ++el) {
+                        // data() encodes both (reaction type, reaction id)
+                        dependency_map_elems_(ab, el) = val.second[el].data();
+                    }
+                } else if constexpr (std::is_same_v<T, mesh::triangle_id_t>) {
+                    auto ab = mol_state_.moleculesOnPatchBoundaries().ab(entity, species);
+                    for (size_t el = 0; el < val.second.size(); ++el) {
+                        dependency_map_bnds_(ab, el) = val.second[el].data();
+                    }
+                } else {
+                    static_assert(always_false_v<T>, "unmanaged entity type");
+                }
+            },
+            std::get<0>(val.first));
+    }
+}
+
+//------------------------------------------------------------------
+
+template <typename NumMolecules>
+typename KProcState<NumMolecules>::Graph KProcState<NumMolecules>::getDependenciesGraph(
+    const Propensities<NumMolecules>& propensities) const {
   // propensities needed to extract a kproc index
   auto num_edges = [](const dependencies_t &deps) {
     return std::accumulate(deps.begin(), deps.end(), 0u,
@@ -190,9 +253,10 @@ KProcState::Graph KProcState::getDependenciesGraph(const Propensities<> &propens
 
 //------------------------------------------------------------------
 
-void KProcState::setupGroups(bool independent_kprocs) {
+template <typename NumMolecules>
+void KProcState<NumMolecules>::setupGroups(bool independent_kprocs) {
   // propensities needed to extract a kproc. index
-  Propensities<> propensities;
+  Propensities<NumMolecules> propensities;
   propensities.init(handledKProcsClassesAndSizes());
   // extract the number of kproc dependencies
   if (independent_kprocs) {
@@ -229,26 +293,27 @@ void KProcState::setupGroups(bool independent_kprocs) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wreturn-type"
 template <typename NumMolecules>
-const std::vector<MolStateElementID>& KProcState::updateMolStateAndOccupancy(
+const std::vector<MolStateElementID>& KProcState<NumMolecules>::updateMolStateAndOccupancy(
     MolState<NumMolecules>& mol_state,
     const osh::Real event_time,
     const KProcID& event) const {
-    switch (event.type()) {
-    case KProcType ::Reac:
-        return reactions().updateMolStateAndOccupancy(mol_state, event.id(), event_time);
-    case KProcType::SReac:
-        return surfaceReactions().updateMolStateAndOccupancy(mol_state, event.id(), event_time);
-    case KProcType::VDepSReac:
-        return vDepSurfaceReactions().updateMolStateAndOccupancy(mol_state, event.id(), event_time);
-    case KProcType::GHKSReac:
-        return ghkSurfaceReactions().updateMolStateAndOccupancy(mol_state, event.id(), event_time);
-    case KProcType::Diff:
-        throw std::logic_error("Unhandled kinetic process: Diffusion");
-    }
+  switch (event.type()) {
+  case KProcType ::Reac:
+    return reactions().updateMolStateAndOccupancy(mol_state, event.id(), event_time);
+  case KProcType::SReac:
+    return surfaceReactions().updateMolStateAndOccupancy(mol_state, event.id(), event_time);
+  case KProcType::VDepSReac:
+    return vDepSurfaceReactions().updateMolStateAndOccupancy(mol_state, event.id(), event_time);
+  case KProcType::GHKSReac:
+    return ghkSurfaceReactions().updateMolStateAndOccupancy(mol_state, event.id(), event_time);
+  case KProcType::Diff:
+    throw std::logic_error("Unhandled kinetic process: Diffusion");
+  }
 }
 
 #pragma GCC diagnostic ignored "-Wreturn-type"
-void KProcState::report(std::ostream &report_stream, KProcID kid) const {
+template <typename NumMolecules>
+void KProcState<NumMolecules>::report(std::ostream& report_stream, KProcID kid) const {
   switch (kid.type()) {
   case KProcType ::Reac:
     return reactions().report(report_stream, kid.id());
@@ -266,9 +331,10 @@ void KProcState::report(std::ostream &report_stream, KProcID kid) const {
 
 //------------------------------------------------------------------
 
-std::pair<KProcState::Graph, std::vector<std::string>>
-KProcState::getDependenciesGraphAndLabels() const {
-  Propensities<> propensities;
+template <typename NumMolecules>
+std::pair<typename KProcState<NumMolecules>::Graph, std::vector<std::string>>
+KProcState<NumMolecules>::getDependenciesGraphAndLabels() const {
+  Propensities<NumMolecules> propensities;
   propensities.init(handledKProcsClassesAndSizes());
   std::vector<std::string> labels(propensities.size());
   std::transform(boost::make_counting_iterator(size_t{}),
@@ -284,44 +350,25 @@ KProcState::getDependenciesGraphAndLabels() const {
 //--------------------------------------------------------
 
 // explicit template instantiation definitions
-template void
-KProcState::collateDependencies(const Reactions &processes,
-                                DependenciesMap &dependency_map) const;
-template void
-KProcState::collateDependencies(const SurfaceReactions &processes,
-                                DependenciesMap &dependency_map) const;
-template void
-KProcState::collateDependencies(const VDepSurfaceReactions &processes,
-                                DependenciesMap &dependency_map) const;
-template void
-KProcState::collateDependencies(const GHKSurfaceReactions &processes,
-                                DependenciesMap &dependency_map) const;
+template void KProcState<osh::I32>::collateDependencies(const Reactions& processes,
+                                                        DependenciesMap& dependency_map) const;
+template void KProcState<osh::I32>::collateDependencies(const SurfaceReactions& processes,
+                                                        DependenciesMap& dependency_map) const;
+template void KProcState<osh::I32>::collateDependencies(const VDepSurfaceReactions& processes,
+                                                        DependenciesMap& dependency_map) const;
+template void KProcState<osh::I32>::collateDependencies(const GHKSurfaceReactions& processes,
+                                                        DependenciesMap& dependency_map) const;
+template void KProcState<osh::I64>::collateDependencies(const Reactions& processes,
+                                                        DependenciesMap& dependency_map) const;
+template void KProcState<osh::I64>::collateDependencies(const SurfaceReactions& processes,
+                                                        DependenciesMap& dependency_map) const;
+template void KProcState<osh::I64>::collateDependencies(const VDepSurfaceReactions& processes,
+                                                        DependenciesMap& dependency_map) const;
+template void KProcState<osh::I64>::collateDependencies(const GHKSurfaceReactions& processes,
+                                                        DependenciesMap& dependency_map) const;
 
-template propensity_function_traits<osh::I32>::value
-KProcState::propensityFun<osh::I32>() const;
-template propensity_function_traits<osh::I64>::value
-KProcState::propensityFun<osh::I64>() const;
-
-template const std::vector<MolStateElementID>& KProcState::updateMolStateAndOccupancy(
-    MolState<osh::I32>& mol_state,
-    const osh::Real event_time,
-    const KProcID& event) const;
-template const std::vector<MolStateElementID>& KProcState::updateMolStateAndOccupancy(
-    MolState<osh::I64>& mol_state,
-    const osh::Real event_time,
-    const KProcID& event) const;
-
-
-template KProcState::KProcState(const Statedef& statedef,
-                                DistMesh& mesh,
-                                MolState<osh::I32>& mol_state,
-                                bool use_rssa,
-                                bool independent_kprocs);
-template KProcState::KProcState(const Statedef& statedef,
-                                DistMesh& mesh,
-                                MolState<osh::I64>& mol_state,
-                                bool use_rssa,
-                                bool independent_kprocs);
+template class KProcState<osh::I32>;
+template class KProcState<osh::I64>;
 
 } // namespace kproc
 } // namespace dist

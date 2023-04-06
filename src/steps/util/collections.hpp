@@ -2,14 +2,14 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -88,38 +88,6 @@ namespace impl {
         return r;
     }
 } // namespace impl
-
-struct hash_references_tag {};
-
-/** Return bit vector representing set membership.
- *
- * \param tag        (Optionally) specify hash table should hash references, not values,
- * \param items      Collection of items to test for membership.
- * \param collection Collection to test membership against.
- * \param hash       (Optionally) specify hash function for elements of collection.
- * \return           Vector v of size items.size(), where v[i] is
- *                   true if ith element of items exists in collection.
- *
- * When hash_references is specified, items and collection must have the same value_type,
- * that is, no conversions between their value_types will be deduced.
- */
-
-template <typename C1, typename C2, typename H>
-std::vector<bool> inline map_membership(hash_references_tag, const C1 &items, const C2 &collection, const H &hasher) {
-    typedef typename container_traits<C2>::value_type V;
-    typedef std::unordered_set<std::reference_wrapper<const V>, impl::hash_ref<H>, impl::equal_to_ref> hash_table_type;
-
-    return impl::map_membership<hash_table_type>(items, collection, hasher);
-}
-
-template <typename C1, typename C2>
-std::vector<bool> inline map_membership(hash_references_tag, const C1 &items, const C2 &collection) {
-    typedef typename std::hash<typename container_traits<C2>::value_type> H;
-    typedef typename container_traits<C2>::value_type V;
-    typedef std::unordered_set<std::reference_wrapper<const V>, impl::hash_ref<H>, impl::equal_to_ref> hash_table_type;
-
-    return impl::map_membership<hash_table_type>(items, collection, H());
-}
 
 template <typename C1, typename C2, typename H = std::hash<typename container_traits<C2>::value_type>>
 std::vector<bool> inline map_membership(const C1 &items, const C2 &collection, const H &hasher) {

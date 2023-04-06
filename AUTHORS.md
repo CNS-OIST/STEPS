@@ -28,6 +28,7 @@ Weiliang Chen (OIST, since 2009)
 Jules Lallouette (OIST, since 2019)
 * Development of the new python API
 * Testing and documentation for the new python API
+* Automatic data saving to HDF5 and XDMF formats
 
 Guido Klingbeil  (OIST, 2015 - 2019)
 * Matlab Simbiology support utility

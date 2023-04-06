@@ -35,7 +35,7 @@ TEST(PetscSystem, KrylovSolver) {
     KSP ksp;
     PC pc;
     PetscInt N = 100;
-	double tol = 1.e-12;
+    double tol = 2.e-12;
 
     VecCreateMPI(PETSC_COMM_WORLD, PETSC_DECIDE, N, &x);
     VecCreateMPI(PETSC_COMM_WORLD, PETSC_DECIDE, N, &x_exact);

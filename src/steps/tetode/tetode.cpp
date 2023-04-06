@@ -2,14 +2,14 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -558,7 +558,7 @@ void TetODE::_setup()
                 l[j] = distance(pMesh->_getVertex(v[0]), pMesh->_getVertex(v[1]));
             }
 
-            std::vector<triangle_id_t> tris(3, boost::none);
+            std::vector<triangle_id_t> tris(3, std::nullopt);
             for (int j = 0; j < 3; ++j)
             {
                 const auto& neighb_tris = bar2tri[tri_bars[j]];
@@ -1471,15 +1471,15 @@ void TetODE::_setupEField()
 
     pEFVert_GtoL = new vertex_id_t[nverts];
     for (uint i=0; i < nverts; ++i) {
-        pEFVert_GtoL[i] = boost::none;
+        pEFVert_GtoL[i] = std::nullopt;
     }
     pEFTri_GtoL = new triangle_id_t[ntris];
     for (uint i=0; i< ntris; ++i) {
-        pEFTri_GtoL[i] = boost::none;
+        pEFTri_GtoL[i] = std::nullopt;
     }
     pEFTet_GtoL = new tetrahedron_id_t[ntets];
     for (uint i=0; i < ntets; ++i) {
-        pEFTet_GtoL[i] = boost::none;
+        pEFTet_GtoL[i] = std::nullopt;
     }
 
     pEFTri_LtoG = new triangle_id_t[neftris()];

@@ -60,7 +60,6 @@ std::ostream& operator<<(std::ostream& os, const Vec& v) {
     PetscInt N;
     VecGetSize(v, &N);
     os << '(' << N << "): \n";
-    PetscViewerPushFormat(PETSC_VIEWER_STDOUT_WORLD, PETSC_VIEWER_ASCII_DENSE);
     VecView(v, PETSC_VIEWER_STDOUT_WORLD);
     return os << '\n';
 }
@@ -72,7 +71,6 @@ std::ostream& operator<<(std::ostream& os, const Mat& m) {
     PetscInt M, N;
     MatGetSize(m, &M, &N);
     os << '(' << M << 'x' << N << "): \n";
-    PetscViewerPushFormat(PETSC_VIEWER_STDOUT_WORLD, PETSC_VIEWER_ASCII_DENSE);
     MatView(m, PETSC_VIEWER_STDOUT_WORLD);
     return os << '\n';
 }

@@ -91,10 +91,13 @@ class flat_multimap;
  * \tparam Policy data structure implementation
  */
 template <typename T, int Size, int Policy>
-class flat_multimap_data_iterator: public std::iterator<std::input_iterator_tag, gsl::span<T>> {
+class flat_multimap_data_iterator {
   public:
-    using super_type = std::iterator<std::input_iterator_tag, gsl::span<T>>;
-    using value_type = typename super_type::value_type;
+    using iterator_category = std::input_iterator_tag;
+    using value_type = gsl::span<T>;
+    using difference_type = std::ptrdiff_t;
+    using pointer = value_type*;
+    using reference = value_type&;
     using fmm_type = typename std::conditional<
         std::is_const<T>::value,
         const flat_multimap<typename std::remove_const<T>::type, Size, Policy>,
@@ -128,11 +131,11 @@ class flat_multimap_data_iterator: public std::iterator<std::input_iterator_tag,
         return data_.begin() != other.data_.begin();
     }
 
-    typename super_type::value_type& operator*() noexcept {
+    value_type& operator*() noexcept {
         return data_;
     }
 
-    const typename super_type::value_type& operator*() const noexcept {
+    const value_type& operator*() const noexcept {
         return data_;
     }
 
@@ -141,10 +144,13 @@ class flat_multimap_data_iterator: public std::iterator<std::input_iterator_tag,
 };
 
 template <typename T, int Policy>
-class flat_multimap_data_iterator<T, 1, Policy>: public std::iterator<std::input_iterator_tag, T> {
+class flat_multimap_data_iterator<T, 1, Policy> {
   public:
-    using super_type = std::iterator<std::input_iterator_tag, T>;
-    using value_type = typename super_type::value_type;
+    using iterator_category = std::input_iterator_tag;
+    using value_type = T;
+    using difference_type = std::ptrdiff_t;
+    using pointer = T*;
+    using reference = T&;
     using fmm_type = typename std::conditional<
         std::is_const<T>::value,
         const flat_multimap<typename std::remove_const<T>::type, 1, Policy>,
@@ -178,7 +184,11 @@ class flat_multimap_data_iterator<T, 1, Policy>: public std::iterator<std::input
         return data_ != other.data_;
     }
 
-    inline typename super_type::value_type& operator*() const noexcept {
+    inline const value_type& operator*() const noexcept {
+        return *data_;
+    }
+
+    inline value_type& operator*() noexcept {
         return *data_;
     }
 
@@ -284,12 +294,13 @@ class flat_multimap_element {
 };
 
 template <typename T, int Size, int Policy>
-class flat_multimap_element_iterator
-    : public std::iterator<std::input_iterator_tag, flat_multimap_element<T, Size, Policy>> {
+class flat_multimap_element_iterator {
   public:
-    using super_type =
-        std::iterator<std::input_iterator_tag, flat_multimap_element<T, Size, Policy>>;
-    using value_type = typename super_type::value_type;
+    using iterator_category = std::input_iterator_tag;
+    using value_type = flat_multimap_element<T, Size, Policy>;
+    using difference_type = std::ptrdiff_t;
+    using pointer = value_type*;
+    using reference = value_type&;
     using fmm_type = typename std::conditional<
         std::is_const<T>::value,
         const flat_multimap<typename std::remove_const<T>::type, Size, Policy>,

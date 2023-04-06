@@ -2,14 +2,14 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -74,7 +74,12 @@ double steps::math::permeability
     double denominator = C*exp(2.0*D*V) + ((B-C)*D*V -C -B)*exp(D*V) + B;
     double numerator = exp(2.0*D*V) - 2.0*exp(D*V) + 1;
 
-    double A = G * (numerator/denominator);
+    // If both the denominator and numerator are 0, we compute the limit of the indeterminate form by
+    // applying L’Hôpital’s rule:
+    double A = (std::abs(numerator) > std::numeric_limits<double>::epsilon() or
+                std::abs(denominator) > std::numeric_limits<double>::epsilon())
+                   ? G * (numerator / denominator)
+                   : 2.0 * G / (C + B);
 
     double P  = (A*GAS_CONSTANT*T)/(pow(z, 2.0)*pow(FARADAY, 2.0));
 
@@ -94,8 +99,17 @@ double steps::math::GHKcurrent
     AssertLog(iconc >= 0.0);
     AssertLog(oconc >= 0.0);
 
-    double numerator = (P * pow(z, 2.0) * V * pow(FARADAY, 2.0))/(GAS_CONSTANT*T) * (iconc - (oconc*exp(((0-z)*V*FARADAY)/(GAS_CONSTANT*T))));
-    double denominator = (1-exp(((0-z)*V*FARADAY)/(GAS_CONSTANT*T)));
+    double nuFoRT = static_cast<double>(z) * V * FARADAY / (GAS_CONSTANT * T);
+    if (nuFoRT >= std::numeric_limits<double>::max_exponent10 * 2.30 ||
+        nuFoRT <= std::numeric_limits<double>::min_exponent10 * 2.30) {
+        throw std::runtime_error("Overflow encountered, nuFoRT: " + std::to_string(nuFoRT));
+    }
+    double eNuFoRT = std::exp(-nuFoRT);
 
-    return (numerator/denominator);
+    if (std::abs(nuFoRT) > std::numeric_limits<double>::epsilon()) {
+        return P * z * FARADAY * nuFoRT * (iconc - oconc * eNuFoRT) / (1.0 - eNuFoRT);
+    } else {
+        // The limit of the indeterminate form is computed with L’Hôpital’s rule
+        return P * z * FARADAY * (iconc - oconc);
+    }
 }

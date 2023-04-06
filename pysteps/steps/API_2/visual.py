@@ -1,14 +1,14 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -24,6 +24,7 @@
 
 import numpy as np
 import pyqtgraph as pg
+from pyqtgraph.Qt import QtCore, QtWidgets
 
 import steps.API_1.visual as svisual
 
@@ -65,8 +66,8 @@ class SimControl(nutils.UsableObject):
 
         sim = Simulation(...)
 
-        rs = ResultSelector(sim)              # We need a result selector path root for describing
-                                              # things to add to the plots.
+        rs = ResultSelector(sim)              # We need a result selector path root for
+                                              # describing things to add to the plots.
 
         ...                                   # Setting up initial conditions
 
@@ -96,12 +97,12 @@ class SimControl(nutils.UsableObject):
                 ElementDisplay(               # All compartment and patches should be displayed
                     rs.ALL(Compartment, Patch)
                 )
-                ElementDisplay(               # The S1 species in all compartments should be plotted
-                    rs.ALL(Compartment).S1,   # in yellow
+                ElementDisplay(               # The S1 species in all compartments should be
+                    rs.ALL(Compartment).S1,   # plotted in yellow
                     color=(0, 0.5, 0.5, 1)
                 )
-                ElementDisplay(               # The S2 species in all patches should be plotted in
-                    rs.ALL(Patch).S2,         # purple.
+                ElementDisplay(               # The S2 species in all patches should be plotted
+                    rs.ALL(Patch).S2,         # in purple.
                     color=(0.5, 0, 0.5, 1)
                 )
                 ElementDisplay(               # Complexes CC in comp1 should be plotted with a
@@ -120,6 +121,7 @@ class SimControl(nutils.UsableObject):
 
     def __init__(self, title="Sim Control", start_time=0.0, end_time=10, upd_interval=0.1, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
         self._app = pg.mkQApp()
 
         self.title = title
@@ -192,7 +194,7 @@ class PlotDisplay(nutils.UsingObjects(SimControl), nutils.UsableObject):
 
 
 class TimePlot(nutils.UsingObjects(PlotDisplay)):
-    """Plot time-dependent values
+    r"""Plot time-dependent values
 
     :param rspath: Result selector path of the values to be plotted
     :type rspath: :py:class:`ResultSelector`
@@ -282,7 +284,7 @@ class TimePlot(nutils.UsingObjects(PlotDisplay)):
 
 
 class SpatialPlot(nutils.UsingObjects(PlotDisplay)):
-    """Plot space-dependent values
+    r"""Plot space-dependent values
 
     :param rspath: Result selector path of the values to be plotted
     :type rspath: :py:class:`ResultSelector`
@@ -434,7 +436,7 @@ class SimDisplay(nutils.UsingObjects(SimControl), nutils.UsableObject):
             self._stepsSimDisplay.addItem(sve)
 
     def merge(self, *simDisp):
-        """Merge with a previously declared simulation display
+        r"""Merge with a previously declared simulation display
 
         :param \*simDisp: The simulation displays to merge to self
         :type \*simDisp: :py:class:`SimDisplay`
