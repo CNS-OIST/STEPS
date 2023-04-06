@@ -1,7 +1,5 @@
 #include "efield_operator.hpp"
 
-#include <unordered_set>
-
 #include <Omega_h_adj.hpp>
 #include <Omega_h_array_ops.hpp>
 #include <Omega_h_for.hpp>
@@ -313,11 +311,20 @@ void EFieldOperator::evolve_init(Mat& A0,
                             current_on_verts.data(),
                             INSERT_VALUES);
     CHKERRABORT(mesh.comm_impl(), err);
+    err = VecAssemblyBegin(i());
+    CHKERRABORT(mesh.comm_impl(), err);
+    err = VecAssemblyEnd(i());
+    CHKERRABORT(mesh.comm_impl(), err);
+
     err = VecSetValuesLocal(sol(),
                             mesh::petsc_int_cast(potential_on_verts.size()),
                             idxs.data(),
                             potential_on_verts.data(),
                             INSERT_VALUES);
+    CHKERRABORT(mesh.comm_impl(), err);
+    err = VecAssemblyBegin(sol());
+    CHKERRABORT(mesh.comm_impl(), err);
+    err = VecAssemblyEnd(sol());
     CHKERRABORT(mesh.comm_impl(), err);
 
     err = MatDuplicate(A(), MAT_COPY_VALUES, &A0);

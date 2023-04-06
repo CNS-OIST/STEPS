@@ -419,210 +419,210 @@ cdef class _py_TetOpSplitP(_py_TetAPI):
         self.ptrx().setNSteps(nsteps)
 
 
-    def getBatchTetCounts(self, std.vector[index_t] tets, str s):
+    def getBatchTetCounts(self, std.vector[index_t] tets, str spec):
         """
-        Get the counts of a species s in a list of tetrahedrons.
+        Get the counts of a species spec in a list of tetrahedrons.
 
         Syntax::
 
-            getBatchTetCounts(tets, s)
+            getBatchTetCounts(tets, spec)
 
         Arguments:
         list<index_t> tets
-        string s
+        string spec
 
         Return:
         list<double>
 
         """
-        return self.ptrx().getBatchTetCounts(tets, to_std_string(s))
+        return self.ptrx().getBatchTetCounts(tets, to_std_string(spec))
 
-    def getBatchTriCounts(self, std.vector[index_t] tris, str s):
+    def getBatchTriCounts(self, std.vector[index_t] tris, str spec):
         """
-        Get the counts of a species s in a list of triangles.
+        Get the counts of a species spec in a list of triangles.
 
         Syntax::
 
-            getBatchTriCounts(tris, s)
+            getBatchTriCounts(tris, spec)
 
         Arguments:
         list<index_t> tris
-        string s
+        string spec
 
         Return:
         list<double>
 
         """
-        return self.ptrx().getBatchTriCounts(tris, to_std_string(s))
+        return self.ptrx().getBatchTriCounts(tris, to_std_string(spec))
 
-    def setBatchTetConcs(self, std.vector[index_t] tets, str s, std.vector[double] concs):
+    def setBatchTetConcs(self, std.vector[index_t] tets, str spec, std.vector[double] concs):
         """
-        Set the concentration of a species s in a list of tetrahedrons individually.
+        Set the concentration of a species spec in a list of tetrahedrons individually.
 
         Syntax::
 
-            setBatchTetConcs(tets, s, concs)
+            setBatchTetConcs(tets, spec, concs)
 
         Arguments:
         list<index_t> tets
-        string s
+        string spec
         list<double> concs
 
         Return:
         None
 
         """
-        self.ptrx().setBatchTetConcs(tets, to_std_string(s), concs)
+        self.ptrx().setBatchTetConcs(tets, to_std_string(spec), concs)
 
-    def getBatchTetConcs(self, std.vector[index_t] tets, str s):
+    def getBatchTetConcs(self, std.vector[index_t] tets, str spec):
         """
-        Get the individual concentration of a species s in a list of tetrahedrons.
+        Get the individual concentration of a species spec in a list of tetrahedrons.
 
         Syntax::
 
-            getBatchTetConcs(tets, s)
+            getBatchTetConcs(tets, spec)
 
         Arguments:
         list<index_t> tets
-        string s
+        string spec
 
         Return:
         list<double>
 
         """
-        return self.ptrx().getBatchTetConcs(tets, to_std_string(s))
+        return self.ptrx().getBatchTetConcs(tets, to_std_string(spec))
 
     # ---------------------------------------------------------------------------------
     # NUMPY section - we accept numpy arrays and generically typed memory-views
     # ---------------------------------------------------------------------------------
-    def getBatchTetCountsNP(self, index_t[:] index_array, str s, double[:] counts):
+    def getBatchTetCountsNP(self, index_t[:] index_array, str spec, double[:] counts):
         """
-        Get the counts of a species s in a list of tetrahedrons.
+        Get the counts of a species spec in a list of tetrahedrons.
 
         Syntax::
-            getBatchTetCountsNP(indices, s, counts)
+            getBatchTetCountsNP(indices, spec, counts)
 
         Arguments:
         numpy.array<index_t> indices
-        string s
+        string spec
         numpy.array<double, length = len(indices)> counts
 
         Return:
         None
 
         """
-        self.ptrx().getBatchTetCountsNP(&index_array[0], index_array.shape[0], to_std_string(s), &counts[0], counts.shape[0])
+        self.ptrx().getBatchTetCountsNP(&index_array[0], index_array.shape[0], to_std_string(spec), &counts[0], counts.shape[0])
 
-    def getBatchTetConcsNP(self, index_t[:] index_array, str s, double[:] concs):
+    def getBatchTetConcsNP(self, index_t[:] index_array, str spec, double[:] concs):
         """
-        Get the individual concentrations of a species s in a list of tetrahedrons.
+        Get the individual concentrations of a species spec in a list of tetrahedrons.
 
         Syntax::
-            getBatchTetConcsNP(indices, s, concs)
+            getBatchTetConcsNP(indices, spec, concs)
 
         Arguments:
         numpy.array<index_t> indices
-        string s
+        string spec
         numpy.array<double, length = len(indices)> concs
 
         Return:
         None
 
         """
-        self.ptrx().getBatchTetConcsNP(&index_array[0], index_array.shape[0], to_std_string(s), &concs[0], concs.shape[0])
+        self.ptrx().getBatchTetConcsNP(&index_array[0], index_array.shape[0], to_std_string(spec), &concs[0], concs.shape[0])
 
-    def getBatchTriCountsNP(self, index_t[:] index_array, str s, double[:] counts):
+    def getBatchTriCountsNP(self, index_t[:] index_array, str spec, double[:] counts):
         """
-        Get the counts of a species s in a list of triangles.
+        Get the counts of a species spec in a list of triangles.
 
         Syntax::
-            getBatchTriCountsNP(indices, s, counts)
+            getBatchTriCountsNP(indices, spec, counts)
 
         Arguments:
         numpy.array<index_t> indices
-        string s
+        string spec
         numpy.array<double, length = len(indices)> counts
 
         Return:
             None
 
         """
-        self.ptrx().getBatchTriCountsNP(&index_array[0], index_array.shape[0], to_std_string(s), &counts[0], counts.shape[0])
+        self.ptrx().getBatchTriCountsNP(&index_array[0], index_array.shape[0], to_std_string(spec), &counts[0], counts.shape[0])
 
-    def setBatchTetConcsNP(self, index_t[:] index_array, str s, double[:] concs):
+    def setBatchTetConcsNP(self, index_t[:] index_array, str spec, double[:] concs):
         """
-        Set the concetration of a species s in a list of tetrahedrons.
+        Set the concetration of a species spec in a list of tetrahedrons.
 
         Syntax::
-            setBatchTetConcsNP(indices, s, concs)
+            setBatchTetConcsNP(indices, spec, concs)
 
         Arguments:
         numpy.array<index_t> indices
-        string s
+        string spec
         numpy.array<double, length = len(indices)> concs
 
         Return:
         None
 
         """
-        self.ptrx().setBatchTetConcsNP(&index_array[0], index_array.shape[0], to_std_string(s), &concs[0], concs.shape[0])
+        self.ptrx().setBatchTetConcsNP(&index_array[0], index_array.shape[0], to_std_string(spec), &concs[0], concs.shape[0])
 
 
-    def getBatchTetConcsNP(self, index_t[:] index_array, str s, double[:] concs):
+    def getBatchTetConcsNP(self, index_t[:] index_array, str spec, double[:] concs):
         """
-        Get the concetration of a species s in a list of tetrahedrons.
+        Get the concetration of a species spec in a list of tetrahedrons.
 
         Syntax::
-            getBatchTetConcsNP(indices, s, concs)
+            getBatchTetConcsNP(indices, spec, concs)
 
         Arguments:
         numpy.array<index_t> indices
-        string s
+        string spec
         numpy.array<double, length = len(indices)>
 
         Return:
         None
 
         """
-        self.ptrx().getBatchTetConcsNP(&index_array[0], index_array.shape[0], to_std_string(s), &concs[0], concs.shape[0])
+        self.ptrx().getBatchTetConcsNP(&index_array[0], index_array.shape[0], to_std_string(spec), &concs[0], concs.shape[0])
 
-    def sumBatchTetCountsNP(self, index_t[:] tet_array, str s):
+    def sumBatchTetCountsNP(self, index_t[:] tet_array, str spec):
         """
-        Return the accumulated sum of species s in a batch of tetrahedrons.
+        Return the accumulated sum of species spec in a batch of tetrahedrons.
 
         This function requires NumPy array as input, and called globally in all processes.
 
         Syntax::
 
-            sumBatchTetCountsNP(tet_array, s)
+            sumBatchTetCountsNP(tet_array, spec)
 
         Arguments:
         numpy.array<index_t> tet_array
-        string s
+        string spec
 
         Return:
         float
         """
-        return self.ptrx().sumBatchTetCountsNP(&tet_array[0], tet_array.shape[0], to_std_string(s))
+        return self.ptrx().sumBatchTetCountsNP(&tet_array[0], tet_array.shape[0], to_std_string(spec))
 
-    def sumBatchTriCountsNP(self, index_t[:] tri_array, str s):
+    def sumBatchTriCountsNP(self, index_t[:] tri_array, str spec):
         """
-        Return the accumulated sum of species s in a batch of triangles.
+        Return the accumulated sum of species spec in a batch of triangles.
 
         This function requires NumPy array as input, and called globally in all processes.
 
         Syntax::
 
-            sumBatchTriCountsNP(tri_array, s)
+            sumBatchTriCountsNP(tri_array, spec)
 
         Arguments:
         numpy.array<index_t> tri_array
-        string s
+        string spec
 
         Return:
         float
         """
-        return self.ptrx().sumBatchTriCountsNP(&tri_array[0], tri_array.shape[0], to_std_string(s))
+        return self.ptrx().sumBatchTriCountsNP(&tri_array[0], tri_array.shape[0], to_std_string(spec))
 
     def sumBatchTriGHKIsNP(self, index_t[:] tri_array, str ghk):
         """
@@ -753,7 +753,7 @@ cdef class _py_TetOpSplitP(_py_TetAPI):
         cdef std.vector[string] std_ocs = to_vec_std_strings(ocs)
         self.ptrx().getBatchTriBatchOhmicIsNP(&index_array[0], index_array.shape[0], std_ocs, &counts[0], counts.shape[0])
 
-    def getBatchTriBatchGHKIsNP(self, index_t[:] index_array, list[str] ghks, double[:] counts):
+    def getBatchTriBatchGHKIsNP(self, index_t[:] index_array, ghks, double[:] counts):
         """
         Get the values of a list of GHK currents in a list of triangles,
         store in a flatten 2d array.
@@ -778,248 +778,248 @@ cdef class _py_TetOpSplitP(_py_TetAPI):
     # ROI section
     # ---------------------------------------------------------------------------------
 
-    def getROITetCounts(self, str ROI_id, str s):
+    def getROITetCounts(self, str roi, str spec):
         """
-        Get the counts of a species s in tetrehedrons of a ROI.
+        Get the counts of a species spec in tetrehedrons of a ROI.
 
         Syntax::
 
-            getROITetCounts(ROI_id, s)
+            getROITetCounts(roi, spec)
 
         Arguments:
-        string ROI_id
-        string s
+        string roi
+        string spec
 
         Return:
         list<float>
 
         """
-        return self.ptrx().getROITetCounts(to_std_string(ROI_id), to_std_string(s))
+        return self.ptrx().getROITetCounts(to_std_string(roi), to_std_string(spec))
 
-    def getROITriCounts(self, str ROI_id, str s):
+    def getROITriCounts(self, str roi, str spec):
         """
-        Get the counts of a species s in triangles of a ROI.
+        Get the counts of a species spec in triangles of a ROI.
 
         Syntax::
 
-            getROITriCounts(ROI_id, s)
+            getROITriCounts(roi, spec)
 
         Arguments:
-        string ROI_id
-        string s
+        string roi
+        string spec
 
         Return:
         list<float>
 
         """
-        return self.ptrx().getROITriCounts(to_std_string(ROI_id), to_std_string(s))
+        return self.ptrx().getROITriCounts(to_std_string(roi), to_std_string(spec))
 
-    def getROITetCountsNP(self, str ROI_id, str s, double[:] counts):
+    def getROITetCountsNP(self, str roi, str spec, double[:] counts):
         """
-        Get the counts of a species s in tetrehedrons of a ROI.
+        Get the counts of a species spec in tetrehedrons of a ROI.
 
         Syntax::
-            getROITetCountsNP(ROI_id, s, counts)
+            getROITetCountsNP(roi, spec, counts)
 
         Arguments:
-        string ROI_id
-        string s
+        string roi
+        string spec
         numpy.array<float, length = len(indices)>
 
         Return:
             None
 
         """
-        self.ptrx().getROITetCountsNP(to_std_string(ROI_id), to_std_string(s), &counts[0], counts.shape[0])
+        self.ptrx().getROITetCountsNP(to_std_string(roi), to_std_string(spec), &counts[0], counts.shape[0])
 
-    def getROITriCountsNP(self, str ROI_id, str s, double[:] counts):
+    def getROITriCountsNP(self, str roi, str spec, double[:] counts):
         """
-        Get the counts of a species s in triangles of a ROI.
+        Get the counts of a species spec in triangles of a ROI.
 
         Syntax::
-            getROITriCountsNP(ROI_id, s, counts)
+            getROITriCountsNP(roi, spec, counts)
 
         Arguments:
-        string ROI_id
-        string s
+        string roi
+        string spec
         numpy.array<float, length = len(indices)>
 
         Return:
             None
 
         """
-        self.ptrx().getROITriCountsNP(to_std_string(ROI_id), to_std_string(s), &counts[0], counts.shape[0])
+        self.ptrx().getROITriCountsNP(to_std_string(roi), to_std_string(spec), &counts[0], counts.shape[0])
 
-    def getROIVol(self, str ROI_id):
+    def getROIVol(self, str roi):
         """
         Get the volume of a ROI.
 
         Syntax::
-            getROIVol(ROI_id)
+            getROIVol(roi)
 
         Arguments:
-        string ROI_id
+        string roi
 
         Return:
         float
 
         """
-        return self.ptrx().getROIVol(to_std_string(ROI_id))
+        return self.ptrx().getROIVol(to_std_string(roi))
 
-    def getROIArea(self, str ROI_id):
+    def getROIArea(self, str roi):
         """
         Get the area of a ROI.
 
         Syntax::
-            getROIArea(ROI_id)
+            getROIArea(roi)
 
         Arguments:
-        string ROI_id
+        string roi
 
         Return:
         float
 
         """
-        return self.ptrx().getROIArea(to_std_string(ROI_id))
+        return self.ptrx().getROIArea(to_std_string(roi))
 
-    def getROICount(self, str ROI_id, str s):
+    def getROICount(self, str roi, str spec):
         """
         Get the count of a species in a ROI.
 
         Syntax::
-            getROICount(ROI_id, s)
+            getROICount(roi, spec)
 
         Arguments:
-        string ROI_id
-        string s
+        string roi
+        string spec
 
         Return:
         float
 
         """
-        return self.ptrx().getROICount(to_std_string(ROI_id), to_std_string(s))
+        return self.ptrx().getROICount(to_std_string(roi), to_std_string(spec))
 
-    def setROICount(self, str ROI_id, str s, double count):
+    def setROICount(self, str roi, str spec, double count):
         """
         Set the count of a species in a ROI.
 
         Syntax::
-            setROICount(ROI_id, s, count)
+            setROICount(roi, spec, count)
 
         Arguments:
-        string ROI_id
-        string s
+        string roi
+        string spec
         float count
 
         Return:
         None
 
         """
-        self.ptrx().setROICount(to_std_string(ROI_id), to_std_string(s), count)
+        self.ptrx().setROICount(to_std_string(roi), to_std_string(spec), count)
 
-    def getROIAmount(self, str ROI_id, str s):
+    def getROIAmount(self, str roi, str spec):
         """
         Get the amount of a species in a ROI.
 
         Syntax::
-            getROIAmount(ROI_id, s, count)
+            getROIAmount(roi, spec, count)
 
         Arguments:
-        string ROI_id
-        string s
+        string roi
+        string spec
 
         Return:
         float
 
         """
-        return self.ptrx().getROIAmount(to_std_string(ROI_id), to_std_string(s))
+        return self.ptrx().getROIAmount(to_std_string(roi), to_std_string(spec))
 
-    def setROIAmount(self, str ROI_id, str s, double amount):
+    def setROIAmount(self, str roi, str spec, double amount):
         """
         Set the amount of a species in a ROI.
 
         Syntax::
-            setROIAmount(ROI_id, s, amount)
+            setROIAmount(roi, spec, amount)
 
         Arguments:
-        string ROI_id
-        string s
+        string roi
+        string spec
         float amount
 
         Return:
         None
 
         """
-        return self.ptrx().setROIAmount(to_std_string(ROI_id), to_std_string(s), amount)
+        return self.ptrx().setROIAmount(to_std_string(roi), to_std_string(spec), amount)
 
-    def getROIConc(self, str ROI_id, str s):
+    def getROIConc(self, str roi, str spec):
         """
         Get the concentration of a species in a ROI.
 
         Syntax::
-            getROIConc(ROI_id, s)
+            getROIConc(roi, spec)
 
         Arguments:
-        string ROI_id
-        string s
+        string roi
+        string spec
 
         Return:
         float
 
         """
-        return self.ptrx().getROIConc(to_std_string(ROI_id), to_std_string(s))
+        return self.ptrx().getROIConc(to_std_string(roi), to_std_string(spec))
 
-    def setROIConc(self, str ROI_id, str s, double conc):
+    def setROIConc(self, str roi, str spec, double conc):
         """
         Set the concentration of a species in a ROI.
 
         Syntax::
-            setROIConc(ROI_id, s, conc)
+            setROIConc(roi, spec, conc)
 
         Arguments:
-        string ROI_id
-        string s
+        string roi
+        string spec
         float conc
 
         Return:
         None
 
         """
-        self.ptrx().setROIConc(to_std_string(ROI_id), to_std_string(s), conc)
+        self.ptrx().setROIConc(to_std_string(roi), to_std_string(spec), conc)
 
-    def setROIClamped(self, str ROI_id, str s, bool b):
+    def setROIClamped(self, str roi, str spec, bool clamped):
         """
-        Set a species in a ROI to be clamped or not. The count of species s in the ROI is clamped if
-        b is True, not clamped if b is False.
+        Set a species in a ROI to be clamped or not. The count of species spec in the ROI is clamped if
+        clamped is True, not clamped if clamped is False.
 
         Syntax::
-            setROIClamped(ROI_id, s, b)
+            setROIClamped(roi, spec, clamped)
 
         Arguments:
-        string ROI_id
-        string s
-        bool b
+        string roi
+        string spec
+        bool clamped
 
         Return:
         None
 
         """
-        self.ptrx().setROIClamped(to_std_string(ROI_id), to_std_string(s), b)
+        self.ptrx().setROIClamped(to_std_string(roi), to_std_string(spec), clamped)
 
-    def setROIReacK(self, str ROI_id, str r, double kf):
+    def setROIReacK(self, str roi, str r, double kf):
         """
         Sets the macroscopic reaction constant of reaction with identifier string r
-        in a ROI with identifier string ROI_id to kf. The unit of the reaction constant
+        in a ROI with identifier string roi to kf. The unit of the reaction constant
         depends on the order of the reaction.
 
         Note: The default value still comes from the steps.model description, so
         calling reset() will return the reaction constant to that value.
 
         Syntax::
-            setROIReacK(ROI_id, r, kf)
+            setROIReacK(roi, r, kf)
 
         Arguments:
-        string ROI_id
+        string roi
         string r
         float kf
 
@@ -1027,22 +1027,22 @@ cdef class _py_TetOpSplitP(_py_TetAPI):
         None
 
         """
-        self.ptrx().setROIReacK(to_std_string(ROI_id), to_std_string(r), kf)
+        self.ptrx().setROIReacK(to_std_string(roi), to_std_string(r), kf)
 
-    def setROISReacK(self, str ROI_id, str sr, double kf):
+    def setROISReacK(self, str roi, str sr, double kf):
         """
         Sets the macroscopic reaction constant of surface reaction with identifier string sr
-        in a ROI with identifier string ROI_id to kf. The unit of the reaction constant
+        in a ROI with identifier string roi to kf. The unit of the reaction constant
         depends on the order of the reaction.
 
         Note: The default value still comes from the steps.model description, so
         calling reset() will return the reaction constant to that value.
 
         Syntax::
-            setROISReacK(ROI_id, sr, kf)
+            setROISReacK(roi, sr, kf)
 
         Arguments:
-        string ROI_id
+        string roi
         string sr
         float kf
 
@@ -1050,39 +1050,39 @@ cdef class _py_TetOpSplitP(_py_TetAPI):
         None
 
         """
-        self.ptrx().setROISReacK(to_std_string(ROI_id), to_std_string(sr), kf)
+        self.ptrx().setROISReacK(to_std_string(roi), to_std_string(sr), kf)
 
-    def setROIDiffD(self, str ROI_id, str d, double dk):
+    def setROIDiffD(self, str roi, str diff, double dcst):
         """
-        Sets the macroscopic diffusion constant of diffusion with identifier string d
-        in a ROI with identifier string ROI_id to dk.
+        Sets the macroscopic diffusion constant of diffusion with identifier string diff
+        in a ROI with identifier string roi to dcst.
 
         Note: The default value still comes from the steps.model description, so
         calling reset() will return the diffusion constant to that value.
 
         Syntax::
-            setROIDiffD(ROI_id, d, dk)
+            setROIDiffD(roi, diff, dcst)
 
         Arguments:
-        string ROI_id
-        string d
-        float dk
+        string roi
+        string diff
+        float dcst
 
         Return:
             None
 
         """
-        self.ptrx().setROIDiffD(to_std_string(ROI_id), to_std_string(d), dk)
+        self.ptrx().setROIDiffD(to_std_string(roi), to_std_string(diff), dcst)
 
-    def setROIReacActive(self, str ROI_id, str r, bool a):
+    def setROIReacActive(self, str roi, str r, bool a):
         """
         Set reaction r in a ROI to be active or not.
 
         Syntax::
-            setROIReacActive(ROI_id, r, a)
+            setROIReacActive(roi, r, a)
 
         Arguments:
-        string ROI_id
+        string roi
         string r
         bool a
 
@@ -1090,17 +1090,17 @@ cdef class _py_TetOpSplitP(_py_TetAPI):
         None
 
         """
-        self.ptrx().setROIReacActive(to_std_string(ROI_id), to_std_string(r), a)
+        self.ptrx().setROIReacActive(to_std_string(roi), to_std_string(r), a)
 
-    def setROISReacActive(self, str ROI_id, str sr, bool a):
+    def setROISReacActive(self, str roi, str sr, bool a):
         """
         Set surface reaction sr in a ROI to be active or not.
 
         Syntax::
-            setROISReacActive(ROI_id, sr, a)
+            setROISReacActive(roi, sr, a)
 
         Arguments:
-        string ROI_id
+        string roi
         string sr
         bool a
 
@@ -1108,35 +1108,35 @@ cdef class _py_TetOpSplitP(_py_TetAPI):
         None
 
         """
-        self.ptrx().setROISReacActive(to_std_string(ROI_id), to_std_string(sr), a)
+        self.ptrx().setROISReacActive(to_std_string(roi), to_std_string(sr), a)
 
-    def setROIDiffActive(self, str ROI_id, str d, bool act):
+    def setROIDiffActive(self, str roi, str diff, bool act):
         """
-        Set diffusion d in a ROI to be active or not.
+        Set diffusion diff in a ROI to be active or not.
 
         Syntax::
-            setROIDiffActive(ROI_id, sr, a)
+            setROIDiffActive(roi, diff, a)
 
         Arguments:
-        string ROI_id
-        string sr
+        string roi
+        string diff
         bool a
 
         Return:
         None
 
         """
-        self.ptrx().setROIDiffActive(to_std_string(ROI_id), to_std_string(d), act)
+        self.ptrx().setROIDiffActive(to_std_string(roi), to_std_string(diff), act)
 
-    def setROIVDepSReacActive(self, str ROI_id, str vsr, bool a):
+    def setROIVDepSReacActive(self, str roi, str vsr, bool a):
         """
         Set voltage dependent surface reaction vsr in a ROI to be active or not.
 
         Syntax::
-            setROIVDepSReacActive(ROI_id, vsr, a)
+            setROIVDepSReacActive(roi, vsr, a)
 
         Arguments:
-        string ROI_id
+        string roi
         string vsr
         bool a
 
@@ -1144,121 +1144,121 @@ cdef class _py_TetOpSplitP(_py_TetAPI):
         None
 
         """
-        self.ptrx().setROIVDepSReacActive(to_std_string(ROI_id), to_std_string(vsr), a)
+        self.ptrx().setROIVDepSReacActive(to_std_string(roi), to_std_string(vsr), a)
 
-    def getROIReacExtent(self, str ROI_id, str r):
+    def getROIReacExtent(self, str roi, str r):
         """
         Return the extent of reaction with identifier string r in ROI with
-        identifier string ROI_id, that is the number of times the reaction has occurred up
+        identifier string roi, that is the number of times the reaction has occurred up
         to the current simulation time.
 
         Syntax::
-            getROIReacExtent(ROI_id, r)
+            getROIReacExtent(roi, r)
 
         Arguments:
-        string ROI_id
+        string roi
         string r
 
         Return:
         index_t
 
         """
-        return self.ptrx().getROIReacExtent(to_std_string(ROI_id), to_std_string(r))
+        return self.ptrx().getROIReacExtent(to_std_string(roi), to_std_string(r))
 
-    def resetROIReacExtent(self, str ROI_id, str r):
+    def resetROIReacExtent(self, str roi, str r):
         """
         Reset the extent of reaction with identifier string r in ROI with
-        identifier string ROI_id, that is the number of times the reaction has occurred up
+        identifier string roi, that is the number of times the reaction has occurred up
         to the current simulation time, to 0.
 
         Syntax::
-            resetROIReacExtent(ROI_id, r)
+            resetROIReacExtent(roi, r)
 
         Arguments:
-        string ROI_id
+        string roi
         string r
 
         Return:
         None
 
         """
-        self.ptrx().resetROIReacExtent(to_std_string(ROI_id), to_std_string(r))
+        self.ptrx().resetROIReacExtent(to_std_string(roi), to_std_string(r))
 
-    def getROISReacExtent(self, str ROI_id, str sr):
+    def getROISReacExtent(self, str roi, str sr):
         """
         Return the extent of surface reaction with identifier string sr in ROI with
-        identifier string ROI_id, that is the number of times the reaction has occurred up
+        identifier string roi, that is the number of times the reaction has occurred up
         to the current simulation time.
 
         Syntax::
-            getROISReacExtent(ROI_id, sr)
+            getROISReacExtent(roi, sr)
 
         Arguments:
-        string ROI_id
+        string roi
         string sr
 
         Return:
         index_t
 
         """
-        return self.ptrx().getROISReacExtent(to_std_string(ROI_id), to_std_string(sr))
+        return self.ptrx().getROISReacExtent(to_std_string(roi), to_std_string(sr))
 
-    def resetROISReacExtent(self, str ROI_id, str sr):
+    def resetROISReacExtent(self, str roi, str sr):
         """
         Reset the extent of surface reaction with identifier string r in ROI with
-        identifier string ROI_id, that is the number of times the reaction has occurred up
+        identifier string roi, that is the number of times the reaction has occurred up
         to the current simulation time, to 0.
 
         Syntax::
-            resetROISReacExtent(ROI_id, r)
+            resetROISReacExtent(roi, r)
 
         Arguments:
-        string ROI_id
+        string roi
         string sr
 
         Return:
         None
 
         """
-        self.ptrx().resetROISReacExtent(to_std_string(ROI_id), to_std_string(sr))
+        self.ptrx().resetROISReacExtent(to_std_string(roi), to_std_string(sr))
 
-    def getROIDiffExtent(self, str ROI_id, str d):
+    def getROIDiffExtent(self, str roi, str diff):
         """
-        Return the extent of diffusion with identifier string d in ROI with
-        identifier string ROI_id, that is the number of times the diffusion has occurred up
+        Return the extent of diffusion with identifier string diff in ROI with
+        identifier string roi, that is the number of times the diffusion has occurred up
         to the current simulation time.
 
         Syntax::
-            getROIDiffExtent(ROI_id, d)
+            getROIDiffExtent(roi, diff)
 
         Arguments:
-        string ROI_id
-        string d
+        string roi
+        string diff
 
         Return:
         index_t
 
         """
-        return self.ptrx().getROIDiffExtent(to_std_string(ROI_id), to_std_string(d))
+        return self.ptrx().getROIDiffExtent(to_std_string(roi), to_std_string(diff))
 
-    def resetROIDiffExtent(self, str ROI_id, str s):
+    def resetROIDiffExtent(self, str roi, str spec):
         """
-        Reset the extent of diffusion with identifier string d in ROI with
-        identifier string ROI_id, that is the number of times the diffusion has occurred up
+        Reset the extent of diffusion with identifier string diff in ROI with
+        identifier string roi, that is the number of times the diffusion has occurred up
         to the current simulation time, to 0.
 
         Syntax::
-            resetROIDiffExtent(ROI_id, d)
+            resetROIDiffExtent(roi, diff)
 
         Arguments:
-        string ROI_id
-        string d
+        string roi
+        string diff
 
         Return:
         None
 
         """
-        self.ptrx().resetROIDiffExtent(to_std_string(ROI_id), to_std_string(s))
+        self.ptrx().resetROIDiffExtent(to_std_string(roi), to_std_string(spec))
 
 
     # ------------------------------------------------------------------------------------------------------------

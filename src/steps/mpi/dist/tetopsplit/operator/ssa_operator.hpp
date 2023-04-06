@@ -24,7 +24,7 @@ template <typename RNG, typename NumMolecules, NextEventSearchMethod SearchMetho
 class SSAOperator {
 public:
   SSAOperator(MolState<NumMolecules>& mol_state,
-              kproc::KProcState& kproc_state,
+              kproc::KProcState<NumMolecules>& kproc_state,
               RNG& t_rng,
               osh::Reals potential_on_vertices);
 
@@ -62,17 +62,17 @@ public:
   void reset();
 
   /**
-   * \brief Set the maximum time to be considered as valid in the SSA.
-   * used in GB optimization
-   * \param max_time maximum simulation end time for the SSA search system
+   * \brief 1. Reset the group data structure (group of propensities)
+   *        2. Set the maximum time to be considered as valid in the SSA (used in GB optimization)
+   *        3. Update ALL propensities
    */
-  void updateMaxTime(const osh::Real max_time);
+  void resetAndUpdateAll(const osh::Real state_time, const osh::Real max_time);
 
 private:
   void resetOccupancy(const MolState<NumMolecules>& molState) const;
   
   MolState<NumMolecules> &pMolState;
-  kproc::KProcState &pKProcState;
+  kproc::KProcState<NumMolecules>& pKProcState;
   RNG &rng_;
   osh::Reals potential_on_vertices_;
 
@@ -83,7 +83,6 @@ private:
       pPropensities;
 
   bool  need_reset {true};
-  osh::Real max_time_ {};
 };
 
 // explicit template instantiation declarations

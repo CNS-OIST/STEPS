@@ -1,2 +1,2 @@
-\textbf{Simulation}	\textbf{EfieldDT}	\textbf{EfieldDT Units}
-nsim	\num{0.001}	\si{s}
+\textbf{Simulation}	\textbf{Simulation Path}	\textbf{Value}	\textbf{Value Units}
+nsim	EfieldDT	\num{0.001}	\si{s}

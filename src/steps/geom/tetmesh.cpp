@@ -2,14 +2,14 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -59,9 +59,9 @@ namespace steps {
 namespace tetmesh {
 
 const Tetmesh::tri_tets Tetmesh::UNKNOWN_TRI_NEIGHBORS{
-    {boost::none, boost::none}};
+    {std::nullopt, std::nullopt}};
 const Tetmesh::tet_tets Tetmesh::UNKNOWN_TET_NEIGHBORS{
-    {boost::none, boost::none, boost::none, boost::none}};
+    {std::nullopt, std::nullopt, std::nullopt, std::nullopt}};
 
 Tetmesh::Tetmesh(std::vector<double> const &verts,
                  std::vector<index_t> const &tets,
@@ -238,7 +238,7 @@ void Tetmesh::buildBarData() {
   pBar_sdiffboundaries.assign(pBarsN, nullptr);
 
   pBar_tri_neighbours.resize(pBarsN);
-  pBar_tri_neighbours.assign(pBarsN, bar_tris{{boost::none, boost::none}});
+  pBar_tri_neighbours.assign(pBarsN, bar_tris{{std::nullopt, std::nullopt}});
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -801,7 +801,7 @@ tetrahedron_id_t Tetmesh::findTetByPoint(std::vector<double> const &p) const {
 
 tetrahedron_id_t Tetmesh::findTetByPoint(point3d const &p) const {
   if (!pBBox.contains(p)) {
-    return boost::none;
+    return std::nullopt;
   }
 
   for (auto tidx = 0u; tidx < pTetsN; ++tidx) {
@@ -812,7 +812,7 @@ tetrahedron_id_t Tetmesh::findTetByPoint(point3d const &p) const {
     }
   }
 
-  return boost::none;
+  return std::nullopt;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2037,7 +2037,7 @@ Tetmesh::intersectMontecarlo(const point3d &p_start, const point3d &p_end,
                                         p_cur)) {
         // if not loop over neighbouring tets
         auto neighbTets = _getTetTetNeighb(cur_tet);
-        cur_tet = boost::none;
+        cur_tet = std::nullopt;
         for (unsigned i = 0; i < 4; ++i) {
             if (neighbTets[i].unknown()) {
                 continue;
@@ -2201,7 +2201,7 @@ Tetmesh::intersect(const double *points, int n_points, int sampling) const {
     else
       isecs = intersectDeterministic(start_p, end_p, cur_tet);
     // Get last_tet right away. isecs gets moved later
-    cur_tet = isecs.empty() ? boost::none : isecs.back().first;
+    cur_tet = isecs.empty() ? std::nullopt : isecs.back().first;
     // We reinterpret cast since the types are equivallent but not auto
     // convertible
     intersecs.push_back(

@@ -33,7 +33,7 @@ public:
       , num_iterations(t_num_iterations)
       , molecules_leaving(t_rng)
       , species_per_element(t_species_per_element)
-      , potential_on_vertices_w(num_vertices, 0)
+      , potential_on_vertices_w(num_vertices, DEFAULT_MEMB_POT)
       , current_on_vertices_w(num_vertices, 0) {}
 
   /// number of molecules per species per triangle/tetrahedron
@@ -87,7 +87,7 @@ public:
       , diffusions(mesh, input, scenario.molecules_pools_force_dist_for_variable_sized)
       , kproc_state(statedef, mesh, pools, SSA == SSAMethod::RSSA, scenario.sim_indep_k_procs)
       , ssaOp(pools, kproc_state, t_rng, osh::Reals(input.potential_on_vertices_w))
-      , diffOp(mesh, t_rng, pools, diffusions) {
+      , diffOp(mesh, t_rng, pools, diffusions, kproc_state) {
       if (!scenario.depgraphfile.empty()) {
           std::ofstream ostr(scenario.depgraphfile);
           kproc_state.write_dependency_graph(ostr);
@@ -105,7 +105,7 @@ public:
   MolState<NumMolecules> &pools;
   osh::Real time_delta{};
   kproc::Diffusions<RNG, NumMolecules> diffusions;
-  kproc::KProcState kproc_state;
+  kproc::KProcState<NumMolecules> kproc_state;
   ssa_operator_type ssaOp;
   DiffusionOperator<RNG, NumMolecules> diffOp;
 #if USE_PETSC
@@ -117,6 +117,7 @@ public:
       diffusions.reset();
       pools.reset(state_time);
       ssaOp.reset();
+      kproc_state.resetCurrents();
   }
 
   osh::Real updateIterationTimeStep() {

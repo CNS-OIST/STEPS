@@ -1,14 +1,14 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -69,9 +69,9 @@ class TetCurrentSaving(base_model.TetTestModelFramework):
         sim.ALL(Compartment, Patch).ALL(Species).Clamped = True
 
         sim.ALL(Patch).Chan1[self.newMdl.chancl].Count = 0
-        sim.ALL(Patch).Chan1[self.newMdl.chanop].Count = self.initChan1Cl
+        sim.ALL(Patch).Chan1[self.newMdl.chanop1].Count = self.initChan1Cl
         sim.ALL(Patch).Chan1[self.newMdl.chancl].Clamped = True
-        sim.ALL(Patch).Chan1[self.newMdl.chanop].Clamped = True
+        sim.ALL(Patch).Chan1[self.newMdl.chanop1].Clamped = True
 
 
     def testSmallCurrentRecording(self):

@@ -2,14 +2,14 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -83,8 +83,8 @@ SDiffBoundary::SDiffBoundary(std::string id, Tetmesh *container,
     const std::set<triangle_id_t> bartris = pTetmesh->getBarTriNeighbs(bar);
 
     // Must be one and only one copy of inner patch and outer patch
-    triangle_id_t innertriidx(boost::none);
-    triangle_id_t outertriidx(boost::none);
+    triangle_id_t innertriidx(std::nullopt);
+    triangle_id_t outertriidx(std::nullopt);
 
     for (const auto &tri : bartris) {
       TmPatch *tri_patch = pTetmesh->getTriPatch(tri);

@@ -1,14 +1,14 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -25,9 +25,11 @@
 """ Unit tests for distmesh class and related methods."""
 
 import functools
-import unittest
-import tempfile
+import numpy
+import operator
 import os
+import tempfile
+import unittest
 
 from steps import interface
 
@@ -63,6 +65,10 @@ class distTetMeshTests(test_tetMesh.tetMeshTests):
             return functools.reduce(func, lists)
         else:
             return None
+
+    def allGather(self, lst, func=lambda a, b: a + b):
+        lists = self.mesh3._comm.allgather(lst)
+        return functools.reduce(func, lists)
 
     def testGroupBlocksLoading(self):
         mesh = self.mesh3
@@ -123,6 +129,85 @@ class distTetMeshTests(test_tetMesh.tetMeshTests):
                 if indices is not None:
                     self.assertEqual(set(indices), set(glob.indices))
 
+    def testLocalGlobalContextManager(self):
+        mesh = self.mesh3
+        with mesh:
+            tets = mesh.tets
+            surf = mesh.surface
+        with mesh.asLocal():
+            localTets = mesh.tets
+            localSurf = mesh.surface
+            self.assertCountEqual(localTets.combineWithOperator(operator.or_), tets)
+            self.assertCountEqual(localSurf.combineWithOperator(operator.or_), surf)
+        with mesh.asGlobal():
+            self.assertEqual(mesh.tets, tets)
+            self.assertEqual(mesh.surface, surf)
+
+        # No nesting
+        with self.assertRaises(Exception):
+            with mesh:
+                with mesh.asLocal():
+                    tets = mesh.tets
+
+        with self.assertRaises(Exception):
+            with mesh:
+                with mesh.asGlobal():
+                    tets = mesh.tets
+
+    def testNonOwnedLocalLists(self):
+        mesh = self.mesh3
+        for attr in self.elemListNames:
+            with mesh:
+                lst = getattr(mesh, attr)
+            with mesh.asLocal():
+                ownedLst = getattr(mesh, attr)
+            with mesh.asLocal(owned=False):
+                ghostLst = getattr(mesh, attr)
+            ownedLst2 = lst.toLocal()
+            ghostLst2 = lst.toLocal(owned=False)
+            self.assertCountEqual(ownedLst2, ownedLst)
+            self.assertCountEqual(ghostLst2, ghostLst)
+            self.assertCountEqual(ghostLst.toLocal(owned=True), ownedLst)
+            self.assertCountEqual(ghostLst.toLocal(owned=False), ghostLst)
+            self.assertLess(len(ownedLst), len(ghostLst))
+            self.assertEqual(len(ownedLst - ghostLst), 0)
+            self.assertGreater(len(ghostLst - ownedLst), 0)
+
+            for locElem in ghostLst - ownedLst:
+                self.assertIsNone(locElem.toLocal())
+            for locElem in ownedLst:
+                self.assertIsNotNone(locElem.toGlobal().toLocal())
+            for locElem in ghostLst:
+                self.assertIsNotNone(locElem.toGlobal().toLocal(owned=False))
+
+            allLst1 = ownedLst.combineWithOperator(operator.or_)
+            allLst2 = ghostLst.combineWithOperator(operator.or_)
+            self.assertCountEqual(allLst1, lst)
+            self.assertCountEqual(allLst2, lst)
+
+    def testLocalTetByPoint(self):
+        mesh = self.mesh3
+
+        points = [tet.center for tet in mesh.tets[::10]]
+        for i, point in enumerate(points):
+            tet = mesh.tets[point]
+            self.assertFalse(tet.isLocal())
+            self.assertEqual(tet.idx, i * 10)
+
+            with mesh.asLocal():
+                try:
+                    localTet = mesh.tets[point]
+                except KeyError:
+                    localTet = None
+                # Check that only one rank is not None
+                isNone = mesh._comm.gather(localTet is None, root=0)
+                if MPI.rank == 0:
+                    self.assertEqual(isNone.count(False), 1)
+                if localTet is not None:
+                    self.assertTrue(localTet.isLocal())
+                    self.assertEqual(localTet.idx, tet.toLocal().idx)
+                    self.assertEqual(localTet.toGlobal().idx, tet.idx)
+
     def testMeshProperties(self):
         mesh = self.mesh3
 
@@ -143,7 +228,7 @@ class distTetMeshTests(test_tetMesh.tetMeshTests):
             localMin = mesh.bbox.min
             localMax = mesh.bbox.max
             for l, g in zip(localMin, bbox.min):
-                self.assertLessEqual(l, g)
+                self.assertGreaterEqual(l, g)
             for l, g in zip(localMax, bbox.max):
                 self.assertLessEqual(l, g)
             totalMin = self.gather(localMin, lambda a,b: [min(x,y) for x,y in zip(a,b)])
@@ -155,6 +240,11 @@ class distTetMeshTests(test_tetMesh.tetMeshTests):
         self.assertEqual(list(bbox.min), list(mesh.bbox.min))
         self.assertEqual(list(bbox.max), list(mesh.bbox.max))
 
+        with mesh.asLocal(owned=False):
+            with self.assertWarns(UserWarning):
+                self.assertEqual(list(mesh.bbox.min), list(localMin))
+                self.assertEqual(list(mesh.bbox.max), list(localMax))
+
         # Vol
         vol = mesh.Vol
         with mesh.asLocal():
@@ -164,6 +254,10 @@ class distTetMeshTests(test_tetMesh.tetMeshTests):
             if totVol is not None:
                 self.assertEqual(totVol, vol)
         self.assertEqual(vol, mesh.Vol)
+
+        with mesh.asLocal(owned=False):
+            with self.assertWarns(UserWarning):
+                self.assertEqual(mesh.Vol, localVol)
 
         # elem groups
         tets = mesh.tetGroups['TETGROUP3']
@@ -241,6 +335,102 @@ class distTetMeshTests(test_tetMesh.tetMeshTests):
         self.assertEqual(set(TETGROUP3.tets), set(mesh.tetGroups['TETGROUP3']))
         self.assertEqual(set(TRIGROUP3.tris), set(mesh.triGroups['TRIGROUP3']))
 
+        self.assertAlmostEqual(TETGROUP1.Vol + TETGROUP2.Vol + TETGROUP3.Vol, mesh.Vol)
+
+        self.assertCountEqual(TETGROUP1.surface ^ TETGROUP2.surface ^ TETGROUP3.surface, mesh.surface)
+        self.assertGreater(len(TETGROUP1.surface - mesh.surface), 0)
+        self.assertGreater(len(TETGROUP2.surface - mesh.surface), 0)
+        self.assertGreater(len(TETGROUP3.surface - mesh.surface), 0)
+
+        with mesh.asLocal():
+            tg1 = TETGROUP1.tets
+            tg2 = TETGROUP2.tets
+            tg3 = TETGROUP3.tets
+            s1 = TETGROUP1.surface
+            s2 = TETGROUP2.surface
+            s3 = TETGROUP3.surface
+            bb1 = TETGROUP1.bbox
+            bb2 = TETGROUP2.bbox
+            bb3 = TETGROUP3.bbox
+            v1 = TETGROUP1.Vol
+            v2 = TETGROUP2.Vol
+            v3 = TETGROUP3.Vol
+
+            trg3 = TRIGROUP3.tris
+            p1 = patch1.tris
+            p2 = patch2.tris
+            tbb1 = TRIGROUP3.bbox
+            tbb2 = patch1.bbox
+            tbb3 = patch2.bbox
+            a1 = TRIGROUP3.Area
+            a2 = patch1.Area
+            a3 = patch2.Area
+        self.assertCountEqual(tg1, mesh.tetGroups['TETGROUP1'].toLocal())
+        self.assertCountEqual(tg2, mesh.tetGroups['TETGROUP2'].toLocal())
+        self.assertCountEqual(tg3, mesh.tetGroups['TETGROUP3'].toLocal())
+        self.assertCountEqual(s1.combineWithOperator(operator.or_), TETGROUP1.surface)
+        self.assertCountEqual(s2.combineWithOperator(operator.or_), TETGROUP2.surface)
+        self.assertCountEqual(s3.combineWithOperator(operator.or_), TETGROUP3.surface)
+        for locbb, expglobbb in [(bb1, TETGROUP1.bbox), (bb2, TETGROUP2.bbox), (bb3, TETGROUP3.bbox)]:
+            globbbmin = self.allGather(locbb.min, lambda a,b: [min(x,y) for x,y in zip(a,b)])
+            globbbmax = self.allGather(locbb.max, lambda a,b: [max(x,y) for x,y in zip(a,b)])
+            self.assertEqual(globbbmin, list(expglobbb.min))
+            self.assertEqual(globbbmax, list(expglobbb.max))
+        self.assertEqual(self.allGather(v1), TETGROUP1.Vol)
+        self.assertEqual(self.allGather(v2), TETGROUP2.Vol)
+        self.assertEqual(self.allGather(v3), TETGROUP3.Vol)
+
+        self.assertCountEqual(trg3, mesh.triGroups['TRIGROUP3'].toLocal())
+        self.assertCountEqual(p1, patch1.tris.toLocal())
+        self.assertCountEqual(p2, patch2.tris.toLocal())
+        for locbb, expglobbb in [(tbb1, TRIGROUP3.bbox), (tbb2, patch1.bbox), (tbb3, patch2.bbox)]:
+            globbbmin = self.allGather(locbb.min, lambda a,b: [min(x,y) for x,y in zip(a,b)])
+            globbbmax = self.allGather(locbb.max, lambda a,b: [max(x,y) for x,y in zip(a,b)])
+            self.assertEqual(globbbmin, list(expglobbb.min))
+            self.assertEqual(globbbmax, list(expglobbb.max))
+        self.assertEqual(self.allGather(a1), TRIGROUP3.Area)
+        self.assertEqual(self.allGather(a2), patch1.Area)
+        self.assertEqual(self.allGather(a3), patch2.Area)
+
+        with mesh.asLocal(owned=False):
+            with self.assertWarns(UserWarning):
+                self.assertEqual(list(TETGROUP1.bbox.min), list(bb1.min))
+            with self.assertWarns(UserWarning):
+                self.assertEqual(list(TETGROUP1.bbox.max), list(bb1.max))
+
+            with self.assertWarns(UserWarning):
+                self.assertEqual(TETGROUP1.Vol, v1)
+            with self.assertWarns(UserWarning):
+                self.assertEqual(TETGROUP2.Vol, v2)
+            with self.assertWarns(UserWarning):
+                self.assertEqual(TETGROUP3.Vol, v3)
+
+            with self.assertWarns(UserWarning):
+                self.assertCountEqual(TETGROUP1.surface, s1)
+            with self.assertWarns(UserWarning):
+                self.assertCountEqual(TETGROUP2.surface, s2)
+            with self.assertWarns(UserWarning):
+                self.assertCountEqual(TETGROUP3.surface, s3)
+
+            with self.assertWarns(UserWarning):
+                self.assertEqual(TETGROUP1.Vol, v1)
+            with self.assertWarns(UserWarning):
+                self.assertEqual(TETGROUP2.Vol, v2)
+            with self.assertWarns(UserWarning):
+                self.assertEqual(TETGROUP3.Vol, v3)
+
+            with self.assertWarns(UserWarning):
+                self.assertEqual(list(TRIGROUP3.bbox.min), list(tbb1.min))
+            with self.assertWarns(UserWarning):
+                self.assertEqual(list(TRIGROUP3.bbox.max), list(tbb1.max))
+
+            with self.assertWarns(UserWarning):
+                self.assertEqual(TRIGROUP3.Area, a1)
+            with self.assertWarns(UserWarning):
+                self.assertEqual(patch1.Area, a2)
+            with self.assertWarns(UserWarning):
+                self.assertEqual(patch2.Area, a3)
+
         self.assertEqual(TETGROUP1.Conductivity, 1.23)
 
         self.assertEqual(set(memb2.tris), set(remSurfTris[:len(remSurfTris)//2]))
@@ -248,13 +438,115 @@ class distTetMeshTests(test_tetMesh.tetMeshTests):
         self.assertEqual(memb2.Capacitance, 4.56)
         self.assertEqual(memb3.Capacitance, 7.89)
 
-    def testSplitMeshElemNumbering(self):
-        splitMesh = DistMesh(os.path.join(FILEDIR, '../../../../mesh/3tets_2patches_2comp_split2/3tets_2patches_2comp'))
+    def testDistCompFromLists(self):
+        mesh = self.mesh3
 
-        # Check that the element ids work as expected
-        self.assertEqual(set(splitMesh.tets.indices), set(splitMesh.stepsMesh.getAllTetIndices()))
-        self.assertEqual(set(splitMesh.tris.indices), set(splitMesh.stepsMesh.getAllTriIndices()))
-        self.assertEqual(set(splitMesh.verts.indices), set(splitMesh.stepsMesh.getAllVertIndices()))
+        # Create a compartment from global list
+        with mesh:
+            TG1 = Compartment.Create(mesh.tetGroups['TETGROUP1'])
+        self.assertCountEqual(TG1.tets, mesh.tetGroups['TETGROUP1'])
+            
+        # Check that compartments require local lists with ghost elements
+        with self.assertRaises(Exception):
+            with mesh.asLocal():
+                tets3owned = mesh.tetGroups['TETGROUP3']
+                TG2_ = Compartment.Create(mesh.tetGroups['TETGROUP2'])
+
+        with mesh:
+            with self.assertRaises(Exception):
+                TG3_ = Compartment.Create(tets3owned)
+
+        # Create a compartment from local list with ghost elements
+        with mesh.asLocal(owned=False) as mesh:
+            tets2 = mesh.tetGroups['TETGROUP2']
+            TG2_1 = Compartment.Create(tets2[:len(tets2)//2])
+            TG2_2 = Compartment.Create(tets2[len(tets2)//2:] & mesh.tets)
+            tets3 = mesh.tetGroups['TETGROUP3']
+        self.assertCountEqual(TG2_1.tets | TG2_2.tets, mesh.tetGroups['TETGROUP2'])
+
+        with mesh:
+            TG3 = Compartment.Create(tets3)
+        self.assertCountEqual(TG3.tets, mesh.tetGroups['TETGROUP3'])
+
+    def testDistPatchFromLists(self):
+        mesh = self.mesh3
+
+        with mesh:
+            TETGROUP1 = Compartment.Create()
+            TETGROUP2 = Compartment.Create()
+            TETGROUP3 = Compartment.Create()
+
+        # Create a patch from global lists
+        with mesh:
+            remSurfTris = TETGROUP1.surface & mesh.surface
+            patch1 = Patch.Create(remSurfTris, TETGROUP1)
+        self.assertCountEqual(patch1.tris, remSurfTris)
+
+        # Check that patches require local lists with ghost bounds
+        with self.assertRaises(Exception):
+            with mesh.asLocal():
+                tris2owned = TETGROUP2.surface & mesh.surface
+                patch2_0 = Patch.Create(tris2owned, TETGROUP2)
+
+        with mesh:
+            with self.assertRaises(Exception):
+                patch2_1 = Compartment.Create(tris2owned, TETGROUP2)
+
+        # Create a patch from local list with ghost bounds
+        tris2 = (TETGROUP2.surface & mesh.surface).toLocal(owned=False)
+        tris3 = (TETGROUP3.surface & mesh.surface).toLocal(owned=False)
+        with mesh.asLocal(owned=False) as mesh:
+            patch2 = Patch.Create(tris2, TETGROUP2)
+            self.assertCountEqual(patch2.tris, tris2)
+        self.assertCountEqual(patch2.tris, tris2.combineWithOperator(operator.or_))
+
+        with mesh:
+            patch3 = Patch.Create(tris3, TETGROUP3)
+        self.assertCountEqual(patch3.tris, tris3.combineWithOperator(operator.or_))
+
+        # Create inner patch
+        trisInner = TETGROUP2.surface & TETGROUP3.surface
+        with mesh.asLocal():
+            with self.assertRaises(Exception):
+                patchInner_1 = Patch.Create(trisInner.toLocal(), TETGROUP2, TETGROUP3)
+            patchInner = Patch.Create(trisInner.toLocal(owned=False), TETGROUP2, TETGROUP3)
+            self.assertCountEqual(patchInner.tris, trisInner.toLocal())
+        with mesh.asLocal(owned=False):
+            self.assertCountEqual(patchInner.tris, trisInner.toLocal(owned=False))
+        self.assertCountEqual(patchInner.tris, trisInner)
+
+    def testSplitMeshElemNumbering_n4(self):
+        # Here we load all parts, there should not be any jump in mesh indexes
+        splitMesh = DistMesh(os.path.join(FILEDIR, '../../../../mesh/CaBurst/branch_split'))
+
+        # Check that the element ids are between 0 and N - 1
+        self.assertCountEqual(splitMesh.tets.indices, splitMesh.stepsMesh.getAllTetIndices())
+        self.assertCountEqual(splitMesh.tris.indices, splitMesh.stepsMesh.getAllTriIndices())
+        self.assertCountEqual(splitMesh.verts.indices, splitMesh.stepsMesh.getAllVertIndices())
+
+    def testSplitMeshElemNumberingJumps_n2(self):
+        # We load on purpose only two parts out of 4 to be sure there will be jumps in element numbers
+        splitMesh = DistMesh(os.path.join(FILEDIR, '../../../../mesh/CaBurst/branch_split'))
+
+        # Check that the element ids are between 0 and N - 1
+        self.assertCountEqual(splitMesh.tets.indices, splitMesh.stepsMesh.getAllTetIndices())
+        self.assertCountEqual(splitMesh.tris.indices, splitMesh.stepsMesh.getAllTriIndices())
+        self.assertCountEqual(splitMesh.verts.indices, splitMesh.stepsMesh.getAllVertIndices())
+
+        # Check that they are also correctly ordered
+        self.assertEqual(list(splitMesh.tets.indices), splitMesh.stepsMesh.getAllTetIndices())
+        self.assertEqual(list(splitMesh.tris.indices), splitMesh.stepsMesh.getAllTriIndices())
+        self.assertEqual(list(splitMesh.verts.indices), splitMesh.stepsMesh.getAllVertIndices())
+
+    def testgetTriTetNeighbs(self):
+        centerTet = self.mesh.tets[0, 0, 0]
+        centerTri = centerTet.faces[0]
+        tetNeighbs = centerTri.tetNeighbs
+        self.assertEqual(len(tetNeighbs), 2)
+        self.assertTrue(centerTet in tetNeighbs)
+
+        surfTet = self.mesh.surface[0]
+        self.assertEqual(len(surfTet.tetNeighbs), 1)
 
 
 del test_tetMesh.tetMeshTests.testVTKLoading

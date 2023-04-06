@@ -3,14 +3,14 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -37,10 +37,10 @@ import warnings
 
 __name__      = 'steps'
 __longname__  = 'STochastic Engine for Pathway Simulation'
-__version__   = '4.0.0'
+__version__   = '4.1.0'
 __author__    = 'STEPS Development Team'
 __url__       = 'steps.sourceforge.net'
-__license__   = 'GPL2.0'
+__license__   = 'GPL3.0'
 __binding__   = 'Cython'
 
 #Try importing mpi version if file exists. Avoids catching exception for the wrong reason
@@ -110,6 +110,7 @@ class _CustomMetaPathFinder(importlib.abc.MetaPathFinder):
         self._currAPI = _CustomMetaPathFinder._DEFAULT_API
         self._virtualLoader = _CustomVirtualLoader()
         self._actualLoader = _CustomActualLoader()
+        self._importedModules = []
 
     def find_spec(self, fullname, path, target=None):
         if fullname in _CustomMetaPathFinder._VIRTUAL_IMPORT_PATHS:
@@ -130,11 +131,40 @@ class _CustomMetaPathFinder(importlib.abc.MetaPathFinder):
             # be added to sys.modules.
             spec = importlib.machinery.ModuleSpec(fullname, self._actualLoader)
             spec._actualname = newName
+
+            self._importedModules.append(fullname)
+
             return spec
 
         return None
 
-sys.meta_path.append(_CustomMetaPathFinder())
+    def reset_imports(self):
+        for name in self._importedModules:
+            del sys.modules[name]
+        self._importedModules = []
+
+_path_finder = _CustomMetaPathFinder()
+
+sys.meta_path.append(_path_finder)
+
+def getAPI():
+    """Return the name of the currently used STEPS API
+
+    :rtype: str
+    """
+    return _path_finder._currAPI
+
+def setAPI(name):
+    """Set the currently used STEPS API
+
+    :param name: Name of the API to be used ('API_1' or 'API_2')
+    :type name: str
+    """
+    if name not in _path_finder._API_DIRS:
+        raise ValueError(f'Expected an API name in {_path_finder._API_DIRS}, got {name} instead.')
+    # Clear sys.modules from previously imported modules
+    _path_finder.reset_imports()
+    _path_finder._currAPI = name
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 

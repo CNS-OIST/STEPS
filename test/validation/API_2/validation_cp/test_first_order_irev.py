@@ -1,14 +1,14 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -57,7 +57,7 @@ VOL = 1.0e-18
 
 NITER = 100000		# The number of iterations
 DT = 0.1			# Sampling time-step
-INT = 1.1			# Sim endtime
+INT = 1.0			# Sim endtime
 
 # Tolerance for the comparison:
 # In test runs, with good code, < 1%  will fail with a 1.5% tolerance
@@ -96,8 +96,7 @@ class TestFirstOrderIrev(unittest.TestCase):
         sim.comp1.SA.Count = N
 
         new_dir = './validation_cp/cp/'
-        if not os.path.exists(new_dir):
-            os.makedirs(new_dir)
+        os.makedirs(new_dir, exist_ok=True)
 
         sim.checkpoint('./validation_cp/cp/first_order_irev')
 

@@ -48,7 +48,7 @@ class TestRDKisilevich(unittest.TestCase):
 
         NITER = 50       # The number of iterations
         DT = 0.1         # Sampling time-step
-        INT = 0.3        # Sim endtime
+        INT = 0.2        # Sim endtime
 
         DCSTA = 400*1e-12
         DCSTB = DCSTA

@@ -72,8 +72,7 @@ class TestMastEq(unittest.TestCase):
         sim.setCompCount('comp1', 'A', 0)
 
         new_dir = './validation_cp/cp/'
-        if not os.path.exists(new_dir):
-            os.makedirs(new_dir)
+        os.makedirs(new_dir, exist_ok=True)
 
         sim.checkpoint('./validation_cp/cp/masteq')
 

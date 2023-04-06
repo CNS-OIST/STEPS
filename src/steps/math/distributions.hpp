@@ -15,7 +15,7 @@ namespace steps {
 namespace math {
 
 /// TODO make this a scoped enum once STEPS requires cython 3x
-enum DistributionMethod { DIST_UNIFORM, DIST_MULTINOMIAL };
+enum DistributionMethod { DIST_UNIFORM = 0, DIST_MULTINOMIAL = 1};
 
 //-----------------------------------------------
 /**

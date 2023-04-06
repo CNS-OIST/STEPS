@@ -147,8 +147,7 @@ class TestBDiff(unittest.TestCase):
             sim.setTetCount(k, 'X', tetcount)
 
         new_dir = './validation_cp/cp/'
-        if not os.path.exists(new_dir):
-            os.makedirs(new_dir)
+        os.makedirs(new_dir, exist_ok=True)
             
         sim.checkpoint('./validation_cp/cp/boundiff')
 

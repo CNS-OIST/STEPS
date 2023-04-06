@@ -18,7 +18,7 @@ namespace dist {
 
 template <typename RNG, typename NumMolecules>
 RSSAOperator<RNG, NumMolecules>::RSSAOperator(MolState<NumMolecules>& mol_state,
-                                              kproc::KProcState& k_proc_state,
+                                              kproc::KProcState<NumMolecules>& k_proc_state,
                                               RNG& t_rng,
                                               osh::Reals potential_on_vertices)
     : pMolState(mol_state)
@@ -71,8 +71,8 @@ void RSSAOperator<RNG, NumMolecules>::updateReactionRatesBounds(
                         mol_state_upper_bound_);
 
     for (size_t k = 0; k < a_upper_bound_.groups().size(); k++) {
-        a_upper_bound_.groups()[k].update(mol_state_upper_bound_, rng_, state_time);
-        a_lower_bound_.groups()[k].update(mol_state_lower_bound_, rng_, state_time);
+        a_upper_bound_.groups()[k].update_all(mol_state_upper_bound_, rng_, state_time);
+        a_lower_bound_.groups()[k].update_all(mol_state_lower_bound_, rng_, state_time);
     }
 }
 
@@ -157,8 +157,7 @@ osh::Real RSSAOperator<RNG, NumMolecules>::run(const osh::Real period, const osh
                     isRejected = false;
                 } else {
                     // compute the 'true' propensity
-                    osh::Real rate =
-                        pKProcState.propensityFun<NumMolecules>()(reaction_candidate_id, pMolState);
+                    osh::Real rate = pKProcState.propensityFun()(reaction_candidate_id, pMolState);
                     if (rate < std::numeric_limits<osh::Real>::epsilon()) {
                         throw std::logic_error(
                             "RSSA: propensity rate of the candidate reaction is zero.");

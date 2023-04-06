@@ -1,14 +1,14 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -54,7 +54,7 @@ from . import tol_funcs
     
 NITER = 10
 DT = 0.01
-INT = 0.11
+INT = 0.10
 
 # The number of initial molecules:
 NINJECT = 10000	
@@ -108,8 +108,7 @@ class TestBDiff(unittest.TestCase):
         sim.TETS(minztets).X.Count = int(NINJECT/len(minztets))
 
         new_dir = './validation_cp/cp/'
-        if not os.path.exists(new_dir):
-            os.makedirs(new_dir)
+        os.makedirs(new_dir, exist_ok=True)
             
         sim.checkpoint('./validation_cp/cp/boundiff')
 

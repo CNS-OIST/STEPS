@@ -1,14 +1,14 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -174,23 +174,23 @@ class Units:
         )
     }
 
-    _SPACER_RE = re.compile('\s+')
+    _SPACER_RE = re.compile(r'\s+')
     _SCALED_UNIT_RE = re.compile(
-        '({pref})({dim})([\s\)\^]|$)'.format(
+        r'({pref})({dim})([\s\)\^]|$)'.format(
             pref='|'.join(sorted(_SI_PREFIXES.keys(), key=lambda x:-len(x))),
             dim='|'.join(sorted(_SI_UNITS.keys(), key=lambda x:-len(x))),
         )
     )
     _SCALED_GROUP_RE = re.compile(
-        '({pref})\('.format(
+        r'({pref})\('.format(
             pref='|'.join(sorted(_SI_PREFIXES.keys(), key=lambda x:-len(x))),
         )
     )
-    _EXPONENT_RE = re.compile('\^(-?\d+)')
+    _EXPONENT_RE = re.compile(r'\^(-?\d+)')
 
-    _SPACE_SIMPLIF_1 = re.compile('\s+')
-    _SPACE_SIMPLIF_2 = re.compile('\(\s+')
-    _SPACE_SIMPLIF_3 = re.compile('\s+\)')
+    _SPACE_SIMPLIF_1 = re.compile(r'\s+')
+    _SPACE_SIMPLIF_2 = re.compile(r'\(\s+')
+    _SPACE_SIMPLIF_3 = re.compile(r'\s+\)')
 
     __slots__ = ['_str', '_scale', '_exponents']
 
@@ -395,33 +395,24 @@ class ParameterizedObject:
         super().__init__(*args, **kwargs)
         # Simple static parameters
         self._parameters = {}
-        # "parameters" whose description is more complex than just a string name
-        # The key in the dict should be a tuple with the following format:
-        # (('prop1', val1), ('prop2', 'val2'), ...)
-        self._advancedParameters = {}
 
     def _getAllParams(self):
         """Return all parameters"""
-        return (
-            [param for name, param in self._parameters.items()] +
-            [param for key, param in self._advancedParameters.items()]
-        )
+        return list(self._parameters.values())
 
     def _getSubParameterizedObjects(self):
         """Return all subobjects that can hold parameters."""
         return []
+
+    def _getParameter(self, key):
+        """Get a parameter"""
+        return self._parameters[key] if key in self._parameters else None
 
     def _setParameter(self, key, param, units=None):
         """Set a parameter"""
         if not isinstance(param, Parameter):
             param = Parameter(param, units, name='')
         self._parameters[key] = param
-
-    def _setAdvancedParameter(self, key, param):
-        """Set an advanced parameter"""
-        if not isinstance(param, Parameter):
-            param = Parameter(param, name='')
-        self._advancedParameters[key] = param
 
     def _includeinParamTables(self):
         """Whether the object should be included in parameter tables"""
@@ -433,12 +424,6 @@ class ParameterizedObject:
         Defaults to class name.
         """
         return cls.__name__
-
-    @classmethod
-    def _getGroupedAdvParams(cls):
-        """Return a list of advanced parameter property that should be grouped
-        """
-        return []
 
     @staticmethod
     def RegisterGetter(units=Units('')):
@@ -452,7 +437,8 @@ class ParameterizedObject:
         def wrapper(func, name=None):
             def getter(self):
                 propName = func.__name__ if name is None else name
-                if propName in self._parameters:
+                param = self._getParameter(propName)
+                if param is not None:
                     # Get expected units
                     # It needs to be done here because the unit can depend on the object.
                     if hasattr(units, '__call__'):
@@ -461,12 +447,12 @@ class ParameterizedObject:
                         _units = units
 
                     if _units is None:
-                        return self._parameters[propName].value
+                        return param.value
                     else:
-                        return self._parameters[propName].valueIn(_units)
+                        return param.valueIn(_units)
                 else:
                     # If the property was not set, call the getter. This means that properties
-                    # that were not explicitely set will not be listed as aparameters in parameter
+                    # that were not explicitely set will not be listed as parameters in parameter
                     # tables.
                     return func(self)
             getter.__doc__ = func.__doc__
@@ -507,7 +493,7 @@ class ParameterizedObject:
 
                 # Only add the property if the setter did not raise an exception
                 propName = func.__name__ if name is None else name
-                self._parameters[propName] = val
+                self._setParameter(propName, val)
             setter.__doc__ = func.__doc__
             return setter
         return wrapper
@@ -574,8 +560,42 @@ class ParameterizedObject:
         return wrapper
 
 
+class AdvancedParameterizedObject(ParameterizedObject):
+    """Base class for parameterized objects with more complex key for parameters
+
+    This is usefull for objects that have parameter values that can change several times during
+    a single run, e.g. simulation path values.
+    
+    Parameters held in this class have a description that is more complex than just a string name
+    The key in the self._parameters dict should be a tuple with the following format:
+    (('prop1', val1), ('prop2', 'val2'), ...)
+    """
+    _ADV_PARAMS_DEFAULT_NAME = 'Name'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _getParameter(self, name):
+        """Get a parameter"""
+        return super()._getParameter(self._getCurrentParamKey() + ((self._ADV_PARAMS_DEFAULT_NAME, name),))
+
+    def _setParameter(self, name, param, units=None):
+        """Set a parameter"""
+        key = self._getCurrentParamKey()
+        super()._setParameter(key + ((self._ADV_PARAMS_DEFAULT_NAME, name),), param, units=units)
+
+    def _getCurrentParamKey(self):
+        """Return a key representing the current state of the object"""
+        raise NotImplementedError()
+
+    @classmethod
+    def _getGroupedAdvParams(cls):
+        """Return a list of advanced parameter property that should be grouped
+        """
+        return []
+
 class Parameter:
-    """Class to describe a parameter in a STEPS script
+    r"""Class to describe a parameter in a STEPS script
 
     This class allows the user to declare values as parameters of the script. Parameter objects
     can have units (see example below) and are used to create STEPS objects or to set some of
@@ -664,7 +684,7 @@ class Parameter:
 
     """
 
-    _NAME_EXTRACT_RE = re.compile('(?:(?:^\s*(\w+)\s*=\s*)|.*)Parameter(\(.*$)')
+    _NAME_EXTRACT_RE = re.compile(r'(?:(?:^\s*(\w+)\s*=\s*)|.*)Parameter(\(.*$)')
 
     __slots__ = ['_defLoc', '_name', '_fullname', '_value', '_units', '_kwargs', '_composedPrio', '_dependencies']
 
@@ -701,7 +721,7 @@ class Parameter:
                         ind = i
                         break
 
-                if re.match('^(\s*[;#].*|\s*)$', parStr[ind+1:]) is not None:
+                if re.match(r'^(\s*[;#].*|\s*)$', parStr[ind+1:]) is not None:
                     # If there is indeed only one parameter on the rhs
                     self._name = match.group(1)
                     self._defLoc = (fname, lineno + 1)
@@ -836,7 +856,8 @@ class Parameter:
 
         # Record parameter usage, useful for knowing which parameters are used in e.g. VDepRate.
         if Parameter._PARAMETER_USAGE_RECORD is not None:
-            Parameter._PARAMETER_USAGE_RECORD.append(self)
+            lst, depth = Parameter._PARAMETER_USAGE_RECORD
+            lst[depth].append(self)
 
     def _getAllDependencies(self, alreadyUsed=None):
         """Recursively return all Parameters dependencies"""
@@ -1144,6 +1165,51 @@ class Parameter:
     def __rtruediv__(self, other):
         return self.__truediv__(other, _inv=True)
 
+    def __round__(self, ndigits=None):
+        """Round parameter value in SI
+
+        :param ndigits: Optional, number of digits after the decimal point, defaults to None (i.e.
+            rounds to nearest integer).
+        :type ndigits: int
+        :returns: The Parameter resulting from the rounding to ndigits digits. When rounding a parameter,
+            its value is first converted to SI and the SI value is rounded. The returned parameter keeps
+            the same units. The name of the returned Parameter describes the operation.
+        :rtype: :py:class:`Parameter`
+
+        Usage::
+
+            >>> param1 = Parameter(12.7, 'dm')
+            >>> param2 = round(param1)
+            >>> param2.units # The units are unchanged
+            'dm'
+            >>> param2.value # 12.7 dm is first converted to 1.27 m and rounded to 1 m = 10 dm
+            10
+            >>> param2.name
+            'round(param1)'
+            >>> round(param1, 1).value # Keep more digits: 1.27 m rounded to 1.3 m = 13 dm
+            13.0
+
+        :meta public:
+        """
+        self._checkUsableInOp()
+
+        deps = [self] if self._isNamed() else []
+
+        units = self._units
+
+        if self._units is not None:
+            scl = self._units._scale
+            val = round(self._value * 10 ** scl, ndigits) * 10 ** -scl
+        else:
+            val = round(self._value, ndigits)
+
+        if self._isNamed():
+            name = f'round({self}' + (f', {ndigits}' if ndigits is not None else '') + ')'
+        else:
+            name = ''
+
+        return Parameter(val, units, name=name, _composedPrio=0, _dependencies=deps)
+
     def __float__(self):
         return float(self._valueInSI())
 
@@ -1153,9 +1219,6 @@ class Parameter:
     def __bool__(self):
         return bool(self._value)
 
-    def __round__(self):
-        return round(self._valueInSI())
-
     def __repr__(self):
         if self._isNamed():
             return self._name
@@ -1164,12 +1227,25 @@ class Parameter:
 
     @classmethod
     def _startRecording(cls):
-        cls._PARAMETER_USAGE_RECORD = []
+        if cls._PARAMETER_USAGE_RECORD is None:
+            cls._PARAMETER_USAGE_RECORD = [[[]], 0]
+        else:
+            cls._PARAMETER_USAGE_RECORD[0].append([])
+            cls._PARAMETER_USAGE_RECORD[1] += 1
 
     @classmethod
     def _endRecordingAndGetUsage(cls):
-        res = cls._PARAMETER_USAGE_RECORD
-        cls._PARAMETER_USAGE_RECORD = None
+        lst, depth = cls._PARAMETER_USAGE_RECORD
+
+        res = []
+        for i in range(depth, len(lst)):
+            res += lst[i]
+
+        if depth == 0:
+            cls._PARAMETER_USAGE_RECORD = None
+        else:
+            cls._PARAMETER_USAGE_RECORD[1] -= 1
+
         return res
 
 
@@ -1252,6 +1328,8 @@ def _formatValue(value, **kwargs):
     textFormat = kwargs.get('textFormat', _TEXT_FORMAT_UNICODE)
     numPrecision = kwargs.get('numPrecision', 10)
     isComputation = kwargs.get('isComputation', False)
+    funcRelFilePath = kwargs.get('funcRelFilePath', True)
+    latexPrefix = kwargs.get('latexPrefix', None)
     bold = kwargs.get('bold', False)
 
     if isinstance(value, Parameter):
@@ -1259,11 +1337,13 @@ def _formatValue(value, **kwargs):
         return value
     elif hasattr(value, '__code__'):
         filename = value.__code__.co_filename
-        m = re.match('<ipython-input-(\d)+-', filename)
+        m = re.match(r'<ipython-input-(\d)+-', filename)
         if m is not None:
             filename = f'ipython-{m.group(1)}'
         if textFormat == _TEXT_FORMAT_LATEX:
             qualName = _formatValue(value.__qualname__, **kwargs)
+            if funcRelFilePath:
+                filename = os.path.relpath(filename)
             filename = _formatValue(filename, **kwargs)
             return f'\\texttt{{{qualName}(...)}} at \\texttt{{{filename}}}:{value.__code__.co_firstlineno}'
         else:
@@ -1279,7 +1359,8 @@ def _formatValue(value, **kwargs):
                     finish = _formatValue(srtList[-1], **kwargs)
                     stp = _formatValue(step, **kwargs)
                     return f'{start} to {finish}' + (f' step {stp}' if step != 1 else '')
-        return ', '.join(_formatValue(v, **kwargs) for v in value)
+        fvalues = [_formatValue(v, **kwargs) for v in value]
+        return ', '.join(fv for fv in fvalues if fv is not None)
     elif isinstance(value, steps.API_2.model._SubReactionList):
         if textFormat == _TEXT_FORMAT_LATEX:
             if value._isFwd:
@@ -1306,16 +1387,18 @@ def _formatValue(value, **kwargs):
         if textFormat == _TEXT_FORMAT_LATEX:
             ret = str(value)
             if isComputation:
-                ret = re.sub(' \*\* ([0-9]+)', lambda m: f'^{{{m.group(1)}}}', ret)
-                ret = re.sub('([a-zA-Z]\w+)', lambda m: f'\\mathrm{{\\detokenize{{{m.group(1)}}}}}', ret)
-                ret = re.sub('([0-9]+\.[0-9]+)', lambda m: f'{float(m.group(1)):{numPrecision}g}', ret)
-                ret = re.sub('([^\s]+) / ([^\s]+)', lambda m: f'\\frac{{{m.group(1)}}}{{{m.group(2)}}}', ret)
+                ret = re.sub(r' \*\* ([0-9]+)', lambda m: f'^{{{m.group(1)}}}', ret)
+                ret = re.sub(r'([a-zA-Z]\w+)', lambda m: f'\\mathrm{{\\detokenize{{{m.group(1)}}}}}', ret)
+                ret = re.sub(r'([0-9]+\.[0-9]+)', lambda m: f'{float(m.group(1)):{numPrecision}g}', ret)
+                ret = re.sub(r'([^\s]+) / ([^\s]+)', lambda m: f'\\frac{{{m.group(1)}}}{{{m.group(2)}}}', ret)
                 ret = ret.replace('*', '\\times')
                 ret = f'${ret}$'
-            else:
+            elif latexPrefix is None or not ret.startswith(latexPrefix):
                 toEscape = '#_^&%${}'
                 for c in toEscape:
                     ret = ret.replace(c, f'\\{c}')
+            else:
+                ret = ret[len(latexPrefix):]
             if bold:
                 ret = f'\\textbf{{{ret}}}'
             return ret
@@ -1458,7 +1541,7 @@ def _exportToPDF(
 
 
 def ExportParameters(container, filename, method='csv', hideComputations=False, hideColumns=[], unitsToSimplify=[], **kwargs):
-    """Export container parameters to tables
+    r"""Export container parameters to tables
 
     Extracts all parameters that are used in the container and its contained objects. Parameter
     tables are then created for each object type.
@@ -1491,6 +1574,10 @@ def ExportParameters(container, filename, method='csv', hideComputations=False, 
     :param numPrecision: Number of significant digits to be displayed for floating point numbers.
     :type numPrecision: int
 
+    :param funcRelFilePath: Use relative file path for specifying the source file of a function that
+        is used in a parameter. Defaults to `True`.
+    :type funcRelFilePath: bool
+
     The 'csv' export method will export parameters as tab-separated values in a text file. Since some
     cells can contain commas, the separator has been chosen to be tabs instead of the more common comma.
 
@@ -1502,7 +1589,7 @@ def ExportParameters(container, filename, method='csv', hideComputations=False, 
 
     Both the 'tex' and 'pdf' export methods are experimental. The 'tex' method will export the parameters
     to independent .tex files each containing one table. It requires the installation of the `csv2latex`
-    conversion program. The 'pdf' method will siply call `pdflatex` on the tex files resulting from the
+    conversion program. The 'pdf' method will simply call `pdflatex` on the tex files resulting from the
     'tex' method.
 
     Additional keyword arguments for the 'tex' and 'pdf' formats:
@@ -1511,6 +1598,12 @@ def ExportParameters(container, filename, method='csv', hideComputations=False, 
         `manual page <http://manpages.ubuntu.com/manpages/bionic/man1/csv2latex.1.html>`_ for details.
         Defaults to ``-l 99999 -s t -x -r 2 -z -c 0.9 -e``
     :type csv2latexArgs: str
+
+    :param latexPrefix: If provided, special latex character will not be escaped for strings that are
+        prefixed with `latexPrefix`. For example, if we specified a `Source = '\cite{ArticleRef}'`
+        keyword argument to a `Parameter` object, the `{` and `}` characters will be escaped by default.
+        This can be prevented by using e.g. `latexPrefix='__'` and `Source = '__\cite{ArticleRef}'`.
+    :type latexPrefix: str
     """
     # TODO improvement: Add param to restrict value setting to t=0 or maybe a function that takes time
     # and returns whether it should be considered ?
@@ -1561,10 +1654,9 @@ def ExportParameters(container, filename, method='csv', hideComputations=False, 
                 )
                 row['Defined in'] = _formatValue(defList, **kwargs)
 
-            advParams = obj._advancedParameters
-            if len(advParams) > 0:
+            if isinstance(obj, AdvancedParameterizedObject):
                 param2Tuples = {}
-                for tuples, param in advParams.items():
+                for tuples, param in obj._parameters.items():
                     param2Tuples.setdefault(param, []).append(tuples)
 
                 newRows = []
@@ -1820,6 +1912,8 @@ class NamedObject(SolverPathObject):
         else:
             self.name = name
             self._autoNamed = False
+        if len(NamedObject._forbiddenNames) == 0:
+            NamedObject._loadForbiddenNames()
         if self.name in NamedObject._forbiddenNames:
             if NamedObject._allowForbNames:
                 warnings.warn(
@@ -1831,6 +1925,22 @@ class NamedObject(SolverPathObject):
 
         self._children = KeyOrderedDict()
         self._parents = {}
+
+    @classmethod
+    def _loadForbiddenNames(cls):
+        """Load names that will not be allowed as NamedObject names.
+
+        This prevents cases in which a STEPS object would be inaccessible through SimPath, Simulation, or
+        ResultSelector, because its name is the same as the name of an attribute, a method or a property of
+        these classes (they have priority over __getattr__).
+        """
+        from steps.API_2 import sim as nsim
+        from steps.API_2 import saving as nsaving
+
+        classes = [nsim.SimPath, nsim.Simulation, nsaving.ResultSelector, nsaving._ResultPath,
+                nsaving._ResultList, nsaving._ResultCombiner]
+        for cl in classes:
+            cls._forbiddenNames |= set(dir(cl))
 
     def _addChildren(self, e):
         if isinstance(e, NamedObject):
@@ -1852,7 +1962,7 @@ class NamedObject(SolverPathObject):
 
         :meta public:
         """
-        # TODO revert this temporary change for split meshes
+        # TODO later release: revert this temporary change for split meshes
         # if name.startswith('__'):
         if name.startswith('__') and not name.startswith('__MESH'):
             raise AttributeError
@@ -1883,7 +1993,7 @@ class NamedObject(SolverPathObject):
                 yield c
 
     def ALL(self, *cls):
-        """Return all children of the object, optionally filtered by class
+        r"""Return all children of the object, optionally filtered by class
 
         Takes a variable number of parameters, if no parameters are given, it returns all children
         of the object. Otherwise, if types are given, it returns the children that match at least
@@ -1898,7 +2008,8 @@ class NamedObject(SolverPathObject):
 
             obj.ALL()                    # Return all children
             obj.ALL(Species)             # Return all children Species
-            obj.ALL(Reaction, Diffusion) # Return all children that are either Reaction or Diffusion
+            obj.ALL(Reaction, Diffusion) # Return all children that are either Reaction or
+                                         # Diffusion
         """
         return self._getChildrenOfType(*(cls if len(cls) > 0 else [object]))
 
@@ -1943,6 +2054,9 @@ class NamedObject(SolverPathObject):
             a, b, c = Class(argA, name = 'a'),\\
                       Class(argB1, argB2, name = 'b'),\\
                       Class(argC1, nargC2 = val, name = 'c')
+
+        Note that if a `name` keyword argument is provided to `Params(...)`, it will override the
+        name inferred from the destination variable.
 
         Usage with global keyword argument::
 
@@ -1998,7 +2112,10 @@ class NamedObject(SolverPathObject):
                 res = []
                 for name, arg in zip(names, args):
                     if isinstance(arg, Params):
-                        res.append(cls(*arg.args, **arg.kwargs, **kwargs, name=name))
+                        if 'name' in arg.kwargs:
+                            res.append(cls(*arg.args, **arg.kwargs, **kwargs))
+                        else:
+                            res.append(cls(*arg.args, **arg.kwargs, **kwargs, name=name))
                     else:
                         res.append(cls(arg, **kwargs, name=name))
             else:
@@ -2291,6 +2408,26 @@ def FreezeAfterInit(cls):
     return cls
 
 
+def IgnoresGhostElements(func):
+    """Method decorator to raise a warning if the method is used with non-owned elements"""
+
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if self._local and not self._owned:
+            warnings.warn(f'Local {func.__name__} accesses do not take non-owned elements into account.')
+        if 'owned' in self._callKwargs:
+            owned = self._callKwargs['owned']
+            del self._callKwargs['owned']
+            try:
+                val = func(self, *args, **kwargs)
+            finally:
+                self._callKwargs['owned'] = owned
+            return val
+        else:
+            return func(self, *args, **kwargs)
+    return wrapper
+
+
 ###################################################################################################
 # File version management utilities
 
@@ -2309,10 +2446,10 @@ class Versioned:
 
     _methods = {}
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, version=steps.__version__, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._setVersion(steps.__version__)
+        self._setVersion(version)
 
     @staticmethod
     def _versionRange(above=None, belowOrEq=None):
@@ -2348,18 +2485,19 @@ class Versioned:
         version = Versioned._parseVersion(version)
         self._version = version
         cls = self.__class__
-        for name, versions in cls._versionedMethods.items():
-            res = None
-            for minv, maxv, func in versions:
-                if (minv is None or minv < version) and (maxv is None or version <= maxv):
-                    if res is not None:
-                        raise Exception(
-                            f'Several methods could be used for method {name} with version {version}.'
-                        )
-                    res = func
-            if res is None:
-                raise Exception(f'No methods were found for {name} with version {version}.')
-            setattr(self, name, types.MethodType(res, self))
+        if hasattr(cls, '_versionedMethods'):
+            for name, versions in cls._versionedMethods.items():
+                res = None
+                for minv, maxv, func in versions:
+                    if (minv is None or minv < version) and (maxv is None or version <= maxv):
+                        if res is not None:
+                            raise Exception(
+                                f'Several methods could be used for method {name} with version {version}.'
+                            )
+                        res = func
+                if res is None:
+                    raise Exception(f'No methods were found for {name} with version {version}.')
+                setattr(self, name, types.MethodType(res, self))
 
     @staticmethod
     def _parseVersion(versionStr):
@@ -2431,6 +2569,14 @@ def getSliceIds(s, sz):
     if s.start is not None and s.start >= sz:
         raise IndexError()
     return range(*s.indices(sz))
+
+
+def nparray(data):
+    """Return a numpy array with the appropriate dtype"""
+    try:
+        return numpy.array(data)
+    except ValueError:
+        return numpy.array(data, dtype=object)
 
 
 def key2str(key):
@@ -2523,7 +2669,7 @@ def _print(msg, prio):
     Print a message if its priority permits it and if we are in rank one in case of an MPI
     simulation.
     """
-    from . import sim as nsim
+    from steps.API_2 import sim as nsim
     if prio <= VERBOSITY and nsim.MPI._shouldWrite:
         print(msg)
 
@@ -2578,3 +2724,4 @@ Parameter.__doc__ = Parameter.__doc__.format(
     prefixTable=prefixTable,
     unitTable=unitTable,
 )
+

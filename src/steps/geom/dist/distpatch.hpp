@@ -83,6 +83,12 @@ class DistPatch : public steps::wm::Patch {
               const std::vector<mesh::triangle_global_id_t> &tri_gidxs,
               DistComp *icomp, DistComp *ocomp = nullptr);
 
+    DistPatch(const mesh::patch_name& patch,
+              DistMesh& mesh,
+              const std::vector<mesh::triangle_local_id_t>& tri_lidxs,
+              DistComp* icomp,
+              DistComp* ocomp = nullptr);
+
     /**
      * \brief Get the list of all triangle indices of the patch.
      *

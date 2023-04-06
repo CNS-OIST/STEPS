@@ -65,8 +65,7 @@ class TestFirstOrderIrev(unittest.TestCase):
         res_std2 = np.zeros([ntpnts, 1])
 
         new_dir = './validation_cp/cp/'
-        if not os.path.exists(new_dir):
-            os.makedirs(new_dir)
+        os.makedirs(new_dir, exist_ok=True)
 
         sim.reset()
         sim.setCompCount('comp1', 'A', N)

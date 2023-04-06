@@ -52,7 +52,7 @@ class TestRDUnbdiff2DODE(unittest.TestCase):
 
         # plotting dt; sim endtime:
         DT = 0.001
-        INT = 0.151
+        INT = 0.150
 
         # Number of molecules injected in center; diff constant
         NINJECT = 1000 	

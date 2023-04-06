@@ -47,7 +47,7 @@ class TestRDUnbdiff2DLinesourceRing(unittest.TestCase):
         # Number of iterations; plotting dt; sim endtime:
         NITER = 100
         DT = 0.02
-        INT = 3.02
+        INT = 3.00
 
         # Number of molecules injected in center; diff constant
         NINJECT = 5000

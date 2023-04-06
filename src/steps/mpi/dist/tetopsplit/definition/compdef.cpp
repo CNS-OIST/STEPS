@@ -33,7 +33,7 @@ Compdef::getSpecContainerIdx(model::species_id species) const {
   if (result != specM2C.end()) {
     return result->second;
   }
-  return boost::none;
+  return std::nullopt;
 }
 
 model::species_id
@@ -137,7 +137,7 @@ void Compdef::report(std::ostream& ostr) const {
 
     ostr << std::endl;
     for (const auto& reacdef: reacdefPtrs) {
-        reacdef->report(ostr, boost::none);
+        reacdef->report(ostr, std::nullopt);
     }
 
     ostr << std::endl;

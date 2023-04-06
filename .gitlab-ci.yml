@@ -17,12 +17,18 @@ spack_build:
   except:
     - schedules
 
+perf_mon_spack_build:
+  extends: .spack_build
+  variables:
+    SPACK_PACKAGE_SPEC: +distmesh+petsc+caliper build_type=RelWithDebInfoAndAssert
+
 steps4_simple_model:
   extends: .spack_test
   except:
     - schedules
 
 ctest:
+  needs: ["spack_build"]
   except:
     - schedules
 
@@ -30,7 +36,7 @@ variables:
   GIT_SUBMODULE_STRATEGY: normal
   SPACK_EXTRA_MODULES: llvm
   SPACK_PACKAGE: steps
-  SPACK_PACKAGE_SPEC: +distmesh build_type=RelWithDebInfoAndAssert
+  SPACK_PACKAGE_SPEC: +distmesh+codechecks build_type=RelWithDebInfoAndAssert
 
 .basic_ci:
   variables:
@@ -103,3 +109,110 @@ variables:
     - cmake --build $BUILD_DIR -v -j$KUBERNETES_CPU_REQUEST
     - cd $BUILD_DIR
     - ctest --verbose -E parallel-python # 18.04 docker image has issues with mpi
+
+# Automated Performance Monitoring (perf_mon)
+
+.perf_mon_kernel:
+  stage: test
+  needs: ["perf_mon_spack_build"]
+  when: manual
+  timeout: 72 hours
+  variables:
+    bb5_memory: 1G
+    bb5_ntasks: 1
+    bb5_cpus_per_task: 1
+    bb5_constraint: cpu
+    bb5_qos: longjob
+    bb5_duration: "72:00:00"
+  script:
+    - . ${SPACK_ROOT}/share/spack/setup-env.sh
+    - spack load /${SPACK_INSTALLED_HASH}
+    - .ci/automated_performance_monitoring.sh
+
+perf_mon 1/3:
+  extends: .perf_mon_kernel
+  variables:
+    PERF_MON_MODEL_NAME: SimpleModel
+    compare_with: perfRes_STEPS4.0Paper
+    # nc stands for number of cores
+    # spawned jobs use this amount of cores (evenly distributed across used nodes)
+    nc: 32 512 2048
+
+perf_mon 2/3:
+  extends: .perf_mon_kernel
+  variables:
+    PERF_MON_MODEL_NAME: CaBurstBackground
+    mesh: CaBurstUnifiedMesh
+    compare_with: perfRes_STEPS4.0Paper
+    nc: 32 512 4096
+
+perf_mon 3/3:
+  extends: .perf_mon_kernel
+  variables:
+    PERF_MON_MODEL_NAME: CaBurstFullModel
+    mesh: CaBurstUnifiedMesh
+    compare_with: perfRes_STEPS4.0Paper
+    nc: 32 512 4096
+
+# Automated Validation Monitoring (val_mon)
+
+.val_mon_kernel:
+  stage: test
+  needs: ["spack_build"]
+  timeout: 24 hours
+  tags: [bb5_map]
+  variables:
+    bb5_memory: 1G
+    bb5_ntasks: 1
+    bb5_cpus_per_task: 1
+    bb5_constraint: cpu
+    bb5_qos: longjob
+    bb5_duration: "24:00:00"
+  script:
+    # Load the Spack installation that knows about the package to be tested.
+    - . ${SPACK_ROOT}/share/spack/setup-env.sh
+    - spack load /${SPACK_INSTALLED_HASH}
+    - .ci/automated_validation_monitoring.sh
+
+val_mon_rallpack1:
+  extends: .val_mon_kernel
+  when: manual
+  variables:
+    model_name: rallpack1
+    slurm_job_name: rallpack1_val_mon_CI
+    simulation_dir: rallpack1
+    compare_with: ref_PR_1000_2971c406/raw_traces/STEPS3
+    steps_version: 4
+
+val_mon_rallpack3:
+  extends: .val_mon_kernel
+  when: manual
+  variables:
+    bb5_memory: 2G
+    model_name: rallpack3
+    slurm_job_name: rallpack3_val_mon_CI
+    simulation_dir: rallpack3
+    compare_with: ref_PR_1000_2971c406/raw_traces/STEPS3
+    steps_version: 4
+
+
+val_mon_caburst:
+  extends: .val_mon_kernel
+  when: manual
+  variables:
+    model_name: caburst
+    slurm_job_name: caburst_val_mon_CI
+    simulation_dir: caBurst/full/validations
+    compare_with: ref_PR_1000_2971c406/raw_traces/STEPS3
+    steps_version: 4
+
+# kill the spawned slurm jobs
+# This job kills all the submitted jobs with the names below (only the ones submitted by the CI).
+# Therefore, it could potentially kill the perf_mon from other PRs/MRs.
+# It is a hard RESET of perf_mon in case of troubles in BB5. 
+scancel_perf_mon:
+  stage: test
+  when: manual
+  script:
+    - for nc in 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192; do scancel --jobname=CI_perf_mon_strong_scaling_$nc; done
+    - for nc in 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192; do scancel --jobname=CI_perf_mon_caliper_$nc; done

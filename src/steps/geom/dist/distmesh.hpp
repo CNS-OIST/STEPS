@@ -20,6 +20,7 @@
 #include "util/mesh.hpp"
 #include "util/optional_num.hpp"
 #include "util/vocabulary.hpp"
+#include "math/point.hpp"
 
 namespace steps {
 namespace dist {
@@ -28,6 +29,8 @@ using optional_id_t = util::OptionalNum<size_t>;
 
 class DistMesh : public steps::wm::Geom {
   public:
+    using point3d = steps::math::point3d;
+
     DistMesh(osh::Mesh mesh, const std::string &path, osh::Real scale = 0);
     DistMesh(osh::Library &library, const std::string &path,
              osh::Real scale = 0);
@@ -222,14 +225,22 @@ class DistMesh : public steps::wm::Geom {
     /**
      * \brief Get the tetrahedron that contains a given point.
      *
-     * \attention Parallelism: Collective / Local
+     * \attention Parallelism: Collective
      *
      * \param position 3D position of the point.
-     * \param local Whether to search in the owned part of the mesh only.
-     * \return Global tetrahedron id, invalid is the tetrahedron does not exist.
+     * \return Global tetrahedron id, invalid if the tetrahedron does not exist.
      */
-    mesh::tetrahedron_global_id_t
-    findTetByPoint(const std::vector<double> &position, bool local = false);
+    mesh::tetrahedron_global_id_t findTetByPoint(const std::vector<double>& position);
+
+    /**
+     * \brief Get the tetrahedron that contains a given point.
+     *
+     * \attention Parallelism: Local
+     *
+     * \param position 3D position of the point.
+     * \return Local tetrahedron id, invalid if no local tetrahedron contains the point
+     */
+    mesh::tetrahedron_local_id_t findLocalTetByPoint(const std::vector<double>& position);
 
     /**
      * \brief Get the list of all tetrahedron indices.
@@ -280,6 +291,10 @@ class DistMesh : public steps::wm::Geom {
     void addComp(const model::compartment_id &comp_id,
                  const std::vector<mesh::tetrahedron_global_id_t> &tets,
                  DistComp* comp=nullptr);
+
+    void addComp(const model::compartment_id& comp_id,
+                 const std::vector<mesh::tetrahedron_local_id_t>& tets,
+                 DistComp* comp = nullptr);
 
     /********************************** Patch ************************************/
 
@@ -400,13 +415,14 @@ class DistMesh : public steps::wm::Geom {
     std::vector<mesh::triangle_global_id_t> getSurfTris();
 
     /**
-     * \brief Get the owned triangles on the surface of the mesh.
+     * \brief Get the triangles on the surface of the mesh.
      *
      * \attention Parallelism: Local
      *
+     * \param owned Whether the triangles should be owned (defaults to True).
      * \return Vector of triangle local indices.
      */
-    std::vector<mesh::triangle_local_id_t> getSurfLocalTris();
+    std::vector<mesh::triangle_local_id_t> getSurfLocalTris(bool owned = true);
 
     /**
      * \brief Get the tetrahedron neighbors of a triangle.
@@ -472,10 +488,15 @@ class DistMesh : public steps::wm::Geom {
     std::vector<mesh::triangle_local_id_t>
     getLocalTriIndices(bool owned = true);
 
-    void addPatch(const model::patch_id &name, DistPatch *patch);
-    void addPatch(const model::patch_id &name,
-                  const std::vector<mesh::triangle_global_id_t> &tris,
-                  DistPatch *patch);
+    void addPatch(const model::patch_id& name, DistPatch* patch);
+
+    void addPatch(const model::patch_id& name,
+                  const std::vector<mesh::triangle_global_id_t>& tris,
+                  DistPatch* patch);
+
+    void addPatch(const model::patch_id& name,
+                  const std::vector<mesh::triangle_local_id_t>& tris,
+                  DistPatch* patch);
 
     /********************************** Vert **********************************/
 
@@ -961,8 +982,8 @@ class DistMesh : public steps::wm::Geom {
     void addDiffusionBoundary(
         const mesh::diffusion_boundary_name &name,
         const model::compartment_id &comp1, const model::compartment_id &comp2,
-        boost::optional<std::set<mesh::triangle_global_id_t>> triangles =
-            boost::none);
+        std::optional<std::set<mesh::triangle_global_id_t>> triangles =
+            std::nullopt);
 
     struct DiffusionBoundary {
       /// Test whether a species with container 1 index is diffusing
@@ -1044,6 +1065,39 @@ class DistMesh : public steps::wm::Geom {
       }
     }
 
+    // public alias type for segment intersections
+    using intersection_list_t = std::vector<std::pair<mesh::tetrahedron_global_id_t, double>>;
+
+    /**
+     * \brief Computes the percentage of intersection of a segment with the mesh tets
+     * 
+     * \return A vector where each position contains pairs <tet, intersection ratio>
+     */
+    intersection_list_t 
+    intersectDeterministic(const point3d &p_start, const point3d &p_end, const mesh::tetrahedron_local_id_t &tet_start);
+
+    /**
+     * \brief Computes the percentage of intersection of a line of segments with the mesh tets
+     * 
+     * \return A vector of vectors (for each segment) containing pairs <tet, intersection ratio>
+     */
+    std::vector<intersection_list_t>
+    intersect(const double *points, int n_points, int sampling = -1);
+
+    /**
+     * \brief Gather geometrical entities indices across MPI processes
+     *
+     * \attention Parallelism: Collective
+     *
+     * \tparam Entity geometrical entity index strong id type
+     * \param entities vector of entities in current process
+     * \param datatype MPI data type
+     * \return The assembled vector of indices
+     */
+    template <typename Entity>
+    std::vector<Entity> allGatherEntities(const std::vector<Entity>& entities,
+                                          MPI_Datatype datatype);
+
   private:
     std::unordered_map<mesh::diffusion_boundary_name, size_t>
         diff_bound_name_2_index_;
@@ -1103,20 +1157,6 @@ class DistMesh : public steps::wm::Geom {
      */
     void syncData(void *buff, int count, MPI_Datatype datatype, bool isRoot,
                   bool unknownCount = false) const;
-
-    /**
-     * \brief Gather geometrical entities indices across MPI processes
-     *
-     * \attention Parallelism: Collective
-     *
-     * \tparam Entity geometrical entity index strong id type
-     * \param entities vector of entities in current process
-     * \param datatype MPI data type
-     * \return The assembled vector of indices
-     */
-    template <typename Entity>
-    std::vector<Entity> allGatherEntities(const std::vector<Entity> &entities,
-                                          MPI_Datatype datatype);
 
     osh::Mesh mesh_;
     const std::string path_;

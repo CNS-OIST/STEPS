@@ -1,5 +1,7 @@
 #include "steps/util/strong_id.hpp"
 
+#include <cstdint>
+
 #include "gtest/gtest.h"
 
 using namespace steps::util;

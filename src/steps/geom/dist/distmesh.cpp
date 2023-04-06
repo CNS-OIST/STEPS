@@ -18,6 +18,7 @@
 #include "distcomp.hpp"
 #include "distpatch.hpp"
 #include "math/tetrahedron.hpp"
+#include "math/triangle.hpp"
 #include "util/mesh.hpp"
 #include "util/mpitools.hpp"
 
@@ -110,7 +111,7 @@ DistMesh::DistMesh(osh::Mesh mesh, const std::string& path, osh::Real scale)
   {
       // Compute BBox
       ownedBBoxMin.fill(std::numeric_limits<osh::Real>::max());
-      ownedBBoxMax.fill(std::numeric_limits<osh::Real>::min());
+      ownedBBoxMax.fill(std::numeric_limits<osh::Real>::lowest());
       const auto &tets2verts = mesh_.ask_elem_verts();
       for (const auto elem : owned_elems()) {
           const auto tet2verts = osh::gather_verts<4>(tets2verts, elem.get());
@@ -223,18 +224,22 @@ osh::Mesh DistMesh::load_mesh(osh::Library &library, const std::string &path) {
    */
   const auto rank0 = library.world()->rank() == 0;
 #ifdef OMEGA_H_USE_GMSH
-  {
-      using namespace Omega_h::filesystem;
-      std::ostringstream part_name;
-      part_name << path << '_' << library.world()->rank() + 1 << ".msh";
-      if (exists(part_name.str())) {
-          if (rank0) {
-              std::clog << "Creating Omega_h mesh from GMSH mesh partition "
-                        << part_name.str() << '\n';
-          }
-          return Omega_h::gmsh::read_parallel(path, library.world());
-      }
-  }
+    {
+        using namespace Omega_h::filesystem;  // NOLINT
+        std::ostringstream part_name;
+        part_name << path << '_' << library.world()->rank() + 1 << ".msh";
+        if (exists(part_name.str())) {
+            if (rank0) {
+                std::clog << "Creating Omega_h mesh from GMSH mesh partition " << part_name.str()
+                          << '\n';
+            }
+            auto mesh = Omega_h::gmsh::read_parallel(path, library.world());
+            for (uint d = 0; d <= dim(); ++d) {
+                mesh.set_tag(d, "global", Omega_h::globals_from_owners(&mesh, d));
+            }
+            return mesh;
+        }
+    }
 #endif
   if (rank0) {
     CLOG(INFO, "general_log")
@@ -403,7 +408,7 @@ DistComp *DistMesh::getTetComp(mesh::tetrahedron_local_id_t tet_index) const {
 }
 
 DistComp *DistMesh::getTetComp(mesh::tetrahedron_global_id_t tet_index) const {
-    mesh::compartment_id meshCompId(boost::none);
+    mesh::compartment_id meshCompId(std::nullopt);
     auto localInd = getLocalIndex(tet_index);
     if (localInd.valid()) {
         auto *comp = getTetComp(localInd);
@@ -509,10 +514,18 @@ DistMesh::getTetBarycenter(mesh::tetrahedron_local_id_t tet_index) const {
     return {center.begin(), center.end()};
 }
 
-mesh::tetrahedron_global_id_t
-DistMesh::findTetByPoint(const std::vector<double> &position, bool local) {
-    steps::math::point3d pos{position[0], position[1], position[2]};
-    mesh::tetrahedron_global_id_t tet(boost::none);
+mesh::tetrahedron_global_id_t DistMesh::findTetByPoint(const std::vector<double>& position) {
+    mesh::tetrahedron_global_id_t tet;
+    auto localTet = findLocalTetByPoint(position);
+    if (localTet.valid()) {
+        tet = getGlobalIndex(localTet);
+    }
+    syncData(&tet, 1, MPI_INT64_T, tet.valid());
+    return tet;
+}
+
+mesh::tetrahedron_local_id_t DistMesh::findLocalTetByPoint(const std::vector<double>& position) {
+    math::point3d pos{position[0], position[1], position[2]};
 
     bool inside = true;
     for (int i = 0; inside and i < dim(); ++i) {
@@ -528,24 +541,23 @@ DistMesh::findTetByPoint(const std::vector<double> &position, bool local) {
             for (const auto &p : tet2x) {
                 verts.emplace_back(p[0], p[1], p[2]);
             }
-            if (steps::math::tet_inside(verts[0], verts[1], verts[2], verts[3],
-                                        pos)) {
-                tet = mesh::tetrahedron_global_id_t(getGlobalIndex(elem));
-                break;
+            if (math::tet_inside(verts[0], verts[1], verts[2], verts[3], pos)) {
+                return elem;
             }
         }
     }
-
-    if (not local) {
-        syncData(&tet, 1, MPI_INT64_T, tet.valid());
-    }
-    return tet;
+    return {};
 }
 
 std::vector<mesh::tetrahedron_global_id_t> DistMesh::getAllTetIndices() {
-    return getAllEntities<model::compartment_id, mesh::tetrahedron_global_id_t,
-                          mesh::tetrahedron_local_id_t>(
-        model::compartment_id("__MESH__"));
+    std::vector<mesh::tetrahedron_global_id_t> globals_v;
+    globals_v.reserve(elemLocal2Global.size());
+    for (int i = 0u; i < elemLocal2Global.size(); ++i) {
+        if (owned_elems_mask_[i]) {
+            globals_v.push_back(elemLocal2Global[i]);
+        }
+    }
+    return allGatherEntities(globals_v, MPI_INT64_T);
 }
 
 std::vector<mesh::tetrahedron_local_id_t>
@@ -565,7 +577,7 @@ DistMesh::getTet_(mesh::tetrahedron_global_id_t tet_index) {
             verts.emplace_back(getGlobalIndex(vert));
         }
     } else {
-        verts.resize(4, boost::none);
+        verts.resize(4, std::nullopt);
     }
     syncData(verts.data(), verts.size(), MPI_INT64_T, localInd.valid());
     return verts;
@@ -623,9 +635,8 @@ std::vector<mesh::triangle_global_id_t> DistMesh::getSurfTris() {
         model::patch_id("__MESH_BOUNDARY__"));
 }
 
-std::vector<mesh::triangle_local_id_t> DistMesh::getSurfLocalTris() {
-    auto local_entities =
-        getEntitiesImpl(model::patch_id("__MESH_BOUNDARY__"), true);
+std::vector<mesh::triangle_local_id_t> DistMesh::getSurfLocalTris(bool owned) {
+    const auto& local_entities = getEntitiesImpl(model::patch_id("__MESH_BOUNDARY__"), owned);
     return {local_entities.begin(), local_entities.end()};
 }
 
@@ -664,12 +675,10 @@ DistMesh::getTriTetNeighb(mesh::triangle_local_id_t tri_index) {
     assert(tri_index.valid());
     std::vector<mesh::tetrahedron_local_id_t> neighbs;
     const auto tris2tets = mesh_.ask_up(dim() - 1, dim());
-    auto offset = tris2tets.a2ab[tri_index.get()];
-    auto nind1 = tris2tets.ab2b[offset];
-    auto nind2 = tris2tets.ab2b[offset + 1];
-    neighbs.emplace_back(nind1);
-    if (nind2 != nind1) {
-        neighbs.emplace_back(nind2);
+    const auto start = tris2tets.a2ab[tri_index.get()];
+    const auto end = tris2tets.a2ab[tri_index.get() + 1];
+    for (auto tetidx = start; tetidx < end; ++tetidx) {
+        neighbs.emplace_back(tris2tets.ab2b[tetidx]);
     }
     return neighbs;
 }
@@ -792,7 +801,7 @@ DistPatch *DistMesh::getTriPatch(mesh::triangle_local_id_t tri_index) const {
 }
 
 DistPatch *DistMesh::getTriPatch(mesh::triangle_global_id_t tri_index) const {
-    mesh::patch_id meshPatchId(boost::none);
+    mesh::patch_id meshPatchId(std::nullopt);
     auto localInd = getLocalIndex(tri_index);
     if (localInd.valid()) {
         auto *patch = getTriPatch(localInd);
@@ -819,7 +828,7 @@ DistMesh::getLocalIndex(mesh::tetrahedron_global_id_t tet, bool owned) const {
       (not owned or owned_elems_mask_[result->second.get()] != 0)) {
     return result->second;
   }
-  return boost::none;
+  return std::nullopt;
 }
 
 osh::GO DistMesh::getGlobalIndex(mesh::tetrahedron_local_id_t tet) const {
@@ -833,7 +842,7 @@ DistMesh::getLocalIndex(mesh::triangle_global_id_t tri, bool owned) const {
       (not owned or owned_bounds_mask_[result->second.get()] != 0)) {
     return result->second;
   }
-  return boost::none;
+  return std::nullopt;
 }
 
 osh::GO DistMesh::getGlobalIndex(mesh::triangle_local_id_t tri) const {
@@ -847,7 +856,7 @@ mesh::vertex_local_id_t DistMesh::getLocalIndex(mesh::vertex_global_id_t vert,
       (not owned or owned_verts_mask_[result->second.get()] != 0)) {
     return result->second;
   }
-  return boost::none;
+  return std::nullopt;
 }
 
 osh::GO DistMesh::getGlobalIndex(mesh::vertex_local_id_t vert) const {
@@ -942,112 +951,108 @@ std::vector<std::string> DistMesh::getTags(osh::Int dim) const {
 }
 
 template <typename Tag>
-osh::LOs DistMesh::getEntitiesImpl(const util::strong_string<Tag> &region,
-                                   bool owned) {
-  // for string delimiter
-  auto split = [](const auto &str, const std::string &delimiter) {
-    std::vector<std::string> res;
-    boost::split(res, str, boost::is_any_of(delimiter));
-    return res;
-  };
-  // WARNING!!! Here we strip the .__BOUNDARY__ part (i.e. "smooth" or "spiny")
-  // and look for that tag in the mesh
-  auto reg_split = split(region, ".");
-  if (reg_split.size() == 2 &&  reg_split[1] == "__BOUNDARY__") {
-    if (dim() - 1 != entity_dimension<dim(), util::strong_string<Tag>>::value) {
-      throw std::logic_error("Wrong entity dimension for " +  region);
-    }
-    // WARNING!!! notice that we look for the tetrahedrons marked as "smooth" or
-    // "spiny", not the surfaces! Such a hack! this "auto ents =
-    // getEntities(model::patch_id(reg_split[0]));" would have asked for the
-    // surfaces with this tag
-    auto ents = getEntities(model::compartment_id(reg_split[0]));
-    std::unordered_set<osh::LO> entss;
-    for (auto e : ents) {
-     entss.insert(e.get());
-    }
-    auto bound_owned = owned_bounds_mask_;
-    auto bound2elems = mesh_.ask_up(dim() - 1, dim());
-    std::vector<osh::LO> boundaries_v;
-    for (osh::LO boundary = 0; boundary < bound_owned.size(); boundary++) {
-      if (owned && !bound_owned[boundary]) {
-        continue;
-      }
-      const auto num_elems =
-          bound2elems.a2ab[boundary + 1] - bound2elems.a2ab[boundary];
-      if (num_elems == 1) { 
-        if (entss.find(bound2elems.ab2b[bound2elems.a2ab[boundary]]) != entss.end()) {
-          boundaries_v.push_back(boundary);
+osh::LOs DistMesh::getEntitiesImpl(const util::strong_string<Tag>& region, bool owned) {
+    // for string delimiter
+    auto split = [](const auto& str, const std::string& delimiter) {
+        std::vector<std::string> res;
+        boost::split(res, str, boost::is_any_of(delimiter));
+        return res;
+    };
+    // WARNING!!! Here we strip the .__BOUNDARY__ part (i.e. "smooth" or "spiny")
+    // and look for that tag in the mesh
+    auto reg_split = split(region, ".");
+    if (reg_split.size() == 2 && reg_split[1] == "__BOUNDARY__") {
+        if (dim() - 1 != entity_dimension<dim(), util::strong_string<Tag>>::value) {
+            throw std::logic_error("Wrong entity dimension for " + region);
         }
-      }
-    }
-    // convert std::vector to Omega_h array
-    osh::Write<osh::LO> boundaries(static_cast<osh::LO>(boundaries_v.size()));
-    std::copy(boundaries_v.begin(), boundaries_v.end(), boundaries.begin());
-    return boundaries;
-  } else if (region == "__MESH_BOUNDARY__") {
-    if (dim() - 1 != entity_dimension<dim(), util::strong_string<Tag>>::value) {
-      throw std::logic_error("Wrong entity dimension for __MESH_BOUNDARY__.");
-    }
-    auto bound_owned = owned_bounds_mask_;
-    auto bound2elems = mesh_.ask_up(dim() - 1, dim());
-    std::vector<osh::LO> boundaries_v;
-    for (osh::LO boundary = 0; boundary < bound_owned.size(); boundary++) {
-      if (owned && !bound_owned[boundary]) {
-        continue;
-      }
-      const auto num_elems =
-          bound2elems.a2ab[boundary + 1] - bound2elems.a2ab[boundary];
-      if (num_elems == 1) {
-        boundaries_v.push_back(boundary);
-      }
-    }
-    // convert std::vector to Omega_h array
-    osh::Write<osh::LO> boundaries(static_cast<osh::LO>(boundaries_v.size()));
-    std::copy(boundaries_v.begin(), boundaries_v.end(), boundaries.begin());
-    return {boundaries};
-  } else if (region == "__MESH__") {
-    if (dim() != entity_dimension<dim(), util::strong_string<Tag>>::value) {
-      throw std::logic_error("Wrong entity dimension for __MESH__.");
-    }
-    if (owned) {
-        return owned_elems().data();
+        // WARNING!!! notice that we look for the tetrahedrons marked as "smooth" or
+        // "spiny", not the surfaces! Such a hack! this "auto ents =
+        // getEntities(model::patch_id(reg_split[0]));" would have asked for the
+        // surfaces with this tag
+        const auto& ents = getEntities(model::compartment_id(reg_split[0]));
+        std::unordered_set<osh::LO> entss;
+        for (auto e: ents) {
+            entss.insert(e.get());
+        }
+        const auto& bound_owned = owned_bounds_mask_;
+        const auto& bound2elems = mesh_.ask_up(dim() - 1, dim());
+        std::vector<osh::LO> boundaries_v;
+        for (osh::LO boundary = 0; boundary < bound_owned.size(); boundary++) {
+            if (owned && !bound_owned[boundary]) {
+                continue;
+            }
+            const auto num_elems = bound2elems.a2ab[boundary + 1] - bound2elems.a2ab[boundary];
+            if (num_elems == 1) {
+                if (entss.find(bound2elems.ab2b[bound2elems.a2ab[boundary]]) != entss.end()) {
+                    boundaries_v.push_back(boundary);
+                }
+            }
+        }
+        // convert std::vector to Omega_h array
+        osh::Write<osh::LO> boundaries(static_cast<osh::LO>(boundaries_v.size()));
+        std::copy(boundaries_v.begin(), boundaries_v.end(), boundaries.begin());
+        return boundaries;
+    } else if (region == "__MESH_BOUNDARY__") {
+        if (dim() - 1 != entity_dimension<dim(), util::strong_string<Tag>>::value) {
+            throw std::logic_error("Wrong entity dimension for __MESH_BOUNDARY__.");
+        }
+        const auto& bound_owned = owned_bounds_mask_;
+        const auto& bound2elems = mesh_.ask_up(dim() - 1, dim());
+        std::vector<osh::LO> boundaries_v;
+        for (osh::LO boundary = 0; boundary < bound_owned.size(); boundary++) {
+            if (owned && !bound_owned[boundary]) {
+                continue;
+            }
+            const auto num_elems = bound2elems.a2ab[boundary + 1] - bound2elems.a2ab[boundary];
+            if (num_elems == 1) {
+                boundaries_v.push_back(boundary);
+            }
+        }
+        // convert std::vector to Omega_h array
+        osh::Write<osh::LO> boundaries(static_cast<osh::LO>(boundaries_v.size()));
+        std::copy(boundaries_v.begin(), boundaries_v.end(), boundaries.begin());
+        return {boundaries};
+    } else if (region == "__MESH__") {
+        if (dim() != entity_dimension<dim(), util::strong_string<Tag>>::value) {
+            throw std::logic_error("Wrong entity dimension for __MESH__.");
+        }
+        if (owned) {
+            return owned_elems().data();
+        } else {
+            osh::Write<osh::LO> elements(mesh_.nents(dim()));
+            std::iota(elements.begin(), elements.end(), 0);
+            return osh::LOs(elements);
+        }
     } else {
-        osh::Write<osh::LO> elements(mesh_.nents(dim()));
-        std::iota(elements.begin(), elements.end(), 0);
-        return osh::LOs(elements);
-    }
-  } else {
-    auto class_pairs = getClassPairs(region);
-    std::vector<osh::Int> dims(class_pairs.size());
-    std::transform(class_pairs.begin(), class_pairs.end(), dims.begin(),
-                   [](const auto &v) { return v.dim; });
-    std::set<osh::Int> dim_set(dims.begin(), dims.end());
-    if (dim_set.empty()) {
-      throw std::logic_error("Empty class sets.");
-    }
-    if (dim_set.size() != 1) {
-      throw std::logic_error(
-          "Class sets of different dimensions can't be measured");
-    }
-    auto dim = *dim_set.begin();
-    if (dim !=
-        entity_dimension<DistMesh::dim(), util::strong_string<Tag>>::value) {
-      std::ostringstream oss;
-      oss << "Expecting the dimension of the region to be " << dim;
-      throw std::logic_error(oss.str());
-    }
-    auto marks = osh::mark_class_closures(&mesh_, dim, class_pairs);
-    osh::Write<osh::I8> marked_and_owned(marks.size());
-    if (owned) {
-        const auto& owned_elems_mask = mesh_.owned(dim);
-        for (osh::LO k = 0; k < marks.size(); k++) {
-            marked_and_owned[k] = marks[k] & owned_elems_mask[k];
-      }
-      return osh::collect_marked(marked_and_owned);
-    } else {
-      return osh::collect_marked(marks);
-    }
+        const auto& class_pairs = getClassPairs(region);
+        std::vector<osh::Int> dims(class_pairs.size());
+        std::transform(class_pairs.begin(), class_pairs.end(), dims.begin(), [](const auto& v) {
+            return v.dim;
+        });
+        std::set<osh::Int> dim_set(dims.begin(), dims.end());
+        if (dim_set.empty()) {
+            throw std::logic_error("Empty class sets.");
+        }
+        if (dim_set.size() != 1) {
+            throw std::logic_error("Class sets of different dimensions can't be measured");
+        }
+        auto dim = *dim_set.begin();
+        if (dim != entity_dimension<DistMesh::dim(), util::strong_string<Tag>>::value) {
+            std::ostringstream oss;
+            oss << "Expecting the dimension of the region to be " << dim;
+            throw std::logic_error(oss.str());
+        }
+        const auto& marks = osh::mark_class_closures(&mesh_, dim, class_pairs);
+        osh::Write<osh::I8> marked_and_owned(marks.size());
+        if (owned) {
+            const auto& owned_elems_mask = mesh_.owned(dim);
+            for (osh::LO k = 0; k < marks.size(); k++) {
+                marked_and_owned[k] = marks[k] & owned_elems_mask[k];
+            }
+            return osh::collect_marked(marked_and_owned);
+        } else {
+            return osh::collect_marked(marks);
+        }
   }
 }
 
@@ -1215,37 +1220,44 @@ void DistMesh::addComp(const model::compartment_id &compartment,
   measure_ = std::make_unique<Measure>(comm_impl(), num_compartments(), measureFunc_);
 }
 
-void DistMesh::addComp(const model::compartment_id &compartment,
-                       const std::vector<mesh::tetrahedron_global_id_t> &tets,
-                       DistComp *comp) {
+void DistMesh::addComp(const model::compartment_id& compartment,
+                       const std::vector<mesh::tetrahedron_global_id_t>& tets,
+                       DistComp* comp) {
+    std::vector<mesh::tetrahedron_local_id_t> localTets;
+    for (const auto& tet: tets) {
+        auto localTet = getLocalIndex(tet, false);
+        if (localTet.valid()) {
+            localTets.push_back(localTet);
+        }
+    }
+    addComp(compartment, localTets, comp);
+}
+
+void DistMesh::addComp(const model::compartment_id& compartment,
+                       const std::vector<mesh::tetrahedron_local_id_t>& tets,
+                       DistComp* comp) {
     const mesh::compartment_id comp_id = getCompID(compartment);
     if (comp != nullptr) {
         distcomps.push_back(comp);
     }
     osh::Real p_ownedCompVol{};
     std::vector<osh::LO> v_owned_elems;
-    std::vector<mesh::tetrahedron_local_id_t> elems;
-    for (const auto &tet : tets) {
-        auto localInd = getLocalIndex(tet, false);
-        if (localInd.valid()) {
-            elems.push_back(localInd);
-            mesh::tetrahedron_local_id_t element{localInd};
-            if (isOwned(element)) {
-                p_ownedCompVol += measureFunc_(element);
-                v_owned_elems.push_back(localInd.get());
-            }
-            elem2compid_[element.get()] = comp_id.get();
+    for (const auto& localTet: tets) {
+        if (isOwned(localTet)) {
+            p_ownedCompVol += measureFunc_(localTet);
+            v_owned_elems.push_back(localTet.get());
         }
+        elem2compid_[localTet.get()] = comp_id.get();
     }
     {
-      osh::Write<osh::LO> w_elems(static_cast<osh::LO>(elems.size()));
-      // parallel std::copy(elems.begin(), elems.end(), w_elems.begin())
-      osh::parallel_for(
-          static_cast<osh::LO>(elems.size()), OMEGA_H_LAMBDA(auto index) {
-            const auto element_index = elems[static_cast<size_t>(index)].get();
-            w_elems[index] = element_index;
-          });
-      compid2elems_.emplace(comp_id, w_elems);
+        osh::Write<osh::LO> w_elems(static_cast<osh::LO>(tets.size()));
+        // parallel std::copy(tets.begin(), tets.end(), w_elems.begin())
+        osh::parallel_for(
+            static_cast<osh::LO>(tets.size()), OMEGA_H_LAMBDA(auto index) {
+                const auto element_index = tets[static_cast<size_t>(index)].get();
+                w_elems[index] = element_index;
+            });
+        compid2elems_.emplace(comp_id, w_elems);
     }
 
     compid2ownedvol.resize(compid2ownedvol.size() + 1, p_ownedCompVol);
@@ -1265,31 +1277,39 @@ void DistMesh::addPatch(const model::patch_id &name, DistPatch *patch) {
     distpatches.push_back(patch);
 }
 
-void DistMesh::addPatch(const model::patch_id &name,
-                        const std::vector<mesh::triangle_global_id_t> &tris,
-                        DistPatch *patch) {
+void DistMesh::addPatch(const model::patch_id& name,
+                        const std::vector<mesh::triangle_global_id_t>& tris,
+                        DistPatch* patch) {
+    std::vector<mesh::triangle_local_id_t> localTris;
+    for (const auto& tri: tris) {
+        auto localInd = getLocalIndex(tri, false);
+        if (localInd.valid()) {
+            localTris.push_back(localInd);
+        }
+    }
+    addPatch(name, localTris, patch);
+}
+
+void DistMesh::addPatch(const model::patch_id& name,
+                        const std::vector<mesh::triangle_local_id_t>& tris,
+                        DistPatch* patch) {
     const mesh::patch_id patch_id = getPatchID(name);
     distpatches.push_back(patch);
     std::vector<osh::LO> v_owned_bounds;
-    std::vector<mesh::triangle_local_id_t> bounds;
-    for (const auto &tri : tris) {
-        auto localInd = getLocalIndex(tri, false);
-        if (localInd.valid()) {
-            bounds.push_back(localInd);
-            if (isOwned(localInd)) {
-                v_owned_bounds.push_back(localInd.get());
-            }
+    for (const auto& tri: tris) {
+        if (isOwned(tri)) {
+            v_owned_bounds.push_back(tri.get());
         }
     }
     {
-      osh::Write<osh::LO> w_bounds(static_cast<osh::LO>(bounds.size()));
-      // parallel std::copy(bounds.begin(), bounds.end(), w_bounds.begin())
-      osh::parallel_for(
-          static_cast<osh::LO>(bounds.size()), OMEGA_H_LAMBDA(auto index) {
-            const auto bound_index = bounds[static_cast<size_t>(index)].get();
-            w_bounds[index] = bound_index;
-          });
-      patchid2bounds_.emplace(patch_id, w_bounds);
+        osh::Write<osh::LO> w_tris(static_cast<osh::LO>(tris.size()));
+        // parallel std::copy(tris.begin(), tris.end(), w_tris.begin())
+        osh::parallel_for(
+            static_cast<osh::LO>(tris.size()), OMEGA_H_LAMBDA(auto index) {
+                const auto bound_index = tris[static_cast<size_t>(index)].get();
+                w_tris[index] = bound_index;
+            });
+        patchid2bounds_.emplace(patch_id, w_tris);
     }
     osh::Write<osh::LO> owned_bounds(
         static_cast<osh::Int>(v_owned_bounds.size()));
@@ -1299,75 +1319,78 @@ void DistMesh::addPatch(const model::patch_id &name,
                                mesh::triangle_ids(owned_bounds));
 }
 
-void DistMesh::addDiffusionBoundary(
-    const mesh::diffusion_boundary_name &name,
-    const model::compartment_id &comp1, const model::compartment_id &comp2,
-    boost::optional<std::set<mesh::triangle_global_id_t>> triangles) {
-  auto it = diff_bound_name_2_index_.find(name);
-  if (it != diff_bound_name_2_index_.end()) {
-    throw std::invalid_argument("A diffusion boundary named " + name +
-                                std::string(" already exists"));
-  }
-  diff_bound_name_2_index_[name] = diffusion_boundaries_.size();
-  diffusion_boundaries_.resize(diffusion_boundaries_.size() + 1);
-  auto &db = diffusion_boundaries_.back();
-  db.mdl_comp1 = comp1;
-  db.mdl_comp2 = comp2;
-  db.msh_comp1 = getCompID(comp1);
-  db.msh_comp2 = getCompID(comp2);
-  auto elems1 = compid2elems_[db.msh_comp1];
-  auto elems2 = compid2elems_[db.msh_comp2];
-  auto g = mesh_.ask_down(dim(), dim() - 1);
-  auto bounding_triangles = [&g](const mesh::tetrahedron_ids &elems,
-                                 std::set<mesh::triangle_id_t> &s) {
-    for (const auto elem_idx : elems) {
-      auto tris = osh::gather_down<dim() + 1>(g.ab2b, elem_idx.get());
-      s.insert(tris.begin(), tris.end());
+void DistMesh::addDiffusionBoundary(const mesh::diffusion_boundary_name& name,
+                                    const model::compartment_id& comp1,
+                                    const model::compartment_id& comp2,
+                                    std::optional<std::set<mesh::triangle_global_id_t>> triangles) {
+    auto it = diff_bound_name_2_index_.find(name);
+    if (it != diff_bound_name_2_index_.end()) {
+        throw std::invalid_argument("A diffusion boundary named " + name +
+                                    std::string(" already exists"));
     }
-  };
-  std::set<mesh::triangle_id_t> tris_comp_1, tris_comp_2;
-  bounding_triangles(elems1, tris_comp_1);
-  bounding_triangles(elems2, tris_comp_2);
-  std::vector<mesh::triangle_id_t> intersect_comp_12;
-  std::set_intersection(tris_comp_1.begin(), tris_comp_1.end(),
-                        tris_comp_2.begin(), tris_comp_2.end(),
-                        std::back_inserter(intersect_comp_12));
-  if (triangles) {
-    db.triangles.reserve(triangles->size());
-    for (auto t : *triangles) {
-      auto li = getLocalIndex(t, false);
-      if (li.valid()) {
-          db.triangles.push_back(li);
-      }
+    diff_bound_name_2_index_[name] = diffusion_boundaries_.size();
+    diffusion_boundaries_.resize(diffusion_boundaries_.size() + 1);
+    auto& db = diffusion_boundaries_.back();
+    db.mdl_comp1 = comp1;
+    db.mdl_comp2 = comp2;
+    db.msh_comp1 = getCompID(comp1);
+    db.msh_comp2 = getCompID(comp2);
+    const auto& elems1 = compid2elems_[db.msh_comp1];
+    const auto& elems2 = compid2elems_[db.msh_comp2];
+    const auto& g = mesh_.ask_down(dim(), dim() - 1);
+    auto bounding_triangles = [&g](const mesh::tetrahedron_ids& elems,
+                                   std::set<mesh::triangle_id_t>& s) {
+        for (const auto elem_idx: elems) {
+            const auto& tris = osh::gather_down<dim() + 1>(g.ab2b, elem_idx.get());
+            for (auto tri: tris) {
+                s.emplace(tri);
+            }
+        }
+    };
+    std::set<mesh::triangle_id_t> tris_comp_1, tris_comp_2;
+    bounding_triangles(elems1, tris_comp_1);
+    bounding_triangles(elems2, tris_comp_2);
+    std::vector<mesh::triangle_id_t> intersect_comp_12;
+    std::set_intersection(tris_comp_1.begin(),
+                          tris_comp_1.end(),
+                          tris_comp_2.begin(),
+                          tris_comp_2.end(),
+                          std::back_inserter(intersect_comp_12));
+    if (triangles) {
+        db.triangles.reserve(triangles->size());
+        for (auto t: *triangles) {
+            auto li = getLocalIndex(t, false);
+            if (li.valid()) {
+                db.triangles.push_back(li);
+            }
+        }
+        std::sort(db.triangles.begin(), db.triangles.end());
+        std::vector<mesh::triangle_id_t> intersect_triangles_comp_12;
+        intersect_triangles_comp_12.reserve(db.triangles.size());
+        std::set_intersection(intersect_comp_12.begin(),
+                              intersect_comp_12.end(),
+                              db.triangles.begin(),
+                              db.triangles.end(),
+                              std::back_inserter(intersect_triangles_comp_12));
+        if (db.triangles.size() != intersect_triangles_comp_12.size()) {
+            throw std::logic_error(
+                "Diffusion boundary: some triangles are not part "
+                "of the boundary between the two compartments");
+        }
+    } else {
+        std::swap(db.triangles, intersect_comp_12);
     }
-    std::sort(db.triangles.begin(), db.triangles.end());
-    std::vector<mesh::triangle_id_t> intersect_triangles_comp_12;
-    intersect_triangles_comp_12.reserve(db.triangles.size());
-    std::set_intersection(intersect_comp_12.begin(), intersect_comp_12.end(),
-                          db.triangles.begin(), db.triangles.end(),
-                          std::back_inserter(intersect_triangles_comp_12));
-    if (db.triangles.size() != intersect_triangles_comp_12.size()) {
-      throw std::logic_error("Diffusion boundary: some triangles are not part "
-                             "of the boundary between the two compartments");
+    size_t diffusion_boundary_idx = diffusion_boundaries_.size() - 1;
+    for (const auto& t: db.triangles) {
+        diffusion_boundary_ids_[static_cast<size_t>(t.get())] = diffusion_boundary_idx;
     }
-  } else {
-    std::swap(db.triangles, intersect_comp_12);
-  }
-  size_t diffusion_boundary_idx = diffusion_boundaries_.size() - 1;
-  for (const auto &t : db.triangles) {
-    diffusion_boundary_ids_[static_cast<size_t>(t.get())] =
-        diffusion_boundary_idx;
-  }
 }
 
-void DistMesh::addMembrane(
-    const model::membrane_id name,
-    DistMemb *memb) {
-  if (membranes_.count(name) > 0) {
-    throw std::invalid_argument("A membrane named " + name +
-                                std::string(" already exists"));
-  }
-  membranes_[name] = memb;
+void DistMesh::addMembrane(const model::membrane_id name, DistMemb* memb) {
+    if (membranes_.count(name) > 0) {
+        throw std::invalid_argument("A membrane named " + name + std::string(" already exists"));
+    }
+    membranes_[name] = memb;
 }
 
 void DistMesh::syncData(void *buff, int count,
@@ -1418,6 +1441,196 @@ DistMesh::allGatherEntities(const std::vector<Entity> &entities,
     }
 
     return all_entities;
+}
+
+/**
+ * \brief Return the id of owned tets (not ghost) sharing a vertex with index vidx.
+ * 
+ * \param vidx Index of the vertex.
+ * \return tet ids.
+ */
+static std::vector<mesh::tetrahedron_local_id_t>
+getVertexTetNeighbs(mesh::vertex_local_id_t vidx, const Omega_h::Adj &vert2tet, const osh::Bytes &owned_elems_mask_) {
+  std::vector<mesh::tetrahedron_local_id_t> tets;
+  
+  auto start = vert2tet.a2ab[vidx.get()];
+  auto end = vert2tet.a2ab[vidx.get() + 1];
+  for (auto idx = start; idx < end; ++idx) {
+    auto element = vert2tet.ab2b[idx];
+    if (owned_elems_mask_[element])
+      tets.emplace_back(element);
+  }
+
+  return tets;
+}
+
+DistMesh::intersection_list_t
+DistMesh::intersectDeterministic(const point3d &p_start, const point3d &p_end,
+                                 const mesh::tetrahedron_local_id_t &tet_start) {
+  const auto &tris2verts = mesh_.ask_verts_of(Omega_h::FACE);
+  const auto &tets2verts = mesh_.ask_elem_verts();
+  const auto &vert2tet = mesh_.ask_up(0, dim());
+
+  intersection_list_t segment_intersects;
+  
+  mesh::tetrahedron_local_id_t cur_tet = 
+    (tet_start.unknown()) ? findLocalTetByPoint({p_start[0], p_start[1], p_start[2]}) : tet_start;
+  if (cur_tet.unknown()) {
+    // Using a distributed mesh means that by choice we can test segments that do not overlap with the mesh, 
+    // e.g. dualrun (coupling NEURON & STEPS). Therefore, avoid too many warnings and use them mainly for
+    // debugging -> 1 MPI task.
+    if (comm_size() == 1)
+      CLOG(WARNING, "general_log") << "Initial point is not in the mesh.\n";
+    return segment_intersects;
+  }
+
+  double seg_len = p_start.distance(p_end);
+  point3d previous_point = p_start;
+
+  auto tet2verts = osh::gather_verts<4>(tets2verts, cur_tet.get());
+  auto tet2x = osh::gather_vectors<4, dim()>(coords(), tet2verts);
+  std::array<point3d, 4> tet_vertices;
+  size_t ind_ = 0;
+  for (const auto &p : tet2x) {
+      tet_vertices[ind_][0] = p[0];
+      tet_vertices[ind_][1] = p[1];
+      tet_vertices[ind_][2] = p[2];
+      ind_++;
+  }
+
+  // storage for tet_neighbors
+  size_t neighbs_id = 0;
+  std::vector<mesh::tetrahedron_local_id_t> tet_neighbors;
+
+  // Loop over neighbor tets until we reach the tet containing segment end (or
+  // outside). Won't even enter if the cur_tet contains p_end.
+  while (!steps::math::tet_inside(
+      tet_vertices[0], tet_vertices[1],
+      tet_vertices[2], tet_vertices[3], p_end)) {
+    point3d intersection = previous_point;
+    mesh::tetrahedron_local_id_t next_tet = cur_tet;
+
+    // Loop over current tet faces
+    // if intersection is found select next tet
+    for (const auto &tri_id : getTetTriNeighb(cur_tet)) {
+      const auto tri2verts = osh::gather_verts<3>(tris2verts, tri_id.get());
+      const auto tri2x = osh::gather_vectors<3, 3>(coords(), tri2verts);
+      if (steps::math::tri_intersect_line(
+              point3d(tri2x[0][0], tri2x[0][1], tri2x[0][2]), point3d(tri2x[1][0], tri2x[1][1], tri2x[1][2]),
+              point3d(tri2x[2][0], tri2x[2][1], tri2x[2][2]), previous_point, p_end, intersection)) {
+        
+        // Check that intersection is new
+        if (intersection.almostEqual(previous_point))
+          continue;
+
+        // Next tet is the other side of the chosen triangle
+        const auto& tet_ids = getTriTetNeighb(tri_id);
+
+        // reached the boundary
+        mesh::tetrahedron_local_id_t second_tet_neighb;
+        if (tet_ids.size() == 2) {
+          second_tet_neighb = tet_ids[1];
+        }
+        next_tet = (tet_ids[0] == cur_tet) ? second_tet_neighb : tet_ids[0];
+        break;
+      }
+    }
+
+    // If next_tet == cur_tet then the line did not cross any face
+    // this can happen due to finite precision arithmetic
+    // try other neighboring tets
+    if (next_tet == cur_tet) {
+      // First pass, need to build neighbors list
+      if (neighbs_id == 0) {
+        for (size_t v = 0; v < 4; ++v) {
+          // Get all tets sharing this vertex
+          const auto& tet_v = getVertexTetNeighbs(tet2verts[v], vert2tet, owned_elems_mask_);
+          // Store all neighbours except cur_tet
+          for (size_t t = 0; t < tet_v.size(); ++t) {
+            if (tet_v[t] != cur_tet)
+              tet_neighbors.push_back(tet_v[t]);
+          }
+        }
+      }
+
+      // We tried all neighbors already, give up
+      if (neighbs_id >= tet_neighbors.size()) {
+        if (comm_size() == 1)
+          CLOG(WARNING, "general_log") << "Could not find endpoint.\n";
+        return segment_intersects;
+      }
+
+      next_tet = tet_neighbors[neighbs_id++];
+    }
+
+    double ratio = previous_point.distance(intersection) / seg_len;
+    if (ratio > math::tol_lin)
+      segment_intersects.emplace_back(getGlobalIndex(cur_tet), ratio);
+
+    // Otherwise, unknown() then the segment finishes outside the mesh
+    if (next_tet.unknown()) {
+      if (comm_size() == 1) 
+        CLOG(WARNING, "general_log") << "Endpoint is outside mesh.\n";
+      return segment_intersects;
+    }
+
+    previous_point = intersection;
+    cur_tet = next_tet;
+    tet2verts = osh::gather_verts<4>(tets2verts, cur_tet.get());
+    tet2x = osh::gather_vectors<4, 3>(coords(), tet2verts);
+    ind_ = 0;
+    for (const auto &p : tet2x) {
+        tet_vertices[ind_][0] = p[0];
+        tet_vertices[ind_][1] = p[1];
+        tet_vertices[ind_][2] = p[2];
+        ind_++;
+    }
+  }
+
+  // last intersection to end
+  if (p_start == previous_point) {
+    segment_intersects.emplace_back(getGlobalIndex(cur_tet), 1.0);
+  } else {
+    double ratio = previous_point.distance(p_end) / seg_len;
+    segment_intersects.emplace_back(getGlobalIndex(cur_tet), ratio);
+  }
+
+  return segment_intersects;
+}
+
+std::vector<DistMesh::intersection_list_t>
+DistMesh::intersect(const double *points, int n_points, int sampling) {
+  if (sampling > 0)
+    CLOG(WARNING, "general_log")
+          << "intersectMontecarlo is not ported from STEPS3 to STEPS4 yet."
+          << "Proceeding with intersectDeterministic instead.\n";
+
+  std::vector<DistMesh::intersection_list_t> intersecs;
+  if (n_points <= 1) {
+    CLOG(WARNING, "general_log")
+        << "Please provide at least two points to define a segment.\n";
+    return intersecs;
+  }
+  
+  point3d start_p(points[0], points[1],
+                  points[2]); // beginning of the first segment
+  mesh::tetrahedron_local_id_t cur_tet = findLocalTetByPoint({points[0], points[1], points[2]});
+
+  // loop over each segment
+  for (int i = 1; i < n_points; i++) {
+    point3d end_p(points[i * 3], points[i * 3 + 1], points[i * 3 + 2]);
+
+    // TODO : intersectMontecarlo (?)
+    const auto &isecs = intersectDeterministic(start_p, end_p, cur_tet);
+
+    // Get last_tet right away. isecs gets moved later
+    cur_tet = isecs.empty() ? mesh::tetrahedron_local_id_t::unknown_value() : getLocalIndex(isecs.back().first);
+    
+    intersecs.push_back(isecs);
+    
+    start_p = end_p;
+  }
+  return intersecs;
 }
 
 }  // namespace dist

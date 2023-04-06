@@ -1,14 +1,14 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -28,7 +28,7 @@ import unittest
 
 from steps import interface
 
-from steps.utils import ParameterizedObject, Parameter, Units
+from steps.utils import ParameterizedObject, AdvancedParameterizedObject, Parameter, Units
 
 
 class ParameterUsage(unittest.TestCase):
@@ -726,57 +726,7 @@ class ParameterUsage(unittest.TestCase):
         with self.assertRaises(TypeError):
             param5 ** 'test'
 
-
-    def testParameterizedDeclaration(self):
-        class TestClass(ParameterizedObject):
-            def __init__(self, a, b, c, setb=True, units=Units(''), *args, **kwargs):
-                super().__init__(*args, **kwargs)
-                self.a = a
-                if setb:
-                    self.b = b
-                self._units = units
-                self.c = c
-                self.d = None
-
-            def getUnits(self):
-                return self._units
-
-            @property
-            @ParameterizedObject.RegisterGetter(Units('m s^-1'))
-            def a(self):
-                self.d = 'geta'
-                return 42
-
-            @a.setter
-            @ParameterizedObject.RegisterSetter(Units('m s^-1'))
-            def a(self, v):
-                self.d = 'seta'
-                self.v = v
-
-            @property
-            @ParameterizedObject.RegisterGetter(Units('mV m^-1'))
-            def b(self):
-                self.d = 'getb'
-                return 21
-
-            @b.setter
-            @ParameterizedObject.RegisterSetter(Units('mV m^-1'))
-            def b(self, v):
-                self.d = 'setb'
-                self.v = v
-
-            @property
-            @ParameterizedObject.RegisterGetter(getUnits)
-            def c(self):
-                self.d = 'getc'
-                return 21
-
-            @c.setter
-            @ParameterizedObject.RegisterSetter(getUnits)
-            def c(self, v):
-                self.d = 'setc'
-                self.v = v
-
+    def _testParameterizedClass(self, TestClass):
         TestClass.RegisterParameter('e', Units('S'), 123)
 
         po = TestClass(1, 2, 3, True)
@@ -856,8 +806,7 @@ class ParameterUsage(unittest.TestCase):
         po._setParameter('param3', 3)
 
         param4 = Parameter(4, 'M V^-1 s^-1')
-        po._setAdvancedParameter((('col10', 10), ('col20', 20)), param4)
-        po._setAdvancedParameter((('col10', 100), ('col20', 200)), 5)
+        po._setParameter('param4', param4)
 
         self.assertEqual(
             set(po._getAllParams()),
@@ -868,9 +817,117 @@ class ParameterUsage(unittest.TestCase):
                 param2,
                 Parameter(3, name=''),
                 param4,
-                Parameter(5, name=''),
             ])
         )
+    
+
+    def testParameterizedDeclaration(self):
+        class TestClass(ParameterizedObject):
+            def __init__(self, a, b, c, setb=True, units=Units(''), *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.a = a
+                if setb:
+                    self.b = b
+                self._units = units
+                self.c = c
+                self.d = None
+
+            def getUnits(self):
+                return self._units
+
+            @property
+            @ParameterizedObject.RegisterGetter(Units('m s^-1'))
+            def a(self):
+                self.d = 'geta'
+                return 42
+
+            @a.setter
+            @ParameterizedObject.RegisterSetter(Units('m s^-1'))
+            def a(self, v):
+                self.d = 'seta'
+                self.v = v
+
+            @property
+            @ParameterizedObject.RegisterGetter(Units('mV m^-1'))
+            def b(self):
+                self.d = 'getb'
+                return 21
+
+            @b.setter
+            @ParameterizedObject.RegisterSetter(Units('mV m^-1'))
+            def b(self, v):
+                self.d = 'setb'
+                self.v = v
+
+            @property
+            @ParameterizedObject.RegisterGetter(getUnits)
+            def c(self):
+                self.d = 'getc'
+                return 21
+
+            @c.setter
+            @ParameterizedObject.RegisterSetter(getUnits)
+            def c(self, v):
+                self.d = 'setc'
+                self.v = v
+
+        self._testParameterizedClass(TestClass)
+
+    def testAdvancedParameterizedDeclaration(self):
+        class TestClass(AdvancedParameterizedObject):
+            def __init__(self, a, b, c, setb=True, units=Units(''), *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.a = a
+                if setb:
+                    self.b = b
+                self._units = units
+                self.c = c
+                self.d = None
+
+            def getUnits(self):
+                return self._units
+
+            def _getCurrentParamKey(self):
+                """Return a key representing the current state of the object"""
+                return (('key1', 123), ('key2', 456))
+
+            @property
+            @ParameterizedObject.RegisterGetter(Units('m s^-1'))
+            def a(self):
+                self.d = 'geta'
+                return 42
+
+            @a.setter
+            @ParameterizedObject.RegisterSetter(Units('m s^-1'))
+            def a(self, v):
+                self.d = 'seta'
+                self.v = v
+
+            @property
+            @ParameterizedObject.RegisterGetter(Units('mV m^-1'))
+            def b(self):
+                self.d = 'getb'
+                return 21
+
+            @b.setter
+            @ParameterizedObject.RegisterSetter(Units('mV m^-1'))
+            def b(self, v):
+                self.d = 'setb'
+                self.v = v
+
+            @property
+            @ParameterizedObject.RegisterGetter(getUnits)
+            def c(self):
+                self.d = 'getc'
+                return 21
+
+            @c.setter
+            @ParameterizedObject.RegisterSetter(getUnits)
+            def c(self, v):
+                self.d = 'setc'
+                self.v = v
+
+        self._testParameterizedClass(TestClass)
 
     def testExplicitCasts(self):
         param1 = Parameter(1.3e3, 'uM')
@@ -879,20 +936,28 @@ class ParameterUsage(unittest.TestCase):
         param4 = Parameter(4784.5, 'ms')
 
         self.assertEqual(int(param1), 1)
-        self.assertEqual(round(param1), 1.0)
         self.assertAlmostEqual(float(param1), 1.3)
+        self.assertEqual(round(param1).value, 1e3)
+        self.assertEqual(round(param1).units, 'uM')
+        self.assertEqual(round(param1, 1).value, 1.3e3)
 
         self.assertEqual(int(param2), 2)
-        self.assertEqual(round(param2), 2.0)
         self.assertAlmostEqual(float(param2), 2.4545)
+        self.assertEqual(round(param2).value, 2e3)
+        self.assertEqual(round(param2).units, 'ms')
+        self.assertEqual(round(param2, 2).value, 2.45e3)
 
         self.assertEqual(int(param3), 3)
-        self.assertEqual(round(param3), 4.0)
         self.assertAlmostEqual(float(param3), 3.8)
+        self.assertEqual(round(param3).value, 4e3)
+        self.assertEqual(round(param3).units, 'uM')
+        self.assertEqual(round(param3, 2).value, 3.8e3)
 
         self.assertEqual(int(param4), 4)
-        self.assertEqual(round(param4), 5.0)
         self.assertAlmostEqual(float(param4), 4.7845)
+        self.assertEqual(round(param4).value, 5e3)
+        self.assertEqual(round(param4).units, 'ms')
+        self.assertEqual(round(param4, 3).value, 4785)
 
         param6 = Parameter(True)
         param7 = Parameter(False)

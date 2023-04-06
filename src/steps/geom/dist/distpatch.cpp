@@ -40,14 +40,16 @@ DistPatch::DistPatch(const mesh::patch_name &patch, DistMesh &mesh,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-DistPatch::DistPatch(
-    const mesh::patch_name &patch, DistMesh &mesh,
-    const std::vector<mesh::triangle_global_id_t> &global_indices,
-    DistComp *icomp, DistComp *ocomp)
-    : steps::wm::Patch(patch, &mesh, icomp, ocomp, 0.0), meshRef(mesh),
-      ownedArea(0.0) {
-    for (auto &tri_global_index : global_indices) {
-        const auto tri_local_index = mesh.getLocalIndex(tri_global_index);
+DistPatch::DistPatch(const mesh::patch_name& patch,
+                     DistMesh& mesh,
+                     const std::vector<mesh::triangle_global_id_t>& global_indices,
+                     DistComp* icomp,
+                     DistComp* ocomp)
+    : wm::Patch(patch, &mesh, icomp, ocomp, 0.0)
+    , meshRef(mesh)
+    , ownedArea(0.0) {
+    for (auto& tri_global_index: global_indices) {
+        const auto tri_local_index = mesh.getLocalIndex(tri_global_index, false);
         if (tri_local_index.valid()) {
             _addTri(tri_local_index);
         }
@@ -55,6 +57,24 @@ DistPatch::DistPatch(
     _computeTotalArea();
     _computeBBox();
     mesh.addPatch(model::patch_id(patch), global_indices, this);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+DistPatch::DistPatch(const mesh::patch_name& patch,
+                     DistMesh& mesh,
+                     const std::vector<mesh::triangle_local_id_t>& local_indices,
+                     DistComp* icomp,
+                     DistComp* ocomp)
+    : wm::Patch(patch, &mesh, icomp, ocomp, 0.0)
+    , meshRef(mesh)
+    , ownedArea(0.0) {
+    for (auto& tri_local_index: local_indices) {
+        _addTri(tri_local_index);
+    }
+    _computeTotalArea();
+    _computeBBox();
+    mesh.addPatch(model::patch_id(patch), local_indices, this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -152,9 +172,9 @@ void DistPatch::_computeTotalArea() {
 
 void DistPatch::_computeBBox() {
     ownedBBoxMin.fill(std::numeric_limits<osh::Real>::max());
-    ownedBBoxMax.fill(std::numeric_limits<osh::Real>::min());
-    const auto &tris2verts = meshRef.ask_verts_of(Omega_h::FACE);
-    for (const auto tri : ownedTriLocalIndices) {
+    ownedBBoxMax.fill(std::numeric_limits<osh::Real>::lowest());
+    const auto& tris2verts = meshRef.ask_verts_of(Omega_h::FACE);
+    for (const auto tri: ownedTriLocalIndices) {
         const auto tri2verts = osh::gather_verts<3>(tris2verts, tri.get());
         const auto tri2x = osh::gather_vectors<3, mesh_dimensions()>(
             meshRef.coords(), tri2verts);

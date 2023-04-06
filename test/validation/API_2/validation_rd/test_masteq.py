@@ -52,7 +52,7 @@ class TestRDMasteq(unittest.TestCase):
         VOL = 1.0e-18
 
         DT = 0.1			# Sampling time-step
-        INT = 200000.1 		# Sim endtime
+        INT = 200000.0 		# Sim endtime
 
         # Tolerance for the comparison:
         # In tests with good code <1% fail with tolerance of 1.5%

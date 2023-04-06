@@ -1,5 +1,21 @@
 Release Notes
 
+Version 4.1.0 (2023-04)
+==========================
+License update
+------------------
+1. Project license changed to GPL3.0.
+
+Python API
+----------
+1. Added automatic saving to HDF5 files (HDF5Handler) and XDMF files (XDMFHandler). Data saved
+   with XDMFHandler can be visualized with scientific visualization software like Paraview.
+
+Internal code base
+------------------
+1. Performance improvement: Identify the tetrahedra with molecule changes via diffusion 
+(changes caused by reaction are updated by the ssa operator) and update the associated propensities.
+
 Version 4.0.0 (2022-03)
 ==========================
 
@@ -13,11 +29,11 @@ distributed mesh named `DistMesh`.
 Build and Packaging
 -------------------
 1. STEPS requires a C++ compiler compatible with C++ 17.
-1. New CMake variables to enable profiling of the simulation:
+2. New CMake variables to enable profiling of the simulation:
    `STEPS_USE_LIWKID_PROFLING`, `STEPS_USE_CALIPER_PROFILING`, and `STEPS_USE_NATIVE_PROFILING`
    see [doc/dev/README.md] for more details on how to use it.
-1. Add support to Apple M1
-1. Add support to compilers GCC 11, LLVM 13, and Apple Clang 13
+3. Add support to Apple M1
+4. Add support to compilers GCC 11, LLVM 13, and Apple Clang 13
 
 Version 3.6.0 (2021-02)
 ==========================

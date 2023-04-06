@@ -1,14 +1,14 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -23,14 +23,15 @@
 ###
 
 import pyqtgraph as pg
-from pyqtgraph.Qt import QtCore, QtGui, QtOpenGL
+from pyqtgraph.Qt import QtCore, QtGui
+from PyQt5.QtWidgets import QMainWindow
 import numpy as np
 import pyqtgraph.opengl as gl
 
 
 import time
 
-class SimDisplay(QtGui.QMainWindow):
+class SimDisplay(QMainWindow):
     """
     Simulation Display
     Parameters:
@@ -48,7 +49,7 @@ class SimDisplay(QtGui.QMainWindow):
         """
         Constructor.
         """
-        QtGui.QMainWindow.__init__(self)
+        QMainWindow.__init__(self)
         self.id = id
         self.setGeometry(x, y, w, h)
         self.widget = gl.GLViewWidget(self)

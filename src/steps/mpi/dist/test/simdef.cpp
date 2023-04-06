@@ -1,7 +1,5 @@
 #include "simdef.hpp"
 
-#include <iostream>
-#include <string>
 #include <vector>
 
 #include "geom/dist/distmesh.hpp"

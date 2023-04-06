@@ -53,7 +53,7 @@ class TestRDUnbdiff2D(unittest.TestCase):
         NITER = 100
 
         DT = 0.01
-        INT = 0.21
+        INT = 0.20
 
         # Number of molecules injected in center; diff constant; number of tets sampled:
         NINJECT = 1000	

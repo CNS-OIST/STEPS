@@ -1408,51 +1408,51 @@ cdef class _py_Tetexact(_py_TetAPI):
         self.ptrx().getBatchTriCountsNP(&indices[0], indices.shape[0], to_std_string(s), &counts[0], counts.shape[0])
 
 
-    def getROITetCounts(self, str ROI_id, str s):
+    def getROITetCounts(self, str roi, str s):
         """
         Get the counts of a species s in tetrehedrons of a ROI.
 
         Syntax::
 
-            getROITetCounts(ROI_id, s)
+            getROITetCounts(roi, s)
 
         Arguments:
-        string ROI_id
+        string roi
         string s
 
         Return:
         list<float>
 
         """
-        return self.ptrx().getROITetCounts(to_std_string(ROI_id), to_std_string(s))
+        return self.ptrx().getROITetCounts(to_std_string(roi), to_std_string(s))
 
-    def getROITriCounts(self, str ROI_id, str s):
+    def getROITriCounts(self, str roi, str s):
         """
         Get the counts of a species s in triangles of a ROI.
 
         Syntax::
 
-            getROITriCounts(ROI_id, s)
+            getROITriCounts(roi, s)
 
         Arguments:
-        string ROI_id
+        string roi
         string s
 
         Return:
         list<float>
 
         """
-        return self.ptrx().getROITriCounts(to_std_string(ROI_id), to_std_string(s))
+        return self.ptrx().getROITriCounts(to_std_string(roi), to_std_string(s))
 
-    def getROITetCountsNP(self, str ROI_id, str s, double[:] counts):
+    def getROITetCountsNP(self, str roi, str s, double[:] counts):
         """
         Get the counts of a species s in tetrehedrons of a ROI.
 
         Syntax::
-            getROITetCountsNP(ROI_id, s, counts)
+            getROITetCountsNP(roi, s, counts)
 
         Arguments:
-        string ROI_id
+        string roi
         string s
         numpy.array<float, length = len(indices)>
 
@@ -1460,17 +1460,17 @@ cdef class _py_Tetexact(_py_TetAPI):
         None
 
         """
-        self.ptrx().getROITetCountsNP(to_std_string(ROI_id), to_std_string(s), &counts[0], counts.shape[0])
+        self.ptrx().getROITetCountsNP(to_std_string(roi), to_std_string(s), &counts[0], counts.shape[0])
 
-    def getROITriCountsNP(self, str ROI_id, str s, double[:] counts):
+    def getROITriCountsNP(self, str roi, str s, double[:] counts):
         """
         Get the counts of a species s in triangles of a ROI.
 
         Syntax::
-            getROITriCountsNP(ROI_id, s, counts)
+            getROITriCountsNP(roi, s, counts)
 
         Arguments:
-        string ROI_id
+        string roi
         string s
         numpy.array<float, length = len(indices)>
 
@@ -1478,66 +1478,66 @@ cdef class _py_Tetexact(_py_TetAPI):
         None
 
         """
-        self.ptrx().getROITriCountsNP(to_std_string(ROI_id), to_std_string(s), &counts[0], counts.shape[0])
+        self.ptrx().getROITriCountsNP(to_std_string(roi), to_std_string(s), &counts[0], counts.shape[0])
 
-    def getROIVol(self, str ROI_id):
+    def getROIVol(self, str roi):
         """
         Get the volume of a ROI.
 
         Syntax::
-            getROIVol(ROI_id)
+            getROIVol(roi)
 
         Arguments:
-        string ROI_id
+        string roi
 
         Return:
         float
 
         """
-        return self.ptrx().getROIVol(to_std_string(ROI_id))
+        return self.ptrx().getROIVol(to_std_string(roi))
 
-    def getROIArea(self, str ROI_id):
+    def getROIArea(self, str roi):
         """
         Get the area of a ROI.
 
         Syntax::
-            getROIArea(ROI_id)
+            getROIArea(roi)
 
         Arguments:
-        string ROI_id
+        string roi
 
         Return:
         float
 
         """
-        return self.ptrx().getROIArea(to_std_string(ROI_id))
+        return self.ptrx().getROIArea(to_std_string(roi))
 
-    def getROICount(self, str ROI_id, str s):
+    def getROICount(self, str roi, str s):
         """
         Get the count of a species in a ROI.
 
         Syntax::
-            getROICount(ROI_id, s)
+            getROICount(roi, s)
 
         Arguments:
-        string ROI_id
+        string roi
         string s
 
         Return:
         float
 
         """
-        return self.ptrx().getROICount(to_std_string(ROI_id), to_std_string(s))
+        return self.ptrx().getROICount(to_std_string(roi), to_std_string(s))
 
-    def setROICount(self, str ROI_id, str s, double count):
+    def setROICount(self, str roi, str s, double count):
         """
         Set the count of a species in a ROI.
 
         Syntax::
-            setROICount(ROI_id, s, count)
+            setROICount(roi, s, count)
 
         Arguments:
-        string ROI_id
+        string roi
         string s
         float count
 
@@ -1545,34 +1545,34 @@ cdef class _py_Tetexact(_py_TetAPI):
         None
 
         """
-        self.ptrx().setROICount(to_std_string(ROI_id), to_std_string(s), count)
+        self.ptrx().setROICount(to_std_string(roi), to_std_string(s), count)
 
-    def getROIAmount(self, str ROI_id, str s):
+    def getROIAmount(self, str roi, str s):
         """
         Get the amount of a species in a ROI.
 
         Syntax::
-            getROIAmount(ROI_id, s)
+            getROIAmount(roi, s)
 
         Arguments:
-        string ROI_id
+        string roi
         string s
 
         Return:
         float
 
         """
-        return self.ptrx().getROIAmount(to_std_string(ROI_id), to_std_string(s))
+        return self.ptrx().getROIAmount(to_std_string(roi), to_std_string(s))
 
-    def setROIAmount(self, str ROI_id, str s, double amount):
+    def setROIAmount(self, str roi, str s, double amount):
         """
         Set the amount of a species in a ROI.
 
         Syntax::
-            setROIAmount(ROI_id, s, amount)
+            setROIAmount(roi, s, amount)
 
         Arguments:
-        string ROI_id
+        string roi
         string s
         float amount
 
@@ -1580,34 +1580,34 @@ cdef class _py_Tetexact(_py_TetAPI):
         None
 
         """
-        return self.ptrx().setROIAmount(to_std_string(ROI_id), to_std_string(s), amount)
+        return self.ptrx().setROIAmount(to_std_string(roi), to_std_string(s), amount)
 
-    def getROIConc(self, str ROI_id, str s):
+    def getROIConc(self, str roi, str s):
         """
         Get the concentration of a species in a ROI.
 
         Syntax::
-            getROIConc(ROI_id, s, count)
+            getROIConc(roi, s, count)
 
         Arguments:
-        string ROI_id
+        string roi
         string s
 
         Return:
         float
 
         """
-        return self.ptrx().getROIConc(to_std_string(ROI_id), to_std_string(s))
+        return self.ptrx().getROIConc(to_std_string(roi), to_std_string(s))
 
-    def setROIConc(self, str ROI_id, str s, double conc):
+    def setROIConc(self, str roi, str s, double conc):
         """
         Set the concentration of a species in a ROI.
 
         Syntax::
-            setROIConc(ROI_id, s, conc)
+            setROIConc(roi, s, conc)
 
         Arguments:
-        string ROI_id
+        string roi
         string s
         float conc
 
@@ -1615,158 +1615,158 @@ cdef class _py_Tetexact(_py_TetAPI):
         None
 
         """ 
-        self.ptrx().setROIConc(to_std_string(ROI_id), to_std_string(s), conc)
+        self.ptrx().setROIConc(to_std_string(roi), to_std_string(s), conc)
 
-    def setROIClamped(self, str ROI_id, str s, bool b):
+    def setROIClamped(self, str roi, str s, bool clamped):
         """
         Set a species in a ROI to be clamped or not. The count of species s in the ROI is clamped if
-        b is True, not clamped if b is False.
+        clamped is True, not clamped if clamped is False.
 
         Syntax::
-            setROIClamped(ROI_id, s, b)
+            setROIClamped(roi, s, clamped)
 
         Arguments:
-        string ROI_id
+        string roi
         string s
-        bool b
+        bool clamped
 
         Return:
         None
 
         """
-        self.ptrx().setROIClamped(to_std_string(ROI_id), to_std_string(s), b)
+        self.ptrx().setROIClamped(to_std_string(roi), to_std_string(s), clamped)
 
-    def setROIReacK(self, str ROI_id, str r, double kf):
+    def setROIReacK(self, str roi, str reac, double kf):
         """
-        Sets the macroscopic reaction constant of reaction with identifier string r
-        in a ROI with identifier string ROI_id to kf. The unit of the reaction constant
+        Sets the macroscopic reaction constant of reaction with identifier string reac
+        in a ROI with identifier string roi to kf. The unit of the reaction constant
         depends on the order of the reaction.
 
         Note: The default value still comes from the steps.model description, so 
         calling reset() will return the reaction constant to that value.
 
         Syntax::
-            setROIReacK(ROI_id, r, kf)
+            setROIReacK(roi, reac, kf)
 
         Arguments:
-        string ROI_id
-        string r
+        string roi
+        string reac
         float kf
 
         Return:
         None
 
         """
-        self.ptrx().setROIReacK(to_std_string(ROI_id), to_std_string(r), kf)
+        self.ptrx().setROIReacK(to_std_string(roi), to_std_string(reac), kf)
 
-    def setROISReacK(self, str ROI_id, str sr, double kf):
+    def setROISReacK(self, str roi, str sreac, double kf):
         """
-        Sets the macroscopic reaction constant of surface reaction with identifier string sr
-        in a ROI with identifier string ROI_id to kf. The unit of the reaction constant
+        Sets the macroscopic reaction constant of surface reaction with identifier string sreac
+        in a ROI with identifier string roi to kf. The unit of the reaction constant
         depends on the order of the reaction.
 
         Note: The default value still comes from the steps.model description, so 
         calling reset() will return the reaction constant to that value.
 
         Syntax::
-            setROISReacK(ROI_id, sr, kf)
+            setROISReacK(roi, sreac, kf)
 
         Arguments:
-        string ROI_id
-        string sr
+        string roi
+        string sreac
         float kf
 
         Return:
         None
 
         """
-        self.ptrx().setROISReacK(to_std_string(ROI_id), to_std_string(sr), kf)
+        self.ptrx().setROISReacK(to_std_string(roi), to_std_string(sreac), kf)
 
-    def setROIDiffD(self, str ROI_id, str d, double dk):
+    def setROIDiffD(self, str roi, str diff, double dcst):
         """
-        Sets the macroscopic diffusion constant of diffusion with identifier string d
-        in a ROI with identifier string ROI_id to dk.
+        Sets the macroscopic diffusion constant of diffusion with identifier string diff
+        in a ROI with identifier string roi to dcst.
 
         Note: The default value still comes from the steps.model description, so 
         calling reset() will return the diffusion constant to that value.
 
         Syntax::
-            setROIDiffD(ROI_id, d, dk)
+            setROIDiffD(roi, diff, dcst)
 
         Arguments:
-        string ROI_id
-        string d
-        float dk
+        string roi
+        string diff
+        float dcst
 
         Return:
         None
 
         """
-        self.ptrx().setROIDiffD(to_std_string(ROI_id), to_std_string(d), dk)
+        self.ptrx().setROIDiffD(to_std_string(roi), to_std_string(diff), dcst)
 
-    def setROIReacActive(self, str ROI_id, str r, bool a):
+    def setROIReacActive(self, str roi, str reac, bool a):
         """
-        Set reaction r in a ROI to be active or not.
+        Set reaction reac in a ROI to be active or not.
 
         Syntax::
-            setROIReacActive(ROI_id, r, a)
+            setROIReacActive(roi, reac, a)
 
         Arguments:
-        string ROI_id
-        string r
+        string roi
+        string reac
         bool a
 
         Return:
         None
 
         """
-        self.ptrx().setROIReacActive(to_std_string(ROI_id), to_std_string(r), a)
+        self.ptrx().setROIReacActive(to_std_string(roi), to_std_string(reac), a)
 
-    def setROISReacActive(self, str ROI_id, str sr, bool a):
+    def setROISReacActive(self, str roi, str sreac, bool a):
         """
-        Set surface reaction sr in a ROI to be active or not.
+        Set surface reaction sreac in a ROI to be active or not.
 
         Syntax::
-            setROISReacActive(ROI_id, sr, a)
+            setROISReacActive(roi, sreac, a)
 
         Arguments:
-        string ROI_id
-        string sr
+        string roi
+        string sreac
         bool a
 
         Return:
         None
 
         """
-        self.ptrx().setROISReacActive(to_std_string(ROI_id), to_std_string(sr), a)
+        self.ptrx().setROISReacActive(to_std_string(roi), to_std_string(sreac), a)
 
-    def setROIDiffActive(self, str ROI_id, str d, bool act):
+    def setROIDiffActive(self, str roi, str diff, bool act):
         """
-        Set diffusion d in a ROI to be active or not.
+        Set diffusion diff in a ROI to be active or not.
 
         Syntax::
-            setROIDiffActive(ROI_id, sr, a)
+            setROIDiffActive(roi, sreac, a)
 
         Arguments:
-        string ROI_id
-        string sr
+        string roi
+        string sreac
         bool a
 
         Return:
         None
 
         """
-        self.ptrx().setROIDiffActive(to_std_string(ROI_id), to_std_string(d), act)
+        self.ptrx().setROIDiffActive(to_std_string(roi), to_std_string(diff), act)
 
-    def setROIVDepSReacActive(self, str ROI_id, str vsr, bool a):
+    def setROIVDepSReacActive(self, str roi, str vsr, bool a):
         """
         Set voltage dependent surface reaction vsr in a ROI to be active or not.
 
         Syntax::
-            setROIVDepSReacActive(ROI_id, vsr, a)
+            setROIVDepSReacActive(roi, vsr, a)
 
         Arguments:
-        string ROI_id
+        string roi
         string vsr
         bool a
 
@@ -1774,121 +1774,121 @@ cdef class _py_Tetexact(_py_TetAPI):
         None
 
         """
-        self.ptrx().setROIVDepSReacActive(to_std_string(ROI_id), to_std_string(vsr), a)
+        self.ptrx().setROIVDepSReacActive(to_std_string(roi), to_std_string(vsr), a)
 
-    def getROIReacExtent(self, str ROI_id, str r):
+    def getROIReacExtent(self, str roi, str reac):
         """
-        Return the extent of reaction with identifier string r in ROI with
-        identifier string ROI_id, that is the number of times the reaction has occurred up
+        Return the extent of reaction with identifier string reac in ROI with
+        identifier string roi, that is the number of times the reaction has occurred up
         to the current simulation time.
 
         Syntax::
-            getROIReacExtent(ROI_id, r)
+            getROIReacExtent(roi, reac)
 
         Arguments:
-        string ROI_id
-        string r
+        string roi
+        string reac
 
         Return:
         index_t
 
         """
-        return self.ptrx().getROIReacExtent(to_std_string(ROI_id), to_std_string(r))
+        return self.ptrx().getROIReacExtent(to_std_string(roi), to_std_string(reac))
 
-    def resetROIReacExtent(self, str ROI_id, str r):
+    def resetROIReacExtent(self, str roi, str reac):
         """
-        Reset the extent of reaction with identifier string r in ROI with
-        identifier string ROI_id, that is the number of times the reaction has occurred up
+        Reset the extent of reaction with identifier string reac in ROI with
+        identifier string roi, that is the number of times the reaction has occurred up
         to the current simulation time, to 0.
 
         Syntax::
-            resetROIReacExtent(ROI_id, r)
+            resetROIReacExtent(roi, reac)
 
         Arguments:
-        string ROI_id
-        string r
+        string roi
+        string reac
 
         Return:
         None
 
         """
-        self.ptrx().resetROIReacExtent(to_std_string(ROI_id), to_std_string(r))
+        self.ptrx().resetROIReacExtent(to_std_string(roi), to_std_string(reac))
 
-    def getROISReacExtent(self, str ROI_id, str sr):
+    def getROISReacExtent(self, str roi, str sreac):
         """
-        Return the extent of surface reaction with identifier string sr in ROI with
-        identifier string ROI_id, that is the number of times the reaction has occurred up
+        Return the extent of surface reaction with identifier string sreac in ROI with
+        identifier string roi, that is the number of times the reaction has occurred up
         to the current simulation time.
 
         Syntax::
-            getROISReacExtent(ROI_id, sr)
+            getROISReacExtent(roi, sreac)
 
         Arguments:
-        string ROI_id
-        string sr
+        string roi
+        string sreac
 
         Return:
         index_t
 
         """
-        return self.ptrx().getROISReacExtent(to_std_string(ROI_id), to_std_string(sr))
+        return self.ptrx().getROISReacExtent(to_std_string(roi), to_std_string(sreac))
 
-    def resetROISReacExtent(self, str ROI_id, str sr):
+    def resetROISReacExtent(self, str roi, str sreac):
         """
-        Reset the extent of surface reaction with identifier string r in ROI with
-        identifier string ROI_id, that is the number of times the reaction has occurred up
+        Reset the extent of surface reaction with identifier string reac in ROI with
+        identifier string roi, that is the number of times the reaction has occurred up
         to the current simulation time, to 0.
 
         Syntax::
-            resetROISReacExtent(ROI_id, r)
+            resetROISReacExtent(roi, reac)
 
         Arguments:
-        string ROI_id
-        string sr
+        string roi
+        string sreac
 
         Return:
         None
 
         """
-        self.ptrx().resetROISReacExtent(to_std_string(ROI_id), to_std_string(sr))
+        self.ptrx().resetROISReacExtent(to_std_string(roi), to_std_string(sreac))
 
-    def getROIDiffExtent(self, str ROI_id, str d):
+    def getROIDiffExtent(self, str roi, str diff):
         """
-        Return the extent of diffusion with identifier string d in ROI with
-        identifier string ROI_id, that is the number of times the diffusion has occurred up
+        Return the extent of diffusion with identifier string diff in ROI with
+        identifier string roi, that is the number of times the diffusion has occurred up
         to the current simulation time.
 
         Syntax::
-            getROIDiffExtent(ROI_id, d)
+            getROIDiffExtent(roi, diff)
 
         Arguments:
-        string ROI_id
-        string d
+        string roi
+        string diff
 
         Return:
         index_t
 
         """
-        return self.ptrx().getROIDiffExtent(to_std_string(ROI_id), to_std_string(d))
+        return self.ptrx().getROIDiffExtent(to_std_string(roi), to_std_string(diff))
 
-    def resetROIDiffExtent(self, str ROI_id, str s):
+    def resetROIDiffExtent(self, str roi, str s):
         """
-        Reset the extent of diffusion with identifier string d in ROI with
-        identifier string ROI_id, that is the number of times the diffusion has occurred up
+        Reset the extent of diffusion with identifier string diff in ROI with
+        identifier string roi, that is the number of times the diffusion has occurred up
         to the current simulation time, to 0.
 
         Syntax::
-            resetROIDiffExtent(ROI_id, d)
+            resetROIDiffExtent(roi, diff)
 
         Arguments:
-        string ROI_id
-        string d
+        string roi
+        string diff
 
         Return:
         None
 
         """
-        self.ptrx().resetROIDiffExtent(to_std_string(ROI_id), to_std_string(s))
+        self.ptrx().resetROIDiffExtent(to_std_string(roi), to_std_string(s))
 
 
     @staticmethod
@@ -2421,7 +2421,7 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getCompClamped(to_std_string(c), to_std_string(s))
 
-    def setCompClamped(self, str c, str s, bool b):
+    def setCompClamped(self, str c, str s, bool clamped):
         """
         Sets whether the concentration of species with identifier string spec in compartment 
         with identifier string comp is clamped (clamped = True) or not (clamped = False). 
@@ -2444,9 +2444,9 @@ cdef class _py_API(_py__base):
         None
 
         """
-        self.ptr().setCompClamped(to_std_string(c), to_std_string(s), b)
+        self.ptr().setCompClamped(to_std_string(c), to_std_string(s), clamped)
 
-    def getCompReacK(self, str c, str r):
+    def getCompReacK(self, str c, str reac):
         """
         Returns the macroscopic reaction constant of reaction with identifier string reac 
         in compartment with identifier string comp. The unit of the reaction constant depends 
@@ -2468,9 +2468,9 @@ cdef class _py_API(_py__base):
         float
 
         """
-        return self.ptr().getCompReacK(to_std_string(c), to_std_string(r))
+        return self.ptr().getCompReacK(to_std_string(c), to_std_string(reac))
 
-    def setCompReacK(self, str c, str r, double kf):
+    def setCompReacK(self, str c, str reac, double kf):
         """
         Sets the macroscopic reaction constant of reaction with identifier string reac 
         in compartment with identifier string comp to kf. The unit of the reaction constant 
@@ -2495,9 +2495,9 @@ cdef class _py_API(_py__base):
         None
 
         """
-        self.ptr().setCompReacK(to_std_string(c), to_std_string(r), kf)
+        self.ptr().setCompReacK(to_std_string(c), to_std_string(reac), kf)
 
-    def getCompReacActive(self, str c, str r):
+    def getCompReacActive(self, str c, str reac):
         """
         Returns whether a reaction with identifier string reac in compartment with identifier 
         string comp is active (True) or not (False). If it's not active this means that a 
@@ -2519,9 +2519,9 @@ cdef class _py_API(_py__base):
         bool
 
         """
-        return self.ptr().getCompReacActive(to_std_string(c), to_std_string(r))
+        return self.ptr().getCompReacActive(to_std_string(c), to_std_string(reac))
 
-    def setCompReacActive(self, str c, str r, bool a):
+    def setCompReacActive(self, str c, str reac, bool a):
         """
         Activate (active = True) or deactivate (active = False) a reaction with identifier 
         string reac in compartment with identifier string comp. If a reaction is not active 
@@ -2544,101 +2544,9 @@ cdef class _py_API(_py__base):
         None
 
         """
-        self.ptr().setCompReacActive(to_std_string(c), to_std_string(r), a)
+        self.ptr().setCompReacActive(to_std_string(c), to_std_string(reac), a)
 
-    def getCompDiffD(self, str c, str d):
-        """
-        Returns the diffusion constant of diffusion rule with identifier string diff 
-        in compartment with identifier string comp. This constant is in units m^2/s.
-
-        Note: In a mesh-based solver the value for the compartment is 
-        returned, although individual or groups of tetrahedral elements may have different 
-        values (set with setTetDiffD). 
-
-        Syntax::
-            
-            getCompDiffD(comp, diff)
-            
-        Arguments:
-        string comp
-        string diff
-
-        Return:
-        float
-
-        """
-        return self.ptr().getCompDiffD(to_std_string(c), to_std_string(d))
-
-    def setCompDiffD(self, str c, str d, double dcst):
-        """
-        Sets the diffusion constant of diffusion rule with identifier string diff 
-        in compartment with identifier string comp to dcst (in m^2/s).
-
-        Note: This method will set the diffusion constant in all tetrahedral elements 
-        in the compartment.
-
-        Note: The default value still comes from the steps.model description, 
-        so calling reset() will return the diffusion constants to that value. 
-
-        Syntax::
-            
-            setCompDiffD(comp, diff, dcst)
-            
-        Arguments:
-        string comp
-        string diff
-        float dcst
-
-        Return:
-            None
-
-        """
-        self.ptr().setCompDiffD(to_std_string(c), to_std_string(d), dcst)
-
-    def getCompDiffActive(self, str c, str d):
-        """
-        Returns whether a diffusion rule with identifier string diff in compartment with 
-        identifier string comp is active (True) or not (False). If diffusion of a species 
-        is inactive this means the molecules will remain in place and has the same effect 
-        as a diffusion constant of zero. 
-
-        Syntax::
-            
-            getCompDiffActive(comp, diff)
-            
-        Arguments:
-        string comp
-        string diff
-
-        Return:
-        bool
-
-        """
-        return self.ptr().getCompDiffActive(to_std_string(c), to_std_string(d))
-
-    def setCompDiffActive(self, str c, str d, bool act):
-        """
-        Activate (active = True) or deactivate (active = False) a diffusion rule with 
-        identifier string diff in compartment with identifier string comp. If diffusion 
-        of a species is inactive this means the molecules will remain in place and is 
-        effectively the same as setting the diffusion constant to zero
-
-        Syntax::
-            
-            setCompDiffActive(comp, diff, active)
-            
-        Arguments:
-        string comp
-        string diff
-        bool active
-
-        Return:
-        None
-
-        """
-        self.ptr().setCompDiffActive(to_std_string(c), to_std_string(d), act)
-
-    def getCompReacC(self, str c, str r):
+    def getCompReacC(self, str c, str reac):
         """
         Returns the 'stochastic reaction constant' (or 'specific probability rate constant') 
         of reaction with identifier string reac in compartment with identifier string comp.
@@ -2663,9 +2571,9 @@ cdef class _py_API(_py__base):
         float
 
         """
-        return self.ptr().getCompReacC(to_std_string(c), to_std_string(r))
+        return self.ptr().getCompReacC(to_std_string(c), to_std_string(reac))
 
-    def getCompReacH(self, str c, str r):
+    def getCompReacH(self, str c, str reac):
         """
         Returns h_mu, the distinct number of ways in which reaction with identifier string 
         reac can occur in compartment with identifier string comp, by computing the product 
@@ -2684,9 +2592,9 @@ cdef class _py_API(_py__base):
         float
 
         """
-        return self.ptr().getCompReacH(to_std_string(c), to_std_string(r))
+        return self.ptr().getCompReacH(to_std_string(c), to_std_string(reac))
 
-    def getCompReacA(self, str c, str r):
+    def getCompReacA(self, str c, str reac):
         """
         Returns the propensity of reaction with identifier string reac in compartment 
         with identifier string comp. 
@@ -2712,9 +2620,9 @@ cdef class _py_API(_py__base):
         float
 
         """
-        return self.ptr().getCompReacA(to_std_string(c), to_std_string(r))
+        return self.ptr().getCompReacA(to_std_string(c), to_std_string(reac))
 
-    def getCompReacExtent(self, str c, str r):
+    def getCompReacExtent(self, str c, str reac):
         """
         Return the extent of reaction with identifier string reac in compartment with 
         identifier string comp, that is the number of times the reaction has occurred up 
@@ -2735,9 +2643,9 @@ cdef class _py_API(_py__base):
         index_t
 
         """
-        return self.ptr().getCompReacExtent(to_std_string(c), to_std_string(r))
+        return self.ptr().getCompReacExtent(to_std_string(c), to_std_string(reac))
 
-    def resetCompReacExtent(self, str c, str r):
+    def resetCompReacExtent(self, str c, str reac):
         """
         Resets the extent of reaction with identifier string reac in compartment with 
         identifier string comp to zero. 
@@ -2757,18 +2665,18 @@ cdef class _py_API(_py__base):
         None
 
         """
-        self.ptr().resetCompReacExtent(to_std_string(c), to_std_string(r))
+        self.ptr().resetCompReacExtent(to_std_string(c), to_std_string(reac))
 
     def getPatchArea(self, str p):
         """
-        Returns the area of patch with identifier string pat (in m^2).
+        Returns the area of patch with identifier string patch (in m^2).
 
         Syntax::
-            
-            getPatchArea(pat)
-            
+
+            getPatchArea(patch)
+
         Arguments:
-        string pat
+        string patch
 
         Return:
         float
@@ -2778,14 +2686,14 @@ cdef class _py_API(_py__base):
 
     def setPatchArea(self, str p, double area):
         """
-        Sets the area of patch with identifier string pat to area a (in m^2).
+        Sets the area of patch with identifier string patch to area a (in m^2).
 
         Syntax::
-            
-            setPatchArea(pat, area)
-            
+
+            setPatchArea(patch, area)
+
         Arguments:
-        string pat
+        string patch
         float area
 
         Return:
@@ -2797,15 +2705,15 @@ cdef class _py_API(_py__base):
     def getPatchCount(self, str p, str s):
         """
         Returns the number of molecules of species with identifier string spec in patch 
-        with identifier string pat.Note: in a mesh-based simulation this 
+        with identifier string patch. Note: in a mesh-based simulation this 
         is the combined count from all triangular elements in the patch. 
 
         Syntax::
             
-            getPatchCount(pat, spec)
+            getPatchCount(patch, spec)
             
         Arguments:
-        string pat
+        string patch
         string spec
 
         Return:
@@ -2817,16 +2725,16 @@ cdef class _py_API(_py__base):
     def setPatchCount(self, str p, str s, double n):
         """
         Sets the number of molecules of species with identifier string spec in patch 
-        with identifier string pat to n. Note: in a mesh-based simulation the molecules 
+        with identifier string patch to n. Note: in a mesh-based simulation the molecules 
         are divided as equally as possible over all triangular elements in 
         the patch (i.e. a uniform distribution). 
 
         Syntax::
             
-            setPatchCount(pat, spec, n)
+            setPatchCount(patch, spec, n)
             
         Arguments:
-        string pat
+        string patch
         string spec
         int n
 
@@ -2838,18 +2746,18 @@ cdef class _py_API(_py__base):
 
     def getPatchAmount(self, str p, str s):
         """
-        Returns the amount (in mols) of species with identifier string spec in patch 
-        with identifier string pat.
+        Returns the amount (in mols) of species with identifier string spec in patch
+        with identifier string patch.
 
         Note: in a mesh-based simulation this is the combined amount 
         from all triangular elements in the patch. 
 
         Syntax::
             
-            getPatchAmount(pat, spec)
+            getPatchAmount(patch, spec)
             
         Arguments:
-        string pat
+        string patch
         string spec
 
         Return:
@@ -2860,10 +2768,10 @@ cdef class _py_API(_py__base):
 
     def setPatchAmount(self, str p, str s, double a):
         """
-        Sets the amount (in mols) of species with identifier string spec in patch with 
-        identifier string pat to a. In a discrete solver, such as Wmdirect and Tetexact, 
-        this continuous value is converted internally into a discrete number of molecules 
-        by multiplication with Avogadro's number. 
+        Sets the amount (in mols) of species with identifier string spec in patch with
+        identifier string patch to a. In a discrete solver, such as Wmdirect and Tetexact,
+        this continuous value is converted internally into a discrete number of molecules
+        by multiplication with Avogadro's number.
 
         Note: in a mesh-based simulation the molecules are divided as 
         equally as possible over all triangular elements in the patch (i.e. a uniform 
@@ -2871,10 +2779,10 @@ cdef class _py_API(_py__base):
 
         Syntax::
             
-            setPatchAmount(pat, spec, a)
+            setPatchAmount(patch, spec, a)
             
         Arguments:
-        string pat
+        string patch
         string spec
         float a
 
@@ -2886,20 +2794,20 @@ cdef class _py_API(_py__base):
 
     def getPatchClamped(self, str p, str s):
         """
-        Sets the amount (in mols) of species with identifier string spec in patch with 
-        identifier string pat to a. In a discrete solver, such as Wmdirect and Tetexact, 
-        this continuous value is converted internally into a discrete number of molecules 
-        by multiplication with Avogadro's number. 
+        Gets whether the species with identifier string spec in patch with identifier
+        string patch is clamped (clamped = True) or not (clamped = False). If a species
+        is clamped the number of molecules stays the same regardless of surface reactions
+        that consume or produce molecules of the species.
 
-        Note: in a mesh-based simulation the molecules are divided as equally 
-        as possible over all triangular elements in the patch (i.e. a uniform distribution).
+        Note: in a mesh-based simulation this will return whether all of the triangles of
+        the patch have this species clamped.
 
         Syntax::
-            
-            getPatchClamped(pat, spec)
-            
+
+            getPatchClamped(patch, spec)
+
         Arguments:
-        string pat
+        string patch
         string spec
 
         Return:
@@ -2910,9 +2818,9 @@ cdef class _py_API(_py__base):
 
     def setPatchClamped(self, str p, str s, bool buf):
         """
-        Sets whether the species with identifier string spec in patch with identifier 
-        string pat is clamped (clamped = True) or not (clamped = False). If a species 
-        is clamped the number of molecules stays the same regardless of surface reactions 
+        Sets whether the species with identifier string spec in patch with identifier
+        string patch is clamped (clamped = True) or not (clamped = False). If a species
+        is clamped the number of molecules stays the same regardless of surface reactions
         that consume or produce molecules of the species.
 
         Note: in a mesh-based simulation this will set the species to be clamped in all 
@@ -2920,10 +2828,10 @@ cdef class _py_API(_py__base):
 
         Syntax::
             
-            setPatchClamped(pat, spec, clamped)
+            setPatchClamped(patch, spec, clamped)
             
         Arguments:
-        string pat
+        string patch
         string spec
         bool clamped
 
@@ -2933,10 +2841,10 @@ cdef class _py_API(_py__base):
         """
         self.ptr().setPatchClamped(to_std_string(p), to_std_string(s), buf)
 
-    def getPatchSReacK(self, str p, str r):
+    def getPatchSReacK(self, str p, str reac):
         """
-        Returns the macroscopic reaction constant of surface reaction with identifier 
-        string sreac in patch with identifier string pat. The unit of the reaction constant 
+        Returns the macroscopic reaction constant of surface reaction with identifier
+        string sreac in patch with identifier string patch. The unit of the reaction constant
         depends on the order of the reaction.
 
         Note: In a mesh-based solver the value for the patch is returned, 
@@ -2945,23 +2853,23 @@ cdef class _py_API(_py__base):
 
         Syntax::
             
-            getPatchSReacK(pat, reac)
+            getPatchSReacK(patch, reac)
             
         Arguments:
-        string pat
+        string patch
         string reac
 
         Return:
         float
 
         """
-        return self.ptr().getPatchSReacK(to_std_string(p), to_std_string(r))
+        return self.ptr().getPatchSReacK(to_std_string(p), to_std_string(reac))
 
-    def setPatchSReacK(self, str p, str r, double kf):
+    def setPatchSReacK(self, str p, str reac, double kf):
         """
-        Sets the macroscopic reaction constant of surface reaction with identifier 
-        string sreac in patch with identifier string pat to kf. The unit of the reaction 
-        constant depends on the order of the reaction. 
+        Sets the macroscopic reaction constant of surface reaction with identifier
+        string sreac in patch with identifier string patch to kf. The unit of the reaction
+        constant depends on the order of the reaction.
 
         Note: In a mesh-based simulation this method sets the surface 
         reaction constant in all triangular elements of the patch to kf.
@@ -2971,10 +2879,10 @@ cdef class _py_API(_py__base):
 
         Syntax::
             
-            setPatchSReacK(pat, reac, kf)
+            setPatchSReacK(patch, reac, kf)
             
         Arguments:
-        string pat
+        string patch
         string reac
         float kf
 
@@ -2982,9 +2890,9 @@ cdef class _py_API(_py__base):
         None
 
         """
-        self.ptr().setPatchSReacK(to_std_string(p), to_std_string(r), kf)
+        self.ptr().setPatchSReacK(to_std_string(p), to_std_string(reac), kf)
 
-    def getPatchSReacActive(self, str p, str r):
+    def getPatchSReacActive(self, str p, str reac):
         """
         Returns whether a surface reaction with identifier string sreac in patch with 
         identifier string pat is active (True) or not (False). If it's not active this means 
@@ -2996,23 +2904,23 @@ cdef class _py_API(_py__base):
 
         Syntax::
             
-            getPatchSReacActive(pat, reac)
+            getPatchSReacActive(patch, reac)
             
         Arguments:
-        string pat
+        string patch
         string reac
 
         Return:
         bool
 
         """
-        return self.ptr().getPatchSReacActive(to_std_string(p), to_std_string(r))
+        return self.ptr().getPatchSReacActive(to_std_string(p), to_std_string(reac))
 
-    def setPatchSReacActive(self, str p, str r, bool a):
+    def setPatchSReacActive(self, str p, str reac, bool a):
         """
-        Activate (active = True) or deactivate (active = False) a surface reaction with 
-        identifier string sreac in patch with identifier string pat. If a surface reaction 
-        is not active this means that a reaction will never occur regardless of whether the 
+        Activate (active = True) or deactivate (active = False) a surface reaction with
+        identifier string sreac in patch with identifier string patch. If a surface reaction
+        is not active this means that a reaction will never occur regardless of whether the
         reactants are present in sufficient numbers or not.
 
         Note: In a mesh-based simulation this will activate/ deactivate the 
@@ -3020,10 +2928,10 @@ cdef class _py_API(_py__base):
 
         Syntax::
             
-            setPatchSReacActive(pat, reac, active)
+            setPatchSReacActive(patch, reac, active)
             
         Arguments:
-        string pat
+        string patch
         string reac
         bool active
 
@@ -3031,12 +2939,12 @@ cdef class _py_API(_py__base):
         None
 
         """
-        self.ptr().setPatchSReacActive(to_std_string(p), to_std_string(r), a)
+        self.ptr().setPatchSReacActive(to_std_string(p), to_std_string(reac), a)
 
-    def getPatchSReacC(self, str p, str r):
+    def getPatchSReacC(self, str p, str reac):
         """
-        Returns the 'stochastic reaction constant' (or 'specific probability rate constant') 
-        of surface reaction with identifier string sreac in patch with identifier string pat.
+        Returns the 'stochastic reaction constant' (or 'specific probability rate constant')
+        of surface reaction with identifier string sreac in patch with identifier string patch.
 
         Note: in a mesh-based simulation (i.e. Tetexact), the stochastic reaction constant is 
         computed as the weighted mean of the stochastic reaction constants in all triangular 
@@ -3044,84 +2952,84 @@ cdef class _py_API(_py__base):
 
         Syntax::
             
-            getPatchSReacC(pat, reac)
+            getPatchSReacC(patch, reac)
             
         Arguments:
-        string pat
+        string patch
         string reac
 
         Return:
         float
 
         """
-        return self.ptr().getPatchSReacC(to_std_string(p), to_std_string(r))
+        return self.ptr().getPatchSReacC(to_std_string(p), to_std_string(reac))
 
-    def getPatchSReacH(self, str p, str r):
+    def getPatchSReacH(self, str p, str reac):
         """
-        Returns h_mu, the distinct number of ways in which surface reaction with identifier 
-        string sreac can occur in patch with identifier string pat, by computing the product 
-        of its reactants. Note: in a mesh-based simulation (i.e. Tetexact), returns the sum 
-        of the h_mu's over all triangular elements in the patch. 
+        Returns h_mu, the distinct number of ways in which surface reaction with identifier
+        string sreac can occur in patch with identifier string patch, by computing the product
+        of its reactants. Note: in a mesh-based simulation (i.e. Tetexact), returns the sum
+        of the h_mu's over all triangular elements in the patch.
 
         Syntax::
-            
-            getPatchSReacH(pat, reac)
-            
+
+            getPatchSReacH(patch, reac)
+
         Arguments:
-        string pat
+        string patch
         string reac
 
         Return:
         float
 
         """
-        return self.ptr().getPatchSReacH(to_std_string(p), to_std_string(r))
+        return self.ptr().getPatchSReacH(to_std_string(p), to_std_string(reac))
 
-    def getPatchSReacA(self, str p, str r):
+    def getPatchSReacA(self, str p, str reac):
         """
-        Returns the propensity of surface reaction with identifier string sreac in patch 
-        with identifier string pat. Note: in a mesh-based simulation (i.e. Tetexact), 
-        the propensity of a surface reaction in a patch is computed as the sum of the 
+        Returns the propensity of surface reaction with identifier string sreac in patch
+        with identifier string patch. Note: in a mesh-based simulation (i.e. Tetexact),
+        the propensity of a surface reaction in a patch is computed as the sum of the
         propensities in all triangular elements of the patch.
 
         Syntax::
-            
-            getPatchSReacA(pat, reac)
-            
+
+            getPatchSReacA(patch, reac)
+
         Arguments:
-        string pat
+        string patch
         string reac
 
         Return:
         float
 
         """
-        return self.ptr().getPatchSReacA(to_std_string(p), to_std_string(r))
+        return self.ptr().getPatchSReacA(to_std_string(p), to_std_string(reac))
 
-    def getPatchSReacExtent(self, str p, str r):
+    def getPatchSReacExtent(self, str p, str reac):
         """
-        Returns the extent of surface reaction with identifier string sreac in patch 
-        with identifier string pat, that is the number of times the surface reaction 
-        has occurred up to the current simulation time. 
+        Returns the extent of surface reaction with identifier string sreac in patch
+        with identifier string patch, that is the number of times the surface reaction
+        has occurred up to the current simulation time.
 
         Note: in a mesh-based simulation (i.e. Tetexact), returns the sum of the reaction 
         extents in all triangular elements of the patch.
 
         Syntax::
-            
-            getPatchSReacExtent(pat,reac)
-            
+
+            getPatchSReacExtent(patch,reac)
+
         Arguments:
-        string pat
+        string patch
         string reac
 
         Return:
         index_t
 
         """
-        return self.ptr().getPatchSReacExtent(to_std_string(p), to_std_string(r))
+        return self.ptr().getPatchSReacExtent(to_std_string(p), to_std_string(reac))
 
-    def resetPatchSReacExtent(self, str p, str r):
+    def resetPatchSReacExtent(self, str p, str reac):
         """
         Resets the extent of reaction with identifier string sreac in patch with identifier 
         string pat to zero. 
@@ -3130,35 +3038,35 @@ cdef class _py_API(_py__base):
         in all triangular elements of the patch.
 
         Syntax::
-            
-            resetPatchSReacExtent(pat, reac)
-            
+
+            resetPatchSReacExtent(patch, reac)
+
         Arguments:
-        string pat
+        string patch
         string reac
 
         Return:
         None
 
         """
-        self.ptr().resetPatchSReacExtent(to_std_string(p), to_std_string(r))
+        self.ptr().resetPatchSReacExtent(to_std_string(p), to_std_string(reac))
 
     def getPatchVDepSReacActive(self, str p, str vsr):
         """
-        Returns whether a voltage-dependent surface reaction with identifier string vsreac in patch with 
-        identifier string pat is active (True) or not (False). If it's not active this means 
-        that the voltage-dependent surface reaction will never occur regardless of whether the reactants are 
-        present in sufficient numbers or not. 
+        Returns whether a voltage-dependent surface reaction with identifier string vsreac in patch with
+        identifier string patch is active (True) or not (False). If it's not active this means
+        that the voltage-dependent surface reaction will never occur regardless of whether the reactants are
+        present in sufficient numbers or not.
 
         Note: In a mesh-based simulation this method will return True only 
         if the voltage-dependent surface reaction is active in all triangular elements in the patch.
 
         Syntax::
 
-            getPatchVDepSReacActive(pat, vsreac)
+            getPatchVDepSReacActive(patch, vsreac)
 
         Arguments:
-        string pat
+        string patch
         string vsreac
 
         Return:
@@ -3169,9 +3077,9 @@ cdef class _py_API(_py__base):
 
     def setPatchVDepSReacActive(self, str p, str vsr, bool a):
         """
-        Activate (active = True) or deactivate (active = False) a voltage-dependent surface reaction with 
-        identifier string vsreac in patch with identifier string pat. If a voltage-dependent surface reaction 
-        is not active this means that a reaction will never occur regardless of whether the 
+        Activate (active = True) or deactivate (active = False) a voltage-dependent surface reaction with
+        identifier string vsreac in patch with identifier string patch. If a voltage-dependent surface reaction
+        is not active this means that a reaction will never occur regardless of whether the
         reactants are present in sufficient numbers or not.
 
         Note: In a mesh-based simulation this will activate/ deactivate the 
@@ -3179,10 +3087,10 @@ cdef class _py_API(_py__base):
 
         Syntax::
 
-            setPatchVDepSReacActive(pat, vsreac, active)
+            setPatchVDepSReacActive(patch, vsreac, active)
 
         Arguments:
-        string pat
+        string patch
         string vsreac
         bool active
 
@@ -3330,7 +3238,6 @@ cdef class _py_API(_py__base):
         """
         return self.ptr().getPatchSpecName(p_idx, s_idx)
 
-
     @staticmethod
     cdef _py_API from_ptr(API *ptr):
         cdef _py_API obj = _py_API.__new__(_py_API )
@@ -3356,7 +3263,7 @@ cdef class _py_TetAPI(_py_API):
     def __init__(self, _py_Model m, _py_Geom g, _py_RNG r):
         _py_API.__init__(m, g, r)
 
-    def getTetVol(self, index_t tidx):
+    def getTetVol(self, index_t idx):
         """
         Returns the volume (in m^3) of the tetrahedral element with index idx.
 
@@ -3371,9 +3278,104 @@ cdef class _py_TetAPI(_py_API):
         float
 
         """
-        return self.ptr().getTetVol(tidx)
+        return self.ptr().getTetVol(idx)
 
-    def getTetSpecDefined(self, index_t tidx, str s):
+    #def setTetVol(self, index_t idx, double vol):
+    #    self.ptr().setTetVol(idx, vol)
+
+    def getCompDiffD(self, str c, str diff):
+        """
+        Returns the diffusion constant of diffusion rule with identifier string diff
+        in compartment with identifier string comp. This constant is in units m^2/s.
+
+        Note: In a mesh-based solver the value for the compartment is
+        returned, although individual or groups of tetrahedral elements may have different
+        values (set with setTetDiffD).
+
+        Syntax::
+
+            getCompDiffD(comp, diff)
+
+        Arguments:
+        string comp
+        string diff
+
+        Return:
+        float
+
+        """
+        return self.ptr().getCompDiffD(to_std_string(c), to_std_string(diff))
+
+    def setCompDiffD(self, str c, str diff, double dcst):
+        """
+        Sets the diffusion constant of diffusion rule with identifier string diff
+        in compartment with identifier string comp to dcst (in m^2/s).
+
+        Note: This method will set the diffusion constant in all tetrahedral elements
+        in the compartment.
+
+        Note: The default value still comes from the steps.model description,
+        so calling reset() will return the diffusion constants to that value.
+
+        Syntax::
+
+            setCompDiffD(comp, diff, dcst)
+
+        Arguments:
+        string comp
+        string diff
+        float dcst
+
+        Return:
+            None
+
+        """
+        self.ptr().setCompDiffD(to_std_string(c), to_std_string(diff), dcst)
+
+    def getCompDiffActive(self, str c, str diff):
+        """
+        Returns whether a diffusion rule with identifier string diff in compartment with
+        identifier string comp is active (True) or not (False). If diffusion of a species
+        is inactive this means the molecules will remain in place and has the same effect
+        as a diffusion constant of zero.
+
+        Syntax::
+
+            getCompDiffActive(comp, diff)
+
+        Arguments:
+        string comp
+        string diff
+
+        Return:
+        bool
+
+        """
+        return self.ptr().getCompDiffActive(to_std_string(c), to_std_string(diff))
+
+    def setCompDiffActive(self, str c, str diff, bool act):
+        """
+        Activate (active = True) or deactivate (active = False) a diffusion rule with
+        identifier string diff in compartment with identifier string comp. If diffusion
+        of a species is inactive this means the molecules will remain in place and is
+        effectively the same as setting the diffusion constant to zero
+
+        Syntax::
+
+            setCompDiffActive(comp, diff, active)
+
+        Arguments:
+        string comp
+        string diff
+        bool active
+
+        Return:
+        None
+
+        """
+        self.ptr().setCompDiffActive(to_std_string(c), to_std_string(diff), act)
+
+    def getTetSpecDefined(self, index_t idx, str s):
         """
         Returns whether species with identifier string spec is defined
         in the tetrahedral element with index idx.
@@ -3390,9 +3392,9 @@ cdef class _py_TetAPI(_py_API):
         bool
 
         """
-        return self.ptr().getTetSpecDefined(tidx, to_std_string(s))
+        return self.ptr().getTetSpecDefined(idx, to_std_string(s))
 
-    def getTetCount(self, index_t tidx, str s):
+    def getTetCount(self, index_t idx, str s):
         """
         Returns the number of molecules of species with identifier string spec 
         in the tetrahedral element with index idx.
@@ -3409,9 +3411,9 @@ cdef class _py_TetAPI(_py_API):
         int
 
         """
-        return self.ptr().getTetCount(tidx, to_std_string(s))
+        return self.ptr().getTetCount(idx, to_std_string(s))
 
-    def setTetCount(self, index_t tidx, str s, double n):
+    def setTetCount(self, index_t idx, str s, double n):
         """
         Sets the number of molecules of species with identifier string spec in 
         tetrahedral element with index idx to n.
@@ -3429,9 +3431,9 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setTetCount(tidx, to_std_string(s), n)
+        self.ptr().setTetCount(idx, to_std_string(s), n)
 
-    def getTetAmount(self, index_t tidx, str s):
+    def getTetAmount(self, index_t idx, str s):
         """
         Returns the amount (in mols) of species with identifier string spec in 
         tetrahedral element with index idx.
@@ -3448,9 +3450,9 @@ cdef class _py_TetAPI(_py_API):
         float
 
         """
-        return self.ptr().getTetAmount(tidx, to_std_string(s))
+        return self.ptr().getTetAmount(idx, to_std_string(s))
 
-    def setTetAmount(self, index_t tidx, str s, double m):
+    def setTetAmount(self, index_t idx, str s, double m):
         """
         Sets the amount (in mols) of species with identifier string spec in tetrahedral 
         element with index idx to a. This continuous value must be converted internally 
@@ -3474,9 +3476,9 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setTetAmount(tidx, to_std_string(s), m)
+        self.ptr().setTetAmount(idx, to_std_string(s), m)
 
-    def getTetConc(self, index_t tidx, str s):
+    def getTetConc(self, index_t idx, str s):
         """
         Returns the concentration (in Molar units) of species with identifier 
         string spec in a tetrahedral element with index idx.
@@ -3493,9 +3495,9 @@ cdef class _py_TetAPI(_py_API):
         float
 
         """
-        return self.ptr().getTetConc(tidx, to_std_string(s))
+        return self.ptr().getTetConc(idx, to_std_string(s))
 
-    def setTetConc(self, index_t tidx, str s, double c):
+    def setTetConc(self, index_t idx, str s, double c):
         """
         Sets the concentration (in Molar units) of species with identifier string spec 
         in a tetrahedral element with index idx to conc.This continuous value must be 
@@ -3517,9 +3519,9 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setTetConc(tidx, to_std_string(s), c)
+        self.ptr().setTetConc(idx, to_std_string(s), c)
 
-    def getTetClamped(self, index_t tidx, str s):
+    def getTetClamped(self, index_t idx, str s):
         """
         Returns True if concentration of species with identifier string spec in tetrahedral 
         element with index idx is clamped, which means the concentration stays the 
@@ -3539,9 +3541,9 @@ cdef class _py_TetAPI(_py_API):
         bool
 
         """
-        return self.ptr().getTetClamped(tidx, to_std_string(s))
+        return self.ptr().getTetClamped(idx, to_std_string(s))
 
-    def setTetClamped(self, index_t tidx, str s, bool buf):
+    def setTetClamped(self, index_t idx, str s, bool buf):
         """
         Sets whether the concentration of species spec in tetrahedral element with 
         index idx is clamped (clamped = True) or not (clamped = False). 
@@ -3562,9 +3564,9 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setTetClamped(tidx, to_std_string(s), buf)
+        self.ptr().setTetClamped(idx, to_std_string(s), buf)
 
-    def getTetReacK(self, index_t tidx, str r):
+    def getTetReacK(self, index_t idx, str reac):
         """
         Returns the macroscopic reaction constant of reaction with identifier string reac 
         in tetrahedral element with index idx. The unit of the reaction constant depends 
@@ -3582,9 +3584,9 @@ cdef class _py_TetAPI(_py_API):
         float
 
         """
-        return self.ptr().getTetReacK(tidx, to_std_string(r))
+        return self.ptr().getTetReacK(idx, to_std_string(reac))
 
-    def setTetReacK(self, index_t tidx, str r, double kf):
+    def setTetReacK(self, index_t idx, str reac, double kf):
         """
         Sets the macroscopic reaction constant of reaction with identifier string reac 
         in tetrahedral element with index idx to kf. The units of the reaction constant 
@@ -3603,9 +3605,9 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setTetReacK(tidx, to_std_string(r), kf)
+        self.ptr().setTetReacK(idx, to_std_string(reac), kf)
 
-    def getTetReacActive(self, index_t tidx, str r):
+    def getTetReacActive(self, index_t idx, str reac):
         """
         Returns whether reaction with identifier string reac in tetrahedral element 
         with index idx is active (True) or not (False). If it's not active this means 
@@ -3624,9 +3626,9 @@ cdef class _py_TetAPI(_py_API):
         bool
 
         """
-        return self.ptr().getTetReacActive(tidx, to_std_string(r))
+        return self.ptr().getTetReacActive(idx, to_std_string(reac))
 
-    def setTetReacActive(self, index_t tidx, str r, bool act):
+    def setTetReacActive(self, index_t idx, str reac, bool act):
         """
         Activate (active = True) or deactivate (active = False) a reaction with identifier 
         string reac in tetrahedral element with index idx. If it's not active this means 
@@ -3646,9 +3648,9 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setTetReacActive(tidx, to_std_string(r), act)
+        self.ptr().setTetReacActive(idx, to_std_string(reac), act)
 
-    def getTetDiffD(self, index_t tidx, str d, index_t direction_tet=UNKNOWN_TET):
+    def getTetDiffD(self, index_t idx, str diff, index_t direction_tet=UNKNOWN_TET):
         """
         Returns the diffusion constant of diffusion rule with identifier string diff 
         in tetrahedral element with index idx. This constant is in units m^2/s. If direction_tet is specified, return the diffusion constant towards that direction.
@@ -3666,9 +3668,9 @@ cdef class _py_TetAPI(_py_API):
         float
 
         """
-        return self.ptr().getTetDiffD(tidx, to_std_string(d), direction_tet)
+        return self.ptr().getTetDiffD(idx, to_std_string(diff), direction_tet)
 
-    def setTetDiffD(self, index_t tidx, str d, double dk, index_t direction_tet=UNKNOWN_TET):
+    def setTetDiffD(self, index_t idx, str diff, double dcst, index_t direction_tet=UNKNOWN_TET):
         """
         Sets the diffusion constant of diffusion rule with identifier string diff in 
         tetrahedral element with index idx to dcst (in m^2/s). Specify direction_tet to set the constant only towards a given tetrahedron direction.
@@ -3686,9 +3688,9 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setTetDiffD(tidx, to_std_string(d), dk, direction_tet)
+        self.ptr().setTetDiffD(idx, to_std_string(diff), dcst, direction_tet)
 
-    def getTetDiffActive(self, index_t tidx, str d):
+    def getTetDiffActive(self, index_t idx, str diff):
         """
         Returns whether diffusion with identifier string diff in tetrahedral element 
         with index idx is active (True) or not (False). If diffusion of a species 
@@ -3707,9 +3709,9 @@ cdef class _py_TetAPI(_py_API):
         bool
 
         """
-        return self.ptr().getTetDiffActive(tidx, to_std_string(d))
+        return self.ptr().getTetDiffActive(idx, to_std_string(diff))
 
-    def setTetDiffActive(self, index_t tidx, str d, bool act):
+    def setTetDiffActive(self, index_t idx, str diff, bool act):
         """
         Activate (active = True) or deactivate (active = False) diffusion rule with 
         identifier string diff in tetrahedral element with index idx. If diffusion of 
@@ -3729,9 +3731,9 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setTetDiffActive(tidx, to_std_string(d), act)
+        self.ptr().setTetDiffActive(idx, to_std_string(diff), act)
 
-    def getTetReacC(self, index_t tidx, str r):
+    def getTetReacC(self, index_t idx, str reac):
         """
         Returns the 'stochastic reaction constant' (or 'specific probability rate constant') 
         of reaction with identifier string reac in tetrahedral element with index idx.
@@ -3748,9 +3750,9 @@ cdef class _py_TetAPI(_py_API):
         float
 
         """
-        return self.ptr().getTetReacC(tidx, to_std_string(r))
+        return self.ptr().getTetReacC(idx, to_std_string(reac))
 
-    def getTetReacH(self, index_t tidx, str r):
+    def getTetReacH(self, index_t idx, str reac):
         """
         Returns h_mu, the distinct number of ways in which reaction with identifier string 
         reac can occur in tetrahedral element with index idx, by computing the product of 
@@ -3768,9 +3770,9 @@ cdef class _py_TetAPI(_py_API):
         float
 
         """
-        return self.ptr().getTetReacH(tidx, to_std_string(r))
+        return self.ptr().getTetReacH(idx, to_std_string(reac))
 
-    def getTetReacA(self, index_t tidx, str r):
+    def getTetReacA(self, index_t idx, str reac):
         """
         Returns the propensity of reaction with identifier string reac in tetrahedral 
         element with index idx.
@@ -3787,9 +3789,9 @@ cdef class _py_TetAPI(_py_API):
         float
 
         """
-        return self.ptr().getTetReacA(tidx, to_std_string(r))
+        return self.ptr().getTetReacA(idx, to_std_string(reac))
 
-    def getTetDiffA(self, index_t tidx, str d):
+    def getTetDiffA(self, index_t idx, str diff):
         """
         Returns the propensity of diffusion rule with identifier string diff in 
         tetrahedral element with index idx. 
@@ -3806,9 +3808,9 @@ cdef class _py_TetAPI(_py_API):
         float
 
         """
-        return self.ptr().getTetDiffA(tidx, to_std_string(d))
+        return self.ptr().getTetDiffA(idx, to_std_string(diff))
 
-    def getTetV(self, index_t tidx):
+    def getTetV(self, index_t idx):
         """
         Returns the potential (in volts) of tetrahedral element with index idx, taken at the barycenter.
         			
@@ -3823,9 +3825,9 @@ cdef class _py_TetAPI(_py_API):
         float
 
         """
-        return self.ptr().getTetV(tidx)
+        return self.ptr().getTetV(idx)
 
-    def setTetV(self, index_t tidx, double v):
+    def setTetV(self, index_t idx, double v):
         """
         Set the potential (in volts) of tetrahedral element with index idx.
         			
@@ -3841,9 +3843,9 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setTetV(tidx, v)
+        self.ptr().setTetV(idx, v)
 
-    def getTetVClamped(self, index_t tidx):
+    def getTetVClamped(self, index_t idx):
         """
         Returns true if the potential of tetrahedral element with index idx is clamped
         to some voltage.
@@ -3859,9 +3861,9 @@ cdef class _py_TetAPI(_py_API):
         bool
 
         """
-        return self.ptr().getTetVClamped(tidx)
+        return self.ptr().getTetVClamped(idx)
 
-    def setTetVClamped(self, index_t tidx, bool cl):
+    def setTetVClamped(self, index_t idx, bool cl):
         """
         Sets whether the potential of tetrahedral element with index idx is clamped
         (clamped = True) or not (clamped = False).
@@ -3878,7 +3880,7 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setTetVClamped(tidx, cl)
+        self.ptr().setTetVClamped(idx, cl)
 
     def setDiffBoundaryDiffusionActive(self, str db, str s, bool act):
         """
@@ -3997,7 +3999,7 @@ cdef class _py_TetAPI(_py_API):
         """
         self.ptr().setSDiffBoundaryDcst(to_std_string(sdb), to_std_string(s), dcst, to_std_string(direction_patch))
 
-    def getTriArea(self, index_t tidx):
+    def getTriArea(self, index_t idx):
         """
         Returns the area (in m^2) of the triangular element with index idx.
 
@@ -4012,9 +4014,9 @@ cdef class _py_TetAPI(_py_API):
         float
 
         """
-        return self.ptr().getTriArea(tidx)
+        return self.ptr().getTriArea(idx)
 
-    def getTriSpecDefined(self, index_t tidx, str s):
+    def getTriSpecDefined(self, index_t idx, str s):
         """
         Returns whether species with identifier string spec is defined
         in the triangle element with index idx.
@@ -4031,9 +4033,9 @@ cdef class _py_TetAPI(_py_API):
         bool
 
         """
-        return self.ptr().getTriSpecDefined(tidx, to_std_string(s))
+        return self.ptr().getTriSpecDefined(idx, to_std_string(s))
 
-    def getTriCount(self, index_t tidx, str s):
+    def getTriCount(self, index_t idx, str s):
         """
         Returns the number of molecules of species with identifier string spec 
         in the triangular element with index idx.
@@ -4050,9 +4052,9 @@ cdef class _py_TetAPI(_py_API):
         float
 
         """
-        return self.ptr().getTriCount(tidx, to_std_string(s))
+        return self.ptr().getTriCount(idx, to_std_string(s))
 
-    def setTriCount(self, index_t tidx, str s, double n):
+    def setTriCount(self, index_t idx, str s, double n):
         """
         Sets the number of molecules of species with identifier string spec in 
         triangular element with index idx to n. 
@@ -4070,9 +4072,9 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setTriCount(tidx, to_std_string(s), n)
+        self.ptr().setTriCount(idx, to_std_string(s), n)
 
-    def getTriAmount(self, index_t tidx, str s):
+    def getTriAmount(self, index_t idx, str s):
         """
         Returns the amount (in mols) of species with identifier string spec in triangular 
         element with index idx.  
@@ -4089,9 +4091,9 @@ cdef class _py_TetAPI(_py_API):
         float
 
         """
-        return self.ptr().getTriAmount(tidx, to_std_string(s))
+        return self.ptr().getTriAmount(idx, to_std_string(s))
 
-    def setTriAmount(self, index_t tidx, str s, double m):
+    def setTriAmount(self, index_t idx, str s, double m):
         """
         Sets the amount (in mols) of species with identifier string spec in triangular 
         element with index idx to a. This continuous value must be converted internally 
@@ -4110,9 +4112,9 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setTriAmount(tidx, to_std_string(s), m)
+        self.ptr().setTriAmount(idx, to_std_string(s), m)
 
-    def getTriClamped(self, index_t tidx, str s):
+    def getTriClamped(self, index_t idx, str s):
         """
         Returns True if the species with identifier string spec in triangular element 
         with index idx is clamped, which means the number of molecules stays 
@@ -4131,9 +4133,9 @@ cdef class _py_TetAPI(_py_API):
         bool
 
         """
-        return self.ptr().getTriClamped(tidx, to_std_string(s))
+        return self.ptr().getTriClamped(idx, to_std_string(s))
 
-    def setTriClamped(self, index_t tidx, str s, bool buf):
+    def setTriClamped(self, index_t idx, str s, bool buf):
         """
         Sets whether the concentration of species spec in triangular element with index idx 
         is clamped (clamped = True) or not (clamped = False). If a species is clamped the 
@@ -4153,9 +4155,9 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setTriClamped(tidx, to_std_string(s), buf)
+        self.ptr().setTriClamped(idx, to_std_string(s), buf)
 
-    def getTriSReacK(self, index_t tidx, str r):
+    def getTriSReacK(self, index_t idx, str reac):
         """
         Returns the macroscopic reaction constant of surface reaction with identifier 
         string sreac in triangular element with index idx. The units of the reaction 
@@ -4173,9 +4175,9 @@ cdef class _py_TetAPI(_py_API):
         float
 
         """
-        return self.ptr().getTriSReacK(tidx, to_std_string(r))
+        return self.ptr().getTriSReacK(idx, to_std_string(reac))
 
-    def setTriSReacK(self, index_t tidx, str r, double kf):
+    def setTriSReacK(self, index_t idx, str reac, double kf):
         """
         Sets the macroscopic reaction constant of surface reaction with identifier 
         string sreac in triangular element with index idx to kf. The units of the 
@@ -4194,9 +4196,9 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setTriSReacK(tidx, to_std_string(r), kf)
+        self.ptr().setTriSReacK(idx, to_std_string(reac), kf)
 
-    def getTriSReacActive(self, index_t tidx, str r):
+    def getTriSReacActive(self, index_t idx, str reac):
         """
         Returns whether surface reaction with identifier string sreac in triangular 
         element with index idx is active (True) or not (False). If it's not active 
@@ -4215,9 +4217,9 @@ cdef class _py_TetAPI(_py_API):
         bool
 
         """
-        return self.ptr().getTriSReacActive(tidx, to_std_string(r))
+        return self.ptr().getTriSReacActive(idx, to_std_string(reac))
 
-    def setTriSReacActive(self, index_t tidx, str r, bool act):
+    def setTriSReacActive(self, index_t idx, str reac, bool act):
         """
         Activate (active = True) or deactivate (active = False) a surface reaction 
         with identifier string sreac in triangular element with index idx. If it's 
@@ -4237,9 +4239,9 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setTriSReacActive(tidx, to_std_string(r), act)
+        self.ptr().setTriSReacActive(idx, to_std_string(reac), act)
 
-    def getTriSReacC(self, index_t tidx, str r):
+    def getTriSReacC(self, index_t idx, str reac):
         """
         Returns the 'stochastic reaction constant' (or 'specific probability rate constant') 
         of surface reaction with identifier string sreac in triangular element with index idx.  
@@ -4256,9 +4258,9 @@ cdef class _py_TetAPI(_py_API):
         float
 
         """
-        return self.ptr().getTriSReacC(tidx, to_std_string(r))
+        return self.ptr().getTriSReacC(idx, to_std_string(reac))
 
-    def getTriSReacH(self, index_t tidx, str r):
+    def getTriSReacH(self, index_t idx, str reac):
         """
         Returns h_mu, the distinct number of ways in which surface reaction with identifier 
         string sreac can occur in triangular element with index idx, by computing the product 
@@ -4276,9 +4278,9 @@ cdef class _py_TetAPI(_py_API):
         float
 
         """
-        return self.ptr().getTriSReacH(tidx, to_std_string(r))
+        return self.ptr().getTriSReacH(idx, to_std_string(reac))
 
-    def getTriSReacA(self, index_t tidx, str r):
+    def getTriSReacA(self, index_t idx, str reac):
         """
         Returns the propensity of surface reaction with identifier string sreac 
         in triangular element with index idx. 
@@ -4295,9 +4297,9 @@ cdef class _py_TetAPI(_py_API):
         float
 
         """
-        return self.ptr().getTriSReacA(tidx, to_std_string(r))
+        return self.ptr().getTriSReacA(idx, to_std_string(reac))
 
-    def getTriSDiffD(self, index_t tidx, str d, index_t direction_tri=UNKNOWN_TRI):
+    def getTriSDiffD(self, index_t idx, str diff, index_t direction_tri=UNKNOWN_TRI):
         """
         Returns the diffusion constant of diffusion rule with identifier string diff 
         in triangle element with index idx. If direction_tri is specified, return the diffusion constant towards that direction.
@@ -4307,7 +4309,7 @@ cdef class _py_TetAPI(_py_API):
             getTriDiffD(idx, diff, direction_tri = UNKNOWN_TRI)
             
         Arguments:
-        index_t tidx
+        index_t idx
         string diff
         index_t direction_tri
             
@@ -4315,9 +4317,9 @@ cdef class _py_TetAPI(_py_API):
         float
 
         """
-        return self.ptr().getTriSDiffD(tidx, to_std_string(d), direction_tri)
+        return self.ptr().getTriSDiffD(idx, to_std_string(diff), direction_tri)
 
-    def setTriSDiffD(self, index_t tidx, str d, double dk, index_t direction_tri=UNKNOWN_TRI):
+    def setTriSDiffD(self, index_t idx, str diff, double dcst, index_t direction_tri=UNKNOWN_TRI):
         """
         Sets the diffusion constant of diffusion rule with identifier string diff in 
         triangle element with index idx to dcst. Specify direction_tri to set the constant only towards a given triangle direction.
@@ -4335,9 +4337,9 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setTriSDiffD(tidx, to_std_string(d), dk, direction_tri)
+        self.ptr().setTriSDiffD(idx, to_std_string(diff), dcst, direction_tri)
 
-    def getTriV(self, index_t tidx):
+    def getTriV(self, index_t idx):
         """
         Returns the potential (in volts) of triangle element with index idx, taken at the barycenter.
         			
@@ -4352,9 +4354,9 @@ cdef class _py_TetAPI(_py_API):
         float
 
         """
-        return self.ptr().getTriV(tidx)
+        return self.ptr().getTriV(idx)
 
-    def setTriV(self, index_t tidx, double v):
+    def setTriV(self, index_t idx, double v):
         """
         Set the potential (in volts) of triangle element with index idx.
         			
@@ -4370,9 +4372,9 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setTriV(tidx, v)
+        self.ptr().setTriV(idx, v)
 
-    def getTriVClamped(self, index_t tidx):
+    def getTriVClamped(self, index_t idx):
         """
         Returns true if the potential of triangle element with index idx is clamped
         to some voltage.
@@ -4388,9 +4390,9 @@ cdef class _py_TetAPI(_py_API):
         bool
 
         """
-        return self.ptr().getTriVClamped(tidx)
+        return self.ptr().getTriVClamped(idx)
 
-    def setTriVClamped(self, index_t tidx, bool cl):
+    def setTriVClamped(self, index_t idx, bool cl):
         """
         Sets whether the potential of triangle element with index idx is clamped
         (clamped = True) or not (clamped = False).
@@ -4407,9 +4409,9 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setTriVClamped(tidx, cl)
+        self.ptr().setTriVClamped(idx, cl)
 
-    def getTriOhmicI(self, index_t tidx, str oc=''):
+    def getTriOhmicI(self, index_t idx, str oc=''):
         """
         Returns the ohmic current of triangle element with index idx, in amps.
         			
@@ -4426,10 +4428,10 @@ cdef class _py_TetAPI(_py_API):
 
         """
         if oc == '':
-            return self.ptr().getTriOhmicI(tidx)
-        return self.ptr().getTriOhmicI(tidx, to_std_string(oc))
+            return self.ptr().getTriOhmicI(idx)
+        return self.ptr().getTriOhmicI(idx, to_std_string(oc))
 
-    def getTriGHKI(self, index_t tidx, str ghk=''):
+    def getTriGHKI(self, index_t idx, str ghk=''):
         """
         Returns the GHK current of triangle element with index idx, in amps.
                      
@@ -4446,10 +4448,10 @@ cdef class _py_TetAPI(_py_API):
 
         """
         if ghk == '':
-            return self.ptr().getTriGHKI(tidx)
-        return self.ptr().getTriGHKI(tidx, to_std_string(ghk))
+            return self.ptr().getTriGHKI(idx)
+        return self.ptr().getTriGHKI(idx, to_std_string(ghk))
 
-    def getTriI(self, index_t tidx):
+    def getTriI(self, index_t idx):
         """
         Returns the current of triangle element with index idx, in amps, 
         at the last EField calculation step.
@@ -4465,27 +4467,27 @@ cdef class _py_TetAPI(_py_API):
         float
 
         """
-        return self.ptr().getTriI(tidx)
+        return self.ptr().getTriI(idx)
 
-    def getTriIClamp(self, index_t tidx):
+    def getTriIClamp(self, index_t idx):
         """
-        Get current clamp to triangle element with index tidx.
+        Get current clamp to triangle element with index idx.
         NOTE: Convention is maintained that a positive current clamp is depolarizing, a negative current clamp is hyperpolarizing.
         			
         Syntax::
         			 
-        	getTriIClamp(tidx)
+        	getTriIClamp(idx)
         			 
         Arguments:
-        index_t tidx
+        index_t idx
         			 
         Return:
         float
 
         """
-        return self.ptr().getTriIClamp(tidx)
+        return self.ptr().getTriIClamp(idx)
 
-    def setTriIClamp(self, index_t tidx, double i):
+    def setTriIClamp(self, index_t idx, double i):
         """
         Set current clamp to triangle element with index idx to current i (amps).
         NOTE: Convention is maintained that a positive current clamp is depolarizing, a negative current clamp is hyperpolarizing.
@@ -4502,9 +4504,9 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setTriIClamp(tidx, i)
+        self.ptr().setTriIClamp(idx, i)
 
-    def getTriVDepSReacActive(self, index_t tidx, str vsr):
+    def getTriVDepSReacActive(self, index_t idx, str vsr):
         """
         Returns whether voltage-dependent surface reaction with identifier string vsreac in triangular 
         element with index idx is active (True) or not (False). If it's not active 
@@ -4523,9 +4525,9 @@ cdef class _py_TetAPI(_py_API):
         bool
 
         """
-        return self.ptr().getTriVDepSReacActive(tidx, to_std_string(vsr))
+        return self.ptr().getTriVDepSReacActive(idx, to_std_string(vsr))
 
-    def setTriVDepSReacActive(self, index_t tidx, str vsr, bool act):
+    def setTriVDepSReacActive(self, index_t idx, str vsr, bool act):
         """
         Activate (active = True) or deactivate (active = False) a voltage-dependent surface reaction 
         with identifier string vsreac in triangular element with index idx. If it's 
@@ -4545,27 +4547,27 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setTriVDepSReacActive(tidx, to_std_string(vsr), act)
+        self.ptr().setTriVDepSReacActive(idx, to_std_string(vsr), act)
 
-    def setTriCapac(self, index_t tidx, double cm):
+    def setTriCapac(self, index_t idx, double cm):
         """
-        Sets the specific membrane capacitance (in farad / m^2) of tri with index tidx.
+        Sets the specific membrane capacitance (in farad / m^2) of tri with index idx.
         			 
         Syntax::
         			 
-            setTriCapac(tidx, cm)
+            setTriCapac(idx, cm)
         			 
         Arguments:
-        index_t tidx
+        index_t idx
         float cm
         			 
         Return:
         None
 
         """    
-        self.ptr().setTriCapac(tidx, cm)
+        self.ptr().setTriCapac(idx, cm)
 
-    def getVertV(self, index_t vidx):
+    def getVertV(self, index_t idx):
         """
         Returns the potential (in volts) of vertex element with index idx.
         			
@@ -4580,9 +4582,9 @@ cdef class _py_TetAPI(_py_API):
         float
 
         """
-        return self.ptr().getVertV(vidx)
+        return self.ptr().getVertV(idx)
 
-    def setVertV(self, index_t vidx, double v):
+    def setVertV(self, index_t idx, double v):
         """
         Set the potential (in volts) of vertex element with index idx.
         			
@@ -4598,9 +4600,9 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setVertV(vidx, v)
+        self.ptr().setVertV(idx, v)
 
-    def getVertVClamped(self, index_t vidx):
+    def getVertVClamped(self, index_t idx):
         """
         Returns true if the potential of vertex element with index idx is clamped
         to some voltage.
@@ -4616,9 +4618,9 @@ cdef class _py_TetAPI(_py_API):
         bool
 
         """
-        return self.ptr().getVertVClamped(vidx)
+        return self.ptr().getVertVClamped(idx)
 
-    def setVertVClamped(self, index_t vidx, bool cl):
+    def setVertVClamped(self, index_t idx, bool cl):
         """
         Sets whether the potential of vertex element with index idx is clamped
         (clamped = True) or not (clamped = False).
@@ -4635,27 +4637,27 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setVertVClamped(vidx, cl)
+        self.ptr().setVertVClamped(idx, cl)
 
-    def getVertIClamp(self, index_t vidx):
+    def getVertIClamp(self, index_t idx):
         """
-        Get current clamp to vertex element with index vidx (Amps). 
+        Get current clamp to vertex element with index idx (Amps). 
         NOTE: Convention is maintained that a positive current clamp is depolarizing, a negative current clamp is hyperpolarizing.
 
         Syntax::
 
-            getVertIClamp(vidx)
+            getVertIClamp(idx)
         			 
         Arguments:
-        index_t vidx
+        index_t idx
         			 
         Return:
         float
 
         """
-        return self.ptr().getVertIClamp(vidx)
+        return self.ptr().getVertIClamp(idx)
 
-    def setVertIClamp(self, index_t vidx, double i):
+    def setVertIClamp(self, index_t idx, double i):
         """
         Set current clamp to vertex element with index idx to current i (Amps). 
         NOTE: Convention is maintained that a positive current clamp is depolarizing, a negative current clamp is hyperpolarizing.
@@ -4672,7 +4674,7 @@ cdef class _py_TetAPI(_py_API):
         None
 
         """
-        self.ptr().setVertIClamp(vidx, i)
+        self.ptr().setVertIClamp(idx, i)
 
     def setMembPotential(self, str m, double v):
         """
@@ -4733,8 +4735,8 @@ cdef class _py_TetAPI(_py_API):
 
     def setMembRes(self, str m, double ro, double vrev):
         """
-        Sets the  electrical resistivity (in ohm/m^2) of the membrane with string identifier memb. Reversal potential vrev is required in Volts.
-        			 
+        Sets the surface electrical resistivity ro (in ohm.m^2) of the membrane with string identifier memb. Reversal potential vrev is required in Volts.
+
         Syntax::
         			 
             setMembRes(memb, ro, vrev)

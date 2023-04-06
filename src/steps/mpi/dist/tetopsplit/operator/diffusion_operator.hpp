@@ -6,6 +6,9 @@
 #include <Omega_h_shape.hpp>
 
 #include "../kproc/diffusions.hpp"
+#include "../kproc/kproc_id.hpp"
+#include "../kproc/kproc_state.hpp"
+#include "../mol_state.hpp"
 #include "geom/dist/fwd.hpp"
 #include "rng/rng.hpp"
 
@@ -14,8 +17,11 @@ namespace dist {
 
 template <typename RNG, typename NumMolecules> class DiffusionOperator {
 public:
-  DiffusionOperator(DistMesh &mesh, RNG &t_rng, MolState<NumMolecules> &t_pools,
-                    kproc::Diffusions<RNG, NumMolecules> &t_diffusions);
+  DiffusionOperator(DistMesh& mesh,
+                    RNG& t_rng,
+                    MolState<NumMolecules>& t_pools,
+                    kproc::Diffusions<RNG, NumMolecules>& t_diffusions,
+                    kproc::KProcState<NumMolecules>& t_kproc_state);
   void operator()(osh::Real opsplit_period, osh::Real state_time);
 
   inline osh::I64 getExtent() const noexcept { return num_diffusions_; }
@@ -84,6 +90,9 @@ private:
   RNG& rng;
   MolState<NumMolecules>& pools;
   kproc::Diffusions<RNG, NumMolecules>& diffusions_;
+  // Needed to access the dependency_map and relate (elem_id,species) with KProcIDs (optimization on
+  // updating the propensities).
+  kproc::KProcState<NumMolecules>& kproc_state_;
   osh::I64 num_diffusions_{};
 
   osh::I64 diffusion_threshold_{10};

@@ -1,14 +1,14 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -31,6 +31,7 @@ from .geom import INDEX_DTYPE
 from . import saving as nsaving
 from . import utils as nutils
 
+import sys
 
 # Nothing to import, this module is not supposed to be imported by users
 __all__ = []
@@ -84,11 +85,23 @@ class _OptimizedResultPath:
     to an optimized solver call.
     """
 
-    def __init__(self, allNodes):
+    def __init__(self, rs, allNodes):
         self._len = len(allNodes)
         self._solvCalls = getGroupedBatchCallNodes(allNodes)
 
         self._array = numpy.zeros(self._len, dtype=numpy.float64)
+
+        try:
+            self._simPathMask = rs._simPathMask
+        except AttributeError:
+            self._simPathMask = None
+        if self._simPathMask is not None:
+            self._evaluate = self._evaluateWithMask
+
+    def _evaluateWithMask(self, solvStateId=None):
+        for call, rslice in self._solvCalls:
+            self._array[rslice] = call._evaluate(solvStateId)
+        return self._array[self._simPathMask]
 
     def _evaluate(self, solvStateId=None):
         for call, rslice in self._solvCalls:
@@ -413,7 +426,7 @@ def OptimizeSelectors(sim, selectors):
     # Monkey patch result selectors
     for rs, indLst in rs2Ind.items():
         if any(allValues[i].hasBatchCall() for i in indLst):
-            orp = _OptimizedResultPath([allValues[i] for i in indLst])
+            orp = _OptimizedResultPath(rs, [allValues[i] for i in indLst])
             rs._evaluate = orp._evaluate
 
     return selectors

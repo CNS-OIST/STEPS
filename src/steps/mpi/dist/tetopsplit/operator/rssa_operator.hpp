@@ -38,7 +38,7 @@ public:
    * \param kproc_state kinetic processes state
    */
   RSSAOperator(MolState<NumMolecules>& mol_state,
-               kproc::KProcState& kproc_state,
+               kproc::KProcState<NumMolecules>& kproc_state,
                RNG& t_rng,
                osh::Reals potential_on_vertices);
 
@@ -46,23 +46,23 @@ public:
   inline osh::I64 getExtent() const noexcept { return extent; }
 
   osh::Real run(osh::Real period, osh::Real state_time);
- 
- /* TODO */
- /**
+
+  /* TODO : need further implementation and testing for the new GB optimizations */
+  /**
    * \brief reset the required propensity data stored in the operator
    */
   void reset() {
     // make it do nothing now to pass the CI.
   }
 
- /* TODO */
+  /* TODO : need further implementation and testing for the new GB optimizations */
   /**
-   * \brief Set the maximum time to be considered as valid in the SSA.
-   * used in GB optimization
-   * \param max_time maximum simulation end time for the SSA search system
+   * \brief 1. Reset the group data structure (group of propensities)
+   *        2. Set the maximum time to be considered as valid in the SSA (used in GB optimization)
+   *        3. Update ALL propensities
    */
-  void updateMaxTime(const osh::Real /*max_time*/) {
-     // make it do nothing now to pass the CI.
+  void resetAndUpdateAll(const osh::Real /*state_time*/, const osh::Real /*max_time*/) {
+      // make it do nothing now to pass the CI.
   }
 
 private:
@@ -124,14 +124,14 @@ private:
                                  const MolStateElementID& elemID);
 
   MolState<NumMolecules> &pMolState;
-  kproc::KProcState &pKProcState;
+  kproc::KProcState<NumMolecules>& pKProcState;
 
   // bounds on molecule populations
   MolState<NumMolecules> mol_state_lower_bound_;
   MolState<NumMolecules> mol_state_upper_bound_;
 
   // dependent reactions
-  kproc::KProcState::DependenciesMap dependent_reactions_;
+  typename kproc::KProcState<NumMolecules>::DependenciesMap dependent_reactions_;
 
   // reaction propensity rates
   kproc::Propensities<NumMolecules, kproc::PropensitiesPolicy::direct_without_next_event>

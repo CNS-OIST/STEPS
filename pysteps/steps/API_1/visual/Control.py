@@ -1,14 +1,14 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -24,6 +24,7 @@
 
 import sys, time
 from pyqtgraph.Qt import QtCore, QtGui
+import PyQt5.QtWidgets as pqw
 import os
 import sys
 
@@ -46,7 +47,7 @@ class WorkThread(QtCore.QThread):
         self.workDoneSignal.emit()
         return
 
-class SimControl(QtGui.QWidget):
+class SimControl(pqw.QWidget):
     """
     Simulation Control for the visualization toolkit
             
@@ -65,7 +66,7 @@ class SimControl(QtGui.QWidget):
         Constructor.
 
         """
-        QtGui.QWidget.__init__(self)
+        pqw.QWidget.__init__(self)
         self.setWindowTitle(title)
         self.resize(300, 50)
         self.setWindowTitle(title)
@@ -77,26 +78,26 @@ class SimControl(QtGui.QWidget):
         for d in sim_displays:
             visual_items.extend(d.getItems())
         self.visual_items = set(visual_items)
-        self.layout = QtGui.QGridLayout(self)
+        self.layout = pqw.QGridLayout(self)
         self.workers = []
         
-        self.runButton = QtGui.QPushButton("run")
+        self.runButton = pqw.QPushButton("run")
         self.runButton.released.connect(self.__run)
-        self.stopButton = QtGui.QPushButton("stop")
+        self.stopButton = pqw.QPushButton("stop")
         self.stopButton.released.connect(self.__stop)
         self.stopButton.setDisabled(True)
         self.simForward = True
         self.checkpoint = False
         
-        self.endtimeLabel = QtGui.QLabel("End Time(s): ")
-        self.runtimeEdit = QtGui.QLineEdit(self)
+        self.endtimeLabel = pqw.QLabel("End Time(s): ")
+        self.runtimeEdit = pqw.QLineEdit(self)
         self.runtimeEdit.setText(str(end_time))
-        self.updatetimeLabel = QtGui.QLabel("Update Interval(s): ")
-        self.updateEdit = QtGui.QLineEdit(self)
+        self.updatetimeLabel = pqw.QLabel("Update Interval(s): ")
+        self.updateEdit = pqw.QLineEdit(self)
         self.updateEdit.setText(str(upd_interval))
-        self.simtimeLabel = QtGui.QLabel("Current Simulation Time: %fs" % (start_time))
+        self.simtimeLabel = pqw.QLabel("Current Simulation Time: %fs" % (start_time))
 
-        self.resetButton = QtGui.QPushButton("reset")
+        self.resetButton = pqw.QPushButton("reset")
         self.resetButton.released.connect(self.__reset)
         
         self.__runSims(start_time, True, True)

@@ -2,6 +2,7 @@
 
 #include <iosfwd>
 #include <unordered_map>
+#include <map>
 
 #include "kproc_id.hpp"
 #include "mpi/dist/tetopsplit/fwd.hpp"

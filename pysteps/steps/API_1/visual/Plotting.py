@@ -1,14 +1,14 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2022 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
 #    
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
 #    
 #    STEPS is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2,
+#    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
 #    
 #    STEPS is distributed in the hope that it will be useful,
@@ -23,10 +23,11 @@
 ###
 
 import pyqtgraph as pg
+from pyqtgraph.widgets.GraphicsLayoutWidget import GraphicsLayoutWidget
 import numpy as np
 import steps.API_1.geom as sgeom
 
-class PlotDisplay(pg.GraphicsWindow):
+class PlotDisplay(GraphicsLayoutWidget):
     """
     Visualization plot display.
     
@@ -39,7 +40,7 @@ class PlotDisplay(pg.GraphicsWindow):
         """
         Constructor.
         """
-        pg.GraphicsWindow.__init__(self, title=title, size=size)
+        GraphicsLayoutWidget.__init__(self, title=title, size=size)
         self.updater = {}
     
     def addCompSpecPlot(self, title, sim, comp_id, spec_id, data_size = 1000, x_range = None, y_range = None, measure = "count", **kwargs):

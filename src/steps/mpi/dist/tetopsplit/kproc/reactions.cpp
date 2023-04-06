@@ -1,11 +1,8 @@
 #include "reactions.hpp"
 
-#include <iostream>
-
 #include <Omega_h_map.hpp>
 #include <Omega_h_mark.hpp>
 
-#include "diffusions.hpp"
 #include "kproc_state.hpp"
 #include "geom/dist/distmesh.hpp"
 #include "math/constants.hpp"
@@ -132,7 +129,6 @@ const std::vector<MolStateElementID>& Reactions::updateMolStateAndOccupancy(
     const osh::Real event_time) const {
     const auto& upd = reactions_upd_[index];
     const auto& stoichoimetry = stoichiometry_change_[index];
-
     for (size_t k = 0; k < upd.size(); k++) {
         const auto& elmt = upd[k];
         const auto& s = stoichoimetry[k];

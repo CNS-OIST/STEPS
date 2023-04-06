@@ -65,7 +65,7 @@ TEST_F(TetmeshTest,intersectMontecarlo_all3) {
             p1(v[3], v[4], v[5]);
 
     constexpr size_t nsample = 100;
-    auto res = mesh->intersectMontecarlo(p0, p1, boost::none, nsample);
+    auto res = mesh->intersectMontecarlo(p0, p1, std::nullopt, nsample);
     for (const auto& r: res)
         std::cout << r.first << ": " << r.second << std::endl;
 
@@ -108,7 +108,7 @@ TEST_F(TetmeshTest,intersectMontecarlo_parallel2face_normal2edge_2) {
             p1(v[3], v[4], v[5]);
 
     constexpr size_t nsample = 100;
-    auto res = mesh->intersectMontecarlo(p0, p1, boost::none, nsample);
+    auto res = mesh->intersectMontecarlo(p0, p1, std::nullopt, nsample);
     for (const auto& r: res)
         std::cout << r.first << ": " << r.second << std::endl;
 
@@ -136,7 +136,7 @@ TEST_F(TetmeshTest,intersectMontecarlo_parallel2face_normal2edge_3) {
             p1(v[3], v[4], v[5]);
 
     constexpr size_t nsample = 100;
-    auto res = mesh->intersectMontecarlo(p0, p1, boost::none, nsample);
+    auto res = mesh->intersectMontecarlo(p0, p1, std::nullopt, nsample);
     for (const auto& r: res)
         std::cout << r.first << ": " << r.second << std::endl;
 
@@ -164,7 +164,7 @@ TEST_F(TetmeshTest,intersectMontecarlo_parallel2face_parallel2edge) {
             p1(v[3], v[4], v[5]);
 
     constexpr size_t nsample = 100;
-    auto res = mesh->intersectMontecarlo(p0, p1, boost::none, nsample);
+    auto res = mesh->intersectMontecarlo(p0, p1, std::nullopt, nsample);
     for (const auto& r: res)
         std::cout << r.first << ": " << r.second << std::endl;
 
@@ -184,7 +184,7 @@ TEST_F(TetmeshTest,intersectMontecarlo_parallel2face_withinFace) {
             p1(v[3], v[4], v[5]);
 
     constexpr size_t nsample = 100;
-    auto res = mesh->intersectMontecarlo(p0, p1, boost::none, nsample);
+    auto res = mesh->intersectMontecarlo(p0, p1, std::nullopt, nsample);
     for (const auto& r: res)
         std::cout << r.first << ": " << r.second << std::endl;
 
@@ -204,7 +204,7 @@ TEST_F(TetmeshTest,intersectMontecarlo_parallel2internalFace) {
             p1(v[3], v[4], v[5]);
 
     constexpr size_t nsample = 100;
-    auto res = mesh->intersectMontecarlo(p0, p1, boost::none, nsample);
+    auto res = mesh->intersectMontecarlo(p0, p1, std::nullopt, nsample);
     for (const auto& r: res)
         std::cout << r.first << ": " << r.second << std::endl;
 

@@ -10,7 +10,7 @@ python -c "import steps"
 
 # SSH denies key $BBPCIHPCDEPLOY_GERRIT_PRIVATE_KEY because file too permissive
 install -m 400 "$BBPCIHPCDEPLOY_GERRIT_PRIVATE_KEY" "$PWD/.hpc-key"
-export GIT_SSH_COMMAND="ssh -i $PWD/.hpc-key -o IdentitiesOnly=yes"
+export GIT_SSH_COMMAND="ssh -o ProxyCommand='/usr/bin/socat - PROXY:bbpproxy.epfl.ch:%h:%p' -i $PWD/.hpc-key -o IdentitiesOnly=yes"
 
 if ! [ -d STEPS4Models ] ; then
   git clone --recursive -b main --single-branch git@github.com:CNS-OIST/STEPS4Models.git
