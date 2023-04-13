@@ -387,7 +387,7 @@ if(PYTHONINTERP_FOUND)
 endif()
 
 # Install the bundle libraries if any
-if(USE_BUNDLE_OMEGA_H)
+if(STEPS_USE_DIST_MESH AND USE_BUNDLE_OMEGA_H)
   # Add transitive link of Gmsh when linking against Omega_h
   find_package(Gmsh REQUIRED)
   include_directories("${Gmsh_INCLUDE_DIRS}")
