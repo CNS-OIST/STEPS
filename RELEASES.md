@@ -1,5 +1,12 @@
 Release Notes
 
+Version 4.1.1 (2023-04)
+==========================
+Build and Packaging
+-------------------
+1. Fix older cmake files causing installation issues
+2. Fix `-DSTEPS_USE_DIST_MESH=False` cmake flag not preventing `Omega_h` installation
+
 Version 4.1.0 (2023-04)
 ==========================
 License update
