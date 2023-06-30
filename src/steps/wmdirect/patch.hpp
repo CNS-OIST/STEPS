@@ -24,70 +24,54 @@
 
  */
 
-
-#ifndef STEPS_WMDIRECT_PATCH_HPP
-#define STEPS_WMDIRECT_PATCH_HPP 1
-
+#pragma once
 
 // STL headers.
 #include <cassert>
-#include <vector>
 #include <fstream>
+#include <vector>
 
 // STEPS headers.
-#include "kproc.hpp"
 #include "comp.hpp"
-#include "sreac.hpp"
-#include "util/common.h"
+#include "kproc.hpp"
 #include "solver/patchdef.hpp"
 #include "solver/types.hpp"
+#include "sreac.hpp"
+#include "util/common.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace wmdirect {
-
-////////////////////////////////////////////////////////////////////////////////
-
-namespace swmd = steps::wmdirect;
-
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::wmdirect {
 
 // Forward declarations.
 class Patch;
 class Wmdirect;
 
 // Auxiliary declarations.
-typedef Patch *                         PatchP;
-typedef std::vector<PatchP>             PatchPVec;
-typedef PatchPVec::iterator             PatchPVecI;
-typedef PatchPVec::const_iterator       PatchPVecCI;
+typedef Patch* PatchP;
+typedef std::vector<PatchP> PatchPVec;
+typedef PatchPVec::iterator PatchPVecI;
+typedef PatchPVec::const_iterator PatchPVecCI;
 
-////////////////////////////////////////////////////////////////////////////////
-
-class Patch
-{
-public:
-
+class Patch {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    Patch(steps::solver::Patchdef * patchdef, swmd::Comp * icomp, swmd::Comp * ocomp);
+    Patch(solver::Patchdef* patchdef, Comp* icomp, Comp* ocomp);
     ~Patch();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream& cp_file);
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream& cp_file);
 
     ////////////////////////////////////////////////////////////////////////
 
-    void setupKProcs(Wmdirect * wmd);
+    void setupKProcs(Wmdirect* wmd);
     void setupDeps();
 
     void reset();
@@ -96,8 +80,9 @@ public:
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Patchdef * def() const noexcept
-    { return pPatchdef; }
+    inline solver::Patchdef* def() const noexcept {
+        return pPatchdef;
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -107,50 +92,42 @@ public:
     inline std::vector<steps::wmdirect::KProc*>::const_iterator end() const noexcept {
         return pKProcs.end();
     }
-    inline uint countKProcs() const noexcept
-    { return static_cast<uint>(pKProcs.size()); }
-    inline const std::vector<steps::wmdirect::KProc *>& kprocs() const noexcept {
+    inline uint countKProcs() const noexcept {
+        return static_cast<uint>(pKProcs.size());
+    }
+    inline const std::vector<steps::wmdirect::KProc*>& kprocs() const noexcept {
         return pKProcs;
     }
-    inline std::vector<steps::wmdirect::KProc *>& kprocs() noexcept {
-      return pKProcs;
+    inline std::vector<steps::wmdirect::KProc*>& kprocs() noexcept {
+        return pKProcs;
     }
 
-    steps::wmdirect::KProc * sreac(uint lsridx) const;
+    steps::wmdirect::KProc* sreac(solver::sreac_local_id lsridx) const;
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline swmd::Comp * iComp() const noexcept
-    { return pIComp; }
+    inline Comp* iComp() const noexcept {
+        return pIComp;
+    }
 
-    inline swmd::Comp * oComp() const noexcept
-    { return pOComp; }
-
-    ////////////////////////////////////////////////////////////////////////
-
-private:
+    inline Comp* oComp() const noexcept {
+        return pOComp;
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-    steps::solver::Patchdef             * pPatchdef;
+  private:
+    ////////////////////////////////////////////////////////////////////////
+
+    solver::Patchdef* pPatchdef;
 
     /// The kinetic processes.
-    std::vector<steps::wmdirect::KProc *> pKProcs;
+    std::vector<steps::wmdirect::KProc*> pKProcs;
 
-    swmd::Comp                          * pIComp;
-    swmd::Comp                          * pOComp;
+    Comp* pIComp;
+    Comp* pOComp;
 
     ////////////////////////////////////////////////////////////////////////
-
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-#endif
-// STEPS_WMDIRECT_PATCH_HPP
-
-// END
-
+}  // namespace steps::wmdirect

@@ -40,7 +40,7 @@ def Check(sim, printmsgs=True):
     potential issues.
     """
 
-    def getLocations(reac, elem):
+    def getLocations(reac, elem, geom):
         if elem.loc is None:
             return reac._parents[nmodel.VolumeSystem].locations
         else:
@@ -48,55 +48,100 @@ def Check(sim, printmsgs=True):
             if elem.loc == nmodel.Location.SURF:
                 return [l for l in locations if isinstance(l, ngeom.Patch)]
             elif elem.loc == nmodel.Location.IN:
-                return [l.innerComp for l in locations if isinstance(l, ngeom.Patch)]
+                compLocs = []
+                for l in locations:
+                    if isinstance(l, ngeom.Patch):
+                        compLocs.append(l.innerComp)
+                    elif isinstance(l, nmodel.Raft):
+                        compLocs += [
+                            patch.innerComp for patch in geom.ALL(ngeom.Patch) if patch.innerComp is not None
+                        ]
+                return compLocs
             elif elem.loc == nmodel.Location.OUT:
-                return [l.outerComp for l in locations if isinstance(l, ngeom.Patch)]
+                compLocs = []
+                for l in locations:
+                    if isinstance(l, ngeom.Patch):
+                        compLocs.append(l.outerComp)
+                    elif isinstance(l, nmodel.Raft):
+                        compLocs += [
+                            patch.outerComp for patch in geom.ALL(ngeom.Patch) if patch.outerComp is not None
+                        ]
+                    elif isinstance(l, nmodel.Vesicle):
+                        compLocs += geom.ALL(ngeom.Compartment)
+                return compLocs
+            elif elem.loc == nmodel.Location.VESSURF:
+                return [l for l in locations if isinstance(l, nmodel.Vesicle)]
+            elif elem.loc == nmodel.Location.RAFTSURF:
+                return [l for l in locations if isinstance(l, nmodel.Raft)]
             else:
                 raise NotImplementedError()
 
+    def getReactionsData(pred, errors, warnings):
+        LHSObjs, RHSObjs = set(), set()
+        reacRates = []
+        for reac in sim.model._getChildrenOfType(nmodel.Reaction):
+            if reac._added:
+                if pred(reac):
+                    for lhs, rhs, rm in reac[nmodel.Reaction._FwdSpecifier]._LRP:
+                        tmpLhs, tmpRhs = set(), set()
+                        for e in lhs:
+                            tmpLhs |= set((e._elem, loc) for loc in getLocations(reac, e, sim.geom))
+                        for e in rhs:
+                            tmpRhs |= set((e._elem, loc) for loc in getLocations(reac, e, sim.geom))
+                        LHSObjs |= tmpLhs - tmpRhs
+                        RHSObjs |= tmpRhs - tmpLhs
+                    if reac._bidir:
+                        for lhs, rhs, rm in reac[nmodel.Reaction._BkwSpecifier]._LRP:
+                            tmpLhs, tmpRhs = set(), set()
+                            for e in lhs:
+                                tmpLhs |= set((e._elem, loc) for loc in getLocations(reac, e, sim.geom))
+                            for e in rhs:
+                                tmpRhs |= set((e._elem, loc) for loc in getLocations(reac, e, sim.geom))
+                            LHSObjs |= tmpLhs - tmpRhs
+                            RHSObjs |= tmpRhs - tmpLhs
+                    # TODO Later release: Checking reaction with real complexes
+
+                    # Check reaction rates
+                    for stepsReac in reac['fwd']:
+                        stepsReac = stepsReac._stepsReac
+                        if isinstance(stepsReac, (stepslib._py_Reac, stepslib._py_SReac)):
+                            reacRates.append((reac, stepsReac, stepsReac.getKcst()))
+                    if reac._bidir:
+                        for stepsReac in reac['bkw']:
+                            stepsReac = stepsReac._stepsReac
+                            if isinstance(stepsReac, (stepslib._py_Reac, stepslib._py_SReac)):
+                                reacRates.append((reac, stepsReac, stepsReac.getKcst()))
+            else:
+                errors.append(f'Reaction {reac} was not added to STEPS.')
+
+        return LHSObjs, RHSObjs, reacRates
+
     errors, warnings = [], []
-    LHSObjs, RHSObjs = set(), set()
-    reacRates = []
-    for reac in sim.model._getChildrenOfType(nmodel.Reaction):
-        if reac._added:
-            for lhs, rhs, rm in reac[nmodel.Reaction._FwdSpecifier]._LRP:
-                tmpLhs, tmpRhs = set(), set()
-                for e in lhs:
-                    tmpLhs |= set((e._elem, loc) for loc in getLocations(reac, e))
-                for e in rhs:
-                    tmpRhs |= set((e._elem, loc) for loc in getLocations(reac, e))
-                LHSObjs |= tmpLhs - tmpRhs
-                RHSObjs |= tmpRhs - tmpLhs
-            if reac._bidir:
-                for lhs, rhs, rm in reac[nmodel.Reaction._BkwSpecifier]._LRP:
-                    tmpLhs, tmpRhs = set(), set()
-                    for e in lhs:
-                        tmpLhs |= set((e._elem, loc) for loc in getLocations(reac, e))
-                    for e in rhs:
-                        tmpRhs |= set((e._elem, loc) for loc in getLocations(reac, e))
-                    LHSObjs |= tmpLhs - tmpRhs
-                    RHSObjs |= tmpRhs - tmpLhs
-            # TODO Later release: Checking reaction with real complexes
-
-            # Check reaction rates
-            for stepsReac in reac['fwd']:
-                stepsReac = stepsReac._stepsReac
-                if isinstance(stepsReac, (stepslib._py_Reac, stepslib._py_SReac)):
-                    reacRates.append((reac, stepsReac, stepsReac.getKcst()))
-            if reac._bidir:
-                for stepsReac in reac['bkw']:
-                    stepsReac = stepsReac._stepsReac
-                    if isinstance(stepsReac, (stepslib._py_Reac, stepslib._py_SReac)):
-                        reacRates.append((reac, stepsReac, stepsReac.getKcst()))
-        else:
-            errors.append(f'Reaction {reac} was not added to STEPS.')
-
-    # Inspect objects that appear only on the RHS of reactions
+    LHSObjs, RHSObjs, reacRates = getReactionsData(lambda r: True, errors, warnings)
+    # Inspect objects that appear only on the RHS of reactions, considering all reactions
     for obj, loc in RHSObjs - LHSObjs:
         if isinstance(obj, nmodel.ComplexState):
             errors.append(f'Complex state {obj} in {loc} is only ever present on the RHS of reactions.')
         else:
             warnings.append(f'{obj} in {loc} is only ever present on the RHS of reactions.')
+
+    # Inspect objects that appear only on the RHS of reactions, considering only conventional reactions
+    LHSObjs_noves, RHSObjs_noves, _ = getReactionsData(lambda r: not (r._isVesicleSurfReac() or r._isRaftSurfReac()), [], [])
+    for obj, loc in (RHSObjs_noves - LHSObjs_noves) - (RHSObjs - LHSObjs):
+        # If the object is only present on the RHS of conventional reactions, but is present on the LHS
+        # of vesicle or raft reactions, display different warnings
+        if isinstance(obj, nmodel.ComplexState):
+            errors.append(
+                f'Complex state {obj} in {loc} is only ever present on the RHS of conventional '
+                f'reactions. It is present on the LHS of vesicle or raft reactions, but rafts or '
+                f'vesicles of the corresponding types might not be added to the simulation.'
+            )
+        else:
+            warnings.append(
+                f'{obj} in {loc} is only ever present on the RHS of conventional reactions. It is '
+                f'present on the LHS of vesicle or raft reactions, but rafts or vesicles of the '
+                f'corresponding types might not be added to the simulation.'
+            )
 
     # Check that rates are non-zero and check for outliers
     ratesByOrder = {}

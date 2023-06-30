@@ -125,12 +125,12 @@ class TestRDUnbdiff2DODE(unittest.TestCase):
 
         res_count = numpy.zeros((ntpnts, patch_tris_n))
 
-        sim.setTriCount(ctri_idx, 'X', NINJECT)
+        sim.setTriSpecCount(ctri_idx, 'X', NINJECT)
 
         for i in range(ntpnts):
             sim.run(tpnts[i])
             for k in range(patch_tris_n):
-                res_count[i, k] = sim.getTriCount(patch_tris[k], 'X')
+                res_count[i, k] = sim.getTriSpecCount(patch_tris[k], 'X')
 
         ########################################################################
 

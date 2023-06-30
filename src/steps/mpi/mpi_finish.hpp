@@ -30,20 +30,14 @@
 // The main function may also be used to fetch arguements
 // passed from Python command.
 
-#ifndef STEPS_MPI_MPIFINISH_HPP
-#define STEPS_MPI_MPIFINISH_HPP 1
+#pragma once
 
 // STEPS headers.
-#include "util/common.h"
+#include "util/common.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace mpi {
+namespace steps::mpi {
 
 void mpiFinish();
+void mpiAbort();
 
-}
-}
-
-#endif
+}  // namespace steps::mpi

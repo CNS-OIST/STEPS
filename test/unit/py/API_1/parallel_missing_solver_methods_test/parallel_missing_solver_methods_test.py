@@ -91,13 +91,13 @@ class ParallelMissingSolverMethodsTestCase(unittest.TestCase):
         
     def testSetROIAmount(self):
         amount = 1e-22
-        self.assertEqual(self.sim.getROIAmount('comp1ROI', 'S1'), 0)
-        self.sim.setROIAmount('comp1ROI', 'S1', amount)
-        self.assertAlmostEqual(self.sim.getROIAmount('comp1ROI', 'S1'), amount)
+        self.assertEqual(self.sim.getROISpecAmount('comp1ROI', 'S1'), 0)
+        self.sim.setROISpecAmount('comp1ROI', 'S1', amount)
+        self.assertAlmostEqual(self.sim.getROISpecAmount('comp1ROI', 'S1'), amount)
 
-        self.assertEqual(self.sim.getROIAmount('patch1ROI', 'S1'), 0)
-        self.sim.setROIAmount('patch1ROI', 'S1', amount)
-        self.assertAlmostEqual(self.sim.getROIAmount('patch1ROI', 'S1'), amount)
+        self.assertEqual(self.sim.getROISpecAmount('patch1ROI', 'S1'), 0)
+        self.sim.setROISpecAmount('patch1ROI', 'S1', amount)
+        self.assertAlmostEqual(self.sim.getROISpecAmount('patch1ROI', 'S1'), amount)
 
     def testsetTriCapac(self):
         capac = 1.5e-9

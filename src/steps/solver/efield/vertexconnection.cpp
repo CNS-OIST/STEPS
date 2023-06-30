@@ -24,32 +24,21 @@
 
  */
 
-
-// STL headers.
-#include <cassert>
-#include <iostream>
-#include <sstream>
-
 // STEPS headers.
-#include "util/common.h"
-#include "util/error.hpp"
 #include "vertexconnection.hpp"
+#include "util/checkpointing.hpp"
+#include "util/error.hpp"
 #include "vertexelement.hpp"
 
 // logging
 #include <easylogging++.h>
-////////////////////////////////////////////////////////////////////////////////
 
-namespace sefield = steps::solver::efield;
-using namespace std;
+namespace steps::solver::efield {
 
-////////////////////////////////////////////////////////////////////////////////
-
-sefield::VertexConnection::VertexConnection(sefield::VertexElement * v1, sefield::VertexElement * v2)
-: pVert1(v1)
-, pVert2(v2)
-, pGeomCC(0.0)
-{
+VertexConnection::VertexConnection(VertexElement* v1, VertexElement* v2)
+    : pVert1(v1)
+    , pVert2(v2)
+    , pGeomCC(0.0) {
     AssertLog(v1 != nullptr);
     AssertLog(v2 != nullptr);
     pVert1->addConnection(this);
@@ -58,57 +47,32 @@ sefield::VertexConnection::VertexConnection(sefield::VertexElement * v1, sefield
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sefield::VertexConnection::~VertexConnection()
-= default;
+VertexConnection::~VertexConnection() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::VertexConnection::checkpoint(std::fstream & cp_file)
-{
-    cp_file.write(reinterpret_cast<char*>(&pGeomCC), sizeof(double));
+void VertexConnection::checkpoint(std::fstream& cp_file) {
+    util::checkpoint(cp_file, pGeomCC);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::VertexConnection::restore(std::fstream & cp_file)
-{
-    cp_file.read(reinterpret_cast<char*>(&pGeomCC), sizeof(double));
+void VertexConnection::restore(std::fstream& cp_file) {
+    util::compare(cp_file, pGeomCC, "Mismatched pGeomCC restore value.");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sefield::VertexElement * sefield::VertexConnection::getOther(sefield::VertexElement * element)
-{
-    VertexElement * ret;
-    if (pVert1 == element)
-    {
+VertexElement* VertexConnection::getOther(VertexElement* element) {
+    VertexElement* ret;
+    if (pVert1 == element) {
         ret = pVert2;
-    }
-    else if (pVert2 == element)
-    {
+    } else if (pVert2 == element) {
         ret = pVert1;
-    }
-    else
-    {
+    } else {
         AssertLog(false);
     }
     return ret;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-//bool VertexConnection::hasInternalEnd()
-//{
-//    return (vea->isInternal() || veb->isInternal());
-//}
-
-////////////////////////////////////////////////////////////////////////////////
-
-//bool VertexConnection::isEdge()
-//{
-//    return (vea->isEdge() && veb->isEdge());
-//}
-
-////////////////////////////////////////////////////////////////////////////////
-
-// END
+}  // namespace steps::solver::efield

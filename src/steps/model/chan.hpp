@@ -31,12 +31,11 @@
 #include <string>
 #include <vector>
 
-#include "util/common.h"
+#include "util/common.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace steps {
-namespace model {
+namespace steps::model {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -46,14 +45,14 @@ class Chan;
 class ChanState;
 
 // Auxiliary declarations.
-typedef Chan *                          ChanP;
-typedef std::map<std::string, ChanP>    ChanPMap;
-typedef ChanPMap::iterator              ChanPMapI;
-typedef ChanPMap::const_iterator        ChanPMapCI;
+typedef Chan* ChanP;
+typedef std::map<std::string, ChanP> ChanPMap;
+typedef ChanPMap::iterator ChanPMapI;
+typedef ChanPMap::const_iterator ChanPMapCI;
 
-typedef std::vector<ChanP>              ChanPVec;
-typedef ChanPVec::iterator              ChanPVecI;
-typedef ChanPVec::const_iterator        ChanPVecCI;
+typedef std::vector<ChanP> ChanPVec;
+typedef ChanPVec::iterator ChanPVecI;
+typedef ChanPVec::const_iterator ChanPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Channel grouping a number of states with voltage-dependent
@@ -62,11 +61,8 @@ typedef ChanPVec::const_iterator        ChanPVecCI;
 ///
 /// \warning Methods start with an underscore are not exposed to Python.
 
-class Chan
-{
-
-public:
-
+class Chan {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
@@ -75,7 +71,7 @@ public:
     ///
     /// \param id ID of the species.
     /// \param model Pointer to the parent model.
-    Chan(std::string const & id, Model * model);
+    Chan(std::string const& id, Model* model);
 
     /// Destructor
     ~Chan();
@@ -87,19 +83,21 @@ public:
     /// Return the channel ID.
     ///
     /// \return ID of the channel.
-    inline const std::string& getID() const noexcept
-    { return pID; }
+    inline const std::string& getID() const noexcept {
+        return pID;
+    }
 
     /// Set or change the species ID.
     ///
     /// \param id ID of the species.
-    void setID(std::string const & id);
+    void setID(std::string const& id);
 
     /// Return a pointer to the parent model.
     ///
     /// \return Pointer to the parent model.
-    inline Model * getModel() const noexcept
-    { return pModel; }
+    inline Model* getModel() const noexcept {
+        return pModel;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // OPERATIONS (EXPOSED TO PYTHON): CHANNEL STATES
@@ -109,7 +107,7 @@ public:
     ///
     /// \param id ID of the required channel state.
     /// \return Pointer to the channel state object.
-    ChanState * getChanState(std::string const & id) const;
+    ChanState* getChanState(std::string const& id) const;
 
     /*
     /// Delete a channel state by its ID.
@@ -122,7 +120,7 @@ public:
     ///
     /// \return A vector of pointers to the channel state objects
     ///         stored in the system.
-    std::vector<ChanState *> getAllChanStates() const;
+    std::vector<ChanState*> getAllChanStates() const;
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: DELETION
@@ -141,41 +139,32 @@ public:
     /// Add a state to the channel.
     ///
     /// \param cstate Pointer to the ChanState.
-    void _handleChanStateAdd(ChanState * cstate);
-
+    void _handleChanStateAdd(ChanState* cstate);
 
     /// Delete a state from the channel.
     ///
     /// \param cstate Pointer to the ChanState.
-    void _handleChanStateDel(ChanState * cstate);
-
+    void _handleChanStateDel(ChanState* cstate);
 
     /// Check if a channel state id is occupied.
     ///
     /// \param id ID of the channel state.
-    void _checkChanStateID(std::string const & id) const;
+    void _checkChanStateID(std::string const& id) const;
 
     /// Change the id of a reaction from o to n.
     ///
     /// \param o Old id of the channel state.
     /// \param n New id of the channel state.
-    void _handleChanStateIDChange(std::string const & o, std::string const & n);
+    void _handleChanStateIDChange(std::string const& o, std::string const& n);
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
-    std::string                              pID;
-    Model                                  * pModel;
-    std::map<std::string, ChanState *>       pChanStates;
-
-    ////////////////////////////////////////////////////////////////////////
-
+    std::string pID;
+    Model* pModel;
+    std::map<std::string, ChanState*> pChanStates;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-} // namespace model
-} // namespace steps
+}  // namespace steps::model

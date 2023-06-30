@@ -24,72 +24,62 @@
 
  */
 
-
-// STL headers.
-#include <cassert>
-#include <string>
-
 // STEPS headers.
 #include "diffboundarydef.hpp"
-#include "types.hpp"
 #include "geom/comp.hpp"
+#include "types.hpp"
 #include "util/error.hpp"
 // logging
 #include <easylogging++.h>
+
+namespace steps::solver {
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace ssolver = steps::solver;
-namespace stetmesh = steps::tetmesh;
-
-////////////////////////////////////////////////////////////////////////////////
-
-ssolver::DiffBoundarydef::DiffBoundarydef(Statedef * sd, uint idx, stetmesh::DiffBoundary * db)
-: pStatedef(sd)
-, pIdx(idx)
-, pTris()
-{
+DiffBoundarydef::DiffBoundarydef(Statedef* sd,
+                                 diffboundary_global_id idx,
+                                 tetmesh::DiffBoundary* db)
+    : pStatedef(sd)
+    , pIdx(idx)
+    , pCompA_temp(nullptr)
+    , pCompB_temp(nullptr) {
     AssertLog(pStatedef != nullptr);
     AssertLog(db != nullptr);
 
     pName = db->getID();
     pTris = db->_getAllTriIndices();
-    std::vector<steps::wm::Comp *> comps = db->getComps();
+    std::vector<wm::Comp*> comps = db->getComps();
     pCompA_temp = comps[0];
     pCompB_temp = comps[1];
     AssertLog(pCompA_temp != nullptr);
     AssertLog(pCompB_temp != nullptr);
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::DiffBoundarydef::~DiffBoundarydef()
-= default;
+DiffBoundarydef::~DiffBoundarydef() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::DiffBoundarydef::checkpoint(std::fstream & /*cp_file*/)
-{
+void DiffBoundarydef::checkpoint(std::fstream& /*cp_file*/) {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::DiffBoundarydef::restore(std::fstream & /*cp_file*/)
-{
+void DiffBoundarydef::restore(std::fstream& /*cp_file*/) {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::DiffBoundarydef::setup()
-{
+void DiffBoundarydef::setup() {
     AssertLog(pSetupdone == false);
 
     pCompA = pStatedef->getCompIdx(pCompA_temp);
     pCompB = pStatedef->getCompIdx(pCompB_temp);
     pSetupdone = true;
-
 }
 
-////////////////////////////////////////////////////////////////////////////////
+}  // namespace steps::solver

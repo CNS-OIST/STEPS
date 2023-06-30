@@ -24,29 +24,24 @@
 
  */
 
-
-// Standard library & STL headers.
-#include <vector>
-
 // STEPS headers.
 #include "reac.hpp"
 #include "comp.hpp"
-#include "wmdirect.hpp"
 #include "math/constants.hpp"
+#include "wmdirect.hpp"
 // logging
 #include "util/error.hpp"
 #include <easylogging++.h>
+
+#include "util/checkpointing.hpp"
+
+namespace steps::wmdirect {
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace swmd = steps::wmdirect;
-namespace ssolver = steps::solver;
-namespace smath = steps::math;
-
-////////////////////////////////////////////////////////////////////////////////
-
-static inline double comp_ccst(double kcst, double vol, uint order)
-{
-    double vscale = 1.0e3 * vol * smath::AVOGADRO;
+static inline double comp_ccst(double kcst, double vol, uint order) {
+    double vscale = 1.0e3 * vol * math::AVOGADRO;
     int o1 = static_cast<int>(order) - 1;
 
     // IMPORTANT: Now treating zero-order reaction units correctly, i.e. as
@@ -58,14 +53,12 @@ static inline double comp_ccst(double kcst, double vol, uint order)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmd::Reac::Reac(ssolver::Reacdef * rdef, swmd::Comp * comp)
-:
- pReacdef(rdef)
-, pComp(comp)
-{
+Reac::Reac(solver::Reacdef* rdef, Comp* comp)
+    : pReacdef(rdef)
+    , pComp(comp) {
     AssertLog(pReacdef != nullptr);
     AssertLog(pComp != nullptr);
-    uint lridx = pComp->def()->reacG2L(pReacdef->gidx());
+    solver::reac_local_id lridx = pComp->def()->reacG2L(pReacdef->gidx());
     double kcst = pComp->def()->kcst(lridx);
     pCcst = comp_ccst(kcst, pComp->def()->vol(), pReacdef->order());
     AssertLog(pCcst >= 0.0);
@@ -73,176 +66,164 @@ swmd::Reac::Reac(ssolver::Reacdef * rdef, swmd::Comp * comp)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmd::Reac::~Reac() = default;
+Reac::~Reac() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Reac::checkpoint(std::fstream & cp_file)
-{
-    cp_file.write(reinterpret_cast<char*>(&pCcst), sizeof(double));
+void Reac::checkpoint(std::fstream& cp_file) {
+    util::checkpoint(cp_file, pCcst);
+    KProc::checkpoint(cp_file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Reac::restore(std::fstream & cp_file)
-{
-    cp_file.read(reinterpret_cast<char*>(&pCcst), sizeof(double));
+void Reac::restore(std::fstream& cp_file) {
+    util::restore(cp_file, pCcst);
+    KProc::restore(cp_file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool swmd::Reac::active() const
-{
-    uint lridx = pComp->def()->reacG2L(defr()->gidx());
+bool Reac::active() const {
+    solver::reac_local_id lridx = pComp->def()->reacG2L(defr()->gidx());
     return pComp->def()->active(lridx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Reac::reset()
-{
+void Reac::reset() {
     resetExtent();
-    uint lridx = pComp->def()->reacG2L(defr()->gidx());
+    solver::reac_local_id lridx = pComp->def()->reacG2L(defr()->gidx());
     pComp->def()->setActive(lridx, true);
     resetCcst();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Reac::resetCcst()
-{
-    uint lridx = pComp->def()->reacG2L(pReacdef->gidx());
+void Reac::resetCcst() {
+    solver::reac_local_id lridx = pComp->def()->reacG2L(pReacdef->gidx());
     double kcst = pComp->def()->kcst(lridx);
     pCcst = comp_ccst(kcst, pComp->def()->vol(), pReacdef->order());
     AssertLog(pCcst >= 0);
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Reac::setupDeps()
-{
+void Reac::setupDeps() {
     SchedIDXSet updset;
 
     // Search in local compartment.
-    for (auto const& k : pComp->kprocs()) {
-        for (auto const& s : defr()->updColl()) {
-            if (k->depSpecComp(s, pComp))
+    for (auto const& k: pComp->kprocs()) {
+        for (auto const& s: defr()->updColl()) {
+            if (k->depSpecComp(s, pComp)) {
                 updset.insert(k->schedIDX());
+            }
         }
     }
 
     // Search in neighbouring patches.
-    for (auto const& p : pComp->ipatches()) {
-        for (auto const& k : p->kprocs()) {
-            for (auto const& s : defr()->updColl()) {
-                if (k->depSpecComp(s, pComp))
+    for (auto const& p: pComp->ipatches()) {
+        for (auto const& k: p->kprocs()) {
+            for (auto const& s: defr()->updColl()) {
+                if (k->depSpecComp(s, pComp)) {
                     updset.insert(k->schedIDX());
+                }
             }
         }
     }
-    for (auto const& p : pComp->opatches()) {
-        for (auto const& k : p->kprocs()) {
-            for (auto const& s : defr()->updColl()) {
-                if (k->depSpecComp(s, pComp))
+    for (auto const& p: pComp->opatches()) {
+        for (auto const& k: p->kprocs()) {
+            for (auto const& s: defr()->updColl()) {
+                if (k->depSpecComp(s, pComp)) {
                     updset.insert(k->schedIDX());
+                }
             }
         }
     }
 
-    swmd::schedIDXSet_To_Vec(updset, pUpdVec);
+    schedIDXSet_To_Vec(updset, pUpdVec);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool swmd::Reac::depSpecComp(uint gidx, swmd::Comp * comp)
-{
-    if (pComp != comp) { return false;
-}
+bool Reac::depSpecComp(solver::spec_global_id gidx, Comp* comp) {
+    if (pComp != comp) {
+        return false;
+    }
     return defr()->dep(gidx) != 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool swmd::Reac::depSpecPatch(uint /*gidx*/, swmd::Patch * /*patch*/)
-{
+bool Reac::depSpecPatch(solver::spec_global_id /*gidx*/, Patch* /*patch*/) {
     return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double swmd::Reac::rate() const
-{
-    if (inactive()) { return 0.0;
-}
+double Reac::rate() const {
+    if (inactive()) {
+        return 0.0;
+    }
 
     // Prefetch some variables.
-    ssolver::Compdef * cdef = pComp->def();
-    uint nspecs = cdef->countSpecs();
-    uint * lhs_vec = cdef->reac_lhs_bgn(cdef->reacG2L(defr()->gidx()));
-    double * cnt_vec = cdef->pools();
+    solver::Compdef* cdef = pComp->def();
+    const auto& lhs_vec = cdef->reac_lhs(cdef->reacG2L(defr()->gidx()));
+    const auto& cnt_vec = cdef->pools();
 
     // Compute combinatorial part.
-        double h_mu = 1.0;
-        for (uint pool = 0; pool < nspecs; ++pool)
-        {
-            uint lhs = lhs_vec[pool];
-            if (lhs == 0) { continue;
-}
-            auto cnt = static_cast<uint>(cnt_vec[pool]);
-            if (lhs > cnt)
-            {
-                h_mu = 0.0;
-                break;
-            }
-            switch (lhs)
-            {
-                case 4:
-                {
-                    h_mu *= static_cast<double>(cnt - 3);
-                }
-                STEPS_FALLTHROUGH;
-                case 3:
-                {
-                    h_mu *= static_cast<double>(cnt - 2);
-                }
-                STEPS_FALLTHROUGH;
-                case 2:
-                {
-                    h_mu *= static_cast<double>(cnt - 1);
-                }
-                STEPS_FALLTHROUGH;
-                case 1:
-                {
-                    h_mu *= static_cast<double>(cnt);
-                    break;
-                }
-                default:
-                {
-                    AssertLog(false);
-                }
-            }
+    double h_mu = 1.0;
+    for (auto pool: lhs_vec.range()) {
+        uint lhs = lhs_vec[pool];
+        if (lhs == 0) {
+            continue;
         }
+        auto cnt = static_cast<uint>(cnt_vec[pool]);
+        if (lhs > cnt) {
+            h_mu = 0.0;
+            break;
+        }
+        switch (lhs) {
+        case 4: {
+            h_mu *= static_cast<double>(cnt - 3);
+        }
+            STEPS_FALLTHROUGH;
+        case 3: {
+            h_mu *= static_cast<double>(cnt - 2);
+        }
+            STEPS_FALLTHROUGH;
+        case 2: {
+            h_mu *= static_cast<double>(cnt - 1);
+        }
+            STEPS_FALLTHROUGH;
+        case 1: {
+            h_mu *= static_cast<double>(cnt);
+            break;
+        }
+        default: {
+            AssertLog(false);
+        }
+        }
+    }
 
-        // Multiply with scaled reaction constant.
-        return h_mu * pCcst;
-
+    // Multiply with scaled reaction constant.
+    return h_mu * pCcst;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<uint> const & swmd::Reac::apply()
-{
-    ssolver::Compdef * cdef = pComp->def();
-    double * local = cdef->pools();
-    uint l_ridx = cdef->reacG2L(defr()->gidx());
-    int * upd_vec = cdef->reac_upd_bgn(l_ridx);
-    uint nspecs = cdef->countSpecs();
-    for (uint i=0; i < nspecs; ++i)
-    {
-        if (cdef->clamped(i)) continue;
+std::vector<solver::kproc_global_id> const& Reac::apply() {
+    solver::Compdef* cdef = pComp->def();
+    const auto& local = cdef->pools();
+    const auto& upd_vec = cdef->reac_upd(cdef->reacG2L(defr()->gidx()));
+    for (auto i: upd_vec.range()) {
+        if (cdef->clamped(i)) {
+            continue;
+        }
         int j = upd_vec[i];
-        if (j == 0) continue;
+        if (j == 0) {
+            continue;
+        }
         int nc = static_cast<int>(local[i]) + j;
         cdef->setCount(i, static_cast<double>(nc));
     }
@@ -250,7 +231,4 @@ std::vector<uint> const & swmd::Reac::apply()
     return pUpdVec;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
-
+}  // namespace steps::wmdirect

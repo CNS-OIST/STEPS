@@ -178,7 +178,7 @@ def run(model_string, initial_condition_string, stop_time, event_string='', seed
             for t in range(len(tvector)): # this is an index
                 for c in range(len(compartment_names)): # this is an index
                     for s in range(len(specie_names)):
-                        res[i, c, t, s] = sim.getCompCount(compartment_names[c], specie_names[s])
+                        res[i, c, t, s] = sim.getCompSpecCount(compartment_names[c], specie_names[s])
                 sim.run(tvector[t])
     else: 
         # run with event queue
@@ -218,7 +218,7 @@ def run(model_string, initial_condition_string, stop_time, event_string='', seed
                 for c in range(len(compartment_names)): # this is an index
                     #sim.run(tvector[t])
                     for s in range(len(specie_names)):
-                        res[i, c, t, s] = sim.getCompCount(compartment_names[c], specie_names[s])
+                        res[i, c, t, s] = sim.getCompSpecCount(compartment_names[c], specie_names[s])
    
     # return the data json encoded
     data = {'species':specie_names, 'compartments':compartment_names, 'data':res.tolist()}

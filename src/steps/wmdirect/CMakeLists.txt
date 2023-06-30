@@ -1,11 +1,4 @@
-add_library(stepswmdirect STATIC
-    comp.cpp
-    kproc.cpp
-    patch.cpp
-    reac.cpp
-    sreac.cpp
-    wmdirect.cpp
-)
+add_library(stepswmdirect STATIC comp.cpp kproc.cpp patch.cpp reac.cpp sreac.cpp wmdirect.cpp)
 
 set_property(TARGET stepswmdirect PROPERTY POSITION_INDEPENDENT_CODE ON)
 

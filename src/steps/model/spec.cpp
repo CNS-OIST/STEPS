@@ -24,11 +24,6 @@
 
  */
 
-/*
- *  Last Changed Rev:  $Rev$
- *  Last Changed Date: $Date$
- *  Last Changed By:   $Author$
- */
 
 #include <cassert>
 #include <sstream>
@@ -36,63 +31,61 @@
 
 #include <easylogging++.h>
 
-#include "spec.hpp"
 #include "model.hpp"
+#include "spec.hpp"
 
 #include "util/error.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-using namespace std;
-using namespace steps::model;
+namespace steps::model {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Spec::Spec(string const &id, Model *model, int valence)
-    : pID(id), pModel(model), pValence(valence) {
+Spec::Spec(std::string const& id, Model* model, int valence)
+    : pID(id)
+    , pModel(model)
+    , pValence(valence) {
+    ArgErrLogIf(pModel == nullptr, "No model provided to Spec initializer function");
 
-  ArgErrLogIf(pModel == nullptr,
-              "No model provided to Spec initializer function");
-
-  pModel->_handleSpecAdd(this);
+    pModel->_handleSpecAdd(this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 Spec::~Spec() {
-  if (pModel == nullptr) {
-    return;
-  }
-  _handleSelfDelete();
+    if (pModel == nullptr) {
+        return;
+    }
+    _handleSelfDelete();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void Spec::_handleSelfDelete() {
-  pModel->_handleSpecDel(this);
-  pModel = nullptr;
+    pModel->_handleSpecDel(this);
+    pModel = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Spec::setID(string const &id) {
-  AssertLog(pModel != nullptr);
-  if (id == pID)
-    return;
-  // The following might raise an exception, e.g. if the new ID is not
-  // valid or not unique. If this happens, we don't catch but simply let
-  // it pass by into the Python layer.
-  pModel->_handleSpecIDChange(pID, id);
-  // This line will only be executed if the previous call didn't raise
-  // an exception.
-  pID = id;
+void Spec::setID(std::string const& id) {
+    AssertLog(pModel != nullptr);
+    if (id == pID) {
+        return;
+    }
+    // The following might raise an exception, e.g. if the new ID is not
+    // valid or not unique. If this happens, we don't catch but simply let
+    // it pass by into the Python layer.
+    pModel->_handleSpecIDChange(pID, id);
+    // This line will only be executed if the previous call didn't raise
+    // an exception.
+    pID = id;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void Spec::setValence(int valence) {
-  AssertLog(pModel != nullptr);
-  pValence = valence;
+    AssertLog(pModel != nullptr);
+    pValence = valence;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+}  // namespace steps::model

@@ -24,57 +24,34 @@
 
  */
 
+#include "compdef.hpp"
 
 // STL headers.
 #include <algorithm>
-#include <cassert>
 #include <string>
 
 // STEPS headers.
-#include "compdef.hpp"
-#include "statedef.hpp"
-#include "patchdef.hpp"
-#include "reacdef.hpp"
-#include "types.hpp"
 #include "model/diff.hpp"
 #include "model/reac.hpp"
-// util
+#include "patchdef.hpp"
+#include "reacdef.hpp"
+#include "statedef.hpp"
+#include "util/checkpointing.hpp"
 #include "util/error.hpp"
-// logging
-#include <easylogging++.h>
 
-namespace ssolver=steps::solver;
+namespace steps::solver {
 
-////////////////////////////////////////////////////////////////////////////////
-
-ssolver::Compdef::Compdef(Statedef * sd, uint idx, steps::wm::Comp * c)
-: pStatedef(sd)
-, pName()
-, pVol()
-, pIdx(idx)
-, pCvsys()
-, pSetupRefsdone(false)
-, pSetupIndsdone(false)
-, pSpecsN(0)
-, pSpec_G2L(nullptr)
-, pSpec_L2G(nullptr)
-, pPoolCount(nullptr)
-, pPoolFlags(nullptr)
-, pReacsN(0)
-, pReac_G2L(nullptr)
-, pReac_L2G(nullptr)
-, pReacKcst(nullptr)
-, pReacFlags(nullptr)
-, pReac_DEP_Spec(nullptr)
-, pReac_LHS_Spec(nullptr)
-, pReac_UPD_Spec(nullptr)
-, pDiffsN(0)
-, pDiff_G2L(nullptr)
-, pDiff_L2G(nullptr)
-, pDiffDcst(nullptr)
-, pDiff_DEP_Spec(nullptr)
-, pDiff_LIG(nullptr)
-{
+Compdef::Compdef(Statedef* sd, comp_global_id idx, wm::Comp* c)
+    : pStatedef(sd)
+    , pVol()
+    , pIdx(idx)
+    , pSetupRefsdone(false)
+    , pSetupIndsdone(false)
+    , pSpecsN(0)
+    , pReacsN(0)
+    , pDiffsN(0)
+    , pVesBindsN(0)
+    , pVesUnbindsN(0) {
     AssertLog(pStatedef != nullptr);
     AssertLog(c != nullptr);
 
@@ -83,152 +60,178 @@ ssolver::Compdef::Compdef(Statedef * sd, uint idx, steps::wm::Comp * c)
     pCvsys = c->getVolsys();
 
     uint nspecs = pStatedef->countSpecs();
-    if (nspecs > 0 )
-    {
-        pSpec_G2L = new uint[nspecs];
-        std::fill_n(pSpec_G2L, nspecs, LIDX_UNDEFINED);
-    }
+    pSpec_G2L.container().resize(nspecs);
 
     uint nreacs = pStatedef->countReacs();
-    if (nreacs > 0)
-    {
-        pReac_G2L = new uint[nreacs];
-        std::fill_n(pReac_G2L, nreacs, LIDX_UNDEFINED);
-    }
+    pReac_G2L.container().resize(nreacs);
 
     uint ndiffs = pStatedef->countDiffs();
-    if (ndiffs > 0)
-    {
-        pDiff_G2L = new uint[ndiffs];
-        std::fill_n(pDiff_G2L, ndiffs, LIDX_UNDEFINED);
-    }
+    pDiff_G2L.container().resize(ndiffs);
+
+    uint nvesbinds = pStatedef->countVesBinds();
+    pVesBind_G2L.container().resize(nvesbinds);
+
+    uint nvesunbinds = pStatedef->countVesUnbinds();
+    pVesUnbind_G2L.container().resize(nvesunbinds);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::Compdef::~Compdef()
-{
-    if (pStatedef->countSpecs() > 0 ) delete[] pSpec_G2L;
-    if (pStatedef->countReacs() > 0) { delete[] pReac_G2L;
-}
-    if (pStatedef->countDiffs() > 0) { delete[] pDiff_G2L;
-}
+Compdef::~Compdef() = default;
 
-    if (pSpecsN != 0)
-    {
-        delete[] pSpec_L2G;
-        delete[] pPoolFlags;
-        delete[] pPoolCount;
-    }
+////////////////////////////////////////////////////////////////////////////////
 
-    if (pReacsN != 0)
-    {
-        delete[] pReac_L2G;
-        delete[] pReac_DEP_Spec;
-        delete[] pReac_LHS_Spec;
-        delete[] pReac_UPD_Spec;
-        delete[] pReacKcst;
-        delete[] pReacFlags;
-    }
-
-    if (pDiffsN != 0)
-    {
-        delete[] pDiff_L2G;
-        delete[] pDiff_DEP_Spec;
-        delete[] pDiff_LIG;
-        delete[] pDiffDcst;
-
-    }
-
+void Compdef::checkpoint(std::fstream& cp_file) {
+    util::checkpoint(cp_file, pVol);
+    util::checkpoint(cp_file, pPoolCount);
+    util::checkpoint(cp_file, pPoolFlags);
+    util::checkpoint(cp_file, pReacKcst);
+    util::checkpoint(cp_file, pReacFlags);
+    util::checkpoint(cp_file, pDiffDcst);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Compdef::checkpoint(std::fstream & cp_file)
-{
-    cp_file.write(reinterpret_cast<char*>(pPoolCount), sizeof (double) * pSpecsN);
-    cp_file.write(reinterpret_cast<char*>(pPoolFlags), sizeof (uint) * pSpecsN);
-    cp_file.write(reinterpret_cast<char*>(pReacKcst), sizeof (double) * pReacsN);
-    cp_file.write(reinterpret_cast<char*>(pReacFlags), sizeof (uint) * pReacsN);
+void Compdef::restore(std::fstream& cp_file) {
+    util::restore(cp_file, pVol);
+    util::restore(cp_file, pPoolCount);
+    util::restore(cp_file, pPoolFlags);
+    util::restore(cp_file, pReacKcst);
+    util::restore(cp_file, pReacFlags);
+    util::restore(cp_file, pDiffDcst);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Compdef::restore(std::fstream & cp_file)
-{
-    cp_file.read(reinterpret_cast<char*>(pPoolCount), sizeof (double) * pSpecsN);
-    cp_file.read(reinterpret_cast<char*>(pPoolFlags), sizeof (uint) * pSpecsN);
-    cp_file.read(reinterpret_cast<char*>(pReacKcst), sizeof (double) * pReacsN);
-    cp_file.read(reinterpret_cast<char*>(pReacFlags), sizeof (uint) * pReacsN);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void ssolver::Compdef::setup_references()
-{
+void Compdef::setup_references() {
     AssertLog(pSetupRefsdone == false);
     AssertLog(pSetupIndsdone == false);
 
     const uint ngspecs = pStatedef->countSpecs();
     const uint ngreacs = pStatedef->countReacs();
     const uint ngdiffs = pStatedef->countDiffs();
+    const uint ngvesbinds = pStatedef->countVesBinds();
+    const uint ngvesunbinds = pStatedef->countVesUnbinds();
 
-    if (ngspecs == 0) AssertLog(pSpec_G2L == nullptr);
-    if (ngreacs == 0) AssertLog(pReac_G2L == nullptr);
-    if (ngdiffs == 0) AssertLog(pDiff_G2L == nullptr);
-
+    if (ngspecs == 0) {
+        AssertLog(pSpec_G2L.container().empty());
+    }
+    if (ngreacs == 0) {
+        AssertLog(pReac_G2L.container().empty());
+    }
+    if (ngdiffs == 0) {
+        AssertLog(pDiff_G2L.container().empty());
+    }
+    if (ngvesbinds == 0) {
+        AssertLog(pVesBind_G2L.container().empty());
+    }
+    if (ngvesunbinds == 0) {
+        AssertLog(pVesUnbind_G2L.container().empty());
+    }
 
     // Importantly  assumes that all species from patch sreacs have
-    // been added first. Statedef calls setup on patches, which add Specs to their inner
-    // and outer compartments.
+    // been added first. Statedef calls setup on patches, which add Specs to their
+    // inner and outer compartments.
 
-    // set up local reac indices ////vsys also has _countReacs and Reac * _getReac(lidx)
-    // The local reacs index count (pReacsN) starts at 0.
+    // set up local reac indices ////vsys also has _countReacs and Reac *
+    // _getReac(lidx) The local reacs index count (pReacsN) starts at 0.
     for (auto const& v: pCvsys) {
-        auto vreacs = pStatedef->model()->getVolsys(v)->_getAllReacs();
-        if (ngreacs == 0) AssertLog(vreacs.empty() == true);
-        for (auto const& r: vreacs) {
-            uint gidx = pStatedef->getReacIdx(r.second);
-            AssertLog(gidx < ngreacs);
-            if (pReac_G2L[gidx] != LIDX_UNDEFINED) continue;
-            pReac_G2L[gidx] = pReacsN++;
+        const auto& vreacs = pStatedef->model()->getVolsys(v)->_getAllReacs();
+        if (ngreacs == 0) {
+            AssertLog(vreacs.empty() == true);
         }
-        auto const& vdiffs = pStatedef->model()->getVolsys(v)->_getAllDiffs();
-        if (ngdiffs == 0) AssertLog(vdiffs.empty() == true);
-           for (auto const& d: vdiffs) {
-               uint gidx = pStatedef->getDiffIdx(d.second);
-               AssertLog(gidx < ngdiffs);
-               if (pDiff_G2L[gidx] != LIDX_UNDEFINED) continue;
-               pDiff_G2L[gidx] = pDiffsN++;
-           }
+        for (auto const& r: vreacs) {
+            reac_global_id gidx = pStatedef->getReacIdx(r.second);
+            AssertLog(gidx < ngreacs);
+            if (reacG2L(gidx).valid()) {
+                continue;
+            }
+            pReac_G2L[gidx] = reac_local_id(pReacsN++);
+        }
+        const auto& vdiffs = pStatedef->model()->getVolsys(v)->_getAllDiffs();
+        if (ngdiffs == 0) {
+            AssertLog(vdiffs.empty() == true);
+        }
+        for (auto const& d: vdiffs) {
+            diff_global_id gidx = pStatedef->getDiffIdx(d.second);
+            AssertLog(gidx < ngdiffs);
+            if (diffG2L(gidx).valid()) {
+                continue;
+            }
+            pDiff_G2L[gidx] = diff_local_id(pDiffsN++);
+        }
+
+        const auto& vvesbinds = pStatedef->model()->getVolsys(v)->_getAllVesBinds();
+        if (ngvesbinds == 0) {
+            AssertLog(vvesbinds.empty() == true);
+        }
+        for (auto const& vb: vvesbinds) {
+            vesbind_global_id gidx = pStatedef->getVesBindIdx(vb.second);
+            AssertLog(gidx < ngvesbinds);
+            if (vesbindG2L(gidx).valid()) {
+                continue;
+            }
+            pVesBind_G2L[gidx] = vesbind_local_id(pVesBindsN++);
+        }
+
+        const auto& vvesunbinds = pStatedef->model()->getVolsys(v)->_getAllVesUnbinds();
+        if (ngvesunbinds == 0) {
+            AssertLog(vvesunbinds.empty() == true);
+        }
+        for (const auto& vub: vvesunbinds) {
+            vesunbind_global_id gidx = pStatedef->getVesUnbindIdx(vub.second);
+            AssertLog(gidx < ngvesunbinds);
+            if (vesunbindG2L(gidx).valid()) {
+                continue;
+            }
+            pVesUnbind_G2L[gidx] = vesunbind_local_id(pVesUnbindsN++);
+        }
     }
 
     // now add all species that appear in all reactions, diffusions that
     // can occur in this compartment
     // NOTE: Patchdef setups have called addSpec() to already add some
     // species (from surface reactions)
-    for (uint r = 0; r < ngreacs; ++r)
-    {
-        if (pReac_G2L[r] == LIDX_UNDEFINED) { continue;
-}
-        Reacdef * rdef = pStatedef->reacdef(r);
+    for (auto r: reac_global_id::range(ngreacs)) {
+        if (reacG2L(r).unknown()) {
+            continue;
+        }
+
+        Reacdef* rdef = pStatedef->reacdef(r);
         AssertLog(rdef != nullptr);
-        for (uint s = 0; s < ngspecs; ++s)
-        {
-            if (rdef->reqspec(s) == true) { addSpec(s);
-}
+        for (auto s: spec_global_id::range(ngspecs)) {
+            if (rdef->reqspec(s) == true) {
+                addSpec(s);
+            }
         }
     }
-    for (uint d = 0; d < ngdiffs; ++d)
-    {
-        if (pDiff_G2L[d] == LIDX_UNDEFINED) { continue;
-}
-        Diffdef * ddef = pStatedef->diffdef(d);
-        AssertLog(ddef != 0);
-        for (uint s = 0; s < ngspecs; ++s)
-        {
-            if (ddef->reqspec(s) == true) { addSpec(s);
-}
+    for (auto d: diff_global_id::range(ngdiffs)) {
+        if (diffG2L(d).unknown()) {
+            continue;
+        }
+
+        Diffdef* ddef = pStatedef->diffdef(d);
+        AssertLog(ddef != nullptr);
+        for (auto s: spec_global_id::range(ngspecs)) {
+            if (ddef->reqspec(s) == true) {
+                addSpec(s);
+            }
+        }
+    }
+
+    // NEW FOR MPI STEPS. Add all species from vesicle processes that can appear
+    // in volumes.
+    for (auto r: reac_global_id::range(ngreacs)) {
+        if (reacG2L(r).unknown()) {
+            continue;
+        }
+
+        Reacdef* rdef = pStatedef->reacdef(r);
+        AssertLog(rdef != nullptr);
+        for (auto s: spec_global_id::range(ngspecs)) {
+            if (rdef->reqspec(s) == true) {
+                addSpec(s);
+            }
         }
     }
 
@@ -237,54 +240,49 @@ void ssolver::Compdef::setup_references()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Compdef::setup_indices()
-{
+void Compdef::setup_indices() {
     AssertLog(pSetupRefsdone == true);
     AssertLog(pSetupIndsdone == false);
 
     uint ngspecs = pStatedef->countSpecs();
     uint ngreacs = pStatedef->countReacs();
     uint ngdiffs = pStatedef->countDiffs();
+    uint ngvesbinds = pStatedef->countVesBinds();
+    uint ngvesunbinds = pStatedef->countVesUnbinds();
 
     // Set up local indices
-    if (pSpecsN != 0)
-    {
-        pSpec_L2G = new uint[pSpecsN];
-        for (uint i=0; i < ngspecs; ++i)
-        {
-            uint lidx = pSpec_G2L[i];
-            if (lidx ==  LIDX_UNDEFINED) { continue;
-}
+    if (countSpecs() != 0) {
+        pSpec_L2G.container().resize(countSpecs());
+        for (auto i: spec_global_id::range(ngspecs)) {
+            spec_local_id lidx = specG2L(i);
+            if (lidx.unknown()) {
+                continue;
+            }
             pSpec_L2G[lidx] = i;
         }
     }
 
-    if (pReacsN != 0)
-    {
-        pReac_L2G = new uint[pReacsN];
-        for (uint i=0; i < ngreacs; ++i)
-        {
-            uint lidx = pReac_G2L[i];
-            if (lidx == LIDX_UNDEFINED) { continue;
-}
+    if (countReacs() != 0) {
+        pReac_L2G.container().resize(countReacs());
+        for (auto i: reac_global_id::range(ngreacs)) {
+            reac_local_id lidx = reacG2L(i);
+            if (lidx.unknown()) {
+                continue;
+            }
             pReac_L2G[lidx] = i;
         }
-        uint arrsize = pSpecsN * pReacsN;
-        pReac_DEP_Spec = new int[arrsize];
-        pReac_LHS_Spec = new uint[arrsize];
-        pReac_UPD_Spec = new int[arrsize];
-        std::fill_n(pReac_DEP_Spec, arrsize, 0);
-        std::fill_n(pReac_LHS_Spec, arrsize, 0);
-        std::fill_n(pReac_UPD_Spec, arrsize, 0);
-        for (uint ri = 0; ri < pReacsN; ++ri)
-        {
-            Reacdef * rdef = reacdef(ri);
-            for (uint si = 0; si < ngspecs; ++si)
-            {
-                if (rdef->reqspec(si) == false) { continue;
-}
-                uint sil = pSpec_G2L[si];
-                AssertLog(sil != LIDX_UNDEFINED);
+        uint arrsize = countSpecs() * countReacs();
+        pReac_DEP_Spec.resize(arrsize);
+        pReac_LHS_Spec.resize(arrsize);
+        pReac_UPD_Spec.resize(arrsize);
+        for (auto ri: reac_local_id::range(countReacs())) {
+            Reacdef* rdef = reacdef(ri);
+            for (auto si: spec_global_id::range(ngspecs)) {
+                if (rdef->reqspec(si) == false) {
+                    continue;
+                }
+                spec_local_id sil = specG2L(si);
+                AssertLog(sil.valid());
 
                 uint aridx = _IDX_Reac_Spec(ri, sil);
                 pReac_DEP_Spec[aridx] = rdef->dep(si);
@@ -294,69 +292,80 @@ void ssolver::Compdef::setup_indices()
         }
     }
 
-    if (pDiffsN != 0)
-    {
-        pDiff_L2G = new uint[pDiffsN];
-        for (uint i = 0; i < ngdiffs; ++i)
-        {
-            uint lidx = pDiff_G2L[i];
-            if (lidx == LIDX_UNDEFINED) { continue;
-}
+    if (countDiffs() != 0) {
+        pDiff_L2G.container().resize(countDiffs());
+        for (auto i: diff_global_id::range(ngdiffs)) {
+            diff_local_id lidx = diffG2L(i);
+            if (lidx.unknown()) {
+                continue;
+            }
             pDiff_L2G[lidx] = i;
         }
 
-        uint arrsize = pSpecsN * pDiffsN;
-        pDiff_DEP_Spec = new uint[arrsize];
-        std::fill_n(pDiff_DEP_Spec, arrsize, 0);
-        pDiff_LIG = new uint[pDiffsN];
-        for (uint di = 0; di < pDiffsN; ++di)
-        {
-            Diffdef * ddef = diffdef(di);
-            pDiff_LIG[di] = pSpec_G2L[ddef->lig()];
-            for (uint si = 0; si < ngspecs; ++si)
-            {
-                if (ddef->reqspec(si) == false) { continue;
-}
-                uint sil = pSpec_G2L[si];
-                AssertLog(sil != LIDX_UNDEFINED);
+        uint arrsize = countSpecs() * countDiffs();
+        pDiff_DEP_Spec.resize(arrsize);
+        pDiff_LIG.container().resize(countDiffs());
+        for (auto di: diff_local_id::range(countDiffs())) {
+            Diffdef* ddef = diffdef(di);
+            pDiff_LIG[di] = specG2L(ddef->lig());
+            for (auto si: spec_global_id::range(ngspecs)) {
+                if (ddef->reqspec(si) == false) {
+                    continue;
+                }
+                spec_local_id sil = specG2L(si);
+                AssertLog(sil.valid());
                 uint aridx = _IDX_Diff_Spec(di, sil);
                 pDiff_DEP_Spec[aridx] = ddef->dep(si);
             }
         }
     }
 
-    // Initialise the pools and flags members to zeros.
-    if (pSpecsN != 0)
-    {
-        pPoolCount = new double[pSpecsN];
-        pPoolFlags = new uint[pSpecsN];
-        std::fill_n(pPoolCount, pSpecsN, 0.0);
-        std::fill_n(pPoolFlags, pSpecsN, 0);
+    if (countVesBinds() != 0) {
+        pVesBind_L2G.container().resize(countVesBinds());
+        for (auto i: vesbind_global_id::range(ngvesbinds)) {
+            vesbind_local_id lidx = vesbindG2L(i);
+            if (lidx.unknown()) {
+                continue;
+            }
+            pVesBind_L2G[lidx] = i;
+        }
     }
-    if (pReacsN != 0)
-    {
-        pReacFlags = new uint[pReacsN];
-        std::fill_n(pReacFlags, pReacsN, 0);
+
+    if (countVesUnbinds() != 0) {
+        pVesUnbind_L2G.container().resize(countVesUnbinds());
+        for (auto i: vesunbind_global_id::range(ngvesunbinds)) {
+            vesunbind_local_id lidx = vesunbindG2L(i);
+            if (lidx.unknown()) {
+                continue;
+            }
+            pVesUnbind_L2G[lidx] = i;
+        }
+    }
+
+    // Initialise the pools and flags members to zeros.
+    if (countSpecs() != 0) {
+        pPoolCount.container().resize(countSpecs());
+        pPoolFlags.container().resize(countSpecs());
+    }
+    if (countReacs() != 0) {
+        pReacFlags.container().resize(countReacs());
 
         // Finally initialise constants to user-supplied values
-        pReacKcst = new double[pReacsN];
+        pReacKcst.container().resize(countReacs());
 
-        for (uint i = 0; i < pReacsN; ++i)
-        {
+        for (auto i: reac_local_id::range(countReacs())) {
             // reacdef() returns global Reacdef by local index
-            ssolver::Reacdef * reac = reacdef(i);
+            Reacdef* reac = reacdef(i);
             pReacKcst[i] = reac->kcst();
         }
     }
 
-    if (pDiffsN != 0)
-    {
-        pDiffDcst = new double[pDiffsN];
+    if (countDiffs() != 0) {
+        pDiffDcst.container().resize(countDiffs());
 
-        for (uint i = 0; i <pDiffsN; ++i)
-        {
+        for (auto i: diff_local_id::range(countDiffs())) {
             // diffdef() returns global Diffdef by local index
-            ssolver::Diffdef * diff = diffdef(i);
+            Diffdef* diff = diffdef(i);
             pDiffDcst[i] = diff->dcst();
         }
     }
@@ -365,14 +374,15 @@ void ssolver::Compdef::setup_indices()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Compdef::addIPatchdef(ssolver::Patchdef * p)
-{
+void Compdef::addIPatchdef(Patchdef* p) {
     // Make some checks.
     AssertLog(p != nullptr);
     AssertLog(p->ocompdef() == this);
     // Check whether it's already included.
     auto ip_end = pIPatches.end();
-    if (std::find(pIPatches.begin(), ip_end, p) != ip_end) return;
+    if (std::find(pIPatches.begin(), ip_end, p) != ip_end) {
+        return;
+    }
     auto op_end = pOPatches.end();
     AssertLog(std::find(pOPatches.begin(), op_end, p) == op_end);
     // Include.
@@ -381,14 +391,15 @@ void ssolver::Compdef::addIPatchdef(ssolver::Patchdef * p)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Compdef::addOPatchdef(ssolver::Patchdef * p)
-{
+void Compdef::addOPatchdef(Patchdef* p) {
     // Make some checks.
     AssertLog(p != nullptr);
     AssertLog(p->icompdef() == this);
     // Check whether it's already included.
     auto op_end = pOPatches.end();
-    if (std::find(pOPatches.begin(), op_end, p) != op_end) return;
+    if (std::find(pOPatches.begin(), op_end, p) != op_end) {
+        return;
+    }
     auto ip_end = pIPatches.end();
     AssertLog(std::find(pIPatches.begin(), ip_end, p) == ip_end);
     // Include.
@@ -397,166 +408,153 @@ void ssolver::Compdef::addOPatchdef(ssolver::Patchdef * p)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Compdef::addSpec(uint gidx)
-{
+void Compdef::addSpec(spec_global_id gidx) {
     AssertLog(pSetupIndsdone == false);
     AssertLog(pStatedef->specdef(gidx) != nullptr);
-    if (pSpec_G2L[gidx] != LIDX_UNDEFINED) { return;
-}
-    pSpec_G2L[gidx] = pSpecsN++;
+    if (specG2L(gidx).valid()) {
+        return;
+    }
+    pSpec_G2L[gidx] = spec_local_id(pSpecsN++);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Compdef::setVol(double v)
-{
+void Compdef::setVol(double v) {
     AssertLog(v > 0.0);
     pVol = v;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Compdef::reset()
-{
+void Compdef::reset() {
     AssertLog(pSetupRefsdone == true);
     AssertLog(pSetupIndsdone == true);
-    std::fill_n(pPoolCount, pSpecsN, 0.0);
-    std::fill_n(pPoolFlags, pSpecsN, 0);
-    std::fill_n(pReacFlags, pReacsN, 0);
-    for (uint i = 0; i < pReacsN; ++i)
-    {
-        ssolver::Reacdef * reac = reacdef(i);
+    std::fill(pPoolCount.begin(), pPoolCount.end(), 0.0);
+    std::fill(pPoolFlags.begin(), pPoolFlags.end(), 0);
+    std::fill(pReacFlags.begin(), pReacFlags.end(), 0);
+    for (auto i: reac_local_id::range(countReacs())) {
+        Reacdef* reac = reacdef(i);
         pReacKcst[i] = reac->kcst();
     }
 
-    for (uint i = 0; i <pDiffsN; ++i)
-    {
-        ssolver::Diffdef * diff = diffdef(i);
+    for (auto i: diff_local_id::range(countDiffs())) {
+        Diffdef* diff = diffdef(i);
         pDiffDcst[i] = diff->dcst();
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Compdef::setCount(uint slidx, double count)
-{
+void Compdef::setCount(spec_local_id slidx, double count) {
     AssertLog(pSetupRefsdone == true);
     AssertLog(pSetupIndsdone == true);
-    AssertLog(slidx < pSpecsN);
+    AssertLog(slidx < countSpecs());
     AssertLog(count >= 0.0);
     pPoolCount[slidx] = count;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Compdef::setClamped(uint slidx, bool clamp)
-{
+void Compdef::setClamped(spec_local_id slidx, bool clamp) {
     AssertLog(pSetupRefsdone == true);
     AssertLog(pSetupIndsdone == true);
-    AssertLog(slidx < pSpecsN);
-    if (clamp == true) { pPoolFlags[slidx] |= CLAMPED;
-    } else { pPoolFlags[slidx] &= ~CLAMPED;
-}
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-uint * ssolver::Compdef::reac_lhs_bgn(uint rlidx) const
-{
-    AssertLog(rlidx < pReacsN);
-    return pReac_LHS_Spec + (rlidx * pSpecsN);
+    AssertLog(slidx < countSpecs());
+    if (clamp == true) {
+        pPoolFlags[slidx] |= CLAMPED;
+    } else {
+        pPoolFlags[slidx] &= ~CLAMPED;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint * ssolver::Compdef::reac_lhs_end(uint rlidx) const
-{
-    AssertLog(rlidx < pReacsN);
-    return pReac_LHS_Spec + ((rlidx+1) * pSpecsN);
+strongid_span<spec_local_id, const uint> Compdef::reac_lhs(reac_local_id rlidx) const {
+    AssertLog(rlidx < countReacs());
+    return to_strong_span<spec_local_id>(pReac_LHS_Spec, rlidx, countSpecs());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int * ssolver::Compdef::reac_upd_bgn(uint rlidx) const
-{
-    AssertLog(rlidx < pReacsN);
-    return pReac_UPD_Spec + (rlidx * pSpecsN);
+strongid_span<spec_local_id, const int> Compdef::reac_upd(reac_local_id rlidx) const {
+    AssertLog(rlidx < countReacs());
+    return to_strong_span<spec_local_id>(pReac_UPD_Spec, rlidx, countSpecs());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
-int * ssolver::Compdef::reac_upd_end(uint rlidx) const
-{
-    AssertLog(rlidx < pReacsN);
-    return pReac_UPD_Spec + ((rlidx + 1) * pSpecsN);
-}
-////////////////////////////////////////////////////////////////////////////////
-
-int ssolver::Compdef::reac_dep(uint rlidx, uint slidx) const
-{
-    return pReac_DEP_Spec[slidx + (rlidx * pSpecsN)];
+int Compdef::reac_dep(reac_local_id rlidx, spec_local_id slidx) const {
+    return pReac_DEP_Spec[slidx.get() + (rlidx.get() * countSpecs())];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint ssolver::Compdef::diff_dep(uint dlidx, uint slidx) const
-{
-    return pDiff_DEP_Spec[slidx + (dlidx * pSpecsN)];
+uint Compdef::diff_dep(diff_local_id dlidx, spec_local_id slidx) const {
+    return pDiff_DEP_Spec[slidx.get() + (dlidx.get() * countSpecs())];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::Reacdef * ssolver::Compdef::reacdef(uint rlidx) const
-{
+Reacdef* Compdef::reacdef(reac_local_id rlidx) const {
     AssertLog(pSetupRefsdone == true);
-    AssertLog(rlidx < pReacsN);
-    return pStatedef->reacdef(pReac_L2G[rlidx]);
+    AssertLog(rlidx < countReacs());
+    return pStatedef->reacdef(reacL2G(rlidx));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Compdef::setKcst(uint rlidx, double kcst)
-{
+void Compdef::setKcst(reac_local_id rlidx, double kcst) {
     AssertLog(pSetupRefsdone == true);
     AssertLog(pSetupIndsdone == true);
-    AssertLog(rlidx < pReacsN);
+    AssertLog(rlidx < countReacs());
     AssertLog(kcst >= 0.0);
     pReacKcst[rlidx] = kcst;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Compdef::setDcst(uint dlidx, double dcst)
-{
+void Compdef::setDcst(diff_local_id dlidx, double dcst) {
     AssertLog(pSetupRefsdone == true);
     AssertLog(pSetupIndsdone == true);
-    AssertLog(dlidx < pDiffsN);
+    AssertLog(dlidx < countDiffs());
     AssertLog(dcst >= 0.0);
     pDiffDcst[dlidx] = dcst;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Compdef::setActive(uint rlidx, bool active)
-{
+void Compdef::setActive(reac_local_id rlidx, bool active) {
     AssertLog(pSetupRefsdone == true);
     AssertLog(pSetupIndsdone == true);
-    AssertLog(rlidx < pReacsN);
-    if (active == true) { pReacFlags[rlidx] &= ~INACTIVATED;
-    } else { pReacFlags[rlidx] |= INACTIVATED;
-}
+    AssertLog(rlidx < countReacs());
+    if (active == true) {
+        pReacFlags[rlidx] &= ~INACTIVATED;
+    } else {
+        pReacFlags[rlidx] |= INACTIVATED;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::Diffdef * ssolver::Compdef::diffdef(uint dlidx) const
-{
+Diffdef* Compdef::diffdef(diff_local_id dlidx) const {
     AssertLog(pSetupRefsdone == true);
-    AssertLog(dlidx < pDiffsN);
-    return pStatedef->diffdef(pDiff_L2G[dlidx]);
+    AssertLog(dlidx < countDiffs());
+    return pStatedef->diffdef(diffL2G(dlidx));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// END
+VesBinddef* Compdef::vesbinddef(vesbind_local_id vblidx) const {
+    AssertLog(pSetupRefsdone == true);
+    AssertLog(vblidx < countVesBinds());
+    return pStatedef->vesbinddef(vesbindL2G(vblidx));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+VesUnbinddef* Compdef::vesunbinddef(vesunbind_local_id vblidx) const {
+    AssertLog(pSetupRefsdone == true);
+    AssertLog(vblidx < countVesUnbinds());
+    return pStatedef->vesunbinddef(vesunbindL2G(vblidx));
+}
+
+}  // namespace steps::solver

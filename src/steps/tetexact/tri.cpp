@@ -24,62 +24,50 @@
 
  */
 
-
-// Standard library & STL headers.
-#include <algorithm>
-#include <cassert>
-#include <cmath>
-#include <functional>
-#include <iostream>
+#include "tri.hpp"
 
 // STEPS headers.
-#include "tri.hpp"
 #include "ghkcurr.hpp"
+#include "math/constants.hpp"
 #include "sdiff.hpp"
+#include "solver/ohmiccurrdef.hpp"
+#include "solver/sreacdef.hpp"
 #include "sreac.hpp"
 #include "tet.hpp"
 #include "tetexact.hpp"
 #include "vdepsreac.hpp"
-#include "vdeptrans.hpp"
-#include "math/constants.hpp"
-#include "solver/ohmiccurrdef.hpp"
-#include "solver/sreacdef.hpp"
 
 // logging
-#include <easylogging++.h>
 #include "util/error.hpp"
+#include <easylogging++.h>
 
-////////////////////////////////////////////////////////////////////////////////
+#include "util/checkpointing.hpp"
 
-namespace stex = steps::tetexact;
-namespace ssolver = steps::solver;
+namespace steps::tetexact {
 
-////////////////////////////////////////////////////////////////////////////////
-
-stex::Tri::Tri(triangle_id_t idx, steps::solver::Patchdef * patchdef, double area,
-                double l0, double l1, double l2, double d0, double d1, double d2,
-                tetrahedron_id_t tetinner, tetrahedron_id_t tetouter,
-                triangle_id_t tri0, triangle_id_t tri1, triangle_id_t tri2)
-: pIdx(idx)
-, pPatchdef(patchdef)
-, pInnerTet(nullptr)
-, pOuterTet(nullptr)
-, pTets()
-, pNextTri()
-, pArea(area)
-, pLengths()
-, pDist()
-, pPoolCount(nullptr)
-, pPoolFlags(nullptr)
-, pKProcs()
-, pECharge(nullptr)
-, pECharge_last(nullptr)
-, pECharge_accum(nullptr)
-, pECharge_last_dt(0)
-, pECharge_accum_dt(0)
-, pOCchan_timeintg(nullptr)
-, pOCtime_upd(nullptr)
-{
+Tri::Tri(triangle_global_id idx,
+         solver::Patchdef* patchdef,
+         double area,
+         double l0,
+         double l1,
+         double l2,
+         double d0,
+         double d1,
+         double d2,
+         tetrahedron_global_id tetinner,
+         tetrahedron_global_id tetouter,
+         triangle_global_id tri0,
+         triangle_global_id tri1,
+         triangle_global_id tri2)
+    : pIdx(idx)
+    , pPatchdef(patchdef)
+    , pInnerTet(nullptr)
+    , pOuterTet(nullptr)
+    , pArea(area)
+    , pLengths()
+    , pDist()
+    , pECharge_last_dt(0)
+    , pECharge_accum_dt(0) {
     AssertLog(pPatchdef != nullptr);
     AssertLog(pArea > 0.0);
 
@@ -93,9 +81,7 @@ stex::Tri::Tri(triangle_id_t idx, steps::solver::Patchdef * patchdef, double are
     pTris[1] = tri1;
     pTris[2] = tri2;
 
-    pNextTri[0] = nullptr;
-    pNextTri[1] = nullptr;
-    pNextTri[2] = nullptr;
+    std::fill(pNextTri.begin(), pNextTri.end(), nullptr);
 
     pLengths[0] = l0;
     pLengths[1] = l1;
@@ -106,111 +92,71 @@ stex::Tri::Tri(triangle_id_t idx, steps::solver::Patchdef * patchdef, double are
     pDist[2] = d2;
 
     uint nspecs = pPatchdef->countSpecs();
-    pPoolCount = new uint[nspecs];
-    pPoolFlags = new uint[nspecs];
-    std::fill_n(pPoolCount, nspecs, 0);
-    std::fill_n(pPoolFlags, nspecs, 0);
+    pPoolCount.container().resize(nspecs);
+    pPoolFlags.container().resize(nspecs);
 
     uint nghkcurrs = pPatchdef->countGHKcurrs();
-    pECharge = new int[nghkcurrs];
-    std::fill_n(pECharge, nghkcurrs, 0);
-
-    pECharge_last = new int[nghkcurrs];
-    std::fill_n(pECharge_last, nghkcurrs, 0);
-
-    pECharge_accum = new int[nghkcurrs];
-    std::fill_n(pECharge_accum, nghkcurrs, 0);
+    pECharge.container().resize(nghkcurrs);
+    pECharge_last.container().resize(nghkcurrs);
+    pECharge_accum.container().resize(nghkcurrs);
 
     uint nohmcurrs = pPatchdef->countOhmicCurrs();
-    pOCchan_timeintg = new double[nohmcurrs];
-    std::fill_n(pOCchan_timeintg, nohmcurrs, 0.0);
-    pOCtime_upd = new double[nohmcurrs];
-    std::fill_n(pOCtime_upd, nohmcurrs, 0.0);
+    pOCchan_timeintg.container().resize(nohmcurrs);
+    pOCtime_upd.container().resize(nohmcurrs);
 
-    std::fill_n(pSDiffBndDirection, 3, false);
+    std::fill(pSDiffBndDirection.begin(), pSDiffBndDirection.end(), false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Tri::~Tri()
-{
-    delete[] pPoolCount;
-    delete[] pPoolFlags;
-    delete[] pECharge;
-    delete[] pECharge_last;
-    delete[] pECharge_accum;
-    delete[] pOCchan_timeintg;
-    delete[] pOCtime_upd;
-
-    KProcPVecCI e = pKProcs.end();
-    for (std::vector<stex::KProc *>::const_iterator i = pKProcs.begin();
-         i != e; ++i) delete *i;
+Tri::~Tri() {
+    auto e = pKProcs.end();
+    for (auto i = pKProcs.begin(); i != e; ++i) {
+        delete *i;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tri::checkpoint(std::fstream & cp_file)
-{
-    uint nspecs = patchdef()->countSpecs();
-    cp_file.write(reinterpret_cast<char*>(pPoolCount), sizeof(uint) * nspecs);
-    cp_file.write(reinterpret_cast<char*>(pPoolFlags), sizeof(uint) * nspecs);
-
-    uint nghkcurrs = pPatchdef->countGHKcurrs();
-    cp_file.write(reinterpret_cast<char*>(pECharge), sizeof(int) * nghkcurrs);
-    cp_file.write(reinterpret_cast<char*>(pECharge_last), sizeof(int) * nghkcurrs);
-    cp_file.write(reinterpret_cast<char*>(pECharge_accum), sizeof(int) * nghkcurrs);
-    cp_file.write(reinterpret_cast<char*>(&pECharge_last_dt), sizeof(double));
-    cp_file.write(reinterpret_cast<char*>(&pECharge_accum_dt), sizeof(double));
-
-    uint nohmcurrs = pPatchdef->countOhmicCurrs();
-    cp_file.write(reinterpret_cast<char*>(pOCchan_timeintg), sizeof(double) * nohmcurrs);
-    cp_file.write(reinterpret_cast<char*>(pOCtime_upd), sizeof(double) * nohmcurrs);
-
-    cp_file.write(reinterpret_cast<char*>(pSDiffBndDirection), sizeof(bool) * 3);
-
+void Tri::checkpoint(std::fstream& cp_file) {
+    util::checkpoint(cp_file, pPoolFlags);
+    util::checkpoint(cp_file, pPoolCount);
+    util::checkpoint(cp_file, pECharge_accum);
+    util::checkpoint(cp_file, pECharge_accum_dt);
+    util::checkpoint(cp_file, pECharge_last);
+    util::checkpoint(cp_file, pECharge_last_dt);
+    util::checkpoint(cp_file, pOCtime_upd);
+    util::checkpoint(cp_file, pERev);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tri::restore(std::fstream & cp_file)
-{
-    uint nspecs = patchdef()->countSpecs();
-    cp_file.read(reinterpret_cast<char*>(pPoolCount), sizeof(uint) * nspecs);
-    cp_file.read(reinterpret_cast<char*>(pPoolFlags), sizeof(uint) * nspecs);
-
-    uint nghkcurrs = pPatchdef->countGHKcurrs();
-    cp_file.read(reinterpret_cast<char*>(pECharge), sizeof(int) * nghkcurrs);
-    cp_file.read(reinterpret_cast<char*>(pECharge_last), sizeof(int) * nghkcurrs);
-    cp_file.read(reinterpret_cast<char*>(pECharge_accum), sizeof(int) * nghkcurrs);
-    cp_file.read(reinterpret_cast<char*>(&pECharge_last_dt), sizeof(double));
-    cp_file.read(reinterpret_cast<char*>(&pECharge_accum_dt), sizeof(double));
-
-    uint nohmcurrs = pPatchdef->countOhmicCurrs();
-    cp_file.read(reinterpret_cast<char*>(pOCchan_timeintg), sizeof(double) * nohmcurrs);
-    cp_file.read(reinterpret_cast<char*>(pOCtime_upd), sizeof(double) * nohmcurrs);
-
-    cp_file.read(reinterpret_cast<char*>(pSDiffBndDirection), sizeof(bool) * 3);
-
+void Tri::restore(std::fstream& cp_file) {
+    util::restore(cp_file, pPoolFlags);
+    util::restore(cp_file, pPoolCount);
+    util::restore(cp_file, pECharge_accum);
+    util::restore(cp_file, pECharge_accum_dt);
+    util::restore(cp_file, pECharge_last);
+    util::restore(cp_file, pECharge_last_dt);
+    util::restore(cp_file, pOCtime_upd);
+    util::restore(cp_file, pERev);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tri::setInnerTet(stex::WmVol * t)
-{
+void Tri::setInnerTet(WmVol* t) {
     pInnerTet = t;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tri::setOuterTet(stex::WmVol * t)
-{
+void Tri::setOuterTet(WmVol* t) {
     pOuterTet = t;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tri::setSDiffBndDirection(uint i)
-{
+void Tri::setSDiffBndDirection(uint i) {
     AssertLog(i < 3);
 
     pSDiffBndDirection[i] = true;
@@ -218,176 +164,137 @@ void stex::Tri::setSDiffBndDirection(uint i)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tri::setNextTri(uint i, stex::Tri * t)
-{
-    AssertLog(i <= 2);
-
-    pNextTri[i]= t;
+void Tri::setNextTri(uint i, Tri* t) {
+    pNextTri.at(i) = t;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tri::setupKProcs(stex::Tetexact * tex, bool efield)
-{
-    uint kprocvecsize = pPatchdef->countSReacs()+pPatchdef->countSurfDiffs();
+void Tri::setupKProcs(Tetexact* tex, bool efield) {
+    uint kprocvecsize = pPatchdef->countSReacs() + pPatchdef->countSurfDiffs();
     if (efield) {
-        kprocvecsize += (pPatchdef->countVDepTrans() + pPatchdef->countVDepSReacs() + pPatchdef->countGHKcurrs());
-}
+        kprocvecsize += (pPatchdef->countVDepSReacs() + pPatchdef->countGHKcurrs());
+    }
     pKProcs.resize(kprocvecsize);
 
     uint j = 0;
     // Create surface reaction kprocs
     uint nsreacs = patchdef()->countSReacs();
-    for (uint i=0; i < nsreacs; ++i)
-    {
-        ssolver::SReacdef * srdef = patchdef()->sreacdef(i);
-        auto * sr = new SReac(srdef, this);
+    for (auto i: solver::sreac_local_id::range(nsreacs)) {
+        solver::SReacdef* srdef = patchdef()->sreacdef(i);
+        auto* sr = new SReac(srdef, this);
         AssertLog(sr != nullptr);
         pKProcs[j++] = sr;
         tex->addKProc(sr);
     }
 
     uint nsdiffs = patchdef()->countSurfDiffs();
-    for (uint i=0; i < nsdiffs; ++i)
-    {
-        ssolver::Diffdef * sddef = patchdef()->surfdiffdef(i);
-        auto * sd = new SDiff(sddef, this);
+    for (auto i: solver::surfdiff_local_id::range(nsdiffs)) {
+        solver::SurfDiffdef* sddef = patchdef()->surfdiffdef(i);
+        auto* sd = new SDiff(sddef, this);
         AssertLog(sd != nullptr);
         pKProcs[j++] = sd;
         tex->addKProc(sd);
     }
 
-
-    if (efield)
-    {
-        uint nvdtrans = patchdef()->countVDepTrans();
-        for (uint i=0; i < nvdtrans; ++i)
-        {
-            ssolver::VDepTransdef * vdtdef = patchdef()->vdeptransdef(i);
-            auto * vdt = new VDepTrans(vdtdef, this);
-            AssertLog(vdt != nullptr);
-            pKProcs[j++] = vdt;
-            tex->addKProc(vdt);
-        }
-
+    if (efield) {
         uint nvdsreacs = patchdef()->countVDepSReacs();
-        for (uint i=0; i < nvdsreacs; ++i)
-        {
-            ssolver::VDepSReacdef * vdsrdef = patchdef()->vdepsreacdef(i);
-            auto * vdsr = new VDepSReac(vdsrdef, this);
+        for (auto i: solver::vdepsreac_local_id::range(nvdsreacs)) {
+            solver::VDepSReacdef* vdsrdef = patchdef()->vdepsreacdef(i);
+            auto* vdsr = new VDepSReac(vdsrdef, this);
             AssertLog(vdsr != nullptr);
             pKProcs[j++] = vdsr;
-            tex->addKProc(vdsr);
+            tex->addKProc(vdsr, true);
         }
 
         uint nghkcurrs = patchdef()->countGHKcurrs();
-        for (uint i=0; i < nghkcurrs; ++i)
-        {
-            ssolver::GHKcurrdef * ghkdef = patchdef()->ghkcurrdef(i);
-            auto * ghk = new GHKcurr(ghkdef, this);
+        for (auto i: solver::ghkcurr_local_id::range(nghkcurrs)) {
+            solver::GHKcurrdef* ghkdef = patchdef()->ghkcurrdef(i);
+            auto* ghk = new GHKcurr(ghkdef, this);
             AssertLog(ghk != nullptr);
             pKProcs[j++] = ghk;
-            tex->addKProc(ghk);
+            tex->addKProc(ghk, true);
         }
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tri::reset()
-{
-    uint nspecs = patchdef()->countSpecs();
-    std::fill_n(pPoolCount, nspecs, 0);
-    std::fill_n(pPoolFlags, nspecs, 0);
+void Tri::reset() {
+    std::fill(pPoolCount.begin(), pPoolCount.end(), 0);
+    std::fill(pPoolFlags.begin(), pPoolFlags.end(), 0);
 
-    for (auto kproc: pKProcs) {
+    for (auto const& kproc: pKProcs) {
         kproc->reset();
     }
 
-    uint nghkcurrs = pPatchdef->countGHKcurrs();
-    std::fill_n(pECharge, nghkcurrs, 0);
-    std::fill_n(pECharge_last, nghkcurrs, 0);
-    std::fill_n(pECharge_accum, nghkcurrs, 0);
+    std::fill(pECharge.begin(), pECharge.end(), 0);
+    std::fill(pECharge_last.begin(), pECharge_last.end(), 0);
+    std::fill(pECharge_accum.begin(), pECharge_accum.end(), 0);
     pECharge_last_dt = 0;
     pECharge_accum_dt = 0;
 
-    uint nohmcurrs = pPatchdef->countOhmicCurrs();
-    std::fill_n(pOCchan_timeintg, nohmcurrs, 0.0);
-    std::fill_n(pOCtime_upd, nohmcurrs, 0.0);
+    std::fill(pOCchan_timeintg.begin(), pOCchan_timeintg.end(), 0.0);
+    std::fill(pOCtime_upd.begin(), pOCtime_upd.end(), 0.0);
+
+    pERev.clear();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tri::resetECharge(double dt, double efdt, double t)
-{
+void Tri::resetECharge(double dt, double efdt, double t) {
     uint nghkcurrs = pPatchdef->countGHKcurrs();
 
-    for (uint i=0; i < nghkcurrs; ++i) {
+    for (auto i: solver::ghkcurr_local_id::range(nghkcurrs)) {
         pECharge_accum[i] += pECharge[i];
     }
     pECharge_accum_dt += dt;
 
     if (pECharge_accum_dt >= efdt or
-        (efdt - pECharge_accum_dt) <=
-            std::numeric_limits<double>::epsilon() * t * 8) {
+        (efdt - pECharge_accum_dt) <= std::numeric_limits<double>::epsilon() * t * 8) {
         // Swap arrays
-        std::swap(pECharge_last, pECharge_accum);
+        std::swap(pECharge_last.container(), pECharge_accum.container());
 
         // reset accumulation array and dt values
-        std::fill_n(pECharge_accum, nghkcurrs, 0);
+        std::fill(pECharge_accum.begin(), pECharge_accum.end(), 0);
 
         pECharge_last_dt = pECharge_accum_dt;
         pECharge_accum_dt = 0;
     }
 
-    std::fill_n(pECharge, nghkcurrs, 0);
+    std::fill(pECharge.begin(), pECharge.end(), 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tri::resetOCintegrals()
-{
-    uint nocs = patchdef()->countOhmicCurrs();
-    std::fill_n(pOCchan_timeintg, nocs, 0.0);
+void Tri::resetOCintegrals() {
+    std::fill(pOCchan_timeintg.begin(), pOCchan_timeintg.end(), 0.0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tri::incECharge(uint lidx, int charge)
-{
-    uint nghkcurrs = pPatchdef->countGHKcurrs();
-    AssertLog(lidx < nghkcurrs);
-    pECharge[lidx]+=charge;
+void Tri::incECharge(solver::ghkcurr_local_id lidx, int charge) {
+    pECharge.at(lidx) += charge;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tri::setCount(uint lidx, uint count)
-{
-    AssertLog(lidx < patchdef()->countSpecs());
-    pPoolCount[lidx] = count;
-
-    /* 16/01/10 IH: Counts no longer stored in patch object.
-    // Now update the count in this tri's patch
-    double diff = c - oldcount;
-    double newcount = (patchdef()->pools()[lidx]) + diff;
-    // Patchdef method will do the checking on the double argument (should be positive!)
-    patchdef()->setCount(lidx, newcount);
-    */
+void Tri::setCount(solver::spec_local_id lidx, uint count) {
+    pPoolCount.at(lidx) = count;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tri::incCount(uint lidx, int inc)
-{
-    AssertLog(lidx < patchdef()->countSpecs());
-    pPoolCount[lidx] += inc;
+void Tri::incCount(solver::spec_local_id lidx, int inc) {
+    pPoolCount.at(lidx) += inc;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tri::setOCchange(uint oclidx, uint slidx, double dt, double simtime)
-{
+void Tri::setOCchange(solver::ohmiccurr_local_id oclidx,
+                      solver::spec_local_id slidx,
+                      double dt,
+                      double simtime) {
     // NOTE: simtime is BEFORE the update has taken place
 
     AssertLog(oclidx < patchdef()->countOhmicCurrs());
@@ -395,33 +302,50 @@ void stex::Tri::setOCchange(uint oclidx, uint slidx, double dt, double simtime)
 
     // A channel state relating to an ohmic current has changed it's
     // number.
-    double integral = pPoolCount[slidx]*((simtime+dt) - pOCtime_upd[oclidx]);
+    double integral = pPoolCount[slidx] * ((simtime + dt) - pOCtime_upd[oclidx]);
     AssertLog(integral >= 0.0);
 
     pOCchan_timeintg[oclidx] += integral;
-    pOCtime_upd[oclidx] = simtime+dt;
+    pOCtime_upd[oclidx] = simtime + dt;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Tri::setClamped(uint lidx, bool clamp)
-{
-    if (clamp) { pPoolFlags[lidx] |= CLAMPED;
-    } else { pPoolFlags[lidx] &= ~CLAMPED;
-}
+void Tri::setOCerev(solver::ohmiccurr_local_id oclidx, double erev) {
+    AssertLog(oclidx < patchdef()->countOhmicCurrs());
+    pERev[oclidx] = erev;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::SReac * stex::Tri::sreac(uint lidx) const
-{
+double Tri::getOCerev(solver::ohmiccurr_local_id oclidx) const {
+    auto it = pERev.find(oclidx);
+    if (it != pERev.end()) {
+        return it->second;
+    } else {
+        return patchdef()->ohmiccurrdef(oclidx)->getERev();
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Tri::setClamped(solver::spec_local_id lidx, bool clamp) {
+    if (clamp) {
+        pPoolFlags[lidx] |= CLAMPED;
+    } else {
+        pPoolFlags[lidx] &= ~CLAMPED;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+SReac& Tri::sreac(solver::sreac_local_id lidx) const {
     AssertLog(lidx < patchdef()->countSReacs());
-    return dynamic_cast<stex::SReac*>(pKProcs[lidx]);
+    return *dynamic_cast<SReac*>(pKProcs[lidx.get()]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int stex::Tri::getTriDirection(triangle_id_t tidx)
-{
+int Tri::getTriDirection(triangle_global_id tidx) const noexcept {
     for (uint i = 0; i < 3; i++) {
         if (pTris[i] == tidx) {
             return i;
@@ -432,44 +356,34 @@ int stex::Tri::getTriDirection(triangle_id_t tidx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::SDiff * stex::Tri::sdiff(uint lidx) const
-{
+SDiff& Tri::sdiff(solver::surfdiff_local_id lidx) const {
     AssertLog(lidx < patchdef()->countSurfDiffs());
-    return dynamic_cast<stex::SDiff*>(pKProcs[patchdef()->countSReacs() + lidx]);
+    return *dynamic_cast<SDiff*>(pKProcs[patchdef()->countSReacs() + lidx.get()]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::VDepTrans * stex::Tri::vdeptrans(uint lidx) const
-{
-    AssertLog(lidx < patchdef()->countVDepTrans());
-    return dynamic_cast<stex::VDepTrans*>(pKProcs[patchdef()->countSReacs() + patchdef()->countSurfDiffs() + lidx]);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-stex::VDepSReac * stex::Tri::vdepsreac(uint lidx) const
-{
+VDepSReac& Tri::vdepsreac(solver::vdepsreac_local_id lidx) const {
     AssertLog(lidx < patchdef()->countVDepSReacs());
-    return dynamic_cast<stex::VDepSReac*>(pKProcs[patchdef()->countSReacs() + patchdef()->countSurfDiffs() + patchdef()->countVDepTrans() + lidx]);
-
+    return *dynamic_cast<VDepSReac*>(
+        pKProcs[patchdef()->countSReacs() + patchdef()->countSurfDiffs() + lidx.get()]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::GHKcurr * stex::Tri::ghkcurr(uint lidx) const
-{
+GHKcurr& Tri::ghkcurr(solver::ghkcurr_local_id lidx) const {
     AssertLog(lidx < patchdef()->countGHKcurrs());
-    return dynamic_cast<stex::GHKcurr*>(pKProcs[patchdef()->countSReacs() + patchdef()->countSurfDiffs() + patchdef()->countVDepTrans() + patchdef()->countVDepSReacs() + lidx]);
-
+    return *dynamic_cast<GHKcurr*>(
+        pKProcs[patchdef()->countSReacs() + patchdef()->countSurfDiffs() +
+                patchdef()->countVDepSReacs() + lidx.get()]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stex::Tri::getGHKI(uint lidx) const
-{
-    if (pECharge_last_dt == 0)
+double Tri::getGHKI(solver::ghkcurr_local_id lidx) const {
+    if (pECharge_last_dt == 0) {
         return 0;
+    }
 
     uint nghkcurrs = pPatchdef->countGHKcurrs();
     AssertLog(lidx < nghkcurrs);
@@ -477,51 +391,48 @@ double stex::Tri::getGHKI(uint lidx) const
     int efcharge = pECharge_last[lidx];
     auto efcharged = static_cast<double>(efcharge);
 
-    return ((efcharged*steps::math::E_CHARGE)/pECharge_last_dt);
+    return ((efcharged * math::E_CHARGE) / pECharge_last_dt);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stex::Tri::getGHKI() const
-{
-    if (pECharge_last_dt == 0)
+double Tri::getGHKI() const {
+    if (pECharge_last_dt == 0) {
         return 0;
+    }
 
     uint nghkcurrs = pPatchdef->countGHKcurrs();
-    int efcharge=0;
-    for (uint i =0; i < nghkcurrs; ++i)
-    {
+    int efcharge = 0;
+    for (auto i: solver::ghkcurr_local_id::range(nghkcurrs)) {
         efcharge += pECharge_last[i];
     }
 
     auto efcharged = static_cast<double>(efcharge);
 
-    return ((efcharged*steps::math::E_CHARGE)/pECharge_last_dt);
+    return ((efcharged * math::E_CHARGE) / pECharge_last_dt);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stex::Tri::computeI(double v, double dt, double simtime, double efdt)
-{
+double Tri::computeI(double v, double dt, double simtime, double efdt) {
     double current = 0.0;
     uint nocs = patchdef()->countOhmicCurrs();
-    for (uint i = 0; i < nocs; ++i)
-    {
-        ssolver::OhmicCurrdef * ocdef = patchdef()->ohmiccurrdef(i);
+    for (auto i: solver::ohmiccurr_local_id::range(nocs)) {
+        solver::OhmicCurrdef* ocdef = patchdef()->ohmiccurrdef(i);
         // First calculate the last little bit up to the simtime
-        double integral = pPoolCount[patchdef()->ohmiccurr_chanstate(i)]*(simtime - pOCtime_upd[i]);
+        double integral = pPoolCount[patchdef()->ohmiccurr_chanstate(i)] *
+                          (simtime - pOCtime_upd[i]);
         AssertLog(integral >= 0.0);
         pOCchan_timeintg[i] += integral;
         pOCtime_upd[i] = simtime;
 
         // Find the mean number of channels open over the dt
-        double n = pOCchan_timeintg[i]/dt;
-        current += (n*ocdef->getG())*(v-ocdef->getERev());
+        double n = pOCchan_timeintg[i] / dt;
+        current += (n * ocdef->getG()) * (v - getOCerev(i));
     }
     uint nghkcurrs = pPatchdef->countGHKcurrs();
-    int efcharge=0;
-    for (uint i =0; i < nghkcurrs; ++i)
-    {
+    int efcharge = 0;
+    for (auto i: solver::ghkcurr_local_id::range(nghkcurrs)) {
         efcharge += pECharge[i];
     }
 
@@ -529,7 +440,7 @@ double stex::Tri::computeI(double v, double dt, double simtime, double efdt)
     auto efcharged = static_cast<double>(efcharge);
 
     // Convert charge to coulombs and find mean current
-    current += ((efcharged*steps::math::E_CHARGE)/dt);
+    current += ((efcharged * math::E_CHARGE) / dt);
     resetECharge(dt, efdt, simtime);
     resetOCintegrals();
 
@@ -538,16 +449,14 @@ double stex::Tri::computeI(double v, double dt, double simtime, double efdt)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stex::Tri::getOhmicI(double v,double /*dt*/) const
-{
+double Tri::getOhmicI(double v, double /*dt*/) const {
     double current = 0.0;
     uint nocs = patchdef()->countOhmicCurrs();
-    for (uint i = 0; i < nocs; ++i)
-    {
-        ssolver::OhmicCurrdef * ocdef = patchdef()->ohmiccurrdef(i);
+    for (auto i: solver::ohmiccurr_local_id::range(nocs)) {
+        solver::OhmicCurrdef* ocdef = patchdef()->ohmiccurrdef(i);
         // The next is ok because Patchdef returns local index
         uint n = pPoolCount[patchdef()->ohmiccurr_chanstate(i)];
-        current += (n*ocdef->getG())*(v-ocdef->getERev());
+        current += (n * ocdef->getG()) * (v - getOCerev(i));
     }
 
     return current;
@@ -555,15 +464,12 @@ double stex::Tri::getOhmicI(double v,double /*dt*/) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stex::Tri::getOhmicI(uint lidx, double v,double /*dt*/) const
-{
+double Tri::getOhmicI(solver::ohmiccurr_local_id lidx, double v, double /*dt*/) const {
     AssertLog(lidx < patchdef()->countOhmicCurrs());
-    ssolver::OhmicCurrdef * ocdef = patchdef()->ohmiccurrdef(lidx);
+    solver::OhmicCurrdef* ocdef = patchdef()->ohmiccurrdef(lidx);
     uint n = pPoolCount[patchdef()->ohmiccurr_chanstate(lidx)];
 
-    return (n*ocdef->getG())*(v-ocdef->getERev());
+    return (n * ocdef->getG()) * (v - getOCerev(lidx));
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-//END
+}  // namespace steps::tetexact

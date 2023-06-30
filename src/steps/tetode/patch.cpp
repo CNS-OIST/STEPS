@@ -24,84 +24,70 @@
 
  */
 
-
-// Standard library & STL headers.
-#include <vector>
-
 // STEPS headers.
 #include "patch.hpp"
-#include "tri.hpp"
 #include "solver/compdef.hpp"
+#include "tri.hpp"
 // logging
 #include "util/error.hpp"
 #include <easylogging++.h>
-////////////////////////////////////////////////////////////////////////////////
 
-namespace stode = steps::tetode;
-namespace ssolver = steps::solver;
+#include "util/checkpointing.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::tetode {
 
-stode::Patch::Patch(ssolver::Patchdef * patchdef)
-: pPatchdef(patchdef)
-, pTris()
-, pArea(0)
-, pTris_GtoL()
+
+Patch::Patch(solver::Patchdef* patchdef)
+    : pPatchdef(patchdef)
+    , pArea(0)
+
 
 {
-    AssertLog(pPatchdef != 0);
+    AssertLog(pPatchdef != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stode::Patch::~Patch()
-= default;
+Patch::~Patch() = default;
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stode::Patch::checkpoint(std::fstream & cp_file)
-{
-    cp_file.write(reinterpret_cast<char*> (&pArea), sizeof(double));
+void Patch::checkpoint(std::fstream& cp_file) {
+    util::checkpoint(cp_file, pArea);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stode::Patch::restore(std::fstream & cp_file)
-{
-    cp_file.read(reinterpret_cast<char*>(&pArea), sizeof(double));
+void Patch::restore(std::fstream& cp_file) {
+    util::compare(cp_file, pArea);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stode::Patch::addTri(stode::Tri * tri)
-{
+void Patch::addTri(Tri* tri) {
     AssertLog(tri->patchdef() == def());
-    uint lidx = pTris.size();
+    triangle_local_id lidx(static_cast<index_t>(pTris.size()));
     pTris.push_back(tri);
     pTris_GtoL.emplace(tri->idx(), lidx);
 
-    pArea+=tri->area();
-
+    pArea += tri->area();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stode::Tri * stode::Patch::getTri(uint lidx)
-{
-    AssertLog(lidx < pTris.size());
-    return pTris[lidx];
+Tri* Patch::getTri(triangle_local_id lidx) {
+    AssertLog(lidx < static_cast<index_t>(pTris.size()));
+
+    return pTris[lidx.get()];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-steps::triangle_id_t stode::Patch::getTri_GtoL(triangle_id_t gidx)
-{
+steps::triangle_local_id Patch::getTri_GtoL(triangle_global_id gidx) {
     const auto lidx_it = pTris_GtoL.find(gidx);
     AssertLog(lidx_it != pTris_GtoL.end());
     return lidx_it->second;
 }
-////////////////////////////////////////////////////////////////////////////////
 
-
-// END
+}  // namespace steps::tetode

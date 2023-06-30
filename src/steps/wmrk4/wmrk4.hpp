@@ -24,71 +24,73 @@
 
  */
 
-
-#ifndef STEPS_SOLVER_WMRK4_HPP
-#define STEPS_SOLVER_WMRK4_HPP 1
-
+#pragma once
 
 // STL headers.
 #include <string>
 #include <vector>
 
 // STEPS headers.
-#include "util/common.h"
 #include "solver/api.hpp"
 #include "solver/statedef.hpp"
+#include "util/common.hpp"
 
+#include "util/checkpointing.hpp"
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace steps {
-namespace wmrk4  {
-using namespace steps::solver;
-
-////////////////////////////////////////////////////////////////////////////////
-
-// Forward declarations.
+namespace steps::wmrk4 {
 
 // Auxiliary declarations.
-typedef std::vector<double>             dVec;
-typedef dVec::iterator                    dVecI;
+typedef std::vector<double> dVec;
+typedef dVec::iterator dVecI;
 
-typedef std::vector<uint>                uiVec;
-typedef uiVec::iterator                    uiVecI;
+typedef std::vector<uint> uiVec;
+typedef uiVec::iterator uiVecI;
 
-////////////////////////////////////////////////////////////////////////////////
-
-struct Reactant{
+struct Reactant {
     uint globalIndex;
     uint order;
-    Reactant(uint gidx, uint o) : globalIndex(gidx), order(o) {}
+    Reactant(uint gidx, uint o)
+        : globalIndex(gidx)
+        , order(o) {}
 };
 
-struct SpecieInReaction{
+struct SpecieInReaction {
     uint globalIndex;
     int populationChange;
-    SpecieInReaction(uint gidx, int v) : globalIndex(gidx), populationChange(v) {}
+    SpecieInReaction(uint gidx, int v)
+        : globalIndex(gidx)
+        , populationChange(v) {}
 };
 
-struct Reaction{
+struct Reaction {
     std::vector<Reactant> reactants;
     std::vector<SpecieInReaction> affectedSpecies;
     bool isActivated;
-    double c; // constant relating populations, not concentrations !
-    void addSpecies(uint gidx, uint order, int populationChange)
-    {
-        if (order > 0)
+    double c;  // constant relating populations, not concentrations !
+    void addSpecies(uint gidx, uint order, int populationChange) {
+        if (order > 0) {
             reactants.push_back(Reactant(gidx, order));
-        if (populationChange != 0)
+        }
+        if (populationChange != 0) {
             affectedSpecies.push_back(SpecieInReaction(gidx, populationChange));
+        }
+    }
+
+    void checkpoint(std::fstream& cp_file) {
+        util::checkpoint(cp_file, isActivated);
+        util::checkpoint(cp_file, c);
+    }
+
+    void restore(std::fstream& cp_file) {
+        util::restore(cp_file, isActivated);
+        util::restore(cp_file, c);
     }
 };
 
-class Wmrk4: public API
-{
-
-public:
-
-    Wmrk4(steps::model::Model *m, steps::wm::Geom *g, const rng::RNGptr &r);
+class Wmrk4: public solver::API {
+  public:
+    Wmrk4(model::Model* m, wm::Geom* g, const rng::RNGptr& r);
     ~Wmrk4() override;
 
     ////////////////////////////////////////////////////////////////////////
@@ -100,7 +102,6 @@ public:
     std::string getSolverAuthors() const override;
     std::string getSolverEmail() const override;
 
-
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROLS
     ////////////////////////////////////////////////////////////////////////
@@ -110,8 +111,9 @@ public:
     void advance(double adv) override;
     void step() override;
 
-    inline void setDT(double dt) override
-    { setRk4DT(dt); }
+    inline void setDT(double dt) override {
+        setRk4DT(dt);
+    }
 
     void setRk4DT(double dt) override;
 
@@ -122,62 +124,93 @@ public:
 
     double getTime() const override;
 
-    void checkpoint(std::string const & file_name) override;
-    void restore(std::string const & file_name) override;
+    void checkpoint(std::string const& file_name) override;
+    void restore(std::string const& file_name) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
     //      COMPARTMENT
     ////////////////////////////////////////////////////////////////////////
 
-     double _getCompVol(uint cidx) const override;
-    void _setCompVol(uint cidx, double vol) override;
+    double _getCompVol(solver::comp_global_id cidx) const override;
+    void _setCompVol(solver::comp_global_id cidx, double vol) override;
 
-     double _getCompCount(uint cidx, uint sidx) const override;
-     void _setCompCount(uint cidx, uint sidx, double n) override;
+    double _getCompSpecCount(solver::comp_global_id cidx,
+                             solver::spec_global_id sidx) const override;
+    void _setCompSpecCount(solver::comp_global_id cidx,
+                           solver::spec_global_id sidx,
+                           double n) override;
 
-     double _getCompAmount(uint cidx, uint sidx) const override;
-    void _setCompAmount(uint cidx, uint sidx, double a) override;
+    double _getCompSpecAmount(solver::comp_global_id cidx,
+                              solver::spec_global_id sidx) const override;
+    void _setCompSpecAmount(solver::comp_global_id cidx,
+                            solver::spec_global_id sidx,
+                            double a) override;
 
-    double _getCompConc(uint cidx, uint sidx) const override;
-     void _setCompConc(uint cidx, uint sidx, double c) override;
+    double _getCompSpecConc(solver::comp_global_id cidx,
+                            solver::spec_global_id sidx) const override;
+    void _setCompSpecConc(solver::comp_global_id cidx,
+                          solver::spec_global_id sidx,
+                          double c) override;
 
-    bool _getCompClamped(uint cidx, uint sidx) const override;
-    void _setCompClamped(uint cidx, uint sidx, bool b) override;
+    bool _getCompSpecClamped(solver::comp_global_id cidx,
+                             solver::spec_global_id sidx) const override;
+    void _setCompSpecClamped(solver::comp_global_id cidx,
+                             solver::spec_global_id sidx,
+                             bool b) override;
 
-    double _getCompReacK(uint cidx, uint ridx) const override;
-    void _setCompReacK(uint cidx, uint ridx, double kf) override;
+    double _getCompReacK(solver::comp_global_id cidx, solver::reac_global_id ridx) const override;
+    void _setCompReacK(solver::comp_global_id cidx,
+                       solver::reac_global_id ridx,
+                       double kf) override;
 
-     bool _getCompReacActive(uint cidx, uint ridx) const override;
-    void _setCompReacActive(uint cidx, uint ridx, bool a) override;
+    bool _getCompReacActive(solver::comp_global_id cidx,
+                            solver::reac_global_id ridx) const override;
+    void _setCompReacActive(solver::comp_global_id cidx,
+                            solver::reac_global_id ridx,
+                            bool a) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
     //      PATCH
     ////////////////////////////////////////////////////////////////////////
 
-    double _getPatchArea(uint pidx) const override;
-    void _setPatchArea(uint pidx, double area) override;
+    double _getPatchArea(solver::patch_global_id pidx) const override;
+    void _setPatchArea(solver::patch_global_id pidx, double area) override;
 
-     double _getPatchCount(uint pidx, uint sidx) const override;
-    void _setPatchCount(uint pidx, uint sidx, double n) override;
+    double _getPatchSpecCount(solver::patch_global_id pidx,
+                              solver::spec_global_id sidx) const override;
+    void _setPatchSpecCount(solver::patch_global_id pidx,
+                            solver::spec_global_id sidx,
+                            double n) override;
 
-    double _getPatchAmount(uint pidx, uint sidx) const override;
-     void _setPatchAmount(uint pidx, uint sidx, double a) override;
+    double _getPatchSpecAmount(solver::patch_global_id pidx,
+                               solver::spec_global_id sidx) const override;
+    void _setPatchSpecAmount(solver::patch_global_id pidx,
+                             solver::spec_global_id sidx,
+                             double a) override;
 
-    bool _getPatchClamped(uint pidx, uint sidx) const override;
-    void _setPatchClamped(uint pidx, uint sidx, bool buf) override;
+    bool _getPatchSpecClamped(solver::patch_global_id pidx,
+                              solver::spec_global_id sidx) const override;
+    void _setPatchSpecClamped(solver::patch_global_id pidx,
+                              solver::spec_global_id sidx,
+                              bool buf) override;
 
-    double _getPatchSReacK(uint pidx, uint ridx) const override;
-      void _setPatchSReacK(uint pidx, uint ridx, double kf) override;
+    double _getPatchSReacK(solver::patch_global_id pidx,
+                           solver::sreac_global_id ridx) const override;
+    void _setPatchSReacK(solver::patch_global_id pidx,
+                         solver::sreac_global_id ridx,
+                         double kf) override;
 
-     bool _getPatchSReacActive(uint pidx, uint ridx) const override;
-     void _setPatchSReacActive(uint pidx, uint ridx, bool a) override;
+    bool _getPatchSReacActive(solver::patch_global_id pidx,
+                              solver::sreac_global_id ridx) const override;
+    void _setPatchSReacActive(solver::patch_global_id pidx,
+                              solver::sreac_global_id ridx,
+                              bool a) override;
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
     // WMRK4 SOLVER METHODS
     ////////////////////////////////////////////////////////////////////////
@@ -226,44 +259,35 @@ private:
     ////////////////////////////////////////////////////////////////////////
 
     /// number of species total: all species in all comps and patches
-    uint                                pSpecs_tot;
+    uint pSpecs_tot;
 
     /// number of reactions total: all reactions and surface reactions
     /// in each comp and patch
-    uint                                pReacs_tot;
+    uint pReacs_tot;
 
     /// vector holding current molecular counts (as doubles)
-    dVec                                pVals;
+    dVec pVals;
 
     /// vector holding flags on species
-    uiVec                                pSFlags;
+    uiVec pSFlags;
 
     /// vector holding new, calculated counts
-    dVec                                pNewVals;
+    dVec pNewVals;
 
     /// vector of present derivatives
-    dVec                                pDyDx;
+    dVec pDyDx;
 
     /// the time step
-    double                                pDT;
+    double pDT;
 
     /// objects to contain temporary values important in algorithm
-    dVec                                yt;
-    dVec                                dyt;
-    dVec                                dym;
+    dVec yt;
+    dVec dyt;
+    dVec dym;
 
-    std::vector<Reaction> 				reactions;
+    std::vector<Reaction> reactions;
 
     ////////////////////////////////////////////////////////////////////////
-
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-#endif
-// STEPS_SOLVER_WMRK4_HPP
-
-// END
+}  // namespace steps::wmrk4

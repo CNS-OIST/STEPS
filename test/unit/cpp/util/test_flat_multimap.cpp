@@ -3,7 +3,7 @@
 
 #include "util/flat_multimap.hpp"
 
-using namespace Catch::literals;
+using namespace Catch::literals;  // NOLINT
 
 using steps::fmm_ab2c_padding;
 using steps::fmm_stl;

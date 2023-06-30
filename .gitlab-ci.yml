@@ -9,34 +9,72 @@ include:
 default:
   tags: [bb5_map]
 
+# setup phase
+
 spack_setup:
-  except:
-    - schedules
+  extends: .spack_setup_ccache
+
+# build phase
 
 spack_build:
-  except:
-    - schedules
+  extends: .spack_build
+  variables:
+    SPACK_PACKAGE_SPEC: +codechecks build_type=RelWithDebInfoAndAssert
+
+#spack variants 1/3:
+#  extends: "spack_build"
+#  variables:
+#    SPACK_PACKAGE_SPEC: +distmesh~petsc
+
+#spack variants 2/3:
+#  extends: "spack_build"
+#  variables:
+#    SPACK_PACKAGE_SPEC: ~distmesh~petsc
+
+spack variants 3/3:
+  extends: "spack_build"
+  variables:
+    SPACK_PACKAGE_SPEC: ^petsc+complex~hypre
 
 perf_mon_spack_build:
   extends: .spack_build
   variables:
-    SPACK_PACKAGE_SPEC: +distmesh+petsc+caliper build_type=RelWithDebInfoAndAssert
+    SPACK_PACKAGE_SPEC: +caliper build_type=RelWithDebInfoAndAssert
+
+# test phase
 
 steps4_simple_model:
+  needs: ["spack_build"]
   extends: .spack_test
-  except:
-    - schedules
 
 ctest:
   needs: ["spack_build"]
-  except:
-    - schedules
 
 variables:
   GIT_SUBMODULE_STRATEGY: normal
   SPACK_EXTRA_MODULES: llvm
   SPACK_PACKAGE: steps
-  SPACK_PACKAGE_SPEC: +distmesh+codechecks build_type=RelWithDebInfoAndAssert
+
+arm64_macOS_brew:
+  tags: [macos-arm64]
+  stage: build
+  script:
+    - python3 -m virtualenv venv
+    - venv/bin/pip install --upgrade pip -r requirements.txt
+    - source venv/bin/activate
+    - mkdir build && cd build
+    - cmake_args=(-DCMAKE_BUILD_TYPE=RelWithDebInfoAndAssert
+    -             -DCMAKE_INSTALL_PREFIX=$PWD/../install
+                  -DPYTHON_EXECUTABLE=$PWD/../venv/bin/python3
+                  -DSTEPS_USE_DIST_MESH:BOOL=TRUE
+                  -DUSE_MPI=True
+                  -DUSE_PETSC=True)
+    - cmake .. ${cmake_args[@]}
+    - cmake --build . --parallel
+    - ctest --output-on-failure
+    - cmake --build . --target install
+
+# deactivated Docker container builds
 
 .basic_ci:
   variables:
@@ -209,10 +247,29 @@ val_mon_caburst:
 # kill the spawned slurm jobs
 # This job kills all the submitted jobs with the names below (only the ones submitted by the CI).
 # Therefore, it could potentially kill the perf_mon from other PRs/MRs.
-# It is a hard RESET of perf_mon in case of troubles in BB5. 
+# It is a hard RESET of perf_mon in case of troubles in BB5.
+
 scancel_perf_mon:
   stage: test
   when: manual
   script:
     - for nc in 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192; do scancel --jobname=CI_perf_mon_strong_scaling_$nc; done
     - for nc in 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192; do scancel --jobname=CI_perf_mon_caliper_$nc; done
+
+scancel_val_mon_rallpack1:
+  stage: test
+  when: manual
+  script:
+    - scancel --jobname=rallpack1_val_mon_CI
+
+scancel_val_mon_rallpack3:
+  stage: test
+  when: manual
+  script:
+    - scancel --jobname=rallpack3_val_mon_CI
+
+scancel_val_mon_caburst:
+  stage: test
+  when: manual
+  script:
+    - scancel --jobname=caburst_val_mon_CI

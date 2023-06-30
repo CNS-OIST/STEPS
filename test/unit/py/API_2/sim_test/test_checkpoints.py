@@ -27,6 +27,7 @@
 import os
 import tempfile
 import unittest
+import mpi4py.MPI
 
 from steps import interface
 
@@ -42,6 +43,9 @@ from . import base_model
 def getUniqueTempPrefix(*args, **kwargs):
     _, pathPrefix = tempfile.mkstemp(*args, **kwargs)
     os.remove(pathPrefix)
+    if MPI.nhosts > 1:
+        # Need to synchronize across ranks
+        pathPrefix = mpi4py.MPI.COMM_WORLD.bcast(pathPrefix, root=0)
     return pathPrefix
 
 class WmCheckpoints(base_model.TestModelFramework):
@@ -81,13 +85,72 @@ class WmCheckpoints(base_model.TestModelFramework):
         self.initC1CCsus12 = sim.comp1.CC[sus1, sus2].Count
         self.initC1CCsus22 = sim.comp1.CC[sus2, sus2].Count
 
-        # TODO This should be set with the current extent value but Wmdirect does not save them
-        # in the current STEPS version.
-        self.extents = [0]*13
+        self.extents = [
+            sim.comp1.vs1R1['fwd'].Extent,
+            sim.comp1.vs1R1['bkw'].Extent,
+            sim.comp2.vs2R2['fwd'].Extent,
+            sim.comp2.vs2R2['bkw'].Extent,
+            sim.patch.ss1R3['fwd'].Extent,
+            sim.patch.ss1R3['bkw'].Extent,
+            sim.patch.ss1R4['fwd'].Extent,
+            sim.patch.ss1R4['bkw'].Extent,
+            sim.patch.ss1R5['fwd'].Extent,
+            sim.patch.ss1R5['bkw'].Extent,
+            sim.patch.ss1R6['fwd'].Extent,
+            sim.patch.ss1R6['bkw'].Extent,
+            sim.patch.ss1R7.Extent,
+        ]
 
+    def _getCPFiles(self, pathPrefix):
+        tmpDir, prefix = os.path.split(pathPrefix)
+        cpfiles = []
+        for name in os.listdir(tmpDir):
+            if name.startswith(prefix):
+                fullPath = os.path.join(tmpDir, name)
+                if MPI.nhosts > 1:
+                    *_, rank = name.split('_')
+                    rank = int(rank)
+                    self.assertLess(rank, MPI.nhosts)
+                    self.assertGreaterEqual(rank, 0)
+                    if rank != MPI.rank:
+                        continue
+                    noRankPath = os.path.join(tmpDir, name[:-len(f'_{rank}')])
+                else:
+                    noRankPath = fullPath
+                cpfiles.append((noRankPath, fullPath))
+        return cpfiles
+
+    def _getAutoCPFiles(self, pathPrefix):
+        tmpDir, prefix = os.path.split(pathPrefix)
+        cpfiles = []
+        for name in os.listdir(tmpDir):
+            if name.startswith(prefix):
+                fullPath = os.path.join(tmpDir, name)
+                run, time, solver, *cp = name[(len(prefix)+1):].split('_')
+                run = int(run)
+                time = float(time)
+                if MPI.nhosts > 1:
+                    cp, rank = cp
+                    rank = int(rank)
+                    self.assertLess(rank, MPI.nhosts)
+                    self.assertGreaterEqual(rank, 0)
+                    if rank != MPI.rank:
+                        continue
+                    noRankPath = os.path.join(tmpDir, name[:-len(f'_{rank}')])
+                else:
+                    cp = cp[0]
+                    noRankPath = fullPath
+                self.assertEqual(cp, 'cp')
+                cpfiles.append((run, time, noRankPath, fullPath))
+        cpfiles.sort()
+        return cpfiles
+
+    def _cleanCPFiles(self, cpFiles):
+        for *_, fullPath in cpFiles:
+            os.remove(fullPath)
 
     def testBasicCheckpoints(self):
-        _, cpPath = tempfile.mkstemp(prefix=f'{self.__class__.__name__}basic')
+        cpPath = getUniqueTempPrefix(prefix=f'{self.__class__.__name__}basic')
         _, cpEmptyPath = tempfile.mkstemp(prefix=f'{self.__class__.__name__}empty')
 
         self.newSim.newRun()
@@ -109,17 +172,12 @@ class WmCheckpoints(base_model.TestModelFramework):
         self.newSim.restore(cpPath)
 
         self.assertAlmostEqual(self.newSim.Time, self.endTime / 2)
-        # TODO checkpoint: remove the following line after membrane potential is correctly saved for Tetexact
-        self.membPot = -65e-3
-        # TODO
         self._test_API2_SimPathGetSyntax(self.newSim, init=False, extents=self.extents)
 
-        if MPI._shouldWrite:
-            os.remove(cpPath)
+        self._cleanCPFiles(self._getCPFiles(cpPath))
 
     def testAutoCheckpoints(self):
         pathPrefix = getUniqueTempPrefix(prefix=f'{self.__class__.__name__}auto')
-        tmpDir, prefix = os.path.split(pathPrefix)
 
         with self.assertRaises(TypeError):
             self.newSim.autoCheckpoint(self.cpTime, 42)
@@ -136,36 +194,23 @@ class WmCheckpoints(base_model.TestModelFramework):
             self.newSim.newRun()
             self.newSim.run(self.endTime)
 
-        cpfiles = []
-        for name in os.listdir(tmpDir):
-            if name.startswith(prefix):
-                print(prefix, name)
-                run, time, solver, cp = name[(len(prefix)+1):].split('_')
-                run = int(run)
-                time = float(time)
-                self.assertEqual(cp, 'cp')
-                cpfiles.append((run, time, name))
-        cpfiles.sort()
+        cpfiles = self._getAutoCPFiles(pathPrefix)
 
         self.assertEqual(len(cpfiles), self.nbRuns * (self.endTime / self.cpTime + 1))
         for r in range(self.nbRuns):
-            self.assertEqual(sum(1 for run, time, _ in cpfiles if run == r), self.endTime / self.cpTime + 1)
+            self.assertEqual(sum(1 for run, time, *_ in cpfiles if run == r), self.endTime / self.cpTime + 1)
 
-        for run, time, name in cpfiles:
-            cpPath = os.path.join(tmpDir, name)
-
+        for run, time, cpPath, cpFullPath in cpfiles:
             self.newSim.newRun()
 
             self.newSim.restore(cpPath)
 
             self.assertAlmostEqual(self.newSim.Time, time)
 
-            if MPI._shouldWrite:
-                os.remove(cpPath)
+        self._cleanCPFiles(cpfiles)
 
     def testOnlyLast(self):
         pathPrefix = getUniqueTempPrefix(prefix=f'{self.__class__.__name__}onlyLast')
-        tmpDir, prefix = os.path.split(pathPrefix)
 
         self.newSim.autoCheckpoint(self.cpTime, pathPrefix, onlyLast=True)
 
@@ -173,20 +218,12 @@ class WmCheckpoints(base_model.TestModelFramework):
             self.newSim.newRun()
             self.newSim.run(self.endTime)
 
-        cpfiles = []
-        for name in os.listdir(tmpDir):
-            if name.startswith(prefix):
-                run, time, solver, cp = name[(len(prefix)+1):].split('_')
-                run = int(run)
-                time = float(time)
-                self.assertEqual(cp, 'cp')
-                cpfiles.append((run, time, name))
-        cpfiles.sort()
+        cpfiles = self._getAutoCPFiles(pathPrefix)
         
         self.assertEqual(len(cpfiles), 1)
         self.assertEqual(cpfiles[0][0], self.nbRuns - 1)
 
-        cpPath = os.path.join(tmpDir, cpfiles[0][2])
+        cpPath = cpfiles[0][2]
 
         self.newSim.newRun()
 
@@ -194,12 +231,10 @@ class WmCheckpoints(base_model.TestModelFramework):
 
         self.assertAlmostEqual(self.newSim.Time, cpfiles[0][1])
 
-        if MPI._shouldWrite:
-            os.remove(cpPath)
+        self._cleanCPFiles(cpfiles)
         
     def testStopAutoCheckpointing(self):
         pathPrefix = getUniqueTempPrefix(prefix=f'{self.__class__.__name__}stopAutoChkpt')
-        tmpDir, prefix = os.path.split(pathPrefix)
 
         for r in range(self.nbRuns):
             self.newSim.newRun()
@@ -208,36 +243,24 @@ class WmCheckpoints(base_model.TestModelFramework):
             self.newSim.autoCheckpoint(None)
             self.newSim.run(self.endTime)
 
-        cpfiles = []
-        for name in os.listdir(tmpDir):
-            if name.startswith(prefix):
-                run, time, solver, cp = name[(len(prefix)+1):].split('_')
-                run = int(run)
-                time = float(time)
-                self.assertEqual(cp, 'cp')
-                cpfiles.append((run, time, name))
-        cpfiles.sort()
+        cpfiles = self._getAutoCPFiles(pathPrefix)
 
         self.assertEqual(len(cpfiles), self.nbRuns * (self.endTime / 2 / self.cpTime + 1))
         for r in range(self.nbRuns):
-            self.assertEqual(sum(1 for run, time, _ in cpfiles if run == r), self.endTime / 2 / self.cpTime + 1)
-            self.assertTrue(all(time <= self.endTime / 2 for run, time, _ in cpfiles if run == r))
+            self.assertEqual(sum(1 for run, time, *_ in cpfiles if run == r), self.endTime / 2 / self.cpTime + 1)
+            self.assertTrue(all(time <= self.endTime / 2 for run, time, *_ in cpfiles if run == r))
 
-        for run, time, name in cpfiles:
-            cpPath = os.path.join(tmpDir, name)
-
+        for run, time, cpPath, cpFullPath in cpfiles:
             self.newSim.newRun()
 
             self.newSim.restore(cpPath)
 
             self.assertAlmostEqual(self.newSim.Time, time)
 
-            if MPI._shouldWrite:
-                os.remove(cpPath)
+        self._cleanCPFiles(cpfiles)
 
     def testContinueRestoredRun(self):
         pathPrefix = getUniqueTempPrefix(prefix=f'{self.__class__.__name__}ContinueRestoredRun')
-        tmpDir, prefix = os.path.split(pathPrefix)
 
         rs = ResultSelector(self.newSim)
         saver = rs.comp1.S2.Count
@@ -287,8 +310,73 @@ class WmCheckpoints(base_model.TestModelFramework):
 
             self.assertSameData(firstRunData, saver.data[0:1, :, 0:1], [self.countRefVal])
 
+        self._cleanCPFiles(self._getCPFiles(pathPrefix))
+
+    def testReproducibleCheckpointing(self, plot=False):
+        pathPrefix = getUniqueTempPrefix(prefix=f'{self.__class__.__name__}ReproducibleChekpointing')
+
+        def getSelectors(sim):
+            rs = ResultSelector(sim)
+            selectors = []
+            # Counts
+            selectors.append(rs.ALL(Compartment, Patch).ALL(Species).Count)
+            # Extents
+            selectors.append(rs.ALL(Compartment).ALL(Reaction).Extent)
+            # Membrane potential
+            if self.useEField and not self.useDist:
+                verts = self.newGeom.membrane.tris.verts
+                selectors.append(rs.SUM(rs.VERTS(verts).V) / len(verts))
+
+            return selectors
+
+        selectors = getSelectors(self.newSim)
+        self.newSim.toSave(*selectors, dt=self.deltaT)
+
+        self.newSim.newRun()
+
+        self.init_API2_sim(self.newSim)
+        self.newSim.run(self.endTime / 2)
+        self.newSim.checkpoint(pathPrefix)
+        self.newSim.run(self.endTime)
+
+        # Continue run in same simulation
+        self.newSim.newRun()
+        self.newSim.restore(pathPrefix)
+        self.newSim.run(self.endTime)
+
+        # Continue run in different simulation
+        self.newSim = self._get_API2_Sim(self.newMdl, self.newGeom)
+        selectors2 = getSelectors(self.newSim)
+        self.newSim.toSave(*selectors2, dt=self.deltaT)
+
+        self.newSim.newRun()
+        self.newSim.restore(pathPrefix)
+        self.newSim.run(self.endTime)
+
         if MPI._shouldWrite:
-            os.remove(pathPrefix)
+            for sel1, sel2 in zip(selectors, selectors2):
+                n = len(sel1.data[0]) - len(sel1.data[1])
+                reference = sel1.data[0, n:, :]
+                restored1 = sel1.data[1, :, :]
+                restored2 = sel2.data[0, :, :]
+
+                # Plotting code in case manual inspection is needed
+                if plot:
+                    from matplotlib import pyplot as plt
+                    for i in range(reference.shape[-1]):
+                        if (reference[:, i] != restored1[:, i]).any() or (reference[:, i] != restored2[:, i]).any():
+                            plt.plot(sel1.time[1], reference[:, i], label='Reference run')
+                            plt.plot(sel1.time[1], restored1[:, i], '--', label='Restored run, same simulation')
+                            plt.plot(sel1.time[1], restored2[:, i], '--', label='Restored run, new simulation')
+                            plt.legend()
+                            plt.title(sel1.labels[i])
+                            plt.show()
+
+                # Check that all runs have exactly the same traces
+                self.assertTrue((reference == restored1).all())
+                self.assertTrue((reference == restored2).all())
+
+        self._cleanCPFiles(self._getCPFiles(pathPrefix))
 
 
 class TetCheckpoints(base_model.TetTestModelFramework, WmCheckpoints):
@@ -296,7 +384,10 @@ class TetCheckpoints(base_model.TetTestModelFramework, WmCheckpoints):
 
     def setUp(self):
         base_model.TetTestModelFramework.setUp(self)
-        WmCheckpoints.setUp(self)
+        self.useEField = True
+        self.useVesicle = False
+
+        WmCheckpoints.setUp(self, False)
 
     def _get_API2_Sim(self, nmdl, ngeom):
         nrng = RNG('mt19937', 512, self.seed)
@@ -309,9 +400,10 @@ class TetCheckpoints(base_model.TetTestModelFramework, WmCheckpoints):
 
         sim = self.newSim
 
-        tri1 = self.newGeom.patch.tris[0]
-        tet1 = [tet for tet in tri1.tetNeighbs if tet in self.newGeom.comp1.tets][0]
-        self.membPot = sim.TET(tet1).V
+        if self.useEField:
+            tri1 = self.newGeom.patch.tris[0]
+            tet1 = [tet for tet in tri1.tetNeighbs if tet in self.newGeom.comp1.tets][0]
+            self.membPot = sim.TET(tet1).V
 
         self.extents = [
             sim.comp1.vs1R1['fwd'].Extent,

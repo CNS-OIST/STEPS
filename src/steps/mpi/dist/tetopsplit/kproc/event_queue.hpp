@@ -1,15 +1,13 @@
 #pragma once
 
 #include <iosfwd>
-#include <unordered_map>
 #include <map>
+#include <unordered_map>
 
 #include "kproc_id.hpp"
 #include "mpi/dist/tetopsplit/fwd.hpp"
 
-namespace steps {
-namespace dist {
-namespace kproc {
+namespace steps::dist::kproc {
 
 using EventTime = osh::Real;
 using Event = std::pair<EventTime, kproc::KProcID>;
@@ -37,18 +35,16 @@ class EventQueue {
     friend std::ostream& operator<<(std::ostream& ostr, const EventQueue& events);
 
   private:
-    std::multimap<osh::Real, unsigned> next_event_ {};
-    std::unordered_map<unsigned, osh::Real> kproc_to_event_time_ {};
+    std::multimap<osh::Real, unsigned> next_event_{};
+    std::unordered_map<unsigned, osh::Real> kproc_to_event_time_{};
 
     // maximum time that an event is put into the multimap
-    osh::Real max_time_ {-std::numeric_limits<osh::Real>::epsilon()};
+    osh::Real max_time_{-std::numeric_limits<osh::Real>::epsilon()};
 };
 
 /**
  * \a EventQueue pretty printer
  */
-std::ostream &operator<<(std::ostream &ostr, const EventQueue &events);
+std::ostream& operator<<(std::ostream& ostr, const EventQueue& events);
 
-} // namespace kproc
-} // namespace dist
-} // namespace steps
+}  // namespace steps::dist::kproc

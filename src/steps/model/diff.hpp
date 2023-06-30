@@ -24,25 +24,18 @@
 
  */
 
-/*
- *  Last Changed Rev:  $Rev$
- *  Last Changed Date: $Date$
- *  Last Changed By:   $Author$
- */
-
 #pragma once
 
 #include <cassert>
-#include <string>
 #include <map>
+#include <string>
 #include <vector>
 
-#include "util/common.h"
+#include "util/common.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace steps {
-namespace model {
+namespace steps::model {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -54,24 +47,21 @@ class Model;
 class Spec;
 
 // Auxiliary declarations.
-typedef Diff *                            DiffP;
-typedef std::map<std::string, DiffP>    DiffPMap;
-typedef DiffPMap::iterator              DiffPMapI;
-typedef DiffPMap::const_iterator        DiffPMapCI;
-typedef std::vector<DiffP>              DiffPVec;
-typedef DiffPVec::iterator              DiffPVecI;
-typedef DiffPVec::const_iterator        DiffPVecCI;
+typedef Diff* DiffP;
+typedef std::map<std::string, DiffP> DiffPMap;
+typedef DiffPMap::iterator DiffPMapI;
+typedef DiffPMap::const_iterator DiffPMapCI;
+typedef std::vector<DiffP> DiffPVec;
+typedef DiffPVec::iterator DiffPVecI;
+typedef DiffPVec::const_iterator DiffPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Diffusion rule in a volume system.
 ///
 ///\warning Methods start with an underscore are not exposed to Python.
 
-class Diff
-{
-
-public:
-
+class Diff {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
@@ -82,7 +72,7 @@ public:
     /// \param volsys Volume system which the diffusion rule belongs to.
     /// \param lig Pointers to the species which the diffusion applies to.
     /// \param dcst Diffusion coefficient of the diffusion rule.
-    Diff(std::string const & id, Volsys * volsys, Spec * lig, double dcst=0.0);
+    Diff(std::string const& id, Volsys* volsys, Spec* lig, double dcst = 0.0);
 
     /// Constructor
     ///
@@ -90,7 +80,7 @@ public:
     /// \param surfsys Surface system which the diffusion rule belongs to.
     /// \param lig Pointers to the species which the diffusion applies to.
     /// \param dcst Diffusion coefficient of the diffusion rule.
-    Diff(std::string const & id, Surfsys * surfsys, Spec * lig, double dcst=0.0);
+    Diff(std::string const& id, Surfsys* surfsys, Spec* lig, double dcst = 0.0);
 
     /// Destructor
     ~Diff();
@@ -102,31 +92,35 @@ public:
     /// Return the diffusion rule ID.
     ///
     /// \return ID of the diffusion rule.
-    inline const std::string& getID() const noexcept
-    { return pID; }
+    inline const std::string& getID() const noexcept {
+        return pID;
+    }
 
     /// Set the ID of the diffusion rule.
     ///
     /// \param id ID of the diffusion rule.
-    void setID(std::string const & id);
+    void setID(std::string const& id);
 
     /// Return a pointer to the parent volume system.
     ///
     /// \return Pointer to the parent volume system.
-    inline Volsys * getVolsys() const noexcept
-    { return pVolsys; }
+    inline Volsys* getVolsys() const noexcept {
+        return pVolsys;
+    }
 
     /// Return a pointer to the parent surface system.
     ///
     /// \return Pointer to the parent surface system.
-    inline Surfsys * getSurfsys() const noexcept
-    { return pSurfsys; }
+    inline Surfsys* getSurfsys() const noexcept {
+        return pSurfsys;
+    }
 
     /// Return a pointer to the parent model.
     ///
     /// \return Pointer to the parent model.
-    inline Model * getModel() const noexcept
-    { return pModel; }
+    inline Model* getModel() const noexcept {
+        return pModel;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // OPERATIONS (EXPOSED TO PYTHON):
@@ -135,19 +129,21 @@ public:
     /// Return a pointer to the species to which this diffusion rule applies
     ///
     /// \return Pointer of the species
-    inline Spec * getLig() const noexcept
-    { return pLig; }
+    inline Spec* getLig() const noexcept {
+        return pLig;
+    }
 
     /// Set the species which this difusion rule applies to.
     ///
     /// \param lig Pointer to the species
-    void setLig(Spec * lig);
+    void setLig(Spec* lig);
 
     /// Get the rate constant of the diffusion rule.
     ///
     /// \return Rate constant of the diffusion rule.
-    inline double getDcst() const noexcept
-    { return pDcst; }
+    inline double getDcst() const noexcept {
+        return pDcst;
+    }
 
     /// Set the rate constant of the diffusion rule.
     ///
@@ -158,7 +154,7 @@ public:
     ///
     /// \return List of pointers of species.
     /// \warning Currently will return only one species.
-    std::vector<Spec *> getAllSpecs() const;
+    std::vector<Spec*> getAllSpecs() const;
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: DELETION
@@ -172,26 +168,19 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
-    std::string                         pID;
-    Model                             * pModel{nullptr};
+    std::string pID;
+    Model* pModel{nullptr};
 
-    Volsys                            * pVolsys;
-    Surfsys                              * pSurfsys{nullptr};
+    Volsys* pVolsys{};
+    Surfsys* pSurfsys{nullptr};
 
-    Spec                              * pLig;
-    double                              pDcst;
+    Spec* pLig;
+    double pDcst;
 
-    bool                                 pIsvolume;
-
-    ////////////////////////////////////////////////////////////////////////
-
+    bool pIsvolume;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-} // namespace model
-} // namespace steps
+}  // namespace steps::model

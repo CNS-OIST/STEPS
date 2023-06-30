@@ -27,6 +27,7 @@ import unittest
 import os.path as path
 from . import rallpack1
 
+
 class TestRallpack1(unittest.TestCase):
 
     def setUp(self):

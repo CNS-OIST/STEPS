@@ -1,0 +1,8 @@
+build
+cython
+matplotlib
+mpi4py
+numpy
+pip-tools
+scipy
+unittest2

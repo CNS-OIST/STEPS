@@ -24,56 +24,42 @@
 
  */
 
-// Standard library & STL headers.
-#include <vector>
-
 // STEPS headers.
 #include "sdiffboundary.hpp"
 
 // logging
-#include <easylogging++.h>
 #include "util/error.hpp"
-////////////////////////////////////////////////////////////////////////////////
+#include <easylogging++.h>
 
-namespace stex = steps::tetexact;
-namespace ssolver = steps::solver;
+namespace steps::tetexact {
 
-////////////////////////////////////////////////////////////////////////////////
-
-stex::SDiffBoundary::SDiffBoundary(steps::solver::SDiffBoundarydef * sdbdef)
-: pSDiffBoundarydef(sdbdef)
-, pSetPatches(false)
-, pPatchA(nullptr)
-, pPatchB(nullptr)
-, pTris()
-, pTriDirection()
-{
-    AssertLog(sdbdef != 0);
+SDiffBoundary::SDiffBoundary(solver::SDiffBoundarydef* sdbdef)
+    : pSDiffBoundarydef(sdbdef)
+    , pSetPatches(false)
+    , pPatchA(nullptr)
+    , pPatchB(nullptr) {
+    AssertLog(sdbdef != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::SDiffBoundary::~SDiffBoundary()
-= default;
+SDiffBoundary::~SDiffBoundary() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::SDiffBoundary::checkpoint(std::fstream & /*cp_file*/)
-{
+void SDiffBoundary::checkpoint(std::fstream& /*cp_file*/) {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::SDiffBoundary::restore(std::fstream & /*cp_file*/)
-{
+void SDiffBoundary::restore(std::fstream& /*cp_file*/) {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::SDiffBoundary::setPatches(stex::Patch * patcha, stex::Patch * patchb)
-{
+void SDiffBoundary::setPatches(Patch* patcha, Patch* patchb) {
     AssertLog(pSetPatches == false);
     AssertLog(patcha != nullptr);
     AssertLog(patchb != nullptr);
@@ -86,31 +72,25 @@ void stex::SDiffBoundary::setPatches(stex::Patch * patcha, stex::Patch * patchb)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Patch * stex::SDiffBoundary::patchA()
-{
+Patch* SDiffBoundary::patchA() {
     AssertLog(pSetPatches == true);
     return pPatchA;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Patch * stex::SDiffBoundary::patchB()
-{
+Patch* SDiffBoundary::patchB() {
     AssertLog(pSetPatches == true);
     return pPatchB;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::SDiffBoundary::setTriDirection(triangle_id_t tri, uint direction)
-{
+void SDiffBoundary::setTriDirection(triangle_global_id tri, uint direction) {
     AssertLog(direction < 3);
 
     pTris.push_back(tri);
     pTriDirection.push_back(direction);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
-
+}  // namespace steps::tetexact

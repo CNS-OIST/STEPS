@@ -3,16 +3,15 @@
 #include <string>
 #include <unordered_set>
 
-#include "geom/patch.hpp"
-#include "geom/dist/distmesh.hpp"
 #include "geom/dist/distcomp.hpp"
-#include "util/common.h"
+#include "geom/dist/distmesh.hpp"
+#include "geom/patch.hpp"
+#include "util/common.hpp"
 #include "util/vocabulary.hpp"
 
-namespace steps {
-namespace dist {
+namespace steps::dist {
 
-class DistPatch : public steps::wm::Patch {
+class DistPatch: public wm::Patch {
   public:
     /**
      * \brief Create a patch to a distributed mesh using the physical tag defined in the mesh file.
@@ -30,8 +29,10 @@ class DistPatch : public steps::wm::Patch {
      * \param icomp Pointer to the inner compartment.
      * \param ocomp Pointer to the outer compartment. Default: nullptr
      */
-    DistPatch(const mesh::patch_name &patch, DistMesh &mesh,
-              DistComp *icomp, DistComp *ocomp = nullptr);
+    DistPatch(const mesh::patch_name& patch,
+              DistMesh& mesh,
+              DistComp* icomp,
+              DistComp* ocomp = nullptr);
 
     /**
      * \brief Create a patch to a distributed mesh using the physical tag defined in the mesh file.
@@ -49,13 +50,17 @@ class DistPatch : public steps::wm::Patch {
      * \param icomp Pointer to the inner compartment.
      * \param ocomp Pointer to the outer compartment. Default: nullptr
      */
-    DistPatch(const mesh::patch_name &patch, DistMesh &mesh,
-              mesh::patch_physical_tag physical_tag, DistComp *icomp,
-              DistComp *ocomp = nullptr);
+    DistPatch(const mesh::patch_name& patch,
+              DistMesh& mesh,
+              mesh::patch_physical_tag physical_tag,
+              DistComp* icomp,
+              DistComp* ocomp = nullptr);
 
-    DistPatch(const mesh::patch_name &patch, DistMesh &mesh,
-              std::string tag, DistComp *icomp,
-              DistComp *ocomp = nullptr);
+    DistPatch(const mesh::patch_name& patch,
+              DistMesh& mesh,
+              std::string tag,
+              DistComp* icomp,
+              DistComp* ocomp = nullptr);
 
     /**
      * \brief Create a patch to a distributed mesh using global indices of the triangles.
@@ -79,9 +84,11 @@ class DistPatch : public steps::wm::Patch {
      * \param icomp Pointer to the inner compartment.
      * \param ocomp Pointer to the outer compartment. Default: nullptr
      */
-    DistPatch(const mesh::patch_name &patch, DistMesh &mesh,
-              const std::vector<mesh::triangle_global_id_t> &tri_gidxs,
-              DistComp *icomp, DistComp *ocomp = nullptr);
+    DistPatch(const mesh::patch_name& patch,
+              DistMesh& mesh,
+              const std::vector<mesh::triangle_global_id_t>& tri_gidxs,
+              DistComp* icomp,
+              DistComp* ocomp = nullptr);
 
     DistPatch(const mesh::patch_name& patch,
               DistMesh& mesh,
@@ -106,8 +113,7 @@ class DistPatch : public steps::wm::Patch {
      * \param owned Whether the tetrahedron are owned by the process.
      * \return Vector of global tetrahedron indices.
      */
-    const std::vector<mesh::triangle_local_id_t> &
-    getLocalTriIndices(bool owned = true) const;
+    const std::vector<mesh::triangle_local_id_t>& getLocalTriIndices(bool owned = true) const;
 
     /**
      * \brief Get the area of patch segment owned by the process.
@@ -119,7 +125,9 @@ class DistPatch : public steps::wm::Patch {
      *
      * \return Area of the patch segment owned by the process.
      */
-    inline osh::Real getOwnedArea() const { return ownedArea; }
+    inline osh::Real getOwnedArea() const {
+        return ownedArea;
+    }
 
     /**
      * \brief Get the area of patch segment across all processes.
@@ -133,7 +141,7 @@ class DistPatch : public steps::wm::Patch {
      * \return Total area of the patch segment.
      */
     inline osh::Real getTotalArea() const {
-      return getArea();
+        return getArea();
     }
 
     /**
@@ -192,15 +200,14 @@ class DistPatch : public steps::wm::Patch {
      */
     void _computeBBox();
 
-    DistMesh &meshRef;
+    DistMesh& meshRef;
     osh::Real ownedArea{};
     std::vector<mesh::triangle_local_id_t> triLocalIndices;
     std::vector<mesh::triangle_local_id_t> ownedTriLocalIndices;
 
     // Bounding box of the owned elements
-    std::array<osh::Real, mesh_dimensions()> ownedBBoxMin;
-    std::array<osh::Real, mesh_dimensions()> ownedBBoxMax;
+    std::array<osh::Real, mesh_dimensions()> ownedBBoxMin{};
+    std::array<osh::Real, mesh_dimensions()> ownedBBoxMax{};
 };
 
-}  // namespace dist
-}  // namespace steps
+}  // namespace steps::dist

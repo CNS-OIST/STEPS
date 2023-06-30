@@ -24,9 +24,7 @@
 
  */
 
-
 // STL headers.
-#include <sstream>
 #include <string>
 
 // STEPS headers.
@@ -35,67 +33,67 @@
 #include "util/error.hpp"
 // logging
 #include <easylogging++.h>
-////////////////////////////////////////////////////////////////////////////////
 
-USING(std, string);
-using namespace steps::solver;
+namespace steps::solver {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setSDiffBoundaryDiffusionActive(string const & sdb, string const & s, bool act)
-{
-    uint sdbidx = pStatedef->getSDiffBoundaryIdx(sdb);
-    uint sidx = pStatedef->getSpecIdx(s);
+void API::setSDiffBoundarySpecDiffusionActive(std::string const& sdb,
+                                              std::string const& s,
+                                              bool act) {
+    sdiffboundary_global_id sdbidx = pStatedef->getSDiffBoundaryIdx(sdb);
+    spec_global_id sidx = pStatedef->getSpecIdx(s);
 
-    return _setSDiffBoundaryDiffusionActive(sdbidx, sidx, act);
+    return _setSDiffBoundarySpecDiffusionActive(sdbidx, sidx, act);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getSDiffBoundaryDiffusionActive(string const & sdb, string const & s) const
-{
-    uint sdbidx = pStatedef->getSDiffBoundaryIdx(sdb);
-    uint sidx = pStatedef->getSpecIdx(s);
+bool API::getSDiffBoundarySpecDiffusionActive(std::string const& sdb, std::string const& s) const {
+    sdiffboundary_global_id sdbidx = pStatedef->getSDiffBoundaryIdx(sdb);
+    spec_global_id sidx = pStatedef->getSpecIdx(s);
 
-    return _getSDiffBoundaryDiffusionActive(sdbidx, sidx);
+    return _getSDiffBoundarySpecDiffusionActive(sdbidx, sidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setSDiffBoundaryDcst(std::string const & sdb, std::string const & s, double dcst, std::string const & direction_patch)
-{
-    uint sdbidx = pStatedef->getSDiffBoundaryIdx(sdb);
-    uint sidx = pStatedef->getSpecIdx(s);
+void API::setSDiffBoundarySpecDcst(std::string const& sdb,
+                                   std::string const& s,
+                                   double dcst,
+                                   std::string const& direction_patch) {
+    sdiffboundary_global_id sdbidx = pStatedef->getSDiffBoundaryIdx(sdb);
+    spec_global_id sidx = pStatedef->getSpecIdx(s);
     if (direction_patch.empty()) {
-        _setSDiffBoundaryDcst(sdbidx, sidx, dcst);
+        _setSDiffBoundarySpecDcst(sdbidx, sidx, dcst);
+    } else {
+        patch_global_id pidx = pStatedef->getPatchIdx(direction_patch);
+        _setSDiffBoundarySpecDcst(sdbidx, sidx, dcst, pidx);
     }
-    else {
-        uint pidx = pStatedef->getPatchIdx(direction_patch);
-        _setSDiffBoundaryDcst(sdbidx, sidx, dcst, pidx);
-    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setSDiffBoundaryDiffusionActive(uint /*sdbidx*/, uint /*sidx*/, bool /*act*/)
-{
+void API::_setSDiffBoundarySpecDiffusionActive(sdiffboundary_global_id /*sdbidx*/,
+                                               spec_global_id /*sidx*/,
+                                               bool /*act*/) {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getSDiffBoundaryDiffusionActive(uint /*sdbidx*/, uint /*sidx*/) const
-{
+bool API::_getSDiffBoundarySpecDiffusionActive(sdiffboundary_global_id /*sdbidx*/,
+                                               spec_global_id /*sidx*/) const {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setSDiffBoundaryDcst(uint /*sdbidx*/, uint /*sidx*/, double /*dcst*/, uint /*direction_patch*/)
-{
+void API::_setSDiffBoundarySpecDcst(sdiffboundary_global_id /*sdbidx*/,
+                                    spec_global_id /*sidx*/,
+                                    double /*dcst*/,
+                                    patch_global_id /*direction_patch*/) {
     NotImplErrLog("");
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
+}  // namespace steps::solver

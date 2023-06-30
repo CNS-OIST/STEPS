@@ -24,47 +24,28 @@
 
  */
 
-
-/*
- *  Last Changed Rev:  $Rev$
- *  Last Changed Date: $Date$
- *  Last Changed By:   $Author$
- */
-
-#ifndef STEPS_SOLVER_SPECDEF_HPP
-#define STEPS_SOLVER_SPECDEF_HPP 1
-
+#pragma once
 
 // STL headers.
-#include <string>
 #include <fstream>
+#include <string>
 
 // STEPS headers.
-#include "util/common.h"
-#include "statedef.hpp"
 #include "model/spec.hpp"
+#include "statedef.hpp"
+#include "util/common.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace solver {
-
-// Forwards declarations
-//class Statedef;
-
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::solver {
 
 /// Defined Species
-class Specdef
-{
-
-public:
+class Specdef {
+  public:
     /// Constructor
     ///
     /// \param sd State of the solver.
     /// \param idx Global index of the species.
     /// \param d Pointer to the assocaited Spec object.
-    Specdef(Statedef * sd, uint idx, steps::model::Spec * d);
+    Specdef(Statedef* sd, spec_global_id idx, model::Spec* d);
 
     /// Destructor
     ~Specdef();
@@ -73,21 +54,24 @@ public:
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream& cp_file);
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream& cp_file);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SPECIES
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this species.
-    inline uint gidx() const noexcept
-    { return pIdx; }
+    inline spec_global_id gidx() const noexcept {
+        return pIdx;
+    }
 
     /// Return the name of the species.
-    std::string const name() const;
+    inline std::string const& name() const noexcept {
+        return pName;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: SETUP
@@ -100,25 +84,15 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
-    Statedef                          * pStatedef;
-    uint                                pIdx;
-    std::string                         pName;
-    bool                                pSetupdone;
+    Statedef* pStatedef;
+    spec_global_id pIdx;
+    std::string pName;
+    bool pSetupdone;
 
     ////////////////////////////////////////////////////////////////////////
-
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-#endif
-// STEPS_SOLVER_SPECDEF_HPP
-
-// END
+}  // namespace steps::solver

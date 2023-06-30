@@ -84,8 +84,8 @@ class TestSecondOrderIrev2D(unittest.TestCase):
         os.makedirs(new_dir, exist_ok=True)
 
         sim.reset()
-        sim.setPatchCount('patch1', 'A', COUNTA)
-        sim.setPatchCount('patch1', 'B', COUNTB)
+        sim.setPatchSpecCount('patch1', 'A', COUNTA)
+        sim.setPatchSpecCount('patch1', 'B', COUNTB)
         sim.checkpoint('./validation_cp/cp/second_order_irev_2D')
 
 
@@ -120,12 +120,15 @@ class TestSecondOrderIrev2D(unittest.TestCase):
 
         res_m = numpy.zeros([NITER, ntpnts, 3])
 
+        seed = int(time.time()%4294967295)
         for i in range (0, NITER):
             sim.restore('./validation_cp/cp/second_order_irev_2D')
+            rng.initialize(seed)
+            seed += 1
             for t in range(0, ntpnts):
                 sim.run(tpnts[t])
-                res_m[i, t, 0] = sim.getPatchCount('patch1', 'A')
-                res_m[i, t, 1] = sim.getPatchCount('patch1', 'B')       
+                res_m[i, t, 0] = sim.getPatchSpecCount('patch1', 'A')
+                res_m[i, t, 1] = sim.getPatchSpecCount('patch1', 'B')       
 
         mean_res = numpy.mean(res_m, 0)
 

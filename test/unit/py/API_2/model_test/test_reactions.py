@@ -190,6 +190,7 @@ class ReactionDeclaration(unittest.TestCase):
             with self.assertRaises(TypeError):
                 Surf('test')
 
+
 def suite():
     all_tests = []
     all_tests.append(unittest.makeSuite(ReactionDeclaration, "test"))

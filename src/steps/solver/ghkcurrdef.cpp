@@ -24,38 +24,21 @@
 
  */
 
-
-// Autotools definitions.
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-// STL headers.
-#include <cassert>
-#include <cmath>
-#include <iostream>
-#include <sstream>
-#include <string>
-
 // STEPS headers.
-#include "util/error.hpp"
 #include "ghkcurrdef.hpp"
 #include "math/ghk.hpp"
 #include "model/chanstate.hpp"
 #include "model/spec.hpp"
+#include "util/error.hpp"
 
 // logging
 #include <easylogging++.h>
 
-namespace ssolver = steps::solver;
-namespace smod = steps::model;
+namespace steps::solver {
 
-////////////////////////////////////////////////////////////////////////////////
-
-ssolver::GHKcurrdef::GHKcurrdef(Statedef * sd, uint gidx, smod::GHKcurr * ghk)
-: pStatedef(sd)
-, pIdx(gidx)
-{
+GHKcurrdef::GHKcurrdef(Statedef* sd, ghkcurr_global_id gidx, model::GHKcurr* ghk)
+    : pStatedef(sd)
+    , pIdx(gidx) {
     AssertLog(pStatedef != nullptr);
     AssertLog(ghk != nullptr);
 
@@ -66,8 +49,7 @@ ssolver::GHKcurrdef::GHKcurrdef(Statedef * sd, uint gidx, smod::GHKcurr * ghk)
     pVirtual_oconc = ghk->_voconc();
     pVshift = ghk->_vshift();
 
-    if (! ghk->_infosupplied())
-    {
+    if (!ghk->_infosupplied()) {
         std::ostringstream os;
         os << "\nPermeability not defined for GHK current object.";
         ArgErrLog(os.str());
@@ -76,96 +58,43 @@ ssolver::GHKcurrdef::GHKcurrdef(Statedef * sd, uint gidx, smod::GHKcurr * ghk)
     pValence = ghk->_valence();
     AssertLog(pValence != 0);
 
-    // Fetch the conductance measurement information from the GHKcurr object
-    // in order to calculate the permeability.
-    double G = ghk->_G();
-    if (G > 0.0)
-    {
-        double V = ghk->_V();
-        double temp = ghk->_temp();
-        AssertLog(temp >=0.0);
-        double oconc = ghk->_oconc();
-        AssertLog(oconc >= 0.0);
-        double iconc = ghk->_iconc();
-        AssertLog(iconc >= 0.0);
-
-        // Convert concentrations in Molar input to units for GHK equation, namely mol/m^3 or mmol/l
-        oconc *= 1000.0;
-        iconc *= 1000.0;
-
-        // Calculate the permeability from the GHK flux equation.
-        pPerm = steps::math::permeability(G, V, pValence, temp, iconc, oconc);
-        if (pPerm != pPerm) // Implies pPerm is nan
-        {
-            std::ostringstream os;
-            os << "\nFailed to find permeability for GHK current object, check parameters.";
-            ArgErrLog(os.str());
-        }
-        // TODO: some check here that the permeability isn't ridiculous.
-    }
-    else
-    {
-        double perm = ghk->_P();
-        AssertLog(perm>0.0);
-        pPerm = perm;
-    }
+    double perm = ghk->_P();
+    AssertLog(perm > 0.0);
+    pPerm = perm;
 
     uint nspecs = pStatedef->countSpecs();
-    if (nspecs == 0) { return; // Would be weird, but okay.
-}
-    pSpec_DEP = new int[nspecs];
-    std::fill_n(pSpec_DEP, nspecs, DEP_NONE);
-
-    pSpec_VOL_DEP = new int[nspecs];
-    std::fill_n(pSpec_VOL_DEP, nspecs, DEP_NONE);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-ssolver::GHKcurrdef::~GHKcurrdef()
-{
-    if (pStatedef->countSpecs() > 0)
-    {
-        delete[] pSpec_DEP;
-        delete[] pSpec_VOL_DEP;
+    if (nspecs == 0) {
+        return;  // Would be weird, but okay.
     }
+
+    pSpec_DEP.container().resize(nspecs, DEP_NONE);
+    pSpec_VOL_DEP.container().resize(nspecs, DEP_NONE);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::GHKcurrdef::checkpoint(std::fstream & cp_file)
-{
-    cp_file.write(reinterpret_cast<char*>(&pRealFlux), sizeof(bool));
-    cp_file.write(reinterpret_cast<char*>(&pVirtual_oconc), sizeof(double));
-    cp_file.write(reinterpret_cast<char*>(&pPerm), sizeof(double));
-    cp_file.write(reinterpret_cast<char*>(&pValence), sizeof(int));
-    cp_file.write(reinterpret_cast<char*>(&pVshift), sizeof(double));
+void GHKcurrdef::checkpoint(std::fstream& /*cp_file*/) {
+    // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::GHKcurrdef::restore(std::fstream & cp_file)
-{
-    cp_file.read(reinterpret_cast<char*>(&pRealFlux), sizeof(bool));
-    cp_file.read(reinterpret_cast<char*>(&pVirtual_oconc), sizeof(double));
-    cp_file.read(reinterpret_cast<char*>(&pPerm), sizeof(double));
-    cp_file.read(reinterpret_cast<char*>(&pValence), sizeof(int));
-    cp_file.read(reinterpret_cast<char*>(&pVshift), sizeof(double));
+void GHKcurrdef::restore(std::fstream& /*cp_file*/) {
+    // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::GHKcurrdef::setup()
-{
+void GHKcurrdef::setup() {
     AssertLog(pSetupdone == false);
 
-    uint chidx = pStatedef->getSpecIdx(pChanState);
-    uint ionidx = pStatedef->getSpecIdx(pIon);
+    spec_global_id chidx = pStatedef->getSpecIdx(pChanState);
+    spec_global_id ionidx = pStatedef->getSpecIdx(pIon);
 
     pSpec_CHANSTATE = chidx;
     pSpec_ION = ionidx;
 
-    pSpec_DEP[chidx] |= DEP_STOICH;    // TODO: come back to this and check.
+    pSpec_DEP[chidx] |= DEP_STOICH;
     // Note: The dependency here is indirect. The flux is not modelled as
     // a 2nd order reaction ion + channel -> movement of ion
     // instead the flux comes from the GHK flux equation and is then
@@ -174,7 +103,6 @@ void ssolver::GHKcurrdef::setup()
     // molecules in bordering tetrahedrons.
     // And, the concentration of ion in the inner and outer compartment
     // has an affect on the RATE
-    // pSpec_DEP[ionidx] |= DEP_RATE;
 
     // And, the concentration of ion in the inner and outer compartment
     // has an affect on the RATE
@@ -185,58 +113,49 @@ void ssolver::GHKcurrdef::setup()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint ssolver::GHKcurrdef::chanstate() const
-{
+spec_global_id GHKcurrdef::chanstate() const {
     AssertLog(pSetupdone == true);
     return pSpec_CHANSTATE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint ssolver::GHKcurrdef::ion() const
-{
+spec_global_id GHKcurrdef::ion() const {
     AssertLog(pSetupdone == true);
     return pSpec_ION;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-int ssolver::GHKcurrdef::dep(uint gidx) const
-{
+int GHKcurrdef::dep(spec_global_id gidx) const {
     AssertLog(pSetupdone == true);
-    AssertLog(gidx < pStatedef->countSpecs());
-    return pSpec_DEP[gidx];
+    return pSpec_DEP.at(gidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int ssolver::GHKcurrdef::dep_v(uint gidx) const
-{
+int GHKcurrdef::dep_v(spec_global_id gidx) const {
     AssertLog(pSetupdone == true);
-    AssertLog(gidx < pStatedef->countSpecs());
-    return pSpec_VOL_DEP[gidx];
+    return pSpec_VOL_DEP.at(gidx);
 }
+
 ////////////////////////////////////////////////////////////////////////////////
 
-bool ssolver::GHKcurrdef::req(uint gidx) const
-{
+bool GHKcurrdef::req(spec_global_id gidx) const {
     AssertLog(pSetupdone == true);
-    AssertLog(gidx < pStatedef->countSpecs());
-    if (pSpec_DEP[gidx] != DEP_NONE) { return true;
-}
+    if (pSpec_DEP.at(gidx) != DEP_NONE) {
+        return true;
+    }
     return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool ssolver::GHKcurrdef::req_v(uint gidx) const
-{
+bool GHKcurrdef::req_v(spec_global_id gidx) const {
     AssertLog(pSetupdone == true);
-    AssertLog(gidx < pStatedef->countSpecs());
-    if (pSpec_VOL_DEP[gidx] != DEP_NONE) { return true;
-}
+    if (pSpec_VOL_DEP.at(gidx) != DEP_NONE) {
+        return true;
+    }
     return false;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
+}  // namespace steps::solver

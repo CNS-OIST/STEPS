@@ -25,6 +25,7 @@
 import collections
 import copy
 import datetime
+import enum
 import functools
 import math
 import numbers
@@ -42,8 +43,9 @@ from xml.etree import ElementTree
 import numpy
 import steps
 
-from . import geom as ngeom
 from . import _saving_optim as nsaving_optim
+from . import geom as ngeom
+from . import model as nmodel
 from . import sim as nsim
 from . import utils as nutils
 
@@ -62,13 +64,14 @@ __all__ = [
 # Result selectors
 
 
-class _MetaData:
+class _MetaData(nutils.MutableDictInterface):
     """
     Small utility class for handling metadata setting and getting through __getitem__ and
     __setitem__. Behaves like a dict but performs additional checks when setting values.
     """
 
     def __init__(self, parent):
+        super().__init__()
         self._parent = parent
         self._dict = {}
 
@@ -114,23 +117,8 @@ class _MetaData:
 
         self._dict[key] = lst
 
-    def __iter__(self):
-        return iter(self._dict)
-
     def keys(self):
         return self._dict.keys()
-
-    def items(self):
-        return self._dict.items()
-
-    def get(self, key, default):
-        try:
-            return self[key]
-        except KeyError:
-            return default
-
-    def __contains__(self, key):
-        return key in self._dict
 
 
 class ResultSelector:
@@ -980,7 +968,6 @@ class _ResultPath(ResultSelector):
 
         # Compute labels
         self._labels = []
-        # for descr in self.simpath._getDescriptions(tuple(self._descr)):
         *_descr, endName = self._descr
         for descr in self.simpath._getDescriptions(tuple(_descr)):
             self._labels.append('.'.join(descr[1:] + (endName,)))
@@ -1022,6 +1009,19 @@ class _ResultPath(ResultSelector):
         # Set the metadata
         for key, lst in mtdt.items():
             self.metaData.__setitem__(key, lst, _internal=True)
+        # Add property metadata
+        self.metaData.__setitem__('property', [self._endName] * self._len, _internal=True)
+        # Add endname specific metadata if not already in result path
+        if self._endName in nsim.SimPath._PATH_END_METADATA:
+            for key, val in nsim.SimPath._PATH_END_METADATA[self._endName].items():
+                if key in self.metaData:
+                    row = self.metaData[key]
+                    # Only add where it is not defined
+                    for i, v in enumerate(row):
+                        row[i] = val if v is None else v
+                else:
+                    row = [val] * self._len
+                self.metaData.__setitem__(key, row, _internal=True)
 
     def __getattr__(self, name):
         self._descr.append(name)
@@ -1696,14 +1696,19 @@ class _HDF5DataHandler(_DBDataHandler, nutils.Versioned):
         self._time = None
         self._data = None
 
+        self._lbls = None
+
         # Vector representing the permutation that should be applied before saving the data to file
         # It is used by XDMF data handler to ensure contiguous blocks of data.
         self._colRemapping = None
         self._revColRemapping = None
 
+        self._compObjInds = None
+
         if parent is None:
             # Load column remapping if we are reading data
             self._loadColumnRemap()
+            self._initializeCompoundObjects()
 
     def time(self):
         """Return an accessor to the timepoints data."""
@@ -1717,29 +1722,15 @@ class _HDF5DataHandler(_DBDataHandler, nutils.Versioned):
 
     def labels(self):
         """Return the labels of the data being saved."""
-        self._checkCanAccess()
-        return [lbl.decode('utf-8') for lbl in self._group[_HDF5DataHandler._LABELS_DSET_NAME]]
+        if self._lbls is None:
+            self._checkCanAccess()
+            self._lbls = [lbl.decode('utf-8') for lbl in self._group[_HDF5DataHandler._LABELS_DSET_NAME]]
+        return self._lbls
 
     def metaData(self):
         """Return the metadata of the saved data."""
         self._checkCanAccess()
-        res = {}
-        for name, dset in self._group[_HDF5DataHandler._METADATA_GROUP_NAME].items():
-            if isinstance(dset[0], bytes):
-                res[name] = [v.decode('utf-8') for v in dset]
-                # Try to convert strings to numbers, if possible
-                for i, v in enumerate(res[name]):
-                    for tpe in [int, float]:
-                        try:
-                            res[name][i] = tpe(v)
-                            break
-                        except ValueError:
-                            pass
-                # Restore Nones
-                res[name] = [None if v == 'None' else v for v in res[name]]
-            else:
-                res[name] = [None if numpy.isnan(v) else v for v in dset]
-        return res
+        return _HDF5MetaDataAccessor(self)
 
     def _checkCanAccess(self):
         if not self._dbh._shouldWrite:
@@ -1781,7 +1772,17 @@ class _HDF5DataHandler(_DBDataHandler, nutils.Versioned):
                     mtdtGroup.create_dataset(key, data=vals, **dskwargs)
         self._loadColumnRemap()
 
+        self._initializeCompoundObjects()
+
         self._initialized = True
+
+    def _initializeCompoundObjects(self):
+        """Initialize compound object handler, if applicable"""
+        tpes = self.metaData().get('value_type', None)
+        if tpes is not None:
+            self._compObjInds = [i for i, tpe in enumerate(tpes) if tpe is not None]
+            if len(self._compObjInds) == 0:
+                self._compObjInds = None
 
     def _loadColumnRemap(self):
         """Load Column remapping, if available"""
@@ -1828,8 +1829,11 @@ class _HDF5DataHandler(_DBDataHandler, nutils.Versioned):
                 self._time.resize(self._timeInd + 1, axis=0)
                 self._data.resize(self._timeInd + 1, axis=0)
             self._time[self._timeInd] = t
+            if self._compObjInds is not None:
+                for i in self._compObjInds:
+                    row[i] = self._dbh._compObjHandler.write(row[i])
             if self._colRemapping is None:
-                self._data[self._timeInd, :] = row 
+                self._data[self._timeInd, :] = numpy.array(row)
             else:
                 self._data[self._timeInd, :] = numpy.array(row)[self._colRemapping]
 
@@ -1847,8 +1851,6 @@ class _HDF5DistribDataHandler(_HDF5DataHandler):
         self._rsInd = self._group.attrs[HDF5Handler._RS_INDEX_ATTR]
         self._dbUid = self._hdfGroup.name
 
-        self._lbls = None
-        self._mtdt = None
         self._usedRanks = None
 
         self._setUpRankFiles()
@@ -1876,6 +1878,10 @@ class _HDF5DistribDataHandler(_HDF5DataHandler):
                     _HDF5DataHandler(rnkDBH, None, rsGroup, version=self._version)
                 ) 
 
+    def _initializeCompoundObjects(self):
+        """Initialize compound object handler, if applicable"""
+        pass
+
     def time(self):
         """Return an accessor to the timepoints data."""
         # All times should be the same, can return the first one
@@ -1899,15 +1905,167 @@ class _HDF5DistribDataHandler(_HDF5DataHandler):
 
     def metaData(self):
         """Return the metadata of the saved data."""
-        if self._mtdt is None:
-            self._mtdt = {}
-            rnk2Mtdt = {}
-            for rnk in self._usedRanks:
-                rnk2Mtdt[rnk] = self._dbh._distribRankDBHs[rnk]._distribRS[self._dbUid][self._rsInd].metaData
-            for i, (rnk, locIdx) in enumerate(self._colMap.T):
-                for key, vals in rnk2Mtdt[rnk].items():
-                    self._mtdt.setdefault(key, [None] * self._nbCols)[i] = vals[locIdx]
-        return self._mtdt
+        return _HDF5DistribMetaDataAccessor(self)
+
+
+class _HDF5CompoundObjHandler(nutils.Versioned):
+    """Utility class for writing compound objects to HDF groups
+    Support writing python lists and dicts to HDF5 groups.
+    """
+
+    _COMPOBJ_GROUP_NAME = 'CompoundObjects'
+    _COMPOBJ_DSET_NAME = 'CompObjs'
+
+    _IND_DTYPE = 'i'
+
+    class _DATA_TYPE(enum.IntEnum):
+        INT = 0
+        FLOAT = 1
+        STRING = 2
+        LIST = 3
+        DICT = 4
+
+    _DATA_INFO = {
+        # Data type: (dtype, dataset name)
+        _DATA_TYPE.INT: ('i', 'Ints'),
+        _DATA_TYPE.FLOAT: ('d', 'Floats'),
+        _DATA_TYPE.STRING: ('b', 'Strings'),
+        _DATA_TYPE.LIST: (_IND_DTYPE, 'Lists'),
+    }
+
+    def __init__(self, parentGroup, dbh, cachedTypes=[], **kwargs):
+        super().__init__(**kwargs)
+        self._parentGroup = parentGroup
+        self._dbh = dbh
+        self._caches = {tpe: {} for tpe in cachedTypes}
+        self._group = None
+        self._compDset = None
+        self._dsets = None
+
+        self._cacheInit = False
+
+        self._setUp()
+
+    def _setUp(self):
+        if self._COMPOBJ_GROUP_NAME not in self._parentGroup:
+            self._parentGroup.create_group(self._COMPOBJ_GROUP_NAME)
+        self._group = self._parentGroup[self._COMPOBJ_GROUP_NAME]
+
+        dskwargs = self._dbh._dataSetKWargs
+
+        if self._COMPOBJ_DSET_NAME not in self._group:
+            self._group.create_dataset(
+                self._COMPOBJ_DSET_NAME, (0, 3), maxshape=(None, 3), dtype=self._IND_DTYPE, **dskwargs
+            )
+        self._compDset = self._group[self._COMPOBJ_DSET_NAME]
+
+        self._dsets = {}
+        for tpe, (dtype, dsetName) in self._DATA_INFO.items():
+            if dsetName not in self._group:
+                self._group.create_dataset(dsetName, (0,), maxshape=(None,), dtype=dtype, **dskwargs)
+            self._dsets[tpe] = self._group[dsetName]
+
+    def _getDataRanges(self, ind):
+        """Return datasets and ranges that contain the data of the object with index ind."""
+        tpe, start, end = self._compDset[ind, :]
+        if tpe in [self._DATA_TYPE.FLOAT, self._DATA_TYPE.INT, self._DATA_TYPE.STRING]:
+            if end >= start:
+                return (self._dsets[tpe], start, end)
+            else:
+                return (self._dsets[tpe], start, start + 1)
+        elif tpe in [self._DATA_TYPE.LIST, self._DATA_TYPE.DICT]:
+            return [self._getDataRanges(i) for i in self._dsets[self._DATA_TYPE.LIST][start:end]]
+        else:
+            raise NotImplementedError()
+
+    def _getCacheKey(self, val):
+        if isinstance(val, list):
+            return tuple(self._getCacheKey(v) for v in val)
+        elif isinstance(val, dict):
+            return (self._getCacheKey(list(val.keys())), self._getCacheKey(list(val.values())))
+        return val
+
+    def _pushData(self, tpe, data):
+        dset = self._dsets[tpe]
+        start = len(dset)
+        end = start + len(data)
+        dset.resize(end, axis=0)
+        dset[start:end] = data
+        return start, end
+
+    def _pushCompound(self, tpe, start, end):
+        ind = self._compDset.shape[0]
+        self._compDset.resize(ind + 1, axis=0)
+        self._compDset[ind,:] = [tpe, start, end]
+        return ind
+
+    def _pushObject(self, tpe, data, dataTpe=None):
+        if dataTpe is None:
+            dataTpe = tpe
+        if tpe in self._caches:
+            # Caching
+            cache = self._caches[tpe]
+            key = self._getCacheKey(data)
+            if key not in cache:
+                cache[key] = self._pushCompound(tpe, *self._pushData(dataTpe, data))
+            return cache[key]
+        else:
+            return self._pushCompound(tpe, *self._pushData(dataTpe, data))
+
+    def write(self, obj):
+        if not self._cacheInit:
+            # Initialize cache
+            if len(self._caches) > 0:
+                for i, (tpe, start, end) in enumerate(self._compDset[...]):
+                    if tpe in self._caches:
+                        key = self._getCacheKey(self.read(i))
+                        self._caches[tpe][key] = i
+            self._cacheInit = True
+
+        if obj is None:
+            return -1
+        elif isinstance(obj, numbers.Number):
+            # Single value
+            tpe = self._DATA_TYPE.FLOAT if isinstance(obj, float) else self._DATA_TYPE.INT
+            start, end = self._pushData(tpe, [obj])
+            return self._pushCompound(tpe, start, -1)
+        elif isinstance(obj, str):
+            return self._pushObject(self._DATA_TYPE.STRING, list(obj.encode('utf-8')))
+        elif isinstance(obj, (list, tuple)):
+            if all(isinstance(v, numbers.Number) for v in obj):
+                # List of numbers
+                if any(isinstance(v, float) for v in obj):
+                    return self._pushObject(self._DATA_TYPE.FLOAT, obj)
+                else:
+                    # Integer list
+                    return self._pushObject(self._DATA_TYPE.INT, obj)
+            else:
+                # List of compounds
+                return self._pushObject(self._DATA_TYPE.LIST, [self.write(v) for v in obj])
+        elif isinstance(obj, dict):
+            indKeys = self.write(tuple(obj.keys()))
+            indVals = self.write(list(obj.values()))
+            return self._pushObject(self._DATA_TYPE.DICT, [indKeys, indVals], dataTpe=self._DATA_TYPE.LIST)
+        else:
+            raise TypeError(f'Unsupported type {type(obj)} cannot be added to the HDF5 file.')
+
+    def read(self, ind):
+        if ind < 0:
+            return None
+        tpe, start, end = self._compDset[ind, :]
+        if tpe == self._DATA_TYPE.FLOAT:
+            return list(self._dsets[tpe][start:end]) if end >= start else self._dsets[tpe][start]
+        elif tpe == self._DATA_TYPE.INT:
+            return list(self._dsets[tpe][start:end]) if end >= start else self._dsets[tpe][start]
+        elif tpe == self._DATA_TYPE.STRING:
+            return bytearray(self._dsets[tpe][start:end]).decode('utf-8')
+        elif tpe == self._DATA_TYPE.LIST:
+            return [self.read(i) for i in self._dsets[tpe][start:end]]
+        elif tpe == self._DATA_TYPE.DICT:
+            keys, vals = [self.read(i) for i in self._dsets[self._DATA_TYPE.LIST][start:end]]
+            return {k: v for k, v in zip(keys, vals)}
+        else:
+            return NotImplementedError(f'Unsupported type-code: {tpe}')
 
 
 class _XDMFDataHandler(_HDF5DataHandler):
@@ -2216,6 +2374,16 @@ class _HDF5DataAccessor(nutils.Versioned):
         self._saveTime = saveTime
         self._nbDims = 2 if saveTime else 3
 
+        # Compound objects
+        if self._handler._compObjInds is not None:
+            if self._handler._revColRemapping is not None:
+                self._compObjInds = set(self._handler._revColRemapping[self._handler._compObjInds])
+            else:
+                self._compObjInds = set(self._handler._compObjInds)
+        else:
+            self._compObjInds = None
+
+
     def __getitem__(self, key, forceArray=False):
         key = nutils.formatKey(key, self._nbDims, forceSz=True)
         res = []
@@ -2232,15 +2400,28 @@ class _HDF5DataAccessor(nutils.Versioned):
                     remapKey = key[2]
                     if self._handler._revColRemapping is not None:
                         remapKey = self._handler._revColRemapping[key[2]]
-                    if isinstance(remapKey, slice):
-                        res[-1].append(runData[i, remapKey])
-                    elif hasattr(remapKey, '__iter__'):
-                        res[-1].append([runData[i, j] for j in remapKey])
+                    if self._compObjInds is not None:
+                        # Compound objects
+                        res[-1].append([])
+                        if not hasattr(remapKey, '__iter__'):
+                            remapKey = nutils.getSliceIds(remapKey, runData.shape[1])
+                        for k in remapKey:
+                            if k in self._compObjInds:
+                                obj = self._handler._dbh._compObjHandler.read(int(runData[i, k]))
+                                res[-1][-1].append(obj)
+                            else:
+                                res[-1][-1].append(runData[i, k])
                     else:
-                        res[-1].append([runData[i, remapKey]])
+                        # Float values
+                        if isinstance(remapKey, slice):
+                            res[-1].append(runData[i, remapKey])
+                        elif hasattr(remapKey, '__iter__'):
+                            res[-1].append([runData[i, j] for j in remapKey])
+                        else:
+                            res[-1].append([runData[i, remapKey]])
         if forceArray:
             return nutils.nparray(res)
-        mk = tuple(slice(None) if isinstance(k, slice) else 0 for k in key)
+        mk = tuple(slice(None) if isinstance(k, slice) or hasattr(k, '__iter__') else 0 for k in key)
         return nutils.nparray(_sliceData(res, mk))
 
     def __len__(self):
@@ -2281,7 +2462,7 @@ class _HDF5DistribDataAccessor(_HDF5DataAccessor):
 
         if forceArray:
             return nutils.nparray(res)
-        mk = tuple(slice(None) if isinstance(k, slice) else 0 for k in key)
+        mk = tuple(slice(None) if isinstance(k, slice) or hasattr(k, '__iter__') else 0 for k in key)
         return nutils.nparray(_sliceData(res, mk))
 
     def __len__(self):
@@ -2290,6 +2471,125 @@ class _HDF5DistribDataAccessor(_HDF5DataAccessor):
         rs = self._handler._dbh._distribRankDBHs[rnk]._distribRS[self._handler._dbUid][self._handler._rsInd]
         return len(rs.data)
 
+
+class _HDF5MetaDataAccessor(nutils.Versioned, nutils.ReadOnlyDictInterface):
+    """
+    Meta data accessor for HDF5 files
+    """
+    def __init__(self, handler, **kwargs):
+        super().__init__(**kwargs)
+
+        self._handler = handler
+        self._cache = {}
+
+    def __getitem__(self, key):
+        if key is Ellipsis:
+            return {k: self[k] for k in self}
+        if key not in self._cache:
+            if key not in self._handler._group[_HDF5DataHandler._METADATA_GROUP_NAME]:
+                raise KeyError(f'Cannot access metaData with key: {key}.')
+
+            dset = self._handler._group[_HDF5DataHandler._METADATA_GROUP_NAME][key]
+            if isinstance(dset[0], bytes):
+                res = [v.decode('utf-8') for v in dset]
+                # Try to convert strings to numbers, if possible
+                for i, v in enumerate(res):
+                    for tpe in [int, float]:
+                        try:
+                            res[i] = tpe(v)
+                            break
+                        except ValueError:
+                            pass
+                # Restore Nones
+                res = [None if v == 'None' else v for v in res]
+            else:
+                res = [None if numpy.isnan(v) else v for v in dset]
+
+            self._cache[key] = res
+
+        return self._cache[key]
+
+    def keys(self):
+        for name in self._handler._group[_HDF5DataHandler._METADATA_GROUP_NAME]:
+            yield name
+
+
+class _HDF5DistribMetaDataAccessor(_HDF5MetaDataAccessor):
+    """
+    Meta data accessor for HDF5 files
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._rnk2Mtdt = {}
+        dbuid = self._handler._dbUid
+        rsInd = self._handler._rsInd
+        for rnk in self._handler._usedRanks:
+            self._rnk2Mtdt[rnk] = self._handler._dbh._distribRankDBHs[rnk]._distribRS[dbuid][rsInd].metaData
+ 
+        self._keys = None
+ 
+    def __getitem__(self, key):
+        if key not in self._cache:
+            res = [None] * self._handler._nbCols
+            rnk2mtdt = {rnk: m[key] for rnk, m in self._rnk2Mtdt.items()}
+            for i, (rnk, locIdx) in enumerate(self._handler._colMap.T):
+                res[i] = rnk2mtdt[rnk][locIdx]
+
+            self._cache[key] = res
+
+        return self._cache[key]
+
+    def keys(self):
+        if self._keys is None:
+            keys = set()
+            for rnk, mtdt in self._rnk2Mtdt.items():
+                keys |= set(mtdt.keys())
+            self._keys = sorted(keys)
+        return self._keys
+
+
+class _HDF5StaticDataAccessor(nutils.MutableDictInterface, nutils.Versioned):
+    """
+    Static data accessor for HDF5 files
+    """
+
+    def __init__(self, dbh, group, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._dbh = dbh
+        gname = dbh._STATIC_DATA_GROUP_NAME
+        if gname not in group:
+            if self._dbh._file.mode == 'r':
+                raise Exception('There is no recorded static data in the file.')
+            self._group = group.create_group(gname)
+        else:
+            self._group = group[gname]
+
+    def _checkKey(self, key):
+        if not isinstance(key, str):
+            raise KeyError(f'Static data keys must be strings, got {key} instead.')
+
+    def __setitem__(self, key, value):
+        self._checkKey(key)
+        if key in self._group.attrs:
+            oldValue = self._dbh._compObjHandler.read(self._group.attrs[key])
+            if oldValue != value:
+                raise Exception(
+                    f'The previously recorded value for {key} static data:\n{oldValue}'
+                    f'\nis different from the currently given {key} value:\n{value}'
+                )
+        else:
+            self._group.attrs[key] = self._dbh._compObjHandler.write(value)
+
+    def __getitem__(self, key):
+        self._checkKey(key)
+        if key not in self._group.attrs:
+            raise KeyError(f'There is no recorder value for {key} in the static data.')
+        return self._dbh._compObjHandler.read(self._group.attrs[key])
+
+    def keys(self):
+        return self._group.attrs.keys()
 
 ###################################################################################################
 # Database handlers
@@ -2568,8 +2868,13 @@ class SQLiteDBHandler(DatabaseHandler):
                     values,
                 )
                 self._groupId = c.lastrowid
+                rows = self._conn.execute(
+                    f"SELECT * FROM {SQLiteDBHandler._GROUP_TABLE_NAME} WHERE uniqueid = '{uid}'"
+                ).fetchall()
+                group = SQLiteGroup(self, rows[0])
             else:
                 row = rows[0]
+                group = SQLiteGroup(self, row)
                 # get existing group id
                 self._groupId = row[SQLiteDBHandler._GROUP_TABLE_KEYS.index('groupid')]
                 # Checks parameters
@@ -2629,8 +2934,10 @@ class SQLiteDBHandler(DatabaseHandler):
                         )
 
             self._conn.commit()
+        else:
+            group = None
 
-        return selectors
+        return group, selectors
 
     def _labelsQuerry(self, groupId, rsid):
         """Return labels for ResultSelector rsid in group groupid."""
@@ -2729,7 +3036,6 @@ class SQLiteGroup(DatabaseGroup):
 
     def __init__(self, dbh, row, *args, **kwargs):
         super().__init__(*args, dbh=dbh, **kwargs)
-        self._row = row
         self._dict = {}
         for k, v in zip(row.keys(), row):
             if v is not None:
@@ -2797,6 +3103,14 @@ class SQLiteGroup(DatabaseGroup):
             {'val1': 1, 'val2': 2}
         """
         return {k: v for k, v in self._dict.items() if k not in SQLiteDBHandler._GROUP_TABLE_KEYS}
+
+    @property
+    def staticData(self):
+        """Not supported for SQLite databases.
+
+        See :py:attr:`HDF5Handler.staticData`
+        """
+        raise NotImplementedError('Static data saving is not supported with SQLite databases.')
 
 
 class HDF5Handler(DatabaseHandler, nutils.Versioned):
@@ -2880,6 +3194,9 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
     _RS_GROUP_NAME = 'ResultSelector{}'
     _RS_DISTGROUP_NAME = 'DistributedResultSelector{}'
     _RS_DIST_IND_MAP_NAME = 'DistributedColumnMap'
+
+    _STATIC_DATA_GROUP_NAME = 'staticData'
+
     _DISTRIBUTED_HDF_SUFFIX = '{}_rank{}'
     _HDF_EXTENSION = '.h5'
 
@@ -2891,6 +3208,8 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
         self._file = None
 
         self._currGroup = None
+        self._compObjHandler = None
+
         self._shouldWrite = nsim.MPI._shouldWrite
         self._fileKwArgs = hdf5FileKwArgs
         self._dataSetKWargs = hdf5DatasetKwArgs
@@ -2945,6 +3264,12 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
                     )
                 self._path += HDF5Handler._HDF_EXTENSION
                 self._file = h5py.File(self._path, 'a', **self._fileKwArgs)
+            # Initialize compound object handler
+            if self._compObjHandler is None:
+                DTPE = _HDF5CompoundObjHandler._DATA_TYPE
+                self._compObjHandler = _HDF5CompoundObjHandler(
+                    self._file, self, cachedTypes=[DTPE.INT, DTPE.STRING, DTPE.LIST, DTPE.DICT]
+                )
         elif not self._file:
             raise Exception(f'The HDF5 was closed.')
 
@@ -2957,11 +3282,12 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
             groupNamePattern = HDF5Handler._RS_GROUP_NAME
         if self._shouldWrite and rs._getEvalLen() > 0:
             rsName = groupNamePattern.format(rs._selectorInd)
-            if rsName not in self._currGroup:
-                rsgroup = self._currGroup.create_group(rsName)
+            hdf5Group = self._currGroup._group
+            if rsName not in hdf5Group:
+                rsgroup = hdf5Group.create_group(rsName)
                 rsgroup.attrs[HDF5Handler._RS_DESCRIPTION_ATTR] = rs._strDescr()
                 rsgroup.attrs[HDF5Handler._RS_INDEX_ATTR] = rs._selectorInd
-            return self._currGroup[rsName]
+            return hdf5Group[rsName]
         else:
             return None
 
@@ -2974,7 +3300,7 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
     def _checkSelectors(self, uid, selectors):
         """Check that selectors in the HDF5 file match the simulation selectors"""
         selectorNames = [
-            n for n in self._currGroup if n.startswith(HDF5Handler._RS_GROUP_NAME.format(''))
+            n for n in self._currGroup._group if n.startswith(HDF5Handler._RS_GROUP_NAME.format(''))
         ]
         nonEmptySelectors = [rs for rs in selectors if rs._getEvalLen() > 0]
         if len(selectorNames) != len(nonEmptySelectors):
@@ -2985,7 +3311,7 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
             )
         for rsName, simrs in zip(selectorNames, nonEmptySelectors):
             handler = self._getDataHandler(simrs)
-            grouprs = self._currGroup[rsName]
+            grouprs = self._currGroup._group[rsName]
             descr = grouprs.attrs[HDF5Handler._RS_DESCRIPTION_ATTR]
             rsInd = grouprs.attrs[HDF5Handler._RS_INDEX_ATTR]
             if simrs._strDescr() != descr:
@@ -3011,7 +3337,7 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
                 raise Exception(
                     f'The result selector that was previously used for this '
                     f'unique identifier had different column labels. Expected '
-                    f'{grouprs["labels"]} but got {simrs.labels} instead.'
+                    f'{handler.labels()} but got {simrs.labels} instead.'
                 )
             # check metadata
             filemd = handler.metaData()
@@ -3027,7 +3353,7 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
         """Check that the distributed column map of each distributed result selector in the HDF5 file matches
         the simulation values"""
         selectorNames = [
-            n for n in self._currGroup if n.startswith(HDF5Handler._RS_DISTGROUP_NAME.format(''))
+            n for n in self._currGroup._group if n.startswith(HDF5Handler._RS_DISTGROUP_NAME.format(''))
         ]
         if len(selectorNames) != len(rsInd2DistColMap):
             if nsim.MPI._shouldWrite:
@@ -3043,7 +3369,7 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
                     f'contain {len(rsInd2DistColMap)}.'
                 )
         for rsInd, rsName in enumerate(selectorNames):
-            grouprs = self._currGroup[rsName]
+            grouprs = self._currGroup._group[rsName]
             simColMap = rsInd2DistColMap[rsInd]
             rsColMap = numpy.array(grouprs[HDF5Handler._RS_DIST_IND_MAP_NAME])
             if simColMap.shape[1] != rsColMap.shape[1]:
@@ -3087,7 +3413,7 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
                     distRs = nsaving_optim.OptimizeSelectors(sim, distRs)
                 distribSelectors += distRs
 
-        import mpi4py
+        import mpi4py.MPI
         rsInd2DistColMap = {}
         # Build the mapping between full selector and local distributed selectors on rank 0
         localDistrInds = {rs._selectorInd: (rs._fullLen, rs._distrInds) for rs in distribSelectors}
@@ -3120,13 +3446,14 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
             # Check if the group already exists
             if uid not in self._file:
                 # If it doesn't, create it
-                self._currGroup = self._file.create_group(uid, track_order=True)
-                self._currGroup.attrs[HDF5Handler._TIMESTAMP_ATTR_NAME] = str(datetime.datetime.now())
-                self._currGroup.attrs[HDF5Handler._STEPS_VERSION_ATTR_NAME] = steps.__version__
-                self._currGroup.attrs[HDF5Handler._NB_DISTR_RANKS_ATTR_NAME] = self._nbSavingRanks
+                group = self._file.create_group(uid, track_order=True)
+                group.attrs[HDF5Handler._TIMESTAMP_ATTR_NAME] = str(datetime.datetime.now())
+                group.attrs[HDF5Handler._STEPS_VERSION_ATTR_NAME] = steps.__version__
+                group.attrs[HDF5Handler._NB_DISTR_RANKS_ATTR_NAME] = self._nbSavingRanks
+                self._currGroup = HDF5Group(self, group, version=self._version)
                 try:
                     for argName, val in kwargs.items():
-                        self._currGroup.attrs[argName] = val
+                        group.attrs[argName] = val
                 except Exception as ex:
                     # If attributes could not be set, delete the group before raising the exception
                     self._currGroup = None
@@ -3152,16 +3479,17 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
                 for rs in selectors:
                     self._getRsHDFGroup(rs)
             else:
-                self._currGroup = self._file[uid]
+                group = self._file[uid]
+                self._currGroup = HDF5Group(self, group, version=self._version)
                 # Load version and check it matches the currently used version
-                version = self._parseVersion(self._currGroup.attrs[HDF5Handler._STEPS_VERSION_ATTR_NAME])
+                version = self._parseVersion(group.attrs[HDF5Handler._STEPS_VERSION_ATTR_NAME])
                 if version != self._version:
                     raise Exception(
                         f'Cannot add results to a group that was created with a different STEPS version. '
                         f'Group version: {version}, Current version: {self._version}'
                     )
                 # Check that the number of distributed ranks is the same
-                fileNbRanks = self._currGroup.attrs[HDF5Handler._NB_DISTR_RANKS_ATTR_NAME]
+                fileNbRanks = group.attrs[HDF5Handler._NB_DISTR_RANKS_ATTR_NAME]
                 if fileNbRanks != self._nbSavingRanks:
                     raise Exception(
                         f'Cannot add results to a group that was created with a different number of MPI '
@@ -3170,7 +3498,7 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
                     )
                 # Checks parameters
                 params = {
-                    k: v for k, v in self._currGroup.attrs.items() if k not in HDF5Handler._GROUP_DEFAULT_ATTRS
+                    k: v for k, v in group.attrs.items() if k not in HDF5Handler._GROUP_DEFAULT_ATTRS
                 }
                 if kwargs != params:
                     raise Exception(
@@ -3186,9 +3514,10 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
                 # Check local result selectors
                 self._checkSelectors(uid, selectors)
         else:
+            self._currGroup = None
             self._close()
 
-        return selectors
+        return self._currGroup, selectors
 
     def __getitem__(self, key):
         """Access an HDF5 group from its unique identifier
@@ -3318,6 +3647,35 @@ class HDF5Group(DatabaseGroup, nutils.Versioned):
         """
         return {k: v for k, v in self._group.attrs.items() if k not in HDF5Handler._GROUP_DEFAULT_ATTRS}
 
+    @property
+    def staticData(self):
+        """A mutable mapping which contains static data specific to this run group
+
+        :type: Mapping[str, Union[List, Dict, float, int, str]]
+
+        Usage when writing data::
+
+            >>> with HDF5Handler(filePath) as hdf:
+            >>>     group = sim.toDB(hdf, 'RunGroup1')
+            >>>     group.staticData['StimPoints'] = [1, 5, 8]
+
+        The static data that is saved must be specific to the whole run group. If the key associated to
+        the data already exists in the static data, STEPS will check that the value given is the same
+        as the one that was already saved. If not, an exception will be raised.
+
+        Usage when reading data::
+
+            >>> with HDF5Handler(filePath) as hdf:
+            >>>     group = hdf['RunGroup1']
+            >>>     group.staticData['StimPoints']
+            [1, 5, 8]
+
+        Note that when using MPI, only rank 0 can access this property.
+        """
+        if not nsim.MPI._shouldWrite:
+            raise Exception(f'Only rank 0 can access staticData.')
+        return _HDF5StaticDataAccessor(self._dbh, self._group, version=self._version)
+
 
 class XDMFHandler(HDF5Handler):
     """XDMF / HDF5 File handler
@@ -3403,12 +3761,12 @@ class XDMFHandler(HDF5Handler):
 
     def _getFilePaths(self):
         """Return a list of file paths managed by this rank"""
+        savedFp = set(self._savedFilePaths)
         # To be saved soon:
-        tobeSaved = []
-        for fp in [self._getCurrFullXDMFFilePath(), self._getCurrXDMFFilePath()]:
-            if fp not in self._savedFilePaths:
-                tobeSaved.append(fp)
-        return super()._getFilePaths() + self._savedFilePaths + tobeSaved
+        savedFp.add(self._getCurrXDMFFilePath())
+        if self._sim._isDistributed() and nsim.MPI.rank == 0:
+            savedFp.add(self._getCurrFullXDMFFilePath())
+        return super()._getFilePaths() + sorted(savedFp)
 
     def _getDataHandler(self, rs, groupNamePattern=None):
         """Return a _DBDataHandler for ResultSelector rs."""
@@ -3416,7 +3774,7 @@ class XDMFHandler(HDF5Handler):
 
     def _newGroup(self, sim, uid, selectors, **kwargs):
         """Initialize the file and add a new run group."""
-        selectors = super()._newGroup(sim, uid, selectors, **kwargs)
+        group, selectors = super()._newGroup(sim, uid, selectors, **kwargs)
         if self._xdmfTree is not None:
             self._writeXMLTree()
         self._currUID = uid
@@ -3430,7 +3788,9 @@ class XDMFHandler(HDF5Handler):
 
         self._setUpSelectors(selectors)
 
-        return selectors
+        self._writeModelInfo()
+
+        return group, selectors
 
     def _getAttributeName(self, obj, val, loctpe):
         name = f'{obj}.{val}' if obj is not None else val
@@ -3573,7 +3933,7 @@ class XDMFHandler(HDF5Handler):
 
         if self._sim._isDistributed():
             # Update local nonDistrElem2infos with the ones from other ranks
-            import mpi4py
+            import mpi4py.MPI
             allNDElem2Infos = mpi4py.MPI.COMM_WORLD.allgather(nonDistrElem2infos)
             for rnk, e2i in enumerate(allNDElem2Infos):
                 for locStr, dct in e2i.items():
@@ -3594,7 +3954,6 @@ class XDMFHandler(HDF5Handler):
             ngeom.VertReference: [],
         }
         # Pre-split the grids according to compartments and patches
-        # self._hierarchicalGrids = {}
         for comp in self._sim.geom.ALL(ngeom.Compartment):
             if self._sim._isDistributed():
                 compTets = comp.tets.toLocal()
@@ -3688,7 +4047,7 @@ class XDMFHandler(HDF5Handler):
         
         if self._sim._isDistributed():
             # Synchronize non-distributed result selector data
-            import mpi4py
+            import mpi4py.MPI
             allRS2Len = mpi4py.MPI.COMM_WORLD.allgather({rs._selectorInd: rs._getEvalLen() for rs in
                 selectors})
             allColRemaps = mpi4py.MPI.COMM_WORLD.allgather(rsColRemaps)
@@ -3753,7 +4112,6 @@ class XDMFHandler(HDF5Handler):
         xdmfTree = ElementTree.Element('Xdmf', Version='2.0')
         xdmfTree.set('xmlns:xi', 'http://www.w3.org/2001/XInclude')
         dom = ElementTree.SubElement(xdmfTree, 'Domain')
-        # ElementTree.register_namespace('xi', 'https://www.w3.org/2001/XInclude/')
 
         hierarchicalGrids = {}
         # Add root
@@ -3806,7 +4164,7 @@ class XDMFHandler(HDF5Handler):
 
             if self._sim._isDistributed():
                 # Gather allLocations to rank 0
-                import mpi4py
+                import mpi4py.MPI
                 elemStr2ElemCls = {elemCls._locStr: elemCls for elemCls in self._temporalGrids.keys()}
                 allLocations = [((loc[0]._locStr,) + loc[1:], path) for loc, path in allLocations]
                 fileName = XDMFHandler._FILE_NAME_PATTERN.format(
@@ -3877,15 +4235,17 @@ class XDMFHandler(HDF5Handler):
                         att, self._path, rs._selectorInd, rs._getEvalLen(), tind, start, step, nVals
                     )
 
-    def _writeGrid(self, gridCls, gridInd, t, tind):
+    def _getHDF5SubGroup(self, name):
         if self._shouldWrite:
-            if XDMFHandler._MESH_GROUP_NAME not in self._currGroup:
-                # Write mesh to HDF5 file
-                meshGroup = self._currGroup.create_group(XDMFHandler._MESH_GROUP_NAME)
+            if name not in self._currGroup._group:
+                return self._currGroup._group.create_group(name)
             else:
-                meshGroup = self._currGroup[XDMFHandler._MESH_GROUP_NAME]
+                return self._currGroup._group[name]
         else:
-            meshGroup = None
+            return None
+
+    def _writeGrid(self, gridCls, gridInd, t, tind):
+        meshGroup = self._getHDF5SubGroup(XDMFHandler._MESH_GROUP_NAME)
 
         # Write xdmf description of mesh data
         tpeMap = {
@@ -3902,7 +4262,7 @@ class XDMFHandler(HDF5Handler):
         cond = f'{gridName}/XYZ' not in meshGroup if meshGroup is not None else None
         if not self._sim._isDistributed():
             # If the mesh is not distributed, all ranks need to be involved in the calls to get mesh data
-            import mpi4py
+            import mpi4py.MPI
             cond = mpi4py.MPI.COMM_WORLD.bcast(cond, root=0)
 
         elems, _, loc = self._spatialGrids[gridCls][gridInd]
@@ -3911,6 +4271,7 @@ class XDMFHandler(HDF5Handler):
             topo = []
             if gridCls == ngeom.VertReference:
                 allVerts = [numpy.array(vert) for vert in elems]
+                vertInds = {vert: i for i, vert in enumerate(elems)}
             else:
                 vertInds = {}
                 for elem in elems:
@@ -3926,7 +4287,13 @@ class XDMFHandler(HDF5Handler):
                         topo.append(numpy.array([elemCode] + localInds))
 
             if self._shouldWrite:
+                meshGroup.create_dataset(f'{gridName}/vertInds',
+                    data=numpy.array([vert.idx for vert, _ in vertInds.items()]), **self._dataSetKWargs
+                )
+                meshGroup.create_dataset(f'{gridName}/elemInds', data=numpy.array(elems.indices), **self._dataSetKWargs)
                 meshGroup.create_dataset(f'{gridName}/XYZ', data=numpy.array(allVerts), **self._dataSetKWargs)
+                if len(loc) > 0 and isinstance(loc[-1], str):
+                    meshGroup[gridName].attrs['loc_id'] = loc[-1]
                 if len(topo) > 0:
                     meshGroup.create_dataset(f'{gridName}/topology',
                                              data=numpy.array(topo), **self._dataSetKWargs)
@@ -3981,3 +4348,24 @@ class XDMFHandler(HDF5Handler):
 
         self._temporalGrids[gridCls][gridInd] = (tempGrid, xmlPath, t, grid)
         return grid
+
+    def _writeModelInfo(self):
+        """Write a dictionary containing model information that can be useful for visualization"""
+        # Only rank 0 writes this data
+        if nsim.MPI._shouldWrite:
+            sd = self._currGroup.staticData
+
+            # Write vesicle and raft diameters
+            sd['Vesicles'] = {ves.name: {'Diameter': ves.Diameter} for ves in self._sim.model.ALL(nmodel.Vesicle)}
+            sd['Rafts'] = {raft.name: {'Diameter': raft.Diameter} for raft in self._sim.model.ALL(nmodel.Raft)}
+
+            try:
+                sd['VesiclePaths'] = self._sim.solver._getAllPaths()
+            except AttributeError:
+                pass
+
+            dct = {}
+            for patch in self._sim.geom.ALL(ngeom.Patch):
+                for zone in patch.ALL(ngeom.EndocyticZone):
+                    dct[zone.name] = {'patch': patch.name, 'tris': zone.tris.indices}
+            sd['EndocyticZones'] = dct

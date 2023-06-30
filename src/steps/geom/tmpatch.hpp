@@ -24,12 +24,6 @@
 
  */
 
-/*
- *  Last Changed Rev:  $Rev$
- *  Last Changed Date: $Date$
- *  Last Changed By:   $Author$
- */
-
 #pragma once
 
 #include "comp.hpp"
@@ -39,30 +33,28 @@
 
 #include "math/bbox.hpp"
 #include "model/surfsys.hpp"
-#include "util/common.h"
+#include "util/common.hpp"
 
 #include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace steps {
-namespace tetmesh {
+namespace steps::tetmesh {
 
 ////////////////////////////////////////////////////////////////////////////////
 
 // Forward & auxiliary declarations.
 class Tetmesh;
 class TmComp;
+class EndocyticZone;
 
 ////////////////////////////////////////////////////////////////////////////////
 
 /// Provides annotation for a group of surface triangles of a Tetmesh.
 ///
 /// \warning Methods start with an underscore are not exposed to Python.
-class TmPatch : public steps::wm::Patch
-{
-public:
-
+class TmPatch: public wm::Patch {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
@@ -79,12 +71,14 @@ public:
     /// \param surfsys Pointer to the assocaited surface system.
     ///
     /// This is the constructor for the wm (well-mixed) namespace.
-    TmPatch(std::string const & id, Tetmesh * container,
-         std::vector<index_t> const & tris, steps::wm::Comp* wmicomp,
-            steps::wm::Comp* wmocomp = nullptr);
+    TmPatch(std::string const& id,
+            Tetmesh* container,
+            std::vector<index_t> const& tris,
+            wm::Comp* wmicomp,
+            wm::Comp* wmocomp = nullptr);
 
     /// Destructor.
-    ~TmPatch() {}
+    ~TmPatch();
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO PYTHON):
@@ -94,13 +88,15 @@ public:
     ///
     /// \param tris List of indices of triangles.
     /// \return Results of whether the triangles are inside the patch.
-    std::vector<bool> isTriInside(const std::vector<index_t> &tris) const;
+    std::vector<bool> isTriInside(const std::vector<index_t>& tris) const;
 
     /// Return all triangles (by index) in the patch.
     ///
+
     /// \return List of indices of triangles.
-    std::vector<index_t> getAllTriIndices() const
-    { return strong_type_to_value_type(pTri_indices); }
+    std::vector<index_t> getAllTriIndices() const {
+        return strong_type_to_value_type(pTri_indices);
+    }
 
     /// Get the minimal coordinate of the rectangular bounding box or a plane.
     ///
@@ -112,6 +108,11 @@ public:
     /// \return Maximal coordinate of the rectangular bounding box or a plane.
     std::vector<double> getBoundMax() const;
 
+    /// Get all endocytic zones declared in the patch
+    const std::vector<EndocyticZone*>& getAllEndocyticZones() const {
+        return pEndoZones;
+    }
+
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO C++)
     ////////////////////////////////////////////////////////////////////////
@@ -119,19 +120,25 @@ public:
     /// Return all triangles (by index) in the patch.
     ///
     /// \return List of indices of triangles.
-    inline std::vector<triangle_id_t> const & _getAllTriIndices() const
-    { return pTri_indices; }
+    inline std::vector<triangle_global_id> const& _getAllTriIndices() const {
+        return pTri_indices;
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
+    /// Add an endocytic zone to the patch
+    ///
+    /// \param endoZone The endocytic zone
+    void _addEndocyticZone(EndocyticZone* endoZone);
 
-    Tetmesh                           * pTetmesh;
-    std::vector<triangle_id_t>          pTri_indices;
-    std::size_t                         pTrisN;
+  private:
+    Tetmesh* pTetmesh;
+    std::vector<triangle_global_id> pTri_indices;
+    std::size_t pTrisN;
 
-    steps::math::bounding_box           pBBox;
+    math::bounding_box pBBox;
+
+    std::vector<EndocyticZone*> pEndoZones;
 };
 
-} // namespace tetmesh
-} // namespace steps
+}  // namespace steps::tetmesh

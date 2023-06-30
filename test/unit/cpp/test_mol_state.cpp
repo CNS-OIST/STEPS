@@ -56,14 +56,14 @@ TEST(MolState, Occupancy) {
 
 TEST(MolState, EntityMolecules) {
     osh::LOs structure = {1, 3, 11, 5};
-    steps::dist::EntityMolecules<steps::dist::mesh::tetrahedron_id_t, osh::LO> en_mol(structure);
+    steps::dist::EntityMolecules<steps::dist::mesh::tetrahedron_id_t> en_mol(structure);
     osh::Real val;
 
     steps::dist::mesh::tetrahedron_id_t elem_rd(3);
-    osh::LO species_rd(2);
+    steps::dist::container::species_id species_rd(2);
     en_mol.track_occupancy_rd(elem_rd, species_rd);
     steps::dist::mesh::tetrahedron_id_t elem_ef(2);
-    osh::LO species_ef(1);
+    steps::dist::container::species_id species_ef(1);
     en_mol.track_occupancy_ef(elem_ef, species_ef);
 
     // start from 0

@@ -1,11 +1,4 @@
-add_library(stepswmrssa OBJECT
-    comp.cpp
-    kproc.cpp
-    patch.cpp
-    reac.cpp
-    sreac.cpp
-    wmrssa.cpp
-)
+add_library(stepswmrssa OBJECT comp.cpp kproc.cpp patch.cpp reac.cpp sreac.cpp wmrssa.cpp)
 
 set_property(TARGET stepswmrssa PROPERTY POSITION_INDEPENDENT_CODE ON)
 

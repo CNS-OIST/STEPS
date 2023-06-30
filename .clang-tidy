@@ -1,12 +1,43 @@
 ---
-Checks: 'clang-diagnostic-*,clang-analyzer-*,-clang-analyzer-alpha*,*,-clang-analyzer-alpha.*,-cppcoreguidelines-pro-type-vararg,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-cppcoreguidelines-pro-bounds-pointer-arithmetic,-readability-implicit-bool-cast,-cppcoreguidelines-pro-bounds-constant-array-index,-google-runtime-reference,cppcoreguidelines-owning-memory,-llvmlibc*'
 FormatStyle: file
 
-# Checks to use with "clang-tidy -fix": google-readability-namespace-comments,hicpp-braces-around-statements,modernize-use-equals-default,modernize-use-nullptr,llvm-include-order,modernize-redundant-void-arg,readability-implicit-bool-conversion,readability-redundant-member-init
+Checks: |-
+    -clang-analyzer-optin.*,
+    -clang-analyzer-core.CallAndMessage,
+    -clang-analyzer-security.insecureAPI.rand,
+    ,clang-analyzer-deadcode.*
+    ,cppcoreguidelines-pro-type-member-init
+    ,google-build-using-namespace
+    ,google-readability-namespace-comments
+    ,hicpp-braces-around-statements
+    ,llvm-include-order
+    ,modernize-redundant-void-arg
+    ,modernize-use-auto
+    ,modernize-use-equals-default
+    ,modernize-use-nodiscard
+    ,modernize-use-nullptr
+    ,readability-implicit-bool-conversion
+    ,readability-make-member-function-const
+    ,readability-named-parameter
+    ,readability-redundant-member-init
 
-# Warnings to fix:
-# cppcoreguidelines-pro-type-member-init
-# readability-named-parameter
-# google-build-using-namespace
+WarningsAsErrors: |-
+    ,clang-analyzer-deadcode.*
+    ,google-build-using-namespace
+    ,google-readability-namespace-comments
+    ,hicpp-braces-around-statements
+    ,llvm-include-order
+    ,modernize-redundant-void-arg
+    ,modernize-use-auto
+    ,modernize-use-equals-default
+    ,modernize-use-nodiscard
+    ,modernize-use-nullptr
+    ,readability-implicit-bool-conversion
+    ,readability-make-member-function-const
+    ,readability-named-parameter
+    ,readability-redundant-member-init
 #
 # maybe pro-bounds-pointer-arithmetic but may be required by cython
+
+# Future target:
+# #Checks: 'clang-diagnostic-*,clang-analyzer-*,-clang-analyzer-alpha*,*,-clang-analyzer-alpha.*,-cppcoreguidelines-pro-type-vararg,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-cppcoreguidelines-pro-bounds-pointer-arithmetic,-readability-implicit-bool-cast,-cppcoreguidelines-pro-bounds-constant-array-index,-google-runtime-reference,cppcoreguidelines-owning-memory,-llvmlibc*'

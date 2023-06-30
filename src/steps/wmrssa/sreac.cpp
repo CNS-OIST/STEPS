@@ -24,31 +24,26 @@
 
  */
 
-
-// Standard library & STL headers.
-// #include <vector>
-
 // STEPS headers.
 #include "sreac.hpp"
 #include "comp.hpp"
+#include "math/constants.hpp"
 #include "patch.hpp"
 #include "wmrssa.hpp"
-#include "math/constants.hpp"
 
 // logging
-#include <easylogging++.h>
 #include "util/error.hpp"
+#include <easylogging++.h>
+
+#include "util/checkpointing.hpp"
+
+namespace steps::wmrssa {
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace swmrssa = steps::wmrssa;
-namespace ssolver = steps::solver;
-namespace smath = steps::math;
-
-////////////////////////////////////////////////////////////////////////////////
-
-static inline double comp_ccst_vol(double kcst, double vol, uint order)
-{
-    double vscale = 1.0e3 * vol * smath::AVOGADRO;
+static inline double comp_ccst_vol(double kcst, double vol, uint order) {
+    double vscale = 1.0e3 * vol * math::AVOGADRO;
     int o1 = static_cast<int>(order) - 1;
     // I.H 5/1/2011 Removed this strange special behaviour for zero-order
     // if (o1 < 0) o1 = 0;
@@ -57,9 +52,8 @@ static inline double comp_ccst_vol(double kcst, double vol, uint order)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static inline double comp_ccst_area(double kcst, double area, uint order)
-{
-    double ascale = area * smath::AVOGADRO;
+static inline double comp_ccst_area(double kcst, double area, uint order) {
+    double ascale = area * math::AVOGADRO;
     int o1 = static_cast<int>(order) - 1;
     // I.H 5/1/2011 Removed this strange special behaviour for zero-order
     // if (o1 < 0) o1 = 0;
@@ -68,218 +62,202 @@ static inline double comp_ccst_area(double kcst, double area, uint order)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmrssa::SReac::SReac(ssolver::SReacdef * srdef, swmrssa::Patch * patch)
-:
- pSReacdef(srdef)
-, pPatch(patch)
-{
-    assert (pSReacdef != nullptr);
-    assert (pPatch != nullptr);
+SReac::SReac(solver::SReacdef* srdef, Patch* patch)
+    : pSReacdef(srdef)
+    , pPatch(patch) {
+    assert(pSReacdef != nullptr);
+    assert(pPatch != nullptr);
 
-    uint lsridx = pPatch->def()->sreacG2L(defsr()->gidx());
+    solver::sreac_local_id lsridx = pPatch->def()->sreacG2L(defsr()->gidx());
     double kcst = pPatch->def()->kcst(lsridx);
 
-    if (defsr()->surf_surf() == false)
-    {
+    if (defsr()->surf_surf() == false) {
         double vol;
-        if (defsr()->inside())
-        {
+        if (defsr()->inside()) {
             AssertLog(pPatch->iComp() != nullptr);
             vol = pPatch->iComp()->def()->vol();
-        }
-        else
-        {
-            assert (pPatch->oComp() != 0);
+        } else {
+            assert(pPatch->oComp() != nullptr);
             vol = pPatch->oComp()->def()->vol();
         }
 
         pCcst = comp_ccst_vol(kcst, vol, defsr()->order());
-    }
-    else
-    {
+    } else {
         double area;
         area = pPatch->def()->area();
         pCcst = comp_ccst_area(kcst, area, defsr()->order());
     }
 
-    assert (pCcst >= 0);
+    assert(pCcst >= 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmrssa::SReac::~SReac() = default;
+SReac::~SReac() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::SReac::checkpoint(std::fstream & cp_file)
-{
-    cp_file.write(reinterpret_cast<char*>(&pCcst), sizeof(double));
+void SReac::checkpoint(std::fstream& cp_file) {
+    util::checkpoint(cp_file, pCcst);
+    util::checkpoint(cp_file, pPropensityLB);
+    KProc::checkpoint(cp_file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::SReac::restore(std::fstream & cp_file)
-{
-    cp_file.read(reinterpret_cast<char*>(&pCcst), sizeof(double));
+void SReac::restore(std::fstream& cp_file) {
+    util::restore(cp_file, pCcst);
+    util::restore(cp_file, pPropensityLB);
+    KProc::restore(cp_file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool swmrssa::SReac::active() const
-{
-    uint lsridx = pPatch->def()->sreacG2L(defsr()->gidx());
+bool SReac::active() const {
+    solver::sreac_local_id lsridx = pPatch->def()->sreacG2L(defsr()->gidx());
     return pPatch->def()->active(lsridx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::SReac::setupDeps()
-{
-    Comp * icomp = pPatch->iComp();
-    Comp * ocomp = pPatch->oComp();
+void SReac::setupDeps() {
+    Comp* icomp = pPatch->iComp();
+    Comp* ocomp = pPatch->oComp();
 
     SchedIDXSet updset;
 
-    for (auto const& k : pPatch->kprocs()) {
-        for (auto const& spec : defsr()->updColl_S()) {
-            if (k->depSpecPatch(spec, pPatch))
+    for (auto const& k: pPatch->kprocs()) {
+        for (auto const& spec: defsr()->updColl_S()) {
+            if (k->depSpecPatch(spec, pPatch)) {
                 updset.insert(k->schedIDX());
+            }
         }
     }
 
-    if (icomp != nullptr)
-    {
-        for (auto const& k : icomp->kprocs()) {
-            for (auto const& spec : defsr()->updColl_I()) {
-                if (k->depSpecComp(spec, icomp))
+    if (icomp != nullptr) {
+        for (auto const& k: icomp->kprocs()) {
+            for (auto const& spec: defsr()->updColl_I()) {
+                if (k->depSpecComp(spec, icomp)) {
                     updset.insert(k->schedIDX());
-            }
-        }
-
-        for (auto const& ip : icomp->ipatches()) {
-            for (auto const& k : ip->kprocs()) {
-                for (auto const& spec : defsr()->updColl_I()) {
-                    if (k->depSpecComp(spec, icomp))
-                        updset.insert(k->schedIDX());
                 }
             }
         }
 
-        for (auto const& op : icomp->opatches()) {
-            for (auto const& k : op->kprocs()) {
-                for (auto const& spec : defsr()->updColl_I()) {
-                    if (k->depSpecComp(spec, icomp))
+        for (auto const& ip: icomp->ipatches()) {
+            for (auto const& k: ip->kprocs()) {
+                for (auto const& spec: defsr()->updColl_I()) {
+                    if (k->depSpecComp(spec, icomp)) {
                         updset.insert(k->schedIDX());
+                    }
+                }
+            }
+        }
+
+        for (auto const& op: icomp->opatches()) {
+            for (auto const& k: op->kprocs()) {
+                for (auto const& spec: defsr()->updColl_I()) {
+                    if (k->depSpecComp(spec, icomp)) {
+                        updset.insert(k->schedIDX());
+                    }
                 }
             }
         }
     }
 
-    if (ocomp != nullptr)
-    {
-        for (auto const& k : ocomp->kprocs()) {
-            for (auto const& spec : defsr()->updColl_O()) {
-                if (k->depSpecComp(spec, ocomp))
+    if (ocomp != nullptr) {
+        for (auto const& k: ocomp->kprocs()) {
+            for (auto const& spec: defsr()->updColl_O()) {
+                if (k->depSpecComp(spec, ocomp)) {
                     updset.insert(k->schedIDX());
-            }
-        }
-
-        for (auto const& ip : ocomp->ipatches()) {
-            for (auto const& k : ip->kprocs()) {
-                for (auto const& spec : defsr()->updColl_O()) {
-                    if (k->depSpecComp(spec, ocomp))
-                        updset.insert(k->schedIDX());
                 }
             }
         }
 
-        for (auto const& op : ocomp->opatches())
-        {
-            for (auto const& k : op->kprocs()) {
-                for (auto const& spec : defsr()->updColl_O()) {
-                    if (k->depSpecComp(spec, ocomp))
+        for (auto const& ip: ocomp->ipatches()) {
+            for (auto const& k: ip->kprocs()) {
+                for (auto const& spec: defsr()->updColl_O()) {
+                    if (k->depSpecComp(spec, ocomp)) {
                         updset.insert(k->schedIDX());
+                    }
+                }
+            }
+        }
+
+        for (auto const& op: ocomp->opatches()) {
+            for (auto const& k: op->kprocs()) {
+                for (auto const& spec: defsr()->updColl_O()) {
+                    if (k->depSpecComp(spec, ocomp)) {
+                        updset.insert(k->schedIDX());
+                    }
                 }
             }
         }
     }
 
-    swmrssa::schedIDXSet_To_Vec(updset, pUpdVec);
+    schedIDXSet_To_Vec(updset, pUpdVec);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool swmrssa::SReac::depSpecComp(uint gidx, swmrssa::Comp * comp)
-{
-    if (comp == pPatch->iComp())
-    {
-        return (defsr()->dep_I(gidx) != ssolver::DEP_NONE);
-    }
-    else if (comp == pPatch->oComp())
-    {
-        return (defsr()->dep_O(gidx) != ssolver::DEP_NONE);
+bool SReac::depSpecComp(solver::spec_global_id gidx, Comp* comp) {
+    if (comp == pPatch->iComp()) {
+        return (defsr()->dep_I(gidx) != solver::DEP_NONE);
+    } else if (comp == pPatch->oComp()) {
+        return (defsr()->dep_O(gidx) != solver::DEP_NONE);
     }
     return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool swmrssa::SReac::depSpecPatch(uint gidx, swmrssa::Patch * patch)
-{
-    if (patch != pPatch) { return false;
-}
-    return (defsr()->dep_S(gidx) != ssolver::DEP_NONE);
+bool SReac::depSpecPatch(solver::spec_global_id gidx, Patch* patch) {
+    if (patch != pPatch) {
+        return false;
+    }
+    return (defsr()->dep_S(gidx) != solver::DEP_NONE);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::SReac::reset()
-{
+void SReac::reset() {
     resetExtent();
-    uint lsridx = pPatch->def()->sreacG2L(defsr()->gidx());
+    solver::sreac_local_id lsridx = pPatch->def()->sreacG2L(defsr()->gidx());
     pPatch->def()->setActive(lsridx, true);
     resetCcst();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::SReac::resetCcst()
-{
-    uint lsridx = pPatch->def()->sreacG2L(defsr()->gidx());
+void SReac::resetCcst() {
+    solver::sreac_local_id lsridx = pPatch->def()->sreacG2L(defsr()->gidx());
     double kcst = pPatch->def()->kcst(lsridx);
 
-    if (defsr()->surf_surf() == false)
-    {
+    if (defsr()->surf_surf() == false) {
         double vol;
-        if (defsr()->inside())
-        {
+        if (defsr()->inside()) {
             AssertLog(pPatch->iComp() != nullptr);
             vol = pPatch->iComp()->def()->vol();
-        }
-        else
-        {
-            assert (pPatch->oComp() != nullptr);
+        } else {
+            assert(pPatch->oComp() != nullptr);
             vol = pPatch->oComp()->def()->vol();
         }
 
         pCcst = comp_ccst_vol(kcst, vol, defsr()->order());
-    }
-    else
-    {
+    } else {
         double area;
         area = pPatch->def()->area();
         pCcst = comp_ccst_area(kcst, area, defsr()->order());
     }
 
-    assert (pCcst >= 0);
+    assert(pCcst >= 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double swmrssa::SReac::rate(steps::wmrssa::PropensityRSSA prssa)
-{
-    if (inactive()) { return 0.0;
-}
+double SReac::rate(wmrssa::PropensityRSSA prssa) {
+    if (inactive()) {
+        return 0.0;
+    }
 
     // First we compute the combinatorial part.
     //   1/ for the surface part of the stoichiometry
@@ -287,142 +265,115 @@ double swmrssa::SReac::rate(steps::wmrssa::PropensityRSSA prssa)
     //      depending on whether the sreac is inner() or outer()
     // Then we multiply with mesoscopic constant.
 
-    if (prssa == steps::wmrssa::BOUNDS) {
-        pPropensityLB = rate(steps::wmrssa::LOWERBOUND);
-}
+    if (prssa == wmrssa::BOUNDS) {
+        pPropensityLB = rate(wmrssa::LOWERBOUND);
+    }
 
-    ssolver::Patchdef * pdef = pPatch->def();
-    uint lidx = pdef->sreacG2L(defsr()->gidx());
+    solver::Patchdef* pdef = pPatch->def();
+    solver::sreac_local_id lidx = pdef->sreacG2L(defsr()->gidx());
 
     double h_mu = 1.0;
 
-    uint * lhs_s_vec = pdef->sreac_lhs_S_bgn(lidx);
-    double * cnt_s_vec = pPatch->pools(prssa);
-    uint nspecs_s = pdef->countSpecs();
-    for (uint s = 0; s < nspecs_s; ++s)
-    {
+    const auto& lhs_s_vec = pdef->sreac_lhs_S(lidx);
+    const auto& cnt_s_vec = pPatch->pools(prssa);
+    for (auto s: lhs_s_vec.range()) {
         uint lhs = lhs_s_vec[s];
-        if (lhs == 0) { continue;
-}
+        if (lhs == 0) {
+            continue;
+        }
         auto cnt = static_cast<uint>(cnt_s_vec[s]);
-        if (lhs > cnt)
-        {
+        if (lhs > cnt) {
             return 0.0;
         }
-        switch (lhs)
-        {
-            case 4:
-            {
-                h_mu *= static_cast<double>(cnt - 3);
-            }
+        switch (lhs) {
+        case 4: {
+            h_mu *= static_cast<double>(cnt - 3);
+        }
             STEPS_FALLTHROUGH;
-            case 3:
-            {
-                h_mu *= static_cast<double>(cnt - 2);
-            }
+        case 3: {
+            h_mu *= static_cast<double>(cnt - 2);
+        }
             STEPS_FALLTHROUGH;
-            case 2:
-            {
-                h_mu *= static_cast<double>(cnt - 1);
-            }
+        case 2: {
+            h_mu *= static_cast<double>(cnt - 1);
+        }
             STEPS_FALLTHROUGH;
-            case 1:
-            {
-                h_mu *= static_cast<double>(cnt);
-                break;
-            }
-            default:
-            {
-                AssertLog(false);
-            }
+        case 1: {
+            h_mu *= static_cast<double>(cnt);
+            break;
+        }
+        default: {
+            AssertLog(false);
+        }
         }
     }
 
-    if (defsr()->inside())
-    {
-        uint * lhs_i_vec = pdef->sreac_lhs_I_bgn(lidx);
-        double * cnt_i_vec = pPatch->iComp()->pools(prssa);
-        uint nspecs_i = pdef->countSpecs_I();
-        for (uint s = 0; s < nspecs_i; ++s)
-        {
+    if (defsr()->inside()) {
+        const auto& lhs_i_vec = pdef->sreac_lhs_I(lidx);
+        const auto& cnt_i_vec = pPatch->iComp()->pools(prssa);
+        for (auto s: lhs_i_vec.range()) {
             uint lhs = lhs_i_vec[s];
-            if (lhs == 0) { continue;
-}
+            if (lhs == 0) {
+                continue;
+            }
             uint cnt = cnt_i_vec[s];
-            if (lhs > cnt)
-            {
+            if (lhs > cnt) {
                 return 0.0;
             }
-            switch (lhs)
-            {
-                case 4:
-                {
-                    h_mu *= static_cast<double>(cnt - 3);
-                }
+            switch (lhs) {
+            case 4: {
+                h_mu *= static_cast<double>(cnt - 3);
+            }
                 STEPS_FALLTHROUGH;
-                case 3:
-                {
-                    h_mu *= static_cast<double>(cnt - 2);
-                }
+            case 3: {
+                h_mu *= static_cast<double>(cnt - 2);
+            }
                 STEPS_FALLTHROUGH;
-                case 2:
-                {
-                    h_mu *= static_cast<double>(cnt - 1);
-                }
+            case 2: {
+                h_mu *= static_cast<double>(cnt - 1);
+            }
                 STEPS_FALLTHROUGH;
-                case 1:
-                {
-                    h_mu *= static_cast<double>(cnt);
-                    break;
-                }
-                default:
-                {
-                    AssertLog(false);
-                }
+            case 1: {
+                h_mu *= static_cast<double>(cnt);
+                break;
+            }
+            default: {
+                AssertLog(false);
+            }
             }
         }
-    }
-    else if (defsr()->outside())
-    {
-        uint * lhs_o_vec = pdef->sreac_lhs_O_bgn(lidx);
-        double * cnt_o_vec = pPatch->oComp()->pools(prssa);
-        uint nspecs_o = pdef->countSpecs_O();
-        for (uint s = 0; s < nspecs_o; ++s)
-        {
+    } else if (defsr()->outside()) {
+        const auto& lhs_o_vec = pdef->sreac_lhs_O(lidx);
+        const auto& cnt_o_vec = pPatch->oComp()->pools(prssa);
+        for (auto s: lhs_o_vec.range()) {
             uint lhs = lhs_o_vec[s];
-            if (lhs == 0) { continue;
-}
+            if (lhs == 0) {
+                continue;
+            }
             uint cnt = cnt_o_vec[s];
-            if (lhs > cnt)
-            {
+            if (lhs > cnt) {
                 return 0.0;
             }
-            switch (lhs)
-            {
-                case 4:
-                {
-                    h_mu *= static_cast<double>(cnt - 3);
-                }
+            switch (lhs) {
+            case 4: {
+                h_mu *= static_cast<double>(cnt - 3);
+            }
                 STEPS_FALLTHROUGH;
-                case 3:
-                {
-                    h_mu *= static_cast<double>(cnt - 2);
-                }
+            case 3: {
+                h_mu *= static_cast<double>(cnt - 2);
+            }
                 STEPS_FALLTHROUGH;
-                case 2:
-                {
-                    h_mu *= static_cast<double>(cnt - 1);
-                }
+            case 2: {
+                h_mu *= static_cast<double>(cnt - 1);
+            }
                 STEPS_FALLTHROUGH;
-                case 1:
-                {
-                    h_mu *= static_cast<double>(cnt);
-                    break;
-                }
-                default:
-                {
-                    AssertLog(false);
-                }
+            case 1: {
+                h_mu *= static_cast<double>(cnt);
+                break;
+            }
+            default: {
+                AssertLog(false);
+            }
             }
         }
     }
@@ -432,91 +383,89 @@ double swmrssa::SReac::rate(steps::wmrssa::PropensityRSSA prssa)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<uint> const & swmrssa::SReac::apply()
-{
+std::vector<solver::kproc_global_id> const& SReac::apply() {
     SchedIDXSet updset;
-    //bool returnUpdVec = false;
-    ssolver::Patchdef * pdef = pPatch->def();
-    uint lidx = pdef->sreacG2L(defsr()->gidx());
+    // bool returnUpdVec = false;
+    solver::Patchdef* pdef = pPatch->def();
+    solver::sreac_local_id lidx = pdef->sreacG2L(defsr()->gidx());
 
     // Update patch pools.
-    int * upd_s_vec = pdef->sreac_upd_S_bgn(lidx);
-    double * cnt_s_vec = pdef->pools();
-    uint nspecs_s = pdef->countSpecs();
+    const auto& upd_s_vec = pdef->sreac_upd_S(lidx);
+    const auto& cnt_s_vec = pdef->pools();
 
-    for (uint s = 0; s < nspecs_s; ++s)
-    {
-        if (pdef->clamped(s)) continue;
+    for (auto s: upd_s_vec.range()) {
+        if (pdef->clamped(s)) {
+            continue;
+        }
         int upd = upd_s_vec[s];
-        if (upd == 0) continue;
+        if (upd == 0) {
+            continue;
+        }
         int nc = static_cast<int>(cnt_s_vec[s]) + upd;
         AssertLog(nc >= 0);
         pdef->setCount(s, static_cast<double>(nc));
-        if (pPatch->isOutOfBound(s, nc))
-        {
-            std::vector<steps::wmrssa::KProc *> dependentReacs = pPatch->getSpecUpdKProcs(s);
-            for (auto &dependentReac : dependentReacs)
-              updset.insert(dependentReac->schedIDX());
-            //returnUpdVec = true;
+        if (pPatch->isOutOfBound(s, nc)) {
+            std::vector<wmrssa::KProc*> dependentReacs = pPatch->getSpecUpdKProcs(s);
+            for (auto& dependentReac: dependentReacs) {
+                updset.insert(dependentReac->schedIDX());
+            }
+            // returnUpdVec = true;
         }
     }
 
     // Update inner comp pools.
-    Comp * icomp = pPatch->iComp();
-    if (icomp != nullptr)
-    {
-        int * upd_i_vec = pdef->sreac_upd_I_bgn(lidx);
-        double * cnt_i_vec = icomp->def()->pools();
-        uint nspecs_i = pdef->countSpecs_I();
-        for (uint s = 0; s < nspecs_i; ++s)
-        {
-            if (icomp->def()->clamped(s)) continue;
+    Comp* icomp = pPatch->iComp();
+    if (icomp != nullptr) {
+        const auto& upd_i_vec = pdef->sreac_upd_I(lidx);
+        const auto& cnt_i_vec = icomp->def()->pools();
+        for (auto s: upd_i_vec.range()) {
+            if (icomp->def()->clamped(s)) {
+                continue;
+            }
             int upd = upd_i_vec[s];
-            if (upd == 0) continue;
+            if (upd == 0) {
+                continue;
+            }
             int nc = static_cast<int>(cnt_i_vec[s]) + upd;
             AssertLog(nc >= 0);
             icomp->def()->setCount(s, static_cast<double>(nc));
-            if (icomp->isOutOfBound(s, nc))
-            {
-                std::vector<steps::wmrssa::KProc *> dependentReacs = icomp->getSpecUpdKProcs(s);
-                for (auto &dependentReac : dependentReacs)
-                  updset.insert(dependentReac->schedIDX());
-                //returnUpdVec = true;
+            if (icomp->isOutOfBound(s, nc)) {
+                for (const auto& dependentReac: icomp->getSpecUpdKProcs(s)) {
+                    updset.insert(dependentReac->schedIDX());
+                }
+                // returnUpdVec = true;
             }
         }
     }
 
     // Update outer comp pools.
-    Comp * ocomp = pPatch->oComp();
-    if (ocomp != nullptr)
-    {
-        int * upd_o_vec = pdef->sreac_upd_O_bgn(lidx);
-        double * cnt_o_vec = ocomp->def()->pools();
-        uint nspecs_o = pdef->countSpecs_O();
-        for (uint s = 0; s < nspecs_o; ++s)
-        {
-            if (ocomp->def()->clamped(s)) continue;
+    Comp* ocomp = pPatch->oComp();
+    if (ocomp != nullptr) {
+        const auto& upd_o_vec = pdef->sreac_upd_O(lidx);
+        const auto& cnt_o_vec = ocomp->def()->pools();
+        for (auto s: upd_o_vec.range()) {
+            if (ocomp->def()->clamped(s)) {
+                continue;
+            }
             int upd = upd_o_vec[s];
-            if (upd == 0) continue;
-            int nc = static_cast<int>(cnt_o_vec[s]) + upd;
+            if (upd == 0) {
+                continue;
+            }
+            auto nc = static_cast<int>(cnt_o_vec[s]) + upd;
             AssertLog(nc >= 0);
             ocomp->def()->setCount(s, static_cast<double>(nc));
-            if (ocomp->isOutOfBound(s, nc))
-            {
-                std::vector<steps::wmrssa::KProc *> dependentReacs = ocomp->getSpecUpdKProcs(s);
-                for (auto &dependentReac : dependentReacs)
-                  updset.insert(dependentReac->schedIDX());
-                //returnUpdVec = true;
+            if (ocomp->isOutOfBound(s, nc)) {
+                for (const auto& dependentReac: ocomp->getSpecUpdKProcs(s)) {
+                    updset.insert(dependentReac->schedIDX());
+                }
+                // returnUpdVec = true;
             }
         }
     }
 
     rExtent++;
-    swmrssa::schedIDXSet_To_Vec(updset, pUpdVec);
-    return pUpdVec; //returnUpdVec ? pUpdVec : emptyVec;
+    schedIDXSet_To_Vec(updset, pUpdVec);
+    return pUpdVec;  // returnUpdVec ? pUpdVec : emptyVec;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
-
+}  // namespace steps::wmrssa

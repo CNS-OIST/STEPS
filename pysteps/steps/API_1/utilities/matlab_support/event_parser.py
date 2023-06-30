@@ -186,7 +186,7 @@ class ExprParser(ast.NodeVisitor):
             
             # not tmp_flag: not an assignment but a species
             if not tmp_flag and not rate_flag:
-                code += 'sim.setCompCount("' + comp_spec[0].strip() +'", "' + comp_spec[1].strip() + '", ' + str(lhs) + ')\n' 
+                code += 'sim.setCompSpecCount("' + comp_spec[0].strip() +'", "' + comp_spec[1].strip() + '", ' + str(lhs) + ')\n' 
             elif rate_flag:
                 # check if it is a reaction rate
                 if lhs.strip() in self.rates_to_reactions:

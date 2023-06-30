@@ -1,7 +1,6 @@
 #pragma once
 
 #include <algorithm>
-#include <random>
 
 #include <Omega_h_array.hpp>
 #include <Omega_h_array_ops.hpp>
@@ -15,9 +14,8 @@
 #include "util/flat_multimap.hpp"
 #include "util/vocabulary.hpp"
 
-namespace steps {
-namespace dist {
-namespace kproc {
+
+namespace steps::dist::kproc {
 
 /**
  * Wrapper for
@@ -85,7 +83,7 @@ class DiffusionDiscretizedRates: public util::flat_multimap<osh::Real, 1> {
 
     inline void reset() {
         assign(0.0);
-        std::fill(diffusion_rates_.begin(), diffusion_rates_.end(), 0.0);
+        osh::fill(diffusion_rates_, 0.0);
     }
 
   private:
@@ -93,25 +91,38 @@ class DiffusionDiscretizedRates: public util::flat_multimap<osh::Real, 1> {
     osh::Write<osh::Real> diffusion_rates_;
 };
 
+
 /**
  * Wrapper for number of molecules transferred to neighbors through boundaries
  */
-template <typename NumMolecules>
-class PoolsIncrements: public util::flat_multimap<NumMolecules, DistMesh::dim() + 1> {
+class PoolsIncrements: public util::flat_multimap<molecules_t, DistMesh::dim() + 1> {
   public:
-    using super_type = util::flat_multimap<NumMolecules, DistMesh::dim() + 1>;
+    using super_type = util::flat_multimap<molecules_t, DistMesh::dim() + 1>;
 
-    PoolsIncrements(DistMesh& mesh,
-                    const osh::LOs& elem2num_species,
-                    bool force_dist_for_variable_sized)
+    PoolsIncrements(DistMesh& mesh, const osh::LOs& elem2num_species)
         : super_type(elem2num_species)
         , synced_delta_pools_(this->ab2c().size())
         , mesh_(mesh) {
-        const auto num_species_all_equal = std::adjacent_find(elem2num_species.begin(),
+        // find the index of the element that is not equal to the previous one
+        const bool num_species_all_equal = std::adjacent_find(elem2num_species.begin(),
                                                               elem2num_species.end(),
                                                               std::not_equal_to<>()) ==
                                            elem2num_species.end();
-        if (force_dist_for_variable_sized || !num_species_all_equal) {
+        // 0 is the invalid value (we should not have processes without elements)
+        int nspecies = 0;
+        if (num_species_all_equal && elem2num_species.size() != 0) {
+            nspecies = elem2num_species[0];
+        }
+
+        // MPI technique to check with just std MPI functions if nspecies is the same among all the
+        // ranks. Quite clever
+        int nspecies_MPI[2] = {nspecies, -nspecies};
+        int err = MPI_Allreduce(MPI_IN_PLACE, nspecies_MPI, 2, MPI_INT, MPI_MIN, mesh.comm_impl());
+        if (err != MPI_SUCCESS) {
+            MPI_Abort(mesh_.comm_impl(), err);
+        }
+
+        if (nspecies == 0 || nspecies_MPI[0] != -nspecies_MPI[1]) {
             // Warning! sync_delta_pools relies on the fact that dist_ is
             // initialized (and its pointer to the communicator not null) only if
             // this if is true
@@ -125,7 +136,7 @@ class PoolsIncrements: public util::flat_multimap<NumMolecules, DistMesh::dim() 
     inline void increment_ith_delta_pool(mesh::tetrahedron_id_t element,
                                          container::species_id species,
                                          int element_face,
-                                         NumMolecules num_molecules) noexcept {
+                                         molecules_t num_molecules) noexcept {
         this->operator()(element.get(),
                          species.get())[static_cast<size_t>(element_face)] += num_molecules;
     }
@@ -157,9 +168,9 @@ class PoolsIncrements: public util::flat_multimap<NumMolecules, DistMesh::dim() 
         }
     }
 
-    inline NumMolecules ith_delta_pool(mesh::tetrahedron_id_t element,
-                                       container::species_id species,
-                                       int face) const noexcept {
+    inline molecules_t ith_delta_pool(mesh::tetrahedron_id_t element,
+                                      container::species_id species,
+                                      int face) const noexcept {
         const auto index = this->ab(element.get(), species.get());
         return synced_delta_pools_[index + face];
     }
@@ -167,7 +178,7 @@ class PoolsIncrements: public util::flat_multimap<NumMolecules, DistMesh::dim() 
     /**
      * \return Total number of diffusions
      */
-    inline NumMolecules num_diffusions() const {
+    inline molecules_t num_diffusions() const {
         return osh::get_sum(util::createRead(this->ab2c()));
     }
 
@@ -176,7 +187,7 @@ class PoolsIncrements: public util::flat_multimap<NumMolecules, DistMesh::dim() 
     }
 
   private:
-    osh::Read<NumMolecules> synced_delta_pools_;
+    osh::Read<molecules_t> synced_delta_pools_;
     DistMesh& mesh_;
     osh::Dist dist_;
 
@@ -197,97 +208,86 @@ class PoolsIncrements: public util::flat_multimap<NumMolecules, DistMesh::dim() 
  * Functor to compute number of leaving molecules of a certain species from a
  * given triangle/tetrahedron
  */
-template <typename RNG, typename NumMolecules> class LeavingMolecules {
-public:
-  LeavingMolecules(RNG &t_rng) : rng_(t_rng) {}
+class LeavingMolecules {
+  public:
+    explicit LeavingMolecules(rng::RNG& t_rng)
+        : rng_(t_rng) {}
 
-  NumMolecules operator()(NumMolecules num_molecules,
-                          osh::Real diffusion_propensity_sum,
-                          osh::Real time_delta) const {
-      const auto p = std::clamp(time_delta * diffusion_propensity_sum, 0., 1.);
-      if constexpr (std::is_same_v<RNG, steps::rng::RNG>) {
-          return NumMolecules(rng_.getBinom(static_cast<uint>(num_molecules), p));
-      } else {
-          std::binomial_distribution<NumMolecules> total_leaving(num_molecules, p);
-          return total_leaving(rng_);
-      }
-  }
+    molecules_t operator()(molecules_t num_molecules,
+                           osh::Real diffusion_propensity_sum,
+                           osh::Real time_delta) const {
+        const auto p = std::clamp(time_delta * diffusion_propensity_sum, 0., 1.);
+        return molecules_t(rng_.getBinom(static_cast<uint>(num_molecules), p));
+    }
 
-private:
-  RNG &rng_;
+  private:
+    rng::RNG& rng_;
 };
 
 /**
  * Container for all data structures required to simulate the diffusion of
- * molecules \tparam Dim Mesh dimension \tparam RNG Random number generator
- * functor
+ * molecules
  */
-template <typename RNG, typename NumMolecules> class Diffusions {
-public:
-  Diffusions(DistMesh &t_mesh, SimulationInput<RNG, NumMolecules> &t_input,
-             bool molecules_pools_force_dist_for_variable_sized);
+class Diffusions {
+  public:
+    Diffusions(DistMesh& t_mesh, SimulationInput& t_input);
 
-  inline const DiffusionDiscretizedRates &rates() const noexcept {
-    return rates_;
-  }
+    inline const DiffusionDiscretizedRates& rates() const noexcept {
+        return rates_;
+    }
 
-  inline DiffusionDiscretizedRates &rates() noexcept { return rates_; }
+    inline DiffusionDiscretizedRates& rates() noexcept {
+        return rates_;
+    }
 
-  inline osh::Real &rates_sum(mesh::tetrahedron_id_t element,
-                              container::species_id species) noexcept {
-    return rates_.rates_sum(element, species);
-  }
+    inline osh::Real& rates_sum(mesh::tetrahedron_id_t element,
+                                container::species_id species) noexcept {
+        return rates_.rates_sum(element, species);
+    }
 
-  inline osh::Real rates_sum(mesh::tetrahedron_id_t element,
-                             container::species_id species) const noexcept {
-    return rates_.rates_sum(element, species);
-  }
+    inline osh::Real rates_sum(mesh::tetrahedron_id_t element,
+                               container::species_id species) const noexcept {
+        return rates_.rates_sum(element, species);
+    }
 
-  inline osh::Real ith_rate(mesh::tetrahedron_id_t element,
-                            container::species_id species, int i) const {
-    return rates_.ith_rate(element, species, i);
-  }
+    inline osh::Real ith_rate(mesh::tetrahedron_id_t element,
+                              container::species_id species,
+                              int i) const {
+        return rates_.ith_rate(element, species, i);
+    }
 
-  inline osh::Real &ith_rate(mesh::tetrahedron_id_t element,
-                             container::species_id species, int i) noexcept {
-    return rates_.ith_rate(element, species, i);
-  }
+    inline osh::Real& ith_rate(mesh::tetrahedron_id_t element,
+                               container::species_id species,
+                               int i) noexcept {
+        return rates_.ith_rate(element, species, i);
+    }
 
-  inline const LeavingMolecules<RNG, NumMolecules> &total_leaving() const
-      noexcept {
-    return total_leaving_;
-  }
+    inline const LeavingMolecules& total_leaving() const noexcept {
+        return total_leaving_;
+    }
 
-  inline const PoolsIncrements<NumMolecules> &leaving_molecules() const
-      noexcept {
-    return leaving_molecules_;
-  }
+    inline const PoolsIncrements& leaving_molecules() const noexcept {
+        return leaving_molecules_;
+    }
 
-  inline PoolsIncrements<NumMolecules> &leaving_molecules() noexcept {
-    return leaving_molecules_;
-  }
+    inline PoolsIncrements& leaving_molecules() noexcept {
+        return leaving_molecules_;
+    }
 
-  inline void reset() { leaving_molecules_.reset(); }
+    inline void reset() {
+        leaving_molecules_.reset();
+    }
 
-  /// \return maximum sum of rates on all processes
-  osh::Real global_rates_max_sum() const;
+    /// \return maximum sum of rates on all processes
+    osh::Real global_rates_max_sum() const;
 
-private:
-  const MPI_Comm comm_;
-  DiffusionDiscretizedRates rates_;
-  const LeavingMolecules<RNG, NumMolecules> &total_leaving_;
-  /// number of molecules leaving from every boundary/faces of every
-  /// triangles/tetrahedrons
-  PoolsIncrements<NumMolecules> leaving_molecules_;
+  private:
+    const MPI_Comm comm_;
+    DiffusionDiscretizedRates rates_;
+    const LeavingMolecules& total_leaving_;
+    /// number of molecules leaving from every boundary/faces of every
+    /// triangles/tetrahedrons
+    PoolsIncrements leaving_molecules_;
 };
 
-// explicit instantiation declarations
-extern template class Diffusions<std::mt19937, osh::I32>;
-extern template class Diffusions<std::mt19937, osh::I64>;
-
-extern template class Diffusions<steps::rng::RNG, osh::I32>;
-extern template class Diffusions<steps::rng::RNG, osh::I64>;
-
-} // namespace kproc
-} // namespace dist
-} // namespace steps
+}  // namespace steps::dist::kproc

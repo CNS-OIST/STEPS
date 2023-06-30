@@ -217,6 +217,8 @@ class tetMeshTests(unittest.TestCase):
             tet.neighbs[4]
         with self.assertRaises(IndexError):
             tet.verts[4]
+        self.assertTrue(tet.containsPoint([0, 0, 0]))
+        self.assertFalse(tet.containsPoint([1, 0, 0]))
 
         # Tri
         tri = tet.faces[0]

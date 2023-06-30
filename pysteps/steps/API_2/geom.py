@@ -48,6 +48,7 @@ __all__ = [
     'Compartment',
     'Patch',
     'Membrane',
+    'EndocyticZone',
     'ROI',
     'TetMesh',
     'DistMesh',
@@ -193,7 +194,8 @@ class _PhysicalLocation(nutils.UsingObjects(Geometry), nutils.StepsWrapperObject
     def _canBeChild(self, c):
         """Return wether c can be a child of self."""
         return isinstance(c, (
-            nmodel.Reaction, nmodel.Diffusion, nmodel.Current, nmodel.Complex
+            nmodel.Reaction, nmodel.Diffusion, nmodel.Current, nmodel.Complex, nmodel.VesicleBind,
+            nmodel.VesicleUnbind, nmodel.Endocytosis, nmodel.RaftGen
         ))
 
     def _createStepsObj(self, geom):
@@ -327,13 +329,16 @@ class Compartment(_PhysicalLocation, nutils.ParameterizedObject, nutils.Facade):
     def _SetUpMdlDeps(self, mdl):
         """Set up the structures that will allow species or reaction access from locations."""
         super()._SetUpMdlDeps(mdl)
+        for ves in mdl._getChildrenOfType(nmodel.Vesicle):
+            self._addChildren(ves)
 
     def _canBeChild(self, c):
         """Return wether c can be a child of self."""
         if not super()._canBeChild(c):
             return False
         if ((isinstance(c, nmodel.Reaction) and c._isSurfaceReac()) or
-            (isinstance(c, nmodel.Diffusion) and c._isSurfaceDiff())
+            (isinstance(c, nmodel.Diffusion) and c._isSurfaceDiff()) or
+            isinstance(c, (nmodel.Endocytosis, nmodel.RaftGen))
         ):
             return False
         return True
@@ -352,9 +357,10 @@ class Compartment(_PhysicalLocation, nutils.ParameterizedObject, nutils.Facade):
         """
         super().addSystem(vsys, _loc)
         if _loc is None:
-            if isinstance(vsys, nmodel.SpaceSystem):
-                vsys = vsys.name
-            self.stepsComp.addVolsys(vsys)
+            if isinstance(vsys, str):
+                self.stepsComp.addVolsys(vsys)
+            elif vsys.__class__ is nmodel.VolumeSystem:
+                self.stepsComp.addVolsys(vsys.name)
 
     @property
     @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('m^3'))
@@ -539,8 +545,8 @@ class Patch(_PhysicalLocation, nutils.UsableObject, nutils.ParameterizedObject, 
         with geom:
             patch1 = Patch.Create(inner)
             patch2 = Patch.Create(inner, outer)
-            patch3 = Patch.Create(inner, outer, vsys)
-            patch4 = Patch.Create(inner, None , vsys)
+            patch3 = Patch.Create(inner, outer, ssys)
+            patch4 = Patch.Create(inner, None , ssys)
             patch5 = Patch.Create(inner, None , None, area)
             patch6 = Patch.Create(inner, outer, None, area)
             patch7 = Patch.Create(inner, outer, ssys, area)
@@ -681,9 +687,10 @@ class Patch(_PhysicalLocation, nutils.UsableObject, nutils.ParameterizedObject, 
         :returns: None
         """
         super().addSystem(ssys, nmodel.Location.SURF)
-        if isinstance(ssys, nmodel.SpaceSystem):
-            ssys = ssys.name
-        self.stepsPatch.addSurfsys(ssys)
+        if isinstance(ssys, str):
+            self.stepsPatch.addSurfsys(ssys)
+        elif ssys.__class__ is nmodel.SurfaceSystem:
+            self.stepsPatch.addSurfsys(ssys.name)
 
     def _createStepsObj(self, icomp, ocomp, geom):
         raise NotImplementedError()
@@ -693,7 +700,8 @@ class Patch(_PhysicalLocation, nutils.UsableObject, nutils.ParameterizedObject, 
         if not super()._canBeChild(c):
             return False
         if ((isinstance(c, nmodel.Reaction) and not c._isSurfaceReac()) or
-            (isinstance(c, nmodel.Diffusion) and not c._isSurfaceDiff())
+            (isinstance(c, nmodel.Diffusion) and not c._isSurfaceDiff()) or
+            isinstance(c, (nmodel.VesicleBind, nmodel.VesicleUnbind))
         ):
             return False
         return True
@@ -701,6 +709,10 @@ class Patch(_PhysicalLocation, nutils.UsableObject, nutils.ParameterizedObject, 
     def _SetUpMdlDeps(self, mdl):
         """Set up the structures that will allow species or reaction access from locations."""
         super()._SetUpMdlDeps(mdl)
+        for raft in mdl._getChildrenOfType(nmodel.Raft):
+            self._addChildren(raft)
+        for endoZone in self._getChildrenOfType(EndocyticZone):
+            endoZone._SetUpMdlDeps(mdl)
 
     def _solverStr(self):
         """Return the string that is used as part of method names for this specific object."""
@@ -751,7 +763,7 @@ class _BasePatch(Patch):
     @classmethod
     def _ArgsFromStepsObject(cls, obj, geom):
         icomp = getattr(geom, obj.icomp.getID())
-        ocomp = getattr(geom, obj.ocomp.getID())
+        ocomp = getattr(geom, obj.ocomp.getID()) if obj.ocomp is not None else None
         return (icomp, ocomp)
 
 
@@ -829,6 +841,11 @@ class _TetPatch(_BaseTetPatch):
     def _FromStepsObject(cls, obj, geom):
         """Create the interface object from a STEPS object."""
         patch = super()._FromStepsObject(obj, geom)
+
+        with patch:
+            for subObj in obj.getAllEndocyticZones():
+                EndocyticZone._FromStepsObject(subObj, geom)
+
         return patch
 
     @classmethod
@@ -888,6 +905,72 @@ class _DistPatch(_BaseTetPatch):
 
 
 @nutils.FreezeAfterInit
+class EndocyticZone(nutils.UsingObjects(Patch)):
+    """A set of triangles that model a zone in which endocytosis reactions can happen
+
+    Endocytosis reactions declared in surface systems do not happen at any point of the corresponding
+    patches, they only happen in endocytic zones. By default all endocytosis events are active in this
+    zone, but they can be deactivated during simulation.
+
+    :param tris: The list of triangle
+    :type tris: :py:class:`TriList`
+
+    Endocytic zones are declared by using a patch as a context manager:
+
+        with patch1:
+
+            zone1 = EndocyticZone.Create(triLst)
+
+    Note that the triangles in `triLst` all need to be part of `patch1`.
+    """
+    def __init__(self, tris, _createObj=True, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        (patch,) = self._getUsedObjects()
+
+        if not isinstance(patch, _TetPatch):
+            raise TypeError('Endocytic zones can only be declared in patches from tetrahedral meshes.')
+
+        if not isinstance(tris, TriList):
+            mesh = patch._getParentOfType(Geometry)
+            if not isinstance(mesh, TetMesh):
+                raise TypeError(f'{patch} was not declared in a tetrahedral mesh.')
+            tris = TriList(tris, mesh=mesh)
+
+        self._patch = patch
+        self._tris = tris
+
+        if _createObj:
+            self.stepsEndoZone = stepslib._py_EndocyticZone(
+                self.name, self._patch._getStepsObjects()[0], self._tris.indices
+            )
+
+    def _getStepsObjects(self):
+        """Return a list of the steps objects that this named object holds."""
+        return [self.stepsEndoZone]
+
+    @classmethod
+    def _FromStepsObject(cls, obj, geom):
+        """Create the interface object from a STEPS object."""
+        endoZone = cls(obj.getAllTriIndices(), _createObj=False, name=obj.getID())
+        endoZone.stepsEndoZone = obj
+
+        return endoZone
+
+    def _SetUpMdlDeps(self, mdl):
+        """Set up the structures that will allow species or reaction access from locations."""
+        for endo in self._patch._getChildrenOfType(nmodel.Endocytosis):
+            self._addChildren(endo)
+
+    @property
+    def tris(self):
+        """All triangles in the endocytic zone
+
+        :type: :py:class:`TriList`, read-only
+        """
+        return self._tris
+
+
+@nutils.FreezeAfterInit
 class Membrane(_PhysicalLocation, nutils.Facade):
     """A set of patches on which membrane potential will be computed
 
@@ -898,9 +981,16 @@ class Membrane(_PhysicalLocation, nutils.Facade):
     A Membrane object must be available if membrane potential calculation is to be
     performed.
 
+    By default STEPS only adds the inner compartments of the patches to the conduction volume,
+    if other compartments should also be added to the conduction volume, they should be supplied
+    through the supplementary_comps keyword parameter. 
+
     :param patches: List of patches whose triangles will be added to the membrane
         (only one patch for distributed meshes)
     :type patches: :py:class:`list`
+
+    The following parameters are only available for non-distributed meshes:
+
     :param verify: Perform some checks on suitability of membrane (see below)
     :type verify: :py:class:`bool`
     :param opt_method: Optimization method (see below)
@@ -909,6 +999,8 @@ class Membrane(_PhysicalLocation, nutils.Facade):
     :type search_percent: float
     :param opt_file_name: Full path to a membrane optimization file
     :type opt_file_name: str
+    :param supplementary_comps: Supplementary compartments to be considered part of the conduction volume
+    :type supplementary_comps: List[:py:class:`Compartment`]
 
     Perform some checks on suitability of membrane if *verify* is True: these checks will print
     warnings if membrane forms an open surface or if any triangle is found to have
@@ -1022,13 +1114,15 @@ class Membrane(_PhysicalLocation, nutils.Facade):
 class _TetMembrane(Membrane):
 
     def __init__(
-        self, patches, verify=False, opt_method=1, search_percent=100.0, opt_file_name='', *args, **kwargs
+        self, patches, verify=False, opt_method=1, search_percent=100.0, opt_file_name='',
+        supplementary_comps=[], *args, **kwargs
     ):
         self._tmpParams = dict(
             verify=verify,
             opt_method=opt_method,
             search_percent=search_percent,
-            opt_file_name=opt_file_name
+            opt_file_name=opt_file_name,
+            supplementary_comps=[comp._getStepsObjects()[0] for comp in supplementary_comps],
         )
         super().__init__(patches, *args, **kwargs)
 
@@ -1239,6 +1333,44 @@ class _BaseTetMesh(Geometry):
         :type: float, read-only
         """
         return self.stepsMesh.getMeshVolume(**self._callKwargs)
+
+    def intersect(self, points, sampling=-1):
+        """Computes the intersection of the current mesh and line segment(s), given their vertices
+
+        :param points: A 2-D NumPy array (/memview) of 3D points where each element contains the 3 point
+            coordinates
+        :type points: numpy.ndarray
+        :param sampling: if > 0, use montecarlo method with sampling points, otherwise use deterministic
+            method.
+        :type sampling: int
+
+        :returns: A list of lists of tuples representing the intersected tetrahedrons, one element per line
+            segment. Each tuple is made of 2 elements, a tetrahedron global identifier, and its respective
+            intersection ratio.
+        :rtype: List[List[Tuple[:py:class:`TetReference`, float]]]
+        """
+        res = self.stepsMesh.intersect(points, sampling)
+        return [[(TetReference(idx, mesh=self, **self._lstArgs), rat) for idx, rat in seg] for seg in res]
+
+    def intersectIndependentSegments(self, points, sampling=-1):
+        """Similar to the intersect method but here we deal with independent segments, i.e.
+        every two points we have a segment not related to previous or following ones.
+        E.g. seg0 = (points[0], points[1]), seg1 = (points[2], points[3]), etc.
+
+        :param points: A 2-D NumPy array (/memview) of 3D points where each element contains the 3 point
+            coordinates
+        :type points: numpy.ndarray
+        :param sampling: if > 0, use montecarlo method with sampling points, otherwise use deterministic
+            method.
+        :type sampling: int
+
+        :returns: A list of lists of tuples representing the intersected tetrahedrons, one element per line
+            segment. Each tuple is made of 2 elements, a tetrahedron global identifier, and its respective
+            intersection ratio.
+        :rtype: List[List[Tuple[:py:class:`TetReference`, float]]]
+        """
+        res = self.stepsMesh.intersectIndependentSegments(points, sampling)
+        return [[(TetReference(idx, mesh=self, **self._lstArgs), rat) for idx, rat in seg] for seg in res]
 
 
 @nutils.FreezeAfterInit
@@ -1678,7 +1810,7 @@ class DistMesh(_BaseTetMesh):
 
     @contextlib.contextmanager
     def asGlobal(self):
-        """Context manager method to use the mesh locally
+        """Context manager method to use the mesh globally
 
         This should be used with the ``with`` statement in the following way::
 
@@ -1747,6 +1879,16 @@ class DistMesh(_BaseTetMesh):
                 del self._callKwargs['owned']
             del self._lstArgs['_owned']
 
+    def intersect(self, points, sampling=-1):
+        if not self._local:
+            raise Exception('Cannot use intersect method without using "with mesh.asLocal():".')
+        return super().intersect(points, sampling)
+
+    def intersectIndependentSegments(self, points, sampling=-1):
+        if not self._local:
+            raise Exception('Cannot use intersectIndependentSegments method without using "with mesh.asLocal():".')
+        return super().intersectIndependentSegments(points, sampling)
+
     @_BaseTetMesh.tets.getter
     def tets(self):
         """All tetrahedrons in the mesh
@@ -1801,6 +1943,9 @@ class DistMesh(_BaseTetMesh):
     @staticmethod
     def _use_gmsh():
         return stepslib._py_DistMesh._use_gmsh()
+
+
+DistMesh.intersect.__doc__ = _BaseTetMesh.intersect.__doc__
 
 
 class Reference(nutils.UsingObjects(nutils.Optional(_BaseTetMesh)), nutils.SolverPathObject, nutils.Facade):
@@ -2060,6 +2205,16 @@ class TetReference(Reference):
         else:
             return {}
 
+    def containsPoint(self, point):
+        """Check whether a given 3D point is inside the tetrahedron
+
+        :param point: The 3D point
+        :type point: List[float]
+
+        :rtype: bool
+        """
+        return self.mesh.stepsMesh.isPointInTet(point, self._idx, **self._callKwargs)
+
     @property
     def neighbs(self):
         """Neighboring tetrahedrons (between 0 and 4)
@@ -2136,7 +2291,13 @@ class TetReference(Reference):
 
 
 class _DistTetReference(TetReference, _DistReference):
-    pass
+    @TetReference.neighbs.getter
+    def neighbs(self):
+        if self.mesh._local:
+            inds = self.mesh.stepsMesh.getTetTetNeighb(self._idx, **self._callKwargs, owned=self.mesh._owned)
+            return TetList([ind for ind in inds if ind != UNKNOWN_TET], **self._cloneArgs)
+        else:
+            return TetReference.neighbs.fget(self)
 
 
 TetReference._distCls = _DistTetReference
@@ -2254,7 +2415,13 @@ class TriReference(Reference):
 
 
 class _DistTriReference(TriReference, _DistReference):
-    pass
+    @TriReference.tetNeighbs.getter
+    def tetNeighbs(self):
+        if self.mesh._local:
+            inds = self.mesh.stepsMesh.getTriTetNeighb(self._idx, **self._callKwargs, owned=self.mesh._owned)
+            return TetList([ind for ind in inds if ind != UNKNOWN_TET], **self._cloneArgs)
+        else:
+            return TriReference.tetNeighbs.fget(self)
 
 
 TriReference._distCls = _DistTriReference
@@ -2515,6 +2682,24 @@ class RefList(nutils.UsingObjects(nutils.Optional(_BaseTetMesh)), nutils.SolverP
             raise Exception(f'Unable to identify which mesh should the list be bound to.')
 
         return actualLst, actualMesh
+
+    def _splitByLocation(self):
+        """Split the list in several lists that contain elements in the same comp / patch
+        The order of elements is conserved. The name of the list is conserved but can be postfixed.
+        """
+        res = []
+        loc = (None,)
+        for elem in self:
+            newLoc = elem._getPhysicalLocation()
+            if newLoc != loc:
+                loc = newLoc
+                if not self._autoNamed:
+                    name = f'{self.name}({loc})' if len(res) > 0 else self.name
+                else:
+                    name=None
+                res.append(self.__class__([], **self._cloneArgs, name=name))
+            res[-1].append(elem)
+        return res
 
     def splitToROIs(self, ROIPrefix, method='grid', gridSize=None):
         """Split an element list into a square grid and define each square as a Region Of Interest
@@ -2961,10 +3146,12 @@ class _DistRefList(RefList):
 
         lists = self.mesh._comm.gather(self.toGlobal().indices, root=0)
 
-        allIdx = self.__class__([], mesh=self.mesh, local=False)
         if self.mesh._comm.Get_rank() == 0:
-            for lst in lists:
+            allIdx = self.__class__(lists[0], mesh=self.mesh, local=False)
+            for lst in lists[1:]:
                 allIdx = binOp(allIdx, self.__class__(lst, mesh=self.mesh, local=False))
+        else:
+            allIdx = self.__class__([], mesh=self.mesh, local=False)
 
         lst = self.mesh._comm.bcast(allIdx.indices, root=0)
 

@@ -76,8 +76,8 @@ class ParallelSetGetCountCase(unittest.TestCase):
         tri_hosts = gd.partitionTris(self.mesh, tet_hosts, self.surf_tris)
         solver = solv.TetOpSplit(self.model, self.mesh, self.rng, solv.EF_NONE, tet_hosts, tri_hosts)
         for tet in range(10):
-            solver.setTetCount(tet, 'A', tet)
-            get_count = solver.getTetCount(tet, 'A')
+            solver.setTetSpecCount(tet, 'A', tet)
+            get_count = solver.getTetSpecCount(tet, 'A')
             self.assertEqual(get_count, tet)
 
     def testSetGetTriCount(self):
@@ -85,8 +85,8 @@ class ParallelSetGetCountCase(unittest.TestCase):
         tri_hosts = gd.partitionTris(self.mesh, tet_hosts, self.surf_tris)
         solver = solv.TetOpSplit(self.model, self.mesh, self.rng, solv.EF_NONE, tet_hosts, tri_hosts)
         for tri in self.surf_tris:
-            solver.setTriCount(tri, 'A', tri)
-            get_count = solver.getTriCount(tri, 'A')
+            solver.setTriSpecCount(tri, 'A', tri)
+            get_count = solver.getTriSpecCount(tri, 'A')
             self.assertEqual(get_count, tri)
 
 def suite():

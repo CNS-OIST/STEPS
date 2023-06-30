@@ -24,34 +24,26 @@
 
  */
 
-
-
-// Standard library & STL headers.
-#include <iostream>
-#include <vector>
-
 // STEPS headers.
 #include "reac.hpp"
+
+#include "math/constants.hpp"
 #include "tet.hpp"
 #include "tetexact.hpp"
 #include "wmvol.hpp"
-#include "math/constants.hpp"
 
 // logging
-#include <easylogging++.h>
 #include "util/error.hpp"
 
+#include "util/checkpointing.hpp"
+
+namespace steps::tetexact {
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace stex = steps::tetexact;
-namespace ssolver = steps::solver;
-namespace smath = steps::math;
-
-////////////////////////////////////////////////////////////////////////////////
-
-static inline double comp_ccst(double kcst, double vol, uint order, double /*compvol*/)
-{
-    double vscale = 1.0e3 * vol * smath::AVOGADRO;
+static inline double comp_ccst(double kcst, double vol, uint order, double /*compvol*/) {
+    double vscale = 1.0e3 * vol * math::AVOGADRO;
     int o1 = static_cast<int>(order) - 1;
 
     // IMPORTANT: Now treating zero-order reaction units correctly, i.e. as
@@ -65,18 +57,15 @@ static inline double comp_ccst(double kcst, double vol, uint order, double /*com
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Reac::Reac(ssolver::Reacdef * rdef, stex::WmVol * tet)
-:
- pReacdef(rdef)
-, pTet(tet)
-, pUpdVec()
-, pCcst(0.0)
-, pKcst(0.0)
-{
+Reac::Reac(solver::Reacdef* rdef, WmVol* tet)
+    : pReacdef(rdef)
+    , pTet(tet)
+    , pCcst(0.0)
+    , pKcst(0.0) {
     AssertLog(pReacdef != nullptr);
     AssertLog(pTet != nullptr);
 
-    uint lridx = pTet->compdef()->reacG2L(pReacdef->gidx());
+    solver::reac_local_id lridx = pTet->compdef()->reacG2L(pReacdef->gidx());
     double kcst = pTet->compdef()->kcst(lridx);
     pKcst = kcst;
     pCcst = comp_ccst(kcst, pTet->vol(), pReacdef->order(), pTet->compdef()->vol());
@@ -85,45 +74,27 @@ stex::Reac::Reac(ssolver::Reacdef * rdef, stex::WmVol * tet)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Reac::~Reac() = default;
+Reac::~Reac() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Reac::checkpoint(std::fstream & cp_file)
-{
-    cp_file.write(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
-    cp_file.write(reinterpret_cast<char*>(&pFlags), sizeof(uint));
-
-    cp_file.write(reinterpret_cast<char*>(&pCcst), sizeof(double));
-    cp_file.write(reinterpret_cast<char*>(&pKcst), sizeof(double));
-
-    cp_file.write(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
-    cp_file.write(reinterpret_cast<char*>(&crData.pow), sizeof(int));
-    cp_file.write(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
-    cp_file.write(reinterpret_cast<char*>(&crData.rate), sizeof(double));
+void Reac::checkpoint(std::fstream& cp_file) {
+    util::checkpoint(cp_file, pCcst);
+    util::checkpoint(cp_file, pKcst);
+    KProc::checkpoint(cp_file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Reac::restore(std::fstream & cp_file)
-{
-    cp_file.read(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
-    cp_file.read(reinterpret_cast<char*>(&pFlags), sizeof(uint));
-
-    cp_file.read(reinterpret_cast<char*>(&pCcst), sizeof(double));
-    cp_file.read(reinterpret_cast<char*>(&pKcst), sizeof(double));
-
-    cp_file.read(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
-    cp_file.read(reinterpret_cast<char*>(&crData.pow), sizeof(int));
-    cp_file.read(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
-    cp_file.read(reinterpret_cast<char*>(&crData.rate), sizeof(double));
+void Reac::restore(std::fstream& cp_file) {
+    util::restore(cp_file, pCcst);
+    util::restore(cp_file, pKcst);
+    KProc::restore(cp_file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Reac::reset()
-{
-
+void Reac::reset() {
     crData.recorded = false;
     crData.pow = 0;
     crData.pos = 0;
@@ -135,9 +106,8 @@ void stex::Reac::reset()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Reac::_resetCcst()
-{
-    uint lridx = pTet->compdef()->reacG2L(pReacdef->gidx());
+void Reac::_resetCcst() {
+    solver::reac_local_id lridx = pTet->compdef()->reacG2L(pReacdef->gidx());
     double kcst = pTet->compdef()->kcst(lridx);
     // Also reset kcst
     pKcst = kcst;
@@ -147,8 +117,7 @@ void stex::Reac::_resetCcst()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Reac::setKcst(double k)
-{
+void Reac::setKcst(double k) {
     AssertLog(k >= 0.0);
     pKcst = k;
     pCcst = comp_ccst(k, pTet->vol(), pReacdef->order(), pTet->compdef()->vol());
@@ -157,27 +126,28 @@ void stex::Reac::setKcst(double k)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Reac::setupDeps()
-{
-    std::set<stex::KProc*> updset;
+void Reac::setupDeps() {
+    KProcPSet updset;
 
     // Search in local tetrahedron.
-    for (auto const& k : pTet->kprocs()) {
-        for (auto const& s : pReacdef->UPD_Coll()) {
+    for (auto const& k: pTet->kprocs()) {
+        for (auto const& s: pReacdef->UPD_Coll()) {
             if (k->depSpecTet(s, pTet)) {
-                //updset.insert((*k)->getSSARef());
+                // updset.insert((*k)->getSSARef());
                 updset.insert(k);
             }
         }
     }
 
-    for (auto const& tri : pTet->nexttris()) {
-        if (tri == nullptr) continue;
+    for (auto const& tri: pTet->nexttris()) {
+        if (tri == nullptr) {
+            continue;
+        }
 
-        for (auto const& k : tri->kprocs()) {
-            for (auto const& s : pReacdef->UPD_Coll()) {
+        for (auto const& k: tri->kprocs()) {
+            for (auto const& s: pReacdef->UPD_Coll()) {
                 if (k->depSpecTet(s, pTet) == true) {
-                    //updset.insert((*k)->getSSARef());
+                    // updset.insert((*k)->getSSARef());
                     updset.insert(k);
                 }
             }
@@ -185,77 +155,69 @@ void stex::Reac::setupDeps()
     }
 
     pUpdVec.assign(updset.begin(), updset.end());
-    //pUpdObjVec.assign(updset_obj.begin(), updset_obj.end());
+    // pUpdObjVec.assign(updset_obj.begin(), updset_obj.end());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool stex::Reac::depSpecTet(uint gidx, stex::WmVol * tet)
-{
-    if (pTet != tet) { return false;
-}
+bool Reac::depSpecTet(solver::spec_global_id gidx, WmVol* tet) {
+    if (pTet != tet) {
+        return false;
+    }
     return pReacdef->dep(gidx) != 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool stex::Reac::depSpecTri(uint /*gidx*/, stex::Tri * /*tri*/)
-{
+bool Reac::depSpecTri(solver::spec_global_id /*gidx*/, Tri* /*tri*/) {
     return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stex::Reac::rate(steps::tetexact::Tetexact * /*solver*/)
-{
-    if (inactive()) return 0.0;
+double Reac::rate(Tetexact* /*solver*/) {
+    if (inactive()) {
+        return 0.0;
+    }
 
     // Prefetch some variables.
-    ssolver::Compdef * cdef = pTet->compdef();
-    uint nspecs = cdef->countSpecs();
-    uint * lhs_vec = cdef->reac_lhs_bgn(cdef->reacG2L(pReacdef->gidx()));
+    solver::Compdef* cdef = pTet->compdef();
+    const auto& lhs_vec = cdef->reac_lhs(cdef->reacG2L(pReacdef->gidx()));
     auto const& cnt_vec = pTet->pools();
 
     // Compute combinatorial part.
     double h_mu = 1.0;
-    for (uint pool = 0; pool < nspecs; ++pool)
-    {
+    for (auto pool: lhs_vec.range()) {
         uint lhs = lhs_vec[pool];
-        if (lhs == 0) { continue;
-}
+        if (lhs == 0) {
+            continue;
+        }
         uint cnt = cnt_vec[pool];
-        if (lhs > cnt)
-        {
+        if (lhs > cnt) {
             h_mu = 0.0;
             break;
         }
-        switch (lhs)
-        {
-            case 4:
-            {
-                h_mu *= static_cast<double>(cnt - 3);
-            }
+        switch (lhs) {
+        case 4: {
+            h_mu *= static_cast<double>(cnt - 3);
+        }
             STEPS_FALLTHROUGH;
-            case 3:
-            {
-                h_mu *= static_cast<double>(cnt - 2);
-            }
+        case 3: {
+            h_mu *= static_cast<double>(cnt - 2);
+        }
             STEPS_FALLTHROUGH;
-            case 2:
-            {
-                h_mu *= static_cast<double>(cnt - 1);
-            }
+        case 2: {
+            h_mu *= static_cast<double>(cnt - 1);
+        }
             STEPS_FALLTHROUGH;
-            case 1:
-            {
-                h_mu *= static_cast<double>(cnt);
-                break;
-            }
-            default:
-            {
-                AssertLog(0);
-                return 0.0;
-            }
+        case 1: {
+            h_mu *= static_cast<double>(cnt);
+            break;
+        }
+        default: {
+            AssertLog(0);
+            return 0.0;
+        }
         }
     }
 
@@ -265,18 +227,21 @@ double stex::Reac::rate(steps::tetexact::Tetexact * /*solver*/)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<stex::KProc*> const & stex::Reac::apply(const rng::RNGptr &/*rng*/, double /*dt*/, double /*simtime*/)
-{
+std::vector<KProc*> const& Reac::apply(const rng::RNGptr& /*rng*/,
+                                       double /*dt*/,
+                                       double /*simtime*/) {
     auto const& local = pTet->pools();
-    ssolver::Compdef * cdef = pTet->compdef();
-    uint l_ridx = cdef->reacG2L(pReacdef->gidx());
-    int * upd_vec = cdef->reac_upd_bgn(l_ridx);
-    uint nspecs = cdef->countSpecs();
-    for (uint i = 0; i < nspecs; ++i)
-    {
-        if (pTet->clamped(i)) continue;
+    solver::Compdef* cdef = pTet->compdef();
+    solver::reac_local_id l_ridx = cdef->reacG2L(pReacdef->gidx());
+    const auto& upd_vec = cdef->reac_upd(l_ridx);
+    for (auto i: upd_vec.range()) {
+        if (pTet->clamped(i)) {
+            continue;
+        }
         int j = upd_vec[i];
-        if (j == 0) continue;
+        if (j == 0) {
+            continue;
+        }
         int nc = static_cast<int>(local[i]) + j;
         pTet->setCount(i, static_cast<uint>(nc));
     }
@@ -284,6 +249,4 @@ std::vector<stex::KProc*> const & stex::Reac::apply(const rng::RNGptr &/*rng*/, 
     return pUpdVec;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
+}  // namespace steps::tetexact

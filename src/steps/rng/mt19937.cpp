@@ -24,29 +24,17 @@
 
  */
 
-// Standard library & STL headers.
-#include <cassert>
-#include <sstream>
-#include <string>
-
-// STEPS headers.
 #include "mt19937.hpp"
-// util
-#include "util/error.hpp"
-////////////////////////////////////////////////////////////////////////////////
 
-// STEPS library.
-using steps::rng::MT19937;
+#include "util/checkpointing.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-void MT19937::concreteInitialize(ulong seed)
-{
+namespace steps::rng {
+
+void MT19937::concreteInitialize(ulong seed) {
     pState[0] = seed & 0xffffffffUL;
-    for (pStateInit = 1; pStateInit < MT_N; pStateInit++)
-    {
+    for (pStateInit = 1; pStateInit < MT_N; pStateInit++) {
         pState[pStateInit] =
-            (1812433253UL * (pState[pStateInit - 1] ^
-            (pState[pStateInit - 1] >> 30)) + pStateInit);
+            (1812433253UL * (pState[pStateInit - 1] ^ (pState[pStateInit - 1] >> 30)) + pStateInit);
         // See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier.
         // In the previous versions, MSBs of the seed affect
         // only MSBs of the array pState[].
@@ -59,34 +47,29 @@ void MT19937::concreteInitialize(ulong seed)
 ////////////////////////////////////////////////////////////////////////////////
 
 /// Fills the buffer with random numbers on [0,0xffffffff]-interval.
-void MT19937::concreteFillBuffer()
-{
+void MT19937::concreteFillBuffer() {
     ulong y;
-    static ulong mag01[2] = { 0x0UL, MT_MATRIX_A };
+    static ulong mag01[2] = {0x0UL, MT_MATRIX_A};
     // mag01[x] = x * MATRIX_A  for x=0,1
 
-    for (uint *b = rBuffer; b < rEnd; ++b)
-    {
-        if (pStateInit >= MT_N)
-        {
+    for (uint* b = rBuffer; b < rEnd; ++b) {
+        if (pStateInit >= MT_N) {
             // Generate N words at one time
             int kk;
 
             // If init_genrand() has not been called, a default
             // initial seed is used.
-            if (pStateInit == MT_N + 1) { initialize(5489UL);
-}
+            if (pStateInit == MT_N + 1) {
+                initialize(5489UL);
+            }
 
-            for (kk = 0; kk < MT_N - MT_M; ++kk)
-            {
+            for (kk = 0; kk < MT_N - MT_M; ++kk) {
                 y = (pState[kk] & MT_UPPER_MASK) | (pState[kk + 1] & MT_LOWER_MASK);
                 pState[kk] = pState[kk + MT_M] ^ (y >> 1) ^ mag01[y & 0x1UL];
             }
-            for (; kk < MT_N - 1; ++kk)
-            {
+            for (; kk < MT_N - 1; ++kk) {
                 y = (pState[kk] & MT_UPPER_MASK) | (pState[kk + 1] & MT_LOWER_MASK);
-                pState[kk] = pState[kk + (MT_M - MT_N)] ^
-                    (y >> 1) ^ mag01[y & 0x1UL];
+                pState[kk] = pState[kk + (MT_M - MT_N)] ^ (y >> 1) ^ mag01[y & 0x1UL];
             }
             y = (pState[MT_N - 1] & MT_UPPER_MASK) | (pState[0] & MT_LOWER_MASK);
             pState[MT_N - 1] = pState[MT_M - 1] ^ (y >> 1) ^ mag01[y & 0x1UL];
@@ -109,15 +92,26 @@ void MT19937::concreteFillBuffer()
 ////////////////////////////////////////////////////////////////////////////////
 
 MT19937::MT19937(uint bufsize)
-: RNG(bufsize)
-{
+    : RNG(bufsize) {}
+
+////////////////////////////////////////////////////////////////////////////////
+
+MT19937::~MT19937() = default;
+
+////////////////////////////////////////////////////////////////////////////////
+
+void MT19937::checkpoint(std::ostream& cp_file) const {
+    RNG::checkpoint(cp_file);
+    util::checkpoint(cp_file, pState, MT_N);
+    util::checkpoint(cp_file, pStateInit);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-MT19937::~MT19937()
-= default;
+void MT19937::restore(std::istream& cp_file) {
+    RNG::restore(cp_file);
+    util::restore(cp_file, pState, MT_N);
+    util::restore(cp_file, pStateInit);
+}
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
+}  // namespace steps::rng

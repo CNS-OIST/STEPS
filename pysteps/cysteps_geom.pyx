@@ -1,3 +1,4 @@
+# cython:language_level=3str
 ###___license_placeholder___###
 
 """
@@ -794,11 +795,11 @@ cdef class _py_Tetmesh(_py_Geom):
 
     def __init__(self, std.vector[double] verts, std.vector[index_t] tets, std.vector[index_t] tris=[]):
         """
-        Construction1::
+        Syntax::
 
             mesh = steps.geom.Tetmesh(verts, tets, tris)
 
-        Construct a Tetmesh container by the "first" method: Supply a list of all
+        Construct a Tetmesh container: Supply a list of all
         vertices verts (by Cartesian coordinates), supply a list of all tetrahedrons
         tets (by indices of the 4 vertices) and supply a full or partial list of
         triangles tris (by indices of the 3 vertices). Indexing in STEPS begins at
@@ -817,22 +818,6 @@ cdef class _py_Tetmesh(_py_Geom):
         list<index_t> tets
         list<index_t> tris
 
-        Construction2::
-
-            mesh = steps.geom.Tetmesh(nverts, ntets, ntris)
-
-        Construct a Tetmesh container by the "second" method: Supply only the
-        number of vertices nverts, the number of tetrahedrons ntets and the number
-        of triangles ntris to the initializer, then use set methods to supply the
-        vertex, tetrahedron and triangle information one by one. It is up to the
-        user to make sure all information is supplied and then call setup() explicitly.
-        It is highly recommended to use the first constructor wherever possible due to t
-        he scope for user error when using this method.
-
-        Arguments:
-        index_t nverts
-        index_t ntets
-        index_t ntris
         """
         self._ptr = new Tetmesh( verts, tets, tris )
 
@@ -887,7 +872,7 @@ cdef class _py_Tetmesh(_py_Geom):
         list<float, length = 3>
 
         """
-        return self.ptrx().getVertex(vidx)
+        return self.ptrx().getVertex(vertex_id_t(vidx))
 
     def countVertices(self, ):
         """
@@ -921,7 +906,7 @@ cdef class _py_Tetmesh(_py_Geom):
         list<index_t, length = 2>
 
         """
-        return self.ptrx().getBar(bidx)
+        return self.ptrx().getBar(bar_id_t(bidx))
 
     def countBars(self, ):
         """
@@ -955,7 +940,7 @@ cdef class _py_Tetmesh(_py_Geom):
         list<index_t, length = 3>
 
         """
-        return self.ptrx().getTri(tidx)
+        return self.ptrx().getTri(triangle_global_id(tidx))
 
     def countTris(self, ):
         """
@@ -989,7 +974,7 @@ cdef class _py_Tetmesh(_py_Geom):
         float
 
         """
-        return self.ptrx().getTriArea(tidx)
+        return self.ptrx().getTriArea(triangle_global_id(tidx))
 
     def getTriBars(self, index_t tidx):
         """
@@ -1006,7 +991,7 @@ cdef class _py_Tetmesh(_py_Geom):
         list<int, length = 3>
 
         """
-        return self.ptrx().getTriBars(tidx)
+        return self.ptrx().getTriBars(triangle_global_id(tidx))
 
     def getTriBarycenter(self, index_t tidx):
         """
@@ -1023,7 +1008,7 @@ cdef class _py_Tetmesh(_py_Geom):
         list<float, length = 3>
 
         """
-        return self.ptrx().getTriBarycenter(tidx)
+        return self.ptrx().getTriBarycenter(triangle_global_id(tidx))
 
     def getTriNorm(self, index_t tidx):
         """
@@ -1040,7 +1025,7 @@ cdef class _py_Tetmesh(_py_Geom):
         list<float, length = 3>
 
         """
-        return self.ptrx().getTriNorm(tidx)
+        return self.ptrx().getTriNorm(triangle_global_id(tidx))
 
     def getTriPatch(self, index_t tidx):
         """
@@ -1058,7 +1043,7 @@ cdef class _py_Tetmesh(_py_Geom):
         steps.geom.TmPatch
 
         """
-        return _py_TmPatch.from_ptr(self.ptrx().getTriPatch(tidx))
+        return _py_TmPatch.from_ptr(self.ptrx().getTriPatch(triangle_global_id(tidx)))
 
     def setTriPatch(self, index_t tidx, _py_TmPatch patch):
         """
@@ -1076,7 +1061,7 @@ cdef class _py_Tetmesh(_py_Geom):
         None
 
         """
-        self.ptrx().setTriPatch(tidx, patch.ptrx())
+        self.ptrx().setTriPatch(triangle_global_id(tidx), patch.ptrx())
 
     def setTriDiffBoundary(self, index_t tidx, _py_DiffBoundary diffb):
         """
@@ -1084,7 +1069,7 @@ cdef class _py_Tetmesh(_py_Geom):
 
         Syntax::
 
-            setTriDiffBoundary(tidx, diffb)
+            setTriDiffBoundary(triangle_global_id(tidx), diffb)
 
         Arguments:
         index_t tidx
@@ -1094,7 +1079,7 @@ cdef class _py_Tetmesh(_py_Geom):
         None
 
         """
-        self.ptrx().setTriDiffBoundary(tidx, diffb.ptr())
+        self.ptrx().setTriDiffBoundary(triangle_global_id(tidx), diffb.ptr())
 
     def getTriDiffBoundary(self, index_t tidx):
         """
@@ -1112,7 +1097,7 @@ cdef class _py_Tetmesh(_py_Geom):
         steps.geom.DiffBoundary
 
         """
-        return _py_DiffBoundary.from_ptr(self.ptrx().getTriDiffBoundary(tidx))
+        return _py_DiffBoundary.from_ptr(self.ptrx().getTriDiffBoundary(triangle_global_id(tidx)))
 
     def getTriTetNeighb(self, index_t tidx):
         """
@@ -1130,7 +1115,7 @@ cdef class _py_Tetmesh(_py_Geom):
         list<index_t, length = 2>
 
         """
-        return self.ptrx().getTriTetNeighb(tidx)
+        return self.ptrx().getTriTetNeighb(triangle_global_id(tidx))
 
     def getTriTriNeighb(self, index_t tidx, _py_TmPatch tmpatch):
         """
@@ -1148,7 +1133,7 @@ cdef class _py_Tetmesh(_py_Geom):
         list<index_t>
 
         """
-        return self.ptrx().getTriTriNeighb(tidx, tmpatch.ptrx())
+        return self.ptrx().getTriTriNeighb(triangle_global_id(tidx), tmpatch.ptrx())
 
     def getTriTriNeighbs(self, index_t tidx):
         """
@@ -1166,7 +1151,7 @@ cdef class _py_Tetmesh(_py_Geom):
         list<index_t>
 
         """
-        return self.ptrx().getTriTriNeighbs(tidx)
+        return self.ptrx().getTriTriNeighbs(triangle_global_id(tidx))
 
     def getTet(self, index_t tidx):
         """
@@ -1182,7 +1167,7 @@ cdef class _py_Tetmesh(_py_Geom):
         list<index_t, length = 4>
 
         """
-        return self.ptrx().getTet(tidx)
+        return self.ptrx().getTet(tetrahedron_global_id(tidx))
 
     def countTets(self, ):
         """
@@ -1216,7 +1201,7 @@ cdef class _py_Tetmesh(_py_Geom):
         float
 
         """
-        return self.ptrx().getTetVol(tidx)
+        return self.ptrx().getTetVol(tetrahedron_global_id(tidx))
 
     def getTetQualityRER(self, index_t tidx):
         """
@@ -1233,7 +1218,7 @@ cdef class _py_Tetmesh(_py_Geom):
         float
 
         """
-        return self.ptrx().getTetQualityRER(tidx)
+        return self.ptrx().getTetQualityRER(tetrahedron_global_id(tidx))
 
     def getTetBarycenter(self, index_t tidx):
         """
@@ -1250,7 +1235,7 @@ cdef class _py_Tetmesh(_py_Geom):
         list<float, length = 3>
 
         """
-        return self.ptrx().getTetBarycenter(tidx)
+        return self.ptrx().getTetBarycenter(tetrahedron_global_id(tidx))
 
     def getTetComp(self, index_t tidx):
         """
@@ -1269,7 +1254,7 @@ cdef class _py_Tetmesh(_py_Geom):
         steps.geom.TmComp
 
         """
-        return _py_TmComp.from_ptr(self.ptrx().getTetComp(tidx))
+        return _py_TmComp.from_ptr(self.ptrx().getTetComp(tetrahedron_global_id(tidx)))
 
     def setTetComp(self, index_t tidx, _py_TmComp comp):
         """
@@ -1287,7 +1272,7 @@ cdef class _py_Tetmesh(_py_Geom):
         None
 
         """
-        self.ptrx().setTetComp(tidx, comp.ptrx())
+        self.ptrx().setTetComp(tetrahedron_global_id(tidx), comp.ptrx())
 
     def getTetTriNeighb(self, index_t tidx):
         """
@@ -1304,7 +1289,7 @@ cdef class _py_Tetmesh(_py_Geom):
         list<index_t, length = 4>
 
         """
-        return self.ptrx().getTetTriNeighb(tidx)
+        return self.ptrx().getTetTriNeighb(tetrahedron_global_id(tidx))
 
     def getTetTetNeighb(self, index_t tidx):
         """
@@ -1322,7 +1307,7 @@ cdef class _py_Tetmesh(_py_Geom):
         list<index_t, length = 4>
 
         """
-        return self.ptrx().getTetTetNeighb(tidx)
+        return self.ptrx().getTetTetNeighb(tetrahedron_global_id(tidx))
 
     def findTetByPoint(self, std.vector[double] p):
         """
@@ -1342,6 +1327,23 @@ cdef class _py_Tetmesh(_py_Geom):
 
         """
         return self.ptrx().findTetByPoint(p).get()
+
+    def isPointInTet(self, std.vector[double] p, index_t tidx):
+        """
+        Check if point belongs to the tetrahedron or not
+
+        Syntax::
+
+            isPointInTet(p, tidx)
+
+        Arguments:
+        list<float, length = 3> p
+        int tetrahedron tidx
+
+        Return:
+        bool
+        """
+        return self.ptrx().isPointInTet(p, tetrahedron_global_id(tidx))
 
     def getBoundMin(self, ):
         """
@@ -1617,7 +1619,7 @@ cdef class _py_Tetmesh(_py_Geom):
 
         """
         if not len(coords): return False
-        return self.ptrx().genPointsInTet(tidx, npnts, &coords[0], coords.shape[0])
+        return self.ptrx().genPointsInTet(tetrahedron_global_id(tidx), npnts, &coords[0], coords.shape[0])
 
     def genPointsInTri(self, index_t tidx, uint npnts, double[:] coords):
         """
@@ -1637,7 +1639,7 @@ cdef class _py_Tetmesh(_py_Geom):
 
         """
         if not len(coords): return False
-        return self.ptrx().genPointsInTri(tidx, npnts, &coords[0], coords.shape[0])
+        return self.ptrx().genPointsInTri(triangle_global_id(tidx), npnts, &coords[0], coords.shape[0])
 
     def genTetVisualPointsNP(self, index_t[:] indices, uint[:] point_counts, double[:] coords):
         """
@@ -2458,6 +2460,26 @@ cdef class _py_Tetmesh(_py_Geom):
             raise Exception("Wrong memory layout for point_coords, np array should be [pts,3] and row major")
         return self.ptrx().intersect(&point_coords[0][0], point_coords.shape[0], sampling)
 
+    def intersectIndependentSegments(self, double[:, :] point_coords, int sampling=-1):
+        """
+        Similar to the intersect method but here we deal with independent segments, i.e.
+        every two points we have a segment not related to previous or following ones.
+        E.g. seg0 = (points[0], points[1]), seg1 = (points[2], points[3]), etc.
+
+        Args:
+            points: A 2-D numpy array (/memview), where each position contains the 3 point
+                    coordinates
+            int sampling: not specified or sampling < 1 --> use deterministic method
+                          sampling > 0 --> use montecarlo method with sampling points
+
+        Returns:
+            A list where each position contains the list of intersected tets (and respective
+            intersection ratio) of each line segment.
+        """
+        if (point_coords.strides[0] != 24 or point_coords.strides[1] != 8):
+            raise Exception("Wrong memory layout for point_coords, np array should be [pts,3] and row major")
+        return self.ptrx().intersectIndependentSegments(&point_coords[0][0], point_coords.shape[0], sampling)
+
     @staticmethod
     cdef _py_Tetmesh from_ptr(Tetmesh *ptr):
         if (ptr == NULL):
@@ -2712,6 +2734,16 @@ cdef class _py_TmPatch(_py_Patch):
         """
         return self.ptrx().getBoundMax()
 
+    def getAllEndocyticZones(self, ):
+        """
+        Get all endocytic zones declared in the patch
+
+
+        :rtype: List[EndocyticZone]
+        """
+        cdef std.vector[EndocyticZone*] vec = self.ptrx().getAllEndocyticZones()
+        return [_py_EndocyticZone.from_ptr(ptr) for ptr in vec]
+
     @staticmethod
     cdef _py_TmPatch from_ptr(TmPatch *ptr):
         if (ptr == NULL):
@@ -2733,6 +2765,75 @@ cdef class _py_TmPatch(_py_Patch):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
+cdef class _py_EndocyticZone(_py__base):
+    "Python wrapper class for EndocyticZone"
+# ----------------------------------------------------------------------------------------------------------------------
+    #cdef unique_ptr[EndocyticZone] _autodealoc
+    cdef EndocyticZone *ptr(self):
+        return <EndocyticZone*> self._ptr
+
+    def __init__(self, str id, _py_Patch patch, std.vector[index_t] tris):
+        """
+        Constructor
+
+        :param id: ID of the endocytic zone
+        :type id: str
+        :param patch: patch in which the zone is defined
+        :type patch: TmPatch
+        :param tris: A sequence of triangles (by index)
+        :type tris: List[index_t]
+
+        """
+        self._ptr = new EndocyticZone(to_std_string(id), <TmPatch *>(patch.ptr()), tris)
+
+    def getID(self, ):
+        """
+        Return the endocytic zone id.
+
+        :returns: ID of the endocytic zone.
+
+
+        :rtype: str
+        """
+        return from_std_string(self.ptr().getID())
+
+    def getPatch(self, ):
+        """
+        Return a pointer to the patch container object.
+
+        :returns: The parent patch
+
+
+        :rtype: TmPatch
+        """
+        return _py_TmPatch.from_ptr(self.ptr().getPatch())
+
+    def getAllTriIndices(self, ):
+        """
+        Return all triangles (by index) in the endocytic zone.
+
+        :returns: List of indices of triangles.
+
+
+        :rtype: List[triangle_global_id]
+        """
+        return [_index.get() for _index in self.ptr().getAllTriIndices()]
+
+    @staticmethod
+    cdef _py_EndocyticZone from_ptr(EndocyticZone *ptr):
+        if (ptr == NULL):
+            return None
+        cdef _py_EndocyticZone obj = _py_EndocyticZone.__new__(_py_EndocyticZone)
+        obj._ptr = ptr
+        return obj
+
+    @staticmethod
+    cdef _py_EndocyticZone from_ref(const EndocyticZone &ref):
+        return _py_EndocyticZone.from_ptr(<EndocyticZone*>&ref)
+
+
+
+# ----------------------------------------------------------------------------------------------------------------------
 cdef class _py_Memb(_py__base):
     "Python wrapper class for Memb"
 # ----------------------------------------------------------------------------------------------------------------------
@@ -2740,11 +2841,11 @@ cdef class _py_Memb(_py__base):
     cdef Memb *ptr(self):
         return <Memb*> self._ptr
 
-    def __init__(self, str id, _py_Tetmesh container, list patches, bool verify=False, uint opt_method=1, double search_percent=100.0, str opt_file_name=""):
+    def __init__(self, str id, _py_Tetmesh container, list patches, bool verify=False, uint opt_method=1, double search_percent=100.0, str opt_file_name="", list supplementary_comps=[]):
         """
         Construction:
 
-        memb = steps.geom.Memb(id, container, patches, verify = False, opt_method=1, opt_file_name = '')
+        memb = steps.geom.Memb(id, container, patches, verify = False, opt_method=1, opt_file_name = '', supplementary_comps=[])
 
         Construct a Memb object with identifier string id and assign container
         as the parent geometry container. Set the collection of triangles in
@@ -2759,6 +2860,9 @@ cdef class _py_Memb(_py__base):
         If a filename (with full path) is given in optional argument opt_file_name the membrane optimization will be loaded from file,
         which was saved previously for this membrane with solver method steps.solver.Tetexact.saveMembOpt()
 
+        By default STEPS only adds the inner compartments of the patches to the conduction volume, if other compartments should also
+        be added to the conduction volume, they should be supplied through the supplementary_comps keyword parameter. 
+
         Arguments:
         string id
         steps.geom.Tetmesh container
@@ -2767,11 +2871,17 @@ cdef class _py_Memb(_py__base):
         int opt_method (default = 1)
         float search_percent (default=100)
         string opt_file_name (default = '')
+        list<steps.geom.TmComp> supplementary_comps
         """
         cdef std.vector[TmPatch*] _patches
+        _patches.reserve(len(patches))
         for elem in patches:
             _patches.push_back( (<_py_TmPatch>elem).ptrx() )
-        self._ptr = new Memb(to_std_string(id), container.ptrx(), _patches, verify, opt_method, search_percent, to_std_string(opt_file_name))
+        cdef std.vector[TmComp*] _compartments
+        _compartments.reserve(len(supplementary_comps))
+        for elem in supplementary_comps:
+            _compartments.push_back( (<_py_TmComp>elem).ptrx() )
+        self._ptr = new Memb(to_std_string(id), container.ptrx(), _patches, _compartments, verify, opt_method, search_percent, to_std_string(opt_file_name))
 
     def getContainer(self, ):
         """

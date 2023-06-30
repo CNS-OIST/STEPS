@@ -35,6 +35,7 @@ from steps import stepslib
 from . import geom as ngeom
 from . import utils as nutils
 
+
 try:
     from steps.API_1.model import (
         COMPLEX_REAC_UPDATE,
@@ -52,11 +53,23 @@ __all__ = [
     'Model',
     'VolumeSystem',
     'SurfaceSystem',
+    'VesicleSurfaceSystem',
+    'RaftSurfaceSystem',
+    'Vesicle',
+    'Raft',
     'Species',
+    'LinkSpecies',
     'Complex',
     'Channel',
     'Reaction',
     'Diffusion',
+    'Endocytosis',
+    'Exocytosis',
+    'RaftEndocytosis',
+    'RaftGen',
+    'RaftDis',
+    'VesicleBind',
+    'VesicleUnbind',
     'Current',
     'OhmicCurr',
     'GHKCurr',
@@ -64,6 +77,8 @@ __all__ = [
     'In',
     'Out',
     'Surf',
+    'VesSurf',
+    'RaftSurf',
     'ReactionManager',
     'ReactionElement',
     'ReactingElement',
@@ -84,7 +99,29 @@ __all__ = [
     'CompDepCond',
     'CompDepP',
     'CompDepDcst',
+    'IMMOBILIZING',
+    'MOBILIZING',
+    'NO_EFFECT',
 ]
+
+
+###################################################################################################
+# Enums
+
+try:
+    Immobilization = stepslib._py_Immobilization
+except AttributeError:
+    # Older versions of cython do not export this enum
+    class Immobilization(Enum):
+        IMMOBILIZING = 0
+        MOBILIZING   = 1
+        NO_EFFECT    = 2
+
+# Aliases
+IMMOBILIZING = Immobilization.IMMOBILIZING
+MOBILIZING = Immobilization.MOBILIZING
+NO_EFFECT = Immobilization.NO_EFFECT
+
 
 ###################################################################################################
 # Model
@@ -114,10 +151,17 @@ class Model(nutils.UsableObject, nutils.StepsWrapperObject):
         self.stepsModel = self._createStepsObj() if _createObj else None
         self.volSysConstraints = []
 
-    def _SetUpMdlDeps(self):
+    def _SetUpMdlDeps(self, geom):
         """Set up structures that depend on objects declared in the model."""
         # Start with vesicles because they can update rafts
-        pass
+        for pl in self._getChildrenOfType(Vesicle):
+            pl._SetUpMdlDeps(self, geom)
+        for pl in self._getChildrenOfType(Raft):
+            pl._SetUpMdlDeps(self, geom)
+        for pl in self._getChildrenOfType(VesicleSurfaceSystem):
+            pl._SetUpMdlDeps(geom)
+        for pl in self._getChildrenOfType(RaftSurfaceSystem):
+            pl._SetUpMdlDeps(geom)
 
     def _getStepsObjects(self):
         """Return a list of the steps objects that this named object holds."""
@@ -131,12 +175,22 @@ class Model(nutils.UsableObject, nutils.StepsWrapperObject):
         with mdl:
             for spec in obj.getAllSpecs():
                 Species._FromStepsObject(spec, mdl)
+            for chan in obj.getAllChans():
+                Channel._FromStepsObject(chan, mdl)
+            for lspec in obj.getAllLinkSpecs():
+                LinkSpecies._FromStepsObject(lspec, mdl)
+            for ves in obj.getAllVesicles():
+                Vesicle._FromStepsObject(ves, mdl)
+            for raft in obj.getAllRafts():
+                Raft._FromStepsObject(raft, mdl)
+            for vssys in obj.getAllVesSurfsyss():
+                VesicleSurfaceSystem._FromStepsObject(vssys, mdl)
+            for rssys in obj.getAllRaftsyss():
+                RaftSurfaceSystem._FromStepsObject(rssys, mdl)
             for vsys in obj.getAllVolsyss():
                 VolumeSystem._FromStepsObject(vsys, mdl)
             for ssys in obj.getAllSurfsyss():
                 SurfaceSystem._FromStepsObject(ssys, mdl)
-            for chan in obj.getAllChans():
-                Channel._FromStepsObject(chan, mdl)
         return mdl
 
     def _addVolSysConstraint(self, reac, volSys, surfSys, loc):
@@ -209,6 +263,10 @@ class VolumeSystem(SpaceSystem):
             for reac in obj.getAllReacs():
                 # need to convert to actual steps classes
                 Reaction._FromStepsObject(reac, mdl)
+            for bind in obj.getAllVesBinds():
+                VesicleBind._FromStepsObject(bind, mdl)
+            for unbind in obj.getAllVesUnbinds():
+                VesicleUnbind._FromStepsObject(unbind, mdl)
         return vsys
 
 
@@ -260,12 +318,123 @@ class SurfaceSystem(SpaceSystem):
                 Reaction._FromStepsObject(sreac, mdl)
             for vdsreac in obj.getAllVDepSReacs():
                 Reaction._FromStepsObject(vdsreac, mdl)
-            for ghkc in obj.getAllGHKcurrs():
-                GHKCurr._FromStepsObject(ghkc, mdl)
-            for ohmc in obj.getAllOhmicCurrs():
-                OhmicCurr._FromStepsObject(ohmc, mdl)
+            # TODO not urgent: implement _FromStepsObject for GHK and Ohmic currents
+            # for ghkc in obj.getAllGHKcurrs():
+                # GHKCurr._FromStepsObject(ghkc, mdl)
+            # for ohmc in obj.getAllOhmicCurrs():
+                # OhmicCurr._FromStepsObject(ohmc, mdl)
 
         return ssys
+
+
+@nutils.FreezeAfterInit
+class VesicleSurfaceSystem(SurfaceSystem):
+    """A container that groups reactions and diffusion rules located in a vesicle surface
+
+    Should be used as a context manager for the declaration of vesicle surface reactions, vesicle surface
+    diffusion rules, etc::
+
+        ...
+        with mdl:
+            ...
+            vssys = VesicleSurfaceSystem.Create()
+            with vssys:
+                diff3 = Diffusion.Create(...)
+                ... # Declare other objects in vssys
+
+    After having declared children objects in the ``with vssys:`` block, they can be accessed
+    as attributes of ``vssys`` with their name (see :py:class:`steps.API_2.utils.NamedObject` and
+    :py:func:`steps.API_2.utils.NamedObject.Create`)::
+
+        vssys.diff3
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _createStepsObj(self, mdl):
+        return stepslib._py_VesSurfsys(self.name, mdl.stepsModel)
+
+    def _addLocation(self, l):
+        super()._addLocation(l)
+
+    def _SetUpMdlDeps(self, geom):
+        """Set up structures that depend on objects declared in the model."""
+        # Potentially all compartments can contain any vesicle
+        for comp in geom.ALL(ngeom.Compartment):
+            comp.addSystem(self, Location.OUT)
+
+    @classmethod
+    def _FromStepsObject(cls, obj, mdl):
+        """Create the interface object from a STEPS object."""
+        vssys = cls(_createObj=False, name=obj.getID())
+        vssys.stepsSys = obj
+        with vssys:
+            for diff in obj.getAllVesSDiffs():
+                Diffusion._FromStepsObject(diff, mdl)
+            for vsreac in obj.getAllVesSReacs():
+                Reaction._FromStepsObject(vsreac, mdl)
+            for exc in obj.getAllExocytosis():
+                Exocytosis._FromStepsObject(exc, mdl)
+
+        return vssys
+
+
+@nutils.FreezeAfterInit
+class RaftSurfaceSystem(SurfaceSystem):
+    """A container that groups reactions and diffusion rules located in a raft surface
+
+    Should be used as a context manager for the declaration of raft surface reactions, raft endocytosis
+    rules, etc::
+
+        ...
+        with mdl:
+            ...
+            rssys = RaftSurfaceSystem.Create()
+            with rssys:
+                rend1 = RaftEndocytosis.Create(...)
+                ... # Declare other objects in rssys
+
+    After having declared children objects in the ``with rssys:`` block, they can be accessed
+    as attributes of ``rssys`` with their name (see :py:class:`steps.API_2.utils.NamedObject` and
+    :py:func:`steps.API_2.utils.NamedObject.Create`)::
+
+        rssys.rend1
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _createStepsObj(self, mdl):
+        return stepslib._py_Raftsys(self.name, mdl.stepsModel)
+
+    def _addLocation(self, l):
+        super()._addLocation(l)
+
+    def _SetUpMdlDeps(self, geom):
+        """Set up structures that depend on objects declared in the model."""
+        # Potentially all patches can contain any raft
+        for patch in geom.ALL(ngeom.Patch):
+            patch.addSystem(self)
+            if patch.innerComp is not None:
+                patch.innerComp.addSystem(self, Location.IN)
+            if patch.outerComp is not None:
+                patch.outerComp.addSystem(self, Location.OUT)
+
+    @classmethod
+    def _FromStepsObject(cls, obj, mdl):
+        """Create the interface object from a STEPS object."""
+        rssys = cls(_createObj=False, name=obj.getID())
+        rssys.stepsSys = obj
+        with rssys:
+            for rsreac in obj.getAllRaftSReacs():
+                Reaction._FromStepsObject(rsreac, mdl)
+            for end in obj.getAllRaftEndocytosiss():
+                RaftEndocytosis._FromStepsObject(end, mdl)
+            for dis in obj.getAllRaftDiss():
+                RaftDissolution._FromStepsObject(dis, mdl)
+
+        return rssys
 
 
 ###################################################################################################
@@ -405,7 +574,7 @@ class Complex(nutils.UsingObjects(Model)):
 
     _SIMPATH_ONLY_CHILDREN = True
 
-    def __init__(self, subUnits, *args, statesAsSpecies=False, order=NoOrdering, **kwargs):
+    def __init__(self, subUnits, *args, statesAsSpecies=False, order=NoOrdering, _createObj=True, **kwargs):
         """
         Declare a complex from a list of subunits.
 
@@ -448,13 +617,15 @@ class Complex(nutils.UsingObjects(Model)):
 
         (mdl,) = self._getUsedObjects()
         self._statesAsSpecies = statesAsSpecies
+        self.stepsComplex = None
         self._compStates = {}
-        if statesAsSpecies:
-            # Create all complex states as steps species
-            self.stepsComplex = self._createStepsStates(mdl)
-        else:
-            self._initializePoolStructs()
-            self.stepsComplex = self._createStepsObj(mdl)
+        if _createObj:
+            if statesAsSpecies:
+                # Create all complex states as steps species
+                self.stepsComplex = self._createStepsStates(mdl)
+            else:
+                self._initializePoolStructs()
+                self.stepsComplex = self._createStepsObj(mdl)
 
     def _areStatesAsSpecies(self):
         return self._statesAsSpecies
@@ -769,6 +940,19 @@ class Channel(Complex):
             raise NotImplementedError()
         super().__init__(subUnits, *args, statesAsSpecies=True, **kwargs)
 
+    @classmethod
+    def _FromStepsObject(cls, obj, mdl):
+        """Create the interface object from a STEPS object."""
+        chanStates = obj.getAllChanStates()
+        allSus = [SubUnitState() for state in chanStates]
+        channel = cls(allSus, statesAsSpecies=True, _createObj=False, name=obj.getID())
+        channel.stepsComplex = obj
+        for state, sus in zip(chanStates, allSus):
+            cs = ComplexState(channel, (sus,))
+            cs._setStepsObjects(state)
+            channel._compStates[cs] = state
+        return channel
+
     def _createStepsStates(self, mdl):
         """Create steps ChanState objects for each channel state."""
         chan = stepslib._py_Chan(self.name, mdl.stepsModel)
@@ -900,6 +1084,26 @@ class ReactionElement(nutils.NamedObject):
         """Return a dictionary with string keys and string or numbers values."""
         return {'obj_type': self._solverStr(), 'obj_id': self.name}
 
+    @property
+    def v(self):
+        """Get a version of the element located on the surface of a vesicle
+
+        Shorthand for :py:func:`VesSurf`.
+
+        :type: :py:class:`ReactingElement`, read-only
+        """
+        return VesSurf(self)
+
+    @property
+    def r(self):
+        """Get a version of the element located on the surface of a raft
+
+        Shorthand for :py:func:`RaftSurf`.
+
+        :type: :py:class:`ReactingElement`, read-only
+        """
+        return RaftSurf(self)
+
 
 @nutils.FreezeAfterInit
 class ReactingElement(ReactionElement):
@@ -938,7 +1142,8 @@ class ReactingElement(ReactionElement):
         else:
             s = f'{self.stoich} ' if self.stoich > 1 else ''
             pos = {
-                Location.IN: 'i', Location.OUT: 'o', Location.SURF: 's'
+                Location.IN: 'i', Location.OUT: 'o', Location.SURF: 's', Location.VESSURF: 'v',
+                Location.RAFTSURF: 'r'
             }[self.loc]
             return f'{s}{self._elem}.{pos}'
 
@@ -967,10 +1172,12 @@ class Location(Enum):
     IN = 1
     SURF = 2
     OUT = 3
+    VESSURF = 4
+    RAFTSURF = 5
 
 
-ALL_LOCATIONS = [None, Location.IN, Location.SURF, Location.OUT]
-ALL_SURF_LOCATIONS = [Location.SURF]
+ALL_LOCATIONS = [None, Location.IN, Location.SURF, Location.OUT, Location.VESSURF, Location.RAFTSURF]
+ALL_SURF_LOCATIONS = [Location.SURF, Location.VESSURF, Location.RAFTSURF]
 
 
 def _locSpecifier(elem, loc):
@@ -1019,6 +1226,351 @@ def Surf(elem):
     """
     return _locSpecifier(elem, Location.SURF)
 
+def VesSurf(elem):
+    """Get a version of an element located on the surface of a vesicle
+
+    :param elem: The element
+    :type elem: Union[:py:class:`ReactionElement`, :py:class:`ReactionSide`]
+
+    :returns: A version of the element located on the surface of a vesicle
+    :rtype: Union[:py:class:`ReactingElement`, :py:class:`ReactionSide`]
+    """
+    return _locSpecifier(elem, Location.VESSURF)
+
+def RaftSurf(elem):
+    """Get a version of an element located on the surface of a raft
+
+    :param elem: The element
+    :type elem: Union[:py:class:`ReactionElement`, :py:class:`ReactionSide`]
+
+    :returns: A version of the element located on the surface of a raft
+    :rtype: Union[:py:class:`ReactingElement`, :py:class:`ReactionSide`]
+    """
+    return _locSpecifier(elem, Location.RAFTSURF)
+
+
+####################################
+# Vesicles
+
+class _RaftVesLocation(nutils.UsingObjects(Model),
+        nutils.StepsWrapperObject,
+        nutils.ParameterizedObject
+    ):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.systems = []
+        self.sysNames = []
+
+    def _SetUpMdlDeps(self, mdl, geom):
+        """Set up the structures that will allow species or reaction access from locations."""
+        for sname, loc in self.sysNames:
+            s = getattr(mdl, sname)
+            self.systems.append((s, loc))
+            # Add the reactions and the corresponding reactants to children
+            for name, c in s.children.items():
+                if _RaftVesLocation._canBeChild(self, c):
+                    if self._canBeChild(c):
+                        self._addChildren(c)
+                    for re in c._getAllElems(loc):
+                        if re.name not in self.children:
+                            self._addChildren(re)
+
+            s._addLocation(self)
+        # Add all species as children since users can set any species on vesicles and rafts
+        for spec in mdl.ALL(Species):
+            if spec.name not in self.children:
+                self._addChildren(spec)
+
+    def _canBeChild(self, c):
+        """Return whether c can be a child of self."""
+        return isinstance(c, (Reaction, Diffusion, Exocytosis, RaftEndocytosis, RaftDis))
+
+    def addSystem(self, sys, _loc=None):
+        """Add a vesicle or raft surface system to the location
+
+        :param sys: The volume or surface system to be added, or its name.
+        :type sys: :py:class:`VesicleSurfaceSystem`, :py:class:`RaftSurfaceSystem` or `str`
+
+        :returns: None
+        """
+        if isinstance(sys, SpaceSystem):
+            self.sysNames.append((sys.name, _loc))
+        elif isinstance(sys, str):
+            self.sysNames.append((sys, _loc))
+        else:
+            raise TypeError(
+                f'Expected a VesicleSurfaceSystem or a RaftSurfaceSystem, got {sys} instead.'
+            )
+
+
+class _VesicleSelection(nutils.SolverPathObject):
+    """Class that represents a subselection of vesicles with additional information"""
+
+    def __init__(self, ves, inside):
+        self._ves = ves
+        self._inside = inside
+
+    def _solverStr(self):
+        """Return the string that is used as part of method names for this specific object."""
+        return self._ves._solverStr() + ('Inner' if self._inside else 'Surface')
+
+    def _solverId(self):
+        """Return the id that is used to identify an object in the solver."""
+        return self._ves._solverId()
+
+    def _simPathAutoMetaData(self):
+        """Return a dictionary with string keys and string or numbers values."""
+        return {'ves_loc': self.loc}
+
+    def __getattr__(self, name):
+        return getattr(self._ves, name)
+
+    @property
+    def children(self):
+        return self._ves.children
+
+    @property
+    def ves(self):
+        return self._ves
+
+    @property
+    def loc(self):
+        return 'in' if self._inside else 'surf'
+
+    def __repr__(self):
+        return f"{self.ves}('{self.loc}')"
+
+
+@nutils.FreezeAfterInit
+class Vesicle(_RaftVesLocation):
+    """Represents a vesicle object
+
+    Vesicles are described by a spherical diameter and diffusion rate.
+    It models the many behaviours and interactions of these complex biological
+    entities. A vesicle may be formed by endocytosis or by direct user input,
+    may exit by exocytosis or user input, may transport species on its surface or
+    luminally, and may undergo many interactions with its environment. These
+    interactions are individually described in each corresponding class.
+
+    :param diameter: Diameter of the vesicle (in m)
+    :type diameter: float
+    :param dcst: Default diffusion coefficient of the vesicle (in m^2 s^-1)
+    :param vesSurfSys: Optional vesicle surface system to be associated with the vesicle
+    :type vesSurfSys: :py:class:`VesicleSurfaceSystem`
+    """
+
+    _locStr = 'Vesicle'
+
+    def __init__(self, diameter, dcst=0, vesSurfSys=None, _createObj=True, **kwargs):
+        super().__init__(**kwargs)
+        (mdl,) = self._getUsedObjects()
+
+        self._setParameter('Diameter', diameter, nutils.Units('m'))
+        self._setParameter('Dcst', dcst, nutils.Units('m^2 s^-1'))
+
+        if _createObj:
+            self.stepsVesicle = stepslib._py_Vesicle(self.name, mdl.stepsModel, self.Diameter, self.Dcst)
+        else:
+            self.stepsVesicle = None
+
+        if vesSurfSys is not None:
+            self.addSystem(vesSurfSys)
+
+    def _SetUpMdlDeps(self, mdl, geom):
+        """Set up the structures that will allow species or reaction access from locations."""
+        super()._SetUpMdlDeps(mdl, geom)
+        # Add all relevant link species as children
+        for vsys in mdl.ALL(VolumeSystem):
+            for vbind in vsys.ALL(VesicleBind, VesicleUnbind):
+                for ves, ls in vbind._getVesLinkSpecPairs():
+                    if ves == ves and ls.name not in self.children:
+                        self._addChildren(ls)
+
+    def _canBeChild(self, c):
+        """Return whether c can be a child of self."""
+        return super()._canBeChild(c)
+
+    def _getStepsObjects(self):
+        """Return a list of the steps objects that this named object holds."""
+        return [self.stepsVesicle]
+
+    def _solverStr(self):
+        """Return the string that is used as part of method names for this specific object."""
+        return Vesicle._locStr
+
+    def addSystem(self, sys, _loc=None):
+        """Add a vesicle surface system to the vesicle
+
+        :param sys: The vesicle surface system to be added, or its name.
+        :type sys: Union[:py:class:`steps.API_2.model.VesicleSurfaceSystem`, str]
+
+        :returns: None
+        """
+        super().addSystem(sys, Location.VESSURF)
+        if _loc is None:
+            if isinstance(sys, SpaceSystem):
+                sys = sys.name
+            self.stepsVesicle.addVesSurfsys(sys)
+
+    def __call__(self, loc):
+        """Get a version of the vesicle with added information
+
+        Parentheses notation (function call) can be used on a vesicle to specify additional
+        information. This should never be needed during model declaration but is frequently needed
+        for simulation control and data saving (see :py:class:`steps.API_2.sim.SimPath`).
+
+        :param loc: If `'surf'`, the simulation path represents the surface of the selected vesicles,
+            if `'in'`, it represents the inside of the selected vesicles
+        :type inside: str
+
+        :returns: An object that represents the vesicle with the added information
+
+        :meta public:
+        """
+        if loc not in {'surf', 'in'}:
+            raise ValueError(f"Location string can only be 'surf' or 'in', got {loc} instead.")
+        return _VesicleSelection(self, loc == 'in')
+
+    @classmethod
+    def _FromStepsObject(cls, obj, mdl):
+        """Create the interface object from a STEPS object."""
+        ves = cls(obj.getDiameter(), obj.getDcst(), _createObj=False, name=obj.getID())
+        ves.stepsVesicle = obj
+        for sysname in obj.getVesSurfsys():
+            ves.addSystem(sysname)
+        return ves
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('m'))
+    def Diameter(self):
+        """Vesicle diameter (in m)
+
+        :type: Union[float, :py:class:`steps.API_2.nutils.Parameter`], read-only
+        """
+        pass
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('m^2 s^-1'))
+    def Dcst(self):
+        """Diffusion constant (in m^2 s^-1)
+
+        :type: Union[float, :py:class:`steps.API_2.nutils.Parameter`]
+        """
+        pass
+
+    @Dcst.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('m^2 s^-1'))
+    def Dcst(self, val):
+        if isinstance(val, numbers.Number):
+            self.stepsVesicle.setDcst(val)
+        else:
+            raise TypeError(f'{val} is not a valid diffusion constant.')
+
+
+@nutils.FreezeAfterInit
+class Raft(_RaftVesLocation):
+    """Represents a membrane raft
+
+    The membrane analogy of vesicles, rafts effectively group surface species
+    within a defined radius and exist in and may diffuse within patches. Rafts
+    and the species they contain undergo special interactions such as raft
+    endocytosis, raft generation and raft dissolution.
+
+    Rafts can represent lipid rafts or other clusters. They occupy space
+    defined by a diameter projected onto the surface, and can be mobile.
+
+    :param diameter: Diameter of the raft (in m)
+    :type diameter: float
+    :param dcst: Default diffusion coefficient of the raft (in m^2 s^-1)
+    :param raftSurfSys: Optional raft surface system to be associated with the raft
+    :type raftSurfSys: :py:class:`RaftSurfaceSystem`
+    """
+
+    _locStr = 'Raft'
+
+    def __init__(self, diameter, dcst=0, raftSurfSys=None, _createObj=True, **kwargs):
+        super().__init__(**kwargs)
+        (mdl,) = self._getUsedObjects()
+
+        self._setParameter('Diameter', diameter, nutils.Units('m'))
+        self._setParameter('Dcst', dcst, nutils.Units('m^2 s^-1'))
+
+        if _createObj:
+            self.stepsRaft = stepslib._py_Raft(self.name, mdl.stepsModel, self.Diameter, self.Dcst)
+        else:
+            self.stepsRaft = None
+
+        if raftSurfSys is not None:
+            self.addSystem(raftSurfSys)
+
+    def _canBeChild(self, c):
+        """Return whether c can be a child of self."""
+        if not super()._canBeChild(c):
+            return False
+        if ((isinstance(c, Reaction) and not c._isRaftSurfReac()) or
+            isinstance(c, (Diffusion, Exocytosis))
+        ):
+            return False
+        return True
+
+    def _getStepsObjects(self):
+        """Return a list of the steps objects that this named object holds."""
+        return [self.stepsRaft]
+
+    def _solverStr(self):
+        """Return the string that is used as part of method names for this specific object."""
+        return Raft._locStr
+
+    def addSystem(self, sys, _loc=None):
+        """Add a raft surface system to the raft
+
+        :param sys: The raft surface system to be added, or its name.
+        :type sys: Union[:py:class:`steps.API_2.model.RaftSurfaceSystem`, str]
+
+        :returns: None
+        """
+        super().addSystem(sys, Location.RAFTSURF)
+        if _loc is None:
+            if isinstance(sys, SpaceSystem):
+                sys = sys.name
+            self.stepsRaft.addRaftsys(sys)
+
+    @classmethod
+    def _FromStepsObject(cls, obj, mdl):
+        """Create the interface object from a STEPS object."""
+        raft = cls(obj.getDiameter(), obj.getDcst(), _createObj=False, name=obj.getID())
+        raft.stepsRaft = obj
+        for sysname in obj.getRaftsys():
+            raft.addSystem(sysname)
+        return raft
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('m'))
+    def Diameter(self):
+        """Raft diameter (in m)
+
+        :type: Union[float, :py:class:`steps.API_2.nutils.Parameter`], read-only
+        """
+        pass
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('m^2 s^-1'))
+    def Dcst(self):
+        """Raft diffusion constant (in m^2 s^-1)
+
+        :type: Union[float, :py:class:`steps.API_2.nutils.Parameter`]
+        """
+        pass
+
+    @Dcst.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('m^2 s^-1'))
+    def Dcst(self, val):
+        if isinstance(val, numbers.Number):
+            self.stepsRaft.setDcst(val)
+        else:
+            raise TypeError(f'{val} is not a valid diffusion constant.')
+
 
 ####################################
 
@@ -1039,7 +1591,7 @@ class Species(
     :type valence: int
     """
 
-    _elemStr = ''
+    _elemStr = 'Spec'
 
     def __init__(self, *args, valence=0, _createObj=True, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1082,6 +1634,61 @@ class Species(
     def _solverStr(self):
         """Return the string that is used as part of method names for this specific object."""
         return Species._elemStr
+
+
+@nutils.FreezeAfterInit
+class LinkSpecies(
+        nutils.UsingObjects(Model),
+        ReactionElement,
+        nutils.StepsWrapperObject,
+        nutils.ParameterizedObject
+    ):
+    """A chemical species that can form links between vesicles
+
+    A link species is a special kind of chemical species that links two
+    vesicles (by forming a bond with another link species). A link species is
+    formed by a vesicle binding event and exists within a specified upper and
+    lower bound of length for the duration of its existence. A link species
+    may diffuse on a vesicle surface, but only within this length bound. Link
+    species are destroyed by a vesicle unbinding event.
+
+    :param dcst: Optional, diffusion coefficient of the vesicle (in m^2 s^-1, defaults to 0)
+    :type dcst: float
+    """
+
+    _elemStr = 'LinkSpec'
+
+    def __init__(self, dcst=0, _createObj=True, **kwargs):
+        super().__init__(**kwargs)
+        (mdl,) = self._getUsedObjects()
+
+        self._setParameter('Dcst', dcst, nutils.Units('m^2 s^-1'))
+
+        self.stepsSpecies = stepslib._py_LinkSpec(self.name, mdl.stepsModel, self.Dcst) if _createObj else None
+
+    def _getStepsObjects(self):
+        """Return a list of the steps objects that this named object holds."""
+        return [self.stepsSpecies]
+
+    @classmethod
+    def _FromStepsObject(cls, obj, mdl):
+        """Create the interface object from a STEPS object."""
+        spec = cls(obj.getDcst(), _createObj=False, name=obj.getID())
+        spec.stepsSpecies = obj
+        return spec
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('m^2 s^-1'))
+    def Dcst(self):
+        """Diffusion constant (in m^2 s^-1)
+
+        :type: float, read-only
+        """
+        pass
+
+    def _solverStr(self):
+        """Return the string that is used as part of method names for this specific object."""
+        return LinkSpecies._elemStr
 
 
 @nutils.FreezeAfterInit
@@ -2809,6 +3416,8 @@ class _SubReaction(nutils.NamedObject):
         stepslib._py_Reac: 'Reac',
         stepslib._py_SReac: 'SReac',
         stepslib._py_VDepSReac: 'VDepSReac',
+        stepslib._py_VesSReac: 'VesSReac',
+        stepslib._py_RaftSReac: 'RaftSReac',
         stepslib._py_ComplexReac: 'ComplexReac',
     }
 
@@ -2834,6 +3443,10 @@ class _SubReaction(nutils.NamedObject):
     def _solverStr(self):
         """Return the string that is used as part of method names for this specific object."""
         return self._elemStr
+    
+    def _simPathAutoMetaData(self):
+        """Return a dictionary with string keys and string or numbers values."""
+        return {'obj_type': 'Reac', 'obj_id': self.name}
 
     def _solverSetValue(self, valName, v):
         """
@@ -2887,7 +3500,7 @@ class _SubReactionList(nutils.SolverPathObject, nutils.ParameterizedObject, list
         units = set()
 
         # some reactions are volume-volume regardless of their content
-        isVolVolReac = False
+        isVolVolReac = self._parent._isVesicleSurfReac()
 
         for l, r, rm in self._LRP:
             l = l._getFlatList()
@@ -2936,6 +3549,174 @@ class _SubReactionList(nutils.SolverPathObject, nutils.ParameterizedObject, list
     def K(self, rate):
         if not isinstance(rate, (numbers.Number, XDepFunc)):
             raise TypeError(f'{rate} cannot be used as a rate.')
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=None)
+    def Dependencies(self):
+        """Reaction dependencies
+
+        A set of species that need to be present in order for the reaction to happen but their amount
+        will not have any effect on the reaction rate.
+
+        If the reaction is reversible, this value corresponds to a tuple composed of the forward
+        and backward dependencies. The dependencies can be a special function that depends e.g. on
+        complex states (:py:class:`CompDepFunc`).
+
+        Note that for now, only species on the surfaces of rafts and vesicles can be used as dependencies.
+
+        The dependencies should be given in the shape of a reaction side, for example: `SA.v + SC.v`
+
+        Usage examples::
+
+            # Bidirectional reactions
+            SA.v + SB.o <r[1]> SA.v + SB.v
+            r[1].K = fwd_rate, bkw_rate
+
+            # SC is a dependency for the forward reaction, SD for the backward:
+            r[1].Dependencies = SC.v, SD.v
+
+            # Unidirectional reactions
+            SC.v >r[2]> SD.v
+            r[1].K = single_rate
+            r[1].Dependencies = SA.v
+
+        The dependencies are empty by default.
+
+        :type: Union[:py:class:`steps.API_2.ReactionElement`, :py:class:`steps.API_2.ReactionSide`,
+            :py:class:`CompDepFunc`]
+        """
+        # Return a default value if the property was not set
+        return None
+
+    @Dependencies.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=None)
+    def Dependencies(self, deps):
+        if not isinstance(deps, (ReactionElement, ReactionSide, CompDepFunc, type(None))):
+            raise TypeError(f'{deps} cannot be used as a dependency.')
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=None)
+    def AntiDependencies(self):
+        """Reaction anti-dependencies
+
+        A set of species that, if present, will prevent the reaction from happenning.
+
+        If the reaction is reversible, this value corresponds to a tuple composed of the forward
+        and backward anti-dependencies. The anti-dependencies can be a special function that depends e.g. on
+        complex states (:py:class:`CompDepFunc`).
+
+        Note that for now, only species on the surfaces of rafts can be used as anti-dependencies.
+
+        The anti-dependencies should be given in the shape of a reaction side, for example: `SA.r + SC.r`
+        In that example, the reaction will be prevented if either `SA` or `SC` are present in the raft.
+        If e.g. `2*SA.R + SC.r` is used, the reaction will be prevented is at least two `SA` are present
+        or at least one `SC`.
+
+        Usage examples::
+
+            # Bidirectional reactions
+            SA.r + SB.s <r[1]> SA.r + SB.r
+            r[1].K = fwd_rate, bkw_rate
+
+            # SC will prevent the forward reaction, SD the backward:
+            r[1].AntiDependencies = SC.r, SD.r
+
+            # Unidirectional reactions
+            SC.r >r[2]> SD.r
+            r[1].K = single_rate
+            r[1].AntiDependencies = SA.r
+
+        The anti-dependencies are empty by default.
+
+        :type: Union[:py:class:`steps.API_2.ReactionElement`, :py:class:`steps.API_2.ReactionSide`,
+            :py:class:`CompDepFunc`]
+        """
+        # Return a default value if the property was not set
+        return None
+
+    @AntiDependencies.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=None)
+    def AntiDependencies(self, deps):
+        if not isinstance(deps, (ReactionElement, ReactionSide, CompDepFunc, type(None))):
+            raise TypeError(f'{deps} cannot be used as an anti-dependency.')
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=None)
+    def Immobilization(self):
+        """Reaction immobilization flag
+
+        The immobilization flag is only applicable to reactions involving rafts or vesicles, it can
+        either be :py:data:`IMMOBILIZING`, :py:data:`NO_EFFECT` or :py:data:`MOBILIZING`.
+
+        If the reaction is reversible, this value corresponds to a tuple composed of the forward
+        and backward immobilization flags. Immobilization flags can be a special function that depends e.g. on
+        complex states (:py:class:`CompDepFunc`).
+
+        Usage examples::
+
+            # Bidirectional reactions
+            SA.v + SB.o <r[1]> SA.v + SB.v
+            r[1].K = fwd_rate, bkw_rate
+
+            # Forward reaction immobilizes, backward reaction does not:
+            r[1].Immobilization = IMMOBILIZING, NO_EFFECT
+
+            # Unidirectional reactions
+            SC.v >r[2]> SD.v
+            r[1].K = single_rate
+            r[1].Immobilization = IMMOBILIZING
+
+        The immobilization flag defaults to :py:data:`NO_EFFECT`.
+
+        :type: Union[:py:data:`steps.API_2.model.IMMOBILIZING`, :py:data:`steps.API_2.model.NO_EFFECT`,
+            :py:data:`steps.API_2.model.MOBILIZING`, :py:class:`CompDepFunc`]
+        """
+        # Return a default value if the property was not set
+        return NO_EFFECT
+
+    @Immobilization.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=None)
+    def Immobilization(self, val):
+        if not isinstance(val, Immobilization):
+            raise TypeError(f'Expected an immobilization flag, got {val} instead.')
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('m'))
+    def MaxDistance(self):
+        """Maximum distance (in m) between vesicle and patch for the reaction to occur
+
+        Note that only reactions involving vesicles can have a maximum distance parameter.
+
+        If the reaction is reversible, this value corresponds to a tuple composed of the forward
+        and backward maximum distances. Maximum distances can be a special function that depends e.g. on
+        complex states (:py:class:`CompDepFunc`).
+
+        Usage examples::
+
+            # Bidirectional reactions
+            SA.v + SB.s <r[1]> SA.v + SB.v
+            r[1].K = fwd_rate, bkw_rate
+
+            # Forward reaction has a maximum distance, backward reaction does not:
+            r[1].MaxDistance = 0.1e-6, None
+
+            # Unidirectional reactions
+            SC.v + SD.s >r[2]> 2 * SD.v
+            r[1].K = single_rate
+            r[1].MaxDistance = 5e-7
+
+        The maximum distance defaults to None, i.e. no maximum distance.
+
+        :type: Union[float, :py:class:`CompDepFunc`]
+        """
+        # Return a default value if the property was not set
+        return None
+
+    @MaxDistance.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('m'))
+    def MaxDistance(self, md):
+        if isinstance(md, bool) or not isinstance(md, (numbers.Number, CompDepFunc)):
+            raise TypeError(f'{md} cannot be used as maximum distance.')
 
     def __repr__(self):
         if self._isFwd:
@@ -2995,18 +3776,20 @@ class _SubReactionList(nutils.SolverPathObject, nutils.ParameterizedObject, list
                 if len(compEvents) > 0:
                     name_c = name + (f'_{j}' if len(self._compEvs) > 1 else '')
                     res = self._declareComplexReac(
-                        name_c, l, r, compEvents, mdl, volSys, surfSys, rm * self.K, rm
+                        name_c, l, r, compEvents, mdl, volSys, surfSys, rm * self.K, rm,
+                        self.Dependencies, self.AntiDependencies, self.Immobilization, self.MaxDistance
                     )
                 else:
                     res = self._declareSimpleReac(
-                        name, l, r, mdl, volSys, surfSys, rm * self.K, rm
+                        name, l, r, mdl, volSys, surfSys, rm * self.K, rm, self.Dependencies,
+                        self.AntiDependencies, self.Immobilization, self.MaxDistance
                     )
 
                 # Add the subreactions to self
                 self.append(res)
 
-    def _declareComplexReac(self, name, simpLHS, simpRHS, compEvents, mdl, volSys, surfSys,
-            rate, rateMult):
+    def _declareComplexReac(self, name, simpLHS, simpRHS, compEvents, mdl, volSys, surfSys, rate, rateMult,
+            deps, antideps, immobilization, max_dist):
         """Declare complex reaction involving real complexes."""
 
         if deps is not None:
@@ -3031,7 +3814,8 @@ class _SubReactionList(nutils.SolverPathObject, nutils.ParameterizedObject, list
         return _SubReaction(self, stepsReac, rateMult=rateMult, name=name)
         # END TMP
 
-    def _declareSimpleReac(self, name, lhs, rhs, mdl, volSys, surfSys, rate, rateMult):
+    def _declareSimpleReac(self, name, lhs, rhs, mdl, volSys, surfSys, rate, rateMult, deps, antideps,
+            immobilization, max_dist):
         """Declare and return the steps reactions from the final sides lhs and rhs."""
 
         nutils._print(f'Adding STEPS reaction {name}: {lhs} --> {rhs}, rate = {rate}', 3)
@@ -3039,6 +3823,12 @@ class _SubReactionList(nutils.SolverPathObject, nutils.ParameterizedObject, list
         # Compute rates and other parameters in case of complex dependencies
         if isinstance(rate, CompDepRate):
             rate = rate(lhs)
+        if isinstance(deps, CompDepFunc):
+            deps = deps(lhs)
+        if isinstance(immobilization, CompDepFunc):
+            immobilization = immobilization(lhs)
+        if isinstance(max_dist, CompDepFunc):
+            max_dist = max_dist(lhs)
 
         if self._parent._isSurfaceReac():
             # Surface system reaction
@@ -3049,32 +3839,168 @@ class _SubReactionList(nutils.SolverPathObject, nutils.ParameterizedObject, list
             srhs = rhs._GetStepsElems(Location.SURF)
             orhs = rhs._GetStepsElems(Location.OUT)
 
-            # Normal surface reaction
-            if isinstance(rate, VDepRate):
-                # Voltage dependent surface reaction
-                stepsReac = stepslib._py_VDepSReac(
+            if isinstance(surfSys, VesicleSurfaceSystem):
+                # Vesicle surface reaction
+
+                if len(ilhs) > 0:
+                    raise Exception(
+                        f'{self._decl()}: Vesicle reactions cannot involve species inside the vesicle on'
+                        f' the LHS.'
+                    )
+
+                # On vesicle surface
+                _vlhs = lhs._GetStepsElems(Location.VESSURF)
+                _vrhs = rhs._GetStepsElems(Location.VESSURF)
+                vlhs = [se for se in _vlhs if isinstance(se, stepslib._py_Spec)]
+                llhs = [se for se in _vlhs if isinstance(se, stepslib._py_LinkSpec)]
+                vrhs = [se for se in _vrhs if isinstance(se, stepslib._py_Spec)]
+                lrhs = [se for se in _vrhs if isinstance(se, stepslib._py_LinkSpec)]
+
+                # Check that no forbidden locations are present
+                for elem in lhs:
+                    if elem.loc not in [Location.IN, Location.OUT, Location.SURF, Location.VESSURF]:
+                        raise Exception(
+                            f'{self._decl()}: Element {elem} cannot appear in a vesicle surface reaction.'
+                        )
+
+                # Dependencies
+                vdeps = []
+                if deps is not None:
+                    deps = deps._toReactionSide()
+                    if any(elem.loc != Location.VESSURF for elem in deps):
+                        raise Exception(
+                            f'{self._decl()}: Dependencies of reactions declared in a '
+                            f'VesicleSurfaceSystem need to be explicitely declared on the surface of the '
+                            f'vesicle (e.g. "spec.v"). The dependencies given do not satisfy this '
+                            f'constraint: {deps}.'
+                        )
+
+                    vdeps = deps._GetStepsElems(Location.VESSURF)
+
+                # Immobilization
+                if immobilization not in [IMMOBILIZING, NO_EFFECT, MOBILIZING]:
+                    raise ValueError(
+                        f'{self._decl()}: Unsupported immobilization flag. IMMOBILIZING, NO_EFFECT'
+                        f', or MOBILIZING.')
+
+                # Max distance
+                if max_dist is None:
+                    max_dist = -1
+                elif max_dist < 0:
+                    raise ValueError(
+                        f'{self._decl()}: Maximum distance parameter should be a positive number, got '
+                        f'{max_dist} instead.'
+                    )
+
+                stepsReac = stepslib._py_VesSReac(
                     name,
-                    surfSys.stepsSys,
-                    ilhs=ilhs,
-                    slhs=slhs,
+                    surfSys._getStepsObjects()[0],
                     olhs=olhs,
-                    irhs=irhs,
+                    slhs=slhs,
+                    vlhs=vlhs,
+                    llhs=llhs,
+                    lrhs=lrhs,
+                    vrhs=vrhs,
                     srhs=srhs,
                     orhs=orhs,
-                    **rate._getVDepSReacParams(self._getRateUnits())
+                    irhs=irhs,
+                    vdeps=vdeps,
+                    kcst=rate,
+                    immobilization=immobilization,
+                    max_dist=max_dist,
+                )
+            elif isinstance(surfSys, RaftSurfaceSystem):
+                # Raft surface reaction
+
+                # On vesicle surface
+                rlhs = lhs._GetStepsElems(Location.RAFTSURF)
+                rrhs = rhs._GetStepsElems(Location.RAFTSURF)
+
+                # Check that no forbidden locations are present
+                for elem in lhs:
+                    if elem.loc not in [Location.IN, Location.OUT, Location.SURF, Location.RAFTSURF]:
+                        raise Exception(
+                            f'{self._decl()}: Element {elem} cannot appear in a raft surface reaction.'
+                        )
+
+                # Dependencies
+                rdeps = []
+                if deps is not None:
+                    deps = deps._toReactionSide()
+                    if any(elem.loc != Location.RAFTSURF for elem in deps):
+                        raise Exception(
+                            f'{self._decl()}: Dependencies of reactions declared in a '
+                            f'RaftSurfaceSystem need to be explicitely declared on the surface of the '
+                            f'raft (e.g. "spec.r"). The dependencies given do not satisfy this '
+                            f'constraint: {deps}.'
+                        )
+
+                    rdeps = deps._GetStepsElems(Location.RAFTSURF)
+
+                # Anti Dependencies
+                anti_rdeps = []
+                if antideps is not None:
+                    antideps = antideps._toReactionSide()
+                    if any(elem.loc != Location.RAFTSURF for elem in antideps):
+                        raise Exception(
+                            f'{self._decl()}: Anti-dependencies of reactions declared in a '
+                            f'RaftSurfaceSystem need to be explicitely declared on the surface of the '
+                            f'raft (e.g. "spec.r"). The anti-dependencies given do not satisfy this '
+                            f'constraint: {antideps}.'
+                        )
+
+                    anti_rdeps = antideps._GetStepsElems(Location.RAFTSURF)
+
+                # Immobilization
+                if immobilization not in [IMMOBILIZING, NO_EFFECT, MOBILIZING]:
+                    raise ValueError(
+                        f'{self._decl()}: Unsupported immobilization flag. IMMOBILIZING, NO_EFFECT'
+                        f', or MOBILIZING.')
+
+                stepsReac = stepslib._py_RaftSReac(
+                    name,
+                    surfSys._getStepsObjects()[0],
+                    ilhs=ilhs,
+                    olhs=olhs,
+                    slhs=slhs,
+                    rlhs=rlhs,
+                    rrhs=rrhs,
+                    srhs=srhs,
+                    orhs=orhs,
+                    irhs=irhs,
+                    rdeps=rdeps,
+                    anti_rdeps=anti_rdeps,
+                    kcst=rate,
+                    immobilization=immobilization,
                 )
             else:
-                stepsReac = stepslib._py_SReac(
-                    name,
-                    surfSys.stepsSys,
-                    ilhs=ilhs,
-                    slhs=slhs,
-                    olhs=olhs,
-                    irhs=irhs,
-                    srhs=srhs,
-                    orhs=orhs,
-                    kcst=rate,
-                )
+                # Normal surface reaction
+
+                if isinstance(rate, VDepRate):
+                    # Voltage dependent surface reaction
+                    stepsReac = stepslib._py_VDepSReac(
+                        name,
+                        surfSys.stepsSys,
+                        ilhs=ilhs,
+                        slhs=slhs,
+                        olhs=olhs,
+                        irhs=irhs,
+                        srhs=srhs,
+                        orhs=orhs,
+                        **rate._getVDepSReacParams(self._getRateUnits())
+                    )
+                else:
+                    stepsReac = stepslib._py_SReac(
+                        name,
+                        surfSys.stepsSys,
+                        ilhs=ilhs,
+                        slhs=slhs,
+                        olhs=olhs,
+                        irhs=irhs,
+                        srhs=srhs,
+                        orhs=orhs,
+                        kcst=rate,
+                    )
         else:
             # Volume system reaction
             elhs = lhs._GetStepsElems()
@@ -3089,6 +4015,23 @@ class _SubReactionList(nutils.SolverPathObject, nutils.ParameterizedObject, list
                 )
             else:
                 stepsReac = stepslib._py_Reac(name, volSys.stepsSys, lhs=elhs, rhs=erhs, kcst=rate)
+
+        # Check that there were no silently unused Parameters
+        if not isinstance(stepsReac, (stepslib._py_VesSReac, stepslib._py_RaftSReac)):
+            if deps is not None:
+                raise Exception(
+                    f'{self._decl()}: Dependencies can only be used with vesicle and raft surface reactions.'
+                )
+            if immobilization != NO_EFFECT:
+                raise Exception(
+                    f'{self._decl()}: Immobilization flags can only be used with vesicle and raft surface '
+                    f'reactions.'
+                )
+        if not isinstance(stepsReac, stepslib._py_VesSReac):
+            if max_dist is not None:
+                raise Exception(
+                    f'{self._decl()}: Maximum distances can only be used with vesicle surface reactions.'
+                )
 
         return _SubReaction(self, stepsReac, lhs=lhs, rateMult=rateMult, name=name)
 
@@ -3170,9 +4113,12 @@ class Reaction(
                 lhs += getattr(mdl, lhsSpec.getID())
             for rhsSpec in obj.getRHS():
                 rhs += getattr(mdl, rhsSpec.getID())
-        elif isinstance(obj, stepslib._py_SReac):
-            for lhsSpec in obj.getILHS():
-                lhs += getattr(mdl, lhsSpec.getID()).i
+        elif isinstance(obj, (
+                stepslib._py_SReac, stepslib._py_VDepSReac, 
+                stepslib._py_VesSReac, stepslib._py_RaftSReac)):
+            if not isinstance(obj, stepslib._py_VesSReac):
+                for lhsSpec in obj.getILHS():
+                    lhs += getattr(mdl, lhsSpec.getID()).i
             for lhsSpec in obj.getSLHS():
                 lhs += getattr(mdl, lhsSpec.getID()).s
             for lhsSpec in obj.getOLHS():
@@ -3183,6 +4129,16 @@ class Reaction(
                 rhs += getattr(mdl, rhsSpec.getID()).s
             for rhsSpec in obj.getORHS():
                 rhs += getattr(mdl, rhsSpec.getID()).o
+            if isinstance(obj, stepslib._py_VesSReac):
+                for lhsSpec in obj.getVLHS() + obj.getLLHS():
+                    lhs += getattr(mdl, lhsSpec.getID()).v
+                for rhsSpec in obj.getVRHS() + obj.getLRHS():
+                    rhs += getattr(mdl, rhsSpec.getID()).v
+            if isinstance(obj, stepslib._py_RaftSReac):
+                for lhsSpec in obj.getRLHS():
+                    lhs += getattr(mdl, lhsSpec.getID()).r
+                for rhsSpec in obj.getRRHS():
+                    rhs += getattr(mdl, rhsSpec.getID()).r
         else:
             raise NotImplementedError(f'Cannot import from STEPS reaction {obj}')
 
@@ -3193,7 +4149,35 @@ class Reaction(
         reac._subReactions[Reaction._FwdSpecifier] = subreacLst
 
         # Rate
-        reac.K = obj.getKcst()
+        if not isinstance(obj, stepslib._py_VDepSReac):
+            # TODO not urgent: set K for VDepSReacs
+            reac.K = obj.getKcst()
+
+        # Immobilization
+        if isinstance(obj, (stepslib._py_VesSReac, stepslib._py_RaftSReac)):
+            reac.Immobilization = obj.getImmobilization()
+
+        # MaxDistance
+        if isinstance(obj, stepslib._py_VesSReac) and obj.getMaxDistance() != -1.0:
+            reac.MaxDistance = obj.getMaxDistance()
+
+        # Dependencies
+        if isinstance(obj, (stepslib._py_VesSReac, stepslib._py_RaftSReac)):
+            deps = ReactionSide([])
+            if isinstance(obj, stepslib._py_VesSReac):
+                for depSpec in obj.getVDeps():
+                    deps += getattr(mdl, depSpec.getID()).v
+            else:
+                for depSpec in obj.getRDeps():
+                    deps += getattr(mdl, depSpec.getID()).r
+            reac.Dependencies = deps
+
+        # Anti Dependencies
+        if isinstance(obj, (stepslib._py_RaftSReac, )):
+            antideps = ReactionSide([])
+            for adepSpec in obj.getAntiRDeps():
+                deps += getattr(mdl, adepSpec.getID()).r
+            reac.AntiDependencies = deps
 
         reac._added = True
         for loc in ALL_LOCATIONS:
@@ -3494,6 +4478,12 @@ class Reaction(
             return None
         lhsS, rhsS = self.lhs._isSurfaceSide(), self.rhs._isSurfaceSide()
         return (lhsS and rhsS) or (None in [lhsS, rhsS] and True in [lhsS, rhsS])
+
+    def _isVesicleSurfReac(self):
+        return isinstance(self._usedObjects[3], VesicleSurfaceSystem)
+
+    def _isRaftSurfReac(self):
+        return isinstance(self._usedObjects[3], RaftSurfaceSystem)
 
     def __getitem__(self, key):
         """Get sub-reactions from a reaction
@@ -4145,7 +5135,9 @@ class Diffusion(
         self._elem = elem._getReferenceObject()
 
         if _createObj:
-            if self.sys.__class__ in [VolumeSystem, SurfaceSystem]:
+            if isinstance(self.sys, VesicleSurfaceSystem):
+                cls = stepslib._py_VesSDiff
+            elif self.sys.__class__ in [VolumeSystem, SurfaceSystem]:
                 cls = stepslib._py_Diff
             else:
                 raise Exception(f'Cannot declare a diffusion rule in {self.sys}')
@@ -4263,6 +5255,1044 @@ class Diffusion(
                 sd._stepsDiff.setDcst(val(cs))
         else:
             raise TypeError(f'{val} is not a valid diffusion constant.')
+
+
+###################################################################################################
+# Vesicle and Raft creation / deletion
+
+
+@nutils.FreezeAfterInit
+class Endocytosis(
+        nutils.UsingObjects(Model, SurfaceSystem),
+        nutils.StepsWrapperObject, nutils.ParameterizedObject
+    ):
+    """A specific type of interaction that models endocytosis of a vesicle
+
+    An endocytosis event models the process of vesicle endocytosis by creating
+    a new vesicle within a compartment. A vesicle will be created at a given
+    rate when an optional species signature is met within an endocytic zone of
+    a patch (see :py:class:`steps.API_2.geom.EndocyticZone`).
+
+    :param vesicle: Vesicle that should appear
+    :type vesicle: :py:class:`Vesicle`
+    :param kcst: Rate constant of the reaction in s^-1
+    :type kcst: float
+    :param deps: Species dependencies
+    :type deps: Union[None, :py:class:`ReactionElement`, :py:class:`ReactionSide`]
+    :param inside: If true, the vesicle should appear in the inside compartment, otherwise it should appear
+        in the outside compartment.
+    :type inside: bool
+    """
+
+    def __init__(self, vesicle, kcst=0, deps=None, inside=True, _createObj=True, **kwargs):
+        super().__init__(**kwargs)
+        mdl, surfSys = self._getUsedObjects()
+
+        if isinstance(deps, ReactionElement):
+            deps = deps._toReactionSide()
+        elif deps is None:
+            deps = ReactionSide([])
+        elif not isinstance(deps, ReactionSide):
+            raise TypeError(f'Expected species dependency, got {deps} instead.')
+
+        if any(elem.loc not in [None, Location.SURF] for elem in deps):
+            raise Exception(f'Species dependencies cannot include species in volumes.')
+
+        if not isinstance(vesicle, Vesicle):
+            raise TypeError(f'Expected a vesicle, got {vesicle} instead.')
+
+        self._vesicle = vesicle
+        self._setParameter('Dependencies', deps)
+        self._setParameter('K', kcst, nutils.Units('s^-1'))
+
+        if _createObj:
+            deps = self.Dependencies._GetStepsElems()
+            if inside:
+                self.stepsEndo = stepslib._py_Endocytosis(
+                    self.name, surfSys._getStepsObjects()[0], vesicle._getStepsObjects()[0], None,
+                    deps, self.K
+                )
+            else:
+                self.stepsEndo = stepslib._py_Endocytosis(
+                    self.name, surfSys._getStepsObjects()[0], None, vesicle._getStepsObjects()[0],
+                    deps, self.K
+                )
+        else:
+            self.stepsEndo = None
+
+    def _getStepsObjects(self):
+        """Return a list of the steps objects that this named object holds."""
+        return [self.stepsEndo]
+
+    def _getAllElems(self, loc=None):
+        """
+        Return all elements that can directly be accessed by name from the parent physical
+        location.
+        """
+        return self.Dependencies._getAllElems(loc)
+
+    def _simPathAutoMetaData(self):
+        """Return a dictionary with string keys and string or numbers values."""
+        return {'obj_type': self._solverStr(), 'obj_id': self.name}
+
+    @classmethod
+    def _FromStepsObject(cls, obj, mdl):
+        """Create the interface object from a STEPS object."""
+        ves = getattr(mdl, obj.getIRHS().getID())
+        deps = ReactionSide([])
+        for spec in obj.getSpecDeps():
+            deps += getattr(mdl, spec.getID())
+
+        endo = cls(ves, obj.getKcst(), deps=deps, inside=obj.getInner(), _createObj=False, name=obj.getID())
+        endo.stepsEndo = obj
+
+        return endo
+
+    @property
+    def Vesicle(self):
+        """Vesicle associated with the endocytosis reaction
+
+        :type: :py:class:`Vesicle`, read-only
+        """
+        return self._vesicle
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=None)
+    def Dependencies(self):
+        """Species dependencies for the endocytosis reaction
+
+        :type: :py:class:`ReactionSide`, read-only
+        """
+        pass
+
+    def _getRateUnits(self):
+        """Return rate units of K"""
+        return nutils.Units('s^-1')
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('s^-1'))
+    def K(self):
+        """Endocytosis reaction constant (in s^-1)
+
+        :type: Union[float, :py:class:`steps.API_2.nutils.Parameter`]
+        """
+        pass
+
+    @K.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('s^-1'))
+    def K(self, val):
+        if isinstance(val, numbers.Number):
+            self.stepsEndo.setKcst(val)
+        else:
+            raise TypeError(f'{val} is not a valid reaction constant.')
+
+
+@nutils.FreezeAfterInit
+class Exocytosis(
+        nutils.UsingObjects(Model, VesicleSurfaceSystem),
+        nutils.StepsWrapperObject, nutils.ParameterizedObject
+    ):
+    """A specific type of interaction that models exocytosis of a vesicle
+
+    An exocytosis event models the process of vesicle exocytosis. By default the vesicle
+    is destroyed, species in the vesicle surface are deposited in the patch at
+    the location at which exocytosis occurs, and species inside the vesicle lumen
+    are deposited in the opposite compartment.
+
+
+    :param kcst: Rate constant of the exocytosis reaction in s^-1
+    :type kcst: float
+    :param deps: Species dependencies on the vesicle surface
+    :type deps: Union[None, :py:class:`ReactionElement`, :py:class:`ReactionSide`]
+    :param raft: If this argument is given the exocytosis event will create a
+        raft on the patch at the location that exocytosis occurs. Any species on
+        the vesicle surface will be deposited in the raft instead of in the patch.
+    :type raft: :py:class:`Raft`
+    :param kissAndRun: This parameter can be set to True to model a kiss-and-run
+        exocytosis event. This does not result in collapse of the vesicle,
+        instead the vesicle is maintained in position after the release of
+        vesicle lumen contents into the opposite compartment. The vesicle
+        surface species are maintained on the vesicle.
+    :type kissAndRun: bool
+    :param knrSpecChanges: To aid kiss-and-run modeling, this argument can be a
+        list of tuples of two :py:class:`Species`; when the kiss-and-run event
+        happens, all vesicle surface species from the first element of the tuple
+        get changed to species of the second element. This feature can be used to
+        specify any species changes that take place on the vesicle surface upon a
+        kiss-and-run exocytosis event. This can be useful for modeling maturation
+        of a complex for which undocking may be dependent. 
+    :type knrSpeChanges: List[Tuple[:py:class:`Species`, :py:class:`Species`]]
+    """
+
+    def __init__(self, kcst=0, deps=None, raft=None, kissAndRun=False, knrSpecChanges=None,
+            _createObj=True, **kwargs):
+        super().__init__(**kwargs)
+        mdl, surfSys = self._getUsedObjects()
+
+        if isinstance(deps, ReactionElement):
+            deps = deps._toReactionSide()
+        elif deps is None:
+            deps = ReactionSide([])
+        elif not isinstance(deps, ReactionSide):
+            raise TypeError(f'Expected species dependency, got {deps} instead.')
+
+        if any(elem.loc not in [None, Location.VESSURF] for elem in deps):
+            raise Exception(f'Species dependencies cannot include species in volumes.')
+
+        if raft is not None and not isinstance(raft, Raft):
+            raise TypeError(f'Expected a raft, got {raft} instad.')
+
+        self._raft = raft
+        self._setParameter('Dependencies', deps)
+        self._setParameter('KissAndRun', kissAndRun)
+        self._setParameter('KnRSpecChanges', knrSpecChanges)
+        self._setParameter('K', kcst, nutils.Units('s^-1'))
+
+        if _createObj:
+            if self.KnRSpecChanges is not None:
+                knrSpecChanges = {
+                    spec1._getStepsObjects()[0]: spec2._getStepsObjects()[0]
+                        for spec1, spec2 in self.KnRSpecChanges
+                }
+            else:
+                knrSpecChanges = {}
+            deps = self.Dependencies._GetStepsElems()
+            self.stepsExo = stepslib._py_Exocytosis(
+                self.name, surfSys._getStepsObjects()[0], deps,
+                raft._getStepsObjects()[0] if raft is not None else None,
+                self.K, self.KissAndRun, knrSpecChanges
+            )
+        else:
+            self.stepsExo = None
+
+    def _getStepsObjects(self):
+        """Return a list of the steps objects that this named object holds."""
+        return [self.stepsExo]
+
+    def _simPathAutoMetaData(self):
+        """Return a dictionary with string keys and string or numbers values."""
+        return {'obj_type': self._solverStr(), 'obj_id': self.name}
+
+    def _getAllElems(self, loc=None):
+        """
+        Return all elements that can directly be accessed by name from the parent physical
+        location.
+        """
+        return self.Dependencies._getAllElems(loc)
+
+    @classmethod
+    def _FromStepsObject(cls, obj, mdl):
+        """Create the interface object from a STEPS object."""
+        if obj.getRaft() is not None:
+            raft = getattr(mdl, obj.getRaft().getID())
+        else:
+            raft = None
+        deps = ReactionSide([])
+        for spec in obj.getSpecDeps():
+            deps += getattr(mdl, spec.getID())
+        knrSpecChanges = list(obj.getKissAndRunSpecChanges().items())
+
+        exo = cls(
+            obj.getKcst(), deps=deps, raft=raft, kissAndRun=obj.getKissAndRun(),
+            knrSpecChanges=knrSpecChanges, _createObj=False, name=obj.getID()
+        )
+        exo.stepsExo = obj
+
+        return exo
+
+    @property
+    def Raft(self):
+        """Raft optionally associated with the exocytosis reaction
+
+        :type: Union[:py:class:`Raft`, None], read-only
+        """
+        return self._raft
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=None)
+    def Dependencies(self):
+        """Species dependencies for the exocytosis reaction
+
+        :type: :py:class:`ReactionSide`, read-only
+        """
+        pass
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=None)
+    def KissAndRun(self):
+        """Whether the exocytosis is a kiss-and-run exocytosis
+
+        :type: bool, read-only
+        """
+        pass
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=None)
+    def KnRSpecChanges(self):
+        """Species changes upon kiss-and-run ecoxytosis reaction
+
+        :type: List[Tuple[:py:class:`Species`, :py:class:`Species`]], read-only
+        """
+        pass
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('s^-1'))
+    def K(self):
+        """Exocytosys reaction constant (in s^-1)
+
+        :type: Union[float, :py:class:`steps.API_2.nutils.Parameter`]
+        """
+        pass
+
+    @K.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('s^-1'))
+    def K(self, val):
+        if isinstance(val, numbers.Number):
+            self.stepsExo.setKcst(val)
+        else:
+            raise TypeError(f'{val} is not a valid reaction constant.')
+
+
+@nutils.FreezeAfterInit
+class RaftEndocytosis(
+        nutils.UsingObjects(Model, RaftSurfaceSystem),
+        nutils.StepsWrapperObject, nutils.ParameterizedObject
+    ):
+    """A specific type of interaction that models endocytosis of a raft to form a vesicle
+
+    A raft endocytosis event models the process of vesicle endocytosis by
+    creating a new vesicle within a compartment from a raft. A vesicle will be
+    created at a given rate when an optional species signature is met within
+    the raft. 
+
+    :param vesicle: Vesicle that should appear
+    :type vesicle: :py:class:`Vesicle`
+    :param kcst: Rate constant of the reaction
+    :type kcst: float
+    :param deps: Species dependencies for endocytosis on the raft
+    :type deps: Union[None, :py:class:`ReactionElement`, :py:class:`ReactionSide`]
+    :param inside: If true, the vesicle should appear in the inside compartment, otherwise it should appear
+        in the outside compartment.
+    :type inside: bool
+    """
+
+    def __init__(self, vesicle, kcst=0, deps=None, inside=True, _createObj=True, **kwargs):
+        super().__init__(**kwargs)
+        mdl, surfSys = self._getUsedObjects()
+
+        if isinstance(deps, ReactionElement):
+            deps = deps._toReactionSide()
+        elif deps is None:
+            deps = ReactionSide([])
+        elif not isinstance(deps, ReactionSide):
+            raise TypeError(f'Expected species dependency, got {deps} instead.')
+
+        if any(elem.loc not in [None, Location.RAFTSURF] for elem in deps):
+            raise Exception(f'Species dependencies cannot include species in volumes.')
+
+        if not isinstance(vesicle, Vesicle):
+            raise TypeError(f'Expected a vesicle, got {vesicle} instad.')
+
+        self._vesicle = vesicle
+        self._setParameter('Dependencies', deps)
+        self._setParameter('K', kcst, nutils.Units('s^-1'))
+
+        if _createObj:
+            deps = self.Dependencies._GetStepsElems()
+            if inside:
+                self.stepsRaftEndo = stepslib._py_RaftEndocytosis(
+                    self.name, surfSys._getStepsObjects()[0], vesicle._getStepsObjects()[0], None,
+                    deps, self.K
+                )
+            else:
+                self.stepsRaftEndo = stepslib._py_RaftEndocytosis(
+                    self.name, surfSys._getStepsObjects()[0], None, vesicle._getStepsObjects()[0],
+                    deps, self.K
+                )
+        else:
+            self.stepsRaftEndo = None
+
+    def _getAllElems(self, loc=None):
+        """
+        Return all elements that can directly be accessed by name from the parent physical
+        location.
+        """
+        return self.Dependencies._getAllElems(loc)
+
+    def _getStepsObjects(self):
+        """Return a list of the steps objects that this named object holds."""
+        return [self.stepsRaftEndo]
+
+    def _simPathAutoMetaData(self):
+        """Return a dictionary with string keys and string or numbers values."""
+        return {'obj_type': self._solverStr(), 'obj_id': self.name}
+
+    @classmethod
+    def _FromStepsObject(cls, obj, mdl):
+        """Create the interface object from a STEPS object."""
+        ves = getattr(mdl, obj.getRHS().getID())
+        deps = ReactionSide([])
+        for spec in obj.getSpecDeps():
+            deps += getattr(mdl, spec.getID())
+
+        endo = cls(ves, obj.getKcst(), deps=deps, inside=obj.getInner(), _createObj=False, name=obj.getID())
+        endo.stepsRaftEndo = obj
+
+        return endo
+
+    @property
+    def Vesicle(self):
+        """Vesicle associated with the raft endocytosis reaction
+
+        :type: :py:class:`Vesicle`, read-only
+        """
+        return self._vesicle
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=None)
+    def Dependencies(self):
+        """Species dependencies for the raft endocytosis reaction
+
+        :type: :py:class:`ReactionSide`, read-only
+        """
+        pass
+
+    def _getRateUnits(self):
+        """Return rate units of K"""
+        return nutils.Units('s^-1')
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('s^-1'))
+    def K(self):
+        """RaftEndocytosys reaction constant (in s^-1)
+
+        :type: Union[float, :py:class:`steps.API_2.nutils.Parameter`]
+        """
+        pass
+
+    @K.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('s^-1'))
+    def K(self, val):
+        if isinstance(val, numbers.Number):
+            self.stepsRaftEndo.setKcst(val)
+        else:
+            raise TypeError(f'{val} is not a valid reaction constant.')
+
+
+class RaftGen(
+        nutils.UsingObjects(SurfaceSystem),
+        nutils.StepsWrapperObject, nutils.ParameterizedObject
+    ):
+    """A specific type of interaction that models a raft genesis event
+
+    Generate a raft at a given rate when a defined species signature is met
+    within a patch triangle.
+
+    :param raft: Raft that should be created
+    :type raft: :py:class:`Raft`
+    :param kcst: Rate constant
+    :type kcst: float
+    :param deps: Species dependencies on the patch surface
+    :type deps: Union[None, :py:class:`ReactionElement`, :py:class:`ReactionSide`]
+    """
+
+    def __init__(self, raft, kcst=0, deps=None, _createObj=True, **kwargs):
+        super().__init__(**kwargs)
+        surfSys, = self._getUsedObjects()
+
+        if isinstance(deps, ReactionElement):
+            deps = deps._toReactionSide()
+        elif deps is None:
+            deps = ReactionSide([])
+        elif not isinstance(deps, ReactionSide):
+            raise TypeError(f'Expected species dependency, got {deps} instead.')
+
+        if any(elem.loc not in [None, Location.SURF] for elem in deps):
+            raise Exception(f'Species dependencies cannot include species in volumes.')
+
+        if not isinstance(raft, Raft):
+            raise TypeError(f'Expected a raft, got {raft} instad.')
+
+        self._raft = raft
+        self._setParameter('Dependencies', deps)
+        self._setParameter('K', kcst, nutils.Units('s^-1'))
+
+        if _createObj:
+            deps = self.Dependencies._GetStepsElems()
+            self.stepsRaftGen = stepslib._py_RaftGen(
+                self.name, surfSys._getStepsObjects()[0], deps,
+                raft._getStepsObjects()[0], self.K
+            )
+        else:
+            self.stepsRaftGen = None
+
+    def _getStepsObjects(self):
+        """Return a list of the steps objects that this named object holds."""
+        return [self.stepsRaftGen]
+
+    def _getAllElems(self, loc=None):
+        """
+        Return all elements that can directly be accessed by name from the parent physical
+        location.
+        """
+        return [self.Raft] + self.Dependencies._getAllElems(loc)
+
+    @classmethod
+    def _FromStepsObject(cls, obj, mdl):
+        """Create the interface object from a STEPS object."""
+        if obj.getRaft() is not None:
+            raft = getattr(mdl, obj.getRaft().getID())
+        else:
+            raft = None
+        deps = ReactionSide([])
+        for spec in obj.getSpecDeps():
+            deps += getattr(mdl, spec.getID())
+
+        exo = cls(raft, obj.getKcst(), deps=deps, _createObj=False, name=obj.getID())
+        exo.stepsRaftGen = obj
+
+        return exo
+
+    @property
+    def Raft(self):
+        """Raft associated with the genesis reaction
+
+        :type: :py:class:`Raft`, read-only
+        """
+        return self._raft
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=None)
+    def Dependencies(self):
+        """Species dependencies for the raft genesis reaction
+
+        :type: :py:class:`ReactionSide`, read-only
+        """
+        pass
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('s^-1'))
+    def K(self):
+        """Raft genesis reaction constant (in s^-1)
+
+        :type: Union[float, :py:class:`steps.API_2.nutils.Parameter`]
+        """
+        pass
+
+    @K.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('s^-1'))
+    def K(self, val):
+        if isinstance(val, numbers.Number):
+            self.stepsRaftGen.setKcst(val)
+        else:
+            raise TypeError(f'{val} is not a valid reaction constant.')
+
+
+@nutils.FreezeAfterInit
+class RaftDis(
+        nutils.UsingObjects(RaftSurfaceSystem),
+        nutils.StepsWrapperObject, nutils.ParameterizedObject
+    ):
+    """A specific type of interaction that models a raft dissolution event
+
+    A raft dissolution event results in removal of a raft at a given rate when
+    the population of species within a raft are **at or below** an
+    anti-dependencies signature. Any remaining species in the raft are
+    inserted into patch triangles.
+
+    :param kcst: Rate constant in s^-1
+    :type kcst: float
+    :param antideps: Species anti-dependencies on the raft surface. The raft
+        dissolution cannot happen if species count on the raft are **strictly
+        bigger** than at least one of the anti-dependencies.
+    :type deps: Union[None, :py:class:`ReactionElement`, :py:class:`ReactionSide`]
+    """
+
+    def __init__(self, kcst=0, antideps=None, _createObj=True, **kwargs):
+        super().__init__(**kwargs)
+        surfSys, = self._getUsedObjects()
+
+        if isinstance(antideps, ReactionElement):
+            antideps = antideps._toReactionSide()
+        elif antideps is None:
+            antideps = ReactionSide([])
+        elif not isinstance(antideps, ReactionSide):
+            raise TypeError(f'Expected species dependency, got {antideps} instead.')
+
+        if any(elem.loc not in [None, Location.RAFTSURF] for elem in antideps):
+            raise Exception(f'Species dependencies cannot include species in volumes.')
+
+        self._setParameter('AntiDependencies', antideps)
+        self._setParameter('K', kcst, nutils.Units('s^-1'))
+
+        if _createObj:
+            antideps = self.AntiDependencies._GetStepsElems()
+            self.stepsRaftDis = stepslib._py_RaftDis(
+                self.name, surfSys._getStepsObjects()[0], antideps, self.K
+            )
+        else:
+            self.stepsRaftDis = None
+
+    def _getStepsObjects(self):
+        """Return a list of the steps objects that this named object holds."""
+        return [self.stepsRaftDis]
+
+    def _getAllElems(self, loc=None):
+        """
+        Return all elements that can directly be accessed by name from the parent physical
+        location.
+        """
+        return self.AntiDependencies._getAllElems(loc)
+
+    @classmethod
+    def _FromStepsObject(cls, obj, mdl):
+        """Create the interface object from a STEPS object."""
+        antideps = ReactionSide([])
+        for spec in obj.getSpecAntiDeps():
+            antideps += getattr(mdl, spec.getID())
+
+        exo = cls(obj.getKcst(), antideps=antideps, _createObj=False, name=obj.getID())
+        exo.stepsRaftDis = obj
+
+        return exo
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=None)
+    def AntiDependencies(self):
+        """Species antidependencies for the raft dissolution reaction
+
+        :type: :py:class:`ReactionSide`, read-only
+        """
+        pass
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('s^-1'))
+    def K(self):
+        """Raft dissolution reaction constant (in s^-1)
+
+        :type: Union[float, :py:class:`steps.API_2.nutils.Parameter`]
+        """
+        pass
+
+    @K.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('s^-1'))
+    def K(self, val):
+        if isinstance(val, numbers.Number):
+            self.stepsRaftDis.setKcst(val)
+        else:
+            raise TypeError(f'{val} is not a valid reaction constant.')
+
+
+@nutils.FreezeAfterInit
+class VesicleBind(
+        nutils.UsingObjects(VolumeSystem),
+        nutils.StepsWrapperObject, nutils.ParameterizedObject
+    ):
+    """Vesicle binding reaction in a volume system
+
+    A vesicle binding event binds two vesicles by creating link species between them.
+    The types of vesicle are arbitrarily termed 1 and 2, and may be the same.
+    A reactant on vesicle surface of vesicle 1 binds with a reactant on vesicle
+    2, and link species are created, one on vesicle 1 and one on vesicle 2.
+    Internally these two link species will be associated with each other and
+    exist within a defined length bound.
+
+    :param vesicles: The two vesicles involved in the binding reaction (in a tuple)
+    :type vesicles: Tuple[:py:class:`Vesicle`, :py:class:`Vesicle`]
+    :param reactants: The species involved in the binding reaction for each vesicle (in a tuple,
+        the order should match the vesicles parameter)
+    :type reactants: Tuple[:py:class:`Species`, :py:class:`Species`]
+    :param linkProducts: The link species resulting from the binding for each vesicle (in a tuple,
+        the order should match the vesicles parameter)
+    :type linkProducts: Tuple[:py:class:`LinkSpecies`, :py:class:`LinkSpecies`]
+    :param lenMin: Minimum length of the link between the two vesicles, in m
+    :type lenMin: float
+    :param lenMax: Minimum length of the link between the two vesicles, in m
+    :type lenMax: float
+    :param kcst: Rate constant in M^-1 s^-1
+    :type kcst: float
+    :param immobilization: immobilization flag for the binding reaction (see
+        :py:attr:`VesicleBind.Immobilization`)
+    :type immobilization: Union[:py:data:`steps.API_2.model.IMMOBILIZING`,
+        :py:data:`steps.API_2.model.NO_EFFECT`, :py:data:`steps.API_2.model.MOBILIZING`]
+    :param deps: Dependencies for the binding reaction (in a tuple, the order should match the vesicle
+        parameter)
+    :type deps: Tuple[Union[None, :py:class:`ReactionElement`, :py:class:`ReactionSide`],
+        Union[None, :py:class:`ReactionElement`, :py:class:`ReactionSide`]]
+    """
+
+    def __init__(
+            self, vesicles, reactants, linkProducts, lenMin, lenMax, 
+            kcst=0, immobilization=NO_EFFECT, deps=(None, None), **kwargs
+        ):
+        super().__init__(**kwargs)
+        self._volSys, = self._getUsedObjects()
+
+        self._stepsVesBind = None
+        self._declared = False
+        self._added = False
+
+        # Check that the arguments are of correct types
+        for val, cls in [(vesicles, Vesicle), (reactants, Species), (linkProducts, LinkSpecies)]:
+            if not (isinstance(val, tuple) and len(val) == 2 and all(isinstance(v, cls) for v in val)):
+                raise TypeError(f'Expected a 2-tuple of {cls.__name__}, got {val} instead.')
+
+        self._vesicles = vesicles
+        self._reactants = reactants
+        self._linkProducts = linkProducts
+
+        self.LengthMin = lenMin
+        self.LengthMax = lenMax
+        self.K = kcst
+        self.Immobilization = immobilization
+        self.Dependencies = deps
+
+        self._declared = True
+
+    def _getStepsObjects(self):
+        """Return a list of the steps objects that this named object holds."""
+        return [self._stepsVesBind] if self._stepsVesBind is not None else []
+
+    def _getAllElems(self, loc=None):
+        """
+        Return all elements that can directly be accessed by name from the parent physical
+        location.
+        """
+        return list(self._vesicles)
+
+    def _getVesLinkSpecPairs(self):
+        """Return pairs of (vesicle, link species) that are involved in the reaction"""
+        return zip(self._vesicles, self._linkProducts)
+
+    def _checkNotAdded(self):
+        """Raise an exception if the vesbind reaction was already added to STEPS"""
+        if self._added:
+            raise Exception(
+                'Cannot set properties of a vesicle bind reaction that was already added to STEPS.'
+            )
+
+    def _exitCallback(self, parent):
+        """
+        Method to be called the first time we get out of a context manager in which the object as been
+        declared.
+        """
+        if not self._declared or self._added:
+            return
+
+        allDeps = []
+        for deps in self.Dependencies:
+            vdeps = []
+            ldeps = []
+            if deps is not None:
+                deps = deps._toReactionSide()
+                if any(elem.loc != Location.VESSURF for elem in deps):
+                    raise Exception(
+                        f'{self._decl()}: Dependencies should all be located on the vesicle surface '
+                        f'(spec.v): {deps}'
+                    )
+                for elem in deps._GetStepsElems():
+                    if isinstance(elem, stepslib._py_Spec):
+                        vdeps.append(elem)
+                    elif isinstance(elem, stepslib._py_LinkSpec):
+                        ldeps.append(elem)
+                    else:
+                        raise TypeError(f'{self._decl()}: Unexpected element in dependencies: {elem}')
+            allDeps.append((vdeps, ldeps))
+
+        self._stepsVesBind = stepslib._py_VesBind(
+            self.name, self._volSys._getStepsObjects()[0],
+            self._vesicles[0]._getStepsObjects()[0], self._reactants[0]._getStepsObjects()[0],
+            self._vesicles[1]._getStepsObjects()[0], self._reactants[1]._getStepsObjects()[0],
+            self._linkProducts[0]._getStepsObjects()[0], self._linkProducts[1]._getStepsObjects()[0],
+            self.LengthMax, self.LengthMin,
+            allDeps[0][0], allDeps[1][0],
+            allDeps[0][1], allDeps[1][1],
+            self.K, self.Immobilization
+        )
+
+        self._added = True
+
+    @classmethod
+    def _FromStepsObject(cls, obj, mdl):
+        """Create the interface object from a STEPS object."""
+
+        ves1 = getattr(mdl, obj.getVesicle1().getID())
+        ves2 = getattr(mdl, obj.getVesicle2().getID())
+        r1 = getattr(mdl, obj.getReactant1().getID())
+        r2 = getattr(mdl, obj.getReactant2().getID())
+        l1 = getattr(mdl, obj.getProduct1().getID())
+        l2 = getattr(mdl, obj.getProduct2().getID())
+        dep1, dep2 = ReactionSide([]), ReactionSide([])
+        for spec in obj.getVDeps1():
+            dep1 += getattr(mdl, spec.getID()).v
+        for spec in obj.getVDeps2():
+            dep2 += getattr(mdl, spec.getID()).v
+        for spec in obj.getLDeps1():
+            dep1 += getattr(mdl, spec.getID()).v
+        for spec in obj.getLDeps2():
+            dep2 += getattr(mdl, spec.getID()).v
+
+        vb = cls(
+            (ves1, ves2), (r1, r2), (l1, l2),
+            obj.getLengthMin(), obj.getLengthMax(), obj.getKcst(), obj.getImmobilization(),
+            (dep1, dep2), name=obj.getID()
+        )
+        vb._stepsVesBind = obj
+        vb._added = True
+
+        return vb
+
+    @property
+    def Vesicles(self):
+        """Vesicles associated with the binding reaction
+
+        :type: Tuple[:py:class:`Vesicle`, :py:class:`Vesicle`], read-only
+        """
+        return self._vesicles
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('m'))
+    def LengthMin(self):
+        """Minimum length of the link (in m)
+
+        :type: float
+        """
+        pass
+
+    @LengthMin.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('m'))
+    def LengthMin(self, val):
+        self._checkNotAdded()
+        if not isinstance(val, numbers.Number):
+            raise TypeError(f'{val} is not a valid minimum link length.')
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('m'))
+    def LengthMax(self):
+        """Maximum length of the link (in m)
+
+        :type: float
+        """
+        pass
+
+    @LengthMax.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('m'))
+    def LengthMax(self, val):
+        self._checkNotAdded()
+        if not isinstance(val, numbers.Number):
+            raise TypeError(f'{val} is not a valid maximum link length.')
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('M^-1 s^-1'))
+    def K(self):
+        """Binding reaction constant (in M^-1 s^-1)
+
+        :type: float
+        """
+        return 0
+
+    @K.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('M^-1 s^-1'))
+    def K(self, val):
+        self._checkNotAdded()
+        if not isinstance(val, numbers.Number):
+            raise TypeError(f'{val} is not a valid reaction constant.')
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=None)
+    def Immobilization(self):
+        """Immobilization flag (:py:data:`IMMOBILIZING`, :py:data:`NO_EFFECT` or :py:data:`MOBILIZING`).
+
+        Defaults to :py:data:`NO_EFFECT`.
+
+        :type: Union[:py:data:`steps.API_2.model.IMMOBILIZING`, :py:data:`steps.API_2.model.NO_EFFECT`,
+            :py:data:`steps.API_2.model.MOBILIZING`]
+        """
+        return NO_EFFECT
+
+    @Immobilization.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=None)
+    def Immobilization(self, val):
+        if not isinstance(val, Immobilization):
+            raise TypeError(f'Expected an immobilization flag, got {val} instead.')
+        self._checkNotAdded()
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=None)
+    def Dependencies(self):
+        """Vesicle binding dependencies
+
+        A set of species or link species that need to be present in order for the binding reaction to happen.
+
+        The dependencies should be given in the shape of a reaction side, for example: `SA.v + SC.v`
+
+        The dependencies are empty by default.
+
+        :type: Tuple[Union[None, :py:class:`ReactionElement`, :py:class:`ReactionSide`],
+            Union[None, :py:class:`ReactionElement`, :py:class:`ReactionSide`]]
+        """
+        # Return a default value if the property was not set
+        return None, None
+
+    @Dependencies.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=None)
+    def Dependencies(self, deps):
+        self._checkNotAdded()
+        if (not isinstance(deps, tuple) or 
+                not all(d is None or isinstance(d, (ReactionElement, ReactionSide)) for d in deps)):
+            raise TypeError(f'{deps} cannot be used as a dependency.')
+
+
+@nutils.FreezeAfterInit
+class VesicleUnbind(
+        nutils.UsingObjects(VolumeSystem),
+        nutils.StepsWrapperObject, nutils.ParameterizedObject
+    ):
+    """Vesicle unbinding reaction in a volume system
+
+    A vesicle unbinding event unbinds two vesicles bound by two link species.
+    The types of vesicle are arbitrarily termed 1 and 2, and may be the same.
+    Upon application of this reaction, the link species on vesicle 1 becomes a
+    species on the vesicle 1 surface and the link species on vesicle 2 becomes a
+    species on the vesicle 2 surface.
+
+    :param vesicles: The two vesicles involved in the binding reaction (in a tuple)
+    :type vesicles: Tuple[:py:class:`Vesicle`, :py:class:`Vesicle`]
+    :param linkReactants: The link species involved in the link for each vesicle (in a tuple,
+        the order should match the vesicles parameter)
+    :type linkReactants: Tuple[:py:class:`LinkSpecies`, :py:class:`LinkSpecies`]
+    :param products: The species resulting from the unbinding for each vesicle (in a tuple,
+        the order should match the vesicles parameter)
+    :type products: Tuple[:py:class:`Species`, :py:class:`Species`]
+    :param kcst: Rate constant in s^-1
+    :type kcst: float
+    :param immobilization: immobilization flag for the binding reaction (see 
+        :py:attr:`VesicleUnbind.Immobilization`)
+    :type immobilization: Union[:py:data:`steps.API_2.model.IMMOBILIZING`,
+        :py:data:`steps.API_2.model.NO_EFFECT`, :py:data:`steps.API_2.model.MOBILIZING`]
+    """
+
+    def __init__(self, vesicles, linkReactants, products, kcst=0, immobilization=NO_EFFECT, **kwargs):
+        super().__init__(**kwargs)
+        self._volSys, = self._getUsedObjects()
+
+        self._stepsVesUnbind = None
+        self._declared = False
+        self._added = False
+
+        # Check that the arguments are of correct types
+        for val, cls in [(vesicles, Vesicle), (products, Species), (linkReactants, LinkSpecies)]:
+            if not (isinstance(val, tuple) and len(val) == 2 and all(isinstance(v, cls) for v in val)):
+                raise TypeError(f'Expected a 2-tuple of {cls.__name__}, got {val} instead.')
+
+        self._vesicles = vesicles
+        self._linkReactants = linkReactants
+        self._products = products
+
+        self.K = kcst
+        self.Immobilization = immobilization
+
+        self._declared = True
+
+    def _getStepsObjects(self):
+        """Return a list of the steps objects that this named object holds."""
+        return [self._stepsVesUnbind] if self._stepsVesUnbind is not None else []
+
+    def _getAllElems(self, loc=None):
+        """
+        Return all elements that can directly be accessed by name from the parent physical
+        location.
+        """
+        return list(self._vesicles)
+
+    def _getVesLinkSpecPairs(self):
+        """Return pairs of (vesicle, link species) that are involved in the reaction"""
+        return zip(self._vesicles, self._linkReactants)
+
+    def _checkNotAdded(self):
+        """Raise an exception if the vesunbind reaction was already added to STEPS"""
+        if self._added:
+            raise Exception(
+                'Cannot set properties of a vesicle unbind reaction that was already added to STEPS.'
+            )
+
+    def _exitCallback(self, parent):
+        """
+        Method to be called the first time we get out of a context manager in which the object as been
+        declared.
+        """
+        if not self._declared or self._added:
+            return
+
+        self._stepsVesUnbind = stepslib._py_VesUnbind(
+            self.name, self._volSys._getStepsObjects()[0],
+            self._linkReactants[0]._getStepsObjects()[0], self._linkReactants[1]._getStepsObjects()[0],
+            self._vesicles[0]._getStepsObjects()[0], self._products[0]._getStepsObjects()[0],
+            self._vesicles[1]._getStepsObjects()[0], self._products[1]._getStepsObjects()[0],
+            self.K, self.Immobilization
+        )
+
+        self._added = True
+
+    @classmethod
+    def _FromStepsObject(cls, obj, mdl):
+        """Create the interface object from a STEPS object."""
+
+        ves1 = getattr(mdl, obj.getVesicle1().getID())
+        ves2 = getattr(mdl, obj.getVesicle2().getID())
+        l1 = getattr(mdl, obj.getLink1().getID())
+        l2 = getattr(mdl, obj.getLink2().getID())
+        p1 = getattr(mdl, obj.getProduct1().getID())
+        p2 = getattr(mdl, obj.getProduct2().getID())
+
+        vb = cls((ves1, ves2), (l1, l2), (p1, p2), obj.getKcst(), obj.getImmobilization(), name=obj.getID())
+        vb._stepsVesUnbind = obj
+        vb._added = True
+
+        return vb
+
+    @property
+    def Vesicles(self):
+        """Vesicles associated with the binding reaction
+
+        :type: Tuple[:py:class:`Vesicle`, :py:class:`Vesicle`], read-only
+        """
+        return self._vesicles
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('s^-1'))
+    def K(self):
+        """Binding reaction constant (in s^-1)
+
+        :type: float
+        """
+        return 0
+
+    @K.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('s^-1'))
+    def K(self, val):
+        self._checkNotAdded()
+        if not isinstance(val, numbers.Number):
+            raise TypeError(f'{val} is not a valid reaction constant.')
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=None)
+    def Immobilization(self):
+        """Immobilization flag (:py:data:`IMMOBILIZING`, :py:data:`NO_EFFECT` or :py:data:`MOBILIZING`)
+
+        Defaults to :py:data:`NO_EFFECT`.
+
+        :type: Union[:py:data:`steps.API_2.model.IMMOBILIZING`, :py:data:`steps.API_2.model.NO_EFFECT`,
+            :py:data:`steps.API_2.model.MOBILIZING`]
+        """
+        return NO_EFFECT
+
+    @Immobilization.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=None)
+    def Immobilization(self, val):
+        if not isinstance(val, Immobilization):
+            raise TypeError(f'Expected an immobilization flag, got {val} instead.')
+        self._checkNotAdded()
 
 
 ###################################################################################################
@@ -4613,6 +6643,18 @@ class GHKCurr(Current):
             self.T = T
             self.oconc = oconc
             self.iconc = iconc
+            self._valence = None
+
+        def _setValence(self, valence):
+            self._valence = valence
+
+        @property
+        def value(self):
+            if self._valence is None:
+                raise Exception(
+                    f'The PInfo object was not associated with any GHK current, cannot compute permeability.'
+                )
+            return stepslib._py_permeability(self.g, self.V, self._valence, self.T, self.iconc, self.oconc)
 
     _GHKCurrPInfo.RegisterParameter('g', nutils.Units('S'))
     _GHKCurrPInfo.RegisterParameter('V', nutils.Units('V'))
@@ -4631,7 +6673,10 @@ class GHKCurr(Current):
         self._vshift = vshift
 
         # Properties
-        self.P = P
+        self.P = copy.copy(P)
+        if isinstance(P, GHKCurr._GHKCurrPInfo):
+            self.P._setValence(spec.valence)
+
         self.VOConc = virtual_oconc
 
         self._declared = True
@@ -4698,6 +6743,8 @@ class GHKCurr(Current):
             Pinfos = GHKCurr.PInfo(g=20e-12, V=-22e-3, T=293.15, oconc=4e-3, iconc=155e-3)
 
             GC_CaP = GHKCurr.Create(CaPchan[m3], Ca, Pinfos, computeflux = True)
+
+        The actual permeability can be accessed with `GC_CaP.P.value`.
         """
         return GHKCurr._GHKCurrPInfo(g, V, T, oconc, iconc)
 

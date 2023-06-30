@@ -24,76 +24,37 @@
 
  */
 
-
-// STL headers.
-#include <cassert>
-#include <iostream>
-#include <sstream>
-#include <string>
-
 // STEPS headers.
 #include "vdepsreacdef.hpp"
+#include "model/spec.hpp"
 #include "statedef.hpp"
 #include "types.hpp"
-#include "model/spec.hpp"
 
 #include "util/error.hpp"
 // logging
 #include <easylogging++.h>
 
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::solver {
 
-namespace ssolver = steps::solver;
-namespace smod = steps::model;
-
-////////////////////////////////////////////////////////////////////////////////
-
-ssolver::VDepSReacdef::VDepSReacdef(Statedef * sd, uint idx, smod::VDepSReac * vdsr)
-: pStatedef(sd)
-, pIdx(idx)
-, pName()
-, pIlhs()
-, pOlhs()
-, pSlhs()
-, pIrhs()
-, pOrhs()
-, pSrhs()
-, pSurface_surface(true)
-
-// pOrient?
-
-, pSpec_I_DEP(nullptr)
-, pSpec_S_DEP(nullptr)
-, pSpec_O_DEP(nullptr)
-, pSpec_I_LHS(nullptr)
-, pSpec_S_LHS(nullptr)
-, pSpec_O_LHS(nullptr)
-, pSpec_I_RHS(nullptr)
-, pSpec_S_RHS(nullptr)
-, pSpec_O_RHS(nullptr)
-, pSpec_I_UPD(nullptr)
-, pSpec_S_UPD(nullptr)
-, pSpec_O_UPD(nullptr)
-, pSpec_I_UPD_Coll()
-, pSpec_S_UPD_Coll()
-, pSpec_O_UPD_Coll()
-, pVMin(0.0)
-, pVMax(0.0)
-, pDV(0.0)
-, pVKTab(nullptr)
-, pReqInside(false)
-, pReqOutside(false)
-{
-    AssertLog(pStatedef != 0);
-    AssertLog(vdsr != 0);
+VDepSReacdef::VDepSReacdef(Statedef* sd, vdepsreac_global_id idx, model::VDepSReac* vdsr)
+    : pStatedef(sd)
+    , pIdx(idx)
+    , pSurface_surface(true)
+    , pVMin(0.0)
+    , pVMax(0.0)
+    , pDV(0.0)
+    , pReqInside(false)
+    , pReqOutside(false) {
+    AssertLog(pStatedef != nullptr);
+    AssertLog(vdsr != nullptr);
 
     pName = vdsr->getID();
     pOrder = vdsr->getOrder();
 
-    if (pOrder == 0)
-    {
+    if (pOrder == 0) {
         std::ostringstream os;
-        os << "Model contains zero-order voltage-dependent surface reaction, which are not permitted. ";
+        os << "Model contains zero-order voltage-dependent surface reaction, which "
+              "are not permitted. ";
         ArgErrLog(os.str());
     }
 
@@ -104,12 +65,8 @@ ssolver::VDepSReacdef::VDepSReacdef(Statedef * sd, uint idx, smod::VDepSReac * v
     uint tablesize = vdsr->_getTablesize();
     AssertLog(tablesize == static_cast<uint>(std::floor((pVMax - pVMin) / pDV)) + 1);
 
-    pVKTab = new double[tablesize];
-    // Just temporarily store the pointer:
-    //double * k = vdsr->_getK();
-
-    for (uint i = 0; i < tablesize; ++i)
-    {
+    pVKTab.resize(tablesize);
+    for (uint i = 0; i < tablesize; ++i) {
         pVKTab[i] = vdsr->_getK()[i];
     }
 
@@ -121,201 +78,156 @@ ssolver::VDepSReacdef::VDepSReacdef(Statedef * sd, uint idx, smod::VDepSReac * v
     pOrhs = vdsr->getORHS();
     pSrhs = vdsr->getSRHS();
 
-    if (vdsr->getInner() == true) { pOrient = VDepSReacdef::INSIDE;
-    } else { pOrient = VDepSReacdef::OUTSIDE;
-}
+    if (vdsr->getInner() == true) {
+        pOrient = VDepSReacdef::INSIDE;
+    } else {
+        pOrient = VDepSReacdef::OUTSIDE;
+    }
 
     uint nspecs = pStatedef->countSpecs();
-    if (nspecs == 0) { return; // Would be weird, but okay.
-}
-    pSpec_S_DEP = new int[nspecs];
-    std::fill_n(pSpec_S_DEP, nspecs, DEP_NONE);
-    pSpec_S_LHS = new uint[nspecs];
-    std::fill_n(pSpec_S_LHS, nspecs, 0);
-    if (pOrient ==  VDepSReacdef::INSIDE)
-    {
-        pSpec_I_DEP = new int[nspecs];
-        std::fill_n(pSpec_I_DEP, nspecs, DEP_NONE);
-        pSpec_I_LHS = new uint[nspecs];
-        std::fill_n(pSpec_I_LHS, nspecs, 0);
+    if (nspecs == 0) {
+        return;  // Would be weird, but okay.
     }
-    else
-    {
-        pSpec_O_DEP = new depT[nspecs];
-        std::fill_n(pSpec_O_DEP, nspecs, DEP_NONE);
-        pSpec_O_LHS = new uint[nspecs];
-        std::fill_n(pSpec_O_LHS, nspecs, 0);
+    pSpec_S_DEP.container().resize(nspecs, DEP_NONE);
+    pSpec_S_LHS.container().resize(nspecs);
+    if (pOrient == VDepSReacdef::INSIDE) {
+        pSpec_I_DEP.container().resize(nspecs, DEP_NONE);
+        pSpec_I_LHS.container().resize(nspecs, 0);
+    } else {
+        pSpec_O_DEP.container().resize(nspecs, DEP_NONE);
+        pSpec_O_LHS.container().resize(nspecs, 0);
     }
-    pSpec_I_RHS = new uint[nspecs];
-    std::fill_n(pSpec_I_RHS, nspecs, 0);
-    pSpec_S_RHS = new uint[nspecs];
-    std::fill_n(pSpec_S_RHS, nspecs, 0);
-    pSpec_O_RHS = new uint[nspecs];
-    std::fill_n(pSpec_O_RHS, nspecs, 0);
-    pSpec_I_UPD = new int[nspecs];
-    std::fill_n(pSpec_I_UPD, nspecs, 0);
-    pSpec_S_UPD = new int[nspecs];
-    std::fill_n(pSpec_S_UPD, nspecs, 0);
-    pSpec_O_UPD = new int[nspecs];
-    std::fill_n(pSpec_O_UPD, nspecs, 0);
-
+    pSpec_I_RHS.container().resize(nspecs);
+    pSpec_S_RHS.container().resize(nspecs);
+    pSpec_O_RHS.container().resize(nspecs);
+    pSpec_I_UPD.container().resize(nspecs);
+    pSpec_S_UPD.container().resize(nspecs);
+    pSpec_O_UPD.container().resize(nspecs);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::VDepSReacdef::~VDepSReacdef()
-{
-    if (pStatedef->countSpecs() > 0)
-    {
-        if (pOrient == VDepSReacdef::INSIDE)
-        {
-            delete[] pSpec_I_DEP;
-            delete[] pSpec_I_LHS;
-        }
-        else
-        {
-            delete[] pSpec_O_DEP;
-            delete[] pSpec_O_LHS;
-
-        }
-        delete[] pSpec_S_DEP;
-        delete[] pSpec_S_LHS;
-        delete[] pSpec_I_RHS;
-        delete[] pSpec_S_RHS;
-        delete[] pSpec_O_RHS;
-        delete[] pSpec_I_UPD;
-        delete[] pSpec_S_UPD;
-        delete[] pSpec_O_UPD;
-
-    }
-
-    delete[] pVKTab;
-
+void VDepSReacdef::checkpoint(std::fstream& /*cp_file*/) {
+    // Reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::VDepSReacdef::checkpoint(std::fstream & cp_file)
-{
-    cp_file.write(reinterpret_cast<char*>(&pVMin), sizeof(double));
-    cp_file.write(reinterpret_cast<char*>(&pVMax), sizeof(double));
-    cp_file.write(reinterpret_cast<char*>(&pDV), sizeof(double));
+void VDepSReacdef::restore(std::fstream& /*cp_file*/) {
+    // Reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::VDepSReacdef::restore(std::fstream & cp_file)
-{
-    cp_file.read(reinterpret_cast<char*>(&pVMin), sizeof(double));
-    cp_file.read(reinterpret_cast<char*>(&pVMax), sizeof(double));
-    cp_file.read(reinterpret_cast<char*>(&pDV), sizeof(double));
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void ssolver::VDepSReacdef::setup()
-{
+void VDepSReacdef::setup() {
     AssertLog(pSetupdone == false);
 
-    if (outside()) { AssertLog(pIlhs.empty()); }
-    else if (inside()) { AssertLog(pOlhs.empty()); }
-    else AssertLog(false);
+    if (outside()) {
+        AssertLog(pIlhs.empty());
+    } else if (inside()) {
+        AssertLog(pOlhs.empty());
+    } else {
+        AssertLog(false);
+    }
 
     for (auto const& ol: pOlhs) {
         pSurface_surface = false;
-        uint sidx = pStatedef->getSpecIdx(ol);
+        spec_global_id sidx = pStatedef->getSpecIdx(ol);
         pSpec_O_LHS[sidx] += 1;
     }
 
     for (auto const& il: pIlhs) {
         pSurface_surface = false;
-        uint sidx = pStatedef->getSpecIdx(il);
+        spec_global_id sidx = pStatedef->getSpecIdx(il);
         pSpec_I_LHS[sidx] += 1;
     }
 
     for (auto const& sl: pSlhs) {
-        uint sidx = pStatedef->getSpecIdx(sl);
+        spec_global_id sidx = pStatedef->getSpecIdx(sl);
         pSpec_S_LHS[sidx] += 1;
     }
 
     for (auto const& ir: pIrhs) {
-        uint sidx = pStatedef->getSpecIdx(ir);
+        spec_global_id sidx = pStatedef->getSpecIdx(ir);
         pSpec_I_RHS[sidx] += 1;
     }
 
     for (auto const& sr: pSrhs) {
-        uint sidx = pStatedef->getSpecIdx(sr);
+        spec_global_id sidx = pStatedef->getSpecIdx(sr);
         pSpec_S_RHS[sidx] += 1;
     }
 
     for (auto const& orh: pOrhs) {
-        uint sidx = pStatedef->getSpecIdx(orh);
+        spec_global_id sidx = pStatedef->getSpecIdx(orh);
         pSpec_O_RHS[sidx] += 1;
     }
 
     // Now set up the update vector
-    uint nspecs = pStatedef->countSpecs();
+    uint ngspecs = pStatedef->countSpecs();
     // Deal with surface.
-    for (uint i = 0; i < nspecs; ++i)
-    {
-        auto lhs = static_cast<int>(pSpec_S_LHS[i]);
-        auto rhs = static_cast<int>(pSpec_S_RHS[i]);
-        int aux = pSpec_S_UPD[i] = (rhs - lhs);
-        if (lhs != 0) { pSpec_S_DEP[i] |= DEP_STOICH;
-}
-        if (aux != 0) pSpec_S_UPD_Coll.push_back(i);
+    for (auto s: spec_global_id::range(ngspecs)) {
+        auto lhs = static_cast<int>(pSpec_S_LHS[s]);
+        auto rhs = static_cast<int>(pSpec_S_RHS[s]);
+        int aux = pSpec_S_UPD[s] = (rhs - lhs);
+        if (lhs != 0) {
+            pSpec_S_DEP[s] |= DEP_STOICH;
+        }
+        if (aux != 0) {
+            pSpec_S_UPD_Coll.push_back(s);
+        }
     }
 
     // Deal with inside.
-    for (uint i = 0; i < nspecs; ++i)
-    {
-        int lhs = (inside() ? static_cast<int>(pSpec_I_LHS[i]) : 0);
-        auto rhs = static_cast<int>(pSpec_I_RHS[i]);
-        int aux = pSpec_I_UPD[i] = (rhs - lhs);
-        if (lhs != 0) { pSpec_I_DEP[i] |= DEP_STOICH;
-}
-        if (aux != 0) pSpec_I_UPD_Coll.push_back(i);
+    for (auto s: spec_global_id::range(ngspecs)) {
+        int lhs = (inside() ? static_cast<int>(pSpec_I_LHS[s]) : 0);
+        auto rhs = static_cast<int>(pSpec_I_RHS[s]);
+        int aux = pSpec_I_UPD[s] = (rhs - lhs);
+        if (lhs != 0) {
+            pSpec_I_DEP[s] |= DEP_STOICH;
+        }
+        if (aux != 0) {
+            pSpec_I_UPD_Coll.push_back(s);
+        }
     }
 
     // Deal with outside.
-    for (uint i = 0; i < nspecs; ++i)
-    {
-        int lhs = (outside() ? static_cast<int>(pSpec_O_LHS[i]) : 0);
-        auto rhs = static_cast<int>(pSpec_O_RHS[i]);
-        int aux = pSpec_O_UPD[i] = (rhs - lhs);
-        if (lhs != 0) { pSpec_O_DEP[i] |= DEP_STOICH;
-}
-        if (aux != 0) pSpec_O_UPD_Coll.push_back(i);
+    for (auto s: spec_global_id::range(ngspecs)) {
+        int lhs = (outside() ? static_cast<int>(pSpec_O_LHS[s]) : 0);
+        auto rhs = static_cast<int>(pSpec_O_RHS[s]);
+        int aux = pSpec_O_UPD[s] = (rhs - lhs);
+        if (lhs != 0) {
+            pSpec_O_DEP[s] |= DEP_STOICH;
+        }
+        if (aux != 0) {
+            pSpec_O_UPD_Coll.push_back(s);
+        }
     }
 
     // This has to come before the final loop
     pSetupdone = true;
 
-    for (uint i = 0; i < nspecs; ++i)
-    {
-        if (reqspec_I(i) == true) { pReqInside  = true;
-}
-        if (reqspec_O(i) == true) { pReqOutside  = true;
-}
+    for (auto s: spec_global_id::range(ngspecs)) {
+        if (reqspec_I(s) == true) {
+            pReqInside = true;
+        }
+        if (reqspec_O(s) == true) {
+            pReqOutside = true;
+        }
     }
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double ssolver::VDepSReacdef::getVDepK(double v) const
-{
+double VDepSReacdef::getVDepK(double v) const {
     AssertLog(pSetupdone == true);
-    AssertLog(pVKTab != nullptr);
-    if (v > pVMax)
-    {
+    AssertLog(!pVKTab.empty());
+    if (v > pVMax) {
         std::ostringstream os;
         os << "Voltage to VDepSReac::getVDepRate higher than maximum: ";
         os << v << " > " << pVMax;
         ProgErrLog(os.str());
     }
-    if (v < pVMin)
-    {
+    if (v < pVMin) {
         std::ostringstream os;
         os << "Voltage to VDepSReac::getVDepRate lower than minimum: ";
         os << v << " < " << pVMin;
@@ -326,187 +238,136 @@ double ssolver::VDepSReacdef::getVDepK(double v) const
     double lv = floor(v2);
     auto lvidx = static_cast<uint>(lv);
     uint uvidx = static_cast<uint>(ceil(v2));
-    double r = v2-lv;
+    double r = v2 - lv;
 
     return (((1.0 - r) * pVKTab[lvidx]) + (r * pVKTab[uvidx]));
-
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/*
-bool ssolver::VDepSReacdef::reqInside() const
-{
-    AssertLog(pSetupdone == true);
-
-    // This can be checked by seeing if DEP_I or RHS_I is non-zero
-    // for any species.
-    uint nspecs = pStatedef->countSpecs();
-    for (uint i = 0; i < nspecs; ++i) if (reqspec_I(i) == true) return true;
-    return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool ssolver::VDepSReacdef::reqOutside() const
-{
-    AssertLog(pSetupdone == true);
-
-    // This can be checked by seeing if DEP_O or RHS_O is non-zero
-    // for any species.
-    uint nspecs = pStatedef->countSpecs();
-    for (uint i = 0; i < nspecs; ++i)
-        if (reqspec_O(i) == true) return true;
-    return false;
-}
-*/
-////////////////////////////////////////////////////////////////////////////////
-
-uint ssolver::VDepSReacdef::lhs_I(uint gidx) const
-{
-    if (outside()) { return 0;
-}
-    AssertLog(gidx < pStatedef->countSpecs());
-    return pSpec_I_LHS[gidx];
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-uint ssolver::VDepSReacdef::lhs_S(uint gidx) const
-{
-    AssertLog(gidx < pStatedef->countSpecs());
-    return pSpec_S_LHS[gidx];
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-uint ssolver::VDepSReacdef::lhs_O(uint gidx) const
-{
-    if (inside()) { return 0;
-}
-    AssertLog(gidx < pStatedef->countSpecs());
-    return pSpec_O_LHS[gidx];
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-int ssolver::VDepSReacdef::dep_I(uint gidx) const
-{
-    AssertLog(pSetupdone == true);
-    AssertLog(gidx < pStatedef->countSpecs());
-    if (outside()) { return DEP_NONE;
-}
-    return pSpec_I_DEP[gidx];
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-int ssolver::VDepSReacdef::dep_S(uint gidx) const
-{
-    AssertLog(pSetupdone == true);
-    AssertLog(gidx < pStatedef->countSpecs());
-    return pSpec_S_DEP[gidx];
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-int ssolver::VDepSReacdef::dep_O(uint gidx) const
-{
-    AssertLog(pSetupdone == true);
-    AssertLog(gidx < pStatedef->countSpecs());
-    if (inside()) { return DEP_NONE;
-}
-    return pSpec_O_DEP[gidx];
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-uint ssolver::VDepSReacdef::rhs_I(uint gidx) const
-{
-    AssertLog(gidx < pStatedef->countSpecs());
-    return pSpec_I_RHS[gidx];
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-uint ssolver::VDepSReacdef::rhs_S(uint gidx) const
-{
-    AssertLog(gidx < pStatedef->countSpecs());
-    return pSpec_S_RHS[gidx];
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-uint ssolver::VDepSReacdef::rhs_O(uint gidx) const
-{
-    AssertLog(gidx < pStatedef->countSpecs());
-    return pSpec_O_RHS[gidx];
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-int ssolver::VDepSReacdef::upd_I(uint gidx) const
-{
-    AssertLog(pSetupdone == true);
-    AssertLog(gidx < pStatedef->countSpecs());
-    return pSpec_I_UPD[gidx];
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-int ssolver::VDepSReacdef::upd_S(uint gidx) const
-{
-    AssertLog(pSetupdone == true);
-    AssertLog(gidx < pStatedef->countSpecs());
-    return pSpec_S_UPD[gidx];
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-int ssolver::VDepSReacdef::upd_O(uint gidx) const
-{
-    AssertLog(pSetupdone == true);
-    AssertLog(gidx < pStatedef->countSpecs());
-    return pSpec_O_UPD[gidx];
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-bool ssolver::VDepSReacdef::reqspec_I(uint gidx) const
-{
-    AssertLog(pSetupdone == true);
-    AssertLog(gidx < pStatedef->countSpecs());
-    if (inside()) {
-        if (pSpec_I_DEP[gidx] != DEP_NONE) { return true;
-}
-}
-    if (pSpec_I_RHS[gidx] != 0) { return true;
-}
-    return false;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-bool ssolver::VDepSReacdef::reqspec_S(uint gidx) const
-{
-    AssertLog(pSetupdone == true);
-    AssertLog(gidx < pStatedef->countSpecs());
-    if (pSpec_S_DEP[gidx] != DEP_NONE) { return true;
-}
-    return pSpec_S_RHS[gidx] != 0;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-bool ssolver::VDepSReacdef::reqspec_O(uint gidx) const
-{
-    AssertLog(pSetupdone == true);
-    AssertLog(gidx < pStatedef->countSpecs());
+uint VDepSReacdef::lhs_I(spec_global_id gidx) const {
     if (outside()) {
-        if (pSpec_O_DEP[gidx] != DEP_NONE) { return true;
-}
-}
-    return pSpec_O_RHS[gidx] != 0;
+        return 0;
+    }
+    return pSpec_I_LHS.at(gidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// END
+
+uint VDepSReacdef::lhs_S(spec_global_id gidx) const {
+    return pSpec_S_LHS.at(gidx);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint VDepSReacdef::lhs_O(spec_global_id gidx) const {
+    if (inside()) {
+        return 0;
+    }
+    return pSpec_O_LHS.at(gidx);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int VDepSReacdef::dep_I(spec_global_id gidx) const {
+    AssertLog(pSetupdone == true);
+    if (outside()) {
+        return DEP_NONE;
+    }
+    return pSpec_I_DEP.at(gidx);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int VDepSReacdef::dep_S(spec_global_id gidx) const {
+    AssertLog(pSetupdone == true);
+    return pSpec_S_DEP.at(gidx);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int VDepSReacdef::dep_O(spec_global_id gidx) const {
+    AssertLog(pSetupdone == true);
+    if (inside()) {
+        return DEP_NONE;
+    }
+    return pSpec_O_DEP.at(gidx);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint VDepSReacdef::rhs_I(spec_global_id gidx) const {
+    return pSpec_I_RHS.at(gidx);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint VDepSReacdef::rhs_S(spec_global_id gidx) const {
+    return pSpec_S_RHS.at(gidx);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint VDepSReacdef::rhs_O(spec_global_id gidx) const {
+    return pSpec_O_RHS.at(gidx);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int VDepSReacdef::upd_I(spec_global_id gidx) const {
+    AssertLog(pSetupdone == true);
+    return pSpec_I_UPD.at(gidx);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int VDepSReacdef::upd_S(spec_global_id gidx) const {
+    AssertLog(pSetupdone == true);
+    return pSpec_S_UPD.at(gidx);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int VDepSReacdef::upd_O(spec_global_id gidx) const {
+    AssertLog(pSetupdone == true);
+    return pSpec_O_UPD.at(gidx);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool VDepSReacdef::reqspec_I(spec_global_id gidx) const {
+    AssertLog(pSetupdone == true);
+    if (inside()) {
+        if (pSpec_I_DEP.at(gidx) != DEP_NONE) {
+            return true;
+        }
+    }
+    if (pSpec_I_RHS.at(gidx) != 0) {
+        return true;
+    }
+    return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool VDepSReacdef::reqspec_S(spec_global_id gidx) const {
+    AssertLog(pSetupdone == true);
+    if (pSpec_S_DEP.at(gidx) != DEP_NONE) {
+        return true;
+    }
+    return pSpec_S_RHS.at(gidx) != 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool VDepSReacdef::reqspec_O(spec_global_id gidx) const {
+    AssertLog(pSetupdone == true);
+    if (outside()) {
+        if (pSpec_O_DEP.at(gidx) != DEP_NONE) {
+            return true;
+        }
+    }
+    return pSpec_O_RHS.at(gidx) != 0;
+}
+
+}  // namespace steps::solver

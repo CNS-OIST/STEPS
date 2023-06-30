@@ -24,17 +24,13 @@
 
  */
 
-
-#ifndef STEPS_RNG_MT19937_HPP
-#define STEPS_RNG_MT19937_HPP 1
-
+#pragma once
 
 // STEPS headers.
-#include "util/common.h"
 #include "rng.hpp"
+#include "util/common.hpp"
 
-namespace steps{
-namespace rng{
+namespace steps::rng {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -61,8 +57,8 @@ namespace rng{
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER
+// OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
@@ -76,28 +72,25 @@ namespace rng{
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#define MT_N                                    624
+#define MT_N 624
 
-#define MT_M                                    397
+#define MT_M 397
 
-#define MT_MATRIX_A                             0x9908b0dfUL
+#define MT_MATRIX_A 0x9908b0dfUL
 
-#define MT_UPPER_MASK                           0x80000000UL
+#define MT_UPPER_MASK 0x80000000UL
 
-#define MT_LOWER_MASK                           0x7fffffffUL
+#define MT_LOWER_MASK 0x7fffffffUL
 
 ////////////////////////////////////////////////////////////////////////////////
 
 /// MT19937 Random number generator.
 ///
-/// This random number generator is based on the original Mersenne Twister code (mt19937.c).
+/// This random number generator is based on the original Mersenne Twister code
+/// (mt19937.c).
 
-class MT19937
-: public RNG
-{
-
-public:
-
+class MT19937: public RNG {
+  public:
     /// Constructor
     ///
     /// \param bufsize Size of the buffer.
@@ -107,30 +100,26 @@ public:
     ///
     virtual ~MT19937();
 
-protected:
+    void checkpoint(std::ostream& cp_file) const override;
 
+    void restore(std::istream& cp_file) override;
+
+
+  protected:
     /// Initialize the generator with seed.
     ///
     /// \param seed Seed for the generator.
-    virtual void concreteInitialize(ulong seed);
+    virtual void concreteInitialize(ulong seed) override;
 
     /// Fills the buffer with random numbers on [0,0xffffffff]-interval.
     ///
-    virtual void concreteFillBuffer();
+    virtual void concreteFillBuffer() override;
 
-private:
-
-    unsigned long               pState[MT_N];
-    int                         pStateInit;
-
+  private:
+    unsigned long pState[MT_N]{};
+    int pStateInit{};
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-}
-}
-
-#endif
-// STEPS_RNG_MT19937_HPP
-
-// END
+}  // namespace steps::rng

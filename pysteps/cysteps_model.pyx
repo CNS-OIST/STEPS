@@ -1,6 +1,15 @@
+# cython:language_level=3str
 ###___license_placeholder___###
 
 from steps_model cimport *
+
+import warnings
+
+from enum import Enum
+class _py_Immobilization(Enum):
+    IMMOBILIZING = steps_model.IMMOBILIZING
+    MOBILIZING   = steps_model.MOBILIZING
+    NO_EFFECT    = steps_model.NO_EFFECT
 
 # ======================================================================================================================
 # Python bindings to namespace steps::model
@@ -222,6 +231,36 @@ cdef class _py_Model(_py__base):
         """
         return _py_Surfsys.vector2list(self.ptr().getAllSurfsyss())
 
+    def getVesicle(self, str id):
+        return _py_Vesicle.from_ptr(self.ptr().getVesicle(to_std_string(id)))
+
+    def getAllVesicles(self):
+        return _py_Vesicle.vector2list(self.ptr().getAllVesicles())
+
+    def getRaft(self, str id):
+        return _py_Raft.from_ptr(self.ptr().getRaft(to_std_string(id)))
+
+    def getAllRafts(self):
+        return _py_Raft.vector2list(self.ptr().getAllRafts())
+
+    def getLinkSpec(self, str id):
+        return _py_LinkSpec.from_ptr(self.ptr().getLinkSpec(to_std_string(id)))
+
+    def getAllLinkSpecs(self):
+        return _py_LinkSpec.vector2list(self.ptr().getAllLinkSpecs())
+
+    def getVesSurfsys(self, str id):
+        return _py_VesSurfsys.from_ptr(self.ptr().getVesSurfsys(to_std_string(id)))
+
+    def getAllVesSurfsyss(self):
+        return _py_VesSurfsys.vector2list(self.ptr().getAllVesSurfsyss())
+
+    def getRaftsys(self, str id):
+        return _py_Raftsys.from_ptr(self.ptr().getRaftsys(to_std_string(id)))
+
+    def getAllRaftsyss(self):
+        return _py_Raftsys.vector2list(self.ptr().getAllRaftsyss())
+
     @staticmethod
     cdef _py_Model from_ptr(Model *ptr):
         cdef _py_Model obj = _py_Model.__new__(_py_Model)
@@ -367,6 +406,23 @@ cdef class _py_Spec(_py__base):
     @staticmethod
     cdef list vector2list(std.vector[Spec*] specVec):
         return [ _py_Spec.from_ptr(elem) for elem in specVec ]
+
+    ## Converting dicts ##
+    @staticmethod
+    cdef std.map[SpecP, SpecP] *dict2map(dict specDict, std.map[SpecP, SpecP] *dstMap):
+        for key in specDict:
+            val = specDict[key]
+            assert isinstance(key, _py_Spec), "Wrong type of spec: " + str(type(key))
+            assert isinstance(val, _py_Spec), "Wrong type of spec: " + str(type(val))
+            dstMap.insert(std.pair[SpecP, SpecP]((<_py_Spec>key).ptr(), (<_py_Spec>val).ptr()))
+        return dstMap
+
+    @staticmethod
+    cdef dict map2dict(std.map[SpecP, SpecP] specMap):
+        specDict = {}
+        for elems in specMap:
+            specDict[_py_Spec.from_ptr(elems.first)] = _py_Spec.from_ptr(elems.second)
+        return specDict
 
     ## properties ##
     id = property(getID, setID, doc="Identifier string of the species.")
@@ -764,60 +820,6 @@ cdef class _py_Surfsys(_py__base):
         """
         return _py_Diff.vector2list(self.ptr().getAllDiffs())
 
-    def getVDepTrans(self, str id):
-        """
-        Returns a reference to the steps.model.VDepTrans voltage-dependent transition object
-        with identifier id (if defined in the surface system).
-
-        Syntax::
-
-            getVDepTrans(id)
-
-        Arguments:
-        string id
-
-        Return:
-        steps.model.VDepTrans
-
-        """
-        return _py_VDepTrans.from_ptr(self.ptr().getVDepTrans(to_std_string(id)))
-
-    def delVDepTrans(self, str id):
-        """
-        Remove the steps.model.VDepTrans voltage-dependent transition object with identifier
-        id from the surface system.
-
-        Syntax::
-
-            delVDepTrans(id)
-
-        Arguments:
-        string id
-
-        Return:
-        None
-
-        """
-        self.ptr().delVDepTrans(to_std_string(id))
-
-    def getAllVDepTrans(self, ):
-        """
-        Returns a list of references to all steps.model.VDepTrans voltage-dependent transition
-        objects defined in the surface system.
-
-        Syntax::
-
-            getAllVDepTrans()
-
-        Arguments:
-        None
-
-        Return:
-        list<steps.model.VDepTrans>
-
-        """
-        return _py_VDepTrans.vector2list(self.ptr().getAllVDepTrans())
-
     def getVDepSReac(self, str id):
         """
         Returns a reference to the steps.model.VDepSReac voltage-dependent surface reaction object
@@ -1000,6 +1002,18 @@ cdef class _py_Surfsys(_py__base):
 
         """
         return _py_Spec.vector2list(self.ptr().getAllSpecs())
+
+    def getRaftGen(self, id):
+        return _py_RaftGen.from_ptr(self.ptr().getRaftGen(to_std_string(id)))
+
+    def getAllRaftGens(self):
+        return _py_RaftGen.vector2list(self.ptr().getAllRaftGens())
+
+    def getEndocytosis(self, id):
+        return _py_Endocytosis.from_ptr(self.ptr().getEndocytosis(to_std_string(id)))
+
+    def getAllEndocytosis(self):
+        return _py_Endocytosis.vector2list(self.ptr().getAllEndocytosis())
 
     @staticmethod
     cdef _py_Surfsys from_ptr(Surfsys *ptr):
@@ -1223,6 +1237,17 @@ cdef class _py_Volsys(_py__base):
         """
         return _py_Spec.vector2list(self.ptr().getAllSpecs())
 
+    def getVesBind(self, id):
+        return _py_VesBind.from_ptr(self.ptr().getVesBind(to_std_string(id)))
+
+    def getAllVesBinds(self):
+        return _py_VesBind.vector2list(self.ptr().getAllVesBinds())
+
+    def getVesUnbind(self, id):
+        return _py_VesUnbind.from_ptr(self.ptr().getVesUnbind(to_std_string(id)))
+
+    def getAllVesUnbinds(self):
+        return _py_VesUnbind.vector2list(self.ptr().getAllVesUnbinds())
 
     @staticmethod
     cdef _py_Volsys from_ptr(Volsys *ptr):
@@ -2209,228 +2234,6 @@ cdef class _py_SReac(_py__base):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-cdef class _py_VDepTrans(_py__base):
-    "Python wrapper class for VDepTrans"
-# ----------------------------------------------------------------------------------------------------------------------
-    #cdef unique_ptr[VDepTrans] _autodealoc
-    cdef VDepTrans *ptr(self):
-        return <VDepTrans*> self._ptr
-
-    def __init__(self, str id, _py_Surfsys surfsys, _py_ChanState src, _py_ChanState dst, std.vector[double] ratetab, double vmin, double vmax, double dv, uint tablesize):
-        """
-        Construction::
-
-            vdeptrans = steps.model.VDepTrans(id, surfsys, src, dst, rate=<function>)
-
-        Construct a voltage-dependent transition object with identifier string id
-        and assign surfsys as the parent surface system. The 'source'
-        channel state is assigned with src and the 'destination' channel state
-        is assigned with dst. A function that returns the transition rate in /s
-        at any voltage (in volts) is supplied with rate.
-
-        Arguments:
-        string id
-        steps.model.Surfsys surfsys
-        steps.model.ChanState src
-        steps.model.ChanState dst
-        function rate
-
-        """
-        self._ptr = new VDepTrans(to_std_string(id), surfsys.ptr(), src.ptrx(), dst.ptrx(), ratetab, vmin, vmax, dv, tablesize)
-
-    def getID(self, ):
-        """
-        Get the identifier string of the voltage-dependent transition.
-
-        Syntax::
-
-            getID()
-
-        Arguments:
-        None
-
-        Return:
-        string
-
-        """
-        return from_std_string(self.ptr().getID())
-
-    def setID(self, str id):
-        """
-        Set the identifier string of the voltage-dependent transition.
-
-        Syntax::
-
-            setID(name)
-
-        Arguments:
-        string name
-
-        Return:
-        None
-
-        """
-        self.ptr().setID(to_std_string(id))
-
-    def getSurfsys(self, ):
-        """
-        Returns a reference to the parent steps.model.Surfsys surface system object.
-
-        Syntax::
-
-            getSurfsys()
-
-        Arguments:
-        None
-
-        Return:
-        steps.model.Surfsys
-
-        """
-        return _py_Surfsys.from_ptr(self.ptr().getSurfsys())
-
-    def getModel(self, ):
-        """
-        Returns a reference to the parent steps.model.Model container object of parent surface system object.
-
-        Syntax::
-
-            getModel()
-
-        Arguments:
-        None
-
-        Return:
-        steps.model.Model
-
-        """
-        return _py_Model.from_ptr(self.ptr().getModel())
-
-    def getChan(self, ):
-        """
-        Returns a reference to the steps.model.Chan container object of source and destination channel states.
-
-        Syntax::
-
-            getChan()
-
-        Arguments:
-        None
-
-        Return:
-        steps.model.Chan
-
-        """
-        return _py_Chan.from_ptr(self.ptr().getChan())
-
-    def getSrc(self, ):
-        """
-        Returns a reference to the 'source' (left-hand side) steps.model.ChanState object.
-
-        Syntax::
-
-            getSrc()
-
-        Arguments:
-        None
-
-        Return:
-        steps.model.ChanState
-
-        """
-        return _py_ChanState.from_ptr(self.ptr().getSrc())
-
-    def setSrc(self, _py_ChanState src):
-        """
-        Set the 'source' (left-hand side) channel state.
-
-        Syntax::
-
-            setSrc(src)
-
-        Arguments:
-        steps.model.ChanState src
-
-        Return:
-        None
-
-        """
-        self.ptr().setSrc(src.ptrx())
-
-    def getDst(self, ):
-        """
-        Returns a reference to the 'destination' (right-hand side) steps.model.ChanState object.
-
-        Syntax::
-
-            getDst()
-
-        Arguments:
-        None
-
-        Return:
-        steps.model.ChanState
-
-        """
-        return _py_ChanState.from_ptr(self.ptr().getDst())
-
-    def setDst(self, _py_ChanState dst):
-        """
-        Set the 'destination' (right-hand side) channel state.
-
-        Syntax::
-
-            setDst(dst)
-
-        Arguments:
-        steps.model.ChanState dst
-
-        Return:
-        None
-
-        """
-        self.ptr().setDst(dst.ptrx())
-
-    def getRate(self, ):
-        """
-        Return a list of transition rates in the default voltage range.
-
-        Syntax::
-
-            getRate()
-
-        Arguments:
-        None
-
-        Return:
-        list<float>
-
-        """
-        return self.ptr().getRate()
-
-    @staticmethod
-    cdef _py_VDepTrans from_ptr(VDepTrans *ptr):
-        cdef _py_VDepTrans obj = _py_VDepTrans.__new__(_py_VDepTrans)
-        obj._ptr = ptr
-        return obj
-
-    @staticmethod
-    cdef _py_VDepTrans from_ref(const VDepTrans &ref):
-        return _py_VDepTrans.from_ptr(<VDepTrans*>&ref)
-
-    @staticmethod
-    cdef list vector2list(std.vector[VDepTrans*] vec):
-        return [ _py_VDepTrans.from_ptr(elem) for elem in vec ]
-
-    ## properties ##
-    id      = property(getID, setID, doc="Identifier string of the voltage-dependent transition.")
-    model   = property(getModel, doc="Reference to parent model.")
-    surfsys = property(getSurfsys, doc="Reference to parent surface system.")
-    src     = property(getSrc, setSrc, doc=" Reference to the channel state object that describes the 'source' channel. ")
-    dst     = property(getDst, setDst, doc=" Reference to the channel state object that describes the 'destination' channel. ")
-
-
-# ----------------------------------------------------------------------------------------------------------------------
 cdef class _py_VDepSReac(_py__base):
     "Python wrapper class for VDepSReac"
 # ----------------------------------------------------------------------------------------------------------------------
@@ -2875,7 +2678,7 @@ cdef class _py_OhmicCurr(_py__base):
 
             ohmiccurr = steps.model.OhmicCurr(id, surfsys, chanstate, erev, g)
 
-        Construct an ohmic curernt object with identifier string id
+        Construct an ohmic current object with identifier string id
         and assign surfsys as the parent surface system. Assign to channel state
         chanstate, set the reversal potential to erev (in volts) and the single-channel
         conductance to g (in Siemens).
@@ -3279,6 +3082,22 @@ cdef class _py_GHKcurr(_py__base):
         """
         self.ptr().setPInfo(g, V, T, oconc, iconc)
 
+    def getP(self):
+        """
+        Get the single-channel permeability (units: cubic meters / second).
+
+        Syntax::
+
+            getP()
+
+        Arguments:
+        None
+
+        Return:
+        float
+        """
+        return self.ptr().getP()
+
     def setP(self, double p):
         """
         Set the single-channel permeability directly (units: cubic meters / second).
@@ -3316,3 +3135,935 @@ cdef class _py_GHKcurr(_py__base):
     surfsys = property(getSurfsys, doc="Reference to parent surface system.")
     ion     = property(getIon, setIon, doc=" The current ion. ")
     chanState = property(getChanState, setChanState)
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+cdef class _py_Vesicle(_py__base):
+    "Python wrapper class for Vesicle"
+# ----------------------------------------------------------------------------------------------------------------------
+    cdef Vesicle *ptr(self):
+        return <Vesicle*> self._ptr
+
+    def __init__(self, str id, _py_Model model, double diameter, double dcst=0):
+        self._ptr = new Vesicle(to_std_string(id), model.ptr(), diameter, dcst)
+
+    def getID(self):
+        return from_std_string(self.ptr().getID())
+
+    def addVesSurfsys(self, name):
+        self.ptr().addVesSurfsys(to_std_string(name))
+
+    def getVesSurfsys(self):
+        return string_set_to_list(self.ptr().getVesSurfsys())
+
+    def getDiameter(self):
+        return self.ptr().getDiameter()
+
+    def getDcst(self):
+        return self.ptr().getDcst()
+
+    def setDcst(self, double dcst):
+        return self.ptr().setDcst(dcst)
+
+    def getModel(self):
+        return _py_Model.from_ptr(self.ptr().getModel())
+
+    @staticmethod
+    cdef _py_Vesicle from_ptr(Vesicle *ptr):
+        if ptr == NULL:
+            return None
+        cdef _py_Vesicle obj = _py_Vesicle.__new__(_py_Vesicle)
+        obj._ptr = ptr
+        return obj
+
+    @staticmethod
+    cdef list vector2list(std.vector[Vesicle*] vec):
+        return [ _py_Vesicle.from_ptr(elem) for elem in vec ]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+cdef class _py_VesSurfsys(_py__base):
+    "Python wrapper class for VesSurfsys"
+# ----------------------------------------------------------------------------------------------------------------------
+    cdef VesSurfsys *ptr(self):
+        return <VesSurfsys*> self._ptr
+
+    def __init__(self, str id, _py_Model model):
+        self._ptr = new VesSurfsys(to_std_string(id), model.ptr())
+
+    def getID(self):
+        return from_std_string(self.ptr().getID())
+
+    def getModel(self):
+        return _py_Model.from_ptr(self.ptr().getModel())
+
+    def getVesSReac(self, id):
+        return _py_VesSReac.from_ptr(self.ptr().getVesSReac(to_std_string(id)))
+
+    def getAllVesSReacs(self):
+        return _py_VesSReac.vector2list(self.ptr().getAllVesSReacs())
+
+    def getVesSDiff(self, id):
+        return _py_VesSDiff.from_ptr(self.ptr().getVesSDiff(to_std_string(id)))
+
+    def getAllVesSDiffs(self):
+        return _py_VesSDiff.vector2list(self.ptr().getAllVesSDiffs())
+
+    def getExocytosis(self, id):
+        return _py_Exocytosis.from_ptr(self.ptr().getExocytosis(to_std_string(id)))
+
+    def getAllExocytosis(self):
+        return _py_Exocytosis.vector2list(self.ptr().getAllExocytosis())
+
+    def getAllSpecs(self):
+        return _py_Spec.vector2list(self.ptr().getAllSpecs())
+
+    @staticmethod
+    cdef _py_VesSurfsys from_ptr(VesSurfsys *ptr):
+        if ptr == NULL:
+            return None
+        cdef _py_VesSurfsys obj = _py_VesSurfsys.__new__(_py_VesSurfsys)
+        obj._ptr = ptr
+        return obj
+
+    @staticmethod
+    cdef list vector2list(std.vector[VesSurfsys*] vec):
+        return [ _py_VesSurfsys.from_ptr(elem) for elem in vec ]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+cdef class _py_Raft(_py__base):
+    "Python wrapper class for Raft"
+# ----------------------------------------------------------------------------------------------------------------------
+    cdef Raft *ptr(self):
+        return <Raft*> self._ptr
+
+    def __init__(self, str id, _py_Model model, double diameter, double dcst=0):
+        self._ptr = new Raft(to_std_string(id), model.ptr(), diameter, dcst)
+
+    def getID(self):
+        return from_std_string(self.ptr().getID())
+
+    def addRaftsys(self, name):
+        self.ptr().addRaftsys(to_std_string(name))
+
+    def getRaftsys(self):
+        return string_set_to_list(self.ptr().getRaftsys())
+
+    def getDiameter(self):
+        return self.ptr().getDiameter()
+
+    def getDcst(self):
+        return self.ptr().getDcst()
+
+    def setDcst(self, double dcst):
+        return self.ptr().setDcst(dcst)
+
+    def getModel(self):
+        return _py_Model.from_ptr(self.ptr().getModel())
+
+    @staticmethod
+    cdef _py_Raft from_ptr(Raft *ptr):
+        if ptr == NULL:
+            return None
+        cdef _py_Raft obj = _py_Raft.__new__(_py_Raft)
+        obj._ptr = ptr
+        return obj
+
+    @staticmethod
+    cdef list vector2list(std.vector[Raft*] vec):
+        return [ _py_Raft.from_ptr(elem) for elem in vec ]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+cdef class _py_Raftsys(_py__base):
+    "Python wrapper class for Raftsys"
+# ----------------------------------------------------------------------------------------------------------------------
+    cdef Raftsys *ptr(self):
+        return <Raftsys*> self._ptr
+
+    def __init__(self, str id, _py_Model model):
+        self._ptr = new Raftsys(to_std_string(id), model.ptr())
+
+    def getID(self):
+        return from_std_string(self.ptr().getID())
+
+    def getModel(self):
+        return _py_Model.from_ptr(self.ptr().getModel())
+
+    def getRaftSReac(self, id):
+        return _py_RaftSReac.from_ptr(self.ptr().getRaftSReac(to_std_string(id)))
+
+    def getAllRaftSReacs(self):
+        return _py_RaftSReac.vector2list(self.ptr().getAllRaftSReacs())
+
+    def getRaftEndocytosis(self, id):
+        return _py_RaftEndocytosis.from_ptr(self.ptr().getRaftEndocytosis(to_std_string(id)))
+
+    def getAllRaftEndocytosiss(self):
+        return _py_RaftEndocytosis.vector2list(self.ptr().getAllRaftEndocytosiss())
+
+    def getRaftDis(self, id):
+        return _py_RaftDis.from_ptr(self.ptr().getRaftDis(to_std_string(id)))
+
+    def getAllRaftDiss(self):
+        return _py_RaftDis.vector2list(self.ptr().getAllRaftDiss())
+
+    def getAllSpecs(self):
+        return _py_Spec.vector2list(self.ptr().getAllSpecs())
+
+    @staticmethod
+    cdef _py_Raftsys from_ptr(Raftsys *ptr):
+        cdef _py_Raftsys obj = _py_Raftsys.__new__(_py_Raftsys)
+        obj._ptr = ptr
+        return obj
+
+    @staticmethod
+    cdef list vector2list(std.vector[Raftsys*] vec):
+        return [ _py_Raftsys.from_ptr(elem) for elem in vec ]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+cdef class _py_Endocytosis(_py__base):
+    "Python wrapper class for Endocytosis"
+# ----------------------------------------------------------------------------------------------------------------------
+    cdef Endocytosis *ptr(self):
+        return <Endocytosis*> self._ptr
+
+    def __init__(self, str id, _py_Surfsys ssys, _py_Vesicle irhs=None, _py_Vesicle orhs=None, list deps=[], double kcst=0):
+        cdef std.vector[Spec*] vec
+        _py_Spec.list2vector(deps, &vec)
+
+        self._ptr = new Endocytosis(to_std_string(id), ssys.ptr(), irhs.ptr() if irhs is not None else <Vesicle *>NULL,
+            orhs.ptr() if orhs is not None else <Vesicle *>NULL, vec, kcst
+        )
+
+    def getID(self):
+        return from_std_string(self.ptr().getID())
+
+    def getModel(self):
+        return _py_Model.from_ptr(self.ptr().getModel())
+
+    def getInner(self):
+        return self.ptr().getInner()
+
+    def getSpecDeps(self):
+        return _py_Spec.vector2list(self.ptr().getSpecDeps())
+
+    def getIRHS(self):
+        return _py_Vesicle.from_ptr(self.ptr().getIRHS())
+
+    def getKcst(self):
+        return self.ptr().getKcst()
+
+    def setKcst(self, kcst):
+        return self.ptr().setKcst(kcst)
+
+    def getAllSpecs(self):
+        return _py_Spec.vector2list(self.ptr().getAllSpecs())
+
+    def getSurfsys(self):
+        return _py_Surfsys.from_ptr(self.ptr().getSurfsys())
+
+    @staticmethod
+    cdef _py_Endocytosis from_ptr(Endocytosis *ptr):
+        cdef _py_Endocytosis obj = _py_Endocytosis.__new__(_py_Endocytosis)
+        obj._ptr = ptr
+        return obj
+
+    @staticmethod
+    cdef list vector2list(std.vector[Endocytosis*] vec):
+        return [ _py_Endocytosis.from_ptr(elem) for elem in vec ]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+cdef class _py_Exocytosis(_py__base):
+    "Python wrapper class for Exocytosis"
+# ----------------------------------------------------------------------------------------------------------------------
+    cdef Exocytosis *ptr(self):
+        return <Exocytosis*> self._ptr
+
+    def __init__(self, str id, _py_VesSurfsys ssys, list deps=[], _py_Raft raft=None, double kcst=0, bool kiss_and_run=False, dict kiss_and_run_spec_changes={}):
+        cdef std.vector[Spec*] dep_vec
+        _py_Spec.list2vector(deps, &dep_vec)
+        cdef std.map[SpecP, SpecP] knr_map
+        _py_Spec.dict2map(kiss_and_run_spec_changes, &knr_map)
+
+        self._ptr = new Exocytosis(
+            to_std_string(id), ssys.ptr(), dep_vec, raft.ptr() if raft is not None else <Raft *>NULL, kcst, kiss_and_run, knr_map
+        )
+
+    def getID(self):
+        return from_std_string(self.ptr().getID())
+
+    def getSpecDeps(self):
+        return _py_Spec.vector2list(self.ptr().getSpecDeps())
+
+    def getVesSurfsys(self):
+        return _py_VesSurfsys.from_ptr(self.ptr().getVesSurfsys())
+
+    def getModel(self):
+        return _py_Model.from_ptr(self.ptr().getModel())
+
+    def getRaft(self):
+        return _py_Raft.from_ptr(self.ptr().getRaft())
+
+    def getKissAndRun(self):
+        return self.ptr().getKissAndRun()
+
+    def getKissAndRunSpecChanges(self):
+        return _py_Spec.map2dict(self.ptr().getKissAndRunSpecChanges())
+
+    def getKcst(self):
+        return self.ptr().getKcst()
+
+    def setKcst(self, kcst):
+        return self.ptr().setKcst(kcst)
+
+    @staticmethod
+    cdef _py_Exocytosis from_ptr(Exocytosis *ptr):
+        cdef _py_Exocytosis obj = _py_Exocytosis.__new__(_py_Exocytosis)
+        obj._ptr = ptr
+        return obj
+
+    @staticmethod
+    cdef list vector2list(std.vector[Exocytosis*] vec):
+        return [ _py_Exocytosis.from_ptr(elem) for elem in vec ]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+cdef class _py_RaftEndocytosis(_py__base):
+    "Python wrapper class for RaftEndocytosis"
+# ----------------------------------------------------------------------------------------------------------------------
+    cdef RaftEndocytosis *ptr(self):
+        return <RaftEndocytosis*> self._ptr
+
+    def __init__(self, str id, _py_Raftsys ssys, _py_Vesicle irhs, _py_Vesicle orhs=None, list deps=[], double kcst=0):
+        cdef std.vector[Spec*] vec
+        _py_Spec.list2vector(deps, &vec)
+
+        self._ptr = new RaftEndocytosis(to_std_string(id), ssys.ptr(), irhs.ptr() if irhs is not None else <Vesicle *>NULL,
+            orhs.ptr() if orhs is not None else <Vesicle *>NULL, vec, kcst
+        )
+
+    def getID(self):
+        return from_std_string(self.ptr().getID())
+
+    def getModel(self):
+        return _py_Model.from_ptr(self.ptr().getModel())
+
+    def getRaftsys(self):
+        return _py_Raftsys.from_ptr(self.ptr().getRaftsys())
+
+    def getInner(self):
+        return self.ptr().getInner()
+
+    def getSpecDeps(self):
+        return _py_Spec.vector2list(self.ptr().getSpecDeps())
+
+    def getRHS(self):
+        return _py_Vesicle.from_ptr(self.ptr().getRHS())
+
+    def getKcst(self):
+        return self.ptr().getKcst()
+
+    def setKcst(self, kcst):
+        return self.ptr().setKcst(kcst)
+
+    def getAllSpecs(self):
+        return _py_Spec.vector2list(self.ptr().getAllSpecs())
+
+    @staticmethod
+    cdef _py_RaftEndocytosis from_ptr(RaftEndocytosis *ptr):
+        cdef _py_RaftEndocytosis obj = _py_RaftEndocytosis.__new__(_py_RaftEndocytosis)
+        obj._ptr = ptr
+        return obj
+
+    @staticmethod
+    cdef list vector2list(std.vector[RaftEndocytosis*] vec):
+        return [ _py_RaftEndocytosis.from_ptr(elem) for elem in vec ]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+cdef class _py_RaftGen(_py__base):
+    "Python wrapper class for RaftGen"
+# ----------------------------------------------------------------------------------------------------------------------
+    cdef RaftGen *ptr(self):
+        return <RaftGen*> self._ptr
+
+    def __init__(self, str id, _py_Surfsys ssys, list deps, _py_Raft raft, double kcst=0):
+        cdef std.vector[Spec*] vec
+        _py_Spec.list2vector(deps, &vec)
+
+        self._ptr = new RaftGen(
+            to_std_string(id), ssys.ptr(), vec, raft.ptr(), kcst
+        )
+
+    def getID(self):
+        return from_std_string(self.ptr().getID())
+
+    def getModel(self):
+        return _py_Model.from_ptr(self.ptr().getModel())
+
+    def getSurfsys(self):
+        return _py_Surfsys.from_ptr(self.ptr().getSurfsys())
+
+    def getSpecDeps(self):
+        return _py_Spec.vector2list(self.ptr().getSpecSignature())
+
+    def getRaft(self):
+        return _py_Raft.from_ptr(self.ptr().getRaft())
+
+    def getKcst(self):
+        return self.ptr().getKcst()
+
+    def setKcst(self, kcst):
+        return self.ptr().setKcst(kcst)
+
+    def getAllSpecs(self):
+        return _py_Spec.vector2list(self.ptr().getAllSpecs())
+
+    @staticmethod
+    cdef _py_RaftGen from_ptr(RaftGen *ptr):
+        cdef _py_RaftGen obj = _py_RaftGen.__new__(_py_RaftGen)
+        obj._ptr = ptr
+        return obj
+
+    @staticmethod
+    cdef list vector2list(std.vector[RaftGen*] vec):
+        return [ _py_RaftGen.from_ptr(elem) for elem in vec ]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+cdef class _py_RaftDis(_py__base):
+    "Python wrapper class for RaftDis"
+# ----------------------------------------------------------------------------------------------------------------------
+    cdef RaftDis *ptr(self):
+        return <RaftDis*> self._ptr
+
+    def __init__(self, str id, _py_Raftsys ssys, list antideps, double kcst=0):
+        cdef std.vector[Spec*] vec
+        _py_Spec.list2vector(antideps, &vec)
+
+        self._ptr = new RaftDis(
+            to_std_string(id), ssys.ptr(), vec, kcst
+        )
+
+    def getID(self):
+        return from_std_string(self.ptr().getID())
+
+    def getModel(self):
+        return _py_Model.from_ptr(self.ptr().getModel())
+
+    def getRaftsys(self):
+        return _py_Raftsys.from_ptr(self.ptr().getRaftsys())
+
+    def getRaft(self):
+        return _py_Raft.from_ptr(self.ptr().getRaft())
+
+    def getSpecAntiDeps(self):
+        return _py_Spec.vector2list(self.ptr().getSpecSignature())
+
+    def getKcst(self):
+        return self.ptr().getKcst()
+
+    def setKcst(self, kcst):
+        return self.ptr().setKcst(kcst)
+
+    def getAllSpecs(self):
+        return _py_Spec.vector2list(self.ptr().getAllSpecs())
+
+    @staticmethod
+    cdef _py_RaftDis from_ptr(RaftDis *ptr):
+        cdef _py_RaftDis obj = _py_RaftDis.__new__(_py_RaftDis)
+        obj._ptr = ptr
+        return obj
+
+    @staticmethod
+    cdef list vector2list(std.vector[RaftDis*] vec):
+        return [ _py_RaftDis.from_ptr(elem) for elem in vec ]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+cdef class _py_LinkSpec(_py__base):
+    "Python wrapper class for LinkSpec"
+# ----------------------------------------------------------------------------------------------------------------------
+    cdef LinkSpec *ptr(self):
+        return <LinkSpec*> self._ptr
+
+    def __init__(self, str id, _py_Model model, double dcst=0):
+        self._ptr = new LinkSpec(to_std_string(id), model.ptr(), dcst)
+
+    def getID(self, ):
+        return from_std_string(self.ptr().getID())
+
+    def getDcst(self):
+        return self.ptr().getDcst()
+
+    def getModel(self):
+        return _py_Model.from_ptr(self.ptr().getModel())
+
+    @staticmethod
+    cdef _py_LinkSpec from_ptr(LinkSpec *ptr):
+        cdef _py_LinkSpec obj = _py_LinkSpec.__new__(_py_LinkSpec)
+        obj._ptr = ptr
+        return obj
+
+    @staticmethod
+    cdef std.vector[LinkSpec*] *list2vector(list specList, std.vector[LinkSpec*] *dstVec):
+        for item in specList:
+            assert isinstance(item, _py_LinkSpec), "Wrong type of spec: " + str(type(item))
+            dstVec.push_back( (<_py_LinkSpec>item).ptr())
+        return dstVec
+
+    @staticmethod
+    cdef list vector2list(std.vector[LinkSpec*] specVec):
+        return [ _py_LinkSpec.from_ptr(elem) for elem in specVec ]
+
+# ----------------------------------------------------------------------------------------------------------------------
+cdef class _py_VesSReac(_py__base):
+    "Python wrapper class for VesSReac"
+# ----------------------------------------------------------------------------------------------------------------------
+    cdef VesSReac *ptr(self):
+        return <VesSReac*> self._ptr
+
+    def __init__(self, str id, _py_VesSurfsys surfsys,
+            list olhs=[], list slhs=[], list vlhs=[], list llhs=[],
+            list lrhs=[], list vrhs=[], list srhs=[], list orhs=[], list irhs=[],
+            list vdeps=[], double kcst=0, immobilization=_py_Immobilization.NO_EFFECT,
+            double max_dist=-1, immobility=None
+        ):
+        if immobility is not None:
+            ShowDeprecationWarning(
+                item='The `immobility` keyword argument',
+                replacement='`immobilization`',
+                version='6.0'
+            )
+            immobilization = _py_Immobilization(immobility)
+        if not isinstance(immobilization, _py_Immobilization):
+            raise TypeError(f'Expected an Immobilization value, got {immobilization} instead.')
+        cdef std.vector[Spec*] _olhs, _slhs, _vlhs, _vrhs, _srhs, _orhs, _irhs, _vdeps
+        cdef std.vector[LinkSpec*] _llhs, _lrhs
+        _py_Spec.list2vector(olhs, &_olhs)
+        _py_Spec.list2vector(slhs, &_slhs)
+        _py_Spec.list2vector(vlhs, &_vlhs)
+        _py_LinkSpec.list2vector(llhs, &_llhs)
+        _py_LinkSpec.list2vector(lrhs, &_lrhs)
+        _py_Spec.list2vector(vrhs, &_vrhs)
+        _py_Spec.list2vector(srhs, &_srhs)
+        _py_Spec.list2vector(orhs, &_orhs)
+        _py_Spec.list2vector(irhs, &_irhs)
+        _py_Spec.list2vector(vdeps, &_vdeps)
+        # Instantiate
+        self._ptr = new VesSReac(
+            to_std_string(id), surfsys.ptr(),
+            _olhs, _slhs, _vlhs, _llhs,
+            _lrhs, _vrhs, _srhs, _orhs, _irhs,
+            _vdeps, kcst, immobilization.value, max_dist
+        )
+
+    def getID(self, ):
+        return from_std_string(self.ptr().getID())
+
+    def getVesSurfsys(self):
+        return _py_VesSurfsys.from_ptr(self.ptr().getVesSurfsys())
+
+    def getModel(self):
+        return _py_Model.from_ptr(self.ptr().getModel())
+
+    def getOLHS(self, ):
+        return _py_Spec.vector2list(self.ptr().getOLHS())
+
+    def getSLHS(self, ):
+        return _py_Spec.vector2list(self.ptr().getSLHS())
+
+    def getVLHS(self, ):
+        return _py_Spec.vector2list(self.ptr().getVLHS())
+
+    def getLLHS(self, ):
+        return _py_LinkSpec.vector2list(self.ptr().getLLHS())
+
+    def getLRHS(self, ):
+        return _py_LinkSpec.vector2list(self.ptr().getLRHS())
+
+    def getVRHS(self, ):
+        return _py_Spec.vector2list(self.ptr().getVRHS())
+
+    def getSRHS(self, ):
+        return _py_Spec.vector2list(self.ptr().getSRHS())
+
+    def getORHS(self, ):
+        return _py_Spec.vector2list(self.ptr().getORHS())
+
+    def getIRHS(self, ):
+        return _py_Spec.vector2list(self.ptr().getIRHS())
+
+    def getVDeps(self, ):
+        return _py_Spec.vector2list(self.ptr().getVDeps())
+
+    def getOrder(self):
+        return self.ptr().getOrder()
+
+    def getKcst(self):
+        return self.ptr().getKcst()
+
+    def setKcst(self, double kcst):
+        self.ptr().setKcst(kcst)
+
+    def getImmobilization(self):
+        return _py_Immobilization(self.ptr().getImmobilization())
+
+    def getMaxDistance(self):
+        return self.ptr().getMaxDistance()
+
+    def getAllSpecs(self):
+        return _py_Spec.vector2list(self.ptr().getAllSpecs())
+
+    def getAllLinkSpecs(self):
+        return _py_LinkSpec.vector2list(self.ptr().getAllLinkSpecs())
+
+    @staticmethod
+    cdef _py_VesSReac from_ptr(VesSReac *ptr):
+        cdef _py_VesSReac obj = _py_VesSReac.__new__(_py_VesSReac)
+        obj._ptr = ptr
+        return obj
+
+    @staticmethod
+    cdef list vector2list(std.vector[VesSReac*] vec):
+        return [ _py_VesSReac.from_ptr(elem) for elem in vec ]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+cdef class _py_RaftSReac(_py__base):
+    "Python wrapper class for RaftSReac"
+# ----------------------------------------------------------------------------------------------------------------------
+    cdef RaftSReac *ptr(self):
+        return <RaftSReac*> self._ptr
+
+    def __init__(self, str id, _py_Raftsys surfsys,
+            list ilhs=[], list olhs=[], list slhs=[], list rlhs=[],
+            list rrhs=[], list srhs=[], list orhs=[], list irhs=[],
+            list rdeps=[], list anti_rdeps=[], double kcst=0,
+            immobilization=_py_Immobilization.NO_EFFECT, immobility=None
+        ):
+        if immobility is not None:
+            ShowDeprecationWarning(
+                item='The `immobility` keyword argument',
+                replacement='`immobilization`',
+                version='6.0'
+            )
+            immobilization = _py_Immobilization(immobility)
+        if not isinstance(immobilization, _py_Immobilization):
+            raise TypeError(f'Expected an Immobilization value, got {immobilization} instead.')
+        cdef std.vector[Spec*] _ilhs, _olhs, _slhs, _rlhs, _rrhs, _srhs, _orhs, _irhs, _rdeps, _anti_rdeps
+        _py_Spec.list2vector(ilhs, &_ilhs)
+        _py_Spec.list2vector(olhs, &_olhs)
+        _py_Spec.list2vector(slhs, &_slhs)
+        _py_Spec.list2vector(rlhs, &_rlhs)
+        _py_Spec.list2vector(rrhs, &_rrhs)
+        _py_Spec.list2vector(srhs, &_srhs)
+        _py_Spec.list2vector(orhs, &_orhs)
+        _py_Spec.list2vector(irhs, &_irhs)
+        _py_Spec.list2vector(rdeps, &_rdeps)
+        _py_Spec.list2vector(anti_rdeps, &_anti_rdeps)
+        # Instantiate
+        self._ptr = new RaftSReac(
+            to_std_string(id), surfsys.ptr(),
+            _ilhs, _olhs, _slhs, _rlhs,
+            _rrhs, _srhs, _orhs, _irhs,
+            _rdeps, _anti_rdeps, kcst, immobilization.value
+        )
+
+    def getID(self, ):
+        return from_std_string(self.ptr().getID())
+
+    def getRaftsys(self):
+        return _py_Raftsys.from_ptr(self.ptr().getRaftsys())
+
+    def getModel(self):
+        return _py_Model.from_ptr(self.ptr().getModel())
+
+    def getInner(self):
+        return self.ptr().getInner()
+
+    def getOuter(self):
+        return self.ptr().getOuter()
+
+    def getILHS(self, ):
+        return _py_Spec.vector2list(self.ptr().getILHS())
+
+    def getOLHS(self, ):
+        return _py_Spec.vector2list(self.ptr().getOLHS())
+
+    def getSLHS(self, ):
+        return _py_Spec.vector2list(self.ptr().getSLHS())
+
+    def getRLHS(self, ):
+        return _py_Spec.vector2list(self.ptr().getRsLHS())
+
+    def getRRHS(self, ):
+        return _py_Spec.vector2list(self.ptr().getRsRHS())
+
+    def getSRHS(self, ):
+        return _py_Spec.vector2list(self.ptr().getSRHS())
+
+    def getORHS(self, ):
+        return _py_Spec.vector2list(self.ptr().getORHS())
+
+    def getIRHS(self, ):
+        return _py_Spec.vector2list(self.ptr().getIRHS())
+
+    def getRDeps(self, ):
+        return _py_Spec.vector2list(self.ptr().getRsDeps())
+
+    def getAntiRDeps(self, ):
+        return _py_Spec.vector2list(self.ptr().getAntiRsDeps())
+
+    def getOrder(self):
+        return self.ptr().getOrder()
+
+    def getKcst(self):
+        return self.ptr().getKcst()
+
+    def setKcst(self, double kcst):
+        self.ptr().setKcst(kcst)
+
+    def getImmobilization(self):
+        return _py_Immobilization(self.ptr().getImmobilization())
+
+    def getAllSpecs(self):
+        return _py_Spec.vector2list(self.ptr().getAllSpecs())
+
+    @staticmethod
+    cdef _py_RaftSReac from_ptr(RaftSReac *ptr):
+        cdef _py_RaftSReac obj = _py_RaftSReac.__new__(_py_RaftSReac)
+        obj._ptr = ptr
+        return obj
+
+    @staticmethod
+    cdef list vector2list(std.vector[RaftSReac*] vec):
+        return [ _py_RaftSReac.from_ptr(elem) for elem in vec ]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+cdef class _py_VesSDiff(_py__base):
+    "Python wrapper class for VesSDiff"
+# ----------------------------------------------------------------------------------------------------------------------
+    cdef VesSDiff *ptr(self):
+        return <VesSDiff*> self._ptr
+
+    def __init__(self, str id, _py_VesSurfsys vssys, _py_Spec lig, double dcst=0):
+        self._ptr = new VesSDiff(to_std_string(id), vssys.ptr(), lig.ptr(), dcst)
+
+    def getID(self):
+        return from_std_string(self.ptr().getID())
+
+    def getVesSurfsys(self):
+        return _py_VesSurfsys.from_ptr(self.ptr().getVesSurfsys())
+
+    def getModel(self):
+        return _py_Model.from_ptr(self.ptr().getModel())
+
+    def getLig(self):
+        return _py_Spec.from_ptr(self.ptr().getLig())
+
+    def getDcst(self):
+        return self.ptr().getDcst()
+
+    def setDcst(self, double dcst):
+        return self.ptr().setDcst(dcst)
+
+    def getAllSpecs(self):
+        return _py_Spec.vector2list(self.ptr().getAllSpecs())
+
+    @staticmethod
+    cdef _py_VesSDiff from_ptr(VesSDiff *ptr):
+        cdef _py_VesSDiff obj = _py_VesSDiff.__new__(_py_VesSDiff)
+        obj._ptr = ptr
+        return obj
+
+    @staticmethod
+    cdef list vector2list(std.vector[VesSDiff*] vec):
+        return [ _py_VesSDiff.from_ptr(elem) for elem in vec ]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+cdef class _py_VesBind(_py__base):
+    "Python wrapper class for VesBind"
+# ----------------------------------------------------------------------------------------------------------------------
+    cdef VesBind *ptr(self):
+        return <VesBind*> self._ptr
+
+    def __init__(self, str id, _py_Volsys volsys,
+            _py_Vesicle ves1, _py_Spec r1, _py_Vesicle ves2, _py_Spec r2,
+            _py_LinkSpec l1, _py_LinkSpec l2, double length_max, double length_min,
+            list vdeps1=[], list vdeps2=[], list ldeps1=[], list ldeps2=[],
+            double kcst=0, immobilization=_py_Immobilization.NO_EFFECT, immobility=None
+        ):
+        if immobility is not None:
+            ShowDeprecationWarning(
+                item='The `immobility` keyword argument',
+                replacement='`immobilization`',
+                version='6.0'
+            )
+            immobilization = _py_Immobilization(immobility)
+        if not isinstance(immobilization, _py_Immobilization):
+            raise TypeError(f'Expected an Immobilization value, got {immobilization} instead.')
+        cdef std.vector[Spec*] _vdeps1, _vdeps2
+        cdef std.vector[LinkSpec*] _ldeps1, _ldeps2
+        _py_Spec.list2vector(vdeps1, &_vdeps1)
+        _py_Spec.list2vector(vdeps2, &_vdeps2)
+        _py_LinkSpec.list2vector(ldeps1, &_ldeps1)
+        _py_LinkSpec.list2vector(ldeps2, &_ldeps2)
+        # Instantiate
+        self._ptr = new VesBind(
+            to_std_string(id), volsys.ptr(),
+            ves1.ptr(), r1.ptr(), ves2.ptr(), r2.ptr(), l1.ptr(), l2.ptr(),
+            length_max, length_min, _vdeps1, _vdeps2, _ldeps1, _ldeps2,
+            kcst, immobilization.value
+        )
+
+    def getID(self):
+        return from_std_string(self.ptr().getID())
+
+    def getVolsys(self):
+        return _py_Volsys.from_ptr(self.ptr().getVolsys())
+
+    def getModel(self):
+        return _py_Model.from_ptr(self.ptr().getModel())
+
+    def getVesicle1(self):
+        return _py_Vesicle.from_ptr(self.ptr().getReactants1().first)
+
+    def getVesicle2(self):
+        return _py_Vesicle.from_ptr(self.ptr().getReactants2().first)
+
+    def getReactant1(self):
+        return _py_Spec.from_ptr(self.ptr().getReactants1().second)
+
+    def getReactant2(self):
+        return _py_Spec.from_ptr(self.ptr().getReactants2().second)
+
+    def getProduct1(self):
+        return _py_LinkSpec.from_ptr(self.ptr().getProducts1().second)
+
+    def getProduct2(self):
+        return _py_LinkSpec.from_ptr(self.ptr().getProducts2().second)
+
+    def getKcst(self):
+        return self.ptr().getKcst()
+
+    def setKcst(self, double kcst):
+        self.ptr().setKcst(kcst)
+
+    def getLengthMin(self):
+        return self.ptr().getLengthMin()
+
+    def getLengthMax(self):
+        return self.ptr().getLengthMax()
+
+    def getImmobilization(self):
+        return _py_Immobilization(self.ptr().getImmobilization())
+
+    def getVDeps1(self):
+        return _py_Spec.vector2list(self.ptr().getVDeps1())
+
+    def getVDeps2(self):
+        return _py_Spec.vector2list(self.ptr().getVDeps2())
+
+    def getLDeps1(self):
+        return _py_LinkSpec.vector2list(self.ptr().getLDeps1())
+
+    def getLDeps2(self):
+        return _py_LinkSpec.vector2list(self.ptr().getLDeps2())
+
+    def getAllSpecs(self):
+        return _py_Spec.vector2list(self.ptr().getAllSpecs())
+
+    @staticmethod
+    cdef _py_VesBind from_ptr(VesBind *ptr):
+        cdef _py_VesBind obj = _py_VesBind.__new__(_py_VesBind)
+        obj._ptr = ptr
+        return obj
+
+    @staticmethod
+    cdef list vector2list(std.vector[VesBind*] vec):
+        return [ _py_VesBind.from_ptr(elem) for elem in vec ]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+cdef class _py_VesUnbind(_py__base):
+    "Python wrapper class for VesUnbind"
+# ----------------------------------------------------------------------------------------------------------------------
+    cdef VesUnbind *ptr(self):
+        return <VesUnbind*> self._ptr
+
+    def __init__(self, str id, _py_Volsys volsys,
+            _py_LinkSpec l1, _py_LinkSpec l2,
+            _py_Vesicle ves1, _py_Spec p1, _py_Vesicle ves2, _py_Spec p2,
+            double kcst=0, immobilization=_py_Immobilization.NO_EFFECT, immobility=None
+        ):
+        if immobility is not None:
+            ShowDeprecationWarning(
+                item='The `immobility` keyword argument',
+                replacement='`immobilization`',
+                version='6.0'
+            )
+            immobilization = _py_Immobilization(immobility)
+        if not isinstance(immobilization, _py_Immobilization):
+            raise TypeError(f'Expected an Immobilization value, got {immobilization} instead.')
+        # Instantiate
+        self._ptr = new VesUnbind(
+            to_std_string(id), volsys.ptr(),
+            l1.ptr(), l2.ptr(), ves1.ptr(), p1.ptr(), ves2.ptr(), p2.ptr(),
+            kcst, immobilization.value
+        )
+
+    def getID(self):
+        return from_std_string(self.ptr().getID())
+
+    def getVolsys(self):
+        return _py_Volsys.from_ptr(self.ptr().getVolsys())
+
+    def getModel(self):
+        return _py_Model.from_ptr(self.ptr().getModel())
+
+    def getVesicle1(self):
+        return _py_Vesicle.from_ptr(self.ptr().getProducts1().first)
+
+    def getVesicle2(self):
+        return _py_Vesicle.from_ptr(self.ptr().getProducts2().first)
+
+    def getLink1(self):
+        return _py_LinkSpec.from_ptr(self.ptr().getLinks1().second)
+
+    def getLink2(self):
+        return _py_LinkSpec.from_ptr(self.ptr().getLinks2().second)
+
+    def getProduct1(self):
+        return _py_Spec.from_ptr(self.ptr().getProducts1().second)
+
+    def getProduct2(self):
+        return _py_Spec.from_ptr(self.ptr().getProducts2().second)
+
+    def getKcst(self):
+        return self.ptr().getKcst()
+
+    def setKcst(self, double kcst):
+        self.ptr().setKcst(kcst)
+
+    def getImmobilization(self):
+        return _py_Immobilization(self.ptr().getImmobilization())
+
+    def getAllSpecs(self):
+        return _py_Spec.vector2list(self.ptr().getAllSpecs())
+
+    @staticmethod
+    cdef _py_VesUnbind from_ptr(VesUnbind *ptr):
+        cdef _py_VesUnbind obj = _py_VesUnbind.__new__(_py_VesUnbind)
+        obj._ptr = ptr
+        return obj
+
+    @staticmethod
+    cdef list vector2list(std.vector[VesUnbind*] vec):
+        return [ _py_VesUnbind.from_ptr(elem) for elem in vec ]

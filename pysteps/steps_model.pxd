@@ -10,6 +10,16 @@ from libcpp cimport bool
 cimport std
 from steps_common cimport *
 
+ctypedef Spec* SpecP
+
+# ======================================================================================================================
+cdef extern from "model/fwd.hpp" namespace "steps::model":
+# ----------------------------------------------------------------------------------------------------------------------
+
+    cdef enum Immobilization:
+        IMMOBILIZING "steps::model::Immobilization::IMMOBILIZING",
+        MOBILIZING "steps::model::Immobilization::MOBILIZING",
+        NO_EFFECT "steps::model::Immobilization::NO_EFFECT",
 
 # ======================================================================================================================
 cdef extern from "model/volsys.hpp" namespace "steps::model":
@@ -32,6 +42,12 @@ cdef extern from "model/volsys.hpp" namespace "steps::model":
         void delDiff(std.string) except +
         std.vector[Diff*] getAllDiffs()
         std.vector[Spec*] getAllSpecs()
+        VesBind * getVesBind(std.string) except +
+        void delVesBind(std.string) except +
+        std.vector[VesBind *] getAllVesBinds()
+        VesUnbind * getVesUnbind(std.string) except +
+        void delVesUnbind(std.string) except +
+        std.vector[VesUnbind *] getAllVesUnbinds()
 
 # ======================================================================================================================
 cdef extern from "model/chanstate.hpp" namespace "steps::model":
@@ -74,6 +90,7 @@ cdef extern from "model/ghkcurr.hpp" namespace "steps::model":
         Spec* getIon()
         # Below modified/added by Iain
         void setIon(Spec * ion) except +
+        double getP() except +
         void setP(double p) except +
         void setPInfo(double g, double V, double T, double oconc, double iconc) except +
 
@@ -104,31 +121,6 @@ cdef extern from "model/diff.hpp" namespace "steps::model":
         std.vector[Spec*] getAllSpecs()
         void setDcst(double) except +
 
-
-# ======================================================================================================================
-cdef extern from "model/vdeptrans.hpp" namespace "steps::model":
-# ----------------------------------------------------------------------------------------------------------------------
-    # ctypedef VDepTrans* VDepTransP
-    # ctypedef std.map[std.string,VDepTrans*] VDepTransPMap
-    # ctypedef std.map[std.string,VDepTrans*].iterator VDepTransPMapI
-    # ctypedef std.map[std.string,VDepTrans*].const_iterator VDepTransPMapCI
-    # ctypedef std.vector[VDepTrans*] VDepTransPVec
-    # ctypedef std.vector[VDepTrans*].iterator VDepTransPVecI
-    # ctypedef std.vector[VDepTrans*].const_iterator VDepTransPVecCI
-
-    ###### Cybinding for VDepTrans ######
-    cdef cppclass VDepTrans:
-        VDepTrans(std.string, Surfsys*, ChanState*, ChanState*, std.vector[double], double, double, double, uint) except +
-        std.string getID()
-        void setID(std.string) except +
-        Surfsys* getSurfsys()
-        Model* getModel()
-        Chan* getChan()
-        ChanState* getSrc()
-        ChanState* getDst()
-        std.vector[double] getRate()
-        void setSrc(ChanState * src) except +
-        void setDst(ChanState * dst) except +
 
 # ======================================================================================================================
 cdef extern from "model/vdepsreac.hpp" namespace "steps::model":
@@ -297,7 +289,6 @@ cdef extern from "model/spec.hpp" namespace "steps::model":
         int getValence()
 
 
-
 # ======================================================================================================================
 cdef extern from "model/surfsys.hpp" namespace "steps::model":
 # ----------------------------------------------------------------------------------------------------------------------
@@ -318,9 +309,6 @@ cdef extern from "model/surfsys.hpp" namespace "steps::model":
         Diff* getDiff(std.string) except +
         void delDiff(std.string) except +
         std.vector[Diff*] getAllDiffs()
-        VDepTrans* getVDepTrans(std.string) except +
-        void delVDepTrans(std.string) except +
-        std.vector[VDepTrans*] getAllVDepTrans()
         VDepSReac* getVDepSReac(std.string) except +
         void delVDepSReac(std.string) except +
         std.vector[VDepSReac*] getAllVDepSReacs()
@@ -330,6 +318,12 @@ cdef extern from "model/surfsys.hpp" namespace "steps::model":
         GHKcurr* getGHKcurr(std.string) except +
         void delGHKcurr(std.string) except +
         std.vector[GHKcurr*] getAllGHKcurrs()
+        RaftGen * getRaftGen(std.string) except +
+        void delRaftGen(std.string) except +
+        std.vector[RaftGen *] getAllRaftGens()
+        Endocytosis * getEndocytosis(std.string) except +
+        void delEndocytosis(std.string) except +
+        std.vector[Endocytosis *] getAllEndocytosis()
         std.vector[Spec*] getAllSpecs()
 
 
@@ -365,6 +359,9 @@ cdef extern from "model/model.hpp" namespace "steps::model":
         Spec* getSpec(std.string) except +
         void delSpec(std.string) except +
         std.vector[Spec*] getAllSpecs()
+        LinkSpec * getLinkSpec(std.string) except +
+        void delLinkSpec(std.string) except +
+        std.vector[LinkSpec *] getAllLinkSpecs()
         Chan* getChan(std.string) except +
         std.vector[Chan*] getAllChans()
         Volsys* getVolsys(std.string) except +
@@ -374,3 +371,350 @@ cdef extern from "model/model.hpp" namespace "steps::model":
         void delSurfsys(std.string) except +
         std.vector[Surfsys*] getAllSurfsyss()
 
+        VesSurfsys * getVesSurfsys(std.string) except +
+        void delVesSurfsys(std.string) except +
+        std.vector[VesSurfsys *] getAllVesSurfsyss()
+        Raftsys * getRaftsys(std.string) except +
+        void delRaftsys(std.string) except +
+        std.vector[Raftsys *] getAllRaftsyss()
+
+        Vesicle * getVesicle(std.string) except +
+        std.vector[Vesicle *] getAllVesicles()
+        Raft * getRaft(std.string) except +
+        std.vector[Raft *] getAllRafts()
+
+
+# ======================================================================================================================
+cdef extern from "model/linkspec.hpp" namespace "steps::model":
+# ----------------------------------------------------------------------------------------------------------------------
+
+    ###### Cybinding for LinkSpec ######
+    cdef cppclass LinkSpec:
+        LinkSpec(std.string, Model*, double) except +
+        std.string getID()
+        void setID(std.string) except +
+        Model* getModel()
+        double getDcst()
+
+
+# ======================================================================================================================
+cdef extern from "model/endocytosis.hpp" namespace "steps::model":
+# ----------------------------------------------------------------------------------------------------------------------
+
+    ###### Cybinding for Endocytosis ######
+    cdef cppclass Endocytosis:
+        Endocytosis(std.string, Surfsys*, Vesicle*, Vesicle*, std.vector[Spec*], double) except +
+        std.string getID()
+        void setID(std.string) except +
+        Surfsys* getSurfsys()
+        Model* getModel()
+        bool getInner()
+        std.vector[Spec*] getSpecDeps()
+        Vesicle* getIRHS()
+        double getKcst()
+        void setKcst(double) except +
+        std.vector[Spec*] getAllSpecs()
+
+
+# ======================================================================================================================
+cdef extern from "model/exocytosis.hpp" namespace "steps::model":
+# ----------------------------------------------------------------------------------------------------------------------
+
+    ###### Cybinding for Exocytosis ######
+    cdef cppclass Exocytosis:
+        Exocytosis(std.string, VesSurfsys*, std.vector[Spec*], Raft*, double, bool, std.map[SpecP, SpecP]) except +
+        std.string getID()
+        void setID(std.string) except +
+        VesSurfsys * getVesSurfsys()
+        Model* getModel()
+        Raft* getRaft()
+        bool getKissAndRun()
+        std.map[SpecP, SpecP] getKissAndRunSpecChanges()
+        std.vector[Spec*] getSpecDeps()
+        double getKcst()
+        void setKcst(double) except +
+
+
+# ======================================================================================================================
+cdef extern from "model/raft.hpp" namespace "steps::model":
+# ----------------------------------------------------------------------------------------------------------------------
+
+    ###### Cybinding for Raft ######
+    cdef cppclass Raft:
+        Raft(std.string, Model*, double, double) except +
+        std.string getID()
+        void setID(std.string) except +
+        Model* getModel()
+        double getDiameter()
+        double getDcst()
+        void setDcst(double) except +
+        void addRaftsys(std.string)
+        std.set[std.string] getRaftsys()
+
+
+# ======================================================================================================================
+cdef extern from "model/raftdis.hpp" namespace "steps::model":
+# ----------------------------------------------------------------------------------------------------------------------
+
+    ###### Cybinding for RaftDis ######
+    cdef cppclass RaftDis:
+        RaftDis(std.string, Raftsys*, std.vector[Spec*], double) except +
+        std.string getID()
+        void setID(std.string) except +
+        Model* getModel()
+        Raftsys* getRaftsys()
+        Raft * getRaft()
+        std.vector[Spec*] getSpecSignature()
+        std.vector[Spec*] getAllSpecs()
+        double getKcst()
+        void setKcst(double) except +
+
+
+# ======================================================================================================================
+cdef extern from "model/raftendocytosis.hpp" namespace "steps::model":
+# ----------------------------------------------------------------------------------------------------------------------
+
+    ###### Cybinding for RaftEndocytosis ######
+    cdef cppclass RaftEndocytosis:
+        RaftEndocytosis(std.string, Raftsys*, Vesicle*, Vesicle*, std.vector[Spec*], double) except +
+        std.string getID()
+        void setID(std.string) except +
+        Model* getModel()
+        Raftsys* getRaftsys()
+        bool getInner()
+        std.vector[Spec*] getSpecDeps()
+        Vesicle*  getRHS()
+        double getKcst()
+        void setKcst(double) except +
+        std.vector[Spec*] getAllSpecs()
+
+
+# ======================================================================================================================
+cdef extern from "model/raftgen.hpp" namespace "steps::model":
+# ----------------------------------------------------------------------------------------------------------------------
+
+    ###### Cybinding for RaftDis ######
+    cdef cppclass RaftGen:
+        RaftGen(std.string, Surfsys* , std.vector[Spec*], Raft*, double) except +
+        std.string getID()
+        void setID(std.string) except +
+        Model* getModel()
+        Surfsys * getSurfsys()
+        Raft * getRaft()
+        std.vector[Spec*] getSpecSignature()
+        std.vector[Spec*] getAllSpecs()
+        double getKcst()
+        void setKcst(double) except +
+
+
+# ======================================================================================================================
+cdef extern from "model/raftsreac.hpp" namespace "steps::model":
+# ----------------------------------------------------------------------------------------------------------------------
+
+    ###### Cybinding for RaftSReac ######
+    cdef cppclass RaftSReac:
+        RaftSReac(std.string, Raftsys*, std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], double, Immobilization) except +
+        std.string getID()
+        void setID(std.string) except +
+        Raftsys* getRaftsys()
+        Model* getModel()
+        bool getInner()
+        bool getOuter()
+        std.vector[Spec*] getOLHS()
+        void setOLHS(std.vector[Spec*]) except +
+        std.vector[Spec*] getILHS()
+        void setILHS(std.vector[Spec*]) except +
+        std.vector[Spec*] getSLHS()
+        void setSLHS(std.vector[Spec*]) except +
+        std.vector[Spec*] getRsLHS()
+        void setRsLHS(std.vector[Spec*]) except +
+        std.vector[Spec*] getIRHS()
+        void setIRHS(std.vector[Spec*]) except +
+        std.vector[Spec*] getSRHS()
+        void setSRHS(std.vector[Spec*]) except +
+        std.vector[Spec*] getORHS()
+        void setORHS(std.vector[Spec*]) except +
+        std.vector[Spec*] getRsRHS()
+        void setRsRHS(std.vector[Spec*]) except +
+        std.vector[Spec*] getRsDeps()
+        void setRsDeps(std.vector[Spec*]) except +
+        std.vector[Spec*] getAntiRsDeps()
+        void setAntiRsDeps(std.vector[Spec*]) except +
+        uint getOrder()
+        double getKcst()
+        void setKcst(double) except +
+        std.vector[Spec*] getAllSpecs()
+        Immobilization getImmobilization()
+
+
+# ======================================================================================================================
+cdef extern from "model/raftsys.hpp" namespace "steps::model":
+# ----------------------------------------------------------------------------------------------------------------------
+
+    ###### Cybinding for Raftsys ######
+    cdef cppclass Raftsys:
+        Raftsys(std.string, Model*) except +
+        std.string getID()
+        void setID(std.string) except +
+        Model* getModel()
+        RaftSReac* getRaftSReac(std.string) except +
+        void delRaftSReac(std.string) except +
+        std.vector[RaftSReac*] getAllRaftSReacs()
+        RaftEndocytosis * getRaftEndocytosis(std.string) except +
+        void delRaftEndocytosis(std.string) except +
+        std.vector[RaftEndocytosis*] getAllRaftEndocytosiss()
+        RaftDis * getRaftDis(std.string) except +
+        void delRaftDis(std.string) except +
+        std.vector[RaftDis*] getAllRaftDiss()
+        std.vector[Spec*] getAllSpecs()
+
+
+# ======================================================================================================================
+cdef extern from "model/vesbind.hpp" namespace "steps::model":
+# ----------------------------------------------------------------------------------------------------------------------
+    ctypedef Vesicle* Vesicle_pointer
+
+    ###### Cybinding for VesBind ######
+    cdef cppclass VesBind:
+        VesBind(std.string, Volsys*, Vesicle*, Spec*, Vesicle*, Spec*, LinkSpec*, LinkSpec*, double, double, std.vector[Spec*], std.vector[Spec*], std.vector[LinkSpec*], std.vector[LinkSpec*], double, Immobilization) except +
+        std.string getID()
+        void setID(std.string) except +
+        Model* getModel()
+        Volsys * getVolsys()
+        double getLengthMin()
+        double getLengthMax()
+        Immobilization getImmobilization()
+        std.pair[Vesicle_pointer, Spec*]  getReactants1()
+        std.pair[Vesicle_pointer, Spec*]  getReactants2()
+        std.pair[Vesicle_pointer, LinkSpec*]  getProducts1()
+        std.pair[Vesicle_pointer, LinkSpec*]  getProducts2()
+        std.vector[Spec*] getAllSpecs()
+        double getKcst()
+        void setKcst(double) except +
+        std.vector[Spec*] getVDeps1()
+        std.vector[Spec*] getVDeps2()
+        void setVDeps1(std.vector[Spec*])
+        void setVDeps2(std.vector[Spec*])
+        std.vector[LinkSpec*] getLDeps1()
+        std.vector[LinkSpec*] getLDeps2()
+        void setLDeps1(std.vector[LinkSpec*])
+        void setLDeps2(std.vector[LinkSpec*])
+
+
+# ======================================================================================================================
+cdef extern from "model/vesicle.hpp" namespace "steps::model":
+# ----------------------------------------------------------------------------------------------------------------------
+
+    ###### Cybinding for Vesicle ######
+    cdef cppclass Vesicle:
+        Vesicle(std.string, Model*, double, double)
+        std.string getID()
+        void setID(std.string) except +
+        Model* getModel()
+        double getDiameter()
+        double getDcst()
+        void setDcst(double) except +
+        void addVesSurfsys(std.string)
+        std.set[std.string] getVesSurfsys()
+
+
+# ======================================================================================================================
+cdef extern from "model/vessdiff.hpp" namespace "steps::model":
+# ----------------------------------------------------------------------------------------------------------------------
+
+    ###### Cybinding for VesSDiff ######
+    cdef cppclass VesSDiff:
+        VesSDiff(std.string, VesSurfsys*, Spec *, double)
+        std.string getID()
+        void setID(std.string) except +
+        Model* getModel()
+        VesSurfsys * getVesSurfsys()
+        Spec * getLig()
+        void setLig(Spec*)
+        double getDcst()
+        void setDcst(double) except +
+        std.vector[Spec*] getAllSpecs()
+
+
+# ======================================================================================================================
+cdef extern from "model/vessreac.hpp" namespace "steps::model":
+# ----------------------------------------------------------------------------------------------------------------------
+
+    ###### Cybinding for VesSReac ######
+    cdef cppclass VesSReac:
+        VesSReac(std.string, VesSurfsys*, std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[LinkSpec*], std.vector[LinkSpec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], double, Immobilization, double) except +
+        std.string getID()
+        void setID(std.string) except +
+        VesSurfsys* getVesSurfsys()
+        Model* getModel()
+        std.vector[Spec*] getOLHS()
+        void setOLHS(std.vector[Spec*]) except +
+        std.vector[Spec*] getSLHS()
+        void setSLHS(std.vector[Spec*]) except +
+        std.vector[Spec*] getVLHS()
+        void setVLHS(std.vector[Spec*]) except +
+        std.vector[LinkSpec*] getLLHS()
+        void setLLHS(std.vector[LinkSpec*]) except +
+        std.vector[Spec*] getIRHS()
+        void setIRHS(std.vector[Spec*]) except +
+        std.vector[Spec*] getSRHS()
+        void setSRHS(std.vector[Spec*]) except +
+        std.vector[Spec*] getORHS()
+        void setORHS(std.vector[Spec*]) except +
+        std.vector[Spec*] getVRHS()
+        void setVRHS(std.vector[Spec*]) except +
+        std.vector[LinkSpec*] getLRHS()
+        void setLRHS(std.vector[LinkSpec*]) except +
+        std.vector[Spec*] getVDeps()
+        void setVDeps(std.vector[Spec*]) except +
+        uint getOrder()
+        double getKcst()
+        void setKcst(double) except +
+        Immobilization getImmobilization()
+        double getMaxDistance()
+        std.vector[Spec*] getAllSpecs()
+        std.vector[LinkSpec*] getAllLinkSpecs()
+
+
+# ======================================================================================================================
+cdef extern from "model/vessurfsys.hpp" namespace "steps::model":
+# ----------------------------------------------------------------------------------------------------------------------
+
+    ###### Cybinding for VesSurfsys ######
+    cdef cppclass VesSurfsys:
+        VesSurfsys(std.string, Model*) except +
+        std.string getID()
+        void setID(std.string) except +
+        Model* getModel()
+        VesSReac * getVesSReac(std.string) except +
+        void delVesSReac(std.string) except +
+        std.vector[VesSReac*] getAllVesSReacs()
+        VesSDiff * getVesSDiff(std.string) except +
+        void delVesSDiff(std.string) except +
+        std.vector[VesSDiff*] getAllVesSDiffs()
+        Exocytosis * getExocytosis(std.string) except +
+        void delExocytosis(std.string) except +
+        std.vector[Exocytosis*] getAllExocytosis()
+        std.vector[Spec*] getAllSpecs()
+
+
+# ======================================================================================================================
+cdef extern from "model/vesunbind.hpp" namespace "steps::model":
+# ----------------------------------------------------------------------------------------------------------------------
+    #ctypedef Vesicle* Vesicle_pointer
+
+    ###### Cybinding for VesUnbind ######
+    cdef cppclass VesUnbind:
+        VesUnbind(std.string, Volsys*, LinkSpec*, LinkSpec*, Vesicle*, Spec*, Vesicle*, Spec*, double, Immobilization) except +
+        std.string getID()
+        void setID(std.string) except +
+        Model* getModel()
+        Volsys * getVolsys()
+        Immobilization getImmobilization()
+        std.pair[Vesicle_pointer, LinkSpec*]  getLinks1()
+        std.pair[Vesicle_pointer, LinkSpec*]  getLinks2()
+        std.pair[Vesicle_pointer, Spec*]  getProducts1()
+        std.pair[Vesicle_pointer, Spec*]  getProducts2()
+        std.vector[Spec*] getAllSpecs()
+        double getKcst()
+        void setKcst(double) except +

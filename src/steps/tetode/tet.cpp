@@ -24,50 +24,44 @@
 
  */
 
-
-// Standard library & STL headers.
-#include <algorithm>
-#include <cassert>
-#include <cmath>
-#include <functional>
-#include <iostream>
-
 // STEPS headers.
 #include "tet.hpp"
-#include "tri.hpp"
 #include "tetode.hpp"
-////////////////////////////////////////////////////////////////////////////////
+#include "tri.hpp"
+#include "util/checkpointing.hpp"
 
-namespace stode = steps::tetode;
-namespace ssolver = steps::solver;
+namespace steps::tetode {
 
-////////////////////////////////////////////////////////////////////////////////
-
-stode::Tet::Tet
-  (
-    tetrahedron_id_t idx, solver::Compdef *cdef, double vol,
-    double a0, double a1, double a2, double a3,
-    double d0, double d1, double d2, double d3,
-    tetrahedron_id_t tet0, tetrahedron_id_t tet1, tetrahedron_id_t tet2, tetrahedron_id_t tet3
-  )
-: pCompdef(cdef)
-, pIdx(idx)
-, pVol(vol)
-, pTets()
-//, pTris()
-, pNextTri()
-, pNextTet()
-, pAreas()
-, pDist()
-{
+Tet::Tet(tetrahedron_global_id idx,
+         solver::Compdef* cdef,
+         double vol,
+         double a0,
+         double a1,
+         double a2,
+         double a3,
+         double d0,
+         double d1,
+         double d2,
+         double d3,
+         tetrahedron_global_id tet0,
+         tetrahedron_global_id tet1,
+         tetrahedron_global_id tet2,
+         tetrahedron_global_id tet3)
+    : pCompdef(cdef)
+    , pIdx(idx)
+    , pVol(vol)
+    , pTets()
+    , pNextTri()
+    , pNextTet()
+    , pAreas()
+    , pDist() {
     AssertLog(a0 > 0.0 && a1 > 0.0 && a2 > 0.0 && a3 > 0.0);
     AssertLog(d0 >= 0.0 && d1 >= 0.0 && d2 >= 0.0 && d3 >= 0.0);
 
 
     // At this point we don't have neighbouring tet pointers,
     // but we can store their indices
-    for (uint i=0; i <= 3; ++i)
-    {
+    for (uint i = 0; i <= 3; ++i) {
         pNextTet[i] = nullptr;
         pNextTri[i] = nullptr;
     }
@@ -85,61 +79,40 @@ stode::Tet::Tet
     pDist[1] = d1;
     pDist[2] = d2;
     pDist[3] = d3;
-
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stode::Tet::setNextTet(uint i, stode::Tet * t)
-{
-
-    if (t->compdef() != compdef())
-    {
+void Tet::setNextTet(uint i, Tet* t) {
+    if (t->compdef() != compdef()) {
         pNextTet[i] = nullptr;
-    }
-    else
-    {
+    } else {
         pNextTet[i] = t;
-        if (pNextTri[i] != nullptr) CLOG(INFO, "general_log") << "WARNING: writing over nextTri index " << i;
+        if (pNextTri[i] != nullptr) {
+            CLOG(INFO, "general_log") << "WARNING: writing over nextTri index " << i;
+        }
         pNextTri[i] = nullptr;
     }
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-/*
-void stode::Tet::setNextTri(stex::Tri *t)
-{
-    uint index = pNextTris.size();
-    pNextTris.push_back(t);
-}
-*/
-////////////////////////////////////////////////////////////////////////////////
 
-void stode::Tet::setNextTri(uint i, stode::Tri * t)
-{
-
-
-    // This is too common now to include this message- for any internal patch this happens
-    //if (pNextTet[i] != 0) CLOG(INFO, "general_log") << "WARNING: writing over nextTet index " << i;
-
+void Tet::setNextTri(uint i, Tri* t) {
     pNextTet[i] = nullptr;
-    pNextTri[i]= t;
+    pNextTri[i] = t;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stode::Tet::checkpoint(std::fstream & /*cp_file*/)
-{
+void Tet::checkpoint(std::fstream& /*cp_file*/) {
+    // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stode::Tet::restore(std::fstream & /*cp_file*/)
-{
+void Tet::restore(std::fstream& /*cp_file*/) {
+    // reserve
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// END
+}  // namespace steps::tetode

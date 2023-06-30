@@ -24,47 +24,41 @@
 
  */
 
-
-// Standard library & STL headers.
-#include <algorithm>
-#include <cassert>
-#include <cmath>
-#include <functional>
-#include <iostream>
-
-// STEPS headers.
 #include "tet.hpp"
+
 #include "diff.hpp"
 #include "reac.hpp"
+#include "solver/diffdef.hpp"
 #include "tetexact.hpp"
 #include "tri.hpp"
-#include "solver/diffdef.hpp"
-#include "solver/reacdef.hpp"
 
 // logging
-#include <easylogging++.h>
 #include "util/error.hpp"
-////////////////////////////////////////////////////////////////////////////////
+#include <easylogging++.h>
 
-namespace steps {
-namespace tetexact {
+#include "util/checkpointing.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::tetexact {
 
-Tet::Tet
-  (
-    tetrahedron_id_t idx, solver::Compdef *cdef, double vol,
-    double a0, double a1, double a2, double a3,
-    double d0, double d1, double d2, double d3,
-    tetrahedron_id_t tet0, tetrahedron_id_t tet1, tetrahedron_id_t tet2, tetrahedron_id_t tet3
-  )
-: WmVol(idx, cdef, vol)
-, pTets()
-//, pTris()
-, pNextTet()
-, pAreas()
-, pDist()
-{
+Tet::Tet(tetrahedron_global_id idx,
+         solver::Compdef* cdef,
+         double vol,
+         double a0,
+         double a1,
+         double a2,
+         double a3,
+         double d0,
+         double d1,
+         double d2,
+         double d3,
+         tetrahedron_global_id tet0,
+         tetrahedron_global_id tet1,
+         tetrahedron_global_id tet2,
+         tetrahedron_global_id tet3)
+    : WmVol(idx, cdef, vol)
+    , pNextTet()
+    , pAreas()
+    , pDist() {
     AssertLog(a0 > 0.0 && a1 > 0.0 && a2 > 0.0 && a3 > 0.0);
     AssertLog(d0 >= 0.0 && d1 >= 0.0 && d2 >= 0.0 && d3 >= 0.0);
 
@@ -72,8 +66,7 @@ Tet::Tet
 
     // At this point we don't have neighbouring tet pointers,
     // but we can store their indices
-    for (uint i=0; i <= 3; ++i)
-    {
+    for (uint i = 0; i <= 3; ++i) {
         pNextTet[i] = nullptr;
         pNextTris[i] = nullptr;
     }
@@ -92,84 +85,70 @@ Tet::Tet
     pDist[2] = d2;
     pDist[3] = d3;
 
-    std::fill_n(pDiffBndDirection, 4, false);
+    std::fill(pDiffBndDirection.begin(), pDiffBndDirection.end(), false);
     kprocs().resize(compdef()->countDiffs() + compdef()->countReacs());
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Tet::~Tet()
-= default;
+Tet::~Tet() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Tet::checkpoint(std::fstream & cp_file)
-{
-    cp_file.write(reinterpret_cast<char*>(pDiffBndDirection), sizeof(bool) * 4);
+void Tet::checkpoint(std::fstream& cp_file) {
     WmVol::checkpoint(cp_file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Tet::restore(std::fstream & cp_file)
-{
-    cp_file.read(reinterpret_cast<char*>(pDiffBndDirection), sizeof(bool) * 4);
+void Tet::restore(std::fstream& cp_file) {
     WmVol::restore(cp_file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Tet::setNextTet(uint i, Tet * t)
-{
-
-    // Now adding all tets, even those from other compartments, due to the diffusion boundaries
+void Tet::setNextTet(uint i, Tet* t) {
+    // Now adding all tets, even those from other compartments, due to the
+    // diffusion boundaries
     pNextTet[i] = t;
 
-    //if (pNextTris[i] != 0) CLOG(INFO, "general_log") << "WARNING: writing over nextTri index " << i;
+    // if (pNextTris[i] != 0) CLOG(INFO, "general_log") << "WARNING: writing over
+    // nextTri index " << i;
     pNextTris[i] = nullptr;
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Tet::setDiffBndDirection(uint i)
-{
-    AssertLog(i < 4);
-
-    pDiffBndDirection[i] = true;
+void Tet::setDiffBndDirection(uint i) {
+    pDiffBndDirection.at(i) = true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Tet::setNextTri(Tri */*t*/)
-{
+void Tet::setNextTri(Tri* /*t*/) {
     AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Tet::setNextTri(uint i, Tri * t)
-{
+void Tet::setNextTri(uint i, Tri* t) {
     AssertLog(pNextTris.size() == 4);
     AssertLog(i <= 3);
 
     pNextTet[i] = nullptr;
-    pNextTris[i]= t;
+    pNextTris[i] = t;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Tet::setupKProcs(Tetexact * tex)
-{
+void Tet::setupKProcs(Tetexact* tex) {
     uint j = 0;
 
     // Create reaction kproc's.
     uint nreacs = compdef()->countReacs();
-    for (uint i = 0; i < nreacs; ++i)
-    {
-        auto * rdef = compdef()->reacdef(i);
-        auto * r = new Reac(rdef, this);
+    for (auto i: solver::reac_local_id::range(nreacs)) {
+        auto* rdef = compdef()->reacdef(i);
+        auto* r = new Reac(rdef, this);
         kprocs()[j++] = r;
         tex->addKProc(r);
     }
@@ -179,10 +158,9 @@ void Tet::setupKProcs(Tetexact * tex)
     // because diffs will not be stored in WmVols and the Comp will call the
     // parent method often.
     uint ndiffs = compdef()->countDiffs();
-    for (uint i = 0; i < ndiffs; ++i)
-    {
-        auto * ddef = compdef()->diffdef(i);
-        auto * d = new Diff(ddef, this);
+    for (auto i: solver::diff_local_id::range(ndiffs)) {
+        auto* ddef = compdef()->diffdef(i);
+        auto* d = new Diff(ddef, this);
         kprocs()[j++] = d;
         tex->addKProc(d);
     }
@@ -190,25 +168,20 @@ void Tet::setupKProcs(Tetexact * tex)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Diff * Tet::diff(uint lidx) const
-{
+Diff& Tet::diff(solver::diff_local_id lidx) const {
     AssertLog(lidx < compdef()->countDiffs());
-    return dynamic_cast<Diff*>(pKProcs[compdef()->countReacs() + lidx]);
+    return *dynamic_cast<Diff*>(pKProcs[compdef()->countReacs() + lidx.get()]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
- int Tet::getTetDirection(tetrahedron_id_t tidx) const
-{
+int Tet::getTetDirection(tetrahedron_global_id tidx) const {
     for (uint i = 0; i < 4; i++) {
         if (pTets[i] == tidx) {
-            return i;
+            return static_cast<int>(i);
         }
     }
     return -1;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-} // namespace tetexact
-} // namespace steps
+}  // namespace steps::tetexact

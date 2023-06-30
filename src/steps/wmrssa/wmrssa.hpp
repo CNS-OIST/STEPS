@@ -24,72 +24,55 @@
 
  */
 
-
-#ifndef STEPS_SOLVER_WMRSSA_HPP
-#define STEPS_SOLVER_WMRSSA_HPP 1
-
+#pragma once
 
 // STL headers.
+#include <fstream>
+#include <map>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
-#include <map>
-#include <fstream>
 
 // STEPS headers.
-#include "util/common.h"
 #include "comp.hpp"
-#include "patch.hpp"
 #include "kproc.hpp"
+#include "patch.hpp"
 #include "solver/api.hpp"
-#include "solver/statedef.hpp"
 #include "solver/compdef.hpp"
+#include "solver/fwd.hpp"
 #include "solver/patchdef.hpp"
+#include "solver/statedef.hpp"
+#include "util/common.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace wmrssa {
-
-////////////////////////////////////////////////////////////////////////////////
-
-// Forward declarations.
-
+namespace steps::wmrssa {
 
 // Auxiliary declarations.
-typedef uint                            SchedIDX;
-typedef std::set<SchedIDX>              SchedIDXSet;
-typedef SchedIDXSet::iterator           SchedIDXSetI;
-typedef SchedIDXSet::const_iterator     SchedIDXSetCI;
-typedef std::vector<SchedIDX>           SchedIDXVec;
-typedef SchedIDXVec::iterator           SchedIDXVecI;
-typedef SchedIDXVec::const_iterator     SchedIDXVecCI;
-
-////////////////////////////////////////////////////////////////////////////////
+typedef solver::kproc_global_id SchedIDX;
+typedef std::set<SchedIDX> SchedIDXSet;
+typedef SchedIDXSet::iterator SchedIDXSetI;
+typedef SchedIDXSet::const_iterator SchedIDXSetCI;
+typedef std::vector<SchedIDX> SchedIDXVec;
+typedef SchedIDXVec::iterator SchedIDXVecI;
+typedef SchedIDXVec::const_iterator SchedIDXVecCI;
 
 /// Copies the contents of a set of SchedIDX entries into a vector.
 /// The contents of the vector are completely overridden.
 ///
-extern void schedIDXSet_To_Vec(SchedIDXSet const & s, SchedIDXVec & v);
+extern void schedIDXSet_To_Vec(SchedIDXSet const& s, SchedIDXVec& v);
 
-////////////////////////////////////////////////////////////////////////////////
-
-class Wmrssa: public steps::solver::API
-{
-
-public:
-
-    Wmrssa(steps::model::Model *m, steps::wm::Geom *g, const rng::RNGptr &r);
+class Wmrssa: public solver::API {
+  public:
+    Wmrssa(model::Model* m, wm::Geom* g, const rng::RNGptr& r);
     ~Wmrssa() override;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::string const & file_name) override;
+    void checkpoint(std::string const& file_name) override;
 
     /// restore data
-    void restore(std::string const & file_name) override;
+    void restore(std::string const& file_name) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER INFORMATION
@@ -99,7 +82,6 @@ public:
     std::string getSolverDesc() const override;
     std::string getSolverAuthors() const override;
     std::string getSolverEmail() const override;
-
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROLS
@@ -114,7 +96,6 @@ public:
     // SOLVER STATE ACCESS:
     //      GENERAL
     ////////////////////////////////////////////////////////////////////////
-
 
     double getTime() const override;
 
@@ -134,96 +115,135 @@ public:
     //      COMPARTMENT
     ////////////////////////////////////////////////////////////////////////
 
-     double _getCompVol(uint cidx) const override;
-    void _setCompVol(uint cidx, double vol) override;
+    double _getCompVol(solver::comp_global_id cidx) const override;
+    void _setCompVol(solver::comp_global_id cidx, double vol) override;
 
-     double _getCompCount(uint cidx, uint sidx) const override;
-     void _setCompCount(uint cidx, uint sidx, double n) override;
+    double _getCompSpecCount(solver::comp_global_id cidx,
+                             solver::spec_global_id sidx) const override;
+    void _setCompSpecCount(solver::comp_global_id cidx,
+                           solver::spec_global_id sidx,
+                           double n) override;
 
-     double _getCompAmount(uint cidx, uint sidx) const override;
-    void _setCompAmount(uint cidx, uint sidx, double a) override;
+    double _getCompSpecAmount(solver::comp_global_id cidx,
+                              solver::spec_global_id sidx) const override;
+    void _setCompSpecAmount(solver::comp_global_id cidx,
+                            solver::spec_global_id sidx,
+                            double a) override;
 
-    double _getCompConc(uint cidx, uint sidx) const override;
-     void _setCompConc(uint cidx, uint sidx, double c) override;
+    double _getCompSpecConc(solver::comp_global_id cidx,
+                            solver::spec_global_id sidx) const override;
+    void _setCompSpecConc(solver::comp_global_id cidx,
+                          solver::spec_global_id sidx,
+                          double c) override;
 
-    bool _getCompClamped(uint cidx, uint sidx) const override;
-    void _setCompClamped(uint cidx, uint sidx, bool b) override;
+    bool _getCompSpecClamped(solver::comp_global_id cidx,
+                             solver::spec_global_id sidx) const override;
+    void _setCompSpecClamped(solver::comp_global_id cidx,
+                             solver::spec_global_id sidx,
+                             bool b) override;
 
-    double _getCompReacK(uint cidx, uint ridx) const override;
-    void _setCompReacK(uint cidx, uint ridx, double kf) override;
+    double _getCompReacK(solver::comp_global_id cidx, solver::reac_global_id sridx) const override;
+    void _setCompReacK(solver::comp_global_id cidx,
+                       solver::reac_global_id sridx,
+                       double kf) override;
 
-     bool _getCompReacActive(uint cidx, uint ridx) const override;
-    void _setCompReacActive(uint cidx, uint ridx, bool a) override;
+    bool _getCompReacActive(solver::comp_global_id cidx,
+                            solver::reac_global_id sridx) const override;
+    void _setCompReacActive(solver::comp_global_id cidx,
+                            solver::reac_global_id sridx,
+                            bool a) override;
 
-    double _getCompReacC(uint cidx, uint ridx) const override;
+    double _getCompReacC(solver::comp_global_id cidx, solver::reac_global_id sridx) const override;
 
-    double _getCompReacH(uint cidx, uint ridx) const override;
+    double _getCompReacH(solver::comp_global_id cidx, solver::reac_global_id sridx) const override;
 
-    long double _getCompReacA(uint cidx, uint ridx) const override;
+    long double _getCompReacA(solver::comp_global_id cidx,
+                              solver::reac_global_id sridx) const override;
 
-    unsigned long long _getCompReacExtent(uint cidx, uint ridx) const override;
-     void _resetCompReacExtent(uint cidx, uint ridx) override;
+    unsigned long long _getCompReacExtent(solver::comp_global_id cidx,
+                                          solver::reac_global_id sridx) const override;
+    void _resetCompReacExtent(solver::comp_global_id cidx, solver::reac_global_id sridx) override;
 
     ////////////////////////////////////////////////////////////////////////
-/*
-    double _getCompDiffD(uint cidx, uint didx);
-    void _setCompDiffD(uint cidx, uint didx);
+    /*
+        double _getCompDiffD(solver::comp_global_id cidx, uint didx);
+        void _setCompDiffD(solver::comp_global_id cidx, uint didx);
 
-    bool _getCompDiffActive(uint cidx, uint didx);
-    void _setCompDiffActive(uint cidx, uint didx, bool act);
-*/
+        bool _getCompDiffActive(solver::comp_global_id cidx, uint didx);
+        void _setCompDiffActive(solver::comp_global_id cidx, uint didx, bool act);
+    */
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
     //      PATCH
     ////////////////////////////////////////////////////////////////////////
 
-    double _getPatchArea(uint pidx) const override;
-    void _setPatchArea(uint pidx, double area) override;
+    double _getPatchArea(solver::patch_global_id pidx) const override;
+    void _setPatchArea(solver::patch_global_id pidx, double area) override;
 
-     double _getPatchCount(uint pidx, uint sidx) const override;
-    void _setPatchCount(uint pidx, uint sidx, double n) override;
+    double _getPatchSpecCount(solver::patch_global_id pidx,
+                              solver::spec_global_id sidx) const override;
+    void _setPatchSpecCount(solver::patch_global_id pidx,
+                            solver::spec_global_id sidx,
+                            double n) override;
 
-    double _getPatchAmount(uint pidx, uint sidx) const override;
-     void _setPatchAmount(uint pidx, uint sidx, double a) override;
+    double _getPatchSpecAmount(solver::patch_global_id pidx,
+                               solver::spec_global_id sidx) const override;
+    void _setPatchSpecAmount(solver::patch_global_id pidx,
+                             solver::spec_global_id sidx,
+                             double a) override;
 
-    bool _getPatchClamped(uint pidx, uint sidx) const override;
-    void _setPatchClamped(uint pidx, uint sidx, bool buf) override;
+    bool _getPatchSpecClamped(solver::patch_global_id pidx,
+                              solver::spec_global_id sidx) const override;
+    void _setPatchSpecClamped(solver::patch_global_id pidx,
+                              solver::spec_global_id sidx,
+                              bool buf) override;
 
-    double _getPatchSReacK(uint pidx, uint ridx) const override;
-      void _setPatchSReacK(uint pidx, uint ridx, double kf) override;
+    double _getPatchSReacK(solver::patch_global_id pidx,
+                           solver::sreac_global_id sridx) const override;
+    void _setPatchSReacK(solver::patch_global_id pidx,
+                         solver::sreac_global_id sridx,
+                         double kf) override;
 
-     bool _getPatchSReacActive(uint pidx, uint ridx) const override;
-     void _setPatchSReacActive(uint pidx, uint ridx, bool a) override;
+    bool _getPatchSReacActive(solver::patch_global_id pidx,
+                              solver::sreac_global_id sridx) const override;
+    void _setPatchSReacActive(solver::patch_global_id pidx,
+                              solver::sreac_global_id sridx,
+                              bool a) override;
 
-     double _getPatchSReacC(uint pidx, uint ridx) const override;
+    double _getPatchSReacC(solver::patch_global_id pidx,
+                           solver::sreac_global_id sridx) const override;
 
-     double _getPatchSReacH(uint pidx, uint ridx) const override;
+    double _getPatchSReacH(solver::patch_global_id pidx,
+                           solver::sreac_global_id sridx) const override;
 
-     double _getPatchSReacA(uint pidx, uint ridx) const override;
+    double _getPatchSReacA(solver::patch_global_id pidx,
+                           solver::sreac_global_id sridx) const override;
 
-     unsigned long long _getPatchSReacExtent(uint pidx, uint ridx) const override;
-    void _resetPatchSReacExtent(uint pidx, uint ridx) override;
+    unsigned long long _getPatchSReacExtent(solver::patch_global_id pidx,
+                                            solver::sreac_global_id sridx) const override;
+    void _resetPatchSReacExtent(solver::patch_global_id pidx,
+                                solver::sreac_global_id sridx) override;
 
     ////////////////////////////////////////////////////////////////////////
 
     // Called from local Comp or Patch objects. Ass KProc to this object
-    void addKProc(steps::wmrssa::KProc * kp);
+    void addKProc(wmrssa::KProc* kp);
 
-    inline uint countKProcs() const noexcept
-    { return pKProcs.size(); }
+    inline uint countKProcs() const noexcept {
+        return pKProcs.size();
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
     // WMRSSA SOLVER METHODS
     ////////////////////////////////////////////////////////////////////////
 
-    uint _addComp(steps::solver::Compdef * cdef);
+    uint _addComp(solver::Compdef* cdef);
 
-    uint _addPatch(steps::solver::Patchdef * pdef);
+    uint _addPatch(solver::Patchdef* pdef);
 
     // called when local comp, patch, reac, sreac objects have been created
     // by constructor
@@ -231,62 +251,48 @@ private:
 
     void _build();
 
-    uint _getNext() const;
+    uint _getNext();
 
     void _reset();
 
-    void _update(SchedIDXVec const & entries);
+    void _update(SchedIDXVec const& entries);
 
-    void _executeStep(steps::wmrssa::KProc * kp, double dt);
+    void _executeStep(wmrssa::KProc* kp, double dt);
 
     ////////////////////////////////////////////////////////////////////////
     // LIST OF WMRSSA SOLVER OBJECTS
     ////////////////////////////////////////////////////////////////////////
 
-    std::vector<steps::wmrssa::KProc *>      pKProcs;
+    std::vector<wmrssa::KProc*> pKProcs;
 
-    std::vector<steps::wmrssa::Comp *>       pComps;
-    std::map<steps::solver::Compdef *, Comp *> pCompMap;
+    std::vector<wmrssa::Comp*> pComps;
+    std::map<solver::Compdef*, Comp*> pCompMap;
 
-    std::vector<steps::wmrssa::Patch *>      pPatches;
+    std::vector<wmrssa::Patch*> pPatches;
 
     /// \brief sum of propensities
-    double                                     pA0{0.0};
+    double pA0{0.0};
 
     ////////////////////////////////////////////////////////////////////////
     // N-ARY TREE
     ////////////////////////////////////////////////////////////////////////
 
-    std::vector<uint>                          pLevelSizes;
-
-    std::vector<double *>                      pLevels;
+    std::vector<std::vector<double>> pLevels;
 
     ////////////////////////////////////////////////////////////////////////
 
     // Keeps track of whether _build() has been called
-    bool                                       pBuilt{false};
+    bool pBuilt{false};
 
     ////////////////////////////////////////////////////////////////////////
 
     // Tables to hold update vector indices and random numbers respectively,
     // to be re-used each step.
-    uint                                     * pIndices{nullptr};
-    uint                                        pMaxUpSize{0};
-    double                                   * pRannum{nullptr};
+    std::vector<uint> pIndices;
+    uint pMaxUpSize{0};
+    std::vector<double> pRannum;
 
     ////////////////////////////////////////////////////////////////////////
-
-    uint countUpdate{0};
-    uint countSteps{0};
-
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-#endif
-// STEPS_SOLVER_WMRSSA_HPP
-
-// END
+}  // namespace steps::wmrssa

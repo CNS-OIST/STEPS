@@ -24,17 +24,17 @@
 
  */
 
+#pragma once
 
 // Standard library & STL headers.
 #include <memory>
 #include <string>
 
 // STEPS headers.
-#include "util/common.h"
 #include "rng.hpp"
+#include "util/common.hpp"
 
-namespace steps {
-namespace rng {
+namespace steps::rng {
 
 /// Create a random number generator with name rng_name and return as RNG object.
 ///
@@ -47,5 +47,4 @@ RNGptr create(std::string rng_name, uint bufsize);
 /// \param buffsize Size of buffer.
 RNGptr create_mt19937(uint bufsize);
 
-} // namespace rng
-} // namespace steps
+}  // namespace steps::rng

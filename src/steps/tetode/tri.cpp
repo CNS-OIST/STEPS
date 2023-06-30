@@ -24,46 +24,41 @@
 
  */
 
-
-
-// Standard library & STL headers.
-#include <algorithm>
-#include <cassert>
-#include <cmath>
-#include <functional>
-#include <iostream>
-
 // STEPS headers.
 #include "tri.hpp"
-#include "tetode.hpp"
-#include "tet.hpp"
+
+#include "math/constants.hpp"
+#include "math/ghk.hpp"
 #include "solver/ghkcurrdef.hpp"
 #include "solver/ohmiccurrdef.hpp"
 #include "solver/patchdef.hpp"
-#include "math/constants.hpp"
-#include "math/ghk.hpp"
+#include "tet.hpp"
+#include "tetode.hpp"
 
+#include "util/checkpointing.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::tetode {
 
-namespace stode = steps::tetode;
-namespace ssolver = steps::solver;
-namespace sm = steps::math;
-
-////////////////////////////////////////////////////////////////////////////////
-
-stode::Tri::Tri(triangle_id_t idx, steps::solver::Patchdef *patchdef, double area,
-                double l0, double l1, double l2, double d0, double d1, double d2,
-                tetrahedron_id_t tetinner, tetrahedron_id_t tetouter,
-                triangle_id_t tri0, triangle_id_t tri1, triangle_id_t tri2)
-: pIdx(idx)
-, pPatchdef(patchdef)
-, pTets()
-, pTris()
-, pNextTri()
-, pArea(area)
-, pLengths()
-, pDist()
+Tri::Tri(triangle_global_id idx,
+         solver::Patchdef* patchdef,
+         double area,
+         double l0,
+         double l1,
+         double l2,
+         double d0,
+         double d1,
+         double d2,
+         tetrahedron_global_id tetinner,
+         tetrahedron_global_id tetouter,
+         triangle_global_id tri0,
+         triangle_global_id tri1,
+         triangle_global_id tri2)
+    : pIdx(idx)
+    , pPatchdef(patchdef)
+    , pNextTri()
+    , pArea(area)
+    , pLengths()
+    , pDist()
 
 {
     AssertLog(pPatchdef != nullptr);
@@ -90,140 +85,143 @@ stode::Tri::Tri(triangle_id_t idx, steps::solver::Patchdef *patchdef, double are
     pDist[0] = d0;
     pDist[1] = d1;
     pDist[2] = d2;
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stode::Tri::~Tri()
-= default;
+Tri::~Tri() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stode::Tri::setInnerTet(stode::Tet * t)
-{
+void Tri::setInnerTet(Tet* t) {
     pInnerTet = t;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stode::Tri::setOuterTet(stode::Tet * t)
-{
+void Tri::setOuterTet(Tet* t) {
     pOuterTet = t;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stode::Tri::setNextTri(uint i, stode::Tri * t)
-{
+void Tri::setNextTri(uint i, Tri* t) {
     AssertLog(i <= 2);
 
-    pNextTri[i]= t;
+    pNextTri[i] = t;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stode::Tri::checkpoint(std::fstream & /*cp_file*/)
-{
+void Tri::checkpoint(std::fstream& cp_file) {
+    util::checkpoint(cp_file, pERev);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stode::Tri::restore(std::fstream & /*cp_file*/)
-{
+void Tri::restore(std::fstream& cp_file) {
+    util::restore(cp_file, pERev);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stode::Tri::getOhmicI(double v, steps::tetode::TetODE * solver) const
-{
+void Tri::setOCerev(solver::ohmiccurr_local_id oclidx, double erev) {
+    AssertLog(oclidx < patchdef()->countOhmicCurrs());
+    pERev[oclidx] = erev;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double Tri::getOCerev(solver::ohmiccurr_local_id oclidx) const {
+    auto it = pERev.find(oclidx);
+    if (it != pERev.end()) {
+        return it->second;
+    } else {
+        return patchdef()->ohmiccurrdef(oclidx)->getERev();
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double Tri::getOhmicI(double v, steps::tetode::TetODE* solver) const {
     double current = 0.0;
     uint nocs = patchdef()->countOhmicCurrs();
-    for (uint i = 0; i < nocs; ++i)
-    {
-        ssolver::OhmicCurrdef * ocdef = patchdef()->ohmiccurrdef(i);
-        // The next is ok because Patchdef returns local index
-        //if (idx() %1000 == 0) CLOG(INFO, "general_log") << "\nOhmic current: " << patchdef()->ohmiccurrdef(i)->name();
+    for (auto i: solver::ohmiccurr_local_id::range(nocs)) {
+        solver::OhmicCurrdef* ocdef = patchdef()->ohmiccurrdef(i);
 
-        // Now need to get the states from TetODE object, and remember to convert local indices to the global ones it needs
-        uint spec_gidx = patchdef()->specL2G(patchdef()->ohmiccurr_chanstate(i));
+        // Now need to get the states from TetODE object, and remember to convert local indices to
+        // the global ones it needs
+        solver::spec_global_id spec_gidx = patchdef()->specL2G(patchdef()->ohmiccurr_chanstate(i));
 
-        double n = solver->_getTriCount(pIdx, spec_gidx);
-        //if (idx() %1000 == 0) CLOG(INFO, "general_log") << "\nN# " << i << ": " << n;
+        double n = solver->_getTriSpecCount(pIdx, spec_gidx);
 
-        current += (n*ocdef->getG())*(v-ocdef->getERev());
-        //if (idx() %1000 == 0) CLOG(INFO, "general_log") << "\nCurrent# " << i << ": " << (n*ocdef->getG())*(v-ocdef->getERev());
+        current += (n * ocdef->getG()) * (v - getOCerev(i));
     }
-    //if (idx() %1000 == 0) CLOG(INFO, "general_log") << "\n";
 
     return current;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
-double stode::Tri::getGHKI(double v,double dt, steps::tetode::TetODE * solver) const
-{
+double Tri::getGHKI(double v, double dt, steps::tetode::TetODE* solver) const {
     double current = 0.0;
 
     uint nghkcurrs = patchdef()->countGHKcurrs();
-    for (uint i =0; i < nghkcurrs; ++i)
-    {
-        ssolver::GHKcurrdef * ghkdef = patchdef()->ghkcurrdef(i);
+    for (auto i: solver::ghkcurr_local_id::range(nghkcurrs)) {
+        solver::GHKcurrdef* ghkdef = patchdef()->ghkcurrdef(i);
 
         // The rate comes from the GHK flux equation. The flux equation
         // returns a single-channel current which must be converted to a rate,
         // remembering that flux can be positive or negative (bi-directional)
-        const uint gidxion = ghkdef->ion();
+        const solver::spec_global_id gidxion = ghkdef->ion();
         double voconc = ghkdef->voconc();
 
-
-        // HOW TO GET THE CONCENTRATIONS?
-
         // Get concentrations in Molar units: convert to Mol/m^3
-        double iconc = solver->_getTetConc(iTet()->idx(), gidxion)*1.0e3;
+        double iconc = solver->_getTetSpecConc(iTet()->idx(), gidxion) * 1.0e3;
         double oconc = 0.0;
 
-        if (voconc < 0.0) {  oconc = solver->_getTetConc(oTet()->idx(), gidxion)*1.0e3;
-        } else {  oconc = voconc*1.0e3;
-}
+        if (voconc < 0.0) {
+            oconc = solver->_getTetSpecConc(oTet()->idx(), gidxion) * 1.0e3;
+        } else {
+            oconc = voconc * 1.0e3;
+        }
 
-        //double v = solver->getTriV(idx()); // check indices are global or local
         double T = solver->getTemp();
 
-        double flux_per_channel = sm::GHKcurrent(ghkdef->perm(), v+ghkdef->vshift(), ghkdef->valence(),
-                                     T, iconc, oconc);
+        double flux_per_channel = math::GHKcurrent(
+            ghkdef->perm(), v + ghkdef->vshift(), ghkdef->valence(), T, iconc, oconc);
 
         // Fetch global index of channel state
-        uint cs_gidx = ghkdef->chanstate();
+        solver::spec_global_id cs_gidx = ghkdef->chanstate();
 
-        double flux = solver->_getTriCount(idx(), cs_gidx) * flux_per_channel;
+        double flux = solver->_getTriSpecCount(idx(), cs_gidx) * flux_per_channel;
 
-        current+=flux;
+        current += flux;
 
-        //Now got to move ions
-        if (ghkdef->realflux())
-        {
+        // Now got to move ions
+        if (ghkdef->realflux()) {
             // Note: For a positive flux, this could be an efflux of +ve cations,
             // or an influx of -ve anions. Need to check the valence.
 
             // Get the rate of ion flux, remembering valence may by other than 1.
-            double rt = flux/(sm::E_CHARGE * static_cast<double>(ghkdef->valence()));
+            double rt = flux / (math::E_CHARGE * static_cast<double>(ghkdef->valence()));
             // Now a positive rate is always an efflux and a negative rate is an influx
 
             // rt is number of ions per second; positive is an efflux and a negative is an influx
-            double count = rt*dt;
+            double count = rt * dt;
 
-            if (voconc < 0.0) { solver->_setTetCount(oTet()->idx(), gidxion, solver->_getTetCount(oTet()->idx(), gidxion)+count);
-}
-            solver->_setTetCount(iTet()->idx(), gidxion, solver->_getTetCount(iTet()->idx(), gidxion)-count);
-
-
+            if (voconc < 0.0) {
+                solver->_setTetSpecCount(oTet()->idx(),
+                                         gidxion,
+                                         solver->_getTetSpecCount(oTet()->idx(), gidxion) + count);
+            }
+            solver->_setTetSpecCount(iTet()->idx(),
+                                     gidxion,
+                                     solver->_getTetSpecCount(iTet()->idx(), gidxion) - count);
         }
-
     }
 
     return current;
-
 }
 
-////////////////////////////////////////////////////////////////////////////////
-//END
+}  // namespace steps::tetode

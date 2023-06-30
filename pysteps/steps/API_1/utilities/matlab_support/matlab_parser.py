@@ -459,9 +459,9 @@ class Parser(object):
                     raise Exception('Invalid flag: ' + str(flag))
                 if(clamp_all):
                     for c in self.compartments:
-                        clamping_code.append('.setCompClamped(\'' + c + '\', \'' + name + '\' , ' + str(flag) + ')\n')
+                        clamping_code.append('.setCompSpecClamped(\'' + c + '\', \'' + name + '\' , ' + str(flag) + ')\n')
                 else:
-                    clamping_code.append('.setCompClamped(\'' + compartment + '\', \'' + name + '\' , ' + str(flag) + ')\n')
+                    clamping_code.append('.setCompSpecClamped(\'' + compartment + '\', \'' + name + '\' , ' + str(flag) + ')\n')
             elif(token == 'Name'):
                 # same as an unpaired token[1]
                 name = tokens.pop(0)
@@ -474,9 +474,9 @@ class Parser(object):
         code = ''
         code += name + ' = ' + self.steps_model_module + '.Spec(\'' + name + '\',' + str(self.model_name) + ')\n'
         if(molarity == 'True'):
-            self.setCountCode.append('.setCompAmount(\'' + compartment + '\' ,\'' + name + '\', ' + str(count * factor) + ')\n')
+            self.setCountCode.append('.setCompSpecAmount(\'' + compartment + '\' ,\'' + name + '\', ' + str(count * factor) + ')\n')
         elif(molarity == 'False'):
-            self.setCountCode.append('.setCompCount(\'' + compartment + '\' ,\'' + name + '\', ' + str(count) + ')\n')
+            self.setCountCode.append('.setCompSpecCount(\'' + compartment + '\' ,\'' + name + '\', ' + str(count) + ')\n')
         # self.setCountCode += 'print(\'' + name + ' added.\')\n'
         self.setCountCode += clamping_code    
 

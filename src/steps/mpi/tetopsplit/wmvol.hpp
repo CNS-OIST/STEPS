@@ -24,33 +24,24 @@
 
  */
 
-
-#ifndef STEPS_MPI_TETOPSPLIT_WMVOL_HPP
-#define STEPS_MPI_TETOPSPLIT_WMVOL_HPP 1
+#pragma once
 
 // STL headers.
 #include <cassert>
-#include <vector>
-#include <set>
 #include <fstream>
+#include <set>
+#include <vector>
 
 // logging
 #include <easylogging++.h>
 
 // STEPS headers.
 #include "kproc.hpp"
-#include "util/common.h"
 #include "solver/compdef.hpp"
 #include "solver/types.hpp"
-////////////////////////////////////////////////////////////////////////////////
+#include "util/common.hpp"
 
-namespace steps {
-namespace mpi {
-namespace tetopsplit {
-
-////////////////////////////////////////////////////////////////////////////////
-
-namespace smtos = steps::mpi::tetopsplit;
+namespace steps::mpi::tetopsplit {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -62,10 +53,10 @@ class Tet;
 class TetOpSplitP;
 
 // Auxiliary declarations.
-typedef WmVol *                           WmVolP;
-typedef std::vector<WmVolP>               WmVolPVec;
-typedef WmVolPVec::iterator               WmVolPVecI;
-typedef WmVolPVec::const_iterator         WmVolPVecCI;
+typedef WmVol* WmVolP;
+typedef std::vector<WmVolP> WmVolPVec;
+typedef WmVolPVec::iterator WmVolPVecI;
+typedef WmVolPVec::const_iterator WmVolPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -74,19 +65,13 @@ typedef WmVolPVec::const_iterator         WmVolPVecCI;
 // reaction-diffusion solver. Of course, if a compartment is well-mixed,
 // any diffusion rules are ignored.
 //
-class WmVol
-{
-
-public:
-
+class WmVol {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    WmVol
-      (
-        tetrahedron_id_t idx, steps::solver::Compdef *cdef, double vol, int rank, int host_rank
-      );
+    WmVol(tetrahedron_global_id idx, solver::Compdef* cdef, double vol, int rank, int host_rank);
 
     virtual ~WmVol();
 
@@ -94,10 +79,10 @@ public:
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    virtual void checkpoint(std::fstream & cp_file);
+    virtual void checkpoint(std::fstream& cp_file);
 
     /// restore data
-    virtual void restore(std::fstream & cp_file);
+    virtual void restore(std::fstream& cp_file);
 
     ////////////////////////////////////////////////////////////////////////
     // SETUP
@@ -106,9 +91,9 @@ public:
     /// Create the kinetic processes -- to be called when all tetrahedrons
     /// and triangles have been fully declared and connected.
     ///
-    virtual void setupKProcs(smtos::TetOpSplitP * tex);
+    virtual void setupKProcs(TetOpSplitP* tex);
 
-    virtual void setNextTri(smtos::Tri *t);
+    virtual void setNextTri(Tri* t);
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -117,11 +102,13 @@ public:
     ////////////////////////////////////////////////////////////////////////
     // GENERAL INFORMATION
     ////////////////////////////////////////////////////////////////////////
-    inline steps::solver::Compdef * compdef() const noexcept
-    { return pCompdef; }
+    inline solver::Compdef* compdef() const noexcept {
+        return pCompdef;
+    }
 
-    inline tetrahedron_id_t idx() const noexcept
-    { return pIdx; }
+    inline tetrahedron_global_id idx() const noexcept {
+        return pIdx;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // SHAPE & CONNECTIVITY INFORMATION.
@@ -129,74 +116,79 @@ public:
 
     /// Get the volume.
     ///
-    inline double vol() const noexcept
-    { return pVol; }
-
+    inline double vol() const noexcept {
+        return pVol;
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline uint * pools() const
-    { return pPoolCount; }
-    virtual void setCount(uint lidx, uint count, double period = 0.0);
-    virtual void incCount(uint lidx, int inc, double period = 0.0, bool local_change = false);
+    inline const auto& pools() const noexcept {
+        return pPoolCount;
+    }
+
+    virtual void setCount(solver::spec_local_id lidx, uint count, double period = 0.0);
+    virtual void incCount(solver::spec_local_id lidx,
+                          int inc,
+                          double period = 0.0,
+                          bool local_change = false);
 
     // The concentration of species global index gidx in MOL PER l
-    double conc(uint gidx) const;
+    double conc(solver::spec_global_id gidx) const;
 
     static const uint CLAMPED = 1;
 
-    inline bool clamped(uint lidx) const noexcept
-    { return pPoolFlags[lidx] & CLAMPED; }
-    void setClamped(uint lidx, bool clamp);
+    inline bool clamped(solver::spec_local_id lidx) const noexcept {
+        return (pPoolFlags[lidx] & CLAMPED) != 0;
+    }
+    void setClamped(solver::spec_local_id lidx, bool clamp);
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline std::vector<smtos::Tri *>::const_iterator nexttriBegin() const noexcept
-    { return pNextTris.begin(); }
-    inline std::vector<smtos::Tri *>::const_iterator nexttriEnd() const noexcept
-    { return pNextTris.end(); }
-    inline const std::vector<smtos::Tri *>& nexttris() const noexcept
-    { return pNextTris; }
-    inline uint countNextTris() const noexcept
-    { return pNextTris.size(); }
+    inline const std::vector<Tri*>& nexttris() const noexcept {
+        return pNextTris;
+    }
+    inline uint countNextTris() const noexcept {
+        return pNextTris.size();
+    }
 
+    inline uint getStartKProcIdx() const noexcept {
+        return startKProcIdx;
+    }
+    inline uint countKProcs() const noexcept {
+        return nKProcs;
+    }
+    inline std::vector<KProc*>& kprocs() noexcept {
+        return pKProcs;
+    }
 
-    inline std::vector<smtos::KProc *>::const_iterator kprocBegin() const noexcept
-    { return pKProcs.begin(); }
-    inline std::vector<smtos::KProc *>::const_iterator kprocEnd() const noexcept
-    { return pKProcs.end(); }
-    inline uint getStartKProcIdx() const noexcept
-    {return startKProcIdx;}
-    inline uint countKProcs() const noexcept
-    { return nKProcs; }
-    inline std::vector<smtos::KProc *> & kprocs() noexcept
-    { return pKProcs; }
-
-    inline KProc * getKProc(uint lidx)
-    {
-        if (hostRank != myRank) return nullptr;
+    inline KProc* getKProc(uint lidx) {
+        if (hostRank != myRank) {
+            return nullptr;
+        }
         AssertLog(lidx < pKProcs.size());
         return pKProcs[lidx];
     }
 
-    smtos::Reac * reac(uint lidx) const;
+    Reac& reac(solver::reac_local_id lidx) const;
 
-    virtual double getPoolOccupancy(uint lidx) const;
-    virtual double getLastUpdate(uint lidx) const;
+    virtual double getPoolOccupancy(solver::spec_local_id lidx) const;
+    virtual double getLastUpdate(solver::spec_local_id lidx) const;
     virtual void resetPoolOccupancy();
 
     ////////////////////////////////////////////////////////////////////////
 
     // MPISTEPS
     bool getInHost() const;
-    inline int getHost() const { return hostRank; }
+    inline int getHost() const {
+        return hostRank;
+    }
     void setHost(int host, int rank);
-    //void addSyncHost(int host);
-    void setSolver(steps::mpi::tetopsplit::TetOpSplitP* solver);
-    steps::mpi::tetopsplit::TetOpSplitP* solver() const;
+    // void addSyncHost(int host);
+    void setSolver(TetOpSplitP* solver);
+    TetOpSplitP* solver() const;
 
-    //virtual void sendSyncPools();
-    //void recvSyncPools(int source);
+    // virtual void sendSyncPools();
+    // void recvSyncPools(int source);
     // MPISTEPS
 
     /////////////////////////// Dependency ////////////////////////////////
@@ -204,58 +196,42 @@ public:
     virtual void setupDeps();
 
     // check if kp_lidx in this vol depends on spec_gidx in WMVol kp_container
-    virtual bool KProcDepSpecTet(uint kp_lidx, WmVol* kp_container, uint spec_gidx);
+    virtual bool KProcDepSpecTet(uint kp_lidx,
+                                 WmVol* kp_container,
+                                 solver::spec_global_id spec_gidx);
     // check if kp_lidx in this vol depends on spec_gidx in Tri kp_container
-    virtual bool KProcDepSpecTri(uint kp_lidx, Tri* kp_container, uint spec_gidx);
+    virtual bool KProcDepSpecTri(uint kp_lidx, Tri* kp_container, solver::spec_global_id spec_gidx);
 
-    virtual void repartition(smtos::TetOpSplitP * tex, int rank, int host_rank);
+    virtual void repartition(TetOpSplitP* tex, int rank, int host_rank);
 
-protected:
-
+  protected:
     /// Use to store inprocess KProcs.
-    std::vector<smtos::KProc *>          pKProcs;
+    std::vector<KProc*> pKProcs;
     // Use to store indices of outporcess KProcs
-    uint                                 startKProcIdx;
-    uint                                 nKProcs;
+    uint startKProcIdx{};
+    uint nKProcs{};
     // The connected patch triangles.
     // Could be any number from zero to no upper limit- if this object is used
     // to descirbe a well-mixed compartment this may be a big number
-    std::vector<smtos::Tri * >				pNextTris;
-
+    std::vector<Tri*> pNextTris;
 
     ////////////////////////////////////////////////////////////////////////
 
-    tetrahedron_id_t                    pIdx;
+    tetrahedron_global_id pIdx;
 
-    steps::solver::Compdef            * pCompdef;
+    solver::Compdef* pCompdef;
 
-    double                              pVol;
+    double pVol;
 
     /// Numbers of molecules -- stored as uint.
-    uint                              * pPoolCount{nullptr};
+    util::strongid_vector<solver::spec_local_id, uint> pPoolCount;
     /// Flags on these pools -- stored as machine word flags.
-    uint                              * pPoolFlags{nullptr};
+    util::strongid_vector<solver::spec_local_id, uint> pPoolFlags;
 
     ///////// MPI STUFFS ////////////////////////////////////////////////////
-    int                                 myRank;
-    int                                 hostRank;
-    steps::mpi::tetopsplit::TetOpSplitP         * pSol;
-
+    int myRank;
+    int hostRank;
+    TetOpSplitP* pSol{};
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-#endif
-
-// STEPS_MPI_TETOPSPLIT_WMVOL_HPP
-
-// END
-
-
-
+}  // namespace steps::mpi::tetopsplit

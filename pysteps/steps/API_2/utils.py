@@ -1786,11 +1786,14 @@ class SolverPathObject:
 
     def _solverStr(self):
         """Return the string that is used as part of method names for this specific object."""
-        return ''
+        return self.__class__.__name__
 
     def _solverId(self):
         """Return the id that is used to identify an object in the solver."""
-        return (self.name,)
+        try:
+            return (self.name,)
+        except AttributeError:
+            return tuple()
 
     def _solverKeywordParams(self):
         """Return the additional keyword parameters that should be passed to the solver"""
@@ -1821,6 +1824,17 @@ class SolverPathObject:
 
     def __hash__(self):
         return id(self)
+
+
+class SolverRunTimeObject:
+    """Base class for object whose value will only be evaluated at runtime"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _runTimeFunc(self, opType, sim, prefix, suffix, descriptor):
+        """Return a function that will be called during runtime evaluation of the path."""
+        return None
 
 
 class StepsWrapperObject:
@@ -2519,6 +2533,54 @@ class Versioned:
 ###################################################################################################
 # Various utilities
 
+class ReadOnlyDictInterface:
+    """Base class for objects that should behave like read-only dicts
+    __getitem__() and keys() should be implemented.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __setitem__(self, key, value):
+        raise NotImplementedError('Cannot write data, the dictionary is read-only.')
+
+    def __getitem__(self, key):
+        raise NotImplementedError()
+
+    def keys(self):
+        raise NotImplementedError()
+
+    def __iter__(self):
+        for key in self.keys():
+            yield key
+
+    def items(self):
+        for key in self.keys():
+            yield key, self[key]
+
+    def values(self):
+        for key in self.keys():
+            yield self[key]
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def __contains__(self, key):
+        return key in self.keys()
+
+    def __eq__(self, val):
+        return sorted(self.items()) == sorted(val.items())
+
+
+class MutableDictInterface(ReadOnlyDictInterface):
+    """Base class for objects that should behave like dicts
+    __getitem__(), __setitem__() and keys() should be implemented.
+    """
+    def __setitem__(self, key, value):
+        raise NotImplementedError()
+
 
 def limitReprLength(func):
     """Decorator for limiting the length of __repr__ methods."""
@@ -2559,6 +2621,8 @@ def formatKey(key, sz, forceSz=False):
 
 def getSliceIds(s, sz):
     """Return the indices coresponding to slice s of a structure that has length sz."""
+    if isinstance(s, list):
+        return s
     if isinstance(s, numbers.Integral):
         if s >= sz:
             raise IndexError()

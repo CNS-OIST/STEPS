@@ -24,50 +24,24 @@
 
  */
 
-
-
-/*
- *  Last Changed Rev:  $Rev$
- *  Last Changed Date: $Date$
- *  Last Changed By:   $Author$
- */
-
-// STL headers.
-#include <cassert>
-#include <string>
-
 // STEPS headers.
 #include "reacdef.hpp"
+
 #include "compdef.hpp"
-#include "geom/comp.hpp"
 #include "model/reac.hpp"
 
 #include "util/error.hpp"
 // logging
 #include <easylogging++.h>
 
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::solver {
 
-namespace ssolver = steps::solver;
-namespace smod = steps::model;
-
-////////////////////////////////////////////////////////////////////////////////
-
-ssolver::Reacdef::Reacdef(Statedef * sd, uint idx, steps::model::Reac * r)
-: pStatedef(sd)
-, pIdx(idx)
-, pName()
-, pOrder()
-, pKcst()
-, pLhs()
-, pRhs()
-, pSetupdone(false)
-, pSpec_DEP(nullptr)
-, pSpec_LHS(nullptr)
-, pSpec_RHS(nullptr)
-, pSpec_UPD(nullptr)
-, pSpec_UPD_Coll()
-{
+Reacdef::Reacdef(Statedef* sd, reac_global_id idx, model::Reac* r)
+    : pStatedef(sd)
+    , pIdx(idx)
+    , pOrder()
+    , pKcst()
+    , pSetupdone(false) {
     AssertLog(pStatedef != nullptr);
     AssertLog(r != nullptr);
 
@@ -78,72 +52,54 @@ ssolver::Reacdef::Reacdef(Statedef * sd, uint idx, steps::model::Reac * r)
     pRhs = r->getRHS();
 
     uint nspecs = pStatedef->countSpecs();
-    if (nspecs == 0) { return; // Would be weird, but okay.
-}
-    pSpec_DEP = new int[nspecs];
-    std::fill_n(pSpec_DEP, nspecs, DEP_NONE);
-    pSpec_LHS = new uint[nspecs];
-    std::fill_n(pSpec_LHS, nspecs, 0);
-    pSpec_RHS = new uint[nspecs];
-    std::fill_n(pSpec_RHS, nspecs, 0);
-    pSpec_UPD = new int[nspecs];
-    std::fill_n(pSpec_UPD, nspecs, 0);
-
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-ssolver::Reacdef::~Reacdef()
-{
-    if (pStatedef->countSpecs() > 0)
-    {
-        delete[] pSpec_DEP;
-        delete[] pSpec_LHS;
-        delete[] pSpec_RHS;
-        delete[] pSpec_UPD;
+    if (nspecs == 0) {
+        return;  // Would be weird, but okay.
     }
+    pSpec_DEP.container().resize(nspecs, DEP_NONE);
+    pSpec_LHS.container().resize(nspecs);
+    pSpec_RHS.container().resize(nspecs);
+    pSpec_UPD.container().resize(nspecs);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Reacdef::checkpoint(std::fstream & cp_file)
-{
-    cp_file.write(reinterpret_cast<char*>(&pKcst), sizeof(double));
+void Reacdef::checkpoint(std::fstream& /*cp_file*/) {
+    // Reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Reacdef::restore(std::fstream & cp_file)
-{
-    cp_file.read(reinterpret_cast<char*>(&pKcst), sizeof(double));
+void Reacdef::restore(std::fstream& /*cp_file*/) {
+    // Reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Reacdef::setup()
-{
+void Reacdef::setup() {
     AssertLog(pSetupdone == false);
 
-    // first copy the information about the reaction stoichiometry from Reac object
+    // first copy the information about the reaction stoichiometry from Reac
+    // object
     for (auto const& l: pLhs) {
-        uint sidx = pStatedef->getSpecIdx(l);
+        spec_global_id sidx = pStatedef->getSpecIdx(l);
         pSpec_LHS[sidx] += 1;
     }
     for (auto const& r: pRhs) {
-        uint sidx = pStatedef->getSpecIdx(r);
+        spec_global_id sidx = pStatedef->getSpecIdx(r);
         pSpec_RHS[sidx] += 1;
     }
 
     // Now set up the update vector
-    const uint nspecs = pStatedef->countSpecs();
-    for (uint i = 0; i < nspecs; ++i)
-    {
+    for (auto i: pSpec_LHS.range()) {
         auto lhs = static_cast<int>(pSpec_LHS[i]);
         auto rhs = static_cast<int>(pSpec_RHS[i]);
         int aux = pSpec_UPD[i] = (rhs - lhs);
-        if (lhs != 0) { pSpec_DEP[i] |= DEP_STOICH;
-}
-        if (aux != 0) pSpec_UPD_Coll.push_back(i);
+        if (lhs != 0) {
+            pSpec_DEP[i] |= DEP_STOICH;
+        }
+        if (aux != 0) {
+            pSpec_UPD_Coll.emplace_back(i);
+        }
     }
 
     pSetupdone = true;
@@ -151,72 +107,59 @@ void ssolver::Reacdef::setup()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string const ssolver::Reacdef::name() const
-{
+std::string const Reacdef::name() const {
     return pName;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint ssolver::Reacdef::order() const
-{
+uint Reacdef::order() const {
     return pOrder;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double ssolver::Reacdef::kcst() const
-{
+double Reacdef::kcst() const {
     return pKcst;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint ssolver::Reacdef::lhs(uint gidx) const
-{
-    AssertLog(gidx < pStatedef->countSpecs());
-    return pSpec_LHS[gidx];
+uint Reacdef::lhs(spec_global_id gidx) const {
+    return pSpec_LHS.at(gidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int ssolver::Reacdef::dep(uint gidx) const
-{
+depT Reacdef::dep(spec_global_id gidx) const {
     AssertLog(pSetupdone == true);
-    AssertLog(gidx < pStatedef->countSpecs());
-    return pSpec_DEP[gidx];
+    return pSpec_DEP.at(gidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint ssolver::Reacdef::rhs(uint gidx) const
-{
-    AssertLog(gidx < pStatedef->countSpecs());
-    return pSpec_RHS[gidx];
+uint Reacdef::rhs(spec_global_id gidx) const {
+    return pSpec_RHS.at(gidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int ssolver::Reacdef::upd(uint gidx) const
-{
+int Reacdef::upd(spec_global_id gidx) const {
     AssertLog(pSetupdone == true);
-    AssertLog(gidx < pStatedef->countSpecs());
-    return pSpec_UPD[gidx];
+    return pSpec_UPD.at(gidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool ssolver::Reacdef::reqspec(uint gidx) const
-{
+bool Reacdef::reqspec(spec_global_id gidx) const {
     AssertLog(pSetupdone == true);
-    AssertLog(gidx < pStatedef->countSpecs());
-    if (pSpec_DEP[gidx] != DEP_NONE) { return true;
-}
-    if (pSpec_RHS[gidx] != 0) { return true;
-}
+    if (pSpec_DEP.at(gidx) != DEP_NONE) {
+        return true;
+    }
+    if (pSpec_RHS.at(gidx) != 0) {
+        return true;
+    }
     return false;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
+}  // namespace steps::solver

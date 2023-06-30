@@ -24,40 +24,29 @@
 
  */
 
-
-#ifndef STEPS_SOLVER_EFIELD_TETMESH_HPP
-#define STEPS_SOLVER_EFIELD_TETMESH_HPP 1
+#pragma once
 
 // STL headers.
 #include <array>
+#include <fstream>
 #include <iostream>
 #include <map>
+#include <queue>
 #include <set>
 #include <string>
 #include <vector>
-#include <queue>
-#include <fstream>
 
 // STEPS headers.
-#include "util/common.h"
+#include "util/common.hpp"
 #include "util/error.hpp"
 #include "util/vocabulary.hpp"
 #include "vertexconnection.hpp"
 #include "vertexelement.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps{
-namespace solver {
-namespace efield {
-using namespace std;
-
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::solver::efield {
 
 // Forward declarations.
 class TetMesh;
-
-////////////////////////////////////////////////////////////////////////////////
 
 /// Objects of this class are used to store tetrahedrons in a format
 /// that makes it easy to find whether a certain quadruplet of vertices
@@ -65,83 +54,66 @@ class TetMesh;
 ///
 /// \author Stefan Wils
 ///
-class TetStub
-{
-
-public:
-
+class TetStub {
+  public:
     /// Constructor.
     ///
     TetStub(vertex_id_t v1, vertex_id_t v2, vertex_id_t v3, vertex_id_t v4);
 
     /// Constructor.
     ///
-    explicit TetStub(vertex_id_t *v);
+    explicit TetStub(vertex_id_t* v);
 
     /// Comparison operator -- required for storing objects of this
     /// class in a set. Implements strict weak ordering.
     ///
-    bool operator< (TetStub const & t) const;
+    bool operator<(TetStub const& t) const;
 
     /// Output stream operator.
     ///
-    // friend std::ostream & operator<< (std::ostream & os, steps::solver::efield::TetStub const &);
+    // friend std::ostream & operator<< (std::ostream & os,
+    // solver::efield::TetStub const &);
 
-
-
-private:
-
+  private:
     /// Vertices on the edges of the tetrahedron -- sorted from
     /// small to large.
     const std::array<vertex_id_t, 4> pSortedVerts;
-
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
 // I.H. moved from .cpp file
-struct ConnStub
-{
-
-    ConnStub(VertexElement * vertex1, VertexElement * vertex2)
-    : fVertex1(vertex1)
-    , fVertex2(vertex2)
-    {
-        if (fVertex1 < fVertex2)
-        {
-            VertexElement * tmp = fVertex1;
+struct ConnStub {
+    ConnStub(VertexElement* vertex1, VertexElement* vertex2)
+        : fVertex1(vertex1)
+        , fVertex2(vertex2) {
+        if (fVertex1->getIDX() < fVertex2->getIDX()) {
+            VertexElement* tmp = fVertex1;
             fVertex1 = fVertex2;
             fVertex2 = tmp;
         }
     }
 
-    bool operator< (ConnStub const & c) const
-    {
-        if (fVertex1 < c.fVertex1) return true;
-        if (fVertex1 > c.fVertex1) return false;
-        if (fVertex2 < c.fVertex2) return true;
+    bool operator<(ConnStub const& c) const {
+        if (fVertex1->getIDX() < c.fVertex1->getIDX())
+            return true;
+        if (fVertex1->getIDX() > c.fVertex1->getIDX())
+            return false;
+        if (fVertex2->getIDX() < c.fVertex2->getIDX())
+            return true;
         return false;
     }
-    /*
-    // I.H. 24/11/09  Isn't this necessary for a set??
-    bool operator == (ConnStub const & c) const
-    {
-        if (fVertex1 != c.fVertex1) return false;
-        if (fVertex2 != c.fVertex2) return false;
-        return true;
-    }
-    */
-    VertexElement * fVertex1;
-    VertexElement * fVertex2;
 
+    VertexElement* fVertex1;
+    VertexElement* fVertex2;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
 // Auxiliary declarations.
-typedef std::set<TetStub>               TetStubSet;
-typedef TetStubSet::iterator            TetStubSetI;
-typedef TetStubSet::const_iterator      TetStubSetCI;
+typedef std::set<TetStub> TetStubSet;
+typedef TetStubSet::iterator TetStubSetI;
+typedef TetStubSet::const_iterator TetStubSetCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -157,30 +129,30 @@ typedef TetStubSet::const_iterator      TetStubSetCI;
 ///
 /// \author Robert Cannon
 ///
-class TetMesh
-{
-
-public:
-
+class TetMesh {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
     /// Constructor.
     ///
-    TetMesh(uint nv, double * vpos,
-            uint ntr, vertex_id_t * trivi,
-            uint ntet, vertex_id_t * tetvi);
+    TetMesh(uint nv,
+            const double* vpos,
+            uint ntr,
+            const vertex_id_t* trivi,
+            uint ntet,
+            const vertex_id_t* tetvi);
     ~TetMesh();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream& cp_file);
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream& cp_file);
 
     /// Called by the EField constructor after all the triangles and
     /// tetrahedrons have been specified. It extracts all unique
@@ -219,13 +191,15 @@ public:
     ///
     /// Originally from Mesh.
     ///
-    inline uint countVertices() const noexcept
-    { return static_cast<uint>(pElements.size()); }
+    inline uint countVertices() const noexcept {
+        return static_cast<uint>(pElements.size());
+    }
 
     /// Originally from Mesh.
     ///
-    inline VertexElement * getVertex(vertex_id_t i) const
-    { return pElements[i.get()]; }
+    inline VertexElement* getVertex(vertex_id_t i) const {
+        return pElements[i.get()];
+    }
 
     /// For a given vertex, it constructs a list of tetrahedrons that
     /// include this vertex. The tetrahedra are returned in a special
@@ -245,7 +219,7 @@ public:
     ///
     /// Originally from TetMesh.
     ///
-    std::vector<std::array<uint, 3>>  getNeighboringTetrahedra(VertexElement *) const;
+    std::vector<std::array<uint, 3>> getNeighboringTetrahedra(VertexElement*) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: TRIANGLES
@@ -253,33 +227,40 @@ public:
 
     /// Originally from TetMesh.
     ///
-    inline uint getNTri() const noexcept
-    { return pNTri; }
+    inline uint getNTri() const noexcept {
+        return pNTri;
+    }
 
     /// Originally from TetMesh.
-    /// TODO TCL should return std::array<vertex_id_t, 3> and pTriangles should be a std::vector of it
-    inline vertex_id_t * getTriangle(triangle_id_t i) const noexcept
-    { return pTriangles + (3 * i.get()); }
+    /// TODO TCL should return std::array<vertex_id_t, 3> and pTriangles should be
+    /// a std::vector of it
+    inline vertex_id_t* getTriangle(triangle_local_id i) const noexcept {
+        return pTriangles + (3 * i.get());
+    }
 
     /// Originally from TetMesh.
     ///
-    inline vertex_id_t getTriangleVertex(triangle_id_t itr, uint iv) const noexcept
-    { return pTriangles[(3 * itr.get()) + iv]; }
+    inline vertex_id_t getTriangleVertex(triangle_local_id itr, uint iv) const noexcept {
+        return pTriangles[(3 * itr.get()) + iv];
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: TETRAHEDRONS
     ////////////////////////////////////////////////////////////////////////
 
-    inline uint getNTet() const noexcept
-    { return pNTet; }
+    inline uint getNTet() const noexcept {
+        return pNTet;
+    }
 
-    inline vertex_id_t * getTetrahedron(uint i) const noexcept
-    { return pTetrahedrons + (4 * i); }
+    inline vertex_id_t* getTetrahedron(uint i) const noexcept {
+        return pTetrahedrons + (4 * i);
+    }
 
     /// Originally from TetMesh.
     ///
-    inline vertex_id_t getTetrahedronVertex(tetrahedron_id_t itr, uint iv) const noexcept
-    { return pTetrahedrons[(4 * itr.get()) + iv]; }
+    inline vertex_id_t getTetrahedronVertex(tetrahedron_local_id itr, uint iv) const noexcept {
+        return pTetrahedrons[(4 * itr.get()) + iv];
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -287,8 +268,7 @@ public:
     ///
     void applySurfaceCapacitance(double);
 
-    void applyTriCapacitance(triangle_id_t tidx, double cm);
-
+    void applyTriCapacitance(triangle_local_id tidx, double cm);
 
     /// Originally from Mesh.
     ///
@@ -305,11 +285,17 @@ public:
     /// Originally from Mesh.
     /// Iain: big changes here
     ///
-    void axisOrderElements(uint opt_method, std::string const & opt_file_name ="", double search_percent=100.0);
+    void axisOrderElements(uint opt_method,
+                           std::string const& opt_file_name = "",
+                           double search_percent = 100.0);
 
-    void saveOptimal(std::string const & opt_file_name);
+    void saveOptimal(std::string const& opt_file_name);
 
-    void fill_ve_vec(set<VertexElement*> & veset, vector<VertexElement*> & vevec, queue<VertexElement*> & vequeue, uint ncons, VertexElement ** nbrs);
+    void fill_ve_vec(std::set<VertexElement*>& veset,
+                     std::vector<VertexElement*>& vevec,
+                     std::queue<VertexElement*>& vequeue,
+                     uint ncons,
+                     VertexElement** nbrs);
 
     /// Originally from Mesh.
     ///
@@ -322,16 +308,18 @@ public:
 
     /// Originally from Mesh.
     ///
-    uint ncon()
-    { return pConnections.size(); }
+    uint ncon() {
+        return pConnections.size();
+    }
 
     /// Originally from Mesh.
     ///
-    VertexConnection* getConnection(uint i)
-    { return pConnections[i]; }
+    VertexConnection* getConnection(uint i) {
+        return pConnections[i];
+    }
 
     const std::vector<vertex_id_t>& getVertexPermutation() const noexcept {
-      return pVertexPerm;
+        return pVertexPerm;
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -347,11 +335,10 @@ public:
     void reordered();
 
     // Just temporary functions to have a look at the matrix
-    //void displayMatrix(uint);
-    //void savematrix();
+    // void displayMatrix(uint);
+    // void savematrix();
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
     // AUXILIARY OBJECT CONSTRUCTION & SETUP
     ////////////////////////////////////////////////////////////////////////
@@ -367,7 +354,7 @@ private:
     ///
     /// Originally from Mesh.
     ///
-    VertexConnection * newConnection(VertexElement *, VertexElement *);
+    VertexConnection* newConnection(VertexElement*, VertexElement*);
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -378,38 +365,24 @@ private:
     // COPIED FROM MESH
     ////////////////////////////////////////////////////////////////////////
 
-    VertexElementPVec                   pElements;
-    VertexConnectionPVec                pConnections;
+    VertexElementPVec pElements;
+    VertexConnectionPVec pConnections;
 
-    std::vector<vertex_id_t>            pVertexPerm;
+    std::vector<vertex_id_t> pVertexPerm;
 
     ////////////////////////////////////////////////////////////////////////
     // COPIED FROM TETMESH
     ////////////////////////////////////////////////////////////////////////
 
-    index_t           pNTri;
-    uint                                pNTet;
-    vertex_id_t                       * pTetrahedrons;
-    vertex_id_t                       * pTriangles;
+    index_t pNTri;
+    uint pNTet;
+    vertex_id_t* pTetrahedrons;
+    vertex_id_t* pTriangles;
 
-    TetStubSet                          pTetLUT;
-
+    TetStubSet pTetLUT;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-}
-
-////////////////////////////////////////////////////////////////////////////////
+}  // namespace steps::solver::efield
 
 STEPS_EXTERN
-std::ostream & operator<< (std::ostream & os, steps::solver::efield::TetStub const &);
-
-////////////////////////////////////////////////////////////////////////////////
-
-#endif
-// STEPS_SOLVER_EFIELD_TETMESH_HPP
-
-// END
+std::ostream& operator<<(std::ostream& os, steps::solver::efield::TetStub const&);

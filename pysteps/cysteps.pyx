@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# cython: language_level=2
+# cython:language_level=3str
 ###___license_placeholder___###
 
 # =====================================================================================================================
@@ -29,6 +29,9 @@ def _py_init():
 
 def _py_finish():
     finish()
+
+def _py_permeability(G, V, z, T, iconc, oconc):
+    return permeability(G, V, z, T, iconc, oconc)
 
 _USE_PETSC = USE_PETSC
 _STEPS_USE_DIST_MESH = STEPS_USE_DIST_MESH

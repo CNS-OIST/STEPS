@@ -1,5 +1,5 @@
-# * Macro to find a python module
-#
+# Macro to find a python module
+# ~~~
 # Usage: find_python_module (module [VERSION] [REQUIRED])
 #
 # Copyright 2005-2018 Airbus-EDF-IMACS-Phimeca
@@ -8,6 +8,7 @@
 # Copyright.txt for details in:
 #
 # https://github.com/openturns/otsubsetinverse/blob/master/cmake/FindPythonModule.cmake
+# ~~~
 
 macro(find_python_module module)
 
@@ -60,8 +61,9 @@ macro(find_python_module module)
     endif()
 
     find_package_handle_standard_args(
-      ${module} REQUIRED_VARS ${module_upper}_LOCATION _${module_upper}_VERSION_MATCH VERSION_VAR
-      ${module_upper}_VERSION_STRING)
+      ${module}
+      REQUIRED_VARS ${module_upper}_LOCATION _${module_upper}_VERSION_MATCH
+      VERSION_VAR ${module_upper}_VERSION_STRING)
     if(NOT ${module}_FIND_OPTIONAL AND NOT _${module_upper}_VERSION_MATCH)
       message(FATAL_ERROR "Missing python module ${module}")
     endif()

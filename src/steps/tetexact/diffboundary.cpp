@@ -24,52 +24,41 @@
 
  */
 
-
-// Standard library & STL headers.
-#include <vector>
-
 // STEPS headers.
 #include "diffboundary.hpp"
 #include "comp.hpp"
 
 // logging
-#include <easylogging++.h>
 #include "util/error.hpp"
-////////////////////////////////////////////////////////////////////////////////
+#include <easylogging++.h>
 
-namespace stex = steps::tetexact;
-namespace ssolver = steps::solver;
+namespace steps::tetexact {
 
-////////////////////////////////////////////////////////////////////////////////
-
-stex::DiffBoundary::DiffBoundary(steps::solver::DiffBoundarydef * dbdef)
-: pDiffBoundarydef(dbdef)
-{
+DiffBoundary::DiffBoundary(solver::DiffBoundarydef* dbdef)
+    : pDiffBoundarydef(dbdef) {
     AssertLog(dbdef != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::DiffBoundary::~DiffBoundary() = default;
+DiffBoundary::~DiffBoundary() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::DiffBoundary::checkpoint(std::fstream & /*cp_file*/)
-{
+void DiffBoundary::checkpoint(std::fstream& /*cp_file*/) {
+    // reserve
+    // NOTE setTetDirection() is called during Tetexact::setup()
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void DiffBoundary::restore(std::fstream& /*cp_file*/) {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::DiffBoundary::restore(std::fstream & /*cp_file*/)
-{
-    // reserve
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void stex::DiffBoundary::setComps(stex::Comp * compa, stex::Comp * compb)
-{
+void DiffBoundary::setComps(Comp* compa, Comp* compb) {
     AssertLog(pSetComps == false);
     AssertLog(compa != nullptr);
     AssertLog(compb != nullptr);
@@ -82,31 +71,25 @@ void stex::DiffBoundary::setComps(stex::Comp * compa, stex::Comp * compb)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Comp * stex::DiffBoundary::compA()
-{
+Comp* DiffBoundary::compA() {
     AssertLog(pSetComps == true);
     return pCompA;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Comp * stex::DiffBoundary::compB()
-{
+Comp* DiffBoundary::compB() {
     AssertLog(pSetComps == true);
     return pCompB;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::DiffBoundary::setTetDirection(tetrahedron_id_t tet, uint direction)
-{
+void DiffBoundary::setTetDirection(tetrahedron_global_id tet, uint direction) {
     AssertLog(direction < 4);
 
     pTets.push_back(tet);
     pTetDirection.push_back(direction);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
-
+}  // namespace steps::tetexact

@@ -69,7 +69,7 @@ class TestMastEq(unittest.TestCase):
         res = numpy.zeros([ntpnts])
 
         sim.reset()
-        sim.setCompCount('comp1', 'A', 0)
+        sim.setCompSpecCount('comp1', 'A', 0)
 
         new_dir = './validation_cp/cp/'
         os.makedirs(new_dir, exist_ok=True)
@@ -108,7 +108,7 @@ class TestMastEq(unittest.TestCase):
 
         for t in range(0, ntpnts):
             sim.run(tpnts[t])
-            res[t] = sim.getCompCount('comp1', 'A')
+            res[t] = sim.getCompSpecCount('comp1', 'A')
 
         def fact(x): return (1 if x==0 else x * fact(x-1))
 
@@ -118,7 +118,6 @@ class TestMastEq(unittest.TestCase):
         for r in res: steps_n_res[int(r)]+=1
         for s in range(50): steps_n_res[s] = steps_n_res[s]/ntpnts
 
-        passed = True
         max_err = 0.0
 
         k1 = KCST_b

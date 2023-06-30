@@ -46,14 +46,14 @@ cdef extern from "wmrssa/wmrssa.hpp" namespace "steps::wmrssa":
         void setNSteps(uint) except +
         double getCompVol(std.string) except +
         void setCompVol(std.string, double) except +
-        double getCompCount(std.string, std.string) except +
-        void setCompCount(std.string, std.string, double) except +
-        double getCompAmount(std.string, std.string) except +
-        void setCompAmount(std.string, std.string, double) except +
-        double getCompConc(std.string, std.string) except +
-        void setCompConc(std.string, std.string, double) except +
-        bool getCompClamped(std.string, std.string) except +
-        void setCompClamped(std.string, std.string, bool) except +
+        double getCompSpecCount(std.string, std.string) except +
+        void setCompSpecCount(std.string, std.string, double) except +
+        double getCompSpecAmount(std.string, std.string) except +
+        void setCompSpecAmount(std.string, std.string, double) except +
+        double getCompSpecConc(std.string, std.string) except +
+        void setCompSpecConc(std.string, std.string, double) except +
+        bool getCompSpecClamped(std.string, std.string) except +
+        void setCompSpecClamped(std.string, std.string, bool) except +
         double getCompReacK(std.string, std.string) except +
         void setCompReacK(std.string, std.string, double) except +
         bool getCompReacActive(std.string, std.string) except +
@@ -65,12 +65,12 @@ cdef extern from "wmrssa/wmrssa.hpp" namespace "steps::wmrssa":
         void resetCompReacExtent(std.string, std.string) except +
         double getPatchArea(std.string) except +
         void setPatchArea(std.string, double) except +
-        double getPatchCount(std.string, std.string) except +
-        void setPatchCount(std.string, std.string, double) except +
-        double getPatchAmount(std.string, std.string) except +
-        void setPatchAmount(std.string, std.string, double) except +
-        bool getPatchClamped(std.string, std.string) except +
-        void setPatchClamped(std.string, std.string, bool) except +
+        double getPatchSpecCount(std.string, std.string) except +
+        void setPatchSpecCount(std.string, std.string, double) except +
+        double getPatchSpecAmount(std.string, std.string) except +
+        void setPatchSpecAmount(std.string, std.string, double) except +
+        bool getPatchSpecClamped(std.string, std.string) except +
+        void setPatchSpecClamped(std.string, std.string, bool) except +
         double getPatchSReacK(std.string, std.string) except +
         void setPatchSReacK(std.string, std.string, double) except +
         bool getPatchSReacActive(std.string, std.string) except +

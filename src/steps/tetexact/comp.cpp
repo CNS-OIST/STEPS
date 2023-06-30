@@ -24,59 +24,42 @@
 
  */
 
-
-
-// Standard library & STL headers.
-#include <vector>
-
 // STEPS headers.
 #include "comp.hpp"
-#include "kproc.hpp"
 #include "model/reac.hpp"
-#include "tet.hpp"
 
 // logging
-#include <easylogging++.h>
 #include "util/error.hpp"
+#include <easylogging++.h>
 
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::tetexact {
 
-namespace stex = steps::tetexact;
-namespace ssolver = steps::solver;
 
-////////////////////////////////////////////////////////////////////////////////
-
-stex::Comp::Comp(steps::solver::Compdef * compdef)
-: pCompdef(compdef)
-, pVol(0.0)
-, pTets()
-{
+Comp::Comp(solver::Compdef* compdef)
+    : pCompdef(compdef)
+    , pVol(0.0) {
     AssertLog(pCompdef != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Comp::~Comp()
-= default;
+Comp::~Comp() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Comp::checkpoint(std::fstream & /*cp_file*/)
-{
+void Comp::checkpoint(std::fstream& /*cp_file*/) {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Comp::restore(std::fstream & /*cp_file*/)
-{
+void Comp::restore(std::fstream& /*cp_file*/) {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Comp::addTet(stex::WmVol * tet)
-{
+void Comp::addTet(WmVol* tet) {
     AssertLog(tet->compdef() == def());
     pTets.push_back(tet);
     pVol += tet->vol();
@@ -84,34 +67,25 @@ void stex::Comp::addTet(stex::WmVol * tet)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Comp::modCount(uint slidx, double count)
-{
-    AssertLog(slidx < def()->countSpecs());
-    double newcount = (def()->pools()[slidx] + count);
-    AssertLog(newcount >= 0.0);
-    def()->setCount(slidx, newcount);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-stex::WmVol * stex::Comp::pickTetByVol(double rand01) const
-{
-    if (countTets() == 0) { return nullptr;
-}
-    if (countTets() == 1) return pTets[0];
+WmVol* Comp::pickTetByVol(double rand01) const {
+    if (countTets() == 0) {
+        return nullptr;
+    }
+    if (countTets() == 1) {
+        return pTets[0];
+    }
 
     double accum = 0.0;
     double selector = rand01 * vol();
-    WmVolPVecCI t_end = endTet();
-    for (WmVolPVecCI t = bgnTet(); t != t_end; ++t)
-    {
+    auto t_end = endTet();
+    for (auto t = bgnTet(); t != t_end; ++t) {
         accum += (*t)->vol();
-        if (selector < accum) return (*t);
+        if (selector < accum) {
+            return (*t);
+        }
     }
     AssertLog(false);
     return nullptr;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
+}  // namespace steps::tetexact

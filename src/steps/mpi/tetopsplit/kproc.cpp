@@ -24,149 +24,136 @@
 
  */
 
-
 /*
  *  Last Changed Rev:  $Rev$
  *  Last Changed Date: $Date$
  *  Last Changed By:   $Author$
  */
 
-
-// Standard library & STL headers.
-#include <cassert>
-#include <fstream>
-#include <iostream>
 #include <random>
-#include <sstream>
 #include <vector>
 
-// STEPS headers.
 #include "kproc.hpp"
 // logging
 #include "util/error.hpp"
 #include <easylogging++.h>
+
+#include "util/checkpointing.hpp"
+
+namespace steps::mpi::tetopsplit {
+
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace smtos = steps::mpi::tetopsplit;
+KProc::KProc()
+    : rExtent(0)
+    , pFlags(0)
+    , pSchedIDX(0u) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::KProc::KProc()
-: rExtent(0)
-, pFlags(0)
-, pSchedIDX(0)
+KProc::~KProc() = default;
 
-{
+////////////////////////////////////////////////////////////////////////////////
+
+void KProc::checkpoint(std::fstream& cp_file) {
+    util::checkpoint(cp_file, rExtent);
+    util::checkpoint(cp_file, pFlags);
+    util::checkpoint(cp_file, crData);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::KProc::~KProc()
-= default;
-
-////////////////////////////////////////////////////////////////////////////////
-
-void smtos::KProc::setActive(bool active)
-{
-    if (active == true) { pFlags &= ~INACTIVATED;
-    } else { pFlags |= INACTIVATED;
-}
+void KProc::restore(std::fstream& cp_file) {
+    util::restore(cp_file, rExtent);
+    util::restore(cp_file, pFlags);
+    util::restore(cp_file, crData);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-unsigned long long smtos::KProc::getExtent() const
-{
+void KProc::setActive(bool active) {
+    if (active == true) {
+        pFlags &= ~INACTIVATED;
+    } else {
+        pFlags |= INACTIVATED;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+unsigned long long KProc::getExtent() const {
     return rExtent;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::KProc::resetExtent()
-{
+void KProc::resetExtent() {
     rExtent = 0;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::KProc::resetCcst()
-{
+void KProc::resetCcst() {
     // This should never get called on base object
     AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::KProc::c() const
-{
+double KProc::c() const {
     // Should never get called on base object
     AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::KProc::h()
-{
+double KProc::h() {
     // Should never get called on base object
     AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int smtos::KProc::apply(const rng::RNGptr &/*rng*/)
-{
-    // Should never get called on base object
-	AssertLog(false);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-int smtos::KProc::apply(const rng::RNGptr &/*rng*/, uint /*nmolcs*/)
-{
-    // Should never get called on base object
-	AssertLog(false);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-void smtos::KProc::apply(const rng::RNGptr &/*rng*/, double /*dt*/, double /*simtime*/, double /*period*/)
-{
+int KProc::apply(const rng::RNGptr& /*rng*/) {
     // Should never get called on base object
     AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::KProc::resetOccupancies()
-{
+int KProc::apply(const rng::RNGptr& /*rng*/, uint /*nmolcs*/) {
     // Should never get called on base object
     AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<smtos::KProc*> const & smtos::KProc::getLocalUpdVec(int /*direction*/) const
-{
+void KProc::apply(const rng::RNGptr& /*rng*/,
+                  double /*dt*/,
+                  double /*simtime*/,
+                  double /*period*/) {
     // Should never get called on base object
     AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<uint> const & smtos::KProc::getRemoteUpdVec(int /*direction*/) const
-{
+void KProc::resetOccupancies() {
     // Should never get called on base object
     AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-/*
-std::vector<smtos::KProc*> const & smtos::KProc::getSharedUpd()
-{
+
+std::vector<KProc*> const& KProc::getLocalUpdVec(int /*direction*/) const {
     // Should never get called on base object
-	AssertLog(false);
+    AssertLog(false);
 }
-*/
 
 ////////////////////////////////////////////////////////////////////////////////
-// END
+
+std::vector<solver::kproc_global_id> const& KProc::getRemoteUpdVec(int /*direction*/) const {
+    // Should never get called on base object
+    AssertLog(false);
+}
+
+}  // namespace steps::mpi::tetopsplit

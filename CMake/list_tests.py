@@ -72,7 +72,7 @@ if __name__ == "__main__":
     # We need to do this because unittest actually imports the test modules upon test discovery.
     # Since the test modules also import steps, we need to provide a fake steps package in order
     # for the test discovery to work.
-    sys.meta_path.append(_CustomMetaPathFinder())
+    sys.meta_path.insert(0, _CustomMetaPathFinder())
 
     loader = unittest.TestLoader()
     # Redirect stdout to avoid STEPS prints on module import

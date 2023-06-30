@@ -24,11 +24,6 @@
 
  */
 
-/*
- *  Last Changed Rev:  $Rev$
- *  Last Changed Date: $Date$
- *  Last Changed By:   $Author$
- */
 
 #pragma once
 
@@ -37,12 +32,11 @@
 #include <string>
 #include <vector>
 
-#include "util/common.h"
+#include "util/common.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace steps {
-namespace model {
+namespace steps::model {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -51,14 +45,14 @@ class Model;
 class Spec;
 
 // Auxiliary declarations.
-typedef Spec *                          SpecP;
-typedef std::map<std::string, SpecP>    SpecPMap;
-typedef SpecPMap::iterator              SpecPMapI;
-typedef SpecPMap::const_iterator        SpecPMapCI;
+typedef Spec* SpecP;
+typedef std::map<std::string, SpecP> SpecPMap;
+typedef SpecPMap::iterator SpecPMapI;
+typedef SpecPMap::const_iterator SpecPMapCI;
 
-typedef std::vector<SpecP>              SpecPVec;
-typedef SpecPVec::iterator              SpecPVecI;
-typedef SpecPVec::const_iterator        SpecPVecCI;
+typedef std::vector<SpecP> SpecPVec;
+typedef SpecPVec::iterator SpecPVecI;
+typedef SpecPVec::const_iterator SpecPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Species reactant.
@@ -67,11 +61,8 @@ typedef SpecPVec::const_iterator        SpecPVecCI;
 ///
 /// \warning Methods start with an underscore are not exposed to Python.
 
-class Spec
-{
-
-public:
-
+class Spec {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
@@ -80,7 +71,7 @@ public:
     ///
     /// \param id ID of the species.
     /// \param model Pointer to the parent model.
-    Spec(std::string const & id, Model * model, int valence = 0);
+    Spec(std::string const& id, Model* model, int valence = 0);
 
     /// Destructor
     virtual ~Spec();
@@ -92,19 +83,21 @@ public:
     /// Return the species ID.
     ///
     /// \return ID of the species.
-    inline const std::string& getID() const noexcept
-    { return pID; }
+    inline const std::string& getID() const noexcept {
+        return pID;
+    }
 
     /// Set or change the species ID.
     ///
     /// \param id ID of the species.
-    virtual void setID(std::string const & id);
+    virtual void setID(std::string const& id);
 
     /// Return a pointer to the parent model.
     ///
     /// \return Pointer to the parent model.
-    inline Model * getModel() const noexcept
-    { return pModel; }
+    inline Model* getModel() const noexcept {
+        return pModel;
+    }
 
     /// Set the valence of the species.
     ///
@@ -114,8 +107,9 @@ public:
     /// Return the valence of the species.
     ///
     /// \return Valence of the species.
-    inline int getValence() const noexcept
-    { return pValence; }
+    inline int getValence() const noexcept {
+        return pValence;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: DELETION
@@ -135,19 +129,16 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
-    std::string                         pID;
-    Model                             * pModel;
-    int                                 pValence;
+    std::string pID;
+    Model* pModel;
+    int pValence;
 
     ////////////////////////////////////////////////////////////////////////
-
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-} // namespace model
-} // namespace steps
+}  // namespace steps::model

@@ -162,9 +162,12 @@ class TestKisilevich(unittest.TestCase):
 
         sim.toSave(resA, resB, dt=DT)
 
+        seed = time.time()%4294967295
         for i in range (0, NITER):    
             sim.newRun()
             sim.restore('./validation_cp/cp/kisilevich')
+            rng.initialize(seed)
+            seed += 1
             sim.run(INT)
 
         itermeansA = numpy.mean(resA.data, axis=0)
@@ -184,7 +187,6 @@ class TestKisilevich(unittest.TestCase):
 
 
         tpnt_compare = [1, 2]
-        passed = True
         max_err = 0.0
 
         for tidx in tpnt_compare:
@@ -251,8 +253,7 @@ class TestKisilevich(unittest.TestCase):
                     # compare A
                     det_conc = getdetc(resA.time[0,tidx], rad)
                     steps_conc = bin_concsA[i]
-                    if not tol_funcs.tolerable(det_conc, steps_conc, tolerance):
-                        passed = False
+                    self.assertTrue(tol_funcs.tolerable(det_conc, steps_conc, tolerance))
                     if (abs(2*(det_conc-steps_conc)/(det_conc+steps_conc)) > max_err):
                         max_err = abs(2*(det_conc-steps_conc)/(det_conc+steps_conc))
                 #print("Error:",abs(2*(det_conc-steps_conc)/(det_conc+steps_conc))*100.0, "%")

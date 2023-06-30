@@ -155,17 +155,17 @@ class TestRDKisilevich(unittest.TestCase):
         for i in range (0, NITER):
             sim.reset()
             
-            sim.setDiffBoundaryDiffusionActive('diffb', 'A', True)
-            sim.setDiffBoundaryDiffusionActive('diffb', 'B', True)
+            sim.setDiffBoundarySpecDiffusionActive('diffb', 'A', True)
+            sim.setDiffBoundarySpecDiffusionActive('diffb', 'B', True)
             
-            sim.setCompCount('compa', 'A', NA0)
-            sim.setCompCount('compb', 'B', NB0)
+            sim.setCompSpecCount('compa', 'A', NA0)
+            sim.setCompSpecCount('compb', 'B', NB0)
             
             for t in range(0, ntpnts):
                 sim.run(tpnts[t])
                 for k in range(SAMPLE):
-                    resA[i,t,k] = sim.getTetCount(int(tetidxs[k]), 'A')
-                    resB[i,t,k] = sim.getTetCount(int(tetidxs[k]), 'B')
+                    resA[i,t,k] = sim.getTetSpecCount(int(tetidxs[k]), 'A')
+                    resB[i,t,k] = sim.getTetSpecCount(int(tetidxs[k]), 'B')
 
 
         itermeansA = numpy.mean(resA, axis=0)

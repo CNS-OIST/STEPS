@@ -24,79 +24,64 @@
 
  */
 
-
-
-#ifndef STEPS_TETEXACT_DIFFBOUNDARY_HPP
-#define STEPS_TETEXACT_DIFFBOUNDARY_HPP 1
-
+#pragma once
 
 // STL headers.
 #include <cassert>
 #include <vector>
 
 // STEPS headers.
-#include "util/common.h"
 #include "comp.hpp"
-#include "solver/types.hpp"
 #include "solver/diffboundarydef.hpp"
+#include "solver/types.hpp"
+#include "util/common.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace tetexact {
-
-////////////////////////////////////////////////////////////////////////////////
-
-namespace stex = steps::tetexact;
-
-////////////////////////////////////////////////////////////////////////////////
-
+namespace steps::tetexact {
 
 // Forward declarations.
 class DiffBoundary;
 
 // Auxiliary declarations.
-typedef DiffBoundary *                         DiffBoundaryP;
-typedef std::vector<DiffBoundaryP>             DiffBoundaryPVec;
-typedef DiffBoundaryPVec::iterator             DiffBoundaryPVecI;
-typedef DiffBoundaryPVec::const_iterator       DiffBoundaryPVecCI;
+typedef DiffBoundary* DiffBoundaryP;
+typedef std::vector<DiffBoundaryP> DiffBoundaryPVec;
+typedef DiffBoundaryPVec::iterator DiffBoundaryPVecI;
+typedef DiffBoundaryPVec::const_iterator DiffBoundaryPVecCI;
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class DiffBoundary
-{
-public:
-
+class DiffBoundary {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    explicit DiffBoundary(steps::solver::DiffBoundarydef * dbdef);
+    explicit DiffBoundary(solver::DiffBoundarydef* dbdef);
     ~DiffBoundary();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream& cp_file);
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream& cp_file);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::DiffBoundarydef * def() const noexcept
-    { return pDiffBoundarydef; }
+    inline solver::DiffBoundarydef* def() const noexcept {
+        return pDiffBoundarydef;
+    }
 
     // We need access to the compartments so as to check if species are defined
-    stex::Comp * compA();
+    Comp* compA();
 
-    stex::Comp * compB();
+    Comp* compB();
 
-    void setComps(stex::Comp * compa, stex::Comp * compb);
+    void setComps(Comp* compa, Comp* compb);
 
     // Other data we need is the TETRAHEDRONS (not triangles) affected by
     // this diff boundary- if a solver method like setDiffBoundarySpec is called
@@ -108,50 +93,42 @@ public:
 
     // This information is the tetrahedron connected to this diffusion boundary
     // and the direction of the diffusion boundary for that tetrahedron (0 to 3)
-    void setTetDirection(tetrahedron_id_t tet, uint direction);
+    void setTetDirection(tetrahedron_global_id tet, uint direction);
 
 
-    inline const std::vector<tetrahedron_id_t>& getTets() const noexcept
-    { return pTets; }
+    inline const std::vector<tetrahedron_global_id>& getTets() const noexcept {
+        return pTets;
+    }
 
-    inline const std::vector<uint>& getTetDirection() const noexcept
-    { return pTetDirection; }
-
-    ////////////////////////////////////////////////////////////////////////
-
-private:
+    inline const std::vector<uint>& getTetDirection() const noexcept {
+        return pTetDirection;
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-    steps::solver::DiffBoundarydef    * pDiffBoundarydef;
+  private:
+    ////////////////////////////////////////////////////////////////////////
+
+    solver::DiffBoundarydef* pDiffBoundarydef;
 
     // Bool to check if compartments have been specified
-    bool                                 pSetComps{false};
+    bool pSetComps{false};
 
     // Compartment arbitrarily labelled 'A'
-    stex::Comp                           * pCompA{nullptr};
+    Comp* pCompA{nullptr};
     // Compartment arbitrarily labelled 'B'
-    stex::Comp                           * pCompB{nullptr};
+    Comp* pCompB{nullptr};
 
     // A big vector of all the tetrahedrons connected to this diffusion boundary
     // If the diff boundary allows passage of an ion these tets will tell
     // their diffs for that ion to allow diffusion
     // The direction information I'm thinking will come from WHERE??
-    std::vector<tetrahedron_id_t>                     pTets;
+    std::vector<tetrahedron_global_id> pTets;
 
     // Directions have to be stored here - a tet could be connected to 2
     // different diffusion boundaries for example
     // This will be the same length as the pTets vector
-    std::vector<uint>                     pTetDirection;
-
+    std::vector<uint> pTetDirection;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-#endif
-// STEPS_TETEXACT_DIFFBOUNDARY_HPP
-
-// END
+}  // namespace steps::tetexact

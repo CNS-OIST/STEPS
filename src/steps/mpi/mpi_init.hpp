@@ -31,18 +31,16 @@
 // passed from Python command.
 
 // STEPS headers.
-#include "util/common.h"
+#include "util/common.hpp"
 
 #include <mpi.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace steps {
-namespace mpi {
+namespace steps::mpi {
 
 void mpiInit();
 int getRank(MPI_Comm comm = MPI_COMM_WORLD);
 int getNHosts(MPI_Comm comm = MPI_COMM_WORLD);
 
-} // namespace mpi
-} // namespace steps
+}  // namespace steps::mpi

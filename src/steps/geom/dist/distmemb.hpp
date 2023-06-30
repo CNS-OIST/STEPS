@@ -6,8 +6,7 @@
 #include "geom/dist/distmesh.hpp"
 #include "util/vocabulary.hpp"
 
-namespace steps {
-namespace dist {
+namespace steps::dist {
 
 class DistMemb {
   public:
@@ -21,36 +20,46 @@ class DistMemb {
      * \param patches The list of patches included in the membrane
      * \param capac Capacitance per unit area
      */
-    DistMemb(const model::membrane_id &membrane, DistMesh &mesh,
-             std::set<model::patch_id> patches, double capac);
+    DistMemb(const model::membrane_id& membrane,
+             DistMesh& mesh,
+             std::set<model::patch_id> patches,
+             double capac);
 
     /**
      * \brief Return a pointer to the distmesh container object.
      *
      * \attention Parallelism: Collective
      */
-    inline DistMesh *getContainer() const noexcept { return &meshRef; }
+    inline DistMesh* getContainer() const noexcept {
+        return &meshRef;
+    }
 
     /**
      * \brief Return the membrane id.
      *
      * \attention Parallelism: Collective
      */
-    inline std::string const &getID() const noexcept { return pID; }
+    inline std::string const& getID() const noexcept {
+        return pID;
+    }
 
     /**
      * \brief Return the patches.
      *
      * \attention Parallelism: Collective
      */
-    inline std::set<model::patch_id> const &patches() const noexcept { return pPatches; }
+    inline std::set<model::patch_id> const& patches() const noexcept {
+        return pPatches;
+    }
 
     /**
      * \brief Return the membrane capacitance.
      *
      * \attention Parallelism: Collective
      */
-    inline double getCapacitance() const noexcept { return pCapacitance; }
+    inline double getCapacitance() const noexcept {
+        return pCapacitance;
+    }
 
     /**
      * \brief Set the membrane capacitance.
@@ -63,11 +72,9 @@ class DistMemb {
 
   private:
     std::string pID;
-    DistMesh &meshRef;
+    DistMesh& meshRef;
     std::set<model::patch_id> pPatches;
     double pCapacitance;
 };
 
-} // namespace dist
-} // namespace steps
-
+}  // namespace steps::dist

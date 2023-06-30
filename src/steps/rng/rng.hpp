@@ -24,30 +24,23 @@
 
  */
 
-
-#ifndef STEPS_RNG_RNG_HPP
-#define STEPS_RNG_RNG_HPP 1
-
+#pragma once
 
 // STL headers.
 #include <memory>
 
 // STEPS headers.
-#include "util/common.h"
 #include "math/tools.hpp"
+#include "util/common.hpp"
 
-namespace steps {
-namespace rng {
+namespace steps::rng {
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Base class of random number generator.
 ///
 /// The RNG class can be inherited by other classes of random number generators.
-class RNG
-{
-
-public:
-
+class RNG {
+  public:
     /// Constructor
     ///
     /// \param bufsize Size of the buffer.
@@ -56,56 +49,67 @@ public:
     /// Destructor
     virtual ~RNG();
 
+    virtual void checkpoint(std::ostream& cp_file) const;
+
+    virtual void restore(std::istream& cp_file);
+
     /// Initialize the generator with seed.
     ///
     /// \param seed Seed for the generator.
-    void initialize(ulong const & seed);
+    void initialize(ulong const& seed);
+
+    /// Return the seed of the generator.
+    ulong seed() const;
 
     /// Minimax inclusive range for the C++11 compatibility
-    static constexpr uint min() { return 0; }
-    static constexpr uint max() { return 0xffffffffu; }
+    static constexpr uint min() {
+        return 0;
+    }
+    static constexpr uint max() {
+        return 0xffffffffu;
+    }
 
     typedef uint result_type;
-    result_type operator()() { return get(); }
+    result_type operator()() {
+        return get();
+    }
 
     /// Return the next random int in the buffer of the generator.
     ///
-    inline uint get()
-    {
-        if (rNext == rEnd) { concreteFillBuffer(); rNext = rBuffer; }
+    inline uint get() {
+        if (rNext == rEnd) {
+            concreteFillBuffer();
+            rNext = rBuffer;
+        }
         return *(rNext++);
     }
 
     /// Generates a uniform random number on [0,1] real interval.
     ///
-    inline double getUnfII()
-    {
+    inline double getUnfII() {
         // Divided by 2^32-1.
         return get() * (1.0 / 4294967295.0);
     }
 
     /// Generates a uniform random number on [0,1) real interval.
     ///
-    inline double getUnfIE()
-    {
+    inline double getUnfIE() {
         // Divided by 2^32.
-        return get() * (1.0/4294967296.0);
+        return get() * (1.0 / 4294967296.0);
     }
 
     /// Generates a uniform random number on (0,1) real interval.
     ///
-    inline double getUnfEE()
-    {
+    inline double getUnfEE() {
         // Divided by 2^32.
-        return (static_cast<double>(get()) + 0.5) * (1.0/4294967296.0);
+        return (static_cast<double>(get()) + 0.5) * (1.0 / 4294967296.0);
     }
 
     /// Generates a uniform random number on [0,1) with 53-bit resolution.
     ///
-    inline double getUnfIE53()
-    {
+    inline double getUnfIE53() {
         ulong a = get() >> 5, b = get() >> 6;
-        return(a * 67108864.0 + b) * (1.0 / 9007199254740992.0);
+        return (a * 67108864.0 + b) * (1.0 / 9007199254740992.0);
     }
 
     /// Get a standard exponentially distributed number.
@@ -127,13 +131,38 @@ public:
     ///
     uint getBinom(uint t, double p);
 
-protected:
+    /**
+     * Function that rounds a double value to one of the closest straddling integers
+     * with a probability dependent on the proximity
+     * \tparam T the type of the integer returned
+     * \param value to round to one of the closest integer
+     */
+    template <typename T>
+    T stochastic_round(double value) {
+        std::uniform_real_distribution<double> uniform(0.0, 1.0);
+        const auto floored_value = std::floor(value);
+        return static_cast<T>(floored_value) + ((value - floored_value) > uniform(*this) ? 1 : 0);
+    }
 
-    uint                      * rBuffer;
-    uint                        rSize;
+    /**
+     * Function that rounds a double value to one of the closest straddling integers
+     * with a probability dependent on the proximity \tparam T the type of the
+     * integer returned
+     * \param value to round to one of the closest integer
+     * \param upper_bound is the maximum value allowed for the rounded value
+     */
 
-    uint                      * rNext;
-    uint                      * rEnd;
+    template <typename T>
+    T stochastic_round(double value, T upper_bound) {
+        return std::min(upper_bound, this->stochastic_round<T>(value));
+    }
+
+  protected:
+    uint* rBuffer;
+    uint rSize;
+
+    uint* rNext;
+    uint* rEnd;
 
     virtual void concreteInitialize(ulong seed) = 0;
 
@@ -141,21 +170,11 @@ protected:
     ///
     virtual void concreteFillBuffer() = 0;
 
-private:
-
-    bool                        pInitialized;
-
+  private:
+    bool pInitialized;
+    ulong pSeed{};
 };
 
 using RNGptr = std::shared_ptr<RNG>;
 
-////////////////////////////////////////////////////////////////////////////////
-
-} // namespace rng
-} // namespace steps
-
-#endif
-// STEPS_RNG_RNG_HPP
-
-// END
-
+}  // namespace steps::rng

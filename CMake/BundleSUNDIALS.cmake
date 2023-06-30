@@ -4,7 +4,6 @@ endif()
 
 # set path for bundled build
 set(tpdir "${CMAKE_BINARY_DIR}/_bundle")
-set(SUNDIALS_libs "${tpdir}/SUNDIALS-install/lib/libsundials_cvode${CMAKE_SHARED_LIBRARY_SUFFIX}")
 
 # reconfigure only if library is missing (otherwise it recompiles every time)
 include(ExternalProject)
@@ -32,15 +31,39 @@ ExternalProject_Add_StepTargets(SUNDIALS install)
 # create include path that may not exist yet
 file(MAKE_DIRECTORY ${tpdir}/SUNDIALS-install/include)
 
+foreach(libname cvode ida kinsol nvecserial)
+  if(APPLE)
+    add_custom_command(
+      TARGET SUNDIALS-install
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/lib/steps/"
+      COMMAND
+        ${CMAKE_COMMAND} -E copy
+        "${tpdir}/SUNDIALS-install/lib/libsundials_${libname}${CMAKE_SHARED_LIBRARY_SUFFIX}"
+        "${tpdir}/SUNDIALS-install/lib/libsundials_${libname}.3${CMAKE_SHARED_LIBRARY_SUFFIX}"
+        "${CMAKE_BINARY_DIR}/lib/steps/")
+  else()
+    add_custom_command(
+      TARGET SUNDIALS-install
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/lib/steps/"
+      COMMAND
+        ${CMAKE_COMMAND} -E copy
+        "${tpdir}/SUNDIALS-install/lib/libsundials_${libname}${CMAKE_SHARED_LIBRARY_SUFFIX}"
+        "${tpdir}/SUNDIALS-install/lib/libsundials_${libname}${CMAKE_SHARED_LIBRARY_SUFFIX}.3"
+        "${CMAKE_BINARY_DIR}/lib/steps/")
+  endif()
+endforeach()
+
 # add target
 include(ImportModernLib)
-add_library_target(NAME SUNDIALS
+add_library_target(
+  NAME SUNDIALS
   INCLUDE_DIRECTORIES "${tpdir}/SUNDIALS-install/include"
-  LIBRARIES "${tpdir}/SUNDIALS-install/lib/libsundials_nvecserial${CMAKE_SHARED_LIBRARY_SUFFIX}"
-            "${tpdir}/SUNDIALS-install/lib/libsundials_cvode${CMAKE_SHARED_LIBRARY_SUFFIX}"
-            "${tpdir}/SUNDIALS-install/lib/libsundials_ida${CMAKE_SHARED_LIBRARY_SUFFIX}"
-            "${tpdir}/SUNDIALS-install/lib/libsundials_kinsol${CMAKE_SHARED_LIBRARY_SUFFIX}"
-)
+  LIBRARIES "${CMAKE_BINARY_DIR}/lib/steps/libsundials_nvecserial${CMAKE_SHARED_LIBRARY_SUFFIX}"
+            "${CMAKE_BINARY_DIR}/lib/steps/libsundials_cvode${CMAKE_SHARED_LIBRARY_SUFFIX}"
+            "${CMAKE_BINARY_DIR}/lib/steps/libsundials_ida${CMAKE_SHARED_LIBRARY_SUFFIX}"
+            "${CMAKE_BINARY_DIR}/lib/steps/libsundials_kinsol${CMAKE_SHARED_LIBRARY_SUFFIX}")
 
 # ensure that SUNDIALS is compiled and installed before the target is linked
 add_dependencies(SUNDIALS::SUNDIALS SUNDIALS-install)

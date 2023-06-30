@@ -24,70 +24,44 @@
 
  */
 
-
-// STL headers.
-#include <algorithm>
-#include <cassert>
-#include <cmath>
-#include <iostream>
-#include <sstream>
-#include <string>
-
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
 // STEPS headers.
-#include "util/common.h"
 #include "matrix.hpp"
 #include "tetcoupler.hpp"
-#include "geom/tetmesh.hpp"
+#include "util/common.hpp"
 #include "vertexconnection.hpp"
 #include "vertexelement.hpp"
 
 // logging
 #include <easylogging++.h>
 
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::solver::efield {
 
-namespace sefield = steps::solver::efield;
-using namespace std;
-
-////////////////////////////////////////////////////////////////////////////////
-
-sefield::TetCoupler::TetCoupler(TetMesh * mesh)
-: pMesh(mesh)
-{
-}
+TetCoupler::TetCoupler(TetMesh* mesh)
+    : pMesh(mesh) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sefield::TetCoupler::~TetCoupler()
-= default;
+TetCoupler::~TetCoupler() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::TetCoupler::coupleMesh()
-{
-
-    typedef vector<double*> doublePVec;
+void TetCoupler::coupleMesh() {
+    typedef std::vector<double*> doublePVec;
 
     // For each vertex allocate space to accumulate coupling coefficients
     // to neighbors.
     uint nvertices = pMesh->countVertices();
     doublePVec vccs(nvertices);
-//    auto vccs_bgn = vccs.begin();
-//    auto vccs_end = vccs.end();
+
 #pragma omp parallel for
-    for (uint i = 0; i < nvertices; ++i)
-    {
-        VertexElement * vertex = pMesh->getVertex(i);
+    for (uint i = 0; i < nvertices; ++i) {
+        VertexElement* vertex = pMesh->getVertex(vertex_id_t(i));
         AssertLog(vertex->getIDX() == i);
         uint ncons = vertex->getNCon();
-        //double * new_vccs = new double[ncons]();
-        // initialize the array.
-        // std::fill_n(new_vccs, ncons, 0.0);
-        //vccs[i] = new_vccs;
         vccs[i] = new double[ncons]();
     }
 
@@ -105,62 +79,39 @@ void sefield::TetCoupler::coupleMesh()
     //         'neighbouring' vertex nodes.
     //
 #pragma omp parallel for
-    for (uint ivert = 0; ivert < nvertices; ++ivert)
-    {
-        VertexElement* ve = pMesh->getVertex(ivert);
+    for (uint ivert = 0; ivert < nvertices; ++ivert) {
+        VertexElement* ve = pMesh->getVertex(vertex_id_t(ivert));
 
         // Now we need the following information about vertex ve:
         // a list of tetrahedrons of which ve is a part. This list
         // is returned as indices in the ve's neighbour's list.
-        const vector<std::array<uint, 3>>  vti = pMesh->getNeighboringTetrahedra(ve);
+        const std::vector<std::array<uint, 3>>& vti = pMesh->getNeighboringTetrahedra(ve);
 
-        // for (int[] tetinds : pMesh.neighboringTetrahedra(ve)) {
+        // Loop over neighbouring tetrahedra
+        for (auto tetinds: vti) {
+            // Get the tetrahedron by vertex neighbour indices (e.g if the vertex has
+            // 6 neighbours one tetrahedron may be 2,4,5 or something
 
-        // Loop over neighoubring tetrahedra
-        for (auto tetinds : vti) {
-            // Get the tetrahedron by vertex neighbour indices (e.g if the vertex has 6 nighbours one
-            // tetrahedron may be 2,4,5 or something
-
-          // Get an array of the neighbouring vertices.
+            // Get an array of the neighbouring vertices.
             // (As said before, the ints in tetinds are indices in
             // the neighbours list of vertex ve, not global indices.
             auto ves = new VertexElement*[3];
-            for (uint i = 0; i < 3; ++i)
-            {
+            for (uint i = 0; i < 3; ++i) {
                 ves[i] = ve->getNeighbor(tetinds[i]);
             }
             // Compute the flux into the polyhedron around the vertex in
             // terms of the potential difference to each of the corners.
             double facs[3] = {0., 0., 0.};
-            //facs[0]=0.0;
-            //facs[1]=0.0;
-            //facs[2]=0.0;
-
 
             fluxCoeficients(ve, ves, facs);
             // Destroy the ves array
             delete[] ves;
 
             // Accumulate coefficients for neighbours in vccs.
-            for (uint i = 0; i < 3; ++i)
-            {
-                //AssertLog(facs[i] > 0.0);
+            for (uint i = 0; i < 3; ++i) {
                 vccs[ivert][tetinds[i]] += facs[i];
             }
-
-            // Delete the return vector.
-            //delete[] facs;
         }
-
-        /*
-        // Destroy the list of neighbouring tetrahedrons.
-        vector<vector<uint> >::iterator vti_end = vti.end();
-        for (vector<vector<uint> >::iterator vti_r = vti.begin();
-            vti_r != vti_end; ++vti_r)
-        {
-            delete[] (*vti_r);
-        }
-        */
     }
 
     // If all has gone according to plan, then the fluxes are symmetric
@@ -171,11 +122,10 @@ void sefield::TetCoupler::coupleMesh()
     uint ndif = 0;
 
 #pragma omp parallel for
-    for (uint icon = 0; icon < pMesh->ncon(); ++icon)
-    {
-        VertexConnection * vc = pMesh->getConnection(icon);
-        VertexElement * va = vc->getA();
-        VertexElement * vb = vc->getB();
+    for (uint icon = 0; icon < pMesh->ncon(); ++icon) {
+        VertexConnection* vc = pMesh->getConnection(icon);
+        VertexElement* va = vc->getA();
+        VertexElement* vb = vc->getB();
 
         uint va_idx = va->getIDX();
         uint vb_idx = vb->getIDX();
@@ -184,39 +134,35 @@ void sefield::TetCoupler::coupleMesh()
         // look through ti find which one corresponds to the other vertex
         // in this connection
         double wab = 0.0;
-        for (uint i = 0; i < va->getNCon(); ++i)
-        {
-            if (va->getNeighbor(i)->getIDX() == vb_idx)
-            {
+        for (uint i = 0; i < va->getNCon(); ++i) {
+            if (va->getNeighbor(i)->getIDX() == vb_idx) {
                 wab = vccs[va_idx][i];
             }
         }
 
         // do the same the other way round, just to check
         double wba = 0.0;
-        for (uint i = 0; i < vb->getNCon(); ++i)
-        {
-            if (vb->getNeighbor(i)->getIDX() == va_idx)
-            {
+        for (uint i = 0; i < vb->getNCon(); ++i) {
+            if (vb->getNeighbor(i)->getIDX() == va_idx) {
                 wba = vccs[vb_idx][i];
             }
         }
 
-        if (dblsDiffer(wab, wba))
-        {
+        if (dblsDiffer(wab, wba)) {
 #pragma omp atomic
             ndif += 1;
 #ifdef _OPENMP
             auto tid = omp_get_thread_num();
-            if (!tid) CLOG_N_TIMES(100, DEBUG, "general_log") << "symmetry miscount " << wab << " " << wba;
+            if (tid == 0) {
+                CLOG_N_TIMES(100, DEBUG, "general_log")
+                    << "symmetry miscount " << wab << " " << wba;
+            }
 #endif
-}
-        else
-        {
+        } else {
             vc->setGeomCouplingConstant(wab);
         }
 #pragma omp atomic
-         ntot += 1;
+        ntot += 1;
     }
 
     // should ndif > 0 throw an exception?
@@ -229,36 +175,28 @@ void sefield::TetCoupler::coupleMesh()
     // Deallocate vccs.
 #pragma omp parallel for
     for (auto i = 0u; i < vccs.size(); ++i) {
-      delete[] vccs[i];
+        delete[] vccs[i];
     }
-    //for (doublePVecI vccs_i = vccs_bgn; vccs_i != vccs_end; ++vccs_i)
-    //{
-    //    delete[] (*vccs_i);
-    //}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool sefield::TetCoupler::dblsDiffer(double a, double b)
-{
-    return std::fabs(a - b) > (std::fabs(a + b)*1.e-12) && std::fabs(a-b) > (4*std::numeric_limits<double>::epsilon());
+bool TetCoupler::dblsDiffer(double a, double b) {
+    return std::abs(a - b) > (std::abs(a + b) * 1.e-12) &&
+           std::abs(a - b) > (4 * std::numeric_limits<double>::epsilon());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::TetCoupler::cross_product(double * a, double * b, double * c)
-{
-
-    c[0] = (a[1]*b[2]) - (a[2]*b[1]);
-    c[1] = (a[2]*b[0]) - (a[0]*b[2]);
-    c[2] = (a[0]*b[1]) - (a[1]*b[0]);
-
+void TetCoupler::cross_product(double* a, double* b, double* c) {
+    c[0] = (a[1] * b[2]) - (a[2] * b[1]);
+    c[1] = (a[2] * b[0]) - (a[0] * b[2]);
+    c[2] = (a[0] * b[1]) - (a[1] * b[0]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::TetCoupler::fluxCoeficients(sefield::VertexElement * ve, sefield::VertexElement ** ves, double * ret)
-{
+void TetCoupler::fluxCoeficients(VertexElement* ve, VertexElement** ves, double* ret) {
     // Assume that the potential varies linearly across the element between
     // the values at the vertices. Then the procedure is:
     //
@@ -279,17 +217,14 @@ void sefield::TetCoupler::fluxCoeficients(sefield::VertexElement * ve, sefield::
     // Matrix ordering is [row][colunmn], so m[2][0] is the third row,
     // first column of matrix with the vectors to the three adjacent
 
-
     // vertices in its rows.
     auto** m = new double*[3];
-    for (uint i = 0; i < 3; ++i)
-    {
+    for (uint i = 0; i < 3; ++i) {
         m[i] = new double[3];
     }
 
     // This matrix is already the transpose of matrix in equation 13
-    for (uint iv = 0; iv < 3; ++iv)
-    {
+    for (uint iv = 0; iv < 3; ++iv) {
         m[iv][0] = ves[iv]->getX() - ve->getX();
         m[iv][1] = ves[iv]->getY() - ve->getY();
         m[iv][2] = ves[iv]->getZ() - ve->getZ();
@@ -303,13 +238,10 @@ void sefield::TetCoupler::fluxCoeficients(sefield::VertexElement * ve, sefield::
     // rows two and three if neessary. The dot-cross product is the same
     // as the determinant up to a scaling factor
 
-
     bool swap = false;
-    if (vm->det() < 0.)
-    {
+    if (vm->det() < 0.) {
         // switch second and third rows of m;
-        for (uint i = 0; i < 3; ++i)
-        {
+        for (uint i = 0; i < 3; ++i) {
             double w = m[1][i];
             m[1][i] = m[2][i];
             m[2][i] = w;
@@ -319,14 +251,12 @@ void sefield::TetCoupler::fluxCoeficients(sefield::VertexElement * ve, sefield::
         vm = new Matrix(3, m);
     }
 
-
     // CORRECT METHOD
-    Matrix * vmi = vm->inverse();
+    Matrix* vmi = vm->inverse();
     delete vm;
 
     // consider the other vertices in turn
-    for (int ivert = 0; ivert < 3; ivert++)
-    {
+    for (int ivert = 0; ivert < 3; ivert++) {
         int ip = ivert;
         int iq = ivert + 1;
         int ir = ivert + 2;
@@ -348,19 +278,19 @@ void sefield::TetCoupler::fluxCoeficients(sefield::VertexElement * ve, sefield::
         cross_product(m[ir], m[ip], c3);
 
         double vec[3];
-        double f = 1.0/12.0;
-        double g = 2.0/12.0;
+        double f = 1.0 / 12.0;
+        double g = 2.0 / 12.0;
 
         vec[0] = (f * c1[0]) + (g * c2[0]) + (f * c3[0]);
         vec[1] = (f * c1[1]) + (g * c2[1]) + (f * c3[1]);
         vec[2] = (f * c1[2]) + (g * c2[2]) + (f * c3[2]);
 
-        double * wk = vmi->lvprod(vec);
+        double* wk = vmi->lvprod(vec);
 
-        // accumulate the contribution from these two triangles into the final return array
-        // the 0.5 is because the area of the triangle is half the cross product
-        for (int i = 0; i < 3; i++)
-        {
+        // accumulate the contribution from these two triangles into the final
+        // return array the 0.5 is because the area of the triangle is half the
+        // cross product
+        for (int i = 0; i < 3; i++) {
             ret[i] += (0.5 * wk[i]);
         }
         delete wk;
@@ -368,24 +298,19 @@ void sefield::TetCoupler::fluxCoeficients(sefield::VertexElement * ve, sefield::
 
     // if we swapped the sense of the tetrahedron above, swap the results
     // back so they go in the right slots when returned
-    if (swap)
-    {
+    if (swap) {
         double w = ret[1];
         ret[1] = ret[2];
         ret[2] = w;
     }
 
     // memory allocated for m not cleaned up. Lets do that now
-    for (uint i = 0; i < 3; ++i)
-    {
+    for (uint i = 0; i < 3; ++i) {
         delete[] m[i];
     }
     delete[] m;
 
     delete vmi;
-
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
+}  // namespace steps::solver::efield

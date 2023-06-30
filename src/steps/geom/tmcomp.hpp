@@ -31,13 +31,12 @@
 
 #include "comp.hpp"
 #include "math/bbox.hpp"
-#include "util/common.h"
+#include "util/common.hpp"
 #include "util/vocabulary.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace steps {
-namespace tetmesh {
+namespace steps::tetmesh {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -50,10 +49,8 @@ class Tetmesh;
 ///
 ///
 /// \warning Methods start with an underscore are not exposed to Python.
-class TmComp : public steps::wm::Comp
-{
-public:
-
+class TmComp: public wm::Comp {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
@@ -67,9 +64,9 @@ public:
     ///             sequence of positive integer values) in Python.
     /// \param volsys Pointer to the volume system associated.
     ///
-    TmComp(std::string const & id, Tetmesh * container,
-         std::vector<index_t> const & tets);
+    TmComp(std::string const& id, Tetmesh* container, std::vector<index_t> const& tets);
 
+    ~TmComp();
     ////////////////////////////////////////////////////////////////////////
     // BASE CLASS METHODS
     ////////////////////////////////////////////////////////////////////////
@@ -83,20 +80,23 @@ public:
     /// Return a list of all tetrahedron by indices.
     ///
     /// \return List of indices of the tetrahedrons.
-    inline const std::vector<index_t>& getAllTetIndices() const noexcept
-    { return pTet_indices; }
+    inline const std::vector<index_t> getAllTetIndices() const noexcept {
+        return strong_type_to_value_type(pTet_indices);
+    }
 
     /// Return the number of tetrahedrons in this TmComp
     ///
     /// \return the number of tetrahedrons in this TmCOmp
-    inline uint countTets() const noexcept
-    { return pTetsN; }
+    inline uint countTets() const noexcept {
+        return pTetsN;
+    }
 
-    // Return whether tetrahedrons (specified by index) are inside this compartment.
+    // Return whether tetrahedrons (specified by index) are inside this
+    // compartment.
     ///
     /// \param tet List of indices of tetrahedrons.
     /// \return List of results of the tetrahedrons are inside the compartment.
-    std::vector<bool> isTetInside(const std::vector<index_t> &tets) const;
+    std::vector<bool> isTetInside(const std::vector<index_t>& tets) const;
 
     /// Get the minimal coordinate of the rectangular bounding box.
     ///
@@ -115,19 +115,17 @@ public:
     /// Return all tetrahedrons (by index) in the compartment.
     ///
     /// \return List of indices of tetrahedrons.
-    inline std::vector<index_t> const & _getAllTetIndices() const noexcept
-    { return pTet_indices; }
+    inline std::vector<tetrahedron_global_id> const& _getAllTetIndices() const noexcept {
+        return pTet_indices;
+    }
 
-private:
-
-    Tetmesh                                 * pTetmesh;
-    std::vector<index_t> pTet_indices;
-    std::size_t                               pTetsN{0};
-    steps::math::bounding_box                 pBBox;
-
+  private:
+    Tetmesh* pTetmesh;
+    std::vector<tetrahedron_global_id> pTet_indices;
+    std::size_t pTetsN{0};
+    math::bounding_box pBBox;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-} // namespace tetmesh
-} // namespace steps
+}  // namespace steps::tetmesh

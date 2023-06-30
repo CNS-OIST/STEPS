@@ -24,11 +24,6 @@
 
  */
 
-
-// Standard library & STL headers.
-// #include <vector>
-#include <algorithm>
-
 // STEPS headers.
 #include "comp.hpp"
 #include "reac.hpp"
@@ -36,69 +31,55 @@
 // logging
 #include "util/error.hpp"
 #include <easylogging++.h>
-////////////////////////////////////////////////////////////////////////////////
 
-namespace swmd = steps::wmdirect;
-namespace ssolver = steps::solver;
+namespace steps::wmdirect {
 
-////////////////////////////////////////////////////////////////////////////////
-
-swmd::Comp::Comp(steps::solver::Compdef * compdef)
-: pCompdef(compdef)
-, pKProcs()
-, pIPatches()
-, pOPatches()
-{
+Comp::Comp(solver::Compdef* compdef)
+    : pCompdef(compdef) {
     AssertLog(pCompdef != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmd::Comp::~Comp()
-{
-    for (auto const& k : pKProcs) {
+Comp::~Comp() {
+    for (auto const& k: pKProcs) {
         delete k;
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Comp::checkpoint(std::fstream & cp_file)
-{
-    for (auto const& k : pKProcs) {
+void Comp::checkpoint(std::fstream& cp_file) {
+    for (auto const& k: pKProcs) {
         k->checkpoint(cp_file);
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Comp::restore(std::fstream & cp_file)
-{
-    for (auto const& k : pKProcs) {
+void Comp::restore(std::fstream& cp_file) {
+    for (auto const& k: pKProcs) {
         k->restore(cp_file);
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Comp::reset()
-{
-    for (auto kproc: pKProcs) {
+void Comp::reset() {
+    for (auto const& kproc: pKProcs) {
         kproc->reset();
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Comp::setupKProcs(swmd::Wmdirect * wmd)
-{
+void Comp::setupKProcs(Wmdirect* wmd) {
     // Create reaction kproc's.
     uint nreacs = def()->countReacs();
     pKProcs.resize(nreacs);
-    for (uint i = 0; i < nreacs; ++i)
-    {
-        ssolver::Reacdef * rdef = def()->reacdef(i);
-        auto * r = new swmd::Reac(rdef, this);
+    for (uint i = 0; i < nreacs; ++i) {
+        solver::Reacdef* rdef = def()->reacdef(solver::reac_local_id(i));
+        auto* r = new Reac(rdef, this);
         pKProcs[i] = r;
         wmd->addKProc(r);
     }
@@ -106,37 +87,31 @@ void swmd::Comp::setupKProcs(swmd::Wmdirect * wmd)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-steps::wmdirect::KProc * swmd::Comp::reac(uint lridx) const
-{
-    AssertLog(lridx < pKProcs.size());
-    return pKProcs[lridx];
+KProc* Comp::reac(solver::reac_local_id lridx) const {
+    AssertLog(lridx.get() < pKProcs.size());
+    return pKProcs[lridx.get()];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Comp::setupDeps()
-{
-    for (auto kproc: pKProcs) {
+void Comp::setupDeps() {
+    for (auto const& kproc: pKProcs) {
         kproc->setupDeps();
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
-void swmd::Comp::addIPatch(swmd::Patch * p)
-{
+void Comp::addIPatch(Patch* p) {
     AssertLog(std::find(pIPatches.begin(), pIPatches.end(), p) == pIPatches.end());
     pIPatches.push_back(p);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Comp::addOPatch(swmd::Patch * p)
-{
+void Comp::addOPatch(Patch* p) {
     AssertLog(std::find(pOPatches.begin(), pOPatches.end(), p) == pOPatches.end());
     pOPatches.push_back(p);
 }
-////////////////////////////////////////////////////////////////////////////////
 
-// END
+}  // namespace steps::wmdirect

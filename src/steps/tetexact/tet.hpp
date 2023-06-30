@@ -24,9 +24,7 @@
 
  */
 
-
-#ifndef STEPS_TETEXACT_TET_HPP
-#define STEPS_TETEXACT_TET_HPP 1
+#pragma once
 
 // STL headers.
 #include <cassert>
@@ -36,17 +34,13 @@
 #include <easylogging++.h>
 
 // STEPS headers.
-#include "util/common.h"
 #include "kproc.hpp"
-#include "wmvol.hpp"
 #include "solver/compdef.hpp"
 #include "solver/types.hpp"
-////////////////////////////////////////////////////////////////////////////////
+#include "util/common.hpp"
+#include "wmvol.hpp"
 
-namespace steps{
-namespace tetexact{
-
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::tetexact {
 
 // Forward declarations
 class Tet;
@@ -56,39 +50,42 @@ class Reac;
 class Tetexact;
 
 // Auxiliary declarations.
-typedef Tet *                           TetP;
-typedef std::vector<TetP>               TetPVec;
-typedef TetPVec::iterator               TetPVecI;
-typedef TetPVec::const_iterator         TetPVecCI;
+typedef Tet* TetP;
+typedef std::vector<TetP> TetPVec;
+typedef TetPVec::iterator TetPVecI;
+typedef TetPVec::const_iterator TetPVecCI;
 
-////////////////////////////////////////////////////////////////////////////////
-
-class Tet: public WmVol
-{
-
-public:
-
+class Tet: public WmVol {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    Tet
-      (
-        tetrahedron_id_t idx, steps::solver::Compdef *cdef, double vol,
-        double a0, double a1, double a2, double a3,
-        double d0, double d1, double d2, double d3,
-        tetrahedron_id_t tet0, tetrahedron_id_t tet1, tetrahedron_id_t tet2, tetrahedron_id_t tet3
-      );
+    Tet(tetrahedron_global_id idx,
+        solver::Compdef* cdef,
+        double vol,
+        double a0,
+        double a1,
+        double a2,
+        double a3,
+        double d0,
+        double d1,
+        double d2,
+        double d3,
+        tetrahedron_global_id tet0,
+        tetrahedron_global_id tet1,
+        tetrahedron_global_id tet2,
+        tetrahedron_global_id tet3);
     ~Tet() override;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file) override;
+    void checkpoint(std::fstream& cp_file) override;
 
     /// restore data
-    void restore(std::fstream & cp_file) override;
+    void restore(std::fstream& cp_file) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SETUP
@@ -97,20 +94,20 @@ public:
 
     /// Set pointer to the next neighbouring tetrahedron.
     ///
-    void setNextTet(uint i, Tet * t);
+    void setNextTet(uint i, Tet* t);
 
 
     /// Set pointer to the next neighbouring triangle.
-    void setNextTri(uint i, Tri *t);
+    void setNextTri(uint i, Tri* t);
 
     // This method only asserts this method is not called on derived object
-    void setNextTri(Tri *t) override;
+    void setNextTri(Tri* t) override;
 
 
     /// Create the kinetic processes -- to be called when all tetrahedrons
     /// and triangles have been fully declared and connected.
     ///
-    void setupKProcs(Tetexact * tex) override;
+    void setupKProcs(Tetexact* tex) override;
 
 
     ////////////////////////////////////////////////////////////////////////
@@ -119,82 +116,62 @@ public:
 
     /// Get pointer to the next neighbouring triangle.
     ///
-    inline Tri * nextTri(uint i) const
-    {
-        AssertLog(i < 4);
-        return pNextTris[i];
+    inline Tri* nextTri(uint i) const {
+        return pNextTris.at(i);
     }
 
     /// Get pointer to the next neighbouring tetrahedron.
     ///
-    inline Tet * nextTet(uint i) const noexcept
-    { return pNextTet[i]; }
+    inline Tet* nextTet(uint i) const noexcept {
+        return pNextTet[i];
+    }
 
     /// Get the area of a boundary triangle.
     ///
-    inline double area(uint i) const noexcept
-    { return pAreas[i]; }
+    inline double area(uint i) const noexcept {
+        return pAreas[i];
+    }
 
     /// Get the distance to the centroid of the next neighbouring
     /// tetrahedron.
     ///
-    inline double dist(uint i) const noexcept
-    { return pDist[i]; }
+    inline double dist(uint i) const noexcept {
+        return pDist[i];
+    }
 
     /// Find the direction index towards a neighbor tetrahedron.
     ///
-    int getTetDirection(tetrahedron_id_t tidx) const;
+    int getTetDirection(tetrahedron_global_id tidx) const;
 
     ////////////////////////////////////////////////////////////////////////
 
     // Set whether a direction is a diffusion boundary
     void setDiffBndDirection(uint i);
 
-    inline bool getDiffBndDirection(uint idx) const noexcept
-    { return pDiffBndDirection[idx]; }
+    inline bool getDiffBndDirection(uint idx) const noexcept {
+        return pDiffBndDirection[idx];
+    }
 
 
-    Diff * diff(uint lidx) const;
+    Diff& diff(solver::diff_local_id lidx) const;
 
-    inline tetrahedron_id_t tet(uint t) const noexcept
-    { return pTets[t]; }
+    inline tetrahedron_global_id tet(uint t) const noexcept {
+        return pTets.at(t);
+    }
 
-    /*
-    inline uint tri(uint t)
-    { return pTris[t]; }
-    */
-
-    ////////////////////////////////////////////////////////////////////////
-
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
     // Indices of neighbouring tetrahedra.
-    tetrahedron_id_t                    pTets[4];
+    std::array<tetrahedron_global_id, 4> pTets;
 
     /// Pointers to neighbouring tetrahedra.
-    Tet                         * pNextTet[4];
+    std::array<Tet*, 4> pNextTet;
 
-    double                              pAreas[4];
-    double                              pDist[4];
+    std::array<double, 4> pAreas;
+    std::array<double, 4> pDist;
 
-    bool                                pDiffBndDirection[4];
-
-
-    ////////////////////////////////////////////////////////////////////////
-
+    std::array<bool, 4> pDiffBndDirection;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-#endif
-
-// STEPS_TETEXACT_TET_HPP
-
-// END
+}  // namespace steps::tetexact

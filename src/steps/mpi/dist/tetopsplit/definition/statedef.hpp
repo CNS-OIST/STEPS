@@ -3,9 +3,8 @@
 #include <cassert>
 #include <map>
 #include <memory>
+#include <optional>
 #include <vector>
-
-#include <boost/optional.hpp>
 
 #include "efield.hpp"
 #include "fwd.hpp"
@@ -13,8 +12,7 @@
 #include "model/fwd.hpp"
 #include "util/vocabulary.hpp"
 
-namespace steps {
-namespace dist {
+namespace steps::dist {
 
 /**
  * \brief State definition of the biochemical container.
@@ -41,43 +39,39 @@ class Statedef {
      * \param model Reference to the steps::model::Model object.
      * \param mesh Reference to the steps::dist::DistMesh object.
      */
-    Statedef(const steps::model::Model &model,
-             const steps::dist::DistMesh &mesh);
+    Statedef(const steps::model::Model& model, const steps::dist::DistMesh& mesh);
 
     /**
      * Add the species to the biochemical state definition and return its container index.
      * If the species has been added before, return its container index in record,
      * otherwise add the species to the record and return its new container index.
      */
-    model::species_id addSpec(const model::species_name &name);
-    model::species_id getSpecModelIdx(const model::species_name &name) const;
+    model::species_id addSpec(const model::species_name& name);
+    model::species_id getSpecModelIdx(const model::species_name& name) const;
     container::compartment_id addComp(const model::compartment_id& compartment);
     container::patch_id addPatch(
         const model::patch_id& patchId,
         const model::compartment_id& inner_compartment_id,
-        const boost::optional<model::compartment_id>& outer_compartment_id = boost::none);
-    container::compartment_id getCompModelIdx(const model::compartment_id& compartment) const
-        noexcept;
+        const std::optional<model::compartment_id>& outer_compartment_id = {});
+    container::compartment_id getCompModelIdx(
+        const model::compartment_id& compartment) const noexcept;
 
     /**
      * Add the species to the compartment definition and return its comparmental index.
      * If the species has been added before, return its lidx in record,
      * otherwise add the species to the record and return its new lidx.
      */
-    model::species_id addCompSpec(const model::compartment_id &compartment,
-                                  const model::species_name &species);
+    model::species_id addCompSpec(const model::compartment_id& compartment,
+                                  const model::species_name& species);
 
-    std::vector<model::species_id>
-    addCompSpecs(const model::compartment_id &compartment,
-                 const std::vector<model::species_name> &species);
-    std::vector<model::species_id>
-    addPatchSpecs(const model::patch_id &patchId,
-                  const std::vector<model::species_name> &species);
-    model::species_id addPatchSpec(const model::patch_id &patch_id,
-                                   const model::species_name &species);
-    container::species_id
-    getCompSpecContainerIdx(const model::compartment_id &compartment,
-                            const model::species_name &species) const;
+    std::vector<model::species_id> addCompSpecs(const model::compartment_id& compartment,
+                                                const std::vector<model::species_name>& species);
+    std::vector<model::species_id> addPatchSpecs(const model::patch_id& patchId,
+                                                 const std::vector<model::species_name>& species);
+    model::species_id addPatchSpec(const model::patch_id& patch_id,
+                                   const model::species_name& species);
+    container::species_id getCompSpecContainerIdx(const model::compartment_id& compartment,
+                                                  const model::species_name& species) const;
 
     /**
      * Register a diffusion in a given compartment
@@ -85,9 +79,9 @@ class Statedef {
      * diffusion \param species_name the diffusing chemical specie \param dcst
      * diffusion constant \return the diffusion identifier
      */
-    container::diffusion_id
-    addCompDiff(const model::compartment_id &compartment,
-                const model::species_name &species_name, osh::Real dcst);
+    container::diffusion_id addCompDiff(const model::compartment_id& compartment,
+                                        const model::species_name& species_name,
+                                        osh::Real dcst);
 
     /**
      * Register a chemical reaction to a compartment
@@ -97,57 +91,52 @@ class Statedef {
      * \param kcst the reaction constant
      * \return the reaction identifier
      */
-    container::reaction_id
-    addCompReac(const model::compartment_id &compartment,
-                const std::vector<model::species_name> &reactants,
-                const std::vector<model::species_name> &products,
-                osh::Real kcst);
+    container::reaction_id addCompReac(const model::compartment_id& compartment,
+                                       const std::vector<model::species_name>& reactants,
+                                       const std::vector<model::species_name>& products,
+                                       osh::Real kcst);
 
-    container::surface_reaction_id
-    addSurfReac(const model::patch_id &patchId,
-                const std::vector<model::species_name> &reactants_i,
-                const std::vector<model::species_name> &reactants_s,
-                const std::vector<model::species_name> &reactants_o,
-                const std::vector<model::species_name> &products_i,
-                const std::vector<model::species_name> &products_s,
-                const std::vector<model::species_name> &products_o,
-                osh::Real kcst);
+    container::surface_reaction_id addSurfReac(const model::patch_id& patchId,
+                                               const std::vector<model::species_name>& reactants_i,
+                                               const std::vector<model::species_name>& reactants_s,
+                                               const std::vector<model::species_name>& reactants_o,
+                                               const std::vector<model::species_name>& products_i,
+                                               const std::vector<model::species_name>& products_s,
+                                               const std::vector<model::species_name>& products_o,
+                                               osh::Real kcst);
 
-    container::surface_reaction_id
-    addVDepSurfReac(const model::patch_id &patchId,
-                    const std::vector<model::species_name> &reactants_i,
-                    const std::vector<model::species_name> &reactants_s,
-                    const std::vector<model::species_name> &reactants_o,
-                    const std::vector<model::species_name> &products_i,
-                    const std::vector<model::species_name> &products_s,
-                    const std::vector<model::species_name> &products_o,
-                    const std::function<osh::Real(osh::Real)> &kcst);
+    container::surface_reaction_id addVDepSurfReac(
+        const model::patch_id& patchId,
+        const std::vector<model::species_name>& reactants_i,
+        const std::vector<model::species_name>& reactants_s,
+        const std::vector<model::species_name>& reactants_o,
+        const std::vector<model::species_name>& products_i,
+        const std::vector<model::species_name>& products_s,
+        const std::vector<model::species_name>& products_o,
+        const std::function<osh::Real(osh::Real)>& kcst);
 
-    Compdef &getCompdef(container::compartment_id compartment) const noexcept;
+    Compdef& getCompdef(container::compartment_id compartment) const noexcept;
 
-    Compdef &getCompdef(const model::compartment_id &compartment) const
-        noexcept;
+    Compdef& getCompdef(const model::compartment_id& compartment) const noexcept;
 
-    inline Compdef &
-    getDefinition(const model::compartment_id &compartmentId) const noexcept {
-      return getCompdef(compartmentId);
+    inline Compdef& getDefinition(const model::compartment_id& compartmentId) const noexcept {
+        return getCompdef(compartmentId);
     }
 
-    Patchdef &getPatchdef(const container::patch_id &patchId) const noexcept;
+    Patchdef& getPatchdef(const container::patch_id& patchId) const noexcept;
 
-    Patchdef &getPatchdef(const model::patch_id &patchId) const noexcept;
+    Patchdef& getPatchdef(const model::patch_id& patchId) const noexcept;
 
-    inline Patchdef &getDefinition(const model::patch_id &patchId) const
-        noexcept {
-      return getPatchdef(patchId);
+    inline Patchdef& getDefinition(const model::patch_id& patchId) const noexcept {
+        return getPatchdef(patchId);
     }
 
     inline osh::I64 getNComps() const noexcept {
-      return static_cast<osh::I64>(compdefPtrs.size());
+        return static_cast<osh::I64>(compdefPtrs.size());
     }
 
     inline osh::I64 getNumberOfSpecies() const noexcept {
-      return static_cast<osh::I64>(specIDs.size());
+        return static_cast<osh::I64>(specIDs.size());
     }
 
     inline const std::vector<std::unique_ptr<Compdef>>& compdefs() const noexcept {
@@ -158,55 +147,51 @@ class Statedef {
         return patchdefPtrs;
     }
 
-    inline const std::map<model::ohmic_current_id,
-                          std::unique_ptr<OhmicCurrent>> &
-    ohmicCurrents() const noexcept {
+    inline const std::map<model::ohmic_current_id, std::unique_ptr<OhmicCurrent>>& ohmicCurrents()
+        const noexcept {
         return ohmicCurrPtrs;
     }
 
-    inline const std::map<model::ghk_current_id, std::unique_ptr<GHKCurrent>> &
-    ghkCurrents() const noexcept {
+    inline const std::map<model::ghk_current_id, std::unique_ptr<GHKCurrent>>& ghkCurrents()
+        const noexcept {
         return ghkCurrPtrs;
     }
 
-    inline const std::map<model::membrane_id, std::unique_ptr<Membrane>> &
-    membranes() const noexcept {
-      return membranePtrs;
+    inline const std::map<model::membrane_id, std::unique_ptr<Membrane>>& membranes()
+        const noexcept {
+        return membranePtrs;
     }
 
-    inline void addMembrane(const model::membrane_id &membrane,
-                            const model::patch_id &patch, double capacitance) {
-      membranePtrs.emplace(membrane,
-                           std::make_unique<Membrane>(patch, capacitance));
+    inline void addMembrane(const model::membrane_id& membrane,
+                            const model::patch_id& patch,
+                            double capacitance) {
+        membranePtrs.emplace(membrane, std::make_unique<Membrane>(patch, capacitance));
     }
 
-    void addChannel(const model::membrane_id &membrane,
-                    const model::channel_id &channel,
-                    const std::vector<model::species_name> &channel_states);
+    void addChannel(const model::membrane_id& membrane,
+                    const model::channel_id& channel,
+                    const std::vector<model::species_name>& channel_states);
 
-    void
-    addOhmicCurrent(const model::ohmic_current_id &curr,
-                    const model::membrane_id &membrane,
-                    const model::channel_id &channel,
-                    const boost::optional<model::species_name> &species_name,
-                    double conductance, double reversal_potential);
+    void addOhmicCurrent(const model::ohmic_current_id& curr,
+                         const model::membrane_id& membrane,
+                         const model::channel_id& channel,
+                         const std::optional<model::species_name>& species_name,
+                         double conductance,
+                         double reversal_potential);
 
-    inline void setStimulus(const model::membrane_id& membrane, osh::Real current) {
-        membranePtrs[membrane]->setStimulus([current](auto) { return current; });
-    }
+    void setStimulus(const model::membrane_id& membrane, osh::Real current);
 
-    void addCompartmentConductivity(const model::compartment_id &comp_id,
-                                    osh::Real conductivity);
+    void setResistance(const model::membrane_id& membrane, osh::Real resistance);
 
-    osh::Real
-    getCompartmentConductivity(const model::compartment_id &compartment) const {
-      const auto it = compartment_conductivity_.find(compartment);
-      if (it != compartment_conductivity_.end()) {
-        return it->second;
-      } else {
-        throw std::invalid_argument("No conductivity defined for " + compartment);
-      }
-    }
+    osh::Real getResistance(const model::membrane_id& membrane);
+
+    void setReversalPotential(const model::membrane_id& membrane, osh::Real reversal_potential);
+
+    osh::Real getReversalPotential(const model::membrane_id& membrane);
+
+    void addCompartmentConductivity(const model::compartment_id& comp_id, osh::Real conductivity);
+
+    osh::Real getCompartmentConductivity(const model::compartment_id& compartment) const;
 
     /**
      * Add a GHK current surface reaction
@@ -230,21 +215,19 @@ class Statedef {
                                const model::species_name& ion_name,
                                osh::Real permeability,
                                osh::I64 valence,
-                               boost::optional<osh::Real> outer_conc = boost::none,
-                               boost::optional<osh::Real> inner_conc = boost::none);
+                               std::optional<osh::Real> outer_conc = std::nullopt,
+                               std::optional<osh::Real> inner_conc = std::nullopt);
 
-    inline const std::map<model::species_name, model::species_id> &
-    getSpecModelIdxs() const noexcept {
-      return specModelIdxs;
+    inline const std::map<model::species_name, model::species_id>& getSpecModelIdxs()
+        const noexcept {
+        return specModelIdxs;
     }
 
-    const container::surface_reaction_id &
-    getSReacIdx(const model::surface_reaction_id &reac) const;
+    const container::surface_reaction_id& getSReacIdx(const model::surface_reaction_id& reac) const;
 
-    inline const model::species_name &
-    getSpecID(model::species_id spec_model_idx) const noexcept {
-      assert(static_cast<size_t>(spec_model_idx.get()) < specIDs.size());
-      return specIDs[static_cast<size_t>(spec_model_idx.get())];
+    inline const model::species_name& getSpecID(model::species_id spec_model_idx) const noexcept {
+        assert(static_cast<size_t>(spec_model_idx.get()) < specIDs.size());
+        return specIDs[static_cast<size_t>(spec_model_idx.get())];
     }
 
     std::string createReport() const;
@@ -253,10 +236,12 @@ class Statedef {
      * \return true if at least one membrane is defined, false otherwise.
      */
     inline bool is_efield_enabled() const noexcept {
-      return !membranes().empty() && efield_enabled_;
+        return !membranes().empty() && efield_enabled_;
     }
 
-    void disableEField() { efield_enabled_ = false; }
+    void disableEField() {
+        efield_enabled_ = false;
+    }
 
     /// Get temperature
     inline osh::Real getTemp() const noexcept {
@@ -269,15 +254,15 @@ class Statedef {
 
   private:
     template <typename PropensityType>
-    container::surface_reaction_id
-    addSurfReacImpl(const model::patch_id &patchId,
-                    const std::vector<model::species_name> &reactants_i,
-                    const std::vector<model::species_name> &reactants_s,
-                    const std::vector<model::species_name> &reactants_o,
-                    const std::vector<model::species_name> &products_i,
-                    const std::vector<model::species_name> &products_s,
-                    const std::vector<model::species_name> &products_o,
-                    PropensityType kcst);
+    container::surface_reaction_id addSurfReacImpl(
+        const model::patch_id& patchId,
+        const std::vector<model::species_name>& reactants_i,
+        const std::vector<model::species_name>& reactants_s,
+        const std::vector<model::species_name>& reactants_o,
+        const std::vector<model::species_name>& products_i,
+        const std::vector<model::species_name>& products_s,
+        const std::vector<model::species_name>& products_o,
+        PropensityType kcst);
 
     std::map<model::species_name, model::species_id> specModelIdxs;
     std::vector<model::species_name> specIDs;
@@ -296,5 +281,4 @@ class Statedef {
     osh::Real temperature{293.15};
 };
 
-}  // namespace dist
-}  // namespace steps
+}  // namespace steps::dist

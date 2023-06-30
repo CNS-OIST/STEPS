@@ -26,74 +26,68 @@
 
 #pragma once
 
-#include "util/common.h"
+#include "util/common.hpp"
 
-namespace steps {
-namespace math {
+namespace steps::math {
 
-////////////////////////////////////////////////////////////////////////////////
+inline constexpr double E = 2.71828182845904523536028747135;
+inline constexpr double PI = 3.14159265358979323846264338328;
 
-const double E                          = 2.71828182845904523536028747135;
-const double PI                         = 3.14159265358979323846264338328;
+inline constexpr float IEEE_MACH_EPSILON32 = 2e-24;
+inline constexpr double IEEE_MACH_EPSILON64 = 2e-53;
+inline constexpr float IEEE_EPSILON32 = 1.0e-7;
+inline constexpr double IEEE_EPSILON64 = 1.0e-15;
 
-const float  IEEE_MACH_EPSILON32        = 2e-24;
-const double IEEE_MACH_EPSILON64        = 2e-53;
-const float  IEEE_EPSILON32             = 1.0e-7;
-const double IEEE_EPSILON64             = 1.0e-15;
-
-const double  IEEE_HUGE                 = 1e150;
+inline constexpr double IEEE_HUGE = 1e150;
 
 ////////////////////////////////////////////////////////////////////////////////
 
 // Avogadro constant
 // Source: http://physics.nist.gov/cuu/Constants/index.html  4/3/2010
-const double AVOGADRO                   = 6.02214179e23;
+inline constexpr double AVOGADRO = 6.02214179e23;
 
 // Faraday constant
 // Source: http://physics.nist.gov/cuu/Constants/index.html     4/3/2010
-const double FARADAY                    = 96485.3399;
+inline constexpr double FARADAY = 96485.3399;
 
 // Molar gas constant
 // Source: http://physics.nist.gov/cuu/Constants/index.html  4/3/2010
-const double GAS_CONSTANT                = 8.314472;
+inline constexpr double GAS_CONSTANT = 8.314472;
 
 // The Elementray charge
 // Source: http://physics.nist.gov/cuu/Constants/index.html  10/3/2010
-const double E_CHARGE                    = 1.602176487e-19;
+inline constexpr double E_CHARGE = 1.602176487e-19;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const double M_TO_NM                    = 1.0e9;
-const double M_TO_UM                    = 1.0e6;
-const double M_TO_MM                    = 1.0e3;
-const double M_TO_CM                    = 1.0e2;
-const double M_TO_DM                    = 1.0e1;
+inline constexpr double M_TO_NM = 1.0e9;
+inline constexpr double M_TO_UM = 1.0e6;
+inline constexpr double M_TO_MM = 1.0e3;
+inline constexpr double M_TO_CM = 1.0e2;
+inline constexpr double M_TO_DM = 1.0e1;
 
-const double UM_TO_M                    = 1.0e-6;
-
-////////////////////////////////////////////////////////////////////////////////
-
-const double M2_TO_UM2                  = 1.0e12;
-
-const double UM2_TO_M2                  = 1.0e-12;
+inline constexpr double UM_TO_M = 1.0e-6;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const double M3_TO_DM3                  = 1.0e3;
+inline constexpr double M2_TO_UM2 = 1.0e12;
 
-const double DM3_TO_M3                  = 1.0e-3;
-
-const double M3_TO_UM3                  = 1.0e18;
-
-const double UM3_TO_M3                  = 1.0e-18;
+inline constexpr double UM2_TO_M2 = 1.0e-12;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const double MS_TO_S                    = 1.0e-3;
+inline constexpr double M3_TO_DM3 = 1.0e3;
 
-const double S_TO_MS                    = 1.0e3;
+inline constexpr double DM3_TO_M3 = 1.0e-3;
+
+inline constexpr double M3_TO_UM3 = 1.0e18;
+
+inline constexpr double UM3_TO_M3 = 1.0e-18;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-} // namespace math
-} // namespace steps
+inline constexpr double MS_TO_S = 1.0e-3;
+
+inline constexpr double S_TO_MS = 1.0e3;
+
+}  // namespace steps::math

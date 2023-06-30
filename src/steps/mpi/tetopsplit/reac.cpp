@@ -27,12 +27,10 @@
 #include "reac.hpp"
 
 #include <iostream>
-#include <sstream>
 
 #include <easylogging++.h>
 
 #include "kproc.hpp"
-#include "tet.hpp"
 #include "tetopsplit.hpp"
 #include "wmvol.hpp"
 
@@ -40,17 +38,12 @@
 #include "solver/reacdef.hpp"
 #include "util/error.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
+#include "util/checkpointing.hpp"
 
-namespace smtos = steps::mpi::tetopsplit;
-namespace ssolver = steps::solver;
-namespace smath = steps::math;
+namespace steps::mpi::tetopsplit {
 
-////////////////////////////////////////////////////////////////////////////////
-
-static inline double comp_ccst(double kcst, double vol, uint order, double /*compvol*/)
-{
-    double vscale = 1.0e3 * vol * smath::AVOGADRO;
+static inline double comp_ccst(double kcst, double vol, uint order, double /*compvol*/) {
+    double vscale = 1.0e3 * vol * math::AVOGADRO;
     int o1 = static_cast<int>(order) - 1;
 
     // IMPORTANT: Now treating zero-order reaction units correctly, i.e. as
@@ -64,19 +57,15 @@ static inline double comp_ccst(double kcst, double vol, uint order, double /*com
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::Reac::Reac(ssolver::Reacdef * rdef, smtos::WmVol * tet)
-:
- pReacdef(rdef)
-, pTet(tet)
-, localUpdVec()
-, remoteUpdVec()
-, pCcst(0.0)
-, pKcst(0.0)
-{
-    AssertLog(pReacdef != 0);
-    AssertLog(pTet != 0);
+Reac::Reac(solver::Reacdef* rdef, WmVol* tet)
+    : pReacdef(rdef)
+    , pTet(tet)
+    , pCcst(0.0)
+    , pKcst(0.0) {
+    AssertLog(pReacdef != nullptr);
+    AssertLog(pTet != nullptr);
     type = KP_REAC;
-    uint lridx = pTet->compdef()->reacG2L(pReacdef->gidx());
+    solver::reac_local_id lridx = pTet->compdef()->reacG2L(pReacdef->gidx());
     double kcst = pTet->compdef()->kcst(lridx);
     pKcst = kcst;
     pCcst = comp_ccst(kcst, pTet->vol(), pReacdef->order(), pTet->compdef()->vol());
@@ -85,46 +74,27 @@ smtos::Reac::Reac(ssolver::Reacdef * rdef, smtos::WmVol * tet)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::Reac::~Reac()
-= default;
+Reac::~Reac() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Reac::checkpoint(std::fstream & cp_file)
-{
-    cp_file.write(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
-    cp_file.write(reinterpret_cast<char*>(&pFlags), sizeof(uint));
-
-    cp_file.write(reinterpret_cast<char*>(&pCcst), sizeof(double));
-    cp_file.write(reinterpret_cast<char*>(&pKcst), sizeof(double));
-
-    cp_file.write(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
-    cp_file.write(reinterpret_cast<char*>(&crData.pow), sizeof(int));
-    cp_file.write(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
-    cp_file.write(reinterpret_cast<char*>(&crData.rate), sizeof(double));
+void Reac::checkpoint(std::fstream& cp_file) {
+    util::checkpoint(cp_file, pCcst);
+    util::checkpoint(cp_file, pKcst);
+    KProc::checkpoint(cp_file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Reac::restore(std::fstream & cp_file)
-{
-    cp_file.read(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
-    cp_file.read(reinterpret_cast<char*>(&pFlags), sizeof(uint));
-
-    cp_file.read(reinterpret_cast<char*>(&pCcst), sizeof(double));
-    cp_file.read(reinterpret_cast<char*>(&pKcst), sizeof(double));
-
-    cp_file.read(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
-    cp_file.read(reinterpret_cast<char*>(&crData.pow), sizeof(int));
-    cp_file.read(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
-    cp_file.read(reinterpret_cast<char*>(&crData.rate), sizeof(double));
+void Reac::restore(std::fstream& cp_file) {
+    util::restore(cp_file, pCcst);
+    util::restore(cp_file, pKcst);
+    KProc::restore(cp_file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Reac::reset()
-{
-
+void Reac::reset() {
     crData.recorded = false;
     crData.pow = 0;
     crData.pos = 0;
@@ -136,9 +106,8 @@ void smtos::Reac::reset()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Reac::resetCcst()
-{
-    uint lridx = pTet->compdef()->reacG2L(pReacdef->gidx());
+void Reac::resetCcst() {
+    solver::reac_local_id lridx = pTet->compdef()->reacG2L(pReacdef->gidx());
     double kcst = pTet->compdef()->kcst(lridx);
     // Also reset kcst
     pKcst = kcst;
@@ -148,8 +117,7 @@ void smtos::Reac::resetCcst()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Reac::setKcst(double k)
-{
+void Reac::setKcst(double k) {
     AssertLog(k >= 0.0);
     pKcst = k;
     pCcst = comp_ccst(k, pTet->vol(), pReacdef->order(), pTet->compdef()->vol());
@@ -158,39 +126,37 @@ void smtos::Reac::setKcst(double k)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Reac::setupDeps()
-{
+void Reac::setupDeps() {
     AssertLog(pTet->getInHost());
-    std::set<smtos::KProc*> updset;
+    KProcPSet updset;
 
     // Search in local tetrahedron.
     uint nkprocs = pTet->countKProcs();
 
-    for (uint k = 0; k < nkprocs; k++)
-    {
-        for (auto const& s : pReacdef->updColl()) {
+    for (uint k = 0; k < nkprocs; k++) {
+        for (auto const& s: pReacdef->updColl()) {
             if (pTet->KProcDepSpecTet(k, pTet, s)) {
                 updset.insert(pTet->getKProc(k));
             }
-
         }
     }
 
-    for (auto const& tri : pTet->nexttris()) {
-        if (tri == nullptr) continue;
+    for (auto const& tri: pTet->nexttris()) {
+        if (tri == nullptr) {
+            continue;
+        }
         if (pTet->getHost() != tri->getHost()) {
             std::ostringstream os;
-            os << "Patch triangle " << tri->idx() << " and its compartment tetrahedron " << pTet->idx()  << " belong to different hosts.\n";
+            os << "Patch triangle " << tri->idx() << " and its compartment tetrahedron "
+               << pTet->idx() << " belong to different hosts.\n";
             NotImplErrLog(os.str());
         }
         nkprocs = tri->countKProcs();
-        for (uint sk = 0; sk < nkprocs; sk++)
-        {
-            for (auto const& s : pReacdef->updColl()) {
+        for (uint sk = 0; sk < nkprocs; sk++) {
+            for (auto const& s: pReacdef->updColl()) {
                 if (tri->KProcDepSpecTet(sk, pTet, s)) {
                     updset.insert(tri->getKProc(sk));
                 }
-
             }
         }
     }
@@ -199,8 +165,8 @@ void smtos::Reac::setupDeps()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-bool smtos::Reac::depSpecTet(uint gidx, smtos::WmVol * tet)
+/*
+bool Reac::depSpecTet(spec_global_id gidx, WmVol * tet)
 {
     if (pTet != tet) { return false;
 }
@@ -209,64 +175,55 @@ bool smtos::Reac::depSpecTet(uint gidx, smtos::WmVol * tet)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool smtos::Reac::depSpecTri(uint /*gidx*/, smtos::Tri * /*tri*/)
+bool Reac::depSpecTri(spec_global_id , Tri * )
 {
     return false;
 }
-
+*/
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::Reac::rate(smtos::TetOpSplitP * /*solver*/)
-{
-
-    if (inactive()) return 0.0;
-
+double Reac::rate(TetOpSplitP* /*solver*/) {
+    if (inactive()) {
+        return 0.0;
+    }
     // Prefetch some variables.
-    ssolver::Compdef * cdef = pTet->compdef();
-    uint nspecs = cdef->countSpecs();
-    uint * lhs_vec = cdef->reac_lhs_bgn(cdef->reacG2L(pReacdef->gidx()));
-    uint * cnt_vec = pTet->pools();
+    solver::Compdef* cdef = pTet->compdef();
+    const auto& lhs_vec = cdef->reac_lhs(cdef->reacG2L(pReacdef->gidx()));
+    const auto& cnt_vec = pTet->pools();
 
     // Compute combinatorial part.
     double h_mu = 1.0;
-    for (uint pool = 0; pool < nspecs; ++pool)
-    {
+    for (auto pool: lhs_vec.range()) {
         uint lhs = lhs_vec[pool];
-        if (lhs == 0) { continue;
+        if (lhs == 0) {
+            continue;
         }
         uint cnt = cnt_vec[pool];
-        if (lhs > cnt)
-        {
+        if (lhs > cnt) {
             h_mu = 0.0;
             break;
         }
-        switch (lhs)
-        {
-            case 4:
-            {
-                h_mu *= static_cast<double>(cnt - 3);
-            }
+        switch (lhs) {
+        case 4: {
+            h_mu *= static_cast<double>(cnt - 3);
+        }
             STEPS_FALLTHROUGH;
-            case 3:
-            {
-                h_mu *= static_cast<double>(cnt - 2);
-            }
+        case 3: {
+            h_mu *= static_cast<double>(cnt - 2);
+        }
             STEPS_FALLTHROUGH;
-            case 2:
-            {
-                h_mu *= static_cast<double>(cnt - 1);
-            }
+        case 2: {
+            h_mu *= static_cast<double>(cnt - 1);
+        }
             STEPS_FALLTHROUGH;
-            case 1:
-            {
-                h_mu *= static_cast<double>(cnt);
-                break;
-            }
-            default:
-            {
-                AssertLog(0);
-                return 0.0;
-            }
+        case 1: {
+            h_mu *= static_cast<double>(cnt);
+            break;
+        }
+        default: {
+            AssertLog(0);
+            return 0.0;
+        }
         }
     }
 
@@ -276,15 +233,12 @@ double smtos::Reac::rate(smtos::TetOpSplitP * /*solver*/)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Reac::apply(const rng::RNGptr &/*rng*/, double /*dt*/, double /*simtime*/, double period)
-{
-    uint * local = pTet->pools();
-    ssolver::Compdef * cdef = pTet->compdef();
-    uint l_ridx = cdef->reacG2L(pReacdef->gidx());
-    int * upd_vec = cdef->reac_upd_bgn(l_ridx);
-    uint nspecs = cdef->countSpecs();
-    for (uint i = 0; i < nspecs; ++i)
-    {
+void Reac::apply(const rng::RNGptr& /*rng*/, double /*dt*/, double /*simtime*/, double period) {
+    const auto& local = pTet->pools();
+    solver::Compdef* cdef = pTet->compdef();
+    solver::reac_local_id l_ridx = cdef->reacG2L(pReacdef->gidx());
+    const auto& upd_vec = cdef->reac_upd(l_ridx);
+    for (auto i: upd_vec.range()) {
         if (pTet->clamped(i) == true) {
             continue;
         }
@@ -299,24 +253,20 @@ void smtos::Reac::apply(const rng::RNGptr &/*rng*/, double /*dt*/, double /*simt
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<uint> const & smtos::Reac::getRemoteUpdVec(int /*direction*/) const
-{
+std::vector<solver::kproc_global_id> const& Reac::getRemoteUpdVec(int /*direction*/) const {
     return remoteUpdVec;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<smtos::KProc*> const & smtos::Reac::getLocalUpdVec(int /*direction*/) const
-{
+std::vector<KProc*> const& Reac::getLocalUpdVec(int /*direction*/) const {
     return localUpdVec;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Reac::resetOccupancies()
-{
+void Reac::resetOccupancies() {
     pTet->resetPoolOccupancy();
 }
-////////////////////////////////////////////////////////////////////////////////
 
-// END
+}  // namespace steps::mpi::tetopsplit

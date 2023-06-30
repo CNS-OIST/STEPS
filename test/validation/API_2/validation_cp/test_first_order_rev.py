@@ -120,9 +120,12 @@ class TestFirstOrderRev(unittest.TestCase):
 
         sim.toSave(res, dt=DT)
 
+        seed = time.time()%4294967295
         for i in range (0, NITER):
             sim.newRun()
             sim.restore('./validation_cp/cp/first_order_rev')
+            rng.initialize(seed)
+            seed += 1
             sim.run(INT)
 
         mean_res = numpy.mean(res.data, 0) * 1e6
@@ -131,7 +134,6 @@ class TestFirstOrderRev(unittest.TestCase):
         Beq = (COUNT/(VOL*Avogadro * 1e3))*1e6 -Aeq
 
         max_err = 0.0
-        passed = True
         for i in range(len(res.time[0])):
             if i < 7:
                 continue

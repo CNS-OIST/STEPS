@@ -24,9 +24,7 @@
 
  */
 
-#ifndef STEPS_MPI_TETOPSPLIT_SDIFFBOUNDARY_HPP
-#define STEPS_MPI_TETOPSPLIT_SDIFFBOUNDARY_HPP 1
-
+#pragma once
 
 // STL headers.
 #include <cassert>
@@ -34,110 +32,89 @@
 
 // STEPS headers.
 #include "patch.hpp"
-#include "util/common.h"
-#include "solver/types.hpp"
 #include "solver/sdiffboundarydef.hpp"
+#include "solver/types.hpp"
+#include "util/common.hpp"
+
+namespace steps::mpi::tetopsplit {
 
 ////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace mpi {
-namespace tetopsplit {
-
-////////////////////////////////////////////////////////////////////////////////
-
-namespace smtos = steps::mpi::tetopsplit;
-
-////////////////////////////////////////////////////////////////////////////////
-
 
 // Forward declarations.
 class SDiffBoundary;
 
 // Auxiliary declarations.
-typedef SDiffBoundary *                         SDiffBoundaryP;
-typedef std::vector<SDiffBoundaryP>             SDiffBoundaryPVec;
-typedef SDiffBoundaryPVec::iterator             SDiffBoundaryPVecI;
-typedef SDiffBoundaryPVec::const_iterator       SDiffBoundaryPVecCI;
-
+typedef SDiffBoundary* SDiffBoundaryP;
+typedef std::vector<SDiffBoundaryP> SDiffBoundaryPVec;
+typedef SDiffBoundaryPVec::iterator SDiffBoundaryPVecI;
+typedef SDiffBoundaryPVec::const_iterator SDiffBoundaryPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class SDiffBoundary
-{
-public:
-
+class SDiffBoundary {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    explicit SDiffBoundary(steps::solver::SDiffBoundarydef * sdbdef);
+    explicit SDiffBoundary(solver::SDiffBoundarydef* sdbdef);
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream& cp_file);
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream& cp_file);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::SDiffBoundarydef * def() const noexcept
-    { return pSDiffBoundarydef; }
+    inline solver::SDiffBoundarydef* def() const noexcept {
+        return pSDiffBoundarydef;
+    }
 
     // We need access to the compartments so as to check if species are defined
-    smtos::Patch * patchA();
+    Patch* patchA();
 
-    smtos::Patch * patchB();
+    Patch* patchB();
 
-    void setPatches(smtos::Patch * patcha, smtos::Patch * patchb);
+    void setPatches(Patch* patcha, Patch* patchb);
 
+    void setTriDirection(triangle_global_id tri, uint direction);
 
-    void setTriDirection(triangle_id_t tri, uint direction);
+    const std::vector<triangle_global_id>& getTris() const noexcept {
+        return pTris;
+    }
 
-    const std::vector<triangle_id_t>& getTris() const noexcept
-    { return pTris; }
-
-    const std::vector<uint>& getTriDirection() const noexcept
-    { return pTriDirection; }
-
-    ////////////////////////////////////////////////////////////////////////
-
-private:
+    const std::vector<uint>& getTriDirection() const noexcept {
+        return pTriDirection;
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-    steps::solver::SDiffBoundarydef    *  pSDiffBoundarydef;
+  private:
+    ////////////////////////////////////////////////////////////////////////
+
+    solver::SDiffBoundarydef* pSDiffBoundarydef;
 
     // Bool to check if patches have been specified
-    bool                                  pSetPatches;
+    bool pSetPatches;
 
     // Patch arbitrarily labelled 'A'
-    smtos::Patch                         * pPatchA;
+    Patch* pPatchA;
     // Compartment arbitrarily labelled 'B'
-    smtos::Patch                         * pPatchB;
+    Patch* pPatchB;
 
     // A big vector of all the tris connected to this diffusion boundary
-    std::vector<triangle_id_t>             pTris;
+    std::vector<triangle_global_id> pTris;
 
     // Directions have to be stored here - a tri could be connected to 2
     // different diffusion boundaries for example
     // This will be the same length as the pTets vector
-    std::vector<uint>                     pTriDirection;
-
+    std::vector<uint> pTriDirection;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-}
-
-#endif
-// STEPS_MPI_TETOPSPLIT_SDIFFBOUNDARY_HPP
-
-// END
+}  // namespace steps::mpi::tetopsplit

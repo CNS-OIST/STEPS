@@ -70,15 +70,15 @@ class DiffSelTestCase(unittest.TestCase):
     def testDiffSel(self):
         tet_hosts = gd.binTetsByAxis(self.mesh, steps.mpi.nhosts)
         solver = solv.TetOpSplit(self.model, self.mesh, self.rng, solv.EF_NONE, tet_hosts)
-        solver.setCompCount('comp', 'A', 1)
+        solver.setCompSpecCount('comp', 'A', 1)
         if __name__ == "__main__":
             print("Running...")
         solver.run(0.001)
         if __name__ == "__main__":
             print("")
-            print("A:", solver.getCompCount("comp", "A"))
+            print("A:", solver.getCompSpecCount("comp", "A"))
             print("steps:", solver.getNSteps())
-        self.assertEqual(solver.getCompCount("comp", "A"), 1)
+        self.assertEqual(solver.getCompSpecCount("comp", "A"), 1)
         self.assertNotEqual(solver.getNSteps(), 0)
 
 def suite():

@@ -6,8 +6,7 @@
 
 #include "util/vocabulary.hpp"
 
-namespace steps {
-namespace dist {
+namespace steps::dist {
 
 /**
  * \brief State definition of a reaction.
@@ -31,49 +30,53 @@ class Reacdef {
     enum class PoolChangeArrayType { LHS, RHS, UPD };
     using pool_change_t = std::vector<osh::I64>;
 
-    Reacdef(const Compdef &compdef, container::kproc_id kproc,
+    Reacdef(const Compdef& compdef,
+            container::kproc_id kproc,
             container::reaction_id reaction,
-            const std::vector<container::species_id> &reactants,
-            const std::vector<container::species_id> &products, osh::Real kcst);
+            const std::vector<container::species_id>& reactants,
+            const std::vector<container::species_id>& products,
+            osh::Real kcst);
 
     inline container::kproc_id getKProcContainerIdx() const noexcept {
         return kproc_id;
     }
 
-    inline osh::Real getKcst() const noexcept { return kcst; }
+    inline osh::Real getKcst() const noexcept {
+        return kcst;
+    }
 
-    inline osh::I64 getOrder() const noexcept { return order; }
+    inline osh::I64 getOrder() const noexcept {
+        return order;
+    }
 
     inline const Compdef& compdef() const noexcept {
         return pCompdef;
     }
 
     inline bool depSpec(container::species_id species) const noexcept {
-      return poolChangeLHS[static_cast<size_t>(species.get())] != 0;
+        return poolChangeLHS[static_cast<size_t>(species.get())] != 0;
     }
 
     /**
      *
      * \return dependent species of the reaction
      */
-    inline const std::vector<model::species_id> &getUpdSpecModelIdxs() const
-        noexcept {
-      return updSpecModelIdxs;
+    inline const std::vector<model::species_id>& getUpdSpecModelIdxs() const noexcept {
+        return updSpecModelIdxs;
     }
 
-    const pool_change_t &getPoolChangeArray(PoolChangeArrayType type) const
-        noexcept;
+    const pool_change_t& getPoolChangeArray(PoolChangeArrayType type) const noexcept;
 
-    const pool_change_t &getPoolChangeLHS() const noexcept {
-      return poolChangeLHS;
+    const pool_change_t& getPoolChangeLHS() const noexcept {
+        return poolChangeLHS;
     }
 
-    const pool_change_t &getPoolChangeRHS() const noexcept {
-      return poolChangeRHS;
+    const pool_change_t& getPoolChangeRHS() const noexcept {
+        return poolChangeRHS;
     }
 
-    const pool_change_t &getPoolChangeUPD() const noexcept {
-      return poolChangeUPD;
+    const pool_change_t& getPoolChangeUPD() const noexcept {
+        return poolChangeUPD;
     }
 
     void report(std::ostream& ostr, const mesh::tetrahedron_id_t tet_id) const;
@@ -106,5 +109,4 @@ class Reacdef {
     std::vector<model::species_id> updSpecModelIdxs;
 };
 
-}  // namespace dist
-}  // namespace steps
+}  // namespace steps::dist

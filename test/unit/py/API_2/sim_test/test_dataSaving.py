@@ -33,6 +33,7 @@ import threading
 import time
 import unittest
 
+import steps
 from steps import interface
 
 from steps.model import *
@@ -263,10 +264,10 @@ class SimDataSaving(base_model.TestModelFramework):
         timepoints = np.arange(0, self.endTime + self.deltaT, self.deltaT)
         def oldSave(sim):
             res = []
-            res.append(sim.getCompCount('comp1', 'S1'))
-            res.append(sim.getCompCount('comp1', 'S2'))
-            res.append(sim.getPatchCount('patch', 'ExS1S2'))
-            res.append(sim.getCompCount('comp1', 'CCsus12'))
+            res.append(sim.getCompSpecCount('comp1', 'S1'))
+            res.append(sim.getCompSpecCount('comp1', 'S2'))
+            res.append(sim.getPatchSpecCount('patch', 'ExS1S2'))
+            res.append(sim.getCompSpecCount('comp1', 'CCsus12'))
             return res
 
         def newSave(rs):
@@ -317,9 +318,9 @@ class SimDataSaving(base_model.TestModelFramework):
         timepoints = np.arange(0, self.endTime + self.deltaT, self.deltaT)
         def oldSave(sim):
             res = []
-            res.append(sim.getCompCount('comp1', 'S1'))
-            res.append(sim.getCompCount('comp1', 'S2'))
-            res.append(sim.getPatchCount('patch', 'ExS1S2'))
+            res.append(sim.getCompSpecCount('comp1', 'S1'))
+            res.append(sim.getCompSpecCount('comp1', 'S2'))
+            res.append(sim.getPatchSpecCount('patch', 'ExS1S2'))
             return res
 
         def newSave(rs):
@@ -360,9 +361,9 @@ class SimDataSaving(base_model.TestModelFramework):
         timepoints = np.arange(0, self.endTime + self.deltaT, self.deltaT)
         def oldSave(sim):
             res = []
-            res.append(sim.getCompCount('comp1', 'S1'))
-            res.append(sim.getCompCount('comp1', 'S2'))
-            res.append(sim.getPatchCount('patch', 'ExS1S2'))
+            res.append(sim.getCompSpecCount('comp1', 'S1'))
+            res.append(sim.getCompSpecCount('comp1', 'S2'))
+            res.append(sim.getPatchSpecCount('patch', 'ExS1S2'))
             return res
 
         def newSave(rs):
@@ -408,12 +409,12 @@ class SimDataSaving(base_model.TestModelFramework):
         self.createdFiles.add(path)
         def oldSave(sim):
             res = []
-            res.append(sim.getCompCount('comp1', 'S1'))
-            res.append(sim.getCompCount('comp1', 'S2'))
-            res.append(sim.getPatchCount('patch', 'ExS1S2'))
-            res.append(sim.getCompCount('comp1', 'CCsus12') + 2*sim.getCompCount('comp1', 'CCsus12'))
-            tmp = sim.getCompCount('comp1', 'S1') + sim.getCompCount('comp1', 'S2') + sim.getCompCount('comp2', 'S1') + sim.getCompCount('comp2', 'S2')
-            tmp /= (sim.getPatchCount('patch', 'ExS1S2') + sim.getPatchCount('patch', 'Ex'))
+            res.append(sim.getCompSpecCount('comp1', 'S1'))
+            res.append(sim.getCompSpecCount('comp1', 'S2'))
+            res.append(sim.getPatchSpecCount('patch', 'ExS1S2'))
+            res.append(sim.getCompSpecCount('comp1', 'CCsus12') + 2*sim.getCompSpecCount('comp1', 'CCsus12'))
+            tmp = sim.getCompSpecCount('comp1', 'S1') + sim.getCompSpecCount('comp1', 'S2') + sim.getCompSpecCount('comp2', 'S1') + sim.getCompSpecCount('comp2', 'S2')
+            tmp /= (sim.getPatchSpecCount('patch', 'ExS1S2') + sim.getPatchSpecCount('patch', 'Ex'))
             res.append(tmp)
             return res
 
@@ -467,6 +468,12 @@ class SimDataSaving(base_model.TestModelFramework):
 
     def testFileSaving(self):
         self.simulateAndCompare(*self._testFileSavingParams())
+
+    def testFileSavingOlderVersions(self):
+        version = steps.__version__
+        steps.__version__ = '3.5.0'
+        self.simulateAndCompare(*self._testFileSavingParams())
+        steps.__version__ = version
 
     def _testFileSavingDB(self, dbCls, dbArgs, dbKwargs, dbUID='GroupId', suffix=''):
         _, dbPath = tempfile.mkstemp(prefix=f'{self.__class__.__name__}testFileSaving', suffix='.db')
@@ -563,11 +570,11 @@ class SimDataSaving(base_model.TestModelFramework):
         timepoints = np.arange(0, self.endTime + self.deltaT, self.deltaT)
         def oldSave(sim):
             res = []
-            res.append(sim.getCompCount('comp1', 'S1'))
-            res.append(sim.getCompCount('comp1', 'S2'))
-            res.append(sim.getPatchCount('patch', 'ExS1S2'))
-            res.append(sim.getCompCount('comp2', 'S1'))
-            res.append(sim.getCompCount('comp2', 'S2'))
+            res.append(sim.getCompSpecCount('comp1', 'S1'))
+            res.append(sim.getCompSpecCount('comp1', 'S2'))
+            res.append(sim.getPatchSpecCount('patch', 'ExS1S2'))
+            res.append(sim.getCompSpecCount('comp2', 'S1'))
+            res.append(sim.getCompSpecCount('comp2', 'S2'))
             return res
 
         def newSave(rs):
@@ -914,7 +921,32 @@ class SimDataSaving(base_model.TestModelFramework):
         self.newSim.toSave(saver1, saver2, dt=self.deltaT)
 
         with dbCls(dbPath) as dbh:
-            self.newSim.toDB(dbh, dbUID, val1=1, val2=2)
+            # No slashes in group uid
+            with self.assertRaises(ValueError):
+                self.newSim.toDB(dbh, f'{dbUID}/test')
+
+            group = self.newSim.toDB(dbh, dbUID, val1=1, val2=2)
+
+            # Static data
+            if MPI._shouldWrite:
+                # Also check that parameters can be accessed
+                self.assertCountEqual(group.parameters.items(), dict(val1=1, val2=2).items())
+                self.assertEqual(group.name, dbUID)
+                if dbCls == SQLiteDBHandler:
+                    with self.assertRaises(NotImplementedError):
+                        group.staticData
+                else:
+                    group.staticData['teststatic1'] = list(range(10))
+                    group.staticData['teststatic1'] = list(range(10))
+                    with self.assertRaises(Exception):
+                        group.staticData['teststatic1'] = list(range(5))
+                    with self.assertRaises(KeyError):
+                        group.staticData[42] = [1, 2, 3]
+                    with self.assertRaises(TypeError):
+                        group.staticData['teststatic2'] = set([1, 2, 3])
+            else:
+                self.assertIsNone(group)
+
             self.newSim.newRun()
             self.init_API2_sim(self.newSim)
             self.newSim.run(self.shortEndTime)
@@ -929,7 +961,27 @@ class SimDataSaving(base_model.TestModelFramework):
             if MPI._shouldWrite:
                 with self.assertRaises(Exception):
                     self.newSim.toDB(dbh, dbUID, val1=3, val2=4)
-            self.newSim.toDB(dbh, dbUID, val1=1, val2=2)
+            group = self.newSim.toDB(dbh, dbUID, val1=1, val2=2)
+
+            # Static data
+            if MPI._shouldWrite:
+                # Also check that parameters can be accessed
+                self.assertCountEqual(group.parameters.items(), dict(val1=1, val2=2).items())
+                self.assertEqual(group.name, dbUID)
+                if dbCls == SQLiteDBHandler:
+                    with self.assertRaises(NotImplementedError):
+                        group.staticData
+                else:
+                    group.staticData['teststatic2'] = {i: 'a'*i for i in range(5)}
+                    with self.assertRaises(Exception):
+                        group.staticData['teststatic1'] = list(range(5))
+                    with self.assertRaises(KeyError):
+                        group.staticData[42] = [1, 2, 3]
+                    with self.assertRaises(TypeError):
+                        group.staticData['teststatic3'] = set([1, 2, 3])
+            else:
+                self.assertIsNone(group)
+
             self.newSim.newRun()
             self.init_API2_sim(self.newSim)
             self.newSim.run(self.shortEndTime)
@@ -945,6 +997,7 @@ class SimDataSaving(base_model.TestModelFramework):
             self.newSim.run(self.shortEndTime)
             self.createdFiles |= set(dbh._getFilePaths())
 
+        # Read data
         with dbCls(dbPath) as dbh:
             if MPI._shouldWrite:
                 self.assertEqual(len(list(dbh)), 2)
@@ -972,6 +1025,10 @@ class SimDataSaving(base_model.TestModelFramework):
                 with self.assertRaises(AttributeError):
                     dbh[dbUID].test
                 self.assertEqual(dbh[dbUID].name, dbUID)
+                # Static data
+                if dbCls != SQLiteDBHandler:
+                    self.assertEqual(dbh[dbUID].staticData['teststatic1'], list(range(10)))
+                    self.assertEqual(dbh[dbUID].staticData['teststatic2'], {i: 'a'*i for i in range(5)})
 
                 sv1, sv2 = dbh[dbUID].results
                 self.assertEqual(len(sv1.time), 2)
@@ -983,8 +1040,9 @@ class SimDataSaving(base_model.TestModelFramework):
                 saver1AutoMtdt = {
                     'loc_type': [Compartment._locStr] * 2 + [Patch._locStr] + [Compartment._locStr] * 2,
                     'loc_id': ['comp1', 'comp1', 'patch', 'comp1', None],
-                    'obj_type': ['', '', '', '', ''],
+                    'obj_type': ['Spec', 'Spec', 'Spec', '', 'Spec'],
                     'obj_id': ['S1', 'S2', 'ExS1S2', 'sus2', None],
+                    'property': ['Count', 'Count', 'Count', 'Count', 'Count'],
                 }
                 self.assertEqual({**saver1Mtdt, **saver1AutoMtdt}, sv1.metaData)
                 self.assertEqual(saver2.metaData._dict, sv2.metaData)
@@ -1032,6 +1090,7 @@ class SimDataSaving(base_model.TestModelFramework):
                 self.createdFiles |= set(dbh._getFilePaths())
 
 
+
 class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
     """Test data access, setting, and saving with tetmeshes."""
 
@@ -1065,11 +1124,11 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
             res = []
             c1 = 0
             for t in self.oc1tets:
-                c1 += sim.getTetCount(t, 'S1')
+                c1 += sim.getTetSpecCount(t, 'S1')
             res.append(c1)
             p1 = 0
             for t in self.optris:
-                p1 += sim.getTriCount(t, 'Ex')
+                p1 += sim.getTriSpecCount(t, 'Ex')
             res.append(p1 * 2)
             return res
 
@@ -1143,7 +1202,9 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
         tets = self.newGeom.tets
         tris1 = self.newGeom.patch.tris
         tris2 = self.newGeom.patch2.tris
-        saver2 = rs.TETS(tets).S1.Count << rs.TRIS(tris1 + tris2).ExS1S2.Count << rs.VERTS(tris1.verts).V
+        saver2 = rs.TETS(tets).S1.Count << rs.TRIS(tris1 + tris2).ExS1S2.Count
+        if self.useEField:
+            saver2 = saver2 << rs.VERTS(tris1.verts).V
 
         saver3 = rs.TETS(tets[0:len(tets)//2]).S2.Count << rs.TRIS(tris1).Ex.Count << rs.diffb.S1.DiffusionActive
 
@@ -1152,7 +1213,10 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
         else:
             saver4 = rs.ALL(ROI).ALL(Species).Count
 
-        saver5 = rs.TRIS(tris1).Chan1_Ohm_I.I
+        if self.useEField:
+            saver5 = rs.TRIS(tris1).Chan1_Ohm_I.I
+        else:
+            saver5 = rs.TRIS(tris1).ExS1S2.Count
 
         if self.useDist:
             saver6 = rs.TRIS(tris1).Ex.Count

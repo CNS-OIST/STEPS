@@ -1,3 +1,4 @@
+# cython:language_level=3str
 ###___license_placeholder___###
 
 from libcpp.memory cimport shared_ptr

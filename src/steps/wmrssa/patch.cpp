@@ -24,200 +24,180 @@
 
  */
 
-
-// Standard library & STL headers.
-// #include <vector>
-#include <algorithm>
-
 // STEPS headers.
 #include "patch.hpp"
-#include "wmrssa.hpp"
 #include "solver/statedef.hpp"
+#include "wmrssa.hpp"
 
 // logging
-#include <easylogging++.h>
 #include "util/error.hpp"
+#include <easylogging++.h>
+
+#include "util/checkpointing.hpp"
+
+namespace steps::wmrssa {
+
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace swmrssa = steps::wmrssa;
-namespace ssolver = steps::solver;
-
-////////////////////////////////////////////////////////////////////////////////
-
-swmrssa::Patch::Patch(steps::solver::Patchdef * patchdef, swmrssa::Comp * icomp, swmrssa::Comp * ocomp)
-: pPatchdef(patchdef)
-, pKProcs()
-, pIComp(icomp)
-, pOComp(ocomp)
-{
+Patch::Patch(solver::Patchdef* patchdef, Comp* icomp, Comp* ocomp)
+    : pPatchdef(patchdef)
+    , pIComp(icomp)
+    , pOComp(ocomp) {
     AssertLog(pPatchdef != nullptr);
-    if (iComp() != nullptr) { iComp()->addIPatch(this);
-}
-    if (oComp() != nullptr) oComp()->addOPatch(this);
+    if (iComp() != nullptr) {
+        iComp()->addIPatch(this);
+    }
+    if (oComp() != nullptr) {
+        oComp()->addOPatch(this);
+    }
     uint nspecs = patchdef->countSpecs();
-    pPoolLB = new double[nspecs]();
-    pPoolUB = new double[nspecs]();
+    pPoolLB.container().resize(nspecs);
+    pPoolUB.container().resize(nspecs);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmrssa::Patch::~Patch()
-{
-    for (auto const& k : pKProcs) {
+Patch::~Patch() {
+    for (auto const& k: pKProcs) {
         delete k;
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::Patch::checkpoint(std::fstream & cp_file)
-{
-    for (auto const& k : pKProcs) {
+void Patch::checkpoint(std::fstream& cp_file) {
+    for (auto const& k: pKProcs) {
         k->checkpoint(cp_file);
     }
+    util::checkpoint(cp_file, pPoolLB);
+    util::checkpoint(cp_file, pPoolUB);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::Patch::restore(std::fstream & cp_file)
-{
-    for (auto const& k : pKProcs) {
+void Patch::restore(std::fstream& cp_file) {
+    for (auto const& k: pKProcs) {
         k->restore(cp_file);
     }
+    util::restore(cp_file, pPoolLB);
+    util::restore(cp_file, pPoolUB);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::Patch::setupKProcs(swmrssa::Wmrssa * wmd)
-{
+void Patch::setupKProcs(Wmrssa* wmd) {
     // Create surface reaction kproc's.
     uint nsreacs = def()->countSReacs();
     pKProcs.resize(nsreacs);
-    for (uint i = 0; i < nsreacs; ++i)
-    {
-        ssolver::SReacdef * srdef = def()->sreacdef(i);
-        auto * sr = new swmrssa::SReac(srdef, this);
-        pKProcs[i] = sr;
+    for (auto i: solver::sreac_local_id::range(nsreacs)) {
+        solver::SReacdef* srdef = def()->sreacdef(i);
+        auto* sr = new SReac(srdef, this);
+        pKProcs[i.get()] = sr;
         wmd->addKProc(sr);
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::Patch::setupDeps()
-{
-    for (auto kproc: pKProcs) {
+void Patch::setupDeps() {
+    for (auto const& kproc: pKProcs) {
         kproc->setupDeps();
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmrssa::KProc * swmrssa::Patch::sreac(uint lsridx) const
-{
-    assert (lsridx < pKProcs.size());
-    return pKProcs[lsridx];
+KProc* Patch::sreac(solver::sreac_local_id lsridx) const {
+    assert(lsridx.get() < pKProcs.size());
+    return pKProcs[lsridx.get()];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::Patch::reset()
-{
-    for (auto kproc: pKProcs) {
+void Patch::reset() {
+    for (auto const& kproc: pKProcs) {
         kproc->reset();
     }
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::Patch::setBounds(uint i, int nc)
-{
-    const double delta = .05;
-    if (nc > 3/delta)
-    {
-        pPoolLB[i] = nc*(1 - delta);
-        pPoolUB[i] = nc*(1 + delta);
-    }
-    else if (nc > 3)
-    {
+void Patch::setBounds(solver::spec_local_id i, int nc) {
+    constexpr double delta = .05;
+    if (nc > 3 / delta) {
+        pPoolLB[i] = nc * (1 - delta);
+        pPoolUB[i] = nc * (1 + delta);
+    } else if (nc > 3) {
         pPoolLB[i] = nc - 3;
         pPoolUB[i] = nc + 3;
-    }
-    else if (nc > 0)
-    {
+    } else if (nc > 0) {
         pPoolLB[i] = 1;
-        pPoolUB[i] = 2*nc;
-    }
-    else{
+        pPoolUB[i] = 2 * nc;
+    } else {
         pPoolLB[i] = 0;
         pPoolUB[i] = 0;
     }
     pPoolLB[i] -= delta;
     pPoolUB[i] += delta;
-    /*pPoolLB[i] = std::max(std::min(nc*(1 - delta), nc - 3.), 0.); //nc/(3 - delta - 2*(1 - delta)/(1 + 2./(nc+1))); //
-    pPoolUB[i] = std::max(nc*(1 + delta), nc + 3.); //nc*(3 - delta - 2*(1 - delta)/(1 + 2./(nc+1))); /*/
+    /*pPoolLB[i] = std::max(std::min(nc*(1 - delta), nc - 3.), 0.); //nc/(3 -
+    delta - 2*(1 - delta)/(1 + 2./(nc+1))); // pPoolUB[i] = std::max(nc*(1 +
+    delta), nc + 3.); //nc*(3 - delta - 2*(1 - delta)/(1 + 2./(nc+1))); /*/
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool swmrssa::Patch::isOutOfBound(uint i, int nc)
-{
+bool Patch::isOutOfBound(solver::spec_local_id i, int nc) {
     AssertLog(i < def()->countSpecs());
     if (nc > pPoolLB[i] && nc < pPoolUB[i]) {
         return false;
-}
+    }
     setBounds(i, nc);
     return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double* swmrssa::Patch::pools(steps::wmrssa::PropensityRSSA prssa) const
-{
-    switch(prssa)
-    {
-        case steps::wmrssa::CURRENT:
-            return def()->pools();
-        case steps::wmrssa::LOWERBOUND:
-            return pPoolLB;
-        case steps::wmrssa::BOUNDS:
-            return pPoolUB;
-        default:
-            AssertLog(false);
+const util::strongid_vector<solver::spec_local_id, double>& Patch::pools(
+    wmrssa::PropensityRSSA prssa) const {
+    switch (prssa) {
+    case wmrssa::CURRENT:
+        return def()->pools();
+    case wmrssa::LOWERBOUND:
+        return pPoolLB;
+    case wmrssa::BOUNDS:
+        return pPoolUB;
+    default:
+        AssertLog(false);
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmrssa::Patch::setupSpecDeps()
-{
+void Patch::setupSpecDeps() {
     uint nspecs = def()->countSpecs();
     localSpecUpdKProcs.resize(nspecs);
-    for (uint slidx = 0; slidx < nspecs; slidx++) {
-        uint sgidx = def()->specL2G(slidx);
-        for (auto const& k : pKProcs) {
+    for (auto slidx: solver::spec_local_id::range(nspecs)) {
+        solver::spec_global_id sgidx = def()->specL2G(slidx);
+        for (auto const& k: pKProcs) {
             if (k->depSpecPatch(sgidx, this)) {
-                localSpecUpdKProcs[slidx].push_back(k);
+                localSpecUpdKProcs[slidx.get()].push_back(k);
             }
         }
-        if (pIComp != nullptr)
-        {
-            for (auto const& k : pIComp->kprocs()) {
+        if (pIComp != nullptr) {
+            for (auto const& k: pIComp->kprocs()) {
                 if (k->depSpecPatch(sgidx, this)) {
-                    localSpecUpdKProcs[slidx].push_back(k);
+                    localSpecUpdKProcs[slidx.get()].push_back(k);
                 }
             }
         }
-        if (pOComp != nullptr)
-        {
-            for (auto const& k : pOComp->kprocs()) {
+        if (pOComp != nullptr) {
+            for (auto const& k: pOComp->kprocs()) {
                 if (k->depSpecPatch(sgidx, this)) {
-                    localSpecUpdKProcs[slidx].push_back(k);
+                    localSpecUpdKProcs[slidx.get()].push_back(k);
                 }
             }
         }
     }
 }
 
-// END
+}  // namespace steps::wmrssa

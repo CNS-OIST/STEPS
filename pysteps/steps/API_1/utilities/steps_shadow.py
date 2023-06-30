@@ -342,15 +342,14 @@ class ShadowMesh:
         Return:
             None
         """
-        file = open(file_name, "wb")
-        Pickle.dump(len(self.comps), file)
-        Pickle.dump(len(self.patches), file)
-        for c in self.comps.values():
-            c.exportTo(file)
-        for p in self.patches.values():
-            p.exportTo(file)
-        Pickle.dump(self.rois, file)
-        file.close()
+        with open(file_name, "wb") as file:
+            Pickle.dump(len(self.comps), file)
+            Pickle.dump(len(self.patches), file)
+            for c in self.comps.values():
+                c.exportTo(file)
+            for p in self.patches.values():
+                p.exportTo(file)
+            Pickle.dump(self.rois, file)
     
     @staticmethod
     def importFrom(file_name):
@@ -363,16 +362,15 @@ class ShadowMesh:
         Return:
             ShadowMesh object
         """
-        file = open(file_name, "rb")
-        mesh = ShadowMesh()
-        ncomps = Pickle.load(file)
-        npatches = Pickle.load(file)
-        for c in range(ncomps):
-            comp = ShadowComp.importFrom(mesh, file)
-        for p in range(npatches):
-            patch = ShadowPatch.importFrom(mesh, file)
-        mesh.rois = Pickle.load(file)
-        file.close()
+        with open(file_name, "rb") as file:
+            mesh = ShadowMesh()
+            ncomps = Pickle.load(file)
+            npatches = Pickle.load(file)
+            for c in range(ncomps):
+                comp = ShadowComp.importFrom(mesh, file)
+            for p in range(npatches):
+                patch = ShadowPatch.importFrom(mesh, file)
+            mesh.rois = Pickle.load(file)
         return mesh
     
     def writeToTetmesh(self, tetmesh, node_proxy, tet_proxy, tri_proxy):

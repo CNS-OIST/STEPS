@@ -31,14 +31,10 @@
 #include <string>
 #include <vector>
 
-#include "util/common.h"
+#include "solver/fwd.hpp"
+#include "util/common.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace wm {
-
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::wm {
 
 // Forward declarations.
 class Comp;
@@ -49,10 +45,8 @@ class Patch;
 ///
 /// \warning Methods start with an underscore are not exposed to Python.
 ////////////////////////////////////////////////////////////////////////////
-class Geom
-{
-public:
-
+class Geom {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
@@ -71,17 +65,17 @@ public:
     ///
     /// \param id ID of the compartment object.
     /// \return Pointer to the compartment.
-    steps::wm::Comp * getComp(std::string const & id) const;
+    wm::Comp* getComp(std::string const& id) const;
 
     /// Delete a compartment with name id.
     ///
     /// \param id ID of the compartment.
-    void delComp(std::string const & id);
+    void delComp(std::string const& id) const;
 
     /// Return all compartments in the geometry container.
     ///
     /// \return List of pointers to the compartment objects.
-    std::vector<steps::wm::Comp *> getAllComps() const;
+    std::vector<wm::Comp*> getAllComps() const;
 
     ////////////////////////////////////////////////////////////////////////
     // OPERATIONS (EXPOSED TO PYTHON): PATCHES
@@ -91,17 +85,17 @@ public:
     ///
     /// \param id ID of the patch.
     /// \return Pointer to the patch.
-    steps::wm::Patch * getPatch(std::string const & id) const;
+    wm::Patch* getPatch(std::string const& id) const;
 
     /// Delete a patch with name id.
     ///
     /// \param id ID of the patch.
-    void delPatch(std::string const & id);
+    void delPatch(std::string const& id) const;
 
     /// Return all patches in the geometry container.
     ///
     /// \return List of pointers to the patch objects.
-    std::vector<steps::wm::Patch *> getAllPatches() const;
+    std::vector<wm::Patch*> getAllPatches() const;
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED): SOLVER HELPER METHODS
@@ -110,27 +104,28 @@ public:
     /// Count the compartments in the geometry container.
     ///
     /// \return Number of compartments.
-    inline std::size_t _countComps() const noexcept
-    { return pComps.size(); }
+    inline std::size_t _countComps() const noexcept {
+        return pComps.size();
+    }
 
     /// Return a compartment with index gidx.
     ///
     /// \param gidx Index of the compartment.
     /// \return Pointer to the compartment.
-    steps::wm::Comp * _getComp(uint gidx) const;
+    wm::Comp* _getComp(solver::comp_global_id gidx) const;
 
     /// Count the patches in the geometry container.
     ///
     /// \return Number of patches.
-    inline std::size_t _countPatches() const noexcept
-    { return pPatches.size(); }
+    inline std::size_t _countPatches() const noexcept {
+        return pPatches.size();
+    }
 
     /// Return a patch with index gidx.
     ///
     /// \param gidx Index of the patch.
     /// \return Pointer to the patch.
-    steps::wm::Patch * _getPatch(uint gidx) const;
-
+    wm::Patch* _getPatch(solver::patch_global_id gidx) const;
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED): STEPS::WM OPERATIONS
@@ -139,59 +134,56 @@ public:
     /// Check if a compartment id is occupied.
     ///
     /// \param id ID of the compartment.
-    void _checkCompID(std::string const & id) const;
+    void _checkCompID(std::string const& id) const;
 
     /// Change the id of a compartment.
     ///
     /// \param o Old id of the compartment.
     /// \param n New id of the compartment.
-    void _handleCompIDChange(std::string const & o, std::string const & n);
+    void _handleCompIDChange(std::string const& o, std::string const& n);
 
     /// Add a compartment.
     ///
     /// \param comp Pointer to the compartment.
-    void _handleCompAdd(steps::wm::Comp * comp);
+    void _handleCompAdd(wm::Comp* comp);
 
     /// Delete a compartment.
     ///
     /// \param comp Pointer to the compartment.
-    void _handleCompDel(steps::wm::Comp * comp);
+    void _handleCompDel(wm::Comp* comp);
 
     /// Check if a patch id is occupied.
     ///
     /// \param id ID of the patch.
-    void _checkPatchID(std::string const & id) const;
+    void _checkPatchID(std::string const& id) const;
 
     /// Change the id of a patch.
     ///
     /// \param o Old id of the patch.
     /// \param n New id of the patch.
-    void _handlePatchIDChange(std::string const & o, std::string const & n);
+    void _handlePatchIDChange(std::string const& o, std::string const& n);
 
     /// Add a patch.
     ///
     /// \param patch Pointer to the patch.
-    void _handlePatchAdd(steps::wm::Patch * patch);
+    void _handlePatchAdd(wm::Patch* patch);
 
     /// Delete a patch.
     ///
     /// \param patch Pointer to the patch.
-    void _handlePatchDel(steps::wm::Patch *patch);
+    void _handlePatchDel(wm::Patch* patch);
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
-    std::map<std::string, steps::wm::Comp *>       pComps;
-    std::map<std::string, steps::wm::Patch *>      pPatches;
+    std::map<std::string, wm::Comp*> pComps;
+    std::map<std::string, wm::Patch*> pPatches;
 
     ////////////////////////////////////////////////////////////////////////
-
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-} // namespace wm
-} // namespace steps
+}  // namespace steps::wm

@@ -24,54 +24,37 @@
 
  */
 
-
-#ifndef STEPS_WMRSSA_SREAC_HPP
-#define STEPS_WMRSSA_SREAC_HPP 1
-
-
-// STL headers.
+#pragma once
 
 // STEPS headers.
-#include "util/common.h"
 #include "kproc.hpp"
 #include "solver/sreacdef.hpp"
 #include "solver/types.hpp"
+#include "util/common.hpp"
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace wmrssa {
-
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::wmrssa {
 
 // Forward declarations
 class Comp;
 class Patch;
 
-////////////////////////////////////////////////////////////////////////////////
-
-class SReac
-: public steps::wmrssa::KProc
-{
-
-public:
-
+class SReac: public KProc {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    SReac(steps::solver::SReacdef * srdef, Patch * patch);
+    SReac(solver::SReacdef* srdef, Patch* patch);
     ~SReac() override;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file) override;
+    void checkpoint(std::fstream& cp_file) override;
 
     /// restore data
-    void restore(std::fstream & cp_file) override;
+    void restore(std::fstream& cp_file) override;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
@@ -81,62 +64,59 @@ public:
 
     bool active() const;
 
-    inline bool inactive() const noexcept
-    { return (! active()); }
-
+    inline bool inactive() const noexcept {
+        return (!active());
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
     void setupDeps() override;
-    bool depSpecComp(uint gidx, Comp * comp) override;
-    bool depSpecPatch(uint gidx, Patch * patch) override;
+    bool depSpecComp(solver::spec_global_id gidx, Comp* comp) override;
+    bool depSpecPatch(solver::spec_global_id gidx, Patch* patch) override;
     void reset() override;
-    double rate(steps::wmrssa::PropensityRSSA prssa = steps::wmrssa::CURRENT) override;
-    std::vector<uint> const & apply() override;
+    double rate(wmrssa::PropensityRSSA prssa = wmrssa::CURRENT) override;
+    std::vector<solver::kproc_global_id> const& apply() override;
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::SReacdef * defsr() const noexcept override
-    { return pSReacdef; }
+    inline solver::SReacdef* defsr() const noexcept override {
+        return pSReacdef;
+    }
 
     void resetCcst() override;
 
-    inline double c() const noexcept override
-    { return pCcst; }
+    inline double c() const noexcept override {
+        return pCcst;
+    }
 
-    inline double propensityLB() const noexcept override
-    { return pPropensityLB; }
+    inline double propensityLB() const noexcept override {
+        return pPropensityLB;
+    }
 
-    inline double h() noexcept override
-    { return (rate()/pCcst); }
+    inline double h() noexcept override {
+        return (rate() / pCcst);
+    }
 
-    uint updVecSize() const override
-    { return pUpdVec.size(); }
+    uint updVecSize() const override {
+        return pUpdVec.size();
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
-    steps::solver::SReacdef           * pSReacdef;
-    Patch                             * pPatch;
-    std::vector<uint>                   pUpdVec;
+    solver::SReacdef* pSReacdef;
+    Patch* pPatch;
+    std::vector<solver::kproc_global_id> pUpdVec;
 
     /// Properly scaled reaction constant.
-    double                              pCcst{0.0};
-    double                              pPropensityLB{0.0};
+    double pCcst{0.0};
+    double pPropensityLB{0.0};
 
     ////////////////////////////////////////////////////////////////////////
-
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-#endif
-// STEPS_WMRSSA_SREAC_HPP
+}  // namespace steps::wmrssa

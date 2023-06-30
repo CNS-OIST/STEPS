@@ -27,16 +27,15 @@
 #pragma once
 
 #include <cassert>
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
-#include "util/common.h"
+#include "util/common.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace steps {
-namespace model {
+namespace steps::model {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -47,13 +46,13 @@ class Model;
 class ChanState;
 
 // Auxiliary declarations.
-typedef OhmicCurr *                            OhmicCurrP;
-typedef std::map<std::string, OhmicCurrP>   OhmicCurrPMap;
-typedef OhmicCurrPMap::iterator             OhmicCurrPMapI;
-typedef OhmicCurrPMap::const_iterator       OhmicCurrPMapCI;
-typedef std::vector<OhmicCurrP>             OhmicCurrPVec;
-typedef OhmicCurrPVec::iterator             OhmicCurrPVecI;
-typedef OhmicCurrPVec::const_iterator       OhmicCurrPVecCI;
+typedef OhmicCurr* OhmicCurrP;
+typedef std::map<std::string, OhmicCurrP> OhmicCurrPMap;
+typedef OhmicCurrPMap::iterator OhmicCurrPMapI;
+typedef OhmicCurrPMap::const_iterator OhmicCurrPMapCI;
+typedef std::vector<OhmicCurrP> OhmicCurrPVec;
+typedef OhmicCurrPVec::iterator OhmicCurrPVecI;
+typedef OhmicCurrPVec::const_iterator OhmicCurrPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Ohmic Current.
@@ -65,11 +64,8 @@ typedef OhmicCurrPVec::const_iterator       OhmicCurrPVecCI;
 ///
 /// \warning Methods start with an underscore are not exposed to Python.
 
-class OhmicCurr
-{
-
-public:
-
+class OhmicCurr {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
@@ -81,8 +77,7 @@ public:
     /// \param erev Reversal potential (in volts).
     /// \param g Single channel conductance (in siemens).
     ///
-    OhmicCurr(std::string const & id, Surfsys * surfsys,
-          ChanState * chanstate, double erev, double g);
+    OhmicCurr(std::string const& id, Surfsys* surfsys, ChanState* chanstate, double erev, double g);
 
     /// Destructor
     ~OhmicCurr();
@@ -94,42 +89,47 @@ public:
     /// Return the ohmic current ID.
     ///
     /// \return ID of the ohmic current.
-    inline std::string getID() const noexcept
-    { return pID; }
+    inline std::string getID() const noexcept {
+        return pID;
+    }
 
     /// Set or change the ohmic current ID.
     ///
     /// \param id ID of the ohmic current.
-    void setID(std::string const & id);
+    void setID(std::string const& id);
 
     /// Return a pointer to the parent surface system.
     ///
     /// \return Pointer to the surface system.
-    inline Surfsys * getSurfsys() const noexcept
-    { return pSurfsys; }
+    inline Surfsys* getSurfsys() const noexcept {
+        return pSurfsys;
+    }
 
     /// Return a pointer to the parent model.
     ///
     /// \return Pointer to the parent model.
-    inline Model * getModel() const noexcept
-    { return pModel; }
+    inline Model* getModel() const noexcept {
+        return pModel;
+    }
 
     /// Return a pointer to the associated channel state.
     ///
     /// \return Pointer to the channel state.
-    inline ChanState * getChanState() const noexcept
-    { return pChanState; }
+    inline ChanState* getChanState() const noexcept {
+        return pChanState;
+    }
 
     /// Change the channel state.
     ///
     /// \param chanstate Channel state of the open state.
-    void setChanState(ChanState * chanstate);
+    void setChanState(ChanState* chanstate);
 
     /// Return the reversal potential (in volts).
     ///
     /// \return Reversal potential of the ohmic current.
-    inline double getERev() const noexcept
-    { return pERev; }
+    inline double getERev() const noexcept {
+        return pERev;
+    }
 
     /// Change the reversal potential.
     ///
@@ -139,8 +139,9 @@ public:
     /// Return the channel conductance (in siemens).
     ///
     /// \return Channel conductance associated with ohmic current.
-    inline double getG() const noexcept
-    { return pG; }
+    inline double getG() const noexcept {
+        return pG;
+    }
 
     /// Change the channel conductance.
     ///
@@ -158,23 +159,16 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
-    std::string                         pID;
-    Model                             * pModel;
-    Surfsys                           * pSurfsys;
+    std::string pID;
+    Model* pModel;
+    Surfsys* pSurfsys;
 
-    ChanState                         * pChanState;
-    double                              pERev;
-    double                              pG;
-
-    ////////////////////////////////////////////////////////////////////////
-
+    ChanState* pChanState;
+    double pERev;
+    double pG;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-} // namespace model
-} // namespace steps
+}  // namespace steps::model

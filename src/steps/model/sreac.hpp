@@ -24,25 +24,18 @@
 
  */
 
-/*
- *  Last Changed Rev:  $Rev$
- *  Last Changed Date: $Date$
- *  Last Changed By:   $Author$
- */
-
 #pragma once
 
 #include <cassert>
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
-#include "util/common.h"
+#include "util/common.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace steps {
-namespace model {
+namespace steps::model {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -53,13 +46,13 @@ class Model;
 class Spec;
 
 // Auxiliary declarations.
-typedef SReac *                            SReacP;
-typedef std::map<std::string, SReacP>   SReacPMap;
-typedef SReacPMap::iterator             SReacPMapI;
-typedef SReacPMap::const_iterator       SReacPMapCI;
-typedef std::vector<SReacP>             SReacPVec;
-typedef SReacPVec::iterator             SReacPVecI;
-typedef SReacPVec::const_iterator       SReacPVecCI;
+typedef SReac* SReacP;
+typedef std::map<std::string, SReacP> SReacPMap;
+typedef SReacPMap::iterator SReacPMapI;
+typedef SReacPMap::const_iterator SReacPMapCI;
+typedef std::vector<SReacP> SReacPVec;
+typedef SReacPVec::iterator SReacPVecI;
+typedef SReacPVec::const_iterator SReacPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Surface reaction.
@@ -68,11 +61,8 @@ typedef SReacPVec::const_iterator       SReacPVecCI;
 /// i.e. a patch between two compartments.
 ///
 /// \warning Methods start with an underscore are not exposed to Python.
-class SReac
-{
-
-public:
-
+class SReac {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
@@ -95,13 +85,14 @@ public:
     /// \warning By default, the vlhs are defined in the outer compartment.
     ///          call setInner and SetOuter to change this default setting.
     /// \sa setInner, setOuter.
-    SReac(std::string const & id, Surfsys * surfsys,
-          std::vector<Spec *> const & olhs = {},
-          std::vector<Spec *> const & ilhs = {},
-          std::vector<Spec *> const & slhs = {},
-          std::vector<Spec *> const & irhs = {},
-          std::vector<Spec *> const & srhs = {},
-          std::vector<Spec *> const & orhs = {},
+    SReac(std::string const& id,
+          Surfsys* surfsys,
+          std::vector<Spec*> const& olhs = {},
+          std::vector<Spec*> const& ilhs = {},
+          std::vector<Spec*> const& slhs = {},
+          std::vector<Spec*> const& irhs = {},
+          std::vector<Spec*> const& srhs = {},
+          std::vector<Spec*> const& orhs = {},
           double kcst = 0.0);
 
     /// Destructor
@@ -114,25 +105,28 @@ public:
     /// Return the surface reaction rule ID.
     ///
     /// \return ID of the surface reaction.
-    inline const std::string& getID() const noexcept
-    { return pID; }
+    inline const std::string& getID() const noexcept {
+        return pID;
+    }
 
     /// Set or change the surface reaction rule ID.
     ///
     /// \param id ID of the surface reaction.
-    void setID(std::string const & id);
+    void setID(std::string const& id);
 
     /// Return a pointer to the parent surface system.
     ///
     /// \return Pointer to the surface system.
-    inline Surfsys * getSurfsys() const noexcept
-    { return pSurfsys; }
+    inline Surfsys* getSurfsys() const noexcept {
+        return pSurfsys;
+    }
 
     /// Return a pointer to the parent model.
     ///
     /// \return Pointer to the parent model.
-    inline Model * getModel() const noexcept
-    { return pModel; }
+    inline Model* getModel() const noexcept {
+        return pModel;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // OPERATIONS (EXPOSED TO PYTHON):
@@ -142,96 +136,104 @@ public:
     ///
     /// \return True if ilhs is set.
     ///         False if else.
-    inline bool getInner() const noexcept
-    { return (! pOuter); }
-
+    inline bool getInner() const noexcept {
+        return (!pOuter);
+    }
 
     /// Check if the lhs involves species in the outer compartment,
     /// or there are no volume species on the lhs.
     ///
     /// \return True if olhs is set, or neither olhs or ilhs are set.
     ///         False if else.
-    inline bool getOuter() const noexcept
-    { return pOuter; }
-
+    inline bool getOuter() const noexcept {
+        return pOuter;
+    }
 
     /// Return a list of outer volume species on the left hand side of reaction.
     ///
     /// \return List of pointers of left hand side outer volume species.
-    inline const std::vector<Spec *> & getOLHS() const noexcept
-    { return pOLHS; }
+    inline const std::vector<Spec*>& getOLHS() const noexcept {
+        return pOLHS;
+    }
 
     /// Set the outer volume species on the left hand side of reaction.
     ///
     /// \param olhs Outer volume species on the left hand side of reaction.
-    void setOLHS(std::vector<Spec *> const & olhs);
+    void setOLHS(std::vector<Spec*> const& olhs);
 
     /// Return a list of inner volume species on the left hand side of reaction.
     ///
     /// \return List of pointers of left hand side inner volume species.
-    inline const std::vector<Spec *> & getILHS() const noexcept
-    { return pILHS; }
+    inline const std::vector<Spec*>& getILHS() const noexcept {
+        return pILHS;
+    }
 
     /// Set the inner volume species on the left hand side of reaction.
     ///
     /// \param ilhs Inner volume species on the left hand side of reaction.
-    void setILHS(std::vector<Spec *> const & ilhs);
+    void setILHS(std::vector<Spec*> const& ilhs);
 
     /// Return a list of surface species on the left hand side of reaction.
     ///
     /// \return List of pointers of left hand side surface species.
-    inline const std::vector<Spec *> & getSLHS() const noexcept
-    { return pSLHS; }
+    inline const std::vector<Spec*>& getSLHS() const noexcept {
+        return pSLHS;
+    }
 
     /// Set the surface species on the left hand side of reaction.
     ///
     /// \param slhs Surface species on the left hand side of reaction.
-    void setSLHS(std::vector<Spec *> const & slhs);
+    void setSLHS(std::vector<Spec*> const& slhs);
 
     /// Return a list of inner volume species on the right hand side of reaction.
     ///
     /// \return List of pointers of right hand side inner volume species.
-    inline const std::vector<Spec *> & getIRHS() const noexcept
-    { return pIRHS; }
+    inline const std::vector<Spec*>& getIRHS() const noexcept {
+        return pIRHS;
+    }
 
     /// Set the inner volume species on the right hand side of reaction.
     ///
     /// \param irhs Inner volume species on the right hand side of reaction.
-    void setIRHS(std::vector<Spec *> const & irhs);
+    void setIRHS(std::vector<Spec*> const& irhs);
 
     /// Return a list of surface species on the right hand side of reaction.
     ///
     /// \return List of pointers of right hand side surface species.
-    inline const std::vector<Spec *> & getSRHS() const noexcept
-    { return pSRHS; }
+    inline const std::vector<Spec*>& getSRHS() const noexcept {
+        return pSRHS;
+    }
 
     /// Set the surface species on the right hand side of reaction.
     ///
     /// \param srhs Surface species on the right hand side of reaction.
-    void setSRHS(std::vector<Spec *> const & srhs);
+    void setSRHS(std::vector<Spec*> const& srhs);
 
     /// Return a list of outer volume species on the right hand side of reaction.
     ///
     /// \return List of pointers of right hand side outer volume species.
-    inline const std::vector<Spec *> & getORHS() const noexcept
-    { return pORHS; }
+    inline const std::vector<Spec*>& getORHS() const noexcept {
+        return pORHS;
+    }
 
     /// Set the outer volume species on the right hand side of reaction.
     ///
     /// \param orhs Outer volume species on the right hand side of reaction.
-    void setORHS(std::vector<Spec *> const & orhs);
+    void setORHS(std::vector<Spec*> const& orhs);
 
     /// Get the order of the surface reaction.
     ///
     /// \return Order of the reaction.
-    inline uint getOrder() const noexcept
-    { return pOrder; }
+    inline uint getOrder() const noexcept {
+        return pOrder;
+    }
 
     /// Get the rate constant of the surface reaction.
     ///
     /// \return Rate constant of the surface reaction.
-    inline double getKcst() const noexcept
-    { return pKcst; }
+    inline double getKcst() const noexcept {
+        return pKcst;
+    }
 
     /// Set the rate constant of the surface reaction.
     ///
@@ -245,7 +247,7 @@ public:
     /// and does not contain any duplicate members.
     ///
     /// \return List of pointers to the species.
-    std::vector<Spec *> getAllSpecs() const;
+    std::vector<Spec*> getAllSpecs() const;
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: DELETION
@@ -258,29 +260,26 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
-    std::string                         pID;
-    Model                             * pModel;
-    Surfsys                           * pSurfsys;
+    std::string pID;
+    Model* pModel;
+    Surfsys* pSurfsys;
 
-    bool                                pOuter;
-    std::vector<Spec *>                 pOLHS;
-    std::vector<Spec *>                 pILHS;
-    std::vector<Spec *>                 pSLHS;
-    std::vector<Spec *>                 pIRHS;
-    std::vector<Spec *>                 pSRHS;
-    std::vector<Spec *>                 pORHS;
-    uint                                pOrder;
-    double                              pKcst;
+    bool pOuter;
+    std::vector<Spec*> pOLHS;
+    std::vector<Spec*> pILHS;
+    std::vector<Spec*> pSLHS;
+    std::vector<Spec*> pIRHS;
+    std::vector<Spec*> pSRHS;
+    std::vector<Spec*> pORHS;
+    uint pOrder;
+    double pKcst;
 
     ////////////////////////////////////////////////////////////////////////
-
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-} // namespace model
-} // namespace steps
+}  // namespace steps::model

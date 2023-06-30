@@ -24,34 +24,23 @@
 
  */
 
-
-#ifndef STEPS_SOLVER_EFIELD_MATRIX_HPP
-#define STEPS_SOLVER_EFIELD_MATRIX_HPP 1
+#pragma once
 
 #include <fstream>
 #include <iostream>
 
 // STEPS headers.
-#include "util/common.h"
+#include "util/common.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps{
-namespace solver {
-namespace efield {
-
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::solver::efield {
 
 /// \todo Clean up (especially get rid of the pointer-to-pointer storage);
 /// could be a useful addition for Boost STEPS.
 ///
 /// \author Robert Cannon
 ///
-class Matrix
-{
-
-public:
-
+class Matrix {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
@@ -63,7 +52,7 @@ public:
     /// Constructor that creates an nn * nn matrix and initializes it
     /// by copying the contents of da.
     ///
-    Matrix(uint nn, double ** da);
+    Matrix(uint nn, double** da);
 
     /// Destructor.
     ///
@@ -73,10 +62,10 @@ public:
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream& cp_file);
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream& cp_file);
 
     ////////////////////////////////////////////////////////////////////////
     // MATRIX OPERATIONS
@@ -84,17 +73,17 @@ public:
 
     /// Makes a deep copy of the matrix.
     ///
-    Matrix * copy();
+    Matrix* copy();
 
     /// Computes left-hand vector product.
     ///
     /// The resulting array needs to deallocated by the caller!
     ///
-    double * lvprod(double * v);
+    double* lvprod(double* v);
 
     /// Returns the transpose of this matrix.
     ///
-    Matrix * transpose();
+    Matrix* transpose();
 
     /// Computes the determinant of this matrix.
     ///
@@ -102,39 +91,26 @@ public:
 
     /// Returns the inverse of this matrix.
     ///
-    Matrix * inverse();
+    Matrix* inverse();
 
     /// Compute the LU decomposition.
     ///
     void LU();
 
     ///
-    double * lubksb(double*);
+    double* lubksb(double*);
 
     /// NOT IMPLEMENTED????
-    double * rvprod(double*);
+    double* rvprod(double*);
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
-    double       ** pA;
-    double        * pWS;
-    uint            pN;
-    int           * pPerm;
-    int             pSign;
-
+  private:
+    double** pA;
+    double* pWS;
+    uint pN;
+    int* pPerm;
+    int pSign;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-#endif
-// STEPS_SOLVER_EFIELD_MATRIX_HPP
-
-// END
+}  // namespace steps::solver::efield

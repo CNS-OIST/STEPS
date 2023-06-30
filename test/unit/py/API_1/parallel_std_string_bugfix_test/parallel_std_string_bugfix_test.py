@@ -100,16 +100,16 @@ class ParallelStdStringBugfixCase(unittest.TestCase):
     def testGetBatchTetCounts(self):
         tetCounts = [i % 15 for i in range(self.mesh.ntets)]
         for i, v in enumerate(tetCounts):
-            self.solver.setTetCount(i, 'A', v)
+            self.solver.setTetSpecCount(i, 'A', v)
 
-        tetCounts2 = self.solver.getBatchTetCounts(range(self.mesh.ntets), 'A')
+        tetCounts2 = self.solver.getBatchTetSpecCounts(range(self.mesh.ntets), 'A')
         self.assertListEqual(tetCounts, tetCounts2)
 
     def testGetBatchTriCounts(self):
         triCounts = [i % 20 for i in self.surf_tris]
         for i, v in zip(self.surf_tris, triCounts):
-            self.solver.setTriCount(i, 'A', v)
-        triCounts2 = self.solver.getBatchTriCounts(self.surf_tris, 'A')
+            self.solver.setTriSpecCount(i, 'A', v)
+        triCounts2 = self.solver.getBatchTriSpecCounts(self.surf_tris, 'A')
         self.assertListEqual(triCounts, triCounts2)
 
     def testSetGetBatchTetConcs(self):
@@ -125,11 +125,11 @@ class ParallelStdStringBugfixCase(unittest.TestCase):
     def testGetBatchTetCountsNP(self):
         tetCounts = [i % 15 for i in range(self.mesh.ntets)]
         for i, v in enumerate(tetCounts):
-            self.solver.setTetCount(i, 'A', v)
+            self.solver.setTetSpecCount(i, 'A', v)
 
         tetInds = np.array(range(self.mesh.ntets), dtype=sgeom.INDEX_DTYPE)
         tetCounts2 = np.zeros(self.mesh.ntets)
-        self.solver.getBatchTetCountsNP(tetInds, 'A', tetCounts2)
+        self.solver.getBatchTetSpecCountsNP(tetInds, 'A', tetCounts2)
 
         for c1, c2 in zip(tetCounts, tetCounts2):
             self.assertEqual(c1, c2)
@@ -137,11 +137,11 @@ class ParallelStdStringBugfixCase(unittest.TestCase):
     def testGetBatchTriCountsNP(self):
         triCounts = [i % 20 for i in self.surf_tris]
         for i, v in zip(self.surf_tris, triCounts):
-            self.solver.setTriCount(i, 'A', v)
+            self.solver.setTriSpecCount(i, 'A', v)
 
         triInds = np.array(self.surf_tris, dtype=sgeom.INDEX_DTYPE)
         triCounts2 = np.zeros(len(self.surf_tris))
-        self.solver.getBatchTriCountsNP(triInds, 'A', triCounts2)
+        self.solver.getBatchTriSpecCountsNP(triInds, 'A', triCounts2)
 
         for c1, c2 in zip(triCounts, triCounts2):
             self.assertEqual(c1, c2)
@@ -149,7 +149,7 @@ class ParallelStdStringBugfixCase(unittest.TestCase):
     def testSumMatchTetCountsNP(self):
         tetCounts = [i % 15 for i in range(self.mesh.ntets)]
         for i, v in enumerate(tetCounts):
-            self.solver.setTetCount(i, 'A', v)
+            self.solver.setTetSpecCount(i, 'A', v)
 
         tetInds = np.array(range(self.mesh.ntets), dtype=sgeom.INDEX_DTYPE)
         tetSum = self.solver.sumBatchTetCountsNP(tetInds, 'A')
@@ -159,7 +159,7 @@ class ParallelStdStringBugfixCase(unittest.TestCase):
     def testSumMatchTriCountsNP(self):
         triCounts = [i % 20 for i in self.surf_tris]
         for i, v in zip(self.surf_tris, triCounts):
-            self.solver.setTriCount(i, 'A', v)
+            self.solver.setTriSpecCount(i, 'A', v)
 
         triInds = np.array(self.surf_tris, dtype=sgeom.INDEX_DTYPE)
         triSum = self.solver.sumBatchTriCountsNP(triInds, 'A')

@@ -34,17 +34,16 @@ def tetmesh2metis(mesh, ofile):
     None
     """
     
-    out = open(ofile, 'w')
-    ntets = mesh.ntets
-    out.write("%i\n" % (ntets))
-    for t in range(ntets):
-        #tet_vol = mesh.getTetVol(t)
-        #out.write('%e ' % (tet_vol))
-        tet_vertices = mesh.getTet(t)
-        for v in tet_vertices:
-            out.write("%i " % (v + 1))
-        out.write("\n")
-    out.close()
+    with open(ofile, 'w') as out:
+        ntets = mesh.ntets
+        out.write("%i\n" % (ntets))
+        for t in range(ntets):
+            #tet_vol = mesh.getTetVol(t)
+            #out.write('%e ' % (tet_vol))
+            tet_vertices = mesh.getTet(t)
+            for v in tet_vertices:
+                out.write("%i " % (v + 1))
+            out.write("\n")
 
 def readPartition(partition_file):
     """
@@ -57,7 +56,7 @@ def readPartition(partition_file):
         partition list for parallel TetOpsplit solver
     """
     partition = []
-    parts = open(partition_file, 'r')
-    for line in parts:
-        partition.append(int(line))
+    with open(partition_file, 'r') as parts:
+        for line in parts:
+            partition.append(int(line))
     return partition

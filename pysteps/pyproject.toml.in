@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "steps"
+authors = [{name = "STEPS Development Team", email = "steps.dev@gmail.com"}]
+description = "STochastic Engine for Pathway Simulation"
+license = {text = "GNU General Public License Version 3"}
+requires-python = ">=3.6"
+dependencies = ["numpy>=1.19"]
+dynamic = ["version"]
+
+[project.urls]
+homepage = "http://steps.sourceforge.net"
+repository = "https://github.com/CNS-OIST/STEPS"
+
+[project.optional-dependencies]
+dist = ["mpi4py>=3.1"]
+hdf5 = ["h5py>=3.1"]
+cov = ["coverage>=5.0"]
+test = ["matplotlib>=3.2", "scipy>=1.5"]
+blender = ["matplotlib>=3.2"]
+
+[tool.setuptools]
+platforms = ["Mac OS X", "Linux", "Unix"]
+
+[tool.setuptools.packages.find]
+include = [${STEPS_INCLUDE_PACKAGES_PYPROJECT}]
+
+[tool.setuptools.dynamic]
+version = {attr = "steps.__version__"}
+
+[tool.black]
+line-length = 110
+skip-string-normalization = true
+fast = true
+
+[tool.yapf]
+based_on_style = "pep8"
+column_limit = 110

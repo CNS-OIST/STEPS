@@ -1,6 +1,6 @@
 ###___license_placeholder___###
 
-cdef extern from "util/common.h":
+cdef extern from "util/common.hpp":
     ctypedef unsigned int uint
     ctypedef unsigned short ushort
     ctypedef unsigned long ulong
@@ -9,3 +9,4 @@ cdef extern from "util/common.h":
 
 cdef extern from "util/vocabulary.hpp" namespace "steps":
     ctypedef char index_t;
+

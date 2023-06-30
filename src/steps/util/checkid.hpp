@@ -24,14 +24,11 @@
 
  */
 
-
-#ifndef STEPS_UTIL_CHECKID_HPP
-#define STEPS_UTIL_CHECKID_HPP 1
+#pragma once
 
 #include <string>
 
-namespace steps {
-namespace util {
+namespace steps::util {
 
 /** Test string for validity as steps object identifier.
  *
@@ -42,7 +39,7 @@ namespace util {
  * followed by a possibly empty sequence of alphanumeric characters
  * [A-Za-z_0-9].
  */
-bool isValidID(const char *s);
+bool isValidID(const char* s);
 
 /** Test string for validity as steps object identifier.
  *
@@ -51,7 +48,7 @@ bool isValidID(const char *s);
  *
  * See isValidID(const char *)
  */
-bool isValidID(const std::string &s);
+bool isValidID(const std::string& s);
 
 /** Throw exception if string is an invalid identifier.
  *
@@ -59,7 +56,7 @@ bool isValidID(const std::string &s);
  *
  * Throws steps::ArgErr if isValidID(s) is false.
  */
-void checkID(const char *s);
+void checkID(const char* s);
 
 /** Throw exception if string is an invalid identifier.
  *
@@ -67,9 +64,6 @@ void checkID(const char *s);
  *
  * Throws steps::ArgErr if isValidID(s) is false.
  */
-void checkID(const std::string &s);
+void checkID(const std::string& s);
 
-}} // namespace steps::util
-
-
-#endif // ndef STEPS_UTIL_CHECKID_HPP
+}  // namespace steps::util

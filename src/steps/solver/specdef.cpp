@@ -24,79 +24,46 @@
 
  */
 
-
-/*
- *  Last Changed Rev:  $Rev$
- *  Last Changed Date: $Date$
- *  Last Changed By:   $Author$
- */
-
-// STL headers.
-#include <cassert>
-#include <string>
+#include "specdef.hpp"
 
 // STEPS headers.
-#include "specdef.hpp"
-#include "statedef.hpp"
 #include "types.hpp"
-
 #include "util/error.hpp"
 // logging
 #include <easylogging++.h>
 
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::solver {
 
-namespace ssolver = steps::solver;
-
-////////////////////////////////////////////////////////////////////////////////
-
-ssolver::Specdef::Specdef(Statedef * sd, uint idx, steps::model::Spec * s)
-: pStatedef(sd)
-, pIdx(idx)
-, pName()
-, pSetupdone(false)
-{
+Specdef::Specdef(Statedef* sd, spec_global_id idx, model::Spec* s)
+    : pStatedef(sd)
+    , pIdx(idx)
+    , pSetupdone(false) {
     AssertLog(pStatedef != nullptr);
     AssertLog(s != nullptr);
     pName = s->getID();
-
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-ssolver::Specdef::~Specdef()
-= default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Specdef::checkpoint(std::fstream & /*cp_file*/)
-{
+Specdef::~Specdef() = default;
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Specdef::checkpoint(std::fstream& /*cp_file*/) {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Specdef::restore(std::fstream & /*cp_file*/)
-{
+void Specdef::restore(std::fstream& /*cp_file*/) {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string const ssolver::Specdef::name() const
-{
-    return pName;
+void Specdef::setup() {
+    pSetupdone = true;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-void ssolver::Specdef::setup()
-{
-  pSetupdone = true;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-// END
-
+}  // namespace steps::solver

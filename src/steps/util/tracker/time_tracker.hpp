@@ -6,23 +6,21 @@
 
 #include <chrono>
 
-namespace steps {
-namespace util {
+namespace steps::util {
 
 /*
  * return value is in seconds
  */
 
 class TimeTracker {
-
-public:
+  public:
     void start();
     void stop();
     double diff();
-private:
+
+  private:
     std::chrono::steady_clock::time_point init_{};
     std::chrono::steady_clock::time_point final_{};
 };
 
-} // namespace util
-} // namespace steps
+}  // namespace steps::util

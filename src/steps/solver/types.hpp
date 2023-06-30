@@ -24,67 +24,65 @@
 
  */
 
-#ifndef STEPS_SIM_SHARED_TYPES_HPP
-#define STEPS_SIM_SHARED_TYPES_HPP 1
-
+#pragma once
 
 // STL headers.
 #include <limits>
 #include <vector>
 
-////////////////////////////////////////////////////////////////////////////////
+/*
+namespace steps::solver {
 
-namespace steps {
-namespace solver {
+typedef unsigned int gidxT;
 
-////////////////////////////////////////////////////////////////////////////////
+static const uint GIDX_UNDEFINED = std::numeric_limits<uint>::max();
 
-typedef unsigned int                    gidxT;
+struct gidxT {
+    uint value;
+    gidxT(uint value = GIDX_UNDEFINED)
+        : value(value) {}
+};
 
-typedef std::vector<gidxT>              gidxTVec;
-typedef gidxTVec::iterator              gidxTVecI;
-typedef gidxTVec::const_iterator        gidxTVecCI;
+typedef std::vector<gidxT> gidxTVec;
+typedef gidxTVec::iterator gidxTVecI;
+typedef gidxTVec::const_iterator gidxTVecCI;
 
-typedef std::vector<gidxT*>             gidxTPVec;
-typedef gidxTPVec::iterator             gidxTPVecI;
-typedef gidxTPVec::const_iterator       gidxTPVecCI;
+typedef std::vector<gidxT*> gidxTPVec;
+typedef gidxTPVec::iterator gidxTPVecI;
+typedef gidxTPVec::const_iterator gidxTPVecCI;
 
-static const gidxT GIDX_UNDEFINED = 0xFFFF;
-
-////////////////////////////////////////////////////////////////////////////////
-
-typedef unsigned int                    lidxT;
-
-typedef std::vector<lidxT>              lidxTVec;
-typedef lidxTVec::iterator              lidxTVecI;
-typedef lidxTVec::const_iterator        lidxTVecCI;
-
-typedef std::vector<lidxT*>             lidxTPVec;
-typedef lidxTPVec::iterator             lidxTPVecI;
-typedef lidxTPVec::const_iterator       lidxTPVecCI;
-
-static const lidxT LIDX_UNDEFINED = std::numeric_limits<lidxT>::max();
+typedef unsigned int lidxT;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-typedef int                             depT;
-typedef std::vector<depT>               depTVec;
-typedef depTVec::iterator               depTVecI;
-typedef depTVec::const_iterator         depTVecCI;
+static const uint LIDX_UNDEFINED = std::numeric_limits<uint>::max();
 
-static const depT DEP_NONE              = 0;
-static const depT DEP_STOICH            = 1;
-static const depT DEP_RATE              = 2;
+struct lidxT {
+    uint value;
+    lidxT(uint value = LIDX_UNDEFINED)
+        : value(value) {}
+};
+
+typedef std::vector<lidxT> lidxTVec;
+typedef lidxTVec::iterator lidxTVecI;
+typedef lidxTVec::const_iterator lidxTVecCI;
+
+typedef std::vector<lidxT*> lidxTPVec;
+typedef lidxTPVec::iterator lidxTPVecI;
+typedef lidxTPVec::const_iterator lidxTPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-   class Compdef;
+typedef int depT;
+typedef std::vector<depT> depTVec;
+typedef depTVec::iterator depTVecI;
+typedef depTVec::const_iterator depTVecCI;
 
-}
-}
+static const depT DEP_NONE = 0;
+static const depT DEP_STOICH = 1;
+static const depT DEP_RATE = 2;
 
-#endif
-// STEPS_SIM_SHARED_TYPES_HPP
+class Compdef;
 
-// END
-
+}  // namespace steps::solver
+*/

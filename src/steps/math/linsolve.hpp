@@ -26,10 +26,9 @@
 
 #pragma once
 
-#include "util/common.h"
+#include "util/common.hpp"
 
-namespace steps {
-namespace math {
+namespace steps::math {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -38,5 +37,4 @@ int linsolve(int n, int rhs_num, double a[]);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-} // namespace math
-} // namespace steps
+}  // namespace steps::math

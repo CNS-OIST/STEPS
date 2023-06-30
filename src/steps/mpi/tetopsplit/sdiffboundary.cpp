@@ -24,50 +24,37 @@
 
  */
 
-// Standard library & STL headers.
-#include <vector>
-
 // STEPS headers.
 #include "sdiffboundary.hpp"
 // logging
 #include "util/error.hpp"
 #include <easylogging++.h>
-////////////////////////////////////////////////////////////////////////////////
 
-namespace smtos = steps::mpi::tetopsplit;
-namespace ssolver = steps::solver;
+namespace steps::mpi::tetopsplit {
 
-////////////////////////////////////////////////////////////////////////////////
-
-smtos::SDiffBoundary::SDiffBoundary(steps::solver::SDiffBoundarydef * sdbdef)
-: pSDiffBoundarydef(sdbdef)
-, pSetPatches(false)
-, pPatchA(nullptr)
-, pPatchB(nullptr)
-, pTris()
-, pTriDirection()
-{
+SDiffBoundary::SDiffBoundary(solver::SDiffBoundarydef* sdbdef)
+    : pSDiffBoundarydef(sdbdef)
+    , pSetPatches(false)
+    , pPatchA(nullptr)
+    , pPatchB(nullptr) {
     AssertLog(sdbdef != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::SDiffBoundary::checkpoint(std::fstream & /*cp_file*/)
-{
+void SDiffBoundary::checkpoint(std::fstream& /*cp_file*/) {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::SDiffBoundary::restore(std::fstream & /*cp_file*/)
-{
+void SDiffBoundary::restore(std::fstream& /*cp_file*/) {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::SDiffBoundary::setPatches(smtos::Patch * patcha, smtos::Patch * patchb)
-{
+void SDiffBoundary::setPatches(Patch* patcha, Patch* patchb) {
     AssertLog(!pSetPatches);
     AssertLog(patcha != nullptr);
     AssertLog(patchb != nullptr);
@@ -80,31 +67,25 @@ void smtos::SDiffBoundary::setPatches(smtos::Patch * patcha, smtos::Patch * patc
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::Patch * smtos::SDiffBoundary::patchA()
-{
+Patch* SDiffBoundary::patchA() {
     AssertLog(pSetPatches);
     return pPatchA;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::Patch * smtos::SDiffBoundary::patchB()
-{
+Patch* SDiffBoundary::patchB() {
     AssertLog(pSetPatches);
     return pPatchB;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::SDiffBoundary::setTriDirection(triangle_id_t tri, uint direction)
-{
+void SDiffBoundary::setTriDirection(triangle_global_id tri, uint direction) {
     AssertLog(direction < 3);
 
     pTris.push_back(tri);
     pTriDirection.push_back(direction);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
-
+}  // namespace steps::mpi::tetopsplit

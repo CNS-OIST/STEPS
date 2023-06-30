@@ -1,9 +1,9 @@
 #pragma once
 
-namespace steps {
-namespace model {
+namespace steps::model {
 
 class Model;
 
-} // namespace model
-} // namespace steps
+enum Immobilization { IMMOBILIZING = 1, NO_EFFECT = 0, MOBILIZING = -1 };
+
+}  // namespace steps::model

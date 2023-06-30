@@ -24,26 +24,18 @@
 
  */
 
-
-#ifndef STEPS_SOLVER_EFIELD_VERTEXELEMENT_HPP
-#define STEPS_SOLVER_EFIELD_VERTEXELEMENT_HPP 1
+#pragma once
 
 // STL headers.
-#include <iostream>
-#include <vector>
-#include <string>
 #include <fstream>
+#include <iostream>
+#include <string>
+#include <vector>
 
 // STEPS headers.
-#include "util/common.h"
+#include "util/common.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps{
-namespace solver {
-namespace efield {
-
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::solver::efield {
 
 // Forward declarations.
 class VertexElement;
@@ -51,10 +43,10 @@ class VertexConnection;
 class Mesh;
 
 // Auxiliary declarations.
-typedef VertexElement *                     VertexElementP;
-typedef std::vector<VertexElementP>         VertexElementPVec;
-typedef VertexElementPVec::iterator         VertexElementPVecI;
-typedef VertexElementPVec::const_iterator   VertexElementPVecCI;
+typedef VertexElement* VertexElementP;
+typedef std::vector<VertexElementP> VertexElementPVec;
+typedef VertexElementPVec::iterator VertexElementPVecI;
+typedef VertexElementPVec::const_iterator VertexElementPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -69,11 +61,8 @@ typedef VertexElementPVec::const_iterator   VertexElementPVecCI;
 ///      constants.
 /// </UL>
 ///
-class VertexElement
-{
-
-public:
-
+class VertexElement {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
@@ -85,7 +74,7 @@ public:
     /// \param vpos
     ///         A 1D array of size 3, giving the vertex's coordinates.
     ///
-    VertexElement(uint idx, double * vpos);
+    VertexElement(uint idx, const double* vpos);
 
     /// Destructor.
     ///
@@ -95,10 +84,10 @@ public:
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream& cp_file);
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream& cp_file);
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -106,19 +95,22 @@ public:
     /// It's not clear why this should happen... Maybe delete in the
     /// future?
     ///
-    inline void setIDX(uint i) noexcept
-    { pIDX = i; }
+    inline void setIDX(uint i) noexcept {
+        pIDX = i;
+    }
 
     /// Adds an amount of surface area to the surface associated with
     /// this vertex.
     ///
-    inline void incrementSurfaceArea(double sa) noexcept
-    { pSurface += sa; }
+    inline void incrementSurfaceArea(double sa) noexcept {
+        pSurface += sa;
+    }
 
     /// Called by VertexConnection::attachToVertices().
     ///
-    inline void addConnection(VertexConnection* vc) noexcept
-    { pConnections.push_back(vc); }
+    inline void addConnection(VertexConnection* vc) noexcept {
+        pConnections.push_back(vc);
+    }
 
     /// Called by TetMesh::extractConnections(). This basically sets up
     /// some additional data structures locally in VertexElement based
@@ -126,13 +118,15 @@ public:
     ///
     void fix();
 
-    inline void setVolume(double d) noexcept
-    { pVolume = d; }
+    inline void setVolume(double d) noexcept {
+        pVolume = d;
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline void applySurfaceCapacitance(double c) noexcept
-    { pCapacitance = c * pSurface; }
+    inline void applySurfaceCapacitance(double c) noexcept {
+        pCapacitance = c * pSurface;
+    }
 
     inline void updateCapacitance(double c) noexcept {
         pCapacitance += c;
@@ -144,42 +138,53 @@ public:
     // GENERAL INFORMATION
     ////////////////////////////////////////////////////////////////////////
 
-    inline uint getIDX() const noexcept
-    { return pIDX; }
+    inline uint getIDX() const noexcept {
+        return pIDX;
+    }
 
-    inline double getX() const noexcept
-    { return pXPos; }
+    inline double getX() const noexcept {
+        return pXPos;
+    }
 
-    inline double getY() const noexcept
-    { return pYPos; }
+    inline double getY() const noexcept {
+        return pYPos;
+    }
 
-    inline double getZ() const noexcept
-    { return pZPos; }
+    inline double getZ() const noexcept {
+        return pZPos;
+    }
 
-    inline double getSurfaceArea() const noexcept
-    { return pSurface; }
+    inline double getSurfaceArea() const noexcept {
+        return pSurface;
+    }
 
-    inline double getCapacitance() const noexcept
-    { return pCapacitance; }
+    inline double getCapacitance() const noexcept {
+        return pCapacitance;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // CONNECTIVITY INFORMATION
     ////////////////////////////////////////////////////////////////////////
 
-    inline VertexElement* getNeighbor(uint i) const noexcept
-    { return pNbrs[i]; }
+    inline VertexElement* getNeighbor(uint i) const noexcept {
+        return pNbrs[i];
+    }
 
-    inline VertexElement** getNeighbours() const noexcept
-    { return pNbrs; }
+    inline VertexElement** getNeighbours() const noexcept {
+        return pNbrs;
+    }
 
-    inline uint nbrIdx(uint i) const noexcept
-    { return pNbrs[i]->getIDX(); }
+    inline uint nbrIdx(uint i) const noexcept {
+        return pNbrs[i]->getIDX();
+    }
 
-    inline uint getNCon() const noexcept
-    { return pNCon; }
+    inline uint getNCon() const noexcept {
+        return pNCon;
+    }
 
-    inline double getCC(uint i) const noexcept
-    { return pCcs[i]; }
+    inline double getCC(uint i) const noexcept {
+        return pCcs[i];
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // OUTPUT
@@ -191,17 +196,16 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
     // GENERAL DATA FIELDS
     ////////////////////////////////////////////////////////////////////////
 
-    uint                        pIDX;
+    uint pIDX;
 
-    double                      pXPos;
-    double                      pYPos;
-    double                      pZPos;
+    double pXPos;
+    double pYPos;
+    double pZPos;
 
     /// During initialization, the surface area is computed for each
     /// triangle specified in the mesh. One third of this value is added
@@ -210,23 +214,23 @@ private:
     /// triangles. An internal vertex (a vertex that is not on the corner
     /// of any triangle will have a surface area of 0).
     ///
-    double                      pSurface;
-    double                      pVolume;
-    double                      pCapacitance;
+    double pSurface;
+    double pVolume;
+    double pCapacitance;
 
     ////////////////////////////////////////////////////////////////////////
     // CONNECTIVITY DATA
     ////////////////////////////////////////////////////////////////////////
 
-    std::vector<VertexConnection*>      pConnections;
+    std::vector<VertexConnection*> pConnections;
 
     /// Set during VertexElement::fix().
     ///
-    uint                                pNCon;
+    uint pNCon;
 
     /// Set during VertexElement::fix().
     ///
-    VertexElement                    ** pNbrs;
+    VertexElement** pNbrs;
 
     /// Set to during VertexElement::fix().
     ///
@@ -235,26 +239,12 @@ private:
     /// Check this later (depends on whether the CC's are read out
     /// only during setup, or during simulation).
     ///
-    double                            * pCcs;
+    std::vector<double> pCcs;
 
     ////////////////////////////////////////////////////////////////////////
-
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-}
-
-////////////////////////////////////////////////////////////////////////////////
+}  // namespace steps::solver::efield
 
 STEPS_EXTERN
-std::ostream & operator<< (std::ostream & os, steps::solver::efield::VertexElement const&);
-
-////////////////////////////////////////////////////////////////////////////////
-
-#endif
-// STEPS_SOLVER_EFIELD_VERTEXELEMENT_HPP
-
-// END
+std::ostream& operator<<(std::ostream& os, steps::solver::efield::VertexElement const&);

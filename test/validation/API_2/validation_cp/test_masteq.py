@@ -132,7 +132,6 @@ class TestMastEq(unittest.TestCase):
         for r in res.data[0,:,0]: steps_n_res[int(r)]+=1
         for s in range(50): steps_n_res[s] = steps_n_res[s]/ntpnts
 
-        passed = True
         max_err = 0.0
 
         k1 = KCST_b

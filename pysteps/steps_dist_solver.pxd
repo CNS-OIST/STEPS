@@ -7,6 +7,7 @@ __copyright__ = "Copyright 2016 EPFL BBP-project"
 # =====================================================================================================================
 from libcpp cimport bool
 from libcpp.memory cimport shared_ptr
+from libcpp.pair cimport pair
 cimport std
 cimport steps
 cimport steps_solver
@@ -17,19 +18,7 @@ cimport steps_rng
 from steps_common cimport *
 from steps_dist cimport *
 
-IF USE_PETSC:
-    # ======================================================================================================================
-    cdef extern from "<petscksp.h>":
-    # ----------------------------------------------------------------------------------------------------------------------
-
-        ctypedef enum KSPNormType:
-            KSP_NORM_DEFAULT,
-            KSP_NORM_NONE,
-            KSP_NORM_PRECONDITIONED,
-            KSP_NORM_UNPRECONDITIONED,
-            KSP_NORM_NATURAL,
-
-# ======================================================================================================================        
+# ======================================================================================================================
 cdef extern from "math/distributions.hpp" namespace "steps::math":
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -72,19 +61,19 @@ cdef extern from "mpi/dist/tetopsplit/tetopsplit.hpp" namespace "steps::dist":
         void setTime(double) except +
         void setNSteps(uint) except +
 
-        std.vector[double] getBatchTetCounts(std.vector[GO], std.string, bool) except +
-        void setBatchTetCounts(std.vector[GO], std.string, std.vector[double], bool) except +
-        std.vector[double] getBatchTetConcs(std.vector[GO], std.string, bool) except +
-        void setBatchTetConcs(std.vector[GO], std.string, std.vector[double], bool) except +
-        std.vector[double] getBatchTriCounts(std.vector[GO], std.string, bool) except +
-        void setBatchTriCounts(std.vector[GO], std.string, std.vector[double], bool) except +
+        std.vector[double] getBatchTetSpecCounts(std.vector[GO], std.string, bool) except +
+        void setBatchTetSpecCounts(std.vector[GO], std.string, std.vector[double], bool) except +
+        std.vector[double] getBatchTetSpecConcs(std.vector[GO], std.string, bool) except +
+        void setBatchTetSpecConcs(std.vector[GO], std.string, std.vector[double], bool) except +
+        std.vector[double] getBatchTriSpecCounts(std.vector[GO], std.string, bool) except +
+        void setBatchTriSpecCounts(std.vector[GO], std.string, std.vector[double], bool) except +
 
-        void getBatchTetCountsNP(GO*, int, std.string, double*, int, bool) except +
-        void setBatchTetCountsNP(GO*, int, std.string, double*, int, bool) except +
-        void getBatchTetConcsNP(GO*, int, std.string, double*, int, bool) except +
-        void setBatchTetConcsNP(GO*, int, std.string, double*, int, bool) except +
-        void getBatchTriCountsNP(GO*, int, std.string, double*, int, bool) except +
-        void setBatchTriCountsNP(GO*, int, std.string, double*, int, bool) except +
+        void getBatchTetSpecCountsNP(GO*, int, std.string, double*, int, bool) except +
+        void setBatchTetSpecCountsNP(GO*, int, std.string, double*, int, bool) except +
+        void getBatchTetSpecConcsNP(GO*, int, std.string, double*, int, bool) except +
+        void setBatchTetSpecConcsNP(GO*, int, std.string, double*, int, bool) except +
+        void getBatchTriSpecCountsNP(GO*, int, std.string, double*, int, bool) except +
+        void setBatchTriSpecCountsNP(GO*, int, std.string, double*, int, bool) except +
 
         void getBatchVertVsNP(GO*, int, double*, int, bool) except +
         void getBatchTriVsNP(GO*, int, double*, int, bool) except +
@@ -93,8 +82,8 @@ cdef extern from "mpi/dist/tetopsplit/tetopsplit.hpp" namespace "steps::dist":
         void getBatchTriOhmicIsNP(GO*, int, std.string, double*, int, bool) except +
         void getBatchTriGHKIsNP(GO*, int, std.string, double*, int, bool) except +
 
-        void setDiffBoundaryDiffusionActive(std.string, std.string, bool) except +
-        bool getDiffBoundaryDiffusionActive(std.string, std.string) except +
+        void setDiffBoundarySpecDiffusionActive(std.string, std.string, bool) except +
+        bool getDiffBoundarySpecDiffusionActive(std.string, std.string) except +
 
         void setDiffApplyThreshold(int) except +
         int getDiffApplyThreshold() except +
@@ -115,33 +104,36 @@ cdef extern from "mpi/dist/tetopsplit/tetopsplit.hpp" namespace "steps::dist":
         void setMembIClamp(std.string, double) except +
         double getVertIClamp(GO, bool) except +
         void setVertIClamp(GO, double, bool) except +
+        double getTriOhmicErev(GO, std.string, bool) except +
+        void getBatchTriOhmicErevsNP(GO*, int, std.string, double*, int, bool) except +
+        void setTriOhmicErev(GO, std.string, double, bool) except +
         double getEfieldDT() except +
         void setEfieldDT(double) except +
-        void setEfieldTolerances(double, double, KSPNormType) except +
+        void setPetscOptions(std.string) except +
         void setTemp(double) except +
         double getTemp() except +
 
         # Not sure they are all mandatory
         double getCompVol(std.string) except +
-        double getCompCount(std.string, std.string) except +
-        void setCompCount(std.string, std.string, double, DistributionMethod) except +
+        double getCompSpecCount(std.string, std.string) except +
+        void setCompSpecCount(std.string, std.string, double, DistributionMethod) except +
         double getCompAmount(std.string, std.string) except +
         void setCompAmount(std.string, std.string, double) except +
-        double getCompConc(std.string, std.string) except +
-        void setCompConc(std.string, std.string, double, DistributionMethod) except +
+        double getCompSpecConc(std.string, std.string) except +
+        void setCompSpecConc(std.string, std.string, double, DistributionMethod) except +
         bool getCompClamped(std.string, std.string) except +
         void setCompClamped(std.string, std.string, bool) except +
         double getCompReacK(std.string, std.string) except +
         void setCompReacK(std.string, std.string, double) except +
         bool getCompReacActive(std.string, std.string) except +
         void setCompReacActive(std.string, std.string, bool) except +
-        double getTetCount(uint, std.string, bool) except +
-        void setTetCount(uint, std.string, double, bool) except +
-        double getTetConc(uint, std.string, bool) except +
-        void setTetConc(uint, std.string, double, bool) except +
+        double getTetSpecCount(uint, std.string, bool) except +
+        void setTetSpecCount(uint, std.string, double, bool) except +
+        double getTetSpecConc(uint, std.string, bool) except +
+        void setTetSpecConc(uint, std.string, double, bool) except +
         double getPatchArea(std.string) except +
-        double getPatchCount(std.string, std.string) except +
-        void setPatchCount(std.string, std.string, double, DistributionMethod) except +
+        double getPatchSpecCount(std.string, std.string) except +
+        void setPatchSpecCount(std.string, std.string, double, DistributionMethod) except +
         double getPatchAmount(std.string, std.string) except +
         void setPatchAmount(std.string, std.string, double) except +
         bool getPatchClamped(std.string, std.string) except +
@@ -151,14 +143,17 @@ cdef extern from "mpi/dist/tetopsplit/tetopsplit.hpp" namespace "steps::dist":
         bool getPatchSReacActive(std.string, std.string) except +
         void setPatchSReacActive(std.string, std.string, bool) except +
         double getPatchMaxV(std.string) except +
-        double getTriCount(uint, std.string, bool) except +
-        void setTriCount(uint, std.string, double, bool) except +
+        double getTriSpecCount(uint, std.string, bool) except +
+        void setTriSpecCount(uint, std.string, double, bool) except +
         double getVertV(GO, bool) except +
         double getTriV(GO, bool) except +
         double getTetV(GO, bool) except +
         double getTriOhmicI(GO, std.string, bool) except +
         double getTriGHKI(GO, std.string, bool) except +
         void setMembPotential(std.string, double) except +
+        void setMembRes(std.string, double, double) except +
+        pair[double,double] getMembRes(std.string) except +
+        void dumpDepGraphToFile(std.string) except +
 
     cdef cppclass TetOpSplit[T, U]:
-        TetOpSplit(steps_model.Model&, steps_dist_tetmesh.DistMesh&, shared_ptr[steps_rng.RNG], bool) except +
+        TetOpSplit(steps_model.Model&, steps_dist_tetmesh.DistMesh&, shared_ptr[steps_rng.RNG], bool, bool) except +

@@ -2,7 +2,8 @@
 
 #include "gtest/gtest.h"
 
-using namespace steps::dist::kproc;
+using steps::dist::kproc::EventQueue;
+using steps::dist::kproc::KProcID;
 
 TEST(KProcEventQueue, CreateAndUpdate) {
     EventQueue queue;
@@ -69,7 +70,7 @@ TEST(KProcEventQueue, TimeCollision) {
     ASSERT_EQ(first3.second.data(), 4);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     int r = 0;
     ::testing::InitGoogleTest(&argc, argv);
     r = RUN_ALL_TESTS();

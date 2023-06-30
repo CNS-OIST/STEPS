@@ -39,85 +39,85 @@
 
 #include "util/error.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-using namespace std;
-using namespace steps::model;
+namespace steps::model {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-OhmicCurr::OhmicCurr(string const &id, Surfsys *surfsys, ChanState *chanstate,
-                     double erev, double g)
-    : pID(id), pModel(nullptr), pSurfsys(surfsys), pChanState(chanstate),
-      pERev(erev), pG(g) {
+OhmicCurr::OhmicCurr(std::string const& id,
+                     Surfsys* surfsys,
+                     ChanState* chanstate,
+                     double erev,
+                     double g)
+    : pID(id)
+    , pModel(nullptr)
+    , pSurfsys(surfsys)
+    , pChanState(chanstate)
+    , pERev(erev)
+    , pG(g) {
+    ArgErrLogIf(pSurfsys == nullptr, "No surfsys provided to OhmicCurr initializer function");
+    ArgErrLogIf(pChanState == nullptr,
+                "No channel state provided to OhmicCurr initializer function");
+    ArgErrLogIf(pG < 0.0, "Channel conductance can't be negative");
 
-  ArgErrLogIf(pSurfsys == nullptr,
-              "No surfsys provided to OhmicCurr initializer function");
-  ArgErrLogIf(pChanState == nullptr,
-              "No channel state provided to OhmicCurr initializer function");
-  ArgErrLogIf(pG < 0.0, "Channel conductance can't be negative");
+    pModel = pSurfsys->getModel();
+    AssertLog(pModel != nullptr);
 
-  pModel = pSurfsys->getModel();
-  AssertLog(pModel != nullptr);
-
-  pSurfsys->_handleOhmicCurrAdd(this);
+    pSurfsys->_handleOhmicCurrAdd(this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 OhmicCurr::~OhmicCurr() {
-  if (pSurfsys == nullptr) {
-    return;
-  }
-  _handleSelfDelete();
+    if (pSurfsys == nullptr) {
+        return;
+    }
+    _handleSelfDelete();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void OhmicCurr::setID(string const &id) {
-  AssertLog(pSurfsys != nullptr);
-  // The following might raise an exception, e.g. if the new ID is not
-  // valid or not unique. If this happens, we don't catch but simply let
-  // it pass by into the Python layer.
-  pSurfsys->_handleOhmicCurrIDChange(pID, id);
-  // This line will only be executed if the previous call didn't raise
-  // an exception.
-  pID = id;
+void OhmicCurr::setID(std::string const& id) {
+    AssertLog(pSurfsys != nullptr);
+    // The following might raise an exception, e.g. if the new ID is not
+    // valid or not unique. If this happens, we don't catch but simply let
+    // it pass by into the Python layer.
+    pSurfsys->_handleOhmicCurrIDChange(pID, id);
+    // This line will only be executed if the previous call didn't raise
+    // an exception.
+    pID = id;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void OhmicCurr::setChanState(ChanState *chanstate) {
-  AssertLog(chanstate != nullptr);
-  pChanState = chanstate;
+void OhmicCurr::setChanState(ChanState* chanstate) {
+    AssertLog(chanstate != nullptr);
+    pChanState = chanstate;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void OhmicCurr::setERev(double erev) {
-  AssertLog(pSurfsys != nullptr);
-  pERev = erev;
+    AssertLog(pSurfsys != nullptr);
+    pERev = erev;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void OhmicCurr::setG(double g) {
-  AssertLog(pSurfsys != nullptr);
+    AssertLog(pSurfsys != nullptr);
 
-  ArgErrLogIf(
-      g < 0.0,
-      "Conductance provided to OhmicCurr::setG function can't be negative");
-  pG = g;
+    ArgErrLogIf(g < 0.0, "Conductance provided to OhmicCurr::setG function can't be negative");
+    pG = g;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void OhmicCurr::_handleSelfDelete() {
-  pSurfsys->_handleOhmicCurrDel(this);
-  pG = 0.0;
-  pERev = 0;
-  pSurfsys = nullptr;
-  pModel = nullptr;
+    pSurfsys->_handleOhmicCurrDel(this);
+    pG = 0.0;
+    pERev = 0;
+    pSurfsys = nullptr;
+    pModel = nullptr;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+}  // namespace steps::model

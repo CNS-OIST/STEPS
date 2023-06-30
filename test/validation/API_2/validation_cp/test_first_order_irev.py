@@ -124,9 +124,12 @@ class TestFirstOrderIrev(unittest.TestCase):
 
         sim.toSave(res, dt=DT)
 
+        seed = time.time()%4294967295
         for i in range (0, NITER):
             sim.newRun()
             sim.restore('./validation_cp/cp/first_order_irev')
+            rng.initialize(seed)
+            seed += 1
             sim.run(INT)
 
         mean_res = np.mean(res.data, 0)
@@ -135,14 +138,12 @@ class TestFirstOrderIrev(unittest.TestCase):
         m_tol = 0
         s_tol=0
 
-        passed = True
         for i in range(len(res.time[0])):
             if i == 0:
                 continue
             analy = N*np.exp(-KCST*res.time[0,i])
             std = np.power((N*(np.exp(-KCST*res.time[0,i]))*(1-(np.exp(-KCST*res.time[0,i])))), 0.5)
-            if not tol_funcs.tolerable(analy, mean_res[i], tolerance):
-                passed = False
+            self.assertTrue(tol_funcs.tolerable(analy, mean_res[i], tolerance))
             self.assertTrue(tol_funcs.tolerable(std, std_res[i], tolerance))
 
 def suite():

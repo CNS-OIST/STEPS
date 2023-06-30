@@ -24,31 +24,20 @@
 
  */
 
-
-#ifndef STEPS_MPI_TETOPSPLIT_PATCH_HPP
-#define STEPS_MPI_TETOPSPLIT_PATCH_HPP 1
-
+#pragma once
 
 // STL headers.
 #include <cassert>
-#include <vector>
 #include <fstream>
+#include <vector>
 
 // STEPS headers.
-#include "tri.hpp"
-#include "util/common.h"
 #include "solver/patchdef.hpp"
 #include "solver/types.hpp"
+#include "tri.hpp"
+#include "util/common.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace mpi {
-namespace tetopsplit {
-
-////////////////////////////////////////////////////////////////////////////////
-
-namespace smtos = steps::mpi::tetopsplit;
+namespace steps::mpi::tetopsplit {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -56,94 +45,74 @@ namespace smtos = steps::mpi::tetopsplit;
 class Patch;
 
 // Auxiliary declarations.
-typedef Patch *                         PatchP;
-typedef std::vector<PatchP>             PatchPVec;
-typedef PatchPVec::iterator             PatchPVecI;
-typedef PatchPVec::const_iterator       PatchPVecCI;
+typedef Patch* PatchP;
+typedef std::vector<PatchP> PatchPVec;
+typedef PatchPVec::iterator PatchPVecI;
+typedef PatchPVec::const_iterator PatchPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class Patch
-{
-public:
-
+class Patch {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    explicit Patch(steps::solver::Patchdef * patchdef);
+    explicit Patch(solver::Patchdef* patchdef);
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream& cp_file);
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream& cp_file);
 
     /// Checks whether Tri::patchdef() corresponds to this object's
     /// PatchDef. There is no check whether the Tri object has already
     /// been added to this Patch object before (i.e. no duplicate
     /// checking).
     ///
-    void addTri(smtos::Tri * tri);
+    void addTri(Tri* tri);
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline void reset()
-    { def()->reset(); }
+    inline void reset() {
+        def()->reset();
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Patchdef * def() const noexcept
-    { return pPatchdef; }
+    inline solver::Patchdef* def() const noexcept {
+        return pPatchdef;
+    }
 
-    inline double area() const noexcept
-    { return pArea; }
+    inline double area() const noexcept {
+        return pArea;
+    }
 
-    //void setArea(double a);
+    inline uint countTris() const noexcept {
+        return pTris.size();
+    }
 
-    inline double * pools() const noexcept
-    { return def()->pools(); }
+    Tri* pickTriByArea(double rand01) const;
 
-    void modCount(uint slidx, double count);
-
-
-    inline uint countTris() const noexcept
-    { return pTris.size(); }
-
-    smtos::Tri * pickTriByArea(double rand01) const;
-
-    inline TriPVecCI bgnTri() const noexcept
-    { return pTris.begin(); }
-    inline TriPVecCI endTri() const noexcept
-    { return pTris.end(); }
-    inline const TriPVec& tris() const noexcept
-    { return pTris; }
+    inline const TriPVec& tris() const noexcept {
+        return pTris;
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
-    steps::solver::Patchdef           * pPatchdef;
-    double                              pArea{0.0};
+    solver::Patchdef* pPatchdef;
+    double pArea{0.0};
 
-    TriPVec                             pTris;
-
+    TriPVec pTris;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-}
-
-#endif
-// STEPS_MPI_TETOPSPLIT_PATCH_HPP
-
-// END
+}  // namespace steps::mpi::tetopsplit

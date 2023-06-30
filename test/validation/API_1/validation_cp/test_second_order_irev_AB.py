@@ -20,6 +20,7 @@ import os
 import math
 import time 
 import numpy
+import random
 
 from . import tol_funcs
 
@@ -60,7 +61,6 @@ class TestSecondOrderIrevAB(unittest.TestCase):
         comp1.addVolsys('vsys')
 
         rng = srng.create('mt19937', 512)
-        import random
         rng.initialize(int(random.random()*1000))
 
         sim = ssolv.Wmdirect(mdl, geom, rng)
@@ -75,8 +75,8 @@ class TestSecondOrderIrevAB(unittest.TestCase):
         os.makedirs(new_dir, exist_ok=True)
 
         sim.reset()
-        sim.setCompConc('comp1', 'A', CONCA)
-        sim.setCompConc('comp1', 'B', CONCB)
+        sim.setCompSpecConc('comp1', 'A', CONCA)
+        sim.setCompSpecConc('comp1', 'B', CONCB)
         sim.checkpoint('./validation_cp/cp/second_order_irev_AB')
 
 
@@ -97,7 +97,6 @@ class TestSecondOrderIrevAB(unittest.TestCase):
         comp1.addVolsys('vsys')
 
         rng = srng.create('mt19937', 512)
-        import random
         rng.initialize(int(random.random()*1000))
 
         sim = ssolv.Wmdirect(mdl, geom, rng)
@@ -108,13 +107,16 @@ class TestSecondOrderIrevAB(unittest.TestCase):
 
         res_m = numpy.zeros([NITER, ntpnts, 3])
 
+        seed = int(time.time()%4294967295)
         for i in range (0, NITER):
             sim.restore('./validation_cp/cp/second_order_irev_AB')
+            rng.initialize(seed)
+            seed += 1
             
             for t in range(0, ntpnts):
                 sim.run(tpnts[t])
-                res_m[i, t, 0] = sim.getCompConc('comp1', 'A')
-                res_m[i, t, 1] = sim.getCompConc('comp1', 'B')
+                res_m[i, t, 0] = sim.getCompSpecConc('comp1', 'A')
+                res_m[i, t, 1] = sim.getCompSpecConc('comp1', 'B')
 
         mean_res = numpy.mean(res_m, 0)
 

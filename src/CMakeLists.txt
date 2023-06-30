@@ -56,68 +56,61 @@ endif()
 
 add_library(libsteps_static STATIC $<TARGET_OBJECTS:stepswmrssa>)
 set_target_properties(libsteps_static PROPERTIES OUTPUT_NAME steps)
-target_link_libraries(libsteps_static PUBLIC
-  stepsutil
-  stepsmath
-  stepsgeom
-  stepsrng
-  stepsmodel
-  stepssolver
-  stepstetexact
-  stepstetode
-  stepswmdirect
-  stepswmrk4
-  ${libsteps_link_libraries}
-)
+target_link_libraries(
+  libsteps_static
+  PUBLIC stepsutil
+         stepsmath
+         stepsgeom
+         stepsrng
+         stepsmodel
+         stepssolver
+         stepstetexact
+         stepstetode
+         stepswmdirect
+         stepswmrk4
+         ${libsteps_link_libraries})
 if(USE_MPI)
   target_link_libraries(libsteps_static PUBLIC stepstetopsplit)
+  target_link_libraries(libsteps_static PUBLIC stepstetvesicle)
   if(STEPS_USE_DIST_MESH)
-    target_link_libraries(libsteps_static PUBLIC stepsdist stepsdisttest)
+    target_link_libraries(libsteps_static PUBLIC stepsdist)
   endif()
 endif()
 
 add_library(libsteps SHARED $<TARGET_OBJECTS:stepswmrssa>)
-target_link_libraries(libsteps PUBLIC
-  stepsutil
-  stepsmath
-  stepsgeom
-  stepsrng
-  stepsmodel
-  stepssolver
-  stepstetexact
-  stepstetode
-  stepswmdirect
-  stepswmrk4
-  ${libsteps_link_libraries}
-)
+target_link_libraries(
+  libsteps
+  PUBLIC stepsutil
+         stepsmath
+         stepsgeom
+         stepsrng
+         stepsmodel
+         stepssolver
+         stepstetexact
+         stepstetode
+         stepswmdirect
+         stepswmrk4
+         ${libsteps_link_libraries})
 if(USE_MPI)
   target_link_libraries(libsteps PUBLIC stepstetopsplit)
+  target_link_libraries(libsteps PUBLIC stepstetvesicle)
   if(STEPS_USE_DIST_MESH)
-    target_link_libraries(libsteps PUBLIC stepsdist stepsdisttest)
+    target_link_libraries(libsteps PUBLIC stepsdist)
   endif()
 endif()
 
-set_target_properties(libsteps
-                      PROPERTIES VERSION
-                                 "${lib_version}"
-                                 SOVERSION
-                                 "${lib_soversion}")
+set_target_properties(libsteps PROPERTIES VERSION "${lib_version}" SOVERSION "${lib_soversion}")
 set_target_properties(libsteps PROPERTIES OUTPUT_NAME steps)
 
-if(STEPS_USE_DIST_MESH)
-    add_executable(tetopsplit_dist steps/mpi/dist/tetopsplit/client/main.cpp)
-    target_link_libraries(tetopsplit_dist PUBLIC libsteps stepsdisttest)
-endif()
 # ==========================================================================
 # Installation of the headers and shared lib
 #
-option(INSTALL_DEV_LIBS
-       "Install steps lib and headers which are required for development only"
-       OFF)
+option(INSTALL_DEV_LIBS "Install steps lib and headers which are required for development only" OFF)
 
 if(INSTALL_DEV_LIBS)
-  install(TARGETS libsteps
-          RUNTIME DESTINATION bin COMPONENT lib
-          ARCHIVE DESTINATION lib COMPONENT lib
-          LIBRARY DESTINATION lib COMPONENT lib)
+  install(
+    TARGETS libsteps
+    RUNTIME DESTINATION bin COMPONENT lib
+    ARCHIVE DESTINATION lib COMPONENT lib
+    LIBRARY DESTINATION lib COMPONENT lib)
 endif()

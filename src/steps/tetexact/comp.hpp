@@ -24,109 +24,96 @@
 
  */
 
-
-#ifndef STEPS_TETEXACT_COMP_HPP
-#define STEPS_TETEXACT_COMP_HPP 1
+#pragma once
 
 // Standard headers.
 #include <cassert>
-#include <vector>
 #include <fstream>
+#include <vector>
 
 // STEPS headers.
-#include "util/common.h"
 #include "solver/compdef.hpp"
+#include "util/common.hpp"
 #include "wmvol.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace tetexact {
-
-////////////////////////////////////////////////////////////////////////////////
-
-namespace stex = steps::tetexact;
-
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::tetexact {
 
 // Forward declarations.
 class Comp;
 
 // Auxiliary declarations.
-typedef Comp *                          CompP;
-typedef std::vector<CompP>              CompPVec;
-typedef CompPVec::iterator              CompPVecI;
-typedef CompPVec::const_iterator        CompPVecCI;
+typedef Comp* CompP;
+typedef std::vector<CompP> CompPVec;
+typedef CompPVec::iterator CompPVecI;
+typedef CompPVec::const_iterator CompPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class Comp
-{
-public:
-
+class Comp {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    Comp(steps::solver::Compdef * compdef);
+    Comp(solver::Compdef* compdef);
     ~Comp();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream& cp_file);
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream& cp_file);
 
     /// Checks whether the Tet's compdef() corresponds to this object's
     /// CompDef. There is no check whether the Tet object has already
     /// been added to this Comp object before (i.e. no duplicate checking).
     ///
-    void addTet(stex::WmVol * tet);
+    void addTet(WmVol* tet);
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline void reset() { def()->reset(); }
+    inline void reset() {
+        def()->reset();
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Compdef *def() const noexcept { return pCompdef; }
+    inline solver::Compdef* def() const noexcept {
+        return pCompdef;
+    }
 
-    inline double vol() const noexcept { return pVol; }
+    inline double vol() const noexcept {
+        return pVol;
+    }
 
-    inline double * pools() const noexcept { return def()->pools(); }
+    inline uint countTets() const noexcept {
+        return pTets.size();
+    }
 
-    void modCount(uint slidx, double count);
+    WmVol* pickTetByVol(double rand01) const;
 
-    inline uint countTets() const noexcept { return pTets.size(); }
-
-    stex::WmVol * pickTetByVol(double rand01) const;
-
-    inline WmVolPVecCI bgnTet() const noexcept { return pTets.begin(); }
-    inline WmVolPVecCI endTet() const noexcept { return pTets.end(); }
-    inline const WmVolPVec &tets() const noexcept { return pTets; }
+    inline WmVolPVecCI bgnTet() const noexcept {
+        return pTets.begin();
+    }
+    inline WmVolPVecCI endTet() const noexcept {
+        return pTets.end();
+    }
+    inline const WmVolPVec& tets() const noexcept {
+        return pTets;
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
+  private:
+    solver::Compdef* pCompdef;
+    double pVol;
 
-    steps::solver::Compdef                    * pCompdef;
-    double                                     pVol;
-
-    WmVolPVec                                pTets;
+    WmVolPVec pTets;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-#endif
-
-// STEPS_TETEXACT_COMP_HPP
-
-// END
+}  // namespace steps::tetexact

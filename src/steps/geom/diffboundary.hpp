@@ -33,12 +33,11 @@
 #include "tmcomp.hpp"
 
 #include "model/surfsys.hpp"
-#include "util/common.h"
+#include "util/common.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace steps {
-namespace tetmesh {
+namespace steps::tetmesh {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -47,28 +46,26 @@ class Tetmesh;
 class DiffBoundary;
 
 // Auxiliary declarations.
-typedef DiffBoundary *                          DiffBoundaryP;
-typedef std::map<std::string, DiffBoundaryP>    DiffBoundaryPMap;
-typedef DiffBoundaryPMap::iterator              DiffBoundaryPMapI;
-typedef DiffBoundaryPMap::const_iterator        DiffBoundaryPMapCI;
+typedef DiffBoundary* DiffBoundaryP;
+typedef std::map<std::string, DiffBoundaryP> DiffBoundaryPMap;
+typedef DiffBoundaryPMap::iterator DiffBoundaryPMapI;
+typedef DiffBoundaryPMap::const_iterator DiffBoundaryPMapCI;
 
-typedef std::vector<DiffBoundaryP>              DiffBoundaryPVec;
-typedef DiffBoundaryPVec::iterator              DiffBoundaryPVecI;
-typedef DiffBoundaryPVec::const_iterator        DiffBoundaryPVecCI;
+typedef std::vector<DiffBoundaryP> DiffBoundaryPVec;
+typedef DiffBoundaryPVec::iterator DiffBoundaryPVecI;
+typedef DiffBoundaryPVec::const_iterator DiffBoundaryPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/// Provides annotation for a group of diffusion boundary triangles of a Tetmesh.
+/// Provides annotation for a group of diffusion boundary triangles of a
+/// Tetmesh.
 ///
 /// Tetmesh object is responsible for maintaining lifetime of associated
 /// DiffBoundary objects (Python proxy class must set thisown to zero.)
 ///
 /// \warning Methods start with an underscore are not exposed to Python.
-class DiffBoundary
-{
-
-public:
-
+class DiffBoundary {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
@@ -83,8 +80,7 @@ public:
 
     ///
     /// This is the constructor for the tetmesh (tetrahedron mesh) namespace.
-    DiffBoundary(std::string id, Tetmesh * container,
-            std::vector<index_t> const & tris);
+    DiffBoundary(std::string id, Tetmesh* container, std::vector<index_t> const& tris);
 
     /// Destructor.
     virtual ~DiffBoundary() {}
@@ -96,37 +92,43 @@ public:
     /// Return the patch id.
     ///
     /// \return ID of the diffusion boundary.
-    inline std::string const & getID() const noexcept
-    { return pID; }
+    inline std::string const& getID() const noexcept {
+        return pID;
+    }
 
     /// Set or change the diffusion boundary id.
     ///
     /// \param id ID of the diffusion boundary.
-    void setID(std::string const & id);
+    void setID(std::string const& id);
 
     /// Return a pointer to the geometry container object.
     ///
     /// \return Pointer to the parent geometry container.
-    inline steps::tetmesh::Tetmesh * getContainer() const noexcept
-    { return pTetmesh; }
+    inline tetmesh::Tetmesh* getContainer() const noexcept {
+        return pTetmesh;
+    }
 
-    /// Return whether triangles (specified by index) are inside this diffusion boundary.
+    /// Return whether triangles (specified by index) are inside this diffusion
+    /// boundary.
     ///
     /// \param tri List of indices of triangles.
-    /// \return Results of whether the triangles are inside the diffusion boundary.
-    std::vector<bool> isTriInside(std::vector<index_t> const &tris) const;
+    /// \return Results of whether the triangles are inside the diffusion
+    /// boundary.
+    std::vector<bool> isTriInside(std::vector<index_t> const& tris) const;
 
     /// Return all triangles (by index) in the diffusion boundary.
     ///
     /// \return List of indices of triangles.
-    inline std::vector<index_t> getAllTriIndices() const noexcept
-    { return strong_type_to_value_type(pTri_indices); }
+    inline std::vector<index_t> getAllTriIndices() const noexcept {
+        return strong_type_to_value_type(pTri_indices);
+    }
 
     /// Return the compartments this diffusion boundary connects
     ///
     /// \return List of the two compartments.
-    inline std::vector<steps::wm::Comp *> getComps() const noexcept
-    { return {pIComp, pOComp}; }
+    inline std::vector<wm::Comp*> getComps() const noexcept {
+        return {pIComp, pOComp};
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO C++)
@@ -135,25 +137,23 @@ public:
     /// Return all triangles (by index) in the diffusion boundary.
     ///
     /// \return List of indices of triangles.
-    inline std::vector<triangle_id_t> const & _getAllTriIndices() const noexcept
-    { return pTri_indices; }
+    inline std::vector<triangle_global_id> const& _getAllTriIndices() const noexcept {
+        return pTri_indices;
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
-    std::string                         pID;
-    steps::tetmesh::Tetmesh           * pTetmesh;
-    steps::wm::Comp *                   pIComp{nullptr};
-    steps::wm::Comp *                   pOComp{nullptr};
-    std::vector<triangle_id_t>          pTri_indices;
-    uint                                pTrisN{0};
+    std::string pID;
+    tetmesh::Tetmesh* pTetmesh;
+    wm::Comp* pIComp{nullptr};
+    wm::Comp* pOComp{nullptr};
+    std::vector<triangle_global_id> pTri_indices;
+    uint pTrisN{0};
 
-////////////////////////////////////////////////////////////////////////////////
-
+    ////////////////////////////////////////////////////////////////////////////////
 };
 
-} // namespace tetemesh
-} // namespace steps
+}  // namespace steps::tetmesh

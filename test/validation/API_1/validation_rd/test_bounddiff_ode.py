@@ -165,12 +165,12 @@ class TestRDBoundDiffODE(unittest.TestCase):
             tetcount = int((1.0*NINJECT)/nztets)
             totset = 0
             for k in minztets:
-                sim.setTetCount(k, 'X', tetcount)
+                sim.setTetSpecCount(k, 'X', tetcount)
                 totset+=tetcount
             for i in range(ntpnts):
                 sim.run(tpnts[i])
                 for k in range(SAMPLE):
-                    res[j, i, k] = sim.getTetCount(int(tetidxs[k]), 'X')
+                    res[j, i, k] = sim.getTetSpecCount(int(tetidxs[k]), 'X')
 
         itermeans = numpy.mean(res, axis = 0)
 

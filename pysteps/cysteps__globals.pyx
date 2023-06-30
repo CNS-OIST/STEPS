@@ -1,7 +1,10 @@
+# cython:language_level=3str
 ###___license_placeholder___###
 
 from libcpp.string cimport string
 from libcpp.vector cimport vector
+
+import warnings
 
 cdef enum OPERATOR:
     LESS = 0, LESS_EQUAL, EQUAL, DIFF, GREATER, GREATER_EQUAL
@@ -23,6 +26,9 @@ cdef class _py__base:
         #string array is converted to a Python2 str (bytes), so that it is ref-counted and is safe to return
         cdef bytes mems = addrstr
         return b"_cPtr_" + mems
+
+    def __hash__(self):
+        return hash(<long int>self._ptr)
 
 
 cdef inline string to_std_string(str s):
@@ -50,3 +56,17 @@ cdef inline vector[string] to_vec_std_strings(str_list):
     for s in str_list:
         str_vec.push_back(to_std_string(s))    
     return str_vec
+
+cdef inline list string_set_to_list(const std.set[std.string] &s):
+    """
+    Return a python list of strings from a C++ STL set of strings.
+    """
+    return [from_std_string(v) for v in s]
+
+def ShowDeprecationWarning(item, replacement=None, version=None):
+    msg = f'{item} is deprecated'
+    if version is not None:
+        msg += f' and will be removed in STEPS {version}'
+    if replacement is not None:
+        msg += f', use {replacement} instead.'
+    warnings.warn(msg, DeprecationWarning)

@@ -33,12 +33,11 @@
 
 #include "spec.hpp"
 
-#include "util/common.h"
+#include "util/common.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace steps {
-namespace model {
+namespace steps::model {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -47,14 +46,14 @@ class Chan;
 class ChanState;
 
 // Auxiliary declarations.
-typedef ChanState *                          ChanStateP;
-typedef std::map<std::string, ChanStateP>    ChanStatePMap;
-typedef ChanStatePMap::iterator              ChanStatePMapI;
-typedef ChanStatePMap::const_iterator        ChanStatePMapCI;
+typedef ChanState* ChanStateP;
+typedef std::map<std::string, ChanStateP> ChanStatePMap;
+typedef ChanStatePMap::iterator ChanStatePMapI;
+typedef ChanStatePMap::const_iterator ChanStatePMapCI;
 
-typedef std::vector<ChanStateP>              ChanStatePVec;
-typedef ChanStatePVec::iterator              ChanStatePVecI;
-typedef ChanStatePVec::const_iterator        ChanStatePVecCI;
+typedef std::vector<ChanStateP> ChanStatePVec;
+typedef ChanStatePVec::iterator ChanStatePVecI;
+typedef ChanStatePVec::const_iterator ChanStatePVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Channel state.
@@ -63,11 +62,8 @@ typedef ChanStatePVec::const_iterator        ChanStatePVecCI;
 ///
 /// \warning Methods start with an underscore are not exposed to Python.
 
-class ChanState: public Spec
-{
-
-public:
-
+class ChanState: public Spec {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
@@ -76,7 +72,7 @@ public:
     ///
     /// \param id ID of the channel state.
     /// \param chan Pointer to the parent channel.
-    ChanState(std::string const & id, Model* model, Chan * chan);
+    ChanState(std::string const& id, Model* model, Chan* chan);
 
     /// Destructor
     ~ChanState();
@@ -88,10 +84,11 @@ public:
     /// Return a pointer to the associated channel.
     ///
     /// \return Pointer to the associated channel.
-    inline Chan * getChan() const noexcept
-    { return pChan; }
+    inline Chan* getChan() const noexcept {
+        return pChan;
+    }
 
-    void setID(std::string const & id);
+    void setID(std::string const& id);
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: DELETION
@@ -111,17 +108,10 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
-    Chan                              * pChan;
-
-    ////////////////////////////////////////////////////////////////////////
-
+    Chan* pChan;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-} // namespace model
-} // namespace steps
+}  // namespace steps::model

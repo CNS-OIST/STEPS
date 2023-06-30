@@ -8,6 +8,7 @@ __copyright__ = "Copyright 2016 EPFL BBP-project"
 from cython.operator cimport dereference as deref
 from libcpp cimport bool
 from libcpp.memory cimport shared_ptr
+from libcpp.pair cimport pair
 cimport std
 cimport steps_solver
 cimport steps_model
@@ -38,25 +39,25 @@ cdef extern from "tetode/tetode.hpp" namespace "steps::tetode":
         double getTime() except +
         double getTemp() except +
         double getCompVol(std.string) except +
-        double getCompCount(std.string, std.string) except +
-        void setCompCount(std.string, std.string, double) except +
-        double getCompAmount(std.string, std.string) except +
-        void setCompAmount(std.string, std.string, double) except +
-        double getCompConc(std.string, std.string) except +
-        void setCompConc(std.string, std.string, double) except +
-        bool getCompClamped(std.string, std.string) except +
-        void setCompClamped(std.string, std.string, bool) except +
+        double getCompSpecCount(std.string, std.string) except +
+        void setCompSpecCount(std.string, std.string, double) except +
+        double getCompSpecAmount(std.string, std.string) except +
+        void setCompSpecAmount(std.string, std.string, double) except +
+        double getCompSpecConc(std.string, std.string) except +
+        void setCompSpecConc(std.string, std.string, double) except +
+        bool getCompSpecClamped(std.string, std.string) except +
+        void setCompSpecClamped(std.string, std.string, bool) except +
         double getCompReacK(std.string, std.string) except +
         void setCompReacK(std.string, std.string, double) except +
         bool getCompReacActive(std.string, std.string) except +
         void setCompReacActive(std.string, std.string, bool) except +
         double getTetVol(uint) except +
-        double getTetCount(uint, std.string) except +
-        void setTetCount(uint, std.string, double) except +
-        double getTetAmount(uint, std.string) except +
-        void setTetAmount(uint, std.string, double) except +
-        double getTetConc(uint, std.string) except +
-        void setTetConc(uint, std.string, double) except +
+        double getTetSpecCount(uint, std.string) except +
+        void setTetSpecCount(uint, std.string, double) except +
+        double getTetSpecAmount(uint, std.string) except +
+        void setTetSpecAmount(uint, std.string, double) except +
+        double getTetSpecConc(uint, std.string) except +
+        void setTetSpecConc(uint, std.string, double) except +
         double getTetReacK(uint, std.string) except +
         void setTetReacK(uint, std.string, double) except +
         double getTetV(uint) except +
@@ -64,21 +65,21 @@ cdef extern from "tetode/tetode.hpp" namespace "steps::tetode":
         bool getTetVClamped(uint) except +
         void setTetVClamped(uint, bool) except +
         double getPatchArea(std.string) except +
-        double getPatchCount(std.string, std.string) except +
-        void setPatchCount(std.string, std.string, double) except +
-        double getPatchAmount(std.string, std.string) except +
-        void setPatchAmount(std.string, std.string, double) except +
-        bool getPatchClamped(std.string, std.string) except +
-        void setPatchClamped(std.string, std.string, bool) except +
+        double getPatchSpecCount(std.string, std.string) except +
+        void setPatchSpecCount(std.string, std.string, double) except +
+        double getPatchSpecAmount(std.string, std.string) except +
+        void setPatchSpecAmount(std.string, std.string, double) except +
+        bool getPatchSpecClamped(std.string, std.string) except +
+        void setPatchSpecClamped(std.string, std.string, bool) except +
         double getPatchSReacK(std.string, std.string) except +
         void setPatchSReacK(std.string, std.string, double) except +
         bool getPatchSReacActive(std.string, std.string) except +
         void setPatchSReacActive(std.string, std.string, bool) except +
         double getTriArea(uint) except +
-        double getTriCount(uint, std.string) except +
-        void setTriCount(uint, std.string, double) except +
-        double getTriAmount(uint, std.string) except +
-        void setTriAmount(uint, std.string, double) except +
+        double getTriSpecCount(uint, std.string) except +
+        void setTriSpecCount(uint, std.string, double) except +
+        double getTriSpecAmount(uint, std.string) except +
+        void setTriSpecAmount(uint, std.string, double) except +
         double getTriSReacK(uint, std.string) except +
         void setTriSReacK(uint, std.string, double) except +
         double getTriV(uint) except +
@@ -87,6 +88,8 @@ cdef extern from "tetode/tetode.hpp" namespace "steps::tetode":
         void setTriVClamped(uint, bool) except +
         double getTriI(uint) except +
         void setTriIClamp(uint, double) except +
+        double getTriOhmicErev(uint, std.string) except +
+        void setTriOhmicErev(uint, std.string, double) except +
         double getVertV(uint) except +
         void setVertV(uint, double) except +
         bool getVertVClamped(uint) except +
@@ -96,5 +99,6 @@ cdef extern from "tetode/tetode.hpp" namespace "steps::tetode":
         void setMembCapac(std.string, double) except +
         void setMembVolRes(std.string, double) except +
         void setMembRes(std.string, double, double) except +
+        pair[double, double] getMembRes(std.string) except +
         void setTolerances(double, double) except +
         void setMaxNumSteps(uint) except +

@@ -24,71 +24,58 @@
 
  */
 
-
-#ifndef STEPS_TETODE_PATCH_HPP
-#define STEPS_TETODE_PATCH_HPP 1
-
+#pragma once
 
 // STL headers.
 #include <cassert>
-#include <vector>
 #include <fstream>
 #include <map>
+#include <vector>
 
 // STEPS headers.
-#include "util/common.h"
-#include "tri.hpp"
 #include "solver/patchdef.hpp"
 #include "solver/types.hpp"
+#include "tri.hpp"
+#include "util/common.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::tetode {
 
-namespace steps {
-namespace tetode {
-
-////////////////////////////////////////////////////////////////////////////////
-
-namespace stode = steps::tetode;
-
-////////////////////////////////////////////////////////////////////////////////
 
 // Forward declarations.
 class Patch;
 
 // Auxiliary declarations.
-typedef Patch *                         PatchP;
-typedef std::vector<PatchP>             PatchPVec;
-typedef PatchPVec::iterator             PatchPVecI;
-typedef PatchPVec::const_iterator       PatchPVecCI;
+typedef Patch* PatchP;
+typedef std::vector<PatchP> PatchPVec;
+typedef PatchPVec::iterator PatchPVecI;
+typedef PatchPVec::const_iterator PatchPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class Patch
-{
-public:
-
+class Patch {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    Patch(steps::solver::Patchdef * patchdef);
+    Patch(solver::Patchdef* patchdef);
     ~Patch();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream& cp_file);
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream& cp_file);
 
     /// Checks whether Tri::patchdef() corresponds to this object's
     /// PatchDef. There is no check whether the Tri object has already
     /// been added to this Patch object before (i.e. no duplicate
     /// checking).
     ///
-    void addTri(stode::Tri * tri);
+    void addTri(Tri* tri);
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -96,52 +83,47 @@ public:
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline double area() const noexcept
-    { return pArea; }
+    inline double area() const noexcept {
+        return pArea;
+    }
 
     // Return the local index of a tri given by global index
-    triangle_id_t getTri_GtoL(triangle_id_t gidx);
+    triangle_local_id getTri_GtoL(triangle_global_id gidx);
 
     // Return the tri of a given local index
-    Tri * getTri(uint lidx);
+    Tri* getTri(triangle_local_id lidx);
 
-    inline steps::solver::Patchdef * def() const noexcept
-    { return pPatchdef; }
+    inline solver::Patchdef* def() const noexcept {
+        return pPatchdef;
+    }
 
-    inline uint countTris() const noexcept
-    { return pTris.size(); }
+    inline uint countTris() const noexcept {
+        return pTris.size();
+    }
 
-
-    inline TriPVecCI bgnTri() const noexcept
-    { return pTris.begin(); }
-    inline TriPVecCI endTri() const noexcept
-    { return pTris.end(); }
-    inline const TriPVec& tris() const noexcept
-    { return pTris; }
+    inline TriPVecCI bgnTri() const noexcept {
+        return pTris.begin();
+    }
+    inline TriPVecCI endTri() const noexcept {
+        return pTris.end();
+    }
+    inline const TriPVec& tris() const noexcept {
+        return pTris;
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
-    steps::solver::Patchdef           * pPatchdef;
+    solver::Patchdef* pPatchdef;
 
-    TriPVec                             pTris;
+    TriPVec pTris;
 
-    double                                 pArea;
+    double pArea;
 
     // A map storing global index to local
-    std::map<triangle_id_t, triangle_id_t>                    pTris_GtoL;
-
+    std::map<triangle_global_id, triangle_local_id> pTris_GtoL;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-#endif
-// STEPS_TETODE_PATCH_HPP
-
-// END
+}  // namespace steps::tetode

@@ -33,6 +33,7 @@ from steps.geom import *
 from steps.sim import *
 from steps.utils import *
 
+import steps.API_1.model as smodel
 
 class ChannelCurrentDeclarations(unittest.TestCase):
     """Test model checking."""
@@ -50,6 +51,19 @@ class ChannelCurrentDeclarations(unittest.TestCase):
                 CC = Channel.Create([suA, suB], statesAsSpecies=False)
 
             Chan = Channel.Create([suA, suB])
+
+            # Load from STEPS object
+            smdl = mdl._getStepsObjects()[0]
+            chan2 = smodel.Chan('chan2', smdl)
+            chanstate1 = smodel.ChanState('chanstate1', smdl, chan2)
+            chanstate2 = smodel.ChanState('chanstate2', smdl, chan2)
+            chanstate3 = smodel.ChanState('chanstate3', smdl, chan2)
+
+            chan2b = Channel._FromStepsObject(chan2, mdl)
+            self.assertEqual(chan2b.name, 'chan2')
+            states = [state._getStepsObjects()[0] for state in chan2b[...]]
+            stepsStates = [chanstate1, chanstate2, chanstate3]
+            self.assertCountEqual(states, stepsStates)
 
     def testVDepReacDeclaration(self):
         mdl = Model()
@@ -228,13 +242,30 @@ class ChannelCurrentDeclarations(unittest.TestCase):
                     GHKCurr(42, Ca, 1e-20)
 
             with ssys:
+                infos = GHKCurr.PInfo(
+                    g = 20e-12, V = -22e-3, T = 293.15, oconc = 4e-3, iconc = 155e-3
+                )
+                # Cannot access the value since infos is not associated with a current
+                with self.assertRaises(Exception):
+                    infos.value
+
                 Curr4 = GHKCurr(
                     Chan1[sus1, sus3],
                     Ca,
-                    GHKCurr.PInfo(
-                        g = 20e-12, V = -22e-3, T = 293.15, oconc = 4e-3, iconc = 155e-3
-                    )
+                    infos,
                 )
+                self.assertEqual(Curr4.P.value, 3.3006027395421925e-20)
+
+                # Reuse the same infos to create another current
+                Curr5 = GHKCurr(
+                    Chan1[sus2, sus3],
+                    Na,
+                    infos,
+                )
+                self.assertEqual(Curr5.P.value, 9.009267378478541e-20)
+
+            self.assertEqual(Curr4.P.value, Curr4._getStepsObjects()[0].getP())
+            self.assertEqual(Curr5.P.value, Curr5._getStepsObjects()[0].getP())
 
 def suite():
     all_tests = []

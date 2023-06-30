@@ -24,61 +24,48 @@
 
  */
 
-
-#ifndef STEPS_SOLVER_OHMICCURRDEF_HPP
-#define STEPS_SOLVER_OHMICCURRDEF_HPP 1
+#pragma once
 
 // STL headers.
-#include <string>
-#include <vector>
 #include <fstream>
 #include <iostream>
+#include <string>
+#include <vector>
 
 // STEPS headers.
-#include "util/common.h"
+#include "model/ohmiccurr.hpp"
 #include "statedef.hpp"
 #include "types.hpp"
-#include "model/ohmiccurr.hpp"
+#include "util/common.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace solver {
+namespace steps::solver {
 
 // Forward declarations.
 class OhmicCurrdef;
 
 // Auxiliary declarations.
-typedef OhmicCurrdef *                   OhmicCurrDefP;
-typedef std::vector<OhmicCurrDefP>       OhmicCurrDefPVec;
-typedef OhmicCurrDefPVec::iterator       OhmicCurrDefPVecI;
+typedef OhmicCurrdef* OhmicCurrDefP;
+typedef std::vector<OhmicCurrDefP> OhmicCurrDefPVec;
+typedef OhmicCurrDefPVec::iterator OhmicCurrDefPVecI;
 typedef OhmicCurrDefPVec::const_iterator OhmicCurrDefPVecCI;
 
-////////////////////////////////////////////////////////////////////////////////
-
-class OhmicCurrdef
-{
-
-public:
+class OhmicCurrdef {
+  public:
     /// Constructor
     ///
     /// \param sd Defined state of the solver.
     /// \param gidx Global index of the ohmic current.
     /// \param oc Pointer to the OhmicCurr object.
-    OhmicCurrdef(Statedef * sd, uint gidx, steps::model::OhmicCurr * oc);
-
-    /// Destructor
-    ~OhmicCurrdef();
+    OhmicCurrdef(Statedef* sd, ohmiccurr_global_id gidx, model::OhmicCurr* oc);
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream& cp_file);
 
     /// restore data
-    void restore(std::fstream & cp_file);
-
+    void restore(std::fstream& cp_file);
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: SETUP
@@ -92,79 +79,71 @@ public:
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this ohmic current.
-    inline uint gidx() const noexcept
-    { return pIdx; }
+    inline ohmiccurr_global_id gidx() const noexcept {
+        return pIdx;
+    }
 
     /// Return the name of the ohmic current.
-    inline const std::string& name() const noexcept
-    { return pName; }
+    inline const std::string& name() const noexcept {
+        return pName;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: PARAMETERS
     ////////////////////////////////////////////////////////////////////////
 
-    inline double getG() const noexcept
-    { return pG; }
-    inline double getERev() const noexcept
-    { return pERev; }
+    inline double getG() const noexcept {
+        return pG;
+    }
+    inline double getERev() const noexcept {
+        return pERev;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: CHANNEL STATE
     ////////////////////////////////////////////////////////////////////////
 
     // Return the global index of the channel state
-    uint chanstate() const;
+    spec_global_id chanstate() const;
 
-    int dep(uint gidx) const;
-    bool req(uint gidx) const;
-
-    ////////////////////////////////////////////////////////////////////////
-
-private:
+    int dep(spec_global_id gidx) const;
+    bool req(spec_global_id gidx) const;
 
     ////////////////////////////////////////////////////////////////////////
 
-    Statedef                          * pStatedef;
+  private:
+    ////////////////////////////////////////////////////////////////////////
+
+    Statedef* pStatedef;
 
     // The global index of this ohmic current.
-    uint                                pIdx;
+    ohmiccurr_global_id pIdx;
 
     // The string identifier of this ohmic current.
-    std::string                         pName;
+    std::string pName;
 
     // True if setup() has been called.
-    bool                                pSetupdone;
-
+    bool pSetupdone;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA: PARAMETERS
     ////////////////////////////////////////////////////////////////////////
 
     // The channel state store as a string, rather than ChanState pointer
-    std::string                         pChanState;
+    std::string pChanState;
 
     // Single-channel conductance
-    double                              pG;
+    double pG;
 
     // Reversal potential
-    double                              pERev;
+    double pERev;
 
-
-    int *                                  pSpec_DEP;
+    util::strongid_vector<spec_global_id, int> pSpec_DEP;
 
     // Global index of the channel state
-    uint                                   pSpec_CHANSTATE;
+    spec_global_id pSpec_CHANSTATE;
 
     ////////////////////////////////////////////////////////////////////////
-
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-#endif
-// STEPS_SOLVER_OHMICCURRDEF_HPP
-
-// END
+}  // namespace steps::solver

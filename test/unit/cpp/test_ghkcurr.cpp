@@ -19,7 +19,7 @@ constexpr double oconc = 1e-3;
 TEST(GHKCurrent, permeability) {
     // 0 membrane potential
     ASSERT_EQ(permeability(1, 0, 1, T, iconc, oconc),
-              2 / (iconc + oconc) * GAS_CONSTANT * T / (FARADAY * FARADAY));
+              2 / (iconc * 1000.0 + oconc * 1000.0) * GAS_CONSTANT * T / (FARADAY * FARADAY));
 }
 
 TEST(GHKCurrent, current) {
@@ -28,6 +28,6 @@ TEST(GHKCurrent, current) {
     // 0 membrane potential
     ASSERT_EQ(GHKcurrent(1, 0, 1, T, iconc, oconc), FARADAY * (iconc - oconc));
     // Equal concentrations on both sides
-    double P = permeability(1, 1, -1, T, 1, 1);
+    double P = permeability(1, 1, -1, T, 0.001, 0.001);
     ASSERT_EQ(GHKcurrent(P, 1, -1, T, 1, 1), 1);
 }

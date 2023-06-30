@@ -7,6 +7,7 @@ __copyright__ = "Copyright 2016 EPFL BBP-project"
 # =====================================================================================================================
 from libcpp cimport bool
 from libcpp.memory cimport shared_ptr
+from libcpp.pair cimport pair
 cimport std
 cimport steps
 cimport steps_solver
@@ -40,6 +41,7 @@ cdef extern from "mpi/mpi_init.hpp" namespace "steps::mpi":
 cdef extern from "mpi/mpi_finish.hpp" namespace "steps::mpi":
 # ----------------------------------------------------------------------------------------------------------------------
     void mpiFinish()
+    void mpiAbort()
 
 
 # ======================================================================================================================
@@ -60,7 +62,7 @@ cdef extern from "mpi/tetopsplit/tetopsplit.hpp" namespace "steps::mpi::tetopspl
 
     ###### Cybinding for TetOpSplitP ######
     cdef cppclass TetOpSplitP:
-        TetOpSplitP(steps_model.Model*, steps_wm.Geom*, shared_ptr[steps_rng.RNG], int, std.vector[uint], std.map[steps.triangle_id_t,uint], std.vector[uint]) except +
+        TetOpSplitP(steps_model.Model*, steps_wm.Geom*, shared_ptr[steps_rng.RNG], int, std.vector[int], std.map[steps.triangle_global_id,int], std.vector[int]) except +
         std.string getSolverName() except +
         std.string getSolverDesc() except +
         std.string getSolverAuthors() except +
@@ -81,14 +83,14 @@ cdef extern from "mpi/tetopsplit/tetopsplit.hpp" namespace "steps::mpi::tetopspl
         double getA0() except +
         uint getNSteps() except +
         double getCompVol(std.string) except +
-        double getCompCount(std.string, std.string) except +
-        void setCompCount(std.string, std.string, double) except +
-        double getCompAmount(std.string, std.string) except +
-        void setCompAmount(std.string, std.string, double) except +
-        double getCompConc(std.string, std.string) except +
-        void setCompConc(std.string, std.string, double) except +
-        bool getCompClamped(std.string, std.string) except +
-        void setCompClamped(std.string, std.string, bool) except +
+        double getCompSpecCount(std.string, std.string) except +
+        void setCompSpecCount(std.string, std.string, double) except +
+        double getCompSpecAmount(std.string, std.string) except +
+        void setCompSpecAmount(std.string, std.string, double) except +
+        double getCompSpecConc(std.string, std.string) except +
+        void setCompSpecConc(std.string, std.string, double) except +
+        bool getCompSpecClamped(std.string, std.string) except +
+        void setCompSpecClamped(std.string, std.string, bool) except +
         double getCompReacK(std.string, std.string) except +
         void setCompReacK(std.string, std.string, double) except +
         bool getCompReacActive(std.string, std.string) except +
@@ -105,14 +107,14 @@ cdef extern from "mpi/tetopsplit/tetopsplit.hpp" namespace "steps::mpi::tetopspl
         double getTetVol(uint) except +
         void setTetVol(uint, double) except +
         bool getTetSpecDefined(uint, std.string) except +
-        double getTetCount(uint, std.string) except +
-        void setTetCount(uint, std.string, double) except +
-        double getTetAmount(uint, std.string) except +
-        void setTetAmount(uint, std.string, double) except +
-        double getTetConc(uint, std.string) except +
-        void setTetConc(uint, std.string, double) except +
-        bool getTetClamped(uint, std.string) except +
-        void setTetClamped(uint, std.string, bool) except +
+        double getTetSpecCount(uint, std.string) except +
+        void setTetSpecCount(uint, std.string, double) except +
+        double getTetSpecAmount(uint, std.string) except +
+        void setTetSpecAmount(uint, std.string, double) except +
+        double getTetSpecConc(uint, std.string) except +
+        void setTetSpecConc(uint, std.string, double) except +
+        bool getTetSpecClamped(uint, std.string) except +
+        void setTetSpecClamped(uint, std.string, bool) except +
         double getTetReacK(uint, std.string) except +
         void setTetReacK(uint, std.string, double) except +
         bool getTetReacActive(uint, std.string) except +
@@ -130,12 +132,12 @@ cdef extern from "mpi/tetopsplit/tetopsplit.hpp" namespace "steps::mpi::tetopspl
         bool getTetVClamped(uint) except +
         void setTetVClamped(uint, bool) except +
         double getPatchArea(std.string) except +
-        double getPatchCount(std.string, std.string) except +
-        void setPatchCount(std.string, std.string, double) except +
-        double getPatchAmount(std.string, std.string) except +
-        void setPatchAmount(std.string, std.string, double) except +
-        bool getPatchClamped(std.string, std.string) except +
-        void setPatchClamped(std.string, std.string, bool) except +
+        double getPatchSpecCount(std.string, std.string) except +
+        void setPatchSpecCount(std.string, std.string, double) except +
+        double getPatchSpecAmount(std.string, std.string) except +
+        void setPatchSpecAmount(std.string, std.string, double) except +
+        bool getPatchSpecClamped(std.string, std.string) except +
+        void setPatchSpecClamped(std.string, std.string, bool) except +
         double getPatchSReacK(std.string, std.string) except +
         void setPatchSReacK(std.string, std.string, double) except +
         bool getPatchSReacActive(std.string, std.string) except +
@@ -147,21 +149,21 @@ cdef extern from "mpi/tetopsplit/tetopsplit.hpp" namespace "steps::mpi::tetopspl
         void resetPatchSReacExtent(std.string, std.string) except +
         bool getPatchVDepSReacActive(std.string, std.string) except +
         void setPatchVDepSReacActive(std.string, std.string, bool) except +
-        void setDiffBoundaryDiffusionActive(std.string, std.string, bool) except +
-        bool getDiffBoundaryDiffusionActive(std.string, std.string) except +
-        void setDiffBoundaryDcst(std.string, std.string, double, std.string) except +
-        void setSDiffBoundaryDiffusionActive(std.string, std.string, bool) except +
-        bool getSDiffBoundaryDiffusionActive(std.string, std.string) except +
-        void setSDiffBoundaryDcst(std.string, std.string, double, std.string) except +
+        void setDiffBoundarySpecDiffusionActive(std.string, std.string, bool) except +
+        bool getDiffBoundarySpecDiffusionActive(std.string, std.string) except +
+        void setDiffBoundarySpecDcst(std.string, std.string, double, std.string) except +
+        void setSDiffBoundarySpecDiffusionActive(std.string, std.string, bool) except +
+        bool getSDiffBoundarySpecDiffusionActive(std.string, std.string) except +
+        void setSDiffBoundarySpecDcst(std.string, std.string, double, std.string) except +
         double getTriArea(uint) except +
         void setTriArea(uint, double) except +
         bool getTriSpecDefined(uint, std.string) except +
-        double getTriCount(uint, std.string) except +
-        void setTriCount(uint, std.string, double) except +
-        double getTriAmount(uint, std.string) except +
-        void setTriAmount(uint, std.string, double) except +
-        bool getTriClamped(uint, std.string) except +
-        void setTriClamped(uint, std.string, bool) except +
+        double getTriSpecCount(uint, std.string) except +
+        void setTriSpecCount(uint, std.string, double) except +
+        double getTriSpecAmount(uint, std.string) except +
+        void setTriSpecAmount(uint, std.string, double) except +
+        bool getTriSpecClamped(uint, std.string) except +
+        void setTriSpecClamped(uint, std.string, bool) except +
         double getTriSReacK(uint, std.string) except +
         void setTriSReacK(uint, std.string, double) except +
         bool getTriSReacActive(uint, std.string) except +
@@ -175,6 +177,8 @@ cdef extern from "mpi/tetopsplit/tetopsplit.hpp" namespace "steps::mpi::tetopspl
         void setTriV(uint, double) except +
         bool getTriVClamped(uint) except +
         void setTriVClamped(uint, bool) except +
+        double getTriOhmicErev(uint, std.string) except +
+        void setTriOhmicErev(uint, std.string, double) except +
         double getTriOhmicI(uint) except +
         double getTriOhmicI(uint, std.string) except +
         double getTriGHKI(uint) except +
@@ -195,27 +199,28 @@ cdef extern from "mpi/tetopsplit/tetopsplit.hpp" namespace "steps::mpi::tetopspl
         void setMembCapac(std.string, double) except +
         void setMembVolRes(std.string, double) except +
         void setMembRes(std.string, double, double) except +
-        std.vector[double] getBatchTetCounts(std.vector[steps.index_t], std.string) except +
-        std.vector[double] getBatchTriCounts(std.vector[steps.index_t], std.string) except +
-        void setBatchTetConcs(std.vector[steps.index_t], std.string, std.vector[double]) except +
-        std.vector[double] getBatchTetConcs(std.vector[steps.index_t], std.string) except +
-        void getBatchTetCountsNP(steps.index_t*, int, std.string, double*, int) except +
-        void getBatchTriCountsNP(steps.index_t*, int, std.string, double*, int) except +
-        void setBatchTetConcsNP(steps.index_t*, size_t, std.string, double*, size_t) except +
-        void getBatchTetConcsNP(steps.index_t*, size_t, std.string, double*, size_t) except +
-        std.vector[double] getROITetCounts(std.string, std.string) except +
-        std.vector[double] getROITriCounts(std.string, std.string) except +
-        void getROITetCountsNP(std.string, std.string, double*, int) except +
-        void getROITriCountsNP(std.string, std.string, double*, int) except +
+        pair[double, double] getMembRes(std.string) except +
+        std.vector[double] getBatchTetSpecCounts(std.vector[steps.index_t], std.string) except +
+        std.vector[double] getBatchTriSpecCounts(std.vector[steps.index_t], std.string) except +
+        void setBatchTetSpecConcs(std.vector[steps.index_t], std.string, std.vector[double]) except +
+        std.vector[double] getBatchTetSpecConcs(std.vector[steps.index_t], std.string) except +
+        void getBatchTetSpecCountsNP(steps.index_t*, int, std.string, double*, int) except +
+        void getBatchTriSpecCountsNP(steps.index_t*, int, std.string, double*, int) except +
+        void setBatchTetSpecConcsNP(steps.index_t*, size_t, std.string, double*, size_t) except +
+        void getBatchTetSpecConcsNP(steps.index_t*, size_t, std.string, double*, size_t) except +
+        std.vector[double] getROITetSpecCounts(std.string, std.string) except +
+        std.vector[double] getROITriSpecCounts(std.string, std.string) except +
+        void getROITetSpecCountsNP(std.string, std.string, double*, int) except +
+        void getROITriSpecCountsNP(std.string, std.string, double*, int) except +
         double getROIVol(std.string) except +
         double getROIArea(std.string) except +
-        double getROICount(std.string, std.string) except +
-        void setROICount(std.string, std.string, double) except +
-        double getROIAmount(std.string, std.string) except +
-        void setROIAmount(std.string, std.string, double) except +
-        double getROIConc(std.string, std.string) except +
-        void setROIConc(std.string, std.string, double) except +
-        void setROIClamped(std.string, std.string, bool) except +
+        double getROISpecCount(std.string, std.string) except +
+        void setROISpecCount(std.string, std.string, double) except +
+        double getROISpecAmount(std.string, std.string) except +
+        void setROISpecAmount(std.string, std.string, double) except +
+        double getROISpecConc(std.string, std.string) except +
+        void setROISpecConc(std.string, std.string, double) except +
+        void setROISpecClamped(std.string, std.string, bool) except +
         void setROIReacK(std.string, std.string, double) except +
         void setROISReacK(std.string, std.string, double) except +
         void setROIDiffD(std.string, std.string, double) except +
@@ -251,5 +256,525 @@ cdef extern from "mpi/tetopsplit/tetopsplit.hpp" namespace "steps::mpi::tetopspl
         double getEFieldTime() except +
         double getRDTime() except +
         double getDataExchangeTime() except +
-        void repartitionAndReset(std.vector[uint],std.map[uint, uint], std.vector[uint]) except +
+        void repartitionAndReset(std.vector[int],std.map[uint, int], std.vector[int]) except +
 
+# ======================================================================================================================
+cdef extern from "mpi/tetvesicle/tetvesicle_rdef.hpp" namespace "steps::mpi::tetvesicle":
+# ----------------------------------------------------------------------------------------------------------------------
+
+    ###### Cybinding for TetVesicleRDEF ######
+    cdef cppclass TetVesicleRDEF:
+        TetVesicleRDEF(steps_model.Model*, steps_wm.Geom*, shared_ptr[steps_rng.RNG], int) except +
+        std.string getSolverName() except +
+        std.string getSolverDesc() except +
+        std.string getSolverAuthors() except +
+        std.string getSolverEmail() except +
+        void reset() except +
+        void run(double) except +
+        void advance(double) except +
+        void step() except +
+        void checkpoint(std.string) except +
+        void restore(std.string) except +
+        void setEfieldDT(double) except +
+        void setTime(double) except +
+        void setTemp(double) except +
+        double getTemp() except +
+        double getTime() except +
+        double getA0() except +
+        uint getNSteps() except +
+        double getVesicleDT() except +
+        void setVesicleDT(double) except +
+        void createPath(std.string) except +
+        void addPathPoint(std.string, uint, std.vector[double]) except +
+        void addPathBranch(std.string, uint, std.map[uint, double]) except +
+        std.vector[double] getBatchTetSpecCounts(std.vector[steps.index_t], std.string) except +
+        std.vector[double] getBatchTriSpecCounts(std.vector[steps.index_t], std.string) except +
+        void getBatchTetSpecCountsNP(index_t *, uint, std.string, double *, uint) except +
+        void getBatchTriSpecCountsNP(index_t *, uint, std.string, double *, uint) except +
+        void setROITetSpecClamped(std.vector[steps.tetrahedron_global_id], std.string, bool) except +
+        void setROITriSpecClamped(std.vector[steps.triangle_global_id], std.string, bool) except +
+        double getROITetSpecCount(std.vector[steps.tetrahedron_global_id], std.string) except +
+        double getROITriSpecCount(std.vector[steps.triangle_global_id], std.string) except +
+        void setROITetSpecCount(std.vector[steps.tetrahedron_global_id], std.string, double) except +
+        void setROITriSpecCount(std.vector[steps.triangle_global_id], std.string, double) except +
+        std.vector[double] getROITetSpecCounts(std.string, std.string) except +
+        std.vector[double] getROITriSpecCounts(std.string, std.string) except +
+        void getROITetSpecCountsNP(std.string, std.string, double *, uint) except +
+        void getROITriSpecCountsNP(std.string, std.string, double *, uint) except +
+        double getROIVol(std.string) except +
+        double getROIArea(std.string) except +
+        double getROISpecCount(std.string, std.string) except +
+        void setROISpecCount(std.string, std.string, double) except +
+        double getROISpecAmount(std.string, std.string) except +
+        void setROISpecAmount(std.string, std.string, double) except +
+        double getROISpecConc(std.string, std.string) except +
+        void setROISpecConc(std.string, std.string, double) except +
+        void setROISpecClamped(std.string, std.string, bool) except +
+        void setROIReacK(std.string, std.string, double) except +
+        void setROISReacK(std.string, std.string, double) except +
+        void setROIDiffD(std.string, std.string, double) except +
+        void setROIReacActive(std.string, std.string, bool) except +
+        void setROISReacActive(std.string, std.string, bool) except +
+        void setROIDiffActive(std.string, std.string, bool) except +
+        void setROIVDepSReacActive(std.string, std.string, bool) except +
+        unsigned long long getROIReacExtent(std.string, std.string) except +
+        void resetROIReacExtent(std.string, std.string) except +
+        unsigned long long getROISReacExtent(std.string, std.string) except +
+        void resetROISReacExtent(std.string, std.string) except +
+        unsigned long long getROIDiffExtent(std.string, std.string) except +
+        void resetROIDiffExtent(std.string, std.string) except +
+        void setDiffApplyThreshold(int) except +
+        unsigned long long getReacExtent(bool) except +
+        unsigned long long getDiffExtent(bool) except +
+        double getNIteration() except +
+        double getUpdPeriod() except +
+        double getCompTime() except +
+        double getSyncTime() except +
+        double getIdleTime() except +
+        double getEFieldTime() except +
+        double getRDTime() except +
+        double getDataExchangeTime() except +
+        double getEfieldDT() except +
+        double getCompVol(std.string) except +
+        double getCompSpecCount(std.string, std.string) except +
+        void setCompSpecCount(std.string, std.string, double) except +
+        double getCompSpecAmount(std.string, std.string) except +
+        void setCompSpecAmount(std.string, std.string, double) except +
+        double getCompSpecConc(std.string, std.string) except +
+        void setCompSpecConc(std.string, std.string, double) except +
+        bool getCompSpecClamped(std.string, std.string) except +
+        void setCompSpecClamped(std.string, std.string, bool) except +
+        double getCompReacK(std.string, std.string) except +
+        void setCompReacK(std.string, std.string, double) except +
+        bool getCompReacActive(std.string, std.string) except +
+        void setCompReacActive(std.string, std.string, bool) except +
+        double getCompDiffD(std.string, std.string) except +
+        void setCompDiffD(std.string, std.string, double) except +
+        bool getCompDiffActive(std.string, std.string) except +
+        void setCompDiffActive(std.string, std.string, bool) except +
+        double getCompReacC(std.string, std.string) except +
+        double getCompReacH(std.string, std.string) except +
+        double getCompReacA(std.string, std.string) except +
+        unsigned long long getCompReacExtent(std.string, std.string) except +
+        void resetCompReacExtent(std.string, std.string) except +
+        uint getCompVesicleCount(std.string, std.string) except +
+        void setCompVesicleCount(std.string, std.string, uint) except +
+        steps.vesicle_individual_id addCompVesicle(std.string, std.string) except +
+        void deleteSingleVesicle(std.string, steps.vesicle_individual_id) except +
+        uint getSingleVesicleSurfaceLinkSpecCount(std.string, steps.vesicle_individual_id, std.string) except +
+        std.vector[steps.linkspec_individual_id] getSingleVesicleSurfaceLinkSpecIndices(std.string, steps.vesicle_individual_id, std.string) except +
+        std.vector[steps.pointspec_individual_id] getSingleVesicleSurfaceSpecIndices(std.string, steps.vesicle_individual_id, std.string) except +
+        std.vector[steps.vesicle_individual_id] getCompVesicleIndices(std.string, std.string) except +
+        std.string getSingleVesicleCompartment(std.string, steps.vesicle_individual_id) except +
+        std.vector[double] getSingleVesiclePos(std.string, steps.vesicle_individual_id) except +
+        void setCompSingleVesiclePos(std.string, std.string, steps.vesicle_individual_id, std.vector[double], bool) except +
+        std.map[steps.vesicle_individual_id, uint] getCompVesicleSurfaceSpecCountDict(std.string, std.string, std.string) except +
+        uint getCompVesicleSurfaceSpecCount(std.string, std.string, std.string) except +
+        uint getCompVesicleInnerSpecCount(std.string, std.string, std.string) except +
+        uint getSingleVesicleSurfaceSpecCount(std.string, steps.vesicle_individual_id, std.string) except +
+        uint getSingleVesicleInnerSpecCount(std.string, steps.vesicle_individual_id, std.string) except +
+        void setSingleVesicleSurfaceSpecCount(std.string, steps.vesicle_individual_id, std.string, uint) except +
+        std.vector[std.vector[double] ] getSingleVesicleSurfaceSpecPos(std.string, steps.vesicle_individual_id, std.string) except +
+        void setSingleVesicleInnerSpecCount(std.string, steps.vesicle_individual_id, std.string, uint) except +
+        std.vector[std.vector[double]] getSingleVesicleSurfaceSpecPosSpherical(std.string, steps.vesicle_individual_id, std.string) except +
+        void setSingleVesicleSurfaceSpecPosSpherical(std.string, steps.vesicle_individual_id, std.string, std.vector[std.vector[double]]) except +
+        std.vector[double] getSingleSpecPosSpherical(std.string, steps.pointspec_individual_id) except +
+        std.map[steps.vesicle_individual_id, uint] getCompVesicleSurfaceLinkSpecCountDict(std.string, std.string, std.string) except +
+        uint getCompVesicleSurfaceLinkSpecCount(std.string, std.string, std.string) except +
+        std.vector[std.vector[double] ] getSingleVesicleSurfaceLinkSpecPos(std.string, steps.vesicle_individual_id, std.string) except +
+        std.vector[double] getSingleLinkSpecPos(steps.linkspec_individual_id) except +
+        steps.linkspec_individual_id getSingleLinkSpecLinkedTo(steps.linkspec_individual_id) except +
+        steps.vesicle_individual_id getSingleLinkSpecVes(steps.linkspec_individual_id) except +
+        uint getSingleVesicleImmobility(std.string, steps.vesicle_individual_id) except +
+        std.vector[steps.tetrahedron_global_id] getSingleVesicleOverlapTets(std.string, steps.vesicle_individual_id) except +
+        void setTetVesicleDcst(steps.tetrahedron_global_id, std.string, double) except +
+        void setVesicleSurfaceLinkSpecSDiffD(std.string, std.string, double) except +
+        void setVesSReacK(std.string, double) except +
+        uint getVesSReacExtent(std.string) except +
+        void setExocytosisK(std.string, double) except +
+        uint getExocytosisExtent(std.string) except +
+        std.vector[steps.ExocytosisEvent] getExocytosisEvents(std.string) except +
+        uint getRaftEndocytosisExtent(std.string) except +
+        std.vector[steps.RaftEndocytosisEvent] getRaftEndocytosisEvents(std.string) except +
+        void setRaftEndocytosisK(std.string, double) except +
+        void addVesicleDiffusionGroup(std.string, std.vector[std.string]) except +
+        void addPathVesicle(std.string, std.string, double, std.map[std.string, uint], std.vector[double]) except +
+        double getTetVol(steps.tetrahedron_global_id) except +
+        double getTetReducedVol(steps.tetrahedron_global_id) except +
+        void setTetVol(steps.tetrahedron_global_id, double) except +
+        bool getTetSpecDefined(steps.tetrahedron_global_id, std.string) except +
+        double getTetSpecCount(steps.tetrahedron_global_id, std.string) except +
+        void setTetSpecCount(steps.tetrahedron_global_id, std.string, double) except +
+        double getTetSpecAmount(steps.tetrahedron_global_id, std.string) except +
+        void setTetSpecAmount(steps.tetrahedron_global_id, std.string, double) except +
+        double getTetSpecConc(steps.tetrahedron_global_id, std.string) except +
+        void setTetSpecConc(steps.tetrahedron_global_id, std.string, double) except +
+        bool getTetSpecClamped(steps.tetrahedron_global_id, std.string) except +
+        void setTetSpecClamped(steps.tetrahedron_global_id, std.string, bool) except +
+        double getTetReacK(steps.tetrahedron_global_id, std.string) except +
+        void setTetReacK(steps.tetrahedron_global_id, std.string, double) except +
+        bool getTetReacActive(steps.tetrahedron_global_id, std.string) except +
+        void setTetReacActive(steps.tetrahedron_global_id, std.string, bool) except +
+        double getTetDiffD(steps.tetrahedron_global_id, std.string, steps.tetrahedron_global_id) except +
+        void setTetDiffD(steps.tetrahedron_global_id, std.string, double, steps.tetrahedron_global_id) except +
+        bool getTetDiffActive(steps.tetrahedron_global_id, std.string) except +
+        void setTetDiffActive(steps.tetrahedron_global_id, std.string, bool) except +
+        double getTetReacC(steps.tetrahedron_global_id, std.string) except +
+        double getTetReacH(steps.tetrahedron_global_id, std.string) except +
+        double getTetReacA(steps.tetrahedron_global_id, std.string) except +
+        double getTetDiffA(steps.tetrahedron_global_id, std.string) except +
+        double getTetV(steps.tetrahedron_global_id) except +
+        void setTetV(steps.tetrahedron_global_id, double) except +
+        bool getTetVClamped(steps.tetrahedron_global_id) except +
+        void setTetVClamped(steps.tetrahedron_global_id, bool) except +
+        double getPatchArea(std.string) except +
+        double getPatchSpecCount(std.string, std.string) except +
+        void setPatchSpecCount(std.string, std.string, double) except +
+        double getPatchSpecAmount(std.string, std.string) except +
+        void setPatchSpecAmount(std.string, std.string, double) except +
+        bool getPatchSpecClamped(std.string, std.string) except +
+        void setPatchSpecClamped(std.string, std.string, bool) except +
+        double getPatchSReacK(std.string, std.string) except +
+        void setPatchSReacK(std.string, std.string, double) except +
+        bool getPatchSReacActive(std.string, std.string) except +
+        void setPatchSReacActive(std.string, std.string, bool) except +
+        double getPatchSReacC(std.string, std.string) except +
+        double getPatchSReacH(std.string, std.string) except +
+        double getPatchSReacA(std.string, std.string) except +
+        unsigned long long getPatchSReacExtent(std.string, std.string) except +
+        void resetPatchSReacExtent(std.string, std.string) except +
+        bool getPatchVDepSReacActive(std.string, std.string) except +
+        void setPatchVDepSReacActive(std.string, std.string, bool) except +
+        uint getPatchRaftCount(std.string, std.string) except +
+        void setPatchRaftCount(std.string, std.string, uint) except +
+        std.vector[double] getSingleRaftPos(std.string, steps.raft_individual_id) except +
+        std.map[steps.raft_individual_id, uint] getPatchRaftSpecCountDict(std.string, std.string, std.string) except +
+        uint getPatchRaftSpecCount(std.string, std.string, std.string) except +
+        uint getSingleRaftSpecCount(std.string, steps.raft_individual_id, std.string) except +
+        void setSingleRaftSpecCount(std.string, steps.raft_individual_id, std.string, uint) except +
+        uint getSingleRaftImmobility(std.string, steps.raft_individual_id) except +
+        double getSingleRaftRaftEndocytosisK(std.string, steps.raft_individual_id, std.string) except +
+        void setSingleRaftRaftEndocytosisK(std.string, steps.raft_individual_id, std.string, double) except +
+        void setSingleRaftSReacActive(std.string, steps.raft_individual_id, std.string, bool) except +
+        bool getSingleRaftSReacActive(std.string, steps.raft_individual_id, std.string) except +
+        void setPatchEndocyticZoneEndocytosisActive(std.string, std.string, std.string, bool) except +
+        void setPatchEndocyticZoneEndocytosisK(std.string, std.string, std.string, double) except +
+        uint getPatchEndocyticZoneEndocytosisExtent(std.string, std.string, std.string) except +
+        std.vector[steps.EndocytosisEvent] getPatchEndocyticZoneEndocytosisEvents(std.string, std.string, std.string) except +
+        std.vector[steps.raft_individual_id] getPatchRaftIndices(std.string, std.string) except +
+        std.string getSingleRaftPatch(std.string, steps.raft_individual_id) except +
+        void setDiffBoundarySpecDiffusionActive(std.string, std.string, bool) except +
+        bool getDiffBoundarySpecDiffusionActive(std.string, std.string) except +
+        void setDiffBoundarySpecDcst(std.string, std.string, double, std.string) except +
+        void setSDiffBoundarySpecDiffusionActive(std.string, std.string, bool) except +
+        bool getSDiffBoundarySpecDiffusionActive(std.string, std.string) except +
+        void setSDiffBoundarySpecDcst(std.string, std.string, double, std.string) except +
+        double getTriArea(steps.triangle_global_id) except +
+        void setTriArea(steps.triangle_global_id, double) except +
+        bool getTriSpecDefined(steps.triangle_global_id, std.string) except +
+        double getTriSpecCount(steps.triangle_global_id, std.string) except +
+        void setTriSpecCount(steps.triangle_global_id, std.string, double) except +
+        double getTriSpecAmount(steps.triangle_global_id, std.string) except +
+        void setTriSpecAmount(steps.triangle_global_id, std.string, double) except +
+        bool getTriSpecClamped(steps.triangle_global_id, std.string) except +
+        void setTriSpecClamped(steps.triangle_global_id, std.string, bool) except +
+        double getTriSReacK(steps.triangle_global_id, std.string) except +
+        void setTriSReacK(steps.triangle_global_id, std.string, double) except +
+        bool getTriSReacActive(steps.triangle_global_id, std.string) except +
+        void setTriSReacActive(steps.triangle_global_id, std.string, bool) except +
+        double getTriSReacC(steps.triangle_global_id, std.string) except +
+        double getTriSReacH(steps.triangle_global_id, std.string) except +
+        double getTriSReacA(steps.triangle_global_id, std.string) except +
+        double getTriDiffD(steps.triangle_global_id, std.string, uint) except +
+        double getTriSDiffD(steps.triangle_global_id, std.string, steps.triangle_global_id) except +
+        void setTriDiffD(steps.triangle_global_id, std.string, double, steps.triangle_global_id) except +
+        void setTriSDiffD(steps.triangle_global_id, std.string, double, steps.triangle_global_id) except +
+        uint getTriRaftCount(steps.triangle_global_id, std.string) except +
+        void setTriRaftCount(steps.triangle_global_id, std.string, uint) except +
+        steps.raft_individual_id addTriRaft(steps.triangle_global_id, std.string) except +
+        bool getTriExocytosisActive(steps.triangle_global_id, std.string) except +
+        void setTriExocytosisActive(steps.triangle_global_id, std.string, bool) except +
+        double getTriV(steps.triangle_global_id) except +
+        void setTriV(steps.triangle_global_id, double) except +
+        bool getTriVClamped(steps.triangle_global_id) except +
+        void setTriVClamped(steps.triangle_global_id, bool) except +
+        double getTriOhmicErev(uint, std.string) except +
+        void setTriOhmicErev(uint, std.string, double) except +
+        double getTriOhmicI(steps.triangle_global_id, std.string) except +
+        double getTriGHKI(steps.triangle_global_id, std.string) except +
+        double getTriI(steps.triangle_global_id) except +
+        double getTriIClamp(steps.triangle_global_id) except +
+        void setTriIClamp(steps.triangle_global_id, double) except +
+        bool getTriVDepSReacActive(steps.triangle_global_id, std.string) except +
+        void setTriVDepSReacActive(steps.triangle_global_id, std.string, bool) except +
+        void setTriCapac(steps.triangle_global_id, double) except +
+        double getVertV(steps.vertex_id_t) except +
+        void setVertV(steps.vertex_id_t, double) except +
+        bool getVertVClamped(steps.vertex_id_t) except +
+        void setVertVClamped(steps.vertex_id_t, bool) except +
+        double getVertIClamp(steps.vertex_id_t) except +
+        void setVertIClamp(steps.vertex_id_t, double) except +
+        void setMembPotential(std.string, double) except +
+        void setMembCapac(std.string, double) except +
+        void setMembVolRes(std.string, double) except +
+        void setMembRes(std.string, double, double) except +
+        void setOutputSync(bool, int) except +
+        bool getOutputSyncStatus() except +
+        int getOutputSyncRank() except +
+
+
+# ======================================================================================================================
+cdef extern from "mpi/tetvesicle/tetvesicle_vesraft.hpp" namespace "steps::mpi::tetvesicle":
+# ----------------------------------------------------------------------------------------------------------------------
+
+    ###### Cybinding for TetVesicleVesRaft ######
+    cdef cppclass TetVesicleVesRaft:
+        TetVesicleVesRaft(steps_model.Model*, steps_wm.Geom*, shared_ptr[steps_rng.RNG], int) except +
+        std.string getSolverName() except +
+        std.string getSolverDesc() except +
+        std.string getSolverAuthors() except +
+        std.string getSolverEmail() except +
+        void reset() except +
+        void run(double) except +
+        void advance(double) except +
+        void step() except +
+        void checkpoint(std.string) except +
+        void restore(std.string) except +
+        double getTime() except +
+        double getA0() except +
+        uint getNSteps() except +
+        double getVesicleDT() except +
+        void setVesicleDT(double) except +
+        void createPath(std.string) except +
+        void addPathPoint(std.string, uint, std.vector[double]) except +
+        void addPathBranch(std.string, uint, std.map[uint, double]) except +
+        std.map[std.string, std.map[uint, std.pair[std.vector[double], std.map[uint, double]]]] getAllPaths() except +
+        std.vector[double] getBatchTetSpecCounts(std.vector[steps.index_t], std.string) except +
+        std.vector[double] getBatchTriSpecCounts(std.vector[steps.index_t], std.string) except +
+        void getBatchTetSpecCountsNP(index_t *, uint, std.string, double *, uint) except +
+        void getBatchTriSpecCountsNP(index_t *, uint, std.string, double *, uint) except +
+        void setROITetSpecClamped(std.vector[steps.tetrahedron_global_id], std.string, bool) except +
+        void setROITriSpecClamped(std.vector[steps.triangle_global_id], std.string, bool) except +
+        double getROITetSpecCount(std.vector[steps.tetrahedron_global_id], std.string) except +
+        double getROITriSpecCount(std.vector[steps.triangle_global_id], std.string) except +
+        void setROITetSpecCount(std.vector[steps.tetrahedron_global_id], std.string, double) except +
+        void setROITriSpecCount(std.vector[steps.triangle_global_id], std.string, double) except +
+        std.vector[double] getROITetSpecCounts(std.string, std.string) except +
+        std.vector[double] getROITriSpecCounts(std.string, std.string) except +
+        void getROITetSpecCountsNP(std.string, std.string, double *, uint) except +
+        void getROITriSpecCountsNP(std.string, std.string, double *, uint) except +
+        double getROIVol(std.string) except +
+        double getROIArea(std.string) except +
+        double getROISpecCount(std.string, std.string) except +
+        void setROISpecCount(std.string, std.string, double) except +
+        double getROISpecAmount(std.string, std.string) except +
+        void setROISpecAmount(std.string, std.string, double) except +
+        double getROISpecConc(std.string, std.string) except +
+        void setROISpecConc(std.string, std.string, double) except +
+        void setROISpecClamped(std.string, std.string, bool) except +
+        void setROIReacK(std.string, std.string, double) except +
+        void setROISReacK(std.string, std.string, double) except +
+        void setROIDiffD(std.string, std.string, double) except +
+        void setROIReacActive(std.string, std.string, bool) except +
+        void setROISReacActive(std.string, std.string, bool) except +
+        void setROIDiffActive(std.string, std.string, bool) except +
+        void setROIVDepSReacActive(std.string, std.string, bool) except +
+        unsigned long long getROIReacExtent(std.string, std.string) except +
+        void resetROIReacExtent(std.string, std.string) except +
+        unsigned long long getROISReacExtent(std.string, std.string) except +
+        void resetROISReacExtent(std.string, std.string) except +
+        unsigned long long getROIDiffExtent(std.string, std.string) except +
+        void resetROIDiffExtent(std.string, std.string) except +
+        void setEfieldDT(double) except +
+        void setTime(double) except +
+        void setTemp(double) except +
+        double getEfieldDT() except +
+        double getTemp() except +
+        double getCompVol(std.string) except +
+        double getCompSpecCount(std.string, std.string) except +
+        void setCompSpecCount(std.string, std.string, double) except +
+        double getCompSpecAmount(std.string, std.string) except +
+        void setCompSpecAmount(std.string, std.string, double) except +
+        double getCompSpecConc(std.string, std.string) except +
+        void setCompSpecConc(std.string, std.string, double) except +
+        bool getCompSpecClamped(std.string, std.string) except +
+        void setCompSpecClamped(std.string, std.string, bool) except +
+        double getCompReacK(std.string, std.string) except +
+        void setCompReacK(std.string, std.string, double) except +
+        bool getCompReacActive(std.string, std.string) except +
+        void setCompReacActive(std.string, std.string, bool) except +
+        double getCompDiffD(std.string, std.string) except +
+        void setCompDiffD(std.string, std.string, double) except +
+        bool getCompDiffActive(std.string, std.string) except +
+        void setCompDiffActive(std.string, std.string, bool) except +
+        double getCompReacC(std.string, std.string) except +
+        double getCompReacH(std.string, std.string) except +
+        double getCompReacA(std.string, std.string) except +
+        unsigned long long getCompReacExtent(std.string, std.string) except +
+        void resetCompReacExtent(std.string, std.string) except +
+        uint getCompVesicleCount(std.string, std.string) except +
+        void setCompVesicleCount(std.string, std.string, uint) except +
+        steps.vesicle_individual_id addCompVesicle(std.string, std.string) except +
+        void deleteSingleVesicle(std.string, steps.vesicle_individual_id) except +
+        uint getSingleVesicleSurfaceLinkSpecCount(std.string, steps.vesicle_individual_id, std.string) except +
+        std.vector[steps.linkspec_individual_id] getSingleVesicleSurfaceLinkSpecIndices(std.string, steps.vesicle_individual_id, std.string) except +
+        std.vector[steps.pointspec_individual_id] getSingleVesicleSurfaceSpecIndices(std.string, steps.vesicle_individual_id, std.string) except +
+        std.vector[steps.vesicle_individual_id] getCompVesicleIndices(std.string, std.string) except +
+        std.string getSingleVesicleCompartment(std.string, steps.vesicle_individual_id) except +
+        std.vector[double] getSingleVesiclePos(std.string, steps.vesicle_individual_id) except +
+        void setCompSingleVesiclePos(std.string, std.string, steps.vesicle_individual_id, std.vector[double], bool) except +
+        std.map[steps.vesicle_individual_id, uint] getCompVesicleSurfaceSpecCountDict(std.string, std.string, std.string) except +
+        uint getCompVesicleSurfaceSpecCount(std.string, std.string, std.string) except +
+        uint getCompVesicleInnerSpecCount(std.string, std.string, std.string) except +
+        uint getSingleVesicleSurfaceSpecCount(std.string, steps.vesicle_individual_id, std.string) except +
+        uint getSingleVesicleInnerSpecCount(std.string, steps.vesicle_individual_id, std.string) except +
+        void setSingleVesicleSurfaceSpecCount(std.string, steps.vesicle_individual_id, std.string, uint) except +
+        std.vector[std.vector[double] ] getSingleVesicleSurfaceSpecPos(std.string, steps.vesicle_individual_id, std.string) except +
+        void setSingleVesicleInnerSpecCount(std.string, steps.vesicle_individual_id, std.string, uint) except +
+        std.vector[std.vector[double]] getSingleVesicleSurfaceSpecPosSpherical(std.string, steps.vesicle_individual_id, std.string) except +
+        void setSingleVesicleSurfaceSpecPosSpherical(std.string, steps.vesicle_individual_id, std.string, std.vector[std.vector[double]]) except +
+        std.vector[double] getSingleSpecPosSpherical(std.string, steps.pointspec_individual_id) except +
+        std.map[steps.vesicle_individual_id, uint] getCompVesicleSurfaceLinkSpecCountDict(std.string, std.string, std.string) except +
+        uint getCompVesicleSurfaceLinkSpecCount(std.string, std.string, std.string) except +
+        std.vector[std.vector[double] ] getSingleVesicleSurfaceLinkSpecPos(std.string, steps.vesicle_individual_id, std.string) except +
+        std.vector[double] getSingleLinkSpecPos(steps.linkspec_individual_id) except +
+        steps.linkspec_individual_id getSingleLinkSpecLinkedTo(steps.linkspec_individual_id) except +
+        steps.vesicle_individual_id getSingleLinkSpecVes(steps.linkspec_individual_id) except +
+        uint getSingleVesicleImmobility(std.string, steps.vesicle_individual_id) except +
+        std.vector[steps.tetrahedron_global_id] getSingleVesicleOverlapTets(std.string, steps.vesicle_individual_id) except +
+        void setTetVesicleDcst(steps.tetrahedron_global_id, std.string, double) except +
+        void setVesicleSurfaceLinkSpecSDiffD(std.string, std.string, double) except +
+        void setVesSReacK(std.string, double) except +
+        uint getVesSReacExtent(std.string) except +
+        void setExocytosisK(std.string, double) except +
+        uint getExocytosisExtent(std.string) except +
+        std.vector[steps.ExocytosisEvent] getExocytosisEvents(std.string) except +
+        uint getRaftEndocytosisExtent(std.string) except +
+        std.vector[steps.EndocytosisEvent] getPatchEndocyticZoneEndocytosisEvents(std.string, std.string, std.string) except +
+        std.vector[steps.RaftEndocytosisEvent] getRaftEndocytosisEvents(std.string) except +
+        void setRaftEndocytosisK(std.string, double) except +
+        void addVesicleDiffusionGroup(std.string, std.vector[std.string]) except +
+        void addPathVesicle(std.string, std.string, double, std.map[std.string, uint], std.vector[double]) except +
+        double getTetVol(steps.tetrahedron_global_id) except +
+        double getTetReducedVol(steps.tetrahedron_global_id) except +
+        void setTetVol(steps.tetrahedron_global_id, double) except +
+        bool getTetSpecDefined(steps.tetrahedron_global_id, std.string) except +
+        double getTetSpecCount(steps.tetrahedron_global_id, std.string) except +
+        void setTetSpecCount(steps.tetrahedron_global_id, std.string, double) except +
+        double getTetSpecAmount(steps.tetrahedron_global_id, std.string) except +
+        void setTetSpecAmount(steps.tetrahedron_global_id, std.string, double) except +
+        double getTetSpecConc(steps.tetrahedron_global_id, std.string) except +
+        void setTetSpecConc(steps.tetrahedron_global_id, std.string, double) except +
+        bool getTetSpecClamped(steps.tetrahedron_global_id, std.string) except +
+        void setTetSpecClamped(steps.tetrahedron_global_id, std.string, bool) except +
+        double getTetReacK(steps.tetrahedron_global_id, std.string) except +
+        void setTetReacK(steps.tetrahedron_global_id, std.string, double) except +
+        bool getTetReacActive(steps.tetrahedron_global_id, std.string) except +
+        void setTetReacActive(steps.tetrahedron_global_id, std.string, bool) except +
+        double getTetDiffD(steps.tetrahedron_global_id, std.string, steps.tetrahedron_global_id) except +
+        void setTetDiffD(steps.tetrahedron_global_id, std.string, double, steps.tetrahedron_global_id) except +
+        bool getTetDiffActive(steps.tetrahedron_global_id, std.string) except +
+        void setTetDiffActive(steps.tetrahedron_global_id, std.string, bool) except +
+        double getTetReacC(steps.tetrahedron_global_id, std.string) except +
+        double getTetReacH(steps.tetrahedron_global_id, std.string) except +
+        double getTetReacA(steps.tetrahedron_global_id, std.string) except +
+        double getTetDiffA(steps.tetrahedron_global_id, std.string) except +
+        double getTetV(steps.tetrahedron_global_id) except +
+        void setTetV(steps.tetrahedron_global_id, double) except +
+        bool getTetVClamped(steps.tetrahedron_global_id) except +
+        void setTetVClamped(steps.tetrahedron_global_id, bool) except +
+        double getPatchArea(std.string) except +
+        double getPatchSpecCount(std.string, std.string) except +
+        void setPatchSpecCount(std.string, std.string, double) except +
+        double getPatchSpecAmount(std.string, std.string) except +
+        void setPatchSpecAmount(std.string, std.string, double) except +
+        bool getPatchSpecClamped(std.string, std.string) except +
+        void setPatchSpecClamped(std.string, std.string, bool) except +
+        double getPatchSReacK(std.string, std.string) except +
+        void setPatchSReacK(std.string, std.string, double) except +
+        bool getPatchSReacActive(std.string, std.string) except +
+        void setPatchSReacActive(std.string, std.string, bool) except +
+        double getPatchSReacC(std.string, std.string) except +
+        double getPatchSReacH(std.string, std.string) except +
+        double getPatchSReacA(std.string, std.string) except +
+        unsigned long long getPatchSReacExtent(std.string, std.string) except +
+        void resetPatchSReacExtent(std.string, std.string) except +
+        bool getPatchVDepSReacActive(std.string, std.string) except +
+        void setPatchVDepSReacActive(std.string, std.string, bool) except +
+        uint getPatchRaftCount(std.string, std.string) except +
+        void setPatchRaftCount(std.string, std.string, uint) except +
+        std.vector[double] getSingleRaftPos(std.string, steps.raft_individual_id) except +
+        std.map[steps.raft_individual_id, uint] getPatchRaftSpecCountDict(std.string, std.string, std.string) except +
+        uint getPatchRaftSpecCount(std.string, std.string, std.string) except +
+        uint getSingleRaftSpecCount(std.string, steps.raft_individual_id, std.string) except +
+        void setSingleRaftSpecCount(std.string, steps.raft_individual_id, std.string, uint) except +
+        uint getSingleRaftImmobility(std.string, steps.raft_individual_id) except +
+        double getSingleRaftRaftEndocytosisK(std.string, steps.raft_individual_id, std.string) except +
+        void setSingleRaftRaftEndocytosisK(std.string, steps.raft_individual_id, std.string, double) except +
+        void setSingleRaftSReacActive(std.string, steps.raft_individual_id, std.string, bool) except +
+        bool getSingleRaftSReacActive(std.string, steps.raft_individual_id, std.string) except +
+        void setPatchEndocyticZoneEndocytosisActive(std.string, std.string, std.string, bool) except +
+        void setPatchEndocyticZoneEndocytosisK(std.string, std.string, std.string, double) except +
+        uint getPatchEndocyticZoneEndocytosisExtent(std.string, std.string, std.string) except +
+        std.vector[steps.raft_individual_id] getPatchRaftIndices(std.string, std.string) except +
+        std.string getSingleRaftPatch(std.string, steps.raft_individual_id) except +
+        void setDiffBoundarySpecDiffusionActive(std.string, std.string, bool) except +
+        bool getDiffBoundarySpecDiffusionActive(std.string, std.string) except +
+        void setDiffBoundarySpecDcst(std.string, std.string, double, std.string) except +
+        void setSDiffBoundarySpecDiffusionActive(std.string, std.string, bool) except +
+        bool getSDiffBoundarySpecDiffusionActive(std.string, std.string) except +
+        void setSDiffBoundarySpecDcst(std.string, std.string, double, std.string) except +
+        double getTriArea(steps.triangle_global_id) except +
+        void setTriArea(steps.triangle_global_id, double) except +
+        bool getTriSpecDefined(steps.triangle_global_id, std.string) except +
+        double getTriSpecCount(steps.triangle_global_id, std.string) except +
+        void setTriSpecCount(steps.triangle_global_id, std.string, double) except +
+        double getTriSpecAmount(steps.triangle_global_id, std.string) except +
+        void setTriSpecAmount(steps.triangle_global_id, std.string, double) except +
+        bool getTriSpecClamped(steps.triangle_global_id, std.string) except +
+        void setTriSpecClamped(steps.triangle_global_id, std.string, bool) except +
+        double getTriSReacK(steps.triangle_global_id, std.string) except +
+        void setTriSReacK(steps.triangle_global_id, std.string, double) except +
+        bool getTriSReacActive(steps.triangle_global_id, std.string) except +
+        void setTriSReacActive(steps.triangle_global_id, std.string, bool) except +
+        double getTriSReacC(steps.triangle_global_id, std.string) except +
+        double getTriSReacH(steps.triangle_global_id, std.string) except +
+        double getTriSReacA(steps.triangle_global_id, std.string) except +
+        double getTriDiffD(steps.triangle_global_id, std.string, uint) except +
+        double getTriSDiffD(steps.triangle_global_id, std.string, steps.triangle_global_id) except +
+        void setTriDiffD(steps.triangle_global_id, std.string, double, steps.triangle_global_id) except +
+        void setTriSDiffD(steps.triangle_global_id, std.string, double, steps.triangle_global_id) except +
+        uint getTriRaftCount(steps.triangle_global_id, std.string) except +
+        void setTriRaftCount(steps.triangle_global_id, std.string, uint) except +
+        steps.raft_individual_id addTriRaft(steps.triangle_global_id, std.string) except +
+        bool getTriExocytosisActive(steps.triangle_global_id, std.string) except +
+        void setTriExocytosisActive(steps.triangle_global_id, std.string, bool) except +
+        double getTriV(steps.triangle_global_id) except +
+        void setTriV(steps.triangle_global_id, double) except +
+        bool getTriVClamped(steps.triangle_global_id) except +
+        void setTriVClamped(steps.triangle_global_id, bool) except +
+        double getTriOhmicErev(uint, std.string) except +
+        void setTriOhmicErev(uint, std.string, double) except +
+        double getTriOhmicI(steps.triangle_global_id, std.string) except +
+        double getTriGHKI(steps.triangle_global_id, std.string) except +
+        double getTriI(steps.triangle_global_id) except +
+        double getTriIClamp(steps.triangle_global_id) except +
+        void setTriIClamp(steps.triangle_global_id, double) except +
+        bool getTriVDepSReacActive(steps.triangle_global_id, std.string) except +
+        void setTriVDepSReacActive(steps.triangle_global_id, std.string, bool) except +
+        void setTriCapac(steps.triangle_global_id, double) except +
+        double getVertV(steps.vertex_id_t) except +
+        void setVertV(steps.vertex_id_t, double) except +
+        bool getVertVClamped(steps.vertex_id_t) except +
+        void setVertVClamped(steps.vertex_id_t, bool) except +
+        double getVertIClamp(steps.vertex_id_t) except +
+        void setVertIClamp(steps.vertex_id_t, double) except +
+        void setMembPotential(std.string, double) except +
+        void setMembCapac(std.string, double) except +
+        void setMembVolRes(std.string, double) except +
+        void setMembRes(std.string, double, double) except +
+        void setOutputSync(bool, int) except +
+        bool getOutputSyncStatus() except +
+        int getOutputSyncRank() except +
+        void setMaxWalkDistFact(double) except +
+        void setMinNbTetVisited(uint n) except +

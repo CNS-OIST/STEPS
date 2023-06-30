@@ -24,45 +24,29 @@
 
  */
 
-#ifndef STEPS_SOLVER_SDIFFBOUNDARYDEF_HPP
-#define STEPS_SOLVER_SDIFFBOUNDARYDEF_HPP 1
-
+#pragma once
 
 // STL headers.
-#include <string>
 #include <fstream>
+#include <string>
 
 // STEPS headers.
-#include "util/common.h"
-#include "statedef.hpp"
 #include "geom/sdiffboundary.hpp"
+#include "statedef.hpp"
+#include "util/common.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace solver {
-
-// Forwards declarations
-class   SDiffBoundarydef;
-
-// Auxiliary declarations.
-typedef SDiffBoundarydef *                      SDiffBoundaryDefP;
-typedef std::vector<SDiffBoundaryDefP>          SDiffBoundaryDefPVec;
-typedef SDiffBoundaryDefPVec::iterator          SDiffBoundaryDefPVecI;
-typedef SDiffBoundaryDefPVec::const_iterator    SDiffBoundaryDefPVecCI;
+namespace steps::solver {
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Defined surface diffusion boundary object.
-class SDiffBoundarydef
-{
-
-public:
+class SDiffBoundarydef {
+  public:
     /// Constructor
     ///
     /// \param sd State of the solver.
     /// \param idx Global index of the object.
     /// \param sdb Pointer to the associated Surface Diffusion boundary object.
-    SDiffBoundarydef(Statedef * sd, uint idx, steps::tetmesh::SDiffBoundary * sdb);
+    SDiffBoundarydef(Statedef* sd, sdiffboundary_global_id idx, tetmesh::SDiffBoundary* sdb);
 
     /// Destructor
     ~SDiffBoundarydef();
@@ -73,71 +57,64 @@ public:
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream& cp_file);
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream& cp_file);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: DIFFUSION BOUNDARY
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this diffusion boundary.
-    inline uint gidx() const
-    { return pIdx; }
+    inline sdiffboundary_global_id gidx() const {
+        return pIdx;
+    }
 
     /// Return the name of this diffusion boundary.
     const std::string& name() const noexcept {
         return pName;
     }
 
-    inline const std::vector<index_t>& bars() const
-    { return pBars; }
+    inline const std::vector<index_t>& bars() const {
+        return pBars;
+    }
 
-    inline uint patcha() const
-    { return pPatchA; }
-    inline uint patchb() const
-    { return pPatchB; }
-
-
-    ////////////////////////////////////////////////////////////////////////
-
-private:
+    inline patch_global_id patcha() const {
+        return pPatchA;
+    }
+    inline patch_global_id patchb() const {
+        return pPatchB;
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-    Statedef                           * pStatedef;
+  private:
+    ////////////////////////////////////////////////////////////////////////
 
-    bool                                 pSetupdone;
+    Statedef* pStatedef;
+
+    bool pSetupdone;
 
     // The global index of this diffusion boundary
-    uint                                 pIdx;
+    sdiffboundary_global_id pIdx;
 
     // The string identifier of this diffusion rule
-    std::string                          pName;
+    std::string pName;
 
     // List of all the bars
 
-    std::vector<index_t>    pBars;
+    std::vector<index_t> pBars;
 
-    uint                                 pPatchA;
-    uint                                 pPatchB;
+    patch_global_id pPatchA;
+    patch_global_id pPatchB;
 
     // The pointer to the well-mixed comps is stored, but should not be used
     // only here so it's available during setup.
-    steps::wm::Patch *                   pPatchA_temp;
-    steps::wm::Patch *                   pPatchB_temp;
+    wm::Patch* pPatchA_temp;
+    wm::Patch* pPatchB_temp;
 
     ////////////////////////////////////////////////////////////////////////
-
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-#endif
-// STEPS_SOLVER_SDIFFBOUNDARYDEF_HPP
-
-// END
+}  // namespace steps::solver

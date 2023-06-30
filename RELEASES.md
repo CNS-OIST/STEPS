@@ -1,5 +1,27 @@
 Release Notes
 
+
+Version 5.0.0 beta (2023-06)
+==========================
+
+New Features
+------------
+1. Introduce a new solver named `TetVesicle` that simulates vesicles, lipid rafts and related phenomena such as endocytosis, exocytosis and active transport on virtual actin filaments. 
+   The solver is built on top of the `TetOpSplit` routines for parallel simulation of SSA reaction and diffusion events. 
+2. Add a new `stepsblender` python module that allows visualisation of STEPS simulation data recorded with `XDMFHandler` using the Blender 3D computer graphics software (https://www.blender.org/).
+3. Checkpointing added or updated for solvers `TetVesicle`, `TetOpSplit`, `Tetexact`, `TetODE`, `Wmdirect`, `Wmrk4`,  `Wmrssa`.    
+
+
+Build and Packaging
+-------------------
+1. Installation process now automatically installs missing python dependencies.
+
+Internal code base
+------------------
+1. All stochastic solvers are now reproducible. 
+2. Numerous fixes, optimizations and modernizations. 
+
+
 Version 4.1.1 (2023-04)
 ==========================
 Build and Packaging
@@ -15,13 +37,11 @@ License update
 
 Python API
 ----------
-1. Added automatic saving to HDF5 files (HDF5Handler) and XDMF files (XDMFHandler). Data saved
-   with XDMFHandler can be visualized with scientific visualization software like Paraview.
+1. Added automatic saving to HDF5 files (HDF5Handler) and XDMF files (XDMFHandler). Data saved with XDMFHandler can be visualized with scientific visualization software like Paraview.
 
 Internal code base
 ------------------
-1. Performance improvement: Identify the tetrahedra with molecule changes via diffusion 
-(changes caused by reaction are updated by the ssa operator) and update the associated propensities.
+1. Performance improvement: Identify the tetrahedra with molecule changes via diffusion (changes caused by reaction are updated by the ssa operator) and update the associated propensities.
 
 Version 4.0.0 (2022-03)
 ==========================
@@ -29,9 +49,7 @@ Version 4.0.0 (2022-03)
 Python API
 ----------
 
-Introduce a new parallel stochastic reaction-diffusion solver and a deterministic
-membrane potential solver named `DistTetOpSplit`. The solver is based on a 
-distributed mesh named `DistMesh`.
+Introduce a new parallel stochastic reaction-diffusion solver and a deterministic membrane potential solver named `DistTetOpSplit`. The solver is based on a distributed mesh named `DistMesh`.
 
 Build and Packaging
 -------------------
@@ -71,9 +89,7 @@ Version 3.5.0 (2019-10)
 
 Python API
 ----------
-1. values for unknown tetrahedron and triangle identifiers changed from
-   -1 to `steps.geom.UNKNOWN_TET` and `steps.geom.UNKNOWN_TRI`
-   respectively.
+1. values for unknown tetrahedron and triangle identifiers changed from -1 to `steps.geom.UNKNOWN_TET` and `steps.geom.UNKNOWN_TRI` respectively.
    You may use these 2 constants instead of -1.
 
     A Python 3 Flake8 extension is available to help you migrate your code.
@@ -91,8 +107,7 @@ Python API
     ./test.py:5:4: E421 consider using steps.geom.UNKNOWN_TET constant instead of -1.
     ```
 
-    You may use the following snippet in your scripts header to have backward
-    compatible code:
+    You may use the following snippet in your scripts header to have backward compatible code:
 
    ```python
    try:
@@ -102,13 +117,11 @@ Python API
        UNKNOWN_TRI = -1
    ```
 
-2. A new constant `steps.geom.INDEX_DTYPE` provides the proper NumPy datatype according
-to whether STEPS has been built with 32 bits or 64 bits identifiers.
+2. A new constant `steps.geom.INDEX_DTYPE` provides the proper NumPy datatype according to whether STEPS has been built with 32 bits or 64 bits identifiers.
 
 Build and Packaging
 -------------------
-1. New `USE_64_BITS_INDICES` CMake option to use 64bits unsigned integers
-   for identifiers instead of 32bits.
+1. New `USE_64_BITS_INDICES` CMake option to use 64bits unsigned integers for identifiers instead of 32bits.
 2. New CMake variables to use either system libraries or bundle code.
     * `USE_BUNDLE_EASYLOGGINGP`
     * `USE_BUNDLE_RANDOM123`
@@ -121,8 +134,7 @@ Internal code base
 ------------------
 1. Disable OpenMP instructions in TetOpSplit solver
 2. Modernize code base by using most of C++11
-3. Increase code safety by using strong types to distinguish
-   identifiers from tetrahedrons, triangles, and vertices
+3. Increase code safety by using strong types to distinguish identifiers from tetrahedrons, triangles, and vertices
 
 Version 3.4.0 (2018-11)
 ==========================
@@ -179,24 +191,15 @@ Version 2.2.0 (2014-04-16)
 
 Version 2.1.0 (2013-09-05)
 ==========================
-1. Add steps.geom.castToTmComp and steps.geom.castToTmPatch methods for casting Comp and Patch
-objects to their TetMesh counterpart (if possible).
-2. Added direct connection between TetODE and E-Field. Previously connection was possible
-only through the python interface.
-3. Other small additions such as optional percentage of starting nodes tested for mesh breadth
-first search in E-Field setup.
+1. Add steps.geom.castToTmComp and steps.geom.castToTmPatch methods for casting Comp and Patch objects to their TetMesh counterpart (if possible).
+2. Added direct connection between TetODE and E-Field. Previously connection was possible only through the python interface.
+3. Other small additions such as optional percentage of starting nodes tested for mesh breadth first search in E-Field setup.
 
 Version 2.0.0 (2013-04-22)
 ==========================
-1. First version to include E-Field and related objects. Allows
-simulation of the potential across a membrane specified as a collection of
-triangles comprising a surface in the tetrahedral mesh. See documentation for
-more information.
-2. Addition of solver TetODE for spatial deterministic simulations. Uses the CVODE
-library for solutions.
-3. Addition of surface diffusion in mesh-based solvers (Tetexact and TetODE), which models a
-diffusive flux between triangles that form part of a patch surface, analogous to
-volume diffusion between tetrahedral elements in a compartment.
+1. First version to include E-Field and related objects. Allows simulation of the potential across a membrane specified as a collection of triangles comprising a surface in the tetrahedral mesh. See documentation for more information.
+2. Addition of solver TetODE for spatial deterministic simulations. Uses the CVODE library for solutions.
+3. Addition of surface diffusion in mesh-based solvers (Tetexact and TetODE), which models a diffusive flux between triangles that form part of a patch surface, analogous to volume diffusion between tetrahedral elements in a compartment.
 4. Several other smaller additions and fixes.
 
 Version 1.3.0 (2011-12)
@@ -205,35 +208,23 @@ Version 1.3.0 (2011-12)
 
 Version 1.2.1 (2011-06-10)
 ==========================
-1. Important bugfix in Tetexact to fix a problem that was causing
-crashes during construction.
+1. Important bugfix in Tetexact to fix a problem that was causing crashes during construction.
 
 Version 1.2.0 (2011-04-13)
 ==========================
 1. SBML support in steps/utilities/sbml.py
-2. Addition of Diffusion Boundary object, which allows for optional
-chemical diffusion between connected compartments.
-3. Initial conditions improvement for Tetexact solver, resulting
-in a  uniform initial spatial concentration across the
-compartment (or patch) regardless of tetrahedron volumes (or triangle
-areas), important where tetrahedrons vary considerably in volume.
+2. Addition of Diffusion Boundary object, which allows for optional chemical diffusion between connected compartments.
+3. Initial conditions improvement for Tetexact solver, resulting in a uniform initial spatial concentration across the compartment (or patch) regardless of tetrahedron volumes (or triangle areas), important where tetrahedrons vary considerably in volume.
 Thanks to Haroon Anwar for bringing this issue to our attention.
-4. Bugfix on Wmrk4 deterministic solver on the reset() function,
-which previously did not reset counts in Patches.
-5. Changed zero-order reaction constants to the conventional M/s.
-Previously was /s.
-6. Bugfix on surface-reactions. Now reaction constants for reactions
-that involve reactants only on a patch (nothing in a volume) are
-correctly scaled in 2D, as opposed to previous 3D scaling. Thanks
-to Gabriela Antunes for pointing out this one.
-7. Additions to examples folder to include scripts that link to the
-user documentation, found in examples/tutorial.
+4. Bugfix on Wmrk4 deterministic solver on the reset() function, which previously did not reset counts in Patches.
+5. Changed zero-order reaction constants to the conventional M/s. Previously was /s.
+6. Bugfix on surface-reactions. Now reaction constants for reactions that involve reactants only on a patch (nothing in a volume) are correctly scaled in 2D, as opposed to previous 3D scaling. Thanks to Gabriela Antunes for pointing out this one.
+7. Additions to examples folder to include scripts that link to the user documentation, found in examples/tutorial.
 
 Version 1.1.2 (2010-05-8)
 ==========================
 1. Solve crash problem of Tetexact solver in some Linux system.
-Binary packages of version 1.1.1 are not affected,
-so only source package is released.
+Binary packages of version 1.1.1 are not affected, so only source package is released.
 
 Version 1.1.1 (2010-04-7)
 ==========================
@@ -252,11 +243,8 @@ Version 1.1.0 (2010-03-20)
 Version 1.0.1 (2010-01-28)
 ==========================
 1. Bug fix of utilities.meshio.importTetgen() method crashing.
-2. Changes to 'def' classes so that these classes no longer store
-a pointer to model level objects or access data from those objects,
-instead coping all data during construction and setup.
-Also modified rng.py to be directly created by swig for
-compatibility with python3.
+2. Changes to 'def' classes so that these classes no longer store a pointer to model level objects or access data from those objects, instead coping all data during construction and setup.
+Also modified rng.py to be directly created by swig for compatibility with python3.
 
 Version 1.0.0 (2010-01-05)
 ==========================

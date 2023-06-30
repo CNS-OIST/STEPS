@@ -79,11 +79,11 @@ cdef extern from "geom/dist/distmesh.hpp" namespace "steps::dist":
         std.vector[double] getVertex(vertex_global_id_t) except +
         std.vector[double] getVertex(vertex_local_id_t) except +
         std.vector[tetrahedron_global_id_t] getTetTetNeighb(tetrahedron_global_id_t) except +
-        std.vector[tetrahedron_local_id_t] getTetTetNeighb(tetrahedron_local_id_t) except +
+        std.vector[tetrahedron_local_id_t] getTetTetNeighb(tetrahedron_local_id_t, bool) except +
         std.vector[triangle_global_id_t] getTetTriNeighb(tetrahedron_global_id_t) except +
         std.vector[triangle_local_id_t] getTetTriNeighb(tetrahedron_local_id_t) except +
         std.vector[tetrahedron_global_id_t] getTriTetNeighb(triangle_global_id_t) except +
-        std.vector[tetrahedron_local_id_t] getTriTetNeighb(triangle_local_id_t) except +
+        std.vector[tetrahedron_local_id_t] getTriTetNeighb(triangle_local_id_t, bool) except +
         std.vector[double] getBoundMin(bool) except +
         std.vector[double] getBoundMax(bool) except +
         std.vector[double] getTetBarycenter(tetrahedron_global_id_t) except +
@@ -92,6 +92,8 @@ cdef extern from "geom/dist/distmesh.hpp" namespace "steps::dist":
         std.vector[double] getTriBarycenter(triangle_local_id_t) except +
         tetrahedron_global_id_t findTetByPoint(std.vector[double]) except +
         tetrahedron_local_id_t findLocalTetByPoint(std.vector[double]) except +
+        bool isPointInTet(std.vector[double], tetrahedron_global_id_t) except +
+        bool isPointInTet(std.vector[double], tetrahedron_local_id_t) except +
         std.vector[tetrahedron_global_id_t] getTaggedTetrahedrons(compartment_id&) except +
         std.vector[tetrahedron_local_id_t] getTaggedLocalTetrahedrons(compartment_id&, bool) except +
         std.vector[triangle_global_id_t] getTaggedTriangles(patch_id&) except +
@@ -101,9 +103,9 @@ cdef extern from "geom/dist/distmesh.hpp" namespace "steps::dist":
         tetrahedron_local_id_t getLocalIndex(tetrahedron_global_id_t, bool) except +
         triangle_local_id_t getLocalIndex(triangle_global_id_t, bool) except +
         vertex_local_id_t getLocalIndex(vertex_global_id_t, bool) except +
-        GO getGlobalIndex(tetrahedron_local_id_t) except +
-        GO getGlobalIndex(triangle_local_id_t) except +
-        GO getGlobalIndex(vertex_local_id_t) except +
+        tetrahedron_global_id_t getGlobalIndex(tetrahedron_local_id_t) except +
+        triangle_global_id_t getGlobalIndex(triangle_local_id_t) except +
+        vertex_global_id_t getGlobalIndex(vertex_local_id_t) except +
         std.vector[tetrahedron_global_id_t] getAllTetIndices() except +
         std.vector[tetrahedron_local_id_t] getLocalTetIndices(bool) except +
         std.vector[triangle_global_id_t] getAllTriIndices() except +
@@ -113,8 +115,8 @@ cdef extern from "geom/dist/distmesh.hpp" namespace "steps::dist":
         double total_measure(compartment_id) except +
         double local_measure(compartment_id) except +
         std.vector[std.string] getTags(int) except +
-        std.vector[std.vector[std.pair[tetrahedron_global_id_t, double]]] intersect(const double*, int) except+
-        std.vector[std.vector[std.pair[tetrahedron_global_id_t, double]]] intersect(const double*, int, int) except+
+        std.vector[std.vector[std.pair[tetrahedron_local_id_t, double]]] intersect(const double*, int, int) except+
+        std.vector[std.vector[std.pair[tetrahedron_local_id_t, double]]] intersectIndependentSegments(const double*, int, int) except+
 
 
 # ======================================================================================================================
