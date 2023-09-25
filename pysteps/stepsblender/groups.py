@@ -415,16 +415,18 @@ class VesicleGroup(objects.BlenderCollection, state.State):
 
                     surfPos = {}
                     for spec, sdata1 in surfPos1.items():
+                        immob = self._vesicles[vesName].isSpecImmobile(spec)
                         sdata2 = surfPos2[spec]
                         spDct = surfPos.setdefault(spec, {})
                         for sidx1, spos1 in sdata1.items():
                             spos2 = sdata2.get(sidx1, None)
                             if spos2 is not None:
-                                spDct[sidx1] = utils.sphericalInterpolation(spos1, spos2, ratio)
-                            elif ratio <= 0.5:
+                                spDct[sidx1] = spos1 if immob else utils.sphericalInterpolation(
+                                    spos1, spos2, ratio)
+                            elif ratio <= 0.5 or immob:
                                 # Disappearing point specs
                                 spDct[sidx1] = spos1
-                        if ratio > 0.5:
+                        if ratio > 0.5 and not immob:
                             # Appearing point specs
                             for sidx2 in set(sdata2.keys()) - set(sdata1.keys()):
                                 spDct[sidx2] = sdata2[sidx2]

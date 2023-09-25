@@ -31,6 +31,7 @@ except ImportError:
 
 import colorsys
 import numpy as np
+import re
 from typing import Annotated
 
 from . import utils
@@ -930,7 +931,8 @@ class BlenderVesicles(BlenderVesicleRafts):
     def setUp(self, coll, fromScratch):
         super().setUp(coll, fromScratch)
 
-        self._immobileSpecs = set(self.immobileSpecs.split(','))
+        self._immobileSpecs = [re.compile(reg)
+                               for reg in self.immobileSpecs.split(',')] if self.immobileSpecs != '' else []
 
         self._innerObjs = {}
         for idx, obj in self._objects.items():
@@ -958,7 +960,7 @@ class BlenderVesicles(BlenderVesicleRafts):
                 self._specSystems.setdefault(Loc.VES_IN, {})[spec._name] = (self._innerObjs, psys_name)
 
     def isSpecImmobile(self, spec):
-        return spec in self._immobileSpecs
+        return any(reg.match(spec) for reg in self._immobileSpecs)
 
     def _setSpecPositions(self, scene, depg, positions):
         for loc, vesDct in positions.items():
