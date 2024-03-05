@@ -144,7 +144,7 @@ class TestBDiff(unittest.TestCase):
         sim.reset()
         tetcount = int((1.0*NINJECT)/nztets)
         for k in minztets:
-            sim.setTetCount(k, 'X', tetcount)
+            sim.setTetSpecCount(k, 'X', tetcount)
 
         new_dir = './validation_cp/cp/'
         os.makedirs(new_dir, exist_ok=True)
@@ -246,12 +246,15 @@ class TestBDiff(unittest.TestCase):
         if not os.path.exists(new_dir):
             print("ok, then I create it !!!!!!!!")
             os.makedirs(new_dir)
+        seed = int(time.time()%4294967295)
         for j in range(NITER):
             sim.restore('./validation_cp/cp/boundiff')
+            rng.initialize(seed)
+            seed += 1
             for i in range(ntpnts):
                 sim.run(tpnts[i])
                 for k in range(SAMPLE):
-                    res[j, i, k] = sim.getTetCount(int(tetidxs[k]), 'X')
+                    res[j, i, k] = sim.getTetSpecCount(int(tetidxs[k]), 'X')
         #print('%d / %d' % (j + 1, NITER))
 
         itermeans = numpy.mean(res, axis = 0)

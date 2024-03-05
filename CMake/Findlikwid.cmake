@@ -1,10 +1,5 @@
-# =============================================================================
-# Copyright (C) 2016-2021 Blue Brain Project
-#
-# See top-level LICENSE file for details.
-# =============================================================================
-
 # Findlikwid
+# ~~~
 # -------------
 #
 # Find likwid
@@ -26,6 +21,7 @@
 #   likwid_FOUND     - set to true if the library is found
 #   likwid_INCLUDE   - list of required include directories
 #   likwid_LIBRARIES - list of required library directories
+# ~~~
 
 find_path(likwid_INCLUDE_DIR "likwid.h" HINTS "${LIKWID_DIR}/include")
 find_library(likwid_LIBRARIES likwid HINTS "${LIKWID_DIR}/lib")
@@ -33,5 +29,4 @@ find_library(likwid_LIBRARIES likwid HINTS "${LIKWID_DIR}/lib")
 # Checks 'REQUIRED', 'QUIET' and versions.
 include(FindPackageHandleStandardArgs)
 
-find_package_handle_standard_args(likwid
-    REQUIRED_VARS likwid_INCLUDE_DIR likwid_LIBRARIES)
+find_package_handle_standard_args(likwid REQUIRED_VARS likwid_INCLUDE_DIR likwid_LIBRARIES)

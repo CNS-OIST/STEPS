@@ -103,7 +103,10 @@ class TestModelFramework(unittest.TestCase):
         self.v2 = 2e-20
         self.a1 = 3e-14
 
+        self.useMesh = False
         self.useDist = False
+        self.useEField = False
+        self.useVesicle = False
 
     def assertSameData(self, oldDat, newDat, refVal):
         self.assertEqual(len(oldDat), len(newDat))
@@ -112,7 +115,13 @@ class TestModelFramework(unittest.TestCase):
             for orow, nrow in zip(orun, nrun):
                 self.assertEqual(len(orow), len(nrow))
                 for o, n, r in zip(orow, nrow, refVal):
-                    if abs(o + n)/2 > r:
+                    if isinstance(o, dict):
+                        self.assertEqual(set(o.keys()), set(n.keys()))
+                        for k in o.keys():
+                            o1, n1 = o[k], n[k]
+                            if abs(o1 + n1)/2 > r:
+                                self.assertLess(abs(o1 - n1) / ((o1+n1)/2), self.tolerance)
+                    elif abs(o + n)/2 > r:
                         # Uncomment for displaying the difference between datasets
                         # import pylab
                         # if MPI._shouldWrite and abs(o - n) / ((o+n)/2)>= self.tolerance:
@@ -123,6 +132,7 @@ class TestModelFramework(unittest.TestCase):
 
 
     def get_API2_Mdl(self, sas=True):
+        self.sas = sas
         # New interface code
         nmdl = Model.Create()
         r = ReactionManager()
@@ -148,12 +158,6 @@ class TestModelFramework(unittest.TestCase):
             with vsys2:
                 S1 + S2 <r['vs2R2']> 2*S2
                 r['vs2R2'].K = self.r02f, self.r02b
-
-                # TODO Temp to prevent the DistTetOpSplit bug not supporting volume systems with different
-                # numbers of species
-                with CC[...]:
-                    sus1 + S1 <r['vs1CR2']> sus2
-                    r['vs1CR2'].K = self.cr01f, self.cr01b
 
             with ssys:
                 (S1.i + Ex.s <r['ss1R3']> ExS1.s) + S2.o <r['ss1R4']> ExS1S2.s
@@ -245,7 +249,10 @@ class TestModelFramework(unittest.TestCase):
         return ogeom
 
     def init_API2_sim(self, sim):
-        sim.comp1.S1.Count = self.initC1S1
+        if self.useDist:
+            sim.comp1.S1.Count = Params(self.initC1S1, distributionMethod=DistributionMethod.MULTINOMIAL)
+        else:
+            sim.comp1.S1.Count = self.initC1S1
         sim.comp1.S2.Count = self.initC1S2
         sim.comp1.CC[self.sus1, self.sus1].Count = self.initC1CCsus11
         sim.comp1.CC[self.sus1, self.sus2].Count = self.initC1CCsus12
@@ -258,23 +265,23 @@ class TestModelFramework(unittest.TestCase):
         sim.patch.ExS1S2.Count = self.initP1ExS1S2
 
     def init_API1_sim(self, sim):
-        sim.setCompCount('comp1', 'S1', self.initC1S1)
-        sim.setCompCount('comp1', 'S2', self.initC1S2)
-        sim.setCompCount('comp1', 'CCsus11', self.initC1CCsus11)
-        sim.setCompCount('comp1', 'CCsus12', self.initC1CCsus12)
-        sim.setCompCount('comp1', 'CCsus22', self.initC1CCsus22)
-        sim.setCompCount('comp2', 'S1', self.initC2S1)
-        sim.setCompCount('comp2', 'S2', self.initC2S2)
-        sim.setPatchCount('patch', 'Ex', self.initP1Ex)
-        sim.setPatchCount('patch', 'ExS1', self.initP1ExS1)
-        sim.setPatchCount('patch', 'ExS2', self.initP1ExS2)
-        sim.setPatchCount('patch', 'ExS1S2', self.initP1ExS1S2)
+        sim.setCompSpecCount('comp1', 'S1', self.initC1S1)
+        sim.setCompSpecCount('comp1', 'S2', self.initC1S2)
+        sim.setCompSpecCount('comp1', 'CCsus11', self.initC1CCsus11)
+        sim.setCompSpecCount('comp1', 'CCsus12', self.initC1CCsus12)
+        sim.setCompSpecCount('comp1', 'CCsus22', self.initC1CCsus22)
+        sim.setCompSpecCount('comp2', 'S1', self.initC2S1)
+        sim.setCompSpecCount('comp2', 'S2', self.initC2S2)
+        sim.setPatchSpecCount('patch', 'Ex', self.initP1Ex)
+        sim.setPatchSpecCount('patch', 'ExS1', self.initP1ExS1)
+        sim.setPatchSpecCount('patch', 'ExS2', self.initP1ExS2)
+        sim.setPatchSpecCount('patch', 'ExS1S2', self.initP1ExS1S2)
 
     def assertAlmostEqualWThresh(self, v1, v2, thresh):
         mean = (v1 + v2) / 2
         self.assertAlmostEqual(v1, v2, delta=abs(thresh * mean))
 
-    def _test_API2_SimPathGetSyntax(self, sim, init=True, usingMesh=False, extents=None):
+    def _test_API2_SimPathGetSyntax(self, sim, init=True, extents=None):
         if init:
             self.init_API2_sim(sim)
 
@@ -288,7 +295,8 @@ class TestModelFramework(unittest.TestCase):
         # Solver global values
         if not self.useDist:
             self.assertTrue(sim.A0 > 0)
-        if usingMesh:
+
+        if self.useMesh and self.useEField:
             self.assertEqual(sim.EfieldDT, self.efielddt)
             self.assertEqual(sim.Temp, self.solvTemp)
 
@@ -296,10 +304,6 @@ class TestModelFramework(unittest.TestCase):
         specData1 = [
             (sim.comp1.S1, self.initC1S1, self.v1),
             (sim.comp1.S2, self.initC1S2, self.v1),
-            (sim.comp1.CC[sus1, sus1], self.initC1CCsus11, self.v1),
-            (sim.comp1.CC[sus1, sus2], self.initC1CCsus12, self.v1),
-            (sim.comp1.CC[sus2, sus2], self.initC1CCsus22, self.v1),
-            (sim.comp1.CC.sus2, self.initC1CCsus12 + 2*self.initC1CCsus22, self.v1),
             (sim.comp2.S1, self.initC2S1, self.v2),
             (sim.comp2.S2, self.initC2S2, self.v2),
         ]
@@ -328,6 +332,23 @@ class TestModelFramework(unittest.TestCase):
                     self.assertAlmostEqualWThresh(path.Amount, cnt / Avogad, self.tolerance)
                     self.assertFalse(path.Clamped)
 
+        # Complexes
+        complexData1 = [
+            (sim.comp1.CC[sus1, sus1], self.initC1CCsus11, self.v1),
+            (sim.comp1.CC[sus1, sus2], self.initC1CCsus12, self.v1),
+            (sim.comp1.CC[sus2, sus2], self.initC1CCsus22, self.v1),
+            (sim.comp1.CC.sus2, self.initC1CCsus12 + 2*self.initC1CCsus22, self.v1),
+        ]
+        for path, cnt, vol in complexData1:
+            with self.subTest(path=path, cnt=cnt, vol=vol):
+                pathCnt = path.Count
+                pathCnc = path.Conc
+                if MPI.rank == 0 or not self.useDist:
+                    self.assertEqual(pathCnt, cnt)
+                    self.assertAlmostEqualWThresh(pathCnc, cnt / Avogad / (1e3 * vol), self.tolerance)
+                if not self.useDist:
+                    self.assertAlmostEqualWThresh(path.Amount, cnt / Avogad, self.tolerance)
+
         # Reactions
         reacData = [
             (sim.comp1.vs1R1, 'fwd', self.r01f, self.initC1S1 * self.initC1S2, 1e3 * self.v1 * Avogad),
@@ -354,13 +375,14 @@ class TestModelFramework(unittest.TestCase):
                     self.assertEqual(path.K, k)
                     self.assertTrue(path.Active)
                     self.assertEqual(path.Extent, extent)
-                    if not usingMesh:
+                    if not self.useMesh:
                         self.assertAlmostEqualWThresh(path.H, h, self.tolerance)
                         self.assertAlmostEqualWThresh(path.C, k / vs, self.tolerance)
                         self.assertAlmostEqualWThresh(path.A, h * k / vs, self.tolerance)
-            self.assertEqual(set(sim.comp1.vs1CR1['fwd'].K), set([self.cr01f, 2 * self.cr01f]))
-            self.assertEqual(set(sim.comp1.vs1CR1['bkw'].K), set([self.cr01b, 2 * self.cr01b]))
-        if usingMesh:
+            if self.sas:
+                self.assertEqual(set(sim.comp1.vs1CR1['fwd'].K), set([self.cr01f, 2 * self.cr01f]))
+                self.assertEqual(set(sim.comp1.vs1CR1['bkw'].K), set([self.cr01b, 2 * self.cr01b]))
+        if self.useMesh and self.useEField:
             if not self.useDist:
                 self.assertTrue(sim.patch.ss1RVDep01['fwd'].Active)
             self.assertFalse(sim.diffb.S1.DiffusionActive)
@@ -372,7 +394,7 @@ class TestModelFramework(unittest.TestCase):
             sum(sim.patch.MATCH('Ex*').Count), 
             self.initP1Ex + self.initP1ExS1 + self.initP1ExS2 + self.initP1ExS1S2
         )
-        if usingMesh:
+        if self.useMesh:
             tet = self.newGeom.comp1.tets[0]
             if not self.useDist:
                 self.assertEqual(sim.TET(tet).Vol, tet.Vol)
@@ -437,14 +459,15 @@ class TestModelFramework(unittest.TestCase):
                     sim.patch.Area,
                     self.tolerance
                 )
-            for v in sim.VERTS(self.newGeom.membrane.tris[0].verts).V:
-                self.assertAlmostEqual(v, self.membPot)
-            self.assertAlmostEqual(
-                sim.VERT(self.newGeom.membrane.tris[0].verts[0]).V,
-                self.membPot
-            )
-            if not self.useDist:
-                self.assertFalse(sim.VERT(self.newGeom.membrane.tris[0].verts[0]).VClamped)
+            if self.useEField:
+                for v in sim.VERTS(self.newGeom.membrane.tris[0].verts).V:
+                    self.assertAlmostEqual(v, self.membPot)
+                self.assertAlmostEqual(
+                    sim.VERT(self.newGeom.membrane.tris[0].verts[0]).V,
+                    self.membPot
+                )
+                if not self.useDist:
+                    self.assertFalse(sim.VERT(self.newGeom.membrane.tris[0].verts[0]).VClamped)
 
             sim.TRIS()
             sim.VERTS()
@@ -462,17 +485,17 @@ class TestModelFramework(unittest.TestCase):
             with self.assertRaises(SimPathInvalidPath):
                 sim.membrane.VERT(0).V
 
-
             tri1 = self.newGeom.patch.tris[0]
             tet1 = [tet for tet in tri1.tetNeighbs if tet in self.newGeom.comp1.tets][0]
             tet2 = [tet for tet in tri1.tetNeighbs if tet in self.newGeom.comp2.tets][0]
 
-            self.assertEqual(sim.TET(tet1).V, self.membPot)
-            if not self.useDist:
-                self.assertEqual(sim.TET(tet1).VClamped, False)
-            self.assertAlmostEqual(sim.TRI(tri1).V, self.membPot)
-            if not self.useDist:
-                self.assertEqual(sim.TRI(tri1).VClamped, False)
+            if self.useEField:
+                self.assertEqual(sim.TET(tet1).V, self.membPot)
+                if not self.useDist:
+                    self.assertEqual(sim.TET(tet1).VClamped, False)
+                self.assertAlmostEqual(sim.TRI(tri1).V, self.membPot)
+                if not self.useDist:
+                    self.assertEqual(sim.TRI(tri1).VClamped, False)
 
             if not self.useDist:
                 # Species
@@ -520,14 +543,15 @@ class TestModelFramework(unittest.TestCase):
                         self.assertAlmostEqualWThresh(path.C, k / vs, self.tolerance)
                         self.assertAlmostEqualWThresh(path.A, h * k / vs, self.tolerance)
 
-                # Currents
-                ohmcurr = sim.TRI(tri1).Chan1_Ohm_I.I
-                ghkcurr = sim.TRI(tri1).Chan1_GHK_I.I
-                self.assertAlmostEqualWThresh(sim.TRI(tri1).I, ohmcurr + ghkcurr, self.tolerance)
+                if self.useEField:
+                    # Currents
+                    ohmcurr = sim.TRI(tri1).Chan1_Ohm_I.I
+                    ghkcurr = sim.TRI(tri1).Chan1_GHK_I.I
+                    self.assertAlmostEqualWThresh(sim.TRI(tri1).I, ohmcurr + ghkcurr, self.tolerance)
 
-                # VDepSReac
-                self.assertTrue(sim.patch.ss1RVDep01['fwd'].Active)
-                self.assertTrue(sim.TRI(tri1).ss1RVDep01['fwd'].Active)
+                    # VDepSReac
+                    self.assertTrue(sim.patch.ss1RVDep01['fwd'].Active)
+                    self.assertTrue(sim.TRI(tri1).ss1RVDep01['fwd'].Active)
 
                 #ROI
                 self.assertEqual(sim.comp1ROI.Vol, sim.comp1.Vol)
@@ -552,10 +576,10 @@ class TestModelFramework(unittest.TestCase):
         with self.assertRaises(SimPathInvalidPath):
             sim.comp1.S1['test'].Count
 
-    def _test_API2_SimPathSetSyntax(self, sim, usingMesh=False):
+    def _test_API2_SimPathSetSyntax(self, sim):
         self.init_API2_sim(sim)
     
-        if usingMesh:
+        if self.useMesh:
             self.c1DS1 *= 0.75
             self.c1DS2 *= 1.234
             self.c2DS1 *= 2.654
@@ -587,7 +611,7 @@ class TestModelFramework(unittest.TestCase):
         self.initP1ExS1 = int(self.initP1ExS1 * 3.214)
 
         # Solver global values
-        if usingMesh:
+        if self.useMesh and self.useEField:
             sim.Temp = self.solvTemp * 1.245
             self.assertAlmostEqualWThresh(sim.Temp, self.solvTemp * 1.245, self.tolerance)
             sim.Temp = self.solvTemp
@@ -620,7 +644,7 @@ class TestModelFramework(unittest.TestCase):
             self.assertTrue(sim.comp1.S1.Clamped)
             self.assertTrue(sim.patch.Ex.Clamped)
 
-        if usingMesh:
+        if self.useMesh:
             sus1, sus2 = self.newMdl.sus1, self.newMdl.sus2
             if not self.useDist:
                 sim.comp1.Diffc1S1.D = self.c1DS1
@@ -692,12 +716,13 @@ class TestModelFramework(unittest.TestCase):
                 self.assertFalse(sim.TET(tet1).Diffc1S1.Active)
                 sim.TET(tet1).Diffc1S1.Active = True
 
-                sim.TET(tet1).V = self.membPot * 1.123
-                self.assertAlmostEqualWThresh(sim.TET(tet1).V, self.membPot * 1.123, self.tolerance)
-                sim.TET(tet1).V = self.membPot
-                sim.TET(tet1).VClamped = True
-                self.assertTrue(sim.TET(tet1).VClamped)
-                sim.TET(tet1).VClamped = False
+                if self.useEField:
+                    sim.TET(tet1).V = self.membPot * 1.123
+                    self.assertAlmostEqualWThresh(sim.TET(tet1).V, self.membPot * 1.123, self.tolerance)
+                    sim.TET(tet1).V = self.membPot
+                    sim.TET(tet1).VClamped = True
+                    self.assertTrue(sim.TET(tet1).VClamped)
+                    sim.TET(tet1).VClamped = False
 
             currVal = sim.TRI(tri1).Ex.Count
             sim.TRI(tri1).Ex.Count = 124
@@ -725,36 +750,48 @@ class TestModelFramework(unittest.TestCase):
                 # self.assertFalse(sim.TRI(tri1).DiffpatchEx.Active)
                 # sim.TRI(tri1).DiffpatchEx.Active = True
 
-                sim.TRI(tri1).V = self.membPot * 1.598
-                self.assertAlmostEqualWThresh(sim.TRI(tri1).V, self.membPot * 1.598, self.tolerance)
-                sim.TRI(tri1).V = self.membPot
-                sim.TRI(tri1).VClamped = True
-                self.assertTrue(sim.TRI(tri1).VClamped)
-                sim.TRI(tri1).VClamped = False
+                if self.useEField:
+                    sim.TRI(tri1).V = self.membPot * 1.598
+                    self.assertAlmostEqualWThresh(sim.TRI(tri1).V, self.membPot * 1.598, self.tolerance)
+                    sim.TRI(tri1).V = self.membPot
+                    sim.TRI(tri1).VClamped = True
+                    self.assertTrue(sim.TRI(tri1).VClamped)
+                    sim.TRI(tri1).VClamped = False
 
-                sim.TRI(tri1).IClamp = 1.234e-7
-                self.assertEqual(sim.TRI(tri1).IClamp, 1.234e-7)
-                sim.TRI(tri1).IClamp = 0
+                    sim.TRI(tri1).IClamp = 1.234e-7
+                    self.assertEqual(sim.TRI(tri1).IClamp, 1.234e-7)
+                    sim.TRI(tri1).IClamp = 0
 
-                sim.TRI(tri1).ss1RVDep01['fwd'].Active = False
-                self.assertFalse(sim.TRI(tri1).ss1RVDep01['fwd'].Active)
-                sim.TRI(tri1).ss1RVDep01['fwd'].Active = True
+                    sim.TRI(tri1).ss1RVDep01['fwd'].Active = False
+                    self.assertFalse(sim.TRI(tri1).ss1RVDep01['fwd'].Active)
+                    sim.TRI(tri1).ss1RVDep01['fwd'].Active = True
+
+                    sim.VERT(vert1).V = self.membPot * 1.2468
+                    self.assertAlmostEqualWThresh(sim.VERT(vert1).V, self.membPot * 1.2468, self.tolerance)
+                    sim.VERT(vert1).V = self.membPot
+                    sim.VERT(vert1).VClamped = True
+                    self.assertTrue(sim.VERT(vert1).VClamped)
+                    sim.VERT(vert1).VClamped = False
+
+            if self.useEField:
+                sim.VERT(vert1).IClamp = 1.7852e-7
+                IclampVal = sim.VERT(vert1).IClamp
+                self.assertAlmostEqualWThresh(IclampVal, 1.7852e-7, self.tolerance)
+                sim.VERT(vert1).IClamp = 0
+
+                sim.membrane.Res = Params(0.1, self.membPot)
+                res, erev = sim.membrane.Res
+                self.assertEqual(res, 0.1)
+                self.assertEqual(erev, self.membPot)
 
                 sim.TRI(tri1).Capac = self.membCap * 1.254
-                # self.assertAlmostEqualWThresh(sim.TRI(tri1).Capac, self.membCap * 1.254, self.tolerance)
-            
-                sim.VERT(vert1).V = self.membPot * 1.2468
-                self.assertAlmostEqualWThresh(sim.VERT(vert1).V, self.membPot * 1.2468, self.tolerance)
-                sim.VERT(vert1).V = self.membPot
-                sim.VERT(vert1).VClamped = True
-                self.assertTrue(sim.VERT(vert1).VClamped)
-                sim.VERT(vert1).VClamped = False
-            sim.VERT(vert1).IClamp = 1.7852e-7
-            # TODO Remove condition after changes from vesicle branch have been merged
-            IclampVal = sim.VERT(vert1).IClamp
-            if MPI.rank == 0 or not self.useDist:
-                self.assertAlmostEqualWThresh(IclampVal, 1.7852e-7, self.tolerance)
-            sim.VERT(vert1).IClamp = 0
+                if self.useDist:
+                    self.assertAlmostEqualWThresh(sim.TRI(tri1).Capac, self.membCap * 1.254, self.tolerance)
+
+                    sim.TRI(tri1).Res = Params(1.561, self.membPot * 1.456)
+                    res, erev = sim.TRI(tri1).Res
+                    self.assertEqual(res, 1.561)
+                    self.assertEqual(erev, self.membPot * 1.456)
 
             if not self.useDist:
                 # ROI
@@ -791,9 +828,10 @@ class TestModelFramework(unittest.TestCase):
                 # self.assertFalse(sim.comp1ROI.Diffc1S1.Active)
                 sim.comp1ROI.Diffc1S1.Active = True
 
-                sim.patchROI.ss1RVDep01['fwd'].Active = False
-                # self.assertFalse(sim.patchROI.ss1RVDep01['fwd'].Active)
-                sim.patchROI.ss1RVDep01['fwd'].Active = True
+                if self.useEField:
+                    sim.patchROI.ss1RVDep01['fwd'].Active = False
+                    # self.assertFalse(sim.patchROI.ss1RVDep01['fwd'].Active)
+                    sim.patchROI.ss1RVDep01['fwd'].Active = True
 
 
         if not self.useDist:
@@ -809,7 +847,7 @@ class TestModelFramework(unittest.TestCase):
             self.assertEqual(sim.patch.ss1R4['bkw'].Active, False)
             self.assertEqual(sim.patch.ss1R6['fwd'].Active, True)
             self.assertEqual(sim.patch.ss1R6['bkw'].Active, False)
-            sim.comp1.ALL(Species).Clamped = [True, False, False] if usingMesh else [True, False]
+            sim.comp1.ALL(Species).Clamped = [True, False, False] if self.useMesh else [True, False]
             sim.patch.ALL(Species).Clamped = [True, False, True, False]
 
             sim.comp1.vs1CR1['fwd'].K = CompDepRate(lambda s: s.Count(self.newMdl.sus1) * 1234, [self.newMdl.CC])
@@ -818,15 +856,11 @@ class TestModelFramework(unittest.TestCase):
 
             # Setting several values using special methods
             sim.comp1.ALL(Species).Clamped = False
-        
-            if usingMesh:
-                sim.membrane.Res = Params(1, self.membPot)
-
 
             sim.ALL(Compartment, Patch).ALL(Species).Clamped = False
             sim.ALL(Compartment, Patch).ALL(Reaction).Active = True
             # Check that all dependent values are correct
-            self._test_API2_SimPathGetSyntax(sim, init=False, usingMesh=usingMesh)
+            self._test_API2_SimPathGetSyntax(sim, init=False)
 
         # Test bad syntax
         with self.assertRaises(SimPathInvalidPath):
@@ -856,9 +890,10 @@ class TestModelFramework(unittest.TestCase):
         with self.assertRaises(Exception):
             sim.comp1.CC.sus1.Count = 10
 
-        with self.assertRaises(Exception):
-            # patch does not contain S1
-            sim.ALL().S1.Count
+        if not self.useVesicle:
+            with self.assertRaises(Exception):
+                # patch does not contain S1
+                sim.ALL().S1.Count
         with self.assertRaises(SimPathSolverMissingMethod):
             # Cannot get the count of reactions
             sim.comp1.ALL(Reaction).Count
@@ -868,7 +903,7 @@ class TestModelFramework(unittest.TestCase):
             sp.Count
         self.newGeom.comp1.name = 'comp1'
         with self.assertRaises(SimPathInvalidPath):
-            if usingMesh:
+            if self.useMesh:
                 sim.comp1.S95.Count
             else:
                 sim.comp1.ALL(Diffusion).D
@@ -917,6 +952,9 @@ class TetTestModelFramework(TestModelFramework):
         self.solvTemp = 300
 
         self.patchz = 2e-6
+        self.useMesh = True
+        self.useEField = True
+        self.useVesicle = False
 
     def get_API2_Mdl(self, sas=True):
         # new model
@@ -926,21 +964,23 @@ class TetTestModelFramework(TestModelFramework):
 
         self.c1DCC = CompDepDcst(lambda s: s.Count(nmdl.sus2) * self.CCmult, [nmdl.CC], name='c1DCC')
 
-        self.rvdep01f = VDepRate(lambda v: 2.0, vrange=self.vrange, name='rvdep01f')
-        self.rvdep01b = VDepRate(lambda v: 1.0, vrange=self.vrange, name='rvdep01b')
+        if self.useEField:
+            self.rvdep01f = VDepRate(lambda v: 2.0, vrange=self.vrange, name='rvdep01f')
+            self.rvdep01b = VDepRate(lambda v: 1.0, vrange=self.vrange, name='rvdep01b')
 
         with nmdl:
 
-            chanop1, chanop2, chancl = SubUnitState.Create()
-            Chan1 = Channel.Create([chanop1, chanop2, chancl])
+            if self.useEField:
+                chanop1, chanop2, chancl = SubUnitState.Create()
+                Chan1 = Channel.Create([chanop1, chanop2, chancl])
 
-            nmdl.S3.valence = 1
-            with nmdl.ssys, Chan1[...]:
-                chancl.s <r['ss1RVDep01']> chanop1.s
-                r['ss1RVDep01'].K = self.rvdep01f, self.rvdep01b
+                nmdl.S3.valence = 1
+                with nmdl.ssys, Chan1[...]:
+                    chancl.s <r['ss1RVDep01']> chanop1.s
+                    r['ss1RVDep01'].K = self.rvdep01f, self.rvdep01b
 
-                Chan1_Ohm_I = OhmicCurr.Create(Chan1[chanop1 | chanop2], self.Chan1_G, self.Chan1_rev)
-                Chan1_GHK_I = GHKCurr.Create(Chan1[chanop1], nmdl.S3, self.Chan1_P, computeflux=True)
+                    Chan1_Ohm_I = OhmicCurr.Create(Chan1[chanop1 | chanop2], self.Chan1_G, self.Chan1_rev)
+                    Chan1_GHK_I = GHKCurr.Create(Chan1[chanop1], nmdl.S3, self.Chan1_P, computeflux=True)
 
             with nmdl.vsys1:
                 Diffc1S1, Diffc1S2, Diffc1S3, Diffc1CC = Diffusion.Create(
@@ -966,20 +1006,21 @@ class TetTestModelFramework(TestModelFramework):
         # old model
         omdl = super().get_API1_Mdl()
 
-        omdl.getSpec('S3').setValence(1)
-        Chan1 = smodel.Chan('Chan1', omdl)
-        chanop1 = smodel.ChanState('chanop1', omdl, Chan1)
-        chanop2 = smodel.ChanState('chanop2', omdl, Chan1)
-        chancl = smodel.ChanState('chancl', omdl, Chan1)
-        ss1RVDep01_fwd = smodel.VDepSReac('ss1RVDep01_fwd', omdl.getSurfsys('ssys'), slhs=[chancl],
-                srhs=[chanop1], k=self.rvdep01f._func, vrange=self.rvdep01f.vrange)
-        ss1RVDep01_bkw = smodel.VDepSReac('ss1RVDep01_bkw', omdl.getSurfsys('ssys'), srhs=[chancl],
-                slhs=[chanop1], k=self.rvdep01b._func, vrange=self.rvdep01b.vrange)
+        if self.useEField:
+            omdl.getSpec('S3').setValence(1)
+            Chan1 = smodel.Chan('Chan1', omdl)
+            chanop1 = smodel.ChanState('chanop1', omdl, Chan1)
+            chanop2 = smodel.ChanState('chanop2', omdl, Chan1)
+            chancl = smodel.ChanState('chancl', omdl, Chan1)
+            ss1RVDep01_fwd = smodel.VDepSReac('ss1RVDep01_fwd', omdl.getSurfsys('ssys'), slhs=[chancl],
+                    srhs=[chanop1], k=self.rvdep01f._func, vrange=self.rvdep01f.vrange)
+            ss1RVDep01_bkw = smodel.VDepSReac('ss1RVDep01_bkw', omdl.getSurfsys('ssys'), srhs=[chancl],
+                    slhs=[chanop1], k=self.rvdep01b._func, vrange=self.rvdep01b.vrange)
 
-        Chan1_Ohm_I_1 = smodel.OhmicCurr('Chan1_Ohm_I_1', omdl.getSurfsys('ssys'), chanstate=chanop1, g=self.Chan1_G, erev=self.Chan1_rev)
-        Chan1_Ohm_I_2 = smodel.OhmicCurr('Chan1_Ohm_I_2', omdl.getSurfsys('ssys'), chanstate=chanop2, g=self.Chan1_G, erev=self.Chan1_rev)
-        Chan1_GHK_I = smodel.GHKcurr('Chan1_GHK_I', omdl.getSurfsys('ssys'), chanop1, omdl.getSpec('S3'), computeflux = True)
-        Chan1_GHK_I.setP(self.Chan1_P)
+            Chan1_Ohm_I_1 = smodel.OhmicCurr('Chan1_Ohm_I_1', omdl.getSurfsys('ssys'), chanstate=chanop1, g=self.Chan1_G, erev=self.Chan1_rev)
+            Chan1_Ohm_I_2 = smodel.OhmicCurr('Chan1_Ohm_I_2', omdl.getSurfsys('ssys'), chanstate=chanop2, g=self.Chan1_G, erev=self.Chan1_rev)
+            Chan1_GHK_I = smodel.GHKcurr('Chan1_GHK_I', omdl.getSurfsys('ssys'), chanop1, omdl.getSpec('S3'), computeflux = True)
+            Chan1_GHK_I.setP(self.Chan1_P)
 
         Diffc1S1 = smodel.Diff('Diffc1S1', omdl.getVolsys('vsys1'), omdl.getSpec('S1'))
         Diffc1S1.setDcst(self.c1DS1)
@@ -1034,10 +1075,11 @@ class TetTestModelFramework(TestModelFramework):
                 patchROI = ROI.Create(patch.tris)
                 vertROI = ROI.Create(patch.tris.verts)
 
-                membrane = Membrane.Create([patch, patch2], opt_method = 1)
+                if self.useEField:
+                    membrane = Membrane.Create([patch, patch2], opt_method = 1)
 
                 sdiffb = SDiffBoundary.Create(patch.tris.edges & patch2.tris.edges, patch, patch2)
-            else:
+            elif self.useEField:
                 membrane = Membrane.Create([patch], capacitance=self.membCap)
                 membrane2 = Membrane.Create([patch2], capacitance=self.membCap)
 
@@ -1094,7 +1136,8 @@ class TetTestModelFramework(TestModelFramework):
             bars = list(bars1 & bars2)
             sdiffb = sgeom.SDiffBoundary('sdiffb', omesh, bars, [patch, patch2])
 
-        membrane = sgeom.Memb('membrane', omesh, [patch, patch2], opt_method = 1)
+        if self.useEField:
+            membrane = sgeom.Memb('membrane', omesh, [patch, patch2], opt_method = 1)
 
         diffb = sgeom.DiffBoundary('diffb', omesh, omesh.getTetTriNeighb(center1))
 
@@ -1108,32 +1151,28 @@ class TetTestModelFramework(TestModelFramework):
         super().init_API2_sim(sim)
         sim.comp1.S3.Count = self.initC1S3
         sim.comp2.S3.Count = self.initC2S3
-        sim.membrane.Potential = self.membPot
-        if not self.useDist:
-            sim.membrane.Capac = self.membCap
-            sim.membrane.VolRes = self.volRes
-        else:
-            sim.membrane2.Potential = self.membPot
-        sim.Temp = self.solvTemp
-
-        sim.patch.Chan1[sim.model.chancl].Count = self.initChan1Cl
+        if self.useEField:
+            sim.membrane.Potential = self.membPot
+            if not self.useDist:
+                sim.membrane.Capac = self.membCap
+                sim.membrane.VolRes = self.volRes
+            else:
+                sim.membrane2.Potential = self.membPot
+            sim.Temp = self.solvTemp
+            sim.patch.Chan1[sim.model.chancl].Count = self.initChan1Cl
 
     def init_API1_sim(self, sim):
         super().init_API1_sim(sim)
-        sim.setCompCount('comp1', 'S3', self.initC1S3)
-        sim.setCompCount('comp2', 'S3', self.initC2S3)
-        sim.setMembPotential('membrane', self.membPot)
-        sim.setMembCapac('membrane', self.membCap)
-        sim.setMembVolRes('membrane', self.volRes)
-        sim.setTemp(self.solvTemp)
+        sim.setCompSpecCount('comp1', 'S3', self.initC1S3)
+        sim.setCompSpecCount('comp2', 'S3', self.initC2S3)
 
-        sim.setPatchCount('patch', 'chancl', self.initChan1Cl)
+        if self.useEField:
+            sim.setMembPotential('membrane', self.membPot)
+            sim.setMembCapac('membrane', self.membCap)
+            sim.setMembVolRes('membrane', self.volRes)
+            sim.setTemp(self.solvTemp)
 
-    def _test_API2_SimPathSetSyntax(self, sim, usingMesh=True):
-        super()._test_API2_SimPathSetSyntax(sim, usingMesh=True)
-
-    def _test_API2_SimPathGetSyntax(self, sim, init=True, usingMesh=True, extents=None):
-        super()._test_API2_SimPathGetSyntax(sim, init=init, usingMesh=True, extents=extents)
+            sim.setPatchSpecCount('patch', 'chancl', self.initChan1Cl)
 
 
 class DistTetTestModelFramework(TetTestModelFramework):
@@ -1149,3 +1188,252 @@ class DistTetTestModelFramework(TetTestModelFramework):
     def get_API1_MeshOnly(self):
         return smeshio.importGmsh(os.path.join(FILEDIR, '../geom_test/meshes/cyl_len10_diam1.msh'), 1e-6)[0]
 
+
+class VesTestModelFramework(TetTestModelFramework):
+
+    def setUp(self):
+        TetTestModelFramework.setUp(self)
+
+        self.useEField = False
+        self.useVesicle = True
+
+        # Model parameters
+        #TODO
+        self.ves1Diam = 5e-8
+        self.ves1Dcst = 1e-12
+
+        self.ves2Diam = 5e-8
+        self.ves2Dcst = 1e-11
+
+        self.raft1Diam = 1e-8
+        self.raft1Dcst = 1e-12
+
+        self.ves1bind1Kcst = 1e10
+
+        self.ves2bind1Kcst = 1e20
+        self.ves2bind2Kcst = 1e20
+        self.ves2unbind1Kcst = 0.04
+        self.ves2unbind2Kcst = 0.01
+        self.ves2unbind3Kcst = 0.05
+
+        self.ves1sreac1fwd = 3
+        self.ves1sreac1bkw = 2
+        self.exo1Kcst = 10
+
+        self.endo1Kcst = 1.5
+        self.rendo1Kcst = 3
+
+        self.nbves1init = 10
+        self.nbraftinit = 10
+
+        # Geom parameters
+        #TODO
+
+
+    def get_API2_Mdl(self, sas=True):
+        # new model
+        nmdl = super().get_API2_Mdl(sas=sas)
+
+        r = ReactionManager()
+
+        #TODO
+        with nmdl:
+            S4 = Species.Create()
+            L1, L2, L3 = LinkSpecies.Create()
+
+            vssys = VesicleSurfaceSystem.Create()
+            rssys = RaftSurfaceSystem.Create()
+
+            ves1 = Vesicle.Create(self.ves1Diam, self.ves1Dcst, vssys)
+            ves2 = Vesicle.Create(self.ves2Diam, self.ves2Dcst, vssys)
+            
+            raft1 = Raft.Create(self.raft1Diam, self.raft1Dcst, rssys)
+
+            with nmdl.vsys1:
+                ves1bind1 = VesicleBind.Create(
+                    (ves1, ves1), (nmdl.S1, nmdl.S1), (L1, L1),
+                    0, self.ves1Diam,
+                    kcst=self.ves1bind1Kcst,
+                )
+
+                ves2bind1 = VesicleBind.Create(
+                    (ves2, ves2), (nmdl.S1, nmdl.S1), (L1, L1),
+                    0, self.ves1Diam,
+                    kcst=self.ves2bind1Kcst,
+                    immobilization=IMMOBILIZING
+                )
+                ves2bind2 = VesicleBind.Create(
+                    (ves2, ves2), (nmdl.S1, nmdl.S1), (L2, L3),
+                    0, self.ves1Diam,
+                    kcst=self.ves2bind2Kcst,
+                    immobilization=IMMOBILIZING
+                )
+                ves2unbind1 = VesicleUnbind.Create(
+                    (ves2, ves2), (L1, L1), (nmdl.S2, nmdl.S2),
+                    kcst=self.ves2unbind1Kcst
+                )
+                ves2unbind2 = VesicleUnbind.Create(
+                    (ves2, ves2), (L1, L1), (nmdl.S3, nmdl.S3),
+                    kcst=self.ves2unbind2Kcst
+                )
+                ves2unbind3 = VesicleUnbind.Create(
+                    (ves2, ves2), (L3, L2), (nmdl.S4, nmdl.S4),
+                    kcst=self.ves2unbind3Kcst
+                )
+
+            with nmdl.vssys:
+                nmdl.S1.v <r['ves1sreac1']> nmdl.S2.v
+                r['ves1sreac1'].K = self.ves1sreac1fwd, self.ves1sreac1bkw
+
+                exo1 = Exocytosis.Create(self.exo1Kcst, deps=nmdl.S1, raft=raft1)
+
+            with nmdl.ssys:
+                endo1 = Endocytosis.Create(ves1)
+                endo1.K = self.endo1Kcst
+
+            with rssys:
+                rendo1 = RaftEndocytosis.Create(ves1)
+                rendo1.K = self.rendo1Kcst
+
+        return nmdl
+
+    def get_API1_Mdl(self):
+        # old model
+        omdl = super().get_API1_Mdl()
+
+        S1 = omdl.getSpec('S1')
+        S2 = omdl.getSpec('S2')
+
+        S4 = smodel.Spec('S4', omdl)
+
+        L1 = smodel.LinkSpec('L1', omdl)
+        L2 = smodel.LinkSpec('L2', omdl)
+        L3 = smodel.LinkSpec('L3', omdl)
+
+        vssys = smodel.VesSurfsys('vssys', omdl)
+        rssys = smodel.Raftsys('rssys', omdl)
+
+        ves1 = smodel.Vesicle('ves1', omdl, self.ves1Diam, self.ves1Dcst)
+        ves1.addVesSurfsys('vssys')
+
+        ves2 = smodel.Vesicle('ves2', omdl, self.ves2Diam, self.ves2Dcst)
+        ves2.addVesSurfsys('vssys')
+
+        raft1 = smodel.Raft('raft1', omdl, self.raft1Diam, self.raft1Dcst)
+        raft1.addRaftsys('rssys')
+
+        ves1bind1 = smodel.VesBind('ves1bind1', omdl.getVolsys('vsys1'), 
+            ves1, S1,
+            ves1, S1,
+            L1, L1, self.ves1Diam, 0, kcst=self.ves1bind1Kcst
+        )
+
+        ves2bind1 = smodel.VesBind('ves2bind1', omdl.getVolsys('vsys1'), 
+            ves2, S1,
+            ves2, S1,
+            L1, L1, self.ves1Diam, 0, kcst=self.ves2bind1Kcst, immobilization=IMMOBILIZING
+        )
+
+        ves2bind2 = smodel.VesBind('ves2bind2', omdl.getVolsys('vsys1'), 
+            ves2, S1,
+            ves2, S1,
+            L2, L3, self.ves1Diam, 0, kcst=self.ves2bind2Kcst, immobilization=IMMOBILIZING
+        )
+
+        ves2unbind1 = smodel.VesUnbind('ves2unbind1', omdl.getVolsys('vsys1'), 
+            L1, L1,
+            ves2, omdl.getSpec('S2'),
+            ves2, omdl.getSpec('S2'),
+            kcst=self.ves2unbind1Kcst
+        )
+
+        ves2unbind2 = smodel.VesUnbind('ves2unbind2', omdl.getVolsys('vsys1'), 
+            L1, L1,
+            ves2, omdl.getSpec('S3'),
+            ves2, omdl.getSpec('S3'),
+            kcst=self.ves2unbind2Kcst
+        )
+
+        ves2unbind3 = smodel.VesUnbind('ves2unbind3', omdl.getVolsys('vsys1'), 
+            L3, L2,
+            ves2, omdl.getSpec('S4'),
+            ves2, omdl.getSpec('S4'),
+            kcst=self.ves2unbind3Kcst
+        )
+
+        ves1sreac1fwd = smodel.VesSReac('ves1sreac1fwd', vssys, vlhs=[S1], vrhs=[S2], kcst=self.ves1sreac1fwd)
+        ves1sreac1bkw = smodel.VesSReac('ves1sreac1bkw', vssys, vlhs=[S2], vrhs=[S1], kcst=self.ves1sreac1bkw)
+
+        exo1 = smodel.Exocytosis('exo1', vssys, deps=[S1], raft=raft1, kcst=self.exo1Kcst)
+
+        endo1 = smodel.Endocytosis('endo1', omdl.getSurfsys('ssys'), ves1, kcst=self.endo1Kcst)
+
+        rendo1 = smodel.RaftEndocytosis('rendo1', rssys, ves1, kcst=self.rendo1Kcst)
+
+        #TODO
+
+        return omdl
+
+    def get_API2_Geom(self, nmdl):
+
+        nmesh = super().get_API2_Geom(nmdl)
+
+        with nmesh.patch:
+            endoZone1 = EndocyticZone.Create(nmesh.patch.tris[0:2])
+
+        #TODO
+
+        return nmesh
+
+    def get_API1_Geom(self, omdl):
+
+        omesh = super().get_API1_Geom(omdl)
+
+        #TODO
+
+        return omesh
+
+    def init_API2_sim(self, sim):
+        super().init_API2_sim(sim)
+
+        # Add vesicles
+        sim.comp1.ves1.Count = self.nbves1init
+
+        lst = VesicleList(sim.comp1.ves1)
+
+        sim.VESICLES(lst)('surf').S1.Count = 100
+
+        # Add rafts
+        tri = sim.patch.tris[0]
+        raft1_1 = sim.TRI(tri).addRaft('raft1')
+
+        sim.patch.raft1.Count = self.nbraftinit
+        sim.RAFTS(sim.patch.raft1).S1.Count = 50
+
+    def init_API1_sim(self, sim):
+        super().init_API1_sim(sim)
+
+        # Add vesicles
+        for i in range(self.nbves1init):
+            ves1_i = sim.addCompVesicle('comp1', 'ves1')
+            sim.setSingleVesicleSurfaceSpecCount('ves1', ves1_i, 'S1', 100)
+
+        # Add rafts
+        tri = self.newGeom.patch.tris[0].idx
+        sim.addTriRaft(tri, 'raft1')
+
+        sim.setPatchRaftCount('patch', 'raft1', self.nbraftinit)
+
+    def one_time_init_API2_sim(self, sim):
+        # Vesicle paths
+        path1 = sim.addVesiclePath('path1')
+        pointsIdx = [path1.addPoint(sim.TET(t).center) for t in range(5)]
+        for start, end in zip(pointsIdx, pointsIdx[1:]):
+            path1.addBranch(start, {end: 1})
+        path1.addVesicle('ves1', 1)
+
+        # Vesicle diffusion groups
+        sim.addVesicleDiffusionGroup('ves1', ['comp1', 'comp2'])
+
+    def one_time_init_API1_sim(self, sim):
+        pass

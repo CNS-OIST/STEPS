@@ -8,6 +8,7 @@ __copyright__ = "Copyright 2016 EPFL BBP-project"
 from cython.operator cimport dereference as deref
 from libcpp cimport bool
 from libcpp.memory cimport shared_ptr
+from libcpp.pair cimport pair
 cimport std
 cimport steps_solver
 cimport steps_model
@@ -53,14 +54,14 @@ cdef extern from "tetexact/tetexact.hpp" namespace "steps::tetexact":
         double getA0() except +
         uint getNSteps() except +
         double getCompVol(std.string) except +
-        double getCompCount(std.string, std.string) except +
-        void setCompCount(std.string, std.string, double) except +
-        double getCompAmount(std.string, std.string) except +
-        void setCompAmount(std.string, std.string, double) except +
-        double getCompConc(std.string, std.string) except +
-        void setCompConc(std.string, std.string, double) except +
-        bool getCompClamped(std.string, std.string) except +
-        void setCompClamped(std.string, std.string, bool) except +
+        double getCompSpecCount(std.string, std.string) except +
+        void setCompSpecCount(std.string, std.string, double) except +
+        double getCompSpecAmount(std.string, std.string) except +
+        void setCompSpecAmount(std.string, std.string, double) except +
+        double getCompSpecConc(std.string, std.string) except +
+        void setCompSpecConc(std.string, std.string, double) except +
+        bool getCompSpecClamped(std.string, std.string) except +
+        void setCompSpecClamped(std.string, std.string, bool) except +
         double getCompReacK(std.string, std.string) except +
         void setCompReacK(std.string, std.string, double) except +
         bool getCompReacActive(std.string, std.string) except +
@@ -77,14 +78,14 @@ cdef extern from "tetexact/tetexact.hpp" namespace "steps::tetexact":
         double getTetVol(uint) except +
         void setTetVol(uint, double) except +
         bool getTetSpecDefined(uint, std.string) except +
-        double getTetCount(uint, std.string) except +
-        void setTetCount(uint, std.string, double) except +
-        double getTetAmount(uint, std.string) except +
-        void setTetAmount(uint, std.string, double) except +
-        double getTetConc(uint, std.string) except +
-        void setTetConc(uint, std.string, double) except +
-        bool getTetClamped(uint, std.string) except +
-        void setTetClamped(uint, std.string, bool) except +
+        double getTetSpecCount(uint, std.string) except +
+        void setTetSpecCount(uint, std.string, double) except +
+        double getTetSpecAmount(uint, std.string) except +
+        void setTetSpecAmount(uint, std.string, double) except +
+        double getTetSpecConc(uint, std.string) except +
+        void setTetSpecConc(uint, std.string, double) except +
+        bool getTetSpecClamped(uint, std.string) except +
+        void setTetSpecClamped(uint, std.string, bool) except +
         double getTetReacK(uint, std.string) except +
         void setTetReacK(uint, std.string, double) except +
         bool getTetReacActive(uint, std.string) except +
@@ -102,12 +103,12 @@ cdef extern from "tetexact/tetexact.hpp" namespace "steps::tetexact":
         bool getTetVClamped(uint) except +
         void setTetVClamped(uint, bool) except +
         double getPatchArea(std.string) except +
-        double getPatchCount(std.string, std.string) except +
-        void setPatchCount(std.string, std.string, double) except +
-        double getPatchAmount(std.string, std.string) except +
-        void setPatchAmount(std.string, std.string, double) except +
-        bool getPatchClamped(std.string, std.string) except +
-        void setPatchClamped(std.string, std.string, bool) except +
+        double getPatchSpecCount(std.string, std.string) except +
+        void setPatchSpecCount(std.string, std.string, double) except +
+        double getPatchSpecAmount(std.string, std.string) except +
+        void setPatchSpecAmount(std.string, std.string, double) except +
+        bool getPatchSpecClamped(std.string, std.string) except +
+        void setPatchSpecClamped(std.string, std.string, bool) except +
         double getPatchSReacK(std.string, std.string) except +
         void setPatchSReacK(std.string, std.string, double) except +
         bool getPatchSReacActive(std.string, std.string) except +
@@ -119,21 +120,21 @@ cdef extern from "tetexact/tetexact.hpp" namespace "steps::tetexact":
         void resetPatchSReacExtent(std.string, std.string) except +
         bool getPatchVDepSReacActive(std.string, std.string) except +
         void setPatchVDepSReacActive(std.string, std.string, bool) except +
-        void setDiffBoundaryDiffusionActive(std.string, std.string, bool) except +
-        bool getDiffBoundaryDiffusionActive(std.string, std.string) except +
-        void setDiffBoundaryDcst(std.string, std.string, double, std.string) except +
-        void setSDiffBoundaryDiffusionActive(std.string, std.string, bool) except +
-        bool getSDiffBoundaryDiffusionActive(std.string, std.string) except +
-        void setSDiffBoundaryDcst(std.string, std.string, double, std.string) except +
+        void setDiffBoundarySpecDiffusionActive(std.string, std.string, bool) except +
+        bool getDiffBoundarySpecDiffusionActive(std.string, std.string) except +
+        void setDiffBoundarySpecDcst(std.string, std.string, double, std.string) except +
+        void setSDiffBoundarySpecDiffusionActive(std.string, std.string, bool) except +
+        bool getSDiffBoundarySpecDiffusionActive(std.string, std.string) except +
+        void setSDiffBoundarySpecDcst(std.string, std.string, double, std.string) except +
         double getTriArea(uint) except +
         void setTriArea(uint, double) except +
         bool getTriSpecDefined(uint, std.string) except +
-        double getTriCount(uint, std.string) except +
-        void setTriCount(uint, std.string, double) except +
-        double getTriAmount(uint, std.string) except +
-        void setTriAmount(uint, std.string, double) except +
-        bool getTriClamped(uint, std.string) except +
-        void setTriClamped(uint, std.string, bool) except +
+        double getTriSpecCount(uint, std.string) except +
+        void setTriSpecCount(uint, std.string, double) except +
+        double getTriSpecAmount(uint, std.string) except +
+        void setTriSpecAmount(uint, std.string, double) except +
+        bool getTriSpecClamped(uint, std.string) except +
+        void setTriSpecClamped(uint, std.string, bool) except +
         double getTriSReacK(uint, std.string) except +
         void setTriSReacK(uint, std.string, double) except +
         bool getTriSReacActive(uint, std.string) except +
@@ -147,6 +148,8 @@ cdef extern from "tetexact/tetexact.hpp" namespace "steps::tetexact":
         void setTriV(uint, double) except +
         bool getTriVClamped(uint) except +
         void setTriVClamped(uint, bool) except +
+        double getTriOhmicErev(uint, std.string) except +
+        void setTriOhmicErev(uint, std.string, double) except +
         double getTriOhmicI(uint) except +
         double getTriOhmicI(uint, std.string) except +
         double getTriGHKI(uint) except +
@@ -164,23 +167,24 @@ cdef extern from "tetexact/tetexact.hpp" namespace "steps::tetexact":
         void setMembCapac(std.string, double) except +
         void setMembVolRes(std.string, double) except +
         void setMembRes(std.string, double, double) except +
-        std.vector[double] getBatchTetCounts(std.vector[index_t], std.string) except +
-        std.vector[double] getBatchTriCounts(std.vector[index_t], std.string) except +
-        void getBatchTetCountsNP(index_t*, int, std.string, double*, int) except +
-        void getBatchTriCountsNP(index_t*, int, std.string, double*, int) except +
-        std.vector[double] getROITetCounts(std.string, std.string) except +
-        std.vector[double] getROITriCounts(std.string, std.string) except +
-        void getROITetCountsNP(std.string, std.string, double*, int) except +
-        void getROITriCountsNP(std.string, std.string, double*, int) except +
+        pair[double, double] getMembRes(std.string) except +
+        std.vector[double] getBatchTetSpecCounts(std.vector[index_t], std.string) except +
+        std.vector[double] getBatchTriSpecCounts(std.vector[index_t], std.string) except +
+        void getBatchTetSpecCountsNP(index_t*, int, std.string, double*, int) except +
+        void getBatchTriSpecCountsNP(index_t*, int, std.string, double*, int) except +
+        std.vector[double] getROITetSpecCounts(std.string, std.string) except +
+        std.vector[double] getROITriSpecCounts(std.string, std.string) except +
+        void getROITetSpecCountsNP(std.string, std.string, double*, int) except +
+        void getROITriSpecCountsNP(std.string, std.string, double*, int) except +
         double getROIVol(std.string) except +
         double getROIArea(std.string) except +
-        double getROICount(std.string, std.string) except +
-        void setROICount(std.string, std.string, double) except +
-        double getROIAmount(std.string, std.string) except +
-        void setROIAmount(std.string, std.string, double) except +
-        double getROIConc(std.string, std.string) except +
-        void setROIConc(std.string, std.string, double) except +
-        void setROIClamped(std.string, std.string, bool) except +
+        double getROISpecCount(std.string, std.string) except +
+        void setROISpecCount(std.string, std.string, double) except +
+        double getROISpecAmount(std.string, std.string) except +
+        void setROISpecAmount(std.string, std.string, double) except +
+        double getROISpecConc(std.string, std.string) except +
+        void setROISpecConc(std.string, std.string, double) except +
+        void setROISpecClamped(std.string, std.string, bool) except +
         void setROIReacK(std.string, std.string, double) except +
         void setROISReacK(std.string, std.string, double) except +
         void setROIDiffD(std.string, std.string, double) except +

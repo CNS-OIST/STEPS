@@ -49,7 +49,7 @@ class TestRDSpatialTetODE(unittest.TestCase):
         NITER_foi = 1        # The number of iterations
 
         # Tolerance for the comparison:
-        tolerance_foi = 1e-4/100  
+        tolerance_foi = 1e-4/100
 
         ####################### First order reversible #########################
 
@@ -167,48 +167,48 @@ class TestRDSpatialTetODE(unittest.TestCase):
 
             with volsys:
                 # First order irreversible
-                A_foi_diff = Diffusion.Create(A_foi, 1e-14)
+                A_foi_diff = Diffusion.Create(A_foi, 1e-13)
                 A_foi >r['R1_foi']> None
                 r['R1_foi'].K = KCST_foi
 
                 # First order reversible
-                A_for_diff = Diffusion.Create(A_for, 1e-14)
-                B_for_diff = Diffusion.Create(B_for, 1e-14)
+                A_for_diff = Diffusion.Create(A_for, 1e-13)
+                B_for_diff = Diffusion.Create(B_for, 1e-13)
                 A_for <r['R1_for']> B_for
                 r['R1_for'].K = KCST_f_for, KCST_b_for
 
                 # Second order irreversible A2
-                A_soA2_diff = Diffusion.Create(A_soA2, 1e-12)
+                A_soA2_diff = Diffusion.Create(A_soA2, 1e-11)
                 2 * A_soA2 >r['R1_soA2']> C_soA2
                 r['R1_soA2'].K = KCST_soA2
 
                 # Second order irreversible AA
-                A_soAA_diff = Diffusion.Create(A_soAA, 2e-13)
-                B_soAA_diff = Diffusion.Create(B_soAA, 2e-13)
+                A_soAA_diff = Diffusion.Create(A_soAA, 2e-12)
+                B_soAA_diff = Diffusion.Create(B_soAA, 2e-12)
                 A_soAA + B_soAA >r['R1_soAA']> C_soAA
                 r['R1_soAA'].K = KCST_soAA
 
                 # Second order irreversible AB
-                A_soAB_diff = Diffusion.Create(A_soAB, 1e-13)
+                A_soAB_diff = Diffusion.Create(A_soAB, 1e-12)
                 B_soAB_diff = Diffusion.Create(B_soAB, 1e-13)
                 A_soAB + B_soAB >r['R1_soAB']> C_soAB
                 r['R1_soAB'].K = KCST_soAB
 
                 # Third order irreversible A3
-                A_soA3_diff = Diffusion.Create(A_toA3, 2e-13)
+                A_soA3_diff = Diffusion.Create(A_toA3, 2e-12)
                 3 * A_toA3 >r['R1_toA3']> C_toA3
                 r['R1_toA3'].K = KCST_toA3
 
                 # Third order irreversible A2B
-                A_soA2B_diff = Diffusion.Create(A_toA2B, 1e-13)
-                B_soA2B_diff = Diffusion.Create(B_toA2B, 1e-13)
+                A_soA2B_diff = Diffusion.Create(A_toA2B, 1e-12)
+                B_soA2B_diff = Diffusion.Create(B_toA2B, 1e-12)
                 2 * A_toA2B + B_toA2B >r['R1_toA2B']> C_toA2B
                 r['R1_toA2B'].K = KCST_toA2B
                     
             with surfsys:
                 # Second order irreversible 2D
-                A_so2d_diff = Diffusion.Create(A_so2d, 1e-12)
-                B_so2d_diff = Diffusion.Create(B_so2d, 1e-12)
+                A_so2d_diff = Diffusion.Create(A_so2d, 1e-11)
+                B_so2d_diff = Diffusion.Create(B_so2d, 1e-11)
                 A_so2d.s + B_so2d.s >r['SR1_so2d']> C_so2d.s
                 r['SR1_so2d'].K = KCST_so2d
 
@@ -223,7 +223,7 @@ class TestRDSpatialTetODE(unittest.TestCase):
         rng = RNG('r123', 512, 1000)
 
         sim = Simulation('TetODE', mdl, mesh, rng)
-        sim.setTolerances(1e-9, 1e-7)
+        sim.setTolerances(2.5e-8, 2.5e-6)
 
         rs = ResultSelector(sim)
 

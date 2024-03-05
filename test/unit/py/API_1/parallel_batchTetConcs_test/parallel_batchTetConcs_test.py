@@ -80,7 +80,7 @@ class batchTetConcs(unittest.TestCase):
 
         # check
         for i in range(0, len(tetIds)):
-            self.assertAlmostEqual(self.sim.getTetConc(tetIds[i], 'A'), tetConcs[i])
+            self.assertAlmostEqual(self.sim.getTetSpecConc(tetIds[i], 'A'), tetConcs[i])
 
     @unittest.expectedFailure
     def testSetBatchTetConcsSizeFail(self):
@@ -93,12 +93,12 @@ class batchTetConcs(unittest.TestCase):
 
     @unittest.expectedFailure
     def testSetBatchTetConcsOutOfRangeFail(self):
-        self.sim.reset()
-        tetIds = [0, 10]
-        tetConcs = [1.0, 2.0]
+       self.sim.reset()
+       tetIds = [0, 10]
+       tetConcs = [1.0, 2.0]
 
-        # set
-        self.sim.setBatchTetConcs(tetIds, 'A', tetConcs)
+       # set
+       self.sim.setBatchTetConcs(tetIds, 'A', tetConcs)
 
     def testGetBatchTetConcs(self):
         self.sim.reset()
@@ -107,30 +107,30 @@ class batchTetConcs(unittest.TestCase):
 
         # set
         for i in range(0, len(tetIds)):
-            self.sim.setTetConc(tetIds[i], 'A', tetConcs[i])
+            self.sim.setTetSpecConc(tetIds[i], 'A', tetConcs[i])
 
         # get
         tetConcsBatch = self.sim.getBatchTetConcs(tetIds, 'A')
 
     @unittest.expectedFailure
     def testGetBatchTetConcsOutOfRangeFail(self):
-        self.sim.reset()
-        tetIds = [0, 10]
+       self.sim.reset()
+       tetIds = [0, 10]
 
-        # get
-        tetConcs = self.sim.getBatchTetConcs(tetIds, 'A')
+       # get
+       tetConcs = self.sim.getBatchTetConcs(tetIds, 'A')
 
-    def testSetBatchTetConcsNP(self):
+    def testSetBatchTetSpecConcsNP(self):
         self.sim.reset()
         tetIds = np.array([0, 1], dtype=INDEX_DTYPE)
         tetConcs = np.array([1.0, 2.0], dtype=float)
 
         # set
-        self.sim.setBatchTetConcsNP(tetIds, 'A', tetConcs)
+        self.sim.setBatchTetSpecConcsNP(tetIds, 'A', tetConcs)
 
         # check
         for i in range(0, len(tetIds)):
-            self.assertAlmostEqual(self.sim.getTetConc(tetIds[i], 'A'), tetConcs[i])
+            self.assertAlmostEqual(self.sim.getTetSpecConc(tetIds[i], 'A'), tetConcs[i])
 
     def testGetBatchTetConcsNP(self):
         self.sim.reset()
@@ -139,7 +139,7 @@ class batchTetConcs(unittest.TestCase):
 
         # set
         for i in range(0, len(tetIds)):
-            self.sim.setTetConc(tetIds[i], 'A', tetConcs[i])
+            self.sim.setTetSpecConc(tetIds[i], 'A', tetConcs[i])
 
         # get
         tetConcsBatch = np.zeros((len(tetConcs),), dtype=float)
@@ -157,7 +157,7 @@ class batchTetConcs(unittest.TestCase):
 
         # set
         for i in range(0, len(tetIds)):
-            self.sim.setTetConc(tetIds[i], 'A', tetConcs[i])
+            self.sim.setTetSpecConc(tetIds[i], 'A', tetConcs[i])
 
         # get
         tetConcsBatch = np.zeros((len(tetConcs)+1,), dtype=float)

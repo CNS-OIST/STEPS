@@ -1,10 +1,10 @@
-#
 # Find Random123 includes
-#
+# ~~~
 # Random123 It can be found at:
 #
 # * Random123_INCLUDE_DIR - where to find Random123.h
 # * Random123_FOUND       - boolean indicating if Random123 was found.
+# ~~~
 
 find_path(Random123_INCLUDE_DIR Random123/threefry.h Random123/MicroURNG.hpp)
 

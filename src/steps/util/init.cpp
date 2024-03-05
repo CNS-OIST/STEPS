@@ -24,26 +24,32 @@
 
  */
 
-#include <easylogging++.h>
 #include "init.hpp"
+
+#include <easylogging++.h>
+
+#ifdef STEPS_USE_DIST_MESH
+#include <Omega_h_defines.hpp>
+#endif  // !STEPS_USE_DIST_MESH
 
 #ifdef OMEGA_H_USE_GMSH
 #include <gmsh.h>
-#endif // OMEGA_H_USE_GMSH
+#endif  // OMEGA_H_USE_GMSH
 
-#include "util/profile/profiler_interface.h"
+#include "util/profile/profiler_interface.hpp"
 
 /*
 HOWTO: Logging, Assertion and Exception
 
-1. To enable assertion logging, make sure ENABLE_ASSERTLOG is defined in src/CMakeLists.txt
-2. Make sure "easylogging++.h" and "steps/error.hpp" are included as header files
+1. To enable assertion logging, make sure ENABLE_ASSERTLOG is defined in
+src/CMakeLists.txt
+2. Make sure "steps/error.hpp" is included as header file in the compilation unit
 3. Use AssertLog(assert_condition) to add assertion, for example
             int a = -1;
             AssertLog(a > 0);
 4. Use error logs like ErrLog(msg), NotImplErrLog(msg), ArgErrLog(msg),
-    ProgErrLog(msg), SysErrLog(msg) and IOErrLog(msg), or condition error logs like
-    ErrLogIf(error_condition, msg), NotImplErrLogIf(error_condition, msg),
+   ProgErrLog(msg), SysErrLog(msg) and IOErrLog(msg), or condition error logs like
+   ErrLogIf(error_condition, msg), NotImplErrLogIf(error_condition, msg),
    ArgErrLogIf(error_condition, msg), ProgErrLogIf(error_condition, msg),
    SysErrLogIf(error_condition, msg) and IOErrLogIf(error_condition, msg)
    to log and throw associated exception, for example
@@ -59,30 +65,26 @@ NOTE: WARNING and INFO mesages do not terminate the simulation.
       INFO messages are not displayed in terminal under parallel mode.
 */
 
-
 INITIALIZE_EASYLOGGINGPP
 
 void steps::init() {
-
-    // easylogging initialization
     el::Loggers::addFlag(el::LoggingFlag::ImmediateFlush);
     el::Loggers::addFlag(el::LoggingFlag::CreateLoggerAutomatically);
     el::Loggers::addFlag(el::LoggingFlag::AutoSpacing);
     el::Loggers::addFlag(el::LoggingFlag::LogDetailedCrashReason);
 
     // This is the default log for serial simulation
-    // This configuration will be rewritten if steps.mpi module is imported in parallel simulation
+    // This configuration will be rewritten if steps.mpi module is imported in
+    // parallel simulation
     el::Configurations serial_conf;
 
-    serial_conf.set(el::Level::Global, el::ConfigurationType::Format, "[%datetime][%level][%loc][%func]: %msg");
     serial_conf.set(el::Level::Global,
-             el::ConfigurationType::ToStandardOutput, "false");
-    serial_conf.set(el::Level::Global,
-                    el::ConfigurationType::ToFile, "true");
-    serial_conf.set(el::Level::Global,
-         el::ConfigurationType::Filename, ".logs/general_log_0.txt");
-    serial_conf.set(el::Level::Global,
-                    el::ConfigurationType::MaxLogFileSize, "2097152");
+                    el::ConfigurationType::Format,
+                    "[%datetime][%level][%loc][%func]: %msg");
+    serial_conf.set(el::Level::Global, el::ConfigurationType::ToStandardOutput, "false");
+    serial_conf.set(el::Level::Global, el::ConfigurationType::ToFile, "true");
+    serial_conf.set(el::Level::Global, el::ConfigurationType::Filename, ".logs/general_log_0.txt");
+    serial_conf.set(el::Level::Global, el::ConfigurationType::MaxLogFileSize, "2097152");
 
     serial_conf.set(el::Level::Fatal, el::ConfigurationType::ToStandardOutput, "true");
     serial_conf.set(el::Level::Error, el::ConfigurationType::ToStandardOutput, "true");
@@ -94,7 +96,11 @@ void steps::init() {
 
 #ifdef OMEGA_H_USE_GMSH
     ::gmsh::initialize();
-#endif // OMEGA_H_USE_GMSH
+    // change the verbosity level
+    // (0: silent except for fatal errors, 1: +errors, 2: +warnings, 3: +direct, 4: +information, 5:
+    // +status, 99: +debug)
+    ::gmsh::option::setNumber("General.Verbosity", 2);
+#endif  // OMEGA_H_USE_GMSH
 
     steps::Instrumentor::init_profile();
 }

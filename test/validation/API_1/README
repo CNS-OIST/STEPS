@@ -10,12 +10,12 @@ validation_cp - Validation of checkpointing, also not currently included in test
 
 Serial validations are run in terminal by executing
 
-    python run_validation_tests.py
+    ctest -R python-validation-API_1
 
-within the current directory (test/validation). Execution should take ~ 15 minutes for all current tests (those under validation_rd and validation_efield)
+within the build directory (/build). Execution should take ~ 15 minutes for all current tests (those under validation_rd and validation_efield)
 
 Parallel validations are run in terminal by executing
 
-   mpirun -n [np] python run_parallel_validation_tests.py
+   ctest -R python-validation-parallel-API_1
 
-within the current directory (test/validation), where [np] is the number of parallel processes for the simulations.
+within the build directory (/build).

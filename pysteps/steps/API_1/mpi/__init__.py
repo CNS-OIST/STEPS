@@ -42,6 +42,7 @@ if not any(stepslib.__name__.endswith(suff) for suff in _mpiSuffixes):
 def customHook(tpe, val, bt):
     sys.__excepthook__(tpe, val, bt)
     sys.stderr.flush()
+    stepslib.mpiAbort()
 
 sys.excepthook = customHook
 

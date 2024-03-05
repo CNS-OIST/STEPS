@@ -10,8 +10,7 @@
 #include "mpi/dist/tetopsplit/kproc/fwd.hpp"
 #include "util/vocabulary.hpp"
 
-namespace steps {
-namespace dist {
+namespace steps::dist {
 
 /**
  * \brief State definition of a compartment.
@@ -48,12 +47,12 @@ class Compdef {
      * \return number of chemical species in the compartment
      */
     inline osh::I32 getNSpecs() const noexcept {
-      return static_cast<osh::I32>(specC2M.size());
+        return static_cast<osh::I32>(specC2M.size());
     }
 
-    container::reaction_id
-    addReac(const std::vector<container::species_id> &reactants,
-            const std::vector<container::species_id> &products, osh::Real kcst);
+    container::reaction_id addReac(const std::vector<container::species_id>& reactants,
+                                   const std::vector<container::species_id>& products,
+                                   osh::Real kcst);
     Reacdef& getReac(container::reaction_id reaction) const;
 
     /**
@@ -62,16 +61,14 @@ class Compdef {
      * \param dcst the diffusion constant
      * \return the diffusion identifier
      */
-    container::diffusion_id addDiff(container::species_id species,
-                                    osh::Real dcst);
+    container::diffusion_id addDiff(container::species_id species, osh::Real dcst);
 
     /**
      * Get internal species identifier of the given diffusion
      * \param diffusion the diffusion identifier
      * \return the internal chemical species identifier
      */
-    container::species_id
-    getDiffSpecContainerIdx(container::diffusion_id diffusion);
+    container::species_id getDiffSpecContainerIdx(container::diffusion_id diffusion);
 
     /**
      * Get global species identifier of the given diffusion
@@ -100,26 +97,27 @@ class Compdef {
      * \param species Local index of the Species.
      * return True if there is dependency, false if not.
      */
-    bool KProcDepSpec(container::kproc_id kproc,
-                      container::species_id species) const;
+    bool KProcDepSpec(container::kproc_id kproc, container::species_id species) const;
 
     /**
      * \return number of kinetic processes defined in the compartment
      */
-    inline osh::I64 getNKProcs() const noexcept { return nKProcs; }
+    inline osh::I64 getNKProcs() const noexcept {
+        return nKProcs;
+    }
 
     /**
      * \return number of reactions defined in the compartment
      */
     inline osh::I64 getNReacs() const noexcept {
-      return static_cast<osh::I64>(reacdefPtrs.size());
+        return static_cast<osh::I64>(reacdefPtrs.size());
     }
 
     /**
      * \return number of diffusions defined in the compartment
      */
     inline osh::I64 getNDiffs() const noexcept {
-      return static_cast<osh::I64>(diffdefPtrs.size());
+        return static_cast<osh::I64>(diffdefPtrs.size());
     }
 
     /**
@@ -129,14 +127,13 @@ class Compdef {
         return diffdefPtrs;
     }
 
-    inline const std::set<container::species_id> &getAllSpeciesDiffused() const
-        noexcept {
-      return species_diffused_;
+    inline const std::set<container::species_id>& getAllSpeciesDiffused() const noexcept {
+        return species_diffused_;
     }
 
-    inline bool isDiffused(const container::species_id &species) const {
-      return std::find(species_diffused_.begin(), species_diffused_.end(),
-                       species) != species_diffused_.end();
+    inline bool isDiffused(const container::species_id& species) const {
+        return std::find(species_diffused_.begin(), species_diffused_.end(), species) !=
+               species_diffused_.end();
     }
 
     /**
@@ -151,13 +148,13 @@ class Compdef {
     }
 
     inline kproc::KProcType getKProcType(container::kproc_id kproc) const {
-      if (kproc.get() >= 0 && kproc < getNReacs()) {
-        return kproc::KProcType::Reac;
-      } else if (kproc >= getNReacs() && kproc < getNKProcs()) {
-        return kproc::KProcType::Diff;
-      } else {
-        throw std::out_of_range("KProc local index error.");
-      }
+        if (kproc.get() >= 0 && kproc < getNReacs()) {
+            return kproc::KProcType::Reac;
+        } else if (kproc >= getNReacs() && kproc < getNKProcs()) {
+            return kproc::KProcType::Diff;
+        } else {
+            throw std::out_of_range("KProc local index error.");
+        }
     }
 
     void report(std::ostream& ostr) const;
@@ -176,5 +173,4 @@ class Compdef {
     std::vector<std::unique_ptr<Diffdef>> diffdefPtrs;
 };
 
-}  // namespace dist
-}  // namespace steps
+}  // namespace steps::dist

@@ -72,8 +72,8 @@ class TestFirstOrderRev(unittest.TestCase):
         os.makedirs(new_dir, exist_ok=True)
 
         sim.reset()
-        sim.setCompCount('comp1', 'A', COUNT)
-        sim.setCompCount('comp1', 'B', 0.0)
+        sim.setCompSpecCount('comp1', 'A', COUNT)
+        sim.setCompSpecCount('comp1', 'B', 0.0)
         sim.checkpoint('./validation_cp/cp/first_order_rev')
 
     def test_forev(self):
@@ -103,12 +103,15 @@ class TestFirstOrderRev(unittest.TestCase):
 
         res_m = numpy.zeros([NITER, ntpnts, 2]) 
 
+        seed = int(time.time()%4294967295)
         for i in range (0, NITER):
             sim.restore('./validation_cp/cp/first_order_rev')
+            rng.initialize(seed)
+            seed += 1
             for t in range(0, ntpnts):
                 sim.run(tpnts[t])
-                res_m[i, t, 0] = sim.getCompConc('comp1', 'A')*1e6
-                res_m[i, t, 1] = sim.getCompConc('comp1', 'B')*1e6
+                res_m[i, t, 0] = sim.getCompSpecConc('comp1', 'A')*1e6
+                res_m[i, t, 1] = sim.getCompSpecConc('comp1', 'B')*1e6
 
         mean_res = numpy.mean(res_m, 0)
 
@@ -116,7 +119,6 @@ class TestFirstOrderRev(unittest.TestCase):
         Beq = (COUNT/(VOL*6.0221415e26))*1e6 -Aeq
 
         max_err = 0.0
-        passed = True
         for i in range(ntpnts):
             if i < 7: continue
             self.assertTrue(tol_funcs.tolerable(mean_res[i,0], Aeq, tolerance))

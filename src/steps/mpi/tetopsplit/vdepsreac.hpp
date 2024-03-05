@@ -24,9 +24,7 @@
 
  */
 
-
-#ifndef STEPS_MPI_TETOPSPLIT_VDEPSREAC_HPP
-#define STEPS_MPI_TETOPSPLIT_VDEPSREAC_HPP 1
+#pragma once
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -37,15 +35,11 @@
 
 // STEPS headers.
 #include "kproc.hpp"
-#include "tri.hpp"
-#include "util/common.h"
 #include "math/constants.hpp"
 #include "solver/vdepsreacdef.hpp"
-////////////////////////////////////////////////////////////////////////////////
+#include "tri.hpp"
 
-namespace steps {
-namespace mpi {
-namespace tetopsplit {
+namespace steps::mpi::tetopsplit {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -55,44 +49,45 @@ class TetOpSplitP;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class VDepSReac: public KProc
-{
-
-public:
-
+class VDepSReac: public KProc {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    VDepSReac(steps::solver::VDepSReacdef * vdsrdef, Tri * tri);
+    VDepSReac(solver::VDepSReacdef* vdsrdef, Tri* tri);
+    VDepSReac(const VDepSReac&) = delete;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file) override;
+    void checkpoint(std::fstream& cp_file) override;
 
     /// restore data
-    void restore(std::fstream & cp_file) override;
+    void restore(std::fstream& cp_file) override;
 
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
     void setupDeps() override;
-    bool depSpecTet(uint gidx, WmVol * tet) override;
-    bool depSpecTri(uint gidx, Tri * tri) override;
+    /*
+    bool depSpecTet(solver::spec_global_id  gidx, WmVol * tet) override;
+    bool depSpecTri(solver::spec_global_id  gidx, Tri * tri) override;
+    */
     void reset() override;
 
-    double rate(TetOpSplitP * solver = nullptr) override;
-    double getScaledDcst(TetOpSplitP * /*solver*/ = nullptr) const override
-    {return 0.0;}
+    double rate(TetOpSplitP* solver = nullptr) override;
+    double getScaledDcst(TetOpSplitP* /*solver*/ = nullptr) const override {
+        return 0.0;
+    }
 
     using KProc::apply;
-    void apply(const rng::RNGptr &rng, double dt, double simtime, double period) override;
+    void apply(const rng::RNGptr& rng, double dt, double simtime, double period) override;
 
-    std::vector<KProc*> const & getLocalUpdVec(int direction = -1) const override;
-    std::vector<uint> const & getRemoteUpdVec(int direction = -1) const override;
+    std::vector<KProc*> const& getLocalUpdVec(int direction = -1) const override;
+    std::vector<solver::kproc_global_id> const& getRemoteUpdVec(int direction = -1) const override;
 
     void resetOccupancies() override;
 
@@ -105,34 +100,22 @@ public:
     }
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
-    steps::solver::VDepSReacdef       * pVDepSReacdef;
-    Tri       * pTri;
+    solver::VDepSReacdef* pVDepSReacdef;
+    Tri* pTri;
 
-    std::vector<KProc*>                 localUpdVec;
-    std::vector<uint>                   remoteUpdVec;
+    std::vector<KProc*> localUpdVec;
+    std::vector<solver::kproc_global_id> remoteUpdVec;
 
     // The information about the size of the comaprtment or patch, and the
     // dimensions. Important for scaling the constant.
     // As volumes and areas currently don't change this can be stored as
     // a constant.
-    double                                 pScaleFactor;
+    double pScaleFactor;
 
     ////////////////////////////////////////////////////////////////////////
-
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-#endif
-
-// STEPS_MPI_TETOPSPLIT_VDEPSREAC_HPP
+}  // namespace steps::mpi::tetopsplit

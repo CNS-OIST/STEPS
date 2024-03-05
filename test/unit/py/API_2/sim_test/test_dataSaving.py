@@ -33,6 +33,7 @@ import threading
 import time
 import unittest
 
+import steps
 from steps import interface
 
 from steps.model import *
@@ -50,53 +51,22 @@ import steps.API_1.utilities.meshio as smeshio
 
 from . import base_model
 
-class SimDataSaving(base_model.TestModelFramework):
-    """Test data access, setting, and saving."""
+
+class ResultSelectorTests(base_model.TestModelFramework):
+    """Test result selector functionality that does not depend on a specific solver"""
+
     def setUp(self, callParent=True):
         if callParent:
             super().setUp()
 
         self.newMdl = self.get_API2_Mdl()
-        self.oldMdl = self.get_API1_Mdl()
         self.newGeom = self.get_API2_Geom(self.newMdl)
-        self.oldGeom = self.get_API1_Geom(self.oldMdl)
-
         self.newSim = self._get_API2_Sim(self.newMdl, self.newGeom)
-        self.oldSim = self._get_API1_Sim(self.oldMdl, self.oldGeom)
-
-        self.createdFiles = set()
-
-        self.sqliteArgs = []
-        self.sqliteKwargs = dict(commitFreq=100)
-
-        self.hdf5Args = []
-        self.hdf5Kwargs = {}
-
-        self.xdmfArgs = []
-        self.xdmfKwargs = {}
-
-    def tearDown(self):
-        super().tearDown()
-        for path in self.createdFiles:
-            if os.path.isfile(path):
-                os.remove(path)
 
     def _get_API2_Sim(self, nmdl, ngeom):
         nrng = RNG('mt19937', 512, self.seed)
         nsim = Simulation('Wmdirect', nmdl, ngeom, nrng)
         return nsim
-
-    def _get_API1_Sim(self, omdl, ogeom):
-        orng=srng.create('mt19937',512)
-        orng.initialize(self.seed)
-        osim = ssolver.Wmdirect(omdl, ogeom, orng)
-        return osim
-
-    def testSimPathGetSyntax(self, init=True, usingMesh=False):
-        self._test_API2_SimPathGetSyntax(self.newSim, init=init, usingMesh=usingMesh)
-
-    def testSimPathSetSyntax(self, usingMesh=False):
-        self._test_API2_SimPathSetSyntax(self.newSim, usingMesh=usingMesh)
 
     def testResultSelectorSyntax(self):
         with self.assertRaises(Exception):
@@ -171,6 +141,290 @@ class SimDataSaving(base_model.TestModelFramework):
             a = rs.comp1.S1.Count
             a.save()
 
+    def testResultSelectorLabels(self):
+        rs = ResultSelector(self.newSim)
+
+        ordSel = \
+            rs.comp1.S1.Count <<\
+            rs.comp1.S2.Conc <<\
+            rs.LIST('comp1', 'comp2').S1.Count <<\
+            rs.LIST(self.newGeom.comp1, self.newGeom.comp2).S2.Count <<\
+            rs.comp1.CC.Count <<\
+            rs.comp1.CC[self.newMdl.sus1, :].Count <<\
+            rs.comp1.CC[..., self.newMdl.sus1].Count <<\
+            rs.SUM(rs.comp1.LIST('S1', 'S2').Count) <<\
+            rs.comp1.S1.Count + rs.comp2.S1.Count <<\
+            (rs.comp1.LIST('S1', 'S2').Count + rs.comp2.LIST('S1', 'S2').Count) <<\
+            rs.SUM(rs.comp1.LIST('S1', 'S2').Count * rs.comp2.LIST('S1', 'S2').Count)# <<\
+
+        expOrdLbls = [
+            'comp1.S1.Count',
+
+            'comp1.S2.Conc',
+
+            'comp1.S1.Count',
+            'comp2.S1.Count',
+
+            'comp1.S2.Count',
+            'comp2.S2.Count',
+
+            'comp1.CC.Count',
+            'comp1.CC[sus1, :].Count',
+            'comp1.CC[:, sus1].Count',
+
+            'SUM(comp1.LIST(S1, S2).Count)',
+            '(comp1.S1.Count + comp2.S1.Count)',
+
+            '(comp1.S1.Count + comp2.S1.Count)',
+            '(comp1.S2.Count + comp2.S2.Count)',
+
+            'SUM((comp1.LIST(S1, S2).Count * comp2.LIST(S1, S2).Count))',
+        ]
+
+        lbls = ordSel.labels
+        self.assertEqual(len(lbls), len(expOrdLbls))
+        for l, el in zip(lbls, expOrdLbls):
+            self.assertEqual(l, el)
+
+        # Setting custom labels
+
+        with self.assertRaises(Exception):
+            ordSel.labels = ['test']
+
+        with self.assertRaises(Exception):
+            ordSel.labels = ['test'] * (len(expOrdLbls) + 1)
+
+        newLabels = [f'label {i}' for i in range(len(expOrdLbls))]
+        ordSel.labels = newLabels
+
+        lbls = ordSel.labels
+        self.assertEqual(len(lbls), len(newLabels))
+        for l, el in zip(lbls, newLabels):
+            self.assertEqual(l, el)
+
+
+        # Operators
+        ordSel = \
+            (rs.comp1.LIST('S1', 'S2').Count + rs.comp2.LIST('S1', 'S2').Count) <<\
+            (rs.comp1.LIST('S1', 'S2').Count - rs.comp2.LIST('S1', 'S2').Count) <<\
+            (rs.comp1.LIST('S1', 'S2').Count * rs.comp2.LIST('S1', 'S2').Count) <<\
+            (rs.comp1.LIST('S1', 'S2').Count / rs.comp2.LIST('S1', 'S2').Count) <<\
+            (rs.comp1.LIST('S1', 'S2').Count ** rs.comp2.LIST('S1', 'S2').Count) <<\
+            (123 + rs.comp2.LIST('S1', 'S2').Count) <<\
+            (123 - rs.comp2.LIST('S1', 'S2').Count) <<\
+            (123 * rs.comp2.LIST('S1', 'S2').Count) <<\
+            (123 / rs.comp2.LIST('S1', 'S2').Count) <<\
+            (rs.comp1.LIST('S1', 'S2').Count + 123) <<\
+            (rs.comp1.LIST('S1', 'S2').Count - 123) <<\
+            (rs.comp1.LIST('S1', 'S2').Count * 123) <<\
+            (rs.comp1.LIST('S1', 'S2').Count / 123) <<\
+            (rs.comp1.LIST('S1', 'S2').Count ** 123)
+
+        expOrdLbls = []
+        operators = ['+', '-', '*', '/', '**']
+        tmp = ['(comp1.S1.Count {} comp2.S1.Count)', '(comp1.S2.Count {} comp2.S2.Count)']
+        for op in operators:
+            expOrdLbls += [t.format(op) for t in tmp]
+        tmp = ['(123 {} comp2.S1.Count)', '(123 {} comp2.S2.Count)']
+        for op in operators[:4]:
+            expOrdLbls += [t.format(op) for t in tmp]
+        tmp = ['(comp1.S1.Count {} 123)', '(comp1.S2.Count {} 123)']
+        for op in operators:
+            expOrdLbls += [t.format(op) for t in tmp]
+
+        lbls = ordSel.labels
+        self.assertEqual(len(lbls), len(expOrdLbls))
+        for l, el in zip(lbls, expOrdLbls):
+            self.assertEqual(l, el)
+
+        # Unordered paths
+
+        unordSel = \
+            rs.ALL(Compartment, Patch).ALL(Species, Complex).Count
+
+        expUnordLbls = [
+            'comp1.S1.Count',
+            'comp1.S2.Count',
+            'comp1.CC.Count',
+            'comp2.S1.Count',
+            'comp2.S2.Count',
+            'patch.Ex.Count',
+            'patch.ExS1.Count',
+            'patch.ExS2.Count',
+            'patch.ExS1S2.Count',
+        ]
+
+        self.assertEqual(set(unordSel.labels), set(expUnordLbls))
+
+        ##########
+        unordSel = \
+            rs.MATCH('^(co[mh]p.+)?(p[a-f]tch)?$').MATCH('^(Ex+)?(S[0-9])*$').Count
+
+        expUnordLbls = [
+            'comp1.S1.Count',
+            'comp1.S2.Count',
+            'comp2.S1.Count',
+            'comp2.S2.Count',
+            'patch.Ex.Count',
+            'patch.ExS1.Count',
+            'patch.ExS2.Count',
+            'patch.ExS1S2.Count',
+        ]
+
+        self.assertEqual(set(unordSel.labels), set(expUnordLbls))
+
+        ##########
+        unordSel = \
+            rs.comp1.LIST(*self.newMdl.CC).Count
+
+        expUnordLbls = [f'comp1.{state}.Count' for state in self.newMdl.CC[...]]
+
+        self.assertEqual(set(unordSel.labels), set(expUnordLbls))
+
+        ##### Setting custom labels after start of simulation
+
+        self.newSim.toSave(unordSel, dt = 0.1)
+
+        self.newSim.newRun()
+
+        with self.assertRaises(Exception):
+            unordSel.labels = expUnordLbls
+
+    def testDescription(self):
+        rs = ResultSelector(self.newSim)
+
+        saver1 = rs.LIST('comp1', 'comp2').LIST('S1', 'S2').Count
+
+        self.assertEqual(saver1.description, 'LIST(comp1, comp2).LIST(S1, S2).Count')
+
+        with self.assertRaises(TypeError):
+            saver1.description = 34
+
+        saver1.description = 'my custom description'
+        self.assertEqual(saver1.description, 'my custom description')
+
+        saverDescr = [
+            (rs.comp1.S1.Conc, 'comp1.S1.Conc'),
+            (rs.ALL(Compartment).S1.Count, 'ALL(Compartment).S1.Count'),
+            (rs.MATCH('comp\d').S1.Count, 'MATCH(comp\d).S1.Count'),
+            (rs.LIST(self.newGeom.comp1, self.newGeom.comp2).S2.Count, 'LIST(comp1, comp2).S2.Count'),
+            (rs.comp1.S1.Count << rs.comp1.S2.Count, 'comp1.S1.Count, comp1.S2.Count'),
+            (rs.comp1.S1.Count + rs.comp1.S2.Count, '(comp1.S1.Count + comp1.S2.Count)'),
+            (rs.comp1.S1.Count - rs.comp1.S2.Count, '(comp1.S1.Count - comp1.S2.Count)'),
+            (rs.comp1.S1.Count * rs.comp1.S2.Count, '(comp1.S1.Count * comp1.S2.Count)'),
+            (rs.comp1.S1.Count / rs.comp1.S2.Count, '(comp1.S1.Count / comp1.S2.Count)'),
+            (rs.comp1.S1.Count ** rs.comp1.S2.Count, '(comp1.S1.Count ** comp1.S2.Count)'),
+            (10 * rs.comp1.S1.Count + rs.comp1.S2.Count, '((10 * comp1.S1.Count) + comp1.S2.Count)'),
+            (rs.SUM(rs.comp1.ALL(Species).Count), 'SUM(comp1.ALL(Species).Count)'),
+            (rs.MAX(rs.comp1.ALL(Species).Count), 'MAX(comp1.ALL(Species).Count)'),
+            (rs.MIN(rs.comp1.ALL(Species).Count), 'MIN(comp1.ALL(Species).Count)'),
+        ]
+
+        for saver, descr in saverDescr:
+            self.assertEqual(saver.description, descr)
+
+    def _checkFeature(self, objStr, obj, tpe, version, firstAdded, noneok=False, exceptTpe=NotImplementedError):
+        if version >= firstAdded:
+            values = eval(objStr)
+            self.assertGreater(len(values), 0)
+            self.assertTrue(all(isinstance(v, tpe) or (v is None and noneok) for v in values))
+        else:
+            with self.assertRaises(exceptTpe):
+                eval(objStr)
+
+    def _testLoadingResultSelector(self, rs, fmt, version):
+        floatTpe = (float, np.float32, np.float64)
+        self._checkFeature("obj.time[0]", rs, floatTpe, version, (3,6,0))
+        self._checkFeature("obj.data[0,:,0]", rs, floatTpe, version, (3,6,0))
+        self._checkFeature("obj.labels", rs, str, version, (3,6,0))
+        self._checkFeature("obj.metaData['loc_type']", rs, str, version, (4,0,0), noneok=True)
+        self._checkFeature("obj.description", rs, str, version, (5,0,1))
+
+    def _testLoadingDBGroup(self, db, fmt, version):
+        group = db.get()
+
+        if fmt == 'h5':
+            self.assertEqual(version, group._version)
+
+        self._checkFeature("obj.name", group, str, version, (4,0,0))
+        self._checkFeature("obj.results", group, steps.saving._ReadOnlyResultSelector, version, (4,0,0))
+        self._checkFeature("obj.parameters", group, str, version, (4,0,0))
+        # Staticdata not implemented for SQLite db
+        self._checkFeature("obj.staticData.keys()", group, str, version if fmt == 'h5' else (0, 0, 0), (5,0,0),
+                           exceptTpe=(NotImplementedError, steps.saving.UnavailableDataError))
+
+        rs, *_ = group.results
+        self._testLoadingResultSelector(rs, fmt, version)
+
+    def testLoadOlderFiles(self):
+        old_dirs = os.path.join(base_model.FILEDIR, '..', 'saved_files')
+        for dir in os.listdir(old_dirs):
+            dirpath = os.path.join(old_dirs, dir)
+            if os.path.isdir(dirpath):
+                version = steps.utils.Versioned._parseVersion(dir)
+                for file in os.listdir(dirpath):
+                    *_, ext = file.split('.')
+                    path = os.path.join(dirpath, file)
+                    with self.subTest(fileFormat=ext, fileVersion=version):
+                        if ext == 'dat':
+                            rs = ResultSelector.FromFile(path)
+                            self._testLoadingResultSelector(rs, ext, version)
+                        elif ext == 'db':
+                            with SQLiteDBHandler(path) as db:
+                                self._testLoadingDBGroup(db, ext, version)
+                        elif ext == 'h5':
+                            with HDF5Handler(path[:-3]) as db:
+                                self._testLoadingDBGroup(db, ext, version)
+
+
+class SimDataSaving(base_model.TestModelFramework):
+    """Test data access, setting, and saving."""
+    def setUp(self, callParent=True):
+        if callParent:
+            super().setUp()
+
+        self.newMdl = self.get_API2_Mdl()
+        self.oldMdl = self.get_API1_Mdl()
+        self.newGeom = self.get_API2_Geom(self.newMdl)
+        self.oldGeom = self.get_API1_Geom(self.oldMdl)
+
+        self.newSim = self._get_API2_Sim(self.newMdl, self.newGeom)
+        self.oldSim = self._get_API1_Sim(self.oldMdl, self.oldGeom)
+
+        self.createdFiles = set()
+
+        self.sqliteArgs = []
+        self.sqliteKwargs = dict(commitFreq=100)
+
+        self.hdf5Args = []
+        self.hdf5Kwargs = {}
+
+        self.xdmfArgs = []
+        self.xdmfKwargs = {}
+
+    def tearDown(self):
+        super().tearDown()
+        for path in self.createdFiles:
+            if os.path.isfile(path):
+                os.remove(path)
+
+    def _get_API2_Sim(self, nmdl, ngeom):
+        nrng = RNG('mt19937', 512, self.seed)
+        nsim = Simulation('Wmdirect', nmdl, ngeom, nrng)
+        return nsim
+
+    def _get_API1_Sim(self, omdl, ogeom):
+        orng=srng.create('mt19937',512)
+        orng.initialize(self.seed)
+        osim = ssolver.Wmdirect(omdl, ogeom, orng)
+        return osim
+
+    def testSimPathGetSyntax(self, init=True):
+        self._test_API2_SimPathGetSyntax(self.newSim, init=init)
+
+    def testSimPathSetSyntax(self):
+        self._test_API2_SimPathSetSyntax(self.newSim)
+
     def simulateAndCompare(self, oldSimToSave, newSimToSave, refVal, dbCls=None, dbPath=None, dbUID=None,
             dbArgs=None, dbKwargs=None, dbGroupArgs={}):
         if self.oldSim is not None:
@@ -205,10 +459,13 @@ class SimDataSaving(base_model.TestModelFramework):
             if MPI._shouldWrite:
                 newDat = getDataFunc(savers)
                 labelList = [s.labels for s in savers]
+                descriptions = [s.description for s in savers]
         else:
             # Test database saving
             with dbCls(dbPath, *dbArgs, **dbKwargs) as dbh:
-                self.newSim.toDB(dbh, dbUID, **dbGroupArgs)
+                group = self.newSim.toDB(dbh, dbUID, **dbGroupArgs)
+                if isinstance(dbh, HDF5Handler) and MPI._shouldWrite:
+                    group.staticData['staticDataTest'] = [1, 2, 3]
                 for rid in range(self.nbRuns):
                     self.newSim.newRun()
                     self.init_API2_sim(self.newSim)
@@ -217,6 +474,7 @@ class SimDataSaving(base_model.TestModelFramework):
                 if MPI._shouldWrite:
                     newDat = getDataFunc(savers)
                     labelList = [s.labels for s in savers]
+                    descriptions = [s.description for s in savers]
 
                 self.createdFiles |= set(dbh._getFilePaths())
 
@@ -235,13 +493,14 @@ class SimDataSaving(base_model.TestModelFramework):
                     self.assertEqual(list(groups)[0].name, dbUID)
                     # results
                     loadedSavers = dbh[dbUID].results
-                    if MPI._shouldWrite:
-                        newDat2 = getDataFunc(loadedSavers)
-                        labelList2 = [s.labels for s in loadedSavers]
+                    newDat2 = getDataFunc(loadedSavers)
+                    labelList2 = [s.labels for s in loadedSavers]
+                    descriptions2 = [s.description for s in loadedSavers]
 
             # Check that the loaded data is identical to the one extracted during simulation
             if MPI._shouldWrite:
                 self.assertSameData(newDat, newDat2, refVal)
+                self.assertEqual(descriptions, descriptions2)
                 for llst, explbl in zip(labelList, labelList2):
                     self.assertEqual(len(llst), len(explbl))
                     for rslbl, elbl in zip(llst, explbl):
@@ -263,10 +522,10 @@ class SimDataSaving(base_model.TestModelFramework):
         timepoints = np.arange(0, self.endTime + self.deltaT, self.deltaT)
         def oldSave(sim):
             res = []
-            res.append(sim.getCompCount('comp1', 'S1'))
-            res.append(sim.getCompCount('comp1', 'S2'))
-            res.append(sim.getPatchCount('patch', 'ExS1S2'))
-            res.append(sim.getCompCount('comp1', 'CCsus12'))
+            res.append(sim.getCompSpecCount('comp1', 'S1'))
+            res.append(sim.getCompSpecCount('comp1', 'S2'))
+            res.append(sim.getPatchSpecCount('patch', 'ExS1S2'))
+            res.append(sim.getCompSpecCount('comp1', 'CCsus12'))
             return res
 
         def newSave(rs):
@@ -317,9 +576,9 @@ class SimDataSaving(base_model.TestModelFramework):
         timepoints = np.arange(0, self.endTime + self.deltaT, self.deltaT)
         def oldSave(sim):
             res = []
-            res.append(sim.getCompCount('comp1', 'S1'))
-            res.append(sim.getCompCount('comp1', 'S2'))
-            res.append(sim.getPatchCount('patch', 'ExS1S2'))
+            res.append(sim.getCompSpecCount('comp1', 'S1'))
+            res.append(sim.getCompSpecCount('comp1', 'S2'))
+            res.append(sim.getPatchSpecCount('patch', 'ExS1S2'))
             return res
 
         def newSave(rs):
@@ -360,9 +619,9 @@ class SimDataSaving(base_model.TestModelFramework):
         timepoints = np.arange(0, self.endTime + self.deltaT, self.deltaT)
         def oldSave(sim):
             res = []
-            res.append(sim.getCompCount('comp1', 'S1'))
-            res.append(sim.getCompCount('comp1', 'S2'))
-            res.append(sim.getPatchCount('patch', 'ExS1S2'))
+            res.append(sim.getCompSpecCount('comp1', 'S1'))
+            res.append(sim.getCompSpecCount('comp1', 'S2'))
+            res.append(sim.getPatchSpecCount('patch', 'ExS1S2'))
             return res
 
         def newSave(rs):
@@ -408,12 +667,12 @@ class SimDataSaving(base_model.TestModelFramework):
         self.createdFiles.add(path)
         def oldSave(sim):
             res = []
-            res.append(sim.getCompCount('comp1', 'S1'))
-            res.append(sim.getCompCount('comp1', 'S2'))
-            res.append(sim.getPatchCount('patch', 'ExS1S2'))
-            res.append(sim.getCompCount('comp1', 'CCsus12') + 2*sim.getCompCount('comp1', 'CCsus12'))
-            tmp = sim.getCompCount('comp1', 'S1') + sim.getCompCount('comp1', 'S2') + sim.getCompCount('comp2', 'S1') + sim.getCompCount('comp2', 'S2')
-            tmp /= (sim.getPatchCount('patch', 'ExS1S2') + sim.getPatchCount('patch', 'Ex'))
+            res.append(sim.getCompSpecCount('comp1', 'S1'))
+            res.append(sim.getCompSpecCount('comp1', 'S2'))
+            res.append(sim.getPatchSpecCount('patch', 'ExS1S2'))
+            res.append(sim.getCompSpecCount('comp1', 'CCsus12') + 2*sim.getCompSpecCount('comp1', 'CCsus12'))
+            tmp = sim.getCompSpecCount('comp1', 'S1') + sim.getCompSpecCount('comp1', 'S2') + sim.getCompSpecCount('comp2', 'S1') + sim.getCompSpecCount('comp2', 'S2')
+            tmp /= (sim.getPatchSpecCount('patch', 'ExS1S2') + sim.getPatchSpecCount('patch', 'Ex'))
             res.append(tmp)
             return res
 
@@ -467,6 +726,12 @@ class SimDataSaving(base_model.TestModelFramework):
 
     def testFileSaving(self):
         self.simulateAndCompare(*self._testFileSavingParams())
+
+    def testFileSavingOlderVersions(self):
+        version = steps.__version__
+        steps.__version__ = '3.5.0'
+        self.simulateAndCompare(*self._testFileSavingParams())
+        steps.__version__ = version
 
     def _testFileSavingDB(self, dbCls, dbArgs, dbKwargs, dbUID='GroupId', suffix=''):
         _, dbPath = tempfile.mkstemp(prefix=f'{self.__class__.__name__}testFileSaving', suffix='.db')
@@ -563,11 +828,11 @@ class SimDataSaving(base_model.TestModelFramework):
         timepoints = np.arange(0, self.endTime + self.deltaT, self.deltaT)
         def oldSave(sim):
             res = []
-            res.append(sim.getCompCount('comp1', 'S1'))
-            res.append(sim.getCompCount('comp1', 'S2'))
-            res.append(sim.getPatchCount('patch', 'ExS1S2'))
-            res.append(sim.getCompCount('comp2', 'S1'))
-            res.append(sim.getCompCount('comp2', 'S2'))
+            res.append(sim.getCompSpecCount('comp1', 'S1'))
+            res.append(sim.getCompSpecCount('comp1', 'S2'))
+            res.append(sim.getPatchSpecCount('patch', 'ExS1S2'))
+            res.append(sim.getCompSpecCount('comp2', 'S1'))
+            res.append(sim.getCompSpecCount('comp2', 'S2'))
             return res
 
         def newSave(rs):
@@ -687,160 +952,7 @@ class SimDataSaving(base_model.TestModelFramework):
         if MPI._shouldWrite:
             self.assertSameData(memsaver.data[...], filesaver.data[...], [self.countRefVal]*3)
 
-    def testResultSelectorLabels(self):
-
-        self.newSim = self._get_API2_Sim(self.newMdl, self.newGeom)
-        rs = ResultSelector(self.newSim)
-
-        ordSel = \
-            rs.comp1.S1.Count <<\
-            rs.comp1.S2.Conc <<\
-            rs.LIST('comp1', 'comp2').S1.Count <<\
-            rs.LIST(self.newGeom.comp1, self.newGeom.comp2).S2.Count <<\
-            rs.comp1.CC.Count <<\
-            rs.comp1.CC[self.newMdl.sus1, :].Count <<\
-            rs.comp1.CC[..., self.newMdl.sus1].Count <<\
-            rs.SUM(rs.comp1.LIST('S1', 'S2').Count) <<\
-            rs.comp1.S1.Count + rs.comp2.S1.Count <<\
-            (rs.comp1.LIST('S1', 'S2').Count + rs.comp2.LIST('S1', 'S2').Count) <<\
-            rs.SUM(rs.comp1.LIST('S1', 'S2').Count * rs.comp2.LIST('S1', 'S2').Count)# <<\
-
-        expOrdLbls = [
-            'comp1.S1.Count',
-
-            'comp1.S2.Conc',
-
-            'comp1.S1.Count',
-            'comp2.S1.Count',
-
-            'comp1.S2.Count',
-            'comp2.S2.Count',
-
-            'comp1.CC.Count',
-            'comp1.CC[sus1, :].Count',
-            'comp1.CC[:, sus1].Count',
-
-            'SUM(comp1.LIST(S1, S2).Count)',
-            '(comp1.S1.Count + comp2.S1.Count)',
-
-            '(comp1.S1.Count + comp2.S1.Count)',
-            '(comp1.S2.Count + comp2.S2.Count)',
-
-            'SUM((comp1.LIST(S1, S2).Count * comp2.LIST(S1, S2).Count))',
-        ]
-
-        lbls = ordSel.labels
-        self.assertEqual(len(lbls), len(expOrdLbls))
-        for l, el in zip(lbls, expOrdLbls):
-            self.assertEqual(l, el)
-
-        # Setting custom labels
-
-        with self.assertRaises(Exception):
-            ordSel.labels = ['test']
-
-        with self.assertRaises(Exception):
-            ordSel.labels = ['test'] * (len(expOrdLbls) + 1)
-
-        newLabels = [f'label {i}' for i in range(len(expOrdLbls))]
-        ordSel.labels = newLabels
-
-        lbls = ordSel.labels
-        self.assertEqual(len(lbls), len(newLabels))
-        for l, el in zip(lbls, newLabels):
-            self.assertEqual(l, el)
-
-
-        # Operators
-        ordSel = \
-            (rs.comp1.LIST('S1', 'S2').Count + rs.comp2.LIST('S1', 'S2').Count) <<\
-            (rs.comp1.LIST('S1', 'S2').Count - rs.comp2.LIST('S1', 'S2').Count) <<\
-            (rs.comp1.LIST('S1', 'S2').Count * rs.comp2.LIST('S1', 'S2').Count) <<\
-            (rs.comp1.LIST('S1', 'S2').Count / rs.comp2.LIST('S1', 'S2').Count) <<\
-            (rs.comp1.LIST('S1', 'S2').Count ** rs.comp2.LIST('S1', 'S2').Count) <<\
-            (123 + rs.comp2.LIST('S1', 'S2').Count) <<\
-            (123 - rs.comp2.LIST('S1', 'S2').Count) <<\
-            (123 * rs.comp2.LIST('S1', 'S2').Count) <<\
-            (123 / rs.comp2.LIST('S1', 'S2').Count) <<\
-            (rs.comp1.LIST('S1', 'S2').Count + 123) <<\
-            (rs.comp1.LIST('S1', 'S2').Count - 123) <<\
-            (rs.comp1.LIST('S1', 'S2').Count * 123) <<\
-            (rs.comp1.LIST('S1', 'S2').Count / 123) <<\
-            (rs.comp1.LIST('S1', 'S2').Count ** 123)
-
-        expOrdLbls = []
-        operators = ['+', '-', '*', '/', '**']
-        tmp = ['(comp1.S1.Count {} comp2.S1.Count)', '(comp1.S2.Count {} comp2.S2.Count)']
-        for op in operators:
-            expOrdLbls += [t.format(op) for t in tmp]
-        tmp = ['(123 {} comp2.S1.Count)', '(123 {} comp2.S2.Count)']
-        for op in operators[:4]:
-            expOrdLbls += [t.format(op) for t in tmp]
-        tmp = ['(comp1.S1.Count {} 123)', '(comp1.S2.Count {} 123)']
-        for op in operators:
-            expOrdLbls += [t.format(op) for t in tmp]
-
-        lbls = ordSel.labels
-        self.assertEqual(len(lbls), len(expOrdLbls))
-        for l, el in zip(lbls, expOrdLbls):
-            self.assertEqual(l, el)
-
-        # Unordered paths
-
-        unordSel = \
-            rs.ALL(Compartment, Patch).ALL(Species, Complex).Count
-
-        expUnordLbls = [
-            'comp1.S1.Count',
-            'comp1.S2.Count',
-            'comp1.CC.Count',
-            'comp2.S1.Count',
-            'comp2.S2.Count',
-            'comp2.CC.Count', # TODO Remove this line once the vsys issue in dist steps (#838) has been solved
-            'patch.Ex.Count',
-            'patch.ExS1.Count',
-            'patch.ExS2.Count',
-            'patch.ExS1S2.Count',
-        ]
-
-        self.assertEqual(set(unordSel.labels), set(expUnordLbls))
-
-        ##########
-        unordSel = \
-            rs.MATCH('^(co[mh]p.+)?(p[a-f]tch)?$').MATCH('^(Ex+)?(S[0-9])*$').Count
-
-        expUnordLbls = [
-            'comp1.S1.Count',
-            'comp1.S2.Count',
-            'comp2.S1.Count',
-            'comp2.S2.Count',
-            'patch.Ex.Count',
-            'patch.ExS1.Count',
-            'patch.ExS2.Count',
-            'patch.ExS1S2.Count',
-        ]
-
-        self.assertEqual(set(unordSel.labels), set(expUnordLbls))
-
-        ##########
-        unordSel = \
-            rs.comp1.LIST(*self.newMdl.CC).Count
-
-        expUnordLbls = [f'comp1.{state}.Count' for state in self.newMdl.CC[...]]
-
-        self.assertEqual(set(unordSel.labels), set(expUnordLbls))
-
-        ##### Setting custom labels after start of simulation
-
-        self.newSim.toSave(unordSel, dt = 0.1)
-
-        self.newSim.newRun()
-
-        with self.assertRaises(Exception):
-            unordSel.labels = expUnordLbls
-
-    
-    def testMetaData(self, usingMesh=False):
+    def testMetaData(self):
         self.newSim = self._get_API2_Sim(self.newMdl, self.newGeom)
         rs = ResultSelector(self.newSim)
 
@@ -878,7 +990,7 @@ class SimDataSaving(base_model.TestModelFramework):
         with self.assertWarns(Warning):
             saver1.metaData['loc_type'] = ['cmp'] * 4
 
-        if usingMesh:
+        if self.useMesh:
             n = len(self.newGeom.tets)
             saver3 = rs.TETS(self.newGeom.tets).S1.Count
             self.assertEqual(list(saver3.metaData['loc_type']), [TetReference._locStr] * n)
@@ -914,7 +1026,32 @@ class SimDataSaving(base_model.TestModelFramework):
         self.newSim.toSave(saver1, saver2, dt=self.deltaT)
 
         with dbCls(dbPath) as dbh:
-            self.newSim.toDB(dbh, dbUID, val1=1, val2=2)
+            # No slashes in group uid
+            with self.assertRaises(ValueError):
+                self.newSim.toDB(dbh, f'{dbUID}/test')
+
+            group = self.newSim.toDB(dbh, dbUID, val1=1, val2=2)
+
+            # Static data
+            if MPI._shouldWrite:
+                # Also check that parameters can be accessed
+                self.assertCountEqual(group.parameters.items(), dict(val1=1, val2=2).items())
+                self.assertEqual(group.name, dbUID)
+                if dbCls == SQLiteDBHandler:
+                    with self.assertRaises(NotImplementedError):
+                        group.staticData
+                else:
+                    group.staticData['teststatic1'] = list(range(10))
+                    group.staticData['teststatic1'] = list(range(10))
+                    with self.assertRaises(Exception):
+                        group.staticData['teststatic1'] = list(range(5))
+                    with self.assertRaises(KeyError):
+                        group.staticData[42] = [1, 2, 3]
+                    with self.assertRaises(TypeError):
+                        group.staticData['teststatic2'] = set([1, 2, 3])
+            else:
+                self.assertIsNone(group)
+
             self.newSim.newRun()
             self.init_API2_sim(self.newSim)
             self.newSim.run(self.shortEndTime)
@@ -929,7 +1066,27 @@ class SimDataSaving(base_model.TestModelFramework):
             if MPI._shouldWrite:
                 with self.assertRaises(Exception):
                     self.newSim.toDB(dbh, dbUID, val1=3, val2=4)
-            self.newSim.toDB(dbh, dbUID, val1=1, val2=2)
+            group = self.newSim.toDB(dbh, dbUID, val1=1, val2=2)
+
+            # Static data
+            if MPI._shouldWrite:
+                # Also check that parameters can be accessed
+                self.assertCountEqual(group.parameters.items(), dict(val1=1, val2=2).items())
+                self.assertEqual(group.name, dbUID)
+                if dbCls == SQLiteDBHandler:
+                    with self.assertRaises(NotImplementedError):
+                        group.staticData
+                else:
+                    group.staticData['teststatic2'] = {i: 'a'*i for i in range(5)}
+                    with self.assertRaises(Exception):
+                        group.staticData['teststatic1'] = list(range(5))
+                    with self.assertRaises(KeyError):
+                        group.staticData[42] = [1, 2, 3]
+                    with self.assertRaises(TypeError):
+                        group.staticData['teststatic3'] = set([1, 2, 3])
+            else:
+                self.assertIsNone(group)
+
             self.newSim.newRun()
             self.init_API2_sim(self.newSim)
             self.newSim.run(self.shortEndTime)
@@ -945,6 +1102,7 @@ class SimDataSaving(base_model.TestModelFramework):
             self.newSim.run(self.shortEndTime)
             self.createdFiles |= set(dbh._getFilePaths())
 
+        # Read data
         with dbCls(dbPath) as dbh:
             if MPI._shouldWrite:
                 self.assertEqual(len(list(dbh)), 2)
@@ -972,6 +1130,10 @@ class SimDataSaving(base_model.TestModelFramework):
                 with self.assertRaises(AttributeError):
                     dbh[dbUID].test
                 self.assertEqual(dbh[dbUID].name, dbUID)
+                # Static data
+                if dbCls != SQLiteDBHandler:
+                    self.assertEqual(dbh[dbUID].staticData['teststatic1'], list(range(10)))
+                    self.assertEqual(dbh[dbUID].staticData['teststatic2'], {i: 'a'*i for i in range(5)})
 
                 sv1, sv2 = dbh[dbUID].results
                 self.assertEqual(len(sv1.time), 2)
@@ -983,8 +1145,9 @@ class SimDataSaving(base_model.TestModelFramework):
                 saver1AutoMtdt = {
                     'loc_type': [Compartment._locStr] * 2 + [Patch._locStr] + [Compartment._locStr] * 2,
                     'loc_id': ['comp1', 'comp1', 'patch', 'comp1', None],
-                    'obj_type': ['', '', '', '', ''],
+                    'obj_type': ['Spec', 'Spec', 'Spec', '', 'Spec'],
                     'obj_id': ['S1', 'S2', 'ExS1S2', 'sus2', None],
+                    'property': ['Count', 'Count', 'Count', 'Count', 'Count'],
                 }
                 self.assertEqual({**saver1Mtdt, **saver1AutoMtdt}, sv1.metaData)
                 self.assertEqual(saver2.metaData._dict, sv2.metaData)
@@ -1032,6 +1195,7 @@ class SimDataSaving(base_model.TestModelFramework):
                 self.createdFiles |= set(dbh._getFilePaths())
 
 
+
 class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
     """Test data access, setting, and saving with tetmeshes."""
 
@@ -1053,23 +1217,17 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
         osim.setEfieldDT(self.efielddt)
         return osim
 
-    def testSimPathSetSyntax(self):
-        super().testSimPathSetSyntax(usingMesh=True)
-
-    def testSimPathGetSyntax(self, init=True, usingMesh=True):
-        super().testSimPathGetSyntax(init=init, usingMesh=True)
-
     def _testDeltaTSavingParams(self):
         timepoints = np.arange(0, self.endTime + self.deltaT, self.deltaT)
         def oldSave(sim):
             res = []
             c1 = 0
             for t in self.oc1tets:
-                c1 += sim.getTetCount(t, 'S1')
+                c1 += sim.getTetSpecCount(t, 'S1')
             res.append(c1)
             p1 = 0
             for t in self.optris:
-                p1 += sim.getTriCount(t, 'Ex')
+                p1 += sim.getTriSpecCount(t, 'Ex')
             res.append(p1 * 2)
             return res
 
@@ -1100,10 +1258,7 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
         )
 
     def testMetaData(self):
-        super().testMetaData(usingMesh=True)
-
-    def testResultSelectorLabels(self):
-        pass
+        super().testMetaData()
 
     @unittest.skipIf(importlib.util.find_spec('h5py') is None, 'h5py not available')
     def testDeltaTSavingXDMF(self, dbUID='GroupId1'):
@@ -1143,7 +1298,9 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
         tets = self.newGeom.tets
         tris1 = self.newGeom.patch.tris
         tris2 = self.newGeom.patch2.tris
-        saver2 = rs.TETS(tets).S1.Count << rs.TRIS(tris1 + tris2).ExS1S2.Count << rs.VERTS(tris1.verts).V
+        saver2 = rs.TETS(tets).S1.Count << rs.TRIS(tris1 + tris2).ExS1S2.Count
+        if self.useEField:
+            saver2 = saver2 << rs.VERTS(tris1.verts).V
 
         saver3 = rs.TETS(tets[0:len(tets)//2]).S2.Count << rs.TRIS(tris1).Ex.Count << rs.diffb.S1.DiffusionActive
 
@@ -1152,7 +1309,10 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
         else:
             saver4 = rs.ALL(ROI).ALL(Species).Count
 
-        saver5 = rs.TRIS(tris1).Chan1_Ohm_I.I
+        if self.useEField:
+            saver5 = rs.TRIS(tris1).Chan1_Ohm_I.I
+        else:
+            saver5 = rs.TRIS(tris1).ExS1S2.Count
 
         if self.useDist:
             saver6 = rs.TRIS(tris1).Ex.Count
@@ -1224,9 +1384,25 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
             # Need an MPI barrier to prevent early removal of files
             mpi4py.MPI.COMM_WORLD.Barrier()
 
+    def testSimPathFunctionSetting(self):
+        sim = self.newSim
+        self.init_API2_sim(sim)
+        self.specInds = {spec: i for i, spec in enumerate(sim.model.ALL(Species))}
+
+        sim.TETS().ALL(Species).Count = lambda tet, spec: self.specInds[spec] + len(self.specInds) * tet.idx
+
+        for tet in sim.geom.tets:
+            for spec in tet.ALL(Species):
+                self.assertEqual(sim.TET(tet).LIST(spec).Count, self.specInds[spec] + len(self.specInds) * tet.idx)
+
+    @unittest.skip('Not needed here')
+    def testXDMFWithoutMesh(self):
+        pass
+
 
 def suite():
     all_tests = []
+    all_tests.append(unittest.makeSuite(ResultSelectorTests, "test"))
     all_tests.append(unittest.makeSuite(SimDataSaving, "test"))
     all_tests.append(unittest.makeSuite(TetSimDataSaving, "test"))
     return unittest.TestSuite(all_tests)

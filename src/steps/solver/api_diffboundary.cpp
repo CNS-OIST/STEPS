@@ -24,80 +24,71 @@
 
  */
 
-
-
-// STL headers.
-#include <sstream>
-#include <string>
-
-// STEPS headers.
 #include "api.hpp"
+
 #include "statedef.hpp"
-// util
 #include "util/error.hpp"
-// logging
-#include <easylogging++.h>
-////////////////////////////////////////////////////////////////////////////////
 
-USING(std, string);
-using namespace steps::solver;
+namespace steps::solver {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setDiffBoundaryDiffusionActive(string const & db, string const & s, bool act)
-{
-    uint dbidx = pStatedef->getDiffBoundaryIdx(db);
-    uint sidx = pStatedef->getSpecIdx(s);
+void API::setDiffBoundarySpecDiffusionActive(std::string const& db,
+                                             std::string const& s,
+                                             bool act) {
+    diffboundary_global_id dbidx = pStatedef->getDiffBoundaryIdx(db);
+    spec_global_id sidx = pStatedef->getSpecIdx(s);
 
-    return _setDiffBoundaryDiffusionActive(dbidx, sidx, act);
+    return _setDiffBoundarySpecDiffusionActive(dbidx, sidx, act);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getDiffBoundaryDiffusionActive(string const & db, string const & s) const
-{
-    uint dbidx = pStatedef->getDiffBoundaryIdx(db);
-    uint sidx = pStatedef->getSpecIdx(s);
+bool API::getDiffBoundarySpecDiffusionActive(std::string const& db, std::string const& s) const {
+    diffboundary_global_id dbidx = pStatedef->getDiffBoundaryIdx(db);
+    spec_global_id sidx = pStatedef->getSpecIdx(s);
 
-    return _getDiffBoundaryDiffusionActive(dbidx, sidx);
+    return _getDiffBoundarySpecDiffusionActive(dbidx, sidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setDiffBoundaryDcst(std::string const & db, std::string const & s, double dcst, std::string const & direction_comp)
-{
-    uint dbidx = pStatedef->getDiffBoundaryIdx(db);
-    uint sidx = pStatedef->getSpecIdx(s);
+void API::setDiffBoundarySpecDcst(std::string const& db,
+                                  std::string const& s,
+                                  double dcst,
+                                  std::string const& direction_comp) {
+    diffboundary_global_id dbidx = pStatedef->getDiffBoundaryIdx(db);
+    spec_global_id sidx = pStatedef->getSpecIdx(s);
     if (direction_comp.empty()) {
-        _setDiffBoundaryDcst(dbidx, sidx, dcst);
+        _setDiffBoundarySpecDcst(dbidx, sidx, dcst);
+    } else {
+        comp_global_id cidx = pStatedef->getCompIdx(direction_comp);
+        _setDiffBoundarySpecDcst(dbidx, sidx, dcst, cidx);
     }
-    else {
-        uint cidx = pStatedef->getCompIdx(direction_comp);
-        _setDiffBoundaryDcst(dbidx, sidx, dcst, cidx);
-    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setDiffBoundaryDiffusionActive(uint /*dbidx*/, uint /*sidx*/, bool /*act*/)
-{
+void API::_setDiffBoundarySpecDiffusionActive(diffboundary_global_id /*dbidx*/,
+                                              spec_global_id /*sidx*/,
+                                              bool /*act*/) {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getDiffBoundaryDiffusionActive(uint /*dbidx*/, uint /*sidx*/) const
-{
+bool API::_getDiffBoundarySpecDiffusionActive(diffboundary_global_id /*dbidx*/,
+                                              spec_global_id /*sidx*/) const {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setDiffBoundaryDcst(uint /*dbidx*/, uint /*sidx*/, double /*dcst*/, uint /*direction_comp*/)
-{
+void API::_setDiffBoundarySpecDcst(diffboundary_global_id /*dbidx*/,
+                                   spec_global_id /*sidx*/,
+                                   double /*dcst*/,
+                                   comp_global_id /*direction_comp*/) {
     NotImplErrLog("");
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
+}  // namespace steps::solver

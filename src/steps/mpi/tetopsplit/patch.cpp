@@ -24,57 +24,40 @@
 
  */
 
-
-
-/*
- *  Last Changed Rev:  $Rev$
- *  Last Changed Date: $Date$
- *  Last Changed By:   $Author$
- */
+#include "patch.hpp"
 
 // Standard library & STL headers.
 #include <vector>
 
 // STEPS headers.
-#include "kproc.hpp"
-#include "patch.hpp"
 #include "model/reac.hpp"
 #include "solver/compdef.hpp"
-
-// logging
-#include <easylogging++.h>
+#include "util/checkpointing.hpp"
 #include "util/error.hpp"
-////////////////////////////////////////////////////////////////////////////////
 
-namespace smtos = steps::mpi::tetopsplit;
-namespace ssolver = steps::solver;
 
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::mpi::tetopsplit {
 
-smtos::Patch::Patch(ssolver::Patchdef * patchdef)
-: pPatchdef(patchdef)
-{
+Patch::Patch(solver::Patchdef* patchdef)
+    : pPatchdef(patchdef) {
     AssertLog(pPatchdef != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Patch::checkpoint(std::fstream & /*cp_file*/)
-{
-    // reserve
+void Patch::checkpoint(std::fstream& cp_file) {
+    util::checkpoint(cp_file, pArea);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Patch::restore(std::fstream & /*cp_file*/)
-{
-    // reserve
+void Patch::restore(std::fstream& cp_file) {
+    util::compare(cp_file, pArea);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Patch::addTri(smtos::Tri * tri)
-{
+void Patch::addTri(Tri* tri) {
     AssertLog(tri->patchdef() == def());
     pTris.push_back(tri);
     pArea += tri->area();
@@ -82,22 +65,13 @@ void smtos::Patch::addTri(smtos::Tri * tri)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::Patch::modCount(uint slidx, double count)
-{
-    AssertLog(slidx < def()->countSpecs());
-    double newcount = def()->pools()[slidx] + count;
-    AssertLog(newcount >= 0.0);
-    def()->setCount(slidx, newcount);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-smtos::Tri * smtos::Patch::pickTriByArea(double rand01) const
-{
-    if (countTris() == 0) { return nullptr;
-}
-    if (countTris() == 1) return pTris[0];
-
+Tri* Patch::pickTriByArea(double rand01) const {
+    if (countTris() == 0) {
+        return nullptr;
+    }
+    if (countTris() == 1) {
+        return pTris[0];
+    }
     double accum = 0.0;
     double selector = rand01 * area();
     for (auto const& t: pTris) {
@@ -107,17 +81,7 @@ smtos::Tri * smtos::Patch::pickTriByArea(double rand01) const
         }
     }
 
-    return *(endTri() - 1);
+    return tris().back();
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/*
-void smtos::Patch::setArea(double a)
-{
-    AssertLog(a > 0.0);
-    pArea = a;
-}
-*/
-////////////////////////////////////////////////////////////////////////////////
-
-// END
+}  // namespace steps::mpi::tetopsplit

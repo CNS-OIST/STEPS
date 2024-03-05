@@ -24,83 +24,123 @@
 
  */
 
+#pragma once
 
-#ifndef STEPS_SOLVER_EFIELD_BDSYSTEM_LAPACK_HPP
-#define STEPS_SOLVER_EFIELD_BDSYSTEM_LAPACK_HPP 1
-
+#include <algorithm>
 #include <cstddef>
 #include <vector>
-#include <algorithm>
 
-#include "util/common.h"
 #include "linsystem.hpp"
+#include "util/checkpointing.hpp"
 
-namespace steps {
-namespace solver {
-namespace efield {
+namespace steps::solver::efield {
 
 class LapackBandedMatrix: public AMatrix {
-public:
-    LapackBandedMatrix(size_t n,size_t halfbw):
-        pN(n), pData(n*(3*halfbw+1)), p00(&pData[2*halfbw]), pCStride(3*halfbw)
-    {}
+  public:
+    LapackBandedMatrix(size_t n, size_t halfbw)
+        : pN(n)
+        , pData(n * (3 * halfbw + 1))
+        , p00(&pData[2 * halfbw])
+        , pCStride(3 * halfbw) {}
 
-    size_t nRow() const override final { return pN; }
-    size_t nCol() const override final { return pN; }
-
-    double get(size_t row,size_t col) const override final {
-        return p00[col*pCStride+row];
+    void checkpoint(std::fstream& cp_file) {
+        util::checkpoint(cp_file, pN);
+        util::checkpoint(cp_file, pData);
+        util::checkpoint(cp_file, pCStride);
     }
 
-    void set(size_t row,size_t col,double value) override final {
-        p00[col*pCStride+row]=value;
+    void restore(std::fstream& cp_file) {
+        util::compare(cp_file, pN);
+        util::restore(cp_file, pData);
+        util::compare(cp_file, pCStride);
+    }
+    size_t nRow() const override final {
+        return pN;
+    }
+    size_t nCol() const override final {
+        return pN;
+    }
+
+    double get(size_t row, size_t col) const override final {
+        return p00[col * pCStride + row];
+    }
+
+    void set(size_t row, size_t col, double value) override final {
+        p00[col * pCStride + row] = value;
     }
 
     void zero() override final {
-        std::fill(pData.begin(),pData.end(),0.0);
+        std::fill(pData.begin(), pData.end(), 0.0);
     }
 
-    inline double *data() noexcept { return pData.data(); }
+    inline double* data() noexcept {
+        return pData.data();
+    }
 
-private:
+  private:
     size_t pN;
     std::vector<double> pData;
-    double *p00;
+    double* p00;
     size_t pCStride;
 };
 
-
-class BDSystemLapack
-{
-public:
+class BDSystemLapack {
+  public:
     typedef LapackBandedMatrix matrix_type;
     typedef VVector vector_type;
 
-    BDSystemLapack(size_t n, size_t halfbw):
-        pN(n),
-        pHalfBW(halfbw),
-        pA(n,halfbw),
-        pb(n,0.0),
-        px(n,0.0),
-        pwork(n),
-        pb_view(n, pb.data()),
-        px_view(n, px.data())
-    {}
+    BDSystemLapack(size_t n, size_t halfbw)
+        : pN(n)
+        , pHalfBW(halfbw)
+        , pA(n, halfbw)
+        , pb(n, 0.0)
+        , px(n, 0.0)
+        , pwork(n)
+        , pb_view(n, pb.data())
+        , px_view(n, px.data()) {}
 
-    const matrix_type &A() const noexcept { return pA; }
-    matrix_type &A() noexcept { return pA; }
+    void checkpoint(std::fstream& cp_file) {
+        util::checkpoint(cp_file, pN);
+        util::checkpoint(cp_file, pHalfBW);
+        pA.checkpoint(cp_file);
+        util::checkpoint(cp_file, pb);
+        util::checkpoint(cp_file, px);
+        util::checkpoint(cp_file, pwork);
+    }
 
-    const vector_type &b() const noexcept  { return pb_view; }
-    vector_type &b() noexcept  { return pb_view; }
+    void restore(std::fstream& cp_file) {
+        util::compare(cp_file, pN);
+        util::compare(cp_file, pHalfBW);
+        pA.restore(cp_file);
+        util::restore(cp_file, pb);
+        util::restore(cp_file, px);
+        util::restore(cp_file, pwork);
+    }
 
-    const vector_type &x() const noexcept { return px_view; }
+    const matrix_type& A() const noexcept {
+        return pA;
+    }
+    matrix_type& A() noexcept {
+        return pA;
+    }
 
-    void solve(); // destructive: overwrites pA
+    const vector_type& b() const noexcept {
+        return pb_view;
+    }
+    vector_type& b() noexcept {
+        return pb_view;
+    }
 
-private:
-    size_t pN,pHalfBW;
+    const vector_type& x() const noexcept {
+        return px_view;
+    }
 
-    LapackBandedMatrix pA; // will contain L and U after LU-decomposition
+    void solve();  // destructive: overwrites pA
+
+  private:
+    size_t pN, pHalfBW;
+
+    LapackBandedMatrix pA;  // will contain L and U after LU-decomposition
     std::vector<double> pb;
     std::vector<double> px;
     std::vector<int> pwork;
@@ -109,8 +149,4 @@ private:
     vector_type px_view;
 };
 
-
-}}} // namespace steps::solver::efield
-
-#endif // ndef STEPS_SOLVER_EFIELD_BDSYSTEM_LAPACK_HPP
-
+}  // namespace steps::solver::efield

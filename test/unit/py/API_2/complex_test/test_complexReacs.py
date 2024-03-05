@@ -649,56 +649,75 @@ class CompSelNoOrdReacTestCase(ComplexReacTest5Subunits):
                 C2[A1, A2, :, B1, B2] >r[1]> C2[A2, A2, :, B1, B2]
                 r[1].K = 1
             expectedReacs = [
-                ([C2[A1, A2, A1, B1, B2]], [C2[A2, A2, A1, B1, B2]]),
-                ([C2[A1, A2, A2, B1, B2]], [C2[A2, A2, A2, B1, B2]]),
-                ([C2[A1, A2, A3, B1, B2]], [C2[A2, A2, A3, B1, B2]])
+                ([C2[A1, A2, A1, B1, B2]], [C2[A2, A2, A1, B1, B2]], 1),
+                ([C2[A1, A2, A2, B1, B2]], [C2[A2, A2, A2, B1, B2]], 1),
+                ([C2[A1, A2, A3, B1, B2]], [C2[A2, A2, A3, B1, B2]], 1)
             ]
-            self._checkReactions(expectedReacs, r[1]._getStepsObjects())
+            self._checkReactions(expectedReacs, r[1]._getStepsObjects(), checkRates=True)
 
             with self.vsys:
                 C2[A1, A2, A3, ~B1, B2] >r[2]> C2[A2, A2, A3, ~(B2|B3), B2]
                 r[2].K = 1
             expectedReacs = [
-                ([C2[A1, A2, A3, B2, B2]], [C2[A2, A2, A3, B1, B2]]),
-                ([C2[A1, A2, A3, B3, B2]], [C2[A2, A2, A3, B1, B2]]),
+                ([C2[A1, A2, A3, B2, B2]], [C2[A2, A2, A3, B1, B2]], 1),
+                ([C2[A1, A2, A3, B3, B2]], [C2[A2, A2, A3, B1, B2]], 1),
             ]
-            self._checkReactions(expectedReacs, r[2]._getStepsObjects())
+            self._checkReactions(expectedReacs, r[2]._getStepsObjects(), checkRates=True)
 
             with self.vsys:
                 C2[A1, A2, :, B1|B3, B2] >r[3]> C2[A2, A2, :, B2, B2]
                 r[3].K = 1
             expectedReacs = [
-                ([C2[A1, A2, A1, B1, B2]], [C2[A2, A2, A1, B2, B2]]),
-                ([C2[A1, A2, A2, B1, B2]], [C2[A2, A2, A2, B2, B2]]),
-                ([C2[A1, A2, A3, B1, B2]], [C2[A2, A2, A3, B2, B2]]),
-                ([C2[A1, A2, A1, B3, B2]], [C2[A2, A2, A1, B2, B2]]),
-                ([C2[A1, A2, A2, B3, B2]], [C2[A2, A2, A2, B2, B2]]),
-                ([C2[A1, A2, A3, B3, B2]], [C2[A2, A2, A3, B2, B2]])
+                ([C2[A1, A2, A1, B1, B2]], [C2[A2, A2, A1, B2, B2]], 1),
+                ([C2[A1, A2, A2, B1, B2]], [C2[A2, A2, A2, B2, B2]], 1),
+                ([C2[A1, A2, A3, B1, B2]], [C2[A2, A2, A3, B2, B2]], 1),
+                ([C2[A1, A2, A1, B3, B2]], [C2[A2, A2, A1, B2, B2]], 1),
+                ([C2[A1, A2, A2, B3, B2]], [C2[A2, A2, A2, B2, B2]], 1),
+                ([C2[A1, A2, A3, B3, B2]], [C2[A2, A2, A3, B2, B2]], 1)
             ]
-            self._checkReactions(expectedReacs, r[3]._getStepsObjects())
+            self._checkReactions(expectedReacs, r[3]._getStepsObjects(), checkRates=True)
 
             with self.vsys:
                 C2[A1, A2, A3, B1, :] | C2[:, A1, A3, B1, B2] >r[6]> C2[A1, A2, A3, B1, B2]
                 r[6].K = 1
             expectedReacs = [
-                ([C2[A1, A2, A3, B1, B1]], [C2[A1, A2, A3, B1, B2]]),
-                ([C2[A1, A2, A3, B1, B2]], [C2[A1, A2, A3, B1, B2]]),
-                ([C2[A1, A2, A3, B1, B3]], [C2[A1, A2, A3, B1, B2]]),
-                ([C2[A1, A1, A3, B1, B2]], [C2[A1, A2, A3, B1, B2]]),
-                ([C2[A3, A1, A3, B1, B2]], [C2[A1, A2, A3, B1, B2]]),
+                ([C2[A1, A2, A3, B1, B1]], [C2[A1, A2, A3, B1, B2]], 1),
+                ([C2[A1, A2, A3, B1, B2]], [C2[A1, A2, A3, B1, B2]], 1),
+                ([C2[A1, A2, A3, B1, B3]], [C2[A1, A2, A3, B1, B2]], 1),
+                ([C2[A1, A1, A3, B1, B2]], [C2[A1, A2, A3, B1, B2]], 1),
+                ([C2[A3, A1, A3, B1, B2]], [C2[A1, A2, A3, B1, B2]], 1),
             ]
-            self._checkReactions(expectedReacs, r[6]._getStepsObjects())
+            self._checkReactions(expectedReacs, r[6]._getStepsObjects(), checkRates=True)
 
             with self.vsys:
                 C2[A1, A1, A3, B1, B2] | C2[A1, A2, A3, B1, :]  >r[7]> C2[A1, A2, A3, B1, B2]
                 r[7].K = 1
             expectedReacs = [
-                ([C2[A1, A2, A3, B1, B1]], [C2[A1, A2, A3, B1, B2]]),
-                ([C2[A1, A2, A3, B1, B2]], [C2[A1, A2, A3, B1, B2]]),
-                ([C2[A1, A2, A3, B1, B3]], [C2[A1, A2, A3, B1, B2]]),
-                ([C2[A1, A1, A3, B1, B2]], [C2[A1, A2, A3, B1, B2]]),
+                ([C2[A1, A2, A3, B1, B1]], [C2[A1, A2, A3, B1, B2]], 1),
+                ([C2[A1, A2, A3, B1, B2]], [C2[A1, A2, A3, B1, B2]], 1),
+                ([C2[A1, A2, A3, B1, B3]], [C2[A1, A2, A3, B1, B2]], 1),
+                ([C2[A1, A1, A3, B1, B2]], [C2[A1, A2, A3, B1, B2]], 1),
             ]
-            self._checkReactions(expectedReacs, r[7]._getStepsObjects())
+            self._checkReactions(expectedReacs, r[7]._getStepsObjects(), checkRates=True)
+
+            with self.vsys:
+                C2[~A1, :, :, B1, B2] >r[10]> C2[A1, :, :, B1, B2]
+                r[10].K = 1
+            expectedReacs = [
+                ([C2[A2, A1, A1, B1, B2]], [C2[A1, A1, A1, B1, B2]], 1),
+                ([C2[A2, A1, A2, B1, B2]], [C2[A1, A1, A2, B1, B2]], 1),
+                ([C2[A2, A1, A3, B1, B2]], [C2[A1, A1, A3, B1, B2]], 0.5),
+                ([C2[A2, A2, A2, B1, B2]], [C2[A1, A2, A2, B1, B2]], 1),
+                ([C2[A2, A2, A3, B1, B2]], [C2[A1, A2, A3, B1, B2]], 0.5),
+                ([C2[A2, A3, A3, B1, B2]], [C2[A1, A3, A3, B1, B2]], 0.5),
+                ([C2[A3, A1, A1, B1, B2]], [C2[A1, A1, A1, B1, B2]], 1),
+                ([C2[A3, A1, A2, B1, B2]], [C2[A1, A1, A2, B1, B2]], 0.5),
+                ([C2[A3, A1, A3, B1, B2]], [C2[A1, A1, A3, B1, B2]], 1),
+                ([C2[A3, A2, A2, B1, B2]], [C2[A1, A2, A2, B1, B2]], 0.5),
+                ([C2[A3, A2, A3, B1, B2]], [C2[A1, A2, A3, B1, B2]], 0.5),
+                ([C2[A3, A3, A3, B1, B2]], [C2[A1, A3, A3, B1, B2]], 1),
+            ]
+            self._checkReactions(expectedReacs, r[10]._getStepsObjects(), checkRates=True)
 
             with self.vsys:
                 with self.assertRaises(Exception):

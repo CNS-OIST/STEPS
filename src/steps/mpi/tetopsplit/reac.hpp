@@ -27,21 +27,14 @@
 #pragma once
 
 #include <vector>
-#include <fstream>
 
 #include "kproc.hpp"
 #include "wmvol.hpp"
 
 #include "math/constants.hpp"
-#include "util/common.h"
 #include "solver/reacdef.hpp"
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace mpi {
-namespace tetopsplit {
+namespace steps::mpi::tetopsplit {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -52,62 +45,67 @@ class TetOpSplitP;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class Reac
-: public KProc
-{
-
-public:
-
+class Reac: public KProc {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    Reac(steps::solver::Reacdef * rdef, steps::mpi::tetopsplit::WmVol * tet);
+    Reac(solver::Reacdef* rdef, mpi::tetopsplit::WmVol* tet);
+    Reac(const Reac&) = delete;
     ~Reac() override;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file) override;
+    void checkpoint(std::fstream& cp_file) override;
 
     /// restore data
-    void restore(std::fstream & cp_file) override;
+    void restore(std::fstream& cp_file) override;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    double c() const override
-    { return pCcst; }
+    double c() const override {
+        return pCcst;
+    }
     void resetCcst() override;
 
-    inline double kcst() const
-    { return pKcst; }
+    inline double kcst() const {
+        return pKcst;
+    }
     void setKcst(double k);
 
-    double h() noexcept override
-    { return (rate()/pCcst); }
+    double h() noexcept override {
+        return rate() / pCcst;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
     void setupDeps() override;
-    bool depSpecTet(uint gidx, steps::mpi::tetopsplit::WmVol * tet) override;
-    bool depSpecTri(uint gidx, steps::mpi::tetopsplit::Tri * tri) override;
-
+    /*
+    bool depSpecTet(solver::spec_global_id gidx, mpi::tetopsplit::WmVol *
+    tet) override; bool depSpecTri(solver::spec_global_id gidx,
+    mpi::tetopsplit::Tri * tri) override;
+        */
     void reset() override;
-    double rate(steps::mpi::tetopsplit::TetOpSplitP * solver = nullptr) override;
-    inline double getScaledDcst(steps::mpi::tetopsplit::TetOpSplitP * /*solver*/ = nullptr) const noexcept override
-    {return 0.0;}
+    double rate(mpi::tetopsplit::TetOpSplitP* solver = nullptr) override;
+    inline double getScaledDcst(
+        mpi::tetopsplit::TetOpSplitP* /*solver*/ = nullptr) const noexcept override {
+        return 0.0;
+    }
 
-	// at the moment we assume that reactions are applied globally so no sync is required
-	using KProc::apply;
-    void apply(const rng::RNGptr &rng, double dt, double simtime, double period) override;
+    // at the moment we assume that reactions are applied globally so no sync is
+    // required
+    using KProc::apply;
+    void apply(const rng::RNGptr& rng, double dt, double simtime, double period) override;
 
-    std::vector<KProc*> const & getLocalUpdVec(int direction = -1) const override;
-    std::vector<uint> const & getRemoteUpdVec(int direction = -1) const override;
+    std::vector<KProc*> const& getLocalUpdVec(int direction = -1) const override;
+    std::vector<solver::kproc_global_id> const& getRemoteUpdVec(int direction = -1) const override;
 
     void resetOccupancies() override;
 
@@ -120,33 +118,29 @@ public:
         return pTet->getHost();
     }
 
-    inline steps::mpi::tetopsplit::WmVol* container() const noexcept {
+    inline mpi::tetopsplit::WmVol* container() const noexcept {
         return pTet;
     }
-    ////////////////////////////////////////////////////////////////////////
-
-
-private:
 
     ////////////////////////////////////////////////////////////////////////
 
-    steps::solver::Reacdef                              * pReacdef;
-    steps::mpi::tetopsplit::WmVol                       * pTet;
+  private:
+    ////////////////////////////////////////////////////////////////////////
 
-    std::vector<KProc*>                 localUpdVec;
-    std::vector<uint>                   remoteUpdVec;
+    solver::Reacdef* pReacdef;
+    mpi::tetopsplit::WmVol* pTet;
+
+    std::vector<KProc*> localUpdVec;
+    std::vector<solver::kproc_global_id> remoteUpdVec;
 
     /// Properly scaled reaction constant.
-    double                                                pCcst;
+    double pCcst;
     // Also store the K constant for convenience
-    double                                                pKcst;
+    double pKcst;
 
     ////////////////////////////////////////////////////////////////////////
-
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-} // namespace tetopsplit
-} // namespace mpi
-} // namespace steps
+}  // namespace steps::mpi::tetopsplit

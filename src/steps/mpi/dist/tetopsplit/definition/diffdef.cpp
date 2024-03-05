@@ -4,14 +4,18 @@
 #include "statedef.hpp"
 
 
-namespace steps {
-namespace dist {
+namespace steps::dist {
 
-Diffdef::Diffdef(const Compdef &compdef, container::kproc_id kproc,
+Diffdef::Diffdef(const Compdef& compdef,
+                 container::kproc_id kproc,
                  container::diffusion_id t_diffusion,
-                 container::species_id species, osh::Real t_dcst)
-    : pCompdef(compdef), kprocContainerIdx(kproc), diffusion(t_diffusion),
-      specContainerIdx(species), dcst(t_dcst) {}
+                 container::species_id species,
+                 osh::Real t_dcst)
+    : pCompdef(compdef)
+    , kprocContainerIdx(kproc)
+    , diffusion(t_diffusion)
+    , specContainerIdx(species)
+    , dcst(t_dcst) {}
 
 void Diffdef::report(std::ostream& ostr) const {
     ostr << "Diffusion Report" << std::endl;
@@ -23,5 +27,4 @@ void Diffdef::report(std::ostream& ostr) const {
          << " DCST: " << dcst << std::endl;
 }
 
-}  // namespace dist
-}  // namespace steps
+}  // namespace steps::dist

@@ -24,25 +24,14 @@
 
  */
 
-
-// Standard library & STL headers.
-#include <algorithm>
-#include <cassert>
-#include <cmath>
-#include <functional>
-#include <iostream>
-
-#include <mpi.h>
+#include "wmvol.hpp"
 
 // STEPS headers.
-#include "wmvol.hpp"
 #include "diff.hpp"
 #include "reac.hpp"
-#include "tet.hpp"
 #include "tetopsplit.hpp"
 #include "tri.hpp"
 
-#include "mpi/mpi_common.hpp"
 #include "math/constants.hpp"
 #include "solver/compdef.hpp"
 #include "solver/diffdef.hpp"
@@ -50,79 +39,62 @@
 
 // logging
 #include "util/error.hpp"
-#include <easylogging++.h>
+
+#include "util/checkpointing.hpp"
+
+namespace steps::mpi::tetopsplit {
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace smtos = steps::mpi::tetopsplit;
-namespace ssolver = steps::solver;
-
-////////////////////////////////////////////////////////////////////////////////
-
-smtos::WmVol::WmVol
-  (
-    tetrahedron_id_t idx, solver::Compdef *cdef, double vol, int rank, int host_rank
-  )
-: pIdx(idx)
-, pCompdef(cdef)
-, pVol(vol)
-, myRank(rank)
-, hostRank(host_rank)
-{
+WmVol::WmVol(tetrahedron_global_id idx, solver::Compdef* cdef, double vol, int rank, int host_rank)
+    : pIdx(idx)
+    , pCompdef(cdef)
+    , pVol(vol)
+    , myRank(rank)
+    , hostRank(host_rank) {
     AssertLog(pCompdef != nullptr);
     AssertLog(pVol > 0.0);
 
     // Based on compartment definition, build other structures.
     uint nspecs = compdef()->countSpecs();
-    pPoolCount = new uint[nspecs];
-    pPoolFlags = new uint[nspecs];
-    std::fill_n(pPoolCount, nspecs, 0);
-    std::fill_n(pPoolFlags, nspecs, 0);
-
+    pPoolCount.container().resize(nspecs);
+    pPoolFlags.container().resize(nspecs);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::WmVol::~WmVol()
-{
-    // Delete species pool information.
-    delete[] pPoolCount;
-    delete[] pPoolFlags;
-
+WmVol::~WmVol() {
     // Delete reaction rules.
-    KProcPVecCI e = pKProcs.end();
-    for (KProcPVecCI i = pKProcs.begin(); i != e; ++i) delete *i;
+    auto e = pKProcs.end();
+    for (auto i = pKProcs.begin(); i != e; ++i) {
+        delete *i;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::WmVol::checkpoint(std::fstream & cp_file)
-{
-    uint nspecs = compdef()->countSpecs();
-    cp_file.write(reinterpret_cast<char*>(pPoolCount), sizeof(uint) * nspecs);
-    cp_file.write(reinterpret_cast<char*>(pPoolFlags), sizeof(uint) * nspecs);
+void WmVol::checkpoint(std::fstream& cp_file) {
+    util::checkpoint(cp_file, pPoolFlags);
+    util::checkpoint(cp_file, pPoolCount);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::WmVol::restore(std::fstream & cp_file)
-{
-    uint nspecs = compdef()->countSpecs();
-    cp_file.read(reinterpret_cast<char*>(pPoolCount), sizeof(uint) * nspecs);
-    cp_file.read(reinterpret_cast<char*>(pPoolFlags), sizeof(uint) * nspecs);
+void WmVol::restore(std::fstream& cp_file) {
+    util::restore(cp_file, pPoolFlags);
+    util::restore(cp_file, pPoolCount);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::WmVol::setNextTri(smtos::Tri * t)
-{
+void WmVol::setNextTri(Tri* t) {
     pNextTris.push_back(t);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::WmVol::setupKProcs(smtos::TetOpSplitP * tex)
-{
+void WmVol::setupKProcs(TetOpSplitP* tex) {
     startKProcIdx = tex->countKProcs();
     uint j = 0;
     nKProcs = compdef()->countReacs();
@@ -130,12 +102,11 @@ void smtos::WmVol::setupKProcs(smtos::TetOpSplitP * tex)
     if (hostRank == myRank) {
         // Create reaction kproc's.
         pKProcs.resize(nKProcs);
-        for (uint i = 0; i < nKProcs; ++i)
-        {
-            ssolver::Reacdef * rdef = compdef()->reacdef(i);
-            auto * r = new smtos::Reac(rdef, this);
+        for (auto i: solver::reac_local_id::range(nKProcs)) {
+            auto& rdef = compdef()->reacdef(i);
+            auto* r = new Reac(&rdef, this);
             pKProcs[j++] = r;
-            uint idx = tex->addKProc(r);
+            solver::kproc_global_id idx = tex->addKProc(r);
             r->setSchedIDX(idx);
         }
     }
@@ -143,8 +114,7 @@ void smtos::WmVol::setupKProcs(smtos::TetOpSplitP * tex)
     else {
         pKProcs.resize(0);
 
-        for (uint i = 0; i < nKProcs; ++i)
-        {
+        for (uint i = 0; i < nKProcs; ++i) {
             tex->addKProc(nullptr);
         }
     }
@@ -152,167 +122,148 @@ void smtos::WmVol::setupKProcs(smtos::TetOpSplitP * tex)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::WmVol::setupDeps()
-{
-    if (myRank != hostRank) { return;
-}
-    for (auto& kp : pKProcs) {
+void WmVol::setupDeps() {
+    if (myRank != hostRank) {
+        return;
+    }
+    for (auto& kp: pKProcs) {
         kp->setupDeps();
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool smtos::WmVol::KProcDepSpecTet(uint kp_lidx, smtos::WmVol* kp_container,  uint spec_gidx)
-{
+bool WmVol::KProcDepSpecTet(uint kp_lidx, WmVol* kp_container, solver::spec_global_id spec_gidx) {
     // for wmv it is always reaction so no need to check kproc type
-    if (kp_container != this) { return false;
-}
-    ssolver::Reacdef * rdef = compdef()->reacdef(kp_lidx);
-    return rdef->dep(spec_gidx) != 0;
+    if (kp_container != this) {
+        return false;
+    }
+    const auto& rdef = compdef()->reacdef(solver::reac_local_id(kp_lidx));
+    return rdef.dep(spec_gidx) != 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool smtos::WmVol::KProcDepSpecTri(uint /*kp_lidx*/, smtos::Tri* /*kp_container*/, uint /*spec_gidx*/)
-{
+bool WmVol::KProcDepSpecTri(uint /*kp_lidx*/,
+                            Tri* /*kp_container*/,
+                            solver::spec_global_id /*spec_gidx*/) {
     // Reac never depends on species on triangle
     return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::WmVol::reset()
-{
-    uint nspecs = compdef()->countSpecs();
-    std::fill_n(pPoolCount, nspecs, 0);
-    std::fill_n(pPoolFlags, nspecs, 0);
-    for (auto kproc: pKProcs) {
+void WmVol::reset() {
+    std::fill(pPoolCount.begin(), pPoolCount.end(), 0);
+    std::fill(pPoolFlags.begin(), pPoolFlags.end(), 0);
+
+    for (auto const& kproc: pKProcs) {
         kproc->reset();
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::WmVol::conc(uint gidx) const
-{
-    uint lspidx = compdef()->specG2L(gidx);
+double WmVol::conc(solver::spec_global_id gidx) const {
+    solver::spec_local_id lspidx = compdef()->specG2L(gidx);
     double n = pPoolCount[lspidx];
-    return (n/(1.0e3*pVol*steps::math::AVOGADRO));
+    return n / (1.0e3 * pVol * math::AVOGADRO);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::WmVol::setCount(uint lidx, uint count, double /*period*/)
-{
-    AssertLog(lidx < compdef()->countSpecs());
-    pPoolCount[lidx] = count;
-
+void WmVol::setCount(solver::spec_local_id lidx, uint count, double /*period*/) {
+    pPoolCount.at(lidx) = count;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::WmVol::incCount(uint lidx, int inc, double /*period*/, bool local_change)
-{
-    AssertLog(lidx < compdef()->countSpecs());
-
-
+void WmVol::incCount(solver::spec_local_id lidx, int inc, double /*period*/, bool local_change) {
     // remote change
-    if (hostRank != myRank && ! local_change)
-    {
+    if (hostRank != myRank && !local_change) {
         std::ostringstream os;
         os << "Remote WmVol update is not implemented.\n";
         NotImplErrLog(os.str());
     }
     // local change
     else {
-        double oldcount = pPoolCount[lidx];
-		AssertLog(oldcount + inc >= 0.0);
-		pPoolCount[lidx] += inc;
-
+        double oldcount = pPoolCount.at(lidx);
+        AssertLog(oldcount + inc >= 0.0);
+        pPoolCount[lidx] += inc;
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::WmVol::setClamped(uint lidx, bool clamp)
-{
-    if (clamp) { pPoolFlags[lidx] |= CLAMPED;
-    } else { pPoolFlags[lidx] &= ~CLAMPED;
-}
+void WmVol::setClamped(solver::spec_local_id lidx, bool clamp) {
+    if (clamp) {
+        pPoolFlags[lidx] |= CLAMPED;
+    } else {
+        pPoolFlags[lidx] &= ~CLAMPED;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::Reac * smtos::WmVol::reac(uint lidx) const
-{
+Reac& WmVol::reac(solver::reac_local_id lidx) const {
     AssertLog(lidx < compdef()->countReacs());
-    return dynamic_cast<smtos::Reac*>(pKProcs[lidx]);
+    return *dynamic_cast<Reac*>(pKProcs[lidx.get()]);
 }
 ////////////////////////////////////////////////////////////////////////////////
 // MPISTEPS
-bool smtos::WmVol::getInHost() const
-{
+bool WmVol::getInHost() const {
     return hostRank == myRank;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void smtos::WmVol::setHost(int host, int rank)
-{
+void WmVol::setHost(int host, int rank) {
     hostRank = host;
     myRank = rank;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::WmVol::setSolver(steps::mpi::tetopsplit::TetOpSplitP* solver)
-{
+void WmVol::setSolver(mpi::tetopsplit::TetOpSplitP* solver) {
     pSol = solver;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::TetOpSplitP* smtos::WmVol::solver() const
-{
+TetOpSplitP* WmVol::solver() const {
     return pSol;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::WmVol::getPoolOccupancy(uint /*lidx*/) const
-{
+double WmVol::getPoolOccupancy(solver::spec_local_id /*lidx*/) const {
     AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double smtos::WmVol::getLastUpdate(uint /*lidx*/) const
-{
+double WmVol::getLastUpdate(solver::spec_local_id /*lidx*/) const {
     AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::WmVol::resetPoolOccupancy()
-{
+void WmVol::resetPoolOccupancy() {
     AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
-void smtos::WmVol::repartition(smtos::TetOpSplitP * tex, int rank, int host_rank)
-{
+void WmVol::repartition(TetOpSplitP* tex, int rank, int host_rank) {
     myRank = rank;
     hostRank = host_rank;
 
     // Delete reaction rules.
-    KProcPVecCI e = pKProcs.end();
-    for (KProcPVecCI i = pKProcs.begin(); i != e; ++i) delete *i;
+    auto e = pKProcs.end();
+    for (auto i = pKProcs.begin(); i != e; ++i) {
+        delete *i;
+    }
 
     setupKProcs(tex);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
+}  // namespace steps::mpi::tetopsplit

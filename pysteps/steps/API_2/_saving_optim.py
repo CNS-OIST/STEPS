@@ -418,8 +418,10 @@ def OptimizeSelectors(sim, selectors):
     allValues = _OptimValuesList(sim)
 
     for rs, lst in rs2Ind.items():
-        for path in rs.simpath:
-            _ExtractOptimValuesFromPath(path, rs, allValues, lst)
+        # Do not try to optimize paths containing runtime objects
+        if not rs.simpath._hasRunTimeObject():
+            for path in rs.simpath:
+                _ExtractOptimValuesFromPath(path, rs, allValues, lst)
 
     allValues.setUpCallNodes()
 

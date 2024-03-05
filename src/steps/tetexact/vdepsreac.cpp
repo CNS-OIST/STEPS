@@ -24,60 +24,46 @@
 
  */
 
-
-// Standard library & STL headers.
-#include <vector>
-
 // STEPS headers.
 #include "vdepsreac.hpp"
+#include "math/constants.hpp"
 #include "tet.hpp"
 #include "tetexact.hpp"
 #include "tri.hpp"
-#include "math/constants.hpp"
 
 // logging
-#include <easylogging++.h>
 #include "util/error.hpp"
+
+#include "util/checkpointing.hpp"
+
+namespace steps::tetexact {
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace stex = steps::tetexact;
-namespace ssolver = steps::solver;
-namespace smath = steps::math;
-
-////////////////////////////////////////////////////////////////////////////////
-
-stex::VDepSReac::VDepSReac(ssolver::VDepSReacdef * vdsrdef, stex::Tri * tri)
-:
- pVDepSReacdef(vdsrdef)
-, pTri(tri)
-, pUpdVec()
-, pScaleFactor(0.0)
-{
+VDepSReac::VDepSReac(solver::VDepSReacdef* vdsrdef, Tri* tri)
+    : pVDepSReacdef(vdsrdef)
+    , pTri(tri)
+    , pScaleFactor(0.0) {
     AssertLog(pVDepSReacdef != nullptr);
     AssertLog(pTri != nullptr);
 
-    if (pVDepSReacdef->surf_surf() == false)
-    {
+    if (pVDepSReacdef->surf_surf() == false) {
         double vol;
-        if (pVDepSReacdef->inside())
-        {
+        if (pVDepSReacdef->inside()) {
             AssertLog(pTri->iTet() != nullptr);
             vol = pTri->iTet()->vol();
-        }
-        else
-        {
+        } else {
             AssertLog(pTri->oTet() != nullptr);
             vol = pTri->oTet()->vol();
         }
-        double vscale = 1.0e3 * vol * smath::AVOGADRO;
+        double vscale = 1.0e3 * vol * math::AVOGADRO;
         uint order = pVDepSReacdef->order();
         double o1 = static_cast<double>(order) - 1.0;
 
         pScaleFactor = pow(vscale, -o1);
-    }
-    else
-    {
-        double ascale = pTri->area() * smath::AVOGADRO;
+    } else {
+        double ascale = pTri->area() * math::AVOGADRO;
         uint order = pVDepSReacdef->order();
         double o1 = static_cast<double>(order) - 1.0;
 
@@ -85,49 +71,27 @@ stex::VDepSReac::VDepSReac(ssolver::VDepSReacdef * vdsrdef, stex::Tri * tri)
     }
 
     AssertLog(pScaleFactor > 0.0);
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::VDepSReac::~VDepSReac()
-= default;
+VDepSReac::~VDepSReac() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::VDepSReac::checkpoint(std::fstream & cp_file)
-{
-    cp_file.write(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
-    cp_file.write(reinterpret_cast<char*>(&pFlags), sizeof(uint));
-
-    cp_file.write(reinterpret_cast<char*>(&pScaleFactor), sizeof(double));
-
-    cp_file.write(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
-    cp_file.write(reinterpret_cast<char*>(&crData.pow), sizeof(int));
-    cp_file.write(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
-    cp_file.write(reinterpret_cast<char*>(&crData.rate), sizeof(double));
+void VDepSReac::checkpoint(std::fstream& cp_file) {
+    KProc::checkpoint(cp_file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::VDepSReac::restore(std::fstream & cp_file)
-{
-    cp_file.read(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
-    cp_file.read(reinterpret_cast<char*>(&pFlags), sizeof(uint));
-
-    cp_file.read(reinterpret_cast<char*>(&pScaleFactor), sizeof(double));
-
-    cp_file.read(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
-    cp_file.read(reinterpret_cast<char*>(&crData.pow), sizeof(int));
-    cp_file.read(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
-    cp_file.read(reinterpret_cast<char*>(&crData.rate), sizeof(double));
+void VDepSReac::restore(std::fstream& cp_file) {
+    KProc::restore(cp_file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::VDepSReac::reset()
-{
-
+void VDepSReac::reset() {
     crData.recorded = false;
     crData.pow = 0;
     crData.pos = 0;
@@ -138,8 +102,7 @@ void stex::VDepSReac::reset()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::VDepSReac::setupDeps()
-{
+void VDepSReac::setupDeps() {
     // For all non-zero entries gidx in SReacDef's UPD_S:
     //   Perform depSpecTri(gidx,tri()) for:
     //     All kproc's of tri()
@@ -159,58 +122,64 @@ void stex::VDepSReac::setupDeps()
     // and to eliminate duplicates. At the end of the routine, they are
     // copied into the vector that will be returned during execution.
 
-    WmVol * itet = pTri->iTet();
-    WmVol * otet = pTri->oTet();
+    WmVol* itet = pTri->iTet();
+    WmVol* otet = pTri->oTet();
 
-    std::set<stex::KProc*> updset;
+    KProcPSet updset;
 
-    for (auto const& k : pTri->kprocs()) {
-        for (auto const& spec : pVDepSReacdef->updcoll_S()) {
-            if (k->depSpecTri(spec, pTri))
+    for (auto const& k: pTri->kprocs()) {
+        for (auto const& spec: pVDepSReacdef->updcoll_S()) {
+            if (k->depSpecTri(spec, pTri)) {
                 updset.insert(k);
+            }
         }
     }
 
-    if (itet != nullptr)
-    {
-        for (auto const& k : itet->kprocs()) {
-            for (auto const& spec : pVDepSReacdef->updcoll_I()) {
-                if (k->depSpecTet(spec, itet))
+    if (itet != nullptr) {
+        for (auto const& k: itet->kprocs()) {
+            for (auto const& spec: pVDepSReacdef->updcoll_I()) {
+                if (k->depSpecTet(spec, itet)) {
                     updset.insert(k);
+                }
             }
         }
 
 
-        for (auto const& tri : itet->nexttris()) {
-            if (tri == nullptr) continue;
+        for (auto const& tri: itet->nexttris()) {
+            if (tri == nullptr) {
+                continue;
+            }
 
-            for (auto const& k : tri->kprocs()) {
-                for (auto const& spec : pVDepSReacdef->updcoll_I()) {
-                    if (k->depSpecTet(spec, itet))
+            for (auto const& k: tri->kprocs()) {
+                for (auto const& spec: pVDepSReacdef->updcoll_I()) {
+                    if (k->depSpecTet(spec, itet)) {
                         updset.insert(k);
+                    }
                 }
             }
         }
     }
 
-    if (otet != nullptr)
-    {
-        for (auto const& k : otet->kprocs()) {
-            for (auto const& spec : pVDepSReacdef->updcoll_O()) {
-                if (k->depSpecTet(spec, otet))
+    if (otet != nullptr) {
+        for (auto const& k: otet->kprocs()) {
+            for (auto const& spec: pVDepSReacdef->updcoll_O()) {
+                if (k->depSpecTet(spec, otet)) {
                     updset.insert(k);
+                }
             }
         }
 
 
+        for (auto const& tri: otet->nexttris()) {
+            if (tri == nullptr) {
+                continue;
+            }
 
-        for (auto const& tri : otet->nexttris()) {
-            if (tri == nullptr) continue;
-
-            for (auto const& k : tri->kprocs()) {
-                for (auto const& spec : pVDepSReacdef->updcoll_O()) {
-                    if (k->depSpecTet(spec, otet))
+            for (auto const& k: tri->kprocs()) {
+                for (auto const& spec: pVDepSReacdef->updcoll_O()) {
+                    if (k->depSpecTet(spec, otet)) {
                         updset.insert(k);
+                    }
                 }
             }
         }
@@ -221,8 +190,7 @@ void stex::VDepSReac::setupDeps()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool stex::VDepSReac::depSpecTet(uint gidx, stex::WmVol * tet)
-{
+bool VDepSReac::depSpecTet(solver::spec_global_id gidx, WmVol* tet) {
     // We need to check whether the tet is inside or outside.
     //   -> If inside: check dependency using VDepSReacDef's I_DEP
     //   -> If outside: check dependency using VDepSReacDef's O_DEP
@@ -230,235 +198,210 @@ bool stex::VDepSReac::depSpecTet(uint gidx, stex::WmVol * tet)
     //
     // NOTE: DEP_NONE is defined in steps/sim/shared/types.hpp
 
-    if (tet == pTri->iTet())
-    {
-        return (pVDepSReacdef->dep_I(gidx) != ssolver::DEP_NONE);
-    }
-    else if (tet == pTri->oTet())
-    {
-        return (pVDepSReacdef->dep_O(gidx) != ssolver::DEP_NONE);
+    if (tet == pTri->iTet()) {
+        return pVDepSReacdef->dep_I(gidx) != solver::DEP_NONE;
+    } else if (tet == pTri->oTet()) {
+        return pVDepSReacdef->dep_O(gidx) != solver::DEP_NONE;
     }
     return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool stex::VDepSReac::depSpecTri(uint gidx, stex::Tri * triangle)
-{
-    if (triangle != pTri) { return false;
-}
-    return (pVDepSReacdef->dep_S(gidx) != ssolver::DEP_NONE);
+bool VDepSReac::depSpecTri(solver::spec_global_id gidx, Tri* triangle) {
+    if (triangle != pTri) {
+        return false;
+    }
+    return pVDepSReacdef->dep_S(gidx) != solver::DEP_NONE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stex::VDepSReac::rate(steps::tetexact::Tetexact * solver)
-{
-       if (inactive()) return 0.0;
+double VDepSReac::rate(Tetexact* solver) {
+    if (inactive()) {
+        return 0.0;
+    }
 
-        // First we compute the combinatorial part.
-        //   1/ for the surface part of the stoichiometry
-        //   2/ for the inner or outer volume part of the stoichiometry,
-        //      depending on whether the sreac is inner() or outer()
-        // Then we multiply with mesoscopic constant.
+    // First we compute the combinatorial part.
+    //   1/ for the surface part of the stoichiometry
+    //   2/ for the inner or outer volume part of the stoichiometry,
+    //      depending on whether the sreac is inner() or outer()
+    // Then we multiply with mesoscopic constant.
 
-        ssolver::Patchdef * pdef = pTri->patchdef();
-        uint lidx = pdef->vdepsreacG2L(pVDepSReacdef->gidx());
+    solver::Patchdef* pdef = pTri->patchdef();
+    solver::vdepsreac_local_id lidx = pdef->vdepsreacG2L(pVDepSReacdef->gidx());
 
-        double h_mu = 1.0;
+    double h_mu = 1.0;
 
-        uint * lhs_s_vec = pdef->vdepsreac_lhs_S_bgn(lidx);
-        uint * cnt_s_vec = pTri->pools();
-        uint nspecs_s = pdef->countSpecs();
-        for (uint s = 0; s < nspecs_s; ++s)
-        {
-            uint lhs = lhs_s_vec[s];
-            if (lhs == 0) { continue;
-}
-            uint cnt = cnt_s_vec[s];
-            if (lhs > cnt)
-            {
+    const auto& lhs_s_vec = pdef->vdepsreac_lhs_S(lidx);
+    const auto& cnt_s_vec = pTri->pools();
+    for (auto s: lhs_s_vec.range()) {
+        uint lhs = lhs_s_vec[s];
+        if (lhs == 0) {
+            continue;
+        }
+        uint cnt = cnt_s_vec[s];
+        if (lhs > cnt) {
+            return 0.0;
+        }
+
+        switch (lhs) {
+        case 4: {
+            h_mu *= static_cast<double>(cnt - 3);
+        }
+            STEPS_FALLTHROUGH;
+        case 3: {
+            h_mu *= static_cast<double>(cnt - 2);
+        }
+            STEPS_FALLTHROUGH;
+        case 2: {
+            h_mu *= static_cast<double>(cnt - 1);
+        }
+            STEPS_FALLTHROUGH;
+        case 1: {
+            h_mu *= static_cast<double>(cnt);
+            break;
+        }
+        default: {
+            AssertLog(false);
+        }
+        }
+    }
+
+    if (pVDepSReacdef->inside()) {
+        const auto& lhs_i_vec = pdef->vdepsreac_lhs_I(lidx);
+        auto const& cnt_i_vec = pTri->iTet()->pools();
+        for (auto s: lhs_i_vec.range()) {
+            uint lhs = lhs_i_vec[s];
+            if (lhs == 0) {
+                continue;
+            }
+            uint cnt = cnt_i_vec[s];
+            if (lhs > cnt) {
                 return 0.0;
             }
-            switch (lhs)
-            {
-                case 4:
-                {
-                    h_mu *= static_cast<double>(cnt - 3);
-                }
+            switch (lhs) {
+            case 4: {
+                h_mu *= static_cast<double>(cnt - 3);
+            }
                 STEPS_FALLTHROUGH;
-                case 3:
-                {
-                    h_mu *= static_cast<double>(cnt - 2);
-                }
+            case 3: {
+                h_mu *= static_cast<double>(cnt - 2);
+            }
                 STEPS_FALLTHROUGH;
-                case 2:
-                {
-                    h_mu *= static_cast<double>(cnt - 1);
-                }
+            case 2: {
+                h_mu *= static_cast<double>(cnt - 1);
+            }
                 STEPS_FALLTHROUGH;
-                case 1:
-                {
-                    h_mu *= static_cast<double>(cnt);
-                    break;
-                }
-                default:
-                {
-                    AssertLog(false);
-                }
+            case 1: {
+                h_mu *= static_cast<double>(cnt);
+                break;
+            }
+            default: {
+                AssertLog(false);
+            }
             }
         }
-
-        if (pVDepSReacdef->inside())
-        {
-            uint * lhs_i_vec = pdef->vdepsreac_lhs_I_bgn(lidx);
-            auto const& cnt_i_vec = pTri->iTet()->pools();
-            uint nspecs_i = pdef->countSpecs_I();
-            for (uint s = 0; s < nspecs_i; ++s)
-            {
-                uint lhs = lhs_i_vec[s];
-                if (lhs == 0) { continue;
-}
-                uint cnt = cnt_i_vec[s];
-                if (lhs > cnt)
-                {
-                    return 0.0;
-                }
-                switch (lhs)
-                {
-                    case 4:
-                    {
-                        h_mu *= static_cast<double>(cnt - 3);
-                    }
-                    STEPS_FALLTHROUGH;
-                    case 3:
-                    {
-                        h_mu *= static_cast<double>(cnt - 2);
-                    }
-                    STEPS_FALLTHROUGH;
-                    case 2:
-                    {
-                        h_mu *= static_cast<double>(cnt - 1);
-                    }
-                    STEPS_FALLTHROUGH;
-                    case 1:
-                    {
-                        h_mu *= static_cast<double>(cnt);
-                        break;
-                    }
-                    default:
-                    {
-                        AssertLog(false);
-                    }
-                }
+    } else if (pVDepSReacdef->outside()) {
+        const auto& lhs_o_vec = pdef->vdepsreac_lhs_O(lidx);
+        auto const& cnt_o_vec = pTri->oTet()->pools();
+        for (auto s: lhs_o_vec.range()) {
+            uint lhs = lhs_o_vec[s];
+            if (lhs == 0) {
+                continue;
+            }
+            uint cnt = cnt_o_vec[s];
+            if (lhs > cnt) {
+                return 0.0;
+            }
+            switch (lhs) {
+            case 4: {
+                h_mu *= static_cast<double>(cnt - 3);
+            }
+                STEPS_FALLTHROUGH;
+            case 3: {
+                h_mu *= static_cast<double>(cnt - 2);
+            }
+                STEPS_FALLTHROUGH;
+            case 2: {
+                h_mu *= static_cast<double>(cnt - 1);
+            }
+                STEPS_FALLTHROUGH;
+            case 1: {
+                h_mu *= static_cast<double>(cnt);
+                break;
+            }
+            default: {
+                AssertLog(false);
+            }
             }
         }
-        else if (pVDepSReacdef->outside())
-        {
-            uint * lhs_o_vec = pdef->vdepsreac_lhs_O_bgn(lidx);
-            auto const& cnt_o_vec = pTri->oTet()->pools();
-            uint nspecs_o = pdef->countSpecs_O();
-            for (uint s = 0; s < nspecs_o; ++s)
-            {
-                uint lhs = lhs_o_vec[s];
-                if (lhs == 0) { continue;
-}
-                uint cnt = cnt_o_vec[s];
-                if (lhs > cnt)
-                {
-                    return 0.0;
-                }
-                switch (lhs)
-                {
-                    case 4:
-                    {
-                        h_mu *= static_cast<double>(cnt - 3);
-                    }
-                    STEPS_FALLTHROUGH;
-                    case 3:
-                    {
-                        h_mu *= static_cast<double>(cnt - 2);
-                    }
-                    STEPS_FALLTHROUGH;
-                    case 2:
-                    {
-                        h_mu *= static_cast<double>(cnt - 1);
-                    }
-                    STEPS_FALLTHROUGH;
-                    case 1:
-                    {
-                        h_mu *= static_cast<double>(cnt);
-                        break;
-                    }
-                    default:
-                    {
-                        AssertLog(false);
-                    }
-                }
-            }
-        }
+    }
 
-        double v = solver->getTriV(pTri->idx());
-        double k = pVDepSReacdef->getVDepK(v);
+    double v = solver->getTriV(pTri->idx());
+    double k = pVDepSReacdef->getVDepK(v);
 
-        return h_mu * k * pScaleFactor;
-
+    return h_mu * k * pScaleFactor;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<stex::KProc*> const & stex::VDepSReac::apply(const rng::RNGptr &/*rng*/, double dt, double simtime)
-{
+std::vector<KProc*> const& VDepSReac::apply(const rng::RNGptr& /*rng*/, double dt, double simtime) {
     // NOTE: simtime is BEFORE the update has taken place
 
-    ssolver::Patchdef * pdef = pTri->patchdef();
-    uint lidx = pdef->vdepsreacG2L(pVDepSReacdef->gidx());
+    solver::Patchdef* pdef = pTri->patchdef();
+    solver::vdepsreac_local_id lidx = pdef->vdepsreacG2L(pVDepSReacdef->gidx());
 
-    int * upd_s_vec = pdef->vdepsreac_upd_S_bgn(lidx);
-    uint * cnt_s_vec = pTri->pools();
+    const auto& upd_s_vec = pdef->vdepsreac_upd_S(lidx);
+    const auto& cnt_s_vec = pTri->pools();
 
     // First tell the triangles of any channel states relating to ohmic currents
     // that have been changed. If a change has occured then the triangle will
     // calculate the current that passed through the
     // channel since the last change.
     // NOTE: This must clearly come BEFORE the actual update happens
-    uint nocs = pdef->countOhmicCurrs();
-    for (uint oc = 0; oc < nocs; ++oc)
-    {
+    for (auto oc: solver::ohmiccurr_local_id::range(pdef->countOhmicCurrs())) {
         // Patchdef returns local index
-        uint cs_lidx = pdef->ohmiccurr_chanstate(oc);
-        if (pTri->clamped(cs_lidx)) continue;
+        solver::spec_local_id cs_lidx = pdef->ohmiccurr_chanstate(oc);
+        if (pTri->clamped(cs_lidx)) {
+            continue;
+        }
         int upd = upd_s_vec[cs_lidx];
-        if (upd == 0) continue;
+        if (upd == 0) {
+            continue;
+        }
         // Now here a channel state related to an ohmic current has changed
         // it's number: tell the triangle
         pTri->setOCchange(oc, cs_lidx, dt, simtime);
     }
 
     // Update triangle pools.
-    uint nspecs_s = pdef->countSpecs();
-    for (uint s = 0; s < nspecs_s; ++s)
-    {
-        if (pTri->clamped(s)) continue;
+    for (auto s: upd_s_vec.range()) {
+        if (pTri->clamped(s)) {
+            continue;
+        }
         int upd = upd_s_vec[s];
-        if (upd == 0) continue;
+        if (upd == 0) {
+            continue;
+        }
         int nc = static_cast<int>(cnt_s_vec[s]) + upd;
         AssertLog(nc >= 0);
         pTri->setCount(s, static_cast<uint>(nc));
     }
 
     // Update inner tet pools.
-    stex::WmVol * itet = pTri->iTet();
-    if (itet != nullptr)
-    {
-        int * upd_i_vec = pdef->vdepsreac_upd_I_bgn(lidx);
+    WmVol* itet = pTri->iTet();
+    if (itet != nullptr) {
+        const auto& upd_i_vec = pdef->vdepsreac_upd_I(lidx);
         auto const& cnt_i_vec = itet->pools();
-        uint nspecs_i = pdef->countSpecs_I();
-        for (uint s = 0; s < nspecs_i; ++s)
-        {
-            if (itet->clamped(s)) continue;
+        for (auto s: upd_i_vec.range()) {
+            if (itet->clamped(s)) {
+                continue;
+            }
             int upd = upd_i_vec[s];
-            if (upd == 0) continue;
+            if (upd == 0) {
+                continue;
+            }
             int nc = static_cast<int>(cnt_i_vec[s]) + upd;
             AssertLog(nc >= 0);
             itet->setCount(s, static_cast<uint>(nc));
@@ -466,17 +409,18 @@ std::vector<stex::KProc*> const & stex::VDepSReac::apply(const rng::RNGptr &/*rn
     }
 
     // Update outer tet pools.
-    stex::WmVol * otet = pTri->oTet();
-    if (otet != nullptr)
-    {
-        int * upd_o_vec = pdef->vdepsreac_upd_O_bgn(lidx);
+    WmVol* otet = pTri->oTet();
+    if (otet != nullptr) {
+        const auto& upd_o_vec = pdef->vdepsreac_upd_O(lidx);
         auto const& cnt_o_vec = otet->pools();
-        uint nspecs_o = pdef->countSpecs_O();
-        for (uint s = 0; s < nspecs_o; ++s)
-        {
-            if (otet->clamped(s)) continue;
+        for (auto s: upd_o_vec.range()) {
+            if (otet->clamped(s)) {
+                continue;
+            }
             int upd = upd_o_vec[s];
-            if (upd == 0) continue;
+            if (upd == 0) {
+                continue;
+            }
             int nc = static_cast<int>(cnt_o_vec[s]) + upd;
             AssertLog(nc >= 0);
             otet->setCount(s, static_cast<uint>(nc));
@@ -488,6 +432,4 @@ std::vector<stex::KProc*> const & stex::VDepSReac::apply(const rng::RNGptr &/*rn
     return pUpdVec;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
+}  // namespace steps::tetexact

@@ -24,48 +24,30 @@
 
  */
 
-#ifndef STEPS_SOLVER_SDIFFBOUNDARYDEF_HPP
-#define STEPS_SOLVER_SDIFFBOUNDARYDEF_HPP 1
+#pragma once
 
-
-// STL headers.
+#include <iosfwd>
 #include <string>
-#include <fstream>
 
-// STEPS headers.
-#include "util/common.h"
-#include "statedef.hpp"
+#include "fwd.hpp"
+#include "geom/fwd.hpp"
 #include "geom/sdiffboundary.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace solver {
-
-// Forwards declarations
-class   SDiffBoundarydef;
-
-// Auxiliary declarations.
-typedef SDiffBoundarydef *                      SDiffBoundaryDefP;
-typedef std::vector<SDiffBoundaryDefP>          SDiffBoundaryDefPVec;
-typedef SDiffBoundaryDefPVec::iterator          SDiffBoundaryDefPVecI;
-typedef SDiffBoundaryDefPVec::const_iterator    SDiffBoundaryDefPVecCI;
+namespace steps::solver {
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Defined surface diffusion boundary object.
-class SDiffBoundarydef
-{
-
-public:
+class SDiffBoundarydef {
+  public:
     /// Constructor
     ///
     /// \param sd State of the solver.
     /// \param idx Global index of the object.
-    /// \param sdb Pointer to the associated Surface Diffusion boundary object.
-    SDiffBoundarydef(Statedef * sd, uint idx, steps::tetmesh::SDiffBoundary * sdb);
+    /// \param sdb Reference to the associated Surface Diffusion boundary object.
+    SDiffBoundarydef(Statedef& sd, sdiffboundary_global_id idx, tetmesh::SDiffBoundary& sdb);
 
-    /// Destructor
-    ~SDiffBoundarydef();
+    SDiffBoundarydef(const SDiffBoundarydef&) = delete;
+    SDiffBoundarydef& operator=(const SDiffBoundarydef&) = delete;
 
     void setup();
 
@@ -73,71 +55,55 @@ public:
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream& cp_file) const;
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream& cp_file);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: DIFFUSION BOUNDARY
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this diffusion boundary.
-    inline uint gidx() const
-    { return pIdx; }
+    inline sdiffboundary_global_id gidx() const {
+        return pIdx;
+    }
 
     /// Return the name of this diffusion boundary.
     const std::string& name() const noexcept {
         return pName;
     }
 
-    inline const std::vector<index_t>& bars() const
-    { return pBars; }
+    const std::vector<index_t>& bars() const noexcept {
+        return pBars;
+    }
 
-    inline uint patcha() const
-    { return pPatchA; }
-    inline uint patchb() const
-    { return pPatchB; }
+    inline patch_global_id patcha() const noexcept {
+        return pPatchA;
+    }
+    inline patch_global_id patchb() const noexcept {
+        return pPatchB;
+    }
 
+  private:
+    const Statedef& pStatedef;
+    /// The global index of this diffusion boundary
+    const sdiffboundary_global_id pIdx;
 
-    ////////////////////////////////////////////////////////////////////////
+    /// The string identifier of this diffusion rule
+    const std::string pName;
 
-private:
+    /// List of all the bars
+    const std::vector<index_t> pBars;
 
-    ////////////////////////////////////////////////////////////////////////
-
-    Statedef                           * pStatedef;
-
-    bool                                 pSetupdone;
-
-    // The global index of this diffusion boundary
-    uint                                 pIdx;
-
-    // The string identifier of this diffusion rule
-    std::string                          pName;
-
-    // List of all the bars
-
-    std::vector<index_t>    pBars;
-
-    uint                                 pPatchA;
-    uint                                 pPatchB;
-
-    // The pointer to the well-mixed comps is stored, but should not be used
+    // The 2 pointers to the well-mixed comps is stored, but should not be used
     // only here so it's available during setup.
-    steps::wm::Patch *                   pPatchA_temp;
-    steps::wm::Patch *                   pPatchB_temp;
+    const std::vector<wm::Patch*> pPatches;
 
-    ////////////////////////////////////////////////////////////////////////
+    bool pSetupdone{false};
 
+    patch_global_id pPatchA;
+    patch_global_id pPatchB;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-#endif
-// STEPS_SOLVER_SDIFFBOUNDARYDEF_HPP
-
-// END
+}  // namespace steps::solver

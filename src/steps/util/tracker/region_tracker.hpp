@@ -17,15 +17,15 @@
 #endif
 #include <tuple>
 
-namespace steps {
-namespace util {
+namespace steps::util {
 
 
 class RegionTracker {
+    using tracking_t =
+        std::tuple<double, double, double, std::uint32_t, TimeTracker, MemoryTracker>;
 
-    using tracking_t = std::tuple<double, double, double, std::uint32_t, TimeTracker, MemoryTracker>;
-private:
-    enum tracking {time, memory, memoryDelta, count, timTracker, memTracker};
+  private:
+    enum tracking { time, memory, memoryDelta, count, timTracker, memTracker };
 
     // region name -> tracking tuple
     static std::map<std::string, tracking_t> regions_;
@@ -35,8 +35,7 @@ private:
     static MPI_Comm comm_;
 #endif
 
-public:
-
+  public:
 #ifdef STEPS_USE_MPI
     static void init(MPI_Comm comm = MPI_COMM_WORLD);
 #else
@@ -47,8 +46,6 @@ public:
     static void stop(const std::string& name);
     static tracking_t get(const std::string& name);
     static void print(std::ostream& os = std::cout);
-
 };
 
-} // namespace util
-} // namespace steps
+}  // namespace steps::util

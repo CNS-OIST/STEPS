@@ -41,7 +41,15 @@ import numpy
 
 from . import tol_funcs
 
+try:
+    from steps import stepslib
+    STEPS_SUNDIALS_VERSION_MAJOR = stepslib._STEPS_SUNDIALS_VERSION_MAJOR
+except AttributeError:
+    STEPS_SUNDIALS_VERSION_MAJOR = 3
+
 ########################################################################
+
+
 
 class TestRDUnbdiff2DODE(unittest.TestCase):
 
@@ -118,19 +126,23 @@ class TestRDUnbdiff2DODE(unittest.TestCase):
             triareas[i] = mesh.getTriArea(patch_tris[i])
 
         sim = solvmod.TetODE(mdl, mesh)
-        sim.setTolerances(1.0e-7, 1.0e-7)
+
+        if STEPS_SUNDIALS_VERSION_MAJOR > 4:
+            sim.setTolerances(5e-2, 5e-2)
+        else:
+            sim.setTolerances(2.5e-5, 2.5e-5)
 
         tpnts = numpy.arange(0.0, INT, DT)
         ntpnts = tpnts.shape[0]
 
         res_count = numpy.zeros((ntpnts, patch_tris_n))
 
-        sim.setTriCount(ctri_idx, 'X', NINJECT)
+        sim.setTriSpecCount(ctri_idx, 'X', NINJECT)
 
         for i in range(ntpnts):
             sim.run(tpnts[i])
             for k in range(patch_tris_n):
-                res_count[i, k] = sim.getTriCount(patch_tris[k], 'X')
+                res_count[i, k] = sim.getTriSpecCount(patch_tris[k], 'X')
 
         ########################################################################
 

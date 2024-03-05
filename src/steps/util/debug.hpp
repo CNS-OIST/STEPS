@@ -17,7 +17,7 @@
 #if USE_PETSC
 #include <petscmat.h>
 #include <petscvec.h>
-#endif // USE_PETSC
+#endif  // USE_PETSC
 
 #if STEPS_USE_DIST_MESH
 #include <Omega_h_array.hpp>
@@ -25,22 +25,20 @@
 #include <Omega_h_vector.hpp>
 
 #include "strong_ids.hpp"
-#endif // STEPS_USE_DIST_MESH
+#endif  // STEPS_USE_DIST_MESH
 
-namespace steps {
-namespace util {
+namespace steps::util {
 
 void wait_for_gdb();
 
-} // namespace util
-} // namespace steps
+}  // namespace steps::util
 
 #if USE_PETSC
 /// It must be called after assemblyEnd and it could present problems if run with multiple nodes
 std::ostream& operator<<(std::ostream& os, const Vec& v);
 /// It must be called after assemblyEnd and it could present problems if run with multiple nodes
 std::ostream& operator<<(std::ostream& os, const Mat& v);
-#endif // USE_PETSC
+#endif  // USE_PETSC
 
 
 #if STEPS_USE_DIST_MESH
@@ -51,7 +49,7 @@ namespace Omega_h {
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const Read<T>& v) {
     os << '(' << v.size() << "): [";
-    for (const auto i : v) {
+    for (const auto i: v) {
         os << i << ", ";
     }
     return os << ']';
@@ -86,9 +84,15 @@ std::ostream& operator<<(std::ostream& os, const Matrix<M, N>& mat) {
 
 }  // namespace Omega_h
 
-#endif // STEPS_USE_DIST_MESH
+#endif  // STEPS_USE_DIST_MESH
 
 namespace std {
+
+/// Pretty print of std::pair
+template <typename T1, typename T2>
+ostream& operator<<(ostream& os, const pair<T1, T2>& p) {
+    return os << '(' << p.first << ", " << p.second << ')';
+}
 
 /// Pretty print of std::array
 template <typename T, size_t n>
@@ -217,7 +221,6 @@ ostream& operator<<(ostream& os, const steps::util::strong_ids<T>& v) {
     }
     return os << "]";
 }
-#endif // STEPS_USE_DIST_MESH
+#endif  // STEPS_USE_DIST_MESH
 
 }  // namespace std
-

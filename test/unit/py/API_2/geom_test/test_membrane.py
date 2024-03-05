@@ -33,6 +33,7 @@ from steps.model import *
 from steps.geom import *
 
 FILEDIR = os.path.dirname(os.path.abspath(__file__))
+MESH_DIR = os.path.join(FILEDIR, "..", "..", "..", "..", "mesh")
 
 class membraneTests(unittest.TestCase):
     """Test Membrane class."""
@@ -78,12 +79,59 @@ class membraneTests(unittest.TestCase):
         self.assertAlmostEqual(self.memb.Area, self.ptris.Area + self.ptris2.Area)
 
 
+class conductionVolumeTests(unittest.TestCase):
+    """Test initialization of membrane conduction volume"""
 
+    def setUp(self):
+        mesh = TetMesh.LoadGmsh(os.path.join(MESH_DIR, 'box.msh'), 1e-6)
+        with mesh:
+            center = mesh.bbox.min + (mesh.bbox.max - mesh.bbox.min) / 2
+            innerTets = mesh.tets[center].toList()
+            innerTets.dilate(4)
+
+            inner = Compartment.Create(innerTets)
+            outer = Compartment.Create(mesh.tets - innerTets)
+
+            surf = Patch.Create(mesh.surface, outer, None)
+        self.mesh = mesh
+
+    def testExcludedInnerVolume(self):
+        with self.mesh:
+            membrane = Membrane.Create([self.mesh.surf])
+
+        smemb, = membrane._getStepsObjects()
+        tetInds = smemb.getAllVolTetIndices()
+        self.assertCountEqual(tetInds, self.mesh.outer.tets.indices)
+
+    def testIncludedInnerVolume(self):
+        with self.mesh:
+            membrane = Membrane.Create([self.mesh.surf], supplementary_comps=[self.mesh.inner])
+
+        smemb, = membrane._getStepsObjects()
+        tetInds = smemb.getAllVolTetIndices()
+        self.assertCountEqual(tetInds, self.mesh.tets.indices)
+
+    def testAlreadyIncludedComps(self):
+        with self.assertRaises(Exception):
+            with self.mesh:
+                membrane = Membrane.Create([self.mesh.surf], supplementary_comps=[self.mesh.inner, self.mesh.outer])
+
+    def testPatchSepratedInnerVolume(self):
+        # A warning should be raised with `CLOG(WARNING, "general_log")` but it is not tested here
+        with self.mesh:
+            sep = Patch.Create(self.mesh.inner.surface & self.mesh.outer.surface, self.mesh.inner, self.mesh.outer)
+
+            membrane = Membrane.Create([self.mesh.surf], supplementary_comps=[self.mesh.inner])
+
+        smemb, = membrane._getStepsObjects()
+        tetInds = smemb.getAllVolTetIndices()
+        self.assertCountEqual(tetInds, self.mesh.tets.indices)
 
 
 def suite():
     all_tests = []
     all_tests.append(unittest.makeSuite(membraneTests, "test"))
+    all_tests.append(unittest.makeSuite(conductionVolumeTests, "test"))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

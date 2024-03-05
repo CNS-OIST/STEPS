@@ -6,8 +6,10 @@
 __copyright__ = "Copyright 2016 EPFL BBP-project"
 # =====================================================================================================================
 from cython.operator cimport dereference as deref
+from libcpp.pair cimport pair
 from libcpp cimport bool
 cimport std
+cimport steps
 cimport steps_wm
 cimport steps_rng
 cimport steps_model
@@ -100,19 +102,6 @@ cdef extern from "solver/specdef.hpp" namespace "steps::solver":
     ###### Cybinding for Specdef ######
     cdef cppclass Specdef:
         Specdef(Statedef*, uint, steps_model.Spec*)
-
-
-# ======================================================================================================================
-cdef extern from "solver/vdeptransdef.hpp" namespace "steps::solver":
-# ----------------------------------------------------------------------------------------------------------------------
-    ctypedef VDepTransdef* VDepTransDefP
-    ctypedef std.vector[VDepTransdef*] VDepTransDefPVec
-    ctypedef std.vector[VDepTransdef*].iterator VDepTransDefPVecI
-    ctypedef std.vector[VDepTransdef*].const_iterator VDepTransDefPVecCI
-
-    ###### Cybinding for VDepTransdef ######
-    cdef cppclass VDepTransdef:
-        VDepTransdef(Statedef*, uint, steps_model.VDepTrans*)
 
 
 # ======================================================================================================================
@@ -219,14 +208,23 @@ cdef extern from "solver/api.hpp" namespace "steps::solver":
         #uint getNSteps() except +
         double getCompVol(std.string) except +
         void setCompVol(std.string, double) except +
-        double getCompCount(std.string, std.string) except +
-        void setCompCount(std.string, std.string, double) except +
-        double getCompAmount(std.string, std.string) except +
-        void setCompAmount(std.string, std.string, double) except +
-        double getCompConc(std.string, std.string) except +
-        void setCompConc(std.string, std.string, double) except +
-        bool getCompClamped(std.string, std.string) except +
-        void setCompClamped(std.string, std.string, bool) except +
+        double getCompSpecCount(std.string, std.string) except +
+        void setCompSpecCount(std.string, std.string, double) except +
+        double getCompSpecAmount(std.string, std.string) except +
+        void setCompSpecAmount(std.string, std.string, double) except +
+        double getCompSpecConc(std.string, std.string) except +
+        void setCompSpecConc(std.string, std.string, double) except +
+        bool getCompSpecClamped(std.string, std.string) except +
+        void setCompSpecClamped(std.string, std.string, bool) except +
+        double getCompComplexCount(std.string, std.string, std.vector[std.vector[steps_model.SubunitStateFilter]]) except +
+        void setCompComplexCount(std.string, std.string, std.vector[std.vector[steps_model.SubunitStateFilter]], double n) except +
+        double getCompComplexAmount(std.string, std.string, std.vector[std.vector[steps_model.SubunitStateFilter]]) except +
+        void setCompComplexAmount(std.string, std.string, std.vector[std.vector[steps_model.SubunitStateFilter]], double a) except +
+        double getCompComplexConc(std.string, std.string, std.vector[std.vector[steps_model.SubunitStateFilter]]) except +
+        void setCompComplexConc(std.string, std.string, std.vector[std.vector[steps_model.SubunitStateFilter]], double conc) except +
+        double getCompComplexSUSCount(std.string, std.string, std.vector[std.vector[steps_model.SubunitStateFilter]], uint) except +
+        double getCompComplexSUSConc(std.string, std.string, std.vector[std.vector[steps_model.SubunitStateFilter]], uint) except +
+        double getCompComplexSUSAmount(std.string, std.string, std.vector[std.vector[steps_model.SubunitStateFilter]], uint) except +
         double getCompReacK(std.string, std.string) except +
         void setCompReacK(std.string, std.string, double) except +
         bool getCompReacActive(std.string, std.string) except +
@@ -240,41 +238,47 @@ cdef extern from "solver/api.hpp" namespace "steps::solver":
         double getCompReacA(std.string, std.string) except +
         unsigned long long getCompReacExtent(std.string, std.string) except +
         void resetCompReacExtent(std.string, std.string) except +
-        double getTetVol(uint) except +
+        unsigned long long getCompComplexReacExtent(std.string, std.string) except +
+        double getTetVol(steps.tetrahedron_global_id) except +
         void setTetVol(uint, double) except +
-        bool getTetSpecDefined(uint, std.string) except +
-        double getTetCount(uint, std.string) except +
-        void setTetCount(uint, std.string, double) except +
-        double getTetAmount(uint, std.string) except +
-        void setTetAmount(uint, std.string, double) except +
-        double getTetConc(uint, std.string) except +
-        void setTetConc(uint, std.string, double) except +
-        bool getTetClamped(uint, std.string) except +
-        void setTetClamped(uint, std.string, bool) except +
-        double getTetReacK(uint, std.string) except +
-        void setTetReacK(uint, std.string, double) except +
-        bool getTetReacActive(uint, std.string) except +
-        void setTetReacActive(uint, std.string, bool) except +
-        double getTetDiffD(uint, std.string, uint) except +
-        void setTetDiffD(uint, std.string, double, uint) except +
-        bool getTetDiffActive(uint, std.string) except +
-        void setTetDiffActive(uint, std.string, bool) except +
-        double getTetReacC(uint, std.string) except +
-        double getTetReacH(uint, std.string) except +
-        double getTetReacA(uint, std.string) except +
-        double getTetDiffA(uint, std.string) except +
-        double getTetV(uint) except +
-        void setTetV(uint, double) except +
-        bool getTetVClamped(uint) except +
-        void setTetVClamped(uint, bool) except +
+        bool getTetSpecDefined(steps.tetrahedron_global_id, std.string) except +
+        double getTetSpecCount(steps.tetrahedron_global_id, std.string) except +
+        void setTetSpecCount(steps.tetrahedron_global_id, std.string, double) except +
+        double getTetSpecAmount(steps.tetrahedron_global_id, std.string) except +
+        void setTetSpecAmount(steps.tetrahedron_global_id, std.string, double) except +
+        double getTetSpecConc(steps.tetrahedron_global_id, std.string) except +
+        void setTetSpecConc(steps.tetrahedron_global_id, std.string, double) except +
+        bool getTetSpecClamped(steps.tetrahedron_global_id, std.string) except +
+        void setTetSpecClamped(steps.tetrahedron_global_id, std.string, bool) except +
+        double getTetReacK(steps.tetrahedron_global_id, std.string) except +
+        void setTetReacK(steps.tetrahedron_global_id, std.string, double) except +
+        bool getTetReacActive(steps.tetrahedron_global_id, std.string) except +
+        void setTetReacActive(steps.tetrahedron_global_id, std.string, bool) except +
+        double getTetDiffD(steps.tetrahedron_global_id, std.string, steps.tetrahedron_global_id) except +
+        void setTetDiffD(steps.tetrahedron_global_id, std.string, double, steps.tetrahedron_global_id) except +
+        bool getTetDiffActive(steps.tetrahedron_global_id, std.string) except +
+        void setTetDiffActive(steps.tetrahedron_global_id, std.string, bool) except +
+        double getTetReacC(steps.tetrahedron_global_id, std.string) except +
+        double getTetReacH(steps.tetrahedron_global_id, std.string) except +
+        double getTetReacA(steps.tetrahedron_global_id, std.string) except +
+        double getTetDiffA(steps.tetrahedron_global_id, std.string) except +
+        double getTetV(steps.tetrahedron_global_id) except +
+        void setTetV(steps.tetrahedron_global_id, double) except +
+        bool getTetVClamped(steps.tetrahedron_global_id) except +
+        void setTetVClamped(steps.tetrahedron_global_id, bool) except +
         double getPatchArea(std.string) except +
         void setPatchArea(std.string, double) except +
-        double getPatchCount(std.string, std.string) except +
-        void setPatchCount(std.string, std.string, double) except +
-        double getPatchAmount(std.string, std.string) except +
-        void setPatchAmount(std.string, std.string, double) except +
-        bool getPatchClamped(std.string, std.string) except +
-        void setPatchClamped(std.string, std.string, bool) except +
+        double getPatchSpecCount(std.string, std.string) except +
+        void setPatchSpecCount(std.string, std.string, double) except +
+        double getPatchSpecAmount(std.string, std.string) except +
+        void setPatchSpecAmount(std.string, std.string, double) except +
+        bool getPatchSpecClamped(std.string, std.string) except +
+        void setPatchSpecClamped(std.string, std.string, bool) except +
+        double getPatchComplexCount(std.string, std.string, std.vector[std.vector[steps_model.SubunitStateFilter]]) except +
+        void setPatchComplexCount(std.string, std.string, std.vector[std.vector[steps_model.SubunitStateFilter]], double n) except +
+        double getPatchComplexAmount(std.string, std.string, std.vector[std.vector[steps_model.SubunitStateFilter]]) except +
+        void setPatchComplexAmount(std.string, std.string, std.vector[std.vector[steps_model.SubunitStateFilter]], double a) except +
+        double getPatchComplexSUSCount(std.string, std.string, std.vector[std.vector[steps_model.SubunitStateFilter]], uint) except +
         double getPatchSReacK(std.string, std.string) except +
         void setPatchSReacK(std.string, std.string, double) except +
         bool getPatchSReacActive(std.string, std.string) except +
@@ -284,66 +288,71 @@ cdef extern from "solver/api.hpp" namespace "steps::solver":
         double getPatchSReacA(std.string, std.string) except +
         unsigned long long getPatchSReacExtent(std.string, std.string) except +
         void resetPatchSReacExtent(std.string, std.string) except +
+        unsigned long long getPatchComplexSReacExtent(std.string, std.string) except +
         bool getPatchVDepSReacActive(std.string, std.string) except +
         void setPatchVDepSReacActive(std.string, std.string, bool) except +
-        void setDiffBoundaryDiffusionActive(std.string, std.string, bool) except +
-        bool getDiffBoundaryDiffusionActive(std.string, std.string) except +
-        void setDiffBoundaryDcst(std.string, std.string, double, std.string) except +
-        void setSDiffBoundaryDiffusionActive(std.string, std.string, bool) except +
-        bool getSDiffBoundaryDiffusionActive(std.string, std.string) except +
-        void setSDiffBoundaryDcst(std.string, std.string, double, std.string) except +
-        double getTriArea(uint) except +
-        void setTriArea(uint, double) except +
-        bool getTriSpecDefined(uint, std.string) except +
-        double getTriCount(uint, std.string) except +
-        void setTriCount(uint, std.string, double) except +
-        double getTriAmount(uint, std.string) except +
-        void setTriAmount(uint, std.string, double) except +
-        bool getTriClamped(uint, std.string) except +
-        void setTriClamped(uint, std.string, bool) except +
-        double getTriSReacK(uint, std.string) except +
-        void setTriSReacK(uint, std.string, double) except +
-        bool getTriSReacActive(uint, std.string) except +
-        void setTriSReacActive(uint, std.string, bool) except +
-        double getTriSReacC(uint, std.string) except +
-        double getTriSReacH(uint, std.string) except +
-        double getTriSReacA(uint, std.string) except +
-        double getTriDiffD(uint, std.string, uint) except +
-        double getTriSDiffD(uint, std.string, uint) except +
-        void setTriDiffD(uint, std.string, double, uint) except +
-        void setTriSDiffD(uint, std.string, double, uint) except +
-        double getTriV(uint) except +
-        void setTriV(uint, double) except +
-        bool getTriVClamped(uint) except +
-        void setTriVClamped(uint, bool) except +
-        double getTriOhmicI(uint) except +
-        double getTriOhmicI(uint, std.string) except +
-        double getTriGHKI(uint) except +
-        double getTriGHKI(uint, std.string) except +
-        double getTriI(uint) except +
-        double getTriIClamp(uint) except +
-        void setTriIClamp(uint, double) except +
-        bool getTriVDepSReacActive(uint, std.string) except +
-        void setTriVDepSReacActive(uint, std.string, bool) except +
-        void setTriCapac(uint, double) except +
-        double getVertV(uint) except +
-        void setVertV(uint, double) except +
-        bool getVertVClamped(uint) except +
-        void setVertVClamped(uint, bool) except +
-        double getVertIClamp(uint) except +
-        void setVertIClamp(uint, double) except +
+        void setDiffBoundarySpecDiffusionActive(std.string, std.string, bool) except +
+        bool getDiffBoundarySpecDiffusionActive(std.string, std.string) except +
+        void setDiffBoundarySpecDcst(std.string, std.string, double, std.string) except +
+        void setSDiffBoundarySpecDiffusionActive(std.string, std.string, bool) except +
+        bool getSDiffBoundarySpecDiffusionActive(std.string, std.string) except +
+        void setSDiffBoundarySpecDcst(std.string, std.string, double, std.string) except +
+        double getTriArea(steps.triangle_global_id) except +
+        void setTriArea(steps.triangle_global_id, double) except +
+        bool getTriSpecDefined(steps.triangle_global_id, std.string) except +
+        double getTriSpecCount(steps.triangle_global_id, std.string) except +
+        void setTriSpecCount(steps.triangle_global_id, std.string, double) except +
+        double getTriSpecAmount(steps.triangle_global_id, std.string) except +
+        void setTriSpecAmount(steps.triangle_global_id, std.string, double) except +
+        bool getTriSpecClamped(steps.triangle_global_id, std.string) except +
+        void setTriSpecClamped(steps.triangle_global_id, std.string, bool) except +
+        double getTriSReacK(steps.triangle_global_id, std.string) except +
+        void setTriSReacK(steps.triangle_global_id, std.string, double) except +
+        bool getTriSReacActive(steps.triangle_global_id, std.string) except +
+        void setTriSReacActive(steps.triangle_global_id, std.string, bool) except +
+        double getTriSReacC(steps.triangle_global_id, std.string) except +
+        double getTriSReacH(steps.triangle_global_id, std.string) except +
+        double getTriSReacA(steps.triangle_global_id, std.string) except +
+        double getTriDiffD(steps.triangle_global_id, std.string, uint) except +
+        double getTriSDiffD(steps.triangle_global_id, std.string, steps.triangle_global_id) except +
+        void setTriDiffD(steps.triangle_global_id, std.string, double, steps.triangle_global_id) except +
+        void setTriSDiffD(steps.triangle_global_id, std.string, double, steps.triangle_global_id) except +
+        double getTriV(steps.triangle_global_id) except +
+        void setTriV(steps.triangle_global_id, double) except +
+        bool getTriVClamped(steps.triangle_global_id) except +
+        void setTriVClamped(steps.triangle_global_id, bool) except +
+        double getTriOhmicErev(steps.triangle_global_id, std.string) except +
+        void setTriOhmicErev(steps.triangle_global_id, std.string, double) except +
+        double getTriOhmicI(steps.triangle_global_id) except +
+        double getTriOhmicI(steps.triangle_global_id, std.string) except +
+        double getTriGHKI(steps.triangle_global_id) except +
+        double getTriGHKI(steps.triangle_global_id, std.string) except +
+        double getTriI(steps.triangle_global_id) except +
+        double getTriIClamp(steps.triangle_global_id) except +
+        void setTriIClamp(steps.triangle_global_id, double) except +
+        double getTriVDepSReacK(steps.triangle_global_id, std.string) except +
+        bool getTriVDepSReacActive(steps.triangle_global_id, std.string) except +
+        void setTriVDepSReacActive(steps.triangle_global_id, std.string, bool) except +
+        void setTriCapac(steps.triangle_global_id, double) except +
+        double getVertV(steps.vertex_id_t) except +
+        void setVertV(steps.vertex_id_t, double) except +
+        bool getVertVClamped(steps.vertex_id_t) except +
+        void setVertVClamped(steps.vertex_id_t, bool) except +
+        double getVertIClamp(steps.vertex_id_t) except +
+        void setVertIClamp(steps.vertex_id_t, double) except +
         void setMembPotential(std.string, double) except +
         void setMembCapac(std.string, double) except +
         void setMembVolRes(std.string, double) except +
         void setMembRes(std.string, double, double) except +
+        pair[double, double] getMembRes(std.string) except +
         uint getNComps() except +
         uint getNPatches() except +
-        std.string getCompName(uint) except +
-        std.string getPatchName(uint) except +
-        uint getNCompSpecs(uint) except +
-        uint getNPatchSpecs(uint) except +
-        std.string getCompSpecName(uint, uint) except +
-        std.string getPatchSpecName(uint, uint) except +
+        std.string getCompName(steps.comp_global_id) except +
+        std.string getPatchName(steps.patch_global_id) except +
+        uint getNCompSpecs(steps.comp_global_id) except +
+        uint getNPatchSpecs(steps.patch_global_id) except +
+        std.string getCompSpecName(steps.comp_global_id, steps.spec_local_id) except +
+        std.string getPatchSpecName(steps.patch_global_id, steps.spec_local_id) except +
         double sumBatchTetCountsNP(uint*, int, std.string) except +
         double sumBatchTriCountsNP(uint*, int, std.string) except +
         double sumBatchTriGHKIsNP(uint*, int, std.string) except +
@@ -360,3 +369,56 @@ cdef extern from "solver/api.hpp" namespace "steps::solver":
         double getRDTime() except +
         double getDataExchangeTime() except +
         void repartitionAndReset(std.vector[uint],std.map[uint, uint], std.vector[uint]) except +
+        std.vector[double] getBatchTetCounts(std.vector[steps.index_t], std.string) except +
+        std.vector[double] getBatchTetConcs(std.vector[steps.index_t], std.string) except +
+        void setBatchTetConcs(std.vector[steps.index_t], std.string, std.vector[double]) except +
+        std.vector[double] getBatchTriCounts(std.vector[steps.index_t], std.string) except +
+        void getBatchTetCountsNP(steps.index_t*, int, std.string, double*, int) except +
+        void getBatchTetConcsNP(steps.index_t*, int, std.string, double*, int) except +
+        void setBatchTetConcsNP(steps.index_t*, int, std.string, double*, int) except +
+        void getBatchTriCountsNP(steps.index_t*, int, std.string, double*, int) except +
+        std.vector[double] getROITetCounts(std.string, std.string) except +
+        std.vector[double] getROITriCounts(std.string, std.string) except +
+        void getROITetCountsNP(std.string, std.string, double*, int) except +
+        void getROITriCountsNP(std.string, std.string, double*, int) except +
+        double getROICount(std.string, std.string) except +
+        void setROICount(std.string, std.string, double) except +
+        double getROIAmount(std.string, std.string) except +
+        void setROIAmount(std.string, std.string, double) except +
+        double getROIConc(std.string, std.string) except +
+        void setROIConc(std.string, std.string, double) except +
+        double getCompCount(std.string, std.string) except +
+        void setCompCount(std.string, std.string, double) except +
+        double getCompAmount(std.string, std.string) except +
+        void setCompAmount(std.string, std.string, double) except +
+        double getCompConc(std.string, std.string) except +
+        void setCompConc(std.string, std.string, double) except +
+        double getTetCount(steps.tetrahedron_global_id, std.string) except +
+        void setTetCount(steps.tetrahedron_global_id, std.string, double) except +
+        double getTetAmount(steps.tetrahedron_global_id, std.string) except +
+        void setTetAmount(steps.tetrahedron_global_id, std.string, double) except +
+        double getTetConc(steps.tetrahedron_global_id, std.string) except +
+        void setTetConc(steps.tetrahedron_global_id, std.string, double) except +
+        double getPatchCount(std.string, std.string) except +
+        void setPatchCount(std.string, std.string, double) except +
+        double getPatchAmount(std.string, std.string) except +
+        void setPatchAmount(std.string, std.string, double) except +
+        double getTriCount(steps.triangle_global_id, std.string) except +
+        void setTriCount(steps.triangle_global_id, std.string, double) except +
+        double getTriAmount(steps.triangle_global_id, std.string) except +
+        void setTriAmount(steps.triangle_global_id, std.string, double) except +
+        void setROIClamped(std.string, std.string, bool) except +
+        bool getCompClamped(std.string, std.string) except +
+        void setCompClamped(std.string, std.string, bool) except +
+        bool getTetClamped(steps.tetrahedron_global_id, std.string) except +
+        void setTetClamped(steps.tetrahedron_global_id, std.string, bool) except +
+        bool getPatchClamped(std.string, std.string) except +
+        void setPatchClamped(std.string, std.string, bool) except +
+        bool getTriClamped(steps.triangle_global_id, std.string) except +
+        void setTriClamped(steps.triangle_global_id, std.string, bool) except +
+        void setDiffBoundaryDiffusionActive(std.string, std.string, bool) except +
+        bool getDiffBoundaryDiffusionActive(std.string, std.string) except +
+        void setDiffBoundaryDcst(std.string, std.string, double, std.string) except +
+        void setSDiffBoundaryDiffusionActive(std.string, std.string, bool) except +
+        bool getSDiffBoundaryDiffusionActive(std.string, std.string) except +
+        void setSDiffBoundaryDcst(std.string, std.string, double, std.string) except +

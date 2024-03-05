@@ -26,48 +26,18 @@
 
 #pragma once
 
-#include <cassert>
-#include <map>
-#include <string>
-#include <vector>
-
 #include "spec.hpp"
 
-#include "util/common.h"
+namespace steps::model {
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace model {
-
-////////////////////////////////////////////////////////////////////////////////
-
-// Forward declarations.
-class Chan;
-class ChanState;
-
-// Auxiliary declarations.
-typedef ChanState *                          ChanStateP;
-typedef std::map<std::string, ChanStateP>    ChanStatePMap;
-typedef ChanStatePMap::iterator              ChanStatePMapI;
-typedef ChanStatePMap::const_iterator        ChanStatePMapCI;
-
-typedef std::vector<ChanStateP>              ChanStatePVec;
-typedef ChanStatePVec::iterator              ChanStatePVecI;
-typedef ChanStatePVec::const_iterator        ChanStatePVecCI;
-
-////////////////////////////////////////////////////////////////////////////////
 /// Channel state.
 /// Component that represents a channel state that can be referred to from
 /// voltage-dependent transitions.
 ///
 /// \warning Methods start with an underscore are not exposed to Python.
 
-class ChanState: public Spec
-{
-
-public:
-
+class ChanState: public Spec {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
@@ -75,8 +45,11 @@ public:
     /// Constructor
     ///
     /// \param id ID of the channel state.
-    /// \param chan Pointer to the parent channel.
-    ChanState(std::string const & id, Model* model, Chan * chan);
+    /// \param chan Reference to the parent channel.
+    ChanState(std::string const& id, Model& model, Chan& chan);
+
+    ChanState(const ChanState&) = delete;
+    ChanState& operator=(const ChanState&) = delete;
 
     /// Destructor
     ~ChanState();
@@ -85,13 +58,14 @@ public:
     // CHANNEL STATE PROPERTIES
     ////////////////////////////////////////////////////////////////////////
 
-    /// Return a pointer to the associated channel.
+    /// Return a reference to the associated channel.
     ///
-    /// \return Pointer to the associated channel.
-    inline Chan * getChan() const noexcept
-    { return pChan; }
+    /// \return Reference to the associated channel.
+    inline Chan& getChan() const noexcept {
+        return pChan;
+    }
 
-    void setID(std::string const & id);
+    void setID(std::string const& id);
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: DELETION
@@ -111,17 +85,10 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
-    Chan                              * pChan;
-
-    ////////////////////////////////////////////////////////////////////////
-
+    Chan& pChan;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-} // namespace model
-} // namespace steps
+}  // namespace steps::model

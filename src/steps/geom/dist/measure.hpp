@@ -5,8 +5,7 @@
 #include <Omega_h_array.hpp>
 #include <mpi.h>
 
-namespace steps {
-namespace dist {
+namespace steps::dist {
 
 /**
  * Provide data and operations dealing with measure of mesh elements i.e
@@ -16,8 +15,7 @@ class Measure {
   public:
     /// type of a function taking an element identifier in parameter
     /// and return its measure.
-    using element_measure_func =
-        std::function<osh::Real(mesh::tetrahedron_local_id_t)>;
+    using element_measure_func = std::function<osh::Real(mesh::tetrahedron_local_id_t)>;
 
     /**
      *
@@ -29,8 +27,7 @@ class Measure {
             osh::Int num_compartments,
             const element_measure_func& t_element_measure_func);
 
-    void init(const mesh::tetrahedron_ids &t_owned_elements,
-              const osh::LOs &t_elem2compid);
+    void init(const mesh::tetrahedron_ids& t_owned_elements, const osh::LOs& t_elem2compid);
 
     /**
      * \return the sum of all element measures assigned to this MPI rank
@@ -58,8 +55,7 @@ class Measure {
      * \return the sum of all element measures part of the given rank and compartment
      */
     inline osh::Real rank_measure(osh::Int rank, mesh::compartment_id compartment) const noexcept {
-      return rank2measures_[rank * num_measures_per_rank_ + compartment.get() +
-                            1];
+        return rank2measures_[rank * num_measures_per_rank_ + compartment.get() + 1];
     }
 
     /**
@@ -79,9 +75,8 @@ class Measure {
     /**
      * \return measure of the given element
      */
-    inline osh::Real element_measure(mesh::tetrahedron_id_t element) const
-        noexcept {
-      return element_measure_func_(element);
+    inline osh::Real element_measure(mesh::tetrahedron_id_t element) const noexcept {
+        return element_measure_func_(element);
     }
 
     /**
@@ -94,9 +89,9 @@ class Measure {
     inline osh::Real molecules_in_element(mesh::compartment_id compartment,
                                           mesh::tetrahedron_id_t element,
                                           osh::Real num_molecules) const {
-      const auto element_measure = element_measure_func_(element);
-      const auto rank_measure_p = rank_measure(rank_, compartment);
-      return num_molecules * element_measure / rank_measure_p;
+        const auto element_measure = element_measure_func_(element);
+        const auto rank_measure_p = rank_measure(rank_, compartment);
+        return num_molecules * element_measure / rank_measure_p;
     }
 
     /**
@@ -121,5 +116,4 @@ class Measure {
     osh::Reals rank2measures_;
 };
 
-}  // namespace dist
-}  // namespace steps
+}  // namespace steps::dist

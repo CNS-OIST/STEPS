@@ -102,18 +102,24 @@ def radial_extrema(geom, vset):
 def build_geometry(mesh_path):
     mesh = meshio.loadMesh(mesh_path)[0]
 
-    cyto = sgeom.TmComp('cyto', mesh, range(mesh.ntets))
+    comp1_tets = []
+    comp2_tets = []
+    for tet in range(mesh.ntets):
+        bc = mesh.getTetBarycenter(tet)
+        if (bc[0] < 2e-7 and bc[0] > -2e-7 and bc[1] < 2e-7 and bc[1] > -2e-7):
+            comp2_tets.append(tet)
+        else: comp1_tets.append(tet)
+
+    cyto1 = sgeom.TmComp('cyto1', mesh, comp1_tets)
+    cyto2 = sgeom.TmComp('cyto2', mesh, comp2_tets)
 
     (zmin_tris,zmin_vset,zmax_tris,zmax_vset) = zminmax_tris(mesh)
     memb_tris = list(mesh.getSurfTris())
     for tri in zmin_tris: memb_tris.remove(tri)
     for tri in zmax_tris: memb_tris.remove(tri)
-    memb = sgeom.TmPatch('memb', mesh, memb_tris, cyto)
-    membrane = sgeom.Memb('membrane', mesh, [memb] )
+    memb = sgeom.TmPatch('memb', mesh, memb_tris, cyto1)
+    membrane = sgeom.Memb('membrane', mesh, [memb], supplementary_comps=[cyto2])
 
-    #mesh.addROI('v_zmin',sgeom.ELEM_VERTEX,ROIset(zmin_vset))
-    #mesh.addROI('v_zmin_sample',sgeom.ELEM_VERTEX,ROIset(radial_extrema(mesh,zmin_vset)))
-    #mesh.addROI('v_zmax_sample',sgeom.ELEM_VERTEX,ROIset(radial_extrema(mesh,zmax_vset)))
     mesh.addROI('v_zmin',sgeom.ELEM_VERTEX,zmin_vset)
     mesh.addROI('v_zmin_sample',sgeom.ELEM_VERTEX,radial_extrema(mesh,zmin_vset))
     mesh.addROI('v_zmax_sample',sgeom.ELEM_VERTEX,radial_extrema(mesh,zmax_vset))
@@ -134,16 +140,12 @@ def build_model(mesh, param):
     area_cylinder = np.pi * param['diameter'] * param['length']
     L_G_tot = area_cylinder / param['R_M']
     g_leak_sc = L_G_tot / len(memb.tris)
-    OC_L = smodel.OhmicCurr('OC_L', ssys, chanstate = Leak, erev = param['E_M'], g = g_leak_sc)
+    OC_L = smodel.OhmicCurr('OC_L', ssys, chanstate = Leak, erev = 0, g = g_leak_sc)
 
     return mdl
 
 
 def init_sim(model, mesh, seed, param):
-    # previous setup
-    # rng = srng.create('r123', 512)
-    # rng.initialize(seed)
-    # sim = ssolver.Tetexact(model, mesh, rng, True)
 
     # Create the solver objects
     EFSolver = getattr(ssolver, sim_parameters['EF_solver'])
@@ -158,7 +160,7 @@ def init_sim(model, mesh, seed, param):
         sim.setEfieldDT(param['EF_dt'])
     else :
         raise ValueError('SSA solver ' + param['SSA_solver'] + 'not available')
-        
+
     print('Running Rallpack1 test with ' + param['SSA_solver'])
 
     # Correction factor for deviation between mesh and model cylinder:
@@ -168,7 +170,9 @@ def init_sim(model, mesh, seed, param):
     # Set initial conditions
 
     memb = sgeom.castToTmPatch(mesh.getPatch('memb'))
-    for t in memb.tris: sim.setTriCount(t, 'Leak', 1)
+    for t in memb.tris:
+        sim.setTriSpecCount(t, 'Leak', 1)
+        sim.setTriOhmicErev(t, 'OC_L', param['E_M'])
 
     sim.setMembPotential('membrane', param['E_M'])
     sim.setMembVolRes('membrane', param['R_A'])
@@ -187,7 +191,7 @@ def run_sim(sim, dt, t_end, vertices, verbose=False):
     nvert = len(vertices)
 
     for l in range(N):
-        if verbose and not l%100:  print(str(l)+" out of "+str(N))    
+        if verbose and not l%100:  print(str(l)+" out of "+str(N))
         sim.run(l*dt)
         result[l,:] = [sim.getVertV(v) for v in vertices]
 
@@ -234,11 +238,10 @@ def run_comparison(seed, mesh_file, v0_datafile, v1_datafile, verbose=False):
     data[4,:] = vref_1000um[0:npt]
 
     # rms difference
-    err_0um = data[2,:] - data[1,:] 
+    err_0um = data[2,:] - data[1,:]
     rms_err_0um = la.norm(err_0um)/np.sqrt(npt)
 
     err_1000um = data[4,:] - data[3,:]
     rms_err_1000um = la.norm(err_1000um)/np.sqrt(npt)
 
     return data, rms_err_0um, rms_err_1000um
-

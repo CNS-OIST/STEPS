@@ -3,12 +3,26 @@
 #include "../mol_state.hpp"
 #include "geom/dist/distmesh.hpp"
 
-namespace steps {
-namespace dist {
+namespace steps::dist {
 
-template <typename NumMolecules>
+osh::Real OhmicCurrent::getReversalPotential(mesh::triangle_id_t triangle) const {
+    auto it = reversal_potentials.find(triangle);
+    if (it != reversal_potentials.end()) {
+        return it->second;
+    }
+    return reversal_potential;
+}
+
+void OhmicCurrent::setReversalPotential(mesh::triangle_id_t triangle, osh::Real value) {
+    reversal_potentials.emplace(triangle, value);
+}
+
+void OhmicCurrent::reset() {
+    reversal_potentials.clear();
+}
+
 osh::Real OhmicCurrent::getTriBConVertex(const mesh::triangle_id_t& b_id,
-                                         const MolState<NumMolecules>& mol_state,
+                                         const MolState& mol_state,
                                          const double Avert,
                                          const osh::Real sim_time) const {
     const auto avg_open_channels =
@@ -17,17 +31,16 @@ osh::Real OhmicCurrent::getTriBConVertex(const mesh::triangle_id_t& b_id,
     return avg_open_channels * conductance;
 }
 
-template <typename NumMolecules>
 PetscReal OhmicCurrent::getTriCurrentOnVertex(const osh::Real potential_on_vertex,
                                               const mesh::triangle_id_t& b_id,
-                                              const MolState<NumMolecules>& mol_state,
+                                              const MolState& mol_state,
                                               const DistMesh& mesh,
                                               const osh::Real sim_time) const {
     // A tri split among the vertexes
-    const double Avert = mesh.getTri(b_id.get()).area / 3.0;
+    const double Avert = mesh.getTri(b_id).area / 3.0;
     const PetscReal tri_oc_bc = getTriBConVertex(b_id, mol_state, Avert, sim_time);
 
-    return tri_oc_bc * (potential_on_vertex - reversal_potential);
+    return tri_oc_bc * (potential_on_vertex - getReversalPotential(b_id));
 }
 
 std::ostream& operator<<(std::ostream& os, OhmicCurrent const& m) {
@@ -61,8 +74,9 @@ std::ostream& operator<<(std::ostream& os, Channel const& m) {
 
 std::ostream& operator<<(std::ostream& os, const TriMatAndVecs& obj) {
     os << "vert_idxs:\n";
-    for (const auto i: obj.face_bf2vertsPETSc)
+    for (const auto i: obj.face_bf2vertsPETSc) {
         os << i << ' ';
+    }
     os << '\n';
     os << "triStiffnessMat:\n";
     for (size_t i = 0; i < 3; ++i) {
@@ -72,39 +86,17 @@ std::ostream& operator<<(std::ostream& os, const TriMatAndVecs& obj) {
         os << '\n';
     }
     os << "triBC:\n";
-    for (const auto i: obj.triBC)
+    for (const auto i: obj.triBC) {
         os << i << ' ';
+    }
     os << '\n';
     os << "triI:\n";
-    for (const auto i: obj.triI)
+    for (const auto i: obj.triI) {
         os << i << ' ';
+    }
     os << '\n';
 
     return os;
 }
 
-// explicit template instantiation definitions
-
-template PetscReal OhmicCurrent::getTriBConVertex(const mesh::triangle_id_t& b_id,
-                                                  const MolState<osh::I32>& mol_state,
-                                                  const double Avert,
-                                                  const osh::Real sim_time) const;
-template PetscReal OhmicCurrent::getTriBConVertex(const mesh::triangle_id_t& b_id,
-                                                  const MolState<osh::I64>& mol_state,
-                                                  const double Avert,
-                                                  const osh::Real sim_time) const;
-
-template PetscReal OhmicCurrent::getTriCurrentOnVertex(osh::Real potential_on_vertex,
-                                                       const mesh::triangle_id_t& b_id,
-                                                       const MolState<osh::I32>& mol_state,
-                                                       const DistMesh& mesh,
-                                                       osh::Real sim_time) const;
-
-template PetscReal OhmicCurrent::getTriCurrentOnVertex(osh::Real potential_on_vertex,
-                                                       const mesh::triangle_id_t& b_id,
-                                                       const MolState<osh::I64>& mol_state,
-                                                       const DistMesh& mesh,
-                                                       osh::Real sim_time) const;
-
-}  // namespace dist
-}  // namespace steps
+}  // namespace steps::dist

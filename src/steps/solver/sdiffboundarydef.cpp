@@ -24,80 +24,47 @@
 
  */
 
-// STL headers.
-#include <cassert>
-#include <string>
-
-// STEPS headers.
 #include "sdiffboundarydef.hpp"
-#include "types.hpp"
-#include "geom/patch.hpp"
 
+#include "geom/sdiffboundary.hpp"
+#include "statedef.hpp"
 #include "util/error.hpp"
-// logging
-#include <easylogging++.h>
 
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::solver {
 
-namespace ssolver = steps::solver;
-namespace stetmesh = steps::tetmesh;
-
-////////////////////////////////////////////////////////////////////////////////
-
-ssolver::SDiffBoundarydef::SDiffBoundarydef(Statedef * sd, uint idx, stetmesh::SDiffBoundary * sdb)
-: pStatedef(sd)
-, pSetupdone(false)
-, pIdx(idx)
-, pName()
-, pBars()
-, pPatchA(0)
-, pPatchB(0), pPatchA_temp(nullptr)
-, pPatchB_temp(nullptr)
-{
-    AssertLog(pStatedef != nullptr);
-    AssertLog(sdb != nullptr);
-
-    pName = sdb->getID();
-    pBars = sdb->_getAllBarIndices();
-    auto patches = sdb->getPatches();
-    pPatchA_temp = patches[0];
-    pPatchB_temp = patches[1];
-    AssertLog(pPatchA_temp != nullptr);
-    AssertLog(pPatchB_temp != nullptr);
-
+SDiffBoundarydef::SDiffBoundarydef(Statedef& sd,
+                                   sdiffboundary_global_id idx,
+                                   tetmesh::SDiffBoundary& sdb)
+    : pStatedef(sd)
+    , pIdx(idx)
+    , pName(sdb.getID())
+    , pBars(sdb.getAllBarIndices())
+    , pPatches(sdb.getPatches()) {
+    AssertLog(pPatches.size() == 2);
+    AssertLog(pPatches[0] != nullptr);
+    AssertLog(pPatches[1] != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::SDiffBoundarydef::~SDiffBoundarydef()
-= default;
-
-////////////////////////////////////////////////////////////////////////////////
-
-void ssolver::SDiffBoundarydef::checkpoint(std::fstream & /*cp_file*/)
-{
+void SDiffBoundarydef::checkpoint(std::fstream& /*cp_file*/) const {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::SDiffBoundarydef::restore(std::fstream & /*cp_file*/)
-{
+void SDiffBoundarydef::restore(std::fstream& /*cp_file*/) {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::SDiffBoundarydef::setup()
-{
+void SDiffBoundarydef::setup() {
     AssertLog(pSetupdone == false);
 
-    pPatchA = pStatedef->getPatchIdx(pPatchA_temp);
-    pPatchB = pStatedef->getPatchIdx(pPatchB_temp);
+    pPatchA = pStatedef.getPatchIdx(*pPatches[0]);
+    pPatchB = pStatedef.getPatchIdx(*pPatches[1]);
     pSetupdone = true;
-
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-
+}  // namespace steps::solver

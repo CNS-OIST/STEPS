@@ -26,18 +26,20 @@
 
 #pragma once
 
-#include <numeric>
-#include <cstddef>
 #include <algorithm>
+#include <cassert>
+#include <cstddef>
+#include <limits>
+#include <numeric>
+#include <random>
 
-namespace steps {
-namespace math {
+namespace steps::math {
 
-/** Reservoir-based order samping with adjusted Pareto orders.
+/** Reservoir-based order sampling with adjusted Pareto orders.
  *
  * Sample n items from a given iterator range with inclusion probabilities
  * pi[i].
- * 
+ *
  * Parameter is constructed from n and supplied pi; N is taken as the
  * length of pi. Template parameter weight_type is expected to be a
  * floating point type.
@@ -53,87 +55,120 @@ namespace math {
  *  second order polynomial, as the argument is small.
  */
 
-template <typename weight_type=double,typename size_type=std::size_t>
+template <typename weight_type = double, typename size_type = std::size_t>
 struct adjusted_pareto_sampler {
     adjusted_pareto_sampler() {}
 
     template <typename Iter>
-    adjusted_pareto_sampler(size_t n,Iter pi_begin,Iter pi_end):
-        P(n,pi_begin,pi_end) {}
+    adjusted_pareto_sampler(size_t n, Iter pi_begin, Iter pi_end)
+        : P(n, pi_begin, pi_end) {}
 
     struct param_type {
-        size_type n=0;
+        size_type n = 0;
         std::vector<weight_type> qcoef;
 
         param_type() {}
         template <typename Iter>
-        param_type(size_type n_,Iter pi_begin,Iter pi_end):
-            n(n_), qcoef(pi_begin,pi_end)
-        {
-            using fp=weight_type;
+        param_type(size_type n_, Iter pi_begin, Iter pi_end)
+            : n(n_)
+            , qcoef(pi_begin, pi_end) {
+            using fp = weight_type;
 
             // Normalize supplied pi so that sum = n, and compute d
-            
-            fp pi_sum=std::accumulate(qcoef.begin(),qcoef.end(),fp(0));
-            fp rescale=n/pi_sum;
 
-            fp d=0;
-            for (auto &p: qcoef) {
-                p*=rescale;
-                if (p>1) p=1;
-                d+=p*(1-p);
+            fp pi_sum = std::accumulate(qcoef.begin(), qcoef.end(), fp(0));
+            fp rescale = n / pi_sum;
+
+            fp d = 0;
+            for (auto& p: qcoef) {
+                assert(p >= 0);
+                p *= rescale;
+                if (p > 1)
+                    p = 1;
+                d += p * (1 - p);
             }
 
             // Coefficients q in order sampling (see above)
 
-            fp ood2=1/(d*d);
-            for (auto &q: qcoef) {
-                fp loga=q*(1-q)*(q-fp(0.5))*ood2;
-                fp a=1+loga+fp(0.5)*loga*loga;
-                q=(1-q)/q*a;
+            fp ood2 = 1 / (d * d);
+            // d can only be 0 when rescaled qcoefs are either 0 or 1
+            if (d == 0) {
+                ood2 = 1;
+            }
+            for (auto& q: qcoef) {
+                fp loga = q * (1 - q) * (q - fp(0.5)) * ood2;
+                fp a = 1 + loga + fp(0.5) * loga * loga;
+                if (q == 0) {
+                    q = std::numeric_limits<weight_type>::signaling_NaN();
+                } else {
+                    q = (1 - q) / q * a;
+                }
             }
         }
     } P;
 
     // Minium population size to sample.
-    size_type size() const { return P.n; }
+    size_type size() const {
+        return P.n;
+    }
 
     // (Inclusive) min and max sample sizes
-    size_type min() const { return P.n; }
-    size_type max() const { return P.n; }
+    size_type min() const {
+        return P.n;
+    }
+    size_type max() const {
+        return P.n;
+    }
 
-    void param(const param_type &P_) { P=P_; }
-    const param_type &param() const { return P; }
+    void param(const param_type& P_) {
+        P = P_;
+    }
+    const param_type& param() const {
+        return P;
+    }
 
-    template <typename InIter,typename OutRAIter,typename Rng>
-    size_type operator()(InIter b,InIter e,OutRAIter o,Rng &g) {
+    template <typename InIter, typename OutRAIter, typename Rng>
+    size_type operator()(InIter b, InIter e, OutRAIter o, Rng& g) {
         std::uniform_real_distribution<weight_type> U;
 
-        using key=std::pair<weight_type,size_type>;
+        using key = std::pair<weight_type, size_type>;
         std::vector<key> heap;
         heap.reserve(size());
 
-        size_type i=0;
-        for (; i<P.n && b!=e; ++i) {
-            auto u=U(g);
-            heap.emplace_back(P.qcoef[i]*u/(1-u),i);
-            o[i]=*b++;
+        size_type i = 0;
+        size_type s = 0;
+        for (; s < P.n && b != e; ++i) {
+            if (std::isnan(P.qcoef[i])) {
+                // Do not add NaN qcoefs to the heap
+                b++;
+                continue;
+            }
+            auto u = U(g);
+            heap.emplace_back(P.qcoef[i] * u / (1 - u), s);
+            o[s++] = *b++;
         }
 
-        if (i<P.n) return i; // short population
+        if (s < P.n) {
+            return s;  // short population
+        }
 
-        std::make_heap(heap.begin(),heap.end());
-        std::size_t N=P.qcoef.size();
-        for (; i<N && b!=e; ++b) {
-            auto u=U(g);
-            weight_type q=P.qcoef[i++]*u/(1-u);
+        std::make_heap(heap.begin(), heap.end());
+        size_type N = P.qcoef.size();
+        for (; i < N && b != e; ++b) {
+            if (std::isnan(P.qcoef[i])) {
+                // Do not add NaN qcoefs to the heap
+                i++;
+                continue;
+            }
+            auto u = U(g);
+            weight_type q = P.qcoef[i++] * u / (1 - u);
 
-            if (q<heap.front().first) {
-                key k{q,heap.front().second};
-                std::pop_heap(heap.begin(),heap.end());
-                heap.back()=k;
-                o[k.second]=*b;
-                std::push_heap(heap.begin(),heap.end());
+            if (q < heap.front().first) {
+                key k{q, heap.front().second};
+                std::pop_heap(heap.begin(), heap.end());
+                heap.back() = k;
+                o[k.second] = *b;
+                std::push_heap(heap.begin(), heap.end());
             }
         }
 
@@ -141,6 +176,4 @@ struct adjusted_pareto_sampler {
     }
 };
 
-
-} // namespace math
-} // namespace steps
+}  // namespace steps::math

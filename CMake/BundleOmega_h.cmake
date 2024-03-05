@@ -4,7 +4,6 @@ endif()
 
 # set path for bundled build
 set(tpdir "${CMAKE_BINARY_DIR}/_bundle")
-set(Omega_h_libs "${tpdir}/omega_h-install/lib/libomega_h${CMAKE_SHARED_LIBRARY_SUFFIX}")
 
 # reconfigure only if library is missing (otherwise it recompiles every time)
 include(ExternalProject)
@@ -29,13 +28,20 @@ ExternalProject_Add_StepTargets(omega_h install)
 # create include path that may not exist yet
 file(MAKE_DIRECTORY ${tpdir}/omega_h-install/include)
 
+add_custom_command(
+  TARGET omega_h-install
+  POST_BUILD
+  COMMAND
+    ${CMAKE_COMMAND} -E copy
+    "${tpdir}/omega_h-install/lib/libomega_h${CMAKE_SHARED_LIBRARY_SUFFIX}"
+    "${CMAKE_BINARY_DIR}/lib/steps/libomega_h${CMAKE_SHARED_LIBRARY_SUFFIX}")
+
 # add target
 include(ImportModernLib)
-add_library_target(NAME Omega_h
-  INCLUDE_DIRECTORIES
-    "${tpdir}/omega_h-install/include"
-  LIBRARIES
-    "${tpdir}/omega_h-install/lib/libomega_h${CMAKE_SHARED_LIBRARY_SUFFIX}"
+add_library_target(
+  NAME Omega_h
+  INCLUDE_DIRECTORIES "${tpdir}/omega_h-install/include"
+  LIBRARIES "${CMAKE_BINARY_DIR}/lib/steps/libomega_h${CMAKE_SHARED_LIBRARY_SUFFIX}"
   NAME_LOWER_CASE True)
 
 # ensure that omega_h is compiled and installed before the target is linked

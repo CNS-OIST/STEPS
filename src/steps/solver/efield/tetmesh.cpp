@@ -24,119 +24,78 @@
 
  */
 
-
-
-// STL headers.
-#include <algorithm>
-#include <cassert>
-#include <climits>
-#include <cmath>
-#include <cstring>
-#include <fstream>
-#include <iostream>
-#include <map>
-#include <queue>
-#include <sstream>
-#include <string>
-#include <time.h>       /* time_t, struct tm, difftime, time, mktime */
-#include <vector>
-
-// STEPS headers.
-#include "util/common.h"
-#include "util/error.hpp"
 #include "tetmesh.hpp"
+
+#include "util/checkpointing.hpp"
+#include "util/error.hpp"
 #include "vertexconnection.hpp"
 #include "vertexelement.hpp"
 
-// logging
-#include <easylogging++.h>
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::solver::efield {
 
-namespace sefield = steps::solver::efield;
-using namespace std;
-
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-
-static
-std::array<vertex_id_t, 4> sort_vertices(vertex_id_t v1, vertex_id_t v2, vertex_id_t v3, vertex_id_t v4) {
+static std::array<vertex_id_t, 4> sort_vertices(vertex_id_t v1,
+                                                vertex_id_t v2,
+                                                vertex_id_t v3,
+                                                vertex_id_t v4) {
     std::array<vertex_id_t, 4> eax{{v1, v2, v3, v4}};
     std::sort(eax.begin(), eax.end());
     return eax;
 }
 
-} // namespace steps
-
-sefield::TetStub::TetStub(vertex_id_t v1, vertex_id_t v2, vertex_id_t v3, vertex_id_t v4)
- : pSortedVerts(sort_vertices(v1, v2, v3, v4))
-{
-}
+TetStub::TetStub(vertex_id_t v1, vertex_id_t v2, vertex_id_t v3, vertex_id_t v4)
+    : pSortedVerts(sort_vertices(v1, v2, v3, v4)) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sefield::TetStub::TetStub(vertex_id_t *v)
-: TetStub(v[0], v[1], v[2], v[3])
-{
-}
+TetStub::TetStub(vertex_id_t* v)
+    : TetStub(v[0], v[1], v[2], v[3]) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool sefield::TetStub::operator< (sefield::TetStub const & t) const
-{
-    if (pSortedVerts[0] < t.pSortedVerts[0]) { return true;
-}
-    if (pSortedVerts[0] > t.pSortedVerts[0]) { return false;
-}
-    if (pSortedVerts[1] < t.pSortedVerts[1]) { return true;
-}
-    if (pSortedVerts[1] > t.pSortedVerts[1]) { return false;
-}
-    if (pSortedVerts[2] < t.pSortedVerts[2]) { return true;
-}
-    if (pSortedVerts[2] > t.pSortedVerts[2]) { return false;
-}
-    if (pSortedVerts[3] < t.pSortedVerts[3]) { return true;
-}
-    //if (pSortedVerts[3] > t.pSortedVerts[3]) return false;
+bool TetStub::operator<(TetStub const& t) const {
+    if (pSortedVerts[0] < t.pSortedVerts[0]) {
+        return true;
+    }
+    if (pSortedVerts[0] > t.pSortedVerts[0]) {
+        return false;
+    }
+    if (pSortedVerts[1] < t.pSortedVerts[1]) {
+        return true;
+    }
+    if (pSortedVerts[1] > t.pSortedVerts[1]) {
+        return false;
+    }
+    if (pSortedVerts[2] < t.pSortedVerts[2]) {
+        return true;
+    }
+    if (pSortedVerts[2] > t.pSortedVerts[2]) {
+        return false;
+    }
+    if (pSortedVerts[3] < t.pSortedVerts[3]) {
+        return true;
+    }
     return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-/*
-ostream & operator<< (ostream & os, sefield::TetStub const & ts)
-{
-    os << "(";
-    os << ts.pSortedVerts[0] << ", ";
-    os << ts.pSortedVerts[1] << ", ";
-    os << ts.pSortedVerts[2] << ", ";
-    os << ts.pSortedVerts[3] << ")";
-    return os;
-}
-*/
-////////////////////////////////////////////////////////////////////////////////
 
-sefield::TetMesh::TetMesh
-(
-    uint nv, double * vpos,
-    uint ntr, vertex_id_t * trivi,
-    uint ntet, vertex_id_t * tetvi
-)
-: pElements(nv)
-, pConnections()
-, pNTri(ntr)
-, pNTet(ntet)
-, pTetrahedrons(nullptr)
-, pTriangles(nullptr)
-, pTetLUT()
-//, pTetHS(0)
-//, pNbrHMS(0)
+TetMesh::TetMesh(uint nv,
+                 const double* vpos,
+                 uint ntr,
+                 const vertex_id_t* trivi,
+                 uint ntet,
+                 const vertex_id_t* tetvi)
+    : pElements(nv)
+    , pNTri(ntr)
+    , pNTet(ntet)
+    , pTetrahedrons(nullptr)
+    , pTriangles(nullptr)
+
 {
     // Copy vertices.
-    double * vpos2 = vpos;
-    for (uint i = 0; i < nv; ++i, vpos2 += 3)
-    {
-        auto * velt = new VertexElement(i, vpos2);
+    const double* vpos2 = vpos;
+    for (uint i = 0; i < nv; ++i, vpos2 += 3) {
+        auto* velt = new VertexElement(i, vpos2);
         pElements[i] = velt;
     }
 
@@ -151,25 +110,22 @@ sefield::TetMesh::TetMesh
     memcpy(pTetrahedrons, tetvi, 4 * pNTet * sizeof(vertex_id_t));
 
     // Make a look up table for checking if a tetrahedron exists.
-    for (uint i = 0; i < pNTet; ++i)
-    {
+    for (uint i = 0; i < pNTet; ++i) {
         TetStub t(pTetrahedrons + (i * 4));
         // We don't look kindly on duplicate tetrahedrons.
         AssertLog(pTetLUT.find(t) == pTetLUT.end());
         pTetLUT.insert(t);
     }
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sefield::TetMesh::~TetMesh()
-{
+TetMesh::~TetMesh() {
     delete[] pTriangles;
     delete[] pTetrahedrons;
 
     // Free memory in maps and sets.
-    //delete pTetHS;
+    // delete pTetHS;
     /*
     uint n_hms = pNbrHMS->size();
     for (uint i = 0; i < n_hms; ++i)
@@ -187,114 +143,92 @@ sefield::TetMesh::~TetMesh()
     //             \|/
     //              '
     for (auto const& pElement: pElements) {
-      delete pElement;
+        delete pElement;
     }
 
     for (auto const& pConnection: pConnections) {
-      delete pConnection;
+        delete pConnection;
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::TetMesh::checkpoint(std::fstream & cp_file)
-{
-    auto nelems = pElements.size();
-    cp_file.write(reinterpret_cast<char*>(&nelems), sizeof(uint));
-    for (uint e = 0; e < nelems; e++) {
-        pElements[e]->checkpoint(cp_file);
+void TetMesh::checkpoint(std::fstream& cp_file) {
+    util::checkpoint(cp_file, pElements.size());
+    for (auto const& e: pElements) {
+        e->checkpoint(cp_file);
     }
-    auto nconns = pConnections.size();
-    cp_file.write(reinterpret_cast<char*>(&nconns), sizeof(uint));
-    for (uint c = 0; c < nconns; c++) {
-        pConnections[c]->checkpoint(cp_file);
+    util::checkpoint(cp_file, pConnections.size());
+    for (auto const& c: pConnections) {
+        c->checkpoint(cp_file);
     }
-    steps::checkpoint(cp_file, pVertexPerm, false /* with_size */);
+    util::checkpoint(cp_file, pTriAreas);
+    util::checkpoint(cp_file, pTriPrevCapac);
+    util::checkpoint(cp_file, pVertexPerm);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::TetMesh::restore(std::fstream & cp_file)
-{
-    uint nelems = 0;
-    cp_file.read(reinterpret_cast<char*>(&nelems), sizeof(uint));
-    if (pElements.size() != nelems) {
-        std::ostringstream os;
-        os << "checkpoint data mismatch with simulator parameters: sefield::Tetmesh::nelems, ";
-        os << nelems << ":" << pElements.size();
-        ArgErrLog(os.str());
+void TetMesh::restore(std::fstream& cp_file) {
+    util::compare(cp_file, pElements.size(), "Mismatched pElements restore size.");
+    for (auto const& e: pElements) {
+        e->restore(cp_file);
     }
-    for (uint e = 0; e < nelems; e++) {
-        pElements[e]->restore(cp_file);
-    }
+    util::compare(cp_file, pConnections.size(), "Mismatched pConnections restore size.");
 
-    uint nconns = 0;
-    cp_file.read(reinterpret_cast<char*>(&nconns), sizeof(uint));
-    if (pConnections.size() != nconns) {
-        std::ostringstream os;
-        os << "checkpoint data mismatch with simulator parameters: sefield::Tetmesh::nconns.";
-        os << nconns << ":" << pConnections.size();
-        ArgErrLog(os.str());
+    for (auto const& c: pConnections) {
+        c->restore(cp_file);
     }
-    for (uint c = 0; c < nconns; c++) {
-        pConnections[c]->restore(cp_file);
-    }
-    steps::restore(cp_file, nelems, pVertexPerm);
+    util::restore(cp_file, pTriAreas);
+    util::restore(cp_file, pTriPrevCapac);
+    util::restore(cp_file, pVertexPerm);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::TetMesh::extractConnections()
-{
-    typedef set<ConnStub> ConnSet;
-
+void TetMesh::extractConnections() {
+    typedef std::set<ConnStub> ConnSet;
 
     // Keeps track of connections already added, so we don't do them twice.
     ConnSet conns;
 
     // Loop over all tetrahedrons and identify all edges.
-    for (uint itet = 0; itet < pNTet; ++itet)
-    {
+    for (uint itet = 0; itet < pNTet; ++itet) {
         // Loop over all elements
-        for (uint j = 0; j < 3; ++j)
-        {
+        for (uint j = 0; j < 3; ++j) {
             // And loop over all possible connections
-            // I.H. 24/11/09 Changes here- I didn't really get what was intended before
-            // and I think vertices not belonging to same tetrahedron were being connected
-            for (uint k = j+1; k < 4; ++k)
-            {
+            // I.H. 24/11/09 Changes here- I didn't really get what was intended
+            // before and I think vertices not belonging to same tetrahedron were
+            // being connected
+            for (uint k = j + 1; k < 4; ++k) {
                 AssertLog(k != j);
-                VertexElement * vj = getVertex(pTetrahedrons[(itet * 4) + j]);
-                VertexElement * vk = getVertex(pTetrahedrons[(itet * 4) + k]);
+                VertexElement* vj = getVertex(pTetrahedrons[(itet * 4) + j]);
+                VertexElement* vk = getVertex(pTetrahedrons[(itet * 4) + k]);
                 conns.insert(ConnStub(vj, vk));
             }
         }
-
     }
     // Build connection objects for all edges.
     for (auto const& conn: conns) {
         newConnection(conn.fVertex1, conn.fVertex2);
     }
 
-
     // Do some additional set up stuff.
     // Why here?
     auto nelems = pElements.size();
     pVertexPerm.resize(nelems);
-    for (auto i = 0u; i < nelems; ++i)
-    {
+    for (auto i = 0u; i < nelems; ++i) {
         // This allows the vertex to set up some additional data structures
         // depending on the number of other vertices it is connected to
         // through an edge.
         pElements[i]->fix();
-        pVertexPerm[i] = i;
+        pVertexPerm[i] = vertex_id_t(i);
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::TetMesh::allocateSurface()
-{
+void TetMesh::allocateSurface() {
     AssertLog(pTriangles != nullptr);
 
     pTriAreas.resize(pNTri);
@@ -317,7 +251,7 @@ void sefield::TetMesh::allocateSurface()
         double cy = a2 * b0 - a0 * b2;
         double cz = a0 * b1 - a1 * b0;
 
-        double area = 0.5 * sqrt(cx * cx + cy * cy + cz * cz);
+        double area = 0.5 * std::sqrt(cx * cx + cy * cy + cz * cz);
         double area3 = area / 3.0;
         pTriAreas[iitr] = area;
         pTriPrevCapac[iitr] = 0;
@@ -325,42 +259,34 @@ void sefield::TetMesh::allocateSurface()
         v0->incrementSurfaceArea(area3);
         v1->incrementSurfaceArea(area3);
         v2->incrementSurfaceArea(area3);
-
     }
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::TetMesh::reindexElements()
-{
+void TetMesh::reindexElements() {
     uint i = 0;
     for (auto const& e: pElements) {
-      e->setIDX(i++);
+        e->setIDX(i++);
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-vector<std::array<uint, 3>> sefield::TetMesh::getNeighboringTetrahedra(VertexElement * ve) const
-{
-    vector<std::array<uint, 3>> outputvec;
+std::vector<std::array<uint, 3>> TetMesh::getNeighboringTetrahedra(VertexElement* ve) const {
+    std::vector<std::array<uint, 3>> outputvec;
     // Check input.
     AssertLog(ve != nullptr);
 
-    uint v0x = ve->getIDX();
+    vertex_id_t v0x(ve->getIDX());
     uint nn = ve->getNCon();
-    for (uint i = 0; i < nn; ++i)
-    {
-        for (uint j = i + 1; j < nn; ++j)
-        {
-            for (uint k = j + 1; k < nn; ++k)
-            {
-                uint v1x = ve->nbrIdx(i);
-                uint v2x = ve->nbrIdx(j);
-                uint v3x = ve->nbrIdx(k);
-                if (pTetLUT.find(TetStub(v0x, v1x, v2x, v3x)) != pTetLUT.end())
-                {
+    for (uint i = 0; i < nn; ++i) {
+        for (uint j = i + 1; j < nn; ++j) {
+            for (uint k = j + 1; k < nn; ++k) {
+                vertex_id_t v1x(ve->nbrIdx(i));
+                vertex_id_t v2x(ve->nbrIdx(j));
+                vertex_id_t v3x(ve->nbrIdx(k));
+                if (pTetLUT.find(TetStub(v0x, v1x, v2x, v3x)) != pTetLUT.end()) {
                     outputvec.push_back(std::array<uint, 3>{{i, j, k}});
                 }
             }
@@ -373,14 +299,14 @@ vector<std::array<uint, 3>> sefield::TetMesh::getNeighboringTetrahedra(VertexEle
 ////////////////////////////////////////////////////////////////////////////////
 
 // Applies a surface capacitance to a built mesh. This sets the capacitance for
-// each vertex from its associated area. Assuming the dimension units are microns,
-// then the capacitance should be supplied in pF per square micron. So, for example,
-// to set a capacitance of 1 uF/cm2, you should call this with argument 0.01
+// each vertex from its associated area. Assuming the dimension units are
+// microns, then the capacitance should be supplied in pF per square micron. So,
+// for example, to set a capacitance of 1 uF/cm2, you should call this with
+// argument 0.01
 //
-void sefield::TetMesh::applySurfaceCapacitance(double d)
-{
-    for (auto &pElement : pElements) {
-      pElement->applySurfaceCapacitance(d);
+void TetMesh::applySurfaceCapacitance(double d) {
+    for (auto& pElement: pElements) {
+        pElement->applySurfaceCapacitance(d);
     }
     for (auto& capac: pTriPrevCapac) {
         capac = d;
@@ -389,9 +315,8 @@ void sefield::TetMesh::applySurfaceCapacitance(double d)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::TetMesh::applyTriCapacitance(triangle_id_t tidx, double cm)
-{
-	AssertLog(tidx < pNTri);
+void TetMesh::applyTriCapacitance(triangle_local_id tidx, double cm) {
+    AssertLog(tidx < pNTri);
 
     double cap = (cm - pTriPrevCapac[tidx.get()]) * pTriAreas[tidx.get()] / 3.0;
     pTriPrevCapac[tidx.get()] = cm;
@@ -403,19 +328,17 @@ void sefield::TetMesh::applyTriCapacitance(triangle_id_t tidx, double cm)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::TetMesh::applyConductance(double d)
-{
-    for (auto &pElement : pElements) {
-      pElement->applyConductance(d);
+void TetMesh::applyConductance(double d) {
+    for (auto& pElement: pElements) {
+        pElement->applyConductance(d);
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double sefield::TetMesh::getTotalCapacitance()
-{
+double TetMesh::getTotalCapacitance() {
     double ret = 0.;
-    for (auto &pElement : pElements) {
+    for (auto& pElement: pElements) {
         ret += pElement->getCapacitance();
     }
     return ret;
@@ -423,10 +346,9 @@ double sefield::TetMesh::getTotalCapacitance()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double sefield::TetMesh::getTotalArea()
-{
+double TetMesh::getTotalArea() {
     double ret = 0.;
-    for (auto &pElement : pElements) {
+    for (auto& pElement: pElements) {
         ret += pElement->getSurfaceArea();
     }
     return ret;
@@ -434,14 +356,12 @@ double sefield::TetMesh::getTotalArea()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::array<double, 3> sefield::TetMesh::centerOfMass()
-{
+std::array<double, 3> TetMesh::centerOfMass() {
     std::array<double, 3> ret{};
     const auto nelt = pElements.size();
 
     double f = 1. / nelt;
-    for (auto i = 0u; i < nelt; i++)
-    {
+    for (auto i = 0u; i < nelt; i++) {
         ret[0] += f * pElements[i]->getX();
         ret[1] += f * pElements[i]->getY();
         ret[2] += f * pElements[i]->getZ();
@@ -452,9 +372,9 @@ std::array<double, 3> sefield::TetMesh::centerOfMass()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::TetMesh::axisOrderElements(uint opt_method, std::string const & opt_file_name, double search_percent)
-{
-
+void TetMesh::axisOrderElements(uint opt_method,
+                                std::string const& opt_file_name,
+                                double search_percent) {
     // Now this method provides a choice between Stefan and Robert's method
     // and the new method by Iain. The original method is fast and suffices for
     // simple geometries, Iain's method is superior and important for complex
@@ -463,25 +383,24 @@ void sefield::TetMesh::axisOrderElements(uint opt_method, std::string const & op
     if (!opt_file_name.empty()) {
         std::fstream opt_file;
 
-        opt_file.open(opt_file_name.c_str(),
-                    std::fstream::in | std::fstream::binary);
+        opt_file.open(opt_file_name.c_str(), std::fstream::in | std::fstream::binary);
         opt_file.seekg(0);
 
         uint nelems = 0;
         opt_file.read(reinterpret_cast<char*>(&nelems), sizeof(uint));
         if (pElements.size() != nelems) {
             std::ostringstream os;
-            os << "optimal data mismatch with simulator parameters: sefield::Tetmesh::nelems, ";
+            os << "optimal data mismatch with simulator parameters: "
+                  "Tetmesh::nelems, ";
             os << nelems << ":" << pElements.size();
             ArgErrLog(os.str());
         }
 
-        steps::restore(opt_file, nelems, pVertexPerm);
+        util::restore(opt_file, nelems, pVertexPerm);
 
         VertexElementPVec elements_temp = pElements;
 
-        for (uint vidx = 0; vidx < nelems; ++vidx)
-        {
+        for (uint vidx = 0; vidx < nelems; ++vidx) {
             VertexElementP vep = elements_temp[vidx];
             // sanity check
             AssertLog(vep->getIDX() == vidx);
@@ -493,16 +412,12 @@ void sefield::TetMesh::axisOrderElements(uint opt_method, std::string const & op
         reordered();
         opt_file.close();
         return;
-
     }
 
-
-    if (opt_method == 2)
-    {
+    if (opt_method == 2) {
         // The breadth first search with Cuthill-McKee improvement
 
         auto pNVerts = pElements.size();
-
 
         // the best vertex(narrowest width)
         uint bestone = 0;
@@ -510,113 +425,103 @@ void sefield::TetMesh::axisOrderElements(uint opt_method, std::string const & op
 
         std::vector<VertexElement*> orig_indices = pElements;
 
-        stringstream ss;
+        std::stringstream ss;
         ss << "\n\n-- " << search_percent << "%  Samples of breadth first search --" << std::endl;
-        CLOG(INFO, "general_log") << ss.str() << endl;
+        CLOG(INFO, "general_log") << ss.str() << std::endl;
 
-        //time_t btime;
-        //time_t etime;
-        //time(&btime);
+        // time_t btime;
+        // time_t etime;
+        // time(&btime);
 
-        for (auto vidx = 0u; vidx < pNVerts; vidx += static_cast<uint>(100 / search_percent))
-        {
-            set<VertexElement*> verteleset = set<VertexElement*>();
-            vector<VertexElement*> vertelevec = vector<VertexElement*>();
-            queue<VertexElement*> vertelqueue = queue<VertexElement*>();
+        for (auto vidx = 0u; vidx < pNVerts; vidx += static_cast<uint>(100 / search_percent)) {
+            std::set<VertexElement*> verteleset;
+            std::vector<VertexElement*> vertelevec;
+            std::queue<VertexElement*> vertelqueue;
 
             verteleset.insert(orig_indices[vidx]);
             vertelevec.push_back(orig_indices[vidx]);
             uint ve0ncons = orig_indices[vidx]->getNCon();
-            VertexElement ** ve0neighbs = orig_indices[vidx]->getNeighbours();
+            VertexElement** ve0neighbs = orig_indices[vidx]->getNeighbours();
 
             fill_ve_vec(verteleset, vertelevec, vertelqueue, ve0ncons, ve0neighbs);
             pElements.clear();
 
             uint ielt = 0;
 
-            for (auto const& vertele : vertelevec) {
+            for (auto const& vertele: vertelevec) {
                 pElements.push_back(vertele);
-                pVertexPerm[vertele->getIDX()] = ielt;
+                pVertexPerm[vertele->getIDX()] = vertex_id_t(ielt);
                 ielt++;
             }
 
-            // Note: this will reorder the vertex indices as we go- not a problem in this loop
-            // but they must be reset for the final index setting to work
+            // Note: this will reorder the vertex indices as we go- not a problem in
+            // this loop but they must be reset for the final index setting to work
             reindexElements();
 
             int maxdi = 0;
-            for (auto iv = 0u; iv < pNVerts; ++iv)
-            {
+            for (auto iv: vertex_id_t::range(pNVerts)) {
                 VertexElement* ve = getVertex(iv);
                 int ind = ve->getIDX();
 
-                for (auto i = 0u; i < ve->getNCon(); ++i)
-                {
+                for (auto i = 0u; i < ve->getNCon(); ++i) {
                     auto inbr = static_cast<int>(ve->nbrIdx(i));
                     auto di = ind - inbr;
-                    if (di < 0)
-                    {
+                    if (di < 0) {
                         di = -di;
                     }
-                    if (di > maxdi)
-                    {
+                    if (di > maxdi) {
                         maxdi = di;
                     }
                 }
             }
-            if (maxdi < bestwidth)
-            {
+            if (maxdi < bestwidth) {
                 bestone = vidx;
                 bestwidth = maxdi;
             }
         }
 
         // reset the vertex indices to their original value: important
-        for (uint v = 0; v < pNVerts; ++v)
-        {
+        for (uint v = 0; v < pNVerts; ++v) {
             orig_indices[v]->setIDX(v);
         }
 
-        set<VertexElement*> verteleset = set<VertexElement*>();
-        vector<VertexElement*> vertelevec = vector<VertexElement*>();
-        queue<VertexElement*> vertelqueue = queue<VertexElement*>();
+        std::set<VertexElement*> verteleset;
+        std::vector<VertexElement*> vertelevec;
+        std::queue<VertexElement*> vertelqueue;
 
         verteleset.insert(orig_indices[bestone]);
         vertelevec.push_back(orig_indices[bestone]);
         uint ve0ncons = orig_indices[bestone]->getNCon();
-        VertexElement ** ve0neighbs = orig_indices[bestone]->getNeighbours();
+        VertexElement** ve0neighbs = orig_indices[bestone]->getNeighbours();
 
         fill_ve_vec(verteleset, vertelevec, vertelqueue, ve0ncons, ve0neighbs);
         pElements.clear();
 
         uint ielt = 0;
-        for (auto const& vertele : vertelevec) {
+        for (auto const& vertele: vertelevec) {
             pElements.push_back(vertele);
-            pVertexPerm[vertele->getIDX()]=ielt;
+            pVertexPerm[vertele->getIDX()] = vertex_id_t(ielt);
             ielt++;
         }
 
     }
     // / / / / / / / / / / / /  / / / / / / / / / / / / / / / / / / / / / / //
 
-    else if (opt_method == 1)
-    {
-        //time_t btime;
-        //time_t etime;
-        //time(&btime);
+    else if (opt_method == 1) {
+        // time_t btime;
+        // time_t etime;
+        // time(&btime);
 
         auto const& com = centerOfMass();
-        auto ** m = new double*[3];
-        for (uint i = 0; i < 3; i++)
-        {
+        auto** m = new double*[3];
+        for (uint i = 0; i < 3; i++) {
             m[i] = new double[3];
             m[i][0] = 0.0;
             m[i][1] = 0.0;
             m[i][2] = 0.0;
         }
 
-        for (uint ivert = 0; ivert < countVertices(); ivert++)
-        {
+        for (auto ivert: vertex_id_t::range(countVertices())) {
             VertexElement* ve = getVertex(ivert);
             double x = ve->getX() - com[0];
             double y = ve->getY() - com[1];
@@ -639,13 +544,11 @@ void sefield::TetMesh::axisOrderElements(uint opt_method, std::string const & op
         double gamma;
         double evec[3];
         mainEvec(3, m, &iret, &gamma, evec);
-        if (iret != 1)
-        {
-            CLOG(INFO, "general_log") << "\nWarning - eigenvalue faliure " << endl;
+        if (iret != 1) {
+            CLOG(INFO, "general_log") << "\nWarning - eigenvalue faliure " << std::endl;
         }
 
-        for (uint i = 0; i < 3; i++)
-        {
+        for (uint i = 0; i < 3; i++) {
             delete[] m[i];
         }
         delete[] m;
@@ -657,202 +560,132 @@ void sefield::TetMesh::axisOrderElements(uint opt_method, std::string const & op
         vy += 1.e-9;
         vz += 1.e-10;
 
-
-        map<double, VertexElement*> hm;
-        //vector<double> da;
-        for (uint ielt = 0; ielt < countVertices(); ielt++)
-        {
-            VertexElement * ve = getVertex(ielt);
+        std::map<double, VertexElement*> hm;
+        // vector<double> da;
+        for (auto ielt: vertex_id_t::range(countVertices())) {
+            VertexElement* ve = getVertex(ielt);
             double d = vx * ve->getX() + vy * ve->getY() + vz * ve->getZ();
 
             hm[d] = ve;
-            //da.push_back(d);
+            // da.push_back(d);
         }
 
-        //sort(da.begin(), da.end());
+        // sort(da.begin(), da.end());
 
         pElements.clear();
         uint ielt = 0;
-        map<double, VertexElement*>::const_iterator iter = hm.begin();
+        auto iter = hm.begin();
 
-        while (iter != hm.end())
-        {
+        while (iter != hm.end()) {
             double d = iter->first;
             pElements.push_back(hm[d]);
             ++iter;
 
             // pVertexPerm[i] contains the new index in the elements array
             // for the vertex that was originally at index i
-            pVertexPerm[hm[d]->getIDX()] = ielt;
+            pVertexPerm[hm[d]->getIDX()] = vertex_id_t(ielt);
             ielt++;
         }
-    }
-    else
-    {
+    } else {
         std::ostringstream os;
         os << "Unknown optimization method.\n";
         ArgErrLog(os.str());
     }
 
-
     reindexElements();
     reordered();
-
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void sefield::TetMesh::saveOptimal(std::string const & opt_file_name)
-{
-
+void TetMesh::saveOptimal(std::string const& opt_file_name) {
     std::fstream opt_file;
 
     opt_file.open(opt_file_name.c_str(),
-                std::fstream::out | std::fstream::binary | std::fstream::trunc);
+                  std::fstream::out | std::fstream::binary | std::fstream::trunc);
     uint nelems = static_cast<uint>(pElements.size());
     opt_file.write(reinterpret_cast<char*>(&nelems), sizeof(uint));
 
-    steps::checkpoint(opt_file, pVertexPerm, false /* with_size */);
+    util::checkpoint(opt_file, pVertexPerm, false /* with_size */);
     opt_file.close();
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::TetMesh::fill_ve_vec(set<VertexElement*> & veset, vector<VertexElement*> & vevec, queue<VertexElement*> & vequeue, uint ncons, VertexElement ** nbrs)
-{
-
-    /*
-
-    vector<uint>newindcs=std::vector<uint>();
-    for (uint i=0; i < ncons; ++i)
-    {
-        bool inserted = veset.insert(nbrs[i]).second;
-        if (inserted)
-        {
-            newindcs.push_back(i);
-            // This is the important one- in a vector to keep the ordering
-            vevec.push_back(nbrs[i]);
-            // And add to the queue too, to find their neighbours:
-            vequeue.push(nbrs[i]);
-        }
-    }
-
-    // Go to the next element in the queue
-    if (vequeue.empty() == true) return;
-    else
-    {
-        VertexElement * nextve = vequeue.front();
-        vequeue.pop();
-        VertexElement ** newneighbs = nextve->getNeighbours();
-        uint nextcons = nextve->getNCon();
-        fill_ve_vec(veset, vevec, vequeue, nextcons, newneighbs);
-    }
-    */
-
-    while (true)
-    {
-        multimap<uint, uint> neighb_connections = multimap<uint, uint>();
-        for (uint i=0; i < ncons; ++i)
-        {
+void TetMesh::fill_ve_vec(std::set<VertexElement*>& veset,
+                          std::vector<VertexElement*>& vevec,
+                          std::queue<VertexElement*>& vequeue,
+                          uint ncons,
+                          VertexElement** nbrs) {
+    while (true) {
+        std::multimap<uint, uint> neighb_connections;
+        for (uint i = 0; i < ncons; ++i) {
             bool inserted = veset.insert(nbrs[i]).second;
-            if (inserted)
-            {
-                neighb_connections.insert(std::pair<uint, uint>(nbrs[i]->getNCon(), i));
+            if (inserted) {
+                neighb_connections.emplace(nbrs[i]->getNCon(), i);
             }
         }
 
-
-        multimap<uint,uint>::const_iterator it_end=neighb_connections.end();
-        for (multimap<uint,uint>::const_iterator it=neighb_connections.begin(); it!=it_end; ++it)
-        {
-            vevec.push_back(nbrs[(*it).second]);
-            vequeue.push(nbrs[(*it).second]);
-
+        const auto it_end = neighb_connections.end();
+        for (auto it = neighb_connections.begin(); it != it_end; ++it) {
+            vevec.push_back(nbrs[it->second]);
+            vequeue.push(nbrs[it->second]);
         }
 
-        if (vequeue.empty()) return;
-        else
-        {
-
-
-            VertexElement * nextve = vequeue.front();
+        if (vequeue.empty()) {
+            return;
+        } else {
+            VertexElement* nextve = vequeue.front();
             vequeue.pop();
 
             nbrs = nextve->getNeighbours();
             ncons = nextve->getNCon();
-
         }
-
     }
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::TetMesh::mainEvec
-(
-    uint n,
-    double ** A,
-    uint * it,
-    double * gamma,
-    double * x1
-)
-{
+void TetMesh::mainEvec(uint n, double** A, uint* it, double* gamma, double* x1) {
     double eps = 1.e-10;
     double dta = 1.e-10;
     int maxit = 100;
 
     std::vector<double> x0(n);
-    for (auto i = 0u; i < n; i++)
-    {
-        x0[i] = 1.0 / sqrt(i+1);
+    for (auto i = 0u; i < n; i++) {
+        x0[i] = 1.0 / std::sqrt(i + 1);
     }
-    *it= UINT_MAX;
+    *it = UINT_MAX;
     int l = 1;
-    while (*it == UINT_MAX && l < maxit)
-    {
-        *gamma=0.;
-        for (auto i = 0u; i < n; i++)
-        {
+    while (*it == UINT_MAX && l < maxit) {
+        *gamma = 0.;
+        for (auto i = 0u; i < n; i++) {
             x1[i] = 0.;
-            for (auto j = 0u; j < n; j++)
-            {
+            for (auto j = 0u; j < n; j++) {
                 x1[i] += A[i][j] * x0[j];
             }
 
-            if (fabs(x1[i]) > fabs(*gamma))
-            {
-                *gamma=x1[i];
+            if (std::abs(x1[i]) > std::abs(*gamma)) {
+                *gamma = x1[i];
             }
         }
-        if (fabs(*gamma) < eps)
-        {
-            *it=0;
-        }
-        else
-        {
-            for (auto i = 0u; i < n; i++)
-            {
+        if (std::abs(*gamma) < eps) {
+            *it = 0;
+        } else {
+            for (auto i = 0u; i < n; i++) {
                 x1[i] /= *gamma;
             }
             double phi = 0.0;
-            for (auto i = 0u; i < n; i++)
-            {
-                double s = fabs(x1[i] - x0[i]);
-                if (s > phi)
-                {
+            for (auto i = 0u; i < n; i++) {
+                double s = std::abs(x1[i] - x0[i]);
+                if (s > phi) {
                     phi = s;
                 }
             }
-            if (phi < dta)
-            {
-                *it=1;
-            }
-            else
-            {
-                for (auto i = 0u; i < n; i++)
-                {
+            if (phi < dta) {
+                *it = 1;
+            } else {
+                for (auto i = 0u; i < n; i++) {
                     x0[i] = x1[i];
                 }
                 l++;
@@ -863,19 +696,16 @@ void sefield::TetMesh::mainEvec
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::TetMesh::reordered()
-{
-    auto * tris = pTriangles;
-    for (uint i = 0; i < pNTri; ++i, tris += 3)
-    {
+void TetMesh::reordered() {
+    auto* tris = pTriangles;
+    for (uint i = 0; i < pNTri; ++i, tris += 3) {
         tris[0] = pVertexPerm[tris[0].get()];
         tris[1] = pVertexPerm[tris[1].get()];
         tris[2] = pVertexPerm[tris[2].get()];
     }
 
-    auto * tets = pTetrahedrons;
-    for (uint i = 0; i < pNTet; ++i, tets += 4)
-    {
+    auto* tets = pTetrahedrons;
+    for (uint i = 0; i < pNTet; ++i, tets += 4) {
         tets[0] = pVertexPerm[tets[0].get()];
         tets[1] = pVertexPerm[tets[1].get()];
         tets[2] = pVertexPerm[tets[2].get()];
@@ -885,52 +715,10 @@ void sefield::TetMesh::reordered()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sefield::VertexConnection * sefield::TetMesh::newConnection
-(
-    VertexElement * v1,
-    VertexElement * v2
-)
-{
+VertexConnection* TetMesh::newConnection(VertexElement* v1, VertexElement* v2) {
     auto con = new VertexConnection(v1, v2);
     pConnections.push_back(con);
     return con;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-/*
-void sefield::TetMesh::savematrix()
-{
-    ofstream fout;
-    fout.open("matrixdata.txt");
-
-    uint nverts = countVertices();
-    uint ncons =    pConnections.size();
-
-    std::vector<std::vector<int> > cmatrix(nverts);
-    for (uint i=0; i < nverts; ++i)
-    {
-        cmatrix[i] = std::vector<int>(nverts);
-    }
-
-    for (uint v = 0; v < nverts; ++v)
-    {
-        fout << v << " ";
-        VertexElement * nextve = pElements[v];
-        VertexElement ** newneighbs = nextve->getNeighbours();
-        uint nextcons = nextve->getNCon();
-        for (uint c = 0; c < nextcons; ++c)
-        {
-            fout << newneighbs[c]->getIDX();
-            fout << " ";
-        }
-        fout << "\n";
-    }
-
-    fout.close();
-
-}
-*/
-////////////////////////////////////////////////////////////////////////////////
-
-// END
+}  // namespace steps::solver::efield

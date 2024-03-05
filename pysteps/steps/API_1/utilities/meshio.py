@@ -482,85 +482,22 @@ def importTetGen(pathroot, scale, verbose = False):
         facefname = ''
 
     # Try to read the node file.
-    nodefile = open(nodefname, 'r')
-    # First line is:  <x> <y> <z> [att<# of points> <dimension (3)> <# of attributes>
-    #                <boundary marker (0 or 1)>
-    line = nodefile.readline()
-    while (line[0] == '#' or line[0] == '\n'):
+    with open(nodefname, 'r') as nodefile:
+        # First line is:  <x> <y> <z> [att<# of points> <dimension (3)> <# of attributes>
+        #                <boundary marker (0 or 1)>
         line = nodefile.readline()
-    tokens = line.split()
-    assert len(tokens) == 4
-    nnodes = int(tokens[0])
-    assert nnodes > 0
-    ndims = int(tokens[1])
-    assert ndims == 3
-    nattribs = int(tokens[2])
-    bmarkers = int(tokens[3])
-    while (nodeproxy.getSize() != nnodes):
-        line = nodefile.readline()
-        commentstart = line.find('#')
-        if commentstart != -1:
-            line = line[0:commentstart]
-        # Remaing lines: <point #>ributes]
-        #                [boundary marker]
-        tokens = line.split()
-        if len(tokens) == 0:
-            continue
-        nodeid = int(tokens[0])
-        node = [0.0, 0.0, 0.0]
-        node[0] = float(tokens[1]) * scale
-        node[1] = float(tokens[2]) * scale
-        node[2] = float(tokens[3]) * scale
-        nodeproxy.insert(nodeid, node)
-    # Close the file.
-    nodefile.close()
-
-    # Try to read the tet file.
-    elefile = open(elefname, 'r')
-    line = elefile.readline()
-    while (line[0] == '#' or line[0] == '\n'):
-        line = elefile.readline()
-    tokens = line.split()
-    assert len(tokens) == 3
-    ntets = int(tokens[0])
-    assert ntets > 0
-    ndims = int(tokens[1])
-    assert ndims == 4
-    nattribs = int(tokens[2])
-    while (tetproxy.getSize() != ntets):
-        line = elefile.readline()
-        commentstart = line.find('#')
-        if commentstart != -1:
-            line = line[0:commentstart]
-        # Remaing lines: <point #>ributes]
-        #                [boundary marker]
-        tokens = line.split()
-        if len(tokens) == 0:
-            continue
-        tetid = int(tokens[0])
-        tet = [0, 0, 0, 0]
-        tet[0] = nodeproxy.getSTEPSID(int(tokens[1]))
-        tet[1] = nodeproxy.getSTEPSID(int(tokens[2]))
-        tet[2] = nodeproxy.getSTEPSID(int(tokens[3]))
-        tet[3] = nodeproxy.getSTEPSID(int(tokens[4]))
-        tetproxy.insert(tetid, tet)
-        if nattribs == 1:
-            tetproxy.addToGroup(tokens[5], tetproxy.getSTEPSID(tetid))
-    elefile.close()
-
-    # Try to read the tri file.
-    if (facefname != ''):
-        facefile = open(facefname, 'r')
-        line = facefile.readline()
         while (line[0] == '#' or line[0] == '\n'):
-            line = facefile.readline()
+            line = nodefile.readline()
         tokens = line.split()
-        assert len(tokens) == 2
-        ntris = int(tokens[0])
-        assert ntris > 0
-        nattribs = int(tokens[1])
-        while (triproxy.getSize() != ntris):
-            line = facefile.readline()
+        assert len(tokens) == 4
+        nnodes = int(tokens[0])
+        assert nnodes > 0
+        ndims = int(tokens[1])
+        assert ndims == 3
+        nattribs = int(tokens[2])
+        bmarkers = int(tokens[3])
+        while (nodeproxy.getSize() != nnodes):
+            line = nodefile.readline()
             commentstart = line.find('#')
             if commentstart != -1:
                 line = line[0:commentstart]
@@ -569,16 +506,74 @@ def importTetGen(pathroot, scale, verbose = False):
             tokens = line.split()
             if len(tokens) == 0:
                 continue
-            triid = int(tokens[0])
-            tri = [0, 0, 0]
-            tri[0] = nodeproxy.getSTEPSID(int(tokens[1]))
-            tri[1] = nodeproxy.getSTEPSID(int(tokens[2]))
-            tri[2] = nodeproxy.getSTEPSID(int(tokens[3]))
-            triproxy.insert(triid, tri)
+            nodeid = int(tokens[0])
+            node = [0.0, 0.0, 0.0]
+            node[0] = float(tokens[1]) * scale
+            node[1] = float(tokens[2]) * scale
+            node[2] = float(tokens[3]) * scale
+            nodeproxy.insert(nodeid, node)
+
+    # Try to read the tet file.
+    with open(elefname, 'r') as elefile:
+        line = elefile.readline()
+        while (line[0] == '#' or line[0] == '\n'):
+            line = elefile.readline()
+        tokens = line.split()
+        assert len(tokens) == 3
+        ntets = int(tokens[0])
+        assert ntets > 0
+        ndims = int(tokens[1])
+        assert ndims == 4
+        nattribs = int(tokens[2])
+        while (tetproxy.getSize() != ntets):
+            line = elefile.readline()
+            commentstart = line.find('#')
+            if commentstart != -1:
+                line = line[0:commentstart]
+            # Remaing lines: <point #>ributes]
+            #                [boundary marker]
+            tokens = line.split()
+            if len(tokens) == 0:
+                continue
+            tetid = int(tokens[0])
+            tet = [0, 0, 0, 0]
+            tet[0] = nodeproxy.getSTEPSID(int(tokens[1]))
+            tet[1] = nodeproxy.getSTEPSID(int(tokens[2]))
+            tet[2] = nodeproxy.getSTEPSID(int(tokens[3]))
+            tet[3] = nodeproxy.getSTEPSID(int(tokens[4]))
+            tetproxy.insert(tetid, tet)
             if nattribs == 1:
-                triproxy.addToGroup(tokens[4], triproxy.getSTEPSID(triid))
-        # Close the file.
-        facefile.close()
+                tetproxy.addToGroup(tokens[5], tetproxy.getSTEPSID(tetid))
+
+    # Try to read the tri file.
+    if (facefname != ''):
+        with open(facefname, 'r') as facefile:
+            line = facefile.readline()
+            while (line[0] == '#' or line[0] == '\n'):
+                line = facefile.readline()
+            tokens = line.split()
+            assert len(tokens) == 2
+            ntris = int(tokens[0])
+            assert ntris > 0
+            nattribs = int(tokens[1])
+            while (triproxy.getSize() != ntris):
+                line = facefile.readline()
+                commentstart = line.find('#')
+                if commentstart != -1:
+                    line = line[0:commentstart]
+                # Remaing lines: <point #>ributes]
+                #                [boundary marker]
+                tokens = line.split()
+                if len(tokens) == 0:
+                    continue
+                triid = int(tokens[0])
+                tri = [0, 0, 0]
+                tri[0] = nodeproxy.getSTEPSID(int(tokens[1]))
+                tri[1] = nodeproxy.getSTEPSID(int(tokens[2]))
+                tri[2] = nodeproxy.getSTEPSID(int(tokens[3]))
+                triproxy.insert(triid, tri)
+                if nattribs == 1:
+                    triproxy.addToGroup(tokens[4], triproxy.getSTEPSID(triid))
 
     if (verbose): print("Read TetGen files succesfully")
 
@@ -665,97 +660,95 @@ def importAbaqus(filename, scale, ebs = None, shadow_mesh = None, verbose = Fals
     if (verbose): print("Reading Abaqus file...")
     btime = time.time()
 
-    abaqusfile = open(filename, 'r')
+    with open(filename, 'r') as abaqusfile:
 
-    nodeproxy = ElementProxy('node', 3)
-    tetproxy = ElementProxy('tet', 4)
-    triproxy = ElementProxy('tri', 3)
-
-    line = abaqusfile.readline()
-    # check we have the right kind of CUBIT output file here
-    #assert(line.find('*HEADING'))
-
-    if ebs == None:
-        include = True
-    else:
-        include = False
-    currmap = None
-
-    # add tri data record for remove duplicated triangles
-    recorded_tris = {}
-
-    # read line one by one until the end
-    while(line):
-        type, result = parseAbaqusLine(line)
-        # status check
-        if type == "comment":
-            pass
-        elif type == "keyword" and (result["keyword"] == "NODE"):
-            if (currmap != None):
-                currmap.blockEnd()
-            if "ELSET" in result.keys():
-                nodeproxy.blockBegin(result["ELSET"])
-            else:
-                nodeproxy.blockBegin("AllNodes")
-            currmap = nodeproxy
-        elif type == "keyword" and (result["keyword"] == "ELEMENT"):
-            if (currmap != None):
-                currmap.blockEnd()
-            if "ELSET" in result.keys():
-                blockname = result["ELSET"]
-            else:
-                blockname = "AllElements"
-            if (ebs == None) or (blockname in ebs):
-                include = True
-            else:
-                include  = False
-            if (result["TYPE"] == 'C3D4') and include:
-                currmap = tetproxy
-                tetproxy.blockBegin(blockname)
-            elif (result["TYPE"] == 'STRI3') and include:
-                currmap = triproxy
-                triproxy.blockBegin(blockname)
-            elif currmap != None:
-                currmap.blockEnd()
-                currmap = None
-        elif (type == "keyword") and (currmap != None):
-            currmap.blockEnd()
-            currmap = None
-        elif type == "data" and currmap != None:
-            if (currmap == nodeproxy):
-                nodeid = int(result["data"][0])
-                node = [0.0, 0.0, 0.0]
-                # set to the right scale
-                node[0] = float(result["data"][1])*scale
-                node[1] = float(result["data"][2])*scale
-                node[2] = float(result["data"][3])*scale
-                currmap.insert(nodeid, node)
-            elif (currmap == tetproxy) and include:
-                nodeid = int(result["data"][0])
-                node = [0,0,0,0]
-                node[0] = nodeproxy.getSTEPSID(int(result["data"][1]))
-                node[1] = nodeproxy.getSTEPSID(int(result["data"][2]))
-                node[2] = nodeproxy.getSTEPSID(int(result["data"][3]))
-                node[3] = nodeproxy.getSTEPSID(int(result["data"][4]))
-                currmap.insert(nodeid, node)
-            elif (currmap == triproxy) and include:
-                nodeid = int(result["data"][0])
-                node = [0,0,0]
-                node[0] = nodeproxy.getSTEPSID(int(result["data"][1]))
-                node[1] = nodeproxy.getSTEPSID(int(result["data"][2]))
-                node[2] = nodeproxy.getSTEPSID(int(result["data"][3]))
-                if (node[0], node[1], node[2]) in recorded_tris:
-                    if (verbose): print("Triangle: ", (node[0], node[1], node[2]), " with index ", recorded_tris[(node[0], node[1], node[2])], " has been imported, ignore duplicated triangle ", nodeid)
-                else:
-                    currmap.insert(nodeid, node)
-                    recorded_tris[(node[0], node[1], node[2])] = nodeid
+        nodeproxy = ElementProxy('node', 3)
+        tetproxy = ElementProxy('tet', 4)
+        triproxy = ElementProxy('tri', 3)
 
         line = abaqusfile.readline()
+        # check we have the right kind of CUBIT output file here
+        #assert(line.find('*HEADING'))
 
-    if (currmap != None):
-        currmap.blockEnd()
+        if ebs == None:
+            include = True
+        else:
+            include = False
+        currmap = None
 
-    abaqusfile.close()
+        # add tri data record for remove duplicated triangles
+        recorded_tris = {}
+
+        # read line one by one until the end
+        while(line):
+            type, result = parseAbaqusLine(line)
+            # status check
+            if type == "comment":
+                pass
+            elif type == "keyword" and (result["keyword"] == "NODE"):
+                if (currmap != None):
+                    currmap.blockEnd()
+                if "ELSET" in result.keys():
+                    nodeproxy.blockBegin(result["ELSET"])
+                else:
+                    nodeproxy.blockBegin("AllNodes")
+                currmap = nodeproxy
+            elif type == "keyword" and (result["keyword"] == "ELEMENT"):
+                if (currmap != None):
+                    currmap.blockEnd()
+                if "ELSET" in result.keys():
+                    blockname = result["ELSET"]
+                else:
+                    blockname = "AllElements"
+                if (ebs == None) or (blockname in ebs):
+                    include = True
+                else:
+                    include  = False
+                if (result["TYPE"] == 'C3D4') and include:
+                    currmap = tetproxy
+                    tetproxy.blockBegin(blockname)
+                elif (result["TYPE"] == 'STRI3') and include:
+                    currmap = triproxy
+                    triproxy.blockBegin(blockname)
+                elif currmap != None:
+                    currmap.blockEnd()
+                    currmap = None
+            elif (type == "keyword") and (currmap != None):
+                currmap.blockEnd()
+                currmap = None
+            elif type == "data" and currmap != None:
+                if (currmap == nodeproxy):
+                    nodeid = int(result["data"][0])
+                    node = [0.0, 0.0, 0.0]
+                    # set to the right scale
+                    node[0] = float(result["data"][1])*scale
+                    node[1] = float(result["data"][2])*scale
+                    node[2] = float(result["data"][3])*scale
+                    currmap.insert(nodeid, node)
+                elif (currmap == tetproxy) and include:
+                    nodeid = int(result["data"][0])
+                    node = [0,0,0,0]
+                    node[0] = nodeproxy.getSTEPSID(int(result["data"][1]))
+                    node[1] = nodeproxy.getSTEPSID(int(result["data"][2]))
+                    node[2] = nodeproxy.getSTEPSID(int(result["data"][3]))
+                    node[3] = nodeproxy.getSTEPSID(int(result["data"][4]))
+                    currmap.insert(nodeid, node)
+                elif (currmap == triproxy) and include:
+                    nodeid = int(result["data"][0])
+                    node = [0,0,0]
+                    node[0] = nodeproxy.getSTEPSID(int(result["data"][1]))
+                    node[1] = nodeproxy.getSTEPSID(int(result["data"][2]))
+                    node[2] = nodeproxy.getSTEPSID(int(result["data"][3]))
+                    if (node[0], node[1], node[2]) in recorded_tris:
+                        if (verbose): print("Triangle: ", (node[0], node[1], node[2]), " with index ", recorded_tris[(node[0], node[1], node[2])], " has been imported, ignore duplicated triangle ", nodeid)
+                    else:
+                        currmap.insert(nodeid, node)
+                        recorded_tris[(node[0], node[1], node[2])] = nodeid
+
+            line = abaqusfile.readline()
+
+        if (currmap != None):
+            currmap.blockEnd()
 
     nodedata = nodeproxy.getAllData()
     tetdata = tetproxy.getAllData()
@@ -833,149 +826,145 @@ def importAbaqus2(tetfilename, trifilename, scale, shadow_mesh = None, verbose =
     if (verbose): print("Reading Abaqus file...")
     btime = time.time()
 
-    tetfile = open(tetfilename, 'r')
+    with open(tetfilename, 'r') as tetfile:
 
-    nodeproxy = ElementProxy('node', 3)
-    tetproxy = ElementProxy('tet', 4)
-    triproxy = ElementProxy('tri', 3)
+        nodeproxy = ElementProxy('node', 3)
+        tetproxy = ElementProxy('tet', 4)
+        triproxy = ElementProxy('tri', 3)
 
-    vert_idxs = {}
-
-    line = tetfile.readline()
-    # check we have the right kind of CUBIT output file here
-    #assert(line.find('*HEADING'))
-
-    currmap = None
-    # read line one by one until the end
-    while(line):
-        type, result = parseAbaqusLine(line)
-        # status check
-        if type == "comment":
-            pass
-        elif type == "keyword" and (result["keyword"] == "NODE"):
-            if (currmap != None):
-                currmap.blockEnd()
-            #if (verbose): print('Found *NODE section, start reading nodes.')
-            if "ELSET" in result.keys():
-                nodeproxy.blockBegin(result["ELSET"])
-            else:
-                nodeproxy.blockBegin("AllNodes")
-            currmap = nodeproxy
-        elif type == "keyword" and (result["keyword"] == "ELEMENT"):
-            if (currmap != None):
-                currmap.blockEnd()
-            if "ELSET" in result.keys():
-                blockname = result["ELSET"]
-            else:
-                blockname = "AllElements"
-            if result["TYPE"] == 'C3D4':
-                currmap = tetproxy
-                tetproxy.blockBegin(blockname)
-            elif result["TYPE"] == 'STRI3':
-                print("This importing function is not designed for file with both tetrahedrons and triangles, try importAbaqus instead.")
-                return
-            elif currmap != None:
-                currmap.blockEnd()
-                currmap = None
-        elif (type == "keyword") and (currmap != None):
-            currmap.blockEnd()
-            currmap = None
-        elif type == "data" and currmap != None:
-            if (currmap == nodeproxy):
-                nodeid = int(result["data"][0])
-                node = [0.0, 0.0, 0.0]
-                # set to the right scale
-                node[0] = float(result["data"][1])*scale
-                node[1] = float(result["data"][2])*scale
-                node[2] = float(result["data"][3])*scale
-                currmap.insert(nodeid, node)
-                vert_idxs[tuple(node)] = currmap.getSize() - 1
-
-            elif (currmap == tetproxy):
-                nodeid = int(result["data"][0])
-                node = [0,0,0,0]
-                # set to the right scale
-                node[0] = nodeproxy.getSTEPSID(int(result["data"][1]))
-                node[1] = nodeproxy.getSTEPSID(int(result["data"][2]))
-                node[2] = nodeproxy.getSTEPSID(int(result["data"][3]))
-                node[3] = nodeproxy.getSTEPSID(int(result["data"][4]))
-                currmap.insert(nodeid, node)
+        vert_idxs = {}
 
         line = tetfile.readline()
+        # check we have the right kind of CUBIT output file here
+        #assert(line.find('*HEADING'))
 
-    if (currmap != None):
-        currmap.blockEnd()
-
-    tetfile.close()
-
-    trifile = open(trifilename, 'r')
-
-    line = trifile.readline()
-    # check we have the right kind of CUBIT output file here
-    #assert(line.find('*HEADING'))
-    # add tri data record for remove duplicated triangles
-    recorded_tris = {}
-    currmap = None
-    # read line one by one until the end
-    while(line):
-        # status check
-        type, result = parseAbaqusLine(line)
-        if type == "comment":
-            pass
-        elif type == "keyword" and (result["keyword"] == "NODE"):
-            if (currmap != None):
-                currmap.blockEnd()
-            #if (verbose): print('Found *NODE section, start reading nodes.')
-            if "ELSET" in result.keys():
-                nodeproxy.blockBegin(result["ELSET"])
-            else:
-                nodeproxy.blockBegin("AllNodes")
-            currmap = nodeproxy
-        elif type == "keyword" and (result["keyword"] == "ELEMENT"):
-            if (currmap != None):
-                currmap.blockEnd()
-            if "ELSET" in result.keys():
-                blockname = result["ELSET"]
-            else:
-                blockname = "AllElements"
-            if result["TYPE"] == 'STRI3':
-                currmap = triproxy
-                triproxy.blockBegin(blockname)
-
-        elif (type == "keyword") and (currmap != None):
-            currmap.blockEnd()
-            currmap = None
-
-        elif type == "data":
-            if (currmap == nodeproxy):
-                nodeid = int(result["data"][0])
-                node = [0.0, 0.0, 0.0]
-                # set to the right scale
-                node[0] = float(result["data"][1])*scale
-                node[1] = float(result["data"][2])*scale
-                node[2] = float(result["data"][3])*scale
-                if tuple(node) not in vert_idxs.keys():
-                    print("coordinates ", node, " is not in the tet file, abort function.")
-                    raise
-            elif (currmap == triproxy):
-                nodeid = int(result["data"][0])
-                node = [0,0,0]
-                # set to the right scale
-                node[0] = nodeproxy.getSTEPSID(int(result["data"][1]))
-                node[1] = nodeproxy.getSTEPSID(int(result["data"][2]))
-                node[2] = nodeproxy.getSTEPSID(int(result["data"][3]))
-                if (node[0], node[1], node[2]) in recorded_tris:
-                    if (verbose): print("Triangle: ", (node[0], node[1], node[2]), " with index ", recorded_tris[(node[0], node[1], node[2])], " has been imported, ignore duplicated triangle ", nodeid)
+        currmap = None
+        # read line one by one until the end
+        while(line):
+            type, result = parseAbaqusLine(line)
+            # status check
+            if type == "comment":
+                pass
+            elif type == "keyword" and (result["keyword"] == "NODE"):
+                if (currmap != None):
+                    currmap.blockEnd()
+                #if (verbose): print('Found *NODE section, start reading nodes.')
+                if "ELSET" in result.keys():
+                    nodeproxy.blockBegin(result["ELSET"])
                 else:
+                    nodeproxy.blockBegin("AllNodes")
+                currmap = nodeproxy
+            elif type == "keyword" and (result["keyword"] == "ELEMENT"):
+                if (currmap != None):
+                    currmap.blockEnd()
+                if "ELSET" in result.keys():
+                    blockname = result["ELSET"]
+                else:
+                    blockname = "AllElements"
+                if result["TYPE"] == 'C3D4':
+                    currmap = tetproxy
+                    tetproxy.blockBegin(blockname)
+                elif result["TYPE"] == 'STRI3':
+                    print("This importing function is not designed for file with both tetrahedrons and triangles, try importAbaqus instead.")
+                    return
+                elif currmap != None:
+                    currmap.blockEnd()
+                    currmap = None
+            elif (type == "keyword") and (currmap != None):
+                currmap.blockEnd()
+                currmap = None
+            elif type == "data" and currmap != None:
+                if (currmap == nodeproxy):
+                    nodeid = int(result["data"][0])
+                    node = [0.0, 0.0, 0.0]
+                    # set to the right scale
+                    node[0] = float(result["data"][1])*scale
+                    node[1] = float(result["data"][2])*scale
+                    node[2] = float(result["data"][3])*scale
                     currmap.insert(nodeid, node)
-                    recorded_tris[(node[0], node[1], node[2])] = nodeid
+                    vert_idxs[tuple(node)] = currmap.getSize() - 1
+
+                elif (currmap == tetproxy):
+                    nodeid = int(result["data"][0])
+                    node = [0,0,0,0]
+                    # set to the right scale
+                    node[0] = nodeproxy.getSTEPSID(int(result["data"][1]))
+                    node[1] = nodeproxy.getSTEPSID(int(result["data"][2]))
+                    node[2] = nodeproxy.getSTEPSID(int(result["data"][3]))
+                    node[3] = nodeproxy.getSTEPSID(int(result["data"][4]))
+                    currmap.insert(nodeid, node)
+
+            line = tetfile.readline()
+
+        if (currmap != None):
+            currmap.blockEnd()
+
+    with open(trifilename, 'r') as trifile:
 
         line = trifile.readline()
+        # check we have the right kind of CUBIT output file here
+        #assert(line.find('*HEADING'))
+        # add tri data record for remove duplicated triangles
+        recorded_tris = {}
+        currmap = None
+        # read line one by one until the end
+        while(line):
+            # status check
+            type, result = parseAbaqusLine(line)
+            if type == "comment":
+                pass
+            elif type == "keyword" and (result["keyword"] == "NODE"):
+                if (currmap != None):
+                    currmap.blockEnd()
+                #if (verbose): print('Found *NODE section, start reading nodes.')
+                if "ELSET" in result.keys():
+                    nodeproxy.blockBegin(result["ELSET"])
+                else:
+                    nodeproxy.blockBegin("AllNodes")
+                currmap = nodeproxy
+            elif type == "keyword" and (result["keyword"] == "ELEMENT"):
+                if (currmap != None):
+                    currmap.blockEnd()
+                if "ELSET" in result.keys():
+                    blockname = result["ELSET"]
+                else:
+                    blockname = "AllElements"
+                if result["TYPE"] == 'STRI3':
+                    currmap = triproxy
+                    triproxy.blockBegin(blockname)
 
-    if (currmap != None):
-        currmap.blockEnd()
+            elif (type == "keyword") and (currmap != None):
+                currmap.blockEnd()
+                currmap = None
 
-    trifile.close()
+            elif type == "data":
+                if (currmap == nodeproxy):
+                    nodeid = int(result["data"][0])
+                    node = [0.0, 0.0, 0.0]
+                    # set to the right scale
+                    node[0] = float(result["data"][1])*scale
+                    node[1] = float(result["data"][2])*scale
+                    node[2] = float(result["data"][3])*scale
+                    if tuple(node) not in vert_idxs.keys():
+                        print("coordinates ", node, " is not in the tet file, abort function.")
+                        raise
+                elif (currmap == triproxy):
+                    nodeid = int(result["data"][0])
+                    node = [0,0,0]
+                    # set to the right scale
+                    node[0] = nodeproxy.getSTEPSID(int(result["data"][1]))
+                    node[1] = nodeproxy.getSTEPSID(int(result["data"][2]))
+                    node[2] = nodeproxy.getSTEPSID(int(result["data"][3]))
+                    if (node[0], node[1], node[2]) in recorded_tris:
+                        if (verbose): print("Triangle: ", (node[0], node[1], node[2]), " with index ", recorded_tris[(node[0], node[1], node[2])], " has been imported, ignore duplicated triangle ", nodeid)
+                    else:
+                        currmap.insert(nodeid, node)
+                        recorded_tris[(node[0], node[1], node[2])] = nodeid
+
+            line = trifile.readline()
+
+        if (currmap != None):
+            currmap.blockEnd()
 
 
     nodedata = nodeproxy.getAllData()
@@ -1069,8 +1058,6 @@ def importGmsh(filename, scale, verbose = False):
     if (verbose): print("Reading Gmsh file...")
     btime = time.time()
 
-    meshfile = open(filename, 'r')
-
     nodeproxy = ElementProxy('node', 3)
     tetproxy = ElementProxy('tet', 4)
     triproxy = ElementProxy('tri', 3)
@@ -1148,7 +1135,6 @@ def importGmsh(filename, scale, verbose = False):
                 line = meshfile.readline()
                 assert(line == '$EndElements\n')
             line = meshfile.readline()
-    meshfile.close()
 
     for physical_tag in physical_name_mapping:
         dimension = physical_tag[0]
@@ -1215,52 +1201,51 @@ def importVTK(filename, scale, verbose = False):
     if (verbose): print("Reading VTK file...")
     #btime = time.time()
 
-    vtkfile = open(filename, 'r')
+    with open(filename, 'r') as vtkfile:
 
-    nodeproxy = ElementProxy('node', 3)
-    tetproxy = ElementProxy('tet', 4)
-    triproxy = ElementProxy('tri', 3)
-    elements = []
+        nodeproxy = ElementProxy('node', 3)
+        tetproxy = ElementProxy('tet', 4)
+        triproxy = ElementProxy('tri', 3)
+        elements = []
 
-    warningprinted = False
+        warningprinted = False
 
-    line = vtkfile.readline()
+        line = vtkfile.readline()
 
-    file_it = iter(vtkfile)
-    for line in file_it:
-        if line.strip() == "":
-            continue
-        tokens = line.split()
-        if tokens[0] == "DATASET" and tokens[1] != "UNSTRUCTURED_GRID":
-            print("Error: not an unstructured grid!")
-            break
-        elif tokens[0] == "POINTS":
-            i = 0
-            n_points = int(tokens[1])
-            while i < n_points:
-                line = next(file_it)
-                tokens = line.split()
-                for j in range(len(tokens) // 3):
-                    nodeproxy.insert(i, [float(tokens[j])*scale, float(tokens[j + 1])*scale, float(tokens[j + 2])*scale])
-                    i += 1
-        elif tokens[0] == "CELLS":
-            for i in range(int(tokens[1])):
-                line = next(file_it)
-                tokens = line.split()
-                elements.append(tokens)
-        elif tokens[0] == "CELL_TYPES":
-            for i in range(int(tokens[1])):
-                line = next(file_it)
-                element = elements[i]
-                if int(line) == 5 and int(element[0]) == 3:
-                    triproxy.insert(i, [int(element[1]), int(element[2]), int(element[3])])
-                elif int(line) == 10 and int(element[0]) == 4:
-                    tetproxy.insert(i, [int(element[1]), int(element[2]), int(element[3]), int(element[4])])
-                elif not warningprinted:
-                    print("Warning: at least one element is neither a triangle nor a tetrahedron")
-                    warningprinted = True                 
-            break
-    vtkfile.close()
+        file_it = iter(vtkfile)
+        for line in file_it:
+            if line.strip() == "":
+                continue
+            tokens = line.split()
+            if tokens[0] == "DATASET" and tokens[1] != "UNSTRUCTURED_GRID":
+                print("Error: not an unstructured grid!")
+                break
+            elif tokens[0] == "POINTS":
+                i = 0
+                n_points = int(tokens[1])
+                while i < n_points:
+                    line = next(file_it)
+                    tokens = line.split()
+                    for j in range(len(tokens) // 3):
+                        nodeproxy.insert(i, [float(tokens[j])*scale, float(tokens[j + 1])*scale, float(tokens[j + 2])*scale])
+                        i += 1
+            elif tokens[0] == "CELLS":
+                for i in range(int(tokens[1])):
+                    line = next(file_it)
+                    tokens = line.split()
+                    elements.append(tokens)
+            elif tokens[0] == "CELL_TYPES":
+                for i in range(int(tokens[1])):
+                    line = next(file_it)
+                    element = elements[i]
+                    if int(line) == 5 and int(element[0]) == 3:
+                        triproxy.insert(i, [int(element[1]), int(element[2]), int(element[3])])
+                    elif int(line) == 10 and int(element[0]) == 4:
+                        tetproxy.insert(i, [int(element[1]), int(element[2]), int(element[3]), int(element[4])])
+                    elif not warningprinted:
+                        print("Warning: at least one element is neither a triangle nor a tetrahedron")
+                        warningprinted = True                 
+                break
     nodedata = nodeproxy.getAllData()
     tetdata = tetproxy.getAllData()
     tridata = triproxy.getAllData()
@@ -1332,163 +1317,162 @@ def saveMesh(pathname, tetmesh):
         raise TypeError(f"Expected a steps.API_1.geom.Tetmesh object, got {tetmesh} instead.")
 
     # Following will raise IOError if pathname not a valid directory
-    xmlfile = open(pathname+'.xml', 'w')
+    with open(pathname+'.xml', 'w') as xmlfile:
 
-    xmlfile.write('<?xml version="1.0" encoding="ISO-8859-1"?>\n')
-    xmlfile.write('<tetmesh>\n')
-
-
-    ### Write the node information
-
-    nverts = tetmesh.countVertices()
-
-    xmlfile.write('\t<nodes size="'+str(nverts)+'">\n')
-
-    for node in range(nverts):
-        # Write indices and coordinates to xml file
-        xmlfile.write('\t\t<node idx = "' + str(node) + '">\n')
-        coords = str(tetmesh.getVertex(node))[1:-1]
-        xmlfile.write('\t\t\t<coords>'+ coords + '</coords>\n')
-        xmlfile.write('\t\t</node>\n')
-    xmlfile.write('\t</nodes>\n')
+        xmlfile.write('<?xml version="1.0" encoding="ISO-8859-1"?>\n')
+        xmlfile.write('<tetmesh>\n')
 
 
-    ### Write the triangle information
+        ### Write the node information
 
-    ntris = tetmesh.countTris()
-    xmlfile.write('\t<triangles size="' +str(ntris)+'">\n')
+        nverts = tetmesh.countVertices()
 
-    for tri in range(ntris):
-        # Write indices and nodes to xml file
-        xmlfile.write('\t\t<tri idx="' + str(tri) + '">\n')
-        nodes = str(tetmesh.getTri(tri))[1:-1]
-        xmlfile.write('\t\t\t<nodes>' + nodes + '</nodes>\n')
-        xmlfile.write('\t\t</tri>\n')
-    xmlfile.write('\t</triangles>\n')
+        xmlfile.write('\t<nodes size="'+str(nverts)+'">\n')
 
-
-    ### Write the tetrahedron information
-
-    ntets = tetmesh.countTets()
-    xmlfile.write('\t<tetrahedrons size="' +str(ntets)+'">\n')
-
-    for tet in range(ntets):
-        # Write indices and nodes to xml file
-        xmlfile.write ('\t\t<tet idx="' + str(tet) + '">\n')
-        nodes = str(tetmesh.getTet(tet))[1:-1]
-        xmlfile.write('\t\t\t<nodes>' + nodes + '</nodes>\n')
-        xmlfile.write('\t\t</tet>\n')
-        # Write the volume, barycenter, trineighbours, tetneighbours to xml file
-    xmlfile.write('\t</tetrahedrons>\n')
+        for node in range(nverts):
+            # Write indices and coordinates to xml file
+            xmlfile.write('\t\t<node idx = "' + str(node) + '">\n')
+            coords = str(tetmesh.getVertex(node))[1:-1]
+            xmlfile.write('\t\t\t<coords>'+ coords + '</coords>\n')
+            xmlfile.write('\t\t</node>\n')
+        xmlfile.write('\t</nodes>\n')
 
 
-    ### Write the comp and patch information.
-    # TODO: Changes need to be made to steps code to make it easier to get the tet
-    # and tri members. Currently the mesh returns base pointer (Comp or Patch)
-    # which cannot be used to find the indices.
+        ### Write the triangle information
 
-    comps = tetmesh.getAllComps()
-    ncomps = comps.__len__()
-    xmlfile.write('\t<compartments size="' + str(ncomps) + '">\n')
-
-    if (ncomps > 0) :
-        ids = []
-        vsys=[]
-        tets = []
-        for c in range(ncomps):
-            ids.append(comps[c].getID())
-            vsys.append(comps[c].getVolsys())
-            tets.append([])
-        assert(tets.__len__() == ncomps)
-        # Only choice right now is to loop over all tets and compare comp to tet id
-        for tet in range(ntets):
-            comptemp = tetmesh.getTetComp(tet)
-            if not comptemp: continue
-            idtemp = comptemp.getID()
-            for c in range(ncomps):
-                if idtemp == ids[c]:
-                    tets[c].append(tet)
-                    break
-        # Now we have the tet members of each comp, we can write this to xml
-        for c in range(ncomps):
-            xmlfile.write('\t\t<comp idx="' +str(c) + '">\n')
-            xmlfile.write('\t\t\t<id>' + ids[c] + '</id>\n')
-            xmlfile.write('\t\t\t<volsys>')
-            for v in vsys[c]:
-                if (v != vsys[c][0]) : xmlfile.write(',')
-                xmlfile.write(v)
-            xmlfile.write('</volsys>\n')
-            xmlfile.write('\t\t\t<tets>')
-            for t in tets[c]:
-                if (t != tets[c][0]) : xmlfile.write(',')
-                xmlfile.write(str(t))
-            xmlfile.write('</tets>\n')
-            xmlfile.write('\t\t</comp>\n')
-    xmlfile.write('\t</compartments>\n')
-
-    patches = tetmesh.getAllPatches()
-    npatches = patches.__len__()
-    xmlfile.write('\t<patches size="' + str(npatches) + '">\n')
-
-    if (npatches > 0) :
-        ids = []
-        ssys = []
-        icomp=[]
-        ocomp=[]
-        tris = []
-        for p in range(npatches):
-            ids.append(patches[p].getID())
-            ssys.append(patches[p].getSurfsys())
-            icomp.append(patches[p].getIComp().getID())
-            if (not patches[p].getOComp()): ocomp.append('null')
-            else : ocomp.append(patches[p].getOComp().getID())
-            tris.append([])
-        assert(ids.__len__() == ssys.__len__() == icomp.__len__() == ocomp.__len__() == tris.__len__() == npatches)
+        ntris = tetmesh.countTris()
+        xmlfile.write('\t<triangles size="' +str(ntris)+'">\n')
 
         for tri in range(ntris):
-            patchtemp = tetmesh.getTriPatch(tri)
-            if not patchtemp: continue
-            idtemp = patchtemp.getID()
+            # Write indices and nodes to xml file
+            xmlfile.write('\t\t<tri idx="' + str(tri) + '">\n')
+            nodes = str(tetmesh.getTri(tri))[1:-1]
+            xmlfile.write('\t\t\t<nodes>' + nodes + '</nodes>\n')
+            xmlfile.write('\t\t</tri>\n')
+        xmlfile.write('\t</triangles>\n')
+
+
+        ### Write the tetrahedron information
+
+        ntets = tetmesh.countTets()
+        xmlfile.write('\t<tetrahedrons size="' +str(ntets)+'">\n')
+
+        for tet in range(ntets):
+            # Write indices and nodes to xml file
+            xmlfile.write ('\t\t<tet idx="' + str(tet) + '">\n')
+            nodes = str(tetmesh.getTet(tet))[1:-1]
+            xmlfile.write('\t\t\t<nodes>' + nodes + '</nodes>\n')
+            xmlfile.write('\t\t</tet>\n')
+            # Write the volume, barycenter, trineighbours, tetneighbours to xml file
+        xmlfile.write('\t</tetrahedrons>\n')
+
+
+        ### Write the comp and patch information.
+        # TODO: Changes need to be made to steps code to make it easier to get the tet
+        # and tri members. Currently the mesh returns base pointer (Comp or Patch)
+        # which cannot be used to find the indices.
+
+        comps = tetmesh.getAllComps()
+        ncomps = comps.__len__()
+        xmlfile.write('\t<compartments size="' + str(ncomps) + '">\n')
+
+        if (ncomps > 0) :
+            ids = []
+            vsys=[]
+            tets = []
+            for c in range(ncomps):
+                ids.append(comps[c].getID())
+                vsys.append(comps[c].getVolsys())
+                tets.append([])
+            assert(tets.__len__() == ncomps)
+            # Only choice right now is to loop over all tets and compare comp to tet id
+            for tet in range(ntets):
+                comptemp = tetmesh.getTetComp(tet)
+                if not comptemp: continue
+                idtemp = comptemp.getID()
+                for c in range(ncomps):
+                    if idtemp == ids[c]:
+                        tets[c].append(tet)
+                        break
+            # Now we have the tet members of each comp, we can write this to xml
+            for c in range(ncomps):
+                xmlfile.write('\t\t<comp idx="' +str(c) + '">\n')
+                xmlfile.write('\t\t\t<id>' + ids[c] + '</id>\n')
+                xmlfile.write('\t\t\t<volsys>')
+                for v in vsys[c]:
+                    if (v != vsys[c][0]) : xmlfile.write(',')
+                    xmlfile.write(v)
+                xmlfile.write('</volsys>\n')
+                xmlfile.write('\t\t\t<tets>')
+                for t in tets[c]:
+                    if (t != tets[c][0]) : xmlfile.write(',')
+                    xmlfile.write(str(t))
+                xmlfile.write('</tets>\n')
+                xmlfile.write('\t\t</comp>\n')
+        xmlfile.write('\t</compartments>\n')
+
+        patches = tetmesh.getAllPatches()
+        npatches = patches.__len__()
+        xmlfile.write('\t<patches size="' + str(npatches) + '">\n')
+
+        if (npatches > 0) :
+            ids = []
+            ssys = []
+            icomp=[]
+            ocomp=[]
+            tris = []
             for p in range(npatches):
-                if idtemp == ids[p]:
-                    tris[p].append(tri)
-                    break
-        # Write all to xml
-        for p in range(npatches):
-            xmlfile.write('\t\t<patch idx = "'+str(p) + '">\n')
-            xmlfile.write('\t\t\t<id>' + ids[p] + '</id>\n')
-            xmlfile.write('\t\t\t<surfsys>')
-            for s in ssys[p]:
-                if (s != ssys[p][0]) : xmlfile.write(',')
-                xmlfile.write(s)
-            xmlfile.write('</surfsys>\n')
-            xmlfile.write('\t\t\t<icomp>' + icomp[p] + '</icomp>\n')
-            xmlfile.write('\t\t\t<ocomp>' + ocomp[p] + '</ocomp>\n')
-            xmlfile.write('\t\t\t<tris>')
-            for t in tris[p]:
-                if (t != tris[p][0] ) : xmlfile.write(',')
-                xmlfile.write(str(t))
-            xmlfile.write('</tris>\n')
-            xmlfile.write('\t\t</patch>\n')
-    xmlfile.write('\t</patches>\n')
+                ids.append(patches[p].getID())
+                ssys.append(patches[p].getSurfsys())
+                icomp.append(patches[p].getIComp().getID())
+                if (not patches[p].getOComp()): ocomp.append('null')
+                else : ocomp.append(patches[p].getOComp().getID())
+                tris.append([])
+            assert(ids.__len__() == ssys.__len__() == icomp.__len__() == ocomp.__len__() == tris.__len__() == npatches)
 
-    # add write ROI data
-    roi_ids = tetmesh.getAllROINames()
-    xmlfile.write('\t<ROI_records size="' + str(len(roi_ids)) + '">\n')
-    for n in roi_ids:
-        type = tetmesh.getROIType(n)
-        xmlfile.write('\t\t<ROI id="'+ n + '" type="' + str(type) + '">\n')
-        indices = tetmesh.getROIData(n)
-        xmlfile.write('\t\t\t<indices>')
-        for i in indices:
-            if (i != indices[0] ) : xmlfile.write(',')
-            xmlfile.write(str(i))
-        xmlfile.write('</indices>\n')
-        xmlfile.write('\t\t</ROI>\n')
-    xmlfile.write('\t</ROI_records>\n')
-    xmlfile.write('</tetmesh>')
+            for tri in range(ntris):
+                patchtemp = tetmesh.getTriPatch(tri)
+                if not patchtemp: continue
+                idtemp = patchtemp.getID()
+                for p in range(npatches):
+                    if idtemp == ids[p]:
+                        tris[p].append(tri)
+                        break
+            # Write all to xml
+            for p in range(npatches):
+                xmlfile.write('\t\t<patch idx = "'+str(p) + '">\n')
+                xmlfile.write('\t\t\t<id>' + ids[p] + '</id>\n')
+                xmlfile.write('\t\t\t<surfsys>')
+                for s in ssys[p]:
+                    if (s != ssys[p][0]) : xmlfile.write(',')
+                    xmlfile.write(s)
+                xmlfile.write('</surfsys>\n')
+                xmlfile.write('\t\t\t<icomp>' + icomp[p] + '</icomp>\n')
+                xmlfile.write('\t\t\t<ocomp>' + ocomp[p] + '</ocomp>\n')
+                xmlfile.write('\t\t\t<tris>')
+                for t in tris[p]:
+                    if (t != tris[p][0] ) : xmlfile.write(',')
+                    xmlfile.write(str(t))
+                xmlfile.write('</tris>\n')
+                xmlfile.write('\t\t</patch>\n')
+        xmlfile.write('\t</patches>\n')
 
-    xmlfile.close()
+        # add write ROI data
+        roi_ids = tetmesh.getAllROINames()
+        xmlfile.write('\t<ROI_records size="' + str(len(roi_ids)) + '">\n')
+        for n in roi_ids:
+            type = tetmesh.getROIType(n)
+            xmlfile.write('\t\t<ROI id="'+ n + '" type="' + str(type) + '">\n')
+            indices = tetmesh.getROIData(n)
+            xmlfile.write('\t\t\t<indices>')
+            for i in indices:
+                if (i != indices[0] ) : xmlfile.write(',')
+                xmlfile.write(str(i))
+            xmlfile.write('</indices>\n')
+            xmlfile.write('\t\t</ROI>\n')
+        xmlfile.write('\t</ROI_records>\n')
+        xmlfile.write('</tetmesh>')
+
 
 #############################################################################################
 
@@ -1527,190 +1511,188 @@ def loadMesh(pathname, scale=1, strict=False):
         return (tag,attrs)
 
     # Try to open the XML file. An error will be raisen if it doesn't exist
-    xmlfile = open(pathname+'.xml', 'r')
+    with open(pathname+'.xml', 'r') as xmlfile:
 
-    # Perform a basic check to see if we have the expected kind of file which has not been altered.
-    info = xmlfile.readline()
-    if(xmlfile.readline().rstrip() != '<tetmesh>'):
-        print('XML file is not a recognised STEPS mesh file')
-        return
+        # Perform a basic check to see if we have the expected kind of file which has not been altered.
+        info = xmlfile.readline()
+        if(xmlfile.readline().rstrip() != '<tetmesh>'):
+            print('XML file is not a recognised STEPS mesh file')
+            return
 
-    # Collect basic node information and perform some checks on the data read from XML file
-    nodeinfo = xmlfile.readline().strip()
-    (tag,attrs) = parse_xml_element(nodeinfo)
-    assert(tag == 'nodes')
-    assert('size' in attrs)
-    nnodes = int(attrs['size'])
-
-    nodes_out = [0.0]*(nnodes*3)
-    for i in range(nnodes):
-        idxtemp = xmlfile.readline().strip()
-        assert(int(idxtemp[13:-2]) == i)
-        coordtemp = xmlfile.readline().strip()
-        assert(coordtemp[:8] == '<coords>' and coordtemp[-9:] == '</coords>')
-        coordtemp = coordtemp[8:-9].split(', ')
-        nodes_out[i*3], nodes_out[(i*3)+1], nodes_out[(i*3)+2] = float(coordtemp[0]), float(coordtemp[1]), float(coordtemp[2])
-        assert(xmlfile.readline().strip() == '</node>')
-
-    assert(xmlfile.readline().strip() == '</nodes>')
-
-    # Now read triangle information from xml file and text file if we have it
-    triinfo = xmlfile.readline().strip()
-    (tag,attrs) = parse_xml_element(triinfo)
-    assert(tag == 'triangles')
-    assert('size' in attrs)
-    ntris = int(attrs['size'])
-
-    tris_out = [0]*(ntris*3) # numpy.zeros(ntris*3, dtype = 'int')
-
-    for i in range(ntris):
-        idxtemp = xmlfile.readline().strip()
-        if strict:
-            (tag,attrs) = parse_xml_element(idxtemp)
-            assert(tag == 'tri')
-            assert(int(attrs['idx']) == i)
-
-        nodetemp = xmlfile.readline().strip()
-        assert (nodetemp[:7] == '<nodes>' and nodetemp[-8:] == '</nodes>')
-        nodetemp = nodetemp[7:-8].split(', ')
-        tris_out[i*3], tris_out[(i*3)+1], tris_out[(i*3)+2] = int(nodetemp[0]), int(nodetemp[1]), int(nodetemp[2])
-        assert(xmlfile.readline().strip() == '</tri>')
-        # Now read the text file, if it exists, and get the extra information
-
-    assert(xmlfile.readline().strip() == '</triangles>')
-
-    # Now read tet information from xml file and text file if we have it
-    tetinfo = xmlfile.readline().strip()
-    (tag,attrs) = parse_xml_element(tetinfo)
-    assert(tag == 'tetrahedrons')
-    assert('size' in attrs)
-    ntets = int(attrs['size'])
-
-    tets_out = [0]*(ntets*4)	# numpy.zeros(ntets*4, dtype = 'int')
-    for i in range(ntets):
-        idxtemp = xmlfile.readline().strip()
-        if strict:
-            (tag,attrs) = parse_xml_element(idxtemp)
-            assert(tag == 'tet')
-            assert(int(attrs['idx']) == i)
-
-        nodetemp = xmlfile.readline().strip()
-        assert (nodetemp[:7] == '<nodes>' and nodetemp[-8:] == '</nodes>')
-        nodetemp = nodetemp[7:-8].split(', ')
-        tets_out[i*4], tets_out[(i*4)+1], tets_out[(i*4)+2], tets_out[(i*4)+3] = int(nodetemp[0]), int(nodetemp[1]), int(nodetemp[2]), int(nodetemp[3])
-        assert(xmlfile.readline().strip() == '</tet>')
-
-    assert(xmlfile.readline().strip() == '</tetrahedrons>')
-
-    # Rescale coordinates if requested.
-    if scale!=1:
-        for i in range(len(nodes_out)):
-            nodes_out[i] *= scale
-
-    # We have all the information now. Time to make the Tetmesh object.
-    mesh = stetmesh.Tetmesh(nodes_out, tets_out, tris_out)
-
-    # Now fetch any comp and patch information from XML file
-    compinfo = xmlfile.readline().strip()
-    (tag,attrs) = parse_xml_element(compinfo)
-    assert(tag == 'compartments')
-    assert('size' in attrs)
-    ncomps = int(attrs['size'])
-    comps_out = []
-    for i in range(ncomps):
-        idxtemp = xmlfile.readline().strip()
-        if strict:
-            (tag,attrs) = parse_xml_element(idxtemp)
-            assert(tag == 'comp')
-            assert(int(attrs['idx']) == i)
-
-        idtemp = xmlfile.readline().strip()
-        assert(idtemp[:4] == '<id>' and idtemp[-5:] == '</id>')
-        idtemp = idtemp[4:-5]
-        volsystemp = xmlfile.readline().strip()
-        assert(volsystemp[:8] == '<volsys>' and volsystemp[-9:] == '</volsys>')
-        volsystemp = volsystemp[8:-9].split(',')
-        if (volsystemp[0] == '') : volsystemp = []
-        tettemp = xmlfile.readline().strip()
-        assert(tettemp[:6] == '<tets>' and tettemp[-7:] == '</tets>')
-        tettemp = tettemp[6:-7].split(',')
-        nctets = tettemp.__len__()
-        ctets = [0]*nctets		# numpy.zeros(nctets, dtype = 'int')
-        for ct in range(nctets): ctets[ct] = int(tettemp[ct])
-        c_out = stetmesh.TmComp(idtemp, mesh, ctets)
-        for v in volsystemp: c_out.addVolsys(v)
-        comps_out.append(c_out)
-        assert(xmlfile.readline().strip() == '</comp>')
-    assert(xmlfile.readline().strip() == '</compartments>')
-
-    # Retrieve patch info
-    patchinfo = xmlfile.readline().strip()
-    (tag,attrs) = parse_xml_element(patchinfo)
-    assert(tag == 'patches')
-    assert('size' in attrs)
-    npatches = int(attrs['size'])
-    patches_out = []
-    for i in range(npatches):
-        idxtemp = xmlfile.readline().strip()
-        if strict:
-            (tag,attrs) = parse_xml_element(idxtemp)
-            assert(tag == 'patch')
-            assert(int(attrs['idx']) == i)
-
-        idtemp = xmlfile.readline().strip()
-        assert(idtemp[:4] == '<id>' and idtemp[-5:] == '</id>')
-        idtemp = idtemp[4:-5]
-        surfsystemp = xmlfile.readline().strip()
-        assert(surfsystemp[:9] == '<surfsys>' and surfsystemp[-10:] == '</surfsys>')
-        surfsystemp = surfsystemp[9:-10].split(',')
-        if (surfsystemp[0] == '') : surfsystemp = []
-        icomptemp = xmlfile.readline().strip()
-        assert(icomptemp[:7] == '<icomp>' and icomptemp[-8:] == '</icomp>')
-        icomptemp = icomptemp[7:-8]
-        ocomptemp = xmlfile.readline().strip()
-        assert(ocomptemp[:7] == '<ocomp>' and ocomptemp[-8:] == '</ocomp>')
-        ocomptemp = ocomptemp[7:-8]
-        tritemp = xmlfile.readline().strip()
-        assert(tritemp[:6] == '<tris>' and tritemp[-7:] == '</tris>')
-        tritemp = tritemp[6:-7].split(',')
-        nptris = tritemp.__len__()
-        ptris = [0]*nptris		# numpy.zeros(nptris, dtype='int')
-        for pt in range(nptris): ptris[pt] = int(tritemp[pt])
-        if (ocomptemp != 'null'): p_out = stetmesh.TmPatch(idtemp, mesh, ptris, mesh.getComp(icomptemp), mesh.getComp(ocomptemp))
-        else :  p_out = stetmesh.TmPatch(idtemp, mesh, ptris, mesh.getComp(icomptemp))
-        for s in surfsystemp: p_out.addSurfsys(s)
-        patches_out.append(p_out)
-        assert(xmlfile.readline().strip() == '</patch>')
-    assert(xmlfile.readline().strip() == '</patches>')
-
-    # Retrieve ROI info
-    info = xmlfile.readline().strip()
-    (tag,attrs) = parse_xml_element(info)
-    if tag == 'ROI_records':
-        ROIinfo = info
+        # Collect basic node information and perform some checks on the data read from XML file
+        nodeinfo = xmlfile.readline().strip()
+        (tag,attrs) = parse_xml_element(nodeinfo)
+        assert(tag == 'nodes')
         assert('size' in attrs)
-        nROI = int(attrs['size'])
+        nnodes = int(attrs['size'])
 
-        for r in range(nROI):
-            ROItemp = xmlfile.readline().strip()
-            (tag,attrs) = parse_xml_element(ROItemp)
-            assert(tag == 'ROI')
-            assert('id' in attrs)
-            assert('type' in attrs)
-            id = attrs['id']
-            type = int(attrs['type'])
-
+        nodes_out = [0.0]*(nnodes*3)
+        for i in range(nnodes):
             idxtemp = xmlfile.readline().strip()
-            assert(idxtemp.find("<indices>") != -1)
-            assert(idxtemp.find("</indices>") != -1)
-            idxtemp = idxtemp.replace("<indices>", "").replace("</indices>", "").split(",")
-            indices = [int(i) for i in idxtemp]
-            assert(xmlfile.readline().strip() == '</ROI>')
-            mesh.addROI(id, type, indices)
-        assert(xmlfile.readline().strip() == '</ROI_records>')
-        info = xmlfile.readline().strip()
+            assert(int(idxtemp[13:-2]) == i)
+            coordtemp = xmlfile.readline().strip()
+            assert(coordtemp[:8] == '<coords>' and coordtemp[-9:] == '</coords>')
+            coordtemp = coordtemp[8:-9].split(', ')
+            nodes_out[i*3], nodes_out[(i*3)+1], nodes_out[(i*3)+2] = float(coordtemp[0]), float(coordtemp[1]), float(coordtemp[2])
+            assert(xmlfile.readline().strip() == '</node>')
 
-    xmlfile.close()
+        assert(xmlfile.readline().strip() == '</nodes>')
+
+        # Now read triangle information from xml file and text file if we have it
+        triinfo = xmlfile.readline().strip()
+        (tag,attrs) = parse_xml_element(triinfo)
+        assert(tag == 'triangles')
+        assert('size' in attrs)
+        ntris = int(attrs['size'])
+
+        tris_out = [0]*(ntris*3) # numpy.zeros(ntris*3, dtype = 'int')
+
+        for i in range(ntris):
+            idxtemp = xmlfile.readline().strip()
+            if strict:
+                (tag,attrs) = parse_xml_element(idxtemp)
+                assert(tag == 'tri')
+                assert(int(attrs['idx']) == i)
+
+            nodetemp = xmlfile.readline().strip()
+            assert (nodetemp[:7] == '<nodes>' and nodetemp[-8:] == '</nodes>')
+            nodetemp = nodetemp[7:-8].split(', ')
+            tris_out[i*3], tris_out[(i*3)+1], tris_out[(i*3)+2] = int(nodetemp[0]), int(nodetemp[1]), int(nodetemp[2])
+            assert(xmlfile.readline().strip() == '</tri>')
+            # Now read the text file, if it exists, and get the extra information
+
+        assert(xmlfile.readline().strip() == '</triangles>')
+
+        # Now read tet information from xml file and text file if we have it
+        tetinfo = xmlfile.readline().strip()
+        (tag,attrs) = parse_xml_element(tetinfo)
+        assert(tag == 'tetrahedrons')
+        assert('size' in attrs)
+        ntets = int(attrs['size'])
+
+        tets_out = [0]*(ntets*4)	# numpy.zeros(ntets*4, dtype = 'int')
+        for i in range(ntets):
+            idxtemp = xmlfile.readline().strip()
+            if strict:
+                (tag,attrs) = parse_xml_element(idxtemp)
+                assert(tag == 'tet')
+                assert(int(attrs['idx']) == i)
+
+            nodetemp = xmlfile.readline().strip()
+            assert (nodetemp[:7] == '<nodes>' and nodetemp[-8:] == '</nodes>')
+            nodetemp = nodetemp[7:-8].split(', ')
+            tets_out[i*4], tets_out[(i*4)+1], tets_out[(i*4)+2], tets_out[(i*4)+3] = int(nodetemp[0]), int(nodetemp[1]), int(nodetemp[2]), int(nodetemp[3])
+            assert(xmlfile.readline().strip() == '</tet>')
+
+        assert(xmlfile.readline().strip() == '</tetrahedrons>')
+
+        # Rescale coordinates if requested.
+        if scale!=1:
+            for i in range(len(nodes_out)):
+                nodes_out[i] *= scale
+
+        # We have all the information now. Time to make the Tetmesh object.
+        mesh = stetmesh.Tetmesh(nodes_out, tets_out, tris_out)
+
+        # Now fetch any comp and patch information from XML file
+        compinfo = xmlfile.readline().strip()
+        (tag,attrs) = parse_xml_element(compinfo)
+        assert(tag == 'compartments')
+        assert('size' in attrs)
+        ncomps = int(attrs['size'])
+        comps_out = []
+        for i in range(ncomps):
+            idxtemp = xmlfile.readline().strip()
+            if strict:
+                (tag,attrs) = parse_xml_element(idxtemp)
+                assert(tag == 'comp')
+                assert(int(attrs['idx']) == i)
+
+            idtemp = xmlfile.readline().strip()
+            assert(idtemp[:4] == '<id>' and idtemp[-5:] == '</id>')
+            idtemp = idtemp[4:-5]
+            volsystemp = xmlfile.readline().strip()
+            assert(volsystemp[:8] == '<volsys>' and volsystemp[-9:] == '</volsys>')
+            volsystemp = volsystemp[8:-9].split(',')
+            if (volsystemp[0] == '') : volsystemp = []
+            tettemp = xmlfile.readline().strip()
+            assert(tettemp[:6] == '<tets>' and tettemp[-7:] == '</tets>')
+            tettemp = tettemp[6:-7].split(',')
+            nctets = tettemp.__len__()
+            ctets = [0]*nctets		# numpy.zeros(nctets, dtype = 'int')
+            for ct in range(nctets): ctets[ct] = int(tettemp[ct])
+            c_out = stetmesh.TmComp(idtemp, mesh, ctets)
+            for v in volsystemp: c_out.addVolsys(v)
+            comps_out.append(c_out)
+            assert(xmlfile.readline().strip() == '</comp>')
+        assert(xmlfile.readline().strip() == '</compartments>')
+
+        # Retrieve patch info
+        patchinfo = xmlfile.readline().strip()
+        (tag,attrs) = parse_xml_element(patchinfo)
+        assert(tag == 'patches')
+        assert('size' in attrs)
+        npatches = int(attrs['size'])
+        patches_out = []
+        for i in range(npatches):
+            idxtemp = xmlfile.readline().strip()
+            if strict:
+                (tag,attrs) = parse_xml_element(idxtemp)
+                assert(tag == 'patch')
+                assert(int(attrs['idx']) == i)
+
+            idtemp = xmlfile.readline().strip()
+            assert(idtemp[:4] == '<id>' and idtemp[-5:] == '</id>')
+            idtemp = idtemp[4:-5]
+            surfsystemp = xmlfile.readline().strip()
+            assert(surfsystemp[:9] == '<surfsys>' and surfsystemp[-10:] == '</surfsys>')
+            surfsystemp = surfsystemp[9:-10].split(',')
+            if (surfsystemp[0] == '') : surfsystemp = []
+            icomptemp = xmlfile.readline().strip()
+            assert(icomptemp[:7] == '<icomp>' and icomptemp[-8:] == '</icomp>')
+            icomptemp = icomptemp[7:-8]
+            ocomptemp = xmlfile.readline().strip()
+            assert(ocomptemp[:7] == '<ocomp>' and ocomptemp[-8:] == '</ocomp>')
+            ocomptemp = ocomptemp[7:-8]
+            tritemp = xmlfile.readline().strip()
+            assert(tritemp[:6] == '<tris>' and tritemp[-7:] == '</tris>')
+            tritemp = tritemp[6:-7].split(',')
+            nptris = tritemp.__len__()
+            ptris = [0]*nptris		# numpy.zeros(nptris, dtype='int')
+            for pt in range(nptris): ptris[pt] = int(tritemp[pt])
+            if (ocomptemp != 'null'): p_out = stetmesh.TmPatch(idtemp, mesh, ptris, mesh.getComp(icomptemp), mesh.getComp(ocomptemp))
+            else :  p_out = stetmesh.TmPatch(idtemp, mesh, ptris, mesh.getComp(icomptemp))
+            for s in surfsystemp: p_out.addSurfsys(s)
+            patches_out.append(p_out)
+            assert(xmlfile.readline().strip() == '</patch>')
+        assert(xmlfile.readline().strip() == '</patches>')
+
+        # Retrieve ROI info
+        info = xmlfile.readline().strip()
+        (tag,attrs) = parse_xml_element(info)
+        if tag == 'ROI_records':
+            ROIinfo = info
+            assert('size' in attrs)
+            nROI = int(attrs['size'])
+
+            for r in range(nROI):
+                ROItemp = xmlfile.readline().strip()
+                (tag,attrs) = parse_xml_element(ROItemp)
+                assert(tag == 'ROI')
+                assert('id' in attrs)
+                assert('type' in attrs)
+                id = attrs['id']
+                type = int(attrs['type'])
+
+                idxtemp = xmlfile.readline().strip()
+                assert(idxtemp.find("<indices>") != -1)
+                assert(idxtemp.find("</indices>") != -1)
+                idxtemp = idxtemp.replace("<indices>", "").replace("</indices>", "").split(",")
+                indices = [int(i) for i in idxtemp]
+                assert(xmlfile.readline().strip() == '</ROI>')
+                mesh.addROI(id, type, indices)
+            assert(xmlfile.readline().strip() == '</ROI_records>')
+            info = xmlfile.readline().strip()
 
     assert(info == '</tetmesh>')
     return (mesh,comps_out,patches_out)

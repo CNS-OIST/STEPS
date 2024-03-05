@@ -24,27 +24,13 @@
 
  */
 
-
-// STL headers.
-#include <iostream>
-#include <sstream>
-
-// STEPS headers.
-#include "util/common.h"
-#include "util/error.hpp"
 #include "efield.hpp"
+
 #include "tetcoupler.hpp"
-#include "geom/tetmesh.hpp"
+#include "util/checkpointing.hpp"
+#include "util/error.hpp"
 
-// logging
-#include <easylogging++.h>
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-namespace sefield = steps::solver::efield;
-
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::solver::efield {
 
 // All parameters are supplied in base s.i. units. EField object converts to
 // different units for matrix calculation:
@@ -56,27 +42,23 @@ namespace sefield = steps::solver::efield;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sefield::EField::EField(std::unique_ptr<EFieldSolver> impl):
-    pVProp(std::move(impl))
-{}
+EField::EField(std::unique_ptr<EFieldSolver> impl)
+    : pVProp(std::move(impl)) {}
 
-void sefield::EField::initMesh(uint nverts, double *verts,
-                               uint ntris, vertex_id_t *tris,
-                               uint ntets, vertex_id_t *tets,
-                               uint opt_method,
-                               std::string const &opt_file_name,
-                               double search_percent)
-{
-    pNVerts = nverts;
-    pNTris = ntris;
-    pNTets = ntets;
-
-
+void EField::initMesh(const std::vector<double>& verts,
+                      const std::vector<vertex_id_t>& tris,
+                      const std::vector<vertex_id_t>& tets,
+                      uint opt_method,
+                      std::string const& opt_file_name,
+                      double search_percent) {
+    pNVerts = verts.size() / 3;
+    pNTris = tris.size() / 3;
+    pNTets = tets.size() / 4;
 
     // First, the mesh is constructed -- VertexElements are created
     // and triangle and tetrahedron arrays are copied
     // TODO: (copying tris and tets is maybe not necessary?).
-    pMesh = new sefield::TetMesh(pNVerts, verts, pNTris, tris, pNTets, tets);
+    pMesh = new TetMesh(pNVerts, verts.data(), pNTris, tris.data(), pNTets, tets.data());
     AssertLog(pMesh != nullptr);
 
     // Extract all unique connections, by looping over vertices and
@@ -105,66 +87,56 @@ void sefield::EField::initMesh(uint nverts, double *verts,
     // need a conductivity in units of nS/um. or resistivity in Gohm_micron:
     // 1 ohm_m = 10-9 Gohm_m = 10-3 Gohm_micron.
     // Default is 100 ohm.cm  = 1 ohm.m
-    pMesh->applyConductance(1.0/1.0e-3);
+    pMesh->applyConductance(1.0 / 1.0e-3);
 
     // Default value for the membrane potential is -65mV but may be changed with
     // solver method setPotential
     AssertLog(static_cast<bool>(pVProp));
     pVProp->initMesh(pMesh);
-    setMembPotential(0, DEFAULT_MEMB_POT);
+    setMembPotential(solver::membrane_global_id(0), DEFAULT_MEMB_POT);
 
-    //pTritoVert = new uint[pNTris*3];
-    pTritoVert.resize(pNTris*3);
-    for (uint i=0, j=0; i< pNTris; ++i, j+=3)
-        for (uint v=0; v<3; ++v)
-            pTritoVert[j+v] = pMesh->getTriangleVertex(i,v);
+    // pTritoVert = new uint[pNTris*3];
+    pTritoVert.resize(pNTris * 3);
+    for (uint i = 0, j = 0; i < pNTris; ++i, j += 3) {
+        for (uint v = 0; v < 3; ++v) {
+            pTritoVert[j + v] = pMesh->getTriangleVertex(triangle_local_id(i), v);
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sefield::EField::~EField()
-{
+EField::~EField() {
     delete pMesh;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::EField::checkpoint(std::fstream & cp_file)
-{
-    cp_file.write(reinterpret_cast<char*>(&pNVerts), sizeof(uint));
-    cp_file.write(reinterpret_cast<char*>(&pNTris), sizeof(uint));
-    cp_file.write(reinterpret_cast<char*>(&pNTets), sizeof(uint));
-
-    auto nCPerm = pCPerm.size();
-    cp_file.write(reinterpret_cast<char*>(&nCPerm), sizeof(uint));
-    cp_file.write(reinterpret_cast<char*>(&pCPerm.front()), sizeof(uint) * nCPerm);
-
+void EField::checkpoint(std::fstream& cp_file) {
+    util::checkpoint(cp_file, pNVerts);
+    util::checkpoint(cp_file, pNTris);
+    util::checkpoint(cp_file, pNTets);
+    util::checkpoint(cp_file, pCPerm);
     pMesh->checkpoint(cp_file);
+    pVProp->checkpoint(cp_file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::EField::restore(std::fstream & cp_file)
-{
-    cp_file.read(reinterpret_cast<char*>(&pNVerts), sizeof(uint));
-    cp_file.read(reinterpret_cast<char*>(&pNTris), sizeof(uint));
-    cp_file.read(reinterpret_cast<char*>(&pNTets), sizeof(uint));
-
-    uint nCPerm;
-    cp_file.read(reinterpret_cast<char*>(&nCPerm), sizeof(uint));
-    pCPerm.resize(nCPerm);
-    cp_file.read(reinterpret_cast<char*>(&pCPerm.front()), sizeof(uint) * nCPerm);
-
+void EField::restore(std::fstream& cp_file) {
+    util::compare(cp_file, pNVerts, "Mismatched EField pNVerts restore value.");
+    util::compare(cp_file, pNTris, "Mismatched EField pNTris restore value.");
+    util::compare(cp_file, pNTets, "Mismatched EField pNTets restore value.");
+    util::restore(cp_file, pCPerm);
     pMesh->restore(cp_file);
+    pVProp->restore(cp_file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::EField::setMembCapac(uint midx, double cm)
-{
+void EField::setMembCapac(solver::membrane_global_id midx, double cm) {
     // Currently midx should be zero until multiple membranes are supported
-    AssertLog(midx == 0);
+    AssertLog(midx.get() == 0);
 
     AssertLog(cm >= 0.0);
     // Geometry is in microns, calculation uses pF, so we need to supply
@@ -173,8 +145,7 @@ void sefield::EField::setMembCapac(uint midx, double cm)
     pMesh->applySurfaceCapacitance(cm);
 }
 
-void sefield::EField::setTriCapac(triangle_id_t tidx, double cm)
-{
+void EField::setTriCapac(triangle_local_id tidx, double cm) {
     // tidx argument converted to local index in Tetexact
     AssertLog(tidx < pNTris);
 
@@ -185,117 +156,118 @@ void sefield::EField::setTriCapac(triangle_id_t tidx, double cm)
     // Argument is in F/m^2: 1 F/m^2 = 1 pF / um^2 so no conversion needed!
 
     pMesh->applyTriCapacitance(tidx, cm);
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::EField::setMembPotential(uint midx, double v)
-{
+void EField::setMembPotential(solver::membrane_global_id midx, double v) {
     // Currently midx should be zero until multiple membranes are supported
-    AssertLog(midx == 0);
+    AssertLog(midx.get() == 0);
 
     // We require mV
-    pVProp->setPotential(v*1.0e3);
+    pVProp->setPotential(v * 1.0e3);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::EField::setMembVolRes(uint /*midx*/, double ro)
-{
+void EField::setMembVolRes(solver::membrane_global_id /*midx*/, double ro) {
     AssertLog(ro >= 0.0);
-    pMesh->applyConductance(1.0/(ro*1.0e-3));
+    pMesh->applyConductance(1.0 / (ro * 1.0e-3));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::EField::setSurfaceResistivity(uint /*midx*/, double rspec, double vrev) {
+void EField::setSurfaceResistivity(solver::membrane_global_id /*midx*/, double rspec, double vrev) {
     // arguments in ohm.m^2 and V
     // want Gohm.um^2, so divide by 10^9 for Gohm, multiply by 10^12 for um^2
 
-    double rs = 1.0e3*rspec;
-    double vext = vrev*1.0e3;
+    double rs = 1.0e3 * rspec;
+    double vext = vrev * 1.0e3;
 
     pVProp->setSurfaceConductance(1.0 / rs, vext);
 }
 
+std::pair<double, double> EField::getSurfaceResistivity() const {
+    // resistivity and reversal potential are stored in Gohm.um^2 and mV
+    // return them in ohm.m^2 and V
+
+    const auto& cond = pVProp->getSurfaceConductance();
+    return {1 / (cond.first * 1.0e3), cond.second / 1.0e3};
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
-double sefield::EField::getVertIClamp(vertex_id_t vidx)
-{
+double EField::getVertIClamp(vertex_id_t vidx) {
     // vidx argument converted to local index in Tetexact.
     AssertLog(vidx < pNVerts);
 
-    //Convert the index to one that makes sense to vprop
+    // Convert the index to one that makes sense to vprop
     vidx = pCPerm[vidx.get()];
 
-    // let VProp do any further necessary argument checking (should be less than number of vertices)
+    // let VProp do any further necessary argument checking (should be less than
+    // number of vertices)
     return pVProp->getVertIClamp(vidx) / 1.0e12;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::EField::setVertIClamp(vertex_id_t vidx, double cur)
-{
+void EField::setVertIClamp(vertex_id_t vidx, double cur) {
     // vidx argument converted to local index in Tetexact.
     AssertLog(vidx < pNVerts);
 
-    //Convert the index to one that makes sense to vprop
+    // Convert the index to one that makes sense to vprop
     vidx = pCPerm[vidx.get()];
 
-    // let VProp do any further necessary argument checking (should be less than number of vertices)
-    // convert current to picoamps and maintain convention that positive applied current
-    // is depolarising
-    pVProp->setVertIClamp(vidx, -cur*1.0e12);
+    // let VProp do any further necessary argument checking (should be less than
+    // number of vertices) convert current to picoamps and maintain convention
+    // that positive applied current is depolarising
+    pVProp->setVertIClamp(vidx, -cur * 1.0e12);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::EField::advance(double dt)
-{
+void EField::advance(double dt) {
     AssertLog(dt >= 0.0);
 
-    //Convert to ms
-    pVProp->advance(dt*1.0e3);
+    // Convert to ms
+    pVProp->advance(dt * 1.0e3);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double sefield::EField::getVertV(vertex_id_t vidx)
-{
+double EField::getVertV(vertex_id_t vidx) {
     // vidx argument converted to local index in Tetexact.
     AssertLog(vidx < pNVerts);
-    // let VProp do any further necessary argument checking (should be less than numer of vertices)
+    // let VProp do any further necessary argument checking (should be less than
+    // numer of vertices)
 
-    //Convert the index to one that makes sense to vprop
+    // Convert the index to one that makes sense to vprop
     vidx = pCPerm[vidx.get()];
 
     // convert from mV to V
-    return pVProp->getV(vidx)*1.0e-3;
+    return pVProp->getV(vidx) * 1.0e-3;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::EField::setVertV(vertex_id_t vidx, double v)
-{
+void EField::setVertV(vertex_id_t vidx, double v) {
     // vidx argument converted to local index in Tetexact.
     AssertLog(vidx < pNVerts);
 
-    //Convert the index to one that makes sense to vprop
+    // Convert the index to one that makes sense to vprop
     vidx = pCPerm[vidx.get()];
 
     // convert to millivolts
-    pVProp->setV(vidx, v*1.0e3);
+    pVProp->setV(vidx, v * 1.0e3);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool sefield::EField::getVertVClamped(vertex_id_t vidx)
-{
+bool EField::getVertVClamped(vertex_id_t vidx) {
     // vidx argument converted to local index in Tetexact.
     AssertLog(vidx < pNVerts);
 
-    //Convert the index to one that makes sense to vprop
+    // Convert the index to one that makes sense to vprop
     vidx = pCPerm[vidx.get()];
 
     return pVProp->getClamped(vidx);
@@ -303,12 +275,11 @@ bool sefield::EField::getVertVClamped(vertex_id_t vidx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::EField::setVertVClamped(vertex_id_t vidx, bool cl)
-{
+void EField::setVertVClamped(vertex_id_t vidx, bool cl) {
     // vidx argument converted to local index in Tetexact.
     AssertLog(vidx < pNVerts);
 
-    //Convert the index to one that makes sense to vprop
+    // Convert the index to one that makes sense to vprop
     vidx = pCPerm[vidx.get()];
 
     pVProp->setClamped(vidx, cl);
@@ -316,8 +287,7 @@ void sefield::EField::setVertVClamped(vertex_id_t vidx, bool cl)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double  sefield::EField::getTriV(triangle_id_t tidx)
-{
+double EField::getTriV(triangle_local_id tidx) {
     // tidx argument converted to local index in Tetexact
     AssertLog(tidx < pNTris);
 
@@ -328,13 +298,12 @@ double  sefield::EField::getTriV(triangle_id_t tidx)
     pot += pVProp->getV(pTritoVert[(tidx.get() * 3) + 2]);
 
     // getV returns in milliVolts
-    return ((pot*1.0e-3)/3.0);
+    return (pot * 1.0e-3) / 3.0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::EField::setTriV(triangle_id_t tidx, double v)
-{
+void EField::setTriV(triangle_local_id tidx, double v) {
     // tidx argument converted to local index in Tetexact
     AssertLog(tidx < pNTris);
 
@@ -349,21 +318,23 @@ void sefield::EField::setTriV(triangle_id_t tidx, double v)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool sefield::EField::getTriVClamped(triangle_id_t tidx)
-{
+bool EField::getTriVClamped(triangle_local_id tidx) {
     // tidx argument converted to local index in Tetexact
     AssertLog(tidx < pNTris);
 
     // Directly use VProp since we'll use mesh indices
-    if (!pVProp->getClamped(pMesh->getTriangleVertex(tidx, 0))) return false;
-    if (!pVProp->getClamped(pMesh->getTriangleVertex(tidx, 1))) return false;
+    if (!pVProp->getClamped(pMesh->getTriangleVertex(tidx, 0))) {
+        return false;
+    }
+    if (!pVProp->getClamped(pMesh->getTriangleVertex(tidx, 1))) {
+        return false;
+    }
     return pVProp->getClamped(pMesh->getTriangleVertex(tidx, 2));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::EField::setTriVClamped(triangle_id_t tidx, bool cl)
-{
+void EField::setTriVClamped(triangle_local_id tidx, bool cl) {
     // tidx argument converted to local index in Tetexact
     AssertLog(tidx < pNTris);
 
@@ -374,29 +345,26 @@ void sefield::EField::setTriVClamped(triangle_id_t tidx, bool cl)
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-double sefield::EField::getTriI(triangle_id_t tidx)
-{
+double EField::getTriI(triangle_local_id tidx) {
     // tidx argument converted to local index in Tetexact
     AssertLog(tidx < pNTris);
 
     // convert from picoamp to amp
-    return (pVProp->getTriI(tidx)*1.0e-12);
+    return pVProp->getTriI(tidx) * 1.0e-12;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void    sefield::EField::setTriI(triangle_id_t tidx, double cur)
-{
+void EField::setTriI(triangle_local_id tidx, double cur) {
     // tidx argument converted to local index in Tetexact
     AssertLog(tidx < pNTris);
 
-    pVProp->setTriI(tidx, cur*1.0e12);
+    pVProp->setTriI(tidx, cur * 1.0e12);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double sefield::EField::getTriIClamp(triangle_id_t tidx)
-{
+double EField::getTriIClamp(triangle_local_id tidx) {
     // tidx argument converted to local index in Tetexact
     AssertLog(tidx < pNTris);
     // maintain convention that positive applied current is depolarising
@@ -405,17 +373,16 @@ double sefield::EField::getTriIClamp(triangle_id_t tidx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::EField::setTriIClamp(triangle_id_t tidx, double cur)
-{
+void EField::setTriIClamp(triangle_local_id tidx, double cur) {
     // tidx argument converted to local index in Tetexact
     AssertLog(tidx < pNTris);
     // maintain convention that positive applied current is depolarising
-    pVProp->setTriIClamp(tidx, -cur*1.0e12);
+    pVProp->setTriIClamp(tidx, -cur * 1.0e12);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 /*
-void    sefield::EField::setTriI(double * cur)
+void    EField::setTriI(double * cur)
 {
     for (uint i = 0; i < pNTris; ++i)
     {
@@ -426,9 +393,9 @@ void    sefield::EField::setTriI(double * cur)
 */
 ////////////////////////////////////////////////////////////////////////////////
 
-double    sefield::EField::getTetV(tetrahedron_id_t tidx)
-{
-    // TODO: improve on this function, just returning the mean of the vertices at the moment
+double EField::getTetV(tetrahedron_local_id tidx) {
+    // TODO: improve on this function, just returning the mean of the vertices at
+    // the moment
 
     // tidx argument converted to local index in Tetexact
     AssertLog(tidx < pNTets);
@@ -452,8 +419,7 @@ double    sefield::EField::getTetV(tetrahedron_id_t tidx)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void     sefield::EField::setTetV(tetrahedron_id_t tidx, double v)
-{
+void EField::setTetV(tetrahedron_local_id tidx, double v) {
     // tidx argument converted to local index in Tetexact
     AssertLog(tidx < pNTets);
 
@@ -469,23 +435,26 @@ void     sefield::EField::setTetV(tetrahedron_id_t tidx, double v)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool    sefield::EField::getTetVClamped(tetrahedron_id_t tidx)
-{
+bool EField::getTetVClamped(tetrahedron_local_id tidx) {
     // tidx argument converted to local index in Tetexact
     AssertLog(tidx < pNTets);
 
     // Directly use VProp since we'll use mesh indices
-    if (!pVProp->getClamped(pMesh->getTetrahedronVertex(tidx, 0))) return false;
-    if (!pVProp->getClamped(pMesh->getTetrahedronVertex(tidx, 1))) return false;
-    if (!pVProp->getClamped(pMesh->getTetrahedronVertex(tidx, 2))) return false;
+    if (!pVProp->getClamped(pMesh->getTetrahedronVertex(tidx, 0))) {
+        return false;
+    }
+    if (!pVProp->getClamped(pMesh->getTetrahedronVertex(tidx, 1))) {
+        return false;
+    }
+    if (!pVProp->getClamped(pMesh->getTetrahedronVertex(tidx, 2))) {
+        return false;
+    }
     return pVProp->getClamped(pMesh->getTetrahedronVertex(tidx, 3));
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void    sefield::EField::setTetVClamped(tetrahedron_id_t tidx, bool cl)
-{
+void EField::setTetVClamped(tetrahedron_local_id tidx, bool cl) {
     // tidx argument converted to local index in Tetexact
     AssertLog(tidx < pNTets);
 
@@ -493,15 +462,10 @@ void    sefield::EField::setTetVClamped(tetrahedron_id_t tidx, bool cl)
     pVProp->setClamped(pMesh->getTetrahedronVertex(tidx, 1), cl);
     pVProp->setClamped(pMesh->getTetrahedronVertex(tidx, 2), cl);
     pVProp->setClamped(pMesh->getTetrahedronVertex(tidx, 3), cl);
-
 }
 
-void sefield::EField::saveOptimal(std::string const & opt_file_name)
-{
+void EField::saveOptimal(std::string const& opt_file_name) {
     pMesh->saveOptimal(opt_file_name);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
-
+}  // namespace steps::solver::efield

@@ -26,23 +26,17 @@
 
 #pragma once
 
-#include "util/common.h"
-
-namespace steps {
-namespace math {
+namespace steps::math {
 
 ////////////////////////////////////////////////////////////////////////////////
 
 // Return the permeability in the GHK flux equation from given values of:
 // G (slope conductance in siemens), V (voltage in volts), z (valence),
 // T (temperature in kelvin),
-// iconc (inner concentration of ion in mol per cubic meter),
-// oconc (outer concentration of ion in mol per cubic meter)
+// iconc (inner concentration of ion in mol per litre),
+// oconc (outer concentration of ion in mol per litre)
 
-STEPS_EXTERN double permeability
-(
-    double G, double V, int z, double T, double iconc, double oconc
-);
+double permeability(double G, double V, int z, double T, double iconc, double oconc);
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -53,12 +47,8 @@ STEPS_EXTERN double permeability
 // iconc (inner concentration of ion in mol per cubic meter),
 // oconc (outer concentration of ion in mol per cubic meter)
 
-STEPS_EXTERN double GHKcurrent
-(
-    double P, double V, int z, double T, double iconc, double oconc
-);
+double GHKcurrent(double P, double V, int z, double T, double iconc, double oconc);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-} // namespace math
-} // namespace steps
+}  // namespace steps::math

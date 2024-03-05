@@ -28,45 +28,37 @@
 #include <vector>
 
 // STEPS headers.
-#include "util/common.h"
-#include "util/error.hpp"
 #include "mpi/tetopsplit/comp.hpp"
 #include "mpi/tetopsplit/diffboundary.hpp"
 #include "solver/diffboundarydef.hpp"
+#include "util/error.hpp"
 
 // logging
-#include <easylogging++.h>
-////////////////////////////////////////////////////////////////////////////////
 
-namespace smtos = steps::mpi::tetopsplit;
-namespace ssolver = steps::solver;
+namespace steps::mpi::tetopsplit {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::DiffBoundary::DiffBoundary(steps::solver::DiffBoundarydef * dbdef)
-: pDiffBoundarydef(dbdef)
-{
+DiffBoundary::DiffBoundary(solver::DiffBoundarydef* dbdef)
+    : pDiffBoundarydef(dbdef) {
     AssertLog(dbdef != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::DiffBoundary::checkpoint(std::fstream & /*cp_file*/)
-{
+void DiffBoundary::checkpoint(std::fstream& /*cp_file*/) {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::DiffBoundary::restore(std::fstream & /*cp_file*/)
-{
+void DiffBoundary::restore(std::fstream& /*cp_file*/) {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::DiffBoundary::setComps(smtos::Comp * compa, smtos::Comp * compb)
-{
+void DiffBoundary::setComps(Comp* compa, Comp* compb) {
     AssertLog(pSetComps == false);
     AssertLog(compa != nullptr);
     AssertLog(compb != nullptr);
@@ -79,31 +71,25 @@ void smtos::DiffBoundary::setComps(smtos::Comp * compa, smtos::Comp * compb)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::Comp * smtos::DiffBoundary::compA()
-{
+Comp* DiffBoundary::compA() {
     AssertLog(pSetComps);
     return pCompA;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-smtos::Comp * smtos::DiffBoundary::compB()
-{
+Comp* DiffBoundary::compB() {
     AssertLog(pSetComps);
     return pCompB;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void smtos::DiffBoundary::setTetDirection(tetrahedron_id_t tet, uint direction)
-{
+void DiffBoundary::setTetDirection(tetrahedron_global_id tet, uint direction) {
     AssertLog(direction < 4);
 
     pTets.push_back(tet);
     pTetDirection.push_back(direction);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
-
+}  // namespace steps::mpi::tetopsplit

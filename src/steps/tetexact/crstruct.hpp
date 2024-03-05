@@ -24,22 +24,18 @@
 
  */
 
-#ifndef STEPS_TETEXACT_CRSTRUCT_HPP
-#define STEPS_TETEXACT_CRSTRUCT_HPP 1
+#pragma once
 
-#include <iostream>
 #include <cmath>
+#include <iostream>
 
 #include "kproc.hpp"
 
 // logging
-#include <easylogging++.h>
 #include "util/error.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::tetexact {
 
-namespace steps {
-namespace tetexact {
 class KProc;
 
 struct CRGroup {
@@ -52,13 +48,13 @@ struct CRGroup {
         if (indices == NULL)
             SysErrLog("DirectCR: unable to allocate memory for SSA group.");
 
-        #ifdef SSA_DEBUG
+#ifdef SSA_DEBUG
         CLOG(INFO, "general_log") << "SSA: CRGroup Created\n";
         CLOG(INFO, "general_log") << "power: " << power << "\n";
         CLOG(INFO, "general_log") << "max: " << max << "\n";
         CLOG(INFO, "general_log") << "capacity: " << capacity << "\n";
         CLOG(INFO, "general_log") << "--------------------------------------------------------\n";
-        #endif
+#endif
     }
 
     void free_indices() {
@@ -66,11 +62,11 @@ struct CRGroup {
         indices = 0;
     }
 
-    unsigned                                capacity;
-    unsigned                                size;
-    double                                  max;
-    double                                  sum;
-    KProc**                                 indices;
+    unsigned capacity;
+    unsigned size;
+    double max;
+    double sum;
+    KProc** indices;
 };
 
 struct CRKProcData {
@@ -81,19 +77,10 @@ struct CRKProcData {
         rate = 0.0;
     }
 
-    bool                                    recorded;
-    int                                     pow;
-    unsigned                                pos;
-    double                                  rate;
+    bool recorded;
+    int pow;
+    unsigned pos;
+    double rate;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-#endif
-
-// STEPS_TETEXACT_CRSTRUCT_HPP
-
-// END
+}  // namespace steps::tetexact

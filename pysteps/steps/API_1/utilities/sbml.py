@@ -3482,7 +3482,7 @@ class Interface(object):
         for specie in self.__species:
             if self.__species_comps[specie] in self.__comps:
                 if (self.__species_subst_units[specie] == True):
-                    try: sim.setCompAmount(self.__species_comps[specie], specie, self.__species[specie][0]*self.__substance_units)
+                    try: sim.setCompSpecAmount(self.__species_comps[specie], specie, self.__species[specie][0]*self.__substance_units)
                     except: 
                         raise NotImplementedError("Cannot set amount of species '%s" \
                         "' in compartment '%s'. Species may not be reactant or "\
@@ -3492,7 +3492,7 @@ class Interface(object):
                 else:
                     # Remember the conversion is to meters, steps needs molar
                     try :
-                        sim.setCompConc(self.__species_comps[specie], specie, self.__species[specie][0]*(self.__substance_units/(self.__volume_units*1.0e3)))
+                        sim.setCompSpecConc(self.__species_comps[specie], specie, self.__species[specie][0]*(self.__substance_units/(self.__volume_units*1.0e3)))
                     except: 
                         raise NotImplementedError("Cannot set concentration of species '%s" \
                         "' in compartment '%s'. Species may not be reactant or "\
@@ -3501,11 +3501,11 @@ class Interface(object):
                         "in stochastic simulation."%(specie, self.__species_comps[specie]) )
                 const_bcs = self.__species_const_bc[specie]
                 if (const_bcs[0] == True):
-                    try : sim.setCompClamped(self.__species_comps[specie], specie, True)
+                    try : sim.setCompSpecClamped(self.__species_comps[specie], specie, True)
                     except: pass
             elif self.__species_comps[specie] in self.__patches:
                 if (self.__species_subst_units[specie] == True):
-                    try: sim.setPatchAmount(self.__species_comps[specie], specie, self.__species[specie][0]*self.__substance_units)
+                    try: sim.setPatchSpecAmount(self.__species_comps[specie], specie, self.__species[specie][0]*self.__substance_units)
                     except: 
                         raise NotImplementedError("Cannot set amount of species '%s" \
                         "' in compartment '%s'. Species may not be reactant or "\
@@ -3514,7 +3514,7 @@ class Interface(object):
                         "in stochastic simulation."%(specie, self.__species_comps[specie]) ) 
                 else:
                     # We want to inject conc, but can't for patch
-                    try :sim.setPatchAmount(self.__species_comps[specie], specie, self.__species[specie][0]*self.__substance_units*(sim.getPatchArea(self.__species_comps[specie])/self.__area_units))
+                    try :sim.setPatchSpecAmount(self.__species_comps[specie], specie, self.__species[specie][0]*self.__substance_units*(sim.getPatchArea(self.__species_comps[specie])/self.__area_units))
                     except: 
                         raise NotImplementedError("Cannot set concentration of species '%s" \
                         "' in patch '%s'. Species may not be reactant or "\
@@ -3523,7 +3523,7 @@ class Interface(object):
                         "in stochastic simulation."%(specie, self.__species_comps[specie]) )
                 const_bcs = self.__species_const_bc[specie]
                 if (const_bcs[0] == True):
-                    try : sim.setPatchClamped(self.__species_comps[specie], specie, True)
+                    try : sim.setPatchSpecClamped(self.__species_comps[specie], specie, True)
                     except: pass
             else: assert (False)
                 
@@ -3556,15 +3556,15 @@ class Interface(object):
                 if (self.__species_subst_units[s]): 
                     # Now directly manipulate the self.__species object
                     # We need to convert to SBML units
-                    self.__species[s][0] = sim.getCompAmount(self.__species_comps[s], s)/self.__substance_units
+                    self.__species[s][0] = sim.getCompSpecAmount(self.__species_comps[s], s)/self.__substance_units
                 else: 
-                    self.__species[s][0] = (sim.getCompConc(self.__species_comps[s], s)*1.0e3*self.__volume_units)/self.__substance_units
+                    self.__species[s][0] = (sim.getCompSpecConc(self.__species_comps[s], s)*1.0e3*self.__volume_units)/self.__substance_units
             elif self.__species_comps[s] in self.__patches:
                 if (self.__species_subst_units[s]):
-                    self.__species[s][0] = sim.getPatchAmount(self.__species_comps[s], s)/self.__substance_units
+                    self.__species[s][0] = sim.getPatchSpecAmount(self.__species_comps[s], s)/self.__substance_units
                 else:
                     # We want to get conc, but can't for patch
-                    self.__species[s][0] = sim.getPatchAmount(self.__species_comps[s], s)/(self.__substance_units*(sim.getPatchArea(self.__species_comps[s])/self.__area_units))
+                    self.__species[s][0] = sim.getPatchSpecAmount(self.__species_comps[s], s)/(self.__substance_units*(sim.getPatchArea(self.__species_comps[s])/self.__area_units))
         # Adding time. 
         newtime = sim.getTime()/self.__time_units
         self.__time['time'][0] = self.__time['t'][0] = self.__time['s'][0] = self.__time['Time'][0] = newtime
@@ -3602,31 +3602,31 @@ class Interface(object):
                 if self.__species_comps[var] in self.__comps:
                     if (self.__species_subst_units[var] == True):
                         try: 
-                            before_amount = sim.getCompAmount(self.__species_comps[var], var)
+                            before_amount = sim.getCompSpecAmount(self.__species_comps[var], var)
                             after_amount = value*self.__substance_units
-                            sim.setCompAmount(self.__species_comps[var], var, before_amount+after_amount)
+                            sim.setCompSpecAmount(self.__species_comps[var], var, before_amount+after_amount)
                         except: 
                             raise NotImplementedError("Failed to set amount during rate-rule '%s' (negative amount?)."%r_rate)
                     else:
                         try: 
-                            before_conc = sim.getCompConc(self.__species_comps[var], var)
+                            before_conc = sim.getCompSpecConc(self.__species_comps[var], var)
                             after_conc = value*(self.__substance_units/self.__volume_units)*1.0e-3
-                            sim.setCompConc(self.__species_comps[var], var, before_conc+after_conc)
+                            sim.setCompSpecConc(self.__species_comps[var], var, before_conc+after_conc)
                         except: 
                             raise NotImplementedError("Failed to set concentration during rate-rule '%s' (negative conc?)."%r_rate)
                 elif self.__species_comps[var] in self.__patches:
                     if (self.__species_subst_units[var] == True):
                         try:
-                            before_amount = sim.getPatchAmount(self.__species_comps[var], var)
+                            before_amount = sim.getPatchSpecAmount(self.__species_comps[var], var)
                             after_amount = value*self.__substance_units
-                            sim.setPatchAmount(self.__species_comps[var], var, before_amount+after_amount)
+                            sim.setPatchSpecAmount(self.__species_comps[var], var, before_amount+after_amount)
                         except:
                             raise NotImplementedError("Failed to set amount during rate-rule '%s' (negative amount?)."%r_rate)
                     else:
                         try:
-                            before_conc = sim.getPatchAmount(self.__species_comps[var], var)/sim.getPatchArea(self.__species_comps[var])
+                            before_conc = sim.getPatchSpecAmount(self.__species_comps[var], var)/sim.getPatchArea(self.__species_comps[var])
                             after_conc = value*(self.__substance_units/self.__area_units)
-                            sim.setPatchAmount(self.__species_comps[var], var, (before_conc+after_conc)*sim.getPatchArea(self.__species_comps[var]))
+                            sim.setPatchSpecAmount(self.__species_comps[var], var, (before_conc+after_conc)*sim.getPatchArea(self.__species_comps[var]))
                         except:
                             raise NotImplementedError("Failed to set concentration during rate-rule '%s' (negative conc?)."%r_rate)                            
             elif (var in self.__comps):
@@ -3727,23 +3727,23 @@ class Interface(object):
                 if self.__species_comps[var] in self.__comps:
                     if (self.__species_subst_units[var] == True):
                         try: 
-                            sim.setCompAmount(self.__species_comps[var], var, value*self.__substance_units)
+                            sim.setCompSpecAmount(self.__species_comps[var], var, value*self.__substance_units)
                         except: 
                             raise NotImplementedError("Failed to set amount during assignment-rule '%s' (negative amount?)."%r_ass)
                     else:
                         try: 
-                            sim.setCompConc(self.__species_comps[var], var, value*(self.__substance_units/self.__volume_units)*1.0e-3)
+                            sim.setCompSpecConc(self.__species_comps[var], var, value*(self.__substance_units/self.__volume_units)*1.0e-3)
                         except: 
                             raise NotImplementedError("Failed to set concentration during assignment-rule '%s' (negative conc?)."%r_ass)
                 elif self.__species_comps[var] in self.__patches:
                     if (self.__species_subst_units[var] == True):
                         try:
-                            sim.setPatchAmount(self.__species_comps[var], var, value*self.__substance_units)
+                            sim.setPatchSpecAmount(self.__species_comps[var], var, value*self.__substance_units)
                         except:
                             raise NotImplementedError("Failed to set amount during assignment-rule '%s' (negative amount?)."%r_ass)
                     else:
                         try:
-                            sim.setPatchAmount(self.__species_comps[var], var, value*(self.__substance_units/self.__area_units)*sim.getPatchArea(self.__species_comps[var]))
+                            sim.setPatchSpecAmount(self.__species_comps[var], var, value*(self.__substance_units/self.__area_units)*sim.getPatchArea(self.__species_comps[var]))
                         except:
                             raise NotImplementedError("Failed to set concentration during assignment-rule '%s' (negative conc?)."%r_ass)         
             elif (var in self.__comps):
@@ -4000,25 +4000,25 @@ class Interface(object):
                         specs_update[var] = value
                         if self.__species_comps[var] in self.__comps:
                             if (self.__species_subst_units[var]):
-                                try: sim.setCompAmount(self.__species_comps[var], var, value*self.__substance_units)
+                                try: sim.setCompSpecAmount(self.__species_comps[var], var, value*self.__substance_units)
                                 except: 
                                     raise NotImplementedError("Cannot set amount of species '%s'" \
                                     "in compartment '%s' during event assignment."%(var, self.__species_comps[var]))
                             else:
-                                try: sim.setCompConc(self.__species_comps[var], var, value*(self.__substance_units/self.__volume_units)*1.0e-3)
+                                try: sim.setCompSpecConc(self.__species_comps[var], var, value*(self.__substance_units/self.__volume_units)*1.0e-3)
                                 except: 
                                     raise NotImplementedError("Cannot set concentration of species '%s'" \
                                     "in compartment '%s' during event assignment."%(var, self.__species_comps[var]))
                         elif self.__species_comps[var] in self.__patches:
                             if (self.__species_subst_units[var] == True):
                                 try:
-                                    sim.setPatchAmount(self.__species_comps[var], var, value*self.__substance_units)
+                                    sim.setPatchSpecAmount(self.__species_comps[var], var, value*self.__substance_units)
                                 except: 
                                     raise NotImplementedError("Cannot set amount of species '%s'" \
                                     "in patch '%s' during event assignment."%(var, self.__species_comps[var]))
                             else:
                                 try:
-                                    sim.setPatchAmount(self.__species_comps[var], var, value*(self.__substance_units/self.__area_units)*sim.getPatchArea(self.__species_comps[var]))
+                                    sim.setPatchSpecAmount(self.__species_comps[var], var, value*(self.__substance_units/self.__area_units)*sim.getPatchArea(self.__species_comps[var]))
                                 except: 
                                     raise NotImplementedError("Cannot set concentration of species '%s'" \
                                     "in patch '%s' during event assignment."%(var, self.__species_comps[var]))

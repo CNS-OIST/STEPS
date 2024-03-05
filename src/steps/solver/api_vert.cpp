@@ -24,31 +24,16 @@
 
  */
 
-
-// STL headers.
-#include <sstream>
-#include <string>
-
-// STEPS headers.
 #include "api.hpp"
-#include "statedef.hpp"
+
 #include "geom/tetmesh.hpp"
 #include "util/error.hpp"
-// logging
-#include <easylogging++.h>
-////////////////////////////////////////////////////////////////////////////////
 
-USING(std, string);
-using namespace steps::solver;
+namespace steps::solver {
 
-////////////////////////////////////////////////////////////////////////////////
-
-double API::getVertV(vertex_id_t vidx) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (vidx >= mesh->countVertices())
-        {
+double API::getVertV(vertex_id_t vidx) const {
+    if (auto* mesh = dynamic_cast<tetmesh::Tetmesh*>(&geom())) {
+        if (vidx >= mesh->countVertices()) {
             std::ostringstream os;
             os << "Vertex index out of range.";
             ArgErrLog(os.str());
@@ -56,8 +41,7 @@ double API::getVertV(vertex_id_t vidx) const
         return _getVertV(vidx);
     }
 
-    else
-    {
+    else {
         std::ostringstream os;
         os << "Method not available for this solver.";
         NotImplErrLog("");
@@ -66,12 +50,9 @@ double API::getVertV(vertex_id_t vidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setVertV(vertex_id_t vidx, double v)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (vidx >= mesh->countVertices())
-        {
+void API::setVertV(vertex_id_t vidx, double v) {
+    if (auto* mesh = dynamic_cast<tetmesh::Tetmesh*>(&geom())) {
+        if (vidx >= mesh->countVertices()) {
             std::ostringstream os;
             os << "Vertex index out of range.";
             ArgErrLog(os.str());
@@ -79,8 +60,7 @@ void API::setVertV(vertex_id_t vidx, double v)
         _setVertV(vidx, v);
     }
 
-    else
-    {
+    else {
         std::ostringstream os;
         os << "Method not available for this solver.";
         NotImplErrLog("");
@@ -89,12 +69,9 @@ void API::setVertV(vertex_id_t vidx, double v)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getVertVClamped(vertex_id_t vidx) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (vidx >= mesh->countVertices())
-        {
+bool API::getVertVClamped(vertex_id_t vidx) const {
+    if (auto* mesh = dynamic_cast<tetmesh::Tetmesh*>(&geom())) {
+        if (vidx >= mesh->countVertices()) {
             std::ostringstream os;
             os << "Vertex index out of range.";
             ArgErrLog(os.str());
@@ -102,8 +79,7 @@ bool API::getVertVClamped(vertex_id_t vidx) const
         return _getVertVClamped(vidx);
     }
 
-    else
-    {
+    else {
         std::ostringstream os;
         os << "Method not available for this solver.";
         NotImplErrLog("");
@@ -112,12 +88,9 @@ bool API::getVertVClamped(vertex_id_t vidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setVertVClamped(vertex_id_t vidx, bool cl)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (vidx >= mesh->countVertices())
-        {
+void API::setVertVClamped(vertex_id_t vidx, bool cl) {
+    if (auto* mesh = dynamic_cast<tetmesh::Tetmesh*>(&geom())) {
+        if (vidx >= mesh->countVertices()) {
             std::ostringstream os;
             os << "Vertex index out of range.";
             ArgErrLog(os.str());
@@ -125,8 +98,7 @@ void API::setVertVClamped(vertex_id_t vidx, bool cl)
         _setVertVClamped(vidx, cl);
     }
 
-    else
-    {
+    else {
         std::ostringstream os;
         os << "Method not available for this solver.";
         NotImplErrLog("");
@@ -135,20 +107,15 @@ void API::setVertVClamped(vertex_id_t vidx, bool cl)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getVertIClamp(vertex_id_t vidx) const
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (vidx >= mesh->countVertices())
-        {
+double API::getVertIClamp(vertex_id_t vidx) const {
+    if (auto* mesh = dynamic_cast<tetmesh::Tetmesh*>(&geom())) {
+        if (vidx >= mesh->countVertices()) {
             std::ostringstream os;
             os << "Vertex index out of range.";
             ArgErrLog(os.str());
         }
         return _getVertIClamp(vidx);
-    }
-    else
-    {
+    } else {
         std::ostringstream os;
         os << "Method not available for this solver.";
         NotImplErrLog("");
@@ -157,12 +124,9 @@ double API::getVertIClamp(vertex_id_t vidx) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setVertIClamp(vertex_id_t vidx, double i)
-{
-    if (auto * mesh = dynamic_cast<steps::tetmesh::Tetmesh*>(geom()))
-    {
-        if (vidx >= mesh->countVertices())
-        {
+void API::setVertIClamp(vertex_id_t vidx, double i) {
+    if (auto* mesh = dynamic_cast<tetmesh::Tetmesh*>(&geom())) {
+        if (vidx >= mesh->countVertices()) {
             std::ostringstream os;
             os << "Vertex index out of range.";
             ArgErrLog(os.str());
@@ -170,8 +134,7 @@ void API::setVertIClamp(vertex_id_t vidx, double i)
         _setVertIClamp(vidx, i);
     }
 
-    else
-    {
+    else {
         std::ostringstream os;
         os << "Method not available for this solver.";
         NotImplErrLog("");
@@ -180,46 +143,38 @@ void API::setVertIClamp(vertex_id_t vidx, double i)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getVertV(vertex_id_t /*vidx*/) const
-{
+double API::_getVertV(vertex_id_t /*vidx*/) const {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setVertV(vertex_id_t /*vidx*/, double /*v*/)
-{
+void API::_setVertV(vertex_id_t /*vidx*/, double /*v*/) {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getVertVClamped(vertex_id_t /*vidx*/) const
-{
+bool API::_getVertVClamped(vertex_id_t /*vidx*/) const {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setVertVClamped(vertex_id_t /*vidx*/, bool /*cl*/)
-{
+void API::_setVertVClamped(vertex_id_t /*vidx*/, bool /*cl*/) {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getVertIClamp(vertex_id_t /*vidx*/) const
-{
+double API::_getVertIClamp(vertex_id_t /*vidx*/) const {
     NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setVertIClamp(vertex_id_t /*vidx*/, double /*i*/)
-{
+void API::_setVertIClamp(vertex_id_t /*vidx*/, double /*i*/) {
     NotImplErrLog("");
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
+}  // namespace steps::solver

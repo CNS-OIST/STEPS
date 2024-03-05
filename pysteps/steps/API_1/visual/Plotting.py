@@ -42,6 +42,7 @@ class PlotDisplay(GraphicsLayoutWidget):
         """
         GraphicsLayoutWidget.__init__(self, title=title, size=size)
         self.updater = {}
+        self.show()
     
     def addCompSpecPlot(self, title, sim, comp_id, spec_id, data_size = 1000, x_range = None, y_range = None, measure = "count", **kwargs):
         """
@@ -349,9 +350,9 @@ class CompSpecUpdater:
         self.time = [sim.getTime()]
         value = 0
         if self.measure == "count":
-            value = sim.getCompCount(self.comp_id, self.spec_id)
+            value = sim.getCompSpecCount(self.comp_id, self.spec_id)
         elif self.measure == "conc":
-            value = sim.getCompConc(self.comp_id, self.spec_id)
+            value = sim.getCompSpecConc(self.comp_id, self.spec_id)
         self.data = [value]
         self.curve = plot.plot(self.time, self.data, **kwargs)
         if x_range != None:
@@ -363,9 +364,9 @@ class CompSpecUpdater:
         self.time.append(self.sim.getTime())
         value = 0
         if self.measure == "count":
-            value = self.sim.getCompCount(self.comp_id, self.spec_id)
+            value = self.sim.getCompSpecCount(self.comp_id, self.spec_id)
         elif self.measure == "conc":
-            value = self.sim.getCompConc(self.comp_id, self.spec_id)
+            value = self.sim.getCompSpecConc(self.comp_id, self.spec_id)
         self.data.append(value)
         if len(self.time) >self.data_size:
             self.time.pop(0)
@@ -376,9 +377,9 @@ class CompSpecUpdater:
         self.time = [self.sim.getTime()]
         value = 0
         if self.measure == "count":
-            value = self.sim.getCompCount(self.comp_id, self.spec_id)
+            value = self.sim.getCompSpecCount(self.comp_id, self.spec_id)
         elif self.measure == "conc":
-            value = self.sim.getCompConc(self.comp_id, self.spec_id)
+            value = self.sim.getCompSpecConc(self.comp_id, self.spec_id)
         self.data = [value]
         self.curve.setData(self.time, self.data)
 
@@ -395,7 +396,7 @@ class TetsSpecUpdater:
         self.time = [sim.getTime()]
         value = 0
         for t in self.tets:
-            value += sim.getTetCount(t, self.spec_id)
+            value += sim.getTetSpecCount(t, self.spec_id)
         self.data = [value]
         self.curve = plot.plot(self.time, self.data, **kwargs)
         if x_range != None:
@@ -407,7 +408,7 @@ class TetsSpecUpdater:
         self.time.append(self.sim.getTime())
         value = 0
         for t in self.tets:
-            value += self.sim.getTetCount(t, self.spec_id)
+            value += self.sim.getTetSpecCount(t, self.spec_id)
         self.data.append(value)
         if len(self.time) >self.data_size:
             self.time.pop(0)
@@ -418,7 +419,7 @@ class TetsSpecUpdater:
         self.time = [self.sim.getTime()]
         value = 0
         for t in self.tets:
-            value += self.sim.getTetCount(t, self.spec_id)
+            value += self.sim.getTetSpecCount(t, self.spec_id)
         self.data = [value]
         self.curve.setData(self.time, self.data)
 
@@ -432,7 +433,7 @@ class PatchSpecUpdater:
         self.spec_id = spec_id
         self.data_size = data_size
         self.time = [sim.getTime()]
-        self.data = [sim.getPatchCount(patch_id, spec_id)]
+        self.data = [sim.getPatchSpecCount(patch_id, spec_id)]
         self.curve = plot.plot(self.time, self.data, **kwargs)
         if x_range != None:
             self.plot.setXRange(x_range[0], x_range[1])
@@ -441,7 +442,7 @@ class PatchSpecUpdater:
     
     def update(self):
         self.time.append(self.sim.getTime())
-        self.data.append(self.sim.getPatchCount(self.patch_id, self.spec_id))
+        self.data.append(self.sim.getPatchSpecCount(self.patch_id, self.spec_id))
         if len(self.time) >self.data_size:
             self.time.pop(0)
             self.data.pop(0)
@@ -449,7 +450,7 @@ class PatchSpecUpdater:
     
     def reset(self):
         self.time = [self.sim.getTime()]
-        self.data = [self.sim.getPatchCount(self.patch_id, self.spec_id)]
+        self.data = [self.sim.getPatchSpecCount(self.patch_id, self.spec_id)]
         self.curve.setData(self.time, self.data)
 
 class TrisSpecUpdater:
@@ -464,7 +465,7 @@ class TrisSpecUpdater:
         self.time = [sim.getTime()]
         value = 0
         for t in self.tris:
-            value += sim.getTriCount(t, self.spec_id)
+            value += sim.getTriSpecCount(t, self.spec_id)
         self.data = [value]
         self.curve = plot.plot(self.time, self.data, **kwargs)
         if x_range != None:
@@ -476,7 +477,7 @@ class TrisSpecUpdater:
         self.time.append(self.sim.getTime())
         value = 0
         for t in self.tris:
-            value += self.sim.getTriCount(t, self.spec_id)
+            value += self.sim.getTriSpecCount(t, self.spec_id)
         self.data.append(value)
         if len(self.time) >self.data_size:
             self.time.pop(0)
@@ -487,7 +488,7 @@ class TrisSpecUpdater:
         self.time = [self.sim.getTime()]
         value = 0
         for t in self.tris:
-            value += self.sim.getTriCount(t, self.spec_id)
+            value += self.sim.getTriSpecCount(t, self.spec_id)
         self.data = [value]
         self.curve.setData(self.time, self.data)
 
@@ -503,7 +504,7 @@ class CompSumSpecsUpdater:
         self.time = [sim.getTime()]
         sum = 0
         for s in self.spec_ids:
-            sum += sim.getCompCount(comp_id, s)
+            sum += sim.getCompSpecCount(comp_id, s)
         self.data = [sum]
         self.curve = plot.plot(self.time, self.data, **kwargs)
         if x_range != None:
@@ -515,7 +516,7 @@ class CompSumSpecsUpdater:
         self.time.append(self.sim.getTime())
         sum = 0
         for s in self.spec_ids:
-            sum += self.sim.getCompCount(self.comp_id, s)
+            sum += self.sim.getCompSpecCount(self.comp_id, s)
         self.data.append(sum)
         if len(self.time) >self.data_size:
             self.time.pop(0)
@@ -526,7 +527,7 @@ class CompSumSpecsUpdater:
         self.time = [self.sim.getTime()]
         sum = 0
         for s in self.spec_ids:
-            sum += self.sim.getCompCount(self.comp_id, s)
+            sum += self.sim.getCompSpecCount(self.comp_id, s)
         self.data = [sum]
         self.curve.setData(self.time, self.data)
 
@@ -542,7 +543,7 @@ class PatchSumSpecsUpdater:
         self.time = [sim.getTime()]
         sum = 0
         for s in self.spec_ids:
-            sum += sim.getPatchCount(patch_id, s)
+            sum += sim.getPatchSpecCount(patch_id, s)
         self.data = [sum]
         self.curve = plot.plot(self.time, self.data, **kwargs)
         if x_range != None:
@@ -554,7 +555,7 @@ class PatchSumSpecsUpdater:
         self.time.append(self.sim.getTime())
         sum = 0
         for s in self.spec_ids:
-            sum += self.sim.getPatchCount(self.patch_id, s)
+            sum += self.sim.getPatchSpecCount(self.patch_id, s)
         self.data.append(sum)
         if len(self.time) >self.data_size:
             self.time.pop(0)
@@ -565,7 +566,7 @@ class PatchSumSpecsUpdater:
         self.time = [self.sim.getTime()]
         sum = 0
         for s in self.spec_ids:
-            sum += self.sim.getPatchCount(self.patch_id, s)
+            sum += self.sim.getPatchSpecCount(self.patch_id, s)
         self.data = [sum]
         self.curve.setData(self.time, self.data)
 
@@ -602,7 +603,7 @@ class CompSpecDistUpdater:
             self.bin_data.append(bins[b + 1])
         data = np.zeros(nbins + 1)
         for t in range(len(self.tets)):
-            data[self.belongs[t] - 1] += sim.getTetCount(self.tets[t], self.spec_id)
+            data[self.belongs[t] - 1] += sim.getTetSpecCount(self.tets[t], self.spec_id)
         y_data = []
         for b in range(nbins):
             y_data.append(data[b])
@@ -613,7 +614,7 @@ class CompSpecDistUpdater:
     def update(self):
         data = np.zeros(self.nbins + 1)
         for t in range(len(self.tets)):
-            data[self.belongs[t] - 1] += self.sim.getTetCount(self.tets[t], self.spec_id)
+            data[self.belongs[t] - 1] += self.sim.getTetSpecCount(self.tets[t], self.spec_id)
         y_data = []
         for b in range(self.nbins):
             y_data.append(data[b])
@@ -657,7 +658,7 @@ class PatchSpecDistUpdater:
             self.bin_data.append(bins[b + 1])
         data = np.zeros(nbins + 1)
         for t in range(len(self.tris)):
-            data[self.belongs[t] - 1] += sim.getTriCount(self.tris[t], self.spec_id)
+            data[self.belongs[t] - 1] += sim.getTriSpecCount(self.tris[t], self.spec_id)
         y_data = []
         for b in range(nbins):
             y_data.append(data[b])
@@ -668,7 +669,7 @@ class PatchSpecDistUpdater:
     def update(self):
         data = np.zeros(self.nbins + 1)
         for t in range(len(self.tris)):
-            data[self.belongs[t] - 1] += self.sim.getTriCount(self.tris[t], self.spec_id)
+            data[self.belongs[t] - 1] += self.sim.getTriSpecCount(self.tris[t], self.spec_id)
         y_data = []
         for b in range(self.nbins):
             y_data.append(data[b])
@@ -719,7 +720,7 @@ class TetsSpecDistUpdater:
             self.bin_data.append(bins[b + 1])
         data = np.zeros(nbins + 1)
         for t in range(len(self.tets)):
-            data[self.belongs[t] - 1] += sim.getTetCount(self.tets[t], self.spec_id)
+            data[self.belongs[t] - 1] += sim.getTetSpecCount(self.tets[t], self.spec_id)
         y_data = []
         for b in range(nbins):
             y_data.append(data[b])
@@ -730,7 +731,7 @@ class TetsSpecDistUpdater:
     def update(self):
         data = np.zeros(self.nbins + 1)
         for t in range(len(self.tets)):
-            data[self.belongs[t] - 1] += self.sim.getTetCount(self.tets[t], self.spec_id)
+            data[self.belongs[t] - 1] += self.sim.getTetSpecCount(self.tets[t], self.spec_id)
         y_data = []
         for b in range(self.nbins):
             y_data.append(data[b])
@@ -781,7 +782,7 @@ class TrisSpecDistUpdater:
             self.bin_data.append(bins[b + 1])
         data = np.zeros(nbins + 1)
         for t in range(len(self.tets)):
-            data[self.belongs[t] - 1] += sim.getTriCount(self.tris[t], self.spec_id)
+            data[self.belongs[t] - 1] += sim.getTriSpecCount(self.tris[t], self.spec_id)
         y_data = []
         for b in range(nbins):
             y_data.append(data[b])
@@ -792,7 +793,7 @@ class TrisSpecDistUpdater:
     def update(self):
         data = np.zeros(self.nbins + 1)
         for t in range(len(self.tris)):
-            data[self.belongs[t] - 1] += self.sim.getTriCount(self.tris[t], self.spec_id)
+            data[self.belongs[t] - 1] += self.sim.getTriSpecCount(self.tris[t], self.spec_id)
         y_data = []
         for b in range(self.nbins):
             y_data.append(data[b])

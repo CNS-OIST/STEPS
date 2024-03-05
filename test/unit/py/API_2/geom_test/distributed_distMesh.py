@@ -185,6 +185,31 @@ class distTetMeshTests(test_tetMesh.tetMeshTests):
             self.assertCountEqual(allLst1, lst)
             self.assertCountEqual(allLst2, lst)
 
+    def testCombineWithOperator_n2(self):
+        mesh = self.mesh3
+        with mesh.asLocal(owned=False):
+            lstAll = mesh.tets
+        with mesh.asLocal():
+            lstOwned = mesh.tets
+
+        and_ = lstAll.combineWithOperator(operator.and_)
+        ghosts = (lstAll - lstOwned).combineWithOperator(operator.or_)
+
+        self.assertGreater(len(and_), 0)
+        self.assertCountEqual(and_, ghosts)
+
+        or_ = lstAll.combineWithOperator(operator.or_)
+
+        self.assertCountEqual(or_, mesh.tets)
+
+        addOwned = lstOwned.combineWithOperator(operator.add)
+        addAll = lstAll.combineWithOperator(operator.add)
+
+        self.assertCountEqual(addOwned, mesh.tets)
+        self.assertGreater(len(addAll), len(mesh.tets))
+        for g in ghosts:
+            self.assertEqual(addAll.indices.count(g.idx), 2)
+
     def testLocalTetByPoint(self):
         mesh = self.mesh3
 
@@ -207,6 +232,7 @@ class distTetMeshTests(test_tetMesh.tetMeshTests):
                     self.assertTrue(localTet.isLocal())
                     self.assertEqual(localTet.idx, tet.toLocal().idx)
                     self.assertEqual(localTet.toGlobal().idx, tet.idx)
+                    self.assertTrue(localTet.containsPoint(point))
 
     def testMeshProperties(self):
         mesh = self.mesh3

@@ -127,12 +127,12 @@ class TestRDUnbdiff2DLinesourceRing(unittest.TestCase):
         for j in range(NITER):
             sim.reset()
             for t in inject_tris:
-                sim.setTriCount(t, 'X', float(NINJECT)/len(inject_tris))
+                sim.setTriSpecCount(t, 'X', float(NINJECT)/len(inject_tris))
             for i in range(ntpnts):
                 sim.run(tpnts[i])
                 for k in range(patch_tris_n):
-                    res_count[j, i, k] = sim.getTriCount(patch_tris[k], 'X')
-                    res_conc[j, i, k] = 1e-12*(sim.getTriCount(patch_tris[k], 'X')/sim.getTriArea(patch_tris[k]))
+                    res_count[j, i, k] = sim.getTriSpecCount(patch_tris[k], 'X')
+                    res_conc[j, i, k] = 1e-12*(sim.getTriSpecCount(patch_tris[k], 'X')/sim.getTriArea(patch_tris[k]))
 
         itermeans_count = numpy.mean(res_count, axis = 0)
         itermeans_conc = numpy.mean(res_conc, axis = 0)

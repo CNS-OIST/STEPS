@@ -120,3 +120,33 @@ To generate a suppression file:
 
 CMake won't detect that `test/ci/valgrind` has been modified, so it is required
 to run `cmake .` explicitly after adding or removing a *.supp* file.
+
+### Sanitizers
+
+#### ASAN on Blue Brain 5
+
+1. setup the required build environment, for instance with spack: `spack build-env steps@develop bash --norc`
+2. Load the most recent LLVM module: `module load unstable llvm`
+   Ensure the `CC` and `CXX` environment variables point to this compiler.
+3. Configure STEPS with the sanitizer enabled:
+   ```bash
+   mkdir build-asan ; pushd build-asan
+   cmake -DSTEPS_SANITIZERS:STRING="address" \
+         -DPython_EXECUTABLE=`which python3` \
+         -DUSE_BUNDLE_SUNDIALS:BOOL=FALSE \
+         -DUSE_BUNDLE_OMEGA_H:BOOL=FALSE ..
+   ```
+
+   * `STEPS_SANITIZERS`: comma separated list of checks, see
+      https://github.com/BlueBrain/hpc-coding-conventions/blob/master/cpp/cmake/sanitizers.cmake#L1-L6
+   * `Python_EXECUTABLE`: needs to be forced otherwise `/usr/bin/python3` is picked
+   * `USE_BUNDLE_*`: to speed-up the compilation
+
+4. Build STEPS: `make -j`
+5. Execute the tests with sanitizer enabled: `ctest`
+   To execute an arbitrary Python script using STEPS, mimic the environment variables set by ctest
+   to run the tests, see `ctest -VV` to have the full command written to the standard output.
+
+Known issues:
+* with srun/ASAN on BB5: `MPT ERROR: Unable to restrict trim threshold for heap.`
+  The solution is to set the environment variable: `SUPPRESS_XPMEM_TRIM_THRESH=1`

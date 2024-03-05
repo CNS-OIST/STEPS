@@ -32,33 +32,16 @@
 #include <vector>
 
 #include "comp.hpp"
+#include "fwd.hpp"
 #include "geom.hpp"
 
-#include "model/surfsys.hpp"
-#include "util/common.h"
+#include "model/fwd.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace wm {
-
-////////////////////////////////////////////////////////////////////////////////
-
-// Forward declarations.
-
-class Comp;
-class Geom;
-class Patch;
+namespace steps::wm {
 
 // Auxiliary declarations.
-typedef Patch *                         PatchP;
-typedef std::map<std::string, PatchP>   PatchPMap;
-typedef PatchPMap::iterator             PatchPMapI;
-typedef PatchPMap::const_iterator       PatchPMapCI;
-
-typedef std::vector<PatchP>             PatchPVec;
-typedef PatchPVec::iterator             PatchPVecI;
-typedef PatchPVec::const_iterator       PatchPVecCI;
+typedef Patch* PatchP;
+typedef std::vector<PatchP> PatchPVec;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -83,10 +66,8 @@ typedef PatchPVec::const_iterator       PatchPVecCI;
 ///
 /// \warning Methods start with an underscore are not exposed to Python.
 
-class Patch
-{
-public:
-
+class Patch {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
@@ -94,13 +75,18 @@ public:
     /// Constructor
     ///
     /// \param id ID of the patch.
-    /// \param container Pointer to the parent geometry container.
-    /// \param icomp Pointer to the inner compartment.
-    /// \param ocomp Pointer to the outer compartment.
-    /// \param surfsys Pointer to the associated surface system.
+    /// \param container Reference to the parent geometry container.
+    /// \param icomp Reference to the inner compartment.
+    /// \param ocomp Pointer to the optional outer compartment.
     /// \param area Area of the patch.
-    Patch(std::string id, steps::wm::Geom * container,
-          steps::wm::Comp* icomp, steps::wm::Comp* ocomp = 0, double area = 0.0);
+    Patch(std::string id,
+          wm::Geom& container,
+          wm::Comp& icomp,
+          wm::Comp* ocomp = nullptr,
+          double area = 0.0);
+
+    Patch(const Patch&) = delete;
+    Patch& operator=(const Patch&) = delete;
 
     /// Destructor
     virtual ~Patch();
@@ -112,25 +98,28 @@ public:
     /// Return the patch id.
     ///
     /// \return ID of the patch.
-    inline std::string const & getID() const noexcept
-    { return pID; }
+    inline std::string const& getID() const noexcept {
+        return pID;
+    }
 
     /// Set or change the patch id.
     ///
     /// \param id ID of the patch.
-    void setID(std::string const & id);
+    void setID(std::string const& id);
 
-    /// Return a pointer to the geometry container object.
+    /// Return a reference to the geometry container object.
     ///
-    /// \return Pointer to the parent geometry container.
-    inline steps::wm::Geom * getContainer() const noexcept
-    { return pContainer; }
+    /// \return Reference to the parent geometry container.
+    inline wm::Geom& getContainer() const noexcept {
+        return pContainer;
+    }
 
     /// Return the area of the patch.
     ///
     /// \return Area of the patch.
-    inline double getArea() const noexcept
-    { return pArea; }
+    inline double getArea() const noexcept {
+        return pArea;
+    }
 
     /// Set the area of the patch.
     ///
@@ -144,29 +133,28 @@ public:
     /// Add a surface system with name id.
     ///
     /// \param id ID of the surface system.
-    void addSurfsys(std::string const & id);
+    void addSurfsys(std::string const& id);
 
     /// Get a surface system.
     ///
     /// \return List of the surface systems associated to the patch.
-    inline std::set<std::string> const & getSurfsys() const noexcept
-    {return pSurfsys; }
+    inline const auto& getSurfsys() const noexcept {
+        return pSurfsys;
+    }
 
     /// Delete a surface system with name id.
     ///
     /// \param id ID of the surface system.
-    void delSurfsys(std::string const & id);
+    void delSurfsys(std::string const& id);
 
     ////////////////////////////////////////////////////////////////////////
     // OPERATIONS (EXPOSED TO PYTHON): MODEL LINKING
     ////////////////////////////////////////////////////////////////////////
     /// Return all spec in the patch giving a model.
-    std::vector<steps::model::Spec *>
-    getAllSpecs(const steps::model::Model *model) const;
+    util::flat_set<model::Spec*> getAllSpecs(const model::Model& model) const;
 
     /// Return all SReac in the patch giving a model.
-    std::vector<steps::model::SReac *>
-    getAllSReacs(const steps::model::Model *model) const;
+    util::flat_set<model::SReac*> getAllSReacs(const model::Model& model) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO PYTHON): COMPARTMENTS
@@ -174,15 +162,17 @@ public:
 
     /// Return the inner compartment.
     ///
-    /// \return Pointer to the inner compartment.
-    inline steps::wm::Comp * getIComp() const noexcept
-    { return pIComp; }
+    /// \return Reference to the inner compartment.
+    inline wm::Comp& getIComp() const noexcept {
+        return *pIComp;
+    }
 
-    ///Return the outer compartment.
+    /// Return the outer compartment.
     ///
     /// \return Pointer to the outer compartment.
-    inline steps::wm::Comp * getOComp() const noexcept
-    { return pOComp; }
+    inline wm::Comp* getOComp() const noexcept {
+        return pOComp;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: PATCHES
@@ -191,12 +181,12 @@ public:
     /// Set the inner compartment.
     ///
     /// \param icomp Pointer to the inner compartment.
-    void _setIComp(steps::wm::Comp* icomp);
+    void _setIComp(wm::Comp& icomp);
 
     /// Set the outer compartment.
     ///
     /// \param ocomp Pointer to the outer compartment.
-    void _setOComp(steps::wm::Comp* ocomp);
+    void _setOComp(wm::Comp* ocomp);
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: DELETION
@@ -209,27 +199,23 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-
     ////////////////////////////////////////////////////////////////////////
 
   protected:
     double pArea;
 
   private:
-
     ////////////////////////////////////////////////////////////////////////
 
-    std::string                         pID;
-    steps::wm::Geom                   * pContainer;
-    steps::wm::Comp                   * pIComp{nullptr};
-    steps::wm::Comp                   * pOComp{nullptr};
-    std::set<std::string>               pSurfsys;
-
-    ////////////////////////////////////////////////////////////////////////
-
+    std::string pID;
+    wm::Geom& pContainer;
+    wm::Comp* pIComp{nullptr};
+    wm::Comp* pOComp{nullptr};
+    util::flat_set<std::string> pSurfsys;
 };
 
-////////////////////////////////////////////////////////////////////////////////
+inline bool operator<(const Patch& lhs, const Patch& rhs) {
+    return lhs.getID() < rhs.getID();
+}
 
-} // namespace wm
-} // namespace steps
+}  // namespace steps::wm

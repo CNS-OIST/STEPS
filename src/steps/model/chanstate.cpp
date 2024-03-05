@@ -26,70 +26,46 @@
 
 #include "chanstate.hpp"
 
-// Autotools definitions.
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <cassert>
-#include <sstream>
-#include <string>
-
-#include <easylogging++.h>
-
 #include "chan.hpp"
 
-#include "util/error.hpp"
+namespace steps::model {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-using namespace std;
-using namespace steps::model;
-
-////////////////////////////////////////////////////////////////////////////////
-
-ChanState::ChanState(string const &id, Model *model, Chan *chan)
-    : Spec(id, model), pChan(chan) {
-
-  ArgErrLogIf(pChan == nullptr,
-              "No channel provided to ChanState initializer function");
-  ArgErrLogIf(model != chan->getModel(), "Channel is unknown in this model.");
-
-  pChan->_handleChanStateAdd(this);
+ChanState::ChanState(std::string const& id, Model& model, Chan& chan)
+    : Spec(id, model)
+    , pChan(chan) {
+    pChan._handleChanStateAdd(*this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 ChanState::~ChanState() {
-  if (pChan == nullptr) {
-    return;
-  }
-  _handleSelfDelete();
+    _handleSelfDelete();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void ChanState::_handleSelfDelete() {
-  // Base method
-  Spec::_handleSelfDelete();
+    // Base method
+    Spec::_handleSelfDelete();
 
-  pChan->_handleChanStateDel(this);
-  pChan = nullptr;
+    pChan._handleChanStateDel(*this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ChanState::setID(string const &id) {
-  AssertLog(pChan != nullptr);
-  if (id == getID())
-    return;
-  // The following might raise an exception, e.g. if the new ID is not
-  // valid or not unique. If this happens, we don't catch but simply let
-  // it pass by into the Python layer.
-  pChan->_handleChanStateIDChange(getID(), id);
-  // This line will only be executed if the previous call didn't raise
-  // an exception.
-  Spec::setID(id);
+void ChanState::setID(std::string const& id) {
+    if (id == getID()) {
+        return;
+    }
+    // The following might raise an exception, e.g. if the new ID is not
+    // valid or not unique. If this happens, we don't catch but simply let
+    // it pass by into the Python layer.
+    pChan._handleChanStateIDChange(getID(), id);
+    // This line will only be executed if the previous call didn't raise
+    // an exception.
+    Spec::setID(id);
 }
 
-////////////////////////////////////////////////////////////////////////////////
+}  // namespace steps::model

@@ -24,153 +24,99 @@
 
  */
 
-/*
- *  Last Changed Rev:  $Rev$
- *  Last Changed Date: $Date$
- *  Last Changed By:   $Author$
- */
-
 #include "reac.hpp"
 
-#include <cassert>
-#include <iostream>
-#include <sstream>
-#include <string>
-
-#include <easylogging++.h>
-
-#include "model.hpp"
 #include "spec.hpp"
 #include "volsys.hpp"
 
 #include "util/error.hpp"
-////////////////////////////////////////////////////////////////////////////////
 
-using namespace std;
-using namespace steps::model;
+namespace steps::model {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Reac::Reac(string const &id, Volsys *volsys, vector<Spec *> const &lhs,
-           vector<Spec *> const &rhs, double kcst)
-    : pID(id), pModel(nullptr), pVolsys(volsys), pLHS(), pRHS(), pOrder(0),
-      pKcst(kcst) {
+Reac::Reac(std::string const& id,
+           Volsys& volsys,
+           std::vector<Spec*> const& lhs,
+           std::vector<Spec*> const& rhs,
+           double kcst)
+    : pID(id)
+    , pModel(volsys.getModel())
+    , pVolsys(volsys)
+    , pOrder(0)
+    , pKcst(kcst) {
+    ArgErrLogIf(pKcst < 0.0, "Reaction constant can't be negative");
 
-  ArgErrLogIf(pVolsys == nullptr,
-              "No volsys provided to Reac initializer function");
-  ArgErrLogIf(pKcst < 0.0, "Reaction constant can't be negative");
+    setLHS(lhs);
+    setRHS(rhs);
 
-  pModel = pVolsys->getModel();
-  AssertLog(pModel != nullptr);
-
-  setLHS(lhs);
-  setRHS(rhs);
-
-  pVolsys->_handleReacAdd(this);
+    pVolsys._handleReacAdd(*this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 Reac::~Reac() {
-  if (pVolsys == nullptr) {
-    return;
-  }
-  _handleSelfDelete();
+    _handleSelfDelete();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void Reac::_handleSelfDelete() {
-  pVolsys->_handleReacDel(this);
-  pKcst = 0.0;
-  pOrder = 0;
-  pRHS.clear();
-  pLHS.clear();
-  pVolsys = nullptr;
-  pModel = nullptr;
+    pVolsys._handleReacDel(*this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Reac::setID(string const &id) {
-  AssertLog(pVolsys != nullptr);
-  // The following might raise an exception, e.g. if the new ID is not
-  // valid or not unique. If this happens, we don't catch but simply let
-  // it pass by into the Python layer.
-  pVolsys->_handleReacIDChange(pID, id);
-  // This line will only be executed if the previous call didn't raise
-  // an exception.
-  pID = id;
+void Reac::setID(std::string const& id) {
+    // The following might raise an exception, e.g. if the new ID is not
+    // valid or not unique. If this happens, we don't catch but simply let
+    // it pass by into the Python layer.
+    pVolsys._handleReacIDChange(pID, id);
+    // This line will only be executed if the previous call didn't raise
+    // an exception.
+    pID = id;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Reac::setLHS(vector<Spec *> const &lhs) {
-  AssertLog(pVolsys != nullptr);
-  pLHS.clear();
-  pLHS.reserve(lhs.size());
+void Reac::setLHS(std::vector<Spec*> const& lhs) {
+    pLHS.clear();
+    pLHS.reserve(lhs.size());
 
-  for (auto const &l : lhs) {
-    AssertLog(l->getModel() == pModel);
-    pLHS.push_back(l);
-  }
-  pOrder = pLHS.size();
+    for (auto const& l: lhs) {
+        AssertLog(&l->getModel() == &pModel);
+        pLHS.push_back(l);
+    }
+    pOrder = pLHS.size();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Reac::setRHS(vector<Spec *> const &rhs) {
-  AssertLog(pVolsys != nullptr);
-  pRHS.clear();
-  pRHS.reserve(rhs.size());
+void Reac::setRHS(std::vector<Spec*> const& rhs) {
+    pRHS.clear();
+    pRHS.reserve(rhs.size());
 
-  for (auto const &r : rhs) {
-    AssertLog(r->getModel() == pModel);
-    pRHS.push_back(r);
-  }
+    for (auto const& r: rhs) {
+        AssertLog(&r->getModel() == &pModel);
+        pRHS.push_back(r);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void Reac::setKcst(double kcst) {
-  AssertLog(pVolsys != nullptr);
+    ArgErrLogIf(kcst < 0.0, "Reaction constant can't be negative");
 
-  ArgErrLogIf(kcst < 0.0, "Reaction constant can't be negative");
-
-  pKcst = kcst;
+    pKcst = kcst;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-vector<Spec *> Reac::getAllSpecs() const {
-  SpecPVec specs;
-  bool first_occ;
-
-  for (auto const &l : getLHS()) {
-    first_occ = true;
-    for (auto const &s : specs) {
-      if (s == l) {
-        first_occ = false;
-        break;
-      }
-    }
-    if (first_occ)
-      specs.push_back(l);
-  }
-
-  for (auto const &r : getRHS()) {
-    first_occ = true;
-    for (auto const &s : specs) {
-      if (s == r) {
-        first_occ = false;
-        break;
-      }
-    }
-    if (first_occ)
-      specs.push_back(r);
-  }
-
-  return specs;
+util::flat_set<Spec*> Reac::getAllSpecs() const {
+    util::flat_set<Spec*> specs;
+    specs.insert(getLHS().begin(), getLHS().end());
+    specs.insert(getRHS().begin(), getRHS().end());
+    return specs;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+}  // namespace steps::model

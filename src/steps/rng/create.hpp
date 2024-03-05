@@ -24,28 +24,22 @@
 
  */
 
-
-// Standard library & STL headers.
-#include <memory>
-#include <string>
+#pragma once
 
 // STEPS headers.
-#include "util/common.h"
 #include "rng.hpp"
 
-namespace steps {
-namespace rng {
+namespace steps::rng {
 
 /// Create a random number generator with name rng_name and return as RNG object.
 ///
 /// \param rng_name Name of the random number generator.
 /// \param buffsize Size of buffer.
-RNGptr create(std::string rng_name, uint bufsize);
+RNGptr create(const std::string& rng_name, uint bufsize);
 
 /// Create a MT19937 random number generator and return as RNG object.
 ///
 /// \param buffsize Size of buffer.
 RNGptr create_mt19937(uint bufsize);
 
-} // namespace rng
-} // namespace steps
+}  // namespace steps::rng

@@ -1,10 +1,10 @@
 # Patch to use openmp together with AppleClang and old cmake style.
-#
+# ~~~
 # It is not needed for modern cmake (>=3.12), it does not add the library based
 # on target.
 #
 # It tries to find the OpenMP library installed by brew, anaconda, or macports
-#
+# ~~~
 
 message(STATUS "Applying patch for OpenMP and AppleClang")
 
@@ -12,7 +12,11 @@ message(STATUS "Applying patch for OpenMP and AppleClang")
 find_program(BREW_EXECUTABLE "brew")
 mark_as_advanced(BREW_EXECUTABLE)
 if(BREW_EXECUTABLE)
-  execute_process(COMMAND bash "-c" "brew --prefix libomp" RESULT_VARIABLE ACP_OMP_LIB_FOUND OUTPUT_VARIABLE ACP_OMP_BASE_PATH OUTPUT_STRIP_TRAILING_WHITESPACE)
+  execute_process(
+    COMMAND bash "-c" "brew --prefix libomp"
+    RESULT_VARIABLE ACP_OMP_LIB_FOUND
+    OUTPUT_VARIABLE ACP_OMP_BASE_PATH
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
   if(ACP_OMP_LIB_FOUND EQUAL 0)
     set(ACP_OMP_INCLUDE_PATH ${ACP_OMP_BASE_PATH}/include)
     set(ACP_OMP_LIB_PATH ${ACP_OMP_BASE_PATH}/lib)
@@ -24,7 +28,11 @@ endif()
 find_program(ANACONDA_EXECUTABLE "conda")
 mark_as_advanced(ANACONDA_EXECUTABLE)
 if(ANACONDA_EXECUTABLE AND NOT EXISTS ${ACP_OMP_LIB})
-  execute_process(COMMAND bash "-c" "echo $CONDA_PREFIX" RESULT_VARIABLE CONDA_PREFIX_FOUND OUTPUT_VARIABLE ACP_OMP_BASE_PATH OUTPUT_STRIP_TRAILING_WHITESPACE)
+  execute_process(
+    COMMAND bash "-c" "echo $CONDA_PREFIX"
+    RESULT_VARIABLE CONDA_PREFIX_FOUND
+    OUTPUT_VARIABLE ACP_OMP_BASE_PATH
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
   if(CONDA_PREFIX_FOUND EQUAL 0)
     set(ACP_OMP_INCLUDE_PATH ${ACP_OMP_BASE_PATH}/include)
     set(ACP_OMP_LIB_PATH ${ACP_OMP_BASE_PATH}/lib)
@@ -36,7 +44,11 @@ endif()
 find_program(MACPORT_EXECUTABLE "port")
 mark_as_advanced(MACPORT_EXECUTABLE)
 if(MACPORT_EXECUTABLE AND NOT EXISTS ${ACP_OMP_LIB})
-  execute_process(COMMAND bash "-c" "port -q contents libomp | grep libomp.dylib" RESULT_VARIABLE ACP_OMP_LIB_FOUND OUTPUT_VARIABLE ACP_OMP_LIB OUTPUT_STRIP_TRAILING_WHITESPACE)
+  execute_process(
+    COMMAND bash "-c" "port -q contents libomp | grep libomp.dylib"
+    RESULT_VARIABLE ACP_OMP_LIB_FOUND
+    OUTPUT_VARIABLE ACP_OMP_LIB
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
   if(ACP_OMP_LIB_FOUND EQUAL 0)
     # Strip leading spaces
     string(STRIP ${ACP_OMP_LIB} ACP_OMP_LIB)
@@ -55,15 +67,29 @@ if(EXISTS ${ACP_OMP_LIB})
   message(STATUS "Found libomp: ${ACP_OMP_LIB}")
   set(OPENMP_FOUND True)
 
-  set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp" CACHE STRING "CXX compiler flags for OpenMP parallelization" FORCE)
-  set(OpenMP_CXX_INCLUDE_DIR ${ACP_OMP_INCLUDE_PATH} CACHE STRING "Include path" FORCE)
-  set(OpenMP_CXX_LIB_NAMES "omp" CACHE STRING "CXX compiler libraries for OpenMP parallelization" FORCE)
+  set(OpenMP_CXX_FLAGS
+      "-Xpreprocessor -fopenmp"
+      CACHE STRING "CXX compiler flags for OpenMP parallelization" FORCE)
+  set(OpenMP_CXX_INCLUDE_DIR
+      ${ACP_OMP_INCLUDE_PATH}
+      CACHE STRING "Include path" FORCE)
+  set(OpenMP_CXX_LIB_NAMES
+      "omp"
+      CACHE STRING "CXX compiler libraries for OpenMP parallelization" FORCE)
 
-  set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp" CACHE STRING "C compiler flags for OpenMP parallelization" FORCE)
-  set(OpenMP_C_INCLUDE_DIR ${ACP_OMP_INCLUDE_PATH} CACHE STRING "Include path" FORCE)
-  set(OpenMP_C_LIB_NAMES "omp" CACHE STRING "C compiler libraries for OpenMP parallelization" FORCE)
+  set(OpenMP_C_FLAGS
+      "-Xpreprocessor -fopenmp"
+      CACHE STRING "C compiler flags for OpenMP parallelization" FORCE)
+  set(OpenMP_C_INCLUDE_DIR
+      ${ACP_OMP_INCLUDE_PATH}
+      CACHE STRING "Include path" FORCE)
+  set(OpenMP_C_LIB_NAMES
+      "omp"
+      CACHE STRING "C compiler libraries for OpenMP parallelization" FORCE)
 
-  set(OpenMP_libomp_LIBRARY ${ACP_OMP_LIB} CACHE STRING "Path to library." FORCE)
+  set(OpenMP_libomp_LIBRARY
+      ${ACP_OMP_LIB}
+      CACHE STRING "Path to library." FORCE)
 
 else()
   set(OPENMP_FOUND False)

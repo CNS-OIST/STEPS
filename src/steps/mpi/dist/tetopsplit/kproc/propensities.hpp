@@ -8,14 +8,13 @@
 #include "event_queue.hpp"
 #include "kproc_id.hpp"
 #include "mpi/dist/tetopsplit/fwd.hpp"
+#include "mpi/dist/tetopsplit/mol_state.hpp"
 #include "rng/rng.hpp"
+#include "util/error.hpp"
 #include "util/flat_multimap.hpp"
 #include "util/vocabulary.hpp"
-#include "util/error.hpp"
 
-namespace steps {
-namespace dist {
-namespace kproc {
+namespace steps::dist::kproc {
 
 /**
  * Bitmask values to describe at compile-time the behavior of \a Propensities
@@ -97,9 +96,7 @@ struct PropensitiesTraits {
     static constexpr bool handle_next_event = (Policy & PropensitiesPolicy::with_next_event) != 0;
 };
 
-template <typename NumMolecules,
-          unsigned Policy = PropensitiesPolicy::default_policy,
-          class Enable = void>
+template <unsigned Policy = PropensitiesPolicy::default_policy, class Enable = void>
 struct PropensitiesGroup;
 
 using EventTime = osh::Real;
@@ -120,11 +117,11 @@ using KProcDeps = dependencies_t::const_element_type;
  * \tparam Policy mask
  *   * propgpr_with_next_event: if true, propensities groups can generate a next event.
  */
-template <typename NumMolecules, unsigned int Policy = PropensitiesPolicy::default_policy>
+template <unsigned int Policy = PropensitiesPolicy::default_policy>
 class Propensities {
   public:
-    friend struct PropensitiesGroup<NumMolecules, Policy>;
-    friend class KProcState<NumMolecules>;
+    friend struct PropensitiesGroup<Policy>;
+    friend class KProcState;
 
     static_assert(
         std::is_same<unsigned, typename std::underlying_type<kproc::KProcType>::type>::value,
@@ -139,7 +136,7 @@ class Propensities {
      * \param propensities_fun a function to compute the propensity of a kproc
      */
     void init(const std::array<unsigned, kproc::num_kproc_types()>& k_proc_ty,
-              const typename propensity_function_traits<NumMolecules>::value& propensities_fun,
+              const typename propensity_function_traits::value& propensities_fun,
               const kproc_groups_t& groups);
 
     /**
@@ -232,11 +229,11 @@ class Propensities {
 
     std::vector<osh::Real> v_;
     std::vector<size_t> local_indices_;
-    std::array<unsigned, num_kproc_types()> a2ab_;
-    std::array<unsigned, num_kproc_types()> k_proc_ty_2_num_k_proc_;
-    typename propensity_function_traits<NumMolecules>::value fun_;
+    std::array<unsigned, num_kproc_types()> a2ab_{};
+    std::array<unsigned, num_kproc_types()> k_proc_ty_2_num_k_proc_{};
+    typename propensity_function_traits::value fun_;
     std::uniform_real_distribution<double> uniform_;
-    std::vector<PropensitiesGroup<NumMolecules, Policy>> propensities_groups_;
+    std::vector<PropensitiesGroup<Policy>> propensities_groups_;
 };
 
 //--------------------------------------------------------
@@ -248,40 +245,32 @@ class Propensities {
  * Physical Chemistry A, 104 9 (2000): 1876-1889.
  *
  */
-template <typename NumMolecules, unsigned int Policy>
-struct PropensitiesGroup<
-    NumMolecules, Policy,
-    std::enable_if_t<PropensitiesTraits<Policy>::is_gibson_bruck>> {
+template <unsigned int Policy>
+struct PropensitiesGroup<Policy, std::enable_if_t<PropensitiesTraits<Policy>::is_gibson_bruck>> {
     /**
      * \brief Ctor.
      *
      * \param propensities propensities
      * \param ids KProcIds of processes handled by the group
      */
-    PropensitiesGroup(Propensities<NumMolecules, Policy> &propensities,
-                      kproc_group_t ids)
-        : kprocs_(ids), propensities_(propensities) {}
+    PropensitiesGroup(Propensities<Policy>& propensities, kproc_group_t ids)
+        : kprocs_(ids)
+        , propensities_(propensities) {}
 
     static constexpr bool handle_next_event() {
         return PropensitiesTraits<Policy>::handle_next_event;
     }
 
-    template <typename RNG>
-    inline osh::Real getExp(double prop, RNG &rng) const {
-        if constexpr (std::is_same_v<RNG, steps::rng::RNG>) {
-            return static_cast<osh::Real>(rng.getExp(prop));
-        } else {
-            return std::exponential_distribution<osh::Real>(prop)(rng);
-        }
+    inline osh::Real getExp(double prop, rng::RNG& rng) const {
+        return rng.getExp(prop);
     }
 
     /**
      * \brief reset the group data structure
      */
-    template <typename RNG>
-    void reset(const MolState<NumMolecules> &mol_state, RNG &rng, const osh::Real state_time) {
+    void reset(const MolState& mol_state, rng::RNG& rng, const osh::Real state_time) {
         events_.clear();
-        for (auto kp : kprocs_) {
+        for (auto kp: kprocs_) {
             KProcID kid{static_cast<unsigned>(kp)};
             auto idx = propensities_.ab(kid);
             osh::Real propensity = propensities_.fun_(kid, mol_state);
@@ -291,23 +280,22 @@ struct PropensitiesGroup<
             }
             if (propensity > std::numeric_limits<osh::Real>::epsilon()) {
                 events_.update(kid, state_time + getExp(propensity, rng));
-            }
-            else {
+            } else {
                 events_.update(kid, std::numeric_limits<osh::Real>::infinity());
             }
         }
     }
 
     /**
-     * \brief Update the maximum time threshold of the priority queue 
-     * in the Gibson Bruck method. 
-     * 
-     * An event is added to the next event queue only if it 
+     * \brief Update the maximum time threshold of the priority queue
+     * in the Gibson Bruck method.
+     *
+     * An event is added to the next event queue only if it
      * happens no later than max_time, otherwise it is stored in the reserve.
      * When this function is called, the solution loops over all events stored
      * in the reserve and inserts the ones below or equal to the new threshold
      * to the next event queue.
-     * 
+     *
      * \param max_time the new maximum time threshold
      */
     void updateMaxTime(const osh::Real max_time) {
@@ -321,8 +309,7 @@ struct PropensitiesGroup<
      * \param mol_state molecular state
      * \param rng random number generator
      */
-    template <typename RNG>
-    void update_all(MolState<NumMolecules>& mol_state, RNG& rng, const osh::Real state_time) {
+    void update_all(MolState& mol_state, rng::RNG& rng, const osh::Real state_time) {
         for (auto kp: kprocs_) {
             KProcID kid{static_cast<unsigned>(kp)};
             adjust_existing_events(kid, mol_state, rng, state_time);
@@ -337,8 +324,7 @@ struct PropensitiesGroup<
      * \param mol_state molecular state
      * \param rng random number generator
      */
-    template <typename RNG>
-    void update_outdated(MolState<NumMolecules>& mol_state, RNG& rng, const osh::Real state_time) {
+    void update_outdated(MolState& mol_state, rng::RNG& rng, const osh::Real state_time) {
         for (auto kp: mol_state.outdated_kprocs()) {
             KProcID kid{kp};
             adjust_existing_events(kid, mol_state, rng, state_time);
@@ -356,14 +342,12 @@ struct PropensitiesGroup<
      * \param selection a selection of kprocs that need recomputation following
      * the event
      */
-    template <typename T, typename RNG>
-    void update(const MolState<NumMolecules> &mol_state, RNG &rng,
-                const Event event, const T &selection) {
+    template <typename T>
+    void update(const MolState& mol_state, rng::RNG& rng, const Event event, const T& selection) {
         using cast_type =
-            typename std::conditional<std::is_same<T, KProcDeps>::value,
-                                      unsigned, KProcID>::type;
+            typename std::conditional<std::is_same<T, KProcDeps>::value, unsigned, KProcID>::type;
         if constexpr (!handle_next_event()) {
-            for (auto k : selection) {
+            for (auto k: selection) {
                 KProcID kp(static_cast<cast_type>(k));
                 auto idx = propensities_.ab(kp);
                 auto new_propensity = propensities_.fun_(kp, mol_state);
@@ -372,12 +356,11 @@ struct PropensitiesGroup<
         } else {
             // process the event
             {
-                const auto &kp = event.second;
+                const auto& kp = event.second;
                 auto idx = propensities_.ab(kp);
-                osh::Real new_propensity = propensities_.fun_(kp, mol_state);
+                const osh::Real new_propensity = propensities_.fun_(kp, mol_state);
                 propensities_.v_[idx] = new_propensity;
-                if (new_propensity >
-                    std::numeric_limits<osh::Real>::epsilon()) {
+                if (new_propensity > std::numeric_limits<osh::Real>::epsilon()) {
                     events_.update(kp, event.first + getExp(new_propensity, rng));
                 } else {
                     events_.update(kp, std::numeric_limits<osh::Real>::infinity());
@@ -385,7 +368,7 @@ struct PropensitiesGroup<
             }
 
             // process its dependencies
-            for (auto k : selection) {
+            for (auto k: selection) {
                 KProcID kp(static_cast<cast_type>(k));
                 if (kp.data() != event.second.data()) {
                     adjust_existing_events(kp, mol_state, rng, event.first);
@@ -393,24 +376,24 @@ struct PropensitiesGroup<
             }
         }
     }
-    template <typename RNG>
-    void adjust_existing_events(KProcID kp, const MolState<NumMolecules> &mol_state, 
-                                RNG &rng, const osh::Real current_state_time) {
+
+    void adjust_existing_events(KProcID kp,
+                                const MolState& mol_state,
+                                rng::RNG& rng,
+                                const osh::Real current_state_time) {
         auto idx = propensities_.ab(kp);
         // unrelated to the event that's just happened
-        osh::Real &old_propensity = propensities_.v_[idx];
+        osh::Real& old_propensity = propensities_.v_[idx];
         osh::Real new_propensity = propensities_.fun_(kp, mol_state);
         if (old_propensity != new_propensity) {
-            if (new_propensity >
-                std::numeric_limits<osh::Real>::epsilon()) {
+            if (new_propensity > std::numeric_limits<osh::Real>::epsilon()) {
                 osh::Real adj_time;
-                if (old_propensity >
-                    std::numeric_limits<osh::Real>::epsilon()) {
-                    auto old_time = events_.getEventTime(kp);
+                auto old_time = events_.getEventTime(kp);
+                if (old_propensity > std::numeric_limits<osh::Real>::epsilon() &&
+                    old_time != current_state_time) {
                     assert(old_time > current_state_time);
-                    adj_time = old_propensity / new_propensity *
-                                    (old_time - current_state_time) +
-                                current_state_time;
+                    adj_time = old_propensity / new_propensity * (old_time - current_state_time) +
+                               current_state_time;
                 } else {
                     adj_time = current_state_time + getExp(new_propensity, rng);
                 }
@@ -418,8 +401,7 @@ struct PropensitiesGroup<
                 events_.update(kp, adj_time);
             } else {
                 old_propensity = new_propensity;
-                events_.update(
-                    kp, std::numeric_limits<osh::Real>::infinity());
+                events_.update(kp, std::numeric_limits<osh::Real>::infinity());
             }
         }
     }
@@ -429,24 +411,22 @@ struct PropensitiesGroup<
      *
      * \return a kproc sample
      */
-    template <typename RNG>
-    Event drawEvent(RNG &/*rng*/, osh::Real /* sim_time */) {
+    Event drawEvent(rng::RNG& /*rng*/, osh::Real /* sim_time */) {
         return events_.getFirst();
     }
 
     ///  pretty printer
-    template <typename NumMoleculesF, unsigned int PolicyF>
+    template <unsigned int PolicyF>
     friend std::ostream& operator<<(
         std::ostream& os,
-        const PropensitiesGroup<NumMoleculesF,
-                                PolicyF,
+        const PropensitiesGroup<PolicyF,
                                 std::enable_if_t<PropensitiesTraits<PolicyF>::is_gibson_bruck>>&
             pg);
 
   private:
     EventQueue events_;
     kproc_group_t kprocs_;
-    Propensities<NumMolecules, Policy> &propensities_;
+    Propensities<Policy>& propensities_;
 };
 
 //--------------------------------------------------------
@@ -457,17 +437,15 @@ struct PropensitiesGroup<
  * Kinetics, Annu. Rev. Phys. Chem. 2007. 58:35-55
  *
  */
-template <typename NumMolecules, unsigned int Policy>
-struct PropensitiesGroup<NumMolecules,
-                         Policy,
-                         std::enable_if_t<PropensitiesTraits<Policy>::is_direct>> {
+template <unsigned int Policy>
+struct PropensitiesGroup<Policy, std::enable_if_t<PropensitiesTraits<Policy>::is_direct>> {
     /**
      * \brief Ctor.
      *
      * \param propensities all propensities of kprocs
      * \param ids KProcIds of kprocs handled by the group
      */
-    PropensitiesGroup(Propensities<NumMolecules, Policy>& propensities, const kproc_group_t& ids)
+    PropensitiesGroup(Propensities<Policy>& propensities, const kproc_group_t& ids)
         : idx_(static_cast<size_t>(ids.size()))
         , ids_(ids)
         , propensities_(propensities) {
@@ -489,8 +467,7 @@ struct PropensitiesGroup<NumMolecules,
     /**
      * \brief reset the group data structure
      */
-    template <typename RNG>
-    void reset(const MolState<NumMolecules> &/*mol_state*/, RNG &/*rng*/, const osh::Real /*state_time*/) {
+    void reset(const MolState& /*mol_state*/, rng::RNG& /*rng*/, const osh::Real /*state_time*/) {
         // do nothing
     }
 
@@ -503,10 +480,7 @@ struct PropensitiesGroup<NumMolecules,
      *
      * \param mol_state molecular state
      */
-    template <typename RNG>
-    void update_all(const MolState<NumMolecules>& mol_state,
-                    RNG& /*rng*/,
-                    const osh::Real /*state_time*/) {
+    void update_all(const MolState& mol_state, rng::RNG& /*rng*/, const osh::Real /*state_time*/) {
         size_t k{};
         for (auto it = ids_.begin(); it != ids_.end(); it++, k++) {
             propensities_.v_[idx_[k]] = propensities_.fun_(KProcID(static_cast<unsigned>(*it)),
@@ -522,9 +496,8 @@ struct PropensitiesGroup<NumMolecules,
      *
      * \param mol_state molecular state
      */
-    template <typename RNG>
-    void update_outdated(const MolState<NumMolecules>& mol_state,
-                         RNG& /*rng*/,
+    void update_outdated(const MolState& mol_state,
+                         rng::RNG& /*rng*/,
                          const osh::Real /*state_time*/) {
         /* TODO : Follow the same approach as in Gibson Bruck, i.e. update outdated propensities
            only (test needed). For now go with the original version, i.e. update all propensities.
@@ -545,9 +518,9 @@ struct PropensitiesGroup<NumMolecules,
      * \param mol_state molecular state
      * \param selection of kprocs that need update in the current group
      */
-    template <typename T, typename RNG>
-    void update(const MolState<NumMolecules>& mol_state,
-                RNG& /*rng*/,
+    template <typename T>
+    void update(const MolState& mol_state,
+                rng::RNG& /*rng*/,
                 const Event& /*event*/,
                 const T& selection) {
         using cast_type =
@@ -578,37 +551,31 @@ struct PropensitiesGroup<NumMolecules,
         }
     }
 
-  /**
-   * \brief Draw a kproc id from a discrete distribution of probabilities
-   * given by scaled propensities.
-   *
-   * There are 2 somewhat independent drawing here:
-   *
-   * - when the next event occurs:
-   *    it is a roll on an exponential distribution with a characteristic value equal to
-   *    the sum of the propensities of the group
-   * - what proc is the next event:
-   *    it is a uniform roll over the partial sums, The bigger your weight, the higher is the
-   * probability of being picked
-   *
-   * \param rng a random number generator
-   * \return a kproc sample
-   */
-  template <class RNG>
-  Event drawEvent(RNG &rng, osh::Real sim_time) {
-      // when the propensities are 0 or there we assume that the next event is at infinity
-      if (partial_sums_.empty()) {
-          return {std::numeric_limits<osh::Real>::infinity(), KProcID(0)};
+    /**
+     * \brief Draw a kproc id from a discrete distribution of probabilities
+     * given by scaled propensities.
+     *
+     * There are 2 somewhat independent drawing here:
+     *
+     * - when the next event occurs:
+     *    it is a roll on an exponential distribution with a characteristic value equal to
+     *    the sum of the propensities of the group
+     * - what proc is the next event:
+     *    it is a uniform roll over the partial sums, The bigger your weight, the higher is the
+     * probability of being picked
+     *
+     * \param rng a random number generator
+     * \return a kproc sample
+     */
+    Event drawEvent(rng::RNG& rng, osh::Real sim_time) {
+        // when the propensities are 0 or there we assume that the next event is at infinity
+        if (partial_sums_.empty()) {
+            return {std::numeric_limits<osh::Real>::infinity(), KProcID(0)};
         }
         if (partial_sums_.back() < std::numeric_limits<osh::Real>::epsilon()) {
             return {std::numeric_limits<osh::Real>::infinity(), KProcID(0)};
         }
-        osh::Real next_arrival;
-        if constexpr (std::is_same_v<RNG, steps::rng::RNG>) {
-            next_arrival = static_cast<osh::Real>(rng.getExp(partial_sums_.back()));
-        } else {
-            next_arrival = std::exponential_distribution<osh::Real>(partial_sums_.back())(rng);
-        }
+        const auto next_arrival = rng.getExp(partial_sums_.back());
         auto idx =
             std::distance(partial_sums_.begin(),
                           std::upper_bound(partial_sums_.begin(),
@@ -619,54 +586,38 @@ struct PropensitiesGroup<NumMolecules,
     }
 
     /// pretty printer
-    template <typename NumMoleculesF, unsigned int PolicyF>
+    template <unsigned int PolicyF>
     friend std::ostream& operator<<(
         std::ostream& ostr,
-        const PropensitiesGroup<NumMoleculesF,
-                                PolicyF,
-                                std::enable_if_t<PropensitiesTraits<PolicyF>::is_direct>>& pg);
+        const PropensitiesGroup<PolicyF, std::enable_if_t<PropensitiesTraits<PolicyF>::is_direct>>&
+            pg);
 
   private:
     std::vector<size_t> idx_;
     kproc::kproc_group_t ids_;
     std::vector<osh::Real> partial_sums_;
-    Propensities<NumMolecules, Policy>& propensities_;
+    Propensities<Policy>& propensities_;
 };
 
 /**
  * \a PropensitiesGroup pretty printer
  */
-template <typename NumMolecules, unsigned int Policy>
-inline std::ostream& operator<<(std::ostream& ostr,
-                                const PropensitiesGroup<NumMolecules, Policy>& /* group */) {
+template <unsigned int Policy>
+inline std::ostream& operator<<(std::ostream& ostr, const PropensitiesGroup<Policy>& /* group */) {
     return ostr << "PropensityGroup (base)\n";
 }
 
 //--------------------------------------------------------
 
 // explicit template instantiation declarations
-extern template class Propensities<osh::I32, PropensitiesPolicy::direct_without_next_event>;
-extern template class Propensities<osh::I64, PropensitiesPolicy::direct_without_next_event>;
-extern template class Propensities<osh::I32, PropensitiesPolicy::gibson_bruck_without_next_event>;
-extern template class Propensities<osh::I64, PropensitiesPolicy::gibson_bruck_without_next_event>;
-extern template class Propensities<osh::I32, PropensitiesPolicy::direct_with_next_event>;
-extern template class Propensities<osh::I64, PropensitiesPolicy::direct_with_next_event>;
-extern template class Propensities<osh::I32, PropensitiesPolicy::gibson_bruck_with_next_event>;
-extern template class Propensities<osh::I64, PropensitiesPolicy::gibson_bruck_with_next_event>;
+extern template class Propensities<PropensitiesPolicy::direct_without_next_event>;
+extern template class Propensities<PropensitiesPolicy::gibson_bruck_without_next_event>;
+extern template class Propensities<PropensitiesPolicy::direct_with_next_event>;
+extern template class Propensities<PropensitiesPolicy::gibson_bruck_with_next_event>;
 
-extern template struct PropensitiesGroup<osh::I32, PropensitiesPolicy::direct_without_next_event>;
-extern template struct PropensitiesGroup<osh::I64, PropensitiesPolicy::direct_without_next_event>;
-extern template struct PropensitiesGroup<osh::I32,
-                                         PropensitiesPolicy::gibson_bruck_without_next_event>;
-extern template struct PropensitiesGroup<osh::I64,
-                                         PropensitiesPolicy::gibson_bruck_without_next_event>;
-extern template struct PropensitiesGroup<osh::I32, PropensitiesPolicy::direct_with_next_event>;
-extern template struct PropensitiesGroup<osh::I64, PropensitiesPolicy::direct_with_next_event>;
-extern template struct PropensitiesGroup<osh::I32,
-                                         PropensitiesPolicy::gibson_bruck_with_next_event>;
-extern template struct PropensitiesGroup<osh::I64,
-                                         PropensitiesPolicy::gibson_bruck_with_next_event>;
+extern template struct PropensitiesGroup<PropensitiesPolicy::direct_without_next_event>;
+extern template struct PropensitiesGroup<PropensitiesPolicy::gibson_bruck_without_next_event>;
+extern template struct PropensitiesGroup<PropensitiesPolicy::direct_with_next_event>;
+extern template struct PropensitiesGroup<PropensitiesPolicy::gibson_bruck_with_next_event>;
 
-} // namespace kproc
-} // namespace dist
-} // namespace steps
+}  // namespace steps::dist::kproc

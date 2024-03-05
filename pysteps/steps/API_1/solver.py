@@ -32,6 +32,7 @@ EF_DEFAULT = stepslib._py_TetAPI.EF_DEFAULT
 EF_DV_BDSYS = stepslib._py_TetAPI.EF_DV_BDSYS
 EF_DV_PETSC  = stepslib._py_TetAPI.EF_DV_PETSC
 
+UNKNOWN_INDEX = stepslib.UNKNOWN_INDEX
 
 # --------------------------------------------------------------------
 # Mixin class which provides helper methods, common to all Solvers
@@ -85,16 +86,16 @@ class _Base_Solver(object):
 class Wmrk4(stepslib._py_Wmrk4, _Base_Solver):
     """
     Construction::
-        
+
         sim = steps.solver.Wmrk4(model, geom)
-        
+
     Create a non-spatial deterministic solver based on the Runge-Kutta fourth order method.
-        
+
     Arguments:
     steps.model.Model model
     steps.geom.Geom geom
     """
-    
+
     def run(self, end_time, cp_interval = 0.0, prefix = ""):
         """
         Run the simulation until end_time,
@@ -111,7 +112,7 @@ class Wmrk4(stepslib._py_Wmrk4, _Base_Solver):
         """
         end_time = self.getTime() + advance_time
         self._advance_checkpoint_run(end_time, cp_interval, prefix, 'wmrk4')
-        
+
     def getIndexMapping(self):
         """
         Get a mapping between compartments/patches/species
@@ -123,11 +124,11 @@ class Wmrk4(stepslib._py_Wmrk4, _Base_Solver):
 class Wmdirect(stepslib._py_Wmdirect, _Base_Solver):
     """
     Construction::
-    
+
         sim = steps.solver.Wmdirect(model, geom, rng)
-    
+
     Create a non-spatial stochastic solver based on Gillespie's SSA.
-    
+
     Arguments:
     steps.model.Model model
     steps.geom.Geom geom
@@ -140,7 +141,7 @@ class Wmdirect(stepslib._py_Wmdirect, _Base_Solver):
         Prefix can be added using prefix=<prefix_string>.
         """
         self._advance_checkpoint_run(end_time, cp_interval, prefix, 'wmdirect')
-        
+
     def advance(self, advance_time, cp_interval = 0.0, prefix = ""):
         """
         Advance the simulation for advance_time,
@@ -149,7 +150,7 @@ class Wmdirect(stepslib._py_Wmdirect, _Base_Solver):
         """
         end_time = self.getTime() + advance_time
         self._advance_checkpoint_run(end_time, cp_interval, prefix, 'wmdirect')
-        
+
     def getIndexMapping(self):
         """
         Get a mapping between compartments/patches/species
@@ -161,11 +162,11 @@ class Wmdirect(stepslib._py_Wmdirect, _Base_Solver):
 class Wmrssa(stepslib._py_Wmrssa, _Base_Solver):
     """
     Construction::
-    
+
         sim = steps.solver.Wmrssa(model, geom, rng)
-    
-    Create a non-spatial stochastic solver based on Gillespie's SSA.
-    
+
+    Create a non-spatial stochastic solver implementing a rejection-based SSA.
+
     Arguments:
     steps.model.Model model
     steps.geom.Geom geom
@@ -178,7 +179,7 @@ class Wmrssa(stepslib._py_Wmrssa, _Base_Solver):
         Prefix can be added using prefix=<prefix_string>.
         """
         self._advance_checkpoint_run(end_time, cp_interval, prefix, 'wmrssa')
-        
+
     def advance(self, advance_time, cp_interval = 0.0, prefix = ""):
         """
         Advance the simulation for advance_time,
@@ -187,30 +188,30 @@ class Wmrssa(stepslib._py_Wmrssa, _Base_Solver):
         """
         end_time = self.getTime() + advance_time
         self._advance_checkpoint_run(end_time, cp_interval, prefix, 'wmrssa')
-        
+
     def getIndexMapping(self):
         """
         Get a mapping between compartments/patches/species
         and their indices in the solver.
         """
         return self._getIndexMapping()
-        
-        
+
+
 class Tetexact(stepslib._py_Tetexact, _Base_Solver):
     """
     Construction::
-    
+
         sim = steps.solver.Tetexact(model, geom, rng, calcMembPot = 0)
-    
+
     Create a spatial stochastic solver based on Gillespie's SSA, extended with diffusion across elements in a tetrahedral mesh.
-    If voltage is to be simulated, argument calcMemPot=1 will set to the default solver. calcMembPot=0 means voltage will not be simulated. 
-    
+    If voltage is to be simulated, argument calcMemPot=1 will set to the default solver. calcMembPot=0 means voltage will not be simulated.
+
     Arguments:
     steps.model.Model model
     steps.geom.Geom geom
     steps.rng.RNG rng
     int calcMemPot (default=0)
-    
+
     """
     def run(self, end_time, cp_interval = 0.0, prefix = ""):
         """
@@ -219,7 +220,7 @@ class Tetexact(stepslib._py_Tetexact, _Base_Solver):
         Prefix can be added using prefix=<prefix_string>.
         """
         self._advance_checkpoint_run(end_time, cp_interval, prefix, 'tetexact')
-        
+
     def advance(self, advance_time, cp_interval = 0.0, prefix = ""):
         """
         Advance the simulation for <advance_time>,
@@ -228,7 +229,7 @@ class Tetexact(stepslib._py_Tetexact, _Base_Solver):
         """
         end_time = self.getTime() + advance_time
         self._advance_checkpoint_run(end_time, cp_interval, prefix, 'tetexact')
-        
+
     def getIndexMapping(self):
         """
         Get a mapping between compartments/patches/species
@@ -240,18 +241,18 @@ class Tetexact(stepslib._py_Tetexact, _Base_Solver):
 class TetODE(stepslib._py_TetODE, _Base_Solver):
     """
     Construction::
-    
+
         sim = steps.solver.TetODE(model, geom, rng=None, calcMembPot = 0)
-    
+
     Create a spatial determinstic solver based on the CVODE library.
-    If voltage is to be simulated, argument calcMemPot=1 will set to the default solver. calcMembPot=0 means voltage will not be simulated. 
-    
+    If voltage is to be simulated, argument calcMemPot=1 will set to the default solver. calcMembPot=0 means voltage will not be simulated.
+
     Arguments:
     steps.model.Model model
     steps.geom.Geom geom
     steps.rng.RNG rng (default=None)
     int calcMemPot (default=0)
-    
+
     """
     def run(self, end_time, cp_interval = 0.0, prefix = ""):
         """
@@ -260,7 +261,7 @@ class TetODE(stepslib._py_TetODE, _Base_Solver):
         Prefix can be added using prefix=<prefix_string>.
         """
         self._advance_checkpoint_run(end_time, cp_interval, prefix, 'tetode')
-        
+
     def advance(self, advance_time, cp_interval = 0.0, prefix = ""):
         """
         Advance the simulation for <advance_time>,
@@ -269,7 +270,7 @@ class TetODE(stepslib._py_TetODE, _Base_Solver):
         """
         end_time = self.getTime() + advance_time
         self._advance_checkpoint_run(end_time, cp_interval, prefix, 'tetode')
-    
+
     def getIndexMapping(self):
         """
         Get a mapping between compartments/patches/species

@@ -26,6 +26,7 @@ import steps
 
 import collections
 import copy
+from enum import Enum
 import functools
 import inspect
 import itertools
@@ -36,6 +37,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import types
 import warnings
@@ -456,6 +458,7 @@ class ParameterizedObject:
                     # tables.
                     return func(self)
             getter.__doc__ = func.__doc__
+            getter._units = units
             return getter
         return wrapper
 
@@ -495,6 +498,7 @@ class ParameterizedObject:
                 propName = func.__name__ if name is None else name
                 self._setParameter(propName, val)
             setter.__doc__ = func.__doc__
+            setter._units = units
             return setter
         return wrapper
 
@@ -884,7 +888,7 @@ class Parameter:
 
         :meta public:
         """
-        if name in self._kwargs:
+        if not name.startswith('__') and name in self._kwargs:
             return self._kwargs[name]
         else:
             raise AttributeError(f'Attribute "{name}" was not declared for the Parameter.')
@@ -1127,11 +1131,11 @@ class Parameter:
 
             >>> param1 = Parameter(2, 'um')
             >>> param2 = param1 ** 3
-            >>> param3.units
+            >>> param2.units
             'um^3'
-            >>> param3.value
+            >>> param2.value
             8
-            >>> param3.name
+            >>> param2.name
             'param1 ** 3'
 
         :meta public:
@@ -1209,6 +1213,39 @@ class Parameter:
             name = ''
 
         return Parameter(val, units, name=name, _composedPrio=0, _dependencies=deps)
+
+    def __neg__(self):
+        """Unary negative operator
+
+        :returns: The Parameter resulting from multiplication of its value by -1.
+        :rtype: :py:class:`Parameter`
+
+        Usage::
+
+            >>> param1 = Parameter(2, 'mV')
+            >>> param2 = -param1
+            >>> param2.units
+            'mV'
+            >>> param2.value
+            -2
+            >>> param2.name
+            '-param1'
+
+        :meta public:
+        """
+        self._checkUsableInOp()
+
+        deps = [self] if self._isNamed() else []
+
+        units = self._units
+        val = -1 * self.value
+
+        if self._isNamed():
+            name = f'-({self})' if self._composedPrio > 2 else f'-{self}'
+        else:
+            name = ''
+
+        return Parameter(val, units, name=name, _composedPrio=2, _dependencies=deps)
 
     def __float__(self):
         return float(self._valueInSI())
@@ -1786,11 +1823,14 @@ class SolverPathObject:
 
     def _solverStr(self):
         """Return the string that is used as part of method names for this specific object."""
-        return ''
+        return self.__class__.__name__
 
     def _solverId(self):
         """Return the id that is used to identify an object in the solver."""
-        return (self.name,)
+        try:
+            return (self.name,)
+        except AttributeError:
+            return tuple()
 
     def _solverKeywordParams(self):
         """Return the additional keyword parameters that should be passed to the solver"""
@@ -1819,8 +1859,26 @@ class SolverPathObject:
         """Return a dictionary with string keys and string or numbers values."""
         return {}
 
+    def _simPathCheckParent(self):
+        """
+        Determines whether the object needs to be in the parent's children in order to be added to
+        a simulation path
+        """
+        return True
+
     def __hash__(self):
         return id(self)
+
+
+class SolverRunTimeObject:
+    """Base class for object whose value will only be evaluated at runtime"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _runTimeFunc(self, opType, sim, prefix, suffix, descriptor):
+        """Return a function that will be called during runtime evaluation of the path."""
+        return None
 
 
 class StepsWrapperObject:
@@ -2390,7 +2448,7 @@ def FreezeAfterInit(cls):
     """Class decorator for preventing dynamical attribute creation outside __init__"""
 
     def _setattr(self, name, val):
-        if self.__freezeCounter > 0 or hasattr(self, name):
+        if self.__freezeCounter > 0 or name in self.__dict__ or hasattr(self.__class__, name):
             object.__setattr__(self, name, val)
         else:
             raise AttributeError(f'There is no attribute named {name} in {self}.')
@@ -2402,7 +2460,18 @@ def FreezeAfterInit(cls):
         self.__freezeCounter -= 1
 
     cls.__freezeCounter = 0
-    cls.__setattr__ = _setattr
+    # Wrap existing __setattr__, if any
+    if '__setattr__' in cls.__dict__:
+        oldSetAttr = cls.__setattr__
+        def _newSetAttr(self, name, val):
+            try:
+                _setattr(self, name, val)
+            except AttributeError:
+                oldSetAttr(self, name, val)
+        cls.__setattr__ = _newSetAttr
+    else:
+        cls.__setattr__ = _setattr
+
     cls.__init__ = functools.wraps(cls.__init__)(newInit)
 
     return cls
@@ -2466,11 +2535,17 @@ class Versioned:
                 Versioned._methods.setdefault(func.__name__, []).append((minVersion, maxVersion, func))
                 self.func = func
             def __set_name__(self, owner, name):
-                if not hasattr(owner, '_versionedMethods'):
-                    setattr(owner, '_versionedMethods', {})
-                for funcTuple in Versioned._methods[name]:
-                    owner._versionedMethods.setdefault(name, []).append(funcTuple)
-                del Versioned._methods[name]
+                methods = {}
+                for cls in owner.__mro__:
+                    for _name, st in cls.__dict__.get('_versionedMethods', {}).items():
+                        methods.setdefault(_name, set())
+                        methods[_name] |= st
+                setattr(owner, '_versionedMethods', methods)
+
+                if name in Versioned._methods:
+                    for funcTuple in Versioned._methods[name]:
+                        owner._versionedMethods.setdefault(name, set()).add(funcTuple)
+                    del Versioned._methods[name]
                 setattr(owner, name, self.func)
 
         return decorator
@@ -2519,6 +2594,54 @@ class Versioned:
 ###################################################################################################
 # Various utilities
 
+class ReadOnlyDictInterface:
+    """Base class for objects that should behave like read-only dicts
+    __getitem__() and keys() should be implemented.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __setitem__(self, key, value):
+        raise NotImplementedError('Cannot write data, the dictionary is read-only.')
+
+    def __getitem__(self, key):
+        raise NotImplementedError()
+
+    def keys(self):
+        raise NotImplementedError()
+
+    def __iter__(self):
+        for key in self.keys():
+            yield key
+
+    def items(self):
+        for key in self.keys():
+            yield key, self[key]
+
+    def values(self):
+        for key in self.keys():
+            yield self[key]
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def __contains__(self, key):
+        return key in self.keys()
+
+    def __eq__(self, val):
+        return sorted(self.items()) == sorted(val.items())
+
+
+class MutableDictInterface(ReadOnlyDictInterface):
+    """Base class for objects that should behave like dicts
+    __getitem__(), __setitem__() and keys() should be implemented.
+    """
+    def __setitem__(self, key, value):
+        raise NotImplementedError()
+
 
 def limitReprLength(func):
     """Decorator for limiting the length of __repr__ methods."""
@@ -2559,6 +2682,8 @@ def formatKey(key, sz, forceSz=False):
 
 def getSliceIds(s, sz):
     """Return the indices coresponding to slice s of a structure that has length sz."""
+    if isinstance(s, list):
+        return s
     if isinstance(s, numbers.Integral):
         if s >= sz:
             raise IndexError()
@@ -2578,6 +2703,15 @@ def nparray(data):
     except ValueError:
         return numpy.array(data, dtype=object)
 
+
+def getValueIfAllIdentical(lst):
+    """If all values in lst are identical, return a list with just this value;
+    otherwise return None"""
+    try:
+        val = next(iter(lst))
+    except StopIteration:
+        return None
+    return None if any(v != val for v in lst) else [val]
 
 def key2str(key):
     """Return a string describing the key."""
@@ -2664,14 +2798,31 @@ def SetVerbosity(v):
     steps._quiet = (v == 0)
 
 
-def _print(msg, prio):
+class MessagesTypes(str, Enum):
+    WARNING = '\033[93m'
+    ERROR = '\033[91m'
+    SUCCESS = '\033[92m'
+    UNDERLINE = '\033[4m'
+    BOLD = '\033[1m'
+    HEADER = BOLD + UNDERLINE
+    _END_COLOR = '\033[0m'
+
+
+def _print(msg, prio, tpe=None, indent=0):
     """
     Print a message if its priority permits it and if we are in rank one in case of an MPI
     simulation.
     """
     from steps.API_2 import sim as nsim
     if prio <= VERBOSITY and nsim.MPI._shouldWrite:
+        msg, *sublines = msg.split('\n')
+        if tpe is not None and hasattr(sys.stdout, 'isatty') and sys.stdout.isatty():
+            msg = tpe + msg + MessagesTypes._END_COLOR
+        if indent > 0:
+            msg = '    ' * indent + msg
         print(msg)
+        for sl in sublines:
+            _print(sl, prio, tpe=tpe, indent=indent + 1)
 
 ###################################################################################################
 # Docstrings utilities

@@ -24,38 +24,40 @@
 
  */
 
-
-// Standard library & STL headers.
-// #include <vector>
-
 // STEPS headers.
-#include "kproc.hpp"
+#include "wmrssa/kproc.hpp"
 
 // logging
-#include <easylogging++.h>
 #include "util/error.hpp"
 
+#include "util/checkpointing.hpp"
+
+namespace steps::wmrssa {
+
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace swmrssa = steps::wmrssa;
+void KProc::checkpoint(std::fstream& cp_file) {
+    util::checkpoint(cp_file, rExtent);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-steps::solver::Reacdef * swmrssa::KProc::defr() const
-{
+void KProc::restore(std::fstream& cp_file) {
+    util::restore(cp_file, rExtent);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+solver::Reacdef* KProc::defr() const {
     // Should only be called on derived object
     AssertLog(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-steps::solver::SReacdef * swmrssa::KProc::defsr() const
-{
+solver::SReacdef* KProc::defsr() const {
     // Should only be called on derived object
     AssertLog(false);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
-
+}  // namespace steps::wmrssa

@@ -248,66 +248,66 @@ class TestRDWellMixedWmrk4(unittest.TestCase):
         for i in range (0, NITER_max):
 
             if i < NITER_foi: 
-                sim.setCompCount('comp1', 'A_foi', N_foi)
+                sim.setCompSpecCount('comp1', 'A_foi', N_foi)
             
             if i < NITER_for: 
-                sim.setCompCount('comp1', 'A_for', COUNT_for)
-                sim.setCompCount('comp1', 'B_for', 0.0)
+                sim.setCompSpecCount('comp1', 'A_for', COUNT_for)
+                sim.setCompSpecCount('comp1', 'B_for', 0.0)
 
             if i < NITER_soA2:
-                sim.setCompConc('comp1', 'A_soA2', CONCA_soA2)
+                sim.setCompSpecConc('comp1', 'A_soA2', CONCA_soA2)
 
             if i < NITER_soAA:
-                sim.setCompConc('comp1', 'A_soAA', CONCA_soAA)
-                sim.setCompConc('comp1', 'B_soAA', CONCB_soAA)
+                sim.setCompSpecConc('comp1', 'A_soAA', CONCA_soAA)
+                sim.setCompSpecConc('comp1', 'B_soAA', CONCB_soAA)
 
             if i < NITER_soAB:
-                sim.setCompConc('comp1', 'A_soAB', CONCA_soAB)
-                sim.setCompConc('comp1', 'B_soAB', CONCB_soAB)
+                sim.setCompSpecConc('comp1', 'A_soAB', CONCA_soAB)
+                sim.setCompSpecConc('comp1', 'B_soAB', CONCB_soAB)
             
             if i < NITER_toA3:
-                sim.setCompConc('comp1', 'A_toA3', CONCA_toA3)
+                sim.setCompSpecConc('comp1', 'A_toA3', CONCA_toA3)
 
             if i < NITER_toA2B:
-                sim.setCompConc('comp1', 'A_toA2B', CONCA_toA2B)
-                sim.setCompConc('comp1', 'B_toA2B', CONCB_toA2B)
+                sim.setCompSpecConc('comp1', 'A_toA2B', CONCA_toA2B)
+                sim.setCompSpecConc('comp1', 'B_toA2B', CONCB_toA2B)
                                         
             if i < NITER_so2d:
-                sim.setPatchCount('patch1', 'A_so2d', COUNTA_so2d)
-                sim.setPatchCount('patch1', 'B_so2d', COUNTB_so2d)
+                sim.setPatchSpecCount('patch1', 'A_so2d', COUNTA_so2d)
+                sim.setPatchSpecCount('patch1', 'B_so2d', COUNTB_so2d)
             
             for t in range(0, ntpnts):
                 sim.run(tpnts[t])
 
                 if i < NITER_foi: 
-                    res_m_foi[i, t, 0] = sim.getCompCount('comp1', 'A_foi')
+                    res_m_foi[i, t, 0] = sim.getCompSpecCount('comp1', 'A_foi')
                 
                 if i < NITER_for: 
-                    res_m_for[i, t, 0] = sim.getCompConc('comp1', 'A_for')*1e6
-                    res_m_for[i, t, 1] = sim.getCompConc('comp1', 'B_for')*1e6
+                    res_m_for[i, t, 0] = sim.getCompSpecConc('comp1', 'A_for')*1e6
+                    res_m_for[i, t, 1] = sim.getCompSpecConc('comp1', 'B_for')*1e6
 
                 if i < NITER_soA2:
-                    res_m_soA2[i, t, 0] = sim.getCompConc('comp1', 'A_soA2')
+                    res_m_soA2[i, t, 0] = sim.getCompSpecConc('comp1', 'A_soA2')
 
                 if i < NITER_soAA:
-                    res_m_soAA[i, t, 0] = sim.getCompConc('comp1', 'A_soAA')
-                    res_m_soAA[i, t, 1] = sim.getCompConc('comp1', 'B_soAA')
+                    res_m_soAA[i, t, 0] = sim.getCompSpecConc('comp1', 'A_soAA')
+                    res_m_soAA[i, t, 1] = sim.getCompSpecConc('comp1', 'B_soAA')
                 
                 if i < NITER_soAB:
-                    res_m_soAB[i, t, 0] = sim.getCompConc('comp1', 'A_soAB')
-                    res_m_soAB[i, t, 1] = sim.getCompConc('comp1', 'B_soAB')
+                    res_m_soAB[i, t, 0] = sim.getCompSpecConc('comp1', 'A_soAB')
+                    res_m_soAB[i, t, 1] = sim.getCompSpecConc('comp1', 'B_soAB')
 
                 if i < NITER_toA3:
-                    res_m_toA3[i, t, 0] = sim.getCompConc('comp1', 'A_toA3')
+                    res_m_toA3[i, t, 0] = sim.getCompSpecConc('comp1', 'A_toA3')
 
                 if i < NITER_toA2B:
-                    res_m_toA2B[i, t, 0] = sim.getCompConc('comp1', 'A_toA2B')
-                    res_m_toA2B[i, t, 1] = sim.getCompConc('comp1', 'B_toA2B')
-                    res_m_toA2B[i, t, 2] = sim.getCompConc('comp1', 'C_toA2B')
+                    res_m_toA2B[i, t, 0] = sim.getCompSpecConc('comp1', 'A_toA2B')
+                    res_m_toA2B[i, t, 1] = sim.getCompSpecConc('comp1', 'B_toA2B')
+                    res_m_toA2B[i, t, 2] = sim.getCompSpecConc('comp1', 'C_toA2B')
                             
                 if i < NITER_so2d:
-                    res_m_so2d[i, t, 0] = sim.getPatchCount('patch1', 'A_so2d')
-                    res_m_so2d[i, t, 1] = sim.getPatchCount('patch1', 'B_so2d') 
+                    res_m_so2d[i, t, 0] = sim.getPatchSpecCount('patch1', 'A_so2d')
+                    res_m_so2d[i, t, 1] = sim.getPatchSpecCount('patch1', 'B_so2d') 
 
 
         global mean_res_foi

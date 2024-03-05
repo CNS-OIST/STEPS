@@ -24,49 +24,54 @@
 
  */
 
-
-#ifndef STEPS_UTIL_DISTRIBUTE_HPP
-#define STEPS_UTIL_DISTRIBUTE_HPP
+#pragma once
 
 #include <algorithm>
 #include <cstddef>
+#include <iomanip>
+#include <limits>
 #include <numeric>
 #include <random>
 
 // logging
-#include <easylogging++.h>
 
-#include "error.hpp"
 #include "math/sample.hpp"
+#include "rng/rng.hpp"
+#include "util/error.hpp"
 
-namespace steps {
-namespace util {
+namespace steps::util {
 
 /** Refence wrapper utility class for distribute_quantity implementation. */
 
 template <typename T>
 struct boxed_reference {
-    T *p=nullptr;
+    T* p = nullptr;
 
     boxed_reference() {}
-    boxed_reference(const boxed_reference &x): p(x.p) {}
+    boxed_reference(const boxed_reference& x)
+        : p(x.p) {}
 
-    operator bool() const { return p; }
-    T &get() const { return *p; }
+    operator bool() const {
+        return p;
+    }
+    T& get() const {
+        return *p;
+    }
 
-    boxed_reference &operator=(const boxed_reference &x) {
-        p=x.p;
+    boxed_reference& operator=(const boxed_reference& x) {
+        p = x.p;
         return *this;
     }
 
-    boxed_reference &operator=(T &t) {
-        p=&t;
+    boxed_reference& operator=(T& t) {
+        p = &t;
         return *this;
     }
 
-    void reset() { p=0; }
+    void reset() {
+        p = 0;
+    }
 };
-
 
 /** Fair stochastic distribution of quantity with weighted sampling.
  *
@@ -79,77 +84,110 @@ struct boxed_reference {
  *    value for each item.
  * 2. Allocate the remainder via fair sampling.
  *
- * The functional arguments should have signatures compatible with the following:
+ * The functional arguments should have signatures compatible with:
  *
  *     double weight(Item);
  *     void set_count(Item, uint);
- *     void inc_count(Item, int);
+ *     void inc_count(Item); // increment Item by one
  *
  * where Item is the FwdIter reference type.
  */
 
-template <typename FwdIter, typename Weight, typename SetCount, typename IncCount, typename Rng>
-void distribute_quantity(double x, FwdIter b, FwdIter e, Weight weight, SetCount set_count, IncCount inc_count, Rng &g, double total_weight=0)
-{
+template <typename Quantity,
+          typename FwdIter,
+          typename Weight,
+          typename SetCount,
+          typename IncCount,
+          typename Rng>
+void distribute_quantity(double x,
+                         FwdIter b,
+                         FwdIter e,
+                         Weight weight,
+                         SetCount set_count,
+                         IncCount inc_count,
+                         Rng& g,
+                         double total_weight = 0) {
+    static_assert(std::is_integral_v<Quantity>, "Quantity may be an integral type");
+    assert(x >= 0 && "negative quantity to distribute");
+    assert(x < static_cast<double>(std::numeric_limits<Quantity>::max()));
+
     static std::uniform_real_distribution<double> U;
 
-    if (b==e) return;
-
-    if (x<0) ArgErrLog("negative quantity to distribute");
-    if (x==0) {
-        // Everybody gets zero!
-        for (auto i=b; i!=e; ++i) set_count(*i,0);
+    if (b == e) {
         return;
     }
 
-    if (total_weight==0)
-        for (auto i = b; i != e; ++i)
-            total_weight += weight(i);
+    if (x == 0) {
+        // Everybody gets zero!
+        for (auto i = b; i != e; ++i) {
+            set_count(*i, 0);
+        }
+        return;
+    }
 
-    if (total_weight<=0)
-        ArgErrLog("non-positive total weight for distribution");
+    if (total_weight == 0) {
+        for (auto i = b; i != e; ++i) {
+            total_weight += weight(i);
+        }
+    }
+    assert(total_weight > 0 && "non-positive total weight for distribution");
 
     // Allocate rounded-down fractions and determine weights for sampling.
-    if (U(g) < x-std::floor(x))
-        x = 1+std::floor(x);
-    else
+    if (U(g) < x - std::floor(x)) {
+        x = 1 + std::floor(x);
+    } else {
         x = std::floor(x);
-
-    double x_o_total = x/total_weight;
-    uint allocated = 0;
+    }
+    double x_o_total = x / total_weight;
+    Quantity allocated = 0;
 
     std::vector<double> pi;
-    for (auto i=b; i!=e; ++i) {
+    for (auto i = b; i != e; ++i) {
         double xi = x_o_total * weight(i);
         double xi_floor = std::floor(xi);
         pi.push_back(xi - xi_floor);
 
-        if (xi_floor - 1 > std::numeric_limits<uint>::max())
-            ArgErrLog("quantity too large to distribute (integer limit)");
-
-        uint ni = static_cast<uint>(xi_floor);
+        auto ni = static_cast<Quantity>(xi_floor);
         set_count(*i, ni);
         allocated += ni;
     }
 
-    if (allocated>x)
-        ProgErrLog("internal error in count rounding");
-    auto remainder = static_cast<uint>(x-allocated);
+    if (allocated > x) {
+        std::ostringstream oss;
+        oss << "internal error in count rounding: allocated " << allocated << " but got only "
+            << static_cast<Quantity>(x) << " to allocate" << std::endl;
+        ProgErrLog(oss.str());
+    }
+    auto remainder = static_cast<Quantity>(x - allocated);
 
-    if (remainder == 0) return;
-
+    if (remainder == 0) {
+        return;
+    }
     // Use fractional parts as weights for sampling round.
-    steps::math::adjusted_pareto_sampler<double> S(remainder,pi.begin(),pi.end());
+    math::adjusted_pareto_sampler<double> S(remainder, pi.begin(), pi.end());
 
-    using item_type=typename std::remove_reference<decltype(*b)>::type;
+    using item_type = typename std::remove_reference<decltype(*b)>::type;
     std::vector<boxed_reference<item_type>> extra(remainder);
-    S(b,e,extra.begin(),g);
+    S(b, e, extra.begin(), g);
 
-    for (auto c: extra) inc_count(c.get(),1);
+    for (auto c: extra) {
+        inc_count(c.get());
+    }
 }
 
+// Return iterator to element
+template <typename I>
+I random_element(I begin, I end, const rng::RNGptr rng) {
+    const uint n = std::distance(begin, end);
+    const uint divisor = (rng->max()) / n;
 
-}} // namespace steps::util
+    uint k;
+    do {
+        k = rng->get() / divisor;
+    } while (k >= n);
 
+    std::advance(begin, k);
+    return begin;
+}
 
-#endif // ndef STEPS_UTIL_DISTRIBUTE_HPP
+}  // namespace steps::util

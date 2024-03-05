@@ -27,10 +27,9 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
 # This file is the user-interface file for all solver objects.
-# All objects are directly derived from the corresponding swig objects.
-# All objects are owned by Python.
+# 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
- 
+
 """
 Implementation of parallel simulation solvers.
 
@@ -50,16 +49,16 @@ EF_DV_PETSC  = stepslib._py_TetAPI.EF_DV_PETSC
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Tetrahedral Direct SSA
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #        
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 class TetOpSplit(stepslib._py_TetOpSplitP, _Base_Solver) :
     """
     Construction::
-    
-        sim = steps.solver.TetOpSplit(model, geom, rng, tet_hosts=[], tri_hosts={}, wm_hosts=[], calcMembPot=0)
-    
-    Create a spatial stochastic solver based on operator splitting, that is that reaction events are partitioned and diffusion is approximated. 
-    If voltage is to be simulated, argument calcMembPot specifies the solver e.g. calcMembPot=steps.solver.EF_DV_PETSC will utilise the PETSc library. calcMembPot=0 means voltage will not be simulated. 
-    
+
+        sim = steps.mpi.solver.TetOpSplit(model, geom, rng, tet_hosts=[], tri_hosts={}, wm_hosts=[], calcMembPot=0)
+
+    Create a spatial stochastic solver based on operator splitting, that is that reaction events are partitioned and diffusion is approximated.
+    If voltage is to be simulated, argument calcMembPot specifies the solver e.g. calcMembPot=steps.solver.EF_DV_PETSC will utilise the PETSc library. calcMembPot=0 means voltage will not be simulated.
+
     Arguments:
     steps.model.Model model
     steps.geom.Geom geom
@@ -68,19 +67,19 @@ class TetOpSplit(stepslib._py_TetOpSplitP, _Base_Solver) :
     dict<int, int> tri_hosts (default={})
     list<int> wm_hosts (default=[])
     int calcMemPot (default=0)
-    
+
     """
     def run(self, end_time, cp_interval=0.0, prefix=""):
         """
-        Run the simulation until <end_time>, 
+        Run the simulation until <end_time>,
         automatically checkpoint at each <cp_interval>.
         Prefix can be added using prefix=<prefix_string>.
         """
         self._advance_checkpoint_run(end_time, cp_interval, prefix, 'tetopsplitP' )
-        
+
     def advance(self, advance_time, cp_interval=0.0, prefix=""):
         """
-        Advance the simulation for <advance_time>, 
+        Advance the simulation for <advance_time>,
         automatically checkpoint at each <cp_interval>.
         Prefix can be added using prefix=<prefix_string>.
         """
@@ -94,6 +93,46 @@ class TetOpSplit(stepslib._py_TetOpSplitP, _Base_Solver) :
         """
         return self._getIndexMapping()
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Parallel TetVesicle
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+def decorator(cls):
+    class TetVesicleRDEF(cls, stepslib._py_TetVesicleRDEF, _Base_Solver) :
+        pass
+    class TetVesicleVesRaft(cls, stepslib._py_TetVesicleVesRaft, _Base_Solver) :
+        def __init__(self, *args, **kwargs):
+            import steps.API_1.mpi
+            if steps.API_1.mpi.nhosts < 2:
+                raise Exception("[ERROR] Parallel TetVesicle solver requires minimal 2 computing cores.")
+            stepslib._py_TetVesicleVesRaft.__init__(self, *args, **kwargs)
+
+    TetVesicleRDEF.__doc__ = cls.__doc__
+    TetVesicleVesRaft.__doc__ = cls.__doc__
+    import steps.API_1.mpi
+    if steps.API_1.mpi.rank == 0:
+        return TetVesicleVesRaft
+    else:
+        return TetVesicleRDEF
+
+@decorator
+class TetVesicle:
+    """
+    Construction::
+
+        sim = steps.mpi.solver.TetVesicle(model, geom, rng, calcMembPot=0)
+
+    Create a spatial stochastic solver based on operator-splitting, which also supports vesicles,
+    'rafts' and related phenomena such as exocytosis and endocytosis. If voltage is to be simulated,
+    argument calcMembPot specifies the solver. E.g. calcMembPot=steps.solver.EF_DV_PETSC will
+    utilise the PETSc library. calcMembPot=0 means that voltage will not be simulated.
+
+    Arguments:
+    steps.model.Model model
+    steps.geom.Geom geom
+    steps.rng.RNG rng
+    int calcMemPot (default=0)
+    """
+    pass
 
 try:
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

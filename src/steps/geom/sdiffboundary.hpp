@@ -26,47 +26,22 @@
 
 #pragma once
 
+#include "fwd.hpp"
 #include "geom.hpp"
 #include "tetmesh.hpp"
 #include "tmpatch.hpp"
 
-#include "model/surfsys.hpp"
-#include "util/common.h"
+namespace steps::tetmesh {
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace tetmesh {
-
-////////////////////////////////////////////////////////////////////////////////
-
-// Forward & auxiliary declarations.
-class Tetmesh;
-class SDiffBoundary;
-
-// Auxiliary declarations.
-typedef SDiffBoundary *                          SDiffBoundaryP;
-typedef std::map<std::string, SDiffBoundaryP>    SDiffBoundaryPMap;
-typedef SDiffBoundaryPMap::iterator              SDiffBoundaryPMapI;
-typedef SDiffBoundaryPMap::const_iterator        SDiffBoundaryPMapCI;
-
-typedef std::vector<SDiffBoundaryP>              SDiffBoundaryPVec;
-typedef SDiffBoundaryPVec::iterator              SDiffBoundaryPVecI;
-typedef SDiffBoundaryPVec::const_iterator        SDiffBoundaryPVecCI;
-
-////////////////////////////////////////////////////////////////////////////////
-
-/// Provides annotation for a group of surface diffusion boundary bars of a Tetmesh.
+/// Provides annotation for a group of surface diffusion boundary bars of a
+/// Tetmesh.
 ///
 /// Tetmesh object is responsible for maintaining lifetime of associated
 /// SDiffBoundary objects (Python proxy class must set thisown to zero.)
 ///
 /// \warning Methods starting with an underscore are not exposed to Python.
-class SDiffBoundary
-{
-
-public:
-
+class SDiffBoundary {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
@@ -74,7 +49,7 @@ public:
     /// Constructor.
     ///
     /// \param id ID of the SDiffBoundary.
-    /// \param container Pointer to the Tetmesh container.
+    /// \param container Reference to the Tetmesh container.
     /// \param bars A sequence of bars (by index) as a vector
     ///             of unsigned integers which is represented as
     ///             a sequence of positive integer values in Python.
@@ -84,11 +59,16 @@ public:
 
     ///
     /// This is the constructor for the tetmesh (tetrahedron mesh) namespace.
-    SDiffBoundary(std::string id, Tetmesh * container,
-            std::vector<index_t> const & bars, std::vector<steps::tetmesh::TmPatch *> const & patches);
+    SDiffBoundary(std::string id,
+                  Tetmesh& container,
+                  std::vector<index_t> const& bars,
+                  std::vector<tetmesh::TmPatch*> const& patches);
+
+    SDiffBoundary(const SDiffBoundary&) = delete;
+    SDiffBoundary& operator=(const SDiffBoundary&) = delete;
 
     /// Destructor.
-    virtual ~SDiffBoundary() {}
+    virtual ~SDiffBoundary();
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO PYTHON):
@@ -97,37 +77,43 @@ public:
     /// Return the patch id.
     ///
     /// \return ID of the surface diffusion boundary.
-    inline std::string const & getID() const noexcept
-    { return pID; }
+    inline std::string const& getID() const noexcept {
+        return pID;
+    }
 
     /// Set or change the surface diffusion boundary id.
     ///
     /// \param id ID of the surface diffusion boundary.
-    void setID(std::string const & id);
+    void setID(std::string const& id);
 
-    /// Return a pointer to the geometry container object.
+    /// Return a reference to the geometry container object.
     ///
-    /// \return Pointer to the parent geometry container.
-    inline steps::tetmesh::Tetmesh * getContainer() const noexcept
-    { return pTetmesh; }
+    /// \return Reference to the parent geometry container.
+    inline tetmesh::Tetmesh& getContainer() const noexcept {
+        return pTetmesh;
+    }
 
-    /// Return whether bars (specified by index) are inside this surface diffusion boundary.
+    /// Return whether bars (specified by index) are inside this surface diffusion
+    /// boundary.
     ///
     /// \param bar List of indices of bars.
-    /// \return Results of whether the bars are inside the surface diffusion boundary.
-    std::vector<bool> isBarInside(const std::vector<index_t> &bars) const;
+    /// \return Results of whether the bars are inside the surface diffusion
+    /// boundary.
+    std::vector<bool> isBarInside(const std::vector<index_t>& bars) const;
 
     /// Return all bars (by index) in the surface diffusion boundary.
     ///
     /// \return List of indices of bars.
-    inline std::vector<index_t> const & getAllBarIndices() const noexcept
-    { return pBar_indices; }
+    inline std::vector<index_t> const& getAllBarIndices() const noexcept {
+        return pBar_indices;
+    }
 
     /// Return the patches this surface diffusion boundary connects
     ///
     /// \return List of the two patches.
-    inline std::vector<steps::wm::Patch *> getPatches() const noexcept
-    { return {pIPatch, pOPatch}; }
+    inline std::vector<wm::Patch*> getPatches() const noexcept {
+        return {pIPatch, pOPatch};
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO C++)
@@ -136,26 +122,22 @@ public:
     /// Return all bars (by index) in the surface diffusion boundary.
     ///
     /// \return List of indices of bars.
-    inline std::vector<index_t> const & _getAllBarIndices() const noexcept
-    { return pBar_indices; }
+    inline std::vector<index_t> const& _getAllBarIndices() const noexcept {
+        return pBar_indices;
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
-    std::string                         pID;
+    std::string pID;
 
-    steps::wm::Patch *                  pIPatch{nullptr};
-    steps::wm::Patch *                  pOPatch{nullptr};
+    wm::Patch* pIPatch{nullptr};
+    wm::Patch* pOPatch{nullptr};
 
-    steps::tetmesh::Tetmesh           * pTetmesh;
-    std::vector<index_t>   pBar_indices;
-
-////////////////////////////////////////////////////////////////////////////////
-
+    tetmesh::Tetmesh& pTetmesh;
+    std::vector<index_t> pBar_indices;
 };
 
-} // namespace tetmesh
-} // namespace steps
+}  // namespace steps::tetmesh

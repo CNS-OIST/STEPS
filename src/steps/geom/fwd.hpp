@@ -1,40 +1,47 @@
-#ifndef STEPS_GEOM_FWD_HPP
-#define STEPS_GEOM_FWD_HPP
+/*
+ #################################################################################
+#
+#    STEPS - STochastic Engine for Pathway Simulation
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2003-2006 University of Antwerp, Belgium.
+#    
+#    See the file AUTHORS for details.
+#    This file is part of STEPS.
+#    
+#    STEPS is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License version 3,
+#    as published by the Free Software Foundation.
+#    
+#    STEPS is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#    GNU General Public License for more details.
+#    
+#    You should have received a copy of the GNU General Public License
+#    along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+#################################################################################   
 
-#include <limits>
-#include <iosfwd>
-#include <type_traits>
+ */
 
-#include <steps/util/strong_id.hpp>
+#pragma once
 
 namespace steps {
 
-#ifdef STEPS_USE_64BITS_INDICES
-using index_t = std::uint64_t;
-#else
-using index_t = std::uint32_t;
-#endif
-
-using tetrahedron_id_t = strong_id<index_t, struct tetrahedron_id_trait>;
-using triangle_id_t = strong_id<index_t, struct triangle_id_trait>;
-using vertex_id_t = strong_id<index_t, struct vertex_id_trait>;
-using bar_id_t = strong_id<index_t, struct bar_id_trait>;
-/// TODO TCL add host_id_t primitive type
-
-static const tetrahedron_id_t UNKNOWN_TET(std::numeric_limits<index_t>::max());
-static const triangle_id_t UNKNOWN_TRI(std::numeric_limits<index_t>::max());
-static const vertex_id_t UNKNOWN_VER(std::numeric_limits<index_t>::max());
-static const bar_id_t UNKNOWN_BAR(std::numeric_limits<index_t>::max());
+namespace wm {
+class Comp;
+class Geom;
+class Patch;
+}  // namespace wm
 
 namespace tetmesh {
-
-// Forward declarations.
-class Tetmesh;
+class DiffBoundary;
+class EndocyticZone;
 class Memb;
+class SDiffBoundary;
+class Tetmesh;
+class TmComp;
 class TmPatch;
+}  // namespace tetmesh
 
-} // namespace tetmesh
-
-} // namespace steps
-
-#endif //!STEPS_GEOM_FWD_HPP
+}  // namespace steps

@@ -24,112 +24,91 @@
 
  */
 
-
-#ifndef STEPS_TETEXACT_REAC_HPP
-#define STEPS_TETEXACT_REAC_HPP 1
-
+#pragma once
 
 // Standard library & STL headers.
+#include <fstream>
 #include <map>
 #include <string>
 #include <vector>
-#include <fstream>
 
 // STEPS headers.
-#include "util/common.h"
 #include "kproc.hpp"
 #include "solver/reacdef.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace tetexact {
-
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::tetexact {
 
 // Forward declarations.
 class WmVol;
 class Tri;
 class Tetexact;
 
-////////////////////////////////////////////////////////////////////////////////
-
-class Reac
-: public steps::tetexact::KProc
-{
-
-public:
-
+class Reac: public KProc {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    Reac(steps::solver::Reacdef * rdef, steps::tetexact::WmVol * tet);
+    Reac(solver::Reacdef* rdef, WmVol* tet);
+    Reac(const Reac&) = delete;
     ~Reac() override;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file) override;
+    void checkpoint(std::fstream& cp_file) override;
 
     /// restore data
-    void restore(std::fstream & cp_file) override;
+    void restore(std::fstream& cp_file) override;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    double c() const override
-    { return pCcst; }
+    double c() const override {
+        return pCcst;
+    }
     void _resetCcst();
 
-    inline double kcst() const
-    { return pKcst; }
+    inline double kcst() const {
+        return pKcst;
+    }
     void setKcst(double k);
 
-    double h() override
-    { return (rate()/pCcst); }
+    double h() override {
+        return rate() / pCcst;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
     void setupDeps() override;
-    bool depSpecTet(uint gidx, steps::tetexact::WmVol * tet) override;
-    bool depSpecTri(uint gidx, steps::tetexact::Tri * tri) override;
+    bool depSpecTet(solver::spec_global_id gidx, WmVol* tet) override;
+    bool depSpecTri(solver::spec_global_id gidx, Tri* tri) override;
     void reset() override;
-    double rate(steps::tetexact::Tetexact * solver = nullptr) override;
-    std::vector<KProc*> const & apply(const rng::RNGptr &rng, double dt, double simtime) override;
+    double rate(Tetexact* solver = nullptr) override;
+    std::vector<KProc*> const& apply(const rng::RNGptr& rng, double dt, double simtime) override;
 
-    uint updVecSize() const override
-    { return static_cast<uint>(pUpdVec.size()); }
-
-    ////////////////////////////////////////////////////////////////////////
-
-private:
+    uint updVecSize() const override {
+        return static_cast<uint>(pUpdVec.size());
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-    steps::solver::Reacdef                              * pReacdef;
-    steps::tetexact::WmVol                              * pTet;
-    std::vector<KProc*>                                   pUpdVec;
+  private:
+    ////////////////////////////////////////////////////////////////////////
+
+    solver::Reacdef* pReacdef;
+    WmVol* pTet;
+    std::vector<KProc*> pUpdVec;
     /// Properly scaled reaction constant.
-    double                                                pCcst;
+    double pCcst;
     // Also store the K constant for convenience
-    double                                                pKcst;
+    double pKcst;
 
     ////////////////////////////////////////////////////////////////////////
-
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-#endif
-
-// STEPS_TETEXACT_REAC_HPP
+}  // namespace steps::tetexact

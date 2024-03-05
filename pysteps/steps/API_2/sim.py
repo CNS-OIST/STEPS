@@ -50,38 +50,38 @@ __all__ = [
     'SBMLSimulation',
     'SimPath',
     'MPI',
+    'VesiclePathReference',
+    'VesicleReference',
+    'RaftReference',
+    'VesicleList',
+    'RaftList',
+    'LinkSpecList',
 ]
 
+###################################################################################################
+
+UNDEFINED_VESICLE = stepslib.UNDEFINED_VESICLE
+UNDEFINED_RAFT = stepslib.UNDEFINED_RAFT
 
 ###################################################################################################
 # Enums
 
 
 if stepslib._STEPS_USE_DIST_MESH:
-    class KSPNorm(enum.IntEnum):
-        DEFAULT = stepslib._py_KSPNormType.KSP_NORM_DEFAULT
-        NONE = stepslib._py_KSPNormType.KSP_NORM_NONE
-        PRECONDITIONED = stepslib._py_KSPNormType.KSP_NORM_PRECONDITIONED
-        UNPRECONDITIONED = stepslib._py_KSPNormType.KSP_NORM_UNPRECONDITIONED
-        NATURAL = stepslib._py_KSPNormType.KSP_NORM_NATURAL
-
 
     class SSAMethod(enum.IntEnum):
         SSA = stepslib._py_SSAMethod.SSA
         RSSA = stepslib._py_SSAMethod.RSSA
 
-
     class NextEventSearchMethod(enum.IntEnum):
         DIRECT = stepslib._py_SearchMethod.DIRECT
         GIBSON_BRUCK = stepslib._py_SearchMethod.GIBSON_BRUCK
-
 
     class DistributionMethod(enum.IntEnum):
         UNIFORM = stepslib._py_DistributionMethod.UNIFORM
         MULTINOMIAL = stepslib._py_DistributionMethod.MULTINOMIAL
 
-
-    __all__ +=  ['KSPNorm', 'SSAMethod', 'NextEventSearchMethod', 'DistributionMethod']
+    __all__ += ['SSAMethod', 'NextEventSearchMethod', 'DistributionMethod']
 
 
 ###################################################################################################
@@ -134,13 +134,13 @@ class _SimPathDescr:
     def __init__(self, name):
         self.name = name
 
-    def __get__(self, inst, objtype):
+    def __get__(self, inst, objtype, flatten=True):
         if inst is None:
             return self
 
         res = [self._getPathValue(path) for path in inst]
 
-        return res[0] if len(res) == 1 else res
+        return res[0] if len(res) == 1 and flatten else res
 
     def __set__(self, inst, val):
         paths = list(path for path in inst)
@@ -199,6 +199,22 @@ class _SimPathDescr:
             except Exception as e:
                 raise SolverCallError(f'Exception raised during call to solver: {e}')
 
+    def _processValue(self, path, val):
+        """Process values before using them as parameters of STEPS solver calls"""
+        if isinstance(val, nmodel.XDepFunc):
+            return val
+        elif isinstance(val, nutils.NamedObject):
+            return val.name
+        elif isinstance(val, nutils.Params):
+            args = [self._processValue(path, a) for a in val.args]
+            kwargs = {k: self._processValue(path, a) for k, a in val.kwargs.items()}
+            return nutils.Params(*args, **kwargs)
+        elif hasattr(val, '__call__') and not any(isinstance(e, nutils.SolverRunTimeObject) for e in path):
+            # Value setting with function
+            return val(*path[1:])
+        else:
+            return val
+
     def _setPathValue(self, path, val):
         """
         Set path "path" to value "val".
@@ -206,6 +222,8 @@ class _SimPathDescr:
         """
         if isinstance(path, nutils.SimPathCombiner):
             raise Exception(f'Cannot set simulation paths that involve value combining.')
+
+        val = self._processValue(path, val)
 
         # Parameter checks and potential conversions
         if isinstance(val, nutils.Parameter):
@@ -228,8 +246,7 @@ class _SimPathDescr:
         else:
             if param._units is not None:
                 raise Exception(
-                    f'Parameter {param} with units {param.units} was used to set a value with '
-                    f'no units.'
+                    f'Parameter {param} with units {param.units} was used to set a value with no units.'
                 )
             else:
                 # "Default" behavior
@@ -240,8 +257,7 @@ class _SimPathDescr:
 
         fun, params, kwparams = self._getFunction('set', path)
         if isinstance(val, nutils.Params):
-            args = [a.name if isinstance(a, nutils.NamedObject) else a for a in val.args]
-            kwargs = {k: a.name if isinstance(a, nutils.NamedObject) else a for k, a in val.kwargs.items()}
+            args, kwargs = val.args, val.kwargs
         else:
             args = [path[-1]._solverSetValue(self.name, val)]
             kwargs = {}
@@ -255,6 +271,7 @@ class _SimPathDescr:
         Return a pair of function and parameters necessary to get or set values in the solver
         for a specific path.
         """
+
         def wrap(acc, f):
             return lambda x: acc(f(x))
 
@@ -264,8 +281,9 @@ class _SimPathDescr:
         isGetter = prefix == 'get'
         params = tuple()
         kwparams = {}
+        func = None
         modifier = None
-        for e in path:
+        for i, e in enumerate(path):
             funcName += e._solverStr()
             params += e._solverId()
             kwparams.update(e._solverKeywordParams())
@@ -278,12 +296,19 @@ class _SimPathDescr:
                     else:
                         modifier = wrap(modifier, m)
 
-        try:
-            func = getattr(sim.stepsSolver, funcName + self.name)
-        except AttributeError:
-            raise SimPathSolverMissingMethod(
-                f'Method {funcName+self.name} is not available for solver {sim.stepsSolver}.'
-            )
+            # If one of the element requires a runtime call, defer processing to it
+            if isinstance(e, nutils.SolverRunTimeObject):
+                func = e._runTimeFunc(prefix, sim, path[:i], path[i+1:], self)
+                params = tuple()
+                kwparams = {}
+                break
+        if func is None:
+            try:
+                func = getattr(sim.stepsSolver, funcName + self.name)
+            except AttributeError:
+                raise SimPathSolverMissingMethod(
+                    f'Method {funcName+self.name} is not available for solver {sim.stepsSolver}.'
+                )
         if modifier is not None:
             return (lambda *x, **kw: modifier(func(*x, **kw))), params, kwparams
         else:
@@ -349,16 +374,18 @@ class SimPath:
         'Conc': """Concentration of objects, location needs to be a :py:class:`Compartment` or
             tetrahedron(s)""",
         'Amount': """Amount (in mol) of objects""",
-        'Clamped': """Whether the number of objects is clamped""",
+        'Clamped': """Whether the number of objects is clamped, meaning reactions and other
+            processes do not change the number of objects""",
         'Dcst': """Diffusion constant across a diffusion boundary, object needs to be a
             :py:class:`DiffBoundary`, an additional object must be specified (e.g. a Species)""",
-        'DiffusionActive': """Whether diffusion across a diffusion boundary is active object
+        'DiffusionActive': """Whether diffusion across a diffusion boundary is active, object
             needs to be a :py:class:`DiffBoundary`""",
         'Potential': """Potential of a membrane, location needs to be a :py:class:`Membrane`""",
         'Capac': """Capacitance of a membrane or of (a) triangle(s), location needs to be a
             :py:class:`Membrane` or (a) triangle(s)""",
-        'Res': """Electrical resistivity of a membrane, location needs to be a
-            :py:class:`Membrane`""",
+        'Erev': """Reversal potential of an ohmic current, location needs to be a triangle.""",
+        'Res': """Electrical resistivity and reversal potential of a membrane, location needs
+            to be a :py:class:`Membrane`""",
         'VolRes': """Bulk electrical resistivity (in ohm.m) of the volume associated with a
             membrane, location needs to be a :py:class:`Membrane`""",
         'I': """Current through the location, object needs to be a :py:class:`Current`""",
@@ -368,28 +395,60 @@ class SimPath:
             or (a) vert(ex/ices)""",
         'VClamped': """Whether the potential is clamped at the location (same possible location
             as for ``V``)""",
+        'Indices': """Indices of simulation objects like rafts or vesicles""",
+        'Pos': """3D position of simulation objects like rafts or vesicles, coordinates in m.""",
+        'PosSpherical': """Relative position of species on vesicles, spherical coordinates
+            (theta, phi) in (rad, rad) with -pi <= theta <= pi and 0 <= phi <= pi""",
+        'Immobility': """Immobility status of a vesicle, 0 means mobile""",
+        'Compartment': """Compartment of a simulation object like a vesicle""",
+        'Patch': """Patch of a simulation object like a raft""",
+        'OverlapTets': """List of tetrahedrons that include parts of a specific vesicle""",
+        'SDiffD': """Surface diffusion constant on vesicle surface""",
+        'PathPositions': """List of 3D points that a vesicle will walk along every vesicle dt""",
+        'LinkedTo': """Index of the link species to which a link species is linked""",
+        'Ves': """Index of the specific vesicle containing a simulation object like a link species""",
+        'Events': """List of recent events, no location and object needs to be a :py:class:`Exocytosys`,
+            :py:class:`Endocytosis`, or a :py:class:`RaftEndocytosys`""",
+        'ReducedVol': """Reduced volume of a tetrahedron (taking into account vesicles)""",
     }
 
     # Declare units associated to some path endings
     _PATH_END_UNITS = {
         'Vol': nutils.Units('m^3'),
         'Area': nutils.Units('m^2'),
-        'K': lambda path: path[2]._getRateUnits(),
+        'K': lambda path: path[-1]._getRateUnits() if hasattr(path[-1], '_getRateUnits')\
+            else path[-1].__class__.K.fget._units,
+        'A': nutils.Units('s^-1'),
         'D': nutils.Units('m^2 s^-1'),
         'Count': nutils.Units(''),
         'Conc': nutils.Units('M'),
         'Amount': nutils.Units('mol'),
         'Dcst': nutils.Units('m^2 s^-1'),
         'Potential': nutils.Units('V'),
+        'Erev': nutils.Units('V'),
         # TODO upon modifications: If methods for setting capacitance of a triangle are implemented,
         # check that their units are also F m^-2
-        'Capac': nutils.Units('F m^-2'), 
+        'Capac': nutils.Units('F m^-2'),
         # 'Res': No units for Res because it corresponds to a call with resistance and reversal
         #        potential
         'VolRes': nutils.Units('ohm m'),
         'I': nutils.Units('A'),
         'IClamp': nutils.Units('A'),
         'V': nutils.Units('V'),
+        'SDiffD': nutils.Units('m^2 s^-1'),
+        'ReducedVol': nutils.Units('m^3'),
+    }
+
+    # Declare specific metadata associated to some path endings
+    _PATH_END_METADATA = {
+        'Indices': {'value_type': 'list'},
+        'Pos': {'value_type': 'list'},
+        'PosSpherical': {'value_type': 'list'},
+        'Compartment': {'value_type': 'string'},
+        'Patch': {'value_type': 'string'},
+        'OverlapTets': {'value_type': 'list'},
+        'PathPositions': {'value_type': 'list'},
+        'Events': {'value_type': 'list'},
     }
 
     def __init__(self, _sim, _elems=None):
@@ -477,9 +536,8 @@ class SimPath:
         if len(lst) == 0:
             raise SimPathInvalidPath('Cannot call LIST() without arguments.')
 
-        lst2 = [e.name if isinstance(e, nutils.NamedObject) else e for e in lst]
         try:
-            return SimPath(self._sim, self._namesExtendElems(self._elems, lst2))
+            return SimPath(self._sim, self._appendElems(self._elems, lst))
         except SimPathExtensionError as ex:
             raise SimPathInvalidPath(
                 f'Element {ex.elem} does not have a children named {ex.name}, '
@@ -577,7 +635,10 @@ class SimPath:
             raise SimPathInvalidPath('Tetrahedrons can only be selected at the root of a path.')
         if tets is None:
             tets = self._sim.geom.tets
-        return SimPath(self._sim, {self._sim: {ngeom.TetList(tets, self._sim.geom): {}}})
+        elif not isinstance(tets, ngeom.TetList):
+            tets = ngeom.TetList(tets, self._sim.geom)
+        allLst = tets._splitByLocation()
+        return SimPath(self._sim, {self._sim: {lst: {} for lst in allLst}})
 
     def TRI(self, tri):
         """Extend the path by selecting a given triangle
@@ -626,7 +687,10 @@ class SimPath:
             raise SimPathInvalidPath('Triangles can only be selected at the root of a path.')
         if tris is None:
             tris = self._sim.geom.tris
-        return SimPath(self._sim, {self._sim: {ngeom.TriList(tris, self._sim.geom): {}}})
+        elif not isinstance(tris, ngeom.TriList):
+            tris = ngeom.TriList(tris, self._sim.geom)
+        allLst = tris._splitByLocation()
+        return SimPath(self._sim, {self._sim: {lst: {} for lst in allLst}})
 
     def VERT(self, vert):
         """Extend the path by selecting a given vertex
@@ -677,6 +741,418 @@ class SimPath:
             verts = self._sim.geom.verts
         return SimPath(self._sim, {self._sim: {ngeom.VertList(verts, self._sim.geom): {}}})
 
+    def VESICLE(self, vesicle):
+        """Extend the path by selecting a given vesicle
+
+        This special method can only be used in place of a location when building a path.
+        It will add the given vesicle to the path.
+
+        :param vesicle: The specific vesicle
+        :type vesicle: :py:class:`VesicleReference`
+
+        :returns: An updated path taking into account the newly added element.
+        :rtype: :py:class:`SimPath`
+
+        Example::
+
+            ves1 = sim.comp1.addVesicle(vesA) # Get a reference to the added vesicle
+
+            sim.VESICLE(ves1).S1.Count        # The number of S1 Species in the ves1 vesicle.
+        """
+        if not self._isOnlyRoot:
+            raise SimPathInvalidPath('Specific vesicles can only be selected at the root of a path.')
+        if not isinstance(vesicle, (VesicleReference, nmodel._VesicleSelection)):
+            raise TypeError(f'Expected a vesicle reference, got {vesicle} instead.')
+        return SimPath(self._sim, {self._sim: {vesicle: {}}})
+
+    def VESICLES(self, vesicles=None):
+        """Extend the path by selecting vesicles
+
+        This special method can be used in place of a location when building a path.
+        If so, it expects either a :py:class:`VesicleList` or a :py:class:`SimPath` that can be
+        used to build a :py:class:`VesicleList`.
+
+        It is also possible to use this special method after a location when building a path.
+        If so, it expects either nothing (in which case all vesicle types in that location will
+        be considered), or a :py:class:`steps.API_2.model.Vesicle` (in which case only vesicles of
+        the corresponding type will be considered).
+
+        :param vesicles: The vesicles, a :py:class:`SimPath` that can be used to build a
+            :py:class:`VesicleList`, or a :py:class:`steps.API_2.model.Vesicle`.
+        :type vesicles: Union[:py:class:`VesicleList`, :py:class:`SimPath`,
+            :py:class:`steps.API_2.model.Vesicle`]
+
+        :returns: An updated path taking into account the newly added elements.
+        :rtype: :py:class:`SimPath`
+
+        Example::
+
+            lst = VesicleList(sim.comp1.vesA)
+            lstIn = VesicleList(sim.comp1.vesA(inside=True))
+
+            sim.VESICLES(lst).S1.Count   # The number of S1 Species on the surface of vesicles from lst
+            sim.VESICLES(lstIn).S2.Count # The number of S2 Species inside vesicles from lstIn
+
+            sim.comp1.VESICLES(vesA).Pos     # The positions of each vesicle of type vesA in comp1
+            sim.VESICLES(sim.comp1.vesA).Pos # Same
+
+            sim.comp1.VESICLES().Pos                 # The positions of all vesicles of all types in comp1
+            sim.VESICLES(sim.comp1.ALL(Vesicle)).Pos # Same
+        """
+        if isinstance(vesicles, VesicleList):
+            if not self._isOnlyRoot:
+                raise SimPathInvalidPath('Specific vesicles can only be selected at the root of a path.')
+            return SimPath(self._sim, {self._sim: {vesicles: {}}})
+
+        if vesicles is None:
+            path = self.ALL(nmodel.Vesicle)
+        elif isinstance(vesicles, nmodel.Vesicle):
+            path = self.LIST(vesicles)
+        elif isinstance(vesicles, nmodel._VesicleSelection):
+            path = self.LIST(vesicles.ves)(vesicles.loc)
+        elif isinstance(vesicles, SimPath):
+            path = vesicles
+        elif isinstance(vesicles, nsaving._ResultPath):
+            path = vesicles.simpath
+        else:
+            raise TypeError(
+                f'Expected either nothing, a vesicle list, a vesicle type, or a SimPath, got '
+                f'{vesicles} instead.'
+            )
+
+        return SimPath(self._sim, path._substituteElems(path._elems, _VesicleListStandIn))
+
+    def RAFT(self, raft):
+        """Extend the path by selecting a given raft
+
+        This special method can only be used in place of a location when building a path.
+        It will add the given raft to the path.
+
+        :param raft: The specific raft
+        :type raft: :py:class:`RaftReference`
+
+        :returns: An updated path taking into account the newly added element.
+        :rtype: :py:class:`SimPath`
+
+        Example::
+
+            raft1 = sim.patch1.addRaft(raftA) # Get a reference to the added raft
+
+            sim.RAFT(raft1).S1.Count          # The number of S1 Species in the raft1 raft.
+        """
+        if not self._isOnlyRoot:
+            raise SimPathInvalidPath('Specific rafts can only be selected at the root of a path.')
+        if not isinstance(raft, RaftReference):
+            raise TypeError(f'Expected a raft reference, got {raft} instead.')
+        return SimPath(self._sim, {self._sim: {raft: {}}})
+
+    def RAFTS(self, rafts=None):
+        """Extend the path by selecting rafts
+
+        This special method can be used in place of a location when building a path.
+        If so, it expects either a :py:class:`RaftList` or a :py:class:`SimPath` that can be
+        used to build a :py:class:`RaftList`.
+
+        It is also possible to use this special method after a location when building a path.
+        If so, it expects either nothing (in which case all vesicle types in that location will
+        be considered), or a :py:class:`steps.API_2.model.Raft` (in which case only rafts of
+        the corresponding type will be considered).
+
+        :param rafts: The rafts, a :py:class:`SimPath` that can be used to build a
+            :py:class:`RaftList`, or a :py:class:`steps.API_2.model.Raft`.
+        :type rafts: Union[:py:class:`RaftList`, :py:class:`SimPath`,
+            :py:class:`steps.API_2.model.Raft`]
+
+        :returns: An updated path taking into account the newly added elements.
+        :rtype: :py:class:`SimPath`
+
+        Example::
+
+            lst = RaftList(sim.patch1.raftA)
+
+            sim.RAFTS(lst).S1.Count             # The number of S1 Species on the rafts from lst
+
+            sim.patch1.RAFTS(raftA).Pos         # The positions of each raft of type raftA in patch1
+            sim.RAFTS(sim.patch1.raftA).Pos     # Same
+
+            sim.patch1.RAFTS().Pos              # The positions of all rafts of all types in patch1
+            sim.RAFTS(sim.patch1.ALL(Raft)).Pos # Same
+        """
+        if isinstance(rafts, RaftList):
+            if not self._isOnlyRoot:
+                raise SimPathInvalidPath('Specific rafts can only be selected at the root of a path.')
+            return SimPath(self._sim, {self._sim: {rafts: {}}})
+
+        if rafts is None:
+            path = self.ALL(nmodel.Raft)
+        elif isinstance(rafts, nmodel.Raft):
+            path = self.LIST(rafts)
+        elif isinstance(rafts, SimPath):
+            path = rafts
+        elif isinstance(rafts, nsaving._ResultPath):
+            path = rafts.simpath
+        else:
+            raise TypeError(
+                f'Expected either nothing, a raft list, a raft type, or a SimPath, got '
+                f'{rafts} instead.'
+            )
+
+        return SimPath(self._sim, path._substituteElems(path._elems, _RaftListStandIn))
+
+    def POINTSPEC(self, pointSpec):
+        """Extend the path by selecting a given point species
+
+        This special method can only be used in place of a location when building a path.
+        It will add the given point species to the path.
+
+        :param pointSpec: The specific point species
+        :type pointSpec: :py:class:`PointSpecReference`
+
+        :returns: An updated path taking into account the newly added element.
+        :rtype: :py:class:`SimPath`
+
+        Example::
+
+            sim.POINTSPEC(pointSpec1).PosSpherical  # The 3D spherical position of pointSpec1
+                                                    # with respect to its host vesicle.
+        """
+        if not self._isOnlyRoot:
+            raise SimPathInvalidPath('Specific point speciess can only be selected at the root of a path.')
+        if not isinstance(pointSpec, PointSpecReference):
+            raise TypeError(f'Expected a point species reference, got {pointSpec} instead.')
+        return SimPath(self._sim, {self._sim: {pointSpec: {}}})
+
+    def POINTSPECS(self, pointSpecs=None):
+        """Extend the path by selecting point species
+
+        This special method can be used in place of a location when building a path.
+        If so, it expects either a :py:class:`PointSpecList` or a :py:class:`SimPath` that can be
+        used to build a :py:class:`PointSpecList`.
+
+        It is also possible to use this special method after a location when building a path.
+        Currently, only vesicle surfaces support point species, so the location should be the surface
+        (and not the inside) of a vesicle.
+        If so, it expects either nothing (in which case all point species types in that location will
+        be considered), or a :py:class:`steps.API_2.model.Species` (in which case only point species of
+        the corresponding type will be considered).
+
+        :param pointSpecs: The point species, a :py:class:`SimPath` that can be used to build a
+            :py:class:`PointSpecList`, or a :py:class:`steps.API_2.model.Species`.
+        :type pointSpecs: Union[:py:class:`PointSpecList`, :py:class:`SimPath`,
+            :py:class:`steps.API_2.model.Species`]
+
+        :returns: An updated path taking into account the newly added elements.
+        :rtype: :py:class:`SimPath`
+
+        Example::
+
+            lst = PointSpecList(sim.VESICLE(ves1)('surf').SpecA)     # All point species of type SpecA on
+                                                                     # the surface of specific vesicle ves1
+
+            sim.POINTSPECS(lst).PosSpherical                         # The spherical positions on the
+                                                                     # pointSpecs from lst
+
+            sim.VESICLE(ves1)('surf').POINTSPECS(SpecA).PosSpherical # The positions of each pointSpec of
+                                                                     # type SpecA on specific vesicle ves1
+
+            sim.VESICLE(ves1)('surf').POINTSPECS().PosSpherical      # The positions of all pointSpecs of
+                                                                     # all types on specific vesicle ves1
+        """
+        if isinstance(pointSpecs, PointSpecList):
+            if not self._isOnlyRoot:
+                raise SimPathInvalidPath('Specific pointSpecs can only be selected at the root of a path.')
+            return SimPath(self._sim, {self._sim: {pointSpecs: {}}})
+
+        if pointSpecs is None:
+            path = self.ALL(nmodel.Species)
+        elif isinstance(pointSpecs, nmodel.Species):
+            path = self.LIST(pointSpecs)
+        elif isinstance(pointSpecs, SimPath):
+            path = pointSpecs
+        elif isinstance(pointSpecs, nsaving._ResultPath):
+            path = pointSpecs.simpath
+        elif hasattr(pointSpecs, '__iter__'):
+            path = self.LIST(*pointSpecs)
+        else:
+            raise TypeError(
+                f'Expected either nothing, a pointSpec list, a species type, or a SimPath, got '
+                f'{pointSpecs} instead.'
+            )
+
+        return SimPath(self._sim, path._substituteElems(path._elems, _PointSpecListStandIn))
+
+    def LINKSPEC(self, linkSpec):
+        """Extend the path by selecting a given link species
+
+        This special method can only be used in place of a location when building a path.
+        It will add the given link species to the path.
+
+        :param linkSpec: The specific link species
+        :type linkSpec: :py:class:`LinkSpecReference`
+
+        :returns: An updated path taking into account the newly added element.
+        :rtype: :py:class:`SimPath`
+
+        Example::
+
+            sim.LINKSPEC(linkSpec1).Pos  # The 3D position of linkSpec1.
+        """
+        if not self._isOnlyRoot:
+            raise SimPathInvalidPath('Specific link speciess can only be selected at the root of a path.')
+        if not isinstance(linkSpec, LinkSpecReference):
+            raise TypeError(f'Expected a link species reference, got {linkSpec} instead.')
+        return SimPath(self._sim, {self._sim: {linkSpec: {}}})
+
+    def LINKSPECS(self, linkSpecs=None):
+        """Extend the path by selecting link species
+
+        This special method can be used in place of a location when building a path.
+        If so, it expects either a :py:class:`LinkSpecList` or a :py:class:`SimPath` that can be
+        used to build a :py:class:`LinkSpecList`.
+
+        It is also possible to use this special method after a location when building a path.
+        If so, it expects either nothing (in which case all link species types in that location will
+        be considered), or a :py:class:`steps.API_2.model.LinkSpecies` (in which case only link species of
+        the corresponding type will be considered).
+
+        :param linkSpecs: The link species, a :py:class:`SimPath` that can be used to build a
+            :py:class:`LinkSpecList`, or a :py:class:`steps.API_2.model.LinkSpecies`.
+        :type linkSpecs: Union[:py:class:`LinkSpecList`, :py:class:`SimPath`,
+            :py:class:`steps.API_2.model.LinkSpecies`]
+
+        :returns: An updated path taking into account the newly added elements.
+        :rtype: :py:class:`SimPath`
+
+        Example::
+
+            lst = LinkSpecList(sim.VESICLE(ves1).linkSpecA) # All link species of type linkSpecA on
+                                                            # specific vesicle ves1
+
+            sim.LINKSPECS(lst).Pos                          # The positions on the linkSpecs from lst
+
+            sim.VESICLE(ves1).LINKSPECS(linkSpecA).Pos      # The positions of each linkSpec of type
+                                                            # linkSpecA on specific vesicle ves1
+
+            sim.VESICLE(ves1).LINKSPECS().Pos              # The positions of all linkSpecs of all types
+                                                           # on specific vesicle ves1
+        """
+        if isinstance(linkSpecs, LinkSpecList):
+            if not self._isOnlyRoot:
+                raise SimPathInvalidPath('Specific linkSpecs can only be selected at the root of a path.')
+            return SimPath(self._sim, {self._sim: {linkSpecs: {}}})
+
+        if linkSpecs is None:
+            path = self.ALL(nmodel.LinkSpecies)
+        elif isinstance(linkSpecs, nmodel.LinkSpecies):
+            path = self.LIST(linkSpecs)
+        elif isinstance(linkSpecs, SimPath):
+            path = linkSpecs
+        elif isinstance(linkSpecs, nsaving._ResultPath):
+            path = linkSpecs.simpath
+        elif hasattr(linkSpecs, '__iter__'):
+            path = self.LIST(*linkSpecs)
+        else:
+            raise TypeError(
+                f'Expected either nothing, a linkSpec list, a linkSpec type, or a SimPath, got '
+                f'{linkSpec} instead.'
+            )
+
+        return SimPath(self._sim, path._substituteElems(path._elems, _LinkSpecListStandIn))
+
+    def addVesicle(self, ves):
+        """Add a vesicle to a location
+
+        This method can only be used with the 'TetVesicle' solver. It adds a vesicle to the location
+        specified by the simulation path and returns a reference to the added vesicle.
+        See :py:class:`VesicleReference` for additional documentation.
+
+        :param ves: The type of the vesicle that should be added
+        :type ves: Union[:py:class:`steps.API_2.model.Vesicle`, str]
+
+        :returns: A reference to the specific vesicle that was added
+        :rtype: :py:class:`VesicleReference`
+
+        Example::
+
+            uniqueVes = sim.comp1.addVesicle(ves_A)
+        """
+        if isinstance(ves, nmodel.Vesicle):
+            ves = ves.name
+        if not isinstance(ves, str):
+            raise TypeError(f'Expected a vesicle type or a vesicle type name, got {ves} instead.')
+
+        funcArgs = [_SimPathDescr(nmodel.Vesicle._locStr)._getFunction('add', path) for path in self]
+
+        res = VesicleList(self._sim, ves, [f(*args, ves, **kwargs) for f, args, kwargs in funcArgs])
+
+        return res[0] if len(res) == 1 else res
+
+    def addRaft(self, raft):
+        """Add a raft to a location
+
+        This method can only be used with the 'TetVesicle' solver. It adds a raft to the location
+        specified by the simulation path and returns a reference to the added raft.
+        See :py:class:`RaftReference` for additional documentation.
+
+        :param raft: The type of the raft that should be added
+        :type raft: Union[:py:class:`steps.API_2.model.Raft`, str]
+
+        :returns: A reference to the specific raft that was added
+        :rtype: :py:class:`RaftReference`
+
+        Example::
+
+            uniqueRaft = sim.TRI(tri1).addRaft(raft_A)
+        """
+        if isinstance(raft, nmodel.Raft):
+            raft = raft.name
+        if not isinstance(raft, str):
+            raise TypeError(f'Expected a raft type or a raft type name, got {raft} instead.')
+
+        funcArgs = [_SimPathDescr(nmodel.Raft._locStr)._getFunction('add', path) for path in self]
+
+        res = RaftList(self._sim, raft, [f(*args, raft, **kwargs) for f, args, kwargs in funcArgs])
+
+        return res[0] if len(res) == 1 else res
+
+    def _getNamedChildrenFromElem(self, elem, name):
+        """Return an object from its name if it is a children of elem or of the model, if allowed"""
+        if name in elem.children:
+            return elem.children[name]
+        elif (
+            not hasattr(elem.__class__, '_SIMPATH_ONLY_CHILDREN')
+            and name in self._sim.model.children
+        ):
+            return self._sim.model.children[name]
+        else:
+            raise SimPathExtensionError(elem, name)
+
+    def _appendElems(self, elems, objs):
+        """Append objects in objs to all the tips of elems. Return the new element tree."""
+        res = {}
+        for e, subs in elems.items():
+            if len(subs) == 0:
+                res[e] = {}
+                for obj in objs:
+                    if isinstance(obj, str):
+                        obj = self._getNamedChildrenFromElem(e, obj)
+                    elif isinstance(obj, nutils.NamedObject) and obj._simPathCheckParent():
+                        obj = self._getNamedChildrenFromElem(e, obj.name)
+                    res[e][obj] = {}
+            else:
+                res[e] = self._appendElems(subs, objs)
+        return res
+
+    def _substituteElems(self, elems, substFunc):
+        """Substitute all the tips of elems with substFunc(tip). Return the new element tree."""
+        res = {}
+        for e, subs in elems.items():
+            if len(subs) == 0:
+                res[substFunc(e)] = {}
+            else:
+                res[e] = self._substituteElems(subs, substFunc)
+        return res
+
     def _condExtendElems(self, elems, pred):
         """
         Extend the element tree 'elems' by adding elements at the tips if they satisfy predicate
@@ -700,15 +1176,7 @@ class SimPath:
         res = {}
         for e, subs in elems.items():
             if len(subs) == 0:
-                res[e] = {}
-                for name in names:
-                    if name in e.children:
-                        res[e][e.children[name]] = {}
-                    elif not hasattr(e.__class__, '_SIMPATH_ONLY_CHILDREN') \
-                            and name in self._sim.model.children:
-                        res[e][self._sim.model.children[name]] = {}
-                    else:
-                        raise SimPathExtensionError(e, name)
+                res[e] = {self._getNamedChildrenFromElem(e, name):{} for name in names}
             else:
                 res[e] = self._namesExtendElems(subs, names)
         return res
@@ -739,9 +1207,7 @@ class SimPath:
         for e, subs in elems.items():
             if len(subs) == 0:
                 if not hasattr(e, '__call__'):
-                    raise SimPathInvalidPath(
-                        f'Element {e} cannot be further specified using parentheses.'
-                    )
+                    raise SimPathInvalidPath(f'Element {e} cannot be further specified using parentheses.')
                 newElem = e(*params.args, **params.kwargs)
                 res[newElem] = {}
             else:
@@ -758,9 +1224,7 @@ class SimPath:
                 try:
                     res.append(getattr(e, attrName))
                 except:
-                    raise SimPathInvalidPath(
-                        f'Element {e} does not have any attribute named {attrName}'
-                    )
+                    raise SimPathInvalidPath(f'Element {e} does not have any attribute named {attrName}')
             else:
                 res += self._getTipsAttribute(subs, attrName)
         return res
@@ -811,6 +1275,28 @@ class SimPath:
             else:
                 yield pre + (str(e),) + origDescr[1:]
 
+    def _hasRunTimeObject(self, elems=None):
+        """Return whether the SimPath has at least one object in its tree that is a SolverRunTimeObject."""
+        if elems is None:
+            elems = self._elems
+
+        for e, subs in elems.items():
+            if isinstance(e, nutils.SolverRunTimeObject) or self._hasRunTimeObject(subs):
+                return True
+        return False
+
+    @classmethod
+    def _FromTuple(cls, path):
+        """Return a SimPath from a tuple of the kind returned by SimPath._walk"""
+        if not isinstance(path, tuple) or len(path) == 0 or not isinstance(path[0], Simulation):
+            raise TypeError(
+                f'Expected a tuple with a Simulation object as first element, got {path} instead.'
+            )
+        elems = {}
+        for e in reversed(path):
+            elems = {e: elems}
+        return SimPath(path[0], elems)
+
     def __getattr__(self, name):
         """Extend the path with a named element
 
@@ -835,6 +1321,11 @@ class SimPath:
         try:
             return SimPath(self._sim, self._namesExtendElems(self._elems, [name]))
         except SimPathExtensionError as ex:
+            if self._isOnlyRoot:
+                raise SimPathInvalidPath(
+                    f'{ex.elem.__class__.__name__} {ex.elem} has no children '
+                    f'named {name}, it is not possible to extend the path.'
+                )
             try:
                 res = self._getTipsAttribute(self._elems, name)
                 return res[0] if len(res) == 1 else res
@@ -932,8 +1423,8 @@ class SimPath:
         if self._sim._isDistributed():
             distrDict = {}
             globalInd = 0
-            allDistrInds = [] # Map from savedInd to globalInd
-            spMask = [] # Mask determining which part of the simpath should actually be saved
+            allDistrInds = []  # Map from savedInd to globalInd
+            spMask = []  # Mask determining which part of the simpath should actually be saved
             for locElem, subElems in self._elems[self._sim].items():
                 # Compute length of subElems and locElem
                 nbSubPaths = max(1, len(list(self._walk(elems=subElems))))
@@ -955,7 +1446,9 @@ class SimPath:
                     if isinstance(distrElem, ngeom.RefList) or MPI._shouldWrite:
                         # Compute the indices of the distributed saved values in the original path
                         for lind in listInds:
-                            allDistrInds += range(globalInd + lind * nbSubPaths, globalInd + (lind + 1) * nbSubPaths)
+                            allDistrInds += range(
+                                globalInd + lind * nbSubPaths, globalInd + (lind + 1) * nbSubPaths
+                            )
                         spMask += [True] * nbSubPaths * len(listInds)
                     else:
                         changed = True
@@ -1005,6 +1498,8 @@ class MPI:
     _usingMPI = None
     _shouldWrite = True
 
+    _RETURN_RANK = 0
+
     _solverNameMapping = {
         'TetOpSplit': nutils._CYTHON_PREFIX + 'TetOpSplitP',
         'DistTetOpSplit': nutils._CYTHON_PREFIX + 'DistTetOpSplitP',
@@ -1030,8 +1525,7 @@ class MPI:
                 sys.excepthook = customHook
             else:
                 raise ImportError(
-                    f'Could not load cysteps_mpi.so. Please check that STEPS was built with MPI '
-                    f'support.'
+                    f'Could not load cysteps_mpi.so. Please check that STEPS was built with MPI support.'
                 )
 
     @nutils.classproperty
@@ -1064,6 +1558,13 @@ class MPI:
         # Solvers that require special mapping
         if name in cls._solverNameMapping:
             return getattr(stepslib, cls._solverNameMapping[name])
+        elif name == 'TetVesicle':
+            if MPI.nhosts < 2:
+                raise Exception("[ERROR] Parallel TetVesicle solver requires minimal 2 computing cores.")
+            if MPI.rank == MPI._RETURN_RANK:
+                return getattr(stepslib, nutils._CYTHON_PREFIX + 'TetVesicleVesRaft')
+            else:
+                return getattr(stepslib, nutils._CYTHON_PREFIX + 'TetVesicleRDEF')
         else:
             # Default case
             return getattr(stepslib, nutils._CYTHON_PREFIX + name)
@@ -1108,8 +1609,11 @@ class _SimulationCheckpointer:
     def _save(self, time, _):
         newName = f'{self._prefix}_{self._sim._runId}_{time}_{self._sim._solverStr}_cp'
         self._sim.checkpoint(newName)
-        if self._onlyLast and self._lastName is not None and MPI._shouldWrite:
-            os.remove(self._lastName)
+        if self._onlyLast and self._lastName is not None:
+            if MPI.nhosts > 1:
+                os.remove(self._lastName + f'_{MPI.rank}')
+            else:
+                os.remove(self._lastName)
         self._lastName = newName
         self._updateNextSaveTime()
 
@@ -1143,6 +1647,8 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
         :py:class:`steps.API_2.geom.DistMesh`]
     :param rng: The random number generator to be used in the simulation
     :type rng: :py:class:`steps.API_2.rng.RNG`
+    :param check: Whether model checks should be performed upon creation of the simulation.
+    :type check: bool
     :param \*args: Positional arguments forwarded to the solver constructor, see
         :py:mod:`steps.API_1.solver` or :py:mod:`steps.API_1.mpi.solver`.
     :param \*\*kwargs: Keyword arguments forwarded to the solver constructor, see
@@ -1152,13 +1658,14 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
     SERIAL_SOLVERS = ['Wmdirect', 'Wmrssa', 'Wmrk4', 'Tetexact', 'TetODE']
     """Available serial solvers"""
 
-    PARALLEL_SOLVERS = ['TetOpSplit', 'DistTetOpSplit']
+    PARALLEL_SOLVERS = ['TetOpSplit', 'TetVesicle', 'DistTetOpSplit']
     """Available parallel solvers"""
 
     DISTRIBUTED_SOLVERS = ['DistTetOpSplit']
     """Available distributed solvers"""
 
-    def __init__(self, solverName, mdl, geom, rng=None, *args, name=None, **kwargs):
+    def __init__(self, solverName, mdl, geom, rng=None, *args, name=None, check=True,
+                 _createObj=True, **kwargs):
         super().__init__(name=name)
 
         self._model = mdl
@@ -1166,7 +1673,7 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
         self._rng = rng
 
         self._solverStr = solverName
-        self.stepsSolver = self._createSolver(solverName, *args, **kwargs)
+        self.stepsSolver = self._createSolver(solverName, *args, **kwargs) if _createObj else None
 
         self._resultSelectors = []
         self._nextSave = None
@@ -1175,7 +1682,11 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
 
         self._checkpointer = _SimulationCheckpointer(self)
 
-        nsimcheck.Check(self, True)
+        if check:
+            nsimcheck.Check(self, True)
+
+        # Initialize children to mirror model and geom children
+        self._children = {**self.model.children, **self.geom.children}
 
     @property
     def model(self):
@@ -1279,22 +1790,26 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
         if t > currT:
             self.stepsSolver.run(t)
 
-    def newRun(self):
+    def newRun(self, reset=True):
         """Reset the solver and signal the start of a new run
 
         This method must be called before any call to :py:func:`run` or :py:func:`step`. Since it
-        resets the solver, the initial state must be specified after the call to newRun.
+        usually resets the solver, the initial state must be specified after the call to newRun.
         Result selectors rely on this call to separate the data from different runs.
+
+        :param reset: If `True` (default value) resets the state of the solver.
+        :type reset: bool
 
         .. note::
             The ``'tetODE'`` solver cannot be reset.
         """
-        if self.stepsSolver.__class__ != stepslib._py_TetODE:
-            self.stepsSolver.reset()
-        else:
-            warnings.warn(
-                f'Cannot reset a TetODE solver, a new run was started but the solver was not reset.'
-            )
+        if reset:
+            if self.stepsSolver.__class__ != stepslib._py_TetODE:
+                self.stepsSolver.reset()
+            else:
+                warnings.warn(
+                    f'Cannot reset a TetODE solver, a new run was started but the solver was not reset.'
+                )
 
         # Update data saving structures
         self._newRun()
@@ -1340,28 +1855,37 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
         :param dbh: The database to which the result selectors should be saved (see e.g.
             :py:class:`steps.API_2.saving.SQLiteDBHandler`).
         :type dbh: :py:class:`steps.API_2.saving.DatabaseHandler`
-        :param uid: A unique identifier under which all subsequent runs should be saved
+        :param uid: A unique identifier under which all subsequent runs should be saved. It should
+            not contain any slashes.
         :type uid: str
         :param kwargs: Any additional parameters that should be saved to the database along with
-            the unique identifier. Values are restricted to
+            the unique identifier. Values are restricted to the documented types.
         :type kwargs: int, float, str or bytes
+
+        :return: The database run group object to which the subsequent runs will be saved
+        :rtype: Union[None, :py:class:`steps.API_2.saving.DatabaseGroup`]
 
         Usage::
 
             sim.toSave(...) # Add the result selectors
 
-            with SQLiteDBHandler(dbPath) as dbh:
-                sim.toDB(dbh, 'MySimulation', val1=1, val2=2)
+            with HDF5Handler(dbPath) as hdf:
+                group = sim.toDB(hdf, 'MySimulation', val1=1, val2=2)
                 sim.newRun()
                 ... # Set initial state
                 sim.run(10)
+
+        When using MPI, the run group object is only returned on rank 0, the other ranks return `None`.
         """
         if not isinstance(dbh, nsaving.DatabaseHandler):
             raise TypeError(f'Expected a DatabaseHandler, got {dbh} instead.')
+        if '/' in uid:
+            raise ValueError(f'The unique run group identifier cannot contain slashes: {uid}')
         # The list of result selectors can be modified if the mesh is distributed
-        self._resultSelectors = dbh._newGroup(self, uid, self._resultSelectors, **kwargs)
+        group, self._resultSelectors = dbh._newGroup(self, uid, self._resultSelectors, **kwargs)
         for rs in self._resultSelectors:
             rs._toDB(dbh)
+        return group if MPI._shouldWrite else None
 
     def autoCheckpoint(self, period, prefix='', onlyLast=False):
         """Activates automatic checkpointing
@@ -1390,6 +1914,50 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
         if self._nextSave is not None:
             self._initNextSave()
 
+    def addVesiclePath(self, name):
+        """Add a 3D vesicle path to the simulation
+
+        Paths can be used to transport vesicles.
+
+        This method can only be used with the `'TetVesicle'` solver. It adds an empty 3D path to the
+        simulation, to which nodes and edges can be added. This method returns the path that was added
+        to the simulation, further modifications to the paths are done through the
+        :py:class:`VesiclePathReference` class.
+
+        :param name: The name given to the path to identify it
+        :type name: str
+
+        :returns: A reference to the empty path that was added to the simulation
+        :rtype: :py:class:`VesiclePathReference`
+        """
+        if not isinstance(name, str):
+            raise TypeError('Expected a string, got {name} instead.')
+
+        self.solver.createPath(name)
+        return VesiclePathReference(self, name=name)
+
+    def addVesicleDiffusionGroup(self, ves, comps):
+        """Add a diffusion group for vesicles
+
+        This method adds a 'diffusion group' for vesicles of type `ves`. Vesicles will diffuse
+        freely amongst compartments in `comps` (if they border each other).
+
+        :param ves: The vesicle type
+        :type ves: Union[:py:class:`steps.API_2.model.Vesicle`, str]
+        :param comps: A list of compartments
+        :type comps: List[Union[:py:class:`steps.API_2.geom.Compartment`, str]
+        """
+        if isinstance(ves, nmodel.Vesicle):
+            ves = ves.name
+        if not isinstance(ves, str):
+            raise TypeError(f'Expected a vesicle or a vesicle name, got {ves} instead.')
+
+        comps = [c.name if isinstance(c, ngeom.Compartment) else c for c in comps]
+        if not all(isinstance(c, str) for c in comps):
+            raise TypeError(f'Expected a list of compartments or compartment names, got {comp} instead.')
+
+        self.solver.addVesicleDiffusionGroup(ves, comps)
+
     def _initNextSave(self):
         """Setup the heapq that orders the save events"""
         eventLst = self._resultSelectors + [self._checkpointer]
@@ -1410,14 +1978,6 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
         self._checkpointer._newRun()
         self._initNextSave()
         self._runId += 1
-
-    def _getReferenceObject(self):
-        """
-        Return the object this object was derived from. Useful for getting the complex associated
-        with a complex selector, etc.
-        """
-        # Use geom children as the simulation children
-        return self.geom
 
     def _getSubParameterizedObjects(self):
         """Return all subobjects that can hold parameters."""
@@ -1446,7 +2006,7 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
     def _createSolver(self, solverStr, *args, **kwargs):
         """Create and return a new solver."""
         # Set up structures depending on model
-        self.model._SetUpMdlDeps()
+        self.model._SetUpMdlDeps(self.geom)
         self.geom._SetUpMdlDeps(self.model)
 
         stepsGeom = self.geom._getStepsObjects()[0]
@@ -1483,6 +2043,10 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
         stepsRng = self.rng.stepsrng if self.rng is not None else None
         solver = solverCls(self.model.stepsModel, stepsGeom, stepsRng, *rargs, **rkwargs)
 
+        if solverStr == 'TetVesicle':
+            # Activate output sync by default, only deactivate it for automatic saving
+            solver.setOutputSync(True, MPI._RETURN_RANK)
+
         return solver
 
     def _isDistributed(self):
@@ -1502,8 +2066,7 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
 
     @classmethod
     def _getGroupedAdvParams(cls):
-        """Return a list of advanced parameter property that should be grouped
-        """
+        """Return a list of advanced parameter property that should be grouped"""
         return [cls._ADV_PARAMS_RUN_NUMBER, cls._ADV_PARAMS_RUN_TIME]
 
     #####################
@@ -1607,6 +2170,37 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
         """
         self.stepsSolver.setRk4DT(dt)
 
+    @nutils.AdvancedParameterizedObject.SpecifyUnits(None, nutils.Units('s'))
+    def setVesicleDT(self, dt):
+        """Set the default vesicle dt
+
+        Note: the actual vesicle dt used in the simulation can be lower than this number depending
+        on simulation conditions).
+
+        :param dt: The vesicle dt in seconds
+        :type dt: Union[float, :py:class:`steps.API_2.nutils.Parameter`]
+        """
+        if self._solverStr != 'TetVesicle':
+            raise Exception('Cannot call this method with a solver that does not support vesicles')
+        self.stepsSolver.setVesicleDT(dt)
+
+    def setPetscOptions(self, options):
+        """set PETSc options
+
+        With this call we can pass all the petsc options in one string. At the moment only the
+        options for the Krylov solver (ksp) and the preconditioner (pc) used in the efield calculations
+        are going to have an effect. The full list of options:
+
+        - for the ksp: https://petsc.org/release/docs/manualpages/KSP/KSPSetFromOptions.html
+        - for the pc: https://petsc.org/release/docs/manualpages/PC/PCSetFromOptions.html
+
+        Syntax: setPetscOptions("-option1 val1 -option2 val2 -option3 val3")
+
+        :param options: a string with the options
+        :type options: str
+        """
+        self.stepsSolver.setPetscOptions(options)
+
     def setEfieldTolerances(self, atol=1e-50, rtol=1e-5):
         """Set the absolute and relative tolerances for the Efield solver
 
@@ -1656,6 +2250,16 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
         :type fname: str
         """
         self.stepsSolver.saveMembOpt(fname)
+
+    def dumpDepGraphToFile(self, path):
+        """Dumps the kproc dependency graph in a file specified by path
+
+        :param fname: The file name / path
+        """
+        if not path.endswith(".dot"):
+            path += ".dot"
+
+        self.stepsSolver.dumpDepGraphToFile(path)
 
 
 ###################################################################################################
@@ -1800,3 +2404,634 @@ class SBMLSimulation(Simulation):
         nutils.NamedObject._allowForbNames = False
 
         return mdl, geom
+
+
+###################################################################################################
+# Reference classes used with Simulation
+
+
+class _SimObjectReference(nutils.SolverPathObject):
+    """Base class for all references to objects defined during the simulation"""
+
+    def __init__(self, sim, ident, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        object.__setattr__(self, '_sim', sim)
+        object.__setattr__(self, '_id', ident)
+
+    def _solverId(self):
+        """Return the id that is used to identify an object in the solver."""
+        return (self._id,)
+
+    def __eq__(self, other):
+        return self.__class__ == other.__class__ and self._id == other._id
+
+    def __hash__(self):
+        return hash((self.__class__, self._id))
+
+    @property
+    def idx(self):
+        return self._id
+
+    @property
+    def children(self):
+        return {}
+
+
+@nutils.FreezeAfterInit
+class VesiclePathReference(_SimObjectReference):
+    """Reference to a vesicle path
+
+    An object from this class represents a vesicle path that was added to a simulation. Users should
+    usually instantiate it by calling :py:meth:`Simulation.addVesiclePath`.
+
+    :param sim: The simulation in which the vesicle path was created
+    :type sim: :py:class:`Simulation`
+    :param name: Name of the vesicle path
+    :type name: str
+    """
+
+    def __init__(self, sim, name, *args, **kwargs):
+        super().__init__(sim, name, *args, **kwargs)
+
+        self._currIndex = 0
+
+    def addPoint(self, position):
+        """Add a 3D point to the vesicle path
+
+        :param position: 3D position of the point in cartesian coordinates
+        :type position: Union[:py:class:`steps.API_2.geom.Point`, List[double], Tuple[double]]
+
+        :returns: The index of the point that will be used to add branches
+        :rtype: int
+        """
+        self._currIndex += 1
+        self._sim.solver.addPathPoint(self._id, self._currIndex, list(position))
+        return self._currIndex
+
+    def addBranch(self, source, destPoints):
+        """Create branching in the path from a point
+
+        :param source: An index for the source point, positive integer
+        :type source: int
+        :param destPoints: A dictionary addociating each destination point with a float
+        :type destPoints: Dict[int, float]
+        """
+        self._sim.solver.addPathBranch(self._id, source, destPoints)
+
+    def addVesicle(self, ves, speed, dependencies=None, stoch_stepsize=1e-9):
+        """Add a vesicle to this path
+
+        This means a vesicle of this type can interact with this path upon overlapping it.
+
+        :param ves: Vesicle type that should be added, or its name
+        :type ves: Union[:py:class:`steps.API_2.model.Vesicle`, str]
+        :param speed: Speed of the vesicle on this path in m/s
+        :type speed: float
+        :param dependencies: Optional species dependencies
+        :type dependencies: Union[None, :py:class:`steps.API_2.ReactionSide`]
+        :param stoch_stepsize: Stochastic step length. This may be a single float
+            value where a single-exponential will be applied. If a list of length 2, a double-exponential
+            will be applied by the proportionality specified in the 2nd element.
+        :type stoch_stepsize: Union[float, List[float]]
+        """
+        if isinstance(ves, nmodel.Vesicle):
+            ves = ves.name
+
+        deps = {}
+        if dependencies is not None:
+            if isinstance(dependencies, nmodel.ReactionElement):
+                dependencies = dependencies._toReactionSide()
+            if not isinstance(dependencies, nmodel.ReactionSide):
+                raise TypeError(f'Expected species as dependencies, got {dependencies} instead.')
+
+            for s in dependencies._GetStepsElems():
+                deps.setdefault(s.getID(), 0)
+                deps[s.getID()] += 1
+
+        self._sim.solver.addPathVesicle(self._id, ves, speed, deps, stoch_stepsize)
+
+
+class _TypedSimObjectReference(_SimObjectReference):
+    """Reference to a sim object that can have different types
+    For example, vesicles, rafts and link species can all have different types
+    """
+
+    _objCls = None
+
+    def __init__(self, sim, tpe, idx, *args, **kwargs):
+        super().__init__(sim, idx, *args, **kwargs)
+        if isinstance(tpe, self._objCls):
+            tpe = tpe.name
+        if not isinstance(tpe, str):
+            raise TypeError(f'Expected a {self._objCls.__name__} type or name, got {tpe} instead.')
+
+        object.__setattr__(self, '_type', tpe)
+
+    def __eq__(self, other):
+        return super().__eq__(other) and self._type == other._type
+
+    def __hash__(self):
+        return hash((super().__hash__(), self._type))
+
+    def __repr__(self):
+        return f'{self._type}({self._id})'
+
+    @_SimObjectReference.children.getter
+    def children(self):
+        return getattr(self._sim.model, self._type).children
+
+
+@nutils.FreezeAfterInit
+class VesicleReference(_TypedSimObjectReference):
+    """Reference to a specific vesicle
+
+    An object from this class represents a specific vesicle in a 'TetVesicle' simulation. Users should
+    usually instantiate it by calling :py:meth:`SimPath.addVesicle` or by iterating on a
+    :py:class:`VesicleList`.
+
+    :param sim: The simulation in which the vesicle was created
+    :type sim: :py:class:`Simulation`
+    :param ves_type: The type of the vesicle
+    :type ves_type: Union[:py:class:`steps.API_2.model.Vesicle`, str]
+    :param ves_idx: The global index of the specific vesicle
+    :type ves_idx: int
+    """
+
+    _objCls = nmodel.Vesicle
+
+    def exists(self):
+        """Return whether the specific vesicle exists in the simulation
+
+        :returns: True if the specific vesicle currently exists in the simulation
+        :rtype: bool
+        """
+        if self._id == UNDEFINED_VESICLE:
+            return False
+        else:
+            if self.Compartment == '':
+                object.__setattr__(self, '_id', UNDEFINED_VESICLE)
+                return False
+            else:
+                return True
+
+    def delete(self):
+        """Delete the vesicle from the simulation
+
+        If the vesicle does not exist anymore, this method does not do anything.
+        """
+        self._sim.solver.deleteSingleVesicle(self._type, self._id)
+
+    def setPos(self, pos, force=False):
+        """Move the vesicle to a 3D position
+
+        :param pos: The destination position
+        :type pos: :py:class:`steps.API_2.geom.Point`
+        :param force: When True, If another vesicle is already occupying this position, this method will
+            swap the positions of both vesicles. If False, the position will not be changed and a warning
+            message will be displayed.
+        :type force: bool
+
+        This method is called with `force=False` when the :py:attr:`Pos` property is set.
+        """
+        if not self.exists():
+            raise Exception('Vesicle {self} does not exist in the simulation.')
+        pos = list(pos)
+        if len(pos) != 3:
+            raise Exception(f'Expected a 3D position, got {pos} instead.')
+        self._sim.solver.setSingleVesiclePos(self._type, self._id, pos, force)
+
+    def _solverStr(self):
+        """Return the string that is used as part of method names for this specific object."""
+        return 'SingleVesicle'
+
+    def _solverId(self):
+        """Return the id that is used to identify an object in the solver."""
+        return (
+            self._type,
+            self._id,
+        )
+
+    def __getattr__(self, name):
+        """Use SimPath syntax to get values"""
+        return getattr(self._sim.VESICLE(self), name)
+
+    def __setattr__(self, name, val):
+        """Use SimPath syntax to set values"""
+        setattr(self._sim.VESICLE(self), name, val)
+
+    def __call__(self, loc):
+        """Get a version of the vesicle with added information
+
+        Parentheses notation (function call) can be used on a vesicle to specify additional
+        information. It is frequently needed for simulation control and data saving
+        (see :py:class:`steps.API_2.sim.SimPath`).
+
+        :param loc: If `'surf'`, the simulation path represents the surface of the selected vesicles,
+            if `'in'`, it represents the inside of the selected vesicles
+        :type inside: str
+
+        :returns: An object that represent the vesicle with the added information
+
+        :meta public:
+        """
+        if loc not in {'surf', 'in'}:
+            raise ValueError(f"Location string can only be 'surf' or 'in', got {loc} instead.")
+        return self._sim.VESICLE(nmodel._VesicleSelection(self, loc == 'in'))
+
+    # TODO Add properties of these things to forbidden names
+
+
+@nutils.FreezeAfterInit
+class RaftReference(_TypedSimObjectReference):
+    """Reference to a specific raft
+
+    An object from this class represents a specific raft in a 'TetVesicle' simulation. Users should
+    usually instantiate it by calling :py:meth:`SimPath.addRaft` or by iterating on a
+    :py:class:`RaftList`.
+
+    :param sim: The simulation in which the raft path was created
+    :type sim: :py:class:`Simulation`
+    :param raft_type: The type of the raft
+    :type raft_type: Union[:py:class:`steps.API_2.model.Raft`, str]
+    :param raft_idx: The global index of the specific raft
+    :type raft_idx: int
+    """
+
+    _objCls = nmodel.Raft
+
+    def exists(self):
+        """Return whether the specific raft exists in the simulation
+
+        :returns: True if the specific raft currently exists in the simulation
+        :rtype: bool
+        """
+        if self._id == UNDEFINED_RAFT:
+            return False
+        else:
+            if self.Patch == '':
+                object.__setattr__(self, '_id', UNDEFINED_RAFT)
+                return False
+            else:
+                return True
+
+    def _solverStr(self):
+        """Return the string that is used as part of method names for this specific object."""
+        return 'SingleRaft'
+
+    def _solverId(self):
+        """Return the id that is used to identify an object in the solver."""
+        return (
+            self._type,
+            self._id,
+        )
+
+    def __getattr__(self, name):
+        """Use SimPath syntax to get values"""
+        return getattr(self._sim.RAFT(self), name)
+
+    def __setattr__(self, name, val):
+        """Use SimPath syntax to set values"""
+        setattr(self._sim.RAFT(self), name, val)
+
+
+@nutils.FreezeAfterInit
+class PointSpecReference(_TypedSimObjectReference):
+    """Reference to a specific point species
+
+    An object from this class represents a specific point species in a 'TetVesicle' simulation. Users should
+    usually instantiate it by iterating on a :py:class:`PointSpecList`.
+
+    :param sim: The simulation in which the pointSpec path was created
+    :type sim: :py:class:`Simulation`
+    :param pointSpec_idx: The global index of the specific point species
+    :type pointSpec_idx: int
+    """
+
+    _objCls = nmodel.Species
+
+    def exists(self):
+        """Return whether the specific pointSpec exists in the simulation
+
+        :returns: True if the specific pointSpec currently exists in the simulation
+        :rtype: bool
+        """
+        return self.Ves != UNDEFINED_VESICLE
+
+    def _solverStr(self):
+        """Return the string that is used as part of method names for this specific object."""
+        return 'SingleSpec'
+
+    def _solverId(self):
+        """Return the id that is used to identify an object in the solver."""
+        return (
+            self._type,
+            self._id,
+        )
+
+    def __getattr__(self, name):
+        """Use SimPath syntax to get values"""
+        return getattr(self._sim.POINTSPEC(self), name)
+
+    def __setattr__(self, name, val):
+        """Use SimPath syntax to set values"""
+        setattr(self._sim.POINTSPEC(self), name, val)
+
+
+@nutils.FreezeAfterInit
+class LinkSpecReference(PointSpecReference):
+    """Reference to a specific link species
+
+    An object from this class represents a specific link species in a 'TetVesicle' simulation. Users should
+    usually instantiate it by iterating on a :py:class:`LinkSpecList`.
+
+    :param sim: The simulation in which the linkSpec path was created
+    :type sim: :py:class:`Simulation`
+    :param linkSpec_idx: The global index of the specific link species
+    :type linkSpec_idx: int
+    """
+
+    _objCls = nmodel.LinkSpecies
+
+    def _solverStr(self):
+        """Return the string that is used as part of method names for this specific object."""
+        return 'SingleLinkSpec'
+
+    def _solverId(self):
+        """Return the id that is used to identify an object in the solver."""
+        return (self._id,)
+
+    def __getattr__(self, name):
+        """Use SimPath syntax to get values"""
+        return getattr(self._sim.LINKSPEC(self), name)
+
+    def __setattr__(self, name, val):
+        """Use SimPath syntax to set values"""
+        setattr(self._sim.LINKSPEC(self), name, val)
+
+
+class _SimObjectList(nutils.SolverPathObject):
+    """Base class for lists of references to simulation objects"""
+
+    def __init__(self, sim, tpe=None, indices=None, specifArgs=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if isinstance(sim, SimPath):
+            spath = sim
+            sim = spath._sim
+            for path in spath:
+                *_, elem = path
+                if tpe is None:
+                    tpe = elem.name
+                elif tpe != elem.name:
+                    raise Exception(
+                        f'Several {elem._locStr} types ({tpe} and {elem.name}) are present '
+                        f'in the simulation path. Lists can only contain elements from a '
+                        f'single type.'
+                    )
+            indices = numpy.array(spath.Indices)
+            indices = list(indices.flatten())
+        elif not isinstance(sim, Simulation):
+            if hasattr(sim, '__iter__'):
+                lst = list(sim)
+                types = {}
+                for el in lst:
+                    if isinstance(el, self._refCls):
+                        sim = el._sim
+                        types.setdefault(el._type, []).append(el.idx)
+                    else:
+                        raise TypeError(f'Expected a {self._refCls}, got {el} instead.')
+                if len(types) > 1:
+                    raise ValueError(
+                        f'Cannot create a {self.__class__} from {self._refCls} of different '
+                        f'types: {list(types.keys())}.'
+                    )
+                elif len(types) == 0:
+                    raise ValueError(
+                        f'{self.__class__} can only be created from non-empty lists of {self._refCls}.'
+                    )
+                if tpe is not None or indices is not None:
+                    raise ValueError(
+                        f'tpe and indices keyword argument should be None if the positional argument '
+                        f'to create a {self.__class__} is a list of {self._refCls}.'
+                    )
+                (tpe, indices), *_ = types.items()
+            else:
+                raise TypeError('Expected a SimPath or a list of {self._refCls}, got {sim} instead.')
+        object.__setattr__(self, '_sim', sim)
+        object.__setattr__(self, '_type', tpe)
+        object.__setattr__(self, '_lst', indices)
+        object.__setattr__(self, '_specifArgs', specifArgs)
+
+    def __iter__(self):
+        if self._specifArgs is not None:
+            args, kwargs = self._specifArgs
+            for idx in self._lst:
+                yield self.__class__._refCls(self._sim, self._type, idx)(*args, **kwargs)
+        else:
+            for idx in self._lst:
+                yield self.__class__._refCls(self._sim, self._type, idx)
+
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            return self.__class__(self._sim, self._type, self._lst[key], self._specifArgs)
+        else:
+            ret = self.__class__._refCls(self._sim, self._type, self._lst[key])
+            if self._specifArgs is not None:
+                args, kwargs = self._specifArgs
+                return ret(*args, **kwargs)
+            else:
+                return ret
+
+    def __contains__(self, elem):
+        return elem.__class__ == self.__class__._refCls and elem._type == self._type and elem.idx in self._lst
+
+    def __len__(self):
+        return len(self._lst)
+
+    def __call__(self, *args, **kwargs):
+        return self.__class__(self._sim, self._type, self._lst, (args, kwargs))
+
+    @property
+    def children(self):
+        return {}
+
+    @property
+    def indices(self):
+        """The indices of elements in the list
+
+        :type: List[int], read-only
+        """
+        return copy.copy(self._lst)
+
+    def _simPathWalkExpand(self):
+        """Return an iterable of the elements that should be part of ResultSelector paths."""
+        return self
+
+
+@nutils.FreezeAfterInit
+class VesicleList(_SimObjectList):
+    """List of references to specific vesicles
+
+    :param ves: Simulation path to the type of vesicle or list of VesicleReference
+    :type ves: Union[:py:class:`SimPath`, List[:py:class:`VesicleReference`]]
+    """
+
+    _refCls = VesicleReference
+
+    def __getattr__(self, name):
+        return getattr(self._sim.VESICLES(self), name)
+
+    def __setattr__(self, name, val):
+        setattr(self._sim.VESICLES(self), name, val)
+
+
+@nutils.FreezeAfterInit
+class RaftList(_SimObjectList):
+    """List of references to specific rafts
+
+    :param raft: Simulation path to the type of raft or list of RaftReference
+    :type raft: Union[:py:class:`SimPath`, List[:py:class:`RaftReference`]]
+    """
+
+    _refCls = RaftReference
+
+    def __getattr__(self, name):
+        return getattr(self._sim.RAFTS(self), name)
+
+    def __setattr__(self, name, val):
+        setattr(self._sim.RAFTS(self), name, val)
+
+
+@nutils.FreezeAfterInit
+class PointSpecList(_SimObjectList):
+    """List of references to specific point species
+
+    :param pointSpec: Simulation path to the type of point species or list of PointSpecReference
+    :type pointSpec: Union[:py:class:`SimPath`, List[:py:class:`PointSpecReference`]]
+    """
+
+    _refCls = PointSpecReference
+
+    def __getattr__(self, name):
+        return getattr(self._sim.POINTSPECS(self), name)
+
+    def __setattr__(self, name, val):
+        setattr(self._sim.POINTSPECS(self), name, val)
+
+
+@nutils.FreezeAfterInit
+class LinkSpecList(_SimObjectList):
+    """List of references to specific link species
+
+    :param linkSpec: Simulation path to the type of link species or list of LinkSpecReference
+    :type linkSpec: Union[:py:class:`SimPath`, List[:py:class:`LinkSpecReference`]]
+    """
+
+    _refCls = LinkSpecReference
+
+    def __getattr__(self, name):
+        return getattr(self._sim.LINKSPECS(self), name)
+
+    def __setattr__(self, name, val):
+        setattr(self._sim.LINKSPECS(self), name, val)
+
+
+class _ListStandIn(nutils.NamedObject, nutils.SolverRunTimeObject):
+    """Represents a list of simulation objects as part of a SimPath
+    The list is only evaluated at runtime
+    """
+    def __init__(self, listtpe, obj, _callInfo=None, **kwargs):
+        super().__init__(**kwargs)
+        self._callInfo = _callInfo
+        self._listTpe = listtpe
+        objcls = listtpe._refCls._objCls
+        if isinstance(obj, objcls):
+            self._obj = obj
+        else:
+            raise TypeError(f'Expected a {objcls.__name__}, got {obj} instead.')
+
+    def _runTimeFunc(self, opType, sim, prefix, suffix, descriptor):
+        """Return a function that will be called during runtime evaluation of the path."""
+        def func(*args, **kwargs):
+            objs = self._listTpe(SimPath._FromTuple((sim,) + prefix + (self._obj,)))
+            if self._callInfo is not None:
+                objs = objs(self._callInfo)
+            path = SimPath._FromTuple((sim,) + (objs,) + suffix)
+            if opType == 'get':
+                vals = descriptor.__get__(path, SimPath, flatten=False)
+                return {sr.idx: v for sr, v in zip(objs, vals)}
+            else:
+                descriptor.__set__(path, nutils.Params(*args, **kwargs))
+        return func
+
+    def _getReferenceObject(self):
+        """
+        Return the object this object was derived from. Useful for getting the complex associated
+        with a complex selector, etc.
+        """
+        return self._obj
+
+    def __call__(self, info):
+        """Get a version of the list stand-in with added information"""
+        self._callInfo = info
+        return self
+
+    def _simPathAutoMetaData(self):
+        """Return a dictionary with string keys and string or numbers values."""
+        clsName = self._obj.__class__.__name__.lower()
+        return {f'{clsName}_type': self._obj.name, 'value_type': 'dict'}
+
+    def __repr__(self):
+        clsName = self._obj.__class__.__name__.upper()
+        objStr = f'{self._obj}' + ('' if self._callInfo is None else f"('{self._callInfo}')")
+        return f'{clsName}S({objStr})'
+
+
+class _VesicleListStandIn(_ListStandIn):
+    """Represents a vesicle list as part of a SimPath
+    The vesicle list is only evaluated at runtime
+    """
+    def __init__(self, ves, **kwargs):
+        if isinstance(ves, nmodel._VesicleSelection):
+            kwargs['_callInfo'] = ves.loc
+            ves = ves.ves
+        elif not isinstance(ves, nmodel.Vesicle):
+            raise TypeError(f'Expected a vesicle, got {ves} instead.')
+        super().__init__(VesicleList, ves, **kwargs)
+
+    def _simPathAutoMetaData(self):
+        """Return a dictionary with string keys and string or numbers values."""
+        dct = super()._simPathAutoMetaData()
+        if self._callInfo is not None:
+            dct['vesicle_loc'] = self._callInfo
+        return dct
+
+
+class _RaftListStandIn(_ListStandIn):
+    """Represents a raft list as part of a SimPath
+    The raft list is only evaluated at runtime
+    """
+    def __init__(self, raft, **kwargs):
+        super().__init__(RaftList, raft, **kwargs)
+
+
+class _PointSpecListStandIn(_ListStandIn):
+    """Represents a pointSpec list as part of a SimPath
+    The pointSpec list is only evaluated at runtime
+    """
+    def __init__(self, pointSpec, **kwargs):
+        super().__init__(PointSpecList, pointSpec, **kwargs)
+
+    def __repr__(self):
+        return f'POINTSPECS({self._obj})'
+
+
+class _LinkSpecListStandIn(_ListStandIn):
+    """Represents a linkSpec list as part of a SimPath
+    The linkSpec list is only evaluated at runtime
+    """
+    def __init__(self, linkSpec, **kwargs):
+        super().__init__(LinkSpecList, linkSpec, **kwargs)
+
+    def __repr__(self):
+        return f'LINKSPECS({self._obj})'

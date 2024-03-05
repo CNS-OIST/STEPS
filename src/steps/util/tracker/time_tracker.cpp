@@ -5,14 +5,13 @@
 
 #include "time_tracker.hpp"
 
-namespace steps {
-namespace util {
+namespace steps::util {
 
-void TimeTracker::start(){
+void TimeTracker::start() {
     init_ = std::chrono::steady_clock::now();
 }
 
-void TimeTracker::stop(){
+void TimeTracker::stop() {
     final_ = std::chrono::steady_clock::now();
 }
 
@@ -20,11 +19,10 @@ void TimeTracker::stop(){
  * return value is in seconds
  */
 
-double TimeTracker::diff(){
+double TimeTracker::diff() {
     return static_cast<double>(
-        std::chrono::duration_cast<std::chrono::microseconds>(final_ - init_).count()
-        ) * 1e-6;
+               std::chrono::duration_cast<std::chrono::microseconds>(final_ - init_).count()) *
+           1e-6;
 }
 
-} // namespace util
-} // namespace steps
+}  // namespace steps::util

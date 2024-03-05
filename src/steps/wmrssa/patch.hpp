@@ -24,70 +24,54 @@
 
  */
 
-
-#ifndef STEPS_WMRSSA_PATCH_HPP
-#define STEPS_WMRSSA_PATCH_HPP 1
-
+#pragma once
 
 // STL headers.
 #include <cassert>
-#include <vector>
 #include <fstream>
+#include <vector>
 
 // STEPS headers.
-#include "util/common.h"
-#include "kproc.hpp"
 #include "comp.hpp"
-#include "sreac.hpp"
+#include "kproc.hpp"
 #include "solver/patchdef.hpp"
-#include "solver/types.hpp"
+#include "sreac.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace wmrssa {
-
-////////////////////////////////////////////////////////////////////////////////
-
-namespace swmrssa = steps::wmrssa;
-
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::wmrssa {
 
 // Forward declarations.
 class Patch;
 class Wmrssa;
 
 // Auxiliary declarations.
-typedef Patch *                         PatchP;
-typedef std::vector<PatchP>             PatchPVec;
-typedef PatchPVec::iterator             PatchPVecI;
-typedef PatchPVec::const_iterator       PatchPVecCI;
+typedef Patch* PatchP;
+typedef std::vector<PatchP> PatchPVec;
+typedef PatchPVec::iterator PatchPVecI;
+typedef PatchPVec::const_iterator PatchPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class Patch
-{
-public:
-
+class Patch {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    Patch(steps::solver::Patchdef * patchdef, swmrssa::Comp * icomp, swmrssa::Comp * ocomp);
+    Patch(solver::Patchdef* patchdef, Comp* icomp, Comp* ocomp);
     ~Patch();
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream& cp_file);
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream& cp_file);
 
     ////////////////////////////////////////////////////////////////////////
 
-    void setupKProcs(Wmrssa * wmd);
+    void setupKProcs(Wmrssa* wmd);
     void setupDeps();
 
     void reset();
@@ -96,68 +80,63 @@ public:
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Patchdef * def() const
-    { return pPatchdef; }
+    inline solver::Patchdef* def() const {
+        return pPatchdef;
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline std::vector<steps::wmrssa::KProc*>::const_iterator begin() const {
+    inline std::vector<wmrssa::KProc*>::const_iterator begin() const {
         return pKProcs.begin();
     }
-    inline std::vector<steps::wmrssa::KProc*>::const_iterator end() const {
+    inline std::vector<wmrssa::KProc*>::const_iterator end() const {
         return pKProcs.end();
     }
-    inline uint countKProcs() const
-    { return pKProcs.size(); }
-    inline const std::vector<steps::wmrssa::KProc*>& kprocs() const noexcept
-    { return pKProcs; }
-    steps::wmrssa::KProc * sreac(uint lsridx) const;
+    inline uint countKProcs() const {
+        return pKProcs.size();
+    }
+    inline const std::vector<wmrssa::KProc*>& kprocs() const noexcept {
+        return pKProcs;
+    }
+    wmrssa::KProc* sreac(solver::sreac_local_id lsridx) const;
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline swmrssa::Comp * iComp() const
-    { return pIComp; }
+    inline Comp* iComp() const {
+        return pIComp;
+    }
 
-    inline swmrssa::Comp * oComp() const
-    { return pOComp; }
+    inline Comp* oComp() const {
+        return pOComp;
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-    void setBounds(uint i, int nc);
-    bool isOutOfBound(uint i, int nc);
-    double* pools(steps::wmrssa::PropensityRSSA prssa) const;
+    void setBounds(solver::spec_local_id i, int nc);
+    bool isOutOfBound(solver::spec_local_id i, int nc);
+    const util::strongid_vector<solver::spec_local_id, double>& pools(
+        wmrssa::PropensityRSSA prssa) const;
     void setupSpecDeps();
-    inline std::vector<steps::wmrssa::KProc*> const & getSpecUpdKProcs(uint slidx) noexcept
-    { return localSpecUpdKProcs[slidx]; }
+    inline std::vector<wmrssa::KProc*> const& getSpecUpdKProcs(
+        solver::spec_local_id slidx) noexcept {
+        return localSpecUpdKProcs[slidx.get()];
+    }
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
-    steps::solver::Patchdef             * pPatchdef;
+    solver::Patchdef* pPatchdef;
 
     /// The kinetic processes.
-    std::vector<steps::wmrssa::KProc *> pKProcs;
+    std::vector<wmrssa::KProc*> pKProcs;
 
-    swmrssa::Comp                          * pIComp;
-    swmrssa::Comp                          * pOComp;
+    Comp* pIComp;
+    Comp* pOComp;
     // Table of the lower bounds on populations of the species in this compartment.
-    double                              * pPoolLB;
+    util::strongid_vector<solver::spec_local_id, double> pPoolLB;
     // Table of the upper bounds on populations of the species in this compartment.
-    double                              * pPoolUB;
-    std::vector<std::vector<steps::wmrssa::KProc *>> localSpecUpdKProcs;
-
-    ////////////////////////////////////////////////////////////////////////
-
+    util::strongid_vector<solver::spec_local_id, double> pPoolUB;
+    std::vector<std::vector<wmrssa::KProc*>> localSpecUpdKProcs;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-#endif
-// STEPS_WMRSSA_PATCH_HPP
-
-// END
-
+}  // namespace steps::wmrssa

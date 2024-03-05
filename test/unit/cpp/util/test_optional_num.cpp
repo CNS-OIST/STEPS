@@ -1,41 +1,29 @@
-#include <iostream>
-
-#include <boost/core/ignore_unused.hpp>
-
 #include "util/optional_num.hpp"
 
-#include "gtest/gtest.h"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 
-using namespace steps::util;
+using steps::util::NoneType;
+using steps::util::OptionalNum;
 
-TEST(OptionalNum, isValue) {
+TEST_CASE("OptionalNum_isValue") {
+    auto v3 = OptionalNum<int>(3);
 
-  auto v3 = OptionalNum<int>(3);
+    REQUIRE(v3.value() == 3);
+    REQUIRE(*v3 == 3);
+    REQUIRE(v3.value_or(4) == 3);
+    REQUIRE(bool(v3));
 
-  ASSERT_EQ(v3.value(), 3);
-  ASSERT_EQ(*v3, 3);
-  ASSERT_EQ(v3.value_or(4), 3);
-  ASSERT_EQ(bool(v3), true);
+    v3 = NoneType();
 
-  v3 = NoneType();
-
-  ASSERT_EQ(v3.has_value(), false);
-  ASSERT_EQ(bool(v3), false);
-  ASSERT_EQ(v3.value_or(4), 4);
+    REQUIRE_FALSE(v3.has_value());
+    REQUIRE_FALSE(bool(v3));
+    REQUIRE(v3.value_or(4) == 4);
 }
 
-TEST(OptionalNum, isNone) {
-  auto n = OptionalNum<int>();
-  ASSERT_EQ(n.has_value(), false);
-  auto n2 = OptionalNum<int>(NoneType());
-  ASSERT_EQ(n2.has_value(), false);
+TEST_CASE("OptionalNum_isNone") {
+    auto n = OptionalNum<int>();
+    REQUIRE_FALSE(n.has_value());
+    auto n2 = OptionalNum<int>(NoneType());
+    REQUIRE_FALSE(n2.has_value());
 }
-
-#ifndef NDEBUG
-TEST(OptionalNum, asserts) {
-  using optint = OptionalNum<int>;
-  ASSERT_DEATH({ optint var(optint::none_value()); }, "");
-  auto v3 = OptionalNum<int>(3);
-  ASSERT_DEATH(v3.operator=(optint::none_value()), "");
-}
-#endif // NDEBUG

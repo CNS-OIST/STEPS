@@ -24,10 +24,7 @@
 
  */
 
-
-#ifndef STEPS_SOLVER_EFIELD_EFIELD_HPP
-#define STEPS_SOLVER_EFIELD_EFIELD_HPP 1
-
+#pragma once
 
 // STL headers.
 #include <fstream>
@@ -36,16 +33,10 @@
 
 // STEPS headers.
 #include "efieldsolver.hpp"
-#include "util/common.h"
+#include "solver/fwd.hpp"
 #include "util/vocabulary.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps{
-namespace solver {
-namespace efield {
-
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::solver::efield {
 
 // Forward declarations
 class TetMesh;
@@ -65,10 +56,8 @@ class TetMesh;
 // may be set with solver methods, or take default values.
 // Default value for resistivity  = 1.0x10^-2 farad / m^2
 // Default value for bulk resistivity is 1 ohm.m
-class EField
-{
-public:
-
+class EField {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
@@ -80,20 +69,18 @@ public:
 
     /// Initialise EField solver with mesh data.
     ///
-    /// \param nvert Number of vertices in the mesh.
-    /// \param verts A 1D array of nvert * 3 doubles in row-major order.
-    /// \param ntris Number of triangles in the mesh.
-    /// \param tris A 1D array of ntris * 3 uints in row-major order. These
+    /// \param verts A 1D array of number of vertices in the mesh * 3 doubles in row-major order.
+    /// \param tris A 1D array of number of triangle in the mesh * 3 uints in row-major order. These
     ///         indices point into the vertex array.
-    /// \param ntets Number of tetrahedral elements in the mesh.
-    /// \param tets  A 1D array of ntets * 4 uints in row-major order. These
+    /// \param tets  A 1D array of number of tetrahedral elements in the mesh * 4 uints in row-major
+    /// order. These
     ///         indices point into the vertex array.
     ///
-    void initMesh(uint nverts, double *verts,
-                  uint ntris, vertex_id_t *tris,
-                  uint ntets, vertex_id_t *tets,
+    void initMesh(const std::vector<double>& verts,
+                  const std::vector<vertex_id_t>& tris,
+                  const std::vector<vertex_id_t>& tets,
                   uint opt_method = 1,
-                  std::string const &opt_file_name = "",
+                  std::string const& opt_file_name = "",
                   double search_percent = 100.0);
 
     /// Destructor
@@ -103,106 +90,111 @@ public:
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream& cp_file);
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream& cp_file);
 
     // Save optimal vertex configuration
-    void saveOptimal(std::string const & opt_file_name);
+    void saveOptimal(std::string const& opt_file_name);
 
     ////////////////////////////////////////////////////////////////////////
 
     /// Set the surface resistivity of the membrane.
+    /// \param midx Membrane identifier
     /// \param res Surface resistivity (ohm.m^2)
     /// \param erev Reversal potential (volts)
-    void setSurfaceResistivity(uint midx, double res, double erev);
+    void setSurfaceResistivity(solver::membrane_global_id midx, double res, double erev);
+
+    /// Get the surface resistivity of the membrane.
+    /// \param midx membrane index
+    /// \return A pair containing Surface resistivity (ohm.m^2) and Reversal potential (volts)
+    std::pair<double, double> getSurfaceResistivity() const;
 
     /// Set the initial electric potential of all points in the conduction volume
     /// including surface nodes.
     /// \param v Potential (volts)
-    void     setMembPotential(uint midx, double v);
+    void setMembPotential(solver::membrane_global_id midx, double v);
 
     /// Set the specific membrane capacitance of the membrane
     /// \param cm Specific membrane capacitance (farad / m^2)
-    void     setMembCapac(uint midx, double cm);
+    void setMembCapac(solver::membrane_global_id midx, double cm);
 
-    /// Set the bulk electrical resistivity of the section of the mesh representing
-    /// the volume conductor
-    /// \param ro Electrical resistivity (ohm.m)
-    void     setMembVolRes(uint midx, double ro);
+    /// Set the bulk electrical resistivity of the section of the mesh
+    /// representing the volume conductor \param ro Electrical resistivity (ohm.m)
+    void setMembVolRes(solver::membrane_global_id midx, double ro);
 
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the electric potential of a vertex (volts)
     /// \param vidx Index of the vertex
     /// \return Electric potential of the vertex (volts)
-    double  getVertV(vertex_id_t vidx);
+    double getVertV(vertex_id_t vidx);
 
     /// Set the electric potential of a vertex (volts)
     /// \param vidx Index of the vertex
     /// \param v Electric potential (volts)
-    void    setVertV(vertex_id_t vidx, double v);
+    void setVertV(vertex_id_t vidx, double v);
 
     /// Return whether the electric potential of a vertex is clamped.
     /// \param vidx Index of the vertex
     /// \Return True if electric potential is clamped, False otherwise
-    bool    getVertVClamped(vertex_id_t vidx);
+    bool getVertVClamped(vertex_id_t vidx);
 
     /// Set whether the electric potential of a vertex is clamped or not.
     /// \param vidx Index of the vertex
     /// \param cl Clamped (true) or unclamped (false)
-    void    setVertVClamped(vertex_id_t vidx, bool cl);
+    void setVertVClamped(vertex_id_t vidx, bool cl);
 
     /// Get the current clamp for a vertex element.
     /// \param vidx Index of the vertex
-    double  getVertIClamp(vertex_id_t vidx);
+    double getVertIClamp(vertex_id_t vidx);
 
     /// Set the current clamp for a vertex element.
     /// \param vidx Index of the vertex
     /// \param cur Current clamp for the vertex
-    void     setVertIClamp(vertex_id_t vidx, double cur);
+    void setVertIClamp(vertex_id_t vidx, double cur);
 
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the electric potential of a triangle surface element (volts)
     /// \param tidx Index of the triangle surface element
     /// \return Electric potential of the triangle surface element (volts)
-    double  getTriV(triangle_id_t tidx);
+    double getTriV(triangle_local_id tidx);
 
     /// Set the electric potential of a triangle surface element (volts)
     /// \param tidx Index of the triangle surface element
     /// \param v Electric potential (volts)
-    void     setTriV(triangle_id_t tidx, double v);
+    void setTriV(triangle_local_id tidx, double v);
 
-    /// Return whether the electric potential of a triangle surface element is clamped or not.
-    /// \param tidx Index of the triangle surface element
-    /// \return True if electric potential clamped, False otherwise
-    bool    getTriVClamped(triangle_id_t tidx);
+    /// Return whether the electric potential of a triangle surface element is
+    /// clamped or not. \param tidx Index of the triangle surface element \return
+    /// True if electric potential clamped, False otherwise
+    bool getTriVClamped(triangle_local_id tidx);
 
-    /// Set whether the electric potential of a triangle surface element is clamped or not.
-    /// \param tidx Index of the triangle
-    /// \param cl Clamped (true) or unclamped (false)
-    void    setTriVClamped(triangle_id_t tidx, bool cl);
+    /// Set whether the electric potential of a triangle surface element is
+    /// clamped or not. \param tidx Index of the triangle \param cl Clamped (true)
+    /// or unclamped (false)
+    void setTriVClamped(triangle_local_id tidx, bool cl);
 
     /// Return the total current across a triangle surface element.
     /// \param tidx Index of the triangle surface element
     /// \return Current across the triangle (amps)
-    double  getTriI(triangle_id_t tidx);
+    double getTriI(triangle_local_id tidx);
 
     /// Set the current across a triangle surface element.
     /// \param tidx Index of the triangle surface element
     /// \param cur Current across the triangle (amps)
-    void    setTriI(triangle_id_t tidx, double cur);
+    void setTriI(triangle_local_id tidx, double cur);
 
     /// Get the current clamp for a triangle surface element.
     /// \param tidx Index of the triangle surface element
-    double   getTriIClamp(triangle_id_t tidx);
+    double getTriIClamp(triangle_local_id tidx);
 
     /// Set the current clamp for a triangle surface element.
     /// \param tidx Index of the triangle surface element
     /// \param cur Current clamp for the triangle surface element
-    void     setTriIClamp(triangle_id_t tidx, double cur);
+    void setTriIClamp(triangle_local_id tidx, double cur);
 
     /// Auxiliary function for setting current in all triangles at once.
     /// \param cur A 1D array, size = number of surface triangles,
@@ -212,30 +204,29 @@ public:
     /// Set the specific capacitance of a triangle surface element.
     /// \param tidx Index of the triangle surface element
     /// \param cm Specific membrane capacitance (farad / m^2)
-    void setTriCapac(triangle_id_t tidx, double cm);
+    void setTriCapac(triangle_local_id tidx, double cm);
 
     ////////////////////////////////////////////////////////////////////////
 
     /// Return electric potential for internal tetrahedral elements (volts).
     /// \param tidx Index of the tetrahedron
     /// \return Electric potential of tetrahedron (volts)
-    double    getTetV(tetrahedron_id_t tidx);
+    double getTetV(tetrahedron_local_id tidx);
 
     /// Set the electric potential of a tetrahedral element (volts)
     /// \param tidx Index of the tetrahedral element
     /// \param v Electric potential (volts)
-    void     setTetV(tetrahedron_id_t tidx, double v);
+    void setTetV(tetrahedron_local_id tidx, double v);
 
-    /// Return whether the electric potential of a tetrahedral element is clamped or not.
-    /// \param tidx Index of the tetrahedral element
-    /// \return True if electric potential clamped, False otherwise
-    bool    getTetVClamped(tetrahedron_id_t tidx);
+    /// Return whether the electric potential of a tetrahedral element is clamped
+    /// or not. \param tidx Index of the tetrahedral element \return True if
+    /// electric potential clamped, False otherwise
+    bool getTetVClamped(tetrahedron_local_id tidx);
 
-    /// Set whether the electric potential of a tetrahedral element is clamped or not.
-    /// \param tidx Index of the tetrahedral element
-    /// \param cl Clamped (true) or unclamped (false)
-    void    setTetVClamped(tetrahedron_id_t tidx, bool cl);
-
+    /// Set whether the electric potential of a tetrahedral element is clamped or
+    /// not. \param tidx Index of the tetrahedral element \param cl Clamped (true)
+    /// or unclamped (false)
+    void setTetVClamped(tetrahedron_local_id tidx, bool cl);
 
     ////////////////////////////////////////////////////////////////////////
     // SIMULATION CONTROLS
@@ -243,27 +234,26 @@ public:
 
     /// Advance the EField simulation.
     /// \param sec The time to advance the EField simulation (seconds)
-    void    advance(double sec);
+    void advance(double sec);
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
-    TetMesh                      *pMesh{nullptr};
+  private:
+    TetMesh* pMesh{nullptr};
     std::unique_ptr<EFieldSolver> pVProp;
-    std::vector<vertex_id_t>             pCPerm;
+    std::vector<vertex_id_t> pCPerm;
 
-    index_t          pNVerts{0};
-    index_t        pNTris{0};
+    index_t pNVerts{0};
+    index_t pNTris{0};
     index_t pNTets{0};
 
-    std::vector<vertex_id_t>             pTritoVert;
+    std::vector<vertex_id_t> pTritoVert;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/** Convenience function for constructing EFieldSolver object and correspondingly
- * initialised EField object.
+/** Convenience function for constructing EFieldSolver object and
+ * correspondingly initialised EField object.
  */
 
 template <typename S, typename... Args>
@@ -272,15 +262,4 @@ std::unique_ptr<EField> make_EField(Args&&... args) {
     return std::unique_ptr<EField>(new EField(std::move(ef_solver)));
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-#endif
-// STEPS_SOLVER_EFIELD_EFIELD_HPP
-
-// END
+}  // namespace steps::solver::efield

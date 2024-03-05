@@ -31,7 +31,9 @@ import unittest
 
 FAILED_LOAD_STR = 'unittest.loader._FailedTest'
 
-FAKE_MODULE_NAME = 'steps'
+# STEPS and its dependencies should be provided fake modules
+FAKE_MODULES = ['steps', 'numpy', 'scipy', 'matplotlib', 'mpi4py']
+
 FAKE_MODULE_ALL = ['NoOrdering']
 
 class _FakeModule(types.ModuleType):
@@ -40,6 +42,11 @@ class _FakeModule(types.ModuleType):
         self.__path__ = []
         self.__all__ = FAKE_MODULE_ALL
 
+for meth in ['getattr', 'call', 'getitem', 'mul', 'add', 'truediv']:
+    setattr(_FakeModule, f'__{meth}__', lambda self, *args, **kwargs: self)
+    setattr(_FakeModule, f'__r{meth}__', lambda self, *args, **kwargs: self)
+
+
 class _CustomVirtualLoader(importlib.abc.Loader):
     def create_module(self, spec):
         return _FakeModule(spec.name)
@@ -47,14 +54,16 @@ class _CustomVirtualLoader(importlib.abc.Loader):
     def exec_module(self, module):
         pass
 
+
 class _CustomMetaPathFinder(importlib.abc.MetaPathFinder):
     def __init__(self):
         self._virtualLoader = _CustomVirtualLoader()
 
     def find_spec(self, fullname, path, target=None):
-        if fullname.startswith(FAKE_MODULE_NAME):
+        if any(fullname.startswith(mod) for mod in FAKE_MODULES):
             return importlib.machinery.ModuleSpec(fullname, self._virtualLoader)
         return None
+
 
 def getAllTests(suite):
     if isinstance(suite, unittest.TestCase):
@@ -65,13 +74,14 @@ def getAllTests(suite):
     else:
         raise NotImplementedError()
 
+
 if __name__ == "__main__":
     _, path, prefix = sys.argv
 
     # Modify the import machinery to get a fake module.
     # We need to do this because unittest actually imports the test modules upon test discovery.
-    # Since the test modules also import steps, we need to provide a fake steps package in order
-    # for the test discovery to work.
+    # Since the test modules also import steps and potentially dependencies that are not yet
+    # installed, we need to provide fake packages in order for the test discovery to work.
     sys.meta_path.append(_CustomMetaPathFinder())
 
     loader = unittest.TestLoader()

@@ -32,31 +32,28 @@
 
 #include "point.hpp"
 
-#include "util/common.h"
-
-namespace steps {
-namespace math {
+namespace steps::math {
 
 /** Calculate area of triangle.
  *
  * \param p0,p1,p2 Vertices of triangle.
  * \return Area.
  */
-double tri_area(const point3d &p0, const point3d &p1, const point3d &p2);
+double tri_area(const point3d& p0, const point3d& p1, const point3d& p2);
 
 /** Calculate triangle barycenter.
  *
  * \param p0,p1,p2 Vertices of triangle.
  * \return Barycenter.
  */
-point3d tri_barycenter(const point3d &p0, const point3d &p1, const point3d &p2);
+point3d tri_barycenter(const point3d& p0, const point3d& p1, const point3d& p2);
 
 /** Calculate triangle normal vector.
  *
  * \param p0,p1,p2 Vertices of triangle.
  * \return Unit length normal vector.
  */
-point3d tri_normal(const point3d &p0, const point3d &p1, const point3d &p2);
+point3d tri_normal(const point3d& p0, const point3d& p1, const point3d& p2);
 
 /** Select point in triangle from uniformly generated variates.
  *
@@ -64,7 +61,7 @@ point3d tri_normal(const point3d &p0, const point3d &p1, const point3d &p2);
  * \param s,t Two uniformly-generated variates in [0,1].
  * \return Sampled point.
  */
-point3d tri_ranpnt(const point3d &p0, const point3d &p1, const point3d &p2, double s, double t);
+point3d tri_ranpnt(const point3d& p0, const point3d& p1, const point3d& p2, double s, double t);
 
 /** Intersects a triangle with a line segment
  *
@@ -74,9 +71,12 @@ point3d tri_ranpnt(const point3d &p0, const point3d &p1, const point3d &p2, doub
  *     Otherwise they define a ray starting at lp0 and passing by lp1
  * \return The intersection point if exists, else
  */
-bool tri_intersect_line(const point3d &tp0, const point3d &tp1, const point3d &tp2,
-                        const point3d &lp0, const point3d &lp1, point3d &intersection,
-                        bool is_segment=true);
+bool tri_intersect_line(const point3d& tp0,
+                        const point3d& tp1,
+                        const point3d& tp2,
+                        const point3d& lp0,
+                        const point3d& lp1,
+                        point3d& intersection,
+                        bool is_segment = true);
 
-} // namespace math
-} // namespace steps
+}  // namespace steps::math

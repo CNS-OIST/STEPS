@@ -201,6 +201,7 @@ class ParameterUsage(unittest.TestCase):
         div_inv = param5 / param2
 
         power = param2 ** 2
+        neg = -param2
 
         self.assertTrue(param2._isUserDefined())
         self.assertFalse(add._isUserDefined())
@@ -241,6 +242,10 @@ class ParameterUsage(unittest.TestCase):
         self.assertEqual(power.units, 'uM^2')
         self.assertEqual(power.name, 'param2 ** 2')
 
+        self.assertEqual(neg.value, -2)
+        self.assertEqual(neg.units, 'uM')
+        self.assertEqual(neg.name, '-param2')
+
         # No units
         param2 = Parameter(2, '')
         param5 = Parameter(5, '')
@@ -250,6 +255,7 @@ class ParameterUsage(unittest.TestCase):
         mul = param2 * param5
         div = param2 / param5
         power = param2 ** 2
+        neg = -param2
 
         self.assertEqual(add.value, 7)
         self.assertEqual(add.units, '')
@@ -270,6 +276,10 @@ class ParameterUsage(unittest.TestCase):
         self.assertEqual(power.value, 4)
         self.assertEqual(power.units, '')
         self.assertEqual(power.name, 'param2 ** 2')
+
+        self.assertEqual(neg.value, -2)
+        self.assertEqual(neg.units, '')
+        self.assertEqual(neg.name, '-param2')
 
         # Forbidden operations
         with self.assertRaises(Exception):
@@ -336,6 +346,9 @@ class ParameterUsage(unittest.TestCase):
         div = param2 / param5
         invdiv = param5 / param2
 
+        negadd = -add
+        negmul = -mul
+
         self.assertEqual(add.value, 2 + 5e-3)
         self.assertEqual(add.units, 'm s^-1')
         self.assertEqual(add.name, 'param2 + param5')
@@ -363,6 +376,13 @@ class ParameterUsage(unittest.TestCase):
         self.assertEqual(invdiv.value, 2.5)
         self.assertEqual(invdiv.units, 'um ms^-1 (m s^-1)^-1')
         self.assertEqual(invdiv.name, 'param5 / param2')
+
+        self.assertEqual(negadd.value, -(2 + 5e-3))
+        self.assertEqual(negadd.units, 'm s^-1')
+        self.assertEqual(negadd.name, '-(param2 + param5)')
+        self.assertEqual(negmul.value, -10)
+        self.assertEqual(negmul.units, 'm s^-1 um ms^-1')
+        self.assertEqual(negmul.name, '-param2 * param5')
 
         # Two Parameter objects, one named, incompatible units
         param2 = Parameter(2, 'm s^-1')
@@ -395,7 +415,7 @@ class ParameterUsage(unittest.TestCase):
         self.assertEqual(invdiv.units, 'uM (m s^-1)^-1')
         self.assertEqual(invdiv.name, '(5 uM) / param2')
 
-        # Two named Parameter objects, compatible units
+        # Two Parameter objects, one named, compatible units
         param2 = Parameter(2, 'm s^-1')
 
         add = param2 + Parameter(5, 'um ms^-1')
@@ -407,6 +427,9 @@ class ParameterUsage(unittest.TestCase):
         invmul = Parameter(5, 'um ms^-1') * param2
         div = param2 / Parameter(5, 'um ms^-1')
         invdiv = Parameter(5, 'um ms^-1') / param2
+
+        negadd = -add
+        negmul = -mul
 
         self.assertEqual(add.value, 2 + 5e-3)
         self.assertEqual(add.units, 'm s^-1')
@@ -435,6 +458,13 @@ class ParameterUsage(unittest.TestCase):
         self.assertEqual(invdiv.value, 2.5)
         self.assertEqual(invdiv.units, 'um ms^-1 (m s^-1)^-1')
         self.assertEqual(invdiv.name, '(5 um ms^-1) / param2')
+
+        self.assertEqual(negadd.value, -(2 + 5e-3))
+        self.assertEqual(negadd.units, 'm s^-1')
+        self.assertEqual(negadd.name, '-(param2 + 0.005)')
+        self.assertEqual(negmul.value, -10)
+        self.assertEqual(negmul.units, 'm s^-1 um ms^-1')
+        self.assertEqual(negmul.name, '-param2 * (5 um ms^-1)')
 
         # Two unnamed Parameter objects, incompatible units
         with self.assertRaises(Exception):

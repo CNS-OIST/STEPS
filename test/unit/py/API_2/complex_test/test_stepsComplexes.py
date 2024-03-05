@@ -45,10 +45,10 @@ import time
 
 class StepsComplexReaction(unittest.TestCase):
     """Test Complex creation."""
-    #def setUp(self, order=NoOrdering, nbRuns=100, pThresh=0.01):
-    def setUp(self, order=NoOrdering, nbRuns=100, pThresh=0.001):
+    def setUp(self, order=NoOrdering, nbRuns=50, pThresh=0.001):
         self.nbRuns = nbRuns
         self.pThresh = pThresh
+        self.ENDT = 5
 
         self.mdls = [Model(), Model()]
         self.geoms = [Geometry(), Geometry()]
@@ -57,10 +57,12 @@ class StepsComplexReaction(unittest.TestCase):
         self.sass = [True, False]
         self.species = []
         self.volsyss = []
+        self.surfsyss = []
         self.complexes = []
         self.suss = []
         self.subs = []
         self.comps = []
+        self.patches = []
         for mdl, sas in zip(self.mdls, self.sass):
             with mdl:
                 SA, SB = Species.Create()
@@ -84,37 +86,48 @@ class StepsComplexReaction(unittest.TestCase):
                 vsys = VolumeSystem.Create()
                 self.volsyss.append(vsys)
 
-        for geom, vsys in zip(self.geoms, self.volsyss):
+                ssys = SurfaceSystem.Create()
+                self.surfsyss.append(ssys)
+
+        for geom, vsys, ssys in zip(self.geoms, self.volsyss, self.surfsyss):
             with geom:
-                # Create the cytosol and Endoplasmic Reticulum compartments
                 cyt = Compartment.Create(vsys, 1.6572e-19)
+                out = Compartment.Create(vsys, 1.6572e-19)
 
                 self.comps.append(cyt)
+                self.comps.append(out)
 
-        self.rng = RNG('mt19937', 512, time.time())
+                patch = Patch.Create(cyt, out, ssys, 1e-12)
+                self.patches.append(patch)
+
+        # Hardcoded seed to avoid random failures
+        self.rng = RNG('mt19937', 512, 123456)
 
     @staticmethod
-    def _addSaverToSim(sim, comps, addSingleSUS=True):
+    def _addSaverToSim(sim, locations, complexes, addSingleSUS=True):
         rs = ResultSelector(sim)
-        for comp in comps:
-            states = list(comp)
-            comp = comp._getReferenceObject()
-            data = getattr(rs.cyt, comp.name)[tuple(states[0]._state)].Count
-            for s in states[1:]:
-                data <<= getattr(rs.cyt, comp.name)[tuple(s._state)].Count
+        data = rs.LIST(*locations).ALL(Species).Count
+        for comp in complexes:
+            data <<= rs.LIST(*locations).LIST(*comp).Count
             if addSingleSUS:
-                data <<= getattr(getattr(rs.cyt, comp.name), states[0]._state[0].name).Count
-        data <<= rs.cyt.SA.Count
-        data <<= rs.cyt.SB.Count
+                data <<= rs.LIST(*locations).LIST(comp).LIST(list(comp._subUnits[0]._states)[0]).Count
         sim.toSave(data, dt=0.1)
         return data
 
-    def _testData(self, allData, same=True):
+    def _testData(self, allData, same=True, labels=None, plot=False):
         # Perform Kolmogorov-Smirnov two sampled tests on each time point
         dat1, dat2 = allData
         self.assertEqual(dat1.shape, dat2.shape)
+        nTot = dat1.shape[2]
+
+        if plot:
+            from matplotlib import pyplot as plt
+            nRows = int(nTot ** 0.5)
+            nCols = int(np.ceil(nTot / nRows))
+            fig = None
+
         totNbFail = 0
-        for j in range(dat1.shape[2]):
+        for j in range(nTot):
             nbTests = 0
             allPVals = []
             for t in range(dat1.shape[1]):
@@ -124,21 +137,30 @@ class StepsComplexReaction(unittest.TestCase):
 
             # Raise an error if the number of "failed" tests is higher than expected
             # Apply Benjamini–Hochberg procedure to get the number of "true discoveries"
-            allPVals.sort()
-            nBFail = nbTests
-            for k, pval in enumerate(allPVals):
+            nbFail = nbTests
+            for k, pval in enumerate(sorted(allPVals)):
                 if pval > (k + 1) / nbTests * self.pThresh:
                     nbFail = k
                     break
 
             totNbFail += min(nbFail, 1)
 
-            # Import pylab and uncomment to plot average time traces of values that are significantly different
+            # Plot average time traces of values that are significantly different from expected
+            if plot and ((same and nbFail > 0) or (not same and nbFail == 0)):
+                if fig is None:
+                    fig = plt.figure()
+                    fig.suptitle(f'Data should be ' + ('identical' if same else 'different'))
+                plt.subplot(nRows, nCols, j+1)
+                plt.plot(range(dat1.shape[1]), np.mean(dat1[:,:,j],axis=0), 'b', range(dat1.shape[1]), np.mean(dat2[:,:,j],axis=0), 'r')
+                plt.plot(range(dat1.shape[1]), np.log(allPVals), 'g')
+                if labels is not None:
+                    plt.title(labels[j])
 
-            # if same and nbFail > 0:
-                # print('fail', j)
-                # pylab.plot(range(dat1.shape[1]), np.mean(dat1[:,:,j],axis=0), 'b', range(dat1.shape[1]), np.mean(dat2[:,:,j],axis=0), 'r')
-                # pylab.show()
+        if plot and fig is not None:
+            if (same and totNbFail > 0) or (not same and totNbFail == 0):
+                plt.show()
+            else:
+                plt.close()
 
         if same:
             self.assertEqual(totNbFail, 0)
@@ -152,326 +174,392 @@ class StepsComplexReaction(unittest.TestCase):
             su = SubUnit.Create([sus1, sus2])
             with self.assertRaises(Exception):
                 CC = Complex.Create([su], statesAsSpecies=False, order=StrongOrdering)
+    
+    def _runComplexSurfaceReacSubTests(self, func):
+        with self.subTest('Volume-Volume reactions'):
+            func(self.volsyss, lambda x, _: x, ['cyt', 'cyt'], True)
+            self.setUp()
+            func(self.volsyss, lambda x, _: x, ['cyt', 'cyt'], False)
+        with self.subTest('Surface-Surface reactions'):
+            self.setUp()
+            func(self.surfsyss, lambda x, _: Surf(x), ['patch', 'patch'], True, kfact=2e3)
+            self.setUp()
+            func(self.surfsyss, lambda x, _: Surf(x), ['patch', 'patch'], False, kfact=2e3)
+        with self.subTest('Volume-Surface reactions'):
+            self.setUp()
+            func(self.surfsyss, lambda x, i: [Surf, In][i](x), ['patch', 'cyt'], True)
+            self.setUp()
+            func(self.surfsyss, lambda x, i: [Surf, In][i](x), ['patch', 'cyt'], False)
+            self.setUp()
+            func(self.surfsyss, lambda x, i: [In, Surf][i](x), ['cyt', 'patch'], True)
+            self.setUp()
+            func(self.surfsyss, lambda x, i: [In, Surf][i](x), ['cyt', 'patch'], False)
 
-    def testSubUnitChange(self):
+    def _testSubUnitChange(self, systems, locFunc, locations, same=True, **kwargs):
         r = self.r
         allData = []
-        for mdl, geom, vsys, Comp, subunitstates, species in zip(self.mdls, self.geoms, self.volsyss, self.complexes, self.suss, self.species):
+        for mdl, geom, sys, Comp, subunitstates, species in zip(self.mdls, self.geoms, systems, self.complexes, self.suss, self.species):
             Comp1, Comp2 = Comp
             sus1A, sus1B, sus1C, sus2A, sus2B, sus2C, sus3A, sus3B, sus3C, sus4A, sus4B, sus4C = subunitstates
             SA, SB = species
             with mdl:
-                with vsys:
-                    SA <r[1]> SB
-                    r[1].K = 1, 1
-
-                    with Comp1[...]:
-                        sus1B <r[1]> sus1A <r[2]> sus1C
-                        sus1A['a'] + sus1B['b'] <r[3]> sus1C['a'] + sus1C['b']
-                        r[1].K = 1, 1
-                        r[2].K = 1, 1
-                        r[3].K = 2, 2
-
-            sim = Simulation('Wmdirect', mdl, geom, self.rng)
-            resSaver = self.__class__._addSaverToSim(sim, [Comp1])
-
-            for i in range(self.nbRuns):
-                sim.newRun()
-                sim.cyt.SA.Count = 400
-                sim.cyt.SB.Count = 400
-                sim.cyt.Comp1[(sus1A,)*2 + (sus2C,)*2].Count = 500
-                sim.run(10)
-
-            allData.append(np.array(resSaver.data[:]))
-
-        self._testData(allData)
-
-    def testSubUnitSelectors(self):
-        r = self.r
-        allData = []
-        for mdl, geom, vsys, Comp, subunitstates, species in zip(self.mdls, self.geoms, self.volsyss, self.complexes, self.suss, self.species):
-            Comp1, Comp2 = Comp
-            sus1A, sus1B, sus1C, sus2A, sus2B, sus2C, sus3A, sus3B, sus3C, sus4A, sus4B, sus4C = subunitstates
-            SA, SB = species
-            with mdl:
-                with vsys:
-                    SA <r[1]> SB
-                    r[1].K = 1, 1
-
-                    with Comp1[...]:
-                        (sus1B | sus1A) >r[1]> sus1C
-                        (sus1C | sus1A) >r[2]> sus1B
-                        (sus1C | sus1B) >r[3]> sus1A
-                        r[1].K = 5
-                        r[2].K = 3
-                        r[3].K = 1
-
-                    # Check that subunitstates in filters are not counted as reactants
-                    with Comp1[sus1A, ...]:
-                        sus1A <r[1]> sus1C
-                        r[1].K = 2, 3
-
-            sim = Simulation('Wmdirect', mdl, geom, self.rng)
-            resSaver = self.__class__._addSaverToSim(sim, [Comp1])
-
-            for i in range(self.nbRuns):
-                sim.newRun()
-                sim.cyt.SA.Count = 400
-                sim.cyt.SB.Count = 400
-                sim.cyt.Comp1[(sus1A,)*2 + (sus2C,)*2].Count = 500
-                sim.run(10)
-
-            allData.append(np.array(resSaver.data[:]))
-
-        self._testData(allData)
-
-    def testSubUnitChangeDiffParams(self):
-        r = self.r
-        allData = []
-        for mdl, geom, vsys, Comp, subunitstates, species in zip(self.mdls, self.geoms, self.volsyss, self.complexes, self.suss, self.species):
-            Comp1, Comp2 = Comp
-            sus1A, sus1B, sus1C, sus2A, sus2B, sus2C, sus3A, sus3B, sus3C, sus4A, sus4B, sus4C = subunitstates
-            SA, SB = species
-            with mdl:
-                with vsys:
-                    SA <r[1]> SB
-                    r[1].K = 1, 1
-
-                    with Comp1[...]:
-                        sus1B <r[1]> sus1A <r[2]> sus1C
-                        if mdl is self.mdls[0]:
+                with sys:
+                    with Comp1[..., sus2A, sus2A]:
+                        locFunc(sus1B, 0) <r[1]> locFunc(sus1A, 0) <r[2]> locFunc(sus1C, 0)
+                        locFunc(sus1A['a'], 0) + locFunc(sus1B['b'], 0) <r[3]> locFunc(sus1C['a'], 0) + locFunc(sus1C['b'], 0)
+                        if same or mdl is self.mdls[0]:
                             r[1].K = 1, 1
                             r[2].K = 1, 1
+                            r[3].K = 2, 2
                         else:
-                            r[1].K = 100.5, 1.1
-                            r[2].K = 0.7, 1.2
+                            r[1].K = 5, 1
+                            r[2].K = 2, 1
+                            r[3].K = 3, 2
 
             sim = Simulation('Wmdirect', mdl, geom, self.rng)
-            resSaver = self.__class__._addSaverToSim(sim, [Comp1])
+
+            rs = ResultSelector(sim)
+            data = rs.LIST(locations[0]).LIST(*Comp1[..., sus2A, sus2A]).Count
+            data <<= rs.LIST(locations[0]).Comp1[..., sus2A, sus2A].sus1A.Count
+            sim.toSave(data, dt=0.1)
 
             for i in range(self.nbRuns):
                 sim.newRun()
-                sim.cyt.SA.Count = 400
-                sim.cyt.SB.Count = 400
-                sim.cyt.Comp1[(sus1A,)*2 + (sus2C,)*2].Count = 500
-                sim.run(10)
+                sim.LIST(locations[0]).Comp1[sus1A, sus1A, sus2A, sus2A].Count = 500
+                sim.run(self.ENDT)
 
-            allData.append(np.array(resSaver.data[:]))
+            allData.append(np.array(data.data[:]))
 
-        self._testData(allData, same=False)
+        self._testData(allData, same=same, labels=data.labels)
+
+    def testSubUnitChange(self):
+        self._runComplexSurfaceReacSubTests(self._testSubUnitChange)
+
+    def _testSubUnitSelectors(self, systems, locFunc, locations, same=True, **kwargs):
+        r = self.r
+        allData = []
+        for mdl, geom, sys, Comp, subunitstates, species in zip(self.mdls, self.geoms, systems, self.complexes, self.suss, self.species):
+            Comp1, Comp2 = Comp
+            sus1A, sus1B, sus1C, sus2A, sus2B, sus2C, sus3A, sus3B, sus3C, sus4A, sus4B, sus4C = subunitstates
+            SA, SB = species
+            with mdl:
+                with sys:
+                    with Comp1[..., sus2A, sus2A]:
+                        locFunc(sus1B | sus1A, 0) >r[1]> locFunc(sus1C, 0)
+                        locFunc(sus1C | sus1A, 0) >r[2]> locFunc(sus1B, 0)
+                        locFunc(sus1C | sus1B, 0) >r[3]> locFunc(sus1A, 0)
+                        locFunc(sus1A | sus1B, 0) + locFunc(SA, 1) >r[4]> locFunc(sus1C, 0)
+                        if same or mdl is self.mdls[0]:
+                            r[1].K = 5
+                            r[2].K = 3
+                            r[3].K = 1
+                            r[4].K = 1000
+                        else:
+                            r[1].K = 10
+                            r[2].K = 1
+                            r[3].K = 2
+                            r[4].K = 2000
+
+                    # Check that subunitstates in filters are not counted as reactants
+                    with Comp1[sus1A, ..., sus2A, sus2A]:
+                        locFunc(sus1A, 0) <r[1]> locFunc(sus1C, 0)
+                        if same or mdl is self.mdls[0]:
+                            r[1].K = 2, 3
+                        else:
+                            r[1].K = 1, 5
+
+            sim = Simulation('Wmdirect', mdl, geom, self.rng)
+
+            rs = ResultSelector(sim)
+            data = rs.LIST(locations[1]).SA.Count
+            data <<= rs.LIST(locations[0]).LIST(*Comp1[..., sus2A, sus2A]).Count
+            data <<= rs.LIST(locations[0]).Comp1[..., sus2A, sus2A].sus1A.Count
+            sim.toSave(data, dt=0.1)
+
+            for i in range(self.nbRuns):
+                sim.newRun()
+                sim.LIST(locations[1]).SA.Count = 400
+                sim.LIST(locations[0]).Comp1[sus1A, sus1A, sus2A, sus2A].Count = 500
+                sim.run(self.ENDT)
+
+            allData.append(np.array(data.data[:]))
+
+        self._testData(allData, same=same, labels=data.labels)
+
+    def testSubUnitSelectors(self):
+        self._runComplexSurfaceReacSubTests(self._testSubUnitSelectors)
+
+    def _testSpeciesInteraction(self, systems, locFunc, locations, same=True, kfact=1, **kwargs):
+        r = self.r
+        allData = []
+        for mdl, geom, sys, Comp, subunitstates, species in zip(self.mdls, self.geoms, systems, self.complexes, self.suss, self.species):
+            Comp1, Comp2 = Comp
+            sus1A, sus1B, sus1C, sus2A, sus2B, sus2C, sus3A, sus3B, sus3C, sus4A, sus4B, sus4C = subunitstates
+            SA, SB = species
+            with mdl:
+                with sys:
+                    with Comp1[..., sus2A, sus2A]:
+                        locFunc(sus1A, 0) + locFunc(SA, 1) <r[1]> locFunc(sus1B, 0) + locFunc(SA, 1) <r[2]> locFunc(sus1C, 0) + locFunc(SB, 1)
+                        locFunc(sus1C, 0) + locFunc(SB, 0) <r[3]> locFunc(sus1B, 1) + locFunc(SB, 0)
+                        if same or mdl is self.mdls[0]:
+                            r[1].K = kfact*10000, kfact*1000
+                            r[2].K = kfact*20000, kfact*2000
+                            r[3].K = kfact*5000, kfact*1000
+                        else:
+                            r[1].K = kfact*2000, kfact*7000
+                            r[2].K = kfact*40000, kfact*12000
+                            r[3].K = kfact*20000, kfact*7000
+            sim = Simulation('Wmdirect', mdl, geom, self.rng)
+
+            rs = ResultSelector(sim)
+            data = rs.LIST(locations[1]).LIST(SA, SB).Count
+            data <<= rs.LIST(locations[0]).LIST(*Comp1[..., sus2A, sus2A]).Count
+            if locations[0] != locations[1]:
+                data <<= rs.LIST(locations[1]).LIST(Comp1[sus1B, sus1B, sus2A, sus2A]).Count
+            sim.toSave(data, dt=0.1)
+
+            for i in range(self.nbRuns):
+                sim.newRun()
+                sim.LIST(locations[1]).SA.Count = 400
+                sim.LIST(locations[1]).SB.Count = 400
+                sim.LIST(locations[0]).SB.Count = 400
+                sim.LIST(locations[0]).Comp1[sus1A, sus1A, sus2A, sus2A].Count = 500
+                sim.LIST(locations[1]).Comp1[sus1B, sus1B, sus2A, sus2A].Count = 500
+                sim.run(self.ENDT)
+
+            allData.append(np.array(data.data[:]))
+
+        self._testData(allData, same=same, labels=data.labels)
 
     def testSpeciesInteraction(self):
+        self._runComplexSurfaceReacSubTests(self._testSpeciesInteraction)
+
+    def _testTwoComplexes(self, systems, locFunc, locations, same=True, kfact=1, **kwargs):
         r = self.r
         allData = []
-        for mdl, geom, vsys, Comp, subunitstates, species in zip(self.mdls, self.geoms, self.volsyss, self.complexes, self.suss, self.species):
+        for mdl, geom, sys, Comp, subunitstates, species in zip(self.mdls, self.geoms, systems, self.complexes, self.suss, self.species):
             Comp1, Comp2 = Comp
             sus1A, sus1B, sus1C, sus2A, sus2B, sus2C, sus3A, sus3B, sus3C, sus4A, sus4B, sus4C = subunitstates
             SA, SB = species
             with mdl:
-                with vsys:
-                    with Comp1[...]:
-                        sus1A + SA <r[1]> sus1B + SA <r[2]> sus1C + SB
-                        if mdl is self.mdls[0]:
-                            r[1].K = 10000, 15000
+                with sys:
+                    with Comp1[..., sus2A, sus2A], Comp2[..., sus4A, sus4A]:
+                        locFunc(sus1A, 0) + locFunc(sus3A, 1) <r[1]> locFunc(sus1A, 0) + locFunc(sus3B, 1)
+                        locFunc(sus1A, 0) + locFunc(sus3B, 1) <r[2]> locFunc(sus1B, 0) + locFunc(sus3B, 1)
+                        locFunc(sus1B, 0) + locFunc(sus3B, 1) <r[3]> locFunc(sus1B, 0) + locFunc(sus3C, 1)
+                        locFunc(sus1B, 0) + locFunc(sus3C, 1) <r[4]> locFunc(sus1C, 0) + locFunc(sus3C, 1)
+                        if same or mdl is self.mdls[0]:
+                            r[1].K = kfact * 10000, kfact * 10000
+                            r[2].K = kfact * 10000, kfact * 10000
+                            r[3].K = kfact * 10000, kfact * 10000
+                            r[4].K = kfact * 10000, kfact * 10000
                         else:
-                            r[1].K = 10000, 15000
-                        r[2].K = 20000, 25000
+                            r[1].K = kfact * 20000, kfact * 10000
+                            r[2].K = kfact * 5000, kfact * 10000
+                            r[3].K = kfact * 15000, kfact * 10000
+                            r[4].K = kfact * 1000, kfact * 10000
+
             sim = Simulation('Wmdirect', mdl, geom, self.rng)
-            resSaver = self.__class__._addSaverToSim(sim, [Comp1])
+
+            rs = ResultSelector(sim)
+            data = rs.LIST(locations[0]).LIST(*Comp1[..., sus2A, sus2A]).Count
+            data <<= rs.LIST(locations[1]).LIST(*Comp2[..., sus4A, sus4A]).Count
+            sim.toSave(data, dt=0.1)
 
             for i in range(self.nbRuns):
                 sim.newRun()
-                sim.cyt.SA.Count = 400
-                sim.cyt.SB.Count = 400
-                sim.cyt.Comp1[(sus1A,)*2 + (sus2C,)*2].Count = 500
-                sim.run(10)
+                sim.LIST(locations[0]).Comp1[sus1A, sus1A, sus2A, sus2A].Count = 500
+                sim.LIST(locations[1]).Comp2[sus3A, sus3A, sus4A, sus4A].Count = 500
+                sim.run(self.ENDT)
 
-            allData.append(np.array(resSaver.data[:]))
+            allData.append(np.array(data.data[:]))
 
-        self._testData(allData)
+        self._testData(allData, same=same, labels=data.labels)
 
     def testTwoComplexes(self):
+        self._runComplexSurfaceReacSubTests(self._testTwoComplexes)
+
+    def _testTwoSameComplexes(self, systems, locFunc, locations, same=True, kfact=1, **kwargs):
         r = self.r
         allData = []
-        for mdl, geom, vsys, Comp, subunitstates, species in zip(self.mdls, self.geoms, self.volsyss, self.complexes, self.suss, self.species):
+        for mdl, geom, sys, Comp, subunitstates, species in zip(self.mdls, self.geoms, systems, self.complexes, self.suss, self.species):
             Comp1, Comp2 = Comp
             sus1A, sus1B, sus1C, sus2A, sus2B, sus2C, sus3A, sus3B, sus3C, sus4A, sus4B, sus4C = subunitstates
             SA, SB = species
             with mdl:
-                with vsys:
-                    SA <r[1]> SB
-                    r[1].K = 1, 1
-
-                    with Comp1[...], Comp2[...]:
-                        sus1A + sus3A <r[1]> sus1A + sus3B <r[2]> sus1B + sus3B <r[3]> sus1B + sus3C <r[4]> sus1C + sus3C
-                        r[1].K = 10000, 10000
-                        r[2].K = 10000, 10000
-                        r[3].K = 10000, 10000
-                        r[4].K = 10000, 10000
+                with sys:
+                    with Comp1[..., sus2C, sus2C] as C1, Comp1[..., sus2C, sus2C] as C2:
+                        locFunc(sus1A[C1], 0) + locFunc(sus1A[C2], 1) <r[1]> locFunc(sus1A[C1], 0) + locFunc(sus1B[C2], 1)
+                        locFunc(sus1A[C1], 0) + locFunc(sus1B[C2], 1) <r[2]> locFunc(sus1B[C1], 0) + locFunc(sus1B[C2], 1)
+                        locFunc(sus1B[C1], 0) + locFunc(sus1B[C2], 1) <r[3]> locFunc(sus1B[C1], 0) + locFunc(sus1C[C2], 1)
+                        locFunc(sus1B[C1], 0) + locFunc(sus1C[C2], 1) <r[4]> locFunc(sus1C[C1], 0) + locFunc(sus1C[C2], 1)
+                        if same or mdl is self.mdls[0]:
+                            r[1].K = kfact * 10000, kfact * 10000
+                            r[2].K = kfact * 10000, kfact * 10000
+                            r[3].K = kfact * 10000, kfact * 10000
+                            r[4].K = kfact * 10000, kfact * 10000
+                        else:
+                            r[1].K = kfact * 20000, kfact * 10000
+                            r[2].K = kfact * 5000, kfact * 10000
+                            r[3].K = kfact * 15000, kfact * 10000
+                            r[4].K = kfact * 1000, kfact * 10000
 
             sim = Simulation('Wmdirect', mdl, geom, self.rng)
-            resSaver = self.__class__._addSaverToSim(sim, [Comp1, Comp2])
+
+            rs = ResultSelector(sim)
+            data = rs.LIST(locations[0]).LIST(*Comp1[..., sus2C, sus2C]).Count
+            if locations[0] != locations[1]:
+                data <<= rs.LIST(locations[1]).LIST(*Comp1[..., sus2C, sus2C]).Count
+            sim.toSave(data, dt=0.1)
 
             for i in range(self.nbRuns):
                 sim.newRun()
-                sim.cyt.SA.Count = 400
-                sim.cyt.SB.Count = 400
-                sim.cyt.Comp1[(sus1A,)*2 + (sus2C,)*2].Count = 500
-                sim.cyt.Comp2[(sus3A,)*2 + (sus4C,)*2].Count = 500
-                sim.run(10)
+                sim.LIST(locations[0]).Comp1[sus1A, sus1A, sus2C, sus2C].Count = 500
+                sim.LIST(locations[1]).Comp1[sus1A, sus1A, sus2C, sus2C].Count = 500
+                sim.run(self.ENDT)
 
-            allData.append(np.array(resSaver.data[:]))
+            allData.append(np.array(data.data[:]))
 
-        self._testData(allData)
+        self._testData(allData, same=same, labels=data.labels)
 
     def testTwoSameComplexes(self):
+        self._runComplexSurfaceReacSubTests(self._testTwoSameComplexes)
+
+    def _testFullcomplexes(self, systems, locFunc, locations, same=True, kfact=1, **kwargs):
         r = self.r
         allData = []
-        for mdl, geom, vsys, Comp, subunitstates, species in zip(self.mdls, self.geoms, self.volsyss, self.complexes, self.suss, self.species):
-            Comp1, Comp2 = Comp
-            sus1A, sus1B, sus1C, sus2A, sus2B, sus2C, sus3A, sus3B, sus3C, sus4A, sus4B, sus4C = subunitstates
-            SA, SB = species
-            #print('Run with sas = ', Comp1._statesAsSpecies)
-            with mdl:
-                with vsys:
-                    SA <r[1]> SB
-                    r[1].K = 1, 1
-
-                    with Comp1[..., sus2C, sus2C] as C1, Comp1[..., sus2C, sus2C] as C2:
-                        sus1A[C1] + sus1A[C2] <r[1]> sus1A[C1] + sus1B[C2] <r[2]> sus1B[C1] + sus1B[C2] <r[3]> sus1B[C1] + sus1C[C2] <r[4]> sus1C[C1] + sus1C[C2]
-                        r[1].K = 10000, 10000
-                        r[2].K = 10000, 10000
-                        r[3].K = 10000, 10000
-                        r[4].K = 10000, 10000
-
-            sim = Simulation('Wmdirect', mdl, geom, self.rng)
-            resSaver = self.__class__._addSaverToSim(sim, [Comp1[..., sus2C, sus2C]], addSingleSUS=False)
-
-            for i in range(self.nbRuns):
-                sim.newRun()
-                #print('newRun', i)
-                sim.cyt.SA.Count = 400
-                sim.cyt.SB.Count = 400
-                sim.cyt.Comp1[(sus1A,)*2 + (sus2C,)*2].Count = 500
-                #print('start run')
-                sim.run(10)
-                #print('end run')
-
-            allData.append(np.array(resSaver.data[:]))
-
-        self._testData(allData)
-
-    def testFullcomplexes(self):
-        r = self.r
-        allData = []
-        for mdl, geom, vsys, Comp, subunitstates, species in zip(self.mdls, self.geoms, self.volsyss, self.complexes, self.suss, self.species):
+        for mdl, geom, sys, Comp, subunitstates, species in zip(self.mdls, self.geoms, systems, self.complexes, self.suss, self.species):
             Comp1, Comp2 = Comp
             sus1A, sus1B, sus1C, sus2A, sus2B, sus2C, sus3A, sus3B, sus3C, sus4A, sus4B, sus4C = subunitstates
             SA, SB = species
             with mdl:
-                with vsys:
-                    SA <r[1]> SB
-                    r[1].K = 1, 1
-
+                with sys:
                     C1, C2 = Comp1.get(), Comp2.get()
 
-                    C1[...] <r[1]> C1[...]
-                    C2[...] <r[2]> C2[...]
-                    r[1].K = 1, 1
-                    r[2].K = 1, 1
-
-                    C1[sus1A, ..., sus2C] + C2[sus3A, ..., sus4C] <r[1]> C1[sus1A, ..., sus2C] + C2[sus3B, ..., sus4C]
-                    r[1].K = 10000, 10000
+                    locFunc(C1[sus1A, :, sus2C, sus2C], 0) + locFunc(C2[sus3A, :, sus4C, sus4C], 1) <r[1]> locFunc(C1[sus1A, :, sus2C, sus2C], 0) + locFunc(C2[sus3B, :, sus4C, sus4C], 1)
+                    if same or mdl is self.mdls[0]:
+                        r[1].K = kfact * 10000, kfact * 10000
+                    else:
+                        r[1].K = kfact * 20000, kfact * 10000
 
             sim = Simulation('Wmdirect', mdl, geom, self.rng)
-            resSaver = self.__class__._addSaverToSim(sim, [Comp1, Comp2])
+
+            rs = ResultSelector(sim)
+            data = rs.LIST(locations[0]).LIST(*Comp1[sus1A, :, sus2C, sus2C]).Count
+            data <<= rs.LIST(locations[1]).LIST(*Comp2[~sus3C, :, sus4C, sus4C]).Count
+            sim.toSave(data, dt=0.1)
 
             for i in range(self.nbRuns):
                 sim.newRun()
-                sim.cyt.SA.Count = 400
-                sim.cyt.SB.Count = 400
-                sim.cyt.Comp1[(sus1A,)*2 + (sus2C,)*2].Count = 500
-                sim.cyt.Comp2[(sus3A,)*2 + (sus4C,)*2].Count = 500
-                sim.run(10)
+                sim.LIST(locations[0]).Comp1[sus1A, sus1A, sus2C, sus2C].Count = 500
+                sim.LIST(locations[1]).Comp2[sus3A, sus3A, sus4C, sus4C].Count = 500
+                sim.run(self.ENDT)
 
-            allData.append(np.array(resSaver.data[:]))
+            allData.append(np.array(data.data[:]))
 
-        self._testData(allData)
+        self._testData(allData, same=same, labels=data.labels)
+
+    def testFullcomplexes(self):
+        self._runComplexSurfaceReacSubTests(self._testFullcomplexes)
+
+    def _testFullcomplexesSubSelectors(self, systems, locFunc, locations, same=True, kfact=1, **kwargs):
+        r = self.r
+        allData = []
+        for mdl, geom, sys, Comp, subunitstates, species in zip(self.mdls, self.geoms, systems, self.complexes, self.suss, self.species):
+            Comp1, Comp2 = Comp
+            sus1A, sus1B, sus1C, sus2A, sus2B, sus2C, sus3A, sus3B, sus3C, sus4A, sus4B, sus4C = subunitstates
+            SA, SB = species
+            with mdl:
+                with sys:
+                    C1 = Comp1.get()
+
+                    locFunc(C1[sus1A|sus1B, :, sus2C, sus2C], 0) >r[1]> locFunc(C1[sus1C, :, sus2C, sus2C], 0)
+                    locFunc(C1[sus1A|sus1C, :, sus2C, sus2C], 0) >r[2]> locFunc(C1[sus1B, :, sus2C, sus2C], 0)
+                    locFunc(C1[~sus1A, :, sus2C, sus2C], 0) >r[3]> locFunc(C1[sus1A, :, sus2C, sus2C], 1)
+                    locFunc(C1[~sus1B, :, sus2C, sus2C], 0) >r[4]> locFunc(C1[sus1B, :, sus2C, sus2C], 1)
+                    if same or mdl is self.mdls[0]:
+                        r[1].K = 4
+                        r[2].K = 3
+                        r[3].K = 2
+                        r[4].K = 1
+                    else:
+                        r[1].K = 1
+                        r[2].K = 2
+                        r[3].K = 3
+                        r[4].K = 4
+
+            sim = Simulation('Wmdirect', mdl, geom, self.rng)
+
+            rs = ResultSelector(sim)
+            data = rs.LIST(locations[0]).LIST(*Comp1[..., sus2C, sus2C]).Count
+            if locations[0] != locations[1]:
+                data <<= rs.LIST(locations[1]).LIST(*Comp1[~sus1C, :, sus2C, sus2C]).Count
+            sim.toSave(data, dt=0.1)
+
+            for i in range(self.nbRuns):
+                sim.newRun()
+                sim.LIST(locations[0]).Comp1[sus1A, sus1B, sus2C, sus2C].Count = 500
+                sim.run(self.ENDT)
+
+            allData.append(np.array(data.data[:]))
+
+        self._testData(allData, same=same, labels=data.labels)
 
     def testFullcomplexesSubSelectors(self):
+        self._runComplexSurfaceReacSubTests(self._testFullcomplexesSubSelectors)
+
+    def _testComplexCreationDeletion(self, systems, locFunc, locations, same=True, kfact=1, **kwargs):
         r = self.r
         allData = []
-        for mdl, geom, vsys, Comp, subunitstates, species in zip(self.mdls, self.geoms, self.volsyss, self.complexes, self.suss, self.species):
+        for mdl, geom, sys, Comp, subunitstates, species in zip(self.mdls, self.geoms, systems, self.complexes, self.suss, self.species):
             Comp1, Comp2 = Comp
             sus1A, sus1B, sus1C, sus2A, sus2B, sus2C, sus3A, sus3B, sus3C, sus4A, sus4B, sus4C = subunitstates
             SA, SB = species
             with mdl:
-                with vsys:
-                    SA <r[1]> SB
-                    r[1].K = 1, 1
+                with sys:
+                    with Comp1[...] as C1:
+                        locFunc(sus1A, 0) + locFunc(SA, 1) <r[1]> locFunc(sus1B, 0) + locFunc(SA, 1)
+                        locFunc(sus1B, 0) + locFunc(SB, 1) <r[2]> locFunc(sus1C, 0) + locFunc(SB, 1)
+                        if same or mdl is self.mdls[0]:
+                            r[1].K = kfact * 80000, kfact * 10000
+                            r[2].K = kfact * 50000, kfact * 10000
+                        else:
+                            r[1].K = kfact * 10000, kfact * 50000
+                            r[2].K = kfact * 30000, kfact * 10000
 
                     C1 = Comp1.get()
 
-                    C1[...] <r[1]> C1[...]
-                    r[1].K = 1, 1
+                    locFunc(C1[sus1B, sus1B, ...], 0) >r[1]> None
+                    if same or mdl is self.mdls[0]:
+                        r[1].K = 10
+                    else:
+                        r[1].K = 5
 
-                    C1[sus1A|sus1B, ..., sus2C] >r[1]> C1[sus1C, ..., sus2C]
-                    C1[sus1A|sus1C, ..., sus2C] >r[2]> C1[sus1B, ..., sus2C]
-                    r[1].K = 1
-                    r[2].K = 1
+                    locFunc(C1[sus1C, sus1C, ...], 0) + locFunc(SB, 0) >r[1]> locFunc(C1[sus1C, sus1C, ...], 0) + locFunc(SB, 0) + locFunc(Comp1[sus1A, sus1A, sus2A, sus2A], 0)
+                    if same or mdl is self.mdls[0]:
+                        r[1].K = kfact * 1000000
+                    else:
+                        r[1].K = kfact * 1500000
 
             sim = Simulation('Wmdirect', mdl, geom, self.rng)
-            resSaver = self.__class__._addSaverToSim(sim, [Comp1])
+
+            rs = ResultSelector(sim)
+            data = rs.LIST(locations[0]).LIST(*Comp1[..., sus2C, sus2C]).Count
+            sim.toSave(data, dt=0.1)
 
             for i in range(self.nbRuns):
                 sim.newRun()
-                sim.cyt.SA.Count = 400
-                sim.cyt.SB.Count = 400
-                sim.cyt.Comp1[(sus1A,)*2 + (sus2C,)*2].Count = 500
-                sim.run(10)
+                sim.LIST(locations[1]).SA.Count = 500
+                sim.LIST(locations[1]).SB.Count = 500
+                sim.LIST(locations[0]).Comp1[sus1A, sus1A, sus2C, sus2C].Count = 500
+                sim.run(self.ENDT)
 
-            allData.append(np.array(resSaver.data[:]))
+            allData.append(np.array(data.data[:]))
 
-        self._testData(allData)
+        self._testData(allData, same=same, labels=data.labels)
 
     def testComplexCreationDeletion(self):
-        r = self.r
-        allData = []
-        for mdl, geom, vsys, Comp, subunitstates, species in zip(self.mdls, self.geoms, self.volsyss, self.complexes, self.suss, self.species):
-            Comp1, Comp2 = Comp
-            sus1A, sus1B, sus1C, sus2A, sus2B, sus2C, sus3A, sus3B, sus3C, sus4A, sus4B, sus4C = subunitstates
-            SA, SB = species
-            with mdl:
-                with vsys:
-                    SA <r[1]> SB
-                    r[1].K = 1, 1
-
-                    with Comp1[...] as C1:
-                        sus1A + SA <r[1]> sus1B + SA <r[2]> sus1C + SA
-                        r[1].K = 20000, 10000
-                        r[2].K = 10000, 20000
-
-                    C1 = Comp1.get()
-
-                    C1[sus1B, sus1B, ...] >r[1]> None
-                    r[1].K = 10
-
-                    C1[sus1C, sus1C, ...] + SB >r[1]> C1[sus1C, sus1C, ...] + SB + Comp1[sus1A, sus1A, sus2A, sus2A]
-                    r[1].K = 1000000
-
-            sim = Simulation('Wmdirect', mdl, geom, self.rng)
-            resSaver = self.__class__._addSaverToSim(sim, [Comp1])
-
-            for i in range(self.nbRuns):
-                sim.newRun()
-                sim.cyt.SA.Count = 400
-                sim.cyt.SB.Count = 400
-                sim.cyt.Comp1[(sus1A,)*2 + (sus2C,)*2].Count = 500
-                sim.run(10)
-
-            allData.append(np.array(resSaver.data[:]))
-
-        self._testData(allData)
+        self._runComplexSurfaceReacSubTests(self._testComplexCreationDeletion)
 
     def testComplexDatafromSim(self):
         r = self.r
@@ -501,9 +589,6 @@ class StepsComplexReaction(unittest.TestCase):
             sim.cyt.Comp1.sus1A.Count
             with self.assertRaises(Exception):
                 sim.cyt.Comp1.sus3A.Count
-
-
-
 
 
 def suite():

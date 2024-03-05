@@ -24,32 +24,20 @@
 
  */
 
-
-#ifndef STEPS_MPI_TETOPSPLIT_TET_HPP
-#define STEPS_MPI_TETOPSPLIT_TET_HPP 1
+#pragma once
 
 // STL headers.
 #include <cassert>
 #include <vector>
 
 // logging
-#include <easylogging++.h>
 
 // STEPS headers.
 #include "kproc.hpp"
-#include "wmvol.hpp"
-#include "util/common.h"
 #include "solver/compdef.hpp"
-#include "solver/types.hpp"
-////////////////////////////////////////////////////////////////////////////////
+#include "wmvol.hpp"
 
-namespace steps {
-namespace mpi {
-namespace tetopsplit {
-
-////////////////////////////////////////////////////////////////////////////////
-
-namespace smtos = steps::mpi::tetopsplit;
+namespace steps::mpi::tetopsplit {
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -61,26 +49,21 @@ class Reac;
 class TetOpSplitP;
 
 // Auxiliary declarations.
-typedef Tet *                           TetP;
-typedef std::vector<TetP>               TetPVec;
-typedef TetPVec::iterator               TetPVecI;
-typedef TetPVec::const_iterator         TetPVecCI;
+typedef Tet* TetP;
+typedef std::vector<TetP> TetPVec;
+typedef TetPVec::iterator TetPVecI;
+typedef TetPVec::const_iterator TetPVecCI;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class Tet: public smtos::WmVol
-{
-
-public:
-
+class Tet: public WmVol {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    Tet
-      (
-        tetrahedron_id_t idx,
-        steps::solver::Compdef *cdef,
+    Tet(tetrahedron_global_id idx,
+        solver::Compdef* cdef,
         double vol,
         double a0,
         double a1,
@@ -90,47 +73,42 @@ public:
         double d1,
         double d2,
         double d3,
-        tetrahedron_id_t tet0,
-        tetrahedron_id_t tet1,
-        tetrahedron_id_t tet2,
-        tetrahedron_id_t tet3,
+        tetrahedron_global_id tet0,
+        tetrahedron_global_id tet1,
+        tetrahedron_global_id tet2,
+        tetrahedron_global_id tet3,
         int rank,
-        int host_rank
-      );
-    ~Tet() override;
+        int host_rank);
+
+    Tet(const Tet&) = delete;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file) override;
+    void checkpoint(std::fstream& cp_file) override;
 
     /// restore data
-    void restore(std::fstream & cp_file) override;
+    void restore(std::fstream& cp_file) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SETUP
     ////////////////////////////////////////////////////////////////////////
 
-
     /// Set pointer to the next neighbouring tetrahedron.
     ///
-    void setNextTet(uint i, smtos::Tet * t);
+    void setNextTet(uint i, Tet* t);
 
-    /*
     /// Set pointer to the next neighbouring triangle.
-    void setNextTri(uint i, smtos::Tri * t);
-    */
-    void setNextTri(uint i, smtos::Tri *t);
+    void setNextTri(uint i, Tri* t);
 
     // This method only asserts this method is not called on derived object
-    void setNextTri(smtos::Tri *t) override;
+    void setNextTri(Tri* t) override;
 
     /// Create the kinetic processes -- to be called when all tetrahedrons
     /// and triangles have been fully declared and connected.
     ///
-    void setupKProcs(smtos::TetOpSplitP * tex) override;
-
+    void setupKProcs(TetOpSplitP* tex) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SHAPE & CONNECTIVITY INFORMATION.
@@ -138,128 +116,114 @@ public:
 
     /// Get pointer to the next neighbouring triangle.
     ///
-    inline smtos::Tri * nextTri(uint i) const
-    {
+    inline Tri* nextTri(uint i) const {
         AssertLog(i < 4);
         return pNextTris[i];
     }
 
     /// Get pointer to the next neighbouring tetrahedron.
     ///
-    inline smtos::Tet * nextTet(uint i) const noexcept
-    { return pNextTet[i]; }
+    inline Tet* nextTet(uint i) const noexcept {
+        return pNextTet[i];
+    }
 
     /// Get the area of a boundary triangle.
     ///
-    inline double area(uint i) const noexcept
-    { return pAreas[i]; }
+    inline double area(uint i) const noexcept {
+        return pAreas[i];
+    }
 
     /// Get the distance to the centroid of the next neighbouring
     /// tetrahedron.
     ///
-    inline double dist(uint i) const noexcept
-    { return pDist[i]; }
+    inline double dist(uint i) const noexcept {
+        return pDist[i];
+    }
 
     /// Find the direction index towards a neighbor tetrahedron.
     ///
-    int getTetDirection(tetrahedron_id_t tidx);
+    int getTetDirection(tetrahedron_global_id tidx) const;
 
     ////////////////////////////////////////////////////////////////////////
 
     // Set whether a direction is a diffusion boundary
     void setDiffBndDirection(uint i);
 
-    inline bool getDiffBndDirection(uint idx) const noexcept
-    { return pDiffBndDirection[idx]; }
+    inline bool getDiffBndDirection(uint idx) const noexcept {
+        return pDiffBndDirection[idx];
+    }
 
+    Diff& diff(solver::diff_local_id lidx) const;
 
-    smtos::Diff * diff(uint lidx) const;
-
-    inline tetrahedron_id_t tet(uint t) const noexcept
-    { return pTets[t]; }
+    inline tetrahedron_global_id tet(uint t) const noexcept {
+        return pTets[t];
+    }
 
     /////////////////////////// Dependency ////////////////////////////////
     // setup dependence for KProcs in this subvolume
     void setupDeps() override;
 
     // check if kp_lidx in this vol depends on spec_gidx in WMVol kp_container
-    virtual bool KProcDepSpecTet(uint kp_lidx, WmVol* kp_container, uint spec_gidx) override;
+    virtual bool KProcDepSpecTet(uint kp_lidx,
+                                 WmVol* kp_container,
+                                 solver::spec_global_id spec_gidx) override;
     // check if kp_lidx in this vol depends on spec_gidx in Tri kp_container
-    virtual bool KProcDepSpecTri(uint kp_lidx, Tri* kp_container, uint spec_gidx) override;
+    virtual bool KProcDepSpecTri(uint kp_lidx,
+                                 Tri* kp_container,
+                                 solver::spec_global_id spec_gidx) override;
 
     ///////////////////////////////////////////////////////////////////
 
-    void setCount(uint lidx, uint count, double period = 0.0) override;
-	  void incCount(uint lidx, int inc, double period = 0.0, bool local_change = false) override;
+    void setCount(solver::spec_local_id lidx, uint count, double period = 0.0) override;
+    void incCount(solver::spec_local_id lidx,
+                  int inc,
+                  double period = 0.0,
+                  bool local_change = false) override;
 
-	  inline double getPoolOccupancy(uint lidx) const override {
-	    AssertLog(lidx < compdef()->countSpecs());
-	    return pPoolOccupancy[lidx];
-	  }
-    double getLastUpdate(uint lidx) const override {
-      AssertLog(lidx < compdef()->countSpecs());
-      return pLastUpdate[lidx];
+    inline double getPoolOccupancy(solver::spec_local_id lidx) const override {
+        AssertLog(lidx < compdef()->countSpecs());
+        return pPoolOccupancy[lidx];
     }
-	  void resetPoolOccupancy() override;
+    double getLastUpdate(solver::spec_local_id lidx) const override {
+        AssertLog(lidx < compdef()->countSpecs());
+        return pLastUpdate[lidx];
+    }
+    void resetPoolOccupancy() override;
 
-    std::vector<smtos::KProc*> const & getSpecUpdKProcs(uint slidx);
+    std::vector<KProc*> const& getSpecUpdKProcs(solver::spec_local_id slidx);
 
     ////////////////////////////////////////////////////////////
-    void repartition(smtos::TetOpSplitP * tex, int rank, int host_rank) override;
+    void repartition(TetOpSplitP* tex, int rank, int host_rank) override;
     void setupBufferLocations();
 
-    using super_type = smtos::WmVol;
+    using super_type = WmVol;
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
     // Indices of neighbouring tetrahedra.
-    std::array<tetrahedron_id_t, 4>     pTets;
-
-    /*
-    // Indices of neighbouring triangles.
-    uint                                pTris[4];
-    */
-
-    /*
-    /// POinters to neighbouring triangles
-    smtos::Tri                         * pNextTri[4];
-    */
+    std::array<tetrahedron_global_id, 4> pTets;
 
     /// Pointers to neighbouring tetrahedra.
-    smtos::Tet                         * pNextTet[4];
+    Tet* pNextTet[4];
 
-    double                              pAreas[4];
-    double                              pDist[4];
+    double pAreas[4];
+    double pDist[4];
 
-    bool                                  pDiffBndDirection[4];
-
+    bool pDiffBndDirection[4]{};
 
     /// Structure to store occupancy over the update period
-    double                            * pPoolOccupancy;
+    util::strongid_vector<solver::spec_local_id, double> pPoolOccupancy;
     /// Structure to store time since last update, used to calculate occupancy
-    double 							  *	pLastUpdate;
+    util::strongid_vector<solver::spec_local_id, double> pLastUpdate;
 
-    /// location of where the change of this species is stored in  the solver buffer
-    std::vector<uint>                   bufferLocations;
+    /// location of where the change of this species is stored in  the solver
+    /// buffer
+    util::strongid_vector<solver::spec_local_id, uint> bufferLocations;
     // local kprocs update list when spec is changed
-    std::vector<std::vector<smtos::KProc *>> localSpecUpdKProcs;
+    util::strongid_vector<solver::spec_local_id, std::vector<KProc*>> localSpecUpdKProcs;
 
     ////////////////////////////////////////////////////////////////////////
-
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-#endif
-
-// STEPS_MPI_TETOPSPLIT_TET_HPP
-
-// END
+}  // namespace steps::mpi::tetopsplit

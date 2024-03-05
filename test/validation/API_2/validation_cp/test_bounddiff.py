@@ -164,9 +164,12 @@ class TestBDiff(unittest.TestCase):
         if not os.path.exists(new_dir):
             os.makedirs(new_dir)
 
+        seed = time.time()%4294967295
         for j in range(NITER):
             sim.newRun()
             sim.restore('./validation_cp/cp/boundiff')
+            rng.initialize(seed)
+            seed += 1
             sim.run(INT)
 
         itermeans = numpy.mean(res.data, axis = 0)
@@ -193,7 +196,6 @@ class TestBDiff(unittest.TestCase):
             return p*N/a
 
         tpnt_compare = [6, 8, 10]
-        passed = True
         max_err = 0.0
 
         for t in tpnt_compare:

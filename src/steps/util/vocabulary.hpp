@@ -5,7 +5,7 @@
 #include <type_traits>
 #include <variant>
 
-#include "common.h"
+#include "common.hpp"
 #include "strong_id.hpp"
 #if STEPS_USE_DIST_MESH
 #include "strong_ids.hpp"
@@ -14,19 +14,22 @@
 
 namespace steps {
 
-#ifdef STEPS_USE_64BITS_INDICES
-using index_t = std::uint64_t;
-#else
-using index_t = std::uint32_t;
-#endif
-
 struct tetrahedron_id_trait {};
+struct tetrahedron_global_id_trait {};
+struct tetrahedron_local_id_trait {};
 struct triangle_id_trait {};
+struct triangle_global_id_trait {};
+struct triangle_local_id_trait {};
 struct vertex_id_trait {};
+struct bar_id_trait {};
 using tetrahedron_id_t = util::strong_id<index_t, tetrahedron_id_trait>;
+using tetrahedron_global_id = util::strong_id<index_t, tetrahedron_global_id_trait>;
+using tetrahedron_local_id = util::strong_id<index_t, tetrahedron_local_id_trait>;
 using triangle_id_t = util::strong_id<index_t, triangle_id_trait>;
+using triangle_global_id = util::strong_id<index_t, triangle_global_id_trait>;
+using triangle_local_id = util::strong_id<index_t, triangle_local_id_trait>;
 using vertex_id_t = util::strong_id<index_t, vertex_id_trait>;
-using bar_id_t = util::strong_id<index_t, struct bar_id_trait>;
+using bar_id_t = util::strong_id<index_t, bar_id_trait>;
 
 namespace tetmesh {
 
@@ -35,7 +38,7 @@ class Tetmesh;
 class Memb;
 class TmPatch;
 
-} // namespace tetmesh
+}  // namespace tetmesh
 
 
 #ifdef STEPS_USE_DIST_MESH
@@ -100,8 +103,7 @@ using bar_global_id_t = util::strong_id<osh::I64, struct bar_id_trait>;
 
 /// TODO TCL add host_id_t primitive type
 
-using tetrahedron_local_id_t =
-    util::strong_id<osh::LO, struct tetrahedron_id_trait>;
+using tetrahedron_local_id_t = util::strong_id<osh::LO, struct tetrahedron_id_trait>;
 using triangle_local_id_t = util::strong_id<osh::LO, struct triangle_id_trait>;
 using vertex_local_id_t = util::strong_id<osh::LO, struct vertex_id_trait>;
 using bar_local_id_t = util::strong_id<osh::LO, struct bar_id_trait>;
@@ -123,12 +125,10 @@ struct tag_diffusion_boundary_name {};
 
 /// Compartment name given by the user
 using compartment_name = util::strong_string<tag_compartment_name>;
-using diffusion_boundary_name =
-    util::strong_string<tag_diffusion_boundary_name>;
+using diffusion_boundary_name = util::strong_string<tag_diffusion_boundary_name>;
 
 /// compartment physical tag defined in the mesh
-using compartment_physical_tag =
-    util::strong_id<osh::I32, tag_compartment_physical_tag>;
+using compartment_physical_tag = util::strong_id<osh::I32, tag_compartment_physical_tag>;
 
 /// internal compartment identifier
 using compartment_id = util::strong_id<osh::I32, tag_compartment_id>;
@@ -186,38 +186,40 @@ using reaction_id = util::strong_id<osh::I64, reaction_id_tag>;
 using diffusion_id = util::strong_id<osh::I64, diffusion_id_tag>;
 
 /// internal surface reaction identifier
-using surface_reaction_id =
-    util::strong_id<osh::I64, struct surface_reaction_id_tag>;
+using surface_reaction_id = util::strong_id<osh::I64, struct surface_reaction_id_tag>;
 
 /// internal kinetic process identifier
 using kproc_id = util::strong_id<osh::I64, kproc_id_tag>;
 
 }  // namespace container
 
-using default_molecules_t = Omega_h::LO;
+using molecules_t = Omega_h::GO;
 
 /**
  * Get the dimension of an entity according to the dimension of the mesh
  * \tparam Dim the mesh dimension
  * \tparam Entity vocabulary type i.e a strong_id or a strong_string
  */
-template <Omega_h::Int Dim, class Entity> struct entity_dimension {};
+template <Omega_h::Int Dim, class Entity>
+struct entity_dimension {};
 
-template <Omega_h::Int Dim> struct entity_dimension<Dim, model::vertgroup_id> {
-  static const Omega_h::Int value = Dim - 3;
+template <Omega_h::Int Dim>
+struct entity_dimension<Dim, model::vertgroup_id> {
+    static const Omega_h::Int value = Dim - 3;
 };
 
-template <Omega_h::Int Dim> struct entity_dimension<Dim, model::patch_id> {
-  static const Omega_h::Int value = Dim - 1;
+template <Omega_h::Int Dim>
+struct entity_dimension<Dim, model::patch_id> {
+    static const Omega_h::Int value = Dim - 1;
 };
 
 template <Omega_h::Int Dim>
 struct entity_dimension<Dim, model::compartment_id> {
-  static const Omega_h::Int value = Dim;
+    static const Omega_h::Int value = Dim;
 };
 
 }  // namespace dist
 
-#endif // !STEPS_USE_DIST_MESH
+#endif  // !STEPS_USE_DIST_MESH
 
 }  // namespace steps

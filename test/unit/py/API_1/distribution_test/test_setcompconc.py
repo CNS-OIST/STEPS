@@ -55,12 +55,12 @@ class TestSetConc(unittest.TestCase):
         model = D.make_model(mesh)
         solver = steps.solver.Tetexact(model, mesh, self.rng)
         
-        solver.setCompConc('interior','A', molarity)
-        m2 = solver.getCompConc('interior','A')
+        solver.setCompSpecConc('interior','A', molarity)
+        m2 = solver.getCompSpecConc('interior','A')
 
         self.assertTrue(abs(molarity-m2)<=1)
 
-    # Produce x, mu pair from calling setCompConc() on
+    # Produce x, mu pair from calling setCompSpecConc() on
     # a given mesh.
 
     def set_conc_kernel(self, count, T, mesh):
@@ -79,9 +79,9 @@ class TestSetConc(unittest.TestCase):
         x = [0]*n
         
         for s in range(T):
-            solver.setCompConc('interior', 'A', molarity)
+            solver.setCompSpecConc('interior', 'A', molarity)
             for t in range(n):
-                x[t] += (solver.getTetCount(t,'A')-x[t])/(1+s)
+                x[t] += (solver.getTetSpecCount(t,'A')-x[t])/(1+s)
 
         return x, mu
 
@@ -89,12 +89,12 @@ class TestSetConc(unittest.TestCase):
     def test_distribution(self):
         # even volumes
 
-        D.run_distribution_check(self.set_conc_kernel, alpha=0.005, verbose=False)
+        D.run_distribution_check(self.set_conc_kernel, alpha=0.005, verbose=True)
 
         # uneven volumes
 
-        D.run_distribution_check(self.set_conc_kernel, alpha=0.005, ratio=0.1, verbose=False)
-        D.run_distribution_check(self.set_conc_kernel, alpha=0.005, ratio=10, verbose=False)
+        D.run_distribution_check(self.set_conc_kernel, alpha=0.005, ratio=0.1, verbose=True)
+        D.run_distribution_check(self.set_conc_kernel, alpha=0.005, ratio=10, verbose=True)
 
 def suite():
     all_tests = []

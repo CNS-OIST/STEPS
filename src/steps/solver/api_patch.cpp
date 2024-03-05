@@ -24,266 +24,399 @@
 
  */
 
-// STL headers.
-#include <sstream>
-#include <string>
-
-// STEPS headers.
 #include "api.hpp"
+#include "model/complexevents.hpp"
 #include "statedef.hpp"
-// util
 #include "util/error.hpp"
-// logging
-#include <easylogging++.h>
-////////////////////////////////////////////////////////////////////////////////
 
-USING(std, string);
-using namespace steps::solver;
+namespace steps::solver {
 
-////////////////////////////////////////////////////////////////////////////////
+double API::getPatchArea(std::string const& p) const {
+    // the following may raise an exception if string is unused
+    patch_global_id pidx = pStatedef->getPatchIdx(p);
 
-double API::getPatchArea(string const &p) const {
-  // the following may raise an exception if string is unused
-  uint pidx = pStatedef->getPatchIdx(p);
-
-  return _getPatchArea(pidx);
+    return _getPatchArea(pidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setPatchArea(string const &p, double area) {
-  ArgErrLogIf(area <= 0.0, "Area cannot be negative or zero.");
+void API::setPatchArea(std::string const& p, double area) {
+    ArgErrLogIf(area <= 0.0, "Area cannot be negative or zero.");
 
-  // the following may raise an exception if string is unused
-  uint pidx = pStatedef->getPatchIdx(p);
+    // the following may raise an exception if string is unused
+    patch_global_id pidx = pStatedef->getPatchIdx(p);
 
-  _setPatchArea(pidx, area);
+    _setPatchArea(pidx, area);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getPatchCount(string const &p, string const &s) const {
-  // the following may raise exceptions if strings are unused
-  uint pidx = pStatedef->getPatchIdx(p);
-  uint sidx = pStatedef->getSpecIdx(s);
+double API::getPatchSpecCount(std::string const& p, std::string const& s) const {
+    // the following may raise exceptions if strings are unused
+    patch_global_id pidx = pStatedef->getPatchIdx(p);
+    spec_global_id sidx = pStatedef->getSpecIdx(s);
 
-  return _getPatchCount(pidx, sidx);
+    return _getPatchSpecCount(pidx, sidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setPatchCount(string const &p, string const &s, double n) {
-  ArgErrLogIf(n < 0.0, "Number of molecules cannot be negative.");
+void API::setPatchSpecCount(std::string const& p, std::string const& s, double n) {
+    ArgErrLogIf(n < 0.0, "Number of molecules cannot be negative.");
 
-  // the following may raise exceptions if strings are unused
-  uint pidx = pStatedef->getPatchIdx(p);
-  uint sidx = pStatedef->getSpecIdx(s);
+    // the following may raise exceptions if strings are unused
+    patch_global_id pidx = pStatedef->getPatchIdx(p);
+    spec_global_id sidx = pStatedef->getSpecIdx(s);
 
-  _setPatchCount(pidx, sidx, n);
+    _setPatchSpecCount(pidx, sidx, n);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getPatchAmount(string const &p, string const &s) const {
-  // the following may raise exceptions if strings are unused
-  uint pidx = pStatedef->getPatchIdx(p);
-  uint sidx = pStatedef->getSpecIdx(s);
+double API::getPatchSpecAmount(std::string const& p, std::string const& s) const {
+    // the following may raise exceptions if strings are unused
+    patch_global_id pidx = pStatedef->getPatchIdx(p);
+    spec_global_id sidx = pStatedef->getSpecIdx(s);
 
-  return _getPatchAmount(pidx, sidx);
+    return _getPatchSpecAmount(pidx, sidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setPatchAmount(string const &p, string const &s, double a) {
-  ArgErrLogIf(a < 0.0, "Amount of mols cannot be negative.");
+void API::setPatchSpecAmount(std::string const& p, std::string const& s, double a) {
+    ArgErrLogIf(a < 0.0, "Amount of mols cannot be negative.");
 
-  // the following may raise exceptions if strings are unused
-  uint pidx = pStatedef->getPatchIdx(p);
-  uint sidx = pStatedef->getSpecIdx(s);
+    // the following may raise exceptions if strings are unused
+    patch_global_id pidx = pStatedef->getPatchIdx(p);
+    spec_global_id sidx = pStatedef->getSpecIdx(s);
 
-  _setPatchAmount(pidx, sidx, a);
+    _setPatchSpecAmount(pidx, sidx, a);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getPatchClamped(string const &p, string const &s) const {
-  // the following may raise exceptions if strings are unused
-  uint pidx = pStatedef->getPatchIdx(p);
-  uint sidx = pStatedef->getSpecIdx(s);
+bool API::getPatchSpecClamped(std::string const& p, std::string const& s) const {
+    // the following may raise exceptions if strings are unused
+    patch_global_id pidx = pStatedef->getPatchIdx(p);
+    spec_global_id sidx = pStatedef->getSpecIdx(s);
 
-  return _getPatchClamped(pidx, sidx);
+    return _getPatchSpecClamped(pidx, sidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setPatchClamped(string const &p, string const &s, bool buf) {
-  // the following may raise exceptions if strings are unused
-  uint pidx = pStatedef->getPatchIdx(p);
-  uint sidx = pStatedef->getSpecIdx(s);
+void API::setPatchSpecClamped(std::string const& p, std::string const& s, bool buf) {
+    // the following may raise exceptions if strings are unused
+    patch_global_id pidx = pStatedef->getPatchIdx(p);
+    spec_global_id sidx = pStatedef->getSpecIdx(s);
 
-  _setPatchClamped(pidx, sidx, buf);
+    _setPatchSpecClamped(pidx, sidx, buf);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getPatchSReacK(string const &p, string const &sr) const {
-  // the following may raise exceptions if strings are unused
-  uint pidx = pStatedef->getPatchIdx(p);
-  uint sridx = pStatedef->getSReacIdx(sr);
+double API::getPatchComplexCount(
+    std::string const& c,
+    std::string const& s,
+    const std::vector<std::vector<model::SubunitStateFilter>>& f) const {
+    // the following may throw exceptions if strings are unknown
+    patch_global_id cidx = pStatedef->getPatchIdx(c);
+    complex_global_id sidx = pStatedef->getComplexIdx(s);
 
-  return _getPatchSReacK(pidx, sridx);
+    return _getPatchComplexCount(cidx, sidx, _convertComplexFilters(f));
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+void API::setPatchComplexCount(std::string const& c,
+                               std::string const& s,
+                               const std::vector<std::vector<model::SubunitStateFilter>>& i,
+                               double n) {
+    if (n < 0.0) {
+        std::ostringstream os;
+        os << "Number of molecules cannot be negative.";
+        ArgErrLog(os.str());
+    }
+    // the following may throw exceptions if strings are unknown
+    patch_global_id cidx = pStatedef->getPatchIdx(c);
+    complex_global_id sidx = pStatedef->getComplexIdx(s);
+
+    _setPatchComplexCount(cidx, sidx, _convertComplexState(i), n);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setPatchSReacK(string const &p, string const &sr, double kf) {
-  ArgErrLogIf(kf < 0.0, "Reaction constant cannot be negative.");
+double API::getPatchComplexAmount(
+    std::string const& c,
+    std::string const& s,
+    const std::vector<std::vector<model::SubunitStateFilter>>& f) const {
+    // the following may throw exceptions if strings are unknown
+    patch_global_id cidx = pStatedef->getPatchIdx(c);
+    complex_global_id sidx = pStatedef->getComplexIdx(s);
 
-  // the following may raise exceptions if strings are unused
-  uint pidx = pStatedef->getPatchIdx(p);
-  uint sridx = pStatedef->getSReacIdx(sr);
-
-  _setPatchSReacK(pidx, sridx, kf);
+    return _getPatchComplexAmount(cidx, sidx, _convertComplexFilters(f));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getPatchSReacActive(string const &p, string const &sr) const {
-  // the following may raise exceptions if strings are unused
-  uint pidx = pStatedef->getPatchIdx(p);
-  uint sridx = pStatedef->getSReacIdx(sr);
+void API::setPatchComplexAmount(std::string const& c,
+                                std::string const& s,
+                                const std::vector<std::vector<model::SubunitStateFilter>>& i,
+                                double a) {
+    if (a < 0.0) {
+        std::ostringstream os;
+        os << "Amount of mols cannot be negative.";
+        ArgErrLog(os.str());
+    }
+    // the following may throw exceptions if strings are unknown
+    patch_global_id cidx = pStatedef->getPatchIdx(c);
+    complex_global_id sidx = pStatedef->getComplexIdx(s);
 
-  return _getPatchSReacActive(pidx, sridx);
+    _setPatchComplexAmount(cidx, sidx, _convertComplexState(i), a);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setPatchSReacActive(string const &p, string const &sr, bool a) {
-  // the following may raise exceptions if strings are unused
-  uint pidx = pStatedef->getPatchIdx(p);
-  uint sridx = pStatedef->getSReacIdx(sr);
+double API::getPatchComplexSUSCount(std::string const& c,
+                                    std::string const& s,
+                                    const std::vector<std::vector<model::SubunitStateFilter>>& f,
+                                    uint m) const {
+    // the following may throw exceptions if strings are unknown
+    patch_global_id cidx = pStatedef->getPatchIdx(c);
+    complex_global_id sidx = pStatedef->getComplexIdx(s);
 
-  _setPatchSReacActive(pidx, sridx, a);
+    return _getPatchComplexSUSCount(cidx, sidx, _convertComplexFilters(f), complex_substate_id(m));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::getPatchVDepSReacActive(string const &p, string const &vsr) const {
-  // the following may raise exceptions if strings are unused
-  uint pidx = pStatedef->getPatchIdx(p);
-  uint vsridx = pStatedef->getVDepSReacIdx(vsr);
+double API::getPatchSReacK(std::string const& p, std::string const& sr) const {
+    // the following may raise exceptions if strings are unused
+    patch_global_id pidx = pStatedef->getPatchIdx(p);
+    sreac_global_id sridx = pStatedef->getSReacIdx(sr);
 
-  return _getPatchVDepSReacActive(pidx, vsridx);
+    return _getPatchSReacK(pidx, sridx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setPatchVDepSReacActive(string const &p, string const &vsr, bool a) {
-  // the following may raise exceptions if strings are unused
-  uint pidx = pStatedef->getPatchIdx(p);
-  uint vsridx = pStatedef->getVDepSReacIdx(vsr);
+void API::setPatchSReacK(std::string const& p, std::string const& sr, double kf) {
+    ArgErrLogIf(kf < 0.0, "Reaction constant cannot be negative.");
 
-  _setPatchVDepSReacActive(pidx, vsridx, a);
+    // the following may raise exceptions if strings are unused
+    patch_global_id pidx = pStatedef->getPatchIdx(p);
+    sreac_global_id sridx = pStatedef->getSReacIdx(sr);
+
+    _setPatchSReacK(pidx, sridx, kf);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getPatchSReacH(string const &p, string const &sr) const {
-  // the following may raise exceptions if strings are unused
-  uint pidx = pStatedef->getPatchIdx(p);
-  uint sridx = pStatedef->getSReacIdx(sr);
+bool API::getPatchSReacActive(std::string const& p, std::string const& sr) const {
+    // the following may raise exceptions if strings are unused
+    patch_global_id pidx = pStatedef->getPatchIdx(p);
+    sreac_global_id sridx = pStatedef->getSReacIdx(sr);
 
-  return _getPatchSReacH(pidx, sridx);
+    return _getPatchSReacActive(pidx, sridx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getPatchSReacC(string const &p, string const &sr) const {
-  // the following may raise exceptions if strings are unused
-  uint pidx = pStatedef->getPatchIdx(p);
-  uint sridx = pStatedef->getSReacIdx(sr);
+void API::setPatchSReacActive(std::string const& p, std::string const& sr, bool a) {
+    // the following may raise exceptions if strings are unused
+    patch_global_id pidx = pStatedef->getPatchIdx(p);
+    sreac_global_id sridx = pStatedef->getSReacIdx(sr);
 
-  return _getPatchSReacC(pidx, sridx);
+    _setPatchSReacActive(pidx, sridx, a);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getPatchSReacA(string const &p, string const &sr) const {
-  // the following may raise exceptions if strings are unused
-  uint pidx = pStatedef->getPatchIdx(p);
-  uint sridx = pStatedef->getSReacIdx(sr);
+bool API::getPatchVDepSReacActive(std::string const& p, std::string const& vsr) const {
+    // the following may raise exceptions if strings are unused
+    patch_global_id pidx = pStatedef->getPatchIdx(p);
+    vdepsreac_global_id vsridx = pStatedef->getVDepSReacIdx(vsr);
 
-  return _getPatchSReacA(pidx, sridx);
+    return _getPatchVDepSReacActive(pidx, vsridx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-unsigned long long API::getPatchSReacExtent(string const &p,
-                                            string const &sr) const {
-  // the following may raise exceptions if strings are unused
-  uint pidx = pStatedef->getPatchIdx(p);
-  uint sridx = pStatedef->getSReacIdx(sr);
+void API::setPatchVDepSReacActive(std::string const& p, std::string const& vsr, bool a) {
+    // the following may raise exceptions if strings are unused
+    patch_global_id pidx = pStatedef->getPatchIdx(p);
+    vdepsreac_global_id vsridx = pStatedef->getVDepSReacIdx(vsr);
 
-  return _getPatchSReacExtent(pidx, sridx);
+    _setPatchVDepSReacActive(pidx, vsridx, a);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::resetPatchSReacExtent(string const &p, string const &sr) {
-  // the following may raise exceptions if strings are unused
-  uint pidx = pStatedef->getPatchIdx(p);
-  uint sridx = pStatedef->getSReacIdx(sr);
+double API::getPatchSReacH(std::string const& p, std::string const& sr) const {
+    // the following may raise exceptions if strings are unused
+    patch_global_id pidx = pStatedef->getPatchIdx(p);
+    sreac_global_id sridx = pStatedef->getSReacIdx(sr);
 
-  _resetPatchSReacExtent(pidx, sridx);
+    return _getPatchSReacH(pidx, sridx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setPatchArea(uint /*pidx*/, double /*area*/) { NotImplErrLog(""); }
+double API::getPatchSReacC(std::string const& p, std::string const& sr) const {
+    // the following may raise exceptions if strings are unused
+    patch_global_id pidx = pStatedef->getPatchIdx(p);
+    sreac_global_id sridx = pStatedef->getSReacIdx(sr);
 
-////////////////////////////////////////////////////////////////////////////////
-
-double API::_getPatchSReacH(uint /*pidx*/, uint /*ridx*/) const {
-  NotImplErrLog("");
+    return _getPatchSReacC(pidx, sridx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getPatchSReacC(uint /*pidx*/, uint /*ridx*/) const {
-  NotImplErrLog("");
+double API::getPatchSReacA(std::string const& p, std::string const& sr) const {
+    // the following may raise exceptions if strings are unused
+    patch_global_id pidx = pStatedef->getPatchIdx(p);
+    sreac_global_id sridx = pStatedef->getSReacIdx(sr);
+
+    return _getPatchSReacA(pidx, sridx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::_getPatchSReacA(uint /*pidx*/, uint /*ridx*/) const {
-  NotImplErrLog("");
+unsigned long long API::getPatchSReacExtent(std::string const& p, std::string const& sr) const {
+    // the following may raise exceptions if strings are unused
+    patch_global_id pidx = pStatedef->getPatchIdx(p);
+    sreac_global_id sridx = pStatedef->getSReacIdx(sr);
+
+    return _getPatchSReacExtent(pidx, sridx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-unsigned long long API::_getPatchSReacExtent(uint /*pidx*/,
-                                             uint /*ridx*/) const {
-  NotImplErrLog("");
+void API::resetPatchSReacExtent(std::string const& p, std::string const& sr) {
+    // the following may raise exceptions if strings are unused
+    patch_global_id pidx = pStatedef->getPatchIdx(p);
+    sreac_global_id sridx = pStatedef->getSReacIdx(sr);
+
+    _resetPatchSReacExtent(pidx, sridx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_resetPatchSReacExtent(uint /*pidx*/, uint /*ridx*/) {
-  NotImplErrLog("");
+unsigned long long API::getPatchComplexSReacExtent(std::string const& p,
+                                                   std::string const& r) const {
+    // the following may throw exceptions if strings are unknown
+    patch_global_id pidx = pStatedef->getPatchIdx(p);
+    complexsreac_global_id ridx = pStatedef->getComplexSReacIdx(r);
+
+    return _getPatchComplexSReacExtent(pidx, ridx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool API::_getPatchVDepSReacActive(uint /*pidx*/, uint /*vsridx*/) const {
-  NotImplErrLog("");
+void API::_setPatchArea(patch_global_id /*pidx*/, double /*area*/) {
+    NotImplErrLog("");
+}
+
+
+////////////////////////////////////////////////////////////////////////
+
+double API::_getPatchComplexCount(
+    patch_global_id /*pidx*/,
+    complex_global_id /*cmplIdx*/,
+    const std::vector<util::strongid_vector<complex_substate_id, model::SubunitStateFilter>>& /*f*/)
+    const {
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////
+
+void API::_setPatchComplexCount(patch_global_id /*pidx*/,
+                                complex_global_id /*cmplIdx*/,
+                                const util::strongid_vector<complex_substate_id, uint>& /*i*/,
+                                double /*n*/) {
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////
+
+double API::_getPatchComplexAmount(
+    patch_global_id /*pidx*/,
+    complex_global_id /*sidx*/,
+    const std::vector<util::strongid_vector<complex_substate_id, model::SubunitStateFilter>>& /*f*/)
+    const {
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////
+
+void API::_setPatchComplexAmount(patch_global_id /*pidx*/,
+                                 complex_global_id /*sidx*/,
+                                 const util::strongid_vector<complex_substate_id, uint>& /*i*/,
+                                 double /*a*/) {
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////
+
+double API::_getPatchComplexSUSCount(
+    patch_global_id /*pidx*/,
+    complex_global_id /*sidx*/,
+    const std::vector<util::strongid_vector<complex_substate_id, model::SubunitStateFilter>>& /*f*/,
+    complex_substate_id /*m*/) const {
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::_setPatchVDepSReacActive(uint /*pidx*/, uint /*vsridx*/, bool /*a*/) {
-  NotImplErrLog("");
+double API::_getPatchSReacH(patch_global_id /*pidx*/, sreac_global_id /*ridx*/) const {
+    NotImplErrLog("");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// END
+double API::_getPatchSReacC(patch_global_id /*pidx*/, sreac_global_id /*ridx*/) const {
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::_getPatchSReacA(patch_global_id /*pidx*/, sreac_global_id /*ridx*/) const {
+    NotImplErrLog("");
+}
+
+unsigned long long API::_getPatchSReacExtent(patch_global_id /*pidx*/,
+                                             sreac_global_id /*ridx*/) const {
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void API::_resetPatchSReacExtent(patch_global_id /*pidx*/, sreac_global_id /*ridx*/) {
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////
+
+unsigned long long API::_getPatchComplexSReacExtent(patch_global_id /*pidx*/,
+                                                    complexsreac_global_id /*ridx*/) const {
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool API::_getPatchVDepSReacActive(patch_global_id /*pidx*/
+                                   ,
+                                   vdepsreac_global_id /*vsridx*/) const {
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void API::_setPatchVDepSReacActive(patch_global_id /*pidx*/,
+                                   vdepsreac_global_id /*vsridx*/,
+                                   bool /*a*/) {
+    NotImplErrLog("");
+}
+
+}  // namespace steps::solver

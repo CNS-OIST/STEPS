@@ -26,78 +26,53 @@
 
 #pragma once
 
-#include <cassert>
 #include <string>
-#include <vector>
-#include <map>
 
-#include "util/common.h"
+#include "fwd.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::model {
 
-namespace steps {
-namespace model {
-
-////////////////////////////////////////////////////////////////////////////////
-
-// Forward declarations.
-class GHKcurr;
-class Surfsys;
-class Model;
-class ChanState;
-class Spec;
-
-// Auxiliary declarations.
-typedef GHKcurr *                            GHKcurrP;
-typedef std::map<std::string, GHKcurrP>     GHKcurrPMap;
-typedef GHKcurrPMap::iterator                 GHKcurrPMapI;
-typedef GHKcurrPMap::const_iterator           GHKcurrPMapCI;
-typedef std::vector<GHKcurrP>                 GHKcurrPVec;
-typedef GHKcurrPVec::iterator                 GHKcurrPVecI;
-typedef GHKcurrPVec::const_iterator           GHKcurrPVecCI;
-
-// Added due to problem with default map in constructor.
-typedef std::map<std::string, double> MyMap;
-
-////////////////////////////////////////////////////////////////////////////////
 /// GHK current.
 /// Current through a channel based on the GHK flux equation.
 /// The GHK flux equation contains a term for the channel permeability, not
 /// conductance (since this is not constant with changes in concentrations),
-/// however it is assumed that single-channel SLOPE conductance will be supplied, in
-/// which case we need to know a lot of information about the conductance
-/// measurement in order to calculate the permeability constant.
-/// We need to know at time of measurement: 1) the valence of the ion (which will
+/// however it is assumed that single-channel SLOPE conductance will be
+/// supplied, in which case we need to know a lot of information about the
+/// conductance measurement in order to calculate the permeability constant. We
+/// need to know at time of measurement: 1) the valence of the ion (which will
 /// come from the species object and checked not to be zero), 2) the membrane
 /// potential, 3) the intra and extra-cellular concentrations of the ion and 4)
 /// the temperature.
-/// 2,3 and 4 are conveniently all doubles, and can be supplied in a dict (map in c++),
-/// e.g.   Ca_curr.setGMeasInfo({'temp':6.3, 'iconc': 5e-6})
-/// If this information is not supplied, these will be taken from the initial
-/// conditions in the simulation itself.
-/// This information will then be used to find the single-channel permeability
-/// to be used during the simulation.
+/// 2,3 and 4 are conveniently all doubles, and can be supplied in a dict (map
+/// in c++), e.g.   Ca_curr.setGMeasInfo({'temp':6.3, 'iconc': 5e-6}) If this
+/// information is not supplied, these will be taken from the initial conditions
+/// in the simulation itself. This information will then be used to find the
+/// single-channel permeability to be used during the simulation.
 
 /// \warning Methods start with an underscore are not exposed to Python.
 
-class GHKcurr
-{
-
-public:
-
+class GHKcurr {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
     /// Constructor
     ///
     /// \param id ID of the ohmic current reaction.
-    /// \param surfsys Pointer to the parent surface system.
+    /// \param surfsys Reference to the parent surface system.
     /// \param ion The ion species which carries the current.
     /// \param g Single channel conductance (in siemens).
     ///
-    GHKcurr(std::string const & id, Surfsys * surfsys,
-            ChanState * chanstate, Spec * ion, bool computeflux = true,
-            double virtual_oconc = -1.0, double vshift = 0.0);
+    GHKcurr(std::string const& id,
+            Surfsys& surfsys,
+            ChanState& chanstate,
+            Spec& ion,
+            bool computeflux = true,
+            double virtual_oconc = -1.0,
+            double vshift = 0.0);
+
+    GHKcurr(const GHKcurr&) = delete;
+    GHKcurr& operator=(const GHKcurr&) = delete;
 
     /// Destructor
     ~GHKcurr();
@@ -109,66 +84,52 @@ public:
     /// Return the GHK current ID.
     ///
     /// \return ID of the GHK current.
-    const std::string& getID() const
-    { return pID; }
+    const std::string& getID() const noexcept {
+        return pID;
+    }
 
     /// Set or change the GHK current ID.
     ///
     /// \param id ID of the GHK current.
-    void setID(std::string const & id);
+    void setID(std::string const& id);
 
-    /// Return a pointer to the parent surface system.
+    /// Return a reference to the parent surface system.
     ///
-    /// \return Pointer to the surface system.
-    Surfsys * getSurfsys() const
-    { return pSurfsys; }
+    /// \return Reference to the surface system.
+    Surfsys& getSurfsys() const noexcept {
+        return pSurfsys;
+    }
 
-    /// Return a pointer to the parent model.
+    /// Return a reference to the parent model.
     ///
-    /// \return Pointer to the parent model.
-    Model * getModel() const
-    { return pModel; }
+    /// \return Reference to the parent model.
+    Model& getModel() const noexcept {
+        return pModel;
+    }
 
-    /// Return a pointer to the associated channel state.
+    /// Return a reference to the associated channel state.
     ///
-    /// \return Pointer to the channel state.
-    ChanState * getChanState() const
-    { return pChanState; }
+    /// \return Reference to the channel state.
+    ChanState& getChanState() const noexcept {
+        return *pChanState;
+    }
 
     /// Change the channel state.
     ///
     /// \param chanstate Channel state of the open state.
-    void setChanState(ChanState * chanstate);
+    void setChanState(ChanState& chanstate);
 
-    /// Return a pointer to the ion.
+    /// Return a reference to the ion.
     ///
-    /// \return Pointer to the ion.
-    Spec * getIon() const
-    { return pIon; }
+    /// \return Reference to the ion.
+    Spec& getIon() const noexcept {
+        return *pIon;
+    }
 
     /// Change the ion.
     ///
     /// \param ion Ion species.
-    void setIon(Spec * ion);
-
-    /*
-    /// Return the channel conductance (in siemens) at the specified conditions.
-    ///
-    /// \return Channel conductance associated with GHK current.
-    double getG() const
-    { return pG; }
-
-    /// Change the channel conductance at the specified conditions.
-    ///
-    /// \param g Conductance associated with ohmic current.
-    void setG(double g);
-
-     // To expose, or not to expose. That is the question.
-    /// Return the calculated conductance information.
-    ///
-    /// \return Conductance measurement information.
-    std::map<std::string, double> getGInfo() const;
-    */
+    void setIon(Spec& ion);
 
     /// Set or change the permeability measurement information.
     ///
@@ -179,6 +140,13 @@ public:
     ///
     /// \param ginfo Permeability.
     void setP(double p);
+
+    /// Return the single-channel permeability.
+    ///
+    /// \return single channel permeability.
+    double getP() {
+        return _P();
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: DELETION
@@ -195,15 +163,11 @@ public:
     /// Return whether user has supplied conductance information or not.
     ///
     /// \Return Conductance information supplied bool
-    bool _infosupplied() const noexcept
-    { return pInfoSupplied; }
+    bool _infosupplied() const noexcept {
+        return pInfoSupplied;
+    }
 
-    double _G() const;
     int _valence() const;
-    double _V() const;
-    double _temp() const;
-    double _oconc() const;
-    double _iconc() const;
 
     double _P() const;
 
@@ -211,67 +175,61 @@ public:
     // INTERNAL (NON-EXPOSED) OPERATIONS
     ////////////////////////////////////////////////////////////////////////
     // Real flux flag
-    bool _realflux() const noexcept
-    { return pRealFlux; }
+    bool _realflux() const noexcept {
+        return pRealFlux;
+    }
 
-    double _voconc() const noexcept
-    { return pVirtual_conc; }
+    double _voconc() const noexcept {
+        return pVirtual_conc;
+    }
 
-    double _vshift() const noexcept
-    { return pVshift; }
+    double _vshift() const noexcept {
+        return pVshift;
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
-    std::string                         pID;
-    Model                             * pModel{nullptr};
-    Surfsys                           * pSurfsys;
-    ChanState                         * pChanState;
-    Spec                              * pIon;
-    bool                                 pRealFlux;
-
-    // std::map<std::string, double>       pGInfo;
+    std::string pID;
+    Model& pModel;
+    Surfsys& pSurfsys;
+    ChanState* pChanState;
+    Spec* pIon;
+    bool pRealFlux;
 
     ////////////////////////////////////////////////////////////////////////
     // CONDUCTANCE MEASUREMENT INFORMATION
     ////////////////////////////////////////////////////////////////////////
     // The measured conductance
-    double                              pG;
+    double pG;
     // The ion valence. This comes from Spec object
-    int                                 pValence;
+    int pValence;
     // The potential
-    double                                 pV;
+    double pV;
     // The temperature IN KELVIN
-    double                                 pTemp;
+    double pTemp;
     // The inner concentration in Molar units
-    double                                 pInnerConc;
+    double pInnerConc;
     // The outer concentration in Molar units
-    double                                 pOuterConc;
+    double pOuterConc;
 
     // The single-channel permeability, if we have it
-    double                                 pP;
+    double pP;
 
     // True if we have all conductance measurement information.
     // An exception should be thrown at def level if this info is missing.
-    bool                                 pInfoSupplied;
+    bool pInfoSupplied;
 
     // The 'virtual outer-concentration'. If this is set to a positive number
     // then the outer concentration will be taken from this number,
     // allowing GHK currents on surface of mesh with no outer compartment
-    double                                pVirtual_conc;
+    double pVirtual_conc;
 
     // Allowing a 'voltage shift' for the calcuation as this is used in
     // some models
-    double                                 pVshift;
-
-    ////////////////////////////////////////////////////////////////////////
-
+    double pVshift;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-} // namespace model
-} // namespace steps
+}  // namespace steps::model

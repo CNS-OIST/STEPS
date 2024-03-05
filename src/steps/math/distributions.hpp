@@ -11,11 +11,9 @@
 #include "util/collections.hpp"
 #include "util/distribute.hpp"
 
-namespace steps {
-namespace math {
+namespace steps::math {
 
-/// TODO make this a scoped enum once STEPS requires cython 3x
-enum DistributionMethod { DIST_UNIFORM = 0, DIST_MULTINOMIAL = 1};
+enum DistributionMethod { DIST_UNIFORM = 0, DIST_MULTINOMIAL = 1 };
 
 //-----------------------------------------------
 /**
@@ -32,13 +30,13 @@ enum DistributionMethod { DIST_UNIFORM = 0, DIST_MULTINOMIAL = 1};
  * with a probability of each bin = rates_[i]/sum(rates_) in a multinomial way
  *
  * EXPLANATION
- * In Uniform_distribute the number of objects in each bins is proportional to the associated 
+ * In Uniform_distribute the number of objects in each bins is proportional to the associated
  * weight and is deterministic, such that final distribution among the bins is homogeneous.
- * In Multinomial_distribute the number of objects in each bins is randomly sampled 
+ * In Multinomial_distribute the number of objects in each bins is randomly sampled
  * from a multinomial distribution.
  *
  * distribute() produces the distribution
- * 
+ *
  * \tparam Num
  * \tparam Container
  */
@@ -70,8 +68,7 @@ class Distribution {
     }
 
     /// selector of distribution method
-    template <typename RNG>
-    const write_type<Num>& distribute(RNG& rng, const DistributionMethod distribution) {
+    const write_type<Num>& distribute(rng::RNG& rng, const DistributionMethod distribution) {
         switch (distribution) {
         case DistributionMethod::DIST_UNIFORM:
             return distribute_uniform(rng);
@@ -85,20 +82,14 @@ class Distribution {
 
   private:
     /// Distribute objects in bins in multinomial way
-    template <typename RNG>
-    const write_type<Num>& distribute_multinomial(RNG& rng) {
+    const write_type<Num>& distribute_multinomial(rng::RNG& rng) {
         Num rem_n(this->n_);
         value_type sum_rates = this->sum_rates_;
         for (size_type i = 0; i < this->rates_.size(); ++i) {
             const auto prob = this->rates_[i] / sum_rates;
             if (prob < 1.0) {
-                if constexpr (std::is_same_v<RNG, steps::rng::RNG>) {
-                    this->ret_[i] = static_cast<Num>(
-                        rng.getBinom(static_cast<uint>(rem_n), static_cast<double>(prob)));
-                } else {
-                    std::binomial_distribution<Num> bin(rem_n, prob);
-                    this->ret_[i] = bin(rng);
-                }
+                this->ret_[i] = static_cast<Num>(
+                    rng.getBinom(static_cast<uint>(rem_n), static_cast<double>(prob)));
                 rem_n -= this->ret_[i];
                 sum_rates -= this->rates_[i];
             } else {
@@ -109,35 +100,33 @@ class Distribution {
     }
 
     /// Distribute objects in bins in uniform way
-    template <typename RNG>
-    const write_type<Num>& distribute_uniform(RNG& rng) {
+    const write_type<Num>& distribute_uniform(rng::RNG& rng) {
         if (this->rates_.size() == 0) {
             return this->ret_;
         }
 
-        auto set_count = [](Num& tet, uint c) { tet = c; };
-        auto inc_count = [](Num& tet, int c) { tet += c; };
+        auto set_count = [](Num& tet, Num c) { tet = c; };
+        auto inc_count = [](Num& tet) { ++tet; };
 
         auto weight = [this](const auto tet) {
             // we need to use this way for finding the distance because osh::Write
             // does not implement real iterators
-            const size_t ii = static_cast<size_t>(&(*tet) - this->ret_.data());
+            const auto ii = static_cast<size_t>(&(*tet) - this->ret_.data());
             return this->rates_[ii];
         };
 
-        steps::util::distribute_quantity(this->n_,
-                                         this->ret_.begin(),
-                                         this->ret_.end(),
-                                         weight,
-                                         set_count,
-                                         inc_count,
-                                         rng,
-                                         this->sum_rates_);
+        util::distribute_quantity<Num>(this->n_,
+                                       this->ret_.begin(),
+                                       this->ret_.end(),
+                                       weight,
+                                       set_count,
+                                       inc_count,
+                                       rng,
+                                       this->sum_rates_);
 
         return this->ret_;
     }
 
-  private:
     /// Number of objects (molecules) to be distributed
     const Num n_;
     /// Probabilities as: rates_[i]/sum_rates_
@@ -159,5 +148,4 @@ Distribution<Num, Container> make_dist(Num n, const Container& rates, Output& ou
 }
 
 
-} // namespace math
-} // namespace steps
+}  // namespace steps::math
