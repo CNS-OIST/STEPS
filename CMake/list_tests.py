@@ -32,7 +32,8 @@ import unittest
 FAILED_LOAD_STR = 'unittest.loader._FailedTest'
 
 # STEPS and its dependencies should be provided fake modules
-FAKE_MODULES = ['steps', 'numpy', 'scipy', 'matplotlib', 'mpi4py']
+FAKE_MODULES_STEPS = ['steps', 'stepsblender']
+FAKE_MODULES_DEPS = ['numpy', 'scipy', 'matplotlib', 'mpi4py']
 
 FAKE_MODULE_ALL = ['NoOrdering']
 
@@ -56,11 +57,12 @@ class _CustomVirtualLoader(importlib.abc.Loader):
 
 
 class _CustomMetaPathFinder(importlib.abc.MetaPathFinder):
-    def __init__(self):
+    def __init__(self, fakeModules):
         self._virtualLoader = _CustomVirtualLoader()
+        self._fakeModules = fakeModules
 
     def find_spec(self, fullname, path, target=None):
-        if any(fullname.startswith(mod) for mod in FAKE_MODULES):
+        if any(fullname.startswith(mod) for mod in self._fakeModules):
             return importlib.machinery.ModuleSpec(fullname, self._virtualLoader)
         return None
 
@@ -82,7 +84,10 @@ if __name__ == "__main__":
     # We need to do this because unittest actually imports the test modules upon test discovery.
     # Since the test modules also import steps and potentially dependencies that are not yet
     # installed, we need to provide fake packages in order for the test discovery to work.
-    sys.meta_path.append(_CustomMetaPathFinder())
+    # STEPS should always be replaced by a fake module, in case a previous installation is faulty.
+    sys.meta_path.insert(0, _CustomMetaPathFinder(FAKE_MODULES_STEPS))
+    # STEPS dependencies should only be replaced by fake modules if they are not installed.
+    sys.meta_path.append(_CustomMetaPathFinder(FAKE_MODULES_DEPS))
 
     loader = unittest.TestLoader()
     # Redirect stdout to avoid STEPS prints on module import
