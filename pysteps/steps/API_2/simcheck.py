@@ -250,7 +250,7 @@ def Check(sim, printmsgs=True):
                          * 3 / 4 / numpy.pi) ** (1 / 3)
             for vssys, reacs in vesSurfSyss2reacs.items():
                 for ves in vssys.locations:
-                    if isinstance(ves, nmodel.Vesicle):
+                    if isinstance(ves, nmodel.Vesicle) and ves.Dcst > 0:
                         vesDtThresh = tetRadius ** 2 / (15 * ves.Dcst)
                         if vesDtThresh < vesDt:
                             reacsStr = '\n'.join(map(str, reacs))
@@ -299,19 +299,20 @@ def Check(sim, printmsgs=True):
                             f'Vesicle {ves} has a diameter ({ves.Diameter} m) higher than the smallest '
                             f'side of the mesh bounding box ({smallestDim} m).'
                         )
-                    threshDist = smallestVesDiam + ves.Diameter
-                    frac = 1 - chi2.cdf(3 * threshDist ** 2 /
-                                        (6 * ves.Dcst * vesDt), 3)
-                    if frac > ACCEPTABLE_JUMP_FRACTION:
-                        recDt = (3 / chi2.ppf(1 - ACCEPTABLE_JUMP_FRACTION, 3)
-                                * threshDist ** 2) / (6 * ves.Dcst)
-                        warnings.append(
-                            f'Vesicle {ves} has a diffusion constant ({ves.Dcst} m^2.s^-1) for which, with '
-                            f'the current vesicle Dt ({vesDt} s), {frac * 100:.2f}% of the vesicle jumps could '
-                            f'skip over the smallest vesicle (diameter {smallestVesDiam} m). This can happen '
-                            f'for less than {ACCEPTABLE_JUMP_FRACTION * 100} percent of the jumps '
-                            f'if the vesicle Dt is set to {recDt:.4e} s.'
-                        )
+                    if ves.Dcst > 0:
+                        threshDist = smallestVesDiam + ves.Diameter
+                        frac = 1 - chi2.cdf(3 * threshDist ** 2 /
+                                            (6 * ves.Dcst * vesDt), 3)
+                        if frac > ACCEPTABLE_JUMP_FRACTION:
+                            recDt = (3 / chi2.ppf(1 - ACCEPTABLE_JUMP_FRACTION, 3)
+                                    * threshDist ** 2) / (6 * ves.Dcst)
+                            warnings.append(
+                                f'Vesicle {ves} has a diffusion constant ({ves.Dcst} m^2.s^-1) for which, with '
+                                f'the current vesicle Dt ({vesDt} s), {frac * 100:.2f}% of the vesicle jumps could '
+                                f'skip over the smallest vesicle (diameter {smallestVesDiam} m). This can happen '
+                                f'for less than {ACCEPTABLE_JUMP_FRACTION * 100} percent of the jumps '
+                                f'if the vesicle Dt is set to {recDt:.4e} s.'
+                            )
 
                 # Check whether some species could stay in tetrahedrons even if fully overlapped by vesicles
                 # This can only happen if the diameter of the biggest vesicle is bigger than the diameter of
