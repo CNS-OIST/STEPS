@@ -341,8 +341,14 @@ if(USE_PETSC)
   endif()
 endif()
 
-if(STEPS_USE_DIST_MESH AND USE_PETSC)
-  if(PETSC_SIZEOF_PETSCINT EQUAL 4)
+if(STEPS_USE_DIST_MESH)
+  if(NOT MPI_FOUND)
+    message(
+      FATAL_ERROR
+        "The DistTetOpSplit distributed solver requires MPI, if it is not needed, it can be deactivated by using the following CMake argument: -DSTEPS_USE_DIST_MESH=False"
+    )
+  endif()
+  if(USE_PETSC AND PETSC_SIZEOF_PETSCINT EQUAL 4)
     message(
       WARNING "Distributed mesh requires PETSc to be compiled with configure option "
               "'--with-64-bit-indices=1' to support mesh with "
