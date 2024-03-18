@@ -1054,7 +1054,7 @@ class SimPath:
         else:
             raise TypeError(
                 f'Expected either nothing, a linkSpec list, a linkSpec type, or a SimPath, got '
-                f'{linkSpec} instead.'
+                f'{linkSpecs} instead.'
             )
 
         return SimPath(self._sim, path._substituteElems(path._elems, _LinkSpecListStandIn))
@@ -1954,7 +1954,7 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
 
         comps = [c.name if isinstance(c, ngeom.Compartment) else c for c in comps]
         if not all(isinstance(c, str) for c in comps):
-            raise TypeError(f'Expected a list of compartments or compartment names, got {comp} instead.')
+            raise TypeError(f'Expected a list of compartments or compartment names, got {comps} instead.')
 
         self.solver.addVesicleDiffusionGroup(ves, comps)
 

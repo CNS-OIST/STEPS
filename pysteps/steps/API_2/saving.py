@@ -1308,7 +1308,7 @@ class _ResultList(ResultSelector):
         # Update metaData
         for key, vals in self.metaData.items():
             if len(vals) != self._getEvalLen():
-                self._metaData.__setitem__(key, [vals[inds] for ind in self._distrInds], _internal=True)
+                self._metaData.__setitem__(key, [vals[ind] for ind in self._distrInds], _internal=True)
 
         return self, changed
 
@@ -2558,7 +2558,7 @@ class _FileDataAccessor(nutils.Versioned):
                     break
                 else:
                     raise IndexError(
-                        f'Could not load time slice {ti} of run {ind} from {self._fp}.'
+                        f'Could not load time slice {key[1]} of run {ind} from {self._fp}.'
                         f' The file might be corrupted.'
                     )
 

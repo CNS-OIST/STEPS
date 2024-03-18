@@ -427,7 +427,7 @@ class RaftSurfaceSystem(SurfaceSystem):
             for end in obj.getAllRaftEndocytosiss():
                 RaftEndocytosis._FromStepsObject(end, mdl)
             for dis in obj.getAllRaftDiss():
-                RaftDissolution._FromStepsObject(dis, mdl)
+                RaftDis._FromStepsObject(dis, mdl)
 
         return rssys
 
