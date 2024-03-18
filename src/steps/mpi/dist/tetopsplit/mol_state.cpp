@@ -2,8 +2,7 @@
 
 #include "util/debug.hpp"
 
-namespace steps {
-namespace dist {
+namespace steps::dist {
 
 std::ostream& operator<<(std::ostream& os, const Occupancy& o) {
     os << "correction_: " << o.corrections_ << '\n';
@@ -12,5 +11,4 @@ std::ostream& operator<<(std::ostream& os, const Occupancy& o) {
     return os;
 }
 
-}  // namespace dist
-}  // namespace steps
+}  // namespace steps::dist

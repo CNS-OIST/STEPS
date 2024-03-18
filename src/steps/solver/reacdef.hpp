@@ -24,146 +24,126 @@
 
  */
 
+#pragma once
 
-/*
- *  Last Changed Rev:  $Rev$
- *  Last Changed Date: $Date$
- *  Last Changed By:   $Author$
- */
-
-#ifndef STEPS_SOLVER_REACDEF_HPP
-#define STEPS_SOLVER_REACDEF_HPP 1
-
-
-// STL headers.
+#include <iosfwd>
 #include <string>
-#include <fstream>
 
-// STEPS headers.
-#include "util/common.h"
-#include "statedef.hpp"
-#include "api.hpp"
-#include "types.hpp"
-#include "model/spec.hpp"
+#include "fwd.hpp"
+#include "model/fwd.hpp"
+#include "model/reac.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace solver {
-
-// Forwards declarations
-class Statedef;
-
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::solver {
 
 /// Defined Reaction.
-class Reacdef
-{
-
-public:
+class Reacdef {
+  public:
     /// Constructor
     ///
     /// \param sd State of the solver.
     /// \param idx Global index of the reaction.
-    /// \param r Pointer to the associated Reac object.
-    Reacdef(Statedef * sd, uint idx, steps::model::Reac * r);
+    /// \param r Reference to the associated Reac object.
+    Reacdef(Statedef& sd, reac_global_id idx, model::Reac& r);
 
-    /// Destructor
-    ~Reacdef();
+    Reacdef(const Reacdef&) = delete;
+    Reacdef& operator=(const Reacdef&) = delete;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream& cp_file) const;
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream& cp_file);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: REACTION RULE
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this reaction rule.
-    inline uint gidx() const noexcept
-    { return pIdx; }
+    inline reac_global_id gidx() const noexcept {
+        return pIdx;
+    }
 
     /// Return the name of the reaction.
-    std::string const name() const;
+    std::string const name() const noexcept {
+        return pName;
+    }
 
     /// Return the order of this reaction.
-    uint order() const;
+    uint order() const noexcept {
+        return pOrder;
+    }
 
     /// Return the MACROscopic reaction constant.
-    double kcst() const;
+    double kcst() const noexcept {
+        return pKcst;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: STOICHIOMETRY
     ////////////////////////////////////////////////////////////////////////
     /// \todo imcompleted.
-    uint lhs(uint gidx) const;
-    int dep(uint gidx) const;
-    uint rhs(uint gidx) const;
-    int upd(uint gidx) const;
-    bool reqspec(uint gidx) const;
+    uint lhs(spec_global_id gidx) const;
+    int dep(spec_global_id gidx) const;
+    uint rhs(spec_global_id gidx) const;
+    int upd(spec_global_id gidx) const;
+    bool reqspec(spec_global_id gidx) const;
 
-    inline steps::solver::gidxTVecCI bgnUpdColl() const noexcept
-    { return pSpec_UPD_Coll.begin(); }
-    inline steps::solver::gidxTVecCI endUpdColl() const noexcept
-    { return pSpec_UPD_Coll.end(); }
-    inline const gidxTVec& updColl() const noexcept {
+    inline solver::spec_global_id_vecCI bgnUpdColl() const noexcept {
+        return pSpec_UPD_Coll.begin();
+    }
+    inline solver::spec_global_id_vecCI endUpdColl() const noexcept {
+        return pSpec_UPD_Coll.end();
+    }
+    inline const spec_global_id_vec& updColl() const noexcept {
         return pSpec_UPD_Coll;
     }
-    inline gidxTVec& updColl() noexcept {
-      return pSpec_UPD_Coll;
+
+    inline solver::spec_global_id_vec& updColl() noexcept {
+        return pSpec_UPD_Coll;
     }
 
-    inline const steps::solver::gidxTVec& UPD_Coll() const noexcept
-    { return pSpec_UPD_Coll; }
+    inline const solver::spec_global_id_vec& UPD_Coll() const noexcept {
+        return pSpec_UPD_Coll;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: SETUP
     ////////////////////////////////////////////////////////////////////////
     /// Setup the object.
-    void setup();
+    void setup(const Statedef& sd);
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
-    Statedef                          * pStatedef;
-    uint                                pIdx;
-    std::string                         pName;
-    uint                                 pOrder;
-    double                                 pKcst;
+    const reac_global_id pIdx;
+    const std::string pName;
+    const uint pOrder;
+    const double pKcst;
 
-    // The stoichiometry stored as model level Spec objects.
-    // To be used during setup ONLY
-    steps::model::SpecPVec                 pLhs;
-    steps::model::SpecPVec                 pRhs;
+    /// The stoichiometry stored as model level Spec objects.
+    /// To be used during setup ONLY
+    /// \{
+    const std::vector<model::Spec*> pLhs;
+    const std::vector<model::Spec*> pRhs;
+    /// \}
 
-    bool                                pSetupdone;
+    bool pSetupdone{false};
 
     ////////////////////////////////////////////////////////////////////////
     // DATA: STOICHIOMETRY
     ////////////////////////////////////////////////////////////////////////
 
-    int                               * pSpec_DEP;
-    uint                              * pSpec_LHS;
-    uint                              * pSpec_RHS;
-    int                               * pSpec_UPD;
-    steps::solver::gidxTVec             pSpec_UPD_Coll;
+    util::strongid_vector<spec_global_id, depT> pSpec_DEP;
+    util::strongid_vector<spec_global_id, uint> pSpec_LHS;
+    util::strongid_vector<spec_global_id, uint> pSpec_RHS;
+    util::strongid_vector<spec_global_id, int> pSpec_UPD;
 
+    spec_global_id_vec pSpec_UPD_Coll;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-#endif
-// STEPS_SOLVER_REACDEF_HPP
-
-// END
+}  // namespace steps::solver

@@ -132,9 +132,12 @@ class TestSecondOrderIrev2D(unittest.TestCase):
 
         sim.toSave(res, dt=DT)
 
+        seed = time.time()%4294967295
         for i in range (0, NITER):
             sim.newRun()
             sim.restore('./validation_cp/cp/second_order_irev_2D')
+            rng.initialize(seed)
+            seed += 1
             sim.run(INT)
 
         mean_res = numpy.mean(res.data, 0)

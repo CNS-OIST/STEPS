@@ -2,8 +2,8 @@ add_library(instrumentor INTERFACE)
 target_include_directories(instrumentor INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(MPI_FOUND)
-    target_compile_definitions(instrumentor INTERFACE STEPS_USE_MPI)
-    target_link_libraries(instrumentor INTERFACE MPI::MPI_CXX)
+  target_compile_definitions(instrumentor INTERFACE STEPS_USE_MPI)
+  target_link_libraries(instrumentor INTERFACE MPI::MPI_CXX)
 endif()
 
 # =============================================================================

@@ -24,9 +24,7 @@
 
  */
 
-
-#ifndef STEPS_SOLVER_EFIELD_DVSOLVER_SLU_HPP
-#define STEPS_SOLVER_EFIELD_DVSOLVER_SLU_HPP 1
+#pragma once
 
 #include <algorithm>
 #include <memory>
@@ -35,31 +33,29 @@
 #include <mpi.h>
 
 // STEPS headers.
-#include "util/common.h"
 #include "dVsolver.hpp"
 #include "slusystem.hpp"
 
-namespace steps {
-namespace solver {
-namespace efield {
+namespace steps::solver::efield {
 
 class dVSolverSLU: public dVSolverBase {
-public:
-    explicit dVSolverSLU(MPI_Comm comm): pMpiComm(comm) {}
+  public:
+    explicit dVSolverSLU(MPI_Comm comm)
+        : pMpiComm(comm) {}
 
-    void initMesh(TetMesh *mesh) override {
+    void initMesh(TetMesh* mesh) override {
         dVSolverBase::initMesh(mesh);
         sparsity_template S(pNVerts);
 
         for (auto i = 0u; i < pNVerts; ++i) {
-            VertexElement *ve = mesh->getVertex(i);
+            VertexElement* ve = mesh->getVertex(i);
 
             int idx = ve->getIDX();
             int ncon = ve->getNCon();
 
-            S.insert(std::make_pair(idx, idx));
+            S.emplace(idx, idx);
             for (int j = 0; j < ncon; ++j) {
-                S.insert(std::make_pair(idx, static_cast<int>(ve->nbrIdx(j))));
+                S.emplace(idx, static_cast<int>(ve->nbrIdx(j)));
             }
         }
 
@@ -70,14 +66,9 @@ public:
         _advance(pSLUSys.get(), dt);
     }
 
-private:
+  private:
     std::unique_ptr<SLUSystem> pSLUSys;
     MPI_Comm pMpiComm;
 };
 
-
-}}} // namespace steps::efield::solver
-
-#endif // ndef STEPS_SIM_EFIELD_DVSOLVER_SLU_HPP
-
-// END
+}  // namespace steps::solver::efield

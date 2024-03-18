@@ -132,12 +132,12 @@ class TestRDUnbdiff2D(unittest.TestCase):
 
         for j in range(NITER):
             sim.reset()
-            sim.setTriCount(ctri_idx, 'X', NINJECT)
+            sim.setTriSpecCount(ctri_idx, 'X', NINJECT)
             for i in range(ntpnts):
                 sim.run(tpnts[i])
                 for k in range(patch_tris_n):
-                    res_count[j, i, k] = sim.getTriCount(patch_tris[k], 'X')
-                    res_conc[j, i, k] = sim.getTriCount(patch_tris[k], 'X')/sim.getTriArea(patch_tris[k])
+                    res_count[j, i, k] = sim.getTriSpecCount(patch_tris[k], 'X')
+                    res_conc[j, i, k] = sim.getTriSpecCount(patch_tris[k], 'X')/sim.getTriArea(patch_tris[k])
 
         itermeans_count = numpy.mean(res_count, axis = 0)
         itermeans_conc = numpy.mean(res_conc, axis = 0)

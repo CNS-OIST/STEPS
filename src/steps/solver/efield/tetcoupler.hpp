@@ -24,39 +24,27 @@
 
  */
 
-
-#ifndef STEPS_SOLVER_EFIELD_TETCOUPLER_HPP
-#define STEPS_SOLVER_EFIELD_TETCOUPLER_HPP 1
+#pragma once
 
 // STEPS headers.
-#include "util/common.h"
 #include "tetmesh.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps{
-namespace solver {
-namespace efield {
-
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::solver::efield {
 
 /// It is temporarily created in the constructor of class EField, after a
 /// TetMesh has been (partially) constructed.
 ///
 /// \author Robert Cannon
 ///
-class TetCoupler
-{
-
-public:
-
+class TetCoupler {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
     /// Constructor. Just copies the mesh pointer.
     ///
-    TetCoupler(TetMesh * mesh);
+    TetCoupler(TetMesh* mesh);
 
     /// Destructor.
     ///
@@ -73,8 +61,7 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
     // AUXILIARY FUNCTIONS FOR COUPLEMESH()
     ////////////////////////////////////////////////////////////////////////
@@ -84,33 +71,20 @@ private:
     bool dblsDiffer(double, double);
 
     /// Compute the corss product between two vectors
-    void cross_product(double * a, double * b, double * c);
+    void cross_product(double* a, double* b, double* c);
 
     /// Computes the actual flux coefficients.
     ///
     ///
-    void fluxCoeficients(VertexElement*, VertexElement**, double * ret);
+    void fluxCoeficients(VertexElement*, VertexElement**, double* ret);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA FIELDS
     ////////////////////////////////////////////////////////////////////////
 
-    TetMesh *                   pMesh;
+    TetMesh* pMesh;
 
     ////////////////////////////////////////////////////////////////////////
-
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-#endif
-
-// STEPS_SIM_EFIELD_TETCOUPLER_HPP
-
-// END
+}  // namespace steps::solver::efield

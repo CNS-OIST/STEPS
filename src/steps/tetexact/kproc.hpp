@@ -24,51 +24,35 @@
 
  */
 
-
-#ifndef STEPS_TETEXACT_KPROC_HPP
-#define STEPS_TETEXACT_KPROC_HPP 1
-
-////////////////////////////////////////////////////////////////////////////////
-
+#pragma once
 
 // STL headers.
-#include <vector>
 #include <fstream>
+#include <set>
+#include <vector>
 
 // STEPS headers.
 #include "crstruct.hpp"
-#include "util/common.h"
-#include "solver/types.hpp"
 #include "rng/rng.hpp"
+#include "solver/fwd.hpp"
+#include "util/collections.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::tetexact {
 
-namespace steps{
-namespace tetexact{
-
-////////////////////////////////////////////////////////////////////////////////
-
-//Forward declaration
+// Forward declaration
 class Tet;
 class Tri;
 class WmVol;
 class KProc;
 class Tetexact;
 
-////////////////////////////////////////////////////////////////////////////////
-
-typedef KProc *                         KProcP;
-typedef std::vector<KProcP>             KProcPVec;
-typedef KProcPVec::iterator             KProcPVecI;
-typedef KProcPVec::const_iterator       KProcPVecCI;
-
-////////////////////////////////////////////////////////////////////////////////
+typedef KProc* KProcP;
+typedef std::vector<KProcP> KProcPVec;
 
 class KProc
 
 {
-public:
-
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
@@ -80,34 +64,38 @@ public:
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    virtual void checkpoint(std::fstream & cp_file) = 0;
+    virtual void checkpoint(std::fstream& cp_file);
 
     /// restore data
-    virtual void restore(std::fstream & cp_file) = 0;
+    virtual void restore(std::fstream& cp_file);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-
     static const int INACTIVATED = 1;
 
-    inline bool active() const noexcept
-    { return !(pFlags & INACTIVATED); }
-    inline bool inactive() const noexcept
-    { return static_cast<bool>(pFlags & INACTIVATED); }
+    inline bool active() const noexcept {
+        return !(pFlags & INACTIVATED);
+    }
+    inline bool inactive() const noexcept {
+        return static_cast<bool>(pFlags & INACTIVATED);
+    }
     void setActive(bool active);
 
-    inline uint flags() const
-    { return pFlags; }
+    inline uint flags() const {
+        return pFlags;
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-    uint schedIDX() const
-    { return pSchedIDX; }
+    solver::kproc_global_id schedIDX() const {
+        return pSchedIDX;
+    }
 
-    void setSchedIDX(uint idx)
-    { pSchedIDX = idx; }
+    void setSchedIDX(solver::kproc_global_id idx) {
+        pSchedIDX = idx;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
@@ -118,8 +106,8 @@ public:
     ///
     virtual void setupDeps() = 0;
 
-    virtual bool depSpecTet(uint gidx, steps::tetexact::WmVol * tet) = 0;
-    virtual bool depSpecTri(uint gidx, steps::tetexact::Tri * tri) = 0;
+    virtual bool depSpecTet(solver::spec_global_id gidx, steps::tetexact::WmVol* tet) = 0;
+    virtual bool depSpecTri(solver::spec_global_id gidx, steps::tetexact::Tri* tri) = 0;
 
     /// Reset this Kproc.
     ///
@@ -130,7 +118,7 @@ public:
 
     /// Compute the rate for this kproc (its propensity value).
     ///
-    virtual double rate(steps::tetexact::Tetexact * solver = nullptr) = 0;
+    virtual double rate(steps::tetexact::Tetexact* solver = nullptr) = 0;
 
     // Return the ccst for this kproc
     // NOTE: not pure for this solver because doesn't make sense for Diff
@@ -146,7 +134,7 @@ public:
     ///
     // NOTE: Random number generator available to this function for use
     // by Diff
-    virtual std::vector<KProc*> const & apply(const rng::RNGptr &rng, double dt, double simtime) = 0;
+    virtual std::vector<KProc*> const& apply(const rng::RNGptr& rng, double dt, double simtime) = 0;
 
     virtual uint updVecSize() const = 0;
 
@@ -156,40 +144,34 @@ public:
     void resetExtent();
 
     ////////////////////////////////////////////////////////////////////////
-    /*
-    // Return a pointer to the corresponding Reacdef Diffdef or SReacdef
-    // object
-    // Separate methods to avoid making a base KProcdef class
-    //
-    virtual steps::solver::Reacdef * defr() const;
-    virtual steps::solver::SReacdef * defsr() const;
-    */// compileerror; // check this
-
-    ////////////////////////////////////////////////////////////////////////
 
     // data for CR SSA
-    CRKProcData                         crData;
+    CRKProcData crData;
 
-protected:
-
-    unsigned long long                  rExtent{0};
+  protected:
+    unsigned long long rExtent{0};
 
     ////////////////////////////////////////////////////////////////////////
 
-    uint                                pFlags{0};
+    uint pFlags{0};
 
-    uint                                pSchedIDX{};
+    solver::kproc_global_id pSchedIDX{};
 
     ////////////////////////////////////////////////////////////////////////
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
+inline bool operator<(const KProc& lhs, const KProc& rhs) {
+    return lhs.schedIDX() < rhs.schedIDX();
 }
-}
 
-////////////////////////////////////////////////////////////////////////////////
+using KProcPSet = std::set<KProc*, util::DerefPtrLess<KProc>>;
 
-#endif
+}  // namespace steps::tetexact
 
-// STEPS_TETEXACT_KPROC_HPP
+namespace std {
+// Compilation trap in case std::set<KProc*> is used in the code that will sort KProc instances
+// by their pointer addresses, not their schedule identifier.
+// Prefer KProcPSet for such usage
+template <>
+class set<steps::tetexact::KProc*> {};
+}  // namespace std

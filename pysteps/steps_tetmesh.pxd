@@ -30,11 +30,12 @@ cdef extern from "geom/tmpatch.hpp" namespace "steps::tetmesh":
 
     ###### Cybinding for TmPatch ######
     cdef cppclass TmPatch:
-        TmPatch(std.string, Tetmesh*, std.vector[steps.index_t], steps_wm.Comp*, steps_wm.Comp*) except +
+        TmPatch(std.string, Tetmesh&, std.vector[steps.index_t], steps_wm.Comp&, steps_wm.Comp*) except +
         std.vector[bool] isTriInside(std.vector[steps.index_t]) except +
         std.vector[steps.index_t] getAllTriIndices()
         std.vector[double] getBoundMin()
         std.vector[double] getBoundMax()
+        std.vector[EndocyticZone*] getAllEndocyticZones()
 
 
 # ======================================================================================================================
@@ -50,8 +51,8 @@ cdef extern from "geom/memb.hpp" namespace "steps::tetmesh":
 
     ###### Cybinding for Memb ######
     cdef cppclass Memb:
-        Memb(std.string, Tetmesh*, std.vector[TmPatch*], bool, uint, double, std.string) except +
-        Tetmesh* getContainer()
+        Memb(std.string, Tetmesh&, std.vector[TmPatch*], std.vector[TmComp*], bool, uint, double, std.string) except +
+        Tetmesh& getContainer()
         std.string getID()
         std.vector[bool] isTriInside(std.vector[steps.index_t]) except +
         std.vector[steps.index_t] getAllTriIndices()
@@ -71,13 +72,26 @@ cdef extern from "geom/tmcomp.hpp" namespace "steps::tetmesh":
 
     ###### Cybinding for TmComp ######
     cdef cppclass TmComp:
-        TmComp(std.string, Tetmesh*, std.vector[steps.index_t]) except +
+        TmComp(std.string, Tetmesh&, std.vector[steps.index_t]) except +
         void setVol(double vol) except +
         std.vector[steps.index_t] getAllTetIndices()
         uint countTets()
         std.vector[bool] isTetInside(std.vector[steps.index_t]) except +
         std.vector[double] getBoundMin()
         std.vector[double] getBoundMax()
+
+
+# ======================================================================================================================
+cdef extern from "geom/endocyticzone.hpp" namespace "steps::tetmesh":
+# ----------------------------------------------------------------------------------------------------------------------
+
+    ###### Cybinding for EndocyticZone ######
+    cdef cppclass EndocyticZone:
+        EndocyticZone(std.string, TmPatch&, std.vector[steps.index_t]) except +
+        std.string getID() except +
+        TmPatch& getPatch() except +
+        std.vector[steps.triangle_global_id] getAllTriIndices() except +
+
 
 # ======================================================================================================================
 cdef extern from "geom/diffboundary.hpp" namespace "steps::tetmesh":
@@ -92,10 +106,10 @@ cdef extern from "geom/diffboundary.hpp" namespace "steps::tetmesh":
 
     ###### Cybinding for DiffBoundary ######
     cdef cppclass DiffBoundary:
-        DiffBoundary(std.string, Tetmesh*, std.vector[steps.index_t]) except +
+        DiffBoundary(std.string, Tetmesh&, std.vector[steps.index_t]) except +
         std.string getID()
         void setID(std.string) except +
-        Tetmesh* getContainer()
+        Tetmesh& getContainer()
         std.vector[bool] isTriInside(std.vector[steps.index_t]) except +
         std.vector[steps.index_t] getAllTriIndices()
         std.vector[steps_wm.Comp*] getComps()
@@ -106,10 +120,10 @@ cdef extern from "geom/sdiffboundary.hpp" namespace "steps::tetmesh":
 
     ###### Cybinding for SDiffBoundary ######
     cdef cppclass SDiffBoundary:
-        SDiffBoundary(std.string, Tetmesh*, std.vector[steps.index_t], std.vector[TmPatch*]) except +
+        SDiffBoundary(std.string, Tetmesh&, std.vector[steps.index_t], std.vector[TmPatch*]) except +
         std.string getID()
         void setID(std.string) except +
-        Tetmesh* getContainer()
+        Tetmesh& getContainer()
         std.vector[bool] isBarInside(std.vector[steps.index_t]) except +
         std.vector[steps.index_t] getAllBarIndices()
         std.vector[steps_wm.Patch*] getPatches()
@@ -134,43 +148,43 @@ cdef extern from "geom/tetmesh.hpp" namespace "steps::tetmesh":
     cdef cppclass Tetmesh:
         # All but a few functions can throw excepts- implement for all but the countXXXs functions
         Tetmesh(std.vector[double], std.vector[steps.index_t], std.vector[steps.index_t]) except +
-        Tetmesh(std.vector[double], std.vector[steps.index_t], std.vector[double], std.vector[double], std.vector[steps.index_t], std.vector[steps.index_t], std.vector[double], std.vector[double], std.vector[steps.index_t], std.vector[steps.index_t]) except +
-        std.vector[double] getVertex(steps.index_t) except +
+        std.vector[double] getVertex(steps.vertex_id_t) except +
         steps.index_t countVertices()
-        std.vector[steps.index_t] getBar(steps.index_t) except +
+        std.vector[steps.index_t] getBar(steps.bar_id_t) except +
         steps.index_t countBars()
-        std.vector[steps.index_t] getTri(steps.index_t) except +
+        std.vector[steps.index_t] getTri(steps.triangle_global_id) except +
         steps.index_t countTris()
-        double getTriArea(steps.index_t) except +
-        std.vector[steps.index_t] getTriBars(steps.index_t) except +
-        std.vector[double] getTriBarycenter(steps.index_t) except +
-        std.vector[double] getTriNorm(steps.index_t) except +
-        TmPatch* getTriPatch(steps.index_t) except +
-        void setTriPatch(steps.index_t, TmPatch*) except +
-        void setTriDiffBoundary(steps.index_t, DiffBoundary*) except +
-        DiffBoundary* getTriDiffBoundary(steps.index_t) except +
+        double getTriArea(steps.triangle_global_id) except +
+        std.vector[steps.index_t] getTriBars(steps.triangle_global_id) except +
+        std.vector[double] getTriBarycenter(steps.triangle_global_id) except +
+        std.vector[double] getTriNorm(steps.triangle_global_id) except +
+        TmPatch* getTriPatch(steps.triangle_global_id) except +
+        void setTriPatch(steps.triangle_global_id, TmPatch*) except +
+        void setTriDiffBoundary(steps.triangle_global_id, DiffBoundary*) except +
+        DiffBoundary* getTriDiffBoundary(steps.triangle_global_id) except +
         SDiffBoundary * getBarSDiffBoundary(steps.index_t bidx) except +
-        std.vector[steps.index_t] getTriTetNeighb(steps.index_t) except +
-        std.vector[steps.index_t] getTriTriNeighb(steps.index_t, TmPatch*) except +
-        std.set[steps.index_t] getTriTriNeighbs(steps.index_t) except +
-        std.vector[steps.index_t] getTet(steps.index_t) except +
+        std.vector[steps.index_t] getTriTetNeighb(steps.triangle_global_id) except +
+        std.vector[steps.index_t] getTriTriNeighb(steps.triangle_global_id, TmPatch*) except +
+        std.vector[steps.index_t] getTriTriNeighbs(steps.triangle_global_id) except +
+        std.vector[steps.index_t] getTet(steps.tetrahedron_global_id) except +
         steps.index_t countTets()
-        double getTetVol(steps.index_t) except +
-        double getTetQualityRER(steps.index_t) except +
-        std.vector[double] getTetBarycenter(steps.index_t) except +
-        TmComp* getTetComp(steps.index_t) except +
-        void setTetComp(steps.index_t, TmComp*) except +
-        std.vector[steps.index_t] getTetTriNeighb(steps.index_t) except +
-        std.vector[steps.index_t] getTetTetNeighb(steps.index_t) except +
-        steps.tetrahedron_id_t findTetByPoint(std.vector[double]) except +
+        double getTetVol(steps.tetrahedron_global_id) except +
+        double getTetQualityRER(steps.tetrahedron_global_id) except +
+        std.vector[double] getTetBarycenter(steps.tetrahedron_global_id) except +
+        TmComp* getTetComp(steps.tetrahedron_global_id) except +
+        void setTetComp(steps.tetrahedron_global_id, TmComp*) except +
+        std.vector[steps.index_t] getTetTriNeighb(steps.tetrahedron_global_id) except +
+        std.vector[steps.index_t] getTetTetNeighb(steps.tetrahedron_global_id) except +
+        steps.tetrahedron_global_id findTetByPoint(std.vector[double]) except +
+        bool isPointInTet(std.vector[double], steps.tetrahedron_global_id) except +
         std.vector[double] getBoundMin() except +
         std.vector[double] getBoundMax() except +
         double getMeshVolume() except +
         std.vector[steps.index_t] getSurfTris() except +
-        std.vector[double] getBatchTetBarycenters(std.vector[steps.index_t]) except +
-        void getBatchTetBarycentersNP(steps.index_t*, int, double*, int) except +
-        std.vector[double] getBatchTriBarycenters(std.vector[steps.index_t]) except +
-        void getBatchTriBarycentersNP(steps.index_t*, int, double*, int) except +
+        std.vector[double] getBatchTetBarycenters(std.vector[steps.tetrahedron_global_id]) except +
+        void getBatchTetBarycentersNP(steps.tetrahedron_global_id*, int, double*, int) except +
+        std.vector[double] getBatchTriBarycenters(std.vector[steps.tetrahedron_global_id]) except +
+        void getBatchTriBarycentersNP(steps.tetrahedron_global_id*, int, double*, int) except +
         std.vector[double] getBatchVertices(std.vector[steps.index_t]) except +
         void getBatchVerticesNP(steps.index_t*, int, double*, int) except +
         std.vector[steps.index_t] getBatchTris(std.vector[steps.index_t]) except +
@@ -181,8 +195,8 @@ cdef extern from "geom/tetmesh.hpp" namespace "steps::tetmesh":
         steps.index_t getTetVerticesSetSizeNP(steps.index_t*, int) except +
         void getTriVerticesMappingSetNP(steps.index_t*, int, steps.index_t*, int, steps.index_t*, int) except +
         void getTetVerticesMappingSetNP(steps.index_t*, int, steps.index_t*, int, steps.index_t*, int) except +
-        void genPointsInTet(steps.index_t, steps.index_t, double*, unsigned) except +
-        void genPointsInTri(steps.index_t, steps.index_t, double*, int) except +
+        void genPointsInTet(steps.tetrahedron_global_id, steps.index_t, double*, unsigned) except +
+        void genPointsInTri(steps.triangle_global_id, steps.index_t, double*, int) except +
         void genTetVisualPointsNP(steps.index_t*, int, uint*, int, double*, int) except +
         void genTriVisualPointsNP(steps.index_t*, int, uint*, int, double*, int) except +
         void getBatchTetVolsNP(steps.index_t*, int, double*, int) except +
@@ -221,8 +235,10 @@ cdef extern from "geom/tetmesh.hpp" namespace "steps::tetmesh":
         double getROIArea(std.string) except +
         void reduceROITetPointCountsNP(std.string, uint*, int, double) except +
         void reduceROITriPointCountsNP(std.string, uint*, int, double) except +
-        void setBarSDiffBoundary(steps.index_t bidx, SDiffBoundary * sdiffb) except +
+        void setBarSDiffBoundary(steps.index_t bidx, SDiffBoundary sdiffb) except +
         std.set[steps.index_t] getBarTriNeighbs(steps.index_t bidx) except +
         void setBarTris(steps.index_t bidx, steps.index_t itriidx, steps.index_t otriidx) except +
         std.vector[std.vector[std.pair[steps.index_t, double]]] intersect(const double*, int) except+
         std.vector[std.vector[std.pair[steps.index_t, double]]] intersect(const double*, int, int) except+
+        std.vector[std.vector[std.pair[steps.index_t, double]]] intersectIndependentSegments(const double*, int) except+
+        std.vector[std.vector[std.pair[steps.index_t, double]]] intersectIndependentSegments(const double*, int, int) except+

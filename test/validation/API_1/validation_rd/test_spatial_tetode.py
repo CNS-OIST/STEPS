@@ -159,59 +159,59 @@ class TestRDSpatialTetODE(unittest.TestCase):
 
         # First order irreversible
         A_foi = smod.Spec('A_foi', mdl)
-        A_foi_diff = smod.Diff('A_foi_diff', volsys,A_foi, 0.01e-12)
+        A_foi_diff = smod.Diff('A_foi_diff', volsys,A_foi, 0.1e-12)
         R1_foi = smod.Reac('R1_foi', volsys, lhs = [A_foi], rhs = [], kcst = KCST_foi)
         
         # First order reversible
         A_for = smod.Spec('A_for', mdl)
         B_for = smod.Spec('B_for', mdl)
-        A_for_diff = smod.Diff('A_for_diff', volsys,A_for, 0.01e-12)
-        B_for_diff = smod.Diff('B_for_diff', volsys,B_for, 0.01e-12)
+        A_for_diff = smod.Diff('A_for_diff', volsys,A_for, 0.1e-12)
+        B_for_diff = smod.Diff('B_for_diff', volsys,B_for, 0.1e-12)
         R1_for = smod.Reac('R1_for', volsys, lhs = [A_for], rhs = [B_for], kcst = KCST_f_for)
         R2_for = smod.Reac('R2_for', volsys, lhs = [B_for], rhs = [A_for], kcst = KCST_b_for)
         
         # Second order irreversible A2
         A_soA2 = smod.Spec('A_soA2', mdl)
         C_soA2 = smod.Spec('C_soA2', mdl)
-        A_soA2_diff = smod.Diff('A_soA2_diff', volsys,A_soA2, 1e-12)
+        A_soA2_diff = smod.Diff('A_soA2_diff', volsys,A_soA2, 10e-12)
         R1_soA2 = smod.Reac('R1_soA2', volsys, lhs = [A_soA2, A_soA2], rhs = [C_soA2], kcst = KCST_soA2)
         
         # Second order irreversible AA
         A_soAA = smod.Spec('A_soAA', mdl)
         B_soAA = smod.Spec('B_soAA', mdl)
         C_soAA = smod.Spec('C_soAA', mdl)
-        A_soAA_diff = smod.Diff('A_soAA_diff', volsys,A_soAA, 0.2e-12)
-        B_soAA_diff = smod.Diff('B_soAA_diff', volsys,B_soAA, 0.2e-12)
+        A_soAA_diff = smod.Diff('A_soAA_diff', volsys,A_soAA, 2e-12)
+        B_soAA_diff = smod.Diff('B_soAA_diff', volsys,B_soAA, 2e-12)
         R1_soAA = smod.Reac('R1_soAA', volsys, lhs = [A_soAA, B_soAA], rhs = [C_soAA], kcst = KCST_soAA)
         
         # Second order irreversible AB
         A_soAB = smod.Spec('A_soAB', mdl)
         B_soAB = smod.Spec('B_soAB', mdl)
         C_soAB = smod.Spec('C_soAB', mdl)
-        A_soAB_diff = smod.Diff('A_soAB_diff', volsys,A_soAB, 0.1e-12)
-        B_soAB_diff = smod.Diff('B_soAB_diff', volsys,B_soAB, 0.1e-12)
+        A_soAB_diff = smod.Diff('A_soAB_diff', volsys,A_soAB, 1e-12)
+        B_soAB_diff = smod.Diff('B_soAB_diff', volsys,B_soAB, 1e-12)
         R1_soAB = smod.Reac('R1_soAB', volsys, lhs = [A_soAB, B_soAB], rhs = [C_soAB], kcst = KCST_soAB)
         
         # Third order irreversible A3
         A_toA3 = smod.Spec('A_toA3', mdl)
         C_toA3 = smod.Spec('C_toA3', mdl)
-        A_soA3_diff = smod.Diff('A_soA3_diff', volsys,A_toA3, 0.2e-12)
+        A_soA3_diff = smod.Diff('A_soA3_diff', volsys,A_toA3, 2e-12)
         R1_toA3 = smod.Reac('R1_toA3', volsys, lhs = [A_toA3, A_toA3, A_toA3], rhs = [C_toA3], kcst = KCST_toA3)
         
         # Third order irreversible A2B
         A_toA2B = smod.Spec('A_toA2B', mdl)
         B_toA2B = smod.Spec('B_toA2B', mdl)
         C_toA2B = smod.Spec('C_toA2B', mdl)
-        A_soA2B_diff = smod.Diff('A_soA2B_diff', volsys,A_toA2B, 0.1e-12)
-        B_soA2B_diff = smod.Diff('B_soA2B_diff', volsys,B_toA2B, 0.1e-12)
+        A_soA2B_diff = smod.Diff('A_soA2B_diff', volsys,A_toA2B, 1e-12)
+        B_soA2B_diff = smod.Diff('B_soA2B_diff', volsys,B_toA2B, 1e-12)
         R1_toA3 = smod.Reac('R1_toA2B', volsys, lhs = [A_toA2B, A_toA2B, B_toA2B], rhs = [C_toA2B], kcst = KCST_toA2B)
         
         # Second order irreversible 2D
         A_so2d = smod.Spec('A_so2d', mdl)
         B_so2d = smod.Spec('B_so2d', mdl)
         C_so2d = smod.Spec('C_so2d', mdl)
-        A_so2d_diff = smod.Diff('A_so2d_diff', surfsys,A_so2d, 1.0e-12)
-        B_so2d_diff = smod.Diff('B_so2d_diff', surfsys,B_so2d, 1.0e-12)
+        A_so2d_diff = smod.Diff('A_so2d_diff', surfsys,A_so2d, 10e-12)
+        B_so2d_diff = smod.Diff('B_so2d_diff', surfsys,B_so2d, 10e-12)
         SR1_so2d = smod.SReac('SR1_so2d', surfsys, slhs = [A_so2d, B_so2d], srhs = [C_so2d], kcst = KCST_so2d)
         
 
@@ -228,9 +228,8 @@ class TestRDSpatialTetODE(unittest.TestCase):
         rng = srng.create('r123', 512)
         rng.initialize(1000)
 
-
         sim = ssolv.TetODE(mdl, mesh, rng)
-        sim.setTolerances(1e-9, 1e-7)
+        sim.setTolerances(2.5e-8, 2.5e-6)
 
         global tpnts, ntpnts
         tpnts = numpy.arange(0.0, INT, DT)
@@ -255,69 +254,69 @@ class TestRDSpatialTetODE(unittest.TestCase):
         
 
         for i in range (0, NITER_max):
-                
+
             if i < NITER_foi: 
-                sim.setCompCount('comp1', 'A_foi', N_foi)
+                sim.setCompSpecCount('comp1', 'A_foi', N_foi)
             
             if i < NITER_for: 
-                sim.setCompCount('comp1', 'A_for', COUNT_for)
-                sim.setCompCount('comp1', 'B_for', 0.0)
+                sim.setCompSpecCount('comp1', 'A_for', COUNT_for)
+                sim.setCompSpecCount('comp1', 'B_for', 0.0)
             
             if i < NITER_soA2:
-                sim.setCompConc('comp1', 'A_soA2', CONCA_soA2)
+                sim.setCompSpecConc('comp1', 'A_soA2', CONCA_soA2)
             
             if i < NITER_soAA:
-                sim.setCompConc('comp1', 'A_soAA', CONCA_soAA)
-                sim.setCompConc('comp1', 'B_soAA', CONCB_soAA)
+                sim.setCompSpecConc('comp1', 'A_soAA', CONCA_soAA)
+                sim.setCompSpecConc('comp1', 'B_soAA', CONCB_soAA)
             
             if i < NITER_soAB:
-                sim.setCompConc('comp1', 'A_soAB', CONCA_soAB)
-                sim.setCompConc('comp1', 'B_soAB', CONCB_soAB)
+                sim.setCompSpecConc('comp1', 'A_soAB', CONCA_soAB)
+                sim.setCompSpecConc('comp1', 'B_soAB', CONCB_soAB)
             
             if i < NITER_toA3:
-                sim.setCompConc('comp1', 'A_toA3', CONCA_toA3)
+                sim.setCompSpecConc('comp1', 'A_toA3', CONCA_toA3)
             
             if i < NITER_toA2B:
-                sim.setCompConc('comp1', 'A_toA2B', CONCA_toA2B)
-                sim.setCompConc('comp1', 'B_toA2B', CONCB_toA2B)
+                sim.setCompSpecConc('comp1', 'A_toA2B', CONCA_toA2B)
+                sim.setCompSpecConc('comp1', 'B_toA2B', CONCB_toA2B)
                             
             if i < NITER_so2d:
-                sim.setPatchCount('patch1', 'A_so2d', COUNTA_so2d)
-                sim.setPatchCount('patch1', 'B_so2d', COUNTB_so2d)
+                sim.setPatchSpecCount('patch1', 'A_so2d', COUNTA_so2d)
+                sim.setPatchSpecCount('patch1', 'B_so2d', COUNTB_so2d)
             
             
             for t in range(0, ntpnts):
                 sim.run(tpnts[t])
             
                 if i < NITER_foi: 
-                    res_m_foi[i, t, 0] = sim.getCompCount('comp1', 'A_foi')
+                    res_m_foi[i, t, 0] = sim.getCompSpecCount('comp1', 'A_foi')
                 
                 if i < NITER_for: 
-                    res_m_for[i, t, 0] = sim.getCompConc('comp1', 'A_for')*1e6
-                    res_m_for[i, t, 1] = sim.getCompConc('comp1', 'B_for')*1e6
+                    res_m_for[i, t, 0] = sim.getCompSpecConc('comp1', 'A_for')*1e6
+                    res_m_for[i, t, 1] = sim.getCompSpecConc('comp1', 'B_for')*1e6
                 
                 if i < NITER_soA2:
-                    res_m_soA2[i, t, 0] = sim.getCompConc('comp1', 'A_soA2')
+                    res_m_soA2[i, t, 0] = sim.getCompSpecConc('comp1', 'A_soA2')
                 
                 if i < NITER_soAA:
-                    res_m_soAA[i, t, 0] = sim.getCompConc('comp1', 'A_soAA')
-                    res_m_soAA[i, t, 1] = sim.getCompConc('comp1', 'B_soAA')
+                    res_m_soAA[i, t, 0] = sim.getCompSpecConc('comp1', 'A_soAA')
+                    res_m_soAA[i, t, 1] = sim.getCompSpecConc('comp1', 'B_soAA')
                 
                 if i < NITER_soAB:
-                    res_m_soAB[i, t, 0] = sim.getCompConc('comp1', 'A_soAB')
-                    res_m_soAB[i, t, 1] = sim.getCompConc('comp1', 'B_soAB')
+                    res_m_soAB[i, t, 0] = sim.getCompSpecConc('comp1', 'A_soAB')
+                    res_m_soAB[i, t, 1] = sim.getCompSpecConc('comp1', 'B_soAB')
                 
                 if i < NITER_toA3:
-                    res_m_toA3[i, t, 0] = sim.getCompConc('comp1', 'A_toA3')
+                    res_m_toA3[i, t, 0] = sim.getCompSpecConc('comp1', 'A_toA3')
                 
                 if i < NITER_toA2B:
-                    res_m_toA2B[i, t, 0] = sim.getCompConc('comp1', 'A_toA2B')
-                    res_m_toA2B[i, t, 1] = sim.getCompConc('comp1', 'B_toA2B')
-                    res_m_toA2B[i, t, 2] = sim.getCompConc('comp1', 'C_toA2B')
+                    res_m_toA2B[i, t, 0] = sim.getCompSpecConc('comp1', 'A_toA2B')
+                    res_m_toA2B[i, t, 1] = sim.getCompSpecConc('comp1', 'B_toA2B')
+                    res_m_toA2B[i, t, 2] = sim.getCompSpecConc('comp1', 'C_toA2B')
                        
                 if i < NITER_so2d:
-                    res_m_so2d[i, t, 0] = sim.getPatchCount('patch1', 'A_so2d')
-                    res_m_so2d[i, t, 1] = sim.getPatchCount('patch1', 'B_so2d') 
+                    res_m_so2d[i, t, 0] = sim.getPatchSpecCount('patch1', 'A_so2d')
+                    res_m_so2d[i, t, 1] = sim.getPatchSpecCount('patch1', 'B_so2d') 
                 
 
         global mean_res_foi

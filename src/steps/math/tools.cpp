@@ -28,11 +28,10 @@
 
 #include <ctime>
 
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::math {
 
-void steps::math::setSysRandInitTime()
-{
-    srand(static_cast<unsigned int>(time(0)));
+void setSysRandInitTime() {
+    srand(static_cast<unsigned int>(time(nullptr)));
 }
 
-////////////////////////////////////////////////////////////////////////////////
+}  // namespace steps::math

@@ -115,12 +115,12 @@ class SDiffBndSpeciesIDTestCase(unittest.TestCase):
         self.solver = None
     
     def testCrossBoundarySDiffEvent(self):
-        self.solver.setTriCount(self.ctri_idx, 'X', 1000)
-        self.solver.setSDiffBoundaryDiffusionActive('sdiffb', 'X', True)
-        self.solver.setSDiffBoundaryDcst('sdiffb', 'X', 0.008e-12 , 'patchA')
+        self.solver.setTriSpecCount(self.ctri_idx, 'X', 1000)
+        self.solver.setSDiffBoundarySpecDiffusionActive('sdiffb', 'X', True)
+        self.solver.setSDiffBoundarySpecDcst('sdiffb', 'X', 0.008e-12 , 'patchA')
         self.solver.run(1)
-        self.assertEqual(self.solver.getPatchCount("patchA", "A"), 0)
-        self.assertEqual(self.solver.getPatchCount("patchA", "X") + self.solver.getPatchCount("patchB", "X"), 1000)
+        self.assertEqual(self.solver.getPatchSpecCount("patchA", "A"), 0)
+        self.assertEqual(self.solver.getPatchSpecCount("patchA", "X") + self.solver.getPatchSpecCount("patchB", "X"), 1000)
 
 def suite():
     all_tests = []

@@ -24,22 +24,12 @@
 
  */
 
-// STL headers.
-#include <string>
-
-// STEPS headers.
-#include "common.h"
 #include "error.hpp"
 
-using namespace steps;
+namespace steps {
 
-////////////////////////////////////////////////////////////////////////////////
-
-const char * Err::getMsg() const noexcept
-{
+const char* Err::getMsg() const noexcept {
     return pMessage.c_str();
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-//END
+}  // namespace steps

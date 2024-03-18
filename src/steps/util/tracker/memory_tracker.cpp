@@ -6,23 +6,21 @@
 #include "memory_tracker.hpp"
 #include "peak_rss.hpp"
 
-namespace steps {
-namespace util {
+namespace steps::util {
 
-void MemoryTracker::start(){
+void MemoryTracker::start() {
     init_ = peak_rss();
 }
 
-void MemoryTracker::stop(){
+void MemoryTracker::stop() {
     final_ = peak_rss();
 }
 
 /*
  * return value is in bytes
  */
-std::size_t MemoryTracker::diff(){
+std::size_t MemoryTracker::diff() const {
     return final_ - init_;
 }
 
-} // namespace util
-} // namespace steps
+}  // namespace steps::util

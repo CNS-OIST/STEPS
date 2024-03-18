@@ -24,45 +24,33 @@
 
  */
 
-
-#ifndef STEPS_WMDIRECT_KPROC_HPP
-#define STEPS_WMDIRECT_KPROC_HPP 1
-
+#pragma once
 
 // STL headers.
-#include <vector>
 #include <fstream>
+#include <vector>
 
 // STEPS headers.
-#include "util/common.h"
-#include "solver/types.hpp"
+#include "solver/complexreacdef.hpp"
 #include "solver/reacdef.hpp"
 #include "solver/sreacdef.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::wmdirect {
 
-namespace steps{
-namespace wmdirect{
-
-//Forward declaration
+// Forward declaration
 class Comp;
 class Patch;
 class KProc;
 
-////////////////////////////////////////////////////////////////////////////////
-
-typedef steps::wmdirect::KProc *        KProcP;
-typedef std::vector<KProcP>             KProcPVec;
-typedef KProcPVec::iterator             KProcPVecI;
-typedef KProcPVec::const_iterator       KProcPVecCI;
-
-////////////////////////////////////////////////////////////////////////////////
+typedef steps::wmdirect::KProc* KProcP;
+typedef std::vector<KProcP> KProcPVec;
+typedef KProcPVec::iterator KProcPVecI;
+typedef KProcPVec::const_iterator KProcPVecCI;
 
 class KProc
 
 {
-public:
-
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
@@ -74,34 +62,22 @@ public:
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    virtual void checkpoint(std::fstream & cp_file) = 0;
+    virtual void checkpoint(std::fstream& cp_file);
 
     /// restore data
-    virtual void restore(std::fstream & cp_file) = 0;
+    virtual void restore(std::fstream& cp_file);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
     ////////////////////////////////////////////////////////////////////////
 
-    /*
-    static const int INACTIVATED = 1;
+    solver::kproc_global_id schedIDX() const {
+        return pSchedIDX;
+    }
 
-    inline bool active() const
-    { return !(pFlags & INACTIVATED); }
-    inline bool inactive() const
-    { return (pFlags & INACTIVATED); }
-    void setActive(bool active);
-
-    inline uint flags() const
-    { return pFlags; }
-    */
-    ////////////////////////////////////////////////////////////////////////
-
-    uint schedIDX() const
-    { return pSchedIDX; }
-
-    void setSchedIDX(uint idx)
-    { pSchedIDX = idx; }
+    void setSchedIDX(solver::kproc_global_id idx) {
+        pSchedIDX = idx;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
@@ -112,8 +88,14 @@ public:
     ///
     virtual void setupDeps() = 0;
 
-    virtual bool depSpecComp(uint gidx, Comp * comp) = 0;
-    virtual bool depSpecPatch(uint gidx, Patch * patch) = 0;
+    virtual bool depSpecComp(solver::spec_global_id gidx, Comp* comp) = 0;
+    virtual bool depComplexComp(solver::complex_global_id, solver::complex_substate_id, Comp*) {
+        return false;
+    }
+    virtual bool depSpecPatch(solver::spec_global_id gidx, Patch* patch) = 0;
+    virtual bool depComplexPatch(solver::complex_global_id, solver::complex_substate_id, Patch*) {
+        return false;
+    }
 
     /// Reset this Kproc.
     ///
@@ -136,7 +118,7 @@ public:
     /// a vector of kproc schedule indices that need to be updated as a
     /// result.
     ///
-    virtual std::vector<uint> const & apply() = 0;
+    virtual std::vector<solver::kproc_global_id> const& apply() = 0;
 
     virtual uint updVecSize() const = 0;
 
@@ -145,8 +127,10 @@ public:
     // Return a pointer to the corresponding Reacdef or SReacdef object
     // Separate methods to avoid makeing a base KProcdef class
     //
-    virtual steps::solver::Reacdef * defr() const;
-    virtual steps::solver::SReacdef * defsr() const;
+    virtual solver::Reacdef* defr() const;
+    virtual steps::solver::ComplexReacdef& defcr() const;
+    virtual solver::SReacdef* defsr() const;
+    virtual steps::solver::ComplexSReacdef& defcsr() const;
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -158,30 +142,15 @@ public:
         rExtent = 0;
     }
 
+  protected:
+    unsigned long long rExtent{0};
 
-
-protected:
-
-    unsigned long long                  rExtent{0};
-
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
-    /*
-    uint                                pFlags;
-    */
-    uint                                pSchedIDX{0};
+
+    solver::kproc_global_id pSchedIDX{0u};
 
     ////////////////////////////////////////////////////////////////////////
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-#endif
-// STEPS_WMDIRECT_KPROC_HPP
-
-// END
-
+}  // namespace steps::wmdirect

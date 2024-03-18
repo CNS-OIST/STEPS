@@ -8,12 +8,10 @@
 #include "util/mesh.hpp"
 #include "util/vocabulary.hpp"
 
-namespace steps {
-namespace dist {
+namespace steps::dist {
 
-class DistComp : public steps::wm::Comp {
+class DistComp: public wm::Comp {
   public:
-
     /**
      * \brief Add a compartment to a distributed mesh using its name as the physical tag defined
      * in the mesh file.
@@ -29,7 +27,7 @@ class DistComp : public steps::wm::Comp {
      * \param compartment Name id of the compartment.
      * \param mesh the distributed mesh instance
      */
-    DistComp(const mesh::compartment_name &compartment, DistMesh &mesh, double cond = 0.0);
+    DistComp(const mesh::compartment_name& compartment, DistMesh& mesh, double cond = 0.0);
 
     /**
      * \brief Add a compartment to a distributed mesh using the physical tag defined in the mesh
@@ -47,11 +45,15 @@ class DistComp : public steps::wm::Comp {
      * \param mesh the distributed mesh instance
      * \param physical_tag Physical tag of the compartment tetrahedrons.
      */
-    DistComp(const mesh::compartment_name &compartment, DistMesh &mesh,
-             mesh::compartment_physical_tag physical_tag, double cond = 0.0);
+    DistComp(const mesh::compartment_name& compartment,
+             DistMesh& mesh,
+             mesh::compartment_physical_tag physical_tag,
+             double cond = 0.0);
 
-    DistComp(const mesh::compartment_name &compartment, DistMesh &mesh,
-             std::string tag, double cond);
+    DistComp(const mesh::compartment_name& compartment,
+             DistMesh& mesh,
+             std::string tag,
+             double cond);
 
     /**
      * \brief Add a compartment to a distributed mesh using global indices of the tetrahedrons.
@@ -73,8 +75,9 @@ class DistComp : public steps::wm::Comp {
      * \param global_indices Vector of global indices of the compartment tetrahedrons.
      * \param cond Volume conductance of the tetrahedrons in the compartment
      */
-    DistComp(const mesh::compartment_name &compartment, DistMesh &mesh,
-             const std::vector<mesh::tetrahedron_global_id_t> &global_indices,
+    DistComp(const mesh::compartment_name& compartment,
+             DistMesh& mesh,
+             const std::vector<mesh::tetrahedron_global_id_t>& global_indices,
              double cond = 0.0);
 
     DistComp(const mesh::compartment_name& compartment,
@@ -99,8 +102,7 @@ class DistComp : public steps::wm::Comp {
      * \param owned Whether the tetrahedron are owned by the process.
      * \return Vector of global tetrahedron indices.
      */
-    const std::vector<mesh::tetrahedron_local_id_t> &
-    getLocalTetIndices(bool owned = true) const;
+    const std::vector<mesh::tetrahedron_local_id_t>& getLocalTetIndices(bool owned = true) const;
 
     /**
      * \brief Get all the triangles on the surface of the compartment.
@@ -131,10 +133,10 @@ class DistComp : public steps::wm::Comp {
      * \return Volume of the compartment segment owned by the process.
      */
     inline osh::Real getOwnedVol() const {
-      return ownedVol;
+        return ownedVol;
     }
 
-   /**
+    /**
      * \brief Get the volume of compartment segment across all processes.
      *
      * Return the sum of volumes of tetrahedrons that belong to the compartment
@@ -146,7 +148,7 @@ class DistComp : public steps::wm::Comp {
      * \return Total volume of the compartment segment.
      */
     inline osh::Real getTotalVol() const {
-      return pVol;
+        return pVol;
     }
 
     /**
@@ -154,7 +156,9 @@ class DistComp : public steps::wm::Comp {
      *
      * \attention Parallelism: Collective
      */
-    inline double getConductivity() const noexcept { return pConductivity; }
+    inline double getConductivity() const noexcept {
+        return pConductivity;
+    }
 
     /**
      * \brief Set the compartment conductivity.
@@ -190,7 +194,7 @@ class DistComp : public steps::wm::Comp {
     std::vector<double> getBoundMax(bool local = false) const;
 
   private:
-     /**
+    /**
      * \brief Add a tetrahedron to the compartment.
      *
      * Add a tetrahedron to the compartment using its local index.
@@ -221,17 +225,16 @@ class DistComp : public steps::wm::Comp {
      */
     void _computeBBox();
 
-    DistMesh &meshRef;
+    DistMesh& meshRef;
     osh::Real ownedVol;
     std::vector<mesh::tetrahedron_local_id_t> tetLocalIndices;
     std::vector<mesh::tetrahedron_local_id_t> ownedTetLocalIndices;
 
     // Bounding box of the owned elements
-    std::array<osh::Real, mesh_dimensions()> ownedBBoxMin;
-    std::array<osh::Real, mesh_dimensions()> ownedBBoxMax;
+    std::array<osh::Real, mesh_dimensions()> ownedBBoxMin{};
+    std::array<osh::Real, mesh_dimensions()> ownedBBoxMax{};
 
     double pConductivity;
 };
 
-}  // namespace dist
-}  // namespace steps
+}  // namespace steps::dist

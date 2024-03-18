@@ -24,542 +24,882 @@
 
  */
 
+#pragma once
 
-/*
- *  Last Changed Rev:  $Rev$
- *  Last Changed Date: $Date$
- *  Last Changed By:   $Author$
- */
-
-#ifndef STEPS_SOLVER_STATEDEF_HPP
-#define STEPS_SOLVER_STATEDEF_HPP 1
-
-
-// STL headers.
+#include <iosfwd>
 #include <string>
-#include <vector>
-#include <fstream>
 
-// STEPS headers.
-#include "util/common.h"
-#include "api.hpp"
-#include "rng/rng.hpp"
-#include "model/model.hpp"
-#include "geom/geom.hpp"
-#include "geom/diffboundary.hpp"
-#include "geom/sdiffboundary.hpp"
+#include "geom/fwd.hpp"
+#include "model/fwd.hpp"
+#include "rng/fwd.hpp"
+#include "solver/fwd.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps{
-namespace solver{
-
-////////////////////////////////////////////////////////////////////////////////
-
-// Forwards declarations
-class Compdef;
-class Patchdef;
-class Specdef;
-class Reacdef;
-class SReacdef;
-class Diffdef;
-class Chandef;
-class VDepTransdef;
-class VDepSReacdef;
-class OhmicCurrdef;
-class GHKcurrdef;
-class DiffBoundarydef;
-class SDiffBoundarydef;
-
-// Auxiliary declarations.
-
-typedef Specdef *                        SpecdefP;
-typedef std::vector<SpecdefP>            SpecdefPVec;
-typedef SpecdefPVec::iterator            SpecdefPVecI;
-typedef SpecdefPVec::const_iterator      SpecdefPVecCI;
-
-typedef Compdef *                        CompdefP;
-typedef std::vector<CompdefP>            CompdefPVec;
-typedef CompdefPVec::iterator            CompdefPVecI;
-typedef CompdefPVec::const_iterator      CompdefPVecCI;
-
-typedef Patchdef *                       PatchdefP;
-typedef std::vector<PatchdefP>           PatchdefPVec;
-typedef PatchdefPVec::iterator           PatchdefPVecI;
-typedef PatchdefPVec::const_iterator     PatchdefPVecCI;
-
-typedef Reacdef *                        ReacdefP;
-typedef std::vector<ReacdefP>            ReacdefPVec;
-typedef ReacdefPVec::iterator            ReacdefPVecI;
-typedef ReacdefPVec::const_iterator      ReacdefPVecCI;
-
-typedef SReacdef *                       SReacdefP;
-typedef std::vector<SReacdefP>           SReacdefPVec;
-typedef SReacdefPVec::iterator           SReacdefPVecI;
-typedef SReacdefPVec::const_iterator     SReacdefPVecCI;
-
-typedef Diffdef *                        DiffdefP;
-typedef std::vector<DiffdefP>            DiffdefPVec;
-typedef DiffdefPVec::iterator            DiffdefPVecI;
-typedef DiffdefPVec::const_iterator      DiffdefPVecCI;
-
-typedef Diffdef *                        SurfDiffdefP;
-typedef std::vector<DiffdefP>            SurfDiffdefPVec;
-typedef DiffdefPVec::iterator            SurfDiffdefPVecI;
-typedef DiffdefPVec::const_iterator      SurfDiffdefPVecCI;
-
-typedef Chandef *                        ChandefP;
-typedef std::vector<ChandefP>            ChandefPVec;
-typedef ChandefPVec::iterator            ChandefPVecI;
-typedef ChandefPVec::const_iterator      ChandefPVecCI;
-
-typedef VDepTransdef *                   VDepTransdefP;
-typedef std::vector<VDepTransdefP>       VDepTransdefPVec;
-typedef VDepTransdefPVec::iterator       VDepTransdefPVecI;
-typedef VDepTransdefPVec::const_iterator VDepTransdefPVecCI;
-
-typedef VDepSReacdef *                   VDepSReacdefP;
-typedef std::vector<VDepSReacdefP>       VDepSReacdefPVec;
-typedef VDepSReacdefPVec::iterator       VDepSReacdefPVecI;
-typedef VDepSReacdefPVec::const_iterator VDepSReacdefPVecCI;
-
-typedef OhmicCurrdef *                   OhmicCurrdefP;
-typedef std::vector<OhmicCurrdefP>       OhmicCurrdefPVec;
-typedef OhmicCurrdefPVec::iterator       OhmicCurrdefPVecI;
-typedef OhmicCurrdefPVec::const_iterator OhmicCurrdefPVecCI;
-
-typedef GHKcurrdef *                     GHKcurrdefP;
-typedef std::vector<GHKcurrdefP>         GHKcurrdefPVec;
-typedef GHKcurrdefPVec::iterator         GHKcurrdefPVecI;
-typedef GHKcurrdefPVec::const_iterator   GHKcurrdefPVecCI;
-
-typedef DiffBoundarydef *                    DiffBoundarydefP;
-typedef std::vector<DiffBoundarydefP>        DiffBoundarydefPVec;
-typedef DiffBoundarydefPVec::iterator        DiffBoundarydefPVecI;
-typedef DiffBoundarydefPVec::const_iterator  DiffBoundarydefPVecCI;
-
-typedef SDiffBoundarydef *                    SDiffBoundarydefP;
-typedef std::vector<SDiffBoundarydefP>        SDiffBoundarydefPVec;
-typedef SDiffBoundarydefPVec::iterator        SDiffBoundarydefPVecI;
-typedef SDiffBoundarydefPVec::const_iterator  SDiffBoundarydefPVecCI;
-
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::solver {
 
 /// Defined State
-class Statedef
-{
-
-public:
-
-    enum PoolFlags
-    {
-        CLAMPED_POOLFLAG       = 1
-    };
+class Statedef {
+  public:
+    enum PoolFlags { CLAMPED_POOLFLAG = 1 };
     static const uint PoolFlagDefault = 0;
 
-    enum ReacFlags
-    {
-        INACTIVE_REACFLAG         = 1,
-        KCONST_REACFLAG         = 2
-    };
+    enum ReacFlags { INACTIVE_REACFLAG = 1, KCONST_REACFLAG = 2 };
     static const uint ReacFlagDefault = INACTIVE_REACFLAG | KCONST_REACFLAG;
 
     ////////////////////////////////////////////////////////////////////////
 
     /// Constructor
     ///
-    /// \param m Pointer to the model object.
-    /// \param g Pointer to the geometry container.
-    /// \param r Pointer to the random number generator.
-    Statedef(steps::model::Model *m, steps::wm::Geom *g, const rng::RNGptr &r);
+    /// \param m Reference to the model object.
+    /// \param g Reference to the geometry container.
+    /// \param r Reference to the random number generator.
+    Statedef(model::Model& m, wm::Geom& g, const rng::RNGptr& r);
 
-    /// Destructor
-    ~Statedef();
+    Statedef(const Statedef&) = delete;
+    Statedef& operator=(const Statedef&) = delete;
 
-    uint getMembIdx(std::string const & m) const;
+    membrane_global_id getMembIdx(std::string const& m) const;
 
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream& cp_file) const;
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream& cp_file);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: COMPARTMENTS
     ////////////////////////////////////////////////////////////////////////
 
-    /// Return pointer to Compdef object specified by global index argument.
+    /// Return reference to Compdef object specified by global index argument.
     ///
     /// \param gidx Global index of the Compdef object.
-    Compdef * compdef(uint gidx) const;
+    Compdef& compdef(comp_global_id gidx) const;
 
     /// Return the total number of compartments in the simulation state.
-    inline uint countComps() const noexcept
-    { return pCompdefs.size(); }
+    inline uint countComps() const noexcept {
+        return pCompdefs.size();
+    }
 
     /// Return the global index of compartment identified by string argument.
     ///
     /// \param c Name of the compartment.
-    /// \exception Throw exception if geometry does not contain comp with this identifier.
-    uint getCompIdx(std::string const & c) const;
+    /// \exception Throw exception if geometry does not contain comp with this
+    /// identifier.
+    comp_global_id getCompIdx(std::string const& c) const;
 
     /// Return the global index of compartment identified by  object argument.
     ///
-    /// \param comp Pointer to the Comp object..
-    /// \exception Throw exception if geometry does not contain comp with this identifier.
-    uint getCompIdx(steps::wm::Comp * comp) const;
+    /// \param comp Reference to the Comp object..
+    /// \exception Throw exception if geometry does not contain comp with this
+    /// identifier.
+    comp_global_id getCompIdx(const wm::Comp& comp) const;
 
-    /// Return the beginning iterator of the Compdefs objects.
-    inline std::vector<Compdef*>::const_iterator bgnComp() const noexcept
-    { return pCompdefs.begin(); }
-
-    /// Return the end iterator of the Compdefs objects.
-    inline std::vector<Compdef*>::const_iterator endComp() const noexcept
-    { return pCompdefs.end(); }
-    inline const std::vector<Compdef*>& comps() const noexcept
-    { return pCompdefs; }
+    inline const auto& comps() const noexcept {
+        return pCompdefs;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: PATCHES
     ////////////////////////////////////////////////////////////////////////
 
-    /// Return pointer to Patchdef object specified by global index argument.
+    /// Return reference to Patchdef object specified by global index argument.
     ///
     /// \param gidx Global index of the patch.
-    Patchdef * patchdef(uint gidx) const;
+    Patchdef& patchdef(patch_global_id gidx) const;
 
     /// Return the total number of patches in the simulation state.
-    inline uint countPatches() const noexcept
-    { return pPatchdefs.size(); }
+    inline uint countPatches() const noexcept {
+        return pPatchdefs.size();
+    }
 
     /// Return the global index of patch identified by string argument.
     ///
     /// \param p Name of the patch.
-    /// \exception Throw exception if geometry does not contain patch with this identifier.
-    uint getPatchIdx(std::string const & p) const;
+    /// \exception Throw exception if geometry does not contain patch with this
+    /// identifier.
+    patch_global_id getPatchIdx(std::string const& p) const;
 
     /// Return the global index of patch identified by string argument.
     ///
-    /// \param patch Pointer to the patch.
-    /// \exception Throw exception if geometry does not contain patch with this identifier.
-    uint getPatchIdx(steps::wm::Patch * patch) const;
+    /// \param patch Reference to the patch.
+    /// \exception Throw exception if geometry does not contain patch with this
+    /// identifier.
+    patch_global_id getPatchIdx(const wm::Patch& patch) const;
 
-    /// Return the beginning iterator of the Patchdefs objects.
-    inline std::vector<Patchdef*>::const_iterator bgnPatch() const noexcept
-    { return pPatchdefs.begin(); }
-
-    inline const std::vector<Patchdef*>& patches() const noexcept
-    { return pPatchdefs; }
-
-    /// Return the end iterator of the Patchdefs objects.
-    inline std::vector<Patchdef*>::const_iterator endPatch() const noexcept
-    { return pPatchdefs.end(); }
+    inline const auto& patches() const noexcept {
+        return pPatchdefs;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SPECIES
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of species in the simulation state.
-    inline uint countSpecs() const noexcept
-    { return pSpecdefs.size(); }
+    inline uint countSpecs() const noexcept {
+        return pSpecdefs.size();
+    }
 
-    /// Return pointer to Specdef object specified by global index argument.
+    /// Return reference to Specdef object specified by global index argument.
     ///
     /// \param gidx Global index of the species.
-    Specdef * specdef(uint gidx) const;
+    Specdef& specdef(spec_global_id gidx) const;
 
     /// Return the global index of species identified by string argument.
     ///
     /// \param s Name of the species.
-    /// \exception Throw exception if model does not contain species with this identifier.
-    uint getSpecIdx(std::string const & s) const;
-    uint getSpecIdx(steps::model::Spec * spec) const;
+    /// \exception Throw exception if model does not contain species with this
+    /// identifier.
+    spec_global_id getSpecIdx(std::string const& s) const;
+    spec_global_id getSpecIdx(const model::Spec& spec) const;
+
+    ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: COMPLEXES
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Return the total number of complexes in the simulation state.
+    inline uint countComplexes() const noexcept {
+        return pComplexdefs.size();
+    }
+
+    /// Return pointer to Complexdef object specified by global index argument.
+    ///
+    /// \param gidx Global index of the complex.
+    Complexdef& complexdef(complex_global_id gidx) const;
+
+    /// Return the global index of complexes identified by string argument.
+    ///
+    /// \param s Name of the complex.
+    /// \exception Throw exception if model does not contain complexes with this identifier.
+    complex_global_id getComplexIdx(std::string const& s) const;
+    complex_global_id getComplexIdx(steps::model::Complex* spec) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: REACTIONS
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of reactions in the simulation state.
-    inline uint countReacs() const noexcept
-    { return pReacdefs.size(); }
+    inline uint countReacs() const noexcept {
+        return pReacdefs.size();
+    }
 
-    /// Return pointer to Reacdef object specified by global index argument.
+    /// Return reference to Reacdef object specified by global index argument.
     ///
     /// \param gidx Global index of the reaction.
-    Reacdef * reacdef(uint gidx) const;
+    Reacdef& reacdef(reac_global_id gidx) const;
 
     /// Return the global index of reac identified by string argument.
     ///
     /// \param r Name of the reaction.
-    /// \exception Throw exception if model does not contain reac with this identifier.
-    uint getReacIdx(std::string const & r) const;
+    /// \exception Throw exception if model does not contain reac with this
+    /// identifier.
+    reac_global_id getReacIdx(std::string const& r) const;
 
     /// Return the global index of reac identified by object argument.
     ///
-    /// \param reac Pointer to the reaction object.
-    /// \exception Throw exception if model does not contain reac with this identifier.
-    uint getReacIdx(steps::model::Reac * reac) const;
+    /// \param reac Reference to the reaction object.
+    /// \exception Throw exception if model does not contain reac with this
+    /// identifier.
+    reac_global_id getReacIdx(const model::Reac& reac) const;
+
+    ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: COMPLEX REACTIONS
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Return the total number of complex reactions in the simulation state.
+    inline uint countComplexReacs() const noexcept {
+        return pComplexReacdefs.size();
+    }
+
+    /// Return pointer to ComplexReacdef object specified by global index argument.
+    ///
+    /// \param gidx Global index of the complex reaction.
+    ComplexReacdef& complexreacdef(complexreac_global_id gidx) const;
+
+    /// Return the global index of complex reac identified by string argument.
+    ///
+    /// \param r Name of the complex reaction.
+    /// \exception Throw exception if model does not contain complex reac with this identifier.
+    complexreac_global_id getComplexReacIdx(std::string const& r) const;
+
+    /// Return the global index of complex reac identified by object argument.
+    ///
+    /// \param reac Pointer to the complex reaction object.
+    /// \exception Throw exception if model does not contain complex reac with this identifier.
+    complexreac_global_id getComplexReacIdx(model::ComplexReac* reac) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SURFACE REACTIONS
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of surface reactions in the simulation state.
-    inline uint countSReacs() const noexcept
-    { return pSReacdefs.size(); }
+    inline uint countSReacs() const noexcept {
+        return pSReacdefs.size();
+    }
 
-    /// Return pointer to SReacdef object specified by global index argument.
+    /// Return reference to SReacdef object specified by global index argument.
     ///
     /// \param gidx Global index of the surface reaction.
-    SReacdef * sreacdef(uint gidx) const;
+    SReacdef& sreacdef(sreac_global_id gidx) const;
 
     /// Return the global index of surface reaction identified by string argument.
     ///
     /// \param sr Name of the surface reaction.
-    /// \exception Throw exception if model does not contain sreac with this identifier.
-    uint getSReacIdx(std::string const & sr) const;
+    /// \exception Throw exception if model does not contain sreac with this
+    /// identifier.
+    sreac_global_id getSReacIdx(std::string const& sr) const;
     /// Return the global index of surface reaction identified by object argument.
     ///
-    /// \param sreac Pointer to the surface reaction object..
-    /// \exception Throw exception if model does not contain sreac with this identifier.
-    uint getSReacIdx(steps::model::SReac * sreac) const;
+    /// \param sreac Reference to the surface reaction object..
+    /// \exception Throw exception if model does not contain sreac with this
+    /// identifier.
+    sreac_global_id getSReacIdx(const model::SReac& sreac) const;
+
+    ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: COMPLEX SURFACE REACTIONS
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Return the total number of complex reactions in the simulation state.
+    inline uint countComplexSReacs() const noexcept {
+        return pComplexSReacdefs.size();
+    }
+
+    /// Return pointer to ComplexSReacdef object specified by global index argument.
+    ///
+    /// \param gidx Global index of the complex reaction.
+    ComplexSReacdef& complexsreacdef(complexsreac_global_id gidx) const;
+
+    /// Return the global index of complex reac identified by string argument.
+    ///
+    /// \param r Name of the complex reaction.
+    /// \exception Throw exception if model does not contain complex reac with this identifier.
+    complexsreac_global_id getComplexSReacIdx(std::string const& r) const;
+
+    /// Return the global index of complex reac identified by object argument.
+    ///
+    /// \param reac Pointer to the complex reaction object.
+    /// \exception Throw exception if model does not contain complex reac with this identifier.
+    complexsreac_global_id getComplexSReacIdx(model::ComplexSReac* reac) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: DIFFUSION
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of diffusion rules in the simulation state.
-    inline uint countDiffs() const noexcept
-    { return pDiffdefs.size(); }
+    inline uint countDiffs() const noexcept {
+        return pDiffdefs.size();
+    }
 
-    /// Return pointer to Diffdef object specified by global index argument.
+    /// Return reference to Diffdef object specified by global index argument.
     ///
     /// \param gidx Global index of the diffusion.
-    Diffdef * diffdef(uint gidx) const;
+    Diffdef& diffdef(diff_global_id gidx) const;
 
     /// Return the global index of diffusion identified by string argument.
     ///
     /// \param d Name of the diffusion.
-    /// \exception Throw exception if model does not contain diff with this identifier.
-    uint getDiffIdx(std::string const & d) const;
+    /// \exception Throw exception if model does not contain diff with this
+    /// identifier.
+    diff_global_id getDiffIdx(std::string const& d) const;
 
     /// Return the global index of diffusion identified by object argument.
     ///
-    /// \param diff Pointer to the diffusion object.
+    /// \param diff Reference to the diffusion object.
     /// \exception Throw exception if model does not contain this diff.
-    uint getDiffIdx(steps::model::Diff * diff) const;
+    diff_global_id getDiffIdx(const model::Diff& diff) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SURFACE DIFFUSION
     ////////////////////////////////////////////////////////////////////////
 
-    /// Return the total number of surface diffusion rules in the simulation state.
-    inline uint countSurfDiffs() const noexcept
-    { return pSurfDiffdefs.size(); }
+    /// Return the total number of surface diffusion rules in the simulation
+    /// state.
+    inline uint countSurfDiffs() const noexcept {
+        return pSurfDiffdefs.size();
+    }
 
-    /// Return pointer to SurfDiffdef object specified by global index argument.
+    /// Return reference to SurfDiffdef object specified by global index argument.
     ///
     /// \param gidx Global index of the surface diffusion.
-    Diffdef * surfdiffdef(uint gidx) const;
+    SurfDiffdef& surfdiffdef(surfdiff_global_id gidx) const;
 
-    /// Return the global index of surface diffusion identified by string argument.
+    /// Return the global index of surface diffusion identified by string
+    /// argument.
     ///
     /// \param d Name of the surface diffusion.
-    /// \exception Throw exception if model does not contain diff with this identifier.
-    uint getSurfDiffIdx(std::string const & d) const;
+    /// \exception Throw exception if model does not contain diff with this
+    /// identifier.
+    surfdiff_global_id getSurfDiffIdx(std::string const& d) const;
 
-    /// Return the global index of surface diffusion identified by object argument.
+    /// Return the global index of surface diffusion identified by object
+    /// argument.
     ///
-    /// \param diff Pointer to the surface diffusion object.
+    /// \param diff Reference to the surface diffusion object.
     /// \exception Throw exception if model does not contain this diff.
-    uint getSurfDiffIdx(steps::model::Diff * diff) const;
-
-    ////////////////////////////////////////////////////////////////////////
-    // DATA ACCESS: VOLTAGE-DEPENDENT TRANSITIONS
-    ////////////////////////////////////////////////////////////////////////
-
-    /// Return the total number of voltage-dependent transitions in the simulation state.
-    inline uint countVDepTrans() const noexcept
-    { return pVDepTransdefs.size(); }
-
-    /// Return pointer to VDepTransdef object specified by global index argument.
-    ///
-    /// \param gidx Global index of the voltage-dependent transition.
-    VDepTransdef * vdeptransdef(uint gidx) const;
-
-    /// Return the global index of voltage-dependent transition identified by string argument.
-    ///
-    /// \param vdt Name of the voltage-dependent transition.
-    /// \exception Throw exception if model does not contain vdeptrans with this identifier.
-    uint getVDepTransIdx(std::string const & vdt) const;
-
-    /// Return the global index of voltage-dependent transition identified by object argument.
-    ///
-    /// \param sreac Pointer to the voltage-dependent transition object..
-    /// \exception Throw exception if model does not contain this vdeptrans.
-    uint getVDepTransIdx(steps::model::VDepTrans * vdeptrans) const;
+    surfdiff_global_id getSurfDiffIdx(const model::Diff& diff) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: VOLTAGE-DEPENDENT REACTIONS
     ////////////////////////////////////////////////////////////////////////
 
-    /// Return the total number of voltage-dependent transitions in the simulation state.
-    inline uint countVDepSReacs() const noexcept
-    { return pVDepSReacdefs.size(); }
+    /// Return the total number of voltage-dependent transitions in the simulation
+    /// state.
+    inline uint countVDepSReacs() const noexcept {
+        return pVDepSReacdefs.size();
+    }
 
-    /// Return pointer to VDepSReacdef object specified by global index argument.
+    /// Return reference to VDepSReacdef object specified by global index argument.
     ///
     /// \param gidx Global index of the voltage-dependent reaction.
-    VDepSReacdef * vdepsreacdef(uint gidx) const;
+    VDepSReacdef& vdepsreacdef(vdepsreac_global_id gidx) const;
 
-    /// Return the global index of voltage-dependent reaction identified by string argument.
+    /// Return the global index of voltage-dependent reaction identified by string
+    /// argument.
     ///
     /// \param vdt Name of the voltage-dependent reaction.
-    /// \exception Throw exception if model does not contain vdepsreac with this identifier.
-    uint getVDepSReacIdx(std::string const & vdt) const;
+    /// \exception Throw exception if model does not contain vdepsreac with this
+    /// identifier.
+    vdepsreac_global_id getVDepSReacIdx(std::string const& vdt) const;
 
-    /// Return the global index of voltage-dependent reaction identified by object argument.
+    /// Return the global index of voltage-dependent reaction identified by object
+    /// argument.
     ///
-    /// \param sreac Pointer to the voltage-dependent reaction object..
+    /// \param sreac Reference to the voltage-dependent reaction object..
     /// \exception Throw exception if model does not contain this vdepsreac.
-    uint getVDepSReacIdx(steps::model::VDepSReac * vdepsreac) const;
+    vdepsreac_global_id getVDepSReacIdx(const model::VDepSReac& vdepsreac) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: OHMIC CURRENTS
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of ohmic currents in the simulation state.
-    inline uint countOhmicCurrs() const noexcept
-    { return pOhmicCurrdefs.size(); }
+    inline uint countOhmicCurrs() const noexcept {
+        return pOhmicCurrdefs.size();
+    }
 
-    /// Return pointer to OhmicCurr object specified by global index argument.
+    /// Return reference to OhmicCurr object specified by global index argument.
     ///
     /// \param gidx Global index of the ohmic current.
-    OhmicCurrdef * ohmiccurrdef(uint gidx) const;
+    OhmicCurrdef& ohmiccurrdef(ohmiccurr_global_id gidx) const;
 
     /// Return the global index of ohmic current identified by string argument.
     ///
     /// \param oc Name of the ohmic current.
-    /// \exception Throw exception if model does not contain ohmic current with this identifier.
-    uint getOhmicCurrIdx(std::string const & oc) const;
+    /// \exception Throw exception if model does not contain ohmic current with
+    /// this identifier.
+    ohmiccurr_global_id getOhmicCurrIdx(std::string const& oc) const;
 
     /// Return the global index of ohmic current identified by object argument.
     ///
-    /// \param ocurr Pointer to the ohmic current object..
+    /// \param ocurr Reference to the ohmic current object..
     /// \exception Throw exception if model does not contain this ohmiccurr.
-    uint getOhmicCurrIdx(steps::model::OhmicCurr * ohmiccurr) const;
+    ohmiccurr_global_id getOhmicCurrIdx(const model::OhmicCurr& ohmiccurr) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: GHK CURRENTS
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of ghk currents in the simulation state.
-    inline uint countGHKcurrs() const noexcept
-    { return pGHKcurrdefs.size(); }
+    inline uint countGHKcurrs() const noexcept {
+        return pGHKcurrdefs.size();
+    }
 
-    /// Return pointer to GHKcurr object specified by global index argument.
+    /// Return reference to GHKcurr object specified by global index argument.
     ///
     /// \param gidx Global index of the ghk current.
-    GHKcurrdef * ghkcurrdef(uint gidx) const;
+    GHKcurrdef& ghkcurrdef(ghkcurr_global_id gidx) const;
 
     /// Return the global index of ghk current identified by string argument.
     ///
     /// \param ghk Name of the ghk current.
-    /// \exception Throw exception if model does not contain ghk current with this identifier.
-    uint getGHKcurrIdx(std::string const & ghk) const;
+    /// \exception Throw exception if model does not contain ghk current with this
+    /// identifier.
+    ghkcurr_global_id getGHKcurrIdx(std::string const& ghk) const;
 
     /// Return the global index of ghk current identified by object argument.
     ///
-    /// \param ocurr Pointer to the ghk current object..
+    /// \param ghkcurr Reference to the ghk current object..
     /// \exception Throw exception if model does not contain this ghkcurr.
-    uint getGHKcurrIdx(steps::model::GHKcurr * ghkcurr) const;
+    ghkcurr_global_id getGHKcurrIdx(const model::GHKcurr& ghkcurr) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: DIFFUSION BOUNDARY
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the total number of diffusion boundaries in the simulation state.
-    inline uint countDiffBoundaries() const noexcept
-    { return pDiffBoundarydefs.size(); }
+    inline uint countDiffBoundaries() const noexcept {
+        return pDiffBoundarydefs.size();
+    }
 
-    /// Return pointer to DiffBoundarydef object specified by global index argument.
+    /// Return reference to DiffBoundarydef object specified by global index
+    /// argument.
     ///
     /// \param gidx Global index of the diffusion boundary.
-    DiffBoundarydef * diffboundarydef(uint gidx) const;
+    DiffBoundarydef& diffboundarydef(diffboundary_global_id gidx) const;
 
-    /// Return the global index of diffusion boundary identified by string argument.
+    /// Return the global index of diffusion boundary identified by string
+    /// argument.
     ///
     /// \param d Name of the diffusion boundary.
-    /// \exception Throw exception if geometry does not contain diff boundary with this identifier.
-    uint getDiffBoundaryIdx(std::string const & d) const;
+    /// \exception Throw exception if geometry does not contain diff boundary with
+    /// this identifier.
+    diffboundary_global_id getDiffBoundaryIdx(std::string const& d) const;
 
-    /// Return the global index of diffusion boundary identified by object argument.
+    /// Return the global index of diffusion boundary identified by object
+    /// argument.
     ///
-    /// \param diff Pointer to the diffusion boundary object.
-    /// \exception Throw exception if geoemtry does not contain diff boundary with this identifier.
-    uint getDiffBoundaryIdx(steps::tetmesh::DiffBoundary * diffb) const;
+    /// \param diff Reference to the diffusion boundary object.
+    /// \exception Throw exception if geoemtry does not contain diff boundary with
+    /// this identifier.
+    diffboundary_global_id getDiffBoundaryIdx(const tetmesh::DiffBoundary& diffb) const;
 
-    /// Return the beginning iterator of the Diffusion Boundary objects.
-    inline std::vector<DiffBoundarydef *>::const_iterator bgnDiffBoundary() const noexcept
-    { return pDiffBoundarydefs.begin(); }
-
-    /// Return the end iterator of the Diffusion Boundary objects.
-    inline std::vector<DiffBoundarydef *>::const_iterator endDiffBoundary() const noexcept
-    { return pDiffBoundarydefs.end(); }
-    inline const std::vector<DiffBoundarydef*>& diffBoundaries() const noexcept
-    { return pDiffBoundarydefs; }
+    inline const auto& diffBoundaries() const noexcept {
+        return pDiffBoundarydefs;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SURFACE DIFFUSION BOUNDARY
     ////////////////////////////////////////////////////////////////////////
 
-    /// Return the total number of surface diffusion boundaries in the simulation state.
-    inline uint countSDiffBoundaries() const noexcept
-    { return pSDiffBoundarydefs.size(); }
+    /// Return the total number of surface diffusion boundaries in the simulation
+    /// state.
+    inline uint countSDiffBoundaries() const noexcept {
+        return pSDiffBoundarydefs.size();
+    }
 
-    /// Return pointer to SDiffBoundarydef object specified by global index argument.
+    /// Return reference to SDiffBoundarydef object specified by global index
+    /// argument.
     ///
     /// \param gidx Global index of the surface diffusion boundary.
-    SDiffBoundarydef * sdiffboundarydef(uint gidx) const;
+    SDiffBoundarydef& sdiffboundarydef(sdiffboundary_global_id gidx) const;
 
-    /// Return the global index of surface diffusion boundary identified by string argument.
+    /// Return the global index of surface diffusion boundary identified by string
+    /// argument.
     ///
     /// \param d Name of the surface diffusion boundary.
-    /// \exception Throw exception if geometry does not contain sdiff boundary with this identifier.
-    uint getSDiffBoundaryIdx(std::string const & d) const;
+    /// \exception Throw exception if geometry does not contain sdiff boundary
+    /// with this identifier.
+    sdiffboundary_global_id getSDiffBoundaryIdx(std::string const& d) const;
 
-    /// Return the global index of surface diffusion boundary identified by object argument.
+    /// Return the global index of surface diffusion boundary identified by object
+    /// argument.
     ///
-    /// \param sdiff Pointer to the surface diffusion boundary object.
-    /// \exception Throw exception if geometry does not contain sdiff boundary with this identifier.
-    uint getSDiffBoundaryIdx(steps::tetmesh::SDiffBoundary * sdiffb) const;
+    /// \param sdiffb Reference to the surface diffusion boundary object.
+    /// \exception Throw exception if geometry does not contain sdiff boundary
+    /// with this identifier.
+    sdiffboundary_global_id getSDiffBoundaryIdx(const tetmesh::SDiffBoundary& sdiffb) const;
 
-    /// Return the beginning iterator of the Surface Diffusion Boundary objects.
-    inline std::vector<SDiffBoundarydef *>::const_iterator bgnSDiffBoundary() const noexcept
-    { return pSDiffBoundarydefs.begin(); }
+    inline const auto& sdiffBoundaries() const noexcept {
+        return pSDiffBoundarydefs;
+    }
 
-    /// Return the end iterator of the Surface Diffusion Boundary objects.
-    inline std::vector<SDiffBoundarydef *>::const_iterator endSDiffBoundary() const noexcept
-    { return pSDiffBoundarydefs.end(); }
+    ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: BRIDGE SPECIES
+    ////////////////////////////////////////////////////////////////////////
 
-    inline const std::vector<SDiffBoundarydef*>& sdiffBoundaries() const noexcept
-    { return pSDiffBoundarydefs; }
+    /// Return the total number of species in the simulation state.
+    inline uint countLinkSpecs() const noexcept {
+        return pLinkSpecdefs.size();
+    }
+
+    /// Return reference to LinkSpecdef object specified by global index argument.
+    ///
+    /// \param gidx Global index of the Linkspecies.
+    LinkSpecdef& linkspecdef(linkspec_global_id gidx) const;
+
+    /// Return the global index of Linkspecies identified by string argument.
+    ///
+    /// \param s Name of the Linkspecies.
+    /// \exception Throw exception if model does not contain Linkspecies with this
+    /// identifier.
+    linkspec_global_id getLinkSpecIdx(std::string const& s) const;
+    linkspec_global_id getLinkSpecIdx(const model::LinkSpec& spec) const;
+
+    inline const auto& linkspecs() const noexcept {
+        return pLinkSpecdefs;
+    }
+
+    ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: VESICLES
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Return the total number of vesicles in the simulation state.
+    inline uint countVesicles() const noexcept {
+        return pVesicledefs.size();
+    }
+
+    /// Return reference to Vesicledef object specified by global index argument.
+    ///
+    /// \param gidx Global index of the vesicle.
+    Vesicledef& vesicledef(vesicle_global_id gidx) const;
+
+    vesicle_global_id getVesicleIdx(std::string const& v) const;
+    vesicle_global_id getVesicleIdx(const model::Vesicle& vesicle) const;
+
+    inline const auto& vesicles() const noexcept {
+        return pVesicledefs;
+    }
+
+    ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: RAFTS
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Return the total number of rafts in the simulation state.
+    inline uint countRafts() const noexcept {
+        return pRaftdefs.size();
+    }
+
+    /// Return reference to Raftdef object specified by global index argument.
+    ///
+    /// \param gidx Global index of the raft.
+    Raftdef& raftdef(raft_global_id gidx) const;
+
+    raft_global_id getRaftIdx(std::string const& r) const;
+    raft_global_id getRaftIdx(const model::Raft& raft) const;
+
+    inline const auto& rafts() const noexcept {
+        return pRaftdefs;
+    }
+
+    ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: VESICLE BINDING REACTIONS
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Return the total number of vesicle binding reactions in the simulation
+    /// state.
+    inline uint countVesBinds() const noexcept {
+        return pVesBinddefs.size();
+    }
+
+    /// Return reference to VesBinddef object specified by global index argument.
+    ///
+    /// \param gidx Global index of the vesicle binding reaction.
+    VesBinddef& vesbinddef(vesbind_global_id gidx) const;
+
+    /// Return the global index of vesicle binding reaction identified by string
+    /// argument.
+    ///
+    /// \param vb Name of the vesicle binding reaction.
+    /// \exception Throw exception if model does not contain vesbind with this
+    /// identifier.
+    vesbind_global_id getVesBindIdx(std::string const& vb) const;
+
+    /// Return the global index of vesicle binding reaction identified by object
+    /// argument.
+    ///
+    /// \param vesbind Reference to the vesicle binding reaction object.
+    /// \exception Throw exception if model does not contain vesbind with this
+    /// identifier.
+    vesbind_global_id getVesBindIdx(const model::VesBind& vesbind) const;
+
+    ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: VESICLE UNBINDING REACTIONS
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Return the total number of vesicle unbinding reactions in the simulation
+    /// state.
+    inline uint countVesUnbinds() const noexcept {
+        return pVesUnbinddefs.size();
+    }
+
+    /// Return reference to VesUnbinddef object specified by global index argument.
+    ///
+    /// \param gidx Global index of the vesicle unbinding reaction.
+    VesUnbinddef& vesunbinddef(vesunbind_global_id gidx) const;
+
+    /// Return the global index of vesicle unbinding reaction identified by string
+    /// argument.
+    ///
+    /// \param vb Name of the vesicle unbinding reaction.
+    /// \exception Throw exception if model does not contain vesunbind with this
+    /// identifier.
+    vesunbind_global_id getVesUnbindIdx(std::string const& vb) const;
+
+    /// Return the global index of vesicle unbinding reaction identified by object
+    /// argument.
+    ///
+    /// \param vesbind Reference to the vesicle unbinding reaction object.
+    /// \exception Throw exception if model does not contain vesunbind with this
+    /// identifier.
+    vesunbind_global_id getVesUnbindIdx(const model::VesUnbind& vesunbind) const;
+
+    inline const auto& vesunbinds() const noexcept {
+        return pVesUnbinddefs;
+    }
+
+    ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: VESICLE SURFACE REACTIONS
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Return the total number of vesicle surface reactions in the simulation
+    /// state.
+    inline uint countVesSReacs() const noexcept {
+        return pVesSReacdefs.size();
+    }
+
+    /// Return reference to VesSReacdef object specified by global index argument.
+    ///
+    /// \param gidx Global index of the vesicle surface reaction.
+    VesSReacdef& vessreacdef(vessreac_global_id gidx) const;
+
+    /// Return the global index of vesicle surface reaction identified by string
+    /// argument.
+    ///
+    /// \param vsr Name of the vesicle surface reaction.
+    /// \exception Throw exception if model does not contain vessreac with this
+    /// identifier.
+    vessreac_global_id getVesSReacIdx(std::string const& vsr) const;
+
+    /// Return the global index of vesicle surface reaction identified by object
+    /// argument.
+    ///
+    /// \param vessreac Reference to the surface reaction object..
+    /// \exception Throw exception if model does not contain vessreac with this
+    /// identifier.
+    vessreac_global_id getVesSReacIdx(const model::VesSReac& vessreac) const;
+
+    inline const auto& vessreacs() const noexcept {
+        return pVesSReacdefs;
+    }
+
+    ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: RAFT SURFACE REACTIONS
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Return the total number of raft surface reactions in the simulation state.
+    inline uint countRaftSReacs() const noexcept {
+        return pRaftSReacdefs.size();
+    }
+
+    /// Return reference to RaftSReacdef object specified by global index argument.
+    ///
+    /// \param gidx Global index of the raft surface reaction.
+    RaftSReacdef& raftsreacdef(raftsreac_global_id gidx) const;
+
+    /// Return the global index of raft surface reaction identified by string
+    /// argument.
+    ///
+    /// \param rsr Name of the raft surface reaction.
+    /// \exception Throw exception if model does not contain vessreac with this
+    /// identifier.
+    raftsreac_global_id getRaftSReacIdx(std::string const& rsr) const;
+
+    /// Return the global index of raft surface reaction identified by object
+    /// argument.
+    ///
+    /// \param raftsreac Reference to the surface reaction object..
+    /// \exception Throw exception if model does not contain raftsreac with this
+    /// identifier.
+    raftsreac_global_id getRaftSReacIdx(const model::RaftSReac& raftsreac) const;
+
+    ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: RAFT ENDOCYTOTIC REACTIONS
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Return the total number of endocytotic reactions in the simulation state.
+    inline uint countRaftEndocytosis() const noexcept {
+        return pRaftEndocytosisdefs.size();
+    }
+
+    /// Return reference to RaftEndocytosisdef object specified by global index
+    /// argument.
+    ///
+    /// \param gidx Global index of the endocytotic reaction.
+    RaftEndocytosisdef& raftendocytosisdef(raftendocytosis_global_id gidx) const;
+
+    /// Return the global index of endocytotic reaction identified by string
+    /// argument.
+    ///
+    /// \param endo Name of the endocytotic reaction.
+    /// \exception Throw exception if model does not contain endocytosis with this
+    /// identifier.
+    raftendocytosis_global_id getRaftEndocytosisIdx(std::string const& endo) const;
+
+    /// Return the global index of endocytotic reaction identified by object
+    /// argument.
+    ///
+    /// \param endocyt Reference to the endocytotic reaction object..
+    /// \exception Throw exception if model does not contain endocytosis with this
+    /// identifier.
+    raftendocytosis_global_id getRaftEndocytosisIdx(const model::RaftEndocytosis& endocyt) const;
+
+    inline const auto& raftendocytosiss() const noexcept {
+        return pRaftEndocytosisdefs;
+    }
+
+    ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: RAFT GENESIS
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Return the total number of raft geneses in the simulation state.
+    inline uint countRaftGens() const noexcept {
+        return pRaftGendefs.size();
+    }
+
+    /// Return reference to pRaftGendefs object specified by global index argument.
+    ///
+    /// \param gidx Global index of the raft genesis.
+    RaftGendef& raftgendef(raftgen_global_id gidx) const;
+
+    /// Return the global index of raft genesis identified by string argument.
+    ///
+    /// \param endo Name of the raft genesis.
+    /// \exception Throw exception if model does not contain raft genesis with
+    /// this identifier.
+    raftgen_global_id getRaftGenIdx(std::string const& raftgen) const;
+
+    /// Return the global index of raft genesis identified by object argument.
+    ///
+    /// \param endocyt Reference to the raft genesis object..
+    /// \exception Throw exception if model does not contain raft genesis with
+    /// this identifier.
+    raftgen_global_id getRaftGenIdx(const model::RaftGen& raftgen) const;
+
+    ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: RAFT DISSOLUTION
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Return the total number of raft dissolutions in the simulation state.
+    inline uint countRaftDiss() const noexcept {
+        return pRaftDisdefs.size();
+    }
+
+    /// Return reference to pRaftDisdefs object specified by global index argument.
+    ///
+    /// \param gidx Global index of the raft dissolution.
+    RaftDisdef& raftdisdef(raftdis_global_id gidx) const;
+
+    /// Return the global index of raft dissolution identified by string argument.
+    ///
+    /// \param endo Name of the raft dissolution.
+    /// \exception Throw exception if model does not contain raft dissolution with
+    /// this identifier.
+    raftdis_global_id getRaftDisIdx(std::string const& raftdis) const;
+
+    /// Return the global index of raft dissolution identified by object argument.
+    ///
+    /// \param endocyt Reference to the raft dissolution object..
+    /// \exception Throw exception if model does not contain raft dissolution with
+    /// this identifier.
+    raftdis_global_id getRaftDisIdx(const model::RaftDis& raftdis) const;
+
+    ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: ENDOCYTOTIC REACTIONS
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Return the total number of endocytotic reactions in the simulation state.
+    inline uint countEndocytosis() const noexcept {
+        return pEndocytosisdefs.size();
+    }
+
+    /// Return reference to Endocytosisdef object specified by global index
+    /// argument.
+    ///
+    /// \param gidx Global index of the endocytotic reaction.
+    Endocytosisdef& endocytosisdef(endocytosis_global_id gidx) const;
+
+    /// Return the global index of endocytotic reaction identified by string
+    /// argument.
+    ///
+    /// \param endo Name of the endocytotic reaction.
+    /// \exception Throw exception if model does not contain endocytosis with this
+    /// identifier.
+    endocytosis_global_id getEndocytosisIdx(std::string const& endo) const;
+
+    /// Return the global index of endocytotic reaction identified by object
+    /// argument.
+    ///
+    /// \param endocyt Reference to the endocytotic reaction object..
+    /// \exception Throw exception if model does not contain endocytosis with this
+    /// identifier.
+    endocytosis_global_id getEndocytosisIdx(const model::Endocytosis& endocyt) const;
+
+    ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: EXOCYTOTIC REACTIONS
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Return the total number of exocytotic reactions in the simulation state.
+    inline uint countExocytosis() const noexcept {
+        return pExocytosisdefs.size();
+    }
+
+    /// Return reference to Exocytosisdef object specified by global index argument.
+    ///
+    /// \param gidx Global index of the exocytotic reaction.
+    Exocytosisdef& exocytosisdef(exocytosis_global_id gidx) const;
+
+    /// Return the global index of exocytotic reaction identified by string
+    /// argument.
+    ///
+    /// \param exo Name of the exocytotic reaction.
+    /// \exception Throw exception if model does not contain exocytosis with this
+    /// identifier.
+    exocytosis_global_id getExocytosisIdx(std::string const& exo) const;
+
+    /// Return the global index of exocytotic reaction identified by object
+    /// argument.
+    ///
+    /// \param exocyt Reference to the exocytotic reaction object..
+    /// \exception Throw exception if model does not contain exocytosis with this
+    /// identifier.
+    exocytosis_global_id getExocytosisIdx(const model::Exocytosis& exocyt) const;
+
+    inline const auto& exocytosiss() const noexcept {
+        return pExocytosisdefs;
+    }
+
+    ////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+    // DATA ACCESS: VESICLE SURFACE DIFFUSION
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Return the total number of surface diffusion rules in the simulation
+    /// state.
+    inline uint countVesSDiffs() const noexcept {
+        return pVesSDiffdefs.size();
+    }
+
+    /// Return reference to VesSDiffdefs object specified by global index argument.
+    ///
+    /// \param gidx Global index of the vesicle surface diffusion.
+    VesSDiffdef& vessdiffdef(vessdiff_global_id gidx) const;
+
+    /// Return the global index of vesicle surface diffusion identified by string
+    /// argument.
+    ///
+    /// \param vsd Name of the vesicle surface diffusion.
+    /// \exception Throw exception if model does not contain diff with this
+    /// identifier.
+    vessdiff_global_id getVesSDiffIdx(std::string const& vsd) const;
+
+    /// Return the global index of vesicle surface diffusion identified by object
+    /// argument.
+    ///
+    /// \param vsdiff Reference to the vesicle surface diffusion object.
+    /// \exception Throw exception if model does not contain this diff.
+    vessdiff_global_id getVesSDiffIdx(const model::VesSDiff& vsdiff) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: STATE
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the current simulation time.
-    inline double time() const noexcept
-    { return pTime; }
+    inline double time() const noexcept {
+        return pTime;
+    }
 
     /// Return the model object.
-    inline steps::model::Model * model() const noexcept
-    { return pModel; }
+    inline model::Model& model() const noexcept {
+        return pModel;
+    }
+
+    /// Return the geometry object.
+    inline wm::Geom& geom() const noexcept {
+        return pGeom;
+    }
 
     /// Return the random number generator object.
-    inline const steps::rng::RNGptr& rng() const noexcept
-    { return pRNG; }
+    inline const rng::RNGptr& rng() const noexcept {
+        return pRNG;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: STATE
@@ -576,8 +916,9 @@ public:
     void incTime(double dt);
 
     /// Reset the simulation time to 0s.
-    inline void resetTime() noexcept
-    { pTime = 0.0; }
+    inline void resetTime() noexcept {
+        pTime = 0.0;
+    }
 
     /// Increase the time step.
     ///
@@ -585,53 +926,64 @@ public:
     void incNSteps(uint i = 1);
 
     /// Reset the time step to 0.
-    inline void resetNSteps() noexcept
-    { pNSteps = 0; }
+    inline void resetNSteps() noexcept {
+        pNSteps = 0;
+    }
 
     /// Return current simulation time step.
-    inline uint nsteps() const noexcept
-    { return pNSteps; }
+    inline uint nsteps() const noexcept {
+        return pNSteps;
+    }
 
-    inline void setNSteps(uint nsteps) noexcept
-    { pNSteps = nsteps; }
+    inline void setNSteps(uint nsteps) noexcept {
+        pNSteps = nsteps;
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
+  private:
+    model::Model& pModel;
+    wm::Geom& pGeom;
+    const rng::RNGptr pRNG;
 
-    steps::model::Model               * pModel;
-    steps::wm::Geom                   * pGeom;
-    const steps::rng::RNGptr            pRNG;
+    double pTime;
 
-    double                              pTime;
+    uint pNSteps;
 
-    uint                                pNSteps;
+    util::strongid_vector<spec_global_id, std::unique_ptr<Specdef>> pSpecdefs;
+    util::strongid_vector<complex_global_id, std::unique_ptr<Complexdef>> pComplexdefs;
+    util::strongid_vector<chan_global_id, std::unique_ptr<Chandef>> pChandefs;
+    util::strongid_vector<comp_global_id, std::unique_ptr<Compdef>> pCompdefs;
+    util::strongid_vector<patch_global_id, std::unique_ptr<Patchdef>> pPatchdefs;
+    util::strongid_vector<reac_global_id, std::unique_ptr<Reacdef>> pReacdefs;
+    util::strongid_vector<complexreac_global_id, std::unique_ptr<ComplexReacdef>> pComplexReacdefs;
+    util::strongid_vector<sreac_global_id, std::unique_ptr<SReacdef>> pSReacdefs;
+    util::strongid_vector<complexsreac_global_id, std::unique_ptr<ComplexSReacdef>>
+        pComplexSReacdefs;
+    util::strongid_vector<diff_global_id, std::unique_ptr<Diffdef>> pDiffdefs;
+    util::strongid_vector<surfdiff_global_id, std::unique_ptr<SurfDiffdef>> pSurfDiffdefs;
+    util::strongid_vector<vdepsreac_global_id, std::unique_ptr<VDepSReacdef>> pVDepSReacdefs;
+    util::strongid_vector<ohmiccurr_global_id, std::unique_ptr<OhmicCurrdef>> pOhmicCurrdefs;
+    util::strongid_vector<ghkcurr_global_id, std::unique_ptr<GHKcurrdef>> pGHKcurrdefs;
+    util::strongid_vector<diffboundary_global_id, std::unique_ptr<DiffBoundarydef>>
+        pDiffBoundarydefs;
+    util::strongid_vector<sdiffboundary_global_id, std::unique_ptr<SDiffBoundarydef>>
+        pSDiffBoundarydefs;
 
-    std::vector<Specdef *>              pSpecdefs;
-    std::vector<Chandef *>              pChandefs;
-    std::vector<Compdef *>              pCompdefs;
-    std::vector<Patchdef *>             pPatchdefs;
-    std::vector<Reacdef *>              pReacdefs;
-    std::vector<SReacdef *>             pSReacdefs;
-
-    std::vector<Diffdef *>              pDiffdefs;
-    std::vector<Diffdef *>              pSurfDiffdefs;
-
-    std::vector<DiffBoundarydef *>      pDiffBoundarydefs;
-    std::vector<SDiffBoundarydef *>      pSDiffBoundarydefs;
-    std::vector<VDepTransdef *>         pVDepTransdefs;
-    std::vector<VDepSReacdef *>         pVDepSReacdefs;
-    std::vector<OhmicCurrdef *>         pOhmicCurrdefs;
-    std::vector<GHKcurrdef *>           pGHKcurrdefs;
-
+    util::strongid_vector<linkspec_global_id, std::unique_ptr<LinkSpecdef>> pLinkSpecdefs;
+    util::strongid_vector<vesicle_global_id, std::unique_ptr<Vesicledef>> pVesicledefs;
+    util::strongid_vector<raft_global_id, std::unique_ptr<Raftdef>> pRaftdefs;
+    util::strongid_vector<endocytosis_global_id, std::unique_ptr<Endocytosisdef>> pEndocytosisdefs;
+    util::strongid_vector<exocytosis_global_id, std::unique_ptr<Exocytosisdef>> pExocytosisdefs;
+    util::strongid_vector<vesbind_global_id, std::unique_ptr<VesBinddef>> pVesBinddefs;
+    util::strongid_vector<vesunbind_global_id, std::unique_ptr<VesUnbinddef>> pVesUnbinddefs;
+    util::strongid_vector<vessdiff_global_id, std::unique_ptr<VesSDiffdef>> pVesSDiffdefs;
+    util::strongid_vector<vessreac_global_id, std::unique_ptr<VesSReacdef>> pVesSReacdefs;
+    util::strongid_vector<raftsreac_global_id, std::unique_ptr<RaftSReacdef>> pRaftSReacdefs;
+    util::strongid_vector<raftendocytosis_global_id, std::unique_ptr<RaftEndocytosisdef>>
+        pRaftEndocytosisdefs;
+    util::strongid_vector<raftgen_global_id, std::unique_ptr<RaftGendef>> pRaftGendefs;
+    util::strongid_vector<raftdis_global_id, std::unique_ptr<RaftDisdef>> pRaftDisdefs;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-#endif
-// STEPS_SOLVER_STATEDEF_HPP
-
-// END
+}  // namespace steps::solver

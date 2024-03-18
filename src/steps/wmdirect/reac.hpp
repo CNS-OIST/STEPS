@@ -24,53 +24,35 @@
 
  */
 
-#ifndef STEPS_WMDIRECT_REAC_HPP
-#define STEPS_WMDIRECT_REAC_HPP 1
-
-
-// STL headers.
+#pragma once
 
 // STEPS headers.
 #include "kproc.hpp"
-#include "util/common.h"
 #include "solver/reacdef.hpp"
-#include "solver/types.hpp"
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace wmdirect {
-
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::wmdirect {
 
 // Forward declarations
 class Patch;
 class Comp;
 
-////////////////////////////////////////////////////////////////////////////////
-
-class Reac
-: public steps::wmdirect::KProc
-{
-
-public:
-
+class Reac: public KProc {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    Reac(steps::solver::Reacdef * rdef, Comp * comp);
+    Reac(solver::Reacdef* rdef, Comp* comp);
     ~Reac() override;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file) override;
+    void checkpoint(std::fstream& cp_file) override;
 
     /// restore data
-    void restore(std::fstream & cp_file) override;
+    void restore(std::fstream& cp_file) override;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
@@ -80,59 +62,53 @@ public:
 
     bool active() const;
 
-    inline bool inactive() const
-    { return ! active(); }
-
+    inline bool inactive() const {
+        return !active();
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
     void setupDeps() override;
-    bool depSpecComp(uint gidx, Comp * comp) override;
-    bool depSpecPatch(uint gidx, Patch * patch) override;
+    bool depSpecComp(solver::spec_global_id gidx, Comp* comp) override;
+    bool depSpecPatch(solver::spec_global_id gidx, Patch* patch) override;
     void reset() override;
     double rate() const override;
-    std::vector<uint> const & apply() override;
+    std::vector<solver::kproc_global_id> const& apply() override;
 
-    uint updVecSize() const noexcept  override
-    { return pUpdVec.size(); }
+    uint updVecSize() const noexcept override {
+        return pUpdVec.size();
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::Reacdef * defr() const noexcept override
-    { return pReacdef; }
+    inline solver::Reacdef* defr() const noexcept override {
+        return pReacdef;
+    }
 
     void resetCcst() override;
 
-    inline double c() const noexcept override
-    { return pCcst; }
+    inline double c() const noexcept override {
+        return pCcst;
+    }
 
-    inline double h() const noexcept override
-    { return rate() / pCcst; }
-
-    ////////////////////////////////////////////////////////////////////////
-
-private:
+    inline double h() const noexcept override {
+        return rate() / pCcst;
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-    steps::solver::Reacdef            * pReacdef;
-    Comp                              * pComp;
-    std::vector<uint>                   pUpdVec;
+  private:
+    ////////////////////////////////////////////////////////////////////////
+
+    solver::Reacdef* pReacdef;
+    Comp* pComp;
+    std::vector<solver::kproc_global_id> pUpdVec;
     /// Properly scaled reaction constant.
-    double                              pCcst{0.0};
+    double pCcst{0.0};
 
     ////////////////////////////////////////////////////////////////////////
-
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-#endif
-// STEPS_WMDIRECT_REAC_HPP
-
-// END
+}  // namespace steps::wmdirect

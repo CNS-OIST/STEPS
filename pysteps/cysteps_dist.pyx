@@ -1,4 +1,27 @@
-###___license_placeholder___###
+# cython:language_level=3str
+####################################################################################
+#
+#    STEPS - STochastic Engine for Pathway Simulation
+#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2003-2006 University of Antwerp, Belgium.
+#    
+#    See the file AUTHORS for details.
+#    This file is part of STEPS.
+#    
+#    STEPS is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License version 3,
+#    as published by the Free Software Foundation.
+#    
+#    STEPS is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#    GNU General Public License for more details.
+#    
+#    You should have received a copy of the GNU General Public License
+#    along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+#################################################################################   
+###
 
 """
 This file is the user-interface file for all objects related to STEPS 4. All
@@ -11,6 +34,10 @@ cimport mpi4py.MPI as MPI
 include "cysteps_mpi.pyx"
 from steps_dist_tetmesh cimport *
 from steps_dist_solver cimport *
+
+from typing import NamedTuple
+
+_py_MembraneResistivity = NamedTuple('MembraneResistivity', [('resistivity', float), ('reversal_potential', float)])
 
 # ======================================================================================================================
 # Python bindings to namespace steps::dist
@@ -390,7 +417,7 @@ cdef class _py_DistMesh(_py_Geom):
         else:
             return self.ptrx().getVertex(<vertex_global_id_t>(idx))
 
-    def getTetTetNeighb(self, GO idx, bool local=False):
+    def getTetTetNeighb(self, GO idx, bool local=False, bool owned=True):
         """
         Returns the indices of the four neighbouring tetrahedrons of tetrahedron with index idx.
         An index of UNKNOWN_TET indicates no neighbour (tetrahedron is on the mesh border).
@@ -402,13 +429,14 @@ cdef class _py_DistMesh(_py_Geom):
         Arguments:
         GO idx
         bool local
+        bool owned
 
         Return:
         list<GO, length = 4>
 
         """
         if local:
-            return [tl.get() if tl.valid() else UNKNOWN_TET for tl in self.ptrx().getTetTetNeighb(<tetrahedron_local_id_t>(<LO>(idx)))]
+            return [tl.get() if tl.valid() else UNKNOWN_TET for tl in self.ptrx().getTetTetNeighb(<tetrahedron_local_id_t>(<LO>(idx)), owned)]
         else:
             return [tg.get() if tg.valid() else UNKNOWN_TET for tg in self.ptrx().getTetTetNeighb(<tetrahedron_global_id_t>(idx))]
 
@@ -433,7 +461,7 @@ cdef class _py_DistMesh(_py_Geom):
         else:
             return [tg.get() for tg in self.ptrx().getTetTriNeighb(<tetrahedron_global_id_t>(idx))]
 
-    def getTriTetNeighb(self, GO idx, bool local=False):
+    def getTriTetNeighb(self, GO idx, bool local=False, bool owned=True):
         """
         Returns the indices of the neighbouring tetrahedrons of triangle with
         index idx. If the triangle is on the mesh boundary, only one tetrahedron is returned
@@ -445,15 +473,64 @@ cdef class _py_DistMesh(_py_Geom):
         Arguments:
         GO idx
         bool local
+        bool owned
 
         Return:
         list<GO>
 
         """
         if local:
-            return [tl.get() for tl in self.ptrx().getTriTetNeighb(<triangle_local_id_t>(<LO>(idx)))]
+            return [tl.get() for tl in self.ptrx().getTriTetNeighb(<triangle_local_id_t>(<LO>(idx)), owned)]
         else:
             return [tg.get() for tg in self.ptrx().getTriTetNeighb(<triangle_global_id_t>(idx))]
+
+    def getTriTriNeighbs(self, GO idx, bool local=False, bool owned=True):
+        """
+        Returns the indices of the neighbouring triangles of triangle with
+        index idx.
+
+        Syntax::
+
+            getTriTriNeighbs(idx)
+
+        Arguments:
+        GO idx
+        bool local
+        bool owned
+
+        Return:
+        list<GO>
+
+        """
+        if local:
+            return [tl.get() for tl in self.ptrx().getTriTriNeighbs(<triangle_local_id_t>(<LO>(idx)), owned)]
+        else:
+            return [tg.get() for tg in self.ptrx().getTriTriNeighbs(<triangle_global_id_t>(idx))]
+
+    def getTriTriNeighb(self, GO idx, _py_DistPatch patch, bool local=False, bool owned=True):
+        """
+        Returns the indices of the neighbouring triangles of triangle with
+        index idx within a given patch.
+
+        Syntax::
+
+            getTriTriNeighb(idx, patch)
+
+        Arguments:
+        GO idx
+        DistPatch patch
+        bool local
+        bool owned
+
+        Return:
+        list<GO>
+
+        """
+        if local:
+            return [tl.get() for tl in self.ptrx().getTriTriNeighbs(<triangle_local_id_t>(<LO>(idx)), deref(patch.ptrx()), owned)]
+        else:
+            return [tg.get() for tg in self.ptrx().getTriTriNeighbs(<triangle_global_id_t>(idx), deref(patch.ptrx()))]
+
 
     def getBoundMin(self, bool local=False):
         """
@@ -564,6 +641,27 @@ cdef class _py_DistMesh(_py_Geom):
         else:
             globalInd = self.ptrx().findTetByPoint(p)
             return globalInd.get() if globalInd.valid() else UNKNOWN_TET
+
+    def isPointInTet(self, std.vector[double] p, GO tidx, bool local=False):
+        """
+        Check if point belongs to the tetrahedron or not
+
+        Syntax::
+
+            isPointInTet(p, tidx)
+
+        Arguments:
+        list<float, length = 3> p
+        int tetrahedron tidx
+        bool local
+
+        Return:
+        bool
+        """
+        if local:
+            return self.ptrx().isPointInTet(p, tetrahedron_local_id_t(<LO>(tidx)))
+        else:
+            return self.ptrx().isPointInTet(p, tetrahedron_global_id_t(tidx))
 
     def getTaggedTetrahedrons(self, str tag, bool local=False, bool owned=True):
         """
@@ -714,7 +812,7 @@ cdef class _py_DistMesh(_py_Geom):
         Return:
         int
         """
-        return self.ptrx().getGlobalIndex(tetrahedron_local_id_t(idx))
+        return self.ptrx().getGlobalIndex(tetrahedron_local_id_t(idx)).get()
 
     def getTriGlobalIndex(self, LO idx):
         """
@@ -730,7 +828,7 @@ cdef class _py_DistMesh(_py_Geom):
         Return:
         int
         """
-        return self.ptrx().getGlobalIndex(triangle_local_id_t(idx))
+        return self.ptrx().getGlobalIndex(triangle_local_id_t(idx)).get()
 
     def getVertGlobalIndex(self, LO idx):
         """
@@ -746,7 +844,7 @@ cdef class _py_DistMesh(_py_Geom):
         Return:
         int
         """
-        return self.ptrx().getGlobalIndex(vertex_local_id_t(idx))
+        return self.ptrx().getGlobalIndex(vertex_local_id_t(idx)).get()
 
     def getAllTetIndices(self, bool local=False, bool owned=True):
         """
@@ -835,8 +933,7 @@ cdef class _py_DistMesh(_py_Geom):
         Args:
             points: A 2-D NumPy array (/memview) of points in the 3D space, 
                     where each element contains the 3 point coordinates
-            int sampling: not specified or sampling < 1 --> use deterministic method
-                          sampling > 0 --> use montecarlo method with sampling points
+            int sampling: any value --> deterministic method (montecarlo not implemented for STEPS4)
 
         Returns:
             A list of lists of tuples representing the intersected tetrahedrons, one element per line segment. 
@@ -845,6 +942,26 @@ cdef class _py_DistMesh(_py_Geom):
         if (points.strides[0] != 24 or points.strides[1] != 8):
             raise Exception("Wrong memory layout for points, np array should be [pts,3] and row major")
         data = self.ptrx().intersect(&points[0][0], points.shape[0], sampling)
+        return [[(t.first.get(), t.second) for t in row] for row in data]
+
+    def intersectIndependentSegments(self, double[:, :] points, int sampling=-1):
+        """
+        Similar to the intersect method but here we deal with independent segments, i.e.
+        every two points we have a segment not related to previous or following ones.
+        E.g. seg0 = (points[0], points[1]), seg1 = (points[2], points[3]), etc.
+
+        Args:
+            points: A 2-D NumPy array (/memview) of points in the 3D space, 
+                    where each element contains the 3 point coordinates
+            int sampling: any value --> deterministic method (montecarlo not implemented for STEPS4)
+
+        Returns:
+            A list where each position contains the list of intersected tets (and respective
+            intersection ratio) of each line segment.
+        """
+        if (points.strides[0] != 24 or points.strides[1] != 8):
+            raise Exception("Wrong memory layout for points, np array should be [pts,3] and row major")
+        data = self.ptrx().intersectIndependentSegments(&points[0][0], points.shape[0], sampling)
         return [[(t.first.get(), t.second) for t in row] for row in data]
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -1073,6 +1190,7 @@ cdef class _py_DistPatch(_py_Patch):
             steps.geom.DistComp ocomp
             int physical_tag
         """
+        assert icomp is not None
         cdef std.vector[triangle_global_id_t] tri_indices
         cdef std.vector[triangle_local_id_t] local_tri_indices
         if physical_tag is None:
@@ -1080,7 +1198,7 @@ cdef class _py_DistPatch(_py_Patch):
                 self._ptr = new DistPatch(
                     patch_name(to_std_string(id)),
                     mesh.ptrx()[0],
-                    icomp.ptrx() if icomp is not None else NULL,
+                    deref(icomp.ptrx()),
                     ocomp.ptrx() if ocomp is not None else NULL
                 )
             elif local:
@@ -1091,7 +1209,7 @@ cdef class _py_DistPatch(_py_Patch):
                     patch_name(to_std_string(id)),
                     mesh.ptrx()[0],
                     local_tri_indices,
-                    icomp.ptrx() if icomp is not None else NULL,
+                    deref(icomp.ptrx()),
                     ocomp.ptrx() if ocomp is not None else NULL
                 )
             else:
@@ -1102,7 +1220,7 @@ cdef class _py_DistPatch(_py_Patch):
                     patch_name(to_std_string(id)),
                     mesh.ptrx()[0],
                     tri_indices,
-                    icomp.ptrx() if icomp is not None else NULL,
+                    deref(icomp.ptrx()),
                     ocomp.ptrx() if ocomp is not None else NULL
                 )
         else:
@@ -1110,7 +1228,7 @@ cdef class _py_DistPatch(_py_Patch):
                 patch_name(to_std_string(id)),
                 mesh.ptrx()[0],
                 patch_physical_tag(physical_tag),
-                icomp.ptrx() if icomp is not None else NULL,
+                deref(icomp.ptrx()),
                 ocomp.ptrx() if ocomp is not None else NULL
             )
 
@@ -1263,16 +1381,6 @@ cdef class _py_DistMemb(_py_Memb):
 cimport steps_dist_solver
 from steps_dist_solver cimport TetOpSplitBase, TetOpSplit
 
-IF USE_PETSC:
-    from steps_dist_solver cimport KSPNormType
-
-    cdef class _py_KSPNormType:
-        KSP_NORM_DEFAULT = steps_dist_solver.KSP_NORM_DEFAULT
-        KSP_NORM_NONE = steps_dist_solver.KSP_NORM_NONE
-        KSP_NORM_PRECONDITIONED = steps_dist_solver.KSP_NORM_PRECONDITIONED
-        KSP_NORM_UNPRECONDITIONED = steps_dist_solver.KSP_NORM_UNPRECONDITIONED
-        KSP_NORM_NATURAL = steps_dist_solver.KSP_NORM_NATURAL
-
 cdef class _py_SSAMethod:
     SSA = 0
     RSSA = 1
@@ -1294,7 +1402,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         return <TetOpSplitBase*> self._ptr
 
     def __init__(self, _py_Model model, _py_DistMesh mesh, _py_RNG rng, SSAMethod=_py_SSAMethod.SSA,
-            searchMethod=_py_SearchMethod.DIRECT, bool indepKProcs=False):
+            searchMethod=_py_SearchMethod.GIBSON_BRUCK, bool indepKProcs=False, bool isEfield=True):
         """
         Construction::
 
@@ -1311,6 +1419,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         steps.sim.SSAMethod SSAMethod
         steps.sim.NextEventSearchMethod searchMethod
         bool indepKProcs
+        bool isEfield
 
         """
         if model == None:
@@ -1320,20 +1429,28 @@ cdef class _py_DistTetOpSplitP(_py__base):
         if rng == None:
             raise TypeError('The RNG object is empty.')
 
+        # TODO Remove this after direct method and RSSA have been properly tested
+        if SSAMethod != _py_SSAMethod.SSA or searchMethod != _py_SearchMethod.GIBSON_BRUCK:
+            raise ValueError('Currently, the only supported options are SSAMethod=SSA with searchMethod=GIBSON_BRUCK')
+        # End TODO
+
+        if SSAMethod==_py_SSAMethod.RSSA and searchMethod==_py_SearchMethod.GIBSON_BRUCK:
+            raise ValueError('RSSA cannot be used in conjunction with Gibson Bruck')
+
         if SSAMethod == _py_SSAMethod.SSA:
             if searchMethod == _py_SearchMethod.DIRECT:
                 self._ptr = new TetOpSplit[steps_dist_solver.SSAMethod_SSA, steps_dist_solver.NextEventSearchMethod_Direct](
-                    deref(model.ptr()), deref(mesh.ptrx()), rng.ptr(), indepKProcs
+                    deref(model.ptr()), deref(mesh.ptrx()), rng.ptr(), indepKProcs, isEfield
                 )
             elif searchMethod == _py_SearchMethod.GIBSON_BRUCK:
                 self._ptr = new TetOpSplit[steps_dist_solver.SSAMethod_SSA, steps_dist_solver.NextEventSearchMethod_GibsonBruck](
-                    deref(model.ptr()), deref(mesh.ptrx()), rng.ptr(), indepKProcs
+                    deref(model.ptr()), deref(mesh.ptrx()), rng.ptr(), indepKProcs, isEfield
                 )
             else:
                 raise ValueError(f'Unknown next event search method: {searchMethod}')
         elif SSAMethod == _py_SSAMethod.RSSA:
             self._ptr = new TetOpSplit[steps_dist_solver.SSAMethod_RSSA, steps_dist_solver.NextEventSearchMethod_Direct](
-                deref(model.ptr()), deref(mesh.ptrx()), rng.ptr(), indepKProcs
+                deref(model.ptr()), deref(mesh.ptrx()), rng.ptr(), indepKProcs, isEfield
             )
         else:
             raise ValueError(f'Unknown SSA method: {SSAMethod}')
@@ -1382,7 +1499,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         """
         return self.ptrx().getDiffExtent(local)
 
-    def getCompCount(self, str comp, str spec):
+    def getCompSpecCount(self, str comp, str spec):
         """
         Returns the number of molecules of a species with identifier string spec 
         in compartment with identifier string comp.
@@ -1392,7 +1509,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
 
         Syntax::
             
-            getCompCount(comp, spec)
+            getCompSpecCount(comp, spec)
             
         Arguments:
         string comp
@@ -1402,9 +1519,9 @@ cdef class _py_DistTetOpSplitP(_py__base):
         float
 
         """
-        return self.ptrx().getCompCount(to_std_string(comp), to_std_string(spec))
+        return self.ptrx().getCompSpecCount(to_std_string(comp), to_std_string(spec))
 
-    def getCompConc(self, str comp, str spec):
+    def getCompSpecConc(self, str comp, str spec):
         """
         Returns the concentration (in Molar units) of species with identifier string spec 
         in compartment with identifier string comp.
@@ -1415,7 +1532,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
 
         Syntax::
             
-            getCompConc(comp, spec)
+            getCompSpecConc(comp, spec)
             
         Arguments:
         string comp
@@ -1425,9 +1542,9 @@ cdef class _py_DistTetOpSplitP(_py__base):
         float
 
         """
-        return self.ptrx().getCompConc(to_std_string(comp), to_std_string(spec))
+        return self.ptrx().getCompSpecConc(to_std_string(comp), to_std_string(spec))
 
-    def setCompCount(self, str comp, str spec, double n, distributionMethod=_py_DistributionMethod.UNIFORM):
+    def setCompSpecCount(self, str comp, str spec, double n, distributionMethod=_py_DistributionMethod.UNIFORM):
         """
         Set the number of molecules of a species with identifier string spec 
         in compartment with identifier string comp.
@@ -1446,7 +1563,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
 
         Syntax::
             
-            setCompCount(comp, spec, n, distributionMethod)
+            setCompSpecCount(comp, spec, n, distributionMethod)
             
         Arguments:
         string comp
@@ -1458,9 +1575,9 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().setCompCount(to_std_string(comp), to_std_string(spec), n, distributionMethod)
+        self.ptrx().setCompSpecCount(to_std_string(comp), to_std_string(spec), n, distributionMethod)
 
-    def setCompConc(self, str comp, str spec, double conc, distributionMethod=_py_DistributionMethod.UNIFORM):
+    def setCompSpecConc(self, str comp, str spec, double conc, distributionMethod=_py_DistributionMethod.UNIFORM):
         """
         Sets the concentration (in Molar units) of species with identifier string spec 
         in compartment with identifier string comp to conc. In a discrete solver the 
@@ -1481,7 +1598,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
 
         Syntax::
 
-            setCompConc(comp, spec, conc, distributionMethod)
+            setCompSpecConc(comp, spec, conc, distributionMethod)
             
         Arguments:
         string comp
@@ -1493,9 +1610,9 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().setCompConc(to_std_string(comp), to_std_string(spec), conc, distributionMethod)
+        self.ptrx().setCompSpecConc(to_std_string(comp), to_std_string(spec), conc, distributionMethod)
 
-    def getPatchCount(self, str patch, str spec):
+    def getPatchSpecCount(self, str patch, str spec):
         """
         Returns the number of molecules of species with identifier string spec in patch 
         with identifier string pat.Note: in a mesh-based simulation this 
@@ -1503,7 +1620,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
 
         Syntax::
             
-            getPatchCount(patch, spec)
+            getPatchSpecCount(patch, spec)
             
         Arguments:
         string patch
@@ -1513,9 +1630,9 @@ cdef class _py_DistTetOpSplitP(_py__base):
         float
 
         """
-        return self.ptrx().getPatchCount(to_std_string(patch), to_std_string(spec))
+        return self.ptrx().getPatchSpecCount(to_std_string(patch), to_std_string(spec))
 
-    def setPatchCount(self, str patch, str spec, double n, distributionMethod=_py_DistributionMethod.UNIFORM):
+    def setPatchSpecCount(self, str patch, str spec, double n, distributionMethod=_py_DistributionMethod.UNIFORM):
         """
         Sets the number of molecules of species with identifier string spec in patch 
         with identifier string pat to n.
@@ -1531,7 +1648,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
 
         Syntax::
 
-            setPatchCount(patch, spec, n, distributionMethod)
+            setPatcSpechCount(patch, spec, n, distributionMethod)
             
         Arguments:
         string patch
@@ -1543,7 +1660,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         float
 
         """
-        self.ptrx().setPatchCount(to_std_string(patch), to_std_string(spec), n, distributionMethod)
+        self.ptrx().setPatchSpecCount(to_std_string(patch), to_std_string(spec), n, distributionMethod)
 
     def getPatchMaxV(self, str patch):
         """
@@ -1581,6 +1698,120 @@ cdef class _py_DistTetOpSplitP(_py__base):
 
         """
         self.ptrx().setMembPotential(to_std_string(memb), v)
+
+    def setMembRes(self, str memb, double ro, double vrev):
+        """
+        Sets the surface electrical resistivity ro (in ohm.m^2) of the membrane with string identifier memb. Reversal potential vrev is required in Volts.
+        
+        Syntax::
+        			
+        	setMembRes(memb, ro, vrev)
+        		
+        Arguments:
+        string memb
+        float ro
+        float vrev
+
+        Return:
+        None
+
+        """
+        self.ptrx().setMembRes(to_std_string(memb), ro, vrev)
+
+    def getMembRes(self, str membrane):
+        """
+        Gets the resistivity and the reversal potential of the membrane 
+        with string identifier membrane.
+
+        Syntax::
+        			
+        	getMembRes(membrane)
+        		
+        Arguments:
+        string membrane
+
+        Return:
+        pair: (double, double)
+
+        """
+        cdef MembraneResistivity val = self.ptrx().getMembRes(to_std_string(membrane))
+        return _py_MembraneResistivity(val.resistivity, val.reversal_potential)
+
+    def getTriCapac(self, GO idx, bool local=False):
+        """
+        Returns the specific membrane capacitance (in farad / m^2) of triangle with index idx.
+
+        Syntax::
+
+            getTriCapac(idx)
+
+        Arguments:
+        index_t idx
+        bool local
+
+        Return:
+        float
+
+        """
+        return self.ptrx().getTriCapac(idx, local)
+
+    def setTriCapac(self, GO idx, double cm, bool local=False):
+        """
+        Sets the specific membrane capacitance (in farad / m^2) of triangle with index idx.
+
+        Syntax::
+
+            setTriCapac(idx, cm)
+
+        Arguments:
+        index_t idx
+        float cm
+        bool local
+
+        Return:
+        None
+
+        """
+        self.ptrx().setTriCapac(idx, cm, local)
+
+    def getTriRes(self, GO idx, bool local=False):
+        """
+        Returns the membrane resistivity (in ohm m^2) and reversal potential (in V) for the leak current in triangle with index idx.
+
+        Syntax::
+
+            getTriRes(idx)
+
+        Arguments:
+        index_t idx
+        bool local
+
+        Return:
+        Tuple[float, float]
+
+        """
+        cdef MembraneResistivity val = self.ptrx().getTriRes(idx, local)
+        return _py_MembraneResistivity(val.resistivity, val.reversal_potential)
+
+    def setTriRes(self, GO idx, double res, double erev, bool local=False):
+        """
+        Sets the membrane resistivity (in ohm m^2) and reversal potential (in V) for the leak current in triangle with index idx.
+
+        Syntax::
+
+            setTriRes(idx, res, erev)
+
+        Arguments:
+        index_t idx
+        float res
+        float erev
+        bool local
+
+        Return:
+        None
+
+        """
+        self.ptrx().setTriRes(idx, res, erev, local)
 
     def getVertIClamp(self, GO idx, bool local=False):
         """
@@ -1620,6 +1851,39 @@ cdef class _py_DistTetOpSplitP(_py__base):
 
         """
         self.ptrx().setVertIClamp(idx, current, local)
+
+    IF USE_PETSC:
+        def getTriOhmicErev(self, GO idx, str ohmic_current, bool local=False):
+            """
+            Gets the ohmic current reversal potential of triangle in volts.
+
+            Arguments:
+                idx: Index of the triangle
+                ohmic_current: name of the ohmic current
+                local: whether the triangle index is local to the process or global to the mesh
+
+            Return:
+                double
+            """
+            return self.ptrx().getTriOhmicErev(idx, to_std_string(ohmic_current), local)
+
+        def getBatchTriOhmicErevsNP(self, GO[:] triangles, str ohmic_current, double[:] rv, bool local=False):
+            """
+            """
+            self.ptrx().getBatchTriOhmicErevsNP(&triangles[0], triangles.shape[0], to_std_string(ohmic_current), &rv[0], rv.shape[0], local)
+
+
+        def setTriOhmicErev(self, GO idx, str ohmic_current, double reversal_potential, bool local=False):
+            """
+            Sets the ohmic current reversal potential of triangle in volts.
+
+            Arguments:
+                idx: Index of the triangle
+                ohmic_current: name of the ohmic current
+                reversal_potential: value in volts to assign
+                local: whether the triangle index is local to the process or global to the mesh
+            """
+            return self.ptrx().setTriOhmicErev(idx, to_std_string(ohmic_current), reversal_potential, local)
 
     def getSolverName(self):
         """
@@ -1735,14 +1999,14 @@ cdef class _py_DistTetOpSplitP(_py__base):
         """
         return self.ptrx().getTime()
 
-    def getTetCount(self, GO idx, str spec, bool local=False):
+    def getTetSpecCount(self, GO idx, str spec, bool local=False):
         """
         Returns the number of molecules of species with identifier string spec 
         in the tetrahedral element with index idx.
 
         Syntax::
             
-            getTetCount(idx, spec)
+            getTetSpecCount(idx, spec)
             
         Arguments:
         GO idx
@@ -1753,16 +2017,16 @@ cdef class _py_DistTetOpSplitP(_py__base):
         int
 
         """
-        return self.ptrx().getTetCount(idx, to_std_string(spec), local)
+        return self.ptrx().getTetSpecCount(idx, to_std_string(spec), local)
 
-    def getTetConc(self, GO idx, str spec, bool local=False):
+    def getTetSpecConc(self, GO idx, str spec, bool local=False):
         """
         Returns the concentration (in Molar units) of species with identifier 
         string spec in a tetrahedral element with index idx.
 
         Syntax::
             
-            getTetConc(idx, spec)
+            getTetSpecConc(idx, spec)
             
         Arguments:
         GO idx
@@ -1773,16 +2037,16 @@ cdef class _py_DistTetOpSplitP(_py__base):
         float
 
         """
-        return self.ptrx().getTetConc(idx, to_std_string(spec), local)
+        return self.ptrx().getTetSpecConc(idx, to_std_string(spec), local)
 
-    def setTetCount(self, GO idx, str spec, double n, bool local=False):
+    def setTetSpecCount(self, GO idx, str spec, double n, bool local=False):
         """
         Sets the number of molecules of species with identifier string spec in 
         tetrahedral element with index idx to n.
 
         Syntax::
             
-            setTetCount(idx, spec, n)
+            setTetSpecCount(idx, spec, n)
             
         Arguments:
         GO idx
@@ -1794,9 +2058,9 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().setTetCount(idx, to_std_string(spec), n, local)
+        self.ptrx().setTetSpecCount(idx, to_std_string(spec), n, local)
 
-    def setTetConc(self, GO idx, str spec, double c, bool local=False):
+    def setTetSpecConc(self, GO idx, str spec, double c, bool local=False):
         """
         Sets the concentration (in Molar units) of species with identifier string spec 
         in a tetrahedral element with index idx to conc.This continuous value must be 
@@ -1807,7 +2071,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
 
         Syntax::
             
-            setTetConc(idx, spec, c)
+            setTetSpecConc(idx, spec, c)
             
         Arguments:
         GO idx
@@ -1819,16 +2083,16 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().setTetConc(idx, to_std_string(spec), c, local)
+        self.ptrx().setTetSpecConc(idx, to_std_string(spec), c, local)
 
-    def getTriCount(self, GO idx, str spec, bool local=False):
+    def getTriSpecCount(self, GO idx, str spec, bool local=False):
         """
         Returns the number of molecules of species with identifier string spec 
         in the triangular element with index idx.
 
         Syntax::
             
-            getTriCount(idx, spec)
+            getTriSpecCount(idx, spec)
             
         Arguments:
         GO idx
@@ -1839,16 +2103,16 @@ cdef class _py_DistTetOpSplitP(_py__base):
         float
 
         """
-        return self.ptrx().getTriCount(idx, to_std_string(spec), local)
+        return self.ptrx().getTriSpecCount(idx, to_std_string(spec), local)
 
-    def setTriCount(self, GO idx, str spec, double n, bool local=False):
+    def setTriSpecCount(self, GO idx, str spec, double n, bool local=False):
         """
         Sets the number of molecules of species with identifier string spec in 
         triangular element with index idx to n. 
 
         Syntax::
             
-            setTriCount(idx, spec, n)
+            setTriSpecCount(idx, spec, n)
             
         Arguments:
         GO idx
@@ -1860,7 +2124,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().setTriCount(idx, to_std_string(spec), n, local)
+        self.ptrx().setTriSpecCount(idx, to_std_string(spec), n, local)
 
     def getVertV(self, GO idx, bool local=False):
         """
@@ -1981,13 +2245,13 @@ cdef class _py_DistTetOpSplitP(_py__base):
         """
         self.ptrx().setPatchSReacK(to_std_string(patch), to_std_string(reac), kf)
 
-    def getBatchTetCounts(self, std.vector[GO] tets, str spec, bool local=False):
+    def getBatchTetSpecCounts(self, std.vector[GO] tets, str spec, bool local=False):
         """
         Get the counts of a species s in a list of tetrahedrons.
 
         Syntax::
 
-            getBatchTetCounts(tets, spec)
+            getBatchTetSpecCounts(tets, spec)
 
         Arguments:
         list<GO> tets
@@ -1998,15 +2262,15 @@ cdef class _py_DistTetOpSplitP(_py__base):
         list<double>
 
         """
-        return self.ptrx().getBatchTetCounts(tets, to_std_string(spec), local)
+        return self.ptrx().getBatchTetSpecCounts(tets, to_std_string(spec), local)
 
-    def setBatchTetCounts(self, std.vector[GO] tets, str spec, std.vector[double] counts, bool local=False):
+    def setBatchTetSpecCounts(self, std.vector[GO] tets, str spec, std.vector[double] counts, bool local=False):
         """
         Set the counts of a species s in a list of tetrahedrons individually.
 
         Syntax::
 
-            setBatchTetCounts(tets, spec, counts)
+            setBatchTetSpecCounts(tets, spec, counts)
 
         Arguments:
         list<GO> tets
@@ -2018,15 +2282,15 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().setBatchTetCounts(tets, to_std_string(spec), counts, local)
+        self.ptrx().setBatchTetSpecCounts(tets, to_std_string(spec), counts, local)
 
-    def getBatchTriCounts(self, std.vector[GO] tris, str spec, bool local=False):
+    def getBatchTriSpecCounts(self, std.vector[GO] tris, str spec, bool local=False):
         """
         Get the counts of a species s in a list of triangles.
 
         Syntax::
 
-            getBatchTriCounts(tris, spec)
+            getBatchTriSpecCounts(tris, spec)
 
         Arguments:
         list<GO> tris
@@ -2037,15 +2301,15 @@ cdef class _py_DistTetOpSplitP(_py__base):
         list<double>
 
         """
-        return self.ptrx().getBatchTriCounts(tris, to_std_string(spec), local)
+        return self.ptrx().getBatchTriSpecCounts(tris, to_std_string(spec), local)
 
-    def setBatchTriCounts(self, std.vector[GO] tris, str spec, std.vector[double] counts, bool local=False):
+    def setBatchTriSpecCounts(self, std.vector[GO] tris, str spec, std.vector[double] counts, bool local=False):
         """
         Set the counts of a species s in a list of triangles.
 
         Syntax::
 
-            setBatchTriCounts(tris, spec, counts)
+            setBatchTriSpecCounts(tris, spec, counts)
 
         Arguments:
         list<GO> tris
@@ -2057,15 +2321,15 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        return self.ptrx().setBatchTriCounts(tris, to_std_string(spec), counts, local)
+        return self.ptrx().setBatchTriSpecCounts(tris, to_std_string(spec), counts, local)
 
-    def setBatchTetConcs(self, std.vector[GO] tets, str spec, std.vector[double] concs, bool local=False):
+    def setBatchTetSpecConcs(self, std.vector[GO] tets, str spec, std.vector[double] concs, bool local=False):
         """
         Set the concentration of a species s in a list of tetrahedrons individually.
 
         Syntax::
 
-            setBatchTetConcs(tets, spec, concs)
+            setBatchTetSpecConcs(tets, spec, concs)
 
         Arguments:
         list<GO> tets
@@ -2077,15 +2341,15 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().setBatchTetConcs(tets, to_std_string(spec), concs, local)
+        self.ptrx().setBatchTetSpecConcs(tets, to_std_string(spec), concs, local)
 
-    def getBatchTetConcs(self, std.vector[GO] tets, str spec, bool local=False):
+    def getBatchTetSpecConcs(self, std.vector[GO] tets, str spec, bool local=False):
         """
         Get the individual concentration of a species s in a list of tetrahedrons.
 
         Syntax::
 
-            getBatchTetConcs(tets, spec)
+            getBatchTetSpecConcs(tets, spec)
 
         Arguments:
         list<GO> tets
@@ -2096,17 +2360,17 @@ cdef class _py_DistTetOpSplitP(_py__base):
         list<double>
 
         """
-        return self.ptrx().getBatchTetConcs(tets, to_std_string(spec), local)
+        return self.ptrx().getBatchTetSpecConcs(tets, to_std_string(spec), local)
 
     # # ---------------------------------------------------------------------------------
     # # NUMPY section - we accept numpy arrays and generically typed memory-views
     # # ---------------------------------------------------------------------------------
-    def getBatchTetCountsNP(self, GO[:] indices, str spec, double[:] counts, bool local=False):
+    def getBatchTetSpecCountsNP(self, GO[:] indices, str spec, double[:] counts, bool local=False):
         """
         Get the counts of a species s in a list of tetrahedrons.
 
         Syntax::
-            getBatchTetCountsNP(indices, spec, counts)
+            getBatchTetSpecCountsNP(indices, spec, counts)
 
         Arguments:
         numpy.array<GO> indices
@@ -2118,14 +2382,14 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().getBatchTetCountsNP(&indices[0], indices.shape[0], to_std_string(spec), &counts[0], counts.shape[0], local)
+        self.ptrx().getBatchTetSpecCountsNP(&indices[0], indices.shape[0], to_std_string(spec), &counts[0], counts.shape[0], local)
 
-    def setBatchTetCountsNP(self, GO[:] indices, str spec, double[:] counts, bool local=False):
+    def setBatchTetSpecCountsNP(self, GO[:] indices, str spec, double[:] counts, bool local=False):
         """
         Set the counts of a species s in a list of tetrahedrons.
 
         Syntax::
-            setBatchTetCountsNP(indices, spec, counts)
+            setBatchTetSpecCountsNP(indices, spec, counts)
 
         Arguments:
         numpy.array<GO> indices
@@ -2137,15 +2401,15 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().setBatchTetCountsNP(&indices[0], indices.shape[0], to_std_string(spec), &counts[0],
+        self.ptrx().setBatchTetSpecCountsNP(&indices[0], indices.shape[0], to_std_string(spec), &counts[0],
                 counts.shape[0], local)
 
-    def getBatchTetConcsNP(self, GO[:] indices, str spec, double[:] concs, bool local=False):
+    def getBatchTetSpecConcsNP(self, GO[:] indices, str spec, double[:] concs, bool local=False):
         """
         Get the individual concentration of a species s in a list of tetrahedrons.
 
         Syntax::
-            getBatchTetCountsNP(indices, spec, concs)
+            getBatchTetSpecCountsNP(indices, spec, concs)
 
         Arguments:
         numpy.array<GO> indices
@@ -2157,14 +2421,14 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().getBatchTetConcsNP(&indices[0], indices.shape[0], to_std_string(spec), &concs[0], concs.shape[0], local)
+        self.ptrx().getBatchTetSpecConcsNP(&indices[0], indices.shape[0], to_std_string(spec), &concs[0], concs.shape[0], local)
 
-    def setBatchTetConcsNP(self, GO[:] indices, str spec, double[:] concs, bool local=False):
+    def setBatchTetSpecConcsNP(self, GO[:] indices, str spec, double[:] concs, bool local=False):
         """
         Set the concetration of a species s in a list of tetrahedrons.
 
         Syntax::
-            setBatchTetConcsNP(indices, spec, concs)
+            setBatchTetSpecConcsNP(indices, spec, concs)
 
         Arguments:
         numpy.array<GO> indices
@@ -2176,15 +2440,15 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().setBatchTetConcsNP(&indices[0], indices.shape[0], to_std_string(spec), &concs[0],
+        self.ptrx().setBatchTetSpecConcsNP(&indices[0], indices.shape[0], to_std_string(spec), &concs[0],
                 concs.shape[0], local)
 
-    def getBatchTriCountsNP(self, GO[:] indices, str spec, double[:] counts, bool local=False):
+    def getBatchTriSpecCountsNP(self, GO[:] indices, str spec, double[:] counts, bool local=False):
         """
         Get the counts of a species s in a list of triangles.
 
         Syntax::
-            getBatchTriCountsNP(indices, spec, counts)
+            getBatchTriSpecCountsNP(indices, spec, counts)
 
         Arguments:
         numpy.array<GO> indices
@@ -2196,14 +2460,14 @@ cdef class _py_DistTetOpSplitP(_py__base):
             None
 
         """
-        self.ptrx().getBatchTriCountsNP(&indices[0], indices.shape[0], to_std_string(spec), &counts[0], counts.shape[0], local)
+        self.ptrx().getBatchTriSpecCountsNP(&indices[0], indices.shape[0], to_std_string(spec), &counts[0], counts.shape[0], local)
 
-    def setBatchTriCountsNP(self, GO[:] indices, str spec, double[:] counts, bool local=False):
+    def setBatchTriSpecCountsNP(self, GO[:] indices, str spec, double[:] counts, bool local=False):
         """
         Set the counts of a species s in a list of triangles.
 
         Syntax::
-            getBatchTriCountsNP(indices, spec, counts)
+            getBatchTriSpecCountsNP(indices, spec, counts)
 
         Arguments:
         numpy.array<GO> indices
@@ -2215,7 +2479,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
             None
 
         """
-        self.ptrx().setBatchTriCountsNP(&indices[0], indices.shape[0], to_std_string(spec), &counts[0],
+        self.ptrx().setBatchTriSpecCountsNP(&indices[0], indices.shape[0], to_std_string(spec), &counts[0],
                 counts.shape[0], local)
 
     def getBatchVertVsNP(self, GO[:] indices, double[:] voltages, bool local=False):
@@ -2310,7 +2574,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         """
         self.ptrx().getBatchTriGHKIsNP(&indices[0], indices.shape[0], to_std_string(ghk), &currents[0], currents.shape[0], local)
 
-    def setDiffBoundaryDiffusionActive(self, str diffb, str spec, bool act):
+    def setDiffBoundarySpecDiffusionActive(self, str diffb, str spec, bool act):
         """
         Activates or inactivates diffusion across a diffusion boundary for a species.
                      
@@ -2327,9 +2591,9 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().setDiffBoundaryDiffusionActive(to_std_string(diffb), to_std_string(spec), act)
+        self.ptrx().setDiffBoundarySpecDiffusionActive(to_std_string(diffb), to_std_string(spec), act)
 
-    def getDiffBoundaryDiffusionActive(self, str diffb, str spec):
+    def getDiffBoundarySpecDiffusionActive(self, str diffb, str spec):
         """
         Returns whether diffusion is active across a diffusion boundary for a species.
                      
@@ -2345,7 +2609,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         bool
 
         """
-        return self.ptrx().getDiffBoundaryDiffusionActive(to_std_string(diffb), to_std_string(spec))
+        return self.ptrx().getDiffBoundarySpecDiffusionActive(to_std_string(diffb), to_std_string(spec))
 
     def setDiffApplyThreshold(self, int threshold):
         """
@@ -2446,27 +2710,27 @@ cdef class _py_DistTetOpSplitP(_py__base):
             """
             return self.ptrx().getEfieldDT()
 
-        def setEfieldTolerances(self, double atol=1e-50, double rtol=1e-8, KSPNormType norm_type = steps_dist_solver.KSP_NORM_UNPRECONDITIONED):
+        def setPetscOptions(self, str options):
             """
-            Set the absolute and relative tolerances for the E-field solver and on which norm they should be applied.
-            See https://petsc.org/release/docs/manual/ksp/#convergence-tests
+            set PETSc options
+
+            - for the ksp: https://petsc.org/release/docs/manualpages/KSP/KSPSetFromOptions.html
+            - for the pc: https://petsc.org/release/docs/manualpages/PC/PCSetFromOptions.html
 
             is_unpreconditioned_norm=True is on the unpreconditioned norm, False is on the preconditioned norm
 
             Syntax::
 
-                setEFielTolerances(atol, rtol)
+                setPetscOptions("-option1 val1 -option2 val2")
 
             Arguments:
-            float atol
-            float rtol
-            bool is_unpreconditioned_norm
+            string options: the string with the options in the form: "-option1 val1 -option2 val2"
 
             Return:
             None
 
             """
-            self.ptrx().setEfieldTolerances(atol, rtol, norm_type)
+            self.ptrx().setPetscOptions(to_std_string(options))
 
     def setMembIClamp(self, str memb, float current):
         """
@@ -2485,4 +2749,21 @@ cdef class _py_DistTetOpSplitP(_py__base):
 
         """
         self.ptrx().setMembIClamp(to_std_string(memb), current)
+
+    def dumpDepGraphToFile(self, str path):
+        """
+        Dump the kproc dependency graph in a file specified by path
+
+        Syntax::
+
+            dumpDepGraphToFile(path)
+
+        Arguments:
+        str path
+
+        Return:
+        None
+
+        """
+        self.ptrx().dumpDepGraphToFile(to_std_string(path))
 

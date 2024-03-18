@@ -74,15 +74,22 @@ class TetmeshComponentTestCase(unittest.TestCase):
         vs = [0.,0.,0.,5.,5.,0.,5.,0.,0.,0.,0.,5.]
         tets=[0,1,2,3]
         mesh=Tetmesh(vs, tets, [])
-
+        
         pts = np.array([[.0, .0, 0.],[.1, .1, 5.1]])
+
+        def check_isecs(isecs):
+            self.assertEqual(len(isecs), 1)
+            self.assertEqual(len(isecs[0]), 1)
+            self.assertEqual(len(isecs[0][0]), 2)  # tuple
+            self.assertEqual(isecs[0][0][0], 0)
+            self.assertLess(isecs[0][0][1], 1)
+            self.assertGreater(isecs[0][0][1], 0.9)
+        
         isecs = mesh.intersect(pts)
-        self.assertEqual(len(isecs), 1)
-        self.assertEqual(len(isecs[0]), 1)
-        self.assertEqual(len(isecs[0][0]), 2)  # tuple
-        self.assertEqual(isecs[0][0][0], 0)
-        self.assertLess(isecs[0][0][1], 1)
-        self.assertGreater(isecs[0][0][1], 0.9)
+        check_isecs(isecs)
+
+        isecs = mesh.intersectIndependentSegments(pts)
+        check_isecs(isecs)
 
 
 class TetmeshNPTestCase(unittest.TestCase):

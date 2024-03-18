@@ -1,25 +1,33 @@
 test/.logs/*
 test/unit_test/.logs/*
 test/validation/.logs/*
-test/unit/py/API_1/*
-test/validation/API_*
+test/validation/API_1/validation_cp/cp*
+test/validation/API_2/validation_cp/cp*
+test/validation/API_1/validation_cp_mpi/cp*
+
 .noseids
 *.orig
 .gitignore~
 
+.pydevproject
+
+.settings/*
+
 pysteps/steps/cysteps_mpi.so
 pysteps/steps/cysteps.cpp
 pysteps/steps/cysteps_dist.cpp
+pysteps/dist/
+pysteps/steps.egg-info/
 
 .logs/*
 .project
 examples/tutorial/.logs
-test/validation/validation_efield/.logs/
-test/validation/validation_mpi/.logs/
+test/validation/*/validation_efield/.logs/
+test/validation/*/validation_mpi/.logs/
 doc/documentation/.logs/
-test/validation/validation_cp/cp*
-test/unit/py/tet_dir_dcst.cp
-test/unit/py/tri_dir_dcst.cp
+
+test/unit/py/API_1/tri_dir_dcst.cp
+test/unit/py/API_1/tet_dir_dcst.cp
 
 STEPS.egg-info/PKG-INFO
 *.pyc
@@ -50,14 +58,24 @@ Pipfile.lock
 
 .ipynb_checkpoints
 
+*.log
 # hpc coding conventions
 .clang-format
 .clang-tidy
 .cmake-format.yaml
 .pre-commit-config.yaml
+.bbp-project-venv/
 
 spconfig.*
 
 # ignore checkpoints created by UT
 test/unit/py/*.cp
 Testing/*
+
+.vscode/*
+
+pysteps/dist/*
+pysteps/steps.egg-info/*
+
+pysteps/pyproject.toml
+pysteps/setup.cfg

@@ -24,147 +24,110 @@
 
  */
 
+#pragma once
 
-#ifndef STEPS_SOLVER_DIFFDEF_HPP
-#define STEPS_SOLVER_DIFFDEF_HPP 1
-
-
-// STL headers.
+#include <iosfwd>
 #include <string>
-#include <fstream>
+#include <vector>
 
-// STEPS headers.
-#include "util/common.h"
-#include "statedef.hpp"
+#include "fwd.hpp"
+#include "model/fwd.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace solver {
-
-// Forwards declarations
-//class Statedef;
+namespace steps::solver {
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Defined diffusion object.
-class Diffdef
-{
-
-public:
+template <typename GlobalId>
+class MetaDiffdef {
+  public:
     /// Constructor
     ///
     /// \param sd State of the solver.
     /// \param idx Global index of the object.
-    /// \param d Pointer to the associated Diff object.
-    Diffdef(Statedef * sd, uint idx, steps::model::Diff * d);
+    /// \param d Reference to the associated Diff object.
 
-    /// Destructor
-    ~Diffdef();
+    // NOTE: Since one class is used for both volume and surface diffusion,
+    // can't think of another way right now but to use unsigned ints and not
+    // strong ids for the indices
+    MetaDiffdef(Statedef& sd, GlobalId idx, model::Diff& d);
+
+    MetaDiffdef(const MetaDiffdef&) = delete;
+    MetaDiffdef& operator=(const MetaDiffdef&) = delete;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream& cp_file) const;
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream& cp_file);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: DIFFUSION RULE
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this diffusion rule.
-    inline uint gidx() const noexcept
-    { return pIdx; }
+    inline GlobalId gidx() const noexcept {
+        return pIdx;
+    }
 
     /// Return the name of this diffusion rule.
-    inline const std::string& name() const noexcept
-    { return pName; }
+    inline const std::string& name() const noexcept {
+        return pName;
+    }
 
     /// Return the diffusion constant.
-    inline double dcst() const noexcept
-    { return pDcst; }
+    inline double dcst() const noexcept {
+        return pDcst;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: LIGAND
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of the ligand species.
-    uint lig() const;
+    spec_global_id lig() const;
 
-    /// \todo check
-    int dep(uint gidx) const;
-    /// \todo check
-    bool reqspec(uint gidx) const;
+    int dep(spec_global_id gidx) const;
 
+    bool reqspec(spec_global_id gidx) const;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: SETUP
     ////////////////////////////////////////////////////////////////////////
 
     /// Setup the object.
-    void setup();
-
-    ////////////////////////////////////////////////////////////////////////
-    // SOLVER METHODS: DIFFUSION RULE
-    ////////////////////////////////////////////////////////////////////////
-
-    /// Set the diffusion constant for this diffusion rule.
-    ///
-    /// \param d Rate constant of the diffusion rule.
-    void setDcst(double d);
-
-    /*
-    /// Set the ligand of the diffusion rule by its global index
-    ///
-    /// \param gidx Global index of the diffusion rule.
-    void setLig(uint gidx);
-    */
+    void setup(const Statedef& sd);
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
-
-    Statedef                          * pStatedef;
 
     // The global index of this diffusion rule
-    uint                                pIdx;
+    const GlobalId pIdx;
 
     // The string identifier of this diffusion rule
-    std::string                         pName;
+    const std::string pName;
 
     // The diffusion constant
-    double                              pDcst;
-
-    // The chemical species to which this diffusion rule applies,
-    // safer to store as a sting, rather than model level spec object pointer
-    std::string                         pLig;
+    const double pDcst;
 
     // The global index of the spec
-    uint                                ligGIdx;
+    const spec_global_id ligGIdx;
 
-    bool                                pSetupdone;
+    bool pSetupdone{false};
 
     ////////////////////////////////////////////////////////////////////////
     // DATA: LIGAND
     ////////////////////////////////////////////////////////////////////////
 
-    int                               * pSpec_DEP;
-
-    ////////////////////////////////////////////////////////////////////////
-
+    std::vector<int> pSpec_DEP;
 };
 
-////////////////////////////////////////////////////////////////////////////////
+// explicit template instantiation declarations
+extern template class MetaDiffdef<diff_global_id>;
+extern template class MetaDiffdef<surfdiff_global_id>;
 
-}
-}
-
-#endif
-// STEPS_SOLVER_DIFFDEF_HPP
-
-// END
-
+}  // namespace steps::solver

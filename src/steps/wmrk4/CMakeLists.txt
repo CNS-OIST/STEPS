@@ -1,6 +1,4 @@
-add_library(stepswmrk4 STATIC
-    wmrk4.cpp
-)
+add_library(stepswmrk4 STATIC wmrk4.cpp)
 
 set_property(TARGET stepswmrk4 PROPERTY POSITION_INDEPENDENT_CODE ON)
 

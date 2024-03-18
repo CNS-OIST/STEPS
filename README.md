@@ -5,18 +5,20 @@ If you don't want to do the compilation yourself and just want to quickly try ST
 Install from source code
 ========================
 
-To facilitate new requirements from the parallel TetOpSplit solver,
-STEPS 3.0 and above uses CMake system to replace the Python distutils system
-in previous releases. Please follow the instructions below.
+To facilitate new requirements from the parallel TetOpSplit solver, STEPS 3.0 and above uses CMake system to replace the Python distutils system in previous releases. Please follow the instructions below.
 
 Minimum Prerequisites
 ---------------------
 1. C++ compiler supporting c++17 (e.g. gcc 7.4, clang 6)
-2. Python3 (3.6.x or above)
+2. Python3 (3.6.x or above, 3.9.x or above if using stepsblender python package)
 3. NumPy (http://www.numpy.org/)
-4. CMake (https://cmake.org/)
-5. Cython (http://www.cython.org/)
+4. CMake (https://cmake.org/) (3.16.3 or above)
+5. Cython (http://www.cython.org/) (0.29 or above)
 6. BLAS/OpenBLAS ( http://www.openblas.net/ )
+7. GSL (https://www.gnu.org/software/gsl/)
+8. Eigen3 (https://eigen.tuxfamily.org/)
+9. METIS (https://github.com/KarypisLab/METIS)
+10. `build` and `pip-tools` python modules
 
 See install Dependencies sections
 
@@ -24,6 +26,7 @@ Optional Prerequisites
 ----------------------
 1. To use the parallel SSA solver TetOpSplit: MPI libraries (e.g. MPICH https://www.mpich.org/)
 2. To use the parallel EField solver: PETSc (https://www.mcs.anl.gov/petsc/)
+3. To use the distributed mesh solver with bundled omega_h: Gmsh (https://gmsh.info/)
 
 Installation From Source code
 -----------------------------
@@ -40,7 +43,14 @@ cd STEPS
 git checkout tags/3.5.0 -b steps_3.5.0
 git submodule update --recursive
 ```
-2. run the following commands to compile the source code and install
+
+2. If not already installed, install the `build` and `pip-tools` python modules
+
+```
+pip install --user build pip-tools
+```
+
+3. Run the following commands to compile the source code and install
 
 ```
 git submodule update --init --recursive
@@ -50,6 +60,8 @@ cmake ..
 make
 [sudo] make install
 ```
+
+Note that, by default, STEPS will install its python dependencies during the call to `make install`, this can be prevented by giving the `-DSTEPS_INSTALL_PYTHON_DEPS=False` option to cmake.
 
 After installation, you can check the STEPS installation with the following commands
 
@@ -61,7 +73,7 @@ If STEPS is installed successfully, you should be able to see similar informatio
 
 ```
 STochastic Engine for Pathway Simulation
-Version:  4.1.0
+Version:  5.0.1
 License:  GPL3.0
 Website:  steps.sourceforge.net
 CXX Binding: Cython
@@ -73,11 +85,22 @@ You can change the installation location by changing the prefix in CMake
 cmake -DCMAKE_INSTALL_PREFIX:PATH=/MY_INSTALL_LOCATION ..
 ```
 
-MPI and PETSc libraries are automatically detected in the system. If the user
-wants to manually choose to build STEPS with / without them it can set
+MPI and PETSc libraries are automatically detected in the system. If the user wants to manually choose to build STEPS with / without them it can be set
 
 ```
 cmake -DUSE_MPI=[True|False] -DUSE_PETSC=[True|False] ..
+```
+
+By default, the distributed mesh solver `DistTetOpSplit` will be built. If the user wants to manually choose to build STEPS with / without this it can be set
+
+```
+cmake -DSTEPS_USE_DIST_MESH=[True|False] ..
+```
+
+By default, the distributed mesh solver will be built with bundled omega_h. An external omega_h build may be used by setting 
+
+```
+cmake -DUSE_BUNDLE_OMEGA_H=False ..
 ```
 
 Please refer to [CMAKE documentation](https://cmake.org/documentation/) for customizing your installation
@@ -85,8 +108,7 @@ Please refer to [CMAKE documentation](https://cmake.org/documentation/) for cust
 
 Simulation with serial solvers
 ------------------------------
-STEPS 3.0 and above contain all serial solvers in previous releases,
-to run STEPS in serial interactive mode, open Python and import the steps module
+STEPS 3.0 and above contain all serial solvers in previous releases, to run STEPS in serial interactive mode, open Python and import the steps module
 
 ```python
 import steps
@@ -107,22 +129,34 @@ Detailed guides for the new API can be found in the [documentation](http://steps
 
 More details in [RELEASES](./RELEASES.md) document.
 
-Simulation with parallel TetOpSplit
------------------------------------
-At the moment STEPS does not provide the interactive interface for parallel TetOpSplit solver,
-thus parallel simulations need to be executed via scripts in terminal with "mpirun" command
+Simulation with parallel solvers
+--------------------------------
+At the moment STEPS does not provide the interactive interface for parallel solvers `TetVesicle`, `TetOpSplit`, `DistTetOpSplit`, thus parallel simulations need to be executed via scripts in terminal e.g. with `mpirun` command
 
 ```
 mpirun -n N_PROCS python3 parallel_sim_script.py
 ```
 
 N_PROCS is the number of MPI processes to be created for the parallel simulation.
+For the `TetVesicle` solver N_PROCS must be a minimum of 2.
+For the `DistTetOpSplit` solver N_PROCS must be a power of 2.
 
-Please refer to the documentation of your MPI solution for further customization.
+High performance computing clusters often provide optimized parallel job scheduler and associated commands. For example, the above  `mpirun` command may be replaced by
 
+```
+srun --mpi=pmix python3 parallel_sim_script.py
+```
+
+with [Slurm](https://slurm.schedmd.com/quickstart.html) scheduler and [PMIx](https://pmix.github.io/) interface. Please refer to the documentation of your MPI solution for further customization.
 
 Dependencies and build instructions
 -----------------------------------
+
+### Python dependencies
+
+Since STEPS 5.0, the python dependencies (except `build` and `pip-tools`) are automatically installed during STEPS installation. This does not apply to non-python dependencies like MPI or PETSC, which still need to be installed by the users.
+
+On some systems, the `python3-venv` package might be needed. If so, an error message during installation will point to the exact command needed to install it on your system.
 
 ### Linux Debian based:
 You can follow the installation procedure performed by the [Docker image recipe](https://github.com/CNS-OIST/STEPS_Docker/blob/329b5aaeb4f714f1bfd6fde045addbf3a338dd68/recipe/Dockerfile)
@@ -130,14 +164,6 @@ You can follow the installation procedure performed by the [Docker image recipe]
 ### OSX:
 Use Anaconda or Miniconda:
 `conda install scipy numpy matplotlib cmake cython openblas openmpi llvm-openmp`
-
-you may need to export following environment variables for the compilation.
-```
-export MPICH_CC=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc
-export MPICH_CXX=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++
-export CC=mpicc
-export CXX=mpicxx
-```
 
 
 #### Full example to build STEPS on Apple M1 Silicon with Python 3.8 through Miniconda
@@ -150,19 +176,22 @@ Prerequisites:
 CONDA_DIR=/path/to/miniconda
 export PATH=$CONDA_DIR/bin:$PATH
 conda install -c conda-forge \
-  boost-cpp   \
-  cmake       \
-  cython      \
-  gfortran    \
-  gmsh        \
-  llvm-openmp \
-  matplotlib  \
-  mpi4py      \
-  mpich       \
-  nose        \
-  numpy       \
-  openblas    \
-  pkg-config  \
+  boost-cpp    \
+  cmake        \
+  cython       \
+  eigen        \
+  gfortran     \
+  gmsh         \
+  gsl          \
+  llvm-openmp  \
+  matplotlib   \
+  metis        \
+  mpi4py       \
+  mpich        \
+  numpy        \
+  openblas     \
+  pkg-config   \
+  python-build \
   scipy
 export MPICH_FC=$CONDA_DIR/bin/gfortran
 export MPICH_CC=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc
@@ -181,7 +210,7 @@ export PKG_CONFIG_PATH="/path/to/petsc/installation/lib/pkgconfig:$PKG_CONFIG_PA
 popd
 
 cd /path/to/src
-git clone -b tags/4.1.0 --recursive https://github.com/CNS-OIST/STEPS.git
+git clone -b 5.0.0_beta --recursive https://github.com/CNS-OIST/STEPS.git
 cd STEPS
 mkdir __build
 cd __build

@@ -97,24 +97,24 @@ class ParallelOpSplitTestCase(unittest.TestCase):
         self.rng = None
         self.solver = None
 
-    def testsetROICount(self):
+    def testsetROISpecCount(self):
         """
         test for bugfix https://github.com/CNS-OIST/HBP_STEPS/issues/259
         """
-        self.solver.setROICount("ROI1", "A", 100)
-        get_count = self.solver.getROICount("ROI1", 'A')
+        self.solver.setROISpecCount("ROI1", "A", 100)
+        get_count = self.solver.getROISpecCount("ROI1", 'A')
         self.assertEqual(get_count, 100)
         h_mu = self.solver.getCompReacA("comp1", "reac1")
         self.assertNotEqual(h_mu, 0.0)
 
-        self.solver.setROICount("ROI2", "E", 200)
-        get_count = self.solver.getROICount("ROI2", 'E')
+        self.solver.setROISpecCount("ROI2", "E", 200)
+        get_count = self.solver.getROISpecCount("ROI2", 'E')
         self.assertEqual(get_count, 200)
         h_mu = self.solver.getCompReacA("comp2", "reac2")
         self.assertNotEqual(h_mu, 0.0)
 
-        self.solver.setROICount("ROI3", "B", 300)
-        get_count = self.solver.getROICount("ROI3", 'B')
+        self.solver.setROISpecCount("ROI3", "B", 300)
+        get_count = self.solver.getROISpecCount("ROI3", 'B')
         self.assertEqual(get_count, 300)
         h_mu = self.solver.getPatchSReacA("patch1", "sreac")
         self.assertNotEqual(h_mu, 0.0)

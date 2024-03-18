@@ -24,46 +24,21 @@
 
  */
 
+#pragma once
 
-/*
- *  Last Changed Rev:  $Rev$
- *  Last Changed Date: $Date$
- *  Last Changed By:   $Author$
- */
-
-#ifndef STEPS_SOLVER_SREACDEF_HPP
-#define STEPS_SOLVER_SREACDEF_HPP 1
-
-
-// STL headers.
+#include <iosfwd>
 #include <string>
-#include <fstream>
 
-// STEPS headers.
-#include "util/common.h"
-#include "statedef.hpp"
-#include "api.hpp"
-#include "types.hpp"
-// #include "model/sreac.hpp"
-#include "model/spec.hpp"
+#include "fwd.hpp"
+#include "model/fwd.hpp"
+#include "model/sreac.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace solver {
-
-// Forwards declarations
-class Statedef;
-
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::solver {
 
 /// Defined Surface Reaction.
 /// \todo imcompleted.
-class SReacdef
-{
-
-public:
-
+class SReacdef {
+  public:
     enum orientT  ///< Orientation of the reaction.
     {
         INSIDE = 0,
@@ -74,44 +49,51 @@ public:
     ///
     /// \param sd State of the solver.
     /// \param idx Global index of the surface reaction.
-    /// \param sr Pointer to the SReac object.
-    SReacdef(Statedef * sd, uint idx, steps::model::SReac * sr);
+    /// \param sr Reference to the SReac object.
+    SReacdef(Statedef& sd, sreac_global_id idx, model::SReac& sr);
 
-    /// Destructor
-    ~SReacdef();
+    SReacdef(const SReacdef&) = delete;
+    SReacdef& operator=(const SReacdef&) = delete;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream& cp_file) const;
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream& cp_file);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SURFACE REACTION RULE
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this surface reaction rule.
-    inline uint gidx() const noexcept
-    { return pIdx; }
+    inline sreac_global_id gidx() const noexcept {
+        return pIdx;
+    }
 
     /// Return the name of the surface reaction.
-    std::string const name() const;
+    std::string const name() const noexcept {
+        return pName;
+    }
 
     /// Return the order of this surface reaction.
-    uint order() const;
+    uint order() const noexcept {
+        return pOrder;
+    }
 
     /// Return the MACROscopic reaction constant.
-    double kcst() const;
+    double kcst() const noexcept {
+        return pKcst;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: SETUP
     ////////////////////////////////////////////////////////////////////////
 
     /// Setup the object.
-    void setup();
+    void setup(const Statedef& sd);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: STOICHIOMETRY
@@ -119,8 +101,9 @@ public:
 
     /// Returns true if the left hand side of the reaction stoichiometry
     /// involves reactants on the surface and on the inside volume.
-    inline bool inside() const noexcept
-    { return (pOrient == INSIDE); }
+    inline bool inside() const noexcept {
+        return pOrient == INSIDE;
+    }
 
     /// Returns true if any aspect of the surface reaction references
     /// species on the inside volume, regardless of how they are
@@ -140,11 +123,11 @@ public:
 
     /// Returns true if the left hand side of the reaction stoichiometry
     /// involves reactants on the surface and on the outside volume. This
-    /// method is mutually exclusive with SReacDef::inside, but not
-    /// with SReacDef::insideRef.
+    /// method is mutually exclusive with SReacDef::inside
     ///
-    inline bool outside() const noexcept
-    { return (pOrient == OUTSIDE); }
+    inline bool outside() const noexcept {
+        return pOrient == OUTSIDE;
+    }
 
     /// Returns true if any aspect of the surface reaction references
     /// species on the outside volume, regardless of how they are
@@ -164,8 +147,9 @@ public:
     /// Return true if this reaction only involves surface species,
     /// nothing in a volume at all. In that case the reaction constant
     /// should be treated in 2D
-    inline bool surf_surf() const noexcept
-    { return pSurface_surface; }
+    inline bool surf_surf() const noexcept {
+        return pSurface_surface;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: STOICHIOMETRY
@@ -175,9 +159,9 @@ public:
     /// the inner volume (_I), outer volume (_O) or surface patch (_S)
     /// to have one occurence of this surface reaction.
     ///
-    uint lhs_I(uint gidx) const;
-    uint lhs_S(uint gidx) const;
-    uint lhs_O(uint gidx) const;
+    uint lhs_I(spec_global_id gidx) const;
+    uint lhs_S(spec_global_id gidx) const;
+    uint lhs_O(spec_global_id gidx) const;
 
     /// Returns a description of how an occurence of this surface reaction
     /// depends on some species, defined by its global index idx, to occur.
@@ -185,86 +169,90 @@ public:
     /// type. This method is distinct from the SReacDef::req_I,
     /// SReacDef::req_S and SReacDef::req_O methods.
     ///
-    depT dep_I(uint gidx) const;
-    depT dep_S(uint gidx) const;
-    depT dep_O(uint gidx) const;
+    depT dep_I(spec_global_id gidx) const;
+    depT dep_S(spec_global_id gidx) const;
+    depT dep_O(spec_global_id gidx) const;
 
     /// Returns how many molecules of some species, specified by its
     /// global index, are produced after a single occurence of this
     /// surface reaction. '_I' returns this number for the inner volume,
     /// '_S' for the surface patch and '_O' for the outer volume.
     ///
-    uint rhs_I(uint gidx) const;
-    uint rhs_S(uint gidx) const;
-    uint rhs_O(uint gidx) const;
+    uint rhs_I(spec_global_id gidx) const;
+    uint rhs_S(spec_global_id gidx) const;
+    uint rhs_O(spec_global_id gidx) const;
 
     /// Returns how the amount of a species, specified by its global index,
     /// changes as the result of a single occurence of this surface
     /// reaction on the inside volume (_I), outer volume (_O) or
     /// surface patch (_S).
     ///
-    int upd_I(uint gidx) const;
-    int upd_S(uint gidx) const;
-    int upd_O(uint gidx) const;
+    int upd_I(spec_global_id gidx) const;
+    int upd_S(spec_global_id gidx) const;
+    int upd_O(spec_global_id gidx) const;
 
     /// Returns whether the surface reaction rule references a species,
     /// specified by its global index, on the inner volume side (_I),
     /// outer volume (_O) or surface patch (_S).
     ///
-    bool reqspec_I(uint gidx) const;
-    bool reqspec_S(uint gidx) const;
-    bool reqspec_O(uint gidx) const;
+    bool reqspec_I(spec_global_id gidx) const;
+    bool reqspec_S(spec_global_id gidx) const;
+    bool reqspec_O(spec_global_id gidx) const;
 
-    inline gidxTVecCI beginUpdColl_I() const noexcept
-    { return pSpec_I_UPD_Coll.begin(); }
-    inline gidxTVecCI endUpdColl_I() const noexcept
-    { return pSpec_I_UPD_Coll.end(); }
-    inline const gidxTVec& updColl_I() const noexcept
-    { return pSpec_I_UPD_Coll ;}
-    inline gidxTVecCI beginUpdColl_S() const noexcept
-    { return pSpec_S_UPD_Coll.begin(); }
-    inline gidxTVecCI endUpdColl_S() const noexcept
-    { return pSpec_S_UPD_Coll.end(); }
-    inline const gidxTVec& updColl_S() const noexcept
-    { return pSpec_S_UPD_Coll; }
-    inline gidxTVecCI beginUpdColl_O() const noexcept
-    { return pSpec_O_UPD_Coll.begin(); }
-    inline gidxTVecCI endUpdColl_O() const noexcept
-    { return pSpec_O_UPD_Coll.end(); }
-    inline const gidxTVec& updColl_O() const noexcept
-    { return pSpec_O_UPD_Coll; }
+    inline spec_global_id_vecCI beginUpdColl_I() const noexcept {
+        return pSpec_I_UPD_Coll.begin();
+    }
+    inline spec_global_id_vecCI endUpdColl_I() const noexcept {
+        return pSpec_I_UPD_Coll.end();
+    }
+    inline const spec_global_id_vec& updColl_I() const noexcept {
+        return pSpec_I_UPD_Coll;
+    }
+    inline spec_global_id_vecCI beginUpdColl_S() const noexcept {
+        return pSpec_S_UPD_Coll.begin();
+    }
+    inline spec_global_id_vecCI endUpdColl_S() const noexcept {
+        return pSpec_S_UPD_Coll.end();
+    }
+    inline const spec_global_id_vec& updColl_S() const noexcept {
+        return pSpec_S_UPD_Coll;
+    }
+    inline spec_global_id_vecCI beginUpdColl_O() const noexcept {
+        return pSpec_O_UPD_Coll.begin();
+    }
+    inline spec_global_id_vecCI endUpdColl_O() const noexcept {
+        return pSpec_O_UPD_Coll.end();
+    }
+    inline const spec_global_id_vec& updColl_O() const noexcept {
+        return pSpec_O_UPD_Coll;
+    }
 
-    ////////////////////////////////////////////////////////////////////////
+  private:
+    const sreac_global_id pIdx;
 
-private:
-
-    ////////////////////////////////////////////////////////////////////////
-
-    Statedef                          * pStatedef;
-    uint                                pIdx;
-
-    std::string                         pName;
-    uint                                 pOrder;
-    double                                 pKcst;
+    const std::string pName;
+    const uint pOrder;
+    double pKcst;
+    const uint pCountSpecs;
 
     // The stoichiometry stored as model level Spec objects.
     // To be used during setup ONLY
-    steps::model::SpecPVec                pIlhs;
-    steps::model::SpecPVec                pOlhs;
-    steps::model::SpecPVec                pSlhs;
+    std::vector<model::Spec*> pIlhs;
+    std::vector<model::Spec*> pOlhs;
+    std::vector<model::Spec*> pSlhs;
 
-    steps::model::SpecPVec                 pIrhs;
-    steps::model::SpecPVec                 pOrhs;
-    steps::model::SpecPVec                pSrhs;
+    std::vector<model::Spec*> pIrhs;
+    std::vector<model::Spec*> pOrhs;
+    std::vector<model::Spec*> pSrhs;
 
-    bool                                pSetupdone;
+    bool pSetupdone{false};
 
     // Store whether this surface reaction is 2D or not
-    bool                                 pSurface_surface;
+    bool pSurface_surface{true};
 
     /// Does the left-hand side of the stoichiometry involve molecules
     /// on the inside or on the outside?
-    orientT                             pOrient;
+    orientT pOrient;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA: STOICHIOMETRY
@@ -277,9 +265,9 @@ private:
     /// indexed through global indices, i.e. it runs over all species in
     /// the entire model.
     ///
-    depT                              * pSpec_I_DEP;
-    depT                              * pSpec_S_DEP;
-    depT                              * pSpec_O_DEP;
+    util::strongid_vector<spec_global_id, depT> pSpec_I_DEP;
+    util::strongid_vector<spec_global_id, depT> pSpec_S_DEP;
+    util::strongid_vector<spec_global_id, depT> pSpec_O_DEP;
 
     /// Vector describing the left hand (reactant) side of the reaction
     /// stoichiometry, for species in the inner volume (_I_), outer
@@ -287,9 +275,9 @@ private:
     /// through global indices, i.e. it runs over all species in the entire
     /// model.
     ///
-    uint                              * pSpec_I_LHS;
-    uint                              * pSpec_S_LHS;
-    uint                              * pSpec_O_LHS;
+    util::strongid_vector<spec_global_id, uint> pSpec_I_LHS;
+    util::strongid_vector<spec_global_id, uint> pSpec_S_LHS;
+    util::strongid_vector<spec_global_id, uint> pSpec_O_LHS;
 
     /// An array vector describing the right hand (reaction product) side
     /// of the surface reaction stoichiometry, for species in the inner
@@ -297,9 +285,9 @@ private:
     /// vector must be indexed through global indices, i.e. it runs over
     /// all species in the entire model.
     ///
-    uint                              * pSpec_I_RHS;
-    uint                              * pSpec_S_RHS;
-    uint                              * pSpec_O_RHS;
+    util::strongid_vector<spec_global_id, uint> pSpec_I_RHS;
+    util::strongid_vector<spec_global_id, uint> pSpec_S_RHS;
+    util::strongid_vector<spec_global_id, uint> pSpec_O_RHS;
 
     /// An array describing the update vector (i.e. RHS[] - LHS[]) of
     /// the surface reaction, for species in the inner volume (_I),
@@ -307,25 +295,15 @@ private:
     /// indexed through global indices, i.e. it runs over all species in
     /// the entire model.
     ///
-    int                               * pSpec_I_UPD;
-    int                               * pSpec_S_UPD;
-    int                               * pSpec_O_UPD;
+    util::strongid_vector<spec_global_id, int> pSpec_I_UPD;
+    util::strongid_vector<spec_global_id, int> pSpec_S_UPD;
+    util::strongid_vector<spec_global_id, int> pSpec_O_UPD;
 
     /// A vector collecting the global indices of all species that are
     /// updated when this surface reaction rule occurs.
-    gidxTVec                            pSpec_I_UPD_Coll;
-    gidxTVec                            pSpec_S_UPD_Coll;
-    gidxTVec                            pSpec_O_UPD_Coll;
-
-    ////////////////////////////////////////////////////////////////////////
+    spec_global_id_vec pSpec_I_UPD_Coll;
+    spec_global_id_vec pSpec_S_UPD_Coll;
+    spec_global_id_vec pSpec_O_UPD_Coll;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-#endif
-// STEPS_SOLVER_SREACDEF_HPP
-
-// END
+}  // namespace steps::solver

@@ -7,6 +7,7 @@ Erik De Schutter (OIST, UA, since 2006)
 
 Iain Hepburn (OIST, UA, since 2008)
 * Development of STEPS since version 1.0.0: Well-mixed and spatial stochastic and deterministic solver implementation
+* Development of the TetVesicle solver for simulations of vesicles and lipid rafts along with endocytosis, exocytosis, clustering, active transport, etc. 
 * Voltage calculation on tetrahedral mesh (EField) implementation
 * Serial TetOpSplit development
 * SBML support
@@ -19,6 +20,7 @@ Weiliang Chen (OIST, since 2009)
 * Development of STEPS since version 1.0.0: Well-mixed and spatial stochastic solver development
 * Parallel TetOpSplit implementation
 * STEPS 4.0 TetOpSplit development
+* MPI communication templates for TetVesicle solver
 * Implementation of visualization toolkit
 * Assertion and Exception logging overhaul
 * Meshio utilities
@@ -29,6 +31,7 @@ Jules Lallouette (OIST, since 2019)
 * Development of the new python API
 * Testing and documentation for the new python API
 * Automatic data saving to HDF5 and XDMF formats
+* Blender visualization with stepsblender python package
 
 Guido Klingbeil  (OIST, 2015 - 2019)
 * Matlab Simbiology support utility

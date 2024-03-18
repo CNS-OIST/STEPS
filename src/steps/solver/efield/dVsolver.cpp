@@ -24,29 +24,25 @@
 
  */
 
+#include "dVsolver.hpp"
 
-// STL headers.
 #include <algorithm>
 #include <cmath>
 #include <utility>
 
-// STEPS headers.
-#include "util/common.h"
-#include "dVsolver.hpp"
 #include "geom/tetmesh.hpp"
+#include "util/checkpointing.hpp"
 
-namespace steps {
-namespace solver {
-namespace efield {
+namespace steps::solver::efield {
 
-void dVSolverBase::initMesh(TetMesh *mesh) {
+void dVSolverBase::initMesh(TetMesh* mesh) {
     pMesh = mesh;
     pNVerts = pMesh->countVertices();
     pNTris = pMesh->getNTri();
 
     pV.assign(pNVerts, 0.0);
     pGExt.assign(pNVerts, 0.0);
-    pVertexClamp.assign(pNVerts, false);
+    pVertexClamp.assign(pNVerts, 0);
     pVertCur.assign(pNVerts, 0.0);
     pVertCurClamp.assign(pNVerts, 0.0);
 
@@ -54,22 +50,60 @@ void dVSolverBase::initMesh(TetMesh *mesh) {
     pTriCurClamp.assign(pNTris, 0.0);
 }
 
-void dVSolverBase::setSurfaceConductance(double g_surface, double v_rev) {
-    pVExt = v_rev;
-    if (pMesh == nullptr) { return;
+////////////////////////////////////////////////////////////////////////////////
+
+void dVSolverBase::checkpoint(std::fstream& cp_file) {
+    util::checkpoint(cp_file, pNVerts);
+    util::checkpoint(cp_file, pNTris);
+    util::checkpoint(cp_file, pV);
+    util::checkpoint(cp_file, pGExt);
+    util::checkpoint(cp_file, conductance);
+    util::checkpoint(cp_file, pVExt);
+    util::checkpoint(cp_file, pVertexClamp);
+    util::checkpoint(cp_file, pTriCur);
+    util::checkpoint(cp_file, pTriCurClamp);
+    util::checkpoint(cp_file, pVertCur);
+    util::checkpoint(cp_file, pVertCurClamp);
 }
 
-    for (auto i = 0u; i < pNVerts; ++i) {
+////////////////////////////////////////////////////////////////////////////////
+
+void dVSolverBase::restore(std::fstream& cp_file) {
+    util::compare(cp_file, pNVerts, "Mismatched EField pNVerts restore value.");
+    util::compare(cp_file, pNTris, "Mismatched EField pNTris restore value.");
+    util::restore(cp_file, pV);
+    util::restore(cp_file, pGExt);
+    util::restore(cp_file, conductance);
+    util::restore(cp_file, pVExt);
+    util::restore(cp_file, pVertexClamp);
+    util::restore(cp_file, pTriCur);
+    util::restore(cp_file, pTriCurClamp);
+    util::restore(cp_file, pVertCur);
+    util::restore(cp_file, pVertCurClamp);
+}
+
+void dVSolverBase::setSurfaceConductance(double g_surface, double v_rev) {
+    conductance = g_surface;
+    pVExt = v_rev;
+    if (pMesh == nullptr) {
+        return;
+    }
+
+    for (auto i: vertex_id_t::range(pNVerts)) {
         VertexElement* ve = pMesh->getVertex(i);
         pGExt[ve->getIDX()] = g_surface * ve->getSurfaceArea();
     }
 }
 
-int dVSolverBase::meshHalfBW(TetMesh *mesh) {
+std::pair<double, double> dVSolverBase::getSurfaceConductance() {
+    return {conductance, pVExt};
+}
+
+int dVSolverBase::meshHalfBW(TetMesh* mesh) {
     int halfbw = 0;
     auto nVerts = mesh->countVertices();
-    for (auto i = 0u; i < nVerts; ++i) {
-        VertexElement *ve = mesh->getVertex(i);
+    for (auto i: vertex_id_t::range(nVerts)) {
+        VertexElement* ve = mesh->getVertex(i);
 
         int idx = ve->getIDX();
         int ncon = ve->getNCon();
@@ -81,7 +115,4 @@ int dVSolverBase::meshHalfBW(TetMesh *mesh) {
     return halfbw;
 }
 
-}  // namespace efield
-}  // namespace solver
-}  // namespace steps
-
+}  // namespace steps::solver::efield

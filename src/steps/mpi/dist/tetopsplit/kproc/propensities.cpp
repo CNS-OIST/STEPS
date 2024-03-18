@@ -2,19 +2,16 @@
 
 #include "util/debug.hpp"
 
-namespace steps {
-namespace dist {
-namespace kproc {
+namespace steps::dist::kproc {
 
-template <typename NumMolecules, unsigned int Policy>
-Propensities<NumMolecules, Policy>::Propensities()
+template <unsigned int Policy>
+Propensities<Policy>::Propensities()
     : uniform_(0.0, 1.0 - 2.0 * std::numeric_limits<osh::Real>::epsilon()) {}
 
-template <typename NumMolecules, unsigned int Policy>
-void Propensities<NumMolecules, Policy>::init(
-    const std::array<unsigned, num_kproc_types()>& k_proc_ty,
-    const typename propensity_function_traits<NumMolecules>::value& propensities_fun,
-    const kproc_groups_t& groups) {
+template <unsigned int Policy>
+void Propensities<Policy>::init(const std::array<unsigned, num_kproc_types()>& k_proc_ty,
+                                const typename propensity_function_traits::value& propensities_fun,
+                                const kproc_groups_t& groups) {
     init(k_proc_ty);
     propensities_groups_.clear();
     v_.clear();
@@ -36,53 +33,40 @@ void Propensities<NumMolecules, Policy>::init(
     }
 }
 
-template <typename NumMolecules, unsigned int Policy>
-void Propensities<NumMolecules, Policy>::init(
-    const std::array<unsigned, num_kproc_types()>& k_proc_ty) {
+template <unsigned int Policy>
+void Propensities<Policy>::init(const std::array<unsigned, num_kproc_types()>& k_proc_ty) {
     k_proc_ty_2_num_k_proc_ = k_proc_ty;
     // a2ab is a mapping from the kproc type to the last index plus one of
     // propensities of all kprocs related to this kproc type
     std::partial_sum(k_proc_ty_2_num_k_proc_.begin(), k_proc_ty_2_num_k_proc_.end(), a2ab_.begin());
 }
 
-template <typename NumMoleculesF, unsigned int PolicyF>
+template <unsigned int PolicyF>
 std::ostream& operator<<(
     std::ostream& ostr,
-    const PropensitiesGroup<NumMoleculesF,
-                            PolicyF,
-                            std::enable_if_t<PropensitiesTraits<PolicyF>::is_direct>>& pg) {
+    const PropensitiesGroup<PolicyF, std::enable_if_t<PropensitiesTraits<PolicyF>::is_direct>>&
+        pg) {
     return ostr << "PropensityGroup (Direct)\n"
                 << "  idx_: " << pg.idx_ << "\n  partial_sums_: " << pg.partial_sums_;
 }
 
-template <typename NumMoleculesF, unsigned int PolicyF>
+template <unsigned int PolicyF>
 std::ostream& operator<<(
     std::ostream& ostr,
-    const PropensitiesGroup<NumMoleculesF,
-                            PolicyF,
+    const PropensitiesGroup<PolicyF,
                             std::enable_if_t<PropensitiesTraits<PolicyF>::is_gibson_bruck>>& pg) {
     return ostr << "PropensityGroup (GibsonBruck)" << '\n' << pg.events_;
 }
 
 // explicit template instantiation definitions
-template class Propensities<osh::I32, PropensitiesPolicy::direct_without_next_event>;
-template class Propensities<osh::I64, PropensitiesPolicy::direct_without_next_event>;
-template class Propensities<osh::I32, PropensitiesPolicy::gibson_bruck_without_next_event>;
-template class Propensities<osh::I64, PropensitiesPolicy::gibson_bruck_without_next_event>;
-template class Propensities<osh::I32, PropensitiesPolicy::direct_with_next_event>;
-template class Propensities<osh::I64, PropensitiesPolicy::direct_with_next_event>;
-template class Propensities<osh::I32, PropensitiesPolicy::gibson_bruck_with_next_event>;
-template class Propensities<osh::I64, PropensitiesPolicy::gibson_bruck_with_next_event>;
+template class Propensities<PropensitiesPolicy::direct_without_next_event>;
+template class Propensities<PropensitiesPolicy::gibson_bruck_without_next_event>;
+template class Propensities<PropensitiesPolicy::direct_with_next_event>;
+template class Propensities<PropensitiesPolicy::gibson_bruck_with_next_event>;
 
-template struct PropensitiesGroup<osh::I32, PropensitiesPolicy::direct_without_next_event>;
-template struct PropensitiesGroup<osh::I64, PropensitiesPolicy::direct_without_next_event>;
-template struct PropensitiesGroup<osh::I32, PropensitiesPolicy::gibson_bruck_without_next_event>;
-template struct PropensitiesGroup<osh::I64, PropensitiesPolicy::gibson_bruck_without_next_event>;
-template struct PropensitiesGroup<osh::I32, PropensitiesPolicy::direct_with_next_event>;
-template struct PropensitiesGroup<osh::I64, PropensitiesPolicy::direct_with_next_event>;
-template struct PropensitiesGroup<osh::I32, PropensitiesPolicy::gibson_bruck_with_next_event>;
-template struct PropensitiesGroup<osh::I64, PropensitiesPolicy::gibson_bruck_with_next_event>;
+template struct PropensitiesGroup<PropensitiesPolicy::direct_without_next_event>;
+template struct PropensitiesGroup<PropensitiesPolicy::gibson_bruck_without_next_event>;
+template struct PropensitiesGroup<PropensitiesPolicy::direct_with_next_event>;
+template struct PropensitiesGroup<PropensitiesPolicy::gibson_bruck_with_next_event>;
 
-} // namespace kproc
-} // namespace dist
-} // namespace steps
+}  // namespace steps::dist::kproc

@@ -24,96 +24,46 @@
 
  */
 
-
-// STL headers.
-#include <cassert>
-#include <string>
-
-// STEPS headers.
 #include "chandef.hpp"
-#include "types.hpp"
 
+#include "model/chan.hpp"
+#include "model/chanstate.hpp"
+#include "statedef.hpp"
 #include "util/error.hpp"
-// logging
-#include <easylogging++.h>
-////////////////////////////////////////////////////////////////////////////////
 
-namespace ssolver = steps::solver;
+namespace steps::solver {
 
-////////////////////////////////////////////////////////////////////////////////
-
-ssolver::Chandef::Chandef(Statedef * sd, uint idx, steps::model::Chan * c)
-: pStatedef(sd)
-, pIdx(idx)
-, pName()
-, pSetupdone(false)
-, pChanStates(nullptr)
-, pNChanStates(0)
-, pChanStatesVec()
-{
-    AssertLog(pStatedef != nullptr);
-    AssertLog(c != nullptr);
-    pName = c->getID();
-
-    pChanStatesVec = c->getAllChanStates();
-    pNChanStates = pChanStatesVec.size();
-    if (pNChanStates == 0) { return;
-}
-
-    pChanStates = new uint[pNChanStates];
-    std::fill_n(pChanStates, pNChanStates, GIDX_UNDEFINED);
-
-    ////// anything else????
+Chandef::Chandef(Statedef& /*sd*/, chan_global_id idx, model::Chan& c)
+    : pIdx(idx)
+    , pName(c.getID())
+    , pChanStatesVec(c.getAllChanStates()) {
+    pChanStates.resize(pChanStatesVec.size());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::Chandef::~Chandef()
-{
-    if (pNChanStates > 0) { delete[] pChanStates;
-}
+void Chandef::checkpoint(std::fstream& /*cp_file*/) const {
+    // Reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Chandef::checkpoint(std::fstream & cp_file)
-{
-    cp_file.write(reinterpret_cast<char*>(&pNChanStates), sizeof(uint));
-    cp_file.write(reinterpret_cast<char*>(pChanStates), sizeof(uint) * pNChanStates);
+void Chandef::restore(std::fstream& /*cp_file*/) {
+    // Reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Chandef::restore(std::fstream & cp_file)
-{
-    if (pNChanStates > 0) { delete[] pChanStates;
-}
-
-    cp_file.read(reinterpret_cast<char*>(&pNChanStates), sizeof(uint));
-    pChanStates = new uint[pNChanStates];
-    cp_file.read(reinterpret_cast<char*>(pChanStates), sizeof(uint) * pNChanStates);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void ssolver::Chandef::setup()
-{
-
+void Chandef::setup(const Statedef& sd) {
     AssertLog(pSetupdone == false);
-    AssertLog(pChanStatesVec.size() == nchanstates());
-    for (uint i = 0; i < nchanstates(); ++i)
-    {
-        uint gidx = pStatedef->getSpecIdx(pChanStatesVec[i]);
+    const auto& chan_states = pChanStatesVec;
+    AssertLog(chan_states.size() == nchanstates());
+    for (uint i = 0; i < nchanstates(); ++i) {
+        spec_global_id gidx = sd.getSpecIdx(*chan_states[i]);
         pChanStates[i] = gidx;
     }
 
     pSetupdone = true;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-
-// END
-
-
-
+}  // namespace steps::solver

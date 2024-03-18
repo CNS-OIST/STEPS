@@ -45,39 +45,74 @@ class IntersectTests(unittest.TestCase):
 
     def testIntersect_compareSTEPS4WithSTEPS3(self):
         """ comparison between STEPS3 & STEPS4 and other sanity checks """
+        with self.distMesh.asLocal():
+            eps = 1e-3
 
-        # Test 1 : a line with 1 segment
-        # Create a line from [0,0,0] to [1,1,1]
-        # From one corner of the cube to the other
-        pts = np.array([[0,0,0],[1,1,1]], dtype=float, order='C')
+            # Test 1 : a line with 1 segment -> from one corner of the cube to the other
+            # The eps is needed because the points of the segments are checked in which tetrahedron
+            # they belong to, and for this reason we want to avoid having them on the corners/faces.
+            pts = np.array([[0+eps,0+eps,0+eps],[1-eps,1-eps,1-eps]], dtype=float, order='C')
+            # STEPS4: Start point outside the mesh
+            pts_start_out = np.array([[-1,-1,-1],[1-eps,1-eps,1-eps]], dtype=float, order='C')
+            # STEPS4: End point outside the mesh
+            pts_end_out = np.array([[0+eps,0+eps,0+eps],[2,2,2]], dtype=float, order='C')
+            # STEPS4: Start/End points outside the mesh
+            pts_both_out = np.array([[-1,-1,-1],[2,2,2]], dtype=float, order='C')
 
-        # For every segment we pass, we get a vector/list of pairs of (tet, intersection fraction)
-        intersect_distMesh = self.distMesh.stepsMesh.intersect(pts)
-        intersect_tetMesh = self.tetMesh.stepsMesh.intersect(pts)
-        self.check_intersect(intersect_distMesh, intersect_tetMesh, 1)
+            # For every segment we pass, we get a vector/list of pairs of (tet, intersection fraction)
+            intersect_distMesh = self.distMesh.intersect(pts)
+            intersect_tetMesh = self.tetMesh.intersect(pts)
+            self.check_intersect(intersect_distMesh, intersect_tetMesh, 1)
 
-        # Test 2 : a line with 2 segments
-        pts = np.array([[0,0,0],[0.5,0.5,0.5],[1,1,1]], dtype=float, order='C')
-        intersect_distMesh = self.distMesh.stepsMesh.intersect(pts)
-        intersect_tetMesh = self.tetMesh.stepsMesh.intersect(pts)
-        self.check_intersect(intersect_distMesh, intersect_tetMesh, 2)
+            # Test STEPS4, when start/end points are outside the mesh
+            # check that they are passing through the same tets
+            intersect_distMesh_s = self.distMesh.intersect(pts_start_out)
+            self.check_crossing_tets(intersect_distMesh_s, intersect_distMesh)
+            intersect_distMesh_e = self.distMesh.intersect(pts_end_out)
+            self.check_crossing_tets(intersect_distMesh_e, intersect_distMesh)
+            intersect_distMesh_b = self.distMesh.intersect(pts_both_out)
+            self.check_crossing_tets(intersect_distMesh_b, intersect_distMesh)
+
+            # Test 2 : a line with 2 segments
+            pts = np.array([[0+eps,0+eps,0+eps],[0.5,0.5,0.5],[1-eps,1-eps,1-eps]], dtype=float, order='C')
+            pts_start_out = np.array([[-1,-1,-1],[0.5,0.5,0.5],[1-eps,1-eps,1-eps]], dtype=float, order='C')
+            pts_end_out = np.array([[0+eps,0+eps,0+eps],[0.5,0.5,0.5],[2,2,2]], dtype=float, order='C')
+            pts_both_out = np.array([[-1,-1,-1],[0.5,0.5,0.5],[2,2,2]], dtype=float, order='C')
+
+            intersect_distMesh = self.distMesh.intersect(pts)
+            intersect_tetMesh = self.tetMesh.intersect(pts)
+            self.check_intersect(intersect_distMesh, intersect_tetMesh, 2)
+
+            intersect_distMesh_s = self.distMesh.intersect(pts_start_out)
+            self.check_crossing_tets(intersect_distMesh_s, intersect_distMesh)
+            intersect_distMesh_e = self.distMesh.intersect(pts_end_out)
+            self.check_crossing_tets(intersect_distMesh_e, intersect_distMesh)
+            intersect_distMesh_b = self.distMesh.intersect(pts_both_out)
+            self.check_crossing_tets(intersect_distMesh_b, intersect_distMesh)
 
     def check_intersect(self, intersect_distMesh, intersect_tetMesh, segments):
         self.assertEqual(len(intersect_distMesh), segments)
         self.assertEqual(len(intersect_distMesh), len(intersect_tetMesh))
-        self.assertListEqual(intersect_distMesh, intersect_tetMesh)
+        dist_set = set(frozenset((tet.idx, rat) for tet, rat in seg) for seg in intersect_distMesh)
+        tet_set = set(frozenset((tet.idx, rat) for tet, rat in seg) for seg in intersect_tetMesh)
+        self.assertEqual(dist_set, tet_set)
         not_empty = 0
         for segment in intersect_distMesh:
             for p in segment:
                 # p[0] : tet ID
                 # p[1] : intersection fraction
-                self.assertLess(p[0], self.distMesh.stepsMesh.total_num_elems)
+                self.assertLess(p[0].idx, len(self.distMesh.tets))
                 self.assertLessEqual(p[1], 1)
-                self.assertGreaterEqual(p[0], 0)
+                self.assertGreaterEqual(p[0].idx, 0)
                 self.assertGreaterEqual(p[1], 0)
                 not_empty += 1
         self.assertGreater(not_empty, 0, 
             "No pairs of (tet, fract) returned, even if the line is inside the mesh.")
+    
+    def check_crossing_tets(self, intersect1, intersect2):
+        tets1 = [tet.idx for seg in intersect1 for tet,_ in seg]
+        tets2 = [tet.idx for seg in intersect2 for tet,_ in seg]
+        self.assertEqual(tets1, tets2)
 
 
 def suite():

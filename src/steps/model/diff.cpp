@@ -24,137 +24,105 @@
 
  */
 
-/*
- *  Last Changed Rev:  $Rev$
- *  Last Changed Date: $Date$
- *  Last Changed By:   $Author$
- */
-
 #include "diff.hpp"
-
-#include <cassert>
-#include <sstream>
-#include <string>
-
-#include <easylogging++.h>
 
 #include "model.hpp"
 #include "spec.hpp"
-#include "volsys.hpp"
 #include "surfsys.hpp"
+#include "volsys.hpp"
 
 #include "util/error.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-using namespace std;
-using namespace steps::model;
+namespace steps::model {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Diff::Diff(string const &id, Volsys *volsys, Spec *lig, double dcst)
-    : pID(id), pVolsys(volsys), pLig(lig), pDcst(dcst), pIsvolume(true) {
-
-  ArgErrLogIf(pVolsys == nullptr,
-              "No volsys provided to Diff initializer function.");
-  ArgErrLogIf(pDcst < 0.0, "Diffusion constant can't be negative");
-
-  pModel = pVolsys->getModel();
-  AssertLog(pModel != nullptr);
-
-  pVolsys->_handleDiffAdd(this);
+Diff::Diff(std::string const& id, Volsys& volsys, Spec& lig, double dcst)
+    : pID(id)
+    , pModel(volsys.getModel())
+    , pVolsys(&volsys)
+    , pLig(&lig)
+    , pDcst(dcst)
+    , pIsvolume(true) {
+    ArgErrLogIf(pDcst < 0.0, "Diffusion constant can't be negative");
+    pVolsys->_handleDiffAdd(*this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Diff::Diff(string const &id, Surfsys *surfsys, Spec *lig, double dcst)
-    : pID(id), pSurfsys(surfsys), pLig(lig), pDcst(dcst), pIsvolume(false) {
+Diff::Diff(std::string const& id, Surfsys& surfsys, Spec& lig, double dcst)
+    : pID(id)
+    , pModel(surfsys.getModel())
+    , pSurfsys(&surfsys)
+    , pLig(&lig)
+    , pDcst(dcst)
+    , pIsvolume(false) {
+    ArgErrLogIf(pDcst < 0.0, "Diffusion constant can't be negative");
 
-  ArgErrLogIf(pSurfsys == nullptr,
-              "No surfsys provided to Diff initializer function.");
-
-  ArgErrLogIf(pDcst < 0.0, "Diffusion constant can't be negative");
-
-  pModel = pSurfsys->getModel();
-  AssertLog(pModel != nullptr);
-
-  pSurfsys->_handleDiffAdd(this);
+    pSurfsys->_handleDiffAdd(*this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 Diff::~Diff() {
-  if (pIsvolume) {
-    if (pVolsys == nullptr) {
-      return;
-    }
-  } else {
-    if (pSurfsys == nullptr) {
-      return;
-    }
-  }
-  _handleSelfDelete();
+    _handleSelfDelete();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void Diff::_handleSelfDelete() {
-  if (pIsvolume) {
-    pVolsys->_handleDiffDel(this);
-    pVolsys = nullptr;
-  } else {
-    pSurfsys->_handleDiffDel(this);
-    pSurfsys = nullptr;
-  }
-  pDcst = 0.0;
-  pLig = nullptr;
-  pModel = nullptr;
+    if (pIsvolume) {
+        pVolsys->_handleDiffDel(*this);
+    } else {
+        pSurfsys->_handleDiffDel(*this);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Diff::setID(string const &id) {
-  if (pIsvolume) {
-    AssertLog(pVolsys != nullptr);
-    // The following might raise an exception, e.g. if the new ID is not
-    // valid or not unique. If this happens, we don't catch but simply let
-    // it pass by into the Python layer.
-    pVolsys->_handleDiffIDChange(pID, id);
-  } else {
-    AssertLog(pSurfsys != nullptr);
-    // The following might raise an exception, e.g. if the new ID is not
-    // valid or not unique. If this happens, we don't catch but simply let
-    // it pass by into the Python layer.
-    pSurfsys->_handleDiffIDChange(pID, id);
-  }
-  // This line will only be executed if the previous call didn't raise
-  // an exception.
-  pID = id;
+void Diff::setID(std::string const& id) {
+    if (pIsvolume) {
+        AssertLog(pVolsys != nullptr);
+        // The following might raise an exception, e.g. if the new ID is not
+        // valid or not unique. If this happens, we don't catch but simply let
+        // it pass by into the Python layer.
+        pVolsys->_handleDiffIDChange(pID, id);
+    } else {
+        AssertLog(pSurfsys != nullptr);
+        // The following might raise an exception, e.g. if the new ID is not
+        // valid or not unique. If this happens, we don't catch but simply let
+        // it pass by into the Python layer.
+        pSurfsys->_handleDiffIDChange(pID, id);
+    }
+    // This line will only be executed if the previous call didn't raise
+    // an exception.
+    pID = id;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void Diff::setDcst(double dcst) {
-  if (pIsvolume) {
-    AssertLog(pVolsys != nullptr);
-  } else {
-    AssertLog(pSurfsys != nullptr);
-  }
+    if (pIsvolume) {
+        AssertLog(pVolsys != nullptr);
+    } else {
+        AssertLog(pSurfsys != nullptr);
+    }
 
-  ArgErrLogIf(dcst < 0.0, "Diffusion constant can't be negative");
+    ArgErrLogIf(dcst < 0.0, "Diffusion constant can't be negative");
 
-  pDcst = dcst;
+    pDcst = dcst;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Diff::setLig(Spec *lig) {
-  AssertLog(lig != nullptr);
-  pLig = lig;
+void Diff::setLig(Spec& lig) {
+    pLig = &lig;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<Spec *> Diff::getAllSpecs() const { return {pLig}; }
+std::vector<Spec*> Diff::getAllSpecs() const {
+    return {pLig};
+}
 
-////////////////////////////////////////////////////////////////////////////////
+}  // namespace steps::model

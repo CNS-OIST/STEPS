@@ -74,7 +74,7 @@ class VisualTetsSpec(gl.GLScatterPlotItem):
         
         self.tets = np.array(tets, dtype = INDEX_DTYPE)
         self.counts = np.zeros(self.tets.size)
-        sim.getBatchTetCountsNP(self.tets, spec_id, self.counts)
+        sim.getBatchTetSpecCountsNP(self.tets, spec_id, self.counts)
         
         point_counts = self.counts.astype(np.uint32)
         total = np.sum(point_counts)
@@ -108,7 +108,7 @@ class VisualTetsSpec(gl.GLScatterPlotItem):
         """
             Update the component.
         """
-        self.sim.getBatchTetCountsNP(self.tets, self.spec_id, self.counts)
+        self.sim.getBatchTetSpecCountsNP(self.tets, self.spec_id, self.counts)
         point_counts = self.counts.astype(np.uint32)
 
         total = np.sum(point_counts)
@@ -282,7 +282,7 @@ class VisualTrisSpec(gl.GLScatterPlotItem):
         self.tris = np.array(tris, dtype = INDEX_DTYPE)
         self.counts = np.zeros(self.tris.size)
         
-        sim.getBatchTriCountsNP(self.tris, spec_id, self.counts)
+        sim.getBatchTriSpecCountsNP(self.tris, spec_id, self.counts)
         
         point_counts = self.counts.astype(np.uint32)
         total = np.sum(point_counts)
@@ -315,7 +315,7 @@ class VisualTrisSpec(gl.GLScatterPlotItem):
         """
             Update the component.
         """
-        self.sim.getBatchTriCountsNP(self.tris, self.spec_id, self.counts)
+        self.sim.getBatchTriSpecCountsNP(self.tris, self.spec_id, self.counts)
         self.point_counts = self.counts.astype(np.uint32)
         self.total = np.sum(self.point_counts)
         if self.total > self.max_nspec:
@@ -480,7 +480,7 @@ class VisualTrisChannel(gl.GLScatterPlotItem):
         individual_counts = np.zeros(self.tris.size)
         
         for s in specs_colors.keys():
-            self.sim.getBatchTriCountsNP(self.tris, s, individual_counts)
+            self.sim.getBatchTriSpecCountsNP(self.tris, s, individual_counts)
             total_counts += individual_counts
 
         self.starts = np.insert(np.cumsum(total_counts), 0, 0)
@@ -496,7 +496,7 @@ class VisualTrisChannel(gl.GLScatterPlotItem):
         
         current_counter = np.zeros(self.tris.size, dtype = INDEX_DTYPE)
         for s in self.specs_colors.keys():
-            sim.getBatchTriCountsNP(self.tris, s, individual_counts)
+            sim.getBatchTriSpecCountsNP(self.tris, s, individual_counts)
             for t in range(self.tris.size):
                 self.color[int(self.starts[t] + current_counter[t]) : int(self.starts[t] + current_counter[t] + individual_counts[t])] = self.specs_colors[s]
                 current_counter[t] += individual_counts[t]
@@ -510,7 +510,7 @@ class VisualTrisChannel(gl.GLScatterPlotItem):
         current_counter = np.zeros(self.tris.size, dtype = INDEX_DTYPE)
         individual_counts = np.zeros(self.tris.size)
         for s in self.specs_colors.keys():
-            self.sim.getBatchTriCountsNP(self.tris, s, individual_counts)
+            self.sim.getBatchTriSpecCountsNP(self.tris, s, individual_counts)
             for t in range(self.tris.size):
                 self.color[int(self.starts[t] + current_counter[t]) : int(self.starts[t] + current_counter[t] + individual_counts[t])] = self.specs_colors[s]
                 current_counter[t] += individual_counts[t]

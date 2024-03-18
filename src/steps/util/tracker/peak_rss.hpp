@@ -6,8 +6,7 @@
 
 #include <cstddef>
 
-namespace steps {
-namespace util {
+namespace steps::util {
 
 /*
  * Extract the peak working set size (rss=resident set size).
@@ -19,5 +18,4 @@ namespace util {
 std::size_t peak_rss();
 
 
-} // namespace util
-} // namespace steps
+}  // namespace steps::util

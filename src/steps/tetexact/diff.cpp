@@ -24,49 +24,41 @@
 
  */
 
-
-// Standard library & STL headers.
-#include <iostream>
-#include <vector>
 // STEPS headers.
 #include "diff.hpp"
+#include "solver/compdef.hpp"
+#include "solver/fwd.hpp"
 #include "tet.hpp"
 #include "tri.hpp"
-#include "solver/compdef.hpp"
 
 // logging
-#include <easylogging++.h>
-#include "util/common.h"
-////////////////////////////////////////////////////////////////////////////////
 
-namespace stex = steps::tetexact;
-namespace ssolver = steps::solver;
-namespace smath = steps::math;
+#include "util/checkpointing.hpp"
+
+namespace steps::tetexact {
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Diff::Diff(ssolver::Diffdef * ddef, stex::Tet * tet)
-:
-pDiffdef(ddef)
-, pTet(tet)
-{
+Diff::Diff(solver::Diffdef* ddef, Tet* tet)
+    : pDiffdef(ddef)
+    , pTet(tet) {
     AssertLog(pDiffdef != nullptr);
     AssertLog(pTet != nullptr);
-    std::array<stex::Tet*, 4> next{pTet->nextTet(0),
-                                    pTet->nextTet(1),
-                                    pTet->nextTet(2),
-                                    pTet->nextTet(3)
-                                    };
+    std::array<Tet*, 4> next{pTet->nextTet(0),
+                             pTet->nextTet(1),
+                             pTet->nextTet(2),
+                             pTet->nextTet(3)};
 
-    ssolver::Compdef * cdef = pTet->compdef();
+    solver::Compdef* cdef = pTet->compdef();
     lidxTet = cdef->specG2L(pDiffdef->lig());
 
     // Precalculate part of the scaled diffusion constant.
-    uint ldidx = pTet->compdef()->diffG2L(pDiffdef->gidx());
+    solver::diff_local_id ldidx = pTet->compdef()->diffG2L(pDiffdef->gidx());
     double dcst = pTet->compdef()->dcst(ldidx);
     pDcst = dcst;
 
-    std::array<double, 4> d{ 0.0, 0.0, 0.0, 0.0 };
+    std::array<double, 4> d{0.0, 0.0, 0.0, 0.0};
 
     for (uint i = 0; i < 4; ++i) {
         pDiffBndDirection[i] = pTet->getDiffBndDirection(i);
@@ -77,15 +69,13 @@ pDiffdef(ddef)
         // Compute the scaled diffusion constant.
         // Need to here check if the direction is a diffusion boundary
         double dist = pTet->dist(i);
-        if ((dist > 0.0) && (next[i] != nullptr))
-        {
+        if ((dist > 0.0) && (next[i] != nullptr)) {
             // d[i] only need to set if
             // 1) not towards a boundary, and
             // 2) next[i] in the same compartment as pTet
             // d[i] changes when setDiffBndActive() is called
             // and pDiffBndActive[i] becomes active
-            if (!pDiffBndDirection[i] && next[i]->compdef() == cdef)
-            {
+            if (!pDiffBndDirection[i] && next[i]->compdef() == cdef) {
                 d[i] = (pTet->area(i) * dcst) / (pTet->vol() * dist);
                 pScaledDcst += d[i];
             }
@@ -105,69 +95,37 @@ pDiffdef(ddef)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Diff::~Diff()
-= default;
+Diff::~Diff() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Diff::checkpoint(std::fstream & cp_file)
-{
-    cp_file.write(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
-    cp_file.write(reinterpret_cast<char*>(&pFlags), sizeof(uint));
-
-    auto n_direct_dcsts = directionalDcsts.size();
-    cp_file.write(reinterpret_cast<char*>(&n_direct_dcsts), sizeof(uint));
-    for (auto& item : directionalDcsts) {
-        cp_file.write(reinterpret_cast<const char*>(&item.first), sizeof(uint));
-        cp_file.write(reinterpret_cast<char*>(&item.second), sizeof(double));
-    }
-
-
-    cp_file.write(reinterpret_cast<char*>(&pScaledDcst), sizeof(double));
-    cp_file.write(reinterpret_cast<char*>(&pDcst), sizeof(double));
-    cp_file.write(reinterpret_cast<char*>(pDiffBndActive.data()), sizeof(bool) * 4);
-    cp_file.write(reinterpret_cast<char*>(pDiffBndDirection.data()), sizeof(bool) * 4);
-    cp_file.write(reinterpret_cast<char*>(pNeighbCompLidx.data()), sizeof(ssolver::lidxT) * 4);
-    cp_file.write(reinterpret_cast<char*>(pCDFSelector.data()), sizeof(double) * 3);
-    cp_file.write(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
-    cp_file.write(reinterpret_cast<char*>(&crData.pow), sizeof(int));
-    cp_file.write(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
-    cp_file.write(reinterpret_cast<char*>(&crData.rate), sizeof(double));
+void Diff::checkpoint(std::fstream& cp_file) {
+    util::checkpoint(cp_file, directionalDcsts);
+    util::checkpoint(cp_file, pScaledDcst);
+    util::checkpoint(cp_file, pDcst);
+    util::checkpoint(cp_file, pCDFSelector);
+    util::checkpoint(cp_file, pDiffBndActive);
+    util::checkpoint(cp_file, pDiffBndDirection);
+    util::checkpoint(cp_file, pNeighbCompLidx);
+    KProc::checkpoint(cp_file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Diff::restore(std::fstream & cp_file)
-{
-    cp_file.read(reinterpret_cast<char*>(&rExtent), sizeof(unsigned long long));
-    cp_file.read(reinterpret_cast<char*>(&pFlags), sizeof(uint));
-
-    uint n_direct_dcsts = 0;
-    cp_file.read(reinterpret_cast<char*>(&n_direct_dcsts), sizeof(uint));
-    for (uint i = 0; i < n_direct_dcsts; i++) {
-        uint id = 0;
-        double value = 0.0;
-        cp_file.read(reinterpret_cast<char*>(&id), sizeof(uint));
-        cp_file.read(reinterpret_cast<char*>(&value), sizeof(double));
-        directionalDcsts[id] = value;
-    }
-
-    cp_file.read(reinterpret_cast<char*>(&pScaledDcst), sizeof(double));
-    cp_file.read(reinterpret_cast<char*>(&pDcst), sizeof(double));
-    cp_file.read(reinterpret_cast<char*>(pDiffBndActive.data()), sizeof(bool) * 4);
-    cp_file.read(reinterpret_cast<char*>(pDiffBndDirection.data()), sizeof(bool) * 4);
-    cp_file.read(reinterpret_cast<char*>(pNeighbCompLidx.data()), sizeof(ssolver::lidxT) * 4);
-    cp_file.read(reinterpret_cast<char*>(pCDFSelector.data()), sizeof(double) * 3);
-    cp_file.read(reinterpret_cast<char*>(&crData.recorded), sizeof(bool));
-    cp_file.read(reinterpret_cast<char*>(&crData.pow), sizeof(int));
-    cp_file.read(reinterpret_cast<char*>(&crData.pos), sizeof(unsigned));
-    cp_file.read(reinterpret_cast<char*>(&crData.rate), sizeof(double));
+void Diff::restore(std::fstream& cp_file) {
+    util::restore(cp_file, directionalDcsts);
+    util::restore(cp_file, pScaledDcst);
+    util::restore(cp_file, pDcst);
+    util::restore(cp_file, pCDFSelector);
+    util::restore(cp_file, pDiffBndActive);
+    util::compare(cp_file, pDiffBndDirection);
+    util::compare(cp_file, pNeighbCompLidx);
+    KProc::restore(cp_file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Diff::setupDeps()
-{
+void Diff::setupDeps() {
     // We will check all KProcs of the following simulation elements:
     //   * the 'source' tetrahedron
     //   * any neighbouring triangles
@@ -183,7 +141,7 @@ void stex::Diff::setupDeps()
     // kprocs.
 
     // Search for dependencies in the 'source' tetrahedron.
-    std::set<stex::KProc*> local;
+    KProcPSet local;
 
     for (auto const& k: pTet->kprocs()) {
         // Check locally.
@@ -192,9 +150,8 @@ void stex::Diff::setupDeps()
         }
     }
     // Check the neighbouring triangles.
-    for (uint i = 0; i < 4; ++i)
-    {
-        stex::Tri * next = pTet->nextTri(i);
+    for (uint i = 0; i < 4; ++i) {
+        Tri* next = pTet->nextTri(i);
         if (next == nullptr) {
             continue;
         }
@@ -206,10 +163,9 @@ void stex::Diff::setupDeps()
     }
 
     // Search for dependencies in neighbouring tetrahedra.
-    for (uint i = 0; i < 4; ++i)
-    {
+    for (uint i = 0; i < 4; ++i) {
         // Fetch next tetrahedron, if it exists.
-        stex::Tet * next = pTet->nextTet(i);
+        Tet* next = pTet->nextTet(i);
         if (next == nullptr) {
             continue;
         }
@@ -218,7 +174,7 @@ void stex::Diff::setupDeps()
         }
 
         // Copy local dependencies.
-        std::set<stex::KProc*> local2(local.begin(), local.end());
+        KProcPSet local2(local.begin(), local.end());
 
         // Find the ones 'locally' in the next tet.
         for (auto const& k: next->kprocs()) {
@@ -230,12 +186,12 @@ void stex::Diff::setupDeps()
         // Find deps in neighbouring triangles in the next tet.
         // As said before, this cannot logically include the shared
         // triangle.
-        for (uint j = 0; j < 4; ++j)
-        {
+        for (uint j = 0; j < 4; ++j) {
             // Fetch next triangle, if it exists.
-            stex::Tri * next2 = next->nextTri(j);
-            if (next2 == nullptr) { continue;
-        }
+            Tri* next2 = next->nextTri(j);
+            if (next2 == nullptr) {
+                continue;
+            }
 
             // Find deps.
             for (auto const& k: next2->kprocs()) {
@@ -252,31 +208,31 @@ void stex::Diff::setupDeps()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool stex::Diff::depSpecTet(uint gidx, stex::WmVol * tet)
-{
-    if (pTet != tet) return false;
-    if (gidx != pDiffdef->lig()) { return false;
-}
+bool Diff::depSpecTet(solver::spec_global_id gidx, WmVol* tet) {
+    if (pTet != tet) {
+        return false;
+    }
+    if (gidx != pDiffdef->lig()) {
+        return false;
+    }
     return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool stex::Diff::depSpecTri(uint /*gidx*/, stex::Tri * /*tri*/)
-{
+bool Diff::depSpecTri(solver::spec_global_id /*gidx*/, Tri* /*tri*/) {
     return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Diff::reset()
-{
+void Diff::reset() {
     resetExtent();
 
     // NOTE: These must become the dcst calculation for obvious reasons
     pDiffBndActive = {false, false, false, false};
 
-    uint ldidx = pTet->compdef()->diffG2L(pDiffdef->gidx());
+    solver::diff_local_id ldidx = pTet->compdef()->diffG2L(pDiffdef->gidx());
     double dcst = pTet->compdef()->dcst(ldidx);
 
     // directional dcst will also be clear by setDcst
@@ -288,29 +244,24 @@ void stex::Diff::reset()
     crData.pow = 0;
     crData.pos = 0;
     crData.rate = 0.0;
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Diff::setDiffBndActive(uint i, bool active)
-{
+void Diff::setDiffBndActive(uint i, bool active) {
     AssertLog(i < 4);
     AssertLog(pDiffBndDirection[i]);
 
     // Only need to update if the flags are changing
-    if (pDiffBndActive[i] != active)
-    {
+    if (pDiffBndActive[i] != active) {
         pDiffBndActive[i] = active;
         setDcst(pDcst);
     }
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool stex::Diff::getDiffBndActive(uint i) const
-{
+bool Diff::getDiffBndActive(uint i) const {
     AssertLog(i < 4);
     AssertLog(pDiffBndDirection[i]);
 
@@ -319,43 +270,37 @@ bool stex::Diff::getDiffBndActive(uint i) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stex::Diff::dcst(int direction)
-{
+double Diff::dcst(int direction) {
     auto search_result = directionalDcsts.find(direction);
     if (search_result != directionalDcsts.end()) {
         return search_result->second;
-    }
-    else {
+    } else {
         return pDcst;
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Diff::setDcst(double dcst)
-{
+void Diff::setDcst(double dcst) {
     AssertLog(dcst >= 0.0);
     pDcst = dcst;
     directionalDcsts.clear();
 
-    std::array<stex::Tet *, 4> next{pTet->nextTet(0),
-                                        pTet->nextTet(1),
-                                        pTet->nextTet(2),
-                                        pTet->nextTet(3)
-                                        };
+    std::array<Tet*, 4> next{pTet->nextTet(0),
+                             pTet->nextTet(1),
+                             pTet->nextTet(2),
+                             pTet->nextTet(3)};
 
-    std::array<double, 4> d{ 0.0, 0.0, 0.0, 0.0 };
+    std::array<double, 4> d{0.0, 0.0, 0.0, 0.0};
     pScaledDcst = 0.0;
 
-    for (uint i = 0; i < 4; ++i)
-    {
+    for (uint i = 0; i < 4; ++i) {
         // Compute the scaled diffusion constant.
         // Need to here check if the direction is a diffusion boundary
         double dist = pTet->dist(i);
-        if ((dist > 0.0) && (next[i] != nullptr))
-        {
-            if ((pDiffBndDirection[i] && pDiffBndActive[i]) || (!pDiffBndDirection[i] && next[i]->compdef() == pTet->compdef()))
-            {
+        if ((dist > 0.0) && (next[i] != nullptr)) {
+            if ((pDiffBndDirection[i] && pDiffBndActive[i]) ||
+                (!pDiffBndDirection[i] && next[i]->compdef() == pTet->compdef())) {
                 d[i] = (pTet->area(i) * dcst) / (pTet->vol() * dist);
             }
         }
@@ -366,12 +311,9 @@ void stex::Diff::setDcst(double dcst)
     AssertLog(pScaledDcst >= 0);
 
     // Setup the selector distribution.
-    if (pScaledDcst == 0.0)
-    {
+    if (pScaledDcst == 0.0) {
         pCDFSelector = {0.0, 0.0, 0.0};
-    }
-    else
-    {
+    } else {
         pCDFSelector[0] = d[0] / pScaledDcst;
         pCDFSelector[1] = pCDFSelector[0] + d[1] / pScaledDcst;
         pCDFSelector[2] = pCDFSelector[1] + d[2] / pScaledDcst;
@@ -380,8 +322,7 @@ void stex::Diff::setDcst(double dcst)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Diff::setDirectionDcst(int direction, double dcst)
-{
+void Diff::setDirectionDcst(int direction, double dcst) {
     AssertLog(direction < 4);
     AssertLog(direction >= 0);
     AssertLog(dcst >= 0.0);
@@ -392,29 +333,27 @@ void stex::Diff::setDirectionDcst(int direction, double dcst)
         pDiffBndActive[direction] = true;
     }
 
-    std::array<stex::Tet *, 4> next{pTet->nextTet(0),
-                                        pTet->nextTet(1),
-                                        pTet->nextTet(2),
-                                        pTet->nextTet(3)
-                                        };
+    std::array<Tet*, 4> next{pTet->nextTet(0),
+                             pTet->nextTet(1),
+                             pTet->nextTet(2),
+                             pTet->nextTet(3)};
 
-    std::array<double, 4> d{ 0.0, 0.0, 0.0, 0.0 };
+    std::array<double, 4> d{0.0, 0.0, 0.0, 0.0};
     pScaledDcst = 0.0;
 
-    for (uint i = 0; i < 4; ++i)
-    {
+    for (uint i = 0; i < 4; ++i) {
         // Compute the scaled diffusion constant.
         // Need to here check if the direction is a diffusion boundary
         double dist = pTet->dist(i);
-        if ((dist > 0.0) && (next[i] != nullptr))
-        {
-            if ((pDiffBndDirection[i] && pDiffBndActive[i]) || (!pDiffBndDirection[i] && next[i]->compdef() == pTet->compdef()))
-            {
+        if ((dist > 0.0) && (next[i] != nullptr)) {
+            if ((pDiffBndDirection[i] && pDiffBndActive[i]) ||
+                (!pDiffBndDirection[i] && next[i]->compdef() == pTet->compdef())) {
                 auto search_result = directionalDcsts.find(i);
-                if (search_result != directionalDcsts.end())
+                if (search_result != directionalDcsts.end()) {
                     d[i] = (pTet->area(i) * search_result->second) / (pTet->vol() * dist);
-                else
+                } else {
                     d[i] = (pTet->area(i) * pDcst) / (pTet->vol() * dist);
+                }
             }
         }
         pScaledDcst += d[i];
@@ -424,12 +363,9 @@ void stex::Diff::setDirectionDcst(int direction, double dcst)
     AssertLog(pScaledDcst >= 0);
 
     // Setup the selector distribution.
-    if (pScaledDcst == 0.0)
-    {
+    if (pScaledDcst == 0.0) {
         pCDFSelector = {0.0, 0.0, 0.0};
-    }
-    else
-    {
+    } else {
         pCDFSelector[0] = d[0] / pScaledDcst;
         pCDFSelector[1] = pCDFSelector[0] + d[1] / pScaledDcst;
         pCDFSelector[2] = pCDFSelector[1] + d[2] / pScaledDcst;
@@ -438,12 +374,13 @@ void stex::Diff::setDirectionDcst(int direction, double dcst)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stex::Diff::rate(steps::tetexact::Tetexact * /*solver*/)
-{
-    if (inactive()) return 0.0;
+double Diff::rate(steps::tetexact::Tetexact* /*solver*/) {
+    if (inactive()) {
+        return 0.0;
+    }
 
     // Compute the rate.
-    double rate = (pScaledDcst) * static_cast<double>(pTet->pools()[lidxTet]);
+    double rate = pScaledDcst * static_cast<double>(pTet->pools()[lidxTet]);
     AssertLog(std::isnan(rate) == false);
 
     // Return.
@@ -452,18 +389,16 @@ double stex::Diff::rate(steps::tetexact::Tetexact * /*solver*/)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::vector<stex::KProc*> const & stex::Diff::apply(const rng::RNGptr &rng, double /*dt*/, double /*simtime*/)
-{
-    //uint lidxTet = this->lidxTet;
+std::vector<KProc*> const& Diff::apply(const rng::RNGptr& rng, double /*dt*/, double /*simtime*/) {
+    // uint lidxTet = this->lidxTet;
     // Pre-fetch some general info.
 
 
     // Apply local change.
-    auto * local = pTet->pools().data() + lidxTet;
+    auto* local = pTet->pools().data() + lidxTet.get();
     bool clamped = pTet->clamped(lidxTet);
 
-    if (clamped == false)
-    {
+    if (clamped == false) {
         AssertLog(*local > 0);
     }
 
@@ -471,22 +406,26 @@ std::vector<stex::KProc*> const & stex::Diff::apply(const rng::RNGptr &rng, doub
     double sel = rng->getUnfEE();
 
     uint iSel = 0;
-    for (; iSel < 3; ++iSel)
-        if(sel < pCDFSelector[iSel])
+    for (; iSel < 3; ++iSel) {
+        if (sel < pCDFSelector[iSel]) {
             break;
+        }
+    }
 
     // Direction iSel.
-    stex::Tet * nexttet = pTet->nextTet(iSel);
+    Tet* nexttet = pTet->nextTet(iSel);
     // If there is no next tet 0, pCDFSelector[0] should be zero
     // So we can assert that nextet 0 does indeed exist
     AssertLog(nexttet != nullptr);
-    AssertLog(pNeighbCompLidx[iSel] != solver::LIDX_UNDEFINED);
+    AssertLog(pNeighbCompLidx[iSel].valid());
 
-    if (nexttet->clamped(pNeighbCompLidx[iSel]) == false)
-        nexttet->incCount(pNeighbCompLidx[iSel],1);
+    if (nexttet->clamped(pNeighbCompLidx[iSel]) == false) {
+        nexttet->incCount(pNeighbCompLidx[iSel], 1);
+    }
 
-    if (clamped == false)
+    if (clamped == false) {
         pTet->incCount(lidxTet, -1);
+    }
 
     rExtent++;
 
@@ -495,17 +434,14 @@ std::vector<stex::KProc*> const & stex::Diff::apply(const rng::RNGptr &rng, doub
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint stex::Diff::updVecSize() const
-{
+uint Diff::updVecSize() const {
     auto maxsize = pUpdVec[0].size();
-    for (uint i=1; i <= 3; ++i)
-    {
-        if (pUpdVec[i].size() > maxsize)
+    for (uint i = 1; i <= 3; ++i) {
+        if (pUpdVec[i].size() > maxsize) {
             maxsize = pUpdVec[i].size();
+        }
     }
     return maxsize;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
+}  // namespace steps::tetexact

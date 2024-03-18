@@ -24,79 +24,32 @@
 
  */
 
-
-/*
- *  Last Changed Rev:  $Rev$
- *  Last Changed Date: $Date$
- *  Last Changed By:   $Author$
- */
-
-// STL headers.
-#include <cassert>
-#include <string>
-
-// STEPS headers.
 #include "specdef.hpp"
-#include "statedef.hpp"
-#include "types.hpp"
 
-#include "util/error.hpp"
-// logging
-#include <easylogging++.h>
+#include "model/spec.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::solver {
 
-namespace ssolver = steps::solver;
+Specdef::Specdef(Statedef&, spec_global_id idx, model::Spec& s)
+    : pIdx(idx)
+    , pName(s.getID()) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::Specdef::Specdef(Statedef * sd, uint idx, steps::model::Spec * s)
-: pStatedef(sd)
-, pIdx(idx)
-, pName()
-, pSetupdone(false)
-{
-    AssertLog(pStatedef != nullptr);
-    AssertLog(s != nullptr);
-    pName = s->getID();
-
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-ssolver::Specdef::~Specdef()
-= default;
-
-////////////////////////////////////////////////////////////////////////////////
-
-void ssolver::Specdef::checkpoint(std::fstream & /*cp_file*/)
-{
+void Specdef::checkpoint(std::fstream& /*cp_file*/) const {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Specdef::restore(std::fstream & /*cp_file*/)
-{
+void Specdef::restore(std::fstream& /*cp_file*/) {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string const ssolver::Specdef::name() const
-{
-    return pName;
+void Specdef::setup(const Statedef&) {
+    pSetupdone = true;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-void ssolver::Specdef::setup()
-{
-  pSetupdone = true;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-// END
-
+}  // namespace steps::solver

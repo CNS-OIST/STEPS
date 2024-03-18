@@ -1,5 +1,6 @@
 # .rst: FindGmsh
-# -----------
+# ~~~
+# --------------
 #
 # Find Gmsh executable, headers and library
 #
@@ -12,6 +13,7 @@
 # * Gmsh_VERSION_MINOR   - The minor version of Gmsh.
 # * Gmsh_VERSION_PATCH   - The patch version of Gmsh.
 # * Gmsh_VERSION_STRING  - version number as a string (ex: "4.3.2").
+# ~~~
 
 find_program(Gmsh_EXECUTABLE gmsh)
 
@@ -54,12 +56,8 @@ find_library(Gmsh_LIBRARIES NAMES gmsh)
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
   Gmsh
-  FOUND_VAR
-  Gmsh_FOUND
-  REQUIRED_VARS
-  Gmsh_LIBRARIES
-  Gmsh_INCLUDE_DIRS
-  VERSION_VAR
-  Gmsh_VERSION_STRING)
+  FOUND_VAR Gmsh_FOUND
+  REQUIRED_VARS Gmsh_LIBRARIES Gmsh_INCLUDE_DIRS
+  VERSION_VAR Gmsh_VERSION_STRING)
 
 mark_as_advanced(Gmsh_EXECUTABLE Gmsh_INCLUDE_DIR Gmsh_LIBRARIES)

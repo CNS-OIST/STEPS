@@ -4,8 +4,7 @@
 
 #include "util/vocabulary.hpp"
 
-namespace steps {
-namespace dist {
+namespace steps::dist {
 
 /**
  * \brief State definition of a diffusion.
@@ -18,8 +17,10 @@ namespace dist {
 
 class Diffdef {
   public:
-    Diffdef(const Compdef &compdef, container::kproc_id kproc,
-            container::diffusion_id t_diffusion, container::species_id species,
+    Diffdef(const Compdef& compdef,
+            container::kproc_id kproc,
+            container::diffusion_id t_diffusion,
+            container::species_id species,
             osh::Real t_dcst);
 
     inline container::kproc_id getKProcContainerIdx() const noexcept {
@@ -30,9 +31,11 @@ class Diffdef {
         return diffusion;
     }
     inline container::species_id getSpecContainerIdx() const noexcept {
-      return specContainerIdx;
+        return specContainerIdx;
     }
-    inline osh::Real getDcst() const noexcept { return dcst; }
+    inline osh::Real getDcst() const noexcept {
+        return dcst;
+    }
 
     inline const Compdef& compdef() const noexcept {
         return pCompdef;
@@ -43,7 +46,7 @@ class Diffdef {
      * \return true if the given species depends on this diffusion
      */
     inline bool depSpec(container::species_id species) const noexcept {
-      return species == specContainerIdx;
+        return species == specContainerIdx;
     }
 
     void report(std::ostream& ostr) const;
@@ -56,5 +59,4 @@ class Diffdef {
     osh::Real dcst;
 };
 
-}  // namespace dist
-}  // namespace steps
+}  // namespace steps::dist

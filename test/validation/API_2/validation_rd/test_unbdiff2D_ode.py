@@ -43,6 +43,12 @@ import numpy
 
 from . import tol_funcs
 
+try:
+    from steps import stepslib
+    STEPS_SUNDIALS_VERSION_MAJOR = stepslib._STEPS_SUNDIALS_VERSION_MAJOR
+except AttributeError:
+    STEPS_SUNDIALS_VERSION_MAJOR = 3
+
 ########################################################################
 
 class TestRDUnbdiff2DODE(unittest.TestCase):
@@ -101,7 +107,10 @@ class TestRDUnbdiff2DODE(unittest.TestCase):
         ########################################################################
 
         sim = Simulation('TetODE', mdl, mesh, None)
-        sim.setTolerances(1.0e-7, 1.0e-7)
+        if STEPS_SUNDIALS_VERSION_MAJOR > 4:
+            sim.setTolerances(5e-2, 5e-2)
+        else:
+            sim.setTolerances(2.5e-5, 2.5e-5)
 
         rs = ResultSelector(sim)
 

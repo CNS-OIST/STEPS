@@ -8,6 +8,7 @@ __copyright__ = "Copyright 2016 EPFL BBP-project"
 # =====================================================================================================================
 from cython.operator cimport dereference as deref
 cimport std
+from libcpp cimport bool
 from steps_common cimport *
 
 # ======================================================================================================================
@@ -63,14 +64,91 @@ cdef extern from "util/checkid.hpp" namespace "steps::util":
 
 
 # ======================================================================================================================
+cdef extern from "math/ghk.hpp" namespace "steps::math":
+# ----------------------------------------------------------------------------------------------------------------------
+    double permeability(double G, double V, int z, double T, double iconc, double oconc)
+
+
+# ======================================================================================================================
 cdef extern from "util/vocabulary.hpp" namespace "steps":
 # ----------------------------------------------------------------------------------------------------------------------
 
-    cdef cppclass triangle_id_t:
-        triangle_id_t(index_t)
+    cdef cppclass triangle_global_id:
+        triangle_global_id()
+        triangle_global_id(index_t)
         ulong get()
 
-    cdef cppclass tetrahedron_id_t:
-        tetrahedron_id_t(index_t)
+    cdef cppclass tetrahedron_global_id:
+        tetrahedron_global_id()
+        tetrahedron_global_id(index_t)
         index_t get()
 
+    cdef cppclass vertex_id_t:
+        vertex_id_t()
+        vertex_id_t(index_t)
+        index_t get()
+
+    cdef cppclass bar_id_t:
+        bar_id_t()
+        bar_id_t(index_t)
+        index_t get()
+
+# ======================================================================================================================
+cdef extern from "solver/fwd.hpp" namespace "steps::solver":
+# ----------------------------------------------------------------------------------------------------------------------
+
+    cdef cppclass spec_local_id:
+        spec_local_id()
+        spec_local_id(index_t)
+        index_t get()
+
+    cdef cppclass vesicle_individual_id:
+        vesicle_individual_id()
+        vesicle_individual_id(index_t)
+        ulong get()
+        bool valid()
+
+    cdef cppclass raft_individual_id:
+        raft_individual_id()
+        raft_individual_id(index_t)
+        ulong get()
+        bool valid()
+
+    cdef cppclass comp_global_id:
+        comp_global_id()
+        comp_global_id(index_t)
+        index_t get()
+
+    cdef cppclass patch_global_id:
+        patch_global_id()
+        patch_global_id(index_t)
+        index_t get()
+
+    cdef cppclass linkspec_individual_id:
+        linkspec_individual_id()
+        linkspec_individual_id(index_t)
+        ulong get()
+        bool valid()
+
+    cdef cppclass pointspec_individual_id:
+        pointspec_individual_id()
+        pointspec_individual_id(index_t)
+        ulong get()
+        bool valid()
+
+    cdef cppclass ExocytosisEvent:
+        double time
+        vesicle_individual_id vidx
+        triangle_global_id tidx
+        raft_individual_id ridx
+
+    cdef cppclass RaftEndocytosisEvent:
+        double time
+        raft_individual_id ridx
+        triangle_global_id tidx
+        vesicle_individual_id vidx
+
+    cdef cppclass EndocytosisEvent:
+        double time
+        triangle_global_id tidx
+        vesicle_individual_id vidx

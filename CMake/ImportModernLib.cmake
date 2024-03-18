@@ -1,4 +1,4 @@
-#
+# ~~~
 # For older CMake ( < 3.18 ) libraries found through FindBLA do not
 # define a library target that carries all dependencies. This function
 # supplies the missing target by parsing the relevant lists.
@@ -6,14 +6,13 @@
 # current implementation processes
 # - shared libs
 # - linking flags (-l)
-#
+# ~~~
 
 function(add_library_target)
-    set(oneValueArgs NAME)
-    set(multiValueArgs LIBRARIES INCLUDE_DIRECTORIES)
-    set(options NAME_LOWER_CASE)
-    cmake_parse_arguments(ADT "${options}" "${oneValueArgs}"
-                          "${multiValueArgs}" ${ARGN})
+  set(oneValueArgs NAME)
+  set(multiValueArgs LIBRARIES INCLUDE_DIRECTORIES)
+  set(options NAME_LOWER_CASE)
+  cmake_parse_arguments(ADT "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   set(_base_name "${ADT_NAME}::")
   if(ADT_NAME_LOWER_CASE)
@@ -45,7 +44,7 @@ function(add_library_target)
         endif()
       endif()
       # process -l prepended libs
-      string(REGEX MATCH "(^-l)(.*)" _tmp ${_chunk} )
+      string(REGEX MATCH "(^-l)(.*)" _tmp ${_chunk})
       if(CMAKE_MATCH_0)
         list(APPEND _all_raw_libs "${CMAKE_MATCH_2}")
       endif()
@@ -54,9 +53,9 @@ function(add_library_target)
         list(APPEND _all_raw_libs "${_chunk}")
       endif()
     endforeach()
-    set_property(TARGET "${_lib_name}"
-      PROPERTY INTERFACE_LINK_LIBRARIES "${_all_so_libs};${_all_raw_libs}")
-    set_property(TARGET "${_lib_name}"
-      PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${ADT_INCLUDE_DIRECTORIES}")
+    set_property(TARGET "${_lib_name}" PROPERTY INTERFACE_LINK_LIBRARIES
+                                                "${_all_so_libs};${_all_raw_libs}")
+    set_property(TARGET "${_lib_name}" PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+                                                "${ADT_INCLUDE_DIRECTORIES}")
   endif()
 endfunction()

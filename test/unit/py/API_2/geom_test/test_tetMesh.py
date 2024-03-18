@@ -217,6 +217,8 @@ class tetMeshTests(unittest.TestCase):
             tet.neighbs[4]
         with self.assertRaises(IndexError):
             tet.verts[4]
+        self.assertTrue(tet.containsPoint([0, 0, 0]))
+        self.assertFalse(tet.containsPoint([1, 0, 0]))
 
         # Tri
         tri = tet.faces[0]
@@ -225,6 +227,13 @@ class tetMeshTests(unittest.TestCase):
         self.assertEqual(tuple(tet2.idx for tet2 in tri.tetNeighbs), tuple(ind for ind in stepsMesh.getTriTetNeighb(tri.idx) if ind != UNKNOWN_TET))
         self.assertEqual(tuple(v.idx for v in tri.verts), tuple(stepsMesh.getTri(tri.idx)))
         self.assertEqual(tri.toList(), TriList([tri], mesh=self.mesh))
+        tetNeighbTris = TriList([], mesh=self.mesh)
+        neighbs = tri.tetNeighbs
+        for t in neighbs:
+            tetNeighbTris |= t.faces
+        tetNeighbTris -= tri.toList()
+        self.assertGreaterEqual(len(tri.triNeighbs), len(tetNeighbTris))
+        self.assertEqual(len(tetNeighbTris - tri.triNeighbs), 0)
         if not self._distMesh:
             self.assertEqual(tuple(b.idx for b in tri.bars), tuple(stepsMesh.getTriBars(tri.idx)))
             self.assertEqual(tuple(tri.norm), tuple(stepsMesh.getTriNorm(tri.idx)))
@@ -296,6 +305,7 @@ class tetMeshTests(unittest.TestCase):
             lst6 = lstCls([e for e in allElems[0:nbAppend]], self.mesh)
             lst7 = lstCls(range(nbAppend), self.mesh)
             lst8 = lstCls(range(nbAppend), self.mesh2)
+            lst9 = lstCls(mesh=self.mesh)
 
             # test creation from generator
             lg1 = lstCls((i for i in range(nbAppend)), self.mesh)
@@ -311,6 +321,16 @@ class tetMeshTests(unittest.TestCase):
             for i in range(nbAppend):
                 lst.append(allElems[2 * i + 1])
             lst7.append(allElems[nbAppend])
+
+            # test removing
+            with self.assertRaises(TypeError):
+                lst9.remove(0)
+            with self.assertRaises(ValueError):
+                lst9.remove(allElems[-1])
+            lst9.append(allElems[-1])
+            self.assertEqual(len(lst9), 1)
+            lst9.remove(allElems[-1])
+            self.assertEqual(len(lst9), 0)
 
             # test arbitrary position accessing
             self.assertEqual(lst[nbAppend].idx, 2 * nbAppend - 1)
@@ -676,29 +696,31 @@ class tetMeshTests(unittest.TestCase):
         self.assertEqual(patch2.tris, TriList(triLsts[2], self.mesh))
         self.assertNotEqual(patch2.tris, TriList(triLsts[3], self.mesh))
 
+        # Triangle neighbors in patch
+        for tri in patch1.tris:
+            self.assertCountEqual(tri.patchTriNeighbs, tri.triNeighbs & patch1.tris)
+        self.assertEqual(self.mesh.tris[0].patchTriNeighbs, TriList([], self.mesh))
+
         # edges of a patch
         if not self._distMesh:
             self.assertEqual(set(patch1.edges), set(TriList(triLsts[1], self.mesh).edges))
 
         # Declare simulation to allow species access from patch
-        # TODO Solve random memory corruption that can happen when creating the simulation
-        # Remove the if condition once this is solved
-        if not self._distMesh:
-            sim = self.getSimulation()
+        sim = self.getSimulation()
 
-            # accessing species from a patch
-            self.assertEqual(patch1.SA, self.SA)
-            self.assertEqual(patch1.SB, self.SB)
-            with self.assertRaises(Exception):
-                patch1.SD
+        # accessing species from a patch
+        self.assertEqual(patch1.SA, self.SA)
+        self.assertEqual(patch1.SB, self.SB)
+        with self.assertRaises(Exception):
+            patch1.SD
 
-            # accessing species from a tet
-            self.assertEqual(triLsts[1][0].SA, self.SA)
-            self.assertEqual(triLsts[1][0].SB, self.SB)
-            with self.assertRaises(Exception):
-                triLsts[1][0].SD
-            with self.assertRaises(Exception):
-                triLsts[notAttrInd][0].SA
+        # accessing species from a tet
+        self.assertEqual(triLsts[1][0].SA, self.SA)
+        self.assertEqual(triLsts[1][0].SB, self.SB)
+        with self.assertRaises(Exception):
+            triLsts[1][0].SD
+        with self.assertRaises(Exception):
+            triLsts[notAttrInd][0].SA
 
         # bbox
         c1b = patch1.bbox

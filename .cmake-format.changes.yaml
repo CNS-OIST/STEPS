@@ -1,0 +1,26 @@
+additional_commands:
+  test_unit:
+    pargs:
+      nargs: '*'
+      flags: []
+    kwargs:
+      PATH: 1
+      TARGETS: +
+      DEPENDENCIES: +
+      INCLUDE: +
+      MPI_RANKS: +
+  add_library_target:
+    kwargs:
+      NAME: 1
+      INCLUDE_DIRECTORIES: +
+      LIBRARIES: +
+      NAME_LOWER_CASE: 1
+  add_mpi_test:
+    pargs:
+      nargs: '*'
+      flags: []
+    kwargs:
+      NAME: 1
+      NUM_PROCS: 1
+      COMMAND: +
+      CONFIGURATIONS: +

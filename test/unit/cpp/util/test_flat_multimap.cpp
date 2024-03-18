@@ -1,9 +1,11 @@
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
-
 #include "util/flat_multimap.hpp"
 
-using namespace Catch::literals;
+#include <catch2/catch_approx.hpp>
+#include <catch2/catch_template_test_macros.hpp>
+
+using namespace Catch::literals;  // NOLINT
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
+
 
 using steps::fmm_ab2c_padding;
 using steps::fmm_stl;
@@ -16,15 +18,17 @@ struct Policy {
 #ifdef STEPS_USE_DIST_MESH
 using steps::fmm_osh;
 #define FMM_BACKENDS steps::util::OSH, steps::util::STL
-#define FMM_TEST_POLICIES                                                 \
-    Policy<fmm_osh>, Policy<fmm_osh | fmm_ab2c_padding>, Policy<fmm_stl>, \
-        Policy<fmm_stl | fmm_ab2c_padding>
+typedef std::tuple<Policy<fmm_osh>,
+                   Policy<fmm_osh | fmm_ab2c_padding>,
+                   Policy<fmm_stl>,
+                   Policy<fmm_stl | fmm_ab2c_padding>>
+    fmm_test_policies;
 #else
-#define FMM_BACKENDS      steps::util::STL
-#define FMM_TEST_POLICIES Policy<fmm_stl>, Policy<fmm_stl | fmm_ab2c_padding>
+#define FMM_BACKENDS steps::util::STL
+using fmm_test_policies = std::tuple<Policy<fmm_stl>, Policy<fmm_stl | fmm_ab2c_padding>>;
 #endif  // STEPS_USE_DIST_MESH
 
-TEMPLATE_TEST_CASE("size 1", "[vds]", FMM_TEST_POLICIES) {
+TEMPLATE_LIST_TEST_CASE("size 1", "[vds]", fmm_test_policies) {
     steps::util::flat_multimap<double, 1, TestType::value> v({1, 3, 0, 2}, 3.);
 
     REQUIRE(v.size() == 4);
@@ -109,7 +113,7 @@ TEMPLATE_TEST_CASE("size 1", "[vds]", FMM_TEST_POLICIES) {
     }
 }
 
-TEMPLATE_TEST_CASE("size 3", "[vds]", FMM_TEST_POLICIES) {
+TEMPLATE_LIST_TEST_CASE("size 3", "[vds]", fmm_test_policies) {
     using fmm_type = typename steps::util::flat_multimap<double, 3, TestType::value>;
     fmm_type v({1, 3, 0, 2}, 3.);
 

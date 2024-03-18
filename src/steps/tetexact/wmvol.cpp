@@ -24,142 +24,116 @@
 
  */
 
-
-// Standard library & STL headers.
-#include <algorithm>
-#include <cassert>
-#include <cmath>
-#include <functional>
-#include <iostream>
-
 // STEPS headers.
 #include "wmvol.hpp"
+
 #include "diff.hpp"
+#include "math/constants.hpp"
 #include "reac.hpp"
+#include "solver/reacdef.hpp"
 #include "tet.hpp"
 #include "tetexact.hpp"
 #include "tri.hpp"
-#include "math/constants.hpp"
-#include "solver/diffdef.hpp"
-#include "solver/reacdef.hpp"
+#include "util/checkpointing.hpp"
 
 // logging
-#include <easylogging++.h>
 #include "util/error.hpp"
 
+#include "util/checkpointing.hpp"
+
+namespace steps::tetexact {
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace stex = steps::tetexact;
-namespace ssolver = steps::solver;
-
-////////////////////////////////////////////////////////////////////////////////
-
-stex::WmVol::WmVol
-  (
-    tetrahedron_id_t idx, solver::Compdef *cdef, double vol
-  )
-: pIdx(idx)
-, pCompdef(cdef)
-, pVol(vol)
-{
+WmVol::WmVol(tetrahedron_global_id idx, solver::Compdef* cdef, double vol)
+    : pIdx(idx)
+    , pCompdef(cdef)
+    , pVol(vol) {
     AssertLog(pCompdef != nullptr);
     AssertLog(pVol > 0.0);
 
     // Based on compartment definition, build other structures.
     auto nspecs = compdef()->countSpecs();
-    pPoolCount.resize(nspecs, 0);
-    pPoolFlags.resize(nspecs, 0);
+    pPoolCount.container().resize(nspecs, 0);
+    pPoolFlags.container().resize(nspecs, 0);
     pKProcs.resize(compdef()->countReacs());
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::WmVol::~WmVol()
-{
+WmVol::~WmVol() {
     // Delete reaction rules.
-    for (auto const& i : pKProcs) {
-      delete i;
+    for (auto const& i: pKProcs) {
+        delete i;
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::WmVol::checkpoint(std::fstream & cp_file)
-{
-    steps::checkpoint(cp_file, pPoolCount, false /* with_size */);
-    steps::checkpoint(cp_file, pPoolFlags, false /* with_size */);
+void WmVol::checkpoint(std::fstream& cp_file) {
+    util::checkpoint(cp_file, pPoolCount);
+    util::checkpoint(cp_file, pPoolFlags);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::WmVol::restore(std::fstream & cp_file)
-{
-    const auto nspecs = compdef()->countSpecs();
-    steps::restore(cp_file, nspecs, pPoolCount);
-    steps::restore(cp_file, nspecs, pPoolFlags);
+void WmVol::restore(std::fstream& cp_file) {
+    util::restore(cp_file, pPoolCount);
+    util::restore(cp_file, pPoolFlags);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::WmVol::setNextTri(stex::Tri * t)
-{
+void WmVol::setNextTri(Tri* t) {
     pNextTris.push_back(t);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::WmVol::setupKProcs(stex::Tetexact * tex)
-{
-
+void WmVol::setupKProcs(Tetexact* tex) {
     uint j = 0;
 
     // Note: ignoring diffusion KProcs
 
     // Create reaction kproc's.
     uint nreacs = compdef()->countReacs();
-    for (uint i = 0; i < nreacs; ++i)
-    {
-        ssolver::Reacdef * rdef = compdef()->reacdef(i);
-        auto * r = new stex::Reac(rdef, this);
+    for (auto i: solver::reac_local_id::range(nreacs)) {
+        auto& rdef = compdef()->reacdef(i);
+        auto* r = new Reac(&rdef, this);
         pKProcs[j++] = r;
         tex->addKProc(r);
     }
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::WmVol::reset()
-{
+void WmVol::reset() {
     std::fill(pPoolCount.begin(), pPoolCount.end(), 0);
     std::fill(pPoolFlags.begin(), pPoolFlags.end(), 0);
-    for (auto kproc: pKProcs) {
+
+    for (auto const& kproc: pKProcs) {
         kproc->reset();
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double stex::WmVol::conc(uint gidx) const
-{
-    uint lspidx = compdef()->specG2L(gidx);
+double WmVol::conc(solver::spec_global_id gidx) const {
+    solver::spec_local_id lspidx = compdef()->specG2L(gidx);
     double n = pPoolCount[lspidx];
-    return (n/(1.0e3*pVol*steps::math::AVOGADRO));
+    return n / (1.0e3 * pVol * math::AVOGADRO);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::WmVol::setCount(uint lidx, uint count)
-{
-    AssertLog(lidx < compdef()->countSpecs());
-    pPoolCount[lidx] = count;
+void WmVol::setCount(solver::spec_local_id lidx, uint count) {
+    pPoolCount.at(lidx) = count;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::WmVol::incCount(uint lidx, int inc)
-{
+void WmVol::incCount(solver::spec_local_id lidx, int inc) {
     AssertLog(lidx < compdef()->countSpecs());
 #ifndef NDEBUG
     uint old_count = pPoolCount[lidx];
@@ -175,21 +149,18 @@ void stex::WmVol::incCount(uint lidx, int inc)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::WmVol::setClamped(uint lidx, bool clamp)
-{
-    if (clamp) { pPoolFlags[lidx] |= CLAMPED;
-    } else { pPoolFlags[lidx] &= ~CLAMPED;
-}
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-stex::Reac * stex::WmVol::reac(uint lidx) const
-{
-    AssertLog(lidx < compdef()->countReacs());
-    return dynamic_cast<stex::Reac*>(pKProcs[lidx]);
+void WmVol::setClamped(solver::spec_local_id lidx, bool clamp) {
+    if (clamp) {
+        pPoolFlags[lidx] |= CLAMPED;
+    } else {
+        pPoolFlags[lidx] &= ~CLAMPED;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// END
+Reac& WmVol::reac(solver::reac_local_id lidx) const {
+    return *dynamic_cast<Reac*>(pKProcs.at(lidx.get()));
+}
+
+}  // namespace steps::tetexact

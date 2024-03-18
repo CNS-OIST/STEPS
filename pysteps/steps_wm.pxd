@@ -8,6 +8,8 @@ __copyright__ = "Copyright 2016 EPFL BBP-project"
 from cython.operator cimport dereference as deref
 cimport std
 cimport steps_model
+from steps_common cimport *
+
 
 
 # ======================================================================================================================
@@ -23,19 +25,19 @@ cdef extern from "geom/comp.hpp" namespace "steps::wm":
 
     ###### Cybinding for Comp ######
     cdef cppclass Comp:
-        Comp(std.string, Geom*, double) except +
+        Comp(std.string, Geom, double) except +
         std.string getID()
         void setID(std.string) except +
-        Geom* getContainer()
+        Geom& getContainer()
         double getVol()
         void addVolsys(std.string) except +
-        std.set[std.string] getVolsys()
+        flat_set[std.string] getVolsys()
         void delVolsys(std.string) except +
-        std.vector[steps_model.Spec*] getAllSpecs(steps_model.Model*) except +
-        std.vector[steps_model.Reac*] getAllReacs(steps_model.Model*) except +
-        std.vector[steps_model.Diff*] getAllDiffs(steps_model.Model*) except +
-        std.set[Patch*] getIPatches()
-        std.set[Patch*] getOPatches()
+        flat_set[steps_model.Spec*] getAllSpecs(steps_model.Model) except +
+        flat_set[steps_model.Reac*] getAllReacs(steps_model.Model) except +
+        flat_set[steps_model.Diff*] getAllDiffs(steps_model.Model) except +
+        flat_set[Patch*] getIPatches()
+        flat_set[Patch*] getOPatches()
         void setVol(double vol) except +
 
 # ======================================================================================================================
@@ -51,18 +53,18 @@ cdef extern from "geom/patch.hpp" namespace "steps::wm":
 
     ###### Cybinding for Patch ######
     cdef cppclass Patch:
-        Patch(std.string, Geom*, Comp*, Comp*, double) except +
+        Patch(std.string, Geom&, Comp&, Comp*, double) except +
         std.string getID()
         void setID(std.string) except +
-        Geom* getContainer()
+        Geom& getContainer()
         double getArea()
         void setArea(double area) except +
         void addSurfsys(std.string) except +
-        std.set[std.string] getSurfsys()
+        flat_set[std.string] getSurfsys()
         void delSurfsys(std.string) except +
-        std.vector[steps_model.Spec*] getAllSpecs(steps_model.Model*)
-        std.vector[steps_model.SReac*] getAllSReacs(steps_model.Model*)
-        Comp* getIComp()
+        flat_set[steps_model.Spec*] getAllSpecs(steps_model.Model)
+        flat_set[steps_model.SReac*] getAllSReacs(steps_model.Model)
+        Comp& getIComp()
         Comp* getOComp()
 
 # ======================================================================================================================
@@ -72,10 +74,10 @@ cdef extern from "geom/geom.hpp" namespace "steps::wm":
     ###### Cybinding for Geom ######
     cdef cppclass Geom:
         Geom()
-        Comp* getComp(std.string) except +
+        Comp& getComp(std.string) except +
         void delComp(std.string) except +
         std.vector[Comp*] getAllComps()
-        Patch* getPatch(std.string) except +
+        Patch& getPatch(std.string) except +
         void delPatch(std.string) except +
         std.vector[Patch*] getAllPatches()
 

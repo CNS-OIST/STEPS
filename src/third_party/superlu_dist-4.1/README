@@ -1,6 +1,0 @@
-This code comprises a subset of the SuperLU_DIST 4.1 sparse direct solver
-library, hosted at <URL: http://crd-legacy.lbl.gov/~xiaoye/SuperLU/>
-
-The SuperLU_DIST source is licensed under the Modified BSD License, as
-included in the LICENSE file.
-

@@ -74,7 +74,7 @@ class TestRDWellMixedWmrk4(unittest.TestCase):
 
     def validate(self, sim):
         sim.run(1)
-        count = sim.getCompCount("comp", "A")
+        count = sim.getCompSpecCount("comp", "A")
         self.assertTrue(count > 0)
         if __name__== "__main__": print("Count: ", count)
 

@@ -1,32 +1,34 @@
 #include "mpi/dist/tetopsplit/kproc/event_queue.hpp"
 
-#include "gtest/gtest.h"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 
-using namespace steps::dist::kproc;
+using steps::dist::kproc::EventQueue;
+using steps::dist::kproc::KProcID;
 
-TEST(KProcEventQueue, CreateAndUpdate) {
+TEST_CASE("KProcEventQueue_CreateAndUpdate") {
     EventQueue queue;
 
-    ASSERT_THROW(queue.getEventTime(KProcID(0)), std::logic_error);
+    REQUIRE_THROWS_AS(queue.getEventTime(KProcID(0)), std::logic_error);
     queue.updateMaxTime(1);
     queue.update(KProcID(1), 0.5);
-    ASSERT_EQ(queue.getEventTime(KProcID(1)), .5);
+    REQUIRE_THAT(queue.getEventTime(KProcID(1)), Catch::Matchers::WithinULP(.5, 4));
 
     queue.update(KProcID(2), 0.75);
     queue.update(KProcID(3), 1.75);
     queue.update(KProcID(4), 0.2);
     queue.update(KProcID(5), 0.25);
 
-    ASSERT_EQ(queue.getEventTime(KProcID(4)), 0.2);
+    REQUIRE(queue.getEventTime(KProcID(4)) == 0.2);
     auto first1 = queue.getFirst();
-    ASSERT_EQ(first1.first, 0.2);
-    ASSERT_EQ(first1.second.data(), 4);
+    REQUIRE_THAT(first1.first, Catch::Matchers::WithinULP(0.2, 4));
+    REQUIRE(first1.second.data() == 4);
 
     queue.update(KProcID(4), 0.7);
-    ASSERT_EQ(queue.getEventTime(KProcID(4)), 0.7);
+    REQUIRE_THAT(queue.getEventTime(KProcID(4)), Catch::Matchers::WithinULP(0.7, 4));
     auto first2 = queue.getFirst();
-    ASSERT_EQ(first2.first, 0.25);
-    ASSERT_EQ(first2.second.data(), 5);
+    REQUIRE_THAT(first2.first, Catch::Matchers::WithinULP(0.25, 4));
+    REQUIRE(first2.second.data() == 5);
 
     queue.update(KProcID(1), 1.5);
     queue.update(KProcID(2), 1.75);
@@ -34,18 +36,19 @@ TEST(KProcEventQueue, CreateAndUpdate) {
     queue.update(KProcID(4), 1.2);
     queue.update(KProcID(5), 1.25);
 
-    ASSERT_EQ(queue.getEventTime(KProcID(1)), 1.5);
-    ASSERT_EQ(queue.getEventTime(KProcID(2)), 1.75);
-    ASSERT_EQ(queue.getEventTime(KProcID(3)), 1.85);
-    ASSERT_EQ(queue.getEventTime(KProcID(4)), 1.2);
-    ASSERT_EQ(queue.getEventTime(KProcID(5)), 1.25);
+    REQUIRE_THAT(queue.getEventTime(KProcID(1)), Catch::Matchers::WithinULP(1.5, 4));
+    REQUIRE_THAT(queue.getEventTime(KProcID(2)), Catch::Matchers::WithinULP(1.75, 4));
+    REQUIRE_THAT(queue.getEventTime(KProcID(3)), Catch::Matchers::WithinULP(1.85, 4));
+    REQUIRE_THAT(queue.getEventTime(KProcID(4)), Catch::Matchers::WithinULP(1.2, 4));
+    REQUIRE_THAT(queue.getEventTime(KProcID(5)), Catch::Matchers::WithinULP(1.25, 4));
 
     auto first3 = queue.getFirst();
-    ASSERT_EQ(first3.first, std::numeric_limits<double>::infinity());
-    ASSERT_EQ(first3.second.data(), 0);
+    REQUIRE_THAT(first3.first,
+                 Catch::Matchers::WithinULP(std::numeric_limits<double>::infinity(), 4));
+    REQUIRE(first3.second.data() == 0);
 }
 
-TEST(KProcEventQueue, TimeCollision) {
+TEST_CASE("KProcEventQueue_TimeCollision") {
     EventQueue queue;
     queue.updateMaxTime(1);
     queue.update(KProcID(2), 0.75);
@@ -53,25 +56,18 @@ TEST(KProcEventQueue, TimeCollision) {
     queue.update(KProcID(4), 0.75);
 
     auto first1 = queue.getFirst();
-    ASSERT_EQ(first1.first, 0.75);
-    ASSERT_EQ(first1.second.data(), 2);
+    REQUIRE_THAT(first1.first, Catch::Matchers::WithinULP(0.75, 4));
+    REQUIRE(first1.second.data() == 2);
 
     queue.update(KProcID(2), 0.85);
 
     auto first2 = queue.getFirst();
-    ASSERT_EQ(first2.first, 0.75);
-    ASSERT_EQ(first2.second.data(), 3);
+    REQUIRE_THAT(first2.first, Catch::Matchers::WithinULP(0.75, 4));
+    REQUIRE(first2.second.data() == 3);
 
     queue.update(KProcID(3), 0.95);
 
     auto first3 = queue.getFirst();
-    ASSERT_EQ(first3.first, 0.75);
-    ASSERT_EQ(first3.second.data(), 4);
-}
-
-int main(int argc, char **argv) {
-    int r = 0;
-    ::testing::InitGoogleTest(&argc, argv);
-    r = RUN_ALL_TESTS();
-    return r;
+    REQUIRE_THAT(first3.first, Catch::Matchers::WithinULP(0.75, 4));
+    REQUIRE(first3.second.data() == 4);
 }

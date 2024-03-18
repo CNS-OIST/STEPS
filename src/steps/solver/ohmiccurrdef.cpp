@@ -24,83 +24,44 @@
 
  */
 
-
-// STL headers.
-#include <cassert>
-#include <iostream>
-#include <sstream>
-#include <string>
-
-// STEPS headers.
 #include "ohmiccurrdef.hpp"
+
 #include "model/chanstate.hpp"
-
+#include "statedef.hpp"
 #include "util/error.hpp"
-// logging
-#include <easylogging++.h>
 
-namespace ssolver = steps::solver;
-namespace smod = steps::model;
+namespace steps::solver {
 
-////////////////////////////////////////////////////////////////////////////////
-
-ssolver::OhmicCurrdef::OhmicCurrdef(Statedef * sd, uint gidx, smod::OhmicCurr * oc)
-: pStatedef(sd)
-, pIdx(gidx)
-, pName()
-, pSetupdone(false)
-, pChanState()
-, pG(0.0)
-, pERev(0.0)
-, pSpec_DEP(nullptr)
-, pSpec_CHANSTATE(GIDX_UNDEFINED)
-{
-    AssertLog(pStatedef != nullptr);
-    AssertLog(oc != nullptr);
-
-    uint nspecs = pStatedef->countSpecs();
-    if (nspecs == 0) { return; // Would be weird, but okay.
-}
-    pSpec_DEP = new int[nspecs];
-    std::fill_n(pSpec_DEP, nspecs, DEP_NONE);
-
-    pName = oc->getID();
-    pChanState = oc->getChanState()->getID();
-    pG = oc->getG();
-    AssertLog(pG >= 0.0);
-    pERev = oc->getERev();
+OhmicCurrdef::OhmicCurrdef(Statedef& sd, ohmiccurr_global_id gidx, model::OhmicCurr& oc)
+    : pIdx(gidx)
+    , pName(oc.getID())
+    , pChanState(oc.getChanState().getID())
+    , pG(oc.getG())
+    , pERev(oc.getERev())
+    , pSpec_CHANSTATE{} {
+    uint nspecs = sd.countSpecs();
+    pSpec_DEP.container().resize(nspecs, DEP_NONE);
+    AssertLog(getG() >= 0.0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::OhmicCurrdef::~OhmicCurrdef()
-{
-    if (pStatedef->countSpecs() > 0) delete[] pSpec_DEP;
+void OhmicCurrdef::checkpoint(std::fstream& /*cp_file*/) const {
+    // Reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::OhmicCurrdef::checkpoint(std::fstream & cp_file)
-{
-    cp_file.write(reinterpret_cast<char*>(&pG), sizeof(double));
-    cp_file.write(reinterpret_cast<char*>(&pERev), sizeof(double));
+void OhmicCurrdef::restore(std::fstream& /*cp_file*/) {
+    // Reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::OhmicCurrdef::restore(std::fstream & cp_file)
-{
-    cp_file.read(reinterpret_cast<char*>(&pG), sizeof(double));
-    cp_file.read(reinterpret_cast<char*>(&pERev), sizeof(double));
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void ssolver::OhmicCurrdef::setup()
-{
+void OhmicCurrdef::setup(const Statedef& sd) {
     AssertLog(pSetupdone == false);
 
-    uint chidx = pStatedef->getSpecIdx(pChanState);
+    spec_global_id chidx = sd.getSpecIdx(pChanState);
 
     pSpec_CHANSTATE = chidx;
     pSpec_DEP[chidx] |= DEP_STOICH;
@@ -110,32 +71,26 @@ void ssolver::OhmicCurrdef::setup()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint ssolver::OhmicCurrdef::chanstate() const
-{
+spec_global_id OhmicCurrdef::chanstate() const {
     AssertLog(pSetupdone == true);
     return pSpec_CHANSTATE;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int ssolver::OhmicCurrdef::dep(uint gidx) const
-{
+int OhmicCurrdef::dep(spec_global_id gidx) const {
     AssertLog(pSetupdone == true);
-    AssertLog(gidx < pStatedef->countSpecs());
-    return pSpec_DEP[gidx];
+    return pSpec_DEP.at(gidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool ssolver::OhmicCurrdef::req(uint gidx) const
-{
+bool OhmicCurrdef::req(spec_global_id gidx) const {
     AssertLog(pSetupdone == true);
-    AssertLog(gidx < pStatedef->countSpecs());
-    if (pSpec_DEP[gidx] != DEP_NONE) { return true;
-}
+    if (pSpec_DEP.at(gidx) != DEP_NONE) {
+        return true;
+    }
     return false;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
+}  // namespace steps::solver

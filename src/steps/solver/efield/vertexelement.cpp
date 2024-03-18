@@ -24,80 +24,58 @@
 
  */
 
-
-// STL headers.
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <vector>
-
-// STEPS headers.
-#include "util/common.h"
-#include "vertexconnection.hpp"
 #include "vertexelement.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
+#include "util/checkpointing.hpp"
+#include "vertexconnection.hpp"
 
-namespace sefield = steps::solver::efield;
-using namespace std;
+namespace steps::solver::efield {
 
-////////////////////////////////////////////////////////////////////////////////
-
-sefield::VertexElement::VertexElement(uint idx, double * vpos)
-: pIDX(idx)
-, pXPos(vpos[0])
-, pYPos(vpos[1])
-, pZPos(vpos[2])
-, pSurface(0.0)
-, pVolume(0.0)
-, pCapacitance(0.0)
-, pConnections()
-, pNCon(0)
-, pNbrs(nullptr)
-, pCcs(nullptr)
-{
-}
+VertexElement::VertexElement(uint idx, const double* vpos)
+    : pIDX(idx)
+    , pXPos(vpos[0])
+    , pYPos(vpos[1])
+    , pZPos(vpos[2])
+    , pSurface(0.0)
+    , pVolume(0.0)
+    , pCapacitance(0.0)
+    , pNCon(0)
+    , pNbrs(nullptr) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-sefield::VertexElement::~VertexElement()
-{
+VertexElement::~VertexElement() {
     delete[] pNbrs;
-    delete[] pCcs;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::VertexElement::checkpoint(std::fstream & cp_file)
-{
-    cp_file.write(reinterpret_cast<char*>(&pSurface), sizeof(double));
-    cp_file.write(reinterpret_cast<char*>(&pVolume), sizeof(double));
-    cp_file.write(reinterpret_cast<char*>(&pCapacitance), sizeof(double));
-    cp_file.write(reinterpret_cast<char*>(&pNCon), sizeof(uint));
-    cp_file.write(reinterpret_cast<char*>(pCcs), sizeof(double) * pNCon);
+void VertexElement::checkpoint(std::fstream& cp_file) {
+    util::checkpoint(cp_file, pSurface);
+    util::checkpoint(cp_file, pVolume);
+    util::checkpoint(cp_file, pCapacitance);
+    util::checkpoint(cp_file, pNCon);
+    util::checkpoint(cp_file, pCcs);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::VertexElement::restore(std::fstream & cp_file)
-{
-    cp_file.read(reinterpret_cast<char*>(&pSurface), sizeof(double));
-    cp_file.read(reinterpret_cast<char*>(&pVolume), sizeof(double));
-    cp_file.read(reinterpret_cast<char*>(&pCapacitance), sizeof(double));
-    cp_file.read(reinterpret_cast<char*>(&pNCon), sizeof(uint));
-    cp_file.read(reinterpret_cast<char*>(pCcs), sizeof(double) * pNCon);
+void VertexElement::restore(std::fstream& cp_file) {
+    util::compare(cp_file, pSurface, "Mismatched pSurface restore value.");
+    util::compare(cp_file, pVolume, "Mismatched pVolume restore value.");
+    util::restore(cp_file, pCapacitance);
+    util::compare(cp_file, pNCon, "Mismatched pNCon restore value.");
+    util::restore(cp_file, pCcs);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::VertexElement::fix()
-{
+void VertexElement::fix() {
     pNCon = static_cast<uint>(pConnections.size());
     pNbrs = new VertexElement*[pNCon];
-    pCcs = new double[pNCon];
+    pCcs.resize(pNCon);
 
-    for (auto i = 0u; i < pNCon; ++i)
-    {
+    for (auto i = 0u; i < pNCon; ++i) {
         pNbrs[i] = pConnections[i]->getOther(this);
         pCcs[i] = 0.0;
     }
@@ -105,39 +83,15 @@ void sefield::VertexElement::fix()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void sefield::VertexElement::applyConductance(double a)
-{
+void VertexElement::applyConductance(double a) {
     // this has some effect on compilation/optimization: without it,
     // the coupling constants are wrong
     // Iain : what on earth was the following line doing in here?
     // double* uu = new double[pNCon];
 
-    for (auto i = 0u; i < pNCon; ++i)
-    {
-        pCcs[i] =  a * pConnections[i]->getGeomCouplingConstant();
+    for (auto i = 0u; i < pNCon; ++i) {
+        pCcs[i] = a * pConnections[i]->getGeomCouplingConstant();
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/*
-ostream & operator<< (ostream & os, sefield::VertexElement const & ve)
-{
-    os << "VertexElement(idx=#" << ve.getIDX() << ", ";
-    os << "x=" << ve.getX() << ", ";
-    os << "y=" << ve.getY() << ", ";
-    os << "z=" << ve.getZ() << ", ";
-    os << "ncon=" << ve.getNCon() << ", ";
-    os << "con={";
-    for (uint i = 0; i < ve.getNCon(); ++i)
-    {
-        os << "#" << ve.pNbrs[i]->getIDX() << ":";
-        os << ve.pCcs[i] << ",";
-    }
-    os << "}, ";
-    os << "cap=" << ve.getCapacitance() << ")";
-    return os;
-}
-*/
-////////////////////////////////////////////////////////////////////////////////
-
-// END
+}  // namespace steps::solver::efield

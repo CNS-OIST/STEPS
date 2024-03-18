@@ -126,9 +126,9 @@ class TestKisilevich(unittest.TestCase):
 
         # Now find the distance of the center of the tets to the Z lower face
         for i in range(SAMPLE):
-                baryc = mesh.getTetBarycenter(int(tetidxs[i]))
-                r = baryc[0]
-                tetrads[i] = r*1.0e6
+            baryc = mesh.getTetBarycenter(int(tetidxs[i]))
+            r = baryc[0]
+            tetrads[i] = r*1.0e6
 
         Atets = acomptets
         Btets = bcomptets
@@ -149,11 +149,11 @@ class TestKisilevich(unittest.TestCase):
 
         sim.reset()
 
-        sim.setDiffBoundaryDiffusionActive('diffb', 'A', True)
-        sim.setDiffBoundaryDiffusionActive('diffb', 'B', True)
+        sim.setDiffBoundarySpecDiffusionActive('diffb', 'A', True)
+        sim.setDiffBoundarySpecDiffusionActive('diffb', 'B', True)
 
-        sim.setCompCount('compa', 'A', NA0)
-        sim.setCompCount('compb', 'B', NB0)
+        sim.setCompSpecCount('compa', 'A', NA0)
+        sim.setCompSpecCount('compb', 'B', NB0)
 
         new_dir = './validation_cp/cp/'
         os.makedirs(new_dir, exist_ok=True)
@@ -263,15 +263,17 @@ class TestKisilevich(unittest.TestCase):
         resA = numpy.zeros((NITER, ntpnts, SAMPLE))
         resB = numpy.zeros((NITER, ntpnts, SAMPLE))
 
-
+        seed = int(time.time()%4294967295)
         for i in range (0, NITER):    
             sim.restore('./validation_cp/cp/kisilevich')
+            rng.initialize(seed)
+            seed += 1
             
             for t in range(0, ntpnts):
                 sim.run(tpnts[t])
                 for k in range(SAMPLE):
-                    resA[i,t,k] = sim.getTetCount(int(tetidxs[k]), 'A')
-                    resB[i,t,k] = sim.getTetCount(int(tetidxs[k]), 'B')
+                    resA[i,t,k] = sim.getTetSpecCount(int(tetidxs[k]), 'A')
+                    resB[i,t,k] = sim.getTetSpecCount(int(tetidxs[k]), 'B')
 
 
         itermeansA = numpy.mean(resA, axis=0)

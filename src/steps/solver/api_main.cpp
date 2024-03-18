@@ -24,113 +24,181 @@
 
  */
 
-// STL headers.
-#include <sstream>
-#include <string>
-
-// STEPS headers.
 #include "api.hpp"
+
+#include "geom/comp.hpp"
+#include "geom/geom.hpp"
+#include "model/model.hpp"
+#include "rng/rng.hpp"
 #include "statedef.hpp"
-// util
 #include "util/error.hpp"
-// logging
-#include <easylogging++.h>
-////////////////////////////////////////////////////////////////////////////////
 
-USING(std, string);
-using namespace steps::solver;
+#include "chandef.hpp"
+#include "compdef.hpp"
+#include "complexdef.hpp"
+#include "complexreacdef.hpp"
+#include "complexsreacdef.hpp"
+#include "diffboundarydef.hpp"
+#include "diffdef.hpp"
+#include "endocytosisdef.hpp"
+#include "exocytosisdef.hpp"
+#include "ghkcurrdef.hpp"
+#include "linkspecdef.hpp"
+#include "ohmiccurrdef.hpp"
+#include "patchdef.hpp"
+#include "raftdef.hpp"
+#include "raftdisdef.hpp"
+#include "raftendocytosisdef.hpp"
+#include "raftgendef.hpp"
+#include "raftsreacdef.hpp"
+#include "reacdef.hpp"
+#include "sdiffboundarydef.hpp"
+#include "specdef.hpp"
+#include "sreacdef.hpp"
+#include "vdepsreacdef.hpp"
+#include "vesbinddef.hpp"
+#include "vesicledef.hpp"
+#include "vessdiffdef.hpp"
+#include "vessreacdef.hpp"
+#include "vesunbinddef.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::solver {
 
-API::API(steps::model::Model *m, steps::wm::Geom *g, const rng::RNGptr &r)
-    : pModel(m), pGeom(g), pRNG(r), pStatedef(nullptr) {
-  ArgErrLogIf(pModel == nullptr,
-              "No model provided to solver initializer function");
-  ArgErrLogIf(pGeom == nullptr,
-              "No geometry provided to solver initializer function");
-  ArgErrLogIf(
-      m->_countSpecs() == 0,
-      "Cannot create solver object with this steps.model.Model description "
-      "object. Model must contain at least one chemical Species.");
+API::API(model::Model& m, wm::Geom& g, const rng::RNGptr& r)
+    : pModel(m)
+    , pGeom(g)
+    , pRNG(r)
+    , pStatedef(nullptr) {
+    ArgErrLogIf(pModel._countSpecs() == 0,
+                "Cannot create solver object with this steps.model.Model description "
+                "object. Model must contain at least one chemical Species.");
 
-  ArgErrLogIf(
-      g->_countComps() == 0,
-      "Cannot create solver object with this steps.geom.Geom geometry "
-      "description object. Geometry must contain at least one Compartment.");
+    ArgErrLogIf(pGeom._countComps() == 0,
+                "Cannot create solver object with this steps.geom.Geom geometry "
+                "description object. Geometry must contain at least one Compartment.");
 
-  std::vector<steps::wm::Comp *> comps = g->getAllComps();
-  std::vector<steps::wm::Comp *>::const_iterator c_end = comps.end();
-  for (std::vector<steps::wm::Comp *>::const_iterator c = comps.begin();
-       c != c_end; ++c) {
-    ArgErrLogIf(
-        (*c)->getVol() == 0.0,
-        "Cannot create solver object with this steps.geom.Geom geometry "
-        "description object. All Compartments must have non-zero volume.");
-  }
+    std::vector<wm::Comp*> comps = pGeom.getAllComps();
+    auto c_end = comps.end();
+    for (auto c = comps.begin(); c != c_end; ++c) {
+        ArgErrLogIf((*c)->getVol() == 0.0,
+                    "Cannot create solver object with this steps.geom.Geom geometry "
+                    "description object. All Compartments must have non-zero volume.");
+    }
 
-  // create state object, which will in turn create compdef, specdef etc
-  // objects and initialise
-  pStatedef = new Statedef(m, g, r);
+    // create state object, which will in turn create compdef, specdef etc
+    // objects and initialise
+    pStatedef.reset(new Statedef(m, g, r));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-API::~API() { delete pStatedef; }
+API::~API() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::step() { NotImplErrLog(""); }
+void API::checkpoint(std::ostream& cp_file) const {
+    pRNG->checkpoint(cp_file);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::advance(double /*adv*/) { NotImplErrLog(""); }
+void API::restore(std::istream& cp_file) {
+    pRNG->restore(cp_file);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setRk4DT(double /*dt*/) { NotImplErrLog(""); }
+void API::step() {
+    NotImplErrLog("");
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getRk4DT() const { NotImplErrLog(""); }
+void API::advance(double /*adv*/) {
+    NotImplErrLog("");
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setDT(double /*dt*/) { NotImplErrLog(""); }
+void API::setRk4DT(double /*dt*/) {
+    NotImplErrLog("");
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getDT() const { NotImplErrLog(""); }
+double API::getRk4DT() const {
+    NotImplErrLog("");
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setEfieldDT(double /*efdt*/) { NotImplErrLog(""); }
+void API::setDT(double /*dt*/) {
+    NotImplErrLog("");
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getEfieldDT() const { NotImplErrLog(""); }
+double API::getDT() const {
+    NotImplErrLog("");
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTemp(double /*temp*/) { NotImplErrLog(""); }
+void API::setEfieldDT(double /*efdt*/) {
+    NotImplErrLog("");
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getTemp() const { NotImplErrLog(""); }
+double API::getEfieldDT() const {
+    NotImplErrLog("");
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double API::getA0() const { NotImplErrLog(""); }
+void API::setTemp(double /*temp*/) {
+    NotImplErrLog("");
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint API::getNSteps() const { NotImplErrLog(""); }
+double API::getTemp() const {
+    NotImplErrLog("");
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTime(double /*time*/) { NotImplErrLog(""); }
+double API::getA0() const {
+    NotImplErrLog("");
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setNSteps(uint /*nsteps*/) { NotImplErrLog(""); }
+uint API::getNSteps() const {
+    NotImplErrLog("");
+}
 
 ////////////////////////////////////////////////////////////////////////////////
-// END
+
+void API::setTime(double /*time*/) {
+    NotImplErrLog("");
+}
+////////////////////////////////////////////////////////////////////////////////
+
+void API::setNSteps(uint /*nsteps*/) {
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void API::setVesicleDT(double /*dt*/) {
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::getVesicleDT() const {
+    NotImplErrLog("");
+}
+
+}  // namespace steps::solver

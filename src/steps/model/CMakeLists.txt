@@ -1,18 +1,36 @@
-add_library(stepsmodel STATIC
-    model.cpp
-    diff.cpp
-    chan.cpp
-    reac.cpp
-    spec.cpp
-    sreac.cpp
-    surfsys.cpp
-    volsys.cpp
-    chanstate.cpp
-    ohmiccurr.cpp
-    ghkcurr.cpp
-    vdeptrans.cpp
-    vdepsreac.cpp
-)
+add_library(
+  stepsmodel STATIC
+  chan.cpp
+  chanstate.cpp
+  complex.cpp
+  complexevents.cpp
+  complexreac.cpp
+  complexsreac.cpp
+  diff.cpp
+  endocytosis.cpp
+  exocytosis.cpp
+  ghkcurr.cpp
+  linkspec.cpp
+  model.cpp
+  ohmiccurr.cpp
+  raft.cpp
+  raftdis.cpp
+  raftendocytosis.cpp
+  raftgen.cpp
+  raftsreac.cpp
+  raftsys.cpp
+  reac.cpp
+  spec.cpp
+  sreac.cpp
+  surfsys.cpp
+  vdepsreac.cpp
+  vesbind.cpp
+  vesicle.cpp
+  vessdiff.cpp
+  vessreac.cpp
+  vessurfsys.cpp
+  vesunbind.cpp
+  volsys.cpp)
 
 set_property(TARGET stepsmodel PROPERTY POSITION_INDEPENDENT_CODE ON)
 

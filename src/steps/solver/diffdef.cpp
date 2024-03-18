@@ -24,131 +24,79 @@
 
  */
 
-
-// STL headers.
-#include <cassert>
-#include <string>
-
-// STEPS headers.
 #include "diffdef.hpp"
-#include "specdef.hpp"
-#include "types.hpp"
-#include "model/spec.hpp"
+
 #include "model/diff.hpp"
+#include "model/spec.hpp"
+#include "statedef.hpp"
+#include "util/checkpointing.hpp"
 
-#include "util/error.hpp"
-// logging
-#include <easylogging++.h>
-////////////////////////////////////////////////////////////////////////////////
-
-namespace ssolver = steps::solver;
-namespace smod = steps::model;
+namespace steps::solver {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::Diffdef::Diffdef(Statedef * sd, uint idx, steps::model::Diff * d)
-: pStatedef(sd)
-, pIdx(idx)
-, pName()
-, pDcst()
-, pLig()
-, pSetupdone(false)
-, pSpec_DEP(nullptr)
-{
-    AssertLog(pStatedef != nullptr);
-    AssertLog(d != nullptr);
-
-    pName = d->getID();
-    pDcst = d->getDcst();
-    pLig = d->getLig()->getID();
-    ligGIdx = pStatedef->getSpecIdx(pLig);
-
-    const uint nspecs = pStatedef->countSpecs();
-    if (nspecs == 0) { return;
-    }
-    pSpec_DEP = new int[nspecs];
-    std::fill_n(pSpec_DEP, nspecs, DEP_NONE);
-
+template <typename GlobalId>
+MetaDiffdef<GlobalId>::MetaDiffdef(Statedef& sd, GlobalId idx, model::Diff& d)
+    : pIdx(idx)
+    , pName(d.getID())
+    , pDcst(d.getDcst())
+    , ligGIdx(sd.getSpecIdx(d.getLig().getID())) {
+    const uint nspecs = sd.countSpecs();
+    pSpec_DEP.resize(nspecs, DEP_NONE);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ssolver::Diffdef::~Diffdef()
-{
-    if (pStatedef->countSpecs() > 0) delete[] pSpec_DEP;
+template <typename GlobalId>
+void MetaDiffdef<GlobalId>::checkpoint(std::fstream& /*cp_file*/) const {
+    // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Diffdef::checkpoint(std::fstream & cp_file)
-{
-    cp_file.write(reinterpret_cast<char*>(&pDcst), sizeof(double));
+template <typename GlobalId>
+
+void MetaDiffdef<GlobalId>::restore(std::fstream& /*cp_file*/) {
+    // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ssolver::Diffdef::restore(std::fstream & cp_file)
-{
-    cp_file.read(reinterpret_cast<char*>(&pDcst), sizeof(double));
-}
 
-////////////////////////////////////////////////////////////////////////////////
-
-void ssolver::Diffdef::setup()
-{
+template <typename GlobalId>
+void MetaDiffdef<GlobalId>::setup(const Statedef&) {
     AssertLog(pSetupdone == false);
 
-    pSpec_DEP[lig()] = DEP_STOICH;
+    pSpec_DEP[lig().get()] = DEP_STOICH;
 
     pSetupdone = true;
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-////////////////////////////////////////////////////////////////////////////////
-
-void ssolver::Diffdef::setDcst(double d)
-{
-    AssertLog(d >= 0.0);
-    pDcst = d;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-uint ssolver::Diffdef::lig() const
-{
-    AssertLog(pStatedef != nullptr);
+template <typename GlobalId>
+spec_global_id MetaDiffdef<GlobalId>::lig() const {
     return ligGIdx;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-/*
-void ssolver::Diffdef::setLig(uint gidx)
-{
-    AssertLog(gidx < pStatedef->countSpecs());
-    ssolver::Specdef * spec = pStatedef->specdef(gidx);
-    pLig = spec->name();
-}
-*/
-////////////////////////////////////////////////////////////////////////////////
 
-int ssolver::Diffdef::dep(uint gidx) const
-{
+template <typename GlobalId>
+int MetaDiffdef<GlobalId>::dep(spec_global_id gidx) const {
     AssertLog(pSetupdone == true);
-    AssertLog(gidx < pStatedef->countSpecs());
-    return pSpec_DEP[gidx];
+    return pSpec_DEP.at(gidx.get());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool ssolver::Diffdef::reqspec(uint gidx) const
-{
+template <typename GlobalId>
+bool MetaDiffdef<GlobalId>::reqspec(spec_global_id gidx) const {
     AssertLog(pSetupdone == true);
-    AssertLog(gidx < pStatedef->countSpecs());
-    return pSpec_DEP[gidx] != DEP_NONE;
+    return pSpec_DEP.at(gidx.get()) != DEP_NONE;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+// explicit template instantiation definitions
+template class MetaDiffdef<diff_global_id>;
+template class MetaDiffdef<surfdiff_global_id>;
 
-// END
+}  // namespace steps::solver

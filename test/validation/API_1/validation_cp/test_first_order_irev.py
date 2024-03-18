@@ -68,7 +68,7 @@ class TestFirstOrderIrev(unittest.TestCase):
         os.makedirs(new_dir, exist_ok=True)
 
         sim.reset()
-        sim.setCompCount('comp1', 'A', N)
+        sim.setCompSpecCount('comp1', 'A', N)
         sim.checkpoint('./validation_cp/cp/first_order_irev')
 
     def test_foirev(self):
@@ -97,11 +97,14 @@ class TestFirstOrderIrev(unittest.TestCase):
         res_std1 = np.zeros([ntpnts, 1])
         res_std2 = np.zeros([ntpnts, 1])
 
+        seed = int(time.time()%4294967295)
         for i in range (0, NITER):
             sim.restore('./validation_cp/cp/first_order_irev')
+            rng.initialize(seed)
+            seed += 1
             for t in range(0, ntpnts):
                 sim.run(tpnts[t])
-                res_m[i, t, 0] = sim.getCompCount('comp1', 'A')
+                res_m[i, t, 0] = sim.getCompSpecCount('comp1', 'A')
 
         mean_res = np.mean(res_m, 0)
         std_res = np.std(res_m, 0)
@@ -109,13 +112,11 @@ class TestFirstOrderIrev(unittest.TestCase):
         m_tol = 0
         s_tol=0
 
-        passed = True
         for i in range(ntpnts):
             if i == 0: continue
             analy = N*np.exp(-KCST*tpnts[i])
             std = np.power((N*(np.exp(-KCST*tpnts[i]))*(1-(np.exp(-KCST*tpnts[i])))), 0.5)
-            if not tol_funcs.tolerable(analy, mean_res[i], tolerance):
-                passed = False
+            self.assertTrue(tol_funcs.tolerable(analy, mean_res[i], tolerance))
             self.assertTrue(tol_funcs.tolerable(std, std_res[i], tolerance))
 
 def suite():

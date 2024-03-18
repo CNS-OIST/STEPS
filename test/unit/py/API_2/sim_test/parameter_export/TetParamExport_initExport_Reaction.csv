@@ -12,8 +12,6 @@ chancl.s → chanop1.s	nmdl	ss1RVDep01['fwd']	rvdep01f	s⁻¹	Chan1[:]
 chanop1.s → chancl.s	nmdl	ss1RVDep01['bkw']	rvdep01b	s⁻¹	Chan1[:]	
 sus1 + S1 → sus2	nmdl	vs1CR1['fwd']	2451	M⁻¹ s⁻¹	CC[:, :]	
 sus2 → sus1 + S1	nmdl	vs1CR1['bkw']	152	s⁻¹	CC[:, :]	
-sus1 + S1 → sus2	nmdl	vs1CR2['fwd']	2451	M⁻¹ s⁻¹	CC[:, :]	
-sus2 → sus1 + S1	nmdl	vs1CR2['bkw']	152	s⁻¹	CC[:, :]	
 S1 + S2 → 2S1	nmdl	vs1R1['fwd']	0.002	μM⁻¹ s⁻¹		r01f
 2S1 → S1 + S2	nmdl	vs1R1['bkw']	100	M⁻¹ s⁻¹		
 S1 + S2 → 2S2	nmdl	vs2R2['fwd']	0.005	μM⁻¹ s⁻¹		r02f * 2 + r01f - r01f

@@ -24,54 +24,35 @@
 
  */
 
-
-#ifndef STEPS_WMDIRECT_SREAC_HPP
-#define STEPS_WMDIRECT_SREAC_HPP 1
-
-
-// STL headers.
+#pragma once
 
 // STEPS headers.
 #include "kproc.hpp"
-#include "util/common.h"
 #include "solver/sreacdef.hpp"
-#include "solver/types.hpp"
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace wmdirect {
-
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::wmdirect {
 
 // Forward declarations
 class Comp;
 class Patch;
 
-////////////////////////////////////////////////////////////////////////////////
-
-class SReac
-: public steps::wmdirect::KProc
-{
-
-public:
-
+class SReac: public KProc {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
 
-    SReac(steps::solver::SReacdef * srdef, Patch * patch);
+    SReac(solver::SReacdef* srdef, Patch* patch);
     ~SReac() override;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file) override;
+    void checkpoint(std::fstream& cp_file) override;
 
     /// restore data
-    void restore(std::fstream & cp_file) override;
+    void restore(std::fstream& cp_file) override;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS
@@ -81,58 +62,54 @@ public:
 
     bool active() const;
 
-    inline bool inactive() const
-    { return (! active()); }
-
+    inline bool inactive() const {
+        return !active();
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
     void setupDeps() override;
-    bool depSpecComp(uint gidx, Comp * comp) override;
-    bool depSpecPatch(uint gidx, Patch * patch) override;
+    bool depSpecComp(solver::spec_global_id gidx, Comp* comp) override;
+    bool depSpecPatch(solver::spec_global_id gidx, Patch* patch) override;
     void reset() override;
     double rate() const override;
-    std::vector<uint> const & apply() override;
+    std::vector<solver::kproc_global_id> const& apply() override;
 
     ////////////////////////////////////////////////////////////////////////
 
-    inline steps::solver::SReacdef * defsr() const noexcept override
-    { return pSReacdef; }
+    inline solver::SReacdef* defsr() const noexcept override {
+        return pSReacdef;
+    }
 
     void resetCcst() override;
 
-    inline double c() const noexcept override
-    { return pCcst; }
+    inline double c() const noexcept override {
+        return pCcst;
+    }
 
-    inline double h() const noexcept override
-    { return (rate()/pCcst); }
+    inline double h() const noexcept override {
+        return rate() / pCcst;
+    }
 
-    inline uint updVecSize() const noexcept override
-    { return pUpdVec.size(); }
+    inline uint updVecSize() const noexcept override {
+        return pUpdVec.size();
+    }
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
-    steps::solver::SReacdef           * pSReacdef;
-    Patch                             * pPatch;
-    std::vector<uint>                   pUpdVec;
+    solver::SReacdef* pSReacdef;
+    Patch* pPatch;
+    std::vector<solver::kproc_global_id> pUpdVec;
 
     /// Properly scaled reaction constant.
-    double                              pCcst;
+    double pCcst;
 
     ////////////////////////////////////////////////////////////////////////
-
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-#endif
-// STEPS_WMDIRECT_SREAC_HPP
+}  // namespace steps::wmdirect

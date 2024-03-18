@@ -24,10 +24,6 @@
 
  */
 
-
-// Standard library & STL headers.
-#include <vector>
-
 // STEPS headers.
 #include "patch.hpp"
 #include "kproc.hpp"
@@ -36,43 +32,36 @@
 
 // logging
 #include "util/error.hpp"
-#include <easylogging++.h>
+
+namespace steps::tetexact {
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace stex = steps::tetexact;
-namespace ssolver = steps::solver;
-
-////////////////////////////////////////////////////////////////////////////////
-
-stex::Patch::Patch(ssolver::Patchdef * patchdef)
-: pPatchdef(patchdef)
-{
+Patch::Patch(solver::Patchdef* patchdef)
+    : pPatchdef(patchdef) {
     AssertLog(pPatchdef != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-stex::Patch::~Patch() = default;
+Patch::~Patch() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Patch::checkpoint(std::fstream & /*cp_file*/)
-{
+void Patch::checkpoint(std::fstream& /*cp_file*/) {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Patch::restore(std::fstream & /*cp_file*/)
-{
+void Patch::restore(std::fstream& /*cp_file*/) {
     // reserve
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Patch::addTri(stex::Tri * tri)
-{
+void Patch::addTri(Tri* tri) {
     AssertLog(tri->patchdef() == def());
     pTris.push_back(tri);
     pArea += tri->area();
@@ -80,26 +69,17 @@ void stex::Patch::addTri(stex::Tri * tri)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void stex::Patch::modCount(uint slidx, double count)
-{
-    AssertLog(slidx < def()->countSpecs());
-    double newcount = (def()->pools()[slidx] + count);
-    AssertLog(newcount >= 0.0);
-    def()->setCount(slidx, newcount);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-stex::Tri * stex::Patch::pickTriByArea(double rand01) const
-{
+Tri* Patch::pickTriByArea(double rand01) const {
     if (countTris() == 0) {
         return nullptr;
     }
-    if (countTris() == 1) return pTris[0];
+    if (countTris() == 1) {
+        return pTris[0];
+    }
 
     double accum = 0.0;
     double selector = rand01 * area();
-    for (auto const &t : tris()) {
+    for (auto const& t: tris()) {
         accum += t->area();
         if (selector <= accum) {
             return t;
@@ -109,14 +89,4 @@ stex::Tri * stex::Patch::pickTriByArea(double rand01) const
     return *(endTri() - 1);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/*
-void stex::Patch::setArea(double a)
-{
-    AssertLog(a > 0.0);
-    pArea = a;
-}
-*/
-////////////////////////////////////////////////////////////////////////////////
-
-// END
+}  // namespace steps::tetexact

@@ -24,42 +24,15 @@
 
  */
 
-/*
- *  Last Changed Rev:  $Rev$
- *  Last Changed Date: $Date$
- *  Last Changed By:   $Author$
- */
-
 #pragma once
 
-#include <cassert>
 #include <map>
 #include <string>
-#include <vector>
 
-#include "util/common.h"
+#include "fwd.hpp"
+#include "util/collections.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace model {
-
-////////////////////////////////////////////////////////////////////////////////
-
-// Forward declarations.
-class Model;
-class Spec;
-class Volsys;
-class Reac;
-class Diff;
-
-// Auxiliary declarations.
-typedef Volsys *                        VolsysP;
-typedef std::map<std::string, VolsysP>  VolsysPMap;
-typedef VolsysPMap::iterator            VolsysPMapI;
-typedef VolsysPMap::const_iterator      VolsysPMapCI;
-
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::model {
 
 /// Volume system
 ///
@@ -67,20 +40,19 @@ typedef VolsysPMap::const_iterator      VolsysPMapCI;
 /// involving a reactant enclosed in a compartment.
 ///
 /// \warning Methods start with an underscore are not exposed to Python.
-
-class Volsys
-{
-
-public:
-
+class Volsys {
+  public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
     /// Constructor
     ///
     /// \param id ID of the volume system.
-    /// \param model Pointer to the parent model object.
-    Volsys(std::string const & id, Model * model);
+    /// \param model Reference to the parent model object.
+    Volsys(std::string const& id, Model& model);
+
+    Volsys(const Volsys&) = delete;
+    Volsys& operator=(const Volsys&) = delete;
 
     /// Destructor
     ~Volsys();
@@ -92,19 +64,21 @@ public:
     /// Return the volume system ID.
     ///
     /// \return A string of volume system ID.
-    std::string getID() const
-    { return pID; }
+    const std::string& getID() const noexcept {
+        return pID;
+    }
 
     /// Set or change the volume system ID.
     ///
     /// \param id The new volume system ID.
-    void setID(std::string const & id);
+    void setID(std::string const& id);
 
-    /// Return a pointer to the parent model.
+    /// Return a reference to the parent model.
     ///
-    /// \return Pointer to the parent model.
-    Model * getModel() const
-    { return pModel; }
+    /// \return Reference to the parent model.
+    Model& getModel() const noexcept {
+        return pModel;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // OPERATIONS (EXPOSED TO PYTHON): REACTIONS
@@ -113,19 +87,29 @@ public:
     /// Get a reaction by its ID.
     ///
     /// \param id ID of the required reaction.
-    /// \return Pointer to the reaction object.
-    Reac * getReac(std::string const & id) const;
+    /// \return Reference to the reaction object.
+    Reac& getReac(std::string const& id) const;
 
     /// Delete a reaction by its ID.
     ///
     /// \param id ID of the reaction to be deleted.
-    void delReac(std::string const & id);
+    void delReac(std::string const& id) const;
 
     /// Get all reactions stored in this volume system.
     ///
     /// \return A vector of pointers to the reaction objects
     ///         stored in the system.
-    std::vector<Reac *> getAllReacs() const;
+    util::flat_set<Reac*> getAllReacs() const;
+
+    ////////////////////////////////////////////////////////////////////////
+    // OPERATIONS (EXPOSED TO PYTHON): COMPLEX REACTIONS
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Get all complex reactions stored in this volume system.
+    ///
+    /// \return A vector of pointers to the complex reaction objects
+    ///         stored in the system.
+    util::flat_set<ComplexReac*> getAllComplexReacs() const;
 
     ////////////////////////////////////////////////////////////////////////
     // OPERATIONS (EXPOSED TO PYTHON): DIFFUSION
@@ -134,19 +118,61 @@ public:
     /// Get a difussion by its ID.
     ///
     /// \param id ID of the required difussion.
-    /// \return Pointer to the diffusion object.
-    Diff * getDiff(std::string const & id) const;
+    /// \return Reference to the diffusion object.
+    Diff& getDiff(std::string const& id) const;
 
     /// Delete a diffusion by its ID.
     ///
     /// \param id ID of the diffusion to be deleted.
-    void delDiff(std::string const & id);
+    void delDiff(std::string const& id) const;
 
     /// Get all diffusions stored in this volume system.
     ///
     /// \return A vector of pointers to the diffusion objects
     ///         stored in the system.
-    std::vector<Diff *> getAllDiffs() const;
+    util::flat_set<Diff*> getAllDiffs() const;
+
+    ////////////////////////////////////////////////////////////////////////
+    // OPERATIONS (EXPOSED TO PYTHON): VESICLE BINDINGS
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Get a vesicle binding reaction by its ID.
+    ///
+    /// \param id ID of the required vesicle binding.
+    /// \return Reference to the vesicle binding object.
+    VesBind& getVesBind(std::string const& id) const;
+
+    /// Delete a vesicle binding reaction by its ID.
+    ///
+    /// \param id ID of the vesicle binding reaction to be deleted.
+    void delVesBind(std::string const& id) const;
+
+    /// Get all vesicle binding reactions stored in this volume system.
+    ///
+    /// \return A vector of pointers to the vesicle binding reaction objects
+    ///         stored in the system.
+    util::flat_set<VesBind*> getAllVesBinds() const;
+
+    ////////////////////////////////////////////////////////////////////////
+    // OPERATIONS (EXPOSED TO PYTHON): VESICLE UNBINDINGS
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Get a vesicle unbinding reaction by its ID.
+    ///
+    /// \param id ID of the required vesicle unbinding.
+    /// \return Reference to the vesicle unbinding object.
+    VesUnbind& getVesUnbind(std::string const& id) const;
+
+    /// Delete a vesicle unbinding reaction by its ID.
+    ///
+    /// \param id ID of the vesicle unbinding reaction to be deleted.
+    void delVesUnbind(std::string const& id) const;
+
+    /// Get all vesicle unbinding reactions stored in this volume system.
+    ///
+    /// \return A vector of pointers to the vesicle unbinding reaction objects
+    ///         stored in the system.
+    util::flat_set<VesUnbind*> getAllVesUnbinds() const;
 
     ////////////////////////////////////////////////////////////////////////
     // OPERATIONS (EXPOSED TO PYTHON): SPECIES
@@ -158,7 +184,7 @@ public:
     ///
     /// This method returns a list of all species involved in this volume system,
     /// no duplicate member is included.
-    std::vector<Spec *> getAllSpecs() const;
+    util::flat_set<Spec*> getAllSpecs() const;
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: DELETION
@@ -177,23 +203,32 @@ public:
     /// Check if a reaction id is occupied.
     ///
     /// \param id ID of the reaction.
-    void _checkReacID(std::string const & id) const;
+    void _checkReacID(std::string const& id) const;
 
     /// Change the id of a reaction from o to n.
     ///
     /// \param o Old id of the reaction.
     /// \param n New id of the reaction.
-    void _handleReacIDChange(std::string const & o, std::string const & n);
+    void _handleReacIDChange(std::string const& o, std::string const& n);
+
+    /// Add a reaction to the volume system.
+    ///
+    /// \param reac Reference to the reaction.
+    void _handleReacAdd(Reac& reac);
+
+    /// Delete a reaction in the volume system.
+    ///
+    /// \param reac Reference to the reaction.
+    void _handleReacDel(Reac& reac);
+
+    ////////////////////////////////////////////////////////////////////////
+    // INTERNAL (NON-EXPOSED) OPERATIONS: COMPLEX REACTIONS
+    ////////////////////////////////////////////////////////////////////////
 
     /// Add a reaction to the volume system.
     ///
     /// \param reac Pointer to the reaction.
-    void _handleReacAdd(Reac * reac);
-
-    /// Delete a reaction in the volume system.
-    ///
-    /// \param reac Pointer to the reaction.
-    void _handleReacDel(Reac * reac);
+    void _handleComplexReacAdd(ComplexReac& reac);
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: DIFFUSION
@@ -201,23 +236,73 @@ public:
     /// Check if a diffusion id is occupied.
     ///
     /// \param id ID of the diffusion.
-    void _checkDiffID(std::string const & id) const;
+    void _checkDiffID(std::string const& id) const;
 
     /// Change the id of a diffusion from o to n.
     ///
     /// \param o Old id of the diffusion.
     /// \param n New id of the diffusion.
-    void _handleDiffIDChange(std::string const & o, std::string const & n);
+    void _handleDiffIDChange(std::string const& o, std::string const& n);
 
     /// Add a diffusion to the volume system.
     ///
-    /// \param diff Pointer to the diffusion.
-    void _handleDiffAdd(Diff * diff);
+    /// \param diff Reference to the diffusion.
+    void _handleDiffAdd(Diff& diff);
 
     /// Delete a diffusion in the volume system.
     ///
-    /// \param diff Pointer to the diffusion.
-    void _handleDiffDel(Diff * diff);
+    /// \param diff Reference to the diffusion.
+    void _handleDiffDel(Diff& diff);
+
+    ////////////////////////////////////////////////////////////////////////
+    // INTERNAL (NON-EXPOSED) OPERATIONS: VESICLE BINDINGS
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Check if a vesicle binding reaction id is occupied.
+    ///
+    /// \param id ID of the vesicle binding reaction.
+    void _checkVesBindID(std::string const& id) const;
+
+    /// Change the id of a vesicle binding reaction from o to n.
+    ///
+    /// \param o Old id of the vesicle binding reaction.
+    /// \param n New id of the vesicle binding reaction.
+    void _handleVesBindIDChange(std::string const& o, std::string const& n);
+
+    /// Add a vesicle binding reaction to the volume system.
+    ///
+    /// \param reac Reference to the vesicle binding reaction.
+    void _handleVesBindAdd(VesBind& vesbind);
+
+    /// Delete a vesicle binding reaction in the volume system.
+    ///
+    /// \param reac Reference to the vesicle binding reaction.
+    void _handleVesBindDel(VesBind& vesbind);
+
+    ////////////////////////////////////////////////////////////////////////
+    // INTERNAL (NON-EXPOSED) OPERATIONS: VESICLE UNBINDINGS
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Check if a vesicle unbinding reaction id is occupied.
+    ///
+    /// \param id ID of the vesicle unbinding reaction.
+    void _checkVesUnbindID(std::string const& id) const;
+
+    /// Change the id of a vesicle unbinding reaction from o to n.
+    ///
+    /// \param o Old id of the vesicle unbinding reaction.
+    /// \param n New id of the vesicle unbinding reaction.
+    void _handleVesUnbindIDChange(std::string const& o, std::string const& n);
+
+    /// Add a vesicle unbinding reaction to the volume system.
+    ///
+    /// \param vesunbind Reference to the vesicle unbinding reaction.
+    void _handleVesUnbindAdd(VesUnbind& vesunbind);
+
+    /// Delete a vesicle unbinding reaction in the volume system.
+    ///
+    /// \param vesunbind Reference to the vesicle unbinding reaction.
+    void _handleVesUnbindDel(VesUnbind& vesunbind);
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED): SOLVER HELPER METHODS
@@ -226,38 +311,102 @@ public:
     /// Count the reactions in the volume system.
     ///
     /// \return Number of reactions.
-    inline uint _countReacs() const
-    { return pReacs.size(); }
+    inline uint _countReacs() const noexcept {
+        return pReacs.size();
+    }
 
     /// Get a reaction with index lidx
     ///
     /// \param lidx Index of the reaction.
-    /// \return Pointer to the reaction.
-    Reac * _getReac(uint lidx) const;
+    /// \return Reference to the reaction.
+    Reac& _getReac(uint lidx) const;
+
+    /// Count the complex reactions in the volume system.
+    ///
+    /// \return Number of complex reactions.
+    uint _countComplexReacs() const noexcept {
+        return pComplexReacs.size();
+    }
+
+    /// Get a complex reaction with index lidx
+    ///
+    /// \param lidx Index of the complex reaction.
+    /// \return Pointer to the complex reaction.
+    ComplexReac& _getComplexReac(uint lidx) const;
 
     /// Get all species in the volume system.
     ///
     /// \return A list of pointers to the species.
-    const std::map<std::string, Reac *> & _getAllReacs() const
-    { return pReacs; }
+    inline const std::map<std::string, Reac*>& _getAllReacs() const noexcept {
+        return pReacs;
+    }
+
+    /// Get all complex reacs in the volume system.
+    ///
+    /// \return A list of pointers to the complex reacs.
+    const std::map<std::string, ComplexReac*>& _getAllComplexReacs() const noexcept {
+        return pComplexReacs;
+    }
 
     /// Count the diffusion rules in the volume system.
     ///
     /// \return Number of diffusion rules.
-    inline uint _countDiffs() const
-    { return pDiffs.size(); }
+    inline uint _countDiffs() const noexcept {
+        return pDiffs.size();
+    }
 
     /// Get a diffusion rule with index lidx.
     ///
     /// \param lidx Index of the diffusion rule.
-    /// \return Pointer to the diffusion rule.
-    Diff * _getDiff(uint lidx) const;
+    /// \return Reference to the diffusion rule.
+    Diff& _getDiff(uint lidx) const;
 
     /// Get all diffusion rules in the volume system.
     ///
     /// \return List of pointers to diffusion rules.
-    const std::map<std::string, Diff *> & _getAllDiffs() const
-    { return pDiffs; }
+    inline const std::map<std::string, Diff*>& _getAllDiffs() const noexcept {
+        return pDiffs;
+    }
+
+    /// Count the vesicle binding reactions in the volume system.
+    ///
+    /// \return Number of vesicle binding reactions.
+    inline uint _countVesBinds() const noexcept {
+        return pVesBinds.size();
+    }
+
+    /// Get a vesicle binding reaction with index lidx
+    ///
+    /// \param lidx Index of the vesicle binding reaction.
+    /// \return Reference to the vesicle binding reaction.
+    VesBind& _getVesBind(uint lidx) const;
+
+    /// Get all species in the volume system.
+    ///
+    /// \return A list of pointers to the species.
+    inline const std::map<std::string, VesBind*>& _getAllVesBinds() const noexcept {
+        return pVesBinds;
+    }
+
+    /// Count the vesicle unbinding reactions in the volume system.
+    ///
+    /// \return Number of vesicle unbinding reactions.
+    inline uint _countVesUnbinds() const noexcept {
+        return pVesUnbinds.size();
+    }
+
+    /// Get a vesicle unbinding reaction with index lidx
+    ///
+    /// \param lidx Index of the vesicle unbinding reaction.
+    /// \return Reference to the vesicle unbinding reaction.
+    VesUnbind& _getVesUnbind(uint lidx) const;
+
+    /// Get all species in the volume system.
+    ///
+    /// \return A list of pointers to the species.
+    const std::map<std::string, VesUnbind*>& _getAllVesUnbinds() const noexcept {
+        return pVesUnbinds;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED): STEPS::MODEL OPERATIONS
@@ -265,25 +414,27 @@ public:
 
     /// Delete a species.
     ///
-    /// \param Pointer to the species.
-    void _handleSpecDelete(Spec * spec);
+    /// \param Reference to the species.
+    void _handleSpecDelete(Spec& spec);
+
+    /// Delete a species.
+    ///
+    /// \param Reference to the link species.
+    void _handleLinkSpecDelete(LinkSpec& lspec);
 
     ////////////////////////////////////////////////////////////////////////
 
-private:
-
+  private:
     ////////////////////////////////////////////////////////////////////////
 
-    std::string                         pID;
-    Model                             * pModel;
-    std::map<std::string, Reac *>       pReacs;
-    std::map<std::string, Diff *>       pDiffs;
+    std::string pID;
+    Model& pModel;
+    std::map<std::string, Reac*> pReacs;
+    std::map<std::string, ComplexReac*> pComplexReacs;
+    std::map<std::string, Diff*> pDiffs;
 
-    ////////////////////////////////////////////////////////////////////////
-
+    std::map<std::string, VesBind*> pVesBinds;
+    std::map<std::string, VesUnbind*> pVesUnbinds;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-} // namespace model
-} // namespace steps
+}  // namespace steps::model

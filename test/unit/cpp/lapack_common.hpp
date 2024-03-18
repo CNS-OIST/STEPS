@@ -1,9 +1,5 @@
-#ifndef TEST_LAPACK_COMMON_HPP
-#define TEST_LAPACK_COMMON_HPP
+#pragma once
 
 #include <cstddef>
 
-double estimate_condition(const double *A,size_t n);
-
-#endif // ndef TEST_LAPACK_COMMON_HPP
-
+double estimate_condition(const double* A, size_t n);

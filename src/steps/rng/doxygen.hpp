@@ -24,7 +24,6 @@
 
  */
 
-
 /// \namespace steps::rng
 ///
 /// STEPS random number generation code.

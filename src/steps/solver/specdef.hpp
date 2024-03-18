@@ -24,70 +24,51 @@
 
  */
 
+#pragma once
 
-/*
- *  Last Changed Rev:  $Rev$
- *  Last Changed Date: $Date$
- *  Last Changed By:   $Author$
- */
-
-#ifndef STEPS_SOLVER_SPECDEF_HPP
-#define STEPS_SOLVER_SPECDEF_HPP 1
-
-
-// STL headers.
+#include <iosfwd>
 #include <string>
-#include <fstream>
 
-// STEPS headers.
-#include "util/common.h"
-#include "statedef.hpp"
-#include "model/spec.hpp"
+#include "fwd.hpp"
+#include "model/fwd.hpp"
 
-////////////////////////////////////////////////////////////////////////////////
-
-namespace steps {
-namespace solver {
-
-// Forwards declarations
-//class Statedef;
-
-////////////////////////////////////////////////////////////////////////////////
+namespace steps::solver {
 
 /// Defined Species
-class Specdef
-{
-
-public:
+class Specdef {
+  public:
     /// Constructor
     ///
     /// \param sd State of the solver.
     /// \param idx Global index of the species.
-    /// \param d Pointer to the assocaited Spec object.
-    Specdef(Statedef * sd, uint idx, steps::model::Spec * d);
+    /// \param d Reference to the associated Spec object.
+    Specdef(Statedef& sd, spec_global_id idx, model::Spec& d);
 
-    /// Destructor
-    ~Specdef();
+    Specdef(const Specdef&) = delete;
+    Specdef& operator=(const Specdef&) = delete;
 
     ////////////////////////////////////////////////////////////////////////
     // CHECKPOINTING
     ////////////////////////////////////////////////////////////////////////
     /// checkpoint data
-    void checkpoint(std::fstream & cp_file);
+    void checkpoint(std::fstream& cp_file) const;
 
     /// restore data
-    void restore(std::fstream & cp_file);
+    void restore(std::fstream& cp_file);
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: SPECIES
     ////////////////////////////////////////////////////////////////////////
 
     /// Return the global index of this species.
-    inline uint gidx() const noexcept
-    { return pIdx; }
+    inline spec_global_id gidx() const noexcept {
+        return pIdx;
+    }
 
     /// Return the name of the species.
-    std::string const name() const;
+    inline std::string const& name() const noexcept {
+        return pName;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: SETUP
@@ -96,29 +77,12 @@ public:
     ///
     /// This method is included for consistency with other def objects,
     /// but currently does nothing.
-    void setup();
+    void setup(const Statedef&);
 
-    ////////////////////////////////////////////////////////////////////////
-
-private:
-
-    ////////////////////////////////////////////////////////////////////////
-
-    Statedef                          * pStatedef;
-    uint                                pIdx;
-    std::string                         pName;
-    bool                                pSetupdone;
-
-    ////////////////////////////////////////////////////////////////////////
-
+  private:
+    const spec_global_id pIdx;
+    const std::string pName;
+    bool pSetupdone{false};
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-}
-}
-
-#endif
-// STEPS_SOLVER_SPECDEF_HPP
-
-// END
+}  // namespace steps::solver

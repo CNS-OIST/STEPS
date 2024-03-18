@@ -37,7 +37,7 @@ import warnings
 
 __name__      = 'steps'
 __longname__  = 'STochastic Engine for Pathway Simulation'
-__version__   = '4.1.0'
+__version__   = '5.0.1'
 __author__    = 'STEPS Development Team'
 __url__       = 'steps.sourceforge.net'
 __license__   = 'GPL3.0'
@@ -117,7 +117,7 @@ class _CustomMetaPathFinder(importlib.abc.MetaPathFinder):
             self._currAPI = _CustomMetaPathFinder._VIRTUAL_IMPORT_PATHS[fullname]
             return importlib.machinery.ModuleSpec(fullname, self._virtualLoader)
 
-        if fullname.startswith(__name__):
+        if fullname.startswith(__name__ + '.'):
             splt = fullname.split('.')
             # If we are trying to load a module from a specific API directory, it means the 
             # default path finders did not succeed loading it, i.e. it does not exist.

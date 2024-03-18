@@ -6,24 +6,22 @@
 
 #include <cstddef>
 
-namespace steps {
-namespace util {
+namespace steps::util {
 
 
 class MemoryTracker {
-
-public:
+  public:
     void start();
     void stop();
 
     /*
      * return value is in bytes
      */
-    std::size_t diff();
-private:
+    std::size_t diff() const;
+
+  private:
     std::size_t init_{};
     std::size_t final_{};
 };
 
-} // namespace util
-} // namespace steps
+}  // namespace steps::util

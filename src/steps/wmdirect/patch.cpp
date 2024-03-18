@@ -24,105 +24,104 @@
 
  */
 
-
-// Standard library & STL headers.
-// #include <vector>
-#include <algorithm>
-
 // STEPS headers.
 #include "patch.hpp"
-#include "wmdirect.hpp"
 #include "solver/statedef.hpp"
+#include "wmdirect.hpp"
 // logging
 #include "util/error.hpp"
-#include <easylogging++.h>
-////////////////////////////////////////////////////////////////////////////////
 
-namespace swmd = steps::wmdirect;
-namespace ssolver = steps::solver;
+namespace steps::wmdirect {
 
-////////////////////////////////////////////////////////////////////////////////
-
-swmd::Patch::Patch(steps::solver::Patchdef * patchdef, swmd::Comp * icomp, swmd::Comp * ocomp)
-: pPatchdef(patchdef)
-, pIComp(icomp)
-, pOComp(ocomp)
-{
+Patch::Patch(solver::Patchdef* patchdef, Comp* icomp, Comp* ocomp, Wmdirect* solver)
+    : pSolver(solver)
+    , pPatchdef(patchdef)
+    , pIComp(icomp)
+    , pOComp(ocomp) {
     AssertLog(pPatchdef != nullptr);
-    if (iComp() != nullptr) { iComp()->addIPatch(this);
-}
-    if (oComp() != nullptr) oComp()->addOPatch(this);
+    if (iComp() != nullptr) {
+        iComp()->addIPatch(this);
+    }
+    if (oComp() != nullptr) {
+        oComp()->addOPatch(this);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmd::Patch::~Patch()
-{
-    for (auto const& k : pKProcs) {
+Patch::~Patch() {
+    for (auto const& k: pKProcs) {
         delete k;
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Patch::checkpoint(std::fstream & cp_file)
-{
-    for (auto const& k : pKProcs) {
+void Patch::checkpoint(std::fstream& cp_file) {
+    for (auto const& k: pKProcs) {
         k->checkpoint(cp_file);
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Patch::restore(std::fstream & cp_file)
-{
-    for (auto const& k : pKProcs) {
+void Patch::restore(std::fstream& cp_file) {
+    for (auto const& k: pKProcs) {
         k->restore(cp_file);
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Patch::setupKProcs(swmd::Wmdirect * wmd)
-{
+void Patch::setupKProcs(Wmdirect* wmd) {
     // Create surface reaction kproc's.
     uint nsreacs = def()->countSReacs();
-    pKProcs.resize(nsreacs);
-    for (uint i = 0; i < nsreacs; ++i)
-    {
-        ssolver::SReacdef * srdef = def()->sreacdef(i);
-        auto * sr = new swmd::SReac(srdef, this);
-        pKProcs[i] = sr;
+    uint ncsreacs = def()->countComplexSReacs();
+    pKProcs.resize(nsreacs + ncsreacs);
+    for (auto i: solver::sreac_local_id::range(nsreacs)) {
+        auto& srdef = def()->sreacdef(i);
+        auto* sr = new SReac(&srdef, this);
+        pKProcs[i.get()] = sr;
         wmd->addKProc(sr);
+    }
+
+    for (auto i: solver::complexsreac_local_id::range(ncsreacs)) {
+        solver::ComplexSReacdef& csrdef = def()->complexsreacdef(i);
+        auto* r = new ComplexSReac(csrdef, *this);
+        pKProcs[nsreacs + i.get()] = r;
+        wmd->addKProc(r);
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Patch::setupDeps()
-{
-    for (auto kproc: pKProcs) {
+void Patch::setupDeps() {
+    for (auto const& kproc: pKProcs) {
         kproc->setupDeps();
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-swmd::KProc * swmd::Patch::sreac(uint lsridx) const
-{
-    AssertLog(lsridx < pKProcs.size());
-    return pKProcs[lsridx];
+KProc* Patch::sreac(solver::sreac_local_id lsridx) const {
+    AssertLog(lsridx.get() < pKProcs.size());
+    return pKProcs[lsridx.get()];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void swmd::Patch::reset()
-{
-    for (auto kproc: pKProcs) {
+KProc* Patch::sreac(solver::complexsreac_local_id lridx) const {
+    uint idx = def()->countSReacs() + lridx.get();
+    AssertLog(idx < pKProcs.size());
+    return pKProcs[idx];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Patch::reset() {
+    for (auto const& kproc: pKProcs) {
         kproc->reset();
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// END
+}  // namespace steps::wmdirect
