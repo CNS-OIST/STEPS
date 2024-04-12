@@ -408,15 +408,25 @@ endif()
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   # Default python installation to site-packages, do not use Python_SITEARCH since it points to
   # dist-packages
-  execute_process(
-    COMMAND
-      ${Python_EXECUTABLE} -c
-      "import sys,sysconfig; print(sysconfig.get_path('platlib', sysconfig.get_preferred_scheme('prefix' if sys.prefix != sys.base_prefix else 'user')))"
-    OUTPUT_VARIABLE _python_site_packages_dir
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  set(Python_INSTALL_PREFIX
-      ${_python_site_packages_dir}
-      CACHE PATH "Path to install steps Python package")
+  if(NOT DEFINED Python_INSTALL_PREFIX)
+    execute_process(
+      COMMAND
+        ${Python_EXECUTABLE} -c
+        "import os,sys,sysconfig; print(sysconfig.get_path('platlib') if (sys.prefix != sys.base_prefix or os.path.exists(os.path.join(sys.prefix, 'conda-meta'))) else sysconfig.get_path('platlib', 'osx_framework_user' if bool(sysconfig.get_config_var('PYTHONFRAMEWORK')) else f'{os.name}_user'))"
+      OUTPUT_VARIABLE _python_site_packages_dir
+      ERROR_VARIABLE _python_site_packages_error
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(EXISTS ${_python_site_packages_dir})
+      set(Python_INSTALL_PREFIX
+          ${_python_site_packages_dir}
+          CACHE PATH "Path to install steps Python package")
+    else()
+      message(
+        FATAL_ERROR
+          "Could not determine the python install directory. Please provide it with the -DPython_INSTALL_PREFIX=/path/to/dir option.\n"
+          "The following error was encountered: ${_python_site_packages_error}")
+    endif()
+  endif()
 
   set(CMAKE_INSTALL_PREFIX
       "~/.local/"
