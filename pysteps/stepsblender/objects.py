@@ -383,6 +383,9 @@ class VesicleMaterial(BlenderMaterial):
 
     fresnel_IOR: Annotated[float, 'Fresnel Index Of Refraction'] = 1.05
     fresnel_multiplier: Annotated[float, 'Strength of the outer rim'] = 2
+    facing_blend: Annotated[float, 'Gradient of the inner color'] = 0.4
+
+    shadow_method: Annotated[str, 'Blender shadow method'] = 'NONE'
 
     def setUp(self, mat, fromScratch):
         if fromScratch:
@@ -401,17 +404,25 @@ class VesicleMaterial(BlenderMaterial):
             bsdf.inputs['Alpha'].default_value = self.alpha
             if self.alpha < 1:
                 mat.blend_method = 'BLEND'
-            mat.shadow_method = 'NONE'
+            mat.shadow_method = self.shadow_method
 
             fresnel = nodes.new('ShaderNodeFresnel')
             fresnel.inputs['IOR'].default_value = self.fresnel_IOR
+
+            layer_weight = nodes.new('ShaderNodeLayerWeight')
+            layer_weight.inputs['Blend'].default_value = self.facing_blend
 
             mult = nodes.new('ShaderNodeMath')
             mult.operation = 'MULTIPLY'
             mult.inputs[0].default_value = self.fresnel_multiplier
 
+            add = nodes.new('ShaderNodeMath')
+            add.operation = 'ADD'
+
             node_tree.links.new(mult.inputs[1], fresnel.outputs['Fac'])
-            node_tree.links.new(bsdf.inputs['Emission Strength'], mult.outputs['Value'])
+            node_tree.links.new(add.inputs[0], mult.outputs['Value'])
+            node_tree.links.new(add.inputs[1], layer_weight.outputs['Facing'])
+            node_tree.links.new(bsdf.inputs['Emission Strength'], add.outputs['Value'])
 
 
 class RaftMaterial(BlenderMaterial):
@@ -655,7 +666,8 @@ class BlenderObject(BlenderWrapper):
 class STEPSMeshObject(BlenderObject):
     mesh: BlenderMesh = STEPSMesh
     material: BlenderMaterial = MeshMaterial
-    solidifySurface: Annotated[bool, 'Whether the mesh surface should be solidified'] = True
+    surfaceThickness: Annotated[float,
+        'The thickness of the mesh surface, should be greater than 0 if rafts are present on the surface'] = 0.01
 
     def setUp(self, obj, fromScratch):
         """Sets up the given blender object
@@ -666,8 +678,10 @@ class STEPSMeshObject(BlenderObject):
             :type fromScratch: bool
         """
         super().setUp(obj, fromScratch)
-        if fromScratch and self.solidifySurface:
-            obj.modifiers.new('solidify', type='SOLIDIFY')
+        if fromScratch:
+            if self.surfaceThickness > 0:
+                solid = obj.modifiers.new('solidify', type='SOLIDIFY')
+                solid.thickness = self.surfaceThickness
             # Smooth shading
             if bpy.app.version >= (4, 1, 0) and self.mesh.smooth_angle is not None:
                 # Since Blender 4.1, the smooth shading has to be done on the object and not the mesh.
