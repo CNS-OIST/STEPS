@@ -103,12 +103,7 @@ struct double_prec_constant<double> {
 };
 
 // For GCC an attribute has to be used to control the FP precision...
-#if defined(__GNUC__) && !defined(__clang__) && !defined(__ICC) && \
-	!defined(__INTEL_COMPILER)
-#define ENFORCE_EXACT_FPMATH_ATTR __attribute__((__target__("ieee-fp")))
-#else
 #define ENFORCE_EXACT_FPMATH_ATTR
-#endif
 
 // ... whereas ICC requires a pragma.
 #if defined(__ICC) || defined(__INTEL_COMPILER)
