@@ -1399,6 +1399,29 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
     def testXDMFWithoutMesh(self):
         pass
 
+    @unittest.skipIf(importlib.util.find_spec('h5py') is None, 'h5py not available')
+    def testXDMFWithoutMPI(self, dbUID='GroupID'):
+        """Check that XDMFHandler does not trigger any MPI initialization or any mpi4py import"""
+
+        _, dbPath = tempfile.mkstemp(prefix=f'{self.__class__.__name__}testXDMFWithoutMPISaving', suffix='')
+        self.createdFiles.add(dbPath)
+
+        # Setup traps
+        steps.stepslib.mpiInit = lambda: self.assertTrue(False)
+        sys.modules['mpi4py.MPI'] = None
+
+        rs = ResultSelector(self.newSim)
+        saver = rs.TETS().LIST('S1', 'S2').Count
+        self.newSim.toSave(saver, dt=self.deltaT)
+
+        with XDMFHandler(dbPath) as dbh:
+            self.newSim.toDB(dbh, dbUID, val1=1, val2=2)
+            self.createdFiles |= set(dbh._getFilePaths())
+            self.newSim.newRun()
+            self.init_API2_sim(self.newSim)
+            self.newSim.ALL(Compartment).LIST('S1', 'S2').Count = 100
+            self.newSim.run(self.shortEndTime)
+
 
 def suite():
     all_tests = []

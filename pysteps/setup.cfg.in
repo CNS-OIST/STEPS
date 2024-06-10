@@ -16,6 +16,8 @@ install_requires =
 include = ${STEPS_INCLUDE_PACKAGES_SETUP}
 
 [options.extras_require]
+mpi =
+    mpi4py>=3.1
 dist =
     mpi4py>=3.1
 hdf5 =

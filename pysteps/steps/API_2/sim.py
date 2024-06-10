@@ -1541,6 +1541,11 @@ class MPI:
         return stepslib.getRank()
 
     @nutils.classproperty
+    def _rank(cls):
+        """Internal method for getting the rank of the current process but without initializing MPI"""
+        return cls.rank if cls._usingMPI else 0
+
+    @nutils.classproperty
     def nhosts(cls):
         """Get the number of hosts
 
@@ -1551,6 +1556,11 @@ class MPI:
         """
         cls._loadInfos()
         return stepslib.getNHosts()
+
+    @nutils.classproperty
+    def _nhosts(cls):
+        """Internal method for getting the number of hosts but without initializing MPI"""
+        return cls.nhosts if cls._usingMPI else 1
 
     @classmethod
     def _getSolver(cls, name):
@@ -1610,8 +1620,8 @@ class _SimulationCheckpointer:
         newName = f'{self._prefix}_{self._sim._runId}_{time}_{self._sim._solverStr}_cp'
         self._sim.checkpoint(newName)
         if self._onlyLast and self._lastName is not None:
-            if MPI.nhosts > 1:
-                os.remove(self._lastName + f'_{MPI.rank}')
+            if MPI._nhosts > 1:
+                os.remove(self._lastName + f'_{MPI._rank}')
             else:
                 os.remove(self._lastName)
         self._lastName = newName

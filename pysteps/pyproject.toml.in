@@ -16,6 +16,7 @@ homepage = "http://steps.sourceforge.net"
 repository = "https://github.com/CNS-OIST/STEPS"
 
 [project.optional-dependencies]
+mpi = ["mpi4py>=3.1"]
 dist = ["mpi4py>=3.1"]
 hdf5 = ["h5py>=3.1"]
 cov = ["coverage>=5.0"]

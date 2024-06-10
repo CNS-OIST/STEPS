@@ -118,6 +118,9 @@ set_directory_properties(
 
 # Python optional packages and extras
 set(STEPS_INCLUDE_PACKAGES "steps" "steps.*")
+if(USE_MPI)
+  list(APPEND py_deps "mpi")
+endif()
 if(STEPS_USE_DIST_MESH)
   list(APPEND py_deps "dist")
 endif()

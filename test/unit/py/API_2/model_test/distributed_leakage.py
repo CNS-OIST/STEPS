@@ -157,7 +157,7 @@ class Leakage(unittest.TestCase):
                 cls.Vzmin4 = Vrs.data[0, :, 0] 
                 cls.Vzmax4 = Vrs.data[0, :, 1]
 
-    def testMagnitude(self):
+    def testMagnitude_n1(self):
         """Test getter and setter of membrane resistance in STEPS4"""
         res = 0.4
         rev_pot = 0.4
@@ -165,11 +165,11 @@ class Leakage(unittest.TestCase):
         self.assertEqual( (res, rev_pot), self.sim.solver.getMembRes("membrane"), 
                         "Error in set or get method")
 
-    def testSolution_not_constant(self):
+    def testSolution_not_constant_n1(self):
         self.assertTrue( np.any( np.abs(self.Vzmax3-self.Vzmax3[0]) > 1e-15  ), 
                         "The solution is constant")
 
-    def testMse_3vs4(self):
+    def testMse_3vs4_n1(self):
         """"MSE between the values obtained from steps 3 and steps 4"""
         threshold = 1e-12
         MSE_max = np.mean( (self.Vzmax3 - self.Vzmax4)**2 )
@@ -179,7 +179,7 @@ class Leakage(unittest.TestCase):
         self.assertNotEqual(MSE_min, 0.0, "MSE equal zero")
         self.assertNotEqual(MSE_max, 0.0, "MSE equal zero")
 
-    def testMse_analytical(self):
+    def testMse_analytical_n1(self):
         """"MSE between the values obtained from steps 3 steps 4 and the analytical solution"""
         threshold = 1e-2
 
