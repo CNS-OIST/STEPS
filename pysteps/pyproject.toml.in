@@ -7,7 +7,7 @@ name = "steps"
 authors = [{name = "STEPS Development Team", email = "steps.dev@gmail.com"}]
 description = "STochastic Engine for Pathway Simulation"
 license = {text = "GNU General Public License Version 3"}
-requires-python = ">=3.6"
+requires-python = ">=3.8"
 dependencies = ["numpy>=1.19"]
 dynamic = ["version"]
 

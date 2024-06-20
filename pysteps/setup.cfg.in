@@ -8,7 +8,7 @@ license = GNU General Public License Version 3
 
 [options]
 packages = find:
-python_requires = >=3.6
+python_requires = >=3.8
 install_requires =
     numpy>=1.19
 

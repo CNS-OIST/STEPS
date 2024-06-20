@@ -10,7 +10,7 @@ To facilitate new requirements from the parallel TetOpSplit solver, STEPS 3.0 an
 Minimum Prerequisites
 ---------------------
 1. C++ compiler supporting c++17 (e.g. gcc 7.4, clang 6)
-2. Python3 (3.6.x or above, 3.9.x or above if using stepsblender python package)
+2. Python3 (3.8 or above, 3.9 or above if using `stepsblender` Python package)
 3. NumPy (http://www.numpy.org/)
 4. CMake (https://cmake.org/) (3.16.3 or above)
 5. Cython (http://www.cython.org/) (0.29 or above)
@@ -18,7 +18,7 @@ Minimum Prerequisites
 7. GSL (https://www.gnu.org/software/gsl/)
 8. Eigen3 (https://eigen.tuxfamily.org/)
 9. METIS (https://github.com/KarypisLab/METIS)
-10. `build` and `pip-tools` python modules
+10. `build` and `pip-tools` Python modules
 
 See install Dependencies sections
 
@@ -38,13 +38,13 @@ This includes the master branch as well as all previous releases in https://gith
 git clone --recursive https://github.com/CNS-OIST/STEPS.git
 cd STEPS
 ```
-(optional): To checkout a previous release, for example release with tag `3.5.0` (Release tags can be found [here](https://github.com/CNS-OIST/STEPS/tags), type in
+(optional): To checkout a previous release, for example release with tag `4.1.0` (Release tags can be found [here](https://github.com/CNS-OIST/STEPS/tags), type in
 ```
-git checkout tags/3.5.0 -b steps_3.5.0
+git checkout tags/4.1.0 -b steps_4.1.0
 git submodule update --recursive
 ```
 
-2. If not already installed, install the `build` and `pip-tools` python modules
+2. If not already installed, install the `build` and `pip-tools` Python modules
 
 ```
 pip install --user build pip-tools
@@ -61,7 +61,7 @@ make
 [sudo] make install
 ```
 
-Note that, by default, STEPS will install its python dependencies during the call to `make install`, this can be prevented by giving the `-DSTEPS_INSTALL_PYTHON_DEPS=False` option to cmake.
+Note that, by default, STEPS will install its Python dependencies during the call to `make install`, this can be prevented by giving the `-DSTEPS_INSTALL_PYTHON_DEPS=False` option to cmake.
 
 After installation, you can check the STEPS installation with the following commands
 
@@ -123,7 +123,7 @@ python3 sim_script.py
 Script migration in 3.6
 -----------------------
 
-A new python API is available but scripts that worked with STEPS 3.5 should still work without any modification in STEPS 3.6.
+A new Python API is available but scripts that worked with STEPS 3.5 should still work without any modification in STEPS 3.6.
 
 Detailed guides for the new API can be found in the [documentation](http://steps.sourceforge.net/manual/manual_index.html).
 
@@ -154,7 +154,7 @@ Dependencies and build instructions
 
 ### Python dependencies
 
-Since STEPS 5.0, the python dependencies (except `build` and `pip-tools`) are automatically installed during STEPS installation. This does not apply to non-python dependencies like MPI or PETSC, which still need to be installed by the users.
+Since STEPS 5.0, the Python dependencies (except `build` and `pip-tools`) are automatically installed during STEPS installation. This does not apply to non-python dependencies like MPI or PETSC, which still need to be installed by the users.
 
 On some systems, the `python3-venv` package might be needed. If so, an error message during installation will point to the exact command needed to install it on your system.
 

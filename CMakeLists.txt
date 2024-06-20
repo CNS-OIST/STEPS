@@ -264,7 +264,7 @@ set_property(CACHE CMAKE_BUILD_TYPE
 # Requirements
 # -------------------------------------------------------------------
 find_package(
-  Python 3.6
+  Python 3.8
   COMPONENTS Interpreter Development
   REQUIRED)
 if(STEPS_USE_STEPSBLENDER AND (Python_VERSION VERSION_LESS 3.9.0))
