@@ -454,24 +454,6 @@ set(bundle_lib_install_dir ${CMAKE_INSTALL_PREFIX}/lib)
 # Python dependencies
 include(FindPythonModule)
 find_python_module(build REQUIRED)
-if(STEPS_INSTALL_PYTHON_DEPS)
-  find_python_module(piptools REQUIRED)
-
-  # No .__version__ in the piptools package, so we need to extract it from pip-compile --version
-  execute_process(
-    COMMAND ${Python_EXECUTABLE} -m piptools compile --version
-    RESULT_VARIABLE _piptools_status
-    OUTPUT_VARIABLE _piptools_version
-    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-  if(_piptools_status)
-    message(
-      FATAL_ERROR
-        "pip-compile is not working correctly, check that both pip-tools and pip are correctly upgraded."
-    )
-  else()
-    string(REGEX MATCH "[0-9\.]+$" PIPTOOLS_VERSION_STRING "${_piptools_version}")
-  endif()
-endif()
 
 # Python bindings tech Makes steps Python bindings based on Cython
 if(Python_FOUND)

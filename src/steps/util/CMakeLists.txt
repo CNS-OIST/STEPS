@@ -8,8 +8,15 @@ endif()
 add_subdirectory(tracker)
 add_subdirectory(profile)
 
-add_library(stepsutil STATIC checkid.cpp debug.cpp error.cpp finish.cpp init.cpp
-                             ${EASYLOGGINGPP_INCLUDE_DIRS}/easylogging++.cc)
+add_library(
+  stepsutil STATIC
+  checkid.cpp
+  debug.cpp
+  error.cpp
+  finish.cpp
+  init.cpp
+  vocabulary.cpp
+  ${EASYLOGGINGPP_INCLUDE_DIRS}/easylogging++.cc)
 
 set_property(TARGET stepsutil PROPERTY POSITION_INDEPENDENT_CODE ON)
 

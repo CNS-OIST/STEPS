@@ -18,7 +18,7 @@ Minimum Prerequisites
 7. GSL (https://www.gnu.org/software/gsl/)
 8. Eigen3 (https://eigen.tuxfamily.org/)
 9. METIS (https://github.com/KarypisLab/METIS)
-10. `build` and `pip-tools` Python modules
+10. `build` Python module
 
 See install Dependencies sections
 
@@ -44,10 +44,10 @@ git checkout tags/4.1.0 -b steps_4.1.0
 git submodule update --recursive
 ```
 
-2. If not already installed, install the `build` and `pip-tools` Python modules
+2. If not already installed, install the `build` Python modules
 
 ```
-pip install --user build pip-tools
+pip install --user build
 ```
 
 3. Run the following commands to compile the source code and install
@@ -154,7 +154,7 @@ Dependencies and build instructions
 
 ### Python dependencies
 
-Since STEPS 5.0, the Python dependencies (except `build` and `pip-tools`) are automatically installed during STEPS installation. This does not apply to non-python dependencies like MPI or PETSC, which still need to be installed by the users.
+Since STEPS 5.0, the Python dependencies (except `build`) are automatically installed during STEPS installation. This does not apply to non-python dependencies like MPI or PETSC, which still need to be installed by the users.
 
 On some systems, the `python3-venv` package might be needed. If so, an error message during installation will point to the exact command needed to install it on your system.
 
