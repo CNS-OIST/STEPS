@@ -34,7 +34,7 @@ if __name__ == '__main__':
             f'Error: could not find file TOML file: {toml_path}', file=sys.stderr)
         sys.exit(1)
     with open(toml_path, 'r') as f:
-        proj = tomllib.load(f)
+        proj = tomllib.loads(f.read())
         project = proj.get('project', None)
         if project is None:
             print('No project section in the TOML file.', file=sys.stderr)
