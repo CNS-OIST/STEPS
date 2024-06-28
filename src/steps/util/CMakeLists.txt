@@ -15,7 +15,6 @@ add_library(
   error.cpp
   finish.cpp
   init.cpp
-  vocabulary.cpp
   ${EASYLOGGINGPP_INCLUDE_DIRS}/easylogging++.cc)
 
 set_property(TARGET stepsutil PROPERTY POSITION_INDEPENDENT_CODE ON)
