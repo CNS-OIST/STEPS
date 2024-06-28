@@ -312,7 +312,7 @@ class TestModelFramework(unittest.TestCase):
                 # TODO Remove condition once vesicle changes are merged
                 pathCnt = path.Count
                 pathCnc = path.Conc
-                if MPI.rank == 0 or not self.useDist:
+                if MPI._rank == 0 or not self.useDist:
                     self.assertEqual(pathCnt, cnt)
                     self.assertAlmostEqualWThresh(pathCnc, cnt / Avogad / (1e3 * vol), self.tolerance)
                 if not self.useDist:
@@ -343,7 +343,7 @@ class TestModelFramework(unittest.TestCase):
             with self.subTest(path=path, cnt=cnt, vol=vol):
                 pathCnt = path.Count
                 pathCnc = path.Conc
-                if MPI.rank == 0 or not self.useDist:
+                if MPI._rank == 0 or not self.useDist:
                     self.assertEqual(pathCnt, cnt)
                     self.assertAlmostEqualWThresh(pathCnc, cnt / Avogad / (1e3 * vol), self.tolerance)
                 if not self.useDist:

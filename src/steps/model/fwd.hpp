@@ -1,5 +1,7 @@
 #pragma once
 
+#include "util/common.hpp"
+
 namespace steps::model {
 
 class Chan;

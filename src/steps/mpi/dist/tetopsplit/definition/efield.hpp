@@ -1,5 +1,6 @@
 #pragma once
 
+#include "util/error.hpp"
 #include <map>
 #include <optional>
 #include <utility>
@@ -78,11 +79,38 @@ struct OhmicCurrent {
                                     const MolState& mol_state,
                                     const DistMesh& mesh,
                                     osh::Real sim_time) const;
-#endif  // USE_PETSC
+
     osh::Real getReversalPotential(mesh::triangle_id_t triangle) const;
     void setReversalPotential(mesh::triangle_id_t triangle, osh::Real value);
     void reset();
     friend std::ostream& operator<<(std::ostream& os, OhmicCurrent const& m);
+#else
+    static constexpr auto PETSC_ERROR_MSG =
+        "STEPS was compiled without PETSc, methods related to membrane potential computations are "
+        "not available";
+    double getTriBConVertex(const mesh::triangle_id_t& /*b_id*/,
+                            const MolState& /*mol_state*/,
+                            double /*Avert*/,
+                            osh::Real /*sim_time*/) const {
+        ArgErrLog(PETSC_ERROR_MSG);
+    }
+    double getTriCurrentOnVertex(osh::Real /*potential_on_vertex*/,
+                                 const mesh::triangle_id_t& /*b_id*/,
+                                 const MolState& /*mol_state*/,
+                                 const DistMesh& /*mesh*/,
+                                 osh::Real /*sim_time*/) const {
+        ArgErrLog(PETSC_ERROR_MSG);
+    }
+    osh::Real getReversalPotential(mesh::triangle_id_t /*triangle*/) const {
+        ArgErrLog(PETSC_ERROR_MSG);
+    }
+    void setReversalPotential(mesh::triangle_id_t /*triangle*/, osh::Real /*value*/) {
+        ArgErrLog(PETSC_ERROR_MSG);
+    }
+    void reset() {
+        ArgErrLog(PETSC_ERROR_MSG);
+    }
+#endif  // USE_PETSC
 
     const osh::Real conductance;
     const std::optional<container::species_id> channel_state;

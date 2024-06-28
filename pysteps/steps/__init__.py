@@ -37,7 +37,7 @@ import warnings
 
 __name__      = 'steps'
 __longname__  = 'STochastic Engine for Pathway Simulation'
-__version__   = '5.0.1'
+__version__   = '5.0.2'
 __author__    = 'STEPS Development Team'
 __url__       = 'steps.sourceforge.net'
 __license__   = 'GPL3.0'

@@ -129,13 +129,15 @@ def addUnknownHierarchicalArgs(allParams, addedParams, params, unknown_args):
             matchingParams = [param for pattern, param in reParams if pattern.match(fullName)]
             if len(matchingParams) == 0:
                 raise ValueError(f'Cannot parse argument "{name}"')
-            allTypes = set()
+            allTypes = {}
             for mp in matchingParams:
                 defVal, tpe = getParamFromFullName(allParams, mp)
-                allTypes.add(tpe)
+                allTypes[id(tpe)] = tpe
             if len(allTypes) > 1:
                 raise Exception(
-                    f'Several hierarchical parameters with different types match {name}: {allTypes}.')
+                    f'Several hierarchical parameters with different types match {name}: '
+                    f'{list(allTypes.values())}.'
+                )
 
         addArgumentToParser(parser, fullName, tpe)
         flatParams.append(fullName)

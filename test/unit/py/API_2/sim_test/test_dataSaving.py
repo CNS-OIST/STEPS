@@ -306,7 +306,7 @@ class ResultSelectorTests(base_model.TestModelFramework):
         saverDescr = [
             (rs.comp1.S1.Conc, 'comp1.S1.Conc'),
             (rs.ALL(Compartment).S1.Count, 'ALL(Compartment).S1.Count'),
-            (rs.MATCH('comp\d').S1.Count, 'MATCH(comp\d).S1.Count'),
+            (rs.MATCH(r'comp\d').S1.Count, r'MATCH(comp\d).S1.Count'),
             (rs.LIST(self.newGeom.comp1, self.newGeom.comp2).S2.Count, 'LIST(comp1, comp2).S2.Count'),
             (rs.comp1.S1.Count << rs.comp1.S2.Count, 'comp1.S1.Count, comp1.S2.Count'),
             (rs.comp1.S1.Count + rs.comp1.S2.Count, '(comp1.S1.Count + comp1.S2.Count)'),
@@ -922,7 +922,7 @@ class SimDataSaving(base_model.TestModelFramework):
 
                     self.assertTrue((memsaver.data[-1, :, 0] == filesaver.data[-1, :, 0]).all())
                     with np.testing.suppress_warnings() as sup:
-                        sup.filter(np.VisibleDeprecationWarning)
+                        sup.filter(np.exceptions.VisibleDeprecationWarning)
                         self.assertTrue((memsaver.data[:, :, 0] == filesaver.data[:, :, 0]).all())
                     self.assertTrue((memsaver.data[-1,...] == filesaver.data[-1]).all())
                     self.assertTrue((memsaver.data[-1, ..., 0] == filesaver.data[-1, ..., 0]).all())
@@ -931,7 +931,7 @@ class SimDataSaving(base_model.TestModelFramework):
                     self.assertTrue((memsaver.data[-1, 0] == filesaver.data[-1, 0]).all())
 
                     with np.testing.suppress_warnings() as sup:
-                        sup.filter(np.VisibleDeprecationWarning)
+                        sup.filter(np.exceptions.VisibleDeprecationWarning)
                         self.assertTrue((np.array(memsaver.data) == np.array(filesaver.data)).all())
 
                     with self.assertRaises(Exception):
@@ -1398,6 +1398,29 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
     @unittest.skip('Not needed here')
     def testXDMFWithoutMesh(self):
         pass
+
+    @unittest.skipIf(importlib.util.find_spec('h5py') is None, 'h5py not available')
+    def testXDMFWithoutMPI(self, dbUID='GroupID'):
+        """Check that XDMFHandler does not trigger any MPI initialization or any mpi4py import"""
+
+        _, dbPath = tempfile.mkstemp(prefix=f'{self.__class__.__name__}testXDMFWithoutMPISaving', suffix='')
+        self.createdFiles.add(dbPath)
+
+        # Setup traps
+        steps.stepslib.mpiInit = lambda: self.assertTrue(False)
+        sys.modules['mpi4py.MPI'] = None
+
+        rs = ResultSelector(self.newSim)
+        saver = rs.TETS().LIST('S1', 'S2').Count
+        self.newSim.toSave(saver, dt=self.deltaT)
+
+        with XDMFHandler(dbPath) as dbh:
+            self.newSim.toDB(dbh, dbUID, val1=1, val2=2)
+            self.createdFiles |= set(dbh._getFilePaths())
+            self.newSim.newRun()
+            self.init_API2_sim(self.newSim)
+            self.newSim.ALL(Compartment).LIST('S1', 'S2').Count = 100
+            self.newSim.run(self.shortEndTime)
 
 
 def suite():

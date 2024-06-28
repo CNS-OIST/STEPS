@@ -1,6 +1,27 @@
 Release Notes
 
-Version 5.0.1 (2024-03)
+Version 5.0.2 (2024-06)
+==========================
+
+Python API
+----------
+1. The minimum python version was bumped from 3.6 to 3.8.
+
+Bugfixes
+--------
+1. Fixed compilation issue when PETSc is not installed.
+2. Fixed installation issue in Conda environments.
+
+Internal code base
+------------------
+1. Use Boost instead of GSL for computing qtable for vesicle surface diffusion.
+2. Remove GSL as a minimum prerequisite.
+
+stepsblender python package
+---------------------------
+1. Fixed issues caused by changes in Blender 4.1 python API.
+
+Version 5.0.1 (2024-02)
 ==========================
 
 New Features
@@ -12,8 +33,8 @@ New Features
 Python API
 ----------
 1. Added a new `CustomResults` result selector to save arbitrary data to STEPS HDF5 files.
-1. Added a `.description` property to `ResultSelector`s.
-2. Added a `.patchTriNeighbs` property to `TriReference`s to get neighboring triangles in the same patch.
+2. Added a `.description` property to `ResultSelector`s.
+3. Added a `.patchTriNeighbs` property to `TriReference`s to get neighboring triangles in the same patch.
 
 Version 5.0.0 (2023-06)
 ==========================
@@ -79,7 +100,7 @@ Version 3.6.0 (2021-02)
 
 Python API
 ----------
-1. Added a new python API (see [documentation](http://steps.sourceforge.net/manual/manual_index.html))
+1. Added a new python API (see [documentation](http://steps.sourceforge.net/manual/))
    Scripts written for older STEPS version should still work without any modifications.
    The new python API can be used by adding the following line at the top of a STEPS script:
 

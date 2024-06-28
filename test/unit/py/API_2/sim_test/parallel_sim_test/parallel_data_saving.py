@@ -63,6 +63,10 @@ class TetOpSplitSimDataSaving(tds.TetSimDataSaving):
         osim.setEfieldDT(self.efielddt)
         return osim
 
+    @unittest.skip('Not needed here')
+    def testXDMFWithoutMPI(self):
+        pass
+
 
 class VesRaftRDEFSimDataSaving(base_model.VesTestModelFramework, tds.TetSimDataSaving):
     """Test data access, setting, and saving with vesicle and raft simulations."""
@@ -630,7 +634,11 @@ class VesRaftRDEFSimDataSaving(base_model.VesTestModelFramework, tds.TetSimDataS
             (newSave, newGetData, newRun, explbls),
             [self.countRefVal]*2
         )
-    
+
+    @unittest.skip('Not needed here')
+    def testXDMFWithoutMPI(self):
+        pass
+
 
 def suite():
     all_tests = []

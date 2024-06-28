@@ -118,6 +118,9 @@ set_directory_properties(
 
 # Python optional packages and extras
 set(STEPS_INCLUDE_PACKAGES "steps" "steps.*")
+if(USE_MPI)
+  list(APPEND py_deps "mpi")
+endif()
 if(STEPS_USE_DIST_MESH)
   list(APPEND py_deps "dist")
 endif()
@@ -159,18 +162,24 @@ if(STEPS_INSTALL_PYTHON_DEPS)
   )# random file bridging
   # target->command
 
-  if(PIPTOOLS_VERSION_STRING VERSION_LESS 6.8.0)
+  # Generate requirements file from pyproject.toml
+  if(Python_VERSION VERSION_LESS 3.11.0)
+    # Also install toml if tomllib is not available.
     add_custom_command(
       OUTPUT ${steps_requirements_file}
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMAND ${Python_EXECUTABLE} -m piptools compile --quiet --extra ${py_all_deps} -o
-              ${steps_requirements_file} pyproject.toml)
+      COMMAND ${Python_EXECUTABLE} -m pip install toml
+      COMMAND
+        ${Python_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/generate_requirements.py
+        "${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml" "${steps_requirements_file}" "${py_all_deps}")
+    # TODO: Drop this dependency when we require python >=3.11
   else()
     add_custom_command(
       OUTPUT ${steps_requirements_file}
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMAND ${Python_EXECUTABLE} -m piptools compile --quiet --extra ${py_all_deps} -o
-              ${steps_requirements_file} --resolver=backtracking pyproject.toml)
+      COMMAND
+        ${Python_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/generate_requirements.py
+        "${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml" "${steps_requirements_file}" "${py_all_deps}")
   endif()
 
   install(

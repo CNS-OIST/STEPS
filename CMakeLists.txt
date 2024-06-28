@@ -264,7 +264,7 @@ set_property(CACHE CMAKE_BUILD_TYPE
 # Requirements
 # -------------------------------------------------------------------
 find_package(
-  Python 3.6
+  Python 3.8
   COMPONENTS Interpreter Development
   REQUIRED)
 if(STEPS_USE_STEPSBLENDER AND (Python_VERSION VERSION_LESS 3.9.0))
@@ -284,7 +284,6 @@ if(APPLE)
 else()
   find_package(Threads REQUIRED)
 endif()
-find_package(GSL REQUIRED)
 
 find_package(Boost REQUIRED)
 include_directories(SYSTEM ${Boost_INCLUDE_DIR})
@@ -408,15 +407,25 @@ endif()
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   # Default python installation to site-packages, do not use Python_SITEARCH since it points to
   # dist-packages
-  execute_process(
-    COMMAND
-      ${Python_EXECUTABLE} -c
-      "import sys,sysconfig; print(sysconfig.get_path('platlib', sysconfig.get_preferred_scheme('prefix' if sys.prefix != sys.base_prefix else 'user')))"
-    OUTPUT_VARIABLE _python_site_packages_dir
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  set(Python_INSTALL_PREFIX
-      ${_python_site_packages_dir}
-      CACHE PATH "Path to install steps Python package")
+  if(NOT DEFINED Python_INSTALL_PREFIX)
+    execute_process(
+      COMMAND
+        ${Python_EXECUTABLE} -c
+        "import os,sys,sysconfig; print(sysconfig.get_path('platlib') if (sys.prefix != sys.base_prefix or os.path.exists(os.path.join(sys.prefix, 'conda-meta'))) else sysconfig.get_path('platlib', 'osx_framework_user' if bool(sysconfig.get_config_var('PYTHONFRAMEWORK')) else f'{os.name}_user'))"
+      OUTPUT_VARIABLE _python_site_packages_dir
+      ERROR_VARIABLE _python_site_packages_error
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(EXISTS ${_python_site_packages_dir})
+      set(Python_INSTALL_PREFIX
+          ${_python_site_packages_dir}
+          CACHE PATH "Path to install steps Python package")
+    else()
+      message(
+        FATAL_ERROR
+          "Could not determine the python install directory. Please provide it with the -DPython_INSTALL_PREFIX=/path/to/dir option.\n"
+          "The following error was encountered: ${_python_site_packages_error}")
+    endif()
+  endif()
 
   set(CMAKE_INSTALL_PREFIX
       "~/.local/"
@@ -444,24 +453,6 @@ set(bundle_lib_install_dir ${CMAKE_INSTALL_PREFIX}/lib)
 # Python dependencies
 include(FindPythonModule)
 find_python_module(build REQUIRED)
-if(STEPS_INSTALL_PYTHON_DEPS)
-  find_python_module(piptools REQUIRED)
-
-  # No .__version__ in the piptools package, so we need to extract it from pip-compile --version
-  execute_process(
-    COMMAND ${Python_EXECUTABLE} -m piptools compile --version
-    RESULT_VARIABLE _piptools_status
-    OUTPUT_VARIABLE _piptools_version
-    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-  if(_piptools_status)
-    message(
-      FATAL_ERROR
-        "pip-compile is not working correctly, check that both pip-tools and pip are correctly upgraded."
-    )
-  else()
-    string(REGEX MATCH "[0-9\.]+$" PIPTOOLS_VERSION_STRING "${_piptools_version}")
-  endif()
-endif()
 
 # Python bindings tech Makes steps Python bindings based on Cython
 if(Python_FOUND)

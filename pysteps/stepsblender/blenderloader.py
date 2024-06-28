@@ -31,6 +31,7 @@ import atexit
 from multiprocessing.managers import BaseManager
 import numpy as np
 import os
+import sys
 from typing import Annotated
 
 from . import groups
@@ -88,6 +89,7 @@ class HDF5BlenderLoader(objects.BlenderCollection, state.State):
 
     specScaleFactor: Annotated[float, 'Size of species compared to the mean tetrahedron size'] = 0.025
     background_color: Annotated[utils.colorType, 'Color of the background'] = (0.025, 0.025, 0.025, 1)
+    cycles_shadows: Annotated[bool, 'Make global light cast shadows with the cycles render engine'] = False
 
     Meshes: groups.MeshGroup = None
     Species: groups.SpeciesGroup = None
@@ -114,7 +116,11 @@ class HDF5BlenderLoader(objects.BlenderCollection, state.State):
 
         atexit.register(self._exitServer)
 
-        self._queue_snd.put((self.dbInd, self.rInd, self.include, self.exclude))
+        envInfo = {'numpy_version': np.__version__}
+        self._queue_snd.put((self.dbInd, self.rInd, self.include, self.exclude, envInfo))
+        if self._queue_rcv.get() == Orders.EXIT:
+            print('Data loading server exited, exiting Blender.', file=sys.stderr)
+            sys.exit()
 
         self._load()
 
@@ -163,7 +169,7 @@ class HDF5BlenderLoader(objects.BlenderCollection, state.State):
             # Change light to sun
             bpy.data.lights['Light'].type = 'SUN'
             bpy.data.lights['Light'].energy = 3
-            bpy.data.lights['Light'].cycles.cast_shadow = False
+            bpy.data.lights['Light'].cycles.cast_shadow = self.cycles_shadows
             bpy.data.objects['Light'].rotation_euler = (0, 0, 0)
 
             # Set animation start and end frames

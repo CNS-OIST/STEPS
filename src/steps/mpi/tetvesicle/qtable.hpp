@@ -50,12 +50,12 @@ class Qtable {
     /// restore data
     void restore(std::fstream& cp_file);
 
-    void setup();
+    void setup() noexcept;
 
     // Intended to be used if tablesize or tau changes during simulation
-    void reinit(unsigned int size, double tau);
+    void reinit(unsigned int size, double tau) noexcept;
 
-    double getPhi();
+    double getPhi() const noexcept;
 
     inline double getTau() const noexcept {
         return pTau;
@@ -65,6 +65,7 @@ class Qtable {
     ////////////////////////////////////////////////////////////////////////
 
   private:
+    double Q(double theta) const noexcept;
     unsigned int pTablesize;
     double pTau;
 

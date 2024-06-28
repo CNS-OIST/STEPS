@@ -51,6 +51,7 @@ PointSpec::PointSpec(solver::spec_global_id gidx,
 
 PointSpec::PointSpec(solver::spec_global_id gidx, double radius, std::fstream& cp_file)
     : pSpec_gidx(gidx) {
+    util::restore(cp_file, pIdx);
     util::restore(cp_file, pSpec_gidx);
     util::restore(cp_file, pPosSpherical);
     util::restore(cp_file, pPosCartesian);
@@ -64,6 +65,7 @@ PointSpec::~PointSpec() = default;
 ////////////////////////////////////////////////////////////////////////////////
 
 void PointSpec::checkpoint(std::fstream& cp_file) {
+    util::checkpoint(cp_file, pIdx);
     util::checkpoint(cp_file, pSpec_gidx);
     util::checkpoint(cp_file, pPosSpherical);
     util::checkpoint(cp_file, pPosCartesian);

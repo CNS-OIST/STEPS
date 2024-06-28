@@ -2130,7 +2130,7 @@ class _HDF5DistribDataHandler(_HDF5DataHandler):
         for rnk in self._usedRanks:
             # Open HDF5 files
             if rnk not in self._dbh._distribRankDBHs:
-                if rnk == nsim.MPI.rank:
+                if rnk == nsim.MPI._rank:
                     self._dbh._distribRankDBHs[rnk] = self._dbh
                 else:
                     self._dbh._distribRankDBHs[rnk] = HDF5Handler(
@@ -2199,7 +2199,7 @@ class _HDF5CompoundObjHandler(nutils.Versioned):
         # Data type: (dtype, dataset name)
         _DATA_TYPE.INT: ('i', 'Ints'),
         _DATA_TYPE.FLOAT: ('d', 'Floats'),
-        _DATA_TYPE.STRING: ('b', 'Strings'),
+        _DATA_TYPE.STRING: ('B', 'Strings'),
         _DATA_TYPE.LIST: (_IND_DTYPE, 'Lists'),
     }
 
@@ -3534,7 +3534,7 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
         if hasattr(self, '_file') and self._file is not None:
             self._file.close()
         for rnk, dbh in self._distribRankDBHs.items():
-            if rnk != nsim.MPI.rank:
+            if rnk != nsim.MPI._rank:
                 dbh._close()
 
     def _checkOpenFile(self, sim=None):
@@ -3554,7 +3554,7 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
                 self._file = h5py.File(self._path, 'r', **self._fileKwArgs)
             else:
                 if sim._isDistributed():
-                    self._path = HDF5Handler._DISTRIBUTED_HDF_SUFFIX.format(self._pathPrefix, nsim.MPI.rank)
+                    self._path = HDF5Handler._DISTRIBUTED_HDF_SUFFIX.format(self._pathPrefix, nsim.MPI._rank)
                 elif nsim.MPI._shouldWrite:
                     self._path = self._pathPrefix
                 else:
@@ -3667,7 +3667,7 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
                 )
             else:
                 raise Exception(
-                    f'The HDF5 file associated with MPI rank {nsim.MPI.rank} contains '
+                    f'The HDF5 file associated with MPI rank {nsim.MPI._rank} contains '
                     f'{len(selectorNames)} distributed column remapping dataset while it should '
                     f'contain {len(rsInd2DistColMap)}.'
                 )
@@ -3742,7 +3742,7 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
     def _newGroup(self, sim, uid, selectors, **kwargs):
         """Initialize the file and add a new run group."""
         self._shouldWrite = nsim.MPI._shouldWrite or sim._isDistributed()
-        self._nbSavingRanks = nsim.MPI.nhosts if sim._isDistributed() else 1
+        self._nbSavingRanks = nsim.MPI._nhosts if sim._isDistributed() else 1
         if self._shouldWrite:
             self._checkOpenFile(sim)
 
@@ -4067,7 +4067,7 @@ class XDMFHandler(HDF5Handler):
         savedFp = set(self._savedFilePaths)
         # To be saved soon:
         savedFp.add(self._getCurrXDMFFilePath())
-        if self._sim._isDistributed() and nsim.MPI.rank == 0:
+        if self._sim._isDistributed() and nsim.MPI._rank == 0:
             savedFp.add(self._getCurrFullXDMFFilePath())
         return super()._getFilePaths() + sorted(savedFp)
 
@@ -4205,7 +4205,7 @@ class XDMFHandler(HDF5Handler):
             ngeom.TriReference: [],
             ngeom.VertReference: [],
         }
-        self._rs2Grids = {(nsim.MPI.rank, rs._selectorInd): [] for rs in selectors}
+        self._rs2Grids = {(nsim.MPI._rank, rs._selectorInd): [] for rs in selectors}
 
         locStr2RefCls = {
             cls._locStr: cls for cls in [ngeom.TetReference, ngeom.TriReference, ngeom.VertReference]
@@ -4223,7 +4223,7 @@ class XDMFHandler(HDF5Handler):
             ngeom.Patch._locStr: {},
         }
         for rs in selectors:
-            rsId = (nsim.MPI.rank, rs._selectorInd)
+            rsId = (nsim.MPI._rank, rs._selectorInd)
             if 'loc_type' in rs.metaData and 'loc_id' in rs.metaData:
                 types = rs.metaData['loc_type']
                 inds = rs.metaData['loc_id']
@@ -4339,7 +4339,7 @@ class XDMFHandler(HDF5Handler):
             # Write column remapping of result selectors, if needed
             for rs in selectors:
                 n = rs._getEvalLen()
-                colRemap = rsColRemaps.get((nsim.MPI.rank, rs._selectorInd), [])
+                colRemap = rsColRemaps.get((nsim.MPI._rank, rs._selectorInd), [])
                 if len(colRemap) > 0:
                     if len(colRemap) < n:
                         colRemap += sorted(set(range(n)) - set(colRemap))
@@ -4366,10 +4366,10 @@ class XDMFHandler(HDF5Handler):
 
             self._grid2NonDistrRS = {}
             for (rnk, rsIdx), gridVals in self._rs2Grids.items():
-                if rnk != nsim.MPI.rank:
+                if rnk != nsim.MPI._rank:
                     for val, loctpe, start, step, nVals, gridCls, gridInd, center in gridVals:
                         assert nVals == 1
-                        localRemap = allColRemaps[nsim.MPI.rank].get((rnk, rsIdx), None)
+                        localRemap = allColRemaps[nsim.MPI._rank].get((rnk, rsIdx), None)
                         remoteRemap = allColRemaps[rnk].get((rnk, rsIdx), None)
                         if localRemap is not None:
                             start = localRemap[start]
@@ -4382,7 +4382,7 @@ class XDMFHandler(HDF5Handler):
 
     def _getCurrXDMFFilePath(self):
         fileName = XDMFHandler._FILE_NAME_PATTERN.format(
-            uid=self._currUID, run=self._currRun, rank=nsim.MPI.rank
+            uid=self._currUID, run=self._currRun, rank=nsim.MPI._rank
         )
         return os.path.join(self._xdmfFolder, fileName)
 
@@ -4453,7 +4453,7 @@ class XDMFHandler(HDF5Handler):
                 for i, (elems, _, loc) in enumerate(grids):
                     if self._shouldWrite:
                         if self._sim._isDistributed():
-                            gridName = f'{refCls._locStr}Grid{i}_rank{nsim.MPI.rank}'
+                            gridName = f'{refCls._locStr}Grid{i}_rank{nsim.MPI._rank}'
                         else:
                             gridName = f'{refCls._locStr}Grid{i}'
                         parentGrid, xmlPath = self._getHierarchicalParent(self._hierarchicalGrids, loc)
@@ -4480,11 +4480,11 @@ class XDMFHandler(HDF5Handler):
                 elemStr2ElemCls = {elemCls._locStr: elemCls for elemCls in self._temporalGrids.keys()}
                 allLocations = [((loc[0]._locStr,) + loc[1:], path) for loc, path in allLocations]
                 fileName = XDMFHandler._FILE_NAME_PATTERN.format(
-                    uid=self._currUID, run=self._currRun, rank=nsim.MPI.rank
+                    uid=self._currUID, run=self._currRun, rank=nsim.MPI._rank
                 )
                 allInfos = mpi4py.MPI.COMM_WORLD.gather((fileName, allLocations), root=0)
 
-                if nsim.MPI.rank == 0:
+                if nsim.MPI._rank == 0:
                     # Write a common xmf file on rank 0
                     self._fullXdmf, fullhierarchicalGrids = self._createXMLDocument()
                     for fileName, locations in allInfos:
@@ -4512,7 +4512,7 @@ class XDMFHandler(HDF5Handler):
         return hyperslab
 
     def _newTimeStep(self, t, rs, tind):
-        rsId = (nsim.MPI.rank, rs._selectorInd)
+        rsId = (nsim.MPI._rank, rs._selectorInd)
         for val, loctpe, start, step, nVals, gridCls, gridInd, center in self._rs2Grids[rsId]:
             tempGrid, xmlPath, currTime, currGrid = self._temporalGrids[gridCls][gridInd]
             if currTime != t:
@@ -4566,13 +4566,13 @@ class XDMFHandler(HDF5Handler):
             ngeom.VertReference: (1, 1),
         }
         if self._sim._isDistributed():
-            gridName = f'{gridCls._locStr}Grid{gridInd}_rank{nsim.MPI.rank}'
+            gridName = f'{gridCls._locStr}Grid{gridInd}_rank{nsim.MPI._rank}'
         else:
             gridName = f'{gridCls._locStr}Grid{gridInd}'
         elemCode, elemColNb = tpeMap[gridCls]
 
         cond = f'{gridName}/XYZ' not in meshGroup if meshGroup is not None else None
-        if not self._sim._isDistributed():
+        if nsim.MPI._usingMPI and not self._sim._isDistributed():
             # If the mesh is not distributed, all ranks need to be involved in the calls to get mesh data
             import mpi4py.MPI
             cond = mpi4py.MPI.COMM_WORLD.bcast(cond, root=0)
