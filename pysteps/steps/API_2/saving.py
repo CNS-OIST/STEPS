@@ -2199,7 +2199,7 @@ class _HDF5CompoundObjHandler(nutils.Versioned):
         # Data type: (dtype, dataset name)
         _DATA_TYPE.INT: ('i', 'Ints'),
         _DATA_TYPE.FLOAT: ('d', 'Floats'),
-        _DATA_TYPE.STRING: ('b', 'Strings'),
+        _DATA_TYPE.STRING: ('B', 'Strings'),
         _DATA_TYPE.LIST: (_IND_DTYPE, 'Lists'),
     }
 

@@ -306,7 +306,7 @@ class ResultSelectorTests(base_model.TestModelFramework):
         saverDescr = [
             (rs.comp1.S1.Conc, 'comp1.S1.Conc'),
             (rs.ALL(Compartment).S1.Count, 'ALL(Compartment).S1.Count'),
-            (rs.MATCH('comp\d').S1.Count, 'MATCH(comp\d).S1.Count'),
+            (rs.MATCH(r'comp\d').S1.Count, r'MATCH(comp\d).S1.Count'),
             (rs.LIST(self.newGeom.comp1, self.newGeom.comp2).S2.Count, 'LIST(comp1, comp2).S2.Count'),
             (rs.comp1.S1.Count << rs.comp1.S2.Count, 'comp1.S1.Count, comp1.S2.Count'),
             (rs.comp1.S1.Count + rs.comp1.S2.Count, '(comp1.S1.Count + comp1.S2.Count)'),
@@ -922,7 +922,7 @@ class SimDataSaving(base_model.TestModelFramework):
 
                     self.assertTrue((memsaver.data[-1, :, 0] == filesaver.data[-1, :, 0]).all())
                     with np.testing.suppress_warnings() as sup:
-                        sup.filter(np.VisibleDeprecationWarning)
+                        sup.filter(np.exceptions.VisibleDeprecationWarning)
                         self.assertTrue((memsaver.data[:, :, 0] == filesaver.data[:, :, 0]).all())
                     self.assertTrue((memsaver.data[-1,...] == filesaver.data[-1]).all())
                     self.assertTrue((memsaver.data[-1, ..., 0] == filesaver.data[-1, ..., 0]).all())
@@ -931,7 +931,7 @@ class SimDataSaving(base_model.TestModelFramework):
                     self.assertTrue((memsaver.data[-1, 0] == filesaver.data[-1, 0]).all())
 
                     with np.testing.suppress_warnings() as sup:
-                        sup.filter(np.VisibleDeprecationWarning)
+                        sup.filter(np.exceptions.VisibleDeprecationWarning)
                         self.assertTrue((np.array(memsaver.data) == np.array(filesaver.data)).all())
 
                     with self.assertRaises(Exception):

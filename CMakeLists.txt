@@ -284,7 +284,6 @@ if(APPLE)
 else()
   find_package(Threads REQUIRED)
 endif()
-find_package(GSL REQUIRED)
 
 find_package(Boost REQUIRED)
 include_directories(SYSTEM ${Boost_INCLUDE_DIR})

@@ -48,6 +48,7 @@ class Orders(enum.IntEnum):
     GET_VES_EVENTS = 12
     GET_RAFT_EVENTS = 13
     GET_VERTS_V = 14
+    OK = 15
 
 
 class Loc(enum.Enum):

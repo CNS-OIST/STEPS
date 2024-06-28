@@ -31,6 +31,7 @@ import atexit
 from multiprocessing.managers import BaseManager
 import numpy as np
 import os
+import sys
 from typing import Annotated
 
 from . import groups
@@ -115,7 +116,11 @@ class HDF5BlenderLoader(objects.BlenderCollection, state.State):
 
         atexit.register(self._exitServer)
 
-        self._queue_snd.put((self.dbInd, self.rInd, self.include, self.exclude))
+        envInfo = {'numpy_version': np.__version__}
+        self._queue_snd.put((self.dbInd, self.rInd, self.include, self.exclude, envInfo))
+        if self._queue_rcv.get() == Orders.EXIT:
+            print('Data loading server exited, exiting Blender.', file=sys.stderr)
+            sys.exit()
 
         self._load()
 

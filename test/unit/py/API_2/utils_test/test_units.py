@@ -202,9 +202,9 @@ class UnitsUsage(unittest.TestCase):
             ),
             (
                 [
-                    '\si{mol.L^{-1}}',
-                    '\si{(mol.m^{-2})^{-1}.s^{-1}}',
-                    '\si{\micro M^{-1}.s^{-1}}',
+                    r'\si{mol.L^{-1}}',
+                    r'\si{(mol.m^{-2})^{-1}.s^{-1}}',
+                    r'\si{\micro M^{-1}.s^{-1}}',
                 ],
                 Units._toLatex,
             ),

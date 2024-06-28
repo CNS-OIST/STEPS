@@ -44,4 +44,4 @@ set_property(TARGET stepstetvesicle PROPERTY COMPILE_FLAGS
 
 target_include_directories(stepstetvesicle PUBLIC "${PROJECT_SOURCE_DIR}/src/steps")
 
-target_link_libraries(stepstetvesicle PUBLIC stepsutil stepsmpi stepssolver GSL::gsl GSL::gslcblas)
+target_link_libraries(stepstetvesicle PUBLIC stepsutil stepsmpi stepssolver)
