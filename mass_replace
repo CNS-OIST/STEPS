@@ -1,0 +1,47 @@
+#!/usr/bin/python3
+
+import os
+import re
+import sys
+
+# This script parses all source files in a given directory and replaces a given string
+# with the content of a file. It is usually used to replace the placeholder string
+# "___license_placeholder___" with the content of LICENSE.md
+
+SKIP_FOLDERS = [
+    '.git',
+    'build',
+    'hpc-coding-conventions',
+    'easyloggingpp',
+]
+
+EXTENSIONS = ['pxd', 'pyx', 'cpp', 'hpp', 'h', 'py', 'txt']
+
+
+def file_replace(fname, s_before, s_after):
+    out_fname = fname + '.tmp'
+    with open(out_fname, 'w') as fout:
+        with open(fname, 'r') as fin:
+            for line in fin:
+                fout.write(re.sub(s_before, s_after, line))
+    os.rename(out_fname, fname)
+
+
+def mass_replace(dir_name, s_before, substitute_file):
+    with open(substitute_file, 'r') as f:
+        s_after = f.read()
+    for dirpath, dirnames, filenames in os.walk(dir_name):
+        if any(fold in dirpath for fold in SKIP_FOLDERS):
+            continue
+        for fname in filenames:
+            lower = fname.lower()
+            if any(lower.endswith(f'.{ext}') for ext in EXTENSIONS):
+                file_replace(os.path.join(dirpath, fname), s_before, s_after)
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 4:
+        print('Usage: mass_replace <dir_name> <string_before> <substitute_file>', file=sys.stderr)
+        sys.exit(1)
+    _, path, sbefore, sfile = sys.argv
+    mass_replace(path, sbefore, sfile)
