@@ -1679,6 +1679,8 @@ DistMesh::intersection_list_t DistMesh::intersectDeterministic(const point3d& p_
                     second_tet_neighb = tet_ids[1];
                 }
                 next_tet = (tet_ids[0] == cur_tet) ? second_tet_neighb : tet_ids[0];
+                tet_neighbors.clear();
+                neighbs_id = 0;
                 break;
             }
         }

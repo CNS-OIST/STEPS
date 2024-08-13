@@ -2171,6 +2171,8 @@ std::vector<std::pair<ind_t, double>> Tetmesh::intersectDeterministic(
                 // Next tet is the other side of the chosen triangle
                 auto tet_ids = _getTriTetNeighb(tri_id);
                 next_tet = (tet_ids[0] == cur_tet) ? tet_ids[1] : tet_ids[0];
+                tet_neighbors.clear();
+                neighbs_id = 0;
                 break;
             }
         }
