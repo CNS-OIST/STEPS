@@ -1164,7 +1164,7 @@ class SimDataSaving(base_model.TestModelFramework):
         self.newSim._nextSave = None
         self.newSim.toSave(saver1, saver3, dt=self.deltaT)
         with dbCls(dbPath) as dbh:
-            if MPI._shouldWrite:
+            if MPI._shouldWrite or (isinstance(dbh, HDF5Handler) and self.newSim._isDistributed()):
                 with self.assertRaises(Exception):
                     self.newSim.toDB(dbh, dbUID, val1=1, val2=2)
             else:
@@ -1175,7 +1175,7 @@ class SimDataSaving(base_model.TestModelFramework):
         self.newSim._nextSave = None
         self.newSim.toSave(saver1, saver2, saver3, dt=self.deltaT)
         with dbCls(dbPath) as dbh:
-            if MPI._shouldWrite:
+            if MPI._shouldWrite or (isinstance(dbh, HDF5Handler) and self.newSim._isDistributed()):
                 with self.assertRaises(Exception):
                     self.newSim.toDB(dbh, dbUID, val1=1, val2=2)
             else:
@@ -1291,8 +1291,7 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
 
         rs = ResultSelector(self.newSim)
         saver1 = rs.ALL(Compartment).ALL(Species).Count
-        #TODO Check getPatchCOunt bug
-        # saver1 <<= rs.ALL(Patch).ALL(Species).Count
+        saver1 <<= rs.ALL(Patch).ALL(Species).Count
         saver1 <<= rs.comp1.CC.sus2.Count
 
         tets = self.newGeom.tets
@@ -1319,7 +1318,13 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
         else:
             saver6 = rs.TRIS(tris1).Area
 
-        self.newSim.toSave(saver1, saver2, saver3, saver4, saver5, saver6, dt=self.deltaT)
+        # Combined values accross geometrical elements
+        saver7 = rs.SUM(rs.TRIS(tris1).Ex.Count)
+
+        # Combined values on same geometrical elements
+        saver8 = rs.TETS().S1.Count + rs.TETS().S2.Count
+
+        self.newSim.toSave(saver1, saver2, saver3, saver4, saver5, saver6, saver7, saver8, dt=self.deltaT)
 
         with XDMFHandler(dbPath) as dbh:
             self.newSim.toDB(dbh, dbUID, val1=1, val2=2)
@@ -1354,9 +1359,11 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
 
         rs = ResultSelector(self.newSim)
 
-        saver = rs.TETS().LIST(S1, S2).Count
+        saver1 = rs.TETS().LIST(S1, S2).Count
+        saver2 = rs.TETS().S1.Count + rs.TETS().S2.Count
+        saver3 = rs.SUM(rs.TETS().S1.Count) << rs.SUM(2 * rs.TETS().S2.Count)
 
-        self.newSim.toSave(saver, dt=self.deltaT)
+        self.newSim.toSave(saver1, saver2, saver3, dt=self.deltaT)
 
         vals1 = list(range(len(self.newSim.geom.tets)))
         vals2 = list(reversed(vals1))
@@ -1376,9 +1383,11 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
         # Load data
         if MPI._shouldWrite:
             with XDMFHandler(dbPath) as dbh:
-                saver, = dbh.get().results
-                self.assertEqual(list(saver.data[0,0,0::2]), vals1)
-                self.assertEqual(list(saver.data[0,0,1::2]), vals2)
+                saver1, saver2, saver3 = dbh.get().results
+                self.assertEqual(list(saver1.data[0,0,0::2]), vals1)
+                self.assertEqual(list(saver1.data[0,0,1::2]), vals2)
+                self.assertEqual(list(saver2.data[0,0,:]), list(np.array(vals1) + np.array(vals2)))
+                self.assertEqual(list(saver3.data[0,0,:]), [sum(vals1), 2 * sum(vals2)])
 
         if self.useDist:
             # Need an MPI barrier to prevent early removal of files

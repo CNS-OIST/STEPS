@@ -1441,18 +1441,17 @@ class SimPath:
                     listInds = range(locElemLen)
                 # If the elements are not distributable or are in the current rank, add them to the
                 # new path and keep track of their indices in the original path.
-                if not isinstance(distrElem, ngeom.RefList) or len(distrElem) > 0:
-                    distrDict[distrElem] = subElems
-                    if isinstance(distrElem, ngeom.RefList) or MPI._shouldWrite:
-                        # Compute the indices of the distributed saved values in the original path
-                        for lind in listInds:
-                            allDistrInds += range(
-                                globalInd + lind * nbSubPaths, globalInd + (lind + 1) * nbSubPaths
-                            )
-                        spMask += [True] * nbSubPaths * len(listInds)
-                    else:
-                        changed = True
-                        spMask += [False] * nbSubPaths * locElemLen
+                distrDict[distrElem] = subElems
+                if isinstance(distrElem, ngeom.RefList) or MPI._shouldWrite:
+                    # Compute the indices of the distributed saved values in the original path
+                    for lind in listInds:
+                        allDistrInds += range(
+                            globalInd + lind * nbSubPaths, globalInd + (lind + 1) * nbSubPaths
+                        )
+                    spMask += [True] * nbSubPaths * len(listInds)
+                else:
+                    changed = True
+                    spMask += [False] * nbSubPaths * locElemLen
 
                 globalInd += nbSubPaths * locElemLen
 

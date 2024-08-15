@@ -636,6 +636,7 @@ class ResultSelector:
                 labelStrFunc=labelStrFunc,
                 metaDataFunc=lambda vals: vals,
                 strDescr=opStr.format(self.description, other),
+                distribIndFunc=lambda inds: inds,
             )
         elif isinstance(other, ResultSelector):
             self._checkCompatible(other)
@@ -665,9 +666,8 @@ class ResultSelector:
             elif symetric and self._getEvalLen() == 1:
                 return other._binaryOp(self, op, True, opStr)
             elif other._getEvalLen() == self._getEvalLen():
-                n = self._getEvalLen()
-
                 def opFunc(x):
+                    n = len(x) // 2
                     return [op(a, b) for a, b in zip(x[:n], x[n:])]
 
                 def mtdtFunc(vals):
@@ -688,6 +688,7 @@ class ResultSelector:
                     labelStrFunc=labelStrFunc,
                     metaDataFunc=mtdtFunc,
                     strDescr=opStr.format(self.description, other.description),
+                    distribIndFunc=lambda inds: inds[:len(inds)//2],
                 )
             else:
                 raise Exception(
@@ -897,9 +898,10 @@ class ResultSelector:
             lambda x: 1,
             [sel],
             sel.sim,
-            labelArgFunc=lambda _, d: tuple(c.description for c in d),
+            labelArgFunc=lambda _, d: tuple(_LabelSelector(c, None) for c in d),
             labelStrFunc=lambda *args: f"SUM({' + '.join(args)})",
             strDescr=f'SUM({sel.description})',
+            distribIndFunc=lambda lst: [0],
         )
 
     @classmethod
@@ -922,9 +924,10 @@ class ResultSelector:
             lambda x: 1,
             [sel],
             sel.sim,
-            labelArgFunc=lambda _, d: tuple(c.description for c in d),
+            labelArgFunc=lambda _, d: tuple(_LabelSelector(c, None) for c in d),
             labelStrFunc=lambda *args: f"MIN({', '.join(args)})",
             strDescr=f'MIN({sel.description})',
+            distribIndFunc=lambda lst: [0],
         )
 
     @classmethod
@@ -947,9 +950,10 @@ class ResultSelector:
             lambda x: 1,
             [sel],
             sel.sim,
-            labelArgFunc=lambda _, d: tuple(c.description for c in d),
+            labelArgFunc=lambda _, d: tuple(_LabelSelector(c, None) for c in d),
             labelStrFunc=lambda *args: f"MAX({', '.join(args)})",
             strDescr=f'MAX({sel.description})',
+            distribIndFunc=lambda lst: [0],
         )
 
     @classmethod
@@ -1184,7 +1188,9 @@ class _ResultPath(ResultSelector):
             self._labels = [lbl for lbl, msk in zip(self._labels, self._simPathMask) if msk]
             mtdt = {key:[v for v, msk in zip(lst, self._simPathMask) if msk] for key, lst in mtdt.items()}
 
-        # Set the metadata
+        # Set the metadata, update previously available keys in case the length changed
+        for key in self._metaData:
+            mtdt.setdefault(key, [None] * self._len)
         for key, lst in mtdt.items():
             self.metaData.__setitem__(key, lst, _internal=True)
         # Add property metadata
@@ -1231,12 +1237,12 @@ class _ResultPath(ResultSelector):
 class _ResultList(ResultSelector):
     """Represents the concatenation of several ResultSelectors."""
 
-    def __init__(self, lst, *args, **kwargs):
+    def __init__(self, lst, *args, finalize=True, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.children = lst
-
-        self._finalize()
+        if finalize:
+            self._finalize()
 
         # Do not initialize metadata directly
         self._metaData = None
@@ -1268,20 +1274,25 @@ class _ResultList(ResultSelector):
         for c in self.children:
             c._checkComplete()
 
-    def _finalize(self):
-        """Compute labels and evel length"""
-        self._evalLen = 0
-        for c in self.children:
-            self._evalLen += c._getEvalLen()
+    def _computeEvalLength(self):
+        """Compute and set evaluation lenght"""
+        return sum(c._getEvalLen() for c in self.children)
 
+    def _computeLabels(self):
+        """Compute and set labels"""
         # concatenate labels
-        self._labels = []
+        labels = []
         for c in self.children:
-            self._labels += c.labels
+            labels += c.labels
+        return labels
 
+    def _finalize(self):
+        """Compute and set labels and eval length"""
+        self._evalLen = self._computeEvalLength()
+        self._labels = self._computeLabels()
         self.description = self._strDescr()
 
-    def _distribute(self):
+    def _distribute(self, updateMtdt=True):
         """Distribute the path across MPI ranks if it involves mesh elements of a distributed meshes."""
         if self._distrInds is not None:
             return self, False
@@ -1295,20 +1306,20 @@ class _ResultList(ResultSelector):
             totLen = c._getEvalLen()
             nc, cChanged = c._distribute()
 
-            if nc is not None:
-                newLst.append(nc)
-                distrInds = c._distrInds if c._distrInds is not None else range(c._getEvalLen())
-                self._distrInds += [globalIdx + idx for idx in distrInds]
+            newLst.append(nc)
+            distrInds = nc._distrInds if nc._distrInds is not None else range(nc._getEvalLen())
+            self._distrInds += [globalIdx + idx for idx in distrInds]
 
             changed |= cChanged
             globalIdx += totLen
 
         self.children = newLst
         self._finalize()
-        # Update metaData
-        for key, vals in self.metaData.items():
-            if len(vals) != self._getEvalLen():
-                self._metaData.__setitem__(key, [vals[ind] for ind in self._distrInds], _internal=True)
+
+        if updateMtdt:
+            for key, vals in self.metaData.items():
+                if len(vals) != self._getEvalLen():
+                    self._metaData.__setitem__(key, [vals[ind] for ind in self._distrInds], _internal=True)
 
         return self, changed
 
@@ -1357,22 +1368,39 @@ class _ResultCombiner(_ResultList):
     """
 
     def __init__(self, func, lenFunc, *args, labelArgFunc=None, labelStrFunc=None, metaDataFunc=None,
-            strDescr=None, **kwargs):
+            strDescr=None, distribIndFunc=None, **kwargs):
         self.func = func
-        super().__init__(*args, **kwargs)
-        self._len = lenFunc(super()._getEvalLen())
+        super().__init__(*args, finalize=False, **kwargs)
+        self._lenFunc = lenFunc
         self._labelArgFunc = labelArgFunc if labelArgFunc is not None else lambda i, chld: (f'{chld}[{i}]',)
         self._labelStrFunc = labelStrFunc if labelStrFunc is not None else lambda *args: ''.join(args)
         self._metadataFunc = metaDataFunc if metaDataFunc is not None else nutils.getValueIfAllIdentical
+        self._distribIndFunc = distribIndFunc
 
-        if strDescr is not None:
-            self.description = strDescr
+        self.description = strDescr
+        self._finalize()
 
-        self._labels = []
+    def _computeLabels(self):
+        """Compute labels"""
+        labels = []
         for i in range(self._len):
-            subLabels = self._labelArgFunc(i, self.children)
-            args = [arg.sel.labels[arg.ind] if isinstance(arg, _LabelSelector) else arg for arg in subLabels]
-            self._labels.append(self._labelStrFunc(*args))
+            args = []
+            for arg in self._labelArgFunc(i, self.children):
+                if isinstance(arg, _LabelSelector):
+                    if arg.ind is None:
+                        args.append(arg.sel.description)
+                    else:
+                        args.append(arg.sel.labels[arg.ind])
+                else:
+                    args.append(arg)
+            labels.append(self._labelStrFunc(*args))
+        return labels
+
+    def _finalize(self):
+        """Compute and set labels and eval length"""
+        self._evalLen = super()._computeEvalLength()
+        self._len = self._lenFunc(self._evalLen)
+        self._labels = self._computeLabels()
 
     def _concat(self, other):
         """Concatenate two result selectors into a _ResultList."""
@@ -1380,7 +1408,10 @@ class _ResultCombiner(_ResultList):
 
     def _strDescr(self):
         """Return a default generic description of the ResultSelector."""
-        return f"{self.func}({super()._strDescr()})"
+        if self.description is None:
+            return f"{self.func}({super()._strDescr()})"
+        else:
+            return self.description
 
     def _evaluate(self, solvStateId=None):
         """Return a list of the values to save."""
@@ -1395,17 +1426,28 @@ class _ResultCombiner(_ResultList):
         if self._distrInds is not None:
             return self, False
 
-        self._fullLen = self._getEvalLen()
-        if not nsim.MPI._shouldWrite:
-            self._len = 0
-            self._labels = []
-            self._distrInds = []
-            if self._metaData is not None:
-                self._metaData._clear()
-            return self, True
+        if self._distribIndFunc is not None and 'loc_id' in self.metaData and all(v is not None for v in self.metaData['loc_id']):
+            dist, changed = super()._distribute(updateMtdt=False)
+            if changed:
+                dist._len = self._lenFunc(super()._getEvalLen())
+                # Recompute metaData
+                dist._metaData = None
+                dist.metaData
+                # Compute correct _distrInd
+                dist._distrInds = self._distribIndFunc(dist._distrInds)
+            return dist, changed
         else:
-            self._distrInds = list(range(self._getEvalLen()))
-            return self, False
+            self._fullLen = self._getEvalLen()
+            if not nsim.MPI._shouldWrite:
+                self._len = 0
+                self._labels = []
+                self._distrInds = []
+                if self._metaData is not None:
+                    self._metaData._clear()
+                return self, True
+            else:
+                self._distrInds = list(range(self._getEvalLen()))
+                return self, False
 
     @ResultSelector.metaData.getter
     def metaData(self):
@@ -2038,8 +2080,7 @@ class _HDF5DataHandler(_DBDataHandler):
                         f'Metadata contains values that are not strings or numbers, they cannot '
                         f'be saved to HDF5 format.'
                     )
-                if len(vals) > 0:
-                    mtdtGroup.create_dataset(key, data=vals, **dskwargs)
+                mtdtGroup.create_dataset(key, data=vals, **dskwargs)
         self._loadColumnRemap()
 
         self._initializeCompoundObjects()
@@ -2776,7 +2817,7 @@ class _HDF5MetaDataAccessor(nutils.Versioned, nutils.ReadOnlyDictInterface):
                 raise KeyError(f'Cannot access metaData with key: {key}.')
 
             dset = self._handler._group[_HDF5DataHandler._METADATA_GROUP_NAME][key]
-            if isinstance(dset[0], bytes):
+            if dset.size > 0 and isinstance(dset[0], bytes):
                 res = [v.decode('utf-8') for v in dset]
                 # Try to convert strings to numbers, if possible
                 for i, v in enumerate(res):
@@ -3583,7 +3624,7 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
     def _getRsHDFGroup(self, rs, groupNamePattern=None):
         if groupNamePattern is None:
             groupNamePattern = HDF5Handler._RS_GROUP_NAME
-        if self._shouldWrite and rs._getEvalLen() > 0:
+        if self._shouldWrite:
             rsName = groupNamePattern.format(rs._selectorInd)
             hdf5Group = self._currGroup._group
             if rsName not in hdf5Group:
@@ -3605,14 +3646,13 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
         selectorNames = [
             n for n in self._currGroup._group if n.startswith(HDF5Handler._RS_GROUP_NAME.format(''))
         ]
-        nonEmptySelectors = [rs for rs in selectors if rs._getEvalLen() > 0]
-        if len(selectorNames) != len(nonEmptySelectors):
+        if len(selectorNames) != len(selectors):
             raise Exception(
                 f'The {uid} run group saved in the database is associated with '
                 f'{len(selectorNames)} resultSelectors while the current simulation is '
-                f'associated with {len(nonEmptySelectors)}.'
+                f'associated with {len(selectors)}.'
             )
-        for rsName, simrs in zip(selectorNames, nonEmptySelectors):
+        for rsName, simrs in zip(selectorNames, selectors):
             handler = self._getDataHandler(simrs)
             grouprs = self._currGroup._group[rsName]
             descr = grouprs.attrs[HDF5Handler._RS_DESCRIPTION_ATTR]
@@ -3700,12 +3740,11 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
         for rs in selectors:
             # Distribute the result selector
             rs, changed = rs._distribute()
-            if rs is not None:
-                # Re-create optimization groups
-                if len(optimGroups[-1]) == 0 or optimGroups[-1][-1][0]._optimGroupInd == rs._optimGroupInd:
-                    optimGroups[-1].append((rs, changed))
-                else:
-                    optimGroups.append([])
+            # Re-create optimization groups
+            if len(optimGroups[-1]) == 0 or optimGroups[-1][-1][0]._optimGroupInd == rs._optimGroupInd:
+                optimGroups[-1].append((rs, changed))
+            else:
+                optimGroups.append([])
 
         distribSelectors = []
         for optGrp in optimGroups:
@@ -4185,14 +4224,19 @@ class XDMFHandler(HDF5Handler):
 
     def _getValName(self, sel, i):
         if isinstance(sel, _ResultPath):
-            loc, *objsval = sel._labels[i].split('.')
-            return '.'.join(objsval)
+            valStr = sel.description if i is None else sel._labels[i]
+            return '.'.join(valStr.split('.')[1:])
         elif isinstance(sel, _ResultCombiner):
+            if i is None:
+                return None
             subLabels = sel._labelArgFunc(i, sel.children)
             return sel._labelStrFunc(
                 *[self._getValName(s.sel, s.ind) if isinstance(s, _LabelSelector) else s for s in subLabels]
             )
         elif isinstance(sel, _ResultList):
+            if i is None:
+                return None
+            # TODO Optimize this since it's going to be called several times in a row
             tot = 0
             for c in sel.children:
                 if i - tot < c._getEvalLen():
@@ -4230,13 +4274,17 @@ class XDMFHandler(HDF5Handler):
                 ves_types = rs.metaData.get('vesicle_type', None)
                 raft_types = rs.metaData.get('raft_type', None)
                 for i, (tpe, ind) in enumerate(zip(types, inds)):
-                    if not all(tpes is None or tpes[i] is None for tpes in [ves_types, raft_types]):
+                    if ind is None or not all(tpes is None or tpes[i] is None for tpes in [ves_types, raft_types]):
                         # Do not consider values that are linked with vesicles or rafts
                         continue
-                    val = self._getValName(rs, i)
                     # If the mesh is distributed, we need to use local inds
                     if self._sim._isDistributed() and tpe in locStr2RefCls:
                         ind = locStr2RefCls[tpe]._distCls._getToLocalFunc(self._sim.geom)(ind)
+                        if ind is None:
+                            continue
+                    val = self._getValName(rs, i)
+                    if val is None:
+                        continue
 
                     if tpe in distrElem2infos:
                         distrElem2infos[tpe].setdefault(ind, []).append((val, rsId, i))
