@@ -21,15 +21,7 @@ void OhmicCurrent::reset() {
     reversal_potentials.clear();
 }
 
-osh::Real OhmicCurrent::getTriBConVertex(const mesh::triangle_id_t& b_id,
-                                         const MolState& mol_state,
-                                         const double Avert,
-                                         const osh::Real sim_time) const {
-    const auto avg_open_channels =
-        channel_state ? mol_state.get_occupancy_ef(b_id, *channel_state, sim_time) / 3.0 : Avert;
-
-    return avg_open_channels * conductance;
-}
+#ifdef USE_PETSC
 
 PetscReal OhmicCurrent::getTriCurrentOnVertex(const osh::Real potential_on_vertex,
                                               const mesh::triangle_id_t& b_id,
@@ -42,6 +34,18 @@ PetscReal OhmicCurrent::getTriCurrentOnVertex(const osh::Real potential_on_verte
 
     return tri_oc_bc * (potential_on_vertex - getReversalPotential(b_id));
 }
+
+PetscReal OhmicCurrent::getTriBConVertex(const mesh::triangle_id_t& b_id,
+                                         const MolState& mol_state,
+                                         const double Avert,
+                                         const osh::Real sim_time) const {
+    const auto avg_open_channels =
+        channel_state ? mol_state.get_occupancy_ef(b_id, *channel_state, sim_time) / 3.0 : Avert;
+
+    return avg_open_channels * conductance;
+}
+
+#endif  // USE_PETSC
 
 std::ostream& operator<<(std::ostream& os, OhmicCurrent const& m) {
     return os << "OhmicCurrent.conductance: " << m.conductance
@@ -72,6 +76,8 @@ std::ostream& operator<<(std::ostream& os, Channel const& m) {
     return os;
 }
 
+#ifdef USE_PETSC
+
 std::ostream& operator<<(std::ostream& os, const TriMatAndVecs& obj) {
     os << "vert_idxs:\n";
     for (const auto i: obj.face_bf2vertsPETSc) {
@@ -98,5 +104,7 @@ std::ostream& operator<<(std::ostream& os, const TriMatAndVecs& obj) {
 
     return os;
 }
+
+#endif  // USE_PETSC
 
 }  // namespace steps::dist
