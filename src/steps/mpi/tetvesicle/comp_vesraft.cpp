@@ -212,7 +212,7 @@ solver::vesicle_individual_id CompVesRaft::addVesicle(solver::Vesicledef* vesdef
     }
 
     // For overlap library
-    vector_t vpos(pos[0], pos[1], pos[2]);
+    overlap::Vector vpos(pos[0], pos[1], pos[2]);
 
     std::map<tetrahedron_global_id, double> tets_overlap_new;
 
@@ -246,7 +246,7 @@ solver::vesicle_individual_id CompVesRaft::addVesicle(solver::Vesicledef* vesdef
 
 // There are different ways that this function needs to be used, i.e the vesicle
 // may or may not already be in existence
-bool CompVesRaft::checkPos(vector_t* pos,
+bool CompVesRaft::checkPos(overlap::Vector* pos,
                            double diam,
                            solver::vesicle_global_id vesgidx,
                            std::map<tetrahedron_global_id, double>& tets_overlap_output,
@@ -294,7 +294,7 @@ bool CompVesRaft::checkPos(vector_t* pos,
     std::vector<tetrahedron_global_id> curr_layer, next_layer;
     visited.clear();
 
-    Sphere vesicle(*pos, diam / 2.0);
+    overlap::Sphere vesicle(*pos, diam / 2.0);
 
     double nearly_100 = 99.99999999;
     double total_overlap = 0.0;  // percentage i.e. 100 (or over nearly_100) means
@@ -316,7 +316,7 @@ bool CompVesRaft::checkPos(vector_t* pos,
             return false;
         }
 
-        scalar_t ovlp = overlap(vesicle, *pVesRaft->tet_ext_(central_tet_idx));
+        overlap::Scalar ovlp = overlap::overlap_volume(vesicle, *pVesRaft->tet_ext_(central_tet_idx));
         if (ovlp != 0.0) {
             total_overlap += (100 * ovlp) / vol_sphere;
             tets_overlap_output.emplace(central_tet_idx, ovlp);
@@ -330,7 +330,7 @@ bool CompVesRaft::checkPos(vector_t* pos,
         // Try to use previous overlap is vesicle positions are close enough
         if (ves->getPosition().dist2(pos2) < diam * diam) {
             for (const auto& itet: ves->getOverlap_gidx()) {
-                scalar_t ovlp = overlap(vesicle, *pVesRaft->tet_ext_(itet.first));
+                overlap::Scalar ovlp = overlap::overlap_volume(vesicle, *pVesRaft->tet_ext_(itet.first));
                 if (ovlp != 0.0) {
                     total_overlap += (100 * ovlp) / vol_sphere;
                     tets_overlap_output.emplace(itet.first, ovlp);
@@ -369,7 +369,7 @@ bool CompVesRaft::checkPos(vector_t* pos,
             if (start.unknown()) {
                 return false;
             } else {
-                scalar_t ovlp = overlap(vesicle, *pVesRaft->tet_ext_(start));
+                overlap::Scalar ovlp = overlap::overlap_volume(vesicle, *pVesRaft->tet_ext_(start));
                 if (ovlp != 0.0) {
                     total_overlap += (100 * ovlp) / vol_sphere;
                     tets_overlap_output.emplace(start, ovlp);
@@ -407,7 +407,7 @@ bool CompVesRaft::checkPos(vector_t* pos,
                         }
                     }
                     // Check whether neighb overlaps the vesicle
-                    scalar_t ovlp = overlap(vesicle, *pVesRaft->tet_ext_(neighb));
+                    overlap::Scalar ovlp = overlap::overlap_volume(vesicle, *pVesRaft->tet_ext_(neighb));
                     if (ovlp != 0.0) {
                         overlap_in_layer = true;
                         total_overlap += (100 * ovlp) / vol_sphere;
@@ -703,7 +703,7 @@ void CompVesRaft::runVesicle(double dt) {
                     z_new_pos = v_pos[2] + dz;
                 }
 
-                vector_t new_pos(x_new_pos, y_new_pos, z_new_pos);
+                overlap::Vector new_pos(x_new_pos, y_new_pos, z_new_pos);
 
                 std::map<tetrahedron_global_id, double> tets_overlap_prev = v->getOverlap_gidx();
                 std::map<tetrahedron_global_id, double> tets_overlap_new;
@@ -1014,11 +1014,11 @@ void CompVesRaft::setVesiclePos(solver::vesicle_global_id vidx,
                 return;
             }
 
-            vector_t new_pos(pos[0], pos[1], pos[2]);
+            overlap::Vector new_pos(pos[0], pos[1], pos[2]);
 
             math::position_abs old_pos = v->getPosition();
 
-            vector_t old_pos_vect(old_pos[0], old_pos[1], old_pos[2]);
+            overlap::Vector old_pos_vect(old_pos[0], old_pos[1], old_pos[2]);
 
             math::point3d move_vector =
                 math::point3d(pos[0] - old_pos[0], pos[1] - old_pos[1], pos[2] - old_pos[2]);

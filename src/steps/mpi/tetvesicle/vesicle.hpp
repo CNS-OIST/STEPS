@@ -41,7 +41,6 @@
 #include "rng/rng.hpp"
 #include "solver/vesicledef.hpp"
 
-// vector_t
 #include <fau.de/overlap.hpp>
 
 namespace steps::mpi::tetvesicle {
@@ -115,7 +114,7 @@ class Vesicle {
     ////////////////////////////////////////////////////////////////////////
 
     // Will return false if it can't move because of spec overlap issue
-    bool setPosition(const vector_t& new_pos,
+    bool setPosition(const overlap::Vector& new_pos,
                      std::map<tetrahedron_global_id, double> const& tets_overlap_temp,
                      bool check_comps = false);
 

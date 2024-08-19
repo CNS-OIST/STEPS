@@ -194,7 +194,7 @@ tetmesh::Tetmesh* Vesicle::mesh() const noexcept {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool Vesicle::setPosition(const vector_t& new_pos,
+bool Vesicle::setPosition(const overlap::Vector& new_pos,
                           std::map<tetrahedron_global_id, double> const& tets_overlap_temp,
                           bool check_comps) {
     // Had numerical issues with this. Setting new position, even with 100%
