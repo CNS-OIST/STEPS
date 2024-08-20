@@ -234,12 +234,6 @@ include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/src/third_party/gsl-lite/include)
 # Code coverage
 set(CODECOV_GCOVR_OPTIONS "-v --filter='.*/src/steps/.*'")
 include(UseCodeCoverage)
-if(ENABLE_CODECOVERAGE)
-  install(DIRECTORY ${CMAKE_BINARY_DIR}/${CODECOV_HTMLOUTPUTDIR}/
-          DESTINATION share/steps/${STEPS_VERSION}/coverage)
-  install(FILES ${CMAKE_BINARY_DIR}/${CODECOV_XMLOUTPUTFILE}
-          DESTINATION share/steps/${STEPS_VERSION}/coverage)
-endif()
 
 set(CMAKE_C_FLAGS_RELWITHDEBINFOANDASSERT
     "-O2 -g"
