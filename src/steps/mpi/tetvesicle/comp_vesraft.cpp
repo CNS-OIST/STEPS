@@ -316,7 +316,8 @@ bool CompVesRaft::checkPos(overlap::Vector* pos,
             return false;
         }
 
-        overlap::Scalar ovlp = overlap::overlap_volume(vesicle, *pVesRaft->tet_ext_(central_tet_idx));
+        overlap::Scalar ovlp = overlap::overlap_volume(vesicle,
+                                                       *pVesRaft->tet_ext_(central_tet_idx));
         if (ovlp != 0.0) {
             total_overlap += (100 * ovlp) / vol_sphere;
             tets_overlap_output.emplace(central_tet_idx, ovlp);
@@ -330,7 +331,8 @@ bool CompVesRaft::checkPos(overlap::Vector* pos,
         // Try to use previous overlap is vesicle positions are close enough
         if (ves->getPosition().dist2(pos2) < diam * diam) {
             for (const auto& itet: ves->getOverlap_gidx()) {
-                overlap::Scalar ovlp = overlap::overlap_volume(vesicle, *pVesRaft->tet_ext_(itet.first));
+                overlap::Scalar ovlp = overlap::overlap_volume(vesicle,
+                                                               *pVesRaft->tet_ext_(itet.first));
                 if (ovlp != 0.0) {
                     total_overlap += (100 * ovlp) / vol_sphere;
                     tets_overlap_output.emplace(itet.first, ovlp);
@@ -407,7 +409,8 @@ bool CompVesRaft::checkPos(overlap::Vector* pos,
                         }
                     }
                     // Check whether neighb overlaps the vesicle
-                    overlap::Scalar ovlp = overlap::overlap_volume(vesicle, *pVesRaft->tet_ext_(neighb));
+                    overlap::Scalar ovlp = overlap::overlap_volume(vesicle,
+                                                                   *pVesRaft->tet_ext_(neighb));
                     if (ovlp != 0.0) {
                         overlap_in_layer = true;
                         total_overlap += (100 * ovlp) / vol_sphere;
@@ -668,23 +671,38 @@ void CompVesRaft::runVesicle(double dt) {
 
                 double dcst = 0.0;
 
-                double x_new_pos, y_new_pos, z_new_pos;
-                math::point3d move_vector;
-
                 math::position_abs v_pos = v->getPosition();
 
+                bool pos_found = false;
+                math::point3d move_vector;
+                overlap::Vector new_pos;
+                std::map<tetrahedron_global_id, double> tets_overlap_new;
+                Vesicle* jama_vesicle = nullptr;  // not using it but need a reference
+                std::vector<std::pair<double, math::position_abs>>::const_iterator it;
+
                 if (v->onPath()) {
-                    math::position_abs next_position = v->getNextPosition(dt);
+                    auto [next_pos_begin, next_pos_end] = v->getNextPositions(dt);
+                    auto rend = std::reverse_iterator(next_pos_begin);
+                    for (auto rit = std::reverse_iterator(next_pos_end); rit != rend; ++rit) {
+                        new_pos[0] = rit->second[0];
+                        new_pos[1] = rit->second[1];
+                        new_pos[2] = rit->second[2];
 
-                    x_new_pos = next_position[0];
-                    y_new_pos = next_position[1];
-                    z_new_pos = next_position[2];
+                        move_vector = rit->second - v_pos;
 
-                    double dx = x_new_pos - v_pos[0];
-                    double dy = y_new_pos - v_pos[1];
-                    double dz = z_new_pos - v_pos[2];
-
-                    move_vector = math::point3d(dx, dy, dz);
+                        if (checkPos(&new_pos,
+                                     v->getDiam(),
+                                     ves_gidx,
+                                     tets_overlap_new,
+                                     jama_vesicle,
+                                     std::nullopt,
+                                     v,
+                                     move_vector)) {
+                            pos_found = true;
+                            it = rit.base();
+                            break;
+                        }
+                    }
                 } else {
                     if (pVes_Tetskcst[ves_gidx].count(centraltet) > 0) {
                         dcst = pVes_Tetskcst[ves_gidx][centraltet];
@@ -698,40 +716,36 @@ void CompVesRaft::runVesicle(double dt) {
 
                     move_vector = math::point3d(dx, dy, dz);
 
-                    x_new_pos = v_pos[0] + dx;
-                    y_new_pos = v_pos[1] + dy;
-                    z_new_pos = v_pos[2] + dz;
+                    new_pos[0] = v_pos[0] + dx;
+                    new_pos[1] = v_pos[1] + dy;
+                    new_pos[2] = v_pos[2] + dz;
+
+                    pos_found = checkPos(&new_pos,
+                                         v->getDiam(),
+                                         ves_gidx,
+                                         tets_overlap_new,
+                                         jama_vesicle,
+                                         std::nullopt,
+                                         v,
+                                         move_vector);
                 }
 
-                overlap::Vector new_pos(x_new_pos, y_new_pos, z_new_pos);
-
-                std::map<tetrahedron_global_id, double> tets_overlap_prev = v->getOverlap_gidx();
-                std::map<tetrahedron_global_id, double> tets_overlap_new;
-
-                Vesicle* jama_vesicle = nullptr;  // not using it but need a reference
-
-                // here
-                if (checkPos(&new_pos,
-                             v->getDiam(),
-                             ves_gidx,
-                             tets_overlap_new,
-                             jama_vesicle,
-                             std::nullopt,
-                             v,
-                             move_vector)) {
+                if (pos_found) {
                     // Update position and overlap.
                     // v->setposition will return false if it doesn't move due to spec
                     // overlap issue
                     bool moved = v->setPosition(new_pos, tets_overlap_new);
 
                     if (moved) {
+                        std::map<tetrahedron_global_id, double> tets_overlap_prev =
+                            v->getOverlap_gidx();
                         v->setOverlap(tets_overlap_new);
 
                         pVesRaft->removeOverlap_(tets_overlap_prev, v);
                         pVesRaft->addOverlap_(tets_overlap_new, v);
 
                         if (v->onPath()) {
-                            v->nextPositionOnPath();
+                            v->updatePositionOnPath(it);
                         } else {
                             // Check if this position starts a new path for vesicle
                             math::position_abs pos_ves{new_pos[0], new_pos[1], new_pos[2]};
