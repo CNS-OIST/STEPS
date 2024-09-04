@@ -10,7 +10,7 @@ project(STEPS LANGUAGES CXX)
 
 set(VERSION_MAJOR 5)
 set(VERSION_MINOR 0)
-set(VERSION_PATCH 1)
+set(VERSION_PATCH 3)
 set(STEPS_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
 # hpc coding conventions
@@ -279,7 +279,7 @@ else()
   find_package(Threads REQUIRED)
 endif()
 
-find_package(Boost REQUIRED)
+find_package(Boost 1.66 REQUIRED)
 include_directories(SYSTEM ${Boost_INCLUDE_DIR})
 
 # if USE_MPI is
