@@ -28,6 +28,25 @@ This file is the user-interface file for all objects related to STEPS 4. All
 objects are directly derived from the corresponding Cython objects.
 """
 
+# The following fixes compatibility issues with mpi4py >= 4.0.0 and Open MPI
+# versions that do not support MPI-4 yet.
+# See https://github.com/mpi4py/mpi4py/issues/525
+# This could be removed once common Open MPI packages support MPI-4
+cdef extern from *:
+    """
+    #include <mpi.h>
+    
+    #if (MPI_VERSION < 3) && !defined(PyMPI_HAVE_MPI_Message)
+    typedef void *PyMPI_MPI_Message;
+    #define MPI_Message PyMPI_MPI_Message
+    #endif
+    
+    #if (MPI_VERSION < 4) && !defined(PyMPI_HAVE_MPI_Session)
+    typedef void *PyMPI_MPI_Session;
+    #define MPI_Session PyMPI_MPI_Session
+    #endif
+    """
+
 from cython.operator cimport dereference as deref
 cimport mpi4py.MPI as MPI
 
