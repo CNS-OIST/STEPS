@@ -2004,9 +2004,6 @@ class DistMesh(_BaseTetMesh):
         return stepslib._py_DistMesh._use_gmsh()
 
 
-DistMesh.intersect.__doc__ = _BaseTetMesh.intersect.__doc__
-
-
 class Reference(nutils.UsingObjects(nutils.Optional(_BaseTetMesh)), nutils.SolverPathObject, nutils.Facade):
     """Base class for all element references.
 

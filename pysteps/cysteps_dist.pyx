@@ -955,8 +955,8 @@ cdef class _py_DistMesh(_py_Geom):
             int sampling: any value --> deterministic method (montecarlo not implemented for STEPS4)
 
         Returns:
-            A list of lists of tuples representing the intersected tetrahedrons, one element per line segment. 
-            Each tuple is made of 2 elements, a tetrahedron global identifier, and its respective intersection ratio. 
+            A list of lists of tuples representing the intersected tetrahedrons, one element per line segment.
+            Each tuple is made of 2 elements, a tetrahedron local identifier, and its respective intersection ratio.
         """
         if (points.strides[0] != 24 or points.strides[1] != 8):
             raise Exception("Wrong memory layout for points, np array should be [pts,3] and row major")
@@ -975,8 +975,8 @@ cdef class _py_DistMesh(_py_Geom):
             int sampling: any value --> deterministic method (montecarlo not implemented for STEPS4)
 
         Returns:
-            A list where each position contains the list of intersected tets (and respective
-            intersection ratio) of each line segment.
+            A list of lists of tuples representing the intersected tetrahedrons, one element per line segment.
+            Each tuple is made of 2 elements, a tetrahedron local identifier, and its respective intersection ratio.
         """
         if (points.strides[0] != 24 or points.strides[1] != 8):
             raise Exception("Wrong memory layout for points, np array should be [pts,3] and row major")
