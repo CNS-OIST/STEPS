@@ -58,6 +58,7 @@ __all__ = [
     'SQLiteDBHandler',
     'SQLiteGroup',
     'HDF5Handler',
+    'HDF5MultiFileReader',
     'HDF5Group',
     'XDMFHandler',
 ]
@@ -2924,6 +2925,7 @@ class _HDF5StaticDataAccessor(nutils.MutableDictInterface, nutils.Versioned):
 
 class DatabaseHandler:
     """Base class for all database handlers."""
+    _DEFAULT_GROUP_NAME = 'RunGroup{:04d}'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -2939,6 +2941,19 @@ class DatabaseHandler:
         """Return a list of file paths managed by this rank"""
         return []
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._close()
+
+    def __del__(self):
+        self._close()
+
+    def _close(self):
+        """Close the file(s) / database connection"""
+        raise NotImplementedError()
+
     def __getitem__(self, key):
         """Access a run group from its unique identifier"""
         raise NotImplementedError()
@@ -2946,6 +2961,10 @@ class DatabaseHandler:
     def __iter__(self):
         """Iterate over run groups in the database"""
         raise NotImplementedError()
+
+    def __len__(self):
+        """Return the number of run groups in the database"""
+        return sum(1 for _ in self)
 
     def _initializeParameters(self):
         """Setup parameters and param2Groups data structures"""
@@ -2956,6 +2975,26 @@ class DatabaseHandler:
                 for name, val in group.parameters.items():
                     self._parameters.setdefault(name, set()).add(val)
                     self._param2Groups.setdefault((name, val), set()).add(group)
+
+    def _getDefaultGroupName(self):
+        """Get a default group name that does not already exist in the database"""
+        uid = None
+        if not nsim.MPI._usingMPI or nsim.MPI._shouldWrite:
+            try:
+                n = len(self)
+                while uid is None:
+                    _uid = self._DEFAULT_GROUP_NAME.format(n)
+                    try:
+                        self[_uid]
+                    except KeyError:
+                        uid = _uid
+                    n += 1
+            except FileNotFoundError:
+                uid = self._DEFAULT_GROUP_NAME.format(0)
+        if nsim.MPI._usingMPI:
+            import mpi4py.MPI
+            uid = mpi4py.MPI.COMM_WORLD.bcast(uid, root=0)
+        return uid
 
     @property
     def parameters(self):
@@ -2981,13 +3020,16 @@ class DatabaseHandler:
         self._initializeParameters()
         res = None
         for keyVal in kwargs.items():
-            try:
+            if keyVal[0] not in self._parameters:
+                raise KeyError(f'Parameter {keyVal[0]} does not exist in the file.')
+            if keyVal in self._param2Groups:
                 if res is None:
                     res = copy.copy(self._param2Groups[keyVal])
                 else:
                     res = res & self._param2Groups[keyVal]
-            except KeyError:
-                raise KeyError(f'Could not find any run group with {keyVal[0]} == {keyVal[1]}')
+            else:
+                res = set()
+                break
         return res if res is not None else set(self)
 
     def get(self, **kwargs):
@@ -3125,15 +3167,6 @@ class SQLiteDBHandler(DatabaseHandler):
         self._commitFreq = commitFreq if commitFreq > 0 else SQLiteDBHandler._DEFAULT_COMMIT_FREQ
 
         self._groupId = None
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._close()
-
-    def __del__(self):
-        self._close()
 
     def _close(self):
         """Commit and close the connection."""
@@ -3561,15 +3594,6 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
         # Local read-only result selectors needed when loading distributed data
         self._distribRS = {} # dbUID -> { rsInd -> rs }
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._close()
-
-    def __del__(self):
-        self._close()
-
     def _close(self):
         """Close the file"""
         if hasattr(self, '_file') and self._file is not None:
@@ -3579,6 +3603,10 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
                 dbh._close()
 
     def _checkOpenFile(self, sim=None):
+        # If the file is opened for reading only but is now required for writing, close it
+        if self._file is not None and sim is not None and self._file.mode == 'r':
+            self._close()
+            self._file = None
         if self._file is None:
             import h5py
             if sim is None:
@@ -3589,7 +3617,7 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
                         HDF5Handler._HDF_EXTENSION
                     )
                 if not os.path.isfile(self._path):
-                    raise Exception(
+                    raise FileNotFoundError(
                         f'Cannot load any HDF files with prefix {self._pathPrefix}.'
                     )
                 self._file = h5py.File(self._path, 'r', **self._fileKwArgs)
@@ -3908,6 +3936,114 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
         self._file.visititems(visit)
         for gr in res:
             yield gr
+
+
+class HDF5MultiFileReader(DatabaseHandler):
+    """An HDF5 reader that aggregates data from several files.
+
+    This class can be used to access data from several HDF5 files as if the data was in a single
+    file. It works like :py:class:`HDF5Handler` but is read-only.
+
+    :param path: Can either be a path to a directory or a list of path prefixes for HDF5 files
+        (see :py:class:`HDF5Handler`). If a list of path prefixes is given, all of these files
+        will be opened. If a path to a directory is given, all HDF5 files in the directory will
+        be opened.
+    :type path: Union[List[str], str]
+    :param recursive: Also search in subdirectories (if ``path`` is a path to a directory).
+    :type recursive: bool
+    """
+    _DISTRIB_FILE_PATTERN = re.compile(HDF5Handler._DISTRIBUTED_HDF_SUFFIX.format('(.+)', '(\d+)') + '\.h5$')
+    _FILE_PATTERN = re.compile(r'(.+)\.h5$')
+    _H5PY_EXCEPTIONS = (OSError, RuntimeError)
+
+    def __init__(self, path, recursive=False, **kwargs):
+        super().__init__(**kwargs)
+        self._readers = []
+        if isinstance(path, list) and all(isinstance(p, str) for p in path):
+            self._readers = self._getReaders(path)
+        elif isinstance(path, str):
+            if os.path.isdir(path):
+                self._processDirectory(path, recursive)
+            else:
+                raise FileNotFoundError(f'{path} is not a path to a directory.')
+        else:
+            raise ValueError(
+                f'Expected a path to a directory or a list of path prefixes, got {path} instead.'
+            )
+        if len(self._readers) == 0:
+            raise FileNotFoundError(f'No valid HDF5 files were found in {path}.')
+
+    def _getReaders(self, pathPrefixes):
+        """Get the HDF5Handlers for specifc path prefixes and check that files are not broken"""
+        readers = []
+        for pathPrefix in pathPrefixes:
+            try:
+                hdf = HDF5Handler(pathPrefix)
+                # Try reading data
+                hdf.parameters
+                readers.append(hdf)
+            except self._H5PY_EXCEPTIONS as ex:
+                warnings.warn(
+                    f'The HDF5 file(s) at {pathPrefix} could not be read, it will be skipped. '
+                    f'The following exception was raised: {ex}', RuntimeWarning
+                )
+        return readers
+
+    def _processDirectory(self, path, recursive):
+        """Process files and subdirectories from a directory, and add HDF5 files to self._readers"""
+        for elem in os.listdir(path):
+            elem = os.path.join(path, elem)
+            if os.path.isdir(elem) and recursive:
+                self._processDirectory(elem, recursive)
+            elif m := self._DISTRIB_FILE_PATTERN.match(elem):
+                # For distributed simulations, only open the rank 0 file
+                if m.group(2) == '0':
+                    self._readers += self._getReaders([m.group(1)])
+            elif m := self._FILE_PATTERN.match(elem):
+                self._readers += self._getReaders([m.group(1)])
+
+    def _close(self):
+        """Close the file(s)"""
+        exceptions = []
+        for reader in self._readers:
+            try:
+                reader._close()
+            except Exception as ex:
+                exceptions.append(ex)
+        # TODO: Use ExceptionGroup once we require python >= 3.11
+        if len(exceptions) > 0:
+            raise exceptions[0]
+
+
+    def __getitem__(self, key):
+        """Access an HDF5 group from its unique identifier
+
+        :param key: Unique identifier to the group
+        :type key: str
+        :returns: The associated HDF5 group, if run groups from different files have the same unique
+            identifier, a list containing the corresponding run groups will be returned
+        :rtype: Union[List[:py:class:`HDF5Group`], :py:class:`HDF5Group`]
+
+        :meta public:
+        """
+        res = []
+        for reader in self._readers:
+            try:
+                res.append(reader[key])
+            except KeyError:
+                continue
+        if len(res) == 0:
+            raise KeyError(f'No run group has unique identifier {key}.')
+        return res if len(res) > 1 else res[0]
+
+    def __iter__(self):
+        """Iterate over run groups in all HDF5 files
+        See :py:class:`HDF5Handler`
+
+        :meta public:
+        """
+        for reader in self._readers:
+            yield from reader
 
 
 class HDF5Group(DatabaseGroup, nutils.Versioned):

@@ -2588,7 +2588,7 @@ class Versioned:
         try:
             return tuple(map(int, versionStr.split('.')))
         except:
-            raise Exception(f'Invalid version string "{versionStr}".')
+            raise ValueError(f'Invalid version string "{versionStr}".')
 
 
 ###################################################################################################

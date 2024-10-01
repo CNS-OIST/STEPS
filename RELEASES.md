@@ -1,5 +1,14 @@
 Release Notes
 
+Version 5.0.3 (2024-09)
+==========================
+
+Python API
+----------
+1. Added `HDF5MultiFileReader` to read simulation data from several HDF5 files at once.
+2. `Simulation.toDB` can now be called without a `uid`.
+
+
 Version 5.0.2 (2024-06)
 ==========================
 

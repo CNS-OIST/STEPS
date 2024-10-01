@@ -56,7 +56,7 @@ class TestModelFramework(unittest.TestCase):
         self.seed = 12345
 
         self.endTime = 1
-        self.shortEndTime = 0.1
+        self.shortEndTime = 0.02
         self.deltaT = 0.01
         self.nbRuns = 3
 
