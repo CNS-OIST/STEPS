@@ -63,8 +63,9 @@ auto normal_newell(Iterator first, Iterator last, const Vector& center)
         (*(first + i) - center).cross(*(first + ((i + 1) % count)) - center);
   }
 
+  const auto scale = normal.cwiseAbs().maxCoeff();
   if (const auto length = normal.stableNorm();
-      length > std::numeric_limits<Scalar>::epsilon()) {
+      length > scale * std::numeric_limits<Scalar>::epsilon()) {
     return normal / length;
   }
 

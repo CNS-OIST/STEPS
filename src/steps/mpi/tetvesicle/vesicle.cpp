@@ -329,7 +329,12 @@ void Vesicle::doSurfaceDiffusion() {
 
                 while (tetgidx.unknown()) {
                     attempts += 1;
-                    if (attempts == 1000) {
+                    if (attempts == 10) {
+                        // It is possible that a small part of the vesicle surface lies outside the
+                        // mesh because, to tackle precision issues, we allow a total overlap that
+                        // can be slightly below 100%. Because of this, we might need to resample
+                        // theta and retry another position for surface diffusion. If this happens
+                        // 10 times in a row it is most likely a bug.
                         std::ostringstream os;
                         os << "Failed to do surface diffusion; too many failed attempts. ";
                         ProgErrLog(os.str());
@@ -357,6 +362,8 @@ void Vesicle::doSurfaceDiffusion() {
                         psit->setPosCartesian(pos_rel_orig);
                     }
                 }
+                // In debug mode we are more stringent and only allow one try
+                assert(attempts == 1);
 
                 psit->setOverlapTet_gidx(tetgidx);
             }

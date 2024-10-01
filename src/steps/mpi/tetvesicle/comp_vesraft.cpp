@@ -255,6 +255,7 @@ bool CompVesRaft::checkPos(overlap::Vector* pos,
                            Vesicle* ves,
                            math::point3d move_vector,
                            bool check_permcomps) {
+    assert(tets_overlap_output.empty());
     // First check if any link specs on ves would go beyond their limits on this
     // move vector, and disallow the move if so.
     if (ves != nullptr) {
@@ -355,7 +356,7 @@ bool CompVesRaft::checkPos(overlap::Vector* pos,
                 if (tet_p != nullptr and not tet_p->isFullOverlap()) {
                     // If the tet is in another compartment, potentially check if the vesicle can
                     // diffuse there.
-                    return pTetidcs_G_to_L.find(tet) == pTetidcs_G_to_L.end() or
+                    return pTetidcs_G_to_L.find(tet) != pTetidcs_G_to_L.end() or
                            not check_permcomps or
                            checkVesiclePermittedComp(vesgidx, tet_p->getCompVesRaft());
                 }
@@ -387,7 +388,7 @@ bool CompVesRaft::checkPos(overlap::Vector* pos,
     bool overlap_in_layer = true;
 
     // Grow the overlapping tetrahedrons layer by layer
-    while (not curr_layer.empty() and overlap_in_layer and total_overlap < nearly_100) {
+    while (not curr_layer.empty() and overlap_in_layer) {
         overlap_in_layer = false;
         for (const auto& tet: curr_layer) {
             // Check neighbours
@@ -426,6 +427,7 @@ bool CompVesRaft::checkPos(overlap::Vector* pos,
         next_layer.clear();
     }
 
+    assert(total_overlap < 200 - nearly_100);
     if (total_overlap < nearly_100) {
         return false;
     }
@@ -701,6 +703,8 @@ void CompVesRaft::runVesicle(double dt) {
                             pos_found = true;
                             it = rit.base();
                             break;
+                        } else {
+                            tets_overlap_new.clear();
                         }
                     }
                 } else {
