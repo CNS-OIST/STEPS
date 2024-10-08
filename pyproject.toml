@@ -1,0 +1,78 @@
+[build-system]
+build-backend = "scikit_build_core.build"
+requires = [
+    "build",
+    "cmeel-boost>=1.80",
+    "cmeel-eigen>=3",
+    "cmeel-metis",
+    "cython>=0.29",
+    "gmsh>=4.10",
+    "matplotlib",
+    "mpi4py",
+    "ninja>=1.5",
+    "numpy>=1.19",
+    "petsc",
+    "scipy",
+    "scikit-build-core",
+]
+
+[tool.scikit-build]
+build.verbose = true
+logging.level = "DEBUG"
+wheel.packages = ["pysteps/steps"]
+ninja.make-fallback = false
+sdist.exclude = [
+    ".*",
+    "*.nix",
+    "mass_replace",
+    "doc",
+    "/dist",
+    "MolSim Functional Requirements",
+]
+
+[tool.scikit-build.cmake.define]
+STEPS_INSTALL_PYTHON_DEPS = "OFF"
+USE_PETSC = "ON"
+
+[project]
+name = "steps"
+authors = [{name = "STEPS Development Team", email = "steps.dev@gmail.com"}]
+description = "STochastic Engine for Pathway Simulation"
+version="5.0.3"
+dependencies = [
+    "cython>=0.29",
+    "h5py",
+    "matplotlib",
+    "mpi4py",
+    "numpy>=1.19",
+    "scipy",
+]
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE.md"}
+classifiers=[
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console :: Curses",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Chemistry",
+]
+
+[project.optional-dependencies]
+bundle = [
+    "cmeel-boost>=1.80",
+    "cmeel-eigen>=3",
+    "cmeel-metis",
+    "gmsh>=4.10",
+    "petsc",
+]

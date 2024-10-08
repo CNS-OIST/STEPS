@@ -1,0 +1,70 @@
+---
+name: Create and test source distribution
+on:
+  pull_request: null
+  push:
+    branches:
+      - main
+env:
+  apt_option: -o Acquire::Retries=3
+  apt_pkgs: >
+    build-essential git libgl1 libglu1 libopenblas-dev libopenmpi-dev
+    librdmacm-dev libxcursor1 libxft2 libxinerama1 libxrender1 pkg-config
+    zlib1g-dev
+jobs:
+  build-sdist:
+    name: build source distribution
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.11
+      - name: Setup MPI
+        uses: mpi4py/setup-mpi@v1
+        with:
+          mpi: openmpi
+      - name: Install system packages for MPI
+        run: |
+          sudo apt-get ${{ env.apt_options }} update -y
+          sudo apt-get ${{ env.apt_options }} install ${{ env.apt_pkgs }}
+      - name: install Python build packages
+        run: |
+          python -m pip install build "pip<23.1"
+          python --version
+          pip --version
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Create source distribution
+        run: python -m build --sdist .
+      - name: upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: |
+            dist/*.tar.gz
+            requirements.txt
+      - name: Install source distribution
+        run: |
+          cd dist
+          tar zxf *.tar.gz
+          rm -f *.tar.gz
+          cd steps-*
+          python -m pip install ".[bundle]"
+      - name: Check installation by importing the steps module
+        uses: jannekem/run-python-script-action@v1
+        with:
+          script: |
+            import steps
+            steps._greet()
+      - name: Checkout STEPS example repository
+        uses: actions/checkout@v4
+        with:
+          repository: CNS-OIST/STEPS_Example
+          path: example
+      - name: Run a few simulations
+        run: |
+          python3 example/python_scripts/API_2/well_mixed/well_mixed.py
+          python3 example/python_scripts/API_2/diffusion/diffusion.py
