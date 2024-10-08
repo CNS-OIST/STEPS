@@ -50,41 +50,6 @@ point3d tet_barycenter(const point3d& p0, const point3d& p1, const point3d& p2, 
     return (p0 + p1 + p2 + p3) / 4;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// For a given face of a tetrahedron tell if a particular point (pi) is in the
-// same side than the opposite point (opposite) than the triangle defined by
-// (center, p1, p2). To know it, it only look if dot-product of (norm of
-// (center, p1, p2) * (center, opposite) is the same sign than norm of (center,
-// p1, p2) * (center, pi).
-static inline bool same_direction(const point3d& center,
-                                  const point3d& opposite,
-                                  const point3d& p1,
-                                  const point3d& p2,
-                                  const point3d& pi) {
-    // TetMesh check that any tetrahedron is not degenerated, so don't test it
-
-    // FIXME: the normal of a face is alreay computed by TetMesh, but I don't see
-    // how to use it.
-    auto normal = (p1 - center).cross(p2 - center);
-    auto A = (opposite - center).dot(normal);
-    auto B = (pi - center).dot(normal);
-
-    // 4 ULP
-    constexpr auto epsilon = 4 * std::numeric_limits<point3d::value_type>::epsilon();
-    auto tol = std::max(std::abs(A), std::abs(B)) * epsilon;
-
-    // same sign with tolerance
-    if (A < -tol && B > tol) {
-        return false;
-    }
-    if (A > tol && B < -tol) {
-        return false;
-    }
-
-    return true;
-}
-
 // TODO: try barycentic coordinates, it might be faster
 bool tet_inside(const point3d& p0,
                 const point3d& p1,

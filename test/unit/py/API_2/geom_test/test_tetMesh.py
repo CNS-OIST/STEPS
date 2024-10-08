@@ -172,7 +172,22 @@ class tetMeshTests(unittest.TestCase):
         self.assertEqual(self.mesh.tets[n // 2].idx, n // 2)
         with self.assertRaises(IndexError):
             self.mesh.tets[2*n]
-        self.assertEqual(self.mesh.tets[0, 0, 0].idx, stepsMesh.findTetByPoint([0, 0, 0]))
+        
+        eps = 0.01e-6
+        pp = [eps, eps, eps]
+        if not self._distMesh:
+            exp_tet = 376
+            self.assertEqual(exp_tet,self.mesh.tets[pp].idx)
+            self.assertEqual(exp_tet, stepsMesh.findTetByPoint(pp))
+            self.assertEqual(exp_tet, stepsMesh.findTetByPointLinear(pp))
+            self.assertEqual(exp_tet, stepsMesh.findTetByPointWalk(pp))
+        else:
+            exp_tet = 4367
+            self.assertEqual(exp_tet,self.mesh.tets[pp].idx)
+            self.assertEqual(exp_tet, stepsMesh.findTetByPoint(pp))
+            exp_local_tet = 2763 if MPI.rank == 0 else UNKNOWN_TET
+            self.assertEqual(exp_local_tet, stepsMesh.findLocalTetByPointLinear(pp))
+            self.assertEqual(exp_local_tet, stepsMesh.findLocalTetByPointWalk(pp))
         with self.assertRaises(KeyError):
             self.mesh.tets[10, 10, 10]
 
@@ -181,11 +196,10 @@ class tetMeshTests(unittest.TestCase):
         with self.assertRaises(IndexError):
             self.mesh.tris[2*n]
 
-        if not self._distMesh:
-            n = stepsMesh.countBars()
-            self.assertEqual(self.mesh.bars[n // 2].idx, n // 2)
-            with self.assertRaises(IndexError):
-                self.mesh.bars[2*n]
+        n = stepsMesh.countBars()
+        self.assertEqual(self.mesh.bars[n // 2].idx, n // 2)
+        with self.assertRaises(IndexError):
+            self.mesh.bars[2*n]
 
         n = stepsMesh.countVertices()
         self.assertEqual(self.mesh.verts[n // 2].idx, n // 2)
@@ -234,33 +248,32 @@ class tetMeshTests(unittest.TestCase):
         tetNeighbTris -= tri.toList()
         self.assertGreaterEqual(len(tri.triNeighbs), len(tetNeighbTris))
         self.assertEqual(len(tetNeighbTris - tri.triNeighbs), 0)
+        self.assertEqual(tuple(b.idx for b in tri.bars), tuple(stepsMesh.getTriBars(tri.idx)))
         if not self._distMesh:
-            self.assertEqual(tuple(b.idx for b in tri.bars), tuple(stepsMesh.getTriBars(tri.idx)))
             self.assertEqual(tuple(tri.norm), tuple(stepsMesh.getTriNorm(tri.idx)))
-            with self.assertRaises(IndexError):
-                tri.bars[3]
+        with self.assertRaises(IndexError):
+            tri.bars[3]
         with self.assertRaises(IndexError):
             tri.tetNeighbs[2]
         with self.assertRaises(IndexError):
             tri.verts[3]
 
         # Bar
-        if not self._distMesh:
-            bar = tri.bars[0]
-            v1, v2 = bar.verts
-            self.assertEqual(tuple(bar.center), tuple((v1 + v2)/2))
-            self.assertEqual(tuple(v.idx for v in bar.verts), tuple(stepsMesh.getBar(bar.idx)))
-            self.assertEqual(bar.toList(), BarList([bar], mesh=self.mesh))
-            with self.assertRaises(IndexError):
-                bar.verts[2]
+        bar = tri.bars[0]
+        v1, v2 = bar.verts
+        self.assertEqual(tuple(bar.center), tuple((v1 + v2)/2))
+        self.assertEqual(tuple(v.idx for v in bar.verts), tuple(stepsMesh.getBar(bar.idx)))
+        self.assertEqual(bar.toList(), BarList([bar], mesh=self.mesh))
+        with self.assertRaises(IndexError):
+            bar.verts[2]
 
-            # Vert
-            v = bar.verts[0]
-            self.assertEqual((v.x, v.y, v.z), tuple(stepsMesh.getVertex(v.idx)))
-            self.assertEqual((v[0], v[1], v[2]), tuple(stepsMesh.getVertex(v.idx)))
-            self.assertEqual(v.toList(), VertList([v], mesh=self.mesh))
-            with self.assertRaises(IndexError):
-                v[3]
+        # Vert
+        v = bar.verts[0]
+        self.assertEqual((v.x, v.y, v.z), tuple(stepsMesh.getVertex(v.idx)))
+        self.assertEqual((v[0], v[1], v[2]), tuple(stepsMesh.getVertex(v.idx)))
+        self.assertEqual(v.toList(), VertList([v], mesh=self.mesh))
+        with self.assertRaises(IndexError):
+            v[3]
 
         # Build from other references
         tet1 = self.mesh.tets[0]
@@ -405,8 +418,7 @@ class tetMeshTests(unittest.TestCase):
         nbAppend = 10
         elemTest(TetList, self.mesh.tets, nbAppend)
         elemTest(TriList, self.mesh.tris, nbAppend)
-        if not self._distMesh:
-            elemTest(BarList, self.mesh.bars, nbAppend)
+        elemTest(BarList, self.mesh.bars, nbAppend)
         elemTest(VertList, self.mesh.verts, nbAppend)
 
         # check non-assignability of mesh lists
@@ -447,30 +459,33 @@ class tetMeshTests(unittest.TestCase):
         self.assertTrue(all(checked))
 
         ## .bars
-        if not self._distMesh:
-            lst1b = lst1.bars
-            checked = [False] * len(lst1b)
-            for tet in lst1:
-                for tri in tet.faces:
-                    for bar in tri.bars:
-                        self.assertTrue(bar in lst1b)
-                        checked[lst1b.index(bar)] = True
-            self.assertTrue(all(checked))
+        lst1b = lst1.bars
+        checked = [False] * len(lst1b)
+        for tet in lst1:
+            for tri in tet.faces:
+                for bar in tri.bars:
+                    self.assertTrue(bar in lst1b)
+                    checked[lst1b.index(bar)] = True
+        self.assertTrue(all(checked))
 
         ## .verts
         lst1v = lst1.verts
         checked = [False] * len(lst1v)
         for tet in lst1:
             for tri in tet.faces:
-                if not self._distMesh:
-                    for bar in tri.bars:
-                        for vert in bar.verts:
-                            self.assertTrue(vert in lst1v)
-                            checked[lst1v.index(vert)] = True
-                else:
-                    for vert in tri.verts:
+                for bar in tri.bars:
+                    for vert in bar.verts:
                         self.assertTrue(vert in lst1v)
                         checked[lst1v.index(vert)] = True
+        self.assertTrue(all(checked))
+
+        lst1v = lst1.verts
+        checked = [False] * len(lst1v)
+        for tet in lst1:
+            for tri in tet.faces:
+                for vert in tri.verts:
+                    self.assertTrue(vert in lst1v)
+                    checked[lst1v.index(vert)] = True
         self.assertTrue(all(checked))
 
         vol1 = sum(tet.Vol for tet in lst1)
@@ -515,28 +530,30 @@ class tetMeshTests(unittest.TestCase):
         lst1 = TriList(range(nbAppend), self.mesh)
 
         ## .bars
-        if not self._distMesh:
-            lst1b = lst1.bars
-            checked = [False] * len(lst1b)
-            for tri in lst1:
-                for bar in tri.bars:
-                    self.assertTrue(bar in lst1b)
-                    checked[lst1b.index(bar)] = True
-            self.assertTrue(all(checked))
+        lst1b = lst1.bars
+        checked = [False] * len(lst1b)
+        for tri in lst1:
+            for bar in tri.bars:
+                self.assertTrue(bar in lst1b)
+                checked[lst1b.index(bar)] = True
+        self.assertTrue(all(checked))
 
         ## .verts
         lst1v = lst1.verts
         checked = [False] * len(lst1v)
         for tri in lst1:
-            if not self._distMesh:
-                for bar in tri.bars:
-                    for vert in bar.verts:
-                        self.assertTrue(vert in lst1v)
-                        checked[lst1v.index(vert)] = True
-            else:
-                for vert in tri.verts:
+            for bar in tri.bars:
+                for vert in bar.verts:
                     self.assertTrue(vert in lst1v)
                     checked[lst1v.index(vert)] = True
+        self.assertTrue(all(checked))
+
+        lst1v = lst1.verts
+        checked = [False] * len(lst1v)
+        for tri in lst1:
+            for vert in tri.verts:
+                self.assertTrue(vert in lst1v)
+                checked[lst1v.index(vert)] = True
         self.assertTrue(all(checked))
 
         area1 = sum(tri.Area for tri in lst1)
@@ -545,17 +562,16 @@ class tetMeshTests(unittest.TestCase):
 
         # Tests specific to BarList
 
-        if not self._distMesh:
-            lst1 = BarList(range(nbAppend), self.mesh)
+        lst1 = BarList(range(nbAppend), self.mesh)
 
-            ## .verts
-            lst1v = lst1.verts
-            checked = [False] * len(lst1v)
-            for bar in lst1:
-                for vert in bar.verts:
-                    self.assertTrue(vert in lst1v)
-                    checked[lst1v.index(vert)] = True
-            self.assertTrue(all(checked))
+        ## .verts
+        lst1v = lst1.verts
+        checked = [False] * len(lst1v)
+        for bar in lst1:
+            for vert in bar.verts:
+                self.assertTrue(vert in lst1v)
+                checked[lst1v.index(vert)] = True
+        self.assertTrue(all(checked))
 
     def testCompartments(self):
         """Test the creation of compartments and data acces to/from tetrahedrons."""

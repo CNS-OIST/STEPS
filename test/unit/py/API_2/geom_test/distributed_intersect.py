@@ -43,8 +43,45 @@ class distIntersectTests(unittest.TestCase):
         # cube.msh is a cube of edge length 1 and edge corner at [0,0,0]
         self.tetMesh = TetMesh.LoadGmsh(osp.join(MESH_DIR, "cube.msh"))
 
-    def testIntersectDistributed_n2(self):
-        """ comparison between STEPS3 & distributed STEPS4 and other sanity checks """
+    def testIntersectDistributedLocal_n2(self):
+        """ Test STEPS 4 intersect on distributed mesh """
+        # splitMesh = DistMesh(osp.join(MESH_DIR, "cube_split_2/cube"))
+        splitMesh = DistMesh(osp.join(MESH_DIR, "3_tets.msh"))
+        MPI_rank = mpi4py.MPI.COMM_WORLD.Get_rank()
+        MPI_size = mpi4py.MPI.COMM_WORLD.Get_size()
+        
+        with splitMesh.asLocal():
+            pts = np.array([[0.2,0.1, 0.1],[0.1, 0.1, 0.1]], dtype=float, order='C')
+            ans = self.sort_and_round_intersections(splitMesh.intersect(pts))
+            self.assertEqual(ans, [[(0, 1.0)]] if MPI_rank == 1 else [[]])
+
+            pts = np.array([[0.2,0.1, 0.1],[-0.2, 0.1, 0.1]], dtype=float, order='C')
+            ans = self.sort_and_round_intersections(splitMesh.intersect(pts))
+            self.assertEqual(ans, [[(0, 0.5), (2, 0.5)]] if MPI_rank == 1 else [[]])
+
+            pts = np.array([[0.2,0.1, -0.1],[0.2, 0.1, 0.3]], dtype=float, order='C')
+            ans = self.sort_and_round_intersections(splitMesh.intersect(pts))
+            self.assertEqual(ans, [[(0, 0.75)]] if MPI_rank == 1 else [[(1, 0.25)]])
+
+            pts = np.array([[0.2,0.1, -0.1],[0.1, 0.1, 0]], dtype=float, order='C')
+            ans = self.sort_and_round_intersections(splitMesh.intersect(pts))
+            self.assertEqual(ans, [[]] if MPI_rank == 1 else [[(1, 1.0)]])
+            
+            pts = np.array([[0.2,0.1, -0.1],[0, 0.1, 0.1]], dtype=float, order='C')
+            ans = self.sort_and_round_intersections(splitMesh.intersect(pts))
+            self.assertEqual(ans, [[(0, 0.5)]] if MPI_rank == 1 else [[(1, 0.5)]])
+
+            pts = np.array([[0.2,0.1, -0.1],[-0.2, 0.1, 0.3]], dtype=float, order='C')
+            ans = self.sort_and_round_intersections(splitMesh.intersect(pts))
+            self.assertEqual(ans, [[(0, 0.25), (2, 0.5)]] if MPI_rank == 1 else [[(1, 0.25)]])
+
+    def sort_and_round_intersections(self, intersec):
+        """ Put the intersections in a standard form so they can be easily compared """
+        return [sorted([(tet.toGlobal().idx, round(rat, 3)) for tet, rat in seg]) for seg in intersec]
+
+    def testIntersectDistributedSTEPS3vsSTEPS4_n2(self):
+        """ Comparison between STEPS3 & distributed STEPS4 and other sanity checks """
+
         splitMesh = DistMesh(osp.join(MESH_DIR, "cube_split_2/cube"))
         with splitMesh.asLocal():
             eps = 1e-3

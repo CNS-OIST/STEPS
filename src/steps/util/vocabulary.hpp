@@ -21,7 +21,7 @@ struct triangle_id_trait {};
 struct triangle_global_id_trait {};
 struct triangle_local_id_trait {};
 struct vertex_id_trait {};
-struct bar_id_trait {};
+struct bar_id_trait {};  // edge
 using tetrahedron_id_t = util::strong_id<index_t, tetrahedron_id_trait>;
 using tetrahedron_global_id = util::strong_id<index_t, tetrahedron_global_id_trait>;
 using tetrahedron_local_id = util::strong_id<index_t, tetrahedron_local_id_trait>;
@@ -29,7 +29,7 @@ using triangle_id_t = util::strong_id<index_t, triangle_id_trait>;
 using triangle_global_id = util::strong_id<index_t, triangle_global_id_trait>;
 using triangle_local_id = util::strong_id<index_t, triangle_local_id_trait>;
 using vertex_id_t = util::strong_id<index_t, vertex_id_trait>;
-using bar_id_t = util::strong_id<index_t, bar_id_trait>;
+using bar_id_t = util::strong_id<index_t, bar_id_trait>;  // edge
 
 namespace tetmesh {
 
@@ -99,21 +99,21 @@ namespace mesh {
 using tetrahedron_global_id_t = util::strong_id<osh::I64, tetrahedron_id_trait>;
 using triangle_global_id_t = util::strong_id<osh::I64, triangle_id_trait>;
 using vertex_global_id_t = util::strong_id<osh::I64, vertex_id_trait>;
-using bar_global_id_t = util::strong_id<osh::I64, struct bar_id_trait>;
+using bar_global_id_t = util::strong_id<osh::I64, struct bar_id_trait>;  // edge
 
 /// TODO TCL add host_id_t primitive type
 
 using tetrahedron_local_id_t = util::strong_id<osh::LO, struct tetrahedron_id_trait>;
 using triangle_local_id_t = util::strong_id<osh::LO, struct triangle_id_trait>;
 using vertex_local_id_t = util::strong_id<osh::LO, struct vertex_id_trait>;
-using bar_local_id_t = util::strong_id<osh::LO, struct bar_id_trait>;
+using bar_local_id_t = util::strong_id<osh::LO, struct bar_id_trait>;  // edge
 
 /// TODO TCL add host_id_t primitive type
 
 using tetrahedron_id_t = tetrahedron_local_id_t;
 using triangle_id_t = triangle_local_id_t;
 using vertex_id_t = vertex_local_id_t;
-using bar_id_t = bar_local_id_t;
+using bar_id_t = bar_local_id_t;  // edge
 
 struct tag_compartment_name {};
 struct tag_compartment_physical_tag {};

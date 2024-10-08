@@ -1,4 +1,12 @@
-add_library(stepsmath STATIC tetrahedron.cpp tools.cpp linsolve.cpp triangle.cpp ghk.cpp sphere.cpp)
+add_library(
+  stepsmath STATIC
+  tetrahedron.cpp
+  tools.cpp
+  linsolve.cpp
+  triangle.cpp
+  ghk.cpp
+  segment.cpp
+  sphere.cpp)
 
 set_property(TARGET stepsmath PROPERTY POSITION_INDEPENDENT_CODE ON)
 

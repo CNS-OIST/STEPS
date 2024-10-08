@@ -199,6 +199,25 @@ cdef class _py_DistMesh(_py_Geom):
         else:
             return self.ptrx().total_num_bounds()
 
+    def countBars(self, bool local=False):
+        """
+        Returns the total number of bars in the mesh.
+
+        Syntax:
+
+        countBars()
+
+        Arguments:
+        bool local
+
+        Return:
+        int
+        """
+        if local:
+            return self.ptrx().num_bars()
+        else:
+            return self.ptrx().total_num_bars()
+
     def countVertices(self, bool local=False):
         """
         Returns the total number of vertices in the mesh.
@@ -415,6 +434,27 @@ cdef class _py_DistMesh(_py_Geom):
         else:
             return [vg.get() for vg in self.ptrx().getTri_(<triangle_global_id_t>(idx))]
 
+    def getBar(self, GO idx, bool local=False):
+        """
+        Returns the bar with index idx in the container by its two vertex indices.
+
+        Syntax::
+
+            getBar(idx)
+
+        Arguments:
+        GO idx
+        bool local
+
+        Return:
+        list<GO, length = 3>
+
+        """
+        if local:
+            return [vl.get() for vl in self.ptrx().getBarVertNeighb(<bar_local_id_t>(<LO>(idx)))]
+        else:
+            return [vg.get() for vg in self.ptrx().getBarVertNeighb(<bar_global_id_t>(idx))]
+
     def getVertex(self, GO idx, bool local=False):
         """
         Returns the coordinates of vertex with index idx in the container.
@@ -479,6 +519,27 @@ cdef class _py_DistMesh(_py_Geom):
             return [tl.get() for tl in self.ptrx().getTetTriNeighb(<tetrahedron_local_id_t>(<LO>(idx)))]
         else:
             return [tg.get() for tg in self.ptrx().getTetTriNeighb(<tetrahedron_global_id_t>(idx))]
+
+    def getTriBars(self, GO idx, bool local=False):
+        """
+        Returns the indices of the bars that comprise the triangle.
+
+        Syntax::
+
+            getTriBars(tidx)
+
+        Arguments:
+        GO idx
+        bool local
+
+        Return:
+        list<GO, length = 3>
+
+        """
+        if local:
+            return [tl.get() for tl in self.ptrx().getTriBarNeighb(<triangle_local_id_t>(<LO>(idx)))]
+        else:
+            return [tg.get() for tg in self.ptrx().getTriBarNeighb(<triangle_global_id_t>(idx))]
 
     def getTriTetNeighb(self, GO idx, bool local=False, bool owned=True):
         """
@@ -661,6 +722,48 @@ cdef class _py_DistMesh(_py_Geom):
             globalInd = self.ptrx().findTetByPoint(p)
             return globalInd.get() if globalInd.valid() else UNKNOWN_TET
 
+    def findLocalTetByPointLinear(self, std.vector[double] p):
+        """
+        Returns the local index of the tetrahedron which encompasses a given point
+        p (given in Cartesian coordinates x,y,z). Returns UNKNOWN_TET if p is a position
+        outside the mesh. Linear search.
+
+        Syntax::
+
+            findLocalTetByPointLinear(p)
+
+        Arguments:
+        list<double, length = 3> p
+
+        Return:
+        LO
+
+        """
+        cdef tetrahedron_local_id_t localInd
+        localInd = self.ptrx().findLocalTetByPointLinear(p)
+        return localInd.get() if localInd.valid() else UNKNOWN_TET
+
+    def findLocalTetByPointWalk(self, std.vector[double] p):
+        """
+        Returns the local index of the tetrahedron which encompasses a given point
+        p (given in Cartesian coordinates x,y,z). Returns UNKNOWN_TET if p is a position
+        outside the mesh. A* search with random initial seeding and restarts.
+
+        Syntax::
+
+            findLocalTetByPointWalk(p)
+
+        Arguments:
+        list<double, length = 3> p
+
+        Return:
+        LO
+
+        """
+        cdef tetrahedron_local_id_t localInd
+        localInd = self.ptrx().findLocalTetByPointWalk(p)
+        return localInd.get() if localInd.valid() else UNKNOWN_TET
+
     def isPointInTet(self, std.vector[double] p, GO tidx, bool local=False):
         """
         Check if point belongs to the tetrahedron or not
@@ -798,6 +901,25 @@ cdef class _py_DistMesh(_py_Geom):
         cdef triangle_local_id_t ind = self.ptrx().getLocalIndex(triangle_global_id_t(idx), owned)
         return ind.get() if ind.valid() else None
 
+    def getBarLocalIndex(self, GO idx, bool owned=True):
+        """Return the local index of bar with global index idx
+
+        Return None if the bar does not exist locally.
+
+        Syntax::
+
+            getBarLocalIndex(idx)
+
+        Arguments:
+        int idx
+        bool owned
+
+        Return:
+        int
+        """
+        cdef bar_local_id_t ind = self.ptrx().getLocalIndex(bar_global_id_t(idx), owned)
+        return ind.get() if ind.valid() else None
+
     def getVertLocalIndex(self, GO idx, bool owned=True):
         """Return the local index of vertex with global index idx
 
@@ -839,7 +961,7 @@ cdef class _py_DistMesh(_py_Geom):
 
         Syntax::
 
-            getTetGlobalIndex(idx)
+            getTriGlobalIndex(idx)
 
         Arguments:
         int idx
@@ -848,6 +970,22 @@ cdef class _py_DistMesh(_py_Geom):
         int
         """
         return self.ptrx().getGlobalIndex(triangle_local_id_t(idx)).get()
+
+    def getBarGlobalIndex(self, LO idx):
+        """
+        Return the global index of bar with local index idx
+
+        Syntax::
+
+            getBarGlobalIndex(idx)
+
+        Arguments:
+        int idx
+
+        Return:
+        int
+        """
+        return self.ptrx().getGlobalIndex(bar_local_id_t(idx)).get()
 
     def getVertGlobalIndex(self, LO idx):
         """
@@ -904,6 +1042,26 @@ cdef class _py_DistMesh(_py_Geom):
             return [tl.get() for tl in self.ptrx().getLocalTriIndices(owned) if tl.valid()]
         else:
             return [tg.get() for tg in self.ptrx().getAllTriIndices()]
+
+    def getAllBarIndices(self, bool local=False, bool owned=True):
+        """
+        Returns a list of all bars in the mesh.
+
+        Syntax::
+
+            getAllBarIndices()
+
+        Arguments:
+        bool local
+        bool owned
+
+        Return:
+        list<int>
+        """
+        if local:
+            return [tl.get() for tl in self.ptrx().getLocalBarIndices(owned) if tl.valid()]
+        else:
+            return [tg.get() for tg in self.ptrx().getAllBarIndices()]
 
     def getAllVertIndices(self, bool local=False, bool owned=True):
         """

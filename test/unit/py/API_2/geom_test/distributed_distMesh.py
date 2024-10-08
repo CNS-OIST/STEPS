@@ -53,7 +53,7 @@ class distTetMeshTests(test_tetMesh.tetMeshTests):
 
         self.mesh3 = DistMesh(os.path.join(FILEDIR, 'meshes', 'tagged.msh'))
 
-        self.elemListNames = ['tets', 'tris', 'verts']
+        self.elemListNames = ['tets', 'tris', 'bars', 'verts']
 
     def getSimulation(self):
         rng = RNG('mt19937', 512, 7233)
@@ -565,7 +565,8 @@ class distTetMeshTests(test_tetMesh.tetMeshTests):
         self.assertEqual(list(splitMesh.verts.indices), splitMesh.stepsMesh.getAllVertIndices())
 
     def testgetTriTetNeighbs(self):
-        centerTet = self.mesh.tets[0, 0, 0]
+        # we avoid the vertex that is contexted by multiple tets as the answer is not unique
+        centerTet = self.mesh.tets[1e-10, 1e-10, 1e-10]
         centerTri = centerTet.faces[0]
         tetNeighbs = centerTri.tetNeighbs
         self.assertEqual(len(tetNeighbs), 2)

@@ -114,14 +114,15 @@ struct point3d_: public std::array<double, 3> {
         return (*this)[0] == x[0] && (*this)[1] == x[1] && (*this)[2] == x[2];
     }
 
-    bool almostEqual(const point3d_<Trait>& x) const {
+    bool almostEqual(const point3d_<Trait>& x, const double tol) const {
         if (*this == x) {
             return true;
         }
+
         const point3d_<Trait> d(std::abs((*this)[0] - x[0]),
                                 std::abs((*this)[1] - x[1]),
                                 std::abs((*this)[2] - x[2]));
-        return d[0] < tol_lin && d[1] < tol_lin && d[2] < tol_lin;
+        return d[0] < tol && d[1] < tol && d[2] < tol;
     }
 
     bool operator!=(const point3d_<Trait>& x) const {
@@ -266,5 +267,11 @@ struct position_spherical: public std::array<double, 3> {
         data()[2] = phi;
     }
 };
+
+bool line_intersect_point(const point3d& lp0,
+                          const point3d& lp1,
+                          const point3d& p,
+                          point3d& intersection,
+                          bool is_segment = true);
 
 }  // namespace steps::math

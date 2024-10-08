@@ -402,6 +402,13 @@ class Tetmesh: public wm::Geom {
 
     std::vector<index_t> getTetTetNeighb(tetrahedron_global_id tidx) const;
 
+
+    // Do not inline this otherwise cython does not understand the input number
+    bool isPointInTet(std::vector<double> const& p, tetrahedron_global_id) const;
+
+    bool isPointInTet(position_abs const& p, tetrahedron_global_id) const;
+
+
     /// Find a tetrahedron which encompasses a given point.
     /// Return the index of the tetrahedron that encompasses point;
     ///  return -1 if point is outside mesh;
@@ -409,46 +416,44 @@ class Tetmesh: public wm::Geom {
     /// returns first tetrahedron found.
     /// \param p A point given by its coordinates.
     /// \return ID of the found tetrahedron.
-
     tetrahedron_global_id findTetByPoint(std::vector<double> const& p) const;
 
     tetrahedron_global_id findTetByPoint(position_abs const& p) const;
-
-    bool isPointInTet(std::vector<double> const& p, tetrahedron_global_id) const;
-
-    bool isPointInTet(position_abs const& p, tetrahedron_global_id) const;
-
-    // tetrahedron_global_id findTetByPoint(point3d const &x,
-    // std::vector<tetrahedron_global_id> const & tets) const;
 
     // Above function replaced so it can directly operate on vesicle map
     // structures, using the tetrahedron_global_id keys.
     tetrahedron_global_id findTetByPoint(position_abs const& p,
                                          std::map<tetrahedron_global_id, double> const& tets) const;
 
+    tetrahedron_global_id findTetByPointLinear(std::vector<double> const& p) const;
+
+    // linear search
+    tetrahedron_global_id findTetByPointLinear(position_abs const& pos) const;
+
     tetrahedron_global_id findTetByPointWalk(
         const std::vector<double>& p,
-        const tetrahedron_global_id& start,
+        const tetrahedron_global_id& start = {},
         std::function<bool(const tetrahedron_global_id&)> walkable = {},
         double maxSqDist = -1,
-        uint minNb = 0);
+        uint minNb = 0) const;
 
     /// Same results as findTetByPoint but the tetrahedron is searched by walking through the mesh
     /// instead of iterating over all tetrahedrons. UNKNOWN_TET is also returned if the tetrahedron
     /// containing the point is not reachable from `start`.
     ///
     /// \param p A point given by its coordinates.
-    /// \param start A starting tetrahedron for the walk
+    /// \param start A starting tetrahedron for the walk. unknown = search the full mesh handling
+    /// disconnected meshes with restarts.
     /// \param walkable Predicate that takes a tetrahedron and returns true if the tetrahedron can
     /// be part of the walk \param maxSqDist The maximum squared distance between a tetrahedron and
     /// the target point \param minNb The minimum number of explored tetrahedrons before considering
     /// maxSqDist \return ID of the found tetrahedron.
     tetrahedron_global_id findTetByPointWalk(
         const position_abs& p,
-        const tetrahedron_global_id& start,
+        const tetrahedron_global_id& start = {},
         std::function<bool(const tetrahedron_global_id&)> walkable = {},
         double maxSqDist = -1,
-        uint minNb = 0);
+        uint minNb = 0) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO PYTHON): MESH

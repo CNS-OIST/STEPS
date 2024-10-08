@@ -1974,6 +1974,19 @@ class DistMesh(_BaseTetMesh):
         else:
             return _BaseTetMesh.tris.fget(self)
 
+    @_BaseTetMesh.bars.getter
+    def bars(self):
+        """All bars in the mesh
+
+        :type: :py:class:`BarList`, read-only
+        """
+        if self._local:
+            return BarList(
+                self.stepsMesh.getAllBarIndices(**self._callKwargs), self, _immutable=True, **self._lstArgs
+            )
+        else:
+            return _BaseTetMesh.bars.fget(self)
+
     @_BaseTetMesh.verts.getter
     def verts(self):
         """All vertices in the mesh

@@ -79,3 +79,6 @@ pysteps/steps.egg-info/*
 
 pysteps/pyproject.toml
 pysteps/setup.cfg
+
+spack*
+.spack*

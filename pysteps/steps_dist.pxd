@@ -46,6 +46,18 @@ cdef extern from "util/vocabulary.hpp" namespace "steps::dist::mesh":
         int get()
         bool valid()
 
+    cdef cppclass bar_global_id_t:
+        bar_global_id_t()
+        bar_global_id_t(int)
+        int get()
+        bool valid()
+
+    cdef cppclass bar_local_id_t:
+        bar_local_id_t()
+        bar_local_id_t(int)
+        int get()
+        bool valid()
+
     cdef cppclass vertex_global_id_t:
         vertex_global_id_t()
         vertex_global_id_t(int)

@@ -52,6 +52,7 @@
 #include "util/checkid.hpp"
 #include "util/collections.hpp"
 #include "util/error.hpp"
+#include "util/pqueue.hpp"
 #include "util/unique_indexer.hpp"
 
 using Graph = boost::adjacency_list<boost::vecS,
@@ -68,6 +69,7 @@ using util::checkID;
 using util::deref_strong_id_func;
 using util::deref_strongid;
 using util::make_unique_indexer;
+using util::PQueue;
 
 const Tetmesh::tri_tets Tetmesh::UNKNOWN_TRI_NEIGHBORS{{std::nullopt, std::nullopt}};
 const Tetmesh::tet_tets Tetmesh::UNKNOWN_TET_NEIGHBORS{
@@ -708,15 +710,8 @@ std::vector<index_t> Tetmesh::getTetTetNeighb(tetrahedron_global_id tidx) const 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-tetrahedron_global_id Tetmesh::findTetByPoint(std::vector<double> const& p) const {
-    position_abs x{p[0], p[1], p[2]};
-    return findTetByPoint(x);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 bool Tetmesh::isPointInTet(std::vector<double> const& p, tetrahedron_global_id tidx) const {
-    position_abs x{p[0], p[1], p[2]};
+    const position_abs x{p[0], p[1], p[2]};
     return isPointInTet(x, tidx);
 }
 
@@ -724,7 +719,7 @@ bool Tetmesh::isPointInTet(std::vector<double> const& p, tetrahedron_global_id t
 
 bool Tetmesh::isPointInTet(position_abs const& pos, tetrahedron_global_id tidx) const {
     // eventually do away with this conversion and use position_abs directly
-    point3d p{pos[0], pos[1], pos[2]};
+    const point3d p{pos[0], pos[1], pos[2]};
 
     if (!pBBox.contains(p)) {
         return false;
@@ -741,8 +736,35 @@ bool Tetmesh::isPointInTet(position_abs const& pos, tetrahedron_global_id tidx) 
 
 ////////////////////////////////////////////////////////////////////////////////
 
+tetrahedron_global_id Tetmesh::findTetByPoint(std::vector<double> const& p) const {
+    const position_abs pos{p[0], p[1], p[2]};
+    return findTetByPoint(pos);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 tetrahedron_global_id Tetmesh::findTetByPoint(position_abs const& pos) const {
-    point3d p{pos[0], pos[1], pos[2]};
+    // linear | walk. Feel free to change this parameter based on
+    // performance
+    constexpr size_t threshold = 100;
+    if (pTetsN < threshold) {
+        return findTetByPointLinear(pos);
+    } else {
+        return findTetByPointWalk(pos);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+tetrahedron_global_id Tetmesh::findTetByPointLinear(std::vector<double> const& p) const {
+    const position_abs pos{p[0], p[1], p[2]};
+    return findTetByPointLinear(pos);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+tetrahedron_global_id Tetmesh::findTetByPointLinear(position_abs const& pos) const {
+    const point3d p{pos[0], pos[1], pos[2]};
 
     if (!pBBox.contains(p)) {
         return {};
@@ -767,8 +789,13 @@ tetrahedron_global_id Tetmesh::findTetByPoint(position_abs const& pos) const {
 tetrahedron_global_id Tetmesh::findTetByPoint(
     math::position_abs const& pos,
     std::map<tetrahedron_global_id, double> const& tets) const {
-    // eventually do away with this conversion and use position_abs directly
-    point3d x{pos[0], pos[1], pos[2]};
+    // eventually do away with this conversion and use position_abss directly
+    const point3d p{pos[0], pos[1], pos[2]};
+
+    if (!pBBox.contains(p)) {
+        return {};
+    }
+
 
     for (auto const& tet: tets) {
         tet_verts v = pTets[tet.first.get()];
@@ -777,7 +804,7 @@ tetrahedron_global_id Tetmesh::findTetByPoint(
                              pVerts[v[1].get()],
                              pVerts[v[2].get()],
                              pVerts[v[3].get()],
-                             x)) {
+                             p)) {
             return tet.first;
         }
     }
@@ -792,63 +819,83 @@ tetrahedron_global_id Tetmesh::findTetByPointWalk(
     const tetrahedron_global_id& start,
     std::function<bool(const tetrahedron_global_id&)> walkable,
     double maxSqDist,
-    uint minNb) {
-    position_abs p2(p[0], p[1], p[2]);
-    return findTetByPointWalk(p2, start, walkable, maxSqDist, minNb);
+    uint minNb) const {
+    const position_abs pos{p[0], p[1], p[2]};
+    return findTetByPointWalk(pos, start, walkable, maxSqDist, minNb);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 tetrahedron_global_id Tetmesh::findTetByPointWalk(
-    const position_abs& p,
+    const position_abs& pos,
     const tetrahedron_global_id& start,
     std::function<bool(const tetrahedron_global_id&)> walkable,
     double maxSqDist,
-    uint minNb) {
-    point3d pos{p[0], p[1], p[2]};
-    std::unordered_set<tetrahedron_global_id> visited;
-    auto cmp = [=](const std::pair<tetrahedron_global_id, double>& t1,
-                   const std::pair<tetrahedron_global_id, double>& t2) {
-        return t1.second > t2.second;
-    };
-    std::priority_queue<std::pair<tetrahedron_global_id, double>,
-                        std::vector<std::pair<tetrahedron_global_id, double>>,
-                        decltype(cmp)>
-        ordered(cmp);
+    uint minNb) const {
+    const point3d p{pos[0], pos[1], pos[2]};
 
-    ordered.emplace(start, pTet_barycenters[start.get()].dist2(pos));
-    visited.emplace(start);
-
-    while (not ordered.empty()) {
-        const auto& tet_dist = ordered.top();
-
-        // Stop if the currently processed tetrahedron is too far from the target point
-        if (maxSqDist >= 0 and visited.size() > minNb and tet_dist.second > maxSqDist) {
-            break;
-        }
-
-        auto tet = tet_dist.first;
-        ordered.pop();
-
-        // Check whether the tetrahedron contains the target point
-        const tet_verts& v = pTets[tet.get()];
-        if (math::tet_inside(pVerts[v[0].get()],
-                             pVerts[v[1].get()],
-                             pVerts[v[2].get()],
-                             pVerts[v[3].get()],
-                             pos)) {
-            return tet;
-        }
-
-        // Add neighboring tetrahedrons
-        for (const auto& neighb: pTet_tet_neighbours[tet.get()]) {
-            if (neighb.valid() and visited.emplace(neighb).second and
-                (not walkable or walkable(neighb))) {
-                ordered.emplace(neighb, pTet_barycenters[neighb.get()].dist2(pos));
-            }
-        }
+    if (!pBBox.contains(p)) {
+        return {};
     }
 
+    PQueue<double, tetrahedron_global_id> pq;
+    const auto process_queue = [&]() -> tetrahedron_global_id {
+        while (!pq.empty()) {
+            const auto [d, tet] = pq.next();
+
+            // Stop if the currently processed tetrahedron is too far from the target point
+            if (maxSqDist >= 0 and pq.size_processed() > minNb and d > maxSqDist) {
+                break;
+            }
+
+            // Check whether the tetrahedron contains the target point
+            const tet_verts& v = pTets[tet.get()];
+            if (math::tet_inside(pVerts[v[0].get()],
+                                 pVerts[v[1].get()],
+                                 pVerts[v[2].get()],
+                                 pVerts[v[3].get()],
+                                 p)) {
+                return tet;
+            }
+
+            // Add neighboring tetrahedrons
+            for (const auto& neighb: pTet_tet_neighbours[tet.get()]) {
+                if (neighb.valid() and (not walkable or walkable(neighb))) {
+                    pq.push(pTet_barycenters[neighb.get()].dist2(p), neighb);
+                }
+            }
+        }
+        return {};
+    };
+
+    if (!start.unknown()) {
+        pq.push(pTet_barycenters[start.get()].dist2(p), start);
+        return process_queue();
+    } else {
+        // feel free to adjust this number based on performance
+        constexpr index_t n_samples = 8;
+        const index_t sample_step = std::max(1u, pTetsN / n_samples);
+        // prime the pump
+        for (auto tidx = 0u; tidx < pTetsN; tidx += sample_step) {
+            const auto gid = tetrahedron_global_id(tidx);
+            pq.push(pTet_barycenters[gid.get()].dist2(p), gid);
+        }
+
+        while (pq.size_processed() < pTetsN) {
+            const auto ans = process_queue();
+            if (!ans.unknown()) {
+                return ans;
+            }
+            const auto gid = pq.get_min_unqueued_value();
+            // restart in case the mesh is disconnected
+            if (gid < pTetsN) {
+                pq.push(pTet_barycenters[gid.get()].dist2(p), gid);
+            }
+        }
+        return {};
+    }
+
+    // this should not be reached. Just for security
     return {};
 }
 
@@ -2164,7 +2211,7 @@ std::vector<std::pair<ind_t, double>> Tetmesh::intersectDeterministic(
                                          p_end,
                                          intersection)) {
                 // Check that intersection is new
-                if (intersection.almostEqual(previous_point)) {
+                if (intersection.almostEqual(previous_point, math::tol_lin)) {
                     continue;
                 }
 
