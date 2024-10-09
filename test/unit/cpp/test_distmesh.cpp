@@ -33,10 +33,9 @@ bool compare_info(const nextIntersectionRes& a, const nextIntersectionRes& b) {
     return a.second == b.second && a.first.almostEqual(b.first, tol);
 }
 
+auto lib = Omega_h::Library();
 
 TEST_CASE("distmesh_basic_access") {
-    steps::init();
-    auto lib = Omega_h::Library();
     const auto mesh_file = Omega_h::filesystem::path(STEPS_SOURCE_DIR) / "test" / "mesh" /
                            "3_tets.msh";
     steps::dist::DistMesh mesh(lib, mesh_file.string());
@@ -78,13 +77,9 @@ TEST_CASE("distmesh_basic_access") {
     REQUIRE(conv(mesh.getVertTriNeighb(vert0)) == expected);
     expected = {0, 1, 2, 3, 4};
     REQUIRE(conv(mesh.getVertBarNeighb(vert0)) == expected);
-
-    steps::finish();
 }
 
 TEST_CASE("distmesh_findIntersection") {
-    steps::init();
-    auto lib = Omega_h::Library();
     const auto mesh_file = Omega_h::filesystem::path(STEPS_SOURCE_DIR) / "test" / "mesh" /
                            "3_tets.msh";
     steps::dist::DistMesh mesh(lib, mesh_file.string());
@@ -105,9 +100,6 @@ TEST_CASE("distmesh_findIntersection") {
     // out of the mesh by eps. Still finds it
     expected = mesh::vertex_local_id_t{4};
     REQUIRE((mesh.findIntersection({0, 0, -1 - eps}).intersection_ == expected));
-
-
-    steps::finish();
 }
 
 /// check intersectionInfo basic functions
@@ -126,8 +118,6 @@ TEST_CASE("distmesh_intersectionInfo") {
 }
 
 TEST_CASE("distmesh_findNextIntersection_fromTet") {
-    steps::init();
-    auto lib = Omega_h::Library();
     const auto mesh_file = Omega_h::filesystem::path(STEPS_SOURCE_DIR) / "test" / "mesh" /
                            "3_tets.msh";
     steps::dist::DistMesh mesh(lib, mesh_file.string());
@@ -235,13 +225,9 @@ TEST_CASE("distmesh_findNextIntersection_fromTet") {
     res = mesh.findNextIntersection(p_beg_info, p_end_info);
     CAPTURE(p_beg_info, p_end_info, res, expected);
     REQUIRE(compare_info(res, expected));
-
-    steps::finish();
 }
 
 TEST_CASE("distmesh_findNextIntersection_fromTri") {
-    steps::init();
-    auto lib = Omega_h::Library();
     const auto mesh_file = Omega_h::filesystem::path(STEPS_SOURCE_DIR) / "test" / "mesh" /
                            "3_tets.msh";
     steps::dist::DistMesh mesh(lib, mesh_file.string());
@@ -498,13 +484,9 @@ TEST_CASE("distmesh_findNextIntersection_fromTri") {
     res = mesh.findNextIntersection(p_beg_info, p_end_info);
     CAPTURE(p_beg_info, p_end_info, res, expected);
     REQUIRE(compare_info(res, expected));
-
-    steps::finish();
 }
 
 TEST_CASE("distmesh_findNextIntersection_fromBar") {
-    steps::init();
-    auto lib = Omega_h::Library();
     const auto mesh_file = Omega_h::filesystem::path(STEPS_SOURCE_DIR) / "test" / "mesh" /
                            "3_tets.msh";
     steps::dist::DistMesh mesh(lib, mesh_file.string());
@@ -660,13 +642,9 @@ TEST_CASE("distmesh_findNextIntersection_fromBar") {
     res = mesh.findNextIntersection(p_beg_info, p_end_info);
     CAPTURE(p_beg_info, p_end_info, res, expected);
     REQUIRE(compare_info(res, expected));
-
-    steps::finish();
 }
 
 TEST_CASE("distmesh_findNextIntersection_fromVert") {
-    steps::init();
-    auto lib = Omega_h::Library();
     const auto mesh_file = Omega_h::filesystem::path(STEPS_SOURCE_DIR) / "test" / "mesh" /
                            "3_tets.msh";
     steps::dist::DistMesh mesh(lib, mesh_file.string());
@@ -854,8 +832,6 @@ TEST_CASE("distmesh_findNextIntersection_fromVert") {
     res = mesh.findNextIntersection(p_beg_info, p_end_info);
     CAPTURE(p_beg_info, p_end_info, res, expected);
     REQUIRE(compare_info(res, expected));
-
-    steps::finish();
 }
 
 #define REQUIRE_EQUAL_INTERSECTION_LISTS(ans, required)                      \
@@ -872,10 +848,7 @@ TEST_CASE("distmesh_findNextIntersection_fromVert") {
         }                                                                    \
     } while (0)
 
-
 TEST_CASE("distmesh_intersect") {
-    steps::init();
-    auto lib = Omega_h::Library();
     const auto mesh_file = Omega_h::filesystem::path(STEPS_SOURCE_DIR) / "test" / "mesh" /
                            "3_tets.msh";
     steps::dist::DistMesh mesh(lib, mesh_file.string());
@@ -1023,13 +996,9 @@ TEST_CASE("distmesh_intersect") {
     expected = std::vector<DistMesh::intersection_list_t>{{{mesh::tetrahedron_local_id_t{1}, 1.0}},
                                                           {{mesh::tetrahedron_local_id_t{0}, 1.0}}};
     REQUIRE_EQUAL_INTERSECTION_LISTS(compute_ans(pp), expected);
-
-    steps::finish();
 }
 
 TEST_CASE("distmesh_intersectIndependentSegments") {
-    steps::init();
-    auto lib = Omega_h::Library();
     const auto mesh_file = Omega_h::filesystem::path(STEPS_SOURCE_DIR) / "test" / "mesh" /
                            "3_tets.msh";
     steps::dist::DistMesh mesh(lib, mesh_file.string());
@@ -1058,8 +1027,5 @@ TEST_CASE("distmesh_intersectIndependentSegments") {
     expected = std::vector<DistMesh::intersection_list_t>{{{mesh::tetrahedron_local_id_t{1}, 1.0}},
                                                           {{mesh::tetrahedron_local_id_t{0}, 1.0}}};
     REQUIRE_EQUAL_INTERSECTION_LISTS(compute_ans(pp), expected);
-
-
-    steps::finish();
 }
 }  // namespace steps::dist
