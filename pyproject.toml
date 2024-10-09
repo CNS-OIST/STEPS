@@ -26,16 +26,19 @@ sdist.exclude = [
     "*.nix",
     "mass_replace",
     "doc",
+    "requirements.txt",
     "/dist",
+    "/test",
     "MolSim Functional Requirements",
 ]
 
 [tool.scikit-build.cmake.define]
 STEPS_INSTALL_PYTHON_DEPS = "OFF"
 USE_PETSC = "ON"
+BUILD_TESTING = "OFF"
 
 [project]
-name = "steps"
+name = "STEPS"
 authors = [{name = "STEPS Development Team", email = "steps.dev@gmail.com"}]
 description = "STochastic Engine for Pathway Simulation"
 version="5.0.3"
