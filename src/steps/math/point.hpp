@@ -122,6 +122,7 @@ struct point3d_: public std::array<double, 3> {
         const point3d_<Trait> d(std::abs((*this)[0] - x[0]),
                                 std::abs((*this)[1] - x[1]),
                                 std::abs((*this)[2] - x[2]));
+
         return d[0] < tol && d[1] < tol && d[2] < tol;
     }
 
