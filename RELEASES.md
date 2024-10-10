@@ -7,6 +7,15 @@ Python API
 ----------
 1. Added `HDF5MultiFileReader` to read simulation data from several HDF5 files at once.
 2. `Simulation.toDB` can now be called without a `uid`.
+3. Random number generators (`RNG` class) now have default constructor arguments
+
+Bugfixes
+--------
+1. Fix vesicle path movement sometimes leading to blocked vesicles
+2. Fix rare vesicle surface diffusion crash for boost versions < 1.73
+3. Fix vesicles erroneously diffusing to different compartment
+4. Fix compilation issues with mpi4py >= 4.0.0 and Open MPI < 5.0.0
+5. Fix `DistMesh.intersect` method computations failing under some conditions
 
 
 Version 5.0.2 (2024-06)
