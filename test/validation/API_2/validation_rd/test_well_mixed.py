@@ -449,7 +449,7 @@ class TestRDWellMixed(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TestRDWellMixed, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TestRDWellMixed))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

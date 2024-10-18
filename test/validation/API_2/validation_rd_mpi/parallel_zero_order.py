@@ -73,7 +73,7 @@ class TestRDMPIZeroOrder(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TestRDMPIZeroOrder, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TestRDMPIZeroOrder))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

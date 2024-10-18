@@ -254,7 +254,7 @@ class HDF5CompoundObjects(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(HDF5CompoundObjects, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(HDF5CompoundObjects))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

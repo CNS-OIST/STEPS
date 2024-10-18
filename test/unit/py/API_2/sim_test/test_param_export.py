@@ -143,7 +143,7 @@ class TetParamExport(base_model.TetTestModelFramework):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TetParamExport, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TetParamExport))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

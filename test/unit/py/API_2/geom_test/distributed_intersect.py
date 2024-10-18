@@ -182,7 +182,7 @@ class distIntersectTests(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(distIntersectTests, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(distIntersectTests))
     return unittest.TestSuite(all_tests)
 
 

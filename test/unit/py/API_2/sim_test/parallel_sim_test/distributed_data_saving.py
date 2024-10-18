@@ -60,7 +60,7 @@ class DistTetOpSplitSimDataSaving(bm.DistTetTestModelFramework, tds.TetSimDataSa
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(DistTetOpSplitSimDataSaving, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(DistTetOpSplitSimDataSaving))
     return unittest.TestSuite(all_tests)
 
 

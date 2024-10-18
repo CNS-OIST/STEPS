@@ -146,11 +146,11 @@ class VolsysSpecTestCase(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(VolsysCreationTestCase, "test"))
-    all_tests.append(unittest.makeSuite(VolsysPropertyTestCase, "test"))
-    all_tests.append(unittest.makeSuite(VolsysReacTestCase, "test"))
-    all_tests.append(unittest.makeSuite(VolsysDiffTestCase, "test"))
-    all_tests.append(unittest.makeSuite(VolsysSpecTestCase, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(VolsysCreationTestCase))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(VolsysPropertyTestCase))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(VolsysReacTestCase))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(VolsysDiffTestCase))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(VolsysSpecTestCase))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

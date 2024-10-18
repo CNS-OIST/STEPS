@@ -1615,9 +1615,9 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(ResultSelectorTests, "test"))
-    all_tests.append(unittest.makeSuite(SimDataSaving, "test"))
-    all_tests.append(unittest.makeSuite(TetSimDataSaving, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(ResultSelectorTests))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(SimDataSaving))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TetSimDataSaving))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

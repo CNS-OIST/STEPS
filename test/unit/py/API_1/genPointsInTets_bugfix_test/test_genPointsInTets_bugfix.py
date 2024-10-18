@@ -73,7 +73,7 @@ class GenPointsInTetsBugfixCase(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(GenPointsInTetsBugfixCase, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(GenPointsInTetsBugfixCase))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

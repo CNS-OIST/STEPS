@@ -585,7 +585,7 @@ del test_tetMesh.tetMeshTests.testLoading
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(distTetMeshTests, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(distTetMeshTests))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

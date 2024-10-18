@@ -73,8 +73,8 @@ class SpecPropertyTestCase(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(SpecCreationTestCase, "test"))
-    all_tests.append(unittest.makeSuite(SpecPropertyTestCase, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(SpecCreationTestCase))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(SpecPropertyTestCase))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

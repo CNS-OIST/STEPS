@@ -642,8 +642,8 @@ class VesRaftRDEFSimDataSaving(base_model.VesTestModelFramework, tds.TetSimDataS
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TetOpSplitSimDataSaving, "test"))
-    all_tests.append(unittest.makeSuite(VesRaftRDEFSimDataSaving, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TetOpSplitSimDataSaving))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(VesRaftRDEFSimDataSaving))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

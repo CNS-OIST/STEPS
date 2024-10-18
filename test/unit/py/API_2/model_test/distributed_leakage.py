@@ -199,7 +199,7 @@ class Leakage(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(Leakage, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(Leakage))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

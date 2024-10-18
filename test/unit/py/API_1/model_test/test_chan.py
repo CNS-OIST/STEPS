@@ -83,9 +83,9 @@ class ChanStateTestCase(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(ChanCreationTestCase, "test"))
-    all_tests.append(unittest.makeSuite(ChanPropertyTestCase, "test"))
-    all_tests.append(unittest.makeSuite(ChanStateTestCase, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(ChanCreationTestCase))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(ChanPropertyTestCase))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(ChanStateTestCase))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

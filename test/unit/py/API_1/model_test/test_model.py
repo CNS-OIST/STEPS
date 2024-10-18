@@ -143,11 +143,11 @@ class ModelSurfsysTestCase(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(ModelCreationTestCase, "test"))
-    all_tests.append(unittest.makeSuite(ModelSpecTestCase, "test"))
-    all_tests.append(unittest.makeSuite(ModelChanTestCase, "test"))
-    all_tests.append(unittest.makeSuite(ModelVolsysTestCase, "test"))
-    all_tests.append(unittest.makeSuite(ModelSurfsysTestCase, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(ModelCreationTestCase))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(ModelSpecTestCase))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(ModelChanTestCase))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(ModelVolsysTestCase))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(ModelSurfsysTestCase))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

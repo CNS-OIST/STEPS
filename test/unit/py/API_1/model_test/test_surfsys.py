@@ -123,10 +123,10 @@ class SurfsysDiffTestCase(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(SurfsysCreationTestCase, "test"))
-    all_tests.append(unittest.makeSuite(SurfsysPropertyTestCase, "test"))
-    all_tests.append(unittest.makeSuite(SurfsysSReacTestCase, "test"))
-    all_tests.append(unittest.makeSuite(SurfsysDiffTestCase, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(SurfsysCreationTestCase))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(SurfsysPropertyTestCase))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(SurfsysSReacTestCase))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(SurfsysDiffTestCase))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

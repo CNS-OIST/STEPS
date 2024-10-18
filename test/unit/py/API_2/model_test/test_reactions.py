@@ -193,7 +193,7 @@ class ReactionDeclaration(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(ReactionDeclaration, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(ReactionDeclaration))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

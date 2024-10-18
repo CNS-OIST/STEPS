@@ -593,7 +593,7 @@ class StepsComplexReaction(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(StepsComplexReaction, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(StepsComplexReaction))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

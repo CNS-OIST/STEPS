@@ -129,7 +129,7 @@ class TetVesiclePathsTestCase(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TetVesiclePathsTestCase, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TetVesiclePathsTestCase))
     return unittest.TestSuite(all_tests)
 
 

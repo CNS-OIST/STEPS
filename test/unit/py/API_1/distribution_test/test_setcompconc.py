@@ -98,7 +98,7 @@ class TestSetConc(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TestSetConc, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TestSetConc))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

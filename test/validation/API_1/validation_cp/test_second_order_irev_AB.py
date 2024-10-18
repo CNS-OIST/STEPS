@@ -135,7 +135,7 @@ class TestSecondOrderIrevAB(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TestSecondOrderIrevAB, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TestSecondOrderIrevAB))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

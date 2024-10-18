@@ -77,8 +77,8 @@ class TetVesicleReproducibilityTestCase(ReproducibilityTestCase, base_model.VesT
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TetOpSplitReproducibilityTestCase, "test"))
-    all_tests.append(unittest.makeSuite(TetVesicleReproducibilityTestCase, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TetOpSplitReproducibilityTestCase))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TetVesicleReproducibilityTestCase))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

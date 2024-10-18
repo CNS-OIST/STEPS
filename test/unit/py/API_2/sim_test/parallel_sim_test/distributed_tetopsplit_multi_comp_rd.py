@@ -142,7 +142,7 @@ class DistTetopsplitMultiCompRd(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(DistTetopsplitMultiCompRd, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(DistTetopsplitMultiCompRd))
     return unittest.TestSuite(all_tests)
 
 

@@ -122,7 +122,7 @@ class setCompVolTestCase(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(setCompVolTestCase, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(setCompVolTestCase))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":
