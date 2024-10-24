@@ -13,7 +13,7 @@ Bugfixes
 --------
 1. Fix vesicle path movement sometimes leading to blocked vesicles
 2. Fix rare vesicle surface diffusion crash for boost versions < 1.73
-3. Fix vesicles erroneously diffusing to different compartment
+3. Fix vesicles erroneously diffusing to different compartment (issue was introduced in 5.0.1)
 4. Fix compilation issues with mpi4py >= 4.0.0 and Open MPI < 5.0.0
 5. Fix `DistMesh.intersect` method computations failing under some conditions
 
