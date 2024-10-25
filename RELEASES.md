@@ -11,11 +11,16 @@ Python API
 
 Bugfixes
 --------
-1. Fix vesicle path movement sometimes leading to blocked vesicles
-2. Fix rare vesicle surface diffusion crash for boost versions < 1.73
+1. Improve behavior of stochastic paths (added in 5.0.1). Vesicles test more available sites on path, which reduces chance of vesicle becoming blocked if furthest site is unavailable.
+2. Fix rare vesicle surface diffusion crash for boost versions < 1.73 (issue was introduced in 5.0.2)
 3. Fix vesicles erroneously diffusing to different compartment (issue was introduced in 5.0.1)
 4. Fix compilation issues with mpi4py >= 4.0.0 and Open MPI < 5.0.0
 5. Fix `DistMesh.intersect` method computations failing under some conditions
+
+Dependencies
+------------
+
+1. Updated the [overlap](https://github.com/severinstrobl/overlap) library to [d2a165e](https://github.com/severinstrobl/overlap/commits/d2a165e1e3ac3519fc18b9c260811f15ffe3aa5b) (development version)
 
 
 Version 5.0.2 (2024-06)
