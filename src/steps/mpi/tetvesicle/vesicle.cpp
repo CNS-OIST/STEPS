@@ -1018,7 +1018,7 @@ void Vesicle::updatePositionOnPath(
     }
     pPath_curr_pos = end - 1;
 
-    if (pPath_curr_pos == pPathPositions.end()) {
+    if (end == pPathPositions.end()) {
         // Path has come to an end.
         removeFromPath();
     }

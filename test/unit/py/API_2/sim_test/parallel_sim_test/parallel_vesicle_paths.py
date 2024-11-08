@@ -34,6 +34,7 @@ from steps.geom import *
 from steps.model import *
 from steps.rng import *
 from steps.sim import *
+from steps.saving import *
 
 
 TEST_DIR = os.path.join(os.path.dirname(
@@ -125,6 +126,33 @@ class TetVesiclePathsTestCase(unittest.TestCase):
         exp_speed = (vesref.Pos[0] - mesh.bbox.center.x) / end_t
         self.assertLess(
             abs(exp_speed - speed) / speed, speed_tolerance)
+
+    def testPathEnd(self):
+        path = self.sim.addVesiclePath(f'path')
+        bbox = self.sim.geom.bbox
+        p1 = path.addPoint(bbox.center)
+        shift = (bbox.max.x - bbox.min.x) / 100
+        nbPoints = 10
+        for i in range(nbPoints):
+            p2 = path.addPoint([bbox.center.x + (i + 1) / nbPoints * shift, bbox.center.y, bbox.center.z])
+            path.addBranch(p1, {p2: 1})
+            p1 = p2
+        path.addVesicle(self.sim.model.ves1, speed=1e-7, stoch_stepsize=1e-10)
+
+        sim = self.sim
+        mesh = sim.geom
+
+        rs = ResultSelector(sim)
+        pos = rs.VESICLES(sim.comp.ves1).Pos
+        sim.toSave(pos, dt=0.01)
+
+        sim.newRun()
+        vesref = sim.comp.addVesicle('ves1')
+        vesref.Pos = mesh.bbox.center
+
+        sim.run(self.ENDT)
+
+        self.assertGreater(max([np.linalg.norm(p - mesh.bbox.center) for dct in pos.data[0, :, 0] for idx, p in dct.items()]), 2 * shift)
 
 
 def suite():
