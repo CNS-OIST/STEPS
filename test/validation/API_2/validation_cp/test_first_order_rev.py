@@ -142,7 +142,7 @@ class TestFirstOrderRev(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TestFirstOrderRev, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TestFirstOrderRev))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

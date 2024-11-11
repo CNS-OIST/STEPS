@@ -94,7 +94,7 @@ class DistTetopsplitOmegahCreateDistForVariableSized(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(DistTetopsplitOmegahCreateDistForVariableSized, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(DistTetopsplitOmegahCreateDistForVariableSized))
     return unittest.TestSuite(all_tests)
 
 

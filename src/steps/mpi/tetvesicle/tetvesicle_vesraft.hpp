@@ -349,7 +349,7 @@ class TetVesicleVesRaft: public solver::API {
     }
 
     // Tet_ext is for use by third-party overlap library
-    inline Tetrahedron* tet_ext_(tetrahedron_global_id tet_gidx) const {
+    inline overlap::Tetrahedron* tet_ext_(tetrahedron_global_id tet_gidx) const {
         AssertLog(tet_gidx.get() < pTet_ext.size());
         return pTet_ext[tet_gidx];
     }
@@ -1110,7 +1110,7 @@ class TetVesicleVesRaft: public solver::API {
     TetVesRaft* _getTet(tetrahedron_global_id tgidx) const;
     TriVesRaft* _getTri(triangle_global_id tgidx) const;
     // For overlap
-    util::strongid_vector<tetrahedron_global_id, Tetrahedron*> pTet_ext;
+    util::strongid_vector<tetrahedron_global_id, overlap::Tetrahedron*> pTet_ext;
 
     double pTemp{0.0};
     double pEFDT{1.0e-5};

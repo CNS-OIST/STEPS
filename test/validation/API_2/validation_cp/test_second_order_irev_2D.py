@@ -151,7 +151,7 @@ class TestSecondOrderIrev2D(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TestSecondOrderIrev2D, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TestSecondOrderIrev2D))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

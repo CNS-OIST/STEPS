@@ -10,7 +10,7 @@ project(STEPS LANGUAGES CXX)
 
 set(VERSION_MAJOR 5)
 set(VERSION_MINOR 0)
-set(VERSION_PATCH 1)
+set(VERSION_PATCH 3)
 set(STEPS_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
 # hpc coding conventions
@@ -71,6 +71,23 @@ mark_as_advanced_all("PROFILING")
 # include CTest early to make BUILD_TESTING available
 include(CTest)
 
+find_package(
+  Python 3.8
+  COMPONENTS Interpreter Development
+  REQUIRED)
+include(FindPythonModule)
+
+foreach (_pyprefix ${CMAKE_PREFIX_PATH})
+  if (IS_DIRECTORY ${_pyprefix}/cmeel.prefix)
+    list(APPEND CMAKE_PREFIX_PATH ${_pyprefix}/cmeel.prefix)
+  endif()
+  if (IS_DIRECTORY ${_pyprefix}/petsc/lib/pkgconfig)
+    set(ENV{PKG_CONFIG_PATH} "${_pyprefix}/petsc/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+  elseif(IS_DIRECTORY ${_pyprefix}/petsc/lib)
+    set(PETSC_DIR ${_pyprefix}/petsc)
+  endif()
+endforeach()
+
 set(USE_MPI
     "Default"
     CACHE STRING "Use MPI for parallel solvers")
@@ -81,13 +98,71 @@ set(USE_PETSC
     CACHE STRING "Use PETSC library for parallel E-Field solver")
 set_property(CACHE USE_PETSC PROPERTY STRINGS "Default;True;False")
 
+# Install Paths
+# Use ~/.local as default CMAKE_INSTALL_PREFIX to avoid requiring a sudo make install
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  # Default python installation to site-packages, do not use Python_SITEARCH since it points to
+  # dist-packages
+  if(NOT DEFINED Python_INSTALL_PREFIX)
+    execute_process(
+            COMMAND
+            ${Python_EXECUTABLE} -c
+            "import os,sys,sysconfig; print(sysconfig.get_path('platlib') if (sys.prefix != sys.base_prefix or os.path.exists(os.path.join(sys.prefix, 'conda-meta'))) else sysconfig.get_path('platlib', 'osx_framework_user' if bool(sysconfig.get_config_var('PYTHONFRAMEWORK')) else f'{os.name}_user'))"
+            OUTPUT_VARIABLE _python_site_packages_dir
+            ERROR_VARIABLE _python_site_packages_error
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(EXISTS ${_python_site_packages_dir})
+      set(Python_INSTALL_PREFIX
+              ${_python_site_packages_dir}
+              CACHE PATH "Path to install steps Python package")
+    else()
+      message(
+              FATAL_ERROR
+              "Could not determine the python install directory. Please provide it with the -DPython_INSTALL_PREFIX=/path/to/dir option.\n"
+              "The following error was encountered: ${_python_site_packages_error}")
+    endif()
+  endif()
+
+  if (SKBUILD_PROJECT_NAME)
+    # third parties libraries are installed within the Python lib directory
+    cmake_path(GET Python_INSTALL_PREFIX PARENT_PATH Python_INSTALL_LIB)
+    cmake_path(GET Python_INSTALL_LIB PARENT_PATH Python_INSTALL_LIB)
+    cmake_path(GET Python_INSTALL_LIB PARENT_PATH Python_INSTALL_LIB)
+    set(CMAKE_INSTALL_PREFIX
+            ${Python_INSTALL_LIB}
+            CACHE PATH "Install path prefix" FORCE)
+  else()
+    set(CMAKE_INSTALL_PREFIX
+            "~/.local/"
+            CACHE PATH "Install path prefix" FORCE)
+  endif()
+else()
+  # If the user supplied CMAKE_INSTALL_PREFIX, also install python package there (unless
+  # Python_INSTALL_PREFIX is also supplied), and deactivate python dependencies installation (unless
+  # STEPS_INSTALL_PYTHON_DEPS is supplied).
+  set(Python_INSTALL_PREFIX
+          ${CMAKE_INSTALL_PREFIX}
+          CACHE PATH "Path to install steps Python package")
+  set(STEPS_INSTALL_PYTHON_DEPS
+          OFF
+          CACHE BOOL "Install the Python dependencies")
+  if(NOT STEPS_INSTALL_PYTHON_DEPS)
+    message(
+            STATUS
+            "Automatic installation of STEPS python dependencies is disabled, it can be enabled with -DSTEPS_INSTALL_PYTHON_DEPS=True"
+    )
+  endif()
+endif()
+
+set(bundle_lib_install_dir ${CMAKE_INSTALL_PREFIX}/lib)
+
 if(USE_BUNDLE_EASYLOGGINGPP)
   set(EASYLOGGINGPP_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/src/third_party/easyloggingpp/src")
   # mark as advanced gtest stuff
   include(CMake/MarkAsAdvancedAll.cmake)
   mark_as_advanced_all("gtest")
 else()
-  find_package(PkgConfig)
+  find_package(PkgConfig REQUIRED)
   pkg_check_modules(EASYLOGGINGPP REQUIRED easyloggingpp)
 endif()
 include_directories(SYSTEM ${EASYLOGGINGPP_INCLUDE_DIRS})
@@ -107,7 +182,28 @@ endif()
 
 if(STEPS_USE_DIST_MESH)
   if(USE_BUNDLE_OMEGA_H)
+    # Add transitive link of Gmsh when linking against Omega_h
+
+    find_python_module(gmsh)
+    if(GMSH_FOUND)
+      get_filename_component(gmsh_site_packages ${GMSH_LOCATION} DIRECTORY)
+      get_filename_component(gmsh_python ${gmsh_site_packages} DIRECTORY)
+      get_filename_component(gmsh_root_lib ${gmsh_python} DIRECTORY)
+      get_filename_component(gmsh_root ${gmsh_root_lib} DIRECTORY)
+      list(APPEND CMAKE_PREFIX_PATH ${gmsh_root})
+      unset(gmsh_root)
+      unset(gmsh_root_lib)
+      unset(gmsh_python)
+      unset(gmsh_site_packages)
+    endif()
+
+    find_package(Gmsh REQUIRED)
+
+    include_directories("${Gmsh_INCLUDE_DIRS}")
+
     include(BundleOmega_h)
+    install(FILES "${tpdir}/omega_h-install/lib/libomega_h${CMAKE_SHARED_LIBRARY_SUFFIX}"
+            DESTINATION "${bundle_lib_install_dir}")
   else()
     find_package(Omega_h REQUIRED)
     string(REPLACE "${Omega_h_CXX_FLAGS}" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
@@ -147,7 +243,6 @@ endif()
 
 # metis
 find_package(METIS REQUIRED)
-list(APPEND libsteps_link_libraries ${METIS_LIBRARIES})
 include_directories(SYSTEM ${METIS_INCLUDE_DIR})
 
 # Compiler options
@@ -234,12 +329,6 @@ include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/src/third_party/gsl-lite/include)
 # Code coverage
 set(CODECOV_GCOVR_OPTIONS "-v --filter='.*/src/steps/.*'")
 include(UseCodeCoverage)
-if(ENABLE_CODECOVERAGE)
-  install(DIRECTORY ${CMAKE_BINARY_DIR}/${CODECOV_HTMLOUTPUTDIR}/
-          DESTINATION share/steps/${STEPS_VERSION}/coverage)
-  install(FILES ${CMAKE_BINARY_DIR}/${CODECOV_XMLOUTPUTFILE}
-          DESTINATION share/steps/${STEPS_VERSION}/coverage)
-endif()
 
 set(CMAKE_C_FLAGS_RELWITHDEBINFOANDASSERT
     "-O2 -g"
@@ -263,10 +352,6 @@ set_property(CACHE CMAKE_BUILD_TYPE
 
 # Requirements
 # -------------------------------------------------------------------
-find_package(
-  Python 3.8
-  COMPONENTS Interpreter Development
-  REQUIRED)
 if(STEPS_USE_STEPSBLENDER AND (Python_VERSION VERSION_LESS 3.9.0))
   message(
     FATAL_ERROR
@@ -285,7 +370,7 @@ else()
   find_package(Threads REQUIRED)
 endif()
 
-find_package(Boost REQUIRED)
+find_package(Boost 1.66 REQUIRED)
 include_directories(SYSTEM ${Boost_INCLUDE_DIR})
 
 # if USE_MPI is
@@ -321,22 +406,32 @@ endif()
 
 # see USE_MPI options above
 if(USE_PETSC)
-  include(FindPkgConfig)
   if(USE_PETSC STREQUAL "Default")
     if(NOT MPI_FOUND)
       message(WARNING "Building without PETSc. If desired enable finding MPI libs as well!")
     else()
+      find_package(PkgConfig REQUIRED)
       pkg_search_module(PETSC QUIET PETSc)
+      if(NOT PETSC_FOUND)
+        find_package(PETSc)
+      endif()
     endif()
   elseif(USE_PETSC)
     if(NOT MPI_FOUND)
       message(FATAL_ERROR "PETSc requires MPI!")
     endif()
-    pkg_search_module(PETSC REQUIRED PETSc)
+    find_package(PkgConfig REQUIRED)
+    pkg_search_module(PETSC PETSc)
+    if(NOT PETSC_FOUND)
+      set(PETSC_EXECUTABLE_RUNS ON)
+      find_package(PETSc REQUIRED)
+    endif()
   endif()
   if(PETSC_FOUND)
-    message(STATUS "PETSc found: ${PETSC_LIBRARY_DIRS}")
+    message(STATUS "PETSc library found in: ${PETSC_LIBRARY_DIRS}")
     add_definitions(-DUSE_PETSC)
+  else()
+    message(WARNING "Could not find PETSc library")
   endif()
 endif()
 
@@ -401,57 +496,7 @@ if(USE_BDSYSTEM_LAPACK AND NOT LAPACK_FOUND)
   message(STATUS "Unable to find LAPACK; will not build BDSystem/Lapack code.")
 endif()
 
-# Install Paths ####
-
-# Use ~/.local as default CMAKE_INSTALL_PREFIX to avoid requiring a sudo make install
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  # Default python installation to site-packages, do not use Python_SITEARCH since it points to
-  # dist-packages
-  if(NOT DEFINED Python_INSTALL_PREFIX)
-    execute_process(
-      COMMAND
-        ${Python_EXECUTABLE} -c
-        "import os,sys,sysconfig; print(sysconfig.get_path('platlib') if (sys.prefix != sys.base_prefix or os.path.exists(os.path.join(sys.prefix, 'conda-meta'))) else sysconfig.get_path('platlib', 'osx_framework_user' if bool(sysconfig.get_config_var('PYTHONFRAMEWORK')) else f'{os.name}_user'))"
-      OUTPUT_VARIABLE _python_site_packages_dir
-      ERROR_VARIABLE _python_site_packages_error
-      OUTPUT_STRIP_TRAILING_WHITESPACE)
-    if(EXISTS ${_python_site_packages_dir})
-      set(Python_INSTALL_PREFIX
-          ${_python_site_packages_dir}
-          CACHE PATH "Path to install steps Python package")
-    else()
-      message(
-        FATAL_ERROR
-          "Could not determine the python install directory. Please provide it with the -DPython_INSTALL_PREFIX=/path/to/dir option.\n"
-          "The following error was encountered: ${_python_site_packages_error}")
-    endif()
-  endif()
-
-  set(CMAKE_INSTALL_PREFIX
-      "~/.local/"
-      CACHE PATH "Install path prefix" FORCE)
-else()
-  # If the user supplied CMAKE_INSTALL_PREFIX, also install python package there (unless
-  # Python_INSTALL_PREFIX is also supplied), and deactivate python dependencies installation (unless
-  # STEPS_INSTALL_PYTHON_DEPS is supplied).
-  set(Python_INSTALL_PREFIX
-      ${CMAKE_INSTALL_PREFIX}
-      CACHE PATH "Path to install steps Python package")
-  set(STEPS_INSTALL_PYTHON_DEPS
-      OFF
-      CACHE BOOL "Install the Python dependencies")
-  if(NOT STEPS_INSTALL_PYTHON_DEPS)
-    message(
-      STATUS
-        "Automatic installation of STEPS python dependencies is disabled, it can be enabled with -DSTEPS_INSTALL_PYTHON_DEPS=True"
-    )
-  endif()
-endif()
-
-set(bundle_lib_install_dir ${CMAKE_INSTALL_PREFIX}/lib)
-
 # Python dependencies
-include(FindPythonModule)
 find_python_module(build REQUIRED)
 
 # Python bindings tech Makes steps Python bindings based on Cython
@@ -460,14 +505,6 @@ if(Python_FOUND)
   add_subdirectory(pysteps)
 endif()
 
-# Install the bundle libraries if any
-if(STEPS_USE_DIST_MESH AND USE_BUNDLE_OMEGA_H)
-  # Add transitive link of Gmsh when linking against Omega_h
-  find_package(Gmsh REQUIRED)
-  include_directories("${Gmsh_INCLUDE_DIRS}")
-  install(FILES "${tpdir}/omega_h-install/lib/libomega_h${CMAKE_SHARED_LIBRARY_SUFFIX}"
-          DESTINATION "${bundle_lib_install_dir}")
-endif()
 if(USE_BUNDLE_SUNDIALS)
   install(DIRECTORY "${tpdir}/SUNDIALS-install/lib/" DESTINATION "${bundle_lib_install_dir}")
 endif()

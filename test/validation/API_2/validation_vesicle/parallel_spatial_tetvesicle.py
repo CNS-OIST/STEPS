@@ -461,7 +461,7 @@ class TestRDMPISpatialTetvesicle(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TestRDMPISpatialTetvesicle, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TestRDMPISpatialTetvesicle))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

@@ -312,9 +312,9 @@ class DiffBndDirectionalDcstTestCase(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TetDirectionalDcstTestCase, "test"))
-    all_tests.append(unittest.makeSuite(TriDirectionalDcstTestCase, "test"))
-    all_tests.append(unittest.makeSuite(DiffBndDirectionalDcstTestCase, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TetDirectionalDcstTestCase))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TriDirectionalDcstTestCase))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(DiffBndDirectionalDcstTestCase))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

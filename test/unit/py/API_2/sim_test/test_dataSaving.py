@@ -24,9 +24,14 @@
 
 """ Unit tests for data saving."""
 
+import functools
 import importlib.util
+import itertools
 import numpy as np
+import operator
 import os
+import re
+import shutil
 import sys
 import tempfile
 import threading
@@ -361,7 +366,10 @@ class ResultSelectorTests(base_model.TestModelFramework):
         for dir in os.listdir(old_dirs):
             dirpath = os.path.join(old_dirs, dir)
             if os.path.isdir(dirpath):
-                version = steps.utils.Versioned._parseVersion(dir)
+                try:
+                    version = steps.utils.Versioned._parseVersion(dir)
+                except ValueError:
+                    continue
                 for file in os.listdir(dirpath):
                     *_, ext = file.split('.')
                     path = os.path.join(dirpath, file)
@@ -375,6 +383,20 @@ class ResultSelectorTests(base_model.TestModelFramework):
                         elif ext == 'h5':
                             with HDF5Handler(path[:-3]) as db:
                                 self._testLoadingDBGroup(db, ext, version)
+
+    @unittest.skipIf(importlib.util.find_spec('h5py') is None, 'h5py not available')
+    def testHDF5MultiReaderBrokenFiles(self):
+        saved_dir = os.path.join(base_model.FILEDIR, '..', 'saved_files')
+        broken_dir = os.path.join(saved_dir, 'broken')
+
+        # All files are broken, nothing to load so we should raise FileNotFoundError
+        with self.assertRaises(FileNotFoundError):
+            with self.assertWarns(RuntimeWarning):
+                hdf = HDF5MultiFileReader(broken_dir, recursive=True)
+
+        # Saved files folder contains some loadable files, we should only raise warnings
+        with self.assertWarns(RuntimeWarning):
+            hdf = HDF5MultiFileReader(saved_dir, recursive=True)
 
 
 class SimDataSaving(base_model.TestModelFramework):
@@ -392,6 +414,7 @@ class SimDataSaving(base_model.TestModelFramework):
         self.oldSim = self._get_API1_Sim(self.oldMdl, self.oldGeom)
 
         self.createdFiles = set()
+        self.createdDirectories = set()
 
         self.sqliteArgs = []
         self.sqliteKwargs = dict(commitFreq=100)
@@ -407,6 +430,10 @@ class SimDataSaving(base_model.TestModelFramework):
         for path in self.createdFiles:
             if os.path.isfile(path):
                 os.remove(path)
+        for path in self.createdDirectories:
+            # Delete directories, starting with the most nested
+            if os.path.isdir(path):
+                shutil.rmtree(path)
 
     def _get_API2_Sim(self, nmdl, ngeom):
         nrng = RNG('mt19937', 512, self.seed)
@@ -1030,6 +1057,14 @@ class SimDataSaving(base_model.TestModelFramework):
             with self.assertRaises(ValueError):
                 self.newSim.toDB(dbh, f'{dbUID}/test')
 
+            # Default group uid
+            self.newSim.toDB(dbh, val1=4, val2=5)
+            self.newSim.newRun()
+            self.init_API2_sim(self.newSim)
+            self.newSim.run(self.shortEndTime)
+            self.createdFiles |= set(dbh._getFilePaths())
+
+            # Specific group uid
             group = self.newSim.toDB(dbh, dbUID, val1=1, val2=2)
 
             # Static data
@@ -1105,18 +1140,21 @@ class SimDataSaving(base_model.TestModelFramework):
         # Read data
         with dbCls(dbPath) as dbh:
             if MPI._shouldWrite:
-                self.assertEqual(len(list(dbh)), 2)
+                self.assertEqual(len(dbh), 3)
                 with self.assertRaises(TypeError):
                     dbh[42]
                 with self.assertRaises(KeyError):
                     dbh['test']
                 # dbh properties
-                self.assertEqual(dbh.parameters, dict(val1=set([1, 3]), val2=set([2, 4])))
+                defaultName = DatabaseHandler._DEFAULT_GROUP_NAME.format(0)
+                self.assertEqual(dbh.parameters, dict(val1=set([1, 3, 4]), val2=set([2, 4, 5])))
                 self.assertEqual(dbh.filter(val1=1, val2=2), set([dbh[dbUID]]))
                 self.assertEqual(dbh.filter(val1=3, val2=4), set([dbh[f'{dbUID}_2']]))
+                self.assertEqual(dbh.filter(val1=4, val2=5), set([dbh[defaultName]]))
                 self.assertEqual(dbh.filter(val1=1, val2=4), set())
+                self.assertEqual(dbh.filter(val1=5), set())
                 with self.assertRaises(KeyError):
-                    dbh.filter(val1=5)
+                    dbh.filter(val4=5)
                 self.assertEqual(dbh.filter(), set(dbh))
                 self.assertEqual(dbh.get(val1=1, val2=2), dbh[dbUID])
                 with self.assertRaises(Exception):
@@ -1124,12 +1162,14 @@ class SimDataSaving(base_model.TestModelFramework):
                 # run group properties
                 self.assertEqual(dbh[dbUID].parameters, {'val1':1, 'val2':2})
                 self.assertEqual(dbh[f'{dbUID}_2'].parameters, {'val1':3, 'val2':4})
+                self.assertEqual(dbh[defaultName].parameters, {'val1':4, 'val2':5})
                 self.assertEqual(len(dbh[dbUID].results), 2)
                 self.assertEqual(dbh[dbUID].val1, 1)
                 self.assertEqual(dbh[dbUID].val2, 2)
                 with self.assertRaises(AttributeError):
                     dbh[dbUID].test
                 self.assertEqual(dbh[dbUID].name, dbUID)
+                self.assertEqual(dbh[defaultName].name, defaultName)
                 # Static data
                 if dbCls != SQLiteDBHandler:
                     self.assertEqual(dbh[dbUID].staticData['teststatic1'], list(range(10)))
@@ -1164,7 +1204,7 @@ class SimDataSaving(base_model.TestModelFramework):
         self.newSim._nextSave = None
         self.newSim.toSave(saver1, saver3, dt=self.deltaT)
         with dbCls(dbPath) as dbh:
-            if MPI._shouldWrite:
+            if MPI._shouldWrite or (isinstance(dbh, HDF5Handler) and self.newSim._isDistributed()):
                 with self.assertRaises(Exception):
                     self.newSim.toDB(dbh, dbUID, val1=1, val2=2)
             else:
@@ -1175,7 +1215,7 @@ class SimDataSaving(base_model.TestModelFramework):
         self.newSim._nextSave = None
         self.newSim.toSave(saver1, saver2, saver3, dt=self.deltaT)
         with dbCls(dbPath) as dbh:
-            if MPI._shouldWrite:
+            if MPI._shouldWrite or (isinstance(dbh, HDF5Handler) and self.newSim._isDistributed()):
                 with self.assertRaises(Exception):
                     self.newSim.toDB(dbh, dbUID, val1=1, val2=2)
             else:
@@ -1194,6 +1234,147 @@ class SimDataSaving(base_model.TestModelFramework):
                     self.newSim.toDB(dbh, dbUID, val1=1, val2=2)
                 self.createdFiles |= set(dbh._getFilePaths())
 
+    @unittest.skipIf(importlib.util.find_spec('h5py') is None, 'h5py not available')
+    def testHDF5MultiReader(self):
+        dirParams = {
+            'param1': [1, 2, 3],
+            'param2': ['a', 'b', 'c'],
+            'param3': [0.1, 0.2, 0.3],
+        }
+        fileParams = {
+            'param4': [4, 5, 6],
+        }
+        innerParams = {
+            'param5': [0.1, 0.2]
+        }
+        nDir = functools.reduce(operator.mul, map(len, dirParams.values()), 1)
+        nFile = functools.reduce(operator.mul, map(len, fileParams.values()), 1)
+        nInner = functools.reduce(operator.mul, map(len, innerParams.values()), 1)
+
+        dirPath = ''
+        if MPI._shouldWrite:
+            dirPath = tempfile.mkdtemp(prefix=f'{self.__class__.__name__}testHDF5MultiReader')
+            self.createdDirectories.add(dirPath)
+        if MPI._usingMPI and MPI.nhosts > 1:
+            import mpi4py.MPI
+            dirPath = mpi4py.MPI.COMM_WORLD.bcast(dirPath, root=0)
+        if MPI._shouldWrite:
+            emptyDir = tempfile.mkdtemp(prefix='empty', dir=dirPath)
+
+        rs = ResultSelector(self.newSim)
+        saver = rs.comp1.S1.Count << rs.comp1.S2.Count << rs.patch.ExS1S2.Count
+
+        self.newSim.toSave(saver, dt=self.deltaT)
+
+        allPaths = []
+        for values in itertools.product(*dirParams.values()):
+            kwargs = {name: v for name, v in zip(dirParams.keys(), values)}
+            subDirPath = os.path.join(dirPath, '/'.join(f'{k}_{v}' for k, v in kwargs.items()))
+            if MPI._shouldWrite:
+                os.makedirs(subDirPath, exist_ok=True)
+            if MPI._usingMPI and MPI.nhosts > 1:
+                mpi4py.MPI.COMM_WORLD.barrier()
+            # For each directory, add several files
+            for values2 in itertools.product(*fileParams.values()):
+                kwargs2 = {name: v for name, v in zip(fileParams.keys(), values2)}
+                dbPath = os.path.join(subDirPath, '__'.join(f'{k}_{v}' for k, v in kwargs2.items()))
+                allPaths.append(dbPath)
+
+                with HDF5Handler(dbPath) as hdf:
+                    # In each file, add several groups
+                    for values3 in itertools.product(*innerParams.values()):
+                        kwargs3 = {name: v for name, v in zip(innerParams.keys(), values3)}
+                        self.newSim.toDB(hdf, **kwargs, **kwargs2, **kwargs3)
+                        self.newSim.newRun()
+                        self.init_API2_sim(self.newSim)
+                        self.newSim.run(self.shortEndTime)
+                        self.createdFiles |= set(hdf._getFilePaths())
+
+        # Only read data in rank 0
+        if MPI.rank == 0:
+            # Loading from emptyDirectory
+            with self.assertRaises(FileNotFoundError):
+                hdf = HDF5MultiFileReader(emptyDir)
+
+            # Non-existent directory
+            with self.assertRaises(FileNotFoundError):
+                hdf = HDF5MultiFileReader(emptyDir + '_2')
+
+            # Empty list of files
+            with self.assertRaises(FileNotFoundError):
+                hdf = HDF5MultiFileReader([])
+
+            allParams = {**dirParams, **fileParams, **innerParams}
+            def checkAllFiles(hdf):
+                self.assertEqual(len(hdf), nDir * nFile * nInner)
+                self.assertEqual(hdf.parameters, {k: set(v) for k, v in allParams.items()})
+                self.assertEqual(set(hdf.filter(param5=0.1)), set(hdf[DatabaseHandler._DEFAULT_GROUP_NAME.format(0)]))
+                self.assertEqual(set(hdf.filter(param5=0.2)), set(hdf[DatabaseHandler._DEFAULT_GROUP_NAME.format(1)]))
+                for group in hdf:
+                    self.assertTrue(re.match(re.sub(r'{.*}', r'\\d+', DatabaseHandler._DEFAULT_GROUP_NAME), group.name) is not None)
+                    self.assertTrue(all(param in allParams and value in allParams[param] for param, value in group.parameters.items()))
+                self.assertEqual(len(hdf.filter(**{k: v[0] for k, v in dirParams.items()})), nFile * nInner)
+                self.assertEqual(len(hdf.filter(**{k: v[0] for k, v in fileParams.items()})), nDir * nInner)
+                self.assertEqual(len(hdf.filter(**{k: v[0] for k, v in innerParams.items()})), nDir * nFile)
+                self.assertEqual(len(hdf.filter(param1=34)), 0)
+                with self.assertRaises(KeyError):
+                    hdf.filter(param7=34)
+                with self.assertRaises(KeyError):
+                    hdf['test42']
+                with self.assertRaises(Exception):
+                    hdf.get(param1=1)
+                with self.assertRaises(Exception):
+                    hdf.get(param1=17)
+                with self.assertRaises(KeyError):
+                    hdf.get(testparam=3)
+
+            # Loading from list of file prefixes
+            with HDF5MultiFileReader(allPaths) as hdf:
+                checkAllFiles(hdf)
+
+            # Loading recursively from top directory
+            with HDF5MultiFileReader(dirPath, recursive=True) as hdf:
+                checkAllFiles(hdf)
+
+            # Loading from top directory (empty)
+            with self.assertRaises(FileNotFoundError):
+                hdf = HDF5MultiFileReader(dirPath)
+
+            # Loading from sub directory
+            with HDF5MultiFileReader(os.path.join(dirPath, 'param1_1'), recursive=True) as hdf:
+                self.assertEqual(len(hdf), nDir * nFile * nInner // len(dirParams['param1']))
+
+        if MPI._usingMPI and MPI.nhosts > 1:
+            mpi4py.MPI.COMM_WORLD.barrier()
+
+        # Add files with different parameters
+        with HDF5Handler(os.path.join(dirPath, 'singlefile')) as hdf:
+            self.newSim.toDB(hdf, 'singleUID', param6=3, param7=8)
+            self.newSim.newRun()
+            self.init_API2_sim(self.newSim)
+            self.newSim.run(self.shortEndTime)
+            self.createdFiles |= set(hdf._getFilePaths())
+
+        if MPI._shouldWrite:
+            # Load only single file
+            singleParams = {'param6': set([3]), 'param7': set([8])}
+            with HDF5MultiFileReader(dirPath) as hdf:
+                self.assertEqual(len(hdf), 1)
+                self.assertEqual(hdf.parameters, singleParams)
+                self.assertEqual(set(hdf.filter(param6=3, param7=8)), set(hdf))
+                self.assertEqual(hdf['singleUID'], hdf.get())
+
+            # Load everything
+            with HDF5MultiFileReader(dirPath, recursive=True) as hdf:
+                self.assertEqual(len(hdf), nDir * nFile * nInner + 1)
+                self.assertEqual(hdf.parameters, {**{k: set(v) for k, v in allParams.items()}, **singleParams})
+                self.assertEqual(hdf['singleUID'], hdf.get(param6=3))
+                self.assertEqual(hdf['singleUID'], hdf.get(param6=3, param7=8))
+                self.assertEqual(set([hdf['singleUID']]), hdf.filter(param6=3, param7=8))
+                self.assertEqual(len(hdf.filter(**{k: v[0] for k, v in dirParams.items()})), nFile * nInner)
+
+        if MPI._usingMPI and MPI.nhosts > 1:
+            mpi4py.MPI.COMM_WORLD.barrier()
 
 
 class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
@@ -1291,8 +1472,7 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
 
         rs = ResultSelector(self.newSim)
         saver1 = rs.ALL(Compartment).ALL(Species).Count
-        #TODO Check getPatchCOunt bug
-        # saver1 <<= rs.ALL(Patch).ALL(Species).Count
+        saver1 <<= rs.ALL(Patch).ALL(Species).Count
         saver1 <<= rs.comp1.CC.sus2.Count
 
         tets = self.newGeom.tets
@@ -1319,7 +1499,13 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
         else:
             saver6 = rs.TRIS(tris1).Area
 
-        self.newSim.toSave(saver1, saver2, saver3, saver4, saver5, saver6, dt=self.deltaT)
+        # Combined values accross geometrical elements
+        saver7 = rs.SUM(rs.TRIS(tris1).Ex.Count)
+
+        # Combined values on same geometrical elements
+        saver8 = rs.TETS().S1.Count + rs.TETS().S2.Count
+
+        self.newSim.toSave(saver1, saver2, saver3, saver4, saver5, saver6, saver7, saver8, dt=self.deltaT)
 
         with XDMFHandler(dbPath) as dbh:
             self.newSim.toDB(dbh, dbUID, val1=1, val2=2)
@@ -1354,9 +1540,11 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
 
         rs = ResultSelector(self.newSim)
 
-        saver = rs.TETS().LIST(S1, S2).Count
+        saver1 = rs.TETS().LIST(S1, S2).Count
+        saver2 = rs.TETS().S1.Count + rs.TETS().S2.Count
+        saver3 = rs.SUM(rs.TETS().S1.Count) << rs.SUM(2 * rs.TETS().S2.Count)
 
-        self.newSim.toSave(saver, dt=self.deltaT)
+        self.newSim.toSave(saver1, saver2, saver3, dt=self.deltaT)
 
         vals1 = list(range(len(self.newSim.geom.tets)))
         vals2 = list(reversed(vals1))
@@ -1376,9 +1564,11 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
         # Load data
         if MPI._shouldWrite:
             with XDMFHandler(dbPath) as dbh:
-                saver, = dbh.get().results
-                self.assertEqual(list(saver.data[0,0,0::2]), vals1)
-                self.assertEqual(list(saver.data[0,0,1::2]), vals2)
+                saver1, saver2, saver3 = dbh.get().results
+                self.assertEqual(list(saver1.data[0,0,0::2]), vals1)
+                self.assertEqual(list(saver1.data[0,0,1::2]), vals2)
+                self.assertEqual(list(saver2.data[0,0,:]), list(np.array(vals1) + np.array(vals2)))
+                self.assertEqual(list(saver3.data[0,0,:]), [sum(vals1), 2 * sum(vals2)])
 
         if self.useDist:
             # Need an MPI barrier to prevent early removal of files
@@ -1425,9 +1615,9 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(ResultSelectorTests, "test"))
-    all_tests.append(unittest.makeSuite(SimDataSaving, "test"))
-    all_tests.append(unittest.makeSuite(TetSimDataSaving, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(ResultSelectorTests))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(SimDataSaving))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TetSimDataSaving))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

@@ -2184,7 +2184,7 @@ class NamedObject(SolverPathObject):
             return res
         else:
             raise Exception(
-                f'The line {callLine} does not match the expected format for automatic assignement.'
+                f'The line {callLine} does not match the expected format for automatic assignment.'
             )
 
     def __repr__(self):
@@ -2588,7 +2588,7 @@ class Versioned:
         try:
             return tuple(map(int, versionStr.split('.')))
         except:
-            raise Exception(f'Invalid version string "{versionStr}".')
+            raise ValueError(f'Invalid version string "{versionStr}".')
 
 
 ###################################################################################################

@@ -425,8 +425,8 @@ class TetCheckpoints(base_model.TetTestModelFramework, WmCheckpoints):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(WmCheckpoints, "test"))
-    all_tests.append(unittest.makeSuite(TetCheckpoints, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(WmCheckpoints))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TetCheckpoints))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

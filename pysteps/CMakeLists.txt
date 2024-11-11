@@ -112,6 +112,24 @@ target_link_libraries(cysteps libsteps_static ${libsteps_link_libraries})
 set_target_properties(cysteps PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${localpkgs}/steps" OUTPUT_NAME
                                                                                        ${cymodname})
 
+if(SKBUILD_PROJECT_NAME)
+  # Update RPATH with the dependent shared libraries locations based on the STEPS Python extension
+  # library
+  set(relative_rpaths "../../../" "../cmeel.prefix/lib" "../lib" "../petsc/lib")
+  foreach(relative_rpath ${relative_rpaths})
+    set(linker_rpaths "-Wl,-rpath,\\$ORIGIN/${relative_rpath} ${linker_rpaths}")
+  endforeach()
+
+  set_target_properties(cysteps PROPERTIES BUILD_WITH_INSTALL_RPATH FALSE
+                                           LINK_FLAGS "${linker_rpaths} -Wl,-z,origin")
+
+  # Install compiled lib
+  install(TARGETS cysteps LIBRARY DESTINATION "${Python_INSTALL_PREFIX}/steps/")
+
+  file(TOUCH ${steps_package_timestamp})
+  return()
+endif()
+
 set_directory_properties(
   PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES
              "${CMAKE_CURRENT_SOURCE_DIR}/build;${CMAKE_CURRENT_SOURCE_DIR}/steps.egg-info")

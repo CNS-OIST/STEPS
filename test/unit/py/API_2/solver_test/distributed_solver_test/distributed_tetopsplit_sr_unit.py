@@ -109,7 +109,7 @@ class DistTetopsplitSRunit(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(DistTetopsplitSRunit, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(DistTetopsplitSRunit))
     return unittest.TestSuite(all_tests)
 
 

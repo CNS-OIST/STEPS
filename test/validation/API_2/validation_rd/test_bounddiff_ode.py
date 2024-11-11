@@ -212,7 +212,7 @@ class TestRDBoundDiffODE(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TestRDBoundDiffODE, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TestRDBoundDiffODE))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

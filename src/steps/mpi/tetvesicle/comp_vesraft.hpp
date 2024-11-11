@@ -42,7 +42,6 @@
 #include "solver/compdef.hpp"
 #include "solver/vesicledef.hpp"
 
-// vector_t
 #include <fau.de/overlap.hpp>
 
 namespace steps::mpi::tetvesicle {
@@ -138,7 +137,7 @@ class CompVesRaft {
     // function.
     // NOTE: tets_overlap_output and jama_vesicle_output can be modified by the
     // function so the data is available to the calling function.
-    bool checkPos(vector_t* pos,
+    bool checkPos(overlap::Vector* pos,
                   double diam,
                   solver::vesicle_global_id vesgidx,
                   std::map<tetrahedron_global_id, double>& tets_overlap_output,

@@ -452,7 +452,7 @@ class TestRDSpatialTetODE(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TestRDSpatialTetODE, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TestRDSpatialTetODE))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

@@ -157,7 +157,7 @@ class DistTetopsplitGHK(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(DistTetopsplitGHK, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(DistTetopsplitGHK))
     return unittest.TestSuite(all_tests)
 
 

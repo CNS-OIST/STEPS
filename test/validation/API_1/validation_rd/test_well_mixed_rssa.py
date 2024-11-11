@@ -465,7 +465,7 @@ class TestRDWellMixedRSSA(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TestRDWellMixedRSSA, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TestRDWellMixedRSSA))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

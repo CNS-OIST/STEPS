@@ -47,7 +47,8 @@ Vesicle::Vesicle(solver::Vesicledef* vesdef,
     , pComp_central(comp)
     , pIndex(unique_index)
     , pImmobility(0)
-    , pPathPosition_index(0)
+    , pPath_curr_pos(pPathPositions.begin())
+    , pPath_next_pos_end(pPathPositions.begin())
     , pOnPath(false) {
     AssertLog(pDef != nullptr);
     AssertLog(comp != nullptr);
@@ -81,8 +82,11 @@ Vesicle::Vesicle(solver::Vesicledef* vesdef,
     util::restore(cp_file, pInnerSpecCount);
     util::restore(cp_file, pImmobility);
     util::restore(cp_file, pPathPositions);
-    util::restore(cp_file, pPathPosition_index);
-    util::restore(cp_file, pPathPosition_index_next);
+    uint path_ind;
+    util::restore(cp_file, path_ind);
+    pPath_curr_pos = pPathPositions.begin() + path_ind;
+    util::restore(cp_file, path_ind);
+    pPath_next_pos_end = pPathPositions.begin() + path_ind;
     util::restore(cp_file, pTime_accum);
     util::restore(cp_file, pTime_accum_next);
     util::restore(cp_file, pOnPath);
@@ -145,8 +149,8 @@ void Vesicle::checkpoint(std::fstream& cp_file) {
     util::checkpoint(cp_file, pInnerSpecCount);
     util::checkpoint(cp_file, pImmobility);
     util::checkpoint(cp_file, pPathPositions);
-    util::checkpoint(cp_file, pPathPosition_index);
-    util::checkpoint(cp_file, pPathPosition_index_next);
+    util::checkpoint(cp_file, static_cast<uint>(pPath_curr_pos - pPathPositions.begin()));
+    util::checkpoint(cp_file, static_cast<uint>(pPath_next_pos_end - pPathPositions.begin()));
     util::checkpoint(cp_file, pTime_accum);
     util::checkpoint(cp_file, pTime_accum_next);
     util::checkpoint(cp_file, pOnPath);
@@ -194,7 +198,7 @@ tetmesh::Tetmesh* Vesicle::mesh() const noexcept {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool Vesicle::setPosition(const vector_t& new_pos,
+bool Vesicle::setPosition(const overlap::Vector& new_pos,
                           std::map<tetrahedron_global_id, double> const& tets_overlap_temp,
                           bool check_comps) {
     // Had numerical issues with this. Setting new position, even with 100%
@@ -325,7 +329,12 @@ void Vesicle::doSurfaceDiffusion() {
 
                 while (tetgidx.unknown()) {
                     attempts += 1;
-                    if (attempts == 1000) {
+                    if (attempts == 10) {
+                        // It is possible that a small part of the vesicle surface lies outside the
+                        // mesh because, to tackle precision issues, we allow a total overlap that
+                        // can be slightly below 100%. Because of this, we might need to resample
+                        // theta and retry another position for surface diffusion. If this happens
+                        // 10 times in a row it is most likely a bug.
                         std::ostringstream os;
                         os << "Failed to do surface diffusion; too many failed attempts. ";
                         ProgErrLog(os.str());
@@ -353,6 +362,8 @@ void Vesicle::doSurfaceDiffusion() {
                         psit->setPosCartesian(pos_rel_orig);
                     }
                 }
+                // In debug mode we are more stringent and only allow one try
+                assert(attempts == 1);
 
                 psit->setOverlapTet_gidx(tetgidx);
             }
@@ -966,8 +977,8 @@ void Vesicle::setPathPositions(
     AssertLog(!pOnPath);
 
     pPathPositions = path_positions;
-    pPathPosition_index = 0;
-    pPathPosition_index_next = 0;
+    pPath_curr_pos = pPathPositions.begin();
+    pPath_next_pos_end = pPathPositions.begin();
     pTime_accum = 0.0;
     pTime_accum_next = 0.0;
     pOnPath = true;
@@ -975,33 +986,39 @@ void Vesicle::setPathPositions(
 
 ////////////////////////////////////////////////////////////////////////////////
 
-math::position_abs Vesicle::getNextPosition(double dt) noexcept {
+std::pair<std::vector<std::pair<double, math::position_abs>>::const_iterator,
+          std::vector<std::pair<double, math::position_abs>>::const_iterator>
+Vesicle::getNextPositions(double dt) noexcept {
     double deltas_summed = 0.0;  // have to sum any moves that we apply
-
-    for (uint i = pPathPosition_index + 1; i < pPathPositions.size(); ++i) {
-        if (deltas_summed + (pPathPositions[i].first - pTime_accum) > dt) {
+    for (pPath_next_pos_end = pPath_curr_pos + 1; pPath_next_pos_end != pPathPositions.end();
+         ++pPath_next_pos_end) {
+        if (deltas_summed + (pPath_next_pos_end->first - pTime_accum) > dt) {
             // We stop because next move is still in the future
             pTime_accum_next = pTime_accum + (dt - deltas_summed);
-            return pPathPositions[pPathPosition_index_next].second;
+            return std::make_pair(pPath_curr_pos, pPath_next_pos_end);
         } else {
             // We have a hit, a move that is before the next dt
             // May get multiple hits. May be the last point
-            deltas_summed += pPathPositions[i].first;
-            pPathPosition_index_next = i;
+            deltas_summed += pPath_next_pos_end->first;
         }
     }
 
     // May be at the end
-    return pPathPositions[pPathPosition_index_next].second;
+    return std::make_pair(pPath_curr_pos, pPathPositions.end());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Vesicle::nextPositionOnPath() {
-    pPathPosition_index = pPathPosition_index_next;
-    pTime_accum = pTime_accum_next;
+void Vesicle::updatePositionOnPath(
+    std::vector<std::pair<double, math::position_abs>>::const_iterator end) {
+    if (end == pPath_next_pos_end) {
+        pTime_accum = pTime_accum_next;
+    } else {
+        pTime_accum = 0;
+    }
+    pPath_curr_pos = end - 1;
 
-    if (pPathPosition_index == pPathPositions.size() - 1) {
+    if (end == pPathPositions.end()) {
         // Path has come to an end.
         removeFromPath();
     }
@@ -1011,8 +1028,8 @@ void Vesicle::nextPositionOnPath() {
 
 void Vesicle::removeFromPath() {
     pPathPositions.clear();
-    pPathPosition_index = 0;
-    pPathPosition_index_next = 0;
+    pPath_curr_pos = pPathPositions.begin();
+    pPath_next_pos_end = pPathPositions.begin();
 
     pTime_accum = 0.0;
     pTime_accum_next = 0.0;

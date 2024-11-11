@@ -25,6 +25,7 @@
  */
 
 #include "triangle.hpp"
+#include "segment.hpp"
 
 #include <cassert>
 #include <cmath>
@@ -131,5 +132,109 @@ bool tri_intersect_line(const point3d& v0,
     intersection = p0 + t * pdir;
     return true;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool tri_intersect_point(const point3d& v0,
+                         const point3d& v1,
+                         const point3d& v2,
+                         const point3d& p,
+                         const bool is_triangle) {
+    // barycentric coordinates method
+    const auto edge0 = v1 - v0;
+    const auto edge1 = v2 - v0;
+
+    // degenerate triangles
+    if (segment_intersect_point(v0, v1, v2, false)) {
+        // it is ok to use the L1 norm because the triangle is colinear
+        const auto n0 = normL1(edge0);
+        const auto n1 = normL1(edge1);
+        const auto n2 = normL1(v2 - v1);
+        if (n0 >= n1 && n0 >= n2) {
+            return segment_intersect_point(v0, v1, p);
+        } else if (n1 >= n0 && n1 >= n2) {
+            return segment_intersect_point(v2, v0, p);
+        } else if (n2 >= n0 && n2 >= n1) {
+            return segment_intersect_point(v2, v1, p);
+        }
+    }
+
+    // 4ULP
+    constexpr auto adimensional_tol = 4 * std::numeric_limits<point3d::value_type>::epsilon();
+    const auto tol = adimensional_tol *
+                     std::max(std::max(normL1(edge0), normL1(edge1)), normL1(v2 - v1));
+
+    if (!is_triangle) {
+        // just test if point p belongs to surface defined by the triangle
+        const auto normal = (edge0).cross(edge1);
+        const auto A = std::abs((p - v0).dot(normal));
+        return A < tol;
+    }
+
+    const auto pvec = p - v0;
+
+    const double d00 = edge0.dot(edge0);
+    const double d01 = edge0.dot(edge1);
+    const double d11 = edge1.dot(edge1);
+    const double d20 = pvec.dot(edge0);
+    const double d21 = pvec.dot(edge1);
+
+    const double denom = d00 * d11 - d01 * d01;
+
+    // barycentric coordinates multiplied by denom to avoid divisions
+    const double c1 = (d11 * d20 - d01 * d21);
+    const double c2 = (d00 * d21 - d01 * d20);
+    const double c0 = denom - c1 - c2;
+
+    const double denomtol = denom * adimensional_tol;
+
+    // check that the p projection of the plane is inside the triangle
+    if (c0 < -denomtol || c0 > denom + denomtol) {
+        return false;
+    }
+    if (c1 < -denomtol || c1 > denom + denomtol) {
+        return false;
+    }
+    if (c2 < -denomtol || c2 > denom + denomtol) {
+        return false;
+    }
+
+    // check that projection and initial point overlap
+    const auto pproj = (c0 / denom) * v0 + (c1 / denom) * v1 + (c2 / denom) * v2;
+    return p.almostEqual(pproj, tol);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool same_direction(const point3d& center,
+                    const point3d& opposite,
+                    const point3d& p1,
+                    const point3d& p2,
+                    const point3d& pi) {
+    // TetMesh check that any tetrahedron is not degenerated, so don't test it
+
+    // FIXME: the normal of a face is alreay computed by TetMesh, but I don't see
+    // how to use it.
+    auto normal = (p1 - center).cross(p2 - center);
+    auto A = (opposite - center).dot(normal);
+    auto B = (pi - center).dot(normal);
+
+    // 4 ULP
+    constexpr auto epsilon = 4 * std::numeric_limits<point3d::value_type>::epsilon();
+    const double tol = std::max(std::abs(A), std::abs(B)) * epsilon;
+
+    // same sign with tolerance
+    if (A < -tol && B > tol) {
+        return false;
+    }
+    if (A > tol && B < -tol) {
+        return false;
+    }
+
+    return true;
+}
+
 
 }  // namespace steps::math

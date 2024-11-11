@@ -2,6 +2,7 @@ add_library(
   stepsdist STATIC
   definition/compdef.cpp
   definition/diffdef.cpp
+  definition/efield.cpp
   definition/patchdef.cpp
   definition/reacdef.cpp
   definition/sreacdef.cpp
@@ -28,8 +29,7 @@ add_library(
   tetopsplit.cpp)
 
 if(PETSC_FOUND AND USE_PETSC)
-  target_sources(stepsdist PRIVATE definition/efield.hpp definition/efield.cpp
-                                   operator/efield_operator.cpp operator/efield_operator.hpp)
+  target_sources(stepsdist PRIVATE operator/efield_operator.cpp operator/efield_operator.hpp)
   target_link_libraries(stepsdist PUBLIC PETSC::PETSC)
 endif()
 

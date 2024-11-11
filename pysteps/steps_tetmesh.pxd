@@ -176,6 +176,8 @@ cdef extern from "geom/tetmesh.hpp" namespace "steps::tetmesh":
         std.vector[steps.index_t] getTetTriNeighb(steps.tetrahedron_global_id) except +
         std.vector[steps.index_t] getTetTetNeighb(steps.tetrahedron_global_id) except +
         steps.tetrahedron_global_id findTetByPoint(std.vector[double]) except +
+        steps.tetrahedron_global_id findTetByPointLinear(std.vector[double]) except +
+        steps.tetrahedron_global_id findTetByPointWalk(std.vector[double]) except +
         bool isPointInTet(std.vector[double], steps.tetrahedron_global_id) except +
         std.vector[double] getBoundMin() except +
         std.vector[double] getBoundMax() except +

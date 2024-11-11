@@ -28,6 +28,25 @@ This file is the user-interface file for all objects related to STEPS 4. All
 objects are directly derived from the corresponding Cython objects.
 """
 
+# The following fixes compatibility issues with mpi4py >= 4.0.0 and Open MPI
+# versions that do not support MPI-4 yet.
+# See https://github.com/mpi4py/mpi4py/issues/525
+# This could be removed once common Open MPI packages support MPI-4
+cdef extern from *:
+    """
+    #include <mpi.h>
+    
+    #if (MPI_VERSION < 3) && !defined(PyMPI_HAVE_MPI_Message)
+    typedef void *PyMPI_MPI_Message;
+    #define MPI_Message PyMPI_MPI_Message
+    #endif
+    
+    #if (MPI_VERSION < 4) && !defined(PyMPI_HAVE_MPI_Session)
+    typedef void *PyMPI_MPI_Session;
+    #define MPI_Session PyMPI_MPI_Session
+    #endif
+    """
+
 from cython.operator cimport dereference as deref
 cimport mpi4py.MPI as MPI
 
@@ -179,6 +198,25 @@ cdef class _py_DistMesh(_py_Geom):
             return self.ptrx().num_bounds()
         else:
             return self.ptrx().total_num_bounds()
+
+    def countBars(self, bool local=False):
+        """
+        Returns the total number of bars in the mesh.
+
+        Syntax:
+
+        countBars()
+
+        Arguments:
+        bool local
+
+        Return:
+        int
+        """
+        if local:
+            return self.ptrx().num_bars()
+        else:
+            return self.ptrx().total_num_bars()
 
     def countVertices(self, bool local=False):
         """
@@ -396,6 +434,27 @@ cdef class _py_DistMesh(_py_Geom):
         else:
             return [vg.get() for vg in self.ptrx().getTri_(<triangle_global_id_t>(idx))]
 
+    def getBar(self, GO idx, bool local=False):
+        """
+        Returns the bar with index idx in the container by its two vertex indices.
+
+        Syntax::
+
+            getBar(idx)
+
+        Arguments:
+        GO idx
+        bool local
+
+        Return:
+        list<GO, length = 3>
+
+        """
+        if local:
+            return [vl.get() for vl in self.ptrx().getBarVertNeighb(<bar_local_id_t>(<LO>(idx)))]
+        else:
+            return [vg.get() for vg in self.ptrx().getBarVertNeighb(<bar_global_id_t>(idx))]
+
     def getVertex(self, GO idx, bool local=False):
         """
         Returns the coordinates of vertex with index idx in the container.
@@ -460,6 +519,27 @@ cdef class _py_DistMesh(_py_Geom):
             return [tl.get() for tl in self.ptrx().getTetTriNeighb(<tetrahedron_local_id_t>(<LO>(idx)))]
         else:
             return [tg.get() for tg in self.ptrx().getTetTriNeighb(<tetrahedron_global_id_t>(idx))]
+
+    def getTriBars(self, GO idx, bool local=False):
+        """
+        Returns the indices of the bars that comprise the triangle.
+
+        Syntax::
+
+            getTriBars(tidx)
+
+        Arguments:
+        GO idx
+        bool local
+
+        Return:
+        list<GO, length = 3>
+
+        """
+        if local:
+            return [tl.get() for tl in self.ptrx().getTriBarNeighb(<triangle_local_id_t>(<LO>(idx)))]
+        else:
+            return [tg.get() for tg in self.ptrx().getTriBarNeighb(<triangle_global_id_t>(idx))]
 
     def getTriTetNeighb(self, GO idx, bool local=False, bool owned=True):
         """
@@ -642,6 +722,48 @@ cdef class _py_DistMesh(_py_Geom):
             globalInd = self.ptrx().findTetByPoint(p)
             return globalInd.get() if globalInd.valid() else UNKNOWN_TET
 
+    def findLocalTetByPointLinear(self, std.vector[double] p):
+        """
+        Returns the local index of the tetrahedron which encompasses a given point
+        p (given in Cartesian coordinates x,y,z). Returns UNKNOWN_TET if p is a position
+        outside the mesh. Linear search.
+
+        Syntax::
+
+            findLocalTetByPointLinear(p)
+
+        Arguments:
+        list<double, length = 3> p
+
+        Return:
+        LO
+
+        """
+        cdef tetrahedron_local_id_t localInd
+        localInd = self.ptrx().findLocalTetByPointLinear(p)
+        return localInd.get() if localInd.valid() else UNKNOWN_TET
+
+    def findLocalTetByPointWalk(self, std.vector[double] p):
+        """
+        Returns the local index of the tetrahedron which encompasses a given point
+        p (given in Cartesian coordinates x,y,z). Returns UNKNOWN_TET if p is a position
+        outside the mesh. A* search with random initial seeding and restarts.
+
+        Syntax::
+
+            findLocalTetByPointWalk(p)
+
+        Arguments:
+        list<double, length = 3> p
+
+        Return:
+        LO
+
+        """
+        cdef tetrahedron_local_id_t localInd
+        localInd = self.ptrx().findLocalTetByPointWalk(p)
+        return localInd.get() if localInd.valid() else UNKNOWN_TET
+
     def isPointInTet(self, std.vector[double] p, GO tidx, bool local=False):
         """
         Check if point belongs to the tetrahedron or not
@@ -779,6 +901,25 @@ cdef class _py_DistMesh(_py_Geom):
         cdef triangle_local_id_t ind = self.ptrx().getLocalIndex(triangle_global_id_t(idx), owned)
         return ind.get() if ind.valid() else None
 
+    def getBarLocalIndex(self, GO idx, bool owned=True):
+        """Return the local index of bar with global index idx
+
+        Return None if the bar does not exist locally.
+
+        Syntax::
+
+            getBarLocalIndex(idx)
+
+        Arguments:
+        int idx
+        bool owned
+
+        Return:
+        int
+        """
+        cdef bar_local_id_t ind = self.ptrx().getLocalIndex(bar_global_id_t(idx), owned)
+        return ind.get() if ind.valid() else None
+
     def getVertLocalIndex(self, GO idx, bool owned=True):
         """Return the local index of vertex with global index idx
 
@@ -820,7 +961,7 @@ cdef class _py_DistMesh(_py_Geom):
 
         Syntax::
 
-            getTetGlobalIndex(idx)
+            getTriGlobalIndex(idx)
 
         Arguments:
         int idx
@@ -829,6 +970,22 @@ cdef class _py_DistMesh(_py_Geom):
         int
         """
         return self.ptrx().getGlobalIndex(triangle_local_id_t(idx)).get()
+
+    def getBarGlobalIndex(self, LO idx):
+        """
+        Return the global index of bar with local index idx
+
+        Syntax::
+
+            getBarGlobalIndex(idx)
+
+        Arguments:
+        int idx
+
+        Return:
+        int
+        """
+        return self.ptrx().getGlobalIndex(bar_local_id_t(idx)).get()
 
     def getVertGlobalIndex(self, LO idx):
         """
@@ -886,6 +1043,26 @@ cdef class _py_DistMesh(_py_Geom):
         else:
             return [tg.get() for tg in self.ptrx().getAllTriIndices()]
 
+    def getAllBarIndices(self, bool local=False, bool owned=True):
+        """
+        Returns a list of all bars in the mesh.
+
+        Syntax::
+
+            getAllBarIndices()
+
+        Arguments:
+        bool local
+        bool owned
+
+        Return:
+        list<int>
+        """
+        if local:
+            return [tl.get() for tl in self.ptrx().getLocalBarIndices(owned) if tl.valid()]
+        else:
+            return [tg.get() for tg in self.ptrx().getAllBarIndices()]
+
     def getAllVertIndices(self, bool local=False, bool owned=True):
         """
         Returns a list of all vertices in the mesh.
@@ -936,8 +1113,8 @@ cdef class _py_DistMesh(_py_Geom):
             int sampling: any value --> deterministic method (montecarlo not implemented for STEPS4)
 
         Returns:
-            A list of lists of tuples representing the intersected tetrahedrons, one element per line segment. 
-            Each tuple is made of 2 elements, a tetrahedron global identifier, and its respective intersection ratio. 
+            A list of lists of tuples representing the intersected tetrahedrons, one element per line segment.
+            Each tuple is made of 2 elements, a tetrahedron local identifier, and its respective intersection ratio.
         """
         if (points.strides[0] != 24 or points.strides[1] != 8):
             raise Exception("Wrong memory layout for points, np array should be [pts,3] and row major")
@@ -956,8 +1133,8 @@ cdef class _py_DistMesh(_py_Geom):
             int sampling: any value --> deterministic method (montecarlo not implemented for STEPS4)
 
         Returns:
-            A list where each position contains the list of intersected tets (and respective
-            intersection ratio) of each line segment.
+            A list of lists of tuples representing the intersected tetrahedrons, one element per line segment.
+            Each tuple is made of 2 elements, a tetrahedron local identifier, and its respective intersection ratio.
         """
         if (points.strides[0] != 24 or points.strides[1] != 8):
             raise Exception("Wrong memory layout for points, np array should be [pts,3] and row major")
@@ -1662,197 +1839,181 @@ cdef class _py_DistTetOpSplitP(_py__base):
         """
         self.ptrx().setPatchSpecCount(to_std_string(patch), to_std_string(spec), n, distributionMethod)
 
-    def getPatchMaxV(self, str patch):
-        """
-        Returns the maximum potential across a patch
+    if USE_PETSC:
 
-        Syntax::
+        def setMembPotential(self, str memb, double v):
+            """
+            Sets the potential (in volts) of membrane with string identifier memb.
+            NOTE: This method will set the potential of all nodes in the volume conductor
+            to the same value.
+
+            Syntax::
+                        
+                setMembPotential(memb, v)
+                    
+            Arguments:
+            string memb
+            float v
+
+            Return:
+            None
+
+            """
+            self.ptrx().setMembPotential(to_std_string(memb), v)
+
+        def setMembRes(self, str memb, double ro, double vrev):
+            """
+            Sets the surface electrical resistivity ro (in ohm.m^2) of the membrane with string identifier memb. Reversal potential vrev is required in Volts.
             
-            getPatchMaxV(patch)
-            
-        Arguments:
-        string patch
+            Syntax::
+                        
+                setMembRes(memb, ro, vrev)
+                    
+            Arguments:
+            string memb
+            float ro
+            float vrev
 
-        Return:
-        float
+            Return:
+            None
 
-        """
-        return self.ptrx().getPatchMaxV(to_std_string(patch))
+            """
+            self.ptrx().setMembRes(to_std_string(memb), ro, vrev)
 
-    def setMembPotential(self, str memb, double v):
-        """
-        Sets the potential (in volts) of membrane with string identifier memb.
-        NOTE: This method will set the potential of all nodes in the volume conductor
-        to the same value.
+        def getMembRes(self, str membrane):
+            """
+            Gets the resistivity and the reversal potential of the membrane 
+            with string identifier membrane.
 
-        Syntax::
-        			
-        	setMembPotential(memb, v)
-        		
-        Arguments:
-        string memb
-        float v
+            Syntax::
+                        
+                getMembRes(membrane)
+                    
+            Arguments:
+            string membrane
 
-        Return:
-        None
+            Return:
+            pair: (double, double)
 
-        """
-        self.ptrx().setMembPotential(to_std_string(memb), v)
+            """
+            cdef MembraneResistivity val = self.ptrx().getMembRes(to_std_string(membrane))
+            return _py_MembraneResistivity(val.resistivity, val.reversal_potential)
 
-    def setMembRes(self, str memb, double ro, double vrev):
-        """
-        Sets the surface electrical resistivity ro (in ohm.m^2) of the membrane with string identifier memb. Reversal potential vrev is required in Volts.
-        
-        Syntax::
-        			
-        	setMembRes(memb, ro, vrev)
-        		
-        Arguments:
-        string memb
-        float ro
-        float vrev
+        def getTriCapac(self, GO idx, bool local=False):
+            """
+            Returns the specific membrane capacitance (in farad / m^2) of triangle with index idx.
 
-        Return:
-        None
+            Syntax::
 
-        """
-        self.ptrx().setMembRes(to_std_string(memb), ro, vrev)
+                getTriCapac(idx)
 
-    def getMembRes(self, str membrane):
-        """
-        Gets the resistivity and the reversal potential of the membrane 
-        with string identifier membrane.
+            Arguments:
+            index_t idx
+            bool local
 
-        Syntax::
-        			
-        	getMembRes(membrane)
-        		
-        Arguments:
-        string membrane
+            Return:
+            float
 
-        Return:
-        pair: (double, double)
+            """
+            return self.ptrx().getTriCapac(idx, local)
 
-        """
-        cdef MembraneResistivity val = self.ptrx().getMembRes(to_std_string(membrane))
-        return _py_MembraneResistivity(val.resistivity, val.reversal_potential)
+        def setTriCapac(self, GO idx, double cm, bool local=False):
+            """
+            Sets the specific membrane capacitance (in farad / m^2) of triangle with index idx.
 
-    def getTriCapac(self, GO idx, bool local=False):
-        """
-        Returns the specific membrane capacitance (in farad / m^2) of triangle with index idx.
+            Syntax::
 
-        Syntax::
+                setTriCapac(idx, cm)
 
-            getTriCapac(idx)
+            Arguments:
+            index_t idx
+            float cm
+            bool local
 
-        Arguments:
-        index_t idx
-        bool local
+            Return:
+            None
 
-        Return:
-        float
+            """
+            self.ptrx().setTriCapac(idx, cm, local)
 
-        """
-        return self.ptrx().getTriCapac(idx, local)
+        def getTriRes(self, GO idx, bool local=False):
+            """
+            Returns the membrane resistivity (in ohm m^2) and reversal potential (in V) for the leak current in triangle with index idx.
 
-    def setTriCapac(self, GO idx, double cm, bool local=False):
-        """
-        Sets the specific membrane capacitance (in farad / m^2) of triangle with index idx.
+            Syntax::
 
-        Syntax::
+                getTriRes(idx)
 
-            setTriCapac(idx, cm)
+            Arguments:
+            index_t idx
+            bool local
 
-        Arguments:
-        index_t idx
-        float cm
-        bool local
+            Return:
+            Tuple[float, float]
 
-        Return:
-        None
+            """
+            cdef MembraneResistivity val = self.ptrx().getTriRes(idx, local)
+            return _py_MembraneResistivity(val.resistivity, val.reversal_potential)
 
-        """
-        self.ptrx().setTriCapac(idx, cm, local)
+        def setTriRes(self, GO idx, double res, double erev, bool local=False):
+            """
+            Sets the membrane resistivity (in ohm m^2) and reversal potential (in V) for the leak current in triangle with index idx.
 
-    def getTriRes(self, GO idx, bool local=False):
-        """
-        Returns the membrane resistivity (in ohm m^2) and reversal potential (in V) for the leak current in triangle with index idx.
+            Syntax::
 
-        Syntax::
+                setTriRes(idx, res, erev)
 
-            getTriRes(idx)
+            Arguments:
+            index_t idx
+            float res
+            float erev
+            bool local
 
-        Arguments:
-        index_t idx
-        bool local
+            Return:
+            None
 
-        Return:
-        Tuple[float, float]
+            """
+            self.ptrx().setTriRes(idx, res, erev, local)
 
-        """
-        cdef MembraneResistivity val = self.ptrx().getTriRes(idx, local)
-        return _py_MembraneResistivity(val.resistivity, val.reversal_potential)
+        def getVertIClamp(self, GO idx, bool local=False):
+            """
+            Returns the current clamp on the vertex with index idx, in ampere.
+            NOTE: Convention is maintained that a positive current clamp is depolarizing, a negative current clamp is hyperpolarizing.
 
-    def setTriRes(self, GO idx, double res, double erev, bool local=False):
-        """
-        Sets the membrane resistivity (in ohm m^2) and reversal potential (in V) for the leak current in triangle with index idx.
+            Syntax::
 
-        Syntax::
+                getVertIClamp(idx)
 
-            setTriRes(idx, res, erev)
+            Arguments:
+            GO idx
+            bool local
 
-        Arguments:
-        index_t idx
-        float res
-        float erev
-        bool local
+            Return:
+            float
 
-        Return:
-        None
+            """
+            return self.ptrx().getVertIClamp(idx, local)
 
-        """
-        self.ptrx().setTriRes(idx, res, erev, local)
+        def setVertIClamp(self, GO idx, double current, bool local=False):
+            """
+            Set the current clamp on the vertex with index idx, in ampere.
+            NOTE: Convention is maintained that a positive current clamp is depolarizing, a negative current clamp is hyperpolarizing.
 
-    def getVertIClamp(self, GO idx, bool local=False):
-        """
-        Returns the current clamp on the vertex with index idx, in ampere.
-        NOTE: Convention is maintained that a positive current clamp is depolarizing, a negative current clamp is hyperpolarizing.
+            Syntax::
 
-        Syntax::
+                setVertIClamp(idx, current)
 
-            getVertIClamp(idx)
+            Arguments:
+            GO idx
+            float current
+            bool local
 
-        Arguments:
-        GO idx
-        bool local
+            Return:
+            None
 
-        Return:
-        float
+            """
+            self.ptrx().setVertIClamp(idx, current, local)
 
-        """
-        return self.ptrx().getVertIClamp(idx, local)
-
-    def setVertIClamp(self, GO idx, double current, bool local=False):
-        """
-        Set the current clamp on the vertex with index idx, in ampere.
-        NOTE: Convention is maintained that a positive current clamp is depolarizing, a negative current clamp is hyperpolarizing.
-
-        Syntax::
-
-            setVertIClamp(idx, current)
-
-        Arguments:
-        GO idx
-        float current
-        bool local
-
-        Return:
-        None
-
-        """
-        self.ptrx().setVertIClamp(idx, current, local)
-
-    IF USE_PETSC:
         def getTriOhmicErev(self, GO idx, str ohmic_current, bool local=False):
             """
             Gets the ohmic current reversal potential of triangle in volts.
@@ -1884,6 +2045,98 @@ cdef class _py_DistTetOpSplitP(_py__base):
                 local: whether the triangle index is local to the process or global to the mesh
             """
             return self.ptrx().setTriOhmicErev(idx, to_std_string(ohmic_current), reversal_potential, local)
+
+        def getVertV(self, GO idx, bool local=False):
+            """
+            Returns the potential (in volts) of vertex element with index idx.
+
+            Syntax::
+
+                getVertV(idx)
+
+            Arguments:
+            GO idx
+            bool local
+
+            Return:
+            float
+
+            """
+            return self.ptrx().getVertV(idx, local)
+
+        def getTriV(self, GO idx, bool local=False):
+            """
+            Returns the potential (in volts) of triangle element with index idx.
+
+            Syntax::
+
+                getTetV(idx)
+
+            Arguments:
+            GO idx
+            bool local
+
+            Return:
+            float
+
+            """
+            return self.ptrx().getTriV(idx, local)
+
+        def getTriOhmicI(self, GO idx, str oc, bool local=False):
+            """
+            Returns the ohmic current of triangle element with index idx, in amps.
+
+            Syntax::
+
+                getTriOhmicI(idx, oc)
+
+            Arguments:
+            GO idx
+            string oc
+            bool local
+
+            Return:
+            float
+
+            """
+            return self.ptrx().getTriOhmicI(idx, to_std_string(oc), local)
+
+        def getTriGHKI(self, GO idx, str ghk, bool local=False):
+            """
+            Returns the GHK current of triangle element with index idx, in amps.
+                        
+            Syntax::
+                        
+                getTriGHKI(idx, ghk)
+                        
+            Arguments:
+            GO idx
+            string ghk
+            bool local
+                        
+            Return:
+            float
+
+            """
+            return self.ptrx().getTriGHKI(idx, to_std_string(ghk), local)
+
+        def getTetV(self, GO idx, bool local=False):
+            """
+            Returns the potential (in volts) of tetrahdron element with index idx.
+
+            Syntax::
+
+                getTetV(idx)
+
+            Arguments:
+            GO idx
+            bool local
+
+            Return:
+            float
+
+            """
+            return self.ptrx().getTetV(idx, local)
 
     def getSolverName(self):
         """
@@ -2125,98 +2378,6 @@ cdef class _py_DistTetOpSplitP(_py__base):
 
         """
         self.ptrx().setTriSpecCount(idx, to_std_string(spec), n, local)
-
-    def getVertV(self, GO idx, bool local=False):
-        """
-        Returns the potential (in volts) of vertex element with index idx.
-
-        Syntax::
-
-               getVertV(idx)
-
-        Arguments:
-        GO idx
-        bool local
-
-        Return:
-        float
-
-        """
-        return self.ptrx().getVertV(idx, local)
-
-    def getTriV(self, GO idx, bool local=False):
-        """
-        Returns the potential (in volts) of triangle element with index idx.
-
-        Syntax::
-
-               getTetV(idx)
-
-        Arguments:
-        GO idx
-        bool local
-
-        Return:
-        float
-
-        """
-        return self.ptrx().getTriV(idx, local)
-
-    def getTriOhmicI(self, GO idx, str oc, bool local=False):
-        """
-        Returns the ohmic current of triangle element with index idx, in amps.
-
-        Syntax::
-
-               getTriOhmicI(idx, oc)
-
-        Arguments:
-        GO idx
-        string oc
-        bool local
-
-        Return:
-        float
-
-        """
-        return self.ptrx().getTriOhmicI(idx, to_std_string(oc), local)
-
-    def getTriGHKI(self, GO idx, str ghk, bool local=False):
-        """
-        Returns the GHK current of triangle element with index idx, in amps.
-                     
-        Syntax::
-        			 
-            getTriGHKI(idx, ghk)
-        			 
-        Arguments:
-        GO idx
-        string ghk
-        bool local
-                     
-        Return:
-        float
-
-        """
-        return self.ptrx().getTriGHKI(idx, to_std_string(ghk), local)
-
-    def getTetV(self, GO idx, bool local=False):
-        """
-        Returns the potential (in volts) of tetrahdron element with index idx.
-
-        Syntax::
-
-               getTetV(idx)
-
-        Arguments:
-        GO idx
-        bool local
-
-        Return:
-        float
-
-        """
-        return self.ptrx().getTetV(idx, local)
 
     def setPatchSReacK(self, str patch, str reac, double kf):
         """
@@ -2482,97 +2643,98 @@ cdef class _py_DistTetOpSplitP(_py__base):
         self.ptrx().setBatchTriSpecCountsNP(&indices[0], indices.shape[0], to_std_string(spec), &counts[0],
                 counts.shape[0], local)
 
-    def getBatchVertVsNP(self, GO[:] indices, double[:] voltages, bool local=False):
-        """
-        Get the potential in a list of vertices.
+    if USE_PETSC:
+        def getBatchVertVsNP(self, GO[:] indices, double[:] voltages, bool local=False):
+            """
+            Get the potential in a list of vertices.
 
-        Syntax::
-            getBatchVertVsNP(indices, voltages)
+            Syntax::
+                getBatchVertVsNP(indices, voltages)
 
-        Arguments:
-        numpy.array<GO> indices
-        numpy.array<double, length = len(indices)> voltages
-        bool local
+            Arguments:
+            numpy.array<GO> indices
+            numpy.array<double, length = len(indices)> voltages
+            bool local
 
-        Return:
-            None
+            Return:
+                None
 
-        """
-        self.ptrx().getBatchVertVsNP(&indices[0], indices.shape[0], &voltages[0], voltages.shape[0], local)
+            """
+            self.ptrx().getBatchVertVsNP(&indices[0], indices.shape[0], &voltages[0], voltages.shape[0], local)
 
-    def getBatchTriVsNP(self, GO[:] indices, double[:] voltages, bool local=False):
-        """
-        Get the potential in a list of triangles.
+        def getBatchTriVsNP(self, GO[:] indices, double[:] voltages, bool local=False):
+            """
+            Get the potential in a list of triangles.
 
-        Syntax::
-            getBatchTetVsNP(indices, voltages)
+            Syntax::
+                getBatchTetVsNP(indices, voltages)
 
-        Arguments:
-        numpy.array<GO> indices
-        numpy.array<double, length = len(indices)> voltages
-        bool local
+            Arguments:
+            numpy.array<GO> indices
+            numpy.array<double, length = len(indices)> voltages
+            bool local
 
-        Return:
-            None
+            Return:
+                None
 
-        """
-        self.ptrx().getBatchTriVsNP(&indices[0], indices.shape[0], &voltages[0], voltages.shape[0], local)
+            """
+            self.ptrx().getBatchTriVsNP(&indices[0], indices.shape[0], &voltages[0], voltages.shape[0], local)
 
-    def getBatchTetVsNP(self, GO[:] indices, double[:] voltages, bool local=False):
-        """
-        Get the potential in a list of tetrahedra.
+        def getBatchTetVsNP(self, GO[:] indices, double[:] voltages, bool local=False):
+            """
+            Get the potential in a list of tetrahedra.
 
-        Syntax::
-            getBatchTetVsNP(indices, voltages)
+            Syntax::
+                getBatchTetVsNP(indices, voltages)
 
-        Arguments:
-        numpy.array<GO> indices
-        numpy.array<double, length = len(indices)> voltages
-        bool local
+            Arguments:
+            numpy.array<GO> indices
+            numpy.array<double, length = len(indices)> voltages
+            bool local
 
-        Return:
-            None
+            Return:
+                None
 
-        """
-        self.ptrx().getBatchTetVsNP(&indices[0], indices.shape[0], &voltages[0], voltages.shape[0], local)
+            """
+            self.ptrx().getBatchTetVsNP(&indices[0], indices.shape[0], &voltages[0], voltages.shape[0], local)
 
-    def getBatchTriOhmicIsNP(self, GO[:] indices, str oc, double[:] currents, bool local=False):
-        """
-        Get the Ohmic currents in a list of triangles.
+        def getBatchTriOhmicIsNP(self, GO[:] indices, str oc, double[:] currents, bool local=False):
+            """
+            Get the Ohmic currents in a list of triangles.
 
-        Syntax::
-            getBatchTriOhmicIsNP(indices, oc, currents)
+            Syntax::
+                getBatchTriOhmicIsNP(indices, oc, currents)
 
-        Arguments:
-        numpy.array<GO> indices
-        string oc
-        numpy.array<double, length = len(indices)> currents
-        bool local
+            Arguments:
+            numpy.array<GO> indices
+            string oc
+            numpy.array<double, length = len(indices)> currents
+            bool local
 
-        Return:
-            None
+            Return:
+                None
 
-        """
-        self.ptrx().getBatchTriOhmicIsNP(&indices[0], indices.shape[0], to_std_string(oc), &currents[0], currents.shape[0], local)
+            """
+            self.ptrx().getBatchTriOhmicIsNP(&indices[0], indices.shape[0], to_std_string(oc), &currents[0], currents.shape[0], local)
 
-    def getBatchTriGHKIsNP(self, GO[:] indices, str ghk, double[:] currents, bool local=False):
-        """
-        Get the GHK currents in a list of triangles.
+        def getBatchTriGHKIsNP(self, GO[:] indices, str ghk, double[:] currents, bool local=False):
+            """
+            Get the GHK currents in a list of triangles.
 
-        Syntax::
-            getBatchTriGHKIsNP(indices, ghk, currents)
+            Syntax::
+                getBatchTriGHKIsNP(indices, ghk, currents)
 
-        Arguments:
-        numpy.array<GO> indices
-        string ghk
-        numpy.array<double, length = len(indices)> currents
-        bool local
+            Arguments:
+            numpy.array<GO> indices
+            string ghk
+            numpy.array<double, length = len(indices)> currents
+            bool local
 
-        Return:
-            None
+            Return:
+                None
 
-        """
-        self.ptrx().getBatchTriGHKIsNP(&indices[0], indices.shape[0], to_std_string(ghk), &currents[0], currents.shape[0], local)
+            """
+            self.ptrx().getBatchTriGHKIsNP(&indices[0], indices.shape[0], to_std_string(ghk), &currents[0], currents.shape[0], local)
 
     def setDiffBoundarySpecDiffusionActive(self, str diffb, str spec, bool act):
         """
@@ -2672,7 +2834,8 @@ cdef class _py_DistTetOpSplitP(_py__base):
         """
         return self.ptrx().getTemp()
 
-    IF USE_PETSC:
+    if USE_PETSC:
+
         def setEfieldDT(self, double efdt):
             """
             Set the stepsize for membrane potential solver (default 1us).
@@ -2732,23 +2895,23 @@ cdef class _py_DistTetOpSplitP(_py__base):
             """
             self.ptrx().setPetscOptions(to_std_string(options))
 
-    def setMembIClamp(self, str memb, float current):
-        """
-        Set a current clamp on a membrane
+        def setMembIClamp(self, str memb, float current):
+            """
+            Set a current clamp on a membrane
 
-        Syntax::
+            Syntax::
 
-            setMembIClamp(memb, current)
+                setMembIClamp(memb, current)
 
-        Arguments:
-        str memb
-        float current
+            Arguments:
+            str memb
+            float current
 
-        Return:
-        None
+            Return:
+            None
 
-        """
-        self.ptrx().setMembIClamp(to_std_string(memb), current)
+            """
+            self.ptrx().setMembIClamp(to_std_string(memb), current)
 
     def dumpDepGraphToFile(self, str path):
         """

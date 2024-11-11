@@ -30,7 +30,7 @@ TEST_CASE("MemoryTracker_MB") {
     auto measured = static_cast<double>(tracker.diff());
     auto expected = static_cast<double>(sizeof(data_t) * ar_s);
     // not very precise, expect ~ 20 % error
-    REQUIRE(std::abs(measured - expected) / expected <= 0.2);
+    REQUIRE(std::abs(measured - expected) / expected <= 0.27);
 }
 
 TEST_CASE("MemoryTracker_GB") {

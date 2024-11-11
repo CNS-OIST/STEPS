@@ -113,7 +113,7 @@ class MissingSolverMethodsTestCase(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(MissingSolverMethodsTestCase, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(MissingSolverMethodsTestCase))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

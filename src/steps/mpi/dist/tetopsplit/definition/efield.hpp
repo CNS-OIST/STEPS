@@ -42,6 +42,11 @@ struct OhmicCurrent {
 
     OhmicCurrent(const OhmicCurrent&) = delete;
 
+    osh::Real getReversalPotential(mesh::triangle_id_t triangle) const;
+    void setReversalPotential(mesh::triangle_id_t triangle, osh::Real value);
+    void reset();
+    friend std::ostream& operator<<(std::ostream& os, OhmicCurrent const& m);
+
 #ifdef USE_PETSC
     /** Boundary condition to get the ohmic current flowing through a triangle an split among the
      * vertexes
@@ -79,11 +84,6 @@ struct OhmicCurrent {
                                     const MolState& mol_state,
                                     const DistMesh& mesh,
                                     osh::Real sim_time) const;
-
-    osh::Real getReversalPotential(mesh::triangle_id_t triangle) const;
-    void setReversalPotential(mesh::triangle_id_t triangle, osh::Real value);
-    void reset();
-    friend std::ostream& operator<<(std::ostream& os, OhmicCurrent const& m);
 #else
     static constexpr auto PETSC_ERROR_MSG =
         "STEPS was compiled without PETSc, methods related to membrane potential computations are "
@@ -99,15 +99,6 @@ struct OhmicCurrent {
                                  const MolState& /*mol_state*/,
                                  const DistMesh& /*mesh*/,
                                  osh::Real /*sim_time*/) const {
-        ArgErrLog(PETSC_ERROR_MSG);
-    }
-    osh::Real getReversalPotential(mesh::triangle_id_t /*triangle*/) const {
-        ArgErrLog(PETSC_ERROR_MSG);
-    }
-    void setReversalPotential(mesh::triangle_id_t /*triangle*/, osh::Real /*value*/) {
-        ArgErrLog(PETSC_ERROR_MSG);
-    }
-    void reset() {
         ArgErrLog(PETSC_ERROR_MSG);
     }
 #endif  // USE_PETSC

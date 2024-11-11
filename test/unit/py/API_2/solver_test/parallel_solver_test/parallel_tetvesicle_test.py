@@ -92,7 +92,7 @@ class ParallelTetVesicleTestCase(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(ParallelTetVesicleTestCase, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(ParallelTetVesicleTestCase))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

@@ -90,11 +90,26 @@ class IntersectTests(unittest.TestCase):
             intersect_distMesh_b = self.distMesh.intersect(pts_both_out)
             self.check_crossing_tets(intersect_distMesh_b, intersect_distMesh)
 
+    def testIntersect_independentSegments(self):
+        """ TODO """
+        with self.distMesh.asLocal():
+            eps = 1e-3
+
+            # Test 1 : a line with 1 segment -> from one corner of the cube to the other
+            # The eps is needed because the points of the segments are checked in which tetrahedron
+            # they belong to, and for this reason we want to avoid having them on the corners/faces.
+            pts = np.array([[0.1e-6, 0.1e-6, 0.1e-6],[0.9e-6, 0.9e-6, 0.9e-6]], dtype=float, order='C')
+
+            # For every segment we pass, we get a vector/list of pairs of (tet, intersection fraction)
+            intersect_distMesh = self.distMesh.intersectIndependentSegments(pts)
+
     def check_intersect(self, intersect_distMesh, intersect_tetMesh, segments):
         self.assertEqual(len(intersect_distMesh), segments)
         self.assertEqual(len(intersect_distMesh), len(intersect_tetMesh))
-        dist_set = set(frozenset((tet.idx, rat) for tet, rat in seg) for seg in intersect_distMesh)
-        tet_set = set(frozenset((tet.idx, rat) for tet, rat in seg) for seg in intersect_tetMesh)
+
+        dist_set = [sorted([(tet.idx, round(rat, 3)) for tet, rat in seg]) for seg in intersect_distMesh]
+        tet_set = [sorted([(tet.idx, round(rat, 3)) for tet, rat in seg]) for seg in intersect_tetMesh]
+
         self.assertEqual(dist_set, tet_set)
         not_empty = 0
         for segment in intersect_distMesh:
@@ -110,14 +125,14 @@ class IntersectTests(unittest.TestCase):
             "No pairs of (tet, fract) returned, even if the line is inside the mesh.")
     
     def check_crossing_tets(self, intersect1, intersect2):
-        tets1 = [tet.idx for seg in intersect1 for tet,_ in seg]
-        tets2 = [tet.idx for seg in intersect2 for tet,_ in seg]
+        tets1 = sorted([tet.idx for seg in intersect1 for tet,_ in seg])
+        tets2 = sorted([tet.idx for seg in intersect2 for tet,_ in seg])
         self.assertEqual(tets1, tets2)
 
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(IntersectTests, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(IntersectTests))
     return unittest.TestSuite(all_tests)
 
 

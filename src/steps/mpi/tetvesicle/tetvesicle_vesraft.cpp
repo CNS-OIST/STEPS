@@ -939,20 +939,20 @@ void TetVesicleVesRaft::_addTet(tetrahedron_global_id tetidx,
     const auto tetverts = _mesh()->getTet(tetidx);
 
     std::vector<double> vert0 = _mesh()->getVertex(vertex_id_t(tetverts[0]));
-    vector_t vertex0(vert0[0], vert0[1], vert0[2]);
+    overlap::Vector vertex0(vert0[0], vert0[1], vert0[2]);
 
     std::vector<double> vert1 = _mesh()->getVertex(vertex_id_t(tetverts[1]));
-    vector_t vertex1(vert1[0], vert1[1], vert1[2]);
+    overlap::Vector vertex1(vert1[0], vert1[1], vert1[2]);
 
     std::vector<double> vert2 = _mesh()->getVertex(vertex_id_t(tetverts[2]));
-    vector_t vertex2(vert2[0], vert2[1], vert2[2]);
+    overlap::Vector vertex2(vert2[0], vert2[1], vert2[2]);
 
     std::vector<double> vert3 = _mesh()->getVertex(vertex_id_t(tetverts[3]));
-    vector_t vertex3(vert3[0], vert3[1], vert3[2]);
+    overlap::Vector vertex3(vert3[0], vert3[1], vert3[2]);
 
     // Buggy if I replace the following line with the stuff commented out after
     // it. Problem with tet_anticlockwise??
-    auto* tex = new Tetrahedron(vertex0, vertex1, vertex2, vertex3);
+    auto* tex = new overlap::Tetrahedron(vertex0, vertex1, vertex2, vertex3);
     /*
     math::point3d v0 = math::point3d(vert0[0], vert0[1], vert0[2]);
     math::point3d v1 = math::point3d(vert1[0], vert1[1], vert1[2]);

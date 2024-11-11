@@ -66,7 +66,7 @@ class GmshImportTest(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(GmshImportTest, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(GmshImportTest))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

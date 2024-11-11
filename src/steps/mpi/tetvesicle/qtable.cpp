@@ -82,8 +82,10 @@ void Qtable::setup() noexcept {
     const unsigned int nvals = 10001;
     double x[nvals];
     double y_cdf[nvals];
+    x[0] = 0.0;
+    y_cdf[0] = 0.0;
 
-    for (unsigned int i = 0; i < nvals; ++i) {
+    for (unsigned int i = 1; i < nvals; ++i) {
         double xval = i * (math::PI / (nvals - 1));
         x[i] = xval;
 
