@@ -1,6 +1,8 @@
 #pragma once
 
 #include "util/error.hpp"
+#include <Omega_h_defines.hpp>
+#include <functional>
 #include <map>
 #include <optional>
 #include <utility>

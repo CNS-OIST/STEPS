@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "kproc/kproc_id.hpp"
 #include "util/vocabulary.hpp"
 
