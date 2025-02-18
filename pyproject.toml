@@ -4,7 +4,10 @@ requires = [
     "build",
     "cmeel-boost>=1.80",
     "cmeel-eigen>=3",
-    "cmeel-metis",
+  # cmeel-metis is pinned to 5.1.0 because the next version (5.2.1) leads to linking problems
+  # (libmetis.so: undefined symbol: gk_jbufs), see https://github.com/KarypisLab/METIS/issues/83
+  # It can be unpinned when the issue is fixed.
+    "cmeel-metis==5.1.0",
     "cython>=0.29",
     "gmsh>=4.10",
     "matplotlib",
@@ -75,7 +78,7 @@ classifiers=[
 bundle = [
     "cmeel-boost>=1.80",
     "cmeel-eigen>=3",
-    "cmeel-metis",
+    "cmeel-metis==5.1.0", # Can be unpinned when issues with cmeel-metis are fixed
     "gmsh>=4.10",
     "petsc",
 ]
