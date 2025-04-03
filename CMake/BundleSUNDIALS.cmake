@@ -15,8 +15,8 @@ ExternalProject_Add(
     "${CMAKE_BINARY_DIR}/lib/steps/libsundials_ida${CMAKE_SHARED_LIBRARY_SUFFIX}"
     "${CMAKE_BINARY_DIR}/lib/steps/libsundials_kinsol${CMAKE_SHARED_LIBRARY_SUFFIX}"
   DOWNLOAD_NO_PROGRESS TRUE
-  URL "https://github.com/LLNL/sundials/releases/download/v3.2.1/sundials-3.2.1.tar.gz"
-  URL_HASH SHA256=47d94d977ab2382cdcdd02f72a25ebd4ba8ca2634bbb2f191fe1636e71c86808
+  URL "https://github.com/LLNL/sundials/releases/download/v6.0.0/sundials-6.0.0.tar.gz"
+  URL_HASH SHA256=c7178e54df20a9363ae3e5ac5b3ee9db756a4ddd4b8fff045127e93b73b151f4
   TMP_DIR "${tpdir}/SUNDIALS-tmp"
   STAMP_DIR "${tpdir}/SUNDIALS-stamp"
   DOWNLOAD_DIR "${tpdir}/SUNDIALS-src"
@@ -40,7 +40,7 @@ foreach(libname cvode ida kinsol nvecserial)
       COMMAND
         ${CMAKE_COMMAND} -E copy
         "${tpdir}/SUNDIALS-install/lib/libsundials_${libname}${CMAKE_SHARED_LIBRARY_SUFFIX}"
-        "${tpdir}/SUNDIALS-install/lib/libsundials_${libname}.3${CMAKE_SHARED_LIBRARY_SUFFIX}"
+        "${tpdir}/SUNDIALS-install/lib/libsundials_${libname}.6${CMAKE_SHARED_LIBRARY_SUFFIX}"
         "${CMAKE_BINARY_DIR}/lib/steps/")
   else()
     add_custom_command(
@@ -50,7 +50,7 @@ foreach(libname cvode ida kinsol nvecserial)
       COMMAND
         ${CMAKE_COMMAND} -E copy
         "${tpdir}/SUNDIALS-install/lib/libsundials_${libname}${CMAKE_SHARED_LIBRARY_SUFFIX}"
-        "${tpdir}/SUNDIALS-install/lib/libsundials_${libname}${CMAKE_SHARED_LIBRARY_SUFFIX}.3"
+        "${tpdir}/SUNDIALS-install/lib/libsundials_${libname}${CMAKE_SHARED_LIBRARY_SUFFIX}.6"
         "${CMAKE_BINARY_DIR}/lib/steps/")
   endif()
 endforeach()
@@ -69,8 +69,8 @@ add_library_target(
 add_dependencies(SUNDIALS::SUNDIALS SUNDIALS-install)
 
 if(CMAKE_VERSION VERSION_LESS 3.12.0)
-  add_definitions(-DSTEPS_SUNDIALS_VERSION_MAJOR=3)
+  add_definitions(-DSTEPS_SUNDIALS_VERSION_MAJOR=6)
 else()
-  add_compile_definitions(STEPS_SUNDIALS_VERSION_MAJOR=3)
+  add_compile_definitions(STEPS_SUNDIALS_VERSION_MAJOR=6)
 endif()
-set(STEPS_SUNDIALS_VERSION_MAJOR 3)
+set(STEPS_SUNDIALS_VERSION_MAJOR 6)
