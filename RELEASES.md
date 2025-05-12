@@ -1,5 +1,12 @@
 Release Notes
 
+Version 5.0.4 (2025-05)
+==========================
+
+Dependencies
+------------
+1. Bump bundled SUNDIALS to 6.0.0 for compatibility with CMake 4.0
+
 Version 5.0.3 (2024-09)
 ==========================
 
