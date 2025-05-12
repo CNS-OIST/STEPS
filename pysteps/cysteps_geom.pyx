@@ -3386,9 +3386,6 @@ cdef class _py_SDiffBoundary(_py__base):
 
         """
 
-        if not isinstance(id, bytes):
-            id = id.encode()
-
         self.ptr().setID(to_std_string(id))
 
     def getContainer(self, ):
