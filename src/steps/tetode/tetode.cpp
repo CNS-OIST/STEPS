@@ -29,7 +29,7 @@
 #include <cvode/cvode.h>            /* prototypes for CVODE fcts., consts. */
 #include <nvector/nvector_serial.h> /* serial N_Vector types, fcts., macros */
 #include <sundials/sundials_nvector.h>
-#include <sundials/sundials_types.h> /* definition of type realtype */
+#include <sundials/sundials_types.h> /* definition of type realtype (<6) or sunrealtype (>=6) */
 
 #if STEPS_SUNDIALS_VERSION_MAJOR >= 4
 #include <sunnonlinsol/sunnonlinsol_fixedpoint.h>
@@ -60,6 +60,13 @@
 #define Ith(v, i)     NV_Ith_S(v, i)
 #define IJth(A, i, j) DENSE_ELEM(A, i, j)  // IJth numbers rows,cols 1..NEQ
 
+#if STEPS_SUNDIALS_VERSION_MAJOR < 6
+#define REALTYPE realtype
+#endif
+#if STEPS_SUNDIALS_VERSION_MAJOR >= 6
+#define REALTYPE sunrealtype
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 
 // A vector all the reaction information, hopefully ingeniously
@@ -72,7 +79,7 @@ static std::vector<std::vector<steps::tetode::structA>> pSpec_matrixsub;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static int f_cvode(realtype /*t*/, N_Vector y, N_Vector ydot, void* /*user_data*/) {
+static int f_cvode(REALTYPE /*t*/, N_Vector y, N_Vector ydot, void* /*user_data*/) {
     uint i = 0;
     // for (uint i = 0; i < tetode->pSpecs_tot; ++i)
     for (auto const& sp: pSpec_matrixsub) {
@@ -111,7 +118,7 @@ struct CVodeState {
     // max CVode steps
     uint Nmax_cvode;
     // relative tolerance
-    realtype reltol_cvode;
+    REALTYPE reltol_cvode;
     // Absolute tolerance vector
     N_Vector abstol_cvode;
     // Vector of values, for us species counts
@@ -133,9 +140,9 @@ struct CVodeState {
     void setTolerances(double atol, double rtol);
     void setMaxNumSteps(uint maxn);
     [[nodiscard]] int initialise() const;
-    void reinit(realtype starttime) const;
+    void reinit(REALTYPE starttime) const;
 
-    [[nodiscard]] int run(realtype endtime) const;
+    [[nodiscard]] int run(REALTYPE endtime) const;
 
     void checkpoint(std::fstream& /*cp_file*/);
     void restore(std::fstream& /*cp_file*/);
@@ -165,7 +172,7 @@ void check_flag(void* flagvalue, const char* funcname, int opt) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-CVodeState::CVodeState(uint N_, uint maxn, realtype atol, realtype rtol) {
+CVodeState::CVodeState(uint N_, uint maxn, REALTYPE atol, REALTYPE rtol) {
     N = N_;
     Nmax_cvode = maxn;
 
@@ -319,13 +326,13 @@ int CVodeState::initialise() const {
     return flag;
 }
 
-void CVodeState::reinit(realtype starttime) const {
+void CVodeState::reinit(REALTYPE starttime) const {
     int flag = CVodeReInit(cvode_mem_cvode, starttime, y_cvode);
     check_flag(&flag, "CVodeInit", 1);
 }
 
-int CVodeState::run(realtype endtime) const {
-    realtype t;
+int CVodeState::run(REALTYPE endtime) const {
+    REALTYPE t;
     return CVode(cvode_mem_cvode, endtime, y_cvode, &t, CV_NORMAL);
 }
 

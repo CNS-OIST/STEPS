@@ -10,7 +10,7 @@ project(STEPS LANGUAGES CXX)
 
 set(VERSION_MAJOR 5)
 set(VERSION_MINOR 0)
-set(VERSION_PATCH 3)
+set(VERSION_PATCH 4)
 set(STEPS_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
 # hpc coding conventions
@@ -215,13 +215,7 @@ if(USE_BUNDLE_SUNDIALS)
   include(BundleSUNDIALS)
 else()
   set(LOAD_CVODE ON)
-  find_package(SUNDIALS 2.6...6.9.9 REQUIRED)
-  if(CMAKE_VERSION VERSION_LESS 3.19.0)
-    # For older versions of cmake we need to check upper limit manually
-    if(SUNDIALS_VERSION VERSION_GREATER_EQUAL 7.0.0)
-      message(SEND_ERROR "SUNDIALS is supported up to version 6.x but found ${SUNDIALS_VERSION}")
-    endif()
-  endif()
+  find_package(SUNDIALS 2.6 REQUIRED)
   include(ImportModernLib)
   add_library_target(
     NAME SUNDIALS
