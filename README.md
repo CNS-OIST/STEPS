@@ -68,7 +68,7 @@ If STEPS is installed successfully, you should be able to see similar informatio
 
 ```
 STochastic Engine for Pathway Simulation
-Version:  5.0.3
+Version:  5.0.4
 License:  GPL3.0
 Website:  steps.sourceforge.net
 CXX Binding: Cython

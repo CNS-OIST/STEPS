@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "util/vocabulary.hpp"
 
 #include <Omega_h_array.hpp>

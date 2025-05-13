@@ -88,7 +88,7 @@ DistComp::DistComp(const mesh::compartment_name& compartment,
 std::vector<mesh::tetrahedron_global_id_t> DistComp::getAllTetIndices() const {
     std::vector<mesh::tetrahedron_global_id_t> tets_global;
     tets_global.reserve(ownedTetLocalIndices.size());
-    for (const auto& tet: ownedTetLocalIndices) {
+    for (const auto tet: ownedTetLocalIndices) {
         tets_global.push_back(meshRef.getGlobalIndex(tet));
     }
     return meshRef.allGatherEntities(tets_global, MPI_INT64_T);

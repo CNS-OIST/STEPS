@@ -29,6 +29,7 @@
 // Standard library & STL headers.
 #include <chrono>
 #include <cmath>
+#include <functional>
 #include <random>
 
 

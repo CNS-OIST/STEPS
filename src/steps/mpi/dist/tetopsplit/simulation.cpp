@@ -916,7 +916,7 @@ void OmegaHSimulation<SSA, SearchMethod>::setMembPotential(const model::membrane
         if (icomp == nullptr) {
             continue;
         }
-        for (const auto& tet: icomp->getLocalTetIndices(false)) {
+        for (const auto tet: icomp->getLocalTetIndices(false)) {
             const auto verts = osh::gather_verts<4>(mesh.ask_elem_verts(), tet.get());
             for (const auto& vert: verts) {
                 input->potential_on_vertices_w[vert] = value;
