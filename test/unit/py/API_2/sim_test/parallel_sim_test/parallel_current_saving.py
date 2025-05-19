@@ -47,7 +47,7 @@ class TetOpSplitCurrentSaving(TetCurrentSaving):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TetOpSplitCurrentSaving, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TetOpSplitCurrentSaving))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

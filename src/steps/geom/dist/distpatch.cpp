@@ -96,7 +96,7 @@ std::vector<mesh::triangle_global_id_t> DistPatch::getAllTriIndices() const {
 
     std::vector<mesh::triangle_global_id_t> global_indices;
     global_indices.reserve(ownedTriLocalIndices.size());
-    for (auto& ind: ownedTriLocalIndices) {
+    for (const auto ind: ownedTriLocalIndices) {
         global_indices.emplace_back(meshRef.getGlobalIndex(ind));
     }
 

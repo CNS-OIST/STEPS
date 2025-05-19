@@ -1,5 +1,8 @@
 #pragma once
 
+#include "util/error.hpp"
+#include <Omega_h_defines.hpp>
+#include <functional>
 #include <map>
 #include <optional>
 #include <utility>
@@ -41,6 +44,11 @@ struct OhmicCurrent {
 
     OhmicCurrent(const OhmicCurrent&) = delete;
 
+    osh::Real getReversalPotential(mesh::triangle_id_t triangle) const;
+    void setReversalPotential(mesh::triangle_id_t triangle, osh::Real value);
+    void reset();
+    friend std::ostream& operator<<(std::ostream& os, OhmicCurrent const& m);
+
 #ifdef USE_PETSC
     /** Boundary condition to get the ohmic current flowing through a triangle an split among the
      * vertexes
@@ -78,11 +86,24 @@ struct OhmicCurrent {
                                     const MolState& mol_state,
                                     const DistMesh& mesh,
                                     osh::Real sim_time) const;
+#else
+    static constexpr auto PETSC_ERROR_MSG =
+        "STEPS was compiled without PETSc, methods related to membrane potential computations are "
+        "not available";
+    double getTriBConVertex(const mesh::triangle_id_t& /*b_id*/,
+                            const MolState& /*mol_state*/,
+                            double /*Avert*/,
+                            osh::Real /*sim_time*/) const {
+        ArgErrLog(PETSC_ERROR_MSG);
+    }
+    double getTriCurrentOnVertex(osh::Real /*potential_on_vertex*/,
+                                 const mesh::triangle_id_t& /*b_id*/,
+                                 const MolState& /*mol_state*/,
+                                 const DistMesh& /*mesh*/,
+                                 osh::Real /*sim_time*/) const {
+        ArgErrLog(PETSC_ERROR_MSG);
+    }
 #endif  // USE_PETSC
-    osh::Real getReversalPotential(mesh::triangle_id_t triangle) const;
-    void setReversalPotential(mesh::triangle_id_t triangle, osh::Real value);
-    void reset();
-    friend std::ostream& operator<<(std::ostream& os, OhmicCurrent const& m);
 
     const osh::Real conductance;
     const std::optional<container::species_id> channel_state;

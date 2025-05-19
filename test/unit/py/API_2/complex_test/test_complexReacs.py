@@ -1183,14 +1183,14 @@ class SubStateNoOrdReacTestCase(ComplexReacTest5Subunits):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(ComplexCreation, "test"))
-    all_tests.append(unittest.makeSuite(ComplexCreationStatesAsSpecies, "test"))
-    all_tests.append(unittest.makeSuite(CompStateGeneral, "test"))
-    all_tests.append(unittest.makeSuite(CompStateNoOrdering, "test"))
-    all_tests.append(unittest.makeSuite(CompStateStrongOrdering, "test"))
-    all_tests.append(unittest.makeSuite(CompStateRotationalSymmetryOrdering, "test"))
-    all_tests.append(unittest.makeSuite(CompSelNoOrdReacTestCase, "test"))
-    all_tests.append(unittest.makeSuite(SubStateNoOrdReacTestCase, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(ComplexCreation))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(ComplexCreationStatesAsSpecies))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(CompStateGeneral))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(CompStateNoOrdering))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(CompStateStrongOrdering))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(CompStateRotationalSymmetryOrdering))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(CompSelNoOrdReacTestCase))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(SubStateNoOrdReacTestCase))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

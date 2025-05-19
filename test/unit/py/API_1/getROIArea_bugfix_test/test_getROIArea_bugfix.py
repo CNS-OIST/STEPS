@@ -76,7 +76,7 @@ class getROIAreaTestCase(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(getROIAreaTestCase, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(getROIAreaTestCase))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

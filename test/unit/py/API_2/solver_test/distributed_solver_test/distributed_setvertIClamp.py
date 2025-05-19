@@ -104,7 +104,7 @@ class DistTetopsplitSetVertIClamp(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(DistTetopsplitSetVertIClamp, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(DistTetopsplitSetVertIClamp))
     return unittest.TestSuite(all_tests)
 
 

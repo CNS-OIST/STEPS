@@ -207,6 +207,7 @@ std::ostream& operator<<(std::ostream& os, std::tuple<Args...> const& t) {
 /// Pretty print of variant
 template <class T, class... Args>
 std::ostream& operator<<(std::ostream& os, std::variant<T, Args...> const& t) {
+    os << "(variant idx: " << t.index() << ") ";
     std::visit([&os](auto q) { os << q; }, t);
     return os;
 }

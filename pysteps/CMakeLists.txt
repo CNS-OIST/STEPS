@@ -112,12 +112,33 @@ target_link_libraries(cysteps libsteps_static ${libsteps_link_libraries})
 set_target_properties(cysteps PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${localpkgs}/steps" OUTPUT_NAME
                                                                                        ${cymodname})
 
+if(SKBUILD_PROJECT_NAME)
+  # Update RPATH with the dependent shared libraries locations based on the STEPS Python extension
+  # library
+  set(relative_rpaths "../../../" "../cmeel.prefix/lib" "../lib" "../petsc/lib")
+  foreach(relative_rpath ${relative_rpaths})
+    set(linker_rpaths "-Wl,-rpath,\\$ORIGIN/${relative_rpath} ${linker_rpaths}")
+  endforeach()
+
+  set_target_properties(cysteps PROPERTIES BUILD_WITH_INSTALL_RPATH FALSE
+                                           LINK_FLAGS "${linker_rpaths} -Wl,-z,origin")
+
+  # Install compiled lib
+  install(TARGETS cysteps LIBRARY DESTINATION "${Python_INSTALL_PREFIX}/steps/")
+
+  file(TOUCH ${steps_package_timestamp})
+  return()
+endif()
+
 set_directory_properties(
   PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES
              "${CMAKE_CURRENT_SOURCE_DIR}/build;${CMAKE_CURRENT_SOURCE_DIR}/steps.egg-info")
 
 # Python optional packages and extras
 set(STEPS_INCLUDE_PACKAGES "steps" "steps.*")
+if(USE_MPI)
+  list(APPEND py_deps "mpi")
+endif()
 if(STEPS_USE_DIST_MESH)
   list(APPEND py_deps "dist")
 endif()
@@ -159,18 +180,24 @@ if(STEPS_INSTALL_PYTHON_DEPS)
   )# random file bridging
   # target->command
 
-  if(PIPTOOLS_VERSION_STRING VERSION_LESS 6.8.0)
+  # Generate requirements file from pyproject.toml
+  if(Python_VERSION VERSION_LESS 3.11.0)
+    # Also install toml if tomllib is not available.
     add_custom_command(
       OUTPUT ${steps_requirements_file}
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMAND ${Python_EXECUTABLE} -m piptools compile --quiet --extra ${py_all_deps} -o
-              ${steps_requirements_file} pyproject.toml)
+      COMMAND ${Python_EXECUTABLE} -m pip install toml
+      COMMAND
+        ${Python_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/generate_requirements.py
+        "${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml" "${steps_requirements_file}" "${py_all_deps}")
+    # TODO: Drop this dependency when we require python >=3.11
   else()
     add_custom_command(
       OUTPUT ${steps_requirements_file}
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMAND ${Python_EXECUTABLE} -m piptools compile --quiet --extra ${py_all_deps} -o
-              ${steps_requirements_file} --resolver=backtracking pyproject.toml)
+      COMMAND
+        ${Python_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/generate_requirements.py
+        "${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml" "${steps_requirements_file}" "${py_all_deps}")
   endif()
 
   install(

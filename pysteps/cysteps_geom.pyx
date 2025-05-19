@@ -1336,7 +1336,8 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         Returns the index of the tetrahedron which encompasses a given point
         p (given in Cartesian coordinates x,y,z). Returns -1 if p is a position
-        outside the mesh.
+        outside the mesh. It uses either findTetByPointLinear or findTetByPointWalk
+        depending on the mesh size.
 
         Syntax::
 
@@ -1350,6 +1351,46 @@ cdef class _py_Tetmesh(_py_Geom):
 
         """
         return self.ptrx().findTetByPoint(p).get()
+
+    def findTetByPointLinear(self, std.vector[double] p):
+        """
+        Returns the index of the tetrahedron which encompasses a given point
+        p (given in Cartesian coordinates x,y,z). Returns -1 if p is a position
+        outside the mesh. Linear search. Only suitable for small meshes.
+
+        Syntax::
+
+            findTetByPointLinear(p)
+
+        Arguments:
+        list<double, length = 3> p
+
+        Return:
+        index_t
+
+        """
+        return self.ptrx().findTetByPointLinear(p).get()
+
+    def findTetByPointWalk(self, std.vector[double] p):
+        """
+        Returns the index of the tetrahedron which encompasses a given point
+        p (given in Cartesian coordinates x,y,z). Returns -1 if p is a position
+        outside the mesh. A* search. After a seeding round of random points 
+        the algorithm walks towards the closest tetrahedron. It works for disconnected
+        meshes too. Usually faster than a linear search for normal-sized meshes.
+
+        Syntax::
+
+            findTetByPointWalk(p)
+
+        Arguments:
+        list<double, length = 3> p
+
+        Return:
+        index_t
+
+        """
+        return self.ptrx().findTetByPointWalk(p).get()
 
     def isPointInTet(self, std.vector[double] p, index_t tidx):
         """
@@ -3344,9 +3385,6 @@ cdef class _py_SDiffBoundary(_py__base):
         None
 
         """
-
-        if not isinstance(id, bytes):
-            id = id.encode()
 
         self.ptr().setID(to_std_string(id))
 

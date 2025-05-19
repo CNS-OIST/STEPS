@@ -66,8 +66,8 @@ class TwoTetsTestCase(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(LibraryTestCase, "test"))
-    all_tests.append(unittest.makeSuite(TwoTetsTestCase, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(LibraryTestCase))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TwoTetsTestCase))
     return unittest.TestSuite(all_tests)
 
 

@@ -29,24 +29,17 @@
 // Standard library & STL headers.
 #include <chrono>
 #include <cmath>
+#include <functional>
 #include <random>
 
-// logging
 
-// GSL
-#include <gsl/gsl_integration.h>
+// BOOST
+#include <boost/math/quadrature/gauss_kronrod.hpp>
 
 // STEPS headers.
 #include "math/constants.hpp"  //PI
 
 namespace steps::mpi::tetvesicle {
-
-// For some reason this would only compile with the function definition outside
-// of the class
-double Q(double theta, void* params) {
-    double tau = *(double*) params;
-    return (1.0 / tau) * sqrt(theta * sin(theta)) * exp(-(pow(theta, 2)) / (2 * tau));
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -75,29 +68,30 @@ void Qtable::restore(std::fstream& /*cp_file*/) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Qtable::setup() {
-    gsl_integration_workspace* w = gsl_integration_workspace_alloc(1000);
-
-    // Create the GSL integration function
-    gsl_function F;
-    F.function = &Q;
-    F.params = &pTau;
-
+void Qtable::setup() noexcept {
     // Do the integration to pi to get the normalisation constant
     double result, error;
-    gsl_integration_qags(&F, 0, math::PI, 0, 1e-7, 1000, w, &result, &error);
+    std::function<double(double)> f = std::bind(&Qtable::Q, this, std::placeholders::_1);
+
+    result = boost::math::quadrature::gauss_kronrod<double, 15>::integrate(
+        f, 0, math::PI, 5, 1e-7, &error);
+
     double norm_constant = result;
+
 
     // Use a large table to set up the cdf table
     const unsigned int nvals = 10001;
-    double x[nvals];      // to avoid compile warnings with double x[nvals]
-    double y_cdf[nvals];  // to avoid compile warnings with double y_cdf[nvals]
+    double x[nvals];
+    double y_cdf[nvals];
+    x[0] = 0.0;
+    y_cdf[0] = 0.0;
 
-    for (unsigned int i = 0; i < nvals; ++i) {
+    for (unsigned int i = 1; i < nvals; ++i) {
         double xval = i * (math::PI / (nvals - 1));
         x[i] = xval;
 
-        gsl_integration_qags(&F, 0, xval, 0, 1e-7, 1000, w, &result, &error);
+        result = boost::math::quadrature::gauss_kronrod<double, 15>::integrate(
+            f, 0, xval, 5, 1e-7, &error);
 
         y_cdf[i] = result / norm_constant;
     }
@@ -118,15 +112,13 @@ void Qtable::setup() {
                                       (y_val - y_cdf[idx]);
 
         pX_interp[i] = xinterp;
-        pQ_values[i] = Q(xinterp, &pTau);
+        pQ_values[i] = Q(xinterp);
     }
-
-    gsl_integration_workspace_free(w);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Qtable::reinit(unsigned int size, double tau) {
+void Qtable::reinit(unsigned int size, double tau) noexcept {
     pTablesize = size;
     pTau = tau;
 
@@ -138,7 +130,7 @@ void Qtable::reinit(unsigned int size, double tau) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double Qtable::getPhi() {
+double Qtable::getPhi() const noexcept {
     constexpr unsigned int maxRetries = 10000;
     constexpr double threshold = 0.1;
 
@@ -155,7 +147,7 @@ double Qtable::getPhi() {
         double maxQ = std::max(pQ_values[idx], pQ_values[idx + 1]);
         while (retries < maxRetries) {
             double y = maxQ * rng->getUnfII();
-            if (y < Q(xval, &pTau)) {
+            if (y < Q(xval)) {
                 break;
             } else {
                 ++retries;
@@ -170,6 +162,13 @@ double Qtable::getPhi() {
     }
 
     return xval;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double Qtable::Q(double theta) const noexcept {
+    return (1.0 / pTau) * std::sqrt(theta * std::sin(theta)) *
+           std::exp(-(std::pow(theta, 2)) / (2 * pTau));
 }
 
 }  // namespace steps::mpi::tetvesicle

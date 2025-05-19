@@ -58,6 +58,7 @@ __all__ = [
     'SQLiteDBHandler',
     'SQLiteGroup',
     'HDF5Handler',
+    'HDF5MultiFileReader',
     'HDF5Group',
     'XDMFHandler',
 ]
@@ -636,6 +637,7 @@ class ResultSelector:
                 labelStrFunc=labelStrFunc,
                 metaDataFunc=lambda vals: vals,
                 strDescr=opStr.format(self.description, other),
+                distribIndFunc=lambda inds: inds,
             )
         elif isinstance(other, ResultSelector):
             self._checkCompatible(other)
@@ -665,9 +667,8 @@ class ResultSelector:
             elif symetric and self._getEvalLen() == 1:
                 return other._binaryOp(self, op, True, opStr)
             elif other._getEvalLen() == self._getEvalLen():
-                n = self._getEvalLen()
-
                 def opFunc(x):
+                    n = len(x) // 2
                     return [op(a, b) for a, b in zip(x[:n], x[n:])]
 
                 def mtdtFunc(vals):
@@ -688,6 +689,7 @@ class ResultSelector:
                     labelStrFunc=labelStrFunc,
                     metaDataFunc=mtdtFunc,
                     strDescr=opStr.format(self.description, other.description),
+                    distribIndFunc=lambda inds: inds[:len(inds)//2],
                 )
             else:
                 raise Exception(
@@ -897,9 +899,10 @@ class ResultSelector:
             lambda x: 1,
             [sel],
             sel.sim,
-            labelArgFunc=lambda _, d: tuple(c.description for c in d),
+            labelArgFunc=lambda _, d: tuple(_LabelSelector(c, None) for c in d),
             labelStrFunc=lambda *args: f"SUM({' + '.join(args)})",
             strDescr=f'SUM({sel.description})',
+            distribIndFunc=lambda lst: [0],
         )
 
     @classmethod
@@ -922,9 +925,10 @@ class ResultSelector:
             lambda x: 1,
             [sel],
             sel.sim,
-            labelArgFunc=lambda _, d: tuple(c.description for c in d),
+            labelArgFunc=lambda _, d: tuple(_LabelSelector(c, None) for c in d),
             labelStrFunc=lambda *args: f"MIN({', '.join(args)})",
             strDescr=f'MIN({sel.description})',
+            distribIndFunc=lambda lst: [0],
         )
 
     @classmethod
@@ -947,9 +951,10 @@ class ResultSelector:
             lambda x: 1,
             [sel],
             sel.sim,
-            labelArgFunc=lambda _, d: tuple(c.description for c in d),
+            labelArgFunc=lambda _, d: tuple(_LabelSelector(c, None) for c in d),
             labelStrFunc=lambda *args: f"MAX({', '.join(args)})",
             strDescr=f'MAX({sel.description})',
+            distribIndFunc=lambda lst: [0],
         )
 
     @classmethod
@@ -1184,7 +1189,9 @@ class _ResultPath(ResultSelector):
             self._labels = [lbl for lbl, msk in zip(self._labels, self._simPathMask) if msk]
             mtdt = {key:[v for v, msk in zip(lst, self._simPathMask) if msk] for key, lst in mtdt.items()}
 
-        # Set the metadata
+        # Set the metadata, update previously available keys in case the length changed
+        for key in self._metaData:
+            mtdt.setdefault(key, [None] * self._len)
         for key, lst in mtdt.items():
             self.metaData.__setitem__(key, lst, _internal=True)
         # Add property metadata
@@ -1231,12 +1238,12 @@ class _ResultPath(ResultSelector):
 class _ResultList(ResultSelector):
     """Represents the concatenation of several ResultSelectors."""
 
-    def __init__(self, lst, *args, **kwargs):
+    def __init__(self, lst, *args, finalize=True, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.children = lst
-
-        self._finalize()
+        if finalize:
+            self._finalize()
 
         # Do not initialize metadata directly
         self._metaData = None
@@ -1268,20 +1275,25 @@ class _ResultList(ResultSelector):
         for c in self.children:
             c._checkComplete()
 
-    def _finalize(self):
-        """Compute labels and evel length"""
-        self._evalLen = 0
-        for c in self.children:
-            self._evalLen += c._getEvalLen()
+    def _computeEvalLength(self):
+        """Compute and set evaluation lenght"""
+        return sum(c._getEvalLen() for c in self.children)
 
+    def _computeLabels(self):
+        """Compute and set labels"""
         # concatenate labels
-        self._labels = []
+        labels = []
         for c in self.children:
-            self._labels += c.labels
+            labels += c.labels
+        return labels
 
+    def _finalize(self):
+        """Compute and set labels and eval length"""
+        self._evalLen = self._computeEvalLength()
+        self._labels = self._computeLabels()
         self.description = self._strDescr()
 
-    def _distribute(self):
+    def _distribute(self, updateMtdt=True):
         """Distribute the path across MPI ranks if it involves mesh elements of a distributed meshes."""
         if self._distrInds is not None:
             return self, False
@@ -1295,20 +1307,20 @@ class _ResultList(ResultSelector):
             totLen = c._getEvalLen()
             nc, cChanged = c._distribute()
 
-            if nc is not None:
-                newLst.append(nc)
-                distrInds = c._distrInds if c._distrInds is not None else range(c._getEvalLen())
-                self._distrInds += [globalIdx + idx for idx in distrInds]
+            newLst.append(nc)
+            distrInds = nc._distrInds if nc._distrInds is not None else range(nc._getEvalLen())
+            self._distrInds += [globalIdx + idx for idx in distrInds]
 
             changed |= cChanged
             globalIdx += totLen
 
         self.children = newLst
         self._finalize()
-        # Update metaData
-        for key, vals in self.metaData.items():
-            if len(vals) != self._getEvalLen():
-                self._metaData.__setitem__(key, [vals[ind] for ind in self._distrInds], _internal=True)
+
+        if updateMtdt:
+            for key, vals in self.metaData.items():
+                if len(vals) != self._getEvalLen():
+                    self._metaData.__setitem__(key, [vals[ind] for ind in self._distrInds], _internal=True)
 
         return self, changed
 
@@ -1357,22 +1369,39 @@ class _ResultCombiner(_ResultList):
     """
 
     def __init__(self, func, lenFunc, *args, labelArgFunc=None, labelStrFunc=None, metaDataFunc=None,
-            strDescr=None, **kwargs):
+            strDescr=None, distribIndFunc=None, **kwargs):
         self.func = func
-        super().__init__(*args, **kwargs)
-        self._len = lenFunc(super()._getEvalLen())
+        super().__init__(*args, finalize=False, **kwargs)
+        self._lenFunc = lenFunc
         self._labelArgFunc = labelArgFunc if labelArgFunc is not None else lambda i, chld: (f'{chld}[{i}]',)
         self._labelStrFunc = labelStrFunc if labelStrFunc is not None else lambda *args: ''.join(args)
         self._metadataFunc = metaDataFunc if metaDataFunc is not None else nutils.getValueIfAllIdentical
+        self._distribIndFunc = distribIndFunc
 
-        if strDescr is not None:
-            self.description = strDescr
+        self.description = strDescr
+        self._finalize()
 
-        self._labels = []
+    def _computeLabels(self):
+        """Compute labels"""
+        labels = []
         for i in range(self._len):
-            subLabels = self._labelArgFunc(i, self.children)
-            args = [arg.sel.labels[arg.ind] if isinstance(arg, _LabelSelector) else arg for arg in subLabels]
-            self._labels.append(self._labelStrFunc(*args))
+            args = []
+            for arg in self._labelArgFunc(i, self.children):
+                if isinstance(arg, _LabelSelector):
+                    if arg.ind is None:
+                        args.append(arg.sel.description)
+                    else:
+                        args.append(arg.sel.labels[arg.ind])
+                else:
+                    args.append(arg)
+            labels.append(self._labelStrFunc(*args))
+        return labels
+
+    def _finalize(self):
+        """Compute and set labels and eval length"""
+        self._evalLen = super()._computeEvalLength()
+        self._len = self._lenFunc(self._evalLen)
+        self._labels = self._computeLabels()
 
     def _concat(self, other):
         """Concatenate two result selectors into a _ResultList."""
@@ -1380,7 +1409,10 @@ class _ResultCombiner(_ResultList):
 
     def _strDescr(self):
         """Return a default generic description of the ResultSelector."""
-        return f"{self.func}({super()._strDescr()})"
+        if self.description is None:
+            return f"{self.func}({super()._strDescr()})"
+        else:
+            return self.description
 
     def _evaluate(self, solvStateId=None):
         """Return a list of the values to save."""
@@ -1395,17 +1427,28 @@ class _ResultCombiner(_ResultList):
         if self._distrInds is not None:
             return self, False
 
-        self._fullLen = self._getEvalLen()
-        if not nsim.MPI._shouldWrite:
-            self._len = 0
-            self._labels = []
-            self._distrInds = []
-            if self._metaData is not None:
-                self._metaData._clear()
-            return self, True
+        if self._distribIndFunc is not None and 'loc_id' in self.metaData and all(v is not None for v in self.metaData['loc_id']):
+            dist, changed = super()._distribute(updateMtdt=False)
+            if changed:
+                dist._len = self._lenFunc(super()._getEvalLen())
+                # Recompute metaData
+                dist._metaData = None
+                dist.metaData
+                # Compute correct _distrInd
+                dist._distrInds = self._distribIndFunc(dist._distrInds)
+            return dist, changed
         else:
-            self._distrInds = list(range(self._getEvalLen()))
-            return self, False
+            self._fullLen = self._getEvalLen()
+            if not nsim.MPI._shouldWrite:
+                self._len = 0
+                self._labels = []
+                self._distrInds = []
+                if self._metaData is not None:
+                    self._metaData._clear()
+                return self, True
+            else:
+                self._distrInds = list(range(self._getEvalLen()))
+                return self, False
 
     @ResultSelector.metaData.getter
     def metaData(self):
@@ -2038,8 +2081,7 @@ class _HDF5DataHandler(_DBDataHandler):
                         f'Metadata contains values that are not strings or numbers, they cannot '
                         f'be saved to HDF5 format.'
                     )
-                if len(vals) > 0:
-                    mtdtGroup.create_dataset(key, data=vals, **dskwargs)
+                mtdtGroup.create_dataset(key, data=vals, **dskwargs)
         self._loadColumnRemap()
 
         self._initializeCompoundObjects()
@@ -2130,7 +2172,7 @@ class _HDF5DistribDataHandler(_HDF5DataHandler):
         for rnk in self._usedRanks:
             # Open HDF5 files
             if rnk not in self._dbh._distribRankDBHs:
-                if rnk == nsim.MPI.rank:
+                if rnk == nsim.MPI._rank:
                     self._dbh._distribRankDBHs[rnk] = self._dbh
                 else:
                     self._dbh._distribRankDBHs[rnk] = HDF5Handler(
@@ -2199,7 +2241,7 @@ class _HDF5CompoundObjHandler(nutils.Versioned):
         # Data type: (dtype, dataset name)
         _DATA_TYPE.INT: ('i', 'Ints'),
         _DATA_TYPE.FLOAT: ('d', 'Floats'),
-        _DATA_TYPE.STRING: ('b', 'Strings'),
+        _DATA_TYPE.STRING: ('B', 'Strings'),
         _DATA_TYPE.LIST: (_IND_DTYPE, 'Lists'),
     }
 
@@ -2776,7 +2818,7 @@ class _HDF5MetaDataAccessor(nutils.Versioned, nutils.ReadOnlyDictInterface):
                 raise KeyError(f'Cannot access metaData with key: {key}.')
 
             dset = self._handler._group[_HDF5DataHandler._METADATA_GROUP_NAME][key]
-            if isinstance(dset[0], bytes):
+            if dset.size > 0 and isinstance(dset[0], bytes):
                 res = [v.decode('utf-8') for v in dset]
                 # Try to convert strings to numbers, if possible
                 for i, v in enumerate(res):
@@ -2883,6 +2925,7 @@ class _HDF5StaticDataAccessor(nutils.MutableDictInterface, nutils.Versioned):
 
 class DatabaseHandler:
     """Base class for all database handlers."""
+    _DEFAULT_GROUP_NAME = 'RunGroup{:04d}'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -2898,6 +2941,19 @@ class DatabaseHandler:
         """Return a list of file paths managed by this rank"""
         return []
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._close()
+
+    def __del__(self):
+        self._close()
+
+    def _close(self):
+        """Close the file(s) / database connection"""
+        raise NotImplementedError()
+
     def __getitem__(self, key):
         """Access a run group from its unique identifier"""
         raise NotImplementedError()
@@ -2905,6 +2961,10 @@ class DatabaseHandler:
     def __iter__(self):
         """Iterate over run groups in the database"""
         raise NotImplementedError()
+
+    def __len__(self):
+        """Return the number of run groups in the database"""
+        return sum(1 for _ in self)
 
     def _initializeParameters(self):
         """Setup parameters and param2Groups data structures"""
@@ -2915,6 +2975,26 @@ class DatabaseHandler:
                 for name, val in group.parameters.items():
                     self._parameters.setdefault(name, set()).add(val)
                     self._param2Groups.setdefault((name, val), set()).add(group)
+
+    def _getDefaultGroupName(self):
+        """Get a default group name that does not already exist in the database"""
+        uid = None
+        if not nsim.MPI._usingMPI or nsim.MPI._shouldWrite:
+            try:
+                n = len(self)
+                while uid is None:
+                    _uid = self._DEFAULT_GROUP_NAME.format(n)
+                    try:
+                        self[_uid]
+                    except KeyError:
+                        uid = _uid
+                    n += 1
+            except FileNotFoundError:
+                uid = self._DEFAULT_GROUP_NAME.format(0)
+        if nsim.MPI._usingMPI:
+            import mpi4py.MPI
+            uid = mpi4py.MPI.COMM_WORLD.bcast(uid, root=0)
+        return uid
 
     @property
     def parameters(self):
@@ -2940,13 +3020,16 @@ class DatabaseHandler:
         self._initializeParameters()
         res = None
         for keyVal in kwargs.items():
-            try:
+            if keyVal[0] not in self._parameters:
+                raise KeyError(f'Parameter {keyVal[0]} does not exist in the file.')
+            if keyVal in self._param2Groups:
                 if res is None:
                     res = copy.copy(self._param2Groups[keyVal])
                 else:
                     res = res & self._param2Groups[keyVal]
-            except KeyError:
-                raise KeyError(f'Could not find any run group with {keyVal[0]} == {keyVal[1]}')
+            else:
+                res = set()
+                break
         return res if res is not None else set(self)
 
     def get(self, **kwargs):
@@ -3084,15 +3167,6 @@ class SQLiteDBHandler(DatabaseHandler):
         self._commitFreq = commitFreq if commitFreq > 0 else SQLiteDBHandler._DEFAULT_COMMIT_FREQ
 
         self._groupId = None
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._close()
-
-    def __del__(self):
-        self._close()
 
     def _close(self):
         """Commit and close the connection."""
@@ -3520,24 +3594,19 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
         # Local read-only result selectors needed when loading distributed data
         self._distribRS = {} # dbUID -> { rsInd -> rs }
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._close()
-
-    def __del__(self):
-        self._close()
-
     def _close(self):
         """Close the file"""
         if hasattr(self, '_file') and self._file is not None:
             self._file.close()
         for rnk, dbh in self._distribRankDBHs.items():
-            if rnk != nsim.MPI.rank:
+            if rnk != nsim.MPI._rank:
                 dbh._close()
 
     def _checkOpenFile(self, sim=None):
+        # If the file is opened for reading only but is now required for writing, close it
+        if self._file is not None and sim is not None and self._file.mode == 'r':
+            self._close()
+            self._file = None
         if self._file is None:
             import h5py
             if sim is None:
@@ -3548,13 +3617,13 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
                         HDF5Handler._HDF_EXTENSION
                     )
                 if not os.path.isfile(self._path):
-                    raise Exception(
+                    raise FileNotFoundError(
                         f'Cannot load any HDF files with prefix {self._pathPrefix}.'
                     )
                 self._file = h5py.File(self._path, 'r', **self._fileKwArgs)
             else:
                 if sim._isDistributed():
-                    self._path = HDF5Handler._DISTRIBUTED_HDF_SUFFIX.format(self._pathPrefix, nsim.MPI.rank)
+                    self._path = HDF5Handler._DISTRIBUTED_HDF_SUFFIX.format(self._pathPrefix, nsim.MPI._rank)
                 elif nsim.MPI._shouldWrite:
                     self._path = self._pathPrefix
                 else:
@@ -3583,7 +3652,7 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
     def _getRsHDFGroup(self, rs, groupNamePattern=None):
         if groupNamePattern is None:
             groupNamePattern = HDF5Handler._RS_GROUP_NAME
-        if self._shouldWrite and rs._getEvalLen() > 0:
+        if self._shouldWrite:
             rsName = groupNamePattern.format(rs._selectorInd)
             hdf5Group = self._currGroup._group
             if rsName not in hdf5Group:
@@ -3605,14 +3674,13 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
         selectorNames = [
             n for n in self._currGroup._group if n.startswith(HDF5Handler._RS_GROUP_NAME.format(''))
         ]
-        nonEmptySelectors = [rs for rs in selectors if rs._getEvalLen() > 0]
-        if len(selectorNames) != len(nonEmptySelectors):
+        if len(selectorNames) != len(selectors):
             raise Exception(
                 f'The {uid} run group saved in the database is associated with '
                 f'{len(selectorNames)} resultSelectors while the current simulation is '
-                f'associated with {len(nonEmptySelectors)}.'
+                f'associated with {len(selectors)}.'
             )
-        for rsName, simrs in zip(selectorNames, nonEmptySelectors):
+        for rsName, simrs in zip(selectorNames, selectors):
             handler = self._getDataHandler(simrs)
             grouprs = self._currGroup._group[rsName]
             descr = grouprs.attrs[HDF5Handler._RS_DESCRIPTION_ATTR]
@@ -3667,7 +3735,7 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
                 )
             else:
                 raise Exception(
-                    f'The HDF5 file associated with MPI rank {nsim.MPI.rank} contains '
+                    f'The HDF5 file associated with MPI rank {nsim.MPI._rank} contains '
                     f'{len(selectorNames)} distributed column remapping dataset while it should '
                     f'contain {len(rsInd2DistColMap)}.'
                 )
@@ -3700,12 +3768,11 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
         for rs in selectors:
             # Distribute the result selector
             rs, changed = rs._distribute()
-            if rs is not None:
-                # Re-create optimization groups
-                if len(optimGroups[-1]) == 0 or optimGroups[-1][-1][0]._optimGroupInd == rs._optimGroupInd:
-                    optimGroups[-1].append((rs, changed))
-                else:
-                    optimGroups.append([])
+            # Re-create optimization groups
+            if len(optimGroups[-1]) == 0 or optimGroups[-1][-1][0]._optimGroupInd == rs._optimGroupInd:
+                optimGroups[-1].append((rs, changed))
+            else:
+                optimGroups.append([])
 
         distribSelectors = []
         for optGrp in optimGroups:
@@ -3742,7 +3809,7 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
     def _newGroup(self, sim, uid, selectors, **kwargs):
         """Initialize the file and add a new run group."""
         self._shouldWrite = nsim.MPI._shouldWrite or sim._isDistributed()
-        self._nbSavingRanks = nsim.MPI.nhosts if sim._isDistributed() else 1
+        self._nbSavingRanks = nsim.MPI._nhosts if sim._isDistributed() else 1
         if self._shouldWrite:
             self._checkOpenFile(sim)
 
@@ -3869,6 +3936,114 @@ class HDF5Handler(DatabaseHandler, nutils.Versioned):
         self._file.visititems(visit)
         for gr in res:
             yield gr
+
+
+class HDF5MultiFileReader(DatabaseHandler):
+    """An HDF5 reader that aggregates data from several files.
+
+    This class can be used to access data from several HDF5 files as if the data was in a single
+    file. It works like :py:class:`HDF5Handler` but is read-only.
+
+    :param path: Can either be a path to a directory or a list of path prefixes for HDF5 files
+        (see :py:class:`HDF5Handler`). If a list of path prefixes is given, all of these files
+        will be opened. If a path to a directory is given, all HDF5 files in the directory will
+        be opened.
+    :type path: Union[List[str], str]
+    :param recursive: Also search in subdirectories (if ``path`` is a path to a directory).
+    :type recursive: bool
+    """
+    _DISTRIB_FILE_PATTERN = re.compile(HDF5Handler._DISTRIBUTED_HDF_SUFFIX.format('(.+)', '(\d+)') + '\.h5$')
+    _FILE_PATTERN = re.compile(r'(.+)\.h5$')
+    _H5PY_EXCEPTIONS = (OSError, RuntimeError)
+
+    def __init__(self, path, recursive=False, **kwargs):
+        super().__init__(**kwargs)
+        self._readers = []
+        if isinstance(path, list) and all(isinstance(p, str) for p in path):
+            self._readers = self._getReaders(path)
+        elif isinstance(path, str):
+            if os.path.isdir(path):
+                self._processDirectory(path, recursive)
+            else:
+                raise FileNotFoundError(f'{path} is not a path to a directory.')
+        else:
+            raise ValueError(
+                f'Expected a path to a directory or a list of path prefixes, got {path} instead.'
+            )
+        if len(self._readers) == 0:
+            raise FileNotFoundError(f'No valid HDF5 files were found in {path}.')
+
+    def _getReaders(self, pathPrefixes):
+        """Get the HDF5Handlers for specifc path prefixes and check that files are not broken"""
+        readers = []
+        for pathPrefix in pathPrefixes:
+            try:
+                hdf = HDF5Handler(pathPrefix)
+                # Try reading data
+                hdf.parameters
+                readers.append(hdf)
+            except self._H5PY_EXCEPTIONS as ex:
+                warnings.warn(
+                    f'The HDF5 file(s) at {pathPrefix} could not be read, it will be skipped. '
+                    f'The following exception was raised: {ex}', RuntimeWarning
+                )
+        return readers
+
+    def _processDirectory(self, path, recursive):
+        """Process files and subdirectories from a directory, and add HDF5 files to self._readers"""
+        for elem in os.listdir(path):
+            elem = os.path.join(path, elem)
+            if os.path.isdir(elem) and recursive:
+                self._processDirectory(elem, recursive)
+            elif m := self._DISTRIB_FILE_PATTERN.match(elem):
+                # For distributed simulations, only open the rank 0 file
+                if m.group(2) == '0':
+                    self._readers += self._getReaders([m.group(1)])
+            elif m := self._FILE_PATTERN.match(elem):
+                self._readers += self._getReaders([m.group(1)])
+
+    def _close(self):
+        """Close the file(s)"""
+        exceptions = []
+        for reader in self._readers:
+            try:
+                reader._close()
+            except Exception as ex:
+                exceptions.append(ex)
+        # TODO: Use ExceptionGroup once we require python >= 3.11
+        if len(exceptions) > 0:
+            raise exceptions[0]
+
+
+    def __getitem__(self, key):
+        """Access an HDF5 group from its unique identifier
+
+        :param key: Unique identifier to the group
+        :type key: str
+        :returns: The associated HDF5 group, if run groups from different files have the same unique
+            identifier, a list containing the corresponding run groups will be returned
+        :rtype: Union[List[:py:class:`HDF5Group`], :py:class:`HDF5Group`]
+
+        :meta public:
+        """
+        res = []
+        for reader in self._readers:
+            try:
+                res.append(reader[key])
+            except KeyError:
+                continue
+        if len(res) == 0:
+            raise KeyError(f'No run group has unique identifier {key}.')
+        return res if len(res) > 1 else res[0]
+
+    def __iter__(self):
+        """Iterate over run groups in all HDF5 files
+        See :py:class:`HDF5Handler`
+
+        :meta public:
+        """
+        for reader in self._readers:
+            yield from reader
 
 
 class HDF5Group(DatabaseGroup, nutils.Versioned):
@@ -4067,7 +4242,7 @@ class XDMFHandler(HDF5Handler):
         savedFp = set(self._savedFilePaths)
         # To be saved soon:
         savedFp.add(self._getCurrXDMFFilePath())
-        if self._sim._isDistributed() and nsim.MPI.rank == 0:
+        if self._sim._isDistributed() and nsim.MPI._rank == 0:
             savedFp.add(self._getCurrFullXDMFFilePath())
         return super()._getFilePaths() + sorted(savedFp)
 
@@ -4185,14 +4360,19 @@ class XDMFHandler(HDF5Handler):
 
     def _getValName(self, sel, i):
         if isinstance(sel, _ResultPath):
-            loc, *objsval = sel._labels[i].split('.')
-            return '.'.join(objsval)
+            valStr = sel.description if i is None else sel._labels[i]
+            return '.'.join(valStr.split('.')[1:])
         elif isinstance(sel, _ResultCombiner):
+            if i is None:
+                return None
             subLabels = sel._labelArgFunc(i, sel.children)
             return sel._labelStrFunc(
                 *[self._getValName(s.sel, s.ind) if isinstance(s, _LabelSelector) else s for s in subLabels]
             )
         elif isinstance(sel, _ResultList):
+            if i is None:
+                return None
+            # TODO Optimize this since it's going to be called several times in a row
             tot = 0
             for c in sel.children:
                 if i - tot < c._getEvalLen():
@@ -4205,7 +4385,7 @@ class XDMFHandler(HDF5Handler):
             ngeom.TriReference: [],
             ngeom.VertReference: [],
         }
-        self._rs2Grids = {(nsim.MPI.rank, rs._selectorInd): [] for rs in selectors}
+        self._rs2Grids = {(nsim.MPI._rank, rs._selectorInd): [] for rs in selectors}
 
         locStr2RefCls = {
             cls._locStr: cls for cls in [ngeom.TetReference, ngeom.TriReference, ngeom.VertReference]
@@ -4223,20 +4403,24 @@ class XDMFHandler(HDF5Handler):
             ngeom.Patch._locStr: {},
         }
         for rs in selectors:
-            rsId = (nsim.MPI.rank, rs._selectorInd)
+            rsId = (nsim.MPI._rank, rs._selectorInd)
             if 'loc_type' in rs.metaData and 'loc_id' in rs.metaData:
                 types = rs.metaData['loc_type']
                 inds = rs.metaData['loc_id']
                 ves_types = rs.metaData.get('vesicle_type', None)
                 raft_types = rs.metaData.get('raft_type', None)
                 for i, (tpe, ind) in enumerate(zip(types, inds)):
-                    if not all(tpes is None or tpes[i] is None for tpes in [ves_types, raft_types]):
+                    if ind is None or not all(tpes is None or tpes[i] is None for tpes in [ves_types, raft_types]):
                         # Do not consider values that are linked with vesicles or rafts
                         continue
-                    val = self._getValName(rs, i)
                     # If the mesh is distributed, we need to use local inds
                     if self._sim._isDistributed() and tpe in locStr2RefCls:
                         ind = locStr2RefCls[tpe]._distCls._getToLocalFunc(self._sim.geom)(ind)
+                        if ind is None:
+                            continue
+                    val = self._getValName(rs, i)
+                    if val is None:
+                        continue
 
                     if tpe in distrElem2infos:
                         distrElem2infos[tpe].setdefault(ind, []).append((val, rsId, i))
@@ -4339,7 +4523,7 @@ class XDMFHandler(HDF5Handler):
             # Write column remapping of result selectors, if needed
             for rs in selectors:
                 n = rs._getEvalLen()
-                colRemap = rsColRemaps.get((nsim.MPI.rank, rs._selectorInd), [])
+                colRemap = rsColRemaps.get((nsim.MPI._rank, rs._selectorInd), [])
                 if len(colRemap) > 0:
                     if len(colRemap) < n:
                         colRemap += sorted(set(range(n)) - set(colRemap))
@@ -4366,10 +4550,10 @@ class XDMFHandler(HDF5Handler):
 
             self._grid2NonDistrRS = {}
             for (rnk, rsIdx), gridVals in self._rs2Grids.items():
-                if rnk != nsim.MPI.rank:
+                if rnk != nsim.MPI._rank:
                     for val, loctpe, start, step, nVals, gridCls, gridInd, center in gridVals:
                         assert nVals == 1
-                        localRemap = allColRemaps[nsim.MPI.rank].get((rnk, rsIdx), None)
+                        localRemap = allColRemaps[nsim.MPI._rank].get((rnk, rsIdx), None)
                         remoteRemap = allColRemaps[rnk].get((rnk, rsIdx), None)
                         if localRemap is not None:
                             start = localRemap[start]
@@ -4382,7 +4566,7 @@ class XDMFHandler(HDF5Handler):
 
     def _getCurrXDMFFilePath(self):
         fileName = XDMFHandler._FILE_NAME_PATTERN.format(
-            uid=self._currUID, run=self._currRun, rank=nsim.MPI.rank
+            uid=self._currUID, run=self._currRun, rank=nsim.MPI._rank
         )
         return os.path.join(self._xdmfFolder, fileName)
 
@@ -4453,7 +4637,7 @@ class XDMFHandler(HDF5Handler):
                 for i, (elems, _, loc) in enumerate(grids):
                     if self._shouldWrite:
                         if self._sim._isDistributed():
-                            gridName = f'{refCls._locStr}Grid{i}_rank{nsim.MPI.rank}'
+                            gridName = f'{refCls._locStr}Grid{i}_rank{nsim.MPI._rank}'
                         else:
                             gridName = f'{refCls._locStr}Grid{i}'
                         parentGrid, xmlPath = self._getHierarchicalParent(self._hierarchicalGrids, loc)
@@ -4480,11 +4664,11 @@ class XDMFHandler(HDF5Handler):
                 elemStr2ElemCls = {elemCls._locStr: elemCls for elemCls in self._temporalGrids.keys()}
                 allLocations = [((loc[0]._locStr,) + loc[1:], path) for loc, path in allLocations]
                 fileName = XDMFHandler._FILE_NAME_PATTERN.format(
-                    uid=self._currUID, run=self._currRun, rank=nsim.MPI.rank
+                    uid=self._currUID, run=self._currRun, rank=nsim.MPI._rank
                 )
                 allInfos = mpi4py.MPI.COMM_WORLD.gather((fileName, allLocations), root=0)
 
-                if nsim.MPI.rank == 0:
+                if nsim.MPI._rank == 0:
                     # Write a common xmf file on rank 0
                     self._fullXdmf, fullhierarchicalGrids = self._createXMLDocument()
                     for fileName, locations in allInfos:
@@ -4512,7 +4696,7 @@ class XDMFHandler(HDF5Handler):
         return hyperslab
 
     def _newTimeStep(self, t, rs, tind):
-        rsId = (nsim.MPI.rank, rs._selectorInd)
+        rsId = (nsim.MPI._rank, rs._selectorInd)
         for val, loctpe, start, step, nVals, gridCls, gridInd, center in self._rs2Grids[rsId]:
             tempGrid, xmlPath, currTime, currGrid = self._temporalGrids[gridCls][gridInd]
             if currTime != t:
@@ -4566,13 +4750,13 @@ class XDMFHandler(HDF5Handler):
             ngeom.VertReference: (1, 1),
         }
         if self._sim._isDistributed():
-            gridName = f'{gridCls._locStr}Grid{gridInd}_rank{nsim.MPI.rank}'
+            gridName = f'{gridCls._locStr}Grid{gridInd}_rank{nsim.MPI._rank}'
         else:
             gridName = f'{gridCls._locStr}Grid{gridInd}'
         elemCode, elemColNb = tpeMap[gridCls]
 
         cond = f'{gridName}/XYZ' not in meshGroup if meshGroup is not None else None
-        if not self._sim._isDistributed():
+        if nsim.MPI._usingMPI and not self._sim._isDistributed():
             # If the mesh is not distributed, all ranks need to be involved in the calls to get mesh data
             import mpi4py.MPI
             cond = mpi4py.MPI.COMM_WORLD.bcast(cond, root=0)

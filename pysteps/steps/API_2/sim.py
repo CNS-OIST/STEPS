@@ -1441,18 +1441,17 @@ class SimPath:
                     listInds = range(locElemLen)
                 # If the elements are not distributable or are in the current rank, add them to the
                 # new path and keep track of their indices in the original path.
-                if not isinstance(distrElem, ngeom.RefList) or len(distrElem) > 0:
-                    distrDict[distrElem] = subElems
-                    if isinstance(distrElem, ngeom.RefList) or MPI._shouldWrite:
-                        # Compute the indices of the distributed saved values in the original path
-                        for lind in listInds:
-                            allDistrInds += range(
-                                globalInd + lind * nbSubPaths, globalInd + (lind + 1) * nbSubPaths
-                            )
-                        spMask += [True] * nbSubPaths * len(listInds)
-                    else:
-                        changed = True
-                        spMask += [False] * nbSubPaths * locElemLen
+                distrDict[distrElem] = subElems
+                if isinstance(distrElem, ngeom.RefList) or MPI._shouldWrite:
+                    # Compute the indices of the distributed saved values in the original path
+                    for lind in listInds:
+                        allDistrInds += range(
+                            globalInd + lind * nbSubPaths, globalInd + (lind + 1) * nbSubPaths
+                        )
+                    spMask += [True] * nbSubPaths * len(listInds)
+                else:
+                    changed = True
+                    spMask += [False] * nbSubPaths * locElemLen
 
                 globalInd += nbSubPaths * locElemLen
 
@@ -1541,6 +1540,11 @@ class MPI:
         return stepslib.getRank()
 
     @nutils.classproperty
+    def _rank(cls):
+        """Internal method for getting the rank of the current process but without initializing MPI"""
+        return cls.rank if cls._usingMPI else 0
+
+    @nutils.classproperty
     def nhosts(cls):
         """Get the number of hosts
 
@@ -1551,6 +1555,11 @@ class MPI:
         """
         cls._loadInfos()
         return stepslib.getNHosts()
+
+    @nutils.classproperty
+    def _nhosts(cls):
+        """Internal method for getting the number of hosts but without initializing MPI"""
+        return cls.nhosts if cls._usingMPI else 1
 
     @classmethod
     def _getSolver(cls, name):
@@ -1610,8 +1619,8 @@ class _SimulationCheckpointer:
         newName = f'{self._prefix}_{self._sim._runId}_{time}_{self._sim._solverStr}_cp'
         self._sim.checkpoint(newName)
         if self._onlyLast and self._lastName is not None:
-            if MPI.nhosts > 1:
-                os.remove(self._lastName + f'_{MPI.rank}')
+            if MPI._nhosts > 1:
+                os.remove(self._lastName + f'_{MPI._rank}')
             else:
                 os.remove(self._lastName)
         self._lastName = newName
@@ -1849,14 +1858,14 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
             else:
                 raise Exception(f'Expected a ResultSelector object, got {rs} instead.')
 
-    def toDB(self, dbh, uid, **kwargs):
+    def toDB(self, dbh, uid=None, **kwargs):
         """Redirect all the added results selectors to a database
 
         :param dbh: The database to which the result selectors should be saved (see e.g.
             :py:class:`steps.API_2.saving.SQLiteDBHandler`).
         :type dbh: :py:class:`steps.API_2.saving.DatabaseHandler`
         :param uid: A unique identifier under which all subsequent runs should be saved. It should
-            not contain any slashes.
+            not contain any slashes. If it is not provided, a default one will be used.
         :type uid: str
         :param kwargs: Any additional parameters that should be saved to the database along with
             the unique identifier. Values are restricted to the documented types.
@@ -1879,6 +1888,8 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
         """
         if not isinstance(dbh, nsaving.DatabaseHandler):
             raise TypeError(f'Expected a DatabaseHandler, got {dbh} instead.')
+        if uid is None:
+            uid = dbh._getDefaultGroupName()
         if '/' in uid:
             raise ValueError(f'The unique run group identifier cannot contain slashes: {uid}')
         # The list of result selectors can be modified if the mesh is distributed

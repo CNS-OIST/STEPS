@@ -334,7 +334,7 @@ class TestBDiff(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TestBDiff, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TestBDiff))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

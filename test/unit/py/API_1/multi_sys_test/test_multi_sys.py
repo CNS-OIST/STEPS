@@ -233,8 +233,8 @@ class MultiSurfsysTestCase(unittest.TestCase):
         self._runTest(solver)
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(MultiVolsysTestCase, "test"))
-    all_tests.append(unittest.makeSuite(MultiSurfsysTestCase, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(MultiVolsysTestCase))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(MultiSurfsysTestCase))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

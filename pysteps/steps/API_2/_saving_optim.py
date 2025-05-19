@@ -21,17 +21,16 @@
 #
 #################################################################################   
 ###
- 
-import itertools
-
-import numpy
 
 from .geom import INDEX_DTYPE
 
 from . import saving as nsaving
 from . import utils as nutils
 
+import itertools
+import numpy
 import sys
+import types
 
 # Nothing to import, this module is not supposed to be imported by users
 __all__ = []
@@ -430,5 +429,7 @@ def OptimizeSelectors(sim, selectors):
         if any(allValues[i].hasBatchCall() for i in indLst):
             orp = _OptimizedResultPath(rs, [allValues[i] for i in indLst])
             rs._evaluate = orp._evaluate
-
+        else:
+            # Remove previous monkey patching if the current one doesn't require patching
+            rs._evaluate = types.MethodType(rs.__class__._evaluate, rs)
     return selectors

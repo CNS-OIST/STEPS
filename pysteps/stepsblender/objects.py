@@ -383,6 +383,9 @@ class VesicleMaterial(BlenderMaterial):
 
     fresnel_IOR: Annotated[float, 'Fresnel Index Of Refraction'] = 1.05
     fresnel_multiplier: Annotated[float, 'Strength of the outer rim'] = 2
+    facing_blend: Annotated[float, 'Gradient of the inner color'] = 0.4
+
+    shadow_method: Annotated[str, 'Blender shadow method'] = 'NONE'
 
     def setUp(self, mat, fromScratch):
         if fromScratch:
@@ -401,17 +404,25 @@ class VesicleMaterial(BlenderMaterial):
             bsdf.inputs['Alpha'].default_value = self.alpha
             if self.alpha < 1:
                 mat.blend_method = 'BLEND'
-            mat.shadow_method = 'NONE'
+            mat.shadow_method = self.shadow_method
 
             fresnel = nodes.new('ShaderNodeFresnel')
             fresnel.inputs['IOR'].default_value = self.fresnel_IOR
+
+            layer_weight = nodes.new('ShaderNodeLayerWeight')
+            layer_weight.inputs['Blend'].default_value = self.facing_blend
 
             mult = nodes.new('ShaderNodeMath')
             mult.operation = 'MULTIPLY'
             mult.inputs[0].default_value = self.fresnel_multiplier
 
+            add = nodes.new('ShaderNodeMath')
+            add.operation = 'ADD'
+
             node_tree.links.new(mult.inputs[1], fresnel.outputs['Fac'])
-            node_tree.links.new(bsdf.inputs['Emission Strength'], mult.outputs['Value'])
+            node_tree.links.new(add.inputs[0], mult.outputs['Value'])
+            node_tree.links.new(add.inputs[1], layer_weight.outputs['Facing'])
+            node_tree.links.new(bsdf.inputs['Emission Strength'], add.outputs['Value'])
 
 
 class RaftMaterial(BlenderMaterial):
@@ -545,9 +556,10 @@ class STEPSMesh(BlenderMesh):
                 mesh.attributes.new(prop, type='FLOAT', domain='POINT')
 
             # Smooth shading
-            if self.smooth_angle is not None:
+            if self.smooth_angle is not None and bpy.app.version < (4, 1, 0):
                 for f in mesh.polygons:
                     f.use_smooth = True
+                # These properties were removed in Blender 4.1
                 mesh.use_auto_smooth = True
                 mesh.auto_smooth_angle = self.smooth_angle
         else:
@@ -654,7 +666,8 @@ class BlenderObject(BlenderWrapper):
 class STEPSMeshObject(BlenderObject):
     mesh: BlenderMesh = STEPSMesh
     material: BlenderMaterial = MeshMaterial
-    solidifySurface: Annotated[bool, 'Whether the mesh surface should be solidified'] = True
+    surfaceThickness: Annotated[float,
+        'The thickness of the mesh surface, should be greater than 0 if rafts are present on the surface'] = 0.01
 
     def setUp(self, obj, fromScratch):
         """Sets up the given blender object
@@ -665,8 +678,54 @@ class STEPSMeshObject(BlenderObject):
             :type fromScratch: bool
         """
         super().setUp(obj, fromScratch)
-        if fromScratch and self.solidifySurface:
-            obj.modifiers.new('solidify', type='SOLIDIFY')
+        if fromScratch:
+            if self.surfaceThickness > 0:
+                solid = obj.modifiers.new('solidify', type='SOLIDIFY')
+                solid.thickness = self.surfaceThickness
+            # Smooth shading
+            if bpy.app.version >= (4, 1, 0) and self.mesh.smooth_angle is not None:
+                # Since Blender 4.1, the smooth shading has to be done on the object and not the mesh.
+                # However, the new way to set it (bpy.ops.object.modifier_add_node_group) does not work
+                # in scripts in Blender 4.1 (see https://projects.blender.org/blender/blender/issues/117399).
+                # So the code below (adapted from https://blenderartists.org/t/asset-loading-is-unfinished-warning/1510459/8)
+                # creates the geometry node required for smooth shading
+                modifier = obj.modifiers.new("Smooth by Angle", "NODES")
+                node_group = bpy.data.node_groups.new("Smooth by Angle", "GeometryNodeTree")
+                node_group.interface.new_socket("Geometry", in_out="INPUT", socket_type="NodeSocketGeometry")
+                input_node = node_group.nodes.new("NodeGroupInput")
+                input_node.select = False
+                node_group.interface.new_socket("Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry")
+                output_node = node_group.nodes.new("NodeGroupOutput")
+                output_node.is_active_output = True
+                output_node.select = False
+                node_group.is_modifier = True
+                modifier.node_group = node_group
+
+                nodes = node_group.nodes
+                geom_in = nodes.get("Group Input")
+                geom_out = nodes.get("Group Output")
+                # Edge Angle node
+                node_edge_angle = nodes.new("GeometryNodeInputMeshEdgeAngle")
+                node_edge_angle.label = "Edge Angle"
+                # Compare less or equal node
+                node_less_than_or_equal = nodes.new("FunctionNodeCompare")
+                node_less_than_or_equal.operation = "LESS_EQUAL"
+                node_less_than_or_equal.inputs["B"].default_value = self.mesh.smooth_angle
+                # Shade Smooth node
+                node_set_smooth_edge = nodes.new("GeometryNodeSetShadeSmooth")
+                node_set_smooth_edge.label = "Set Shade Smooth (Edge)"
+                node_set_smooth_edge.domain = "EDGE"
+                # Shade Smooth node
+                node_set_smooth_face = nodes.new("GeometryNodeSetShadeSmooth")
+                node_set_smooth_face.label = "Set Shade Smooth (Face)"
+                node_set_smooth_face.domain = "FACE"
+                node_set_smooth_face.inputs["Shade Smooth"].default_value = True
+                # Linking all the nodes
+                node_group.links.new(node_edge_angle.outputs["Unsigned Angle"], node_less_than_or_equal.inputs["A"])
+                node_group.links.new(geom_in.outputs["Geometry"], node_set_smooth_edge.inputs["Geometry"])
+                node_group.links.new(node_less_than_or_equal.outputs["Result"], node_set_smooth_edge.inputs["Shade Smooth"])
+                node_group.links.new(node_set_smooth_edge.outputs["Geometry"], node_set_smooth_face.inputs["Geometry"])
+                node_group.links.new(node_set_smooth_face.outputs["Geometry"], geom_out.inputs["Geometry"])
 
 
 class STEPSVesiclePath(BlenderObject):

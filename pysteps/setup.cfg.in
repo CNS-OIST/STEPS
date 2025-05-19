@@ -8,14 +8,17 @@ license = GNU General Public License Version 3
 
 [options]
 packages = find:
-python_requires = >=3.6
+python_requires = >=3.8
 install_requires =
     numpy>=1.19
+    scipy>=1.5
 
 [options.packages.find]
 include = ${STEPS_INCLUDE_PACKAGES_SETUP}
 
 [options.extras_require]
+mpi =
+    mpi4py>=3.1
 dist =
     mpi4py>=3.1
 hdf5 =
@@ -24,6 +27,5 @@ cov =
     coverage>=5.0
 test = 
     matplotlib>=3.2
-    scipy>=1.5
 blender =
     matplotlib>=3.2

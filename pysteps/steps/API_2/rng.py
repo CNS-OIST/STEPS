@@ -46,7 +46,7 @@ class RNG:
     Method and attributes are the same as in :py:class:`steps.API_1.rng.RNG`.
     """
 
-    def __init__(self, algoStr, buffSz, seed):
+    def __init__(self, algoStr='mt19937', buffSz=512, seed=1):
         self.stepsrng = stepslib._py_rng_create(algoStr, buffSz)
         self.stepsrng.initialize(seed)
 

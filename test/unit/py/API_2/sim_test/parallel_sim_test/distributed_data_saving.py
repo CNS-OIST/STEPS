@@ -53,10 +53,14 @@ class DistTetOpSplitSimDataSaving(bm.DistTetTestModelFramework, tds.TetSimDataSa
     def _get_API1_Sim(self, omdl, ogeom):
         return None
 
+    @unittest.skip('Not needed here')
+    def testXDMFWithoutMPI(self):
+        pass
+
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(DistTetOpSplitSimDataSaving, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(DistTetOpSplitSimDataSaving))
     return unittest.TestSuite(all_tests)
 
 

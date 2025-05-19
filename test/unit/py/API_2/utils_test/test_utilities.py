@@ -132,7 +132,7 @@ class VariousUtilities(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(VariousUtilities, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(VariousUtilities))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

@@ -621,7 +621,7 @@ class TetopsplitValidationsRD(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TetopsplitValidationsRD, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TetopsplitValidationsRD))
     return unittest.TestSuite(all_tests)
 
 

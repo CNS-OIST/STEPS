@@ -1,6 +1,57 @@
 Release Notes
 
-Version 5.0.1 (2024-03)
+Version 5.0.4 (2025-05)
+==========================
+
+Dependencies
+------------
+1. Bump bundled SUNDIALS to 6.0.0 for compatibility with CMake 4.0
+
+Version 5.0.3 (2024-09)
+==========================
+
+Python API
+----------
+1. Added `HDF5MultiFileReader` to read simulation data from several HDF5 files at once.
+2. `Simulation.toDB` can now be called without a `uid`.
+3. Random number generators (`RNG` class) now have default constructor arguments
+
+Bugfixes
+--------
+1. Improve behavior of stochastic paths (added in 5.0.1). Vesicles test more available sites on path, which reduces chance of vesicle becoming blocked if furthest site is unavailable.
+2. Fix rare vesicle surface diffusion crash for boost versions < 1.73 (issue was introduced in 5.0.2)
+3. Fix vesicles erroneously diffusing to different compartment (issue was introduced in 5.0.1)
+4. Fix compilation issues with mpi4py >= 4.0.0 and Open MPI < 5.0.0
+5. Fix `DistMesh.intersect` method computations failing under some conditions
+
+Dependencies
+------------
+
+1. Updated the [overlap](https://github.com/severinstrobl/overlap) library to [d2a165e](https://github.com/severinstrobl/overlap/commits/d2a165e1e3ac3519fc18b9c260811f15ffe3aa5b) (development version)
+
+
+Version 5.0.2 (2024-06)
+==========================
+
+Python API
+----------
+1. The minimum python version was bumped from 3.6 to 3.8.
+
+Bugfixes
+--------
+1. Fixed compilation issue when PETSc is not installed.
+2. Fixed installation issue in Conda environments.
+
+Internal code base
+------------------
+1. Use Boost instead of GSL for computing qtable for vesicle surface diffusion.
+2. Remove GSL as a minimum prerequisite.
+
+stepsblender python package
+---------------------------
+1. Fixed issues caused by changes in Blender 4.1 python API.
+
+Version 5.0.1 (2024-02)
 ==========================
 
 New Features
@@ -12,8 +63,8 @@ New Features
 Python API
 ----------
 1. Added a new `CustomResults` result selector to save arbitrary data to STEPS HDF5 files.
-1. Added a `.description` property to `ResultSelector`s.
-2. Added a `.patchTriNeighbs` property to `TriReference`s to get neighboring triangles in the same patch.
+2. Added a `.description` property to `ResultSelector`s.
+3. Added a `.patchTriNeighbs` property to `TriReference`s to get neighboring triangles in the same patch.
 
 Version 5.0.0 (2023-06)
 ==========================
@@ -79,7 +130,7 @@ Version 3.6.0 (2021-02)
 
 Python API
 ----------
-1. Added a new python API (see [documentation](http://steps.sourceforge.net/manual/manual_index.html))
+1. Added a new python API (see [documentation](http://steps.sourceforge.net/manual/))
    Scripts written for older STEPS version should still work without any modifications.
    The new python API can be used by adding the following line at the top of a STEPS script:
 

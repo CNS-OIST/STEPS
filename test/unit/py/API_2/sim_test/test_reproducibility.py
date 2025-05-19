@@ -129,7 +129,7 @@ class TetexactReproducibilityTestCase(ReproducibilityTestCase, base_model.TetTes
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TetexactReproducibilityTestCase, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TetexactReproducibilityTestCase))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

@@ -347,7 +347,7 @@ class TestBDiffTetvesicleCP(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TestBDiffTetvesicleCP, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TestBDiffTetvesicleCP))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

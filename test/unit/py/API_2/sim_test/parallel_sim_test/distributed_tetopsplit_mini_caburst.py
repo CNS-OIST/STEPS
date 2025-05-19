@@ -239,7 +239,7 @@ class DistTetopsplitMiniCaburst(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(DistTetopsplitMiniCaburst, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(DistTetopsplitMiniCaburst))
     return unittest.TestSuite(all_tests)
 
 

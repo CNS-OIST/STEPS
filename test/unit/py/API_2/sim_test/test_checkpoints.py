@@ -43,7 +43,7 @@ from . import base_model
 def getUniqueTempPrefix(*args, **kwargs):
     _, pathPrefix = tempfile.mkstemp(*args, **kwargs)
     os.remove(pathPrefix)
-    if MPI.nhosts > 1:
+    if MPI._nhosts > 1:
         # Need to synchronize across ranks
         pathPrefix = mpi4py.MPI.COMM_WORLD.bcast(pathPrefix, root=0)
     return pathPrefix
@@ -108,12 +108,12 @@ class WmCheckpoints(base_model.TestModelFramework):
         for name in os.listdir(tmpDir):
             if name.startswith(prefix):
                 fullPath = os.path.join(tmpDir, name)
-                if MPI.nhosts > 1:
+                if MPI._nhosts > 1:
                     *_, rank = name.split('_')
                     rank = int(rank)
-                    self.assertLess(rank, MPI.nhosts)
+                    self.assertLess(rank, MPI._nhosts)
                     self.assertGreaterEqual(rank, 0)
-                    if rank != MPI.rank:
+                    if rank != MPI._rank:
                         continue
                     noRankPath = os.path.join(tmpDir, name[:-len(f'_{rank}')])
                 else:
@@ -130,12 +130,12 @@ class WmCheckpoints(base_model.TestModelFramework):
                 run, time, solver, *cp = name[(len(prefix)+1):].split('_')
                 run = int(run)
                 time = float(time)
-                if MPI.nhosts > 1:
+                if MPI._nhosts > 1:
                     cp, rank = cp
                     rank = int(rank)
-                    self.assertLess(rank, MPI.nhosts)
+                    self.assertLess(rank, MPI._nhosts)
                     self.assertGreaterEqual(rank, 0)
-                    if rank != MPI.rank:
+                    if rank != MPI._rank:
                         continue
                     noRankPath = os.path.join(tmpDir, name[:-len(f'_{rank}')])
                 else:
@@ -425,8 +425,8 @@ class TetCheckpoints(base_model.TetTestModelFramework, WmCheckpoints):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(WmCheckpoints, "test"))
-    all_tests.append(unittest.makeSuite(TetCheckpoints, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(WmCheckpoints))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TetCheckpoints))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

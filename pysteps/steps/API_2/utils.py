@@ -160,7 +160,7 @@ class Units:
             numpy.array([0, -3, 0, 0, 0, 1, 0], numpy.intc),
             3,
             'molar',
-            'concentration (mol L\ :sup:`-1`)',
+            r'concentration (mol L\ :sup:`-1`)',
         ),
         'C': (
             numpy.array([1, 0, 0, 1, 0, 0, 0], numpy.intc),
@@ -353,12 +353,12 @@ class Units:
         return res
 
     def _toLatex(self):
-        """Return a LateX formated string representing the unit.
+        """Return a LaTeX formated string representing the unit.
         Uses the siunitx latex package"""
 
         def prefix(val):
             if val == 'u':
-                return '\micro '
+                return r'\micro '
             else:
                 return val
 
@@ -370,9 +370,9 @@ class Units:
             lambda m: prefix(m.group(1)) + m.group(2) + m.group(3),
             res,
         )
-        res = '\si{' + res + '}'
+        res = r'\si{' + res + '}'
         res = res.replace(' ', '.')
-        res = res.replace('\micro.', '\micro ')
+        res = res.replace(r'\micro.', r'\micro ')
         return res
 
 
@@ -1540,7 +1540,7 @@ def _exportToTEX(
         with open(texPath, 'w') as f:
             for line in out.split('\n'):
                 if 'documentclass' in line:
-                    f.write('\documentclass{standalone}\n')
+                    f.write('\\documentclass{standalone}\n')
                     continue
                 if line == '\\begin{document}':
                     f.write('\\usepackage{siunitx}\n')
@@ -2184,7 +2184,7 @@ class NamedObject(SolverPathObject):
             return res
         else:
             raise Exception(
-                f'The line {callLine} does not match the expected format for automatic assignement.'
+                f'The line {callLine} does not match the expected format for automatic assignment.'
             )
 
     def __repr__(self):
@@ -2588,7 +2588,7 @@ class Versioned:
         try:
             return tuple(map(int, versionStr.split('.')))
         except:
-            raise Exception(f'Invalid version string "{versionStr}".')
+            raise ValueError(f'Invalid version string "{versionStr}".')
 
 
 ###################################################################################################
@@ -2863,7 +2863,7 @@ class Facade:
 # Insert Prefix and Units information into the Parameter docstring
 prefixTable = GetDocstringTable(
     ['Prefix', 'Name', 'Base 10'], 
-    [(f"``'{pref}'``", name, f'10\ :sup:`{exp}`') for pref, (exp, name) in Units._SI_PREFIXES.items()],
+    [(f"``'{pref}'``", name, fr'10\ :sup:`{exp}`') for pref, (exp, name) in Units._SI_PREFIXES.items()],
     '        '
 )
 unitTable = GetDocstringTable(

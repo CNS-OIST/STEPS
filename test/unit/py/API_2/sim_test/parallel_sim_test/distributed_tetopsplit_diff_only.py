@@ -135,7 +135,7 @@ class DistTetopsplitDiffOnly(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(DistTetopsplitDiffOnly, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(DistTetopsplitDiffOnly))
     return unittest.TestSuite(all_tests)
 
 

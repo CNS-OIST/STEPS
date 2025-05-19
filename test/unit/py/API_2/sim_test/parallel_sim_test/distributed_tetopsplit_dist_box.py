@@ -119,14 +119,12 @@ class DistTetopsplitBox(unittest.TestCase):
         self.sim.comp1.SJ.Count = N0J * MOLECULE_RATIO
 
     def testTetopsplitDistBox(self):
-        """Test after ENDTIME that the counts match with the results of a previous run taken as reference"""
+        """Test after ENDTIME that the counts match statistically to expected counts within a 3x standard deviation bound"""
         ENDTIME = 0.5
-        atol = 10  # we accept results +- 10 or with only 1% relative error
-        rtol = 0.01
-        if platform.system() == "Darwin":
-            expected_counts = [34.0, 1034.0, 673.0, 707.0, 8293.0, 281.0, 1281.0, 6322.0, 1603.0, 17397.0]
-        else:
-            expected_counts = [42.0, 1042.0, 669.0, 711.0, 8289.0, 302.0, 1302.0, 6369.0, 1671.0, 17329.0]
+
+        expected_counts = [39.72575, 1039.72575, 685.62325, 725.349, 8274.651, 295.654, 1295.654, 6354.534, 1650.188, 17349.812]
+        expected_counts_std = [6.08075135, 6.08075135, 18.81690223, 18.73510606, 18.73510606, 15.25862982, 15.25862982, 37.03727641, 35.26414831, 35.26414831]
+        std_bound = 3
 
         self.sim.newRun()
 
@@ -134,15 +132,17 @@ class DistTetopsplitBox(unittest.TestCase):
         self.sim.run(ENDTIME)
 
         counts = self.sim.comp1.ALL(Species).Count
+
         if MPI.rank == 0:
             print(f"\nFinal counts:    {counts}")
-            print(f"Expected counts: {expected_counts}")
-            self.assertTrue(numpy.allclose(counts, expected_counts, rtol=rtol, atol=atol))
-
+            print(f"Mean expected counts: {expected_counts}")
+            print(f"STD expected counts: {expected_counts_std}")
+            for j in range (10):
+                self.assertTrue(numpy.isclose(counts[j], expected_counts[j], rtol=1e-8, atol=std_bound*expected_counts_std[j]))
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(DistTetopsplitBox, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(DistTetopsplitBox))
     return unittest.TestSuite(all_tests)
 
 

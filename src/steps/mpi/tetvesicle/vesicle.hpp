@@ -31,17 +31,16 @@
 #include <iostream>
 #include <list>
 #include <map>
-//#include <string>
 #include <vector>
 
 // STEPS headers.
+#include "math/point.hpp"
 #include "mpi/tetvesicle/comp_vesraft.hpp"
 #include "mpi/tetvesicle/pointspec.hpp"
 #include "mpi/tetvesicle/qtable.hpp"
 #include "rng/rng.hpp"
 #include "solver/vesicledef.hpp"
 
-// vector_t
 #include <fau.de/overlap.hpp>
 
 namespace steps::mpi::tetvesicle {
@@ -115,7 +114,7 @@ class Vesicle {
     ////////////////////////////////////////////////////////////////////////
 
     // Will return false if it can't move because of spec overlap issue
-    bool setPosition(const vector_t& new_pos,
+    bool setPosition(const overlap::Vector& new_pos,
                      std::map<tetrahedron_global_id, double> const& tets_overlap_temp,
                      bool check_comps = false);
 
@@ -325,9 +324,12 @@ class Vesicle {
         return pOnPath;
     }
 
-    math::position_abs getNextPosition(double dt) noexcept;
+    std::pair<std::vector<std::pair<double, math::position_abs>>::const_iterator,
+              std::vector<std::pair<double, math::position_abs>>::const_iterator>
+    getNextPositions(double dt) noexcept;
 
-    void nextPositionOnPath();
+    void updatePositionOnPath(
+        std::vector<std::pair<double, math::position_abs>>::const_iterator end);
 
     void removeFromPath();
 
@@ -369,8 +371,10 @@ class Vesicle {
 
     // PATHS
     std::vector<std::pair<double, math::position_abs>> pPathPositions;
-    uint pPathPosition_index;
-    uint pPathPosition_index_next;  // 'next' is stored because move may be invalid
+    std::vector<std::pair<double, math::position_abs>>::const_iterator pPath_curr_pos;
+    std::vector<std::pair<double, math::position_abs>>::const_iterator
+        pPath_next_pos_end;  // End iterator for the possible next positions on the path. This
+                             // allows several positions to be tested, starting with the furthest.
     bool pOnPath;
     double pTime_accum;       // the accumulated time since the last changed position
     double pTime_accum_next;  // 'next' is stored because move may be invalid

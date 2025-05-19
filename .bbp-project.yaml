@@ -2,12 +2,12 @@ tools:
   ClangFormat:
     include:
       match: &cpp_patterns
-      - .*src/steps/.*\.((h)|(cpp)|(hpp))
-      - .*test/unit/.*\.((h)|(cpp)|(hpp))
+      - .*src/steps/.*\.((h)|(cpp)|(hpp))$
+      - .*test/unit/.*\.((h)|(cpp)|(hpp))$
   CMakeFormat:
     enable: True
   ClangTidy:
     option: --fix
     include:
       match:
-      - .*src/steps/.*\.cpp
+      - .*src/steps/.*\.cpp$

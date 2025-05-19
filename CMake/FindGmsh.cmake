@@ -51,7 +51,8 @@ if(Gmsh_EXECUTABLE)
 endif()
 
 find_path(Gmsh_INCLUDE_DIRS NAMES gmsh.h)
-find_library(Gmsh_LIBRARIES NAMES gmsh)
+find_library(Gmsh_LIBRARIES NAMES gmsh gmsh.${Gmsh_VERSION_MAJOR}.${Gmsh_VERSION_MINOR}
+                                  libgmsh.so.${Gmsh_VERSION_MAJOR}.${Gmsh_VERSION_MINOR})
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(

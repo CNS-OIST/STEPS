@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
+#include <variant>
 
 #include <Omega_h_array_ops.hpp>
 #include <Omega_h_mesh.hpp>
@@ -17,10 +18,12 @@
 #include "geom/dist/fwd.hpp"
 #include "geom/geom.hpp"
 #include "math/point.hpp"
+#include "util/debug.hpp"
 #include "util/flat_multimap.hpp"
 #include "util/mesh.hpp"
 #include "util/optional_num.hpp"
 #include "util/vocabulary.hpp"
+
 
 namespace steps::dist {
 
@@ -28,7 +31,30 @@ using optional_id_t = util::OptionalNum<size_t>;
 
 class DistMesh: public wm::Geom {
   public:
+    using intersectionID = std::variant<mesh::tetrahedron_local_id_t,
+                                        mesh::triangle_local_id_t,
+                                        mesh::bar_local_id_t,
+                                        mesh::vertex_local_id_t>;
     using point3d = math::point3d;
+    struct intersectionInfo {
+        intersectionInfo(){};
+        intersectionInfo(const point3d& point, const intersectionID& intersection)
+            : point_(point)
+            , intersection_(intersection) {}
+
+        bool almostEqual(const intersectionInfo& other, const double tol) const {
+            return intersection_ == other.intersection_ && point_.almostEqual(other.point_, tol);
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const intersectionInfo& info) {
+            os << "IntersectionInfo(Point: " << info.point_
+               << ", Intersection: " << info.intersection_ << ')';
+            return os;
+        }
+
+        point3d point_{};
+        intersectionID intersection_{mesh::tetrahedron_local_id_t{}};
+    };
 
     DistMesh(osh::Mesh mesh, const std::string& path, osh::Real scale = 0);
     DistMesh(osh::Library& library, const std::string& path, osh::Real scale = 0);
@@ -45,6 +71,9 @@ class DistMesh: public wm::Geom {
     inline std::string getBackend() const {
         return "Omega_h";
     }
+
+    // Compute a representative linear tolerance based on a sample of volumes per rank
+    void computeLinTol();
 
     static constexpr bool use_gmsh() noexcept {
 #ifdef OMEGA_H_USE_GMSH
@@ -203,6 +232,45 @@ class DistMesh: public wm::Geom {
      */
     std::vector<mesh::triangle_local_id_t> getTetTriNeighb(mesh::tetrahedron_local_id_t tet_index);
 
+    /**
+     * \brief Get the bar neighbors (edges) of a tetrahedron.
+     *
+     * \attention Parallelism: Collective
+     *
+     * \param tet_index Global index of the tetrahedron.
+     * \return Vector of bar global indexes.
+     */
+    std::vector<mesh::bar_global_id_t> getTetBarNeighb(mesh::tetrahedron_global_id_t tet_index);
+
+    /**
+     * \brief Get the bar neighbors (edges) of a tetrahedron.
+     *
+     * \attention Parallelism: Local
+     *
+     * \param tet_index Local index of the tetrahedron.
+     * \return Vector of bar local indexes, potentially non-owned.
+     */
+    std::vector<mesh::bar_local_id_t> getTetBarNeighb(mesh::tetrahedron_local_id_t tet_index);
+
+    /**
+     * \brief Get the vertex neighbors (vertexes) of a tetrahedron.
+     *
+     * \attention Parallelism: Collective
+     *
+     * \param tet_index Global index of the tetrahedron.
+     * \return Vector of vertex global indexes.
+     */
+    std::vector<mesh::vertex_global_id_t> getTetVertNeighb(mesh::tetrahedron_global_id_t tet_index);
+
+    /**
+     * \brief Get the vertex neighbors (vertexes) of a tetrahedron.
+     *
+     * \attention Parallelism: Local
+     *
+     * \param tet_index Local index of the tetrahedron.
+     * \return Vector of vertex local indexes, potentially non-owned.
+     */
+    std::vector<mesh::vertex_local_id_t> getTetVertNeighb(mesh::tetrahedron_local_id_t tet_index);
 
     /**
      * \brief Get the barycenter of a tetrahedron.
@@ -225,14 +293,54 @@ class DistMesh: public wm::Geom {
     std::vector<double> getTetBarycenter(mesh::tetrahedron_local_id_t tet_index) const;
 
     /**
+     * \brief Find intersection object.
+     *
+     * This function returns the smallest (dimensionally)
+     * object that contains the point. This means that if
+     * the point lies on a bar it will return the bar and
+     * not a triangle defined by the bar or a tet defined
+     * by the bar.
+     *
+     * \param p The point.
+     * \return intersectionInfo object. The point and the
+     * local id of the smallest dimension object that
+     * contains the point.
+     */
+    intersectionInfo findIntersection(const point3d& p);
+
+    /**
+     * \brief Find next intersection object and on what
+     * the segment section lies on
+     *
+     * \param p_beg_info Initial point of the segment and
+     * element on which it lies on. unknown tet for a point
+     * out of the mesh.
+     * \param p_end_info End point of the segment and
+     * element on which it lies on. unknown tet for a point
+     * out of the mesh.
+     * \return pair of the next intersection point and the
+     * object on which the current section of the segment
+     * lies on. For example if the segment passes through
+     * a tet the next intersection is the exit point/triangle
+     * of the segment coupled with the tet id where the segment
+     * passes through.
+     */
+    std::pair<intersectionInfo, intersectionID> findNextIntersection(
+        const intersectionInfo& p_beg_info,
+        const intersectionInfo& p_end_info);
+
+    /**
      * \brief Get the tetrahedron that contains a given point.
      *
      * \attention Parallelism: Collective
      *
      * \param position 3D position of the point.
+     * \param tol tolerance to decide if a point is inside a tet. Negative values
+     * let the program pick a tolerance for you.
      * \return Global tetrahedron id, invalid if the tetrahedron does not exist.
      */
-    mesh::tetrahedron_global_id_t findTetByPoint(const std::vector<double>& position);
+    mesh::tetrahedron_global_id_t findTetByPoint(const std::vector<double>& position,
+                                                 const double tol = -1.0);
 
     /**
      * \brief Get the tetrahedron that contains a given point.
@@ -240,10 +348,59 @@ class DistMesh: public wm::Geom {
      * \attention Parallelism: Local
      *
      * \param position 3D position of the point.
+     * \param tol tolerance to decide if a point is inside a tet. Negative values
+     * let the program pick a tolerance for you.
      * \return Local tetrahedron id, invalid if no local tetrahedron contains the point
      */
-    mesh::tetrahedron_local_id_t findLocalTetByPoint(const point3d& position);
-    mesh::tetrahedron_local_id_t findLocalTetByPoint(const std::vector<double>& position);
+    mesh::tetrahedron_local_id_t findLocalTetByPoint(const point3d& position,
+                                                     const double tol = -1.0);
+    mesh::tetrahedron_local_id_t findLocalTetByPoint(const std::vector<double>& position,
+                                                     const double tol = -1.0);
+
+    /**
+     * \brief Get the tetrahedron that contains a given point.
+     *
+     * Linear search.
+     *
+     * \attention Parallelism: Local
+     *
+     * \param position 3D position of the point.
+     * \param tol tolerance to decide if a point is inside a tet. Negative values
+     * let the program pick a tolerance for you.
+     * \return Local tetrahedron id, invalid if no local tetrahedron contains the point
+     */
+    mesh::tetrahedron_local_id_t findLocalTetByPointLinear(const point3d& position,
+                                                           const double tol = -1.0);
+    mesh::tetrahedron_local_id_t findLocalTetByPointLinear(const std::vector<double>& position,
+                                                           const double tol = -1.0);
+
+    /**
+     * \brief Get the tetrahedron that contains a given point.
+     *
+     * A* search with random initial seeding and restarts.
+     *
+     * \attention Parallelism: Local
+     *
+     * \param position 3D position of the point.
+     * \param tol tolerance to decide if a point is inside a tet. Negative values
+     * let the program pick a tolerance for you.
+     * \return Local tetrahedron id, invalid if no local tetrahedron contains the point
+     */
+    mesh::tetrahedron_local_id_t findLocalTetByPointWalk(const point3d& position,
+                                                         const double tol = -1.0);
+    mesh::tetrahedron_local_id_t findLocalTetByPointWalk(const std::vector<double>& position,
+                                                         const double tol = -1.0);
+
+    /**
+     * \brief Check if point is inside the owned bounding box
+     *
+     * \attention Parallelism: Local
+     *
+     * \param position 3D position of the point.
+     * \param tol linear tolerance. Negative values let the program chose for you.
+     * \return True if point in owned bounding box, otherwise False.
+     */
+    bool isPointInOwnedBBox(const point3d& position, double tol = -1.0) const;
 
     /**
      * \brief Check if point belongs to a tetrahedron or not
@@ -252,9 +409,12 @@ class DistMesh: public wm::Geom {
      *
      * \param pos 3D position of the point.
      * \param tet_id Global tetrahedron id.
+     * \param tol linear tolerance. Negative values let the program chose for you.
      * \return True if point in tet, otherwise False.
      */
-    bool isPointInTet(const std::vector<double>& pos, mesh::tetrahedron_global_id_t tet_id);
+    bool isPointInTet(const std::vector<double>& pos,
+                      mesh::tetrahedron_global_id_t tet_id,
+                      const double tol = -1.0);
 
     /**
      * \brief Check if point belongs to a local tetrahedron or not
@@ -263,9 +423,12 @@ class DistMesh: public wm::Geom {
      *
      * \param pos 3D position of the point.
      * \param tet_id Local tetrahedron id.
+     * \param tol linear tolerance. Negative values let the program chose for you.
      * \return True if point in local tet, otherwise False.
      */
-    bool isPointInTet(const std::vector<double>& pos, mesh::tetrahedron_local_id_t tet_id);
+    bool isPointInTet(const std::vector<double>& pos,
+                      mesh::tetrahedron_local_id_t tet_id,
+                      const double tol = -1.0);
 
     /**
      * \brief Get the list of all tetrahedron indices.
@@ -546,6 +709,46 @@ class DistMesh: public wm::Geom {
         std::function<bool(mesh::triangle_local_id_t)> pred);
 
     /**
+     * \brief Get the bar neighbors (edges) of a triangle.
+     *
+     * \attention Parallelism: Collective
+     *
+     * \param tri_index Global index of the triangle.
+     * \return Vector of bar global indexes.
+     */
+    std::vector<mesh::bar_global_id_t> getTriBarNeighb(mesh::triangle_global_id_t tri_index);
+
+    /**
+     * \brief Get the bar neighbors (edges) of a triangle.
+     *
+     * \attention Parallelism: Local
+     *
+     * \param tri_index Local index of the triangle.
+     * \return Vector of bar local indexes, potentially non-owned.
+     */
+    std::vector<mesh::bar_local_id_t> getTriBarNeighb(mesh::triangle_local_id_t tri_index);
+
+    /**
+     * \brief Get the vertex neighbors (vertexes) of a triangle.
+     *
+     * \attention Parallelism: Collective
+     *
+     * \param tri_index Global index of the triangle.
+     * \return Vector of vertex global indexes.
+     */
+    std::vector<mesh::vertex_global_id_t> getTriVertNeighb(mesh::triangle_global_id_t tri_index);
+
+    /**
+     * \brief Get the vertex neighbors (vertexes) of a triangle.
+     *
+     * \attention Parallelism: Local
+     *
+     * \param tri_index Local index of the triangle.
+     * \return Vector of vertex local indexes, potentially non-owned.
+     */
+    std::vector<mesh::vertex_local_id_t> getTriVertNeighb(mesh::triangle_local_id_t tri_index);
+
+    /**
      * \brief Get the barycenter of a triangle.
      *
      * \attention Parallelism: Collective
@@ -594,10 +797,162 @@ class DistMesh: public wm::Geom {
                   const std::vector<mesh::triangle_local_id_t>& tris,
                   DistPatch* patch);
 
+    /********************************** Bar ***********************************/
+
+    /**
+     * \brief Get the tetrahedron neighbors of a bar (edge).
+     *
+     * \attention Parallelism: Collective
+     *
+     * \param bar_index Global index of the bar.
+     * \return Vector of tet global indexes.
+     */
+    std::vector<mesh::tetrahedron_global_id_t> getBarTetNeighb(mesh::bar_global_id_t bar_index);
+
+    /**
+     * \brief Get the tetrahedron neighbors of a bar (edge).
+     *
+     * \attention Parallelism: Local
+     *
+     * \param bar_index Local index of the bar.
+     * \return Vector of tetrahedron local indexes, potentially non-owned.
+     */
+    std::vector<mesh::tetrahedron_local_id_t> getBarTetNeighb(mesh::bar_local_id_t bar_index,
+                                                              const bool owned);
+
+    /**
+     * \brief Get the triangle neighbors of a bar (edge).
+     *
+     * \attention Parallelism: Collective
+     *
+     * \param bar_index Global index of the bar.
+     * \return Vector of triangle global indexes.
+     */
+    std::vector<mesh::triangle_global_id_t> getBarTriNeighb(mesh::bar_global_id_t bar_index);
+
+    /**
+     * \brief Get the triangle neighbors of a bar (edge).
+     *
+     * \attention Parallelism: Local
+     *
+     * \param bar_index Local index of the bar.
+     * \return Vector of triangle local indexes, potentially non-owned.
+     */
+    std::vector<mesh::triangle_local_id_t> getBarTriNeighb(mesh::bar_local_id_t bar_index);
+
+    /**
+     * \brief Get the vertex neighbors (vertexes) of a bar.
+     *
+     * \attention Parallelism: Collective
+     *
+     * \param bar_index Global index of the bar.
+     * \return Vector of vertex global indexes.
+     */
+    std::vector<mesh::vertex_global_id_t> getBarVertNeighb(mesh::bar_global_id_t bar_index);
+
+    /**
+     * \brief Get the vertex neighbors (vertexes) of a bar.
+     *
+     * \attention Parallelism: Local
+     *
+     * \param bar_index Local index of the bar.
+     * \return Vector of vertex local indexes, potentially non-owned.
+     */
+    std::vector<mesh::vertex_local_id_t> getBarVertNeighb(mesh::bar_local_id_t bar_index);
+
+    /**
+     * \brief Get the list of all mesh bar indices.
+     *
+     * \attention Parallelism: Collective
+     *
+     * \return Vector of global bar indices.
+     */
+    std::vector<mesh::bar_global_id_t> getAllBarIndices();
+
+    /**
+     * \brief Get the list of local bar indices.
+     *
+     * \attention Parallelism: Collective
+     *
+     * \param owned Whether the bars should be owned by the process.
+     * \return Vector of local bar indices.
+     */
+    std::vector<mesh::bar_local_id_t> getLocalBarIndices(bool owned);
+
     /********************************** Vert **********************************/
 
     std::vector<double> getVertex(mesh::vertex_global_id_t vert_index) const;
     std::vector<double> getVertex(mesh::vertex_local_id_t vert_index) const;
+    point3d getPoint3d(mesh::vertex_global_id_t vert_index) const {
+        const auto p = getVertex(vert_index);
+        return {p[0], p[1], p[2]};
+    }
+    point3d getPoint3d(mesh::vertex_local_id_t vert_index) const {
+        const auto p = getVertex(vert_index);
+        return {p[0], p[1], p[2]};
+    }
+
+    /**
+     * \brief Get the tetrahedron neighbors of a vertex.
+     *
+     * \attention Parallelism: Collective
+     *
+     * \param vert_index Global index of the vertex.
+     * \return Vector of tetrahedron global indexes.
+     */
+    std::vector<mesh::tetrahedron_global_id_t> getVertTetNeighb(
+        mesh::vertex_global_id_t vert_index);
+
+    /**
+     * \brief Get the tetrahedron neighbors of a vertex.
+     *
+     * \attention Parallelism: Local
+     *
+     * \param vert_index Local index of the vertex.
+     * \return Vector of tetrahedron local indexes.
+     */
+    std::vector<mesh::tetrahedron_local_id_t> getVertTetNeighb(mesh::vertex_local_id_t vert_index,
+                                                               const bool owned);
+
+    /**
+     * \brief Get the triangle neighbors of a vertex.
+     *
+     * \attention Parallelism: Collective
+     *
+     * \param vert_index Global index of the vertex.
+     * \return Vector of triangle global indexes.
+     */
+    std::vector<mesh::triangle_global_id_t> getVertTriNeighb(mesh::vertex_global_id_t vert_index);
+
+    /**
+     * \brief Get the triangle neighbors of a vertex.
+     *
+     * \attention Parallelism: Local
+     *
+     * \param vert_index Local index of the vertex.
+     * \return Vector of triangle local indexes.
+     */
+    std::vector<mesh::triangle_local_id_t> getVertTriNeighb(mesh::vertex_local_id_t vert_index);
+
+    /**
+     * \brief Get the bar neighbors (edges) of a vertex.
+     *
+     * \attention Parallelism: Collective
+     *
+     * \param vert_index Global index of the vertex.
+     * \return Vector of bar global indexes.
+     */
+    std::vector<mesh::bar_global_id_t> getVertBarNeighb(mesh::vertex_global_id_t vert_index);
+
+    /**
+     * \brief Get the bar neighbors (edges) of a vertex.
+     *
+     * \attention Parallelism: Local
+     *
+     * \param vert_index Local index of the vertex.
+     * \return Vector of bar local indexes.
+     */
+    std::vector<mesh::bar_local_id_t> getVertBarNeighb(mesh::vertex_local_id_t vert_index);
 
     /**
      * \brief Get the list of all mesh vertex indices.
@@ -617,6 +972,55 @@ class DistMesh: public wm::Geom {
      * \return Vector of local vertex indices.
      */
     std::vector<mesh::vertex_local_id_t> getLocalVertIndices(bool owned);
+
+    /********************************** Printing *********************************/
+    // mostly to display errors
+
+
+    std::string print(const mesh::vertex_local_id_t elem) {
+        std::ostringstream ss;
+        ss << "vert: " << elem << ' ' << getPoint3d(elem);
+        return ss.str();
+    }
+
+    std::string print(const mesh::tetrahedron_local_id_t elem) {
+        std::ostringstream ss;
+        ss << "tet: " << elem << ' ';
+        const auto verts = getTetVertNeighb(elem);
+        std::vector<std::string> v;
+        v.reserve(verts.size());
+        std::transform(verts.begin(), verts.end(), std::back_inserter(v), [&](const auto& vert) {
+            return print(vert);
+        });
+        ss << v;
+        return ss.str();
+    }
+
+    std::string print(const mesh::triangle_local_id_t elem) {
+        std::ostringstream ss;
+        ss << "tri: " << elem << ' ';
+        const auto verts = getTriVertNeighb(elem);
+        std::vector<std::string> v;
+        v.reserve(verts.size());
+        std::transform(verts.begin(), verts.end(), std::back_inserter(v), [&](const auto& vert) {
+            return print(vert);
+        });
+        ss << v;
+        return ss.str();
+    }
+
+    std::string print(const mesh::bar_local_id_t elem) {
+        std::ostringstream ss;
+        ss << "bar: " << elem << ' ';
+        const auto verts = getBarVertNeighb(elem);
+        std::vector<std::string> v;
+        v.reserve(verts.size());
+        std::transform(verts.begin(), verts.end(), std::back_inserter(v), [&](const auto& vert) {
+            return print(vert);
+        });
+        ss << v;
+        return ss.str();
+    }
 
     /********************************** Shape *********************************/
 
@@ -696,6 +1100,9 @@ class DistMesh: public wm::Geom {
      */
     mesh::triangle_local_id_t getLocalIndex(mesh::triangle_global_id_t index, bool owned) const;
 
+    mesh::bar_global_id_t getGlobalIndex(mesh::bar_local_id_t index) const;
+    mesh::bar_local_id_t getLocalIndex(mesh::bar_global_id_t index, bool owned) const;
+
     mesh::vertex_global_id_t getGlobalIndex(mesh::vertex_local_id_t index) const;
     mesh::vertex_local_id_t getLocalIndex(mesh::vertex_global_id_t index, bool owned) const;
 
@@ -737,6 +1144,26 @@ class DistMesh: public wm::Geom {
     /// Number of boundaries owned by this process
     inline osh::LO num_bounds() const noexcept {
         return owned_bounds_.size();
+    }
+
+    /// Identifiers of the bars (edges) owned by this process
+    inline const osh::LOs& owned_bars() const noexcept {
+        return owned_bars_;
+    }
+
+    /// Owned and ghost bars (edges) managed by this process
+    inline const osh::Bytes& owned_bars_mask() const noexcept {
+        return owned_bars_mask_;
+    }
+
+    /// Number of bars (edges) in the entire mesh
+    osh::GO total_num_bars() const noexcept {
+        return total_num_bars_;
+    };
+
+    /// Number of bars (edges) owned by this process
+    inline osh::LO num_bars() const noexcept {
+        return owned_bars_.size();
     }
 
     /// Identifiers of the vertices owned by this process
@@ -889,6 +1316,11 @@ class DistMesh: public wm::Geom {
     inline bool isOwned(mesh::triangle_local_id_t point_idx) const noexcept {
         assert(point_idx.get() < owned_bounds_mask_.size());
         return owned_bounds_mask_[point_idx.get()] != 0;
+    }
+
+    inline bool isOwned(mesh::bar_local_id_t point_idx) const noexcept {
+        assert(point_idx.get() < owned_bars_mask_.size());
+        return owned_bars_mask_[point_idx.get()] != 0;
     }
 
     inline bool isOwned(mesh::vertex_local_id_t point_idx) const noexcept {
@@ -1154,6 +1586,7 @@ class DistMesh: public wm::Geom {
     // public alias type for segment intersections
     using intersection_list_t = std::vector<std::pair<mesh::tetrahedron_local_id_t, double>>;
 
+
     /**
      * \brief Computes the percentage of intersection of a segment with the mesh tets
      *
@@ -1163,6 +1596,12 @@ class DistMesh: public wm::Geom {
     intersection_list_t intersectDeterministic(const point3d& p_start,
                                                const point3d& p_end,
                                                const double init_seg_length);
+
+    /// Helper of the intersect deterministic method that can be recursively called
+    void _intersectDeterministicHelper(const intersectionInfo& p_beg_info,
+                                       const intersectionInfo& p_end_info,
+                                       const double init_seg_length,
+                                       intersection_list_t& ans);
 
     /**
      * \brief Computes the percentage of intersection of a line of segments with the mesh tets
@@ -1201,6 +1640,26 @@ class DistMesh: public wm::Geom {
 
   private:
     std::unordered_map<mesh::diffusion_boundary_name, size_t> diff_bound_name_2_index_;
+
+    // Split of findNextIntersection. Case when p_beg lies on a vert
+    std::pair<intersectionInfo, intersectionID> _findNextIntersectionFromVert(
+        const intersectionInfo& p_beg_info,
+        const intersectionInfo& p_end_info);
+
+    // Split of findNextIntersection. Case when p_beg lies on a bar
+    std::pair<intersectionInfo, intersectionID> _findNextIntersectionFromBar(
+        const intersectionInfo& p_beg_info,
+        const intersectionInfo& p_end_info);
+
+    // Split of findNextIntersection. Case when p_beg lies on a tri
+    std::pair<intersectionInfo, intersectionID> _findNextIntersectionFromTri(
+        const intersectionInfo& p_beg_info,
+        const intersectionInfo& p_end_info);
+
+    // Split of findNextIntersection. Case when p_beg lies on a tet
+    std::pair<intersectionInfo, intersectionID> _findNextIntersectionFromTet(
+        const intersectionInfo& p_beg_info,
+        const intersectionInfo& p_end_info);
 
     void fill_triInfo(const Omega_h::Reals& coords, const Omega_h::Reals& areas);
     void fill_tetInfo(const Omega_h::Reals& coords, const Omega_h::Reals& areas);
@@ -1271,6 +1730,10 @@ class DistMesh: public wm::Geom {
     /// owned_bounds_mask_[i] != 0 if i is owned
     osh::Bytes owned_bounds_mask_;
 
+    /// \brief mask to distinguish owned bars (edges) from ghost element
+    /// owned_bars_mask_[i] != 0 if i is owned
+    osh::Bytes owned_bars_mask_;
+
     /// \brief mask to distinguish owned boundaries from ghost element
     /// owned_verts_mask_[i] != 0 if i is owned
     osh::Bytes owned_verts_mask_;
@@ -1292,6 +1755,15 @@ class DistMesh: public wm::Geom {
     osh::LOs owned_bounds_;
     std::unordered_map<mesh::triangle_global_id_t, mesh::triangle_local_id_t> boundGlobal2Local;
     osh::GOs boundLocal2Global;
+    /** \} */
+
+    /** \name Bars (edges)
+     * \{
+     */
+    /// Identifiers of the bars (edges) owned by this process
+    osh::LOs owned_bars_;
+    std::unordered_map<mesh::bar_global_id_t, mesh::bar_local_id_t> barGlobal2Local;
+    osh::GOs barLocal2Global;
     /** \} */
 
     /** \name Vertices
@@ -1353,8 +1825,16 @@ class DistMesh: public wm::Geom {
     /// \brief number of boundaries in the entire mesh
     const osh::GO total_num_bounds_;
 
+    /// \brief number of boundaries in the entire mesh.
+    ///
+    /// Equal to total_num_bounds_ in 2D.
+    const osh::GO total_num_bars_;
+
     /// \brief number of vertices in the entire mesh
     const osh::GO total_num_verts_;
+
+    /// \brief representative tolerance based on a sample (per rank) of volumes
+    double linTol_ = -1.0;
 };
 
 /*****************************************************************************/

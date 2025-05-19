@@ -8,8 +8,14 @@ endif()
 add_subdirectory(tracker)
 add_subdirectory(profile)
 
-add_library(stepsutil STATIC checkid.cpp debug.cpp error.cpp finish.cpp init.cpp
-                             ${EASYLOGGINGPP_INCLUDE_DIRS}/easylogging++.cc)
+add_library(
+  stepsutil STATIC
+  checkid.cpp
+  debug.cpp
+  error.cpp
+  finish.cpp
+  init.cpp
+  ${EASYLOGGINGPP_INCLUDE_DIRS}/easylogging++.cc)
 
 set_property(TARGET stepsutil PROPERTY POSITION_INDEPENDENT_CODE ON)
 
@@ -17,14 +23,14 @@ target_include_directories(stepsutil PUBLIC "${PROJECT_SOURCE_DIR}/src/steps")
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
   set(easyloggingpp_flags
-      "-Wno-error -Wno-error -Wno-double-promotion -Wno-shadow -Wno-unused-parameter -Wno-useless-cast \
+      "-Wno-error -Wno-double-promotion -Wno-shadow -Wno-unused-parameter -Wno-useless-cast \
     -Wno-null-dereference")
   if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "11")
     set(easyloggingpp_flags "${easyloggingpp_flags} -Wno-range-loop-construct")
   endif()
 else()
   set(easyloggingpp_flags
-      "-Wno-error -Wno-error -Wno-double-promotion -Wno-shadow -Wno-unused-parameter -Wno-null-dereference \
+      "-Wno-error -Wno-double-promotion -Wno-shadow -Wno-unused-parameter -Wno-null-dereference \
     -Wno-range-loop-analysis")
 endif()
 set_source_files_properties("${EASYLOGGINGPP_INCLUDE_DIRS}/easylogging++.cc"

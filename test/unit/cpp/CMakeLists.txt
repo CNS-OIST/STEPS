@@ -59,6 +59,7 @@ test_unit(
           membership
           memory_tracker
           optional_num
+          pqueue
           strongid
           time_tracker
   PATH util
@@ -93,11 +94,8 @@ endif()
 if(STEPS_USE_DIST_MESH)
   configure_file(test_common.hpp.in test_common.hpp @ONLY)
 
-  test_unit(TARGETS propensities DEPENDENCIES stepsdist Catch2::Catch2WithMain)
-
-  test_unit(TARGETS mol_state DEPENDENCIES stepsdist Catch2::Catch2WithMain)
-
-  test_unit(TARGETS kproc_event_queue DEPENDENCIES stepsdist Catch2::Catch2WithMain)
+  test_unit(TARGETS propensities mol_state kproc_event_queue distmesh
+            DEPENDENCIES stepsdist Catch2::Catch2WithMain)
 
   include_directories(${CMAKE_CURRENT_BINARY_DIR})
 endif()

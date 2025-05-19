@@ -67,8 +67,8 @@ class TetVesicleCheckpoints(test_checkpoints.TetCheckpoints, base_model.VesTestM
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TetOpSplitCheckpoints, "test"))
-    all_tests.append(unittest.makeSuite(TetVesicleCheckpoints, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TetOpSplitCheckpoints))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TetVesicleCheckpoints))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

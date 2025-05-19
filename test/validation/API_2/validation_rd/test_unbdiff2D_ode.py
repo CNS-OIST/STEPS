@@ -178,7 +178,7 @@ class TestRDUnbdiff2DODE(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TestRDUnbdiff2DODE, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TestRDUnbdiff2DODE))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

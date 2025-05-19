@@ -116,8 +116,8 @@ class TetmeshNPTestCase(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TetmeshCreationTestCase, "test"))
-    all_tests.append(unittest.makeSuite(TetmeshComponentTestCase, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TetmeshCreationTestCase))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TetmeshComponentTestCase))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

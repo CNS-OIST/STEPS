@@ -130,8 +130,8 @@ class conductionVolumeTests(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(membraneTests, "test"))
-    all_tests.append(unittest.makeSuite(conductionVolumeTests, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(membraneTests))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(conductionVolumeTests))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

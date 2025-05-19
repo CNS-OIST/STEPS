@@ -17,11 +17,13 @@
 
 #include "distcomp.hpp"
 #include "distpatch.hpp"
+#include "math/segment.hpp"
 #include "math/tetrahedron.hpp"
 #include "math/triangle.hpp"
 #include "util/error.hpp"
 #include "util/mesh.hpp"
 #include "util/mpitools.hpp"
+#include "util/pqueue.hpp"
 
 namespace steps::dist {
 
@@ -33,6 +35,7 @@ DistMesh::DistMesh(osh::Mesh mesh, const std::string& path, osh::Real scale)
     , scale_(scale)
     , total_num_elems_(mesh.nglobal_ents(dim()))
     , total_num_bounds_(mesh.nglobal_ents(dim() - 1))
+    , total_num_bars_(mesh.nglobal_ents(osh::EDGE))
     , total_num_verts_(mesh.nglobal_ents(osh::VERT)) {
     if (mesh_.dim() != dim()) {
         throw std::domain_error("Unsupported mesh dimension : " + std::to_string(mesh_.dim()));
@@ -56,6 +59,7 @@ DistMesh::DistMesh(osh::Mesh mesh, const std::string& path, osh::Real scale)
     this->mesh_.set_parting(OMEGA_H_GHOSTED);
     owned_elems_mask_ = this->mesh_.owned(dim());
     owned_bounds_mask_ = this->mesh_.owned(dim() - 1);
+    owned_bars_mask_ = this->mesh_.owned(osh::EDGE);
     owned_verts_mask_ = this->mesh_.owned(osh::VERT);
 
     {
@@ -88,6 +92,22 @@ DistMesh::DistMesh(osh::Mesh mesh, const std::string& path, osh::Real scale)
         osh::Write<osh::LO> owned_bounds_array(static_cast<osh::LO>(owned_bounds.size()));
         std::copy(owned_bounds.begin(), owned_bounds.end(), owned_bounds_array.begin());
         owned_bounds_ = owned_bounds_array;
+    }
+
+    {
+        std::vector<osh::LO> owned_bars;
+        owned_bars.reserve(static_cast<size_t>(mesh_.nedges()));
+        this->barLocal2Global = mesh_.globals(osh::EDGE);
+        for (osh::LO bar = 0; bar < mesh_.nedges(); ++bar) {
+            mesh::bar_global_id_t global_index{barLocal2Global[bar]};
+            barGlobal2Local[global_index] = mesh::bar_local_id_t(bar);
+            if (owned_bars_mask_[bar] != 0) {
+                owned_bars.push_back(bar);
+            }
+        }
+        osh::Write<osh::LO> owned_bars_array(static_cast<osh::LO>(owned_bars.size()));
+        std::copy(owned_bars.begin(), owned_bars.end(), owned_bars_array.begin());
+        owned_bars_ = owned_bars_array;
     }
 
     {
@@ -149,6 +169,8 @@ DistMesh::DistMesh(osh::Mesh mesh, const std::string& path, osh::Real scale)
     elem2compid_ = osh::Write<osh::LO>(mesh_.nelems(), INITIAL_COMPARTMENT_ID);
     measure_ = std::make_unique<Measure>(comm_impl(), num_compartments(), measureFunc_);
     diffusion_boundary_ids_.resize(mesh_.nents(dim() - 1), util::nothing);
+
+    computeLinTol();
 }
 
 DistMesh::DistMesh(osh::Library& library, const std::string& path, osh::Real scale)
@@ -217,6 +239,36 @@ int DistMesh::comm_rank() const noexcept {
 
 int DistMesh::comm_size() const noexcept {
     return util::mpi_comm_size(comm_impl());
+}
+
+void DistMesh::computeLinTol() {
+    int i = 0;
+    constexpr int nsamples = 100;
+    const int step = std::max(1, num_elems() / nsamples);
+    double rankVol = 0.0;
+    for (; i < nsamples && i * step < num_elems(); ++i) {
+        rankVol += getTetVol(mesh::tetrahedron_local_id_t{i * step});
+    }
+
+    double totVol = 0.0;
+    auto err = MPI_Allreduce(&rankVol, &totVol, 1, MPI_DOUBLE, MPI_SUM, comm_impl());
+    if (err != MPI_SUCCESS) {
+        MPI_Abort(comm_impl(), err);
+    }
+    int itot = 0;
+    err = MPI_Allreduce(&i, &itot, 1, MPI_INT, MPI_SUM, comm_impl());
+    if (err != MPI_SUCCESS) {
+        MPI_Abort(comm_impl(), err);
+    }
+
+    if (itot == 0 || totVol <= 0.0) {
+        return;
+    }
+    totVol /= static_cast<double>(itot);
+
+    // 4 ULP
+    linTol_ = 4 * std::pow(6.0 * totVol * std::sqrt(2), 1.0 / 3.0) *
+              std::numeric_limits<double>::epsilon();
 }
 
 osh::Mesh DistMesh::load_mesh(osh::Library& library, const std::string& path) {
@@ -480,6 +532,304 @@ std::vector<mesh::triangle_local_id_t> DistMesh::getTetTriNeighb(
     }
     return res;
 }
+std::vector<mesh::bar_global_id_t> DistMesh::getTetBarNeighb(
+    mesh::tetrahedron_global_id_t tet_index) {
+    auto localInd = getLocalIndex(tet_index, true);
+    std::vector<mesh::bar_global_id_t> bars;
+    bars.reserve(6);
+    if (localInd.valid()) {
+        for (auto& bar: getTetBarNeighb(localInd)) {
+            bars.emplace_back(getGlobalIndex(bar));
+        }
+    } else {
+        bars.resize(6);
+    }
+    syncData(bars.data(), 6, MPI_INT64_T, localInd.valid());
+    return bars;
+}
+
+std::vector<mesh::bar_local_id_t> DistMesh::getTetBarNeighb(
+    mesh::tetrahedron_local_id_t tet_index) {
+    assert(tet_index.valid());
+    const auto graph = mesh_.ask_down(dim(), osh::EDGE);
+    const auto tet2bars = Omega_h::gather_down<6>(graph.ab2b, tet_index.get());
+    std::vector<mesh::bar_local_id_t> res;
+    res.reserve(6);
+    for (auto barIdx: tet2bars) {
+        res.emplace_back(barIdx);
+    }
+    return res;
+}
+
+
+std::vector<mesh::tetrahedron_global_id_t> DistMesh::getVertTetNeighb(
+    mesh::vertex_global_id_t vert_index) {
+    auto localInd = getLocalIndex(vert_index, true);
+    std::vector<mesh::tetrahedron_global_id_t> ans;
+    int nbNeighbs{0};
+    if (localInd.valid()) {
+        for (auto& tet: getVertTetNeighb(localInd, false)) {
+            ans.emplace_back(getGlobalIndex(tet));
+        }
+        nbNeighbs = ans.size();
+    }
+
+    syncData(&nbNeighbs, 1, MPI_INT, localInd.valid());
+    ans.resize(nbNeighbs);
+    syncData(ans.data(), ans.size(), MPI_INT64_T, localInd.valid());
+
+    return ans;
+}
+
+std::vector<mesh::tetrahedron_local_id_t> DistMesh::getVertTetNeighb(
+    mesh::vertex_local_id_t vert_index,
+    const bool owned) {
+    assert(vert_index.valid());
+    std::vector<mesh::tetrahedron_local_id_t> tets;
+    const auto& vert2tet = mesh_.ask_up(0, dim());
+
+    const auto start = vert2tet.a2ab[vert_index.get()];
+    const auto end = vert2tet.a2ab[vert_index.get() + 1];
+    for (auto idx = start; idx < end; ++idx) {
+        const mesh::tetrahedron_local_id_t tet(vert2tet.ab2b[idx]);
+        if (not owned or isOwned(tet)) {
+            tets.emplace_back(tet);
+        }
+    }
+
+    return tets;
+}
+
+
+std::vector<mesh::triangle_global_id_t> DistMesh::getVertTriNeighb(
+    mesh::vertex_global_id_t vert_index) {
+    auto localInd = getLocalIndex(vert_index, true);
+    std::vector<mesh::triangle_global_id_t> ans;
+    int nbNeighbs{0};
+    if (localInd.valid()) {
+        for (auto& tri: getVertTriNeighb(localInd)) {
+            ans.emplace_back(getGlobalIndex(tri));
+        }
+        nbNeighbs = ans.size();
+    }
+
+    syncData(&nbNeighbs, 1, MPI_INT, localInd.valid());
+    ans.resize(nbNeighbs);
+    syncData(ans.data(), ans.size(), MPI_INT64_T, localInd.valid());
+
+    return ans;
+}
+
+std::vector<mesh::triangle_local_id_t> DistMesh::getVertTriNeighb(
+    mesh::vertex_local_id_t vert_index) {
+    assert(vert_index.valid());
+    std::vector<mesh::triangle_local_id_t> tris;
+    const auto& vert2tri = mesh_.ask_up(0, osh::FACE);
+
+    const auto start = vert2tri.a2ab[vert_index.get()];
+    const auto end = vert2tri.a2ab[vert_index.get() + 1];
+    for (auto idx = start; idx < end; ++idx) {
+        const mesh::triangle_local_id_t tri(vert2tri.ab2b[idx]);
+        tris.emplace_back(tri);
+    }
+
+    return tris;
+}
+
+std::vector<mesh::bar_global_id_t> DistMesh::getVertBarNeighb(mesh::vertex_global_id_t vert_index) {
+    auto localInd = getLocalIndex(vert_index, true);
+    std::vector<mesh::bar_global_id_t> ans;
+    int nbNeighbs{0};
+    if (localInd.valid()) {
+        for (auto& bar: getVertBarNeighb(localInd)) {
+            ans.emplace_back(getGlobalIndex(bar));
+        }
+        nbNeighbs = ans.size();
+    }
+
+    syncData(&nbNeighbs, 1, MPI_INT, localInd.valid());
+    ans.resize(nbNeighbs);
+    syncData(ans.data(), ans.size(), MPI_INT64_T, localInd.valid());
+
+    return ans;
+}
+
+std::vector<mesh::bar_local_id_t> DistMesh::getVertBarNeighb(mesh::vertex_local_id_t vert_index) {
+    assert(vert_index.valid());
+    std::vector<mesh::bar_local_id_t> bars;
+    const auto& vert2bar = mesh_.ask_up(0, osh::EDGE);
+
+    const auto start = vert2bar.a2ab[vert_index.get()];
+    const auto end = vert2bar.a2ab[vert_index.get() + 1];
+    for (auto idx = start; idx < end; ++idx) {
+        const mesh::bar_local_id_t bar(vert2bar.ab2b[idx]);
+        bars.emplace_back(bar);
+    }
+
+    return bars;
+}
+
+std::vector<mesh::vertex_global_id_t> DistMesh::getTetVertNeighb(
+    mesh::tetrahedron_global_id_t tet_index) {
+    auto localInd = getLocalIndex(tet_index, true);
+    std::vector<mesh::vertex_global_id_t> ans;
+    ans.reserve(4);
+    if (localInd.valid()) {
+        for (auto& vert: getTetVertNeighb(localInd)) {
+            ans.emplace_back(getGlobalIndex(vert));
+        }
+    } else {
+        ans.resize(4);
+    }
+    syncData(ans.data(), 4, MPI_INT64_T, localInd.valid());
+    return ans;
+}
+
+std::vector<mesh::vertex_local_id_t> DistMesh::getTetVertNeighb(
+    mesh::tetrahedron_local_id_t tet_index) {
+    assert(tet_index.valid());
+
+    const auto& ans = osh::gather_verts<4>(mesh_.ask_elem_verts(), tet_index.get());
+
+    return {ans.begin(), ans.end()};
+}
+
+
+std::vector<mesh::vertex_global_id_t> DistMesh::getBarVertNeighb(mesh::bar_global_id_t bar_index) {
+    auto localInd = getLocalIndex(bar_index, true);
+    std::vector<mesh::vertex_global_id_t> ans;
+    if (localInd.valid()) {
+        for (auto& vert: getBarVertNeighb(localInd)) {
+            ans.emplace_back(getGlobalIndex(vert));
+        }
+    } else {
+        ans.resize(2);
+    }
+    syncData(ans.data(), 2, MPI_INT64_T, localInd.valid());
+    return ans;
+}
+
+std::vector<mesh::vertex_local_id_t> DistMesh::getBarVertNeighb(mesh::bar_local_id_t bar_index) {
+    assert(bar_index.valid());
+
+    const auto& ans = osh::gather_verts<2>(mesh_.ask_verts_of(osh::EDGE), bar_index.get());
+
+    return {ans.begin(), ans.end()};
+}
+
+std::vector<mesh::triangle_global_id_t> DistMesh::getBarTriNeighb(mesh::bar_global_id_t bar_index) {
+    auto localInd = getLocalIndex(bar_index, true);
+    std::vector<mesh::triangle_global_id_t> ans;
+    int nbNeighbs{0};
+    if (localInd.valid()) {
+        for (auto& tri: getBarTriNeighb(localInd)) {
+            ans.emplace_back(getGlobalIndex(tri));
+        }
+        nbNeighbs = ans.size();
+    }
+    syncData(&nbNeighbs, 1, MPI_INT, localInd.valid());
+    ans.resize(nbNeighbs);
+    syncData(ans.data(), ans.size(), MPI_INT64_T, localInd.valid());
+    return ans;
+}
+
+std::vector<mesh::triangle_local_id_t> DistMesh::getBarTriNeighb(mesh::bar_local_id_t bar_index) {
+    assert(bar_index.valid());
+    std::vector<mesh::triangle_local_id_t> tris;
+    const auto& bar2tri = mesh_.ask_up(osh::EDGE, osh::FACE);
+    const auto start = bar2tri.a2ab[bar_index.get()];
+    const auto end = bar2tri.a2ab[bar_index.get() + 1];
+    tris.reserve(end - start);
+    for (auto idx = start; idx < end; ++idx) {
+        const mesh::triangle_local_id_t tri(bar2tri.ab2b[idx]);
+        tris.emplace_back(tri);
+    }
+
+    return tris;
+}
+
+
+std::vector<mesh::tetrahedron_global_id_t> DistMesh::getBarTetNeighb(
+    mesh::bar_global_id_t bar_index) {
+    auto localInd = getLocalIndex(bar_index, true);
+    std::vector<mesh::tetrahedron_global_id_t> ans;
+    int nbNeighbs{0};
+    if (localInd.valid()) {
+        for (auto& tet: getBarTetNeighb(localInd, false)) {
+            ans.emplace_back(getGlobalIndex(tet));
+        }
+        nbNeighbs = ans.size();
+    }
+    syncData(&nbNeighbs, 1, MPI_INT, localInd.valid());
+    ans.resize(nbNeighbs);
+    syncData(ans.data(), ans.size(), MPI_INT64_T, localInd.valid());
+    return ans;
+}
+
+std::vector<mesh::tetrahedron_local_id_t> DistMesh::getBarTetNeighb(mesh::bar_local_id_t bar_index,
+                                                                    const bool owned) {
+    assert(bar_index.valid());
+    std::vector<mesh::tetrahedron_local_id_t> ans;
+    const auto& bar2tet = mesh_.ask_up(osh::EDGE, osh::REGION);
+    const auto start = bar2tet.a2ab[bar_index.get()];
+    const auto end = bar2tet.a2ab[bar_index.get() + 1];
+    ans.reserve(end - start);
+    for (auto idx = start; idx < end; ++idx) {
+        const mesh::tetrahedron_local_id_t tet(bar2tet.ab2b[idx]);
+        if (not owned or isOwned(tet)) {
+            ans.emplace_back(tet);
+        }
+    }
+
+    return ans;
+}
+
+std::vector<mesh::vertex_global_id_t> DistMesh::getTriVertNeighb(
+    mesh::triangle_global_id_t tri_index) {
+    auto localInd = getLocalIndex(tri_index, true);
+    std::vector<mesh::vertex_global_id_t> ans;
+    if (localInd.valid()) {
+        for (auto& vert: getTriVertNeighb(localInd)) {
+            ans.emplace_back(getGlobalIndex(vert));
+        }
+    } else {
+        ans.resize(3);
+    }
+    syncData(ans.data(), 3, MPI_INT64_T, localInd.valid());
+    return ans;
+}
+
+std::vector<mesh::vertex_local_id_t> DistMesh::getTriVertNeighb(
+    mesh::triangle_local_id_t tri_index) {
+    assert(tri_index.valid());
+
+    const auto ans = osh::gather_verts<3>(mesh_.ask_verts_of(osh::FACE), tri_index.get());
+
+    return {ans.begin(), ans.end()};
+}
+
+std::vector<mesh::bar_global_id_t> DistMesh::getTriBarNeighb(mesh::triangle_global_id_t tri_index) {
+    auto localInd = getLocalIndex(tri_index, true);
+    std::vector<mesh::bar_global_id_t> ans;
+    if (localInd.valid()) {
+        for (auto& bar: getTriBarNeighb(localInd)) {
+            ans.emplace_back(getGlobalIndex(bar));
+        }
+    } else {
+        ans.resize(3);
+    }
+    syncData(ans.data(), 3, MPI_INT64_T, localInd.valid());
+    return ans;
+}
+
+std::vector<mesh::bar_local_id_t> DistMesh::getTriBarNeighb(mesh::triangle_local_id_t tri_index) {
+    assert(tri_index.valid());
+
+    const auto tris2edges = mesh_.ask_down(Omega_h::FACE, Omega_h::EDGE);
+    const auto edges = osh::gather_down<3>(tris2edges.ab2b, tri_index.get());
+
+    return {edges.begin(), edges.end()};
+}
 
 std::vector<double> DistMesh::getTetBarycenter(mesh::tetrahedron_global_id_t tet_index) const {
     auto localInd = getLocalIndex(tet_index, true);
@@ -500,9 +850,596 @@ std::vector<double> DistMesh::getTetBarycenter(mesh::tetrahedron_local_id_t tet_
     return {center.begin(), center.end()};
 }
 
-mesh::tetrahedron_global_id_t DistMesh::findTetByPoint(const std::vector<double>& position) {
+DistMesh::intersectionInfo DistMesh::findIntersection(const point3d& p) {
+    const auto tet = findLocalTetByPoint(p, linTol_);
+
+    if (tet.unknown()) {
+        return {p, tet};
+    }
+    const auto verts = getTetVertNeighb(tet);
+    for (const auto& vert: verts) {
+        if (getPoint3d(vert).almostEqual(p, linTol_)) {
+            return {p, vert};
+        }
+    }
+
+    const auto bars = getTetBarNeighb(tet);
+    for (const auto& bar: bars) {
+        const auto& bar_verts = getBarVertNeighb(bar);
+        if (math::segment_intersect_point(getPoint3d(bar_verts[0]), getPoint3d(bar_verts[1]), p)) {
+            return {p, bar};
+        }
+    }
+
+    const auto tris = getTetTriNeighb(tet);
+    for (const auto& tri: tris) {
+        const auto& tri_verts = getTriVertNeighb(tri);
+        if (math::tri_intersect_point(
+                getPoint3d(tri_verts[0]), getPoint3d(tri_verts[1]), getPoint3d(tri_verts[2]), p)) {
+            return {p, tri};
+        }
+    }
+    return {p, tet};
+}
+
+std::pair<DistMesh::intersectionInfo, DistMesh::intersectionID> DistMesh::findNextIntersection(
+    const intersectionInfo& p_beg_info,
+    const intersectionInfo& p_end_info) {
+    // p_beg is expected to be valid (intersectionID != unknown_tet) and owned (still
+    // intersectionID)
+
+    // p_end and p_beg both lie on the same element
+    if (p_beg_info.intersection_ == p_end_info.intersection_) {
+        return {p_end_info, p_end_info.intersection_};
+    }
+
+    // invalid intersections
+    const DistMesh::intersectionID unknown = mesh::tetrahedron_local_id_t{};
+    auto ans = _findNextIntersectionFromTet(p_beg_info, p_end_info);
+    if (ans.second != unknown) {
+        return ans;
+    }
+    ans = _findNextIntersectionFromTri(p_beg_info, p_end_info);
+    if (ans.second != unknown) {
+        return ans;
+    }
+    ans = _findNextIntersectionFromBar(p_beg_info, p_end_info);
+    if (ans.second != unknown) {
+        return ans;
+    }
+    ans = _findNextIntersectionFromVert(p_beg_info, p_end_info);
+
+    return ans;
+}
+
+std::pair<DistMesh::intersectionInfo, DistMesh::intersectionID>
+DistMesh::_findNextIntersectionFromVert(const intersectionInfo& p_beg_info,
+                                        const intersectionInfo& p_end_info) {
+    const auto& p_beg = p_beg_info.point_;
+    const auto& p_end = p_end_info.point_;
+    const auto& p_beg_interID = p_beg_info.intersection_;
+    const auto& p_end_interID = p_end_info.intersection_;
+
+    const auto* p_beg_idp = std::get_if<mesh::vertex_local_id_t>(&p_beg_interID);
+    if (p_beg_idp == nullptr) {
+        return {{p_beg, mesh::tetrahedron_local_id_t{}}, mesh::tetrahedron_local_id_t{}};
+    }
+    // p_beg is on a vertex
+
+    // check if segment lies along a neighb bar
+    const auto& bar_ids = getVertBarNeighb(*p_beg_idp);
+    for (const auto& bar_id: bar_ids) {
+        if (!isOwned(bar_id)) {
+            continue;
+        }
+        const intersectionID bar_interID{bar_id};
+        // p_end on neighb bar
+        if (p_end_interID == bar_interID) {
+            return {p_end_info, bar_interID};
+        }
+        // get other vert of bar (other than p_beg)
+        const auto& vert_ids = getBarVertNeighb(bar_id);
+        const mesh::vertex_local_id_t vert_id = (vert_ids[0] == *p_beg_idp) ? vert_ids[1]
+                                                                            : vert_ids[0];
+        const intersectionID vert_interID{vert_id};
+        // p_end on neighb vertex
+        if (p_end_interID == vert_interID) {
+            return {p_end_info, bar_interID};
+        }
+        // p_end out of segment. vert on segment
+        const auto p_vert = getPoint3d(vert_id);
+        if (segment_intersect_point(p_beg, p_end, p_vert)) {
+            return {{p_vert, vert_id}, bar_interID};
+        }
+        // not on connected bar. Continue
+    }
+
+    // check if segment lies on a neighb tri
+    const auto& tri_ids = getVertTriNeighb(*p_beg_idp);
+    for (const auto& tri_id: tri_ids) {
+        if (!isOwned(tri_id)) {
+            continue;
+        }
+        const intersectionID tri_interID{tri_id};
+        // p_end on neighb tri
+        if (p_end_interID == tri_interID) {
+            return {p_end_info, tri_interID};
+        }
+
+        // get bar not connected to p_beg
+        const auto& tri_bar_ids = getTriBarNeighb(tri_id);
+        std::vector<mesh::vertex_local_id_t> vert_ids;
+        const auto bar_idp =
+            std::find_if(tri_bar_ids.begin(), tri_bar_ids.end(), [&](const auto& bid) {
+                vert_ids = getBarVertNeighb(bid);
+                return (vert_ids[0] != *p_beg_idp && vert_ids[1] != *p_beg_idp);
+            });
+        assert(bar_idp != tri_bar_ids.end());
+        const intersectionID bar_interID{*bar_idp};
+        // p_end on opposite bar of a tri
+        if (p_end_interID == bar_interID) {
+            return {p_end_info, tri_interID};
+        }
+        // p_end out of tri. tri on segment
+        const auto p_vert0 = getPoint3d(vert_ids[0]);
+        const auto p_vert1 = getPoint3d(vert_ids[1]);
+        {
+            point3d intersection0, intersection1;
+            if (segment_intersect_segment(
+                    p_beg, p_end, p_vert0, p_vert1, intersection0, intersection1)) {
+                assert(intersection0.almostEqual(intersection1, linTol_));
+                return {{intersection0, bar_interID}, tri_interID};
+            }
+        }
+        // not on connected tri. Continue
+    }
+
+    const auto& tet_ids = getVertTetNeighb(*p_beg_idp, true);
+    for (const auto& tet_id: tet_ids) {
+        const intersectionID tet_interID{tet_id};
+        // p_end on neighb tet
+        if (p_end_interID == tet_interID) {
+            return {p_end_info, tet_interID};
+        }
+
+        // get tri not connected to p_beg
+        const auto& tet_tri_ids = getTetTriNeighb(tet_id);
+        std::vector<mesh::vertex_local_id_t> vert_ids;
+        const auto tri_idp =
+            std::find_if(tet_tri_ids.begin(), tet_tri_ids.end(), [&](const auto& tid) {
+                vert_ids = getTriVertNeighb(tid);
+                return (vert_ids[0] != *p_beg_idp && vert_ids[1] != *p_beg_idp &&
+                        vert_ids[2] != *p_beg_idp);
+            });
+        assert(tri_idp != tet_tri_ids.end());
+        const intersectionID tri_interID{*tri_idp};
+        // p_end on opposite tri of a tet
+        if (p_end_interID == tri_interID) {
+            return {p_end_info, tet_interID};
+        }
+        // p_end out of tri. segment in tet
+        {
+            point3d intersection;
+            if (tri_intersect_line(getPoint3d(vert_ids[0]),
+                                   getPoint3d(vert_ids[1]),
+                                   getPoint3d(vert_ids[2]),
+                                   p_beg,
+                                   p_end,
+                                   intersection)) {
+                return {{intersection, tri_interID}, tet_interID};
+            }
+        }
+    }
+
+    // we could not find the next point. The segment probably goes out of the owned mesh
+    return {{p_beg, mesh::tetrahedron_local_id_t{}}, mesh::tetrahedron_local_id_t{}};
+}
+
+std::pair<DistMesh::intersectionInfo, DistMesh::intersectionID>
+DistMesh::_findNextIntersectionFromBar(const intersectionInfo& p_beg_info,
+                                       const intersectionInfo& p_end_info) {
+    const auto& p_beg = p_beg_info.point_;
+    const auto& p_end = p_end_info.point_;
+    const auto& p_beg_interID = p_beg_info.intersection_;
+    const auto& p_end_interID = p_end_info.intersection_;
+
+    const auto* p_beg_idp = std::get_if<mesh::bar_local_id_t>(&p_beg_interID);
+    if (p_beg_idp == nullptr) {
+        return {{p_beg, mesh::tetrahedron_local_id_t{}}, mesh::tetrahedron_local_id_t{}};
+    }
+    // p_beg is on bar
+
+    // p_end is not on p_beg bar. Already checked
+    const auto& vert_ids = getBarVertNeighb(*p_beg_idp);
+    for (const auto& vert_id: vert_ids) {
+        // checking vert ownership of verts is superfluous since p_beg_interID is owned
+        const intersectionID vert_interID{vert_id};
+        // p_end on bar verts
+        if (p_end_interID == vert_interID) {
+            return {p_end_info, p_beg_interID};
+        }
+        // p_end out of segment. vert on segment
+        const point3d p_vert = getPoint3d(vert_id);
+        if (segment_intersect_point(p_beg, p_end, p_vert)) {
+            return {{p_vert, vert_interID}, p_beg_interID};
+        }
+    }
+
+    const auto& tri_ids = getBarTriNeighb(*p_beg_idp);
+    for (const auto& tri_id: tri_ids) {
+        if (!isOwned(tri_id)) {
+            continue;
+        }
+        const intersectionID tri_interID{tri_id};
+        // p_end on tri
+        if (p_end_interID == tri_interID) {
+            return {p_end_info, tri_interID};
+        }
+
+        // get vert from tri that is not on bar. called opp_vert
+        const auto& tri_vert_ids = getTriVertNeighb(tri_id);
+        const auto opp_vert_idp =
+            std::find_if(tri_vert_ids.begin(), tri_vert_ids.end(), [&](const auto& vid) {
+                return (vid != vert_ids[0] && vid != vert_ids[1]);
+            });
+        assert(opp_vert_idp != tri_vert_ids.end());
+        const intersectionID opp_vert_interID{*opp_vert_idp};
+        // p_end on tri_vert
+        if (p_end_interID == opp_vert_interID) {
+            return {p_end_info, tri_interID};
+        }
+        // p_end out of tri. opp_vert on segment
+        const point3d p_opp_vert = getPoint3d(*opp_vert_idp);
+        if (segment_intersect_point(p_beg, p_end, p_opp_vert)) {
+            return {{p_opp_vert, opp_vert_interID}, tri_interID};
+        }
+
+        // p_end crosses bar that shares a vertex with p_beg bar
+        const auto& tri_bar_ids = getTriBarNeighb(tri_id);
+        for (const auto& tri_bar_id: tri_bar_ids) {
+            if (tri_bar_id == *p_beg_idp) {
+                continue;
+            }
+            const intersectionID tri_bar_interID{tri_bar_id};
+            // p_end on bar
+            if (p_end_interID == tri_bar_interID) {
+                return {p_end_info, tri_interID};
+            }
+
+            // p_end out of tri. segment intersect bar
+            const auto& tri_bar_verts = getBarVertNeighb(tri_bar_id);
+            const auto p_tri_bar_vert0 = getPoint3d(tri_bar_verts[0]);
+            const auto p_tri_bar_vert1 = getPoint3d(tri_bar_verts[1]);
+            {
+                point3d intersection0, intersection1;
+                if (segment_intersect_segment(p_beg,
+                                              p_end,
+                                              p_tri_bar_vert0,
+                                              p_tri_bar_vert1,
+                                              intersection0,
+                                              intersection1)) {
+                    assert(intersection0.almostEqual(intersection1, linTol_));
+                    return {{intersection0, tri_bar_interID}, tri_interID};
+                }
+            }
+        }
+    }
+
+    const auto& tet_ids = getBarTetNeighb(*p_beg_idp, true);
+    for (const auto& tet_id: tet_ids) {
+        const intersectionID tet_interID{tet_id};
+
+        // p_end in tet
+        if (p_end_interID == tet_interID) {
+            return {p_end_info, tet_interID};
+        }
+
+        // find tet bar that does not share a vertex with p_beg bar. Called opp_bar
+        const auto tet_bar_ids = getTetBarNeighb(tet_id);
+        std::vector<mesh::vertex_local_id_t> opp_bar_vert_ids;
+        const auto opp_bar_idp =
+            std::find_if(tet_bar_ids.begin(), tet_bar_ids.end(), [&](const auto& bid) {
+                opp_bar_vert_ids = getBarVertNeighb(bid);
+                return opp_bar_vert_ids[0] != vert_ids[0] && opp_bar_vert_ids[1] != vert_ids[1] &&
+                       opp_bar_vert_ids[0] != vert_ids[1] && opp_bar_vert_ids[1] != vert_ids[0];
+            });
+        assert(opp_bar_idp != tet_bar_ids.end());
+        const intersectionID opp_bar_interID{*opp_bar_idp};
+        // p_end on bar
+        if (p_end_interID == opp_bar_interID) {
+            return {p_end_info, tet_interID};
+        }
+
+        // p_end out of bar. segment intersect bar
+        const point3d p_opp_bar_vert0 = getPoint3d(opp_bar_vert_ids[0]);
+        const point3d p_opp_bar_vert1 = getPoint3d(opp_bar_vert_ids[1]);
+        {
+            point3d intersection0, intersection1;
+            if (segment_intersect_segment(
+                    p_beg, p_end, p_opp_bar_vert0, p_opp_bar_vert1, intersection0, intersection1)) {
+                assert(intersection0.almostEqual(intersection1, linTol_));
+                return {{intersection0, opp_bar_interID}, tet_interID};
+            }
+        }
+
+        const auto& tet_tri_ids = getTetTriNeighb(tet_id);
+        for (const auto tet_tri_id: tet_tri_ids) {
+            // skip the tris that share 2 vertexes with p_beg bar. Already checked
+            const auto& tet_tri_vert_ids = getTriVertNeighb(tet_tri_id);
+            if ((find(tet_tri_vert_ids.begin(), tet_tri_vert_ids.end(), vert_ids[0]) !=
+                 tet_tri_vert_ids.end()) &&
+                (find(tet_tri_vert_ids.begin(), tet_tri_vert_ids.end(), vert_ids[1]) !=
+                 tet_tri_vert_ids.end())) {
+                continue;
+            }
+
+            const intersectionID tet_tri_interID{tet_tri_id};
+            // p_end on tri
+            if (p_end_interID == tet_tri_interID) {
+                return {p_end_info, tet_interID};
+            }
+
+            // p_end out of tet. segment intersect tri.
+            const point3d p_tet_tri_vert0 = getPoint3d(tet_tri_vert_ids[0]);
+            const point3d p_tet_tri_vert1 = getPoint3d(tet_tri_vert_ids[1]);
+            const point3d p_tet_tri_vert2 = getPoint3d(tet_tri_vert_ids[2]);
+            {
+                point3d intersection;
+                if (tri_intersect_line(p_tet_tri_vert0,
+                                       p_tet_tri_vert1,
+                                       p_tet_tri_vert2,
+                                       p_beg,
+                                       p_end,
+                                       intersection)) {
+                    return {{intersection, tet_tri_interID}, tet_interID};
+                }
+            }
+        }
+    }
+
+
+    // we could not find the next point. The segment probably goes out of the owned mesh
+    return {{p_beg, mesh::tetrahedron_local_id_t{}}, mesh::tetrahedron_local_id_t{}};
+}
+
+std::pair<DistMesh::intersectionInfo, DistMesh::intersectionID>
+DistMesh::_findNextIntersectionFromTri(const intersectionInfo& p_beg_info,
+                                       const intersectionInfo& p_end_info) {
+    const auto& p_beg = p_beg_info.point_;
+    const auto& p_end = p_end_info.point_;
+    const auto& p_beg_interID = p_beg_info.intersection_;
+    const auto& p_end_interID = p_end_info.intersection_;
+
+    const auto* p_beg_idp = std::get_if<mesh::triangle_local_id_t>(&p_beg_interID);
+    if (p_beg_idp == nullptr) {
+        return {{p_beg, mesh::tetrahedron_local_id_t{}}, mesh::tetrahedron_local_id_t{}};
+    }
+    // p_beg is on tri
+
+    const auto vert_ids = getTriVertNeighb(*p_beg_idp);
+    for (const auto& vert_id: vert_ids) {
+        // no need to check if the vert is owned since the tri beg is owned
+        const intersectionID vert_interID{vert_id};
+
+        // p_end on vert
+        if (p_end_interID == vert_interID) {
+            return {p_end_info, p_beg_interID};
+        }
+
+        // p_end out of tri. vert on segment
+        const point3d p_vert = getPoint3d(vert_id);
+        if (segment_intersect_point(p_beg, p_end, p_vert)) {
+            return {{p_vert, vert_interID}, p_beg_interID};
+        }
+    }
+
+    const auto bar_ids = getTriBarNeighb(*p_beg_idp);
+    for (const auto& bar_id: bar_ids) {
+        // no need to check if the vert is owned since the tri beg is owned
+        const intersectionID bar_interID{bar_id};
+
+        // p_end on bar
+        if (p_end_interID == bar_interID) {
+            return {p_end_info, p_beg_interID};
+        }
+
+        // p_end out of tri. segment crosses bar
+        const auto& bar_vert_ids = getBarVertNeighb(bar_id);
+        const point3d p_bar_vert0 = getPoint3d(bar_vert_ids[0]);
+        const point3d p_bar_vert1 = getPoint3d(bar_vert_ids[1]);
+        {
+            point3d intersection0, intersection1;
+            if (segment_intersect_segment(
+                    p_beg, p_end, p_bar_vert0, p_bar_vert1, intersection0, intersection1)) {
+                assert(intersection0.almostEqual(intersection1, linTol_));
+                return {{intersection0, bar_interID}, p_beg_interID};
+            }
+        }
+    }
+
+    const auto tet_ids = getTriTetNeighb(*p_beg_idp, true);
+    for (const auto& tet_id: tet_ids) {
+        // no need to check if the vert is owned since the tri beg is owned
+        const intersectionID tet_interID{tet_id};
+
+        // p_end on tet
+        if (p_end_interID == tet_interID) {
+            return {p_end_info, tet_interID};
+        }
+
+        // find opposite vert
+        const auto& tet_vert_ids = getTetVertNeighb(tet_id);
+        const auto opp_vert_idp =
+            std::find_if(tet_vert_ids.begin(), tet_vert_ids.end(), [&](const auto& vid) {
+                return vid != vert_ids[0] && vid != vert_ids[1] && vid != vert_ids[2];
+            });
+        assert(opp_vert_idp != tet_vert_ids.end());
+        const intersectionID opp_vert_interID{*opp_vert_idp};
+
+        // p_end on opposite vert
+        if (p_end_interID == opp_vert_interID) {
+            return {p_end_info, tet_interID};
+        }
+
+        // p_end out of tet. opp_vert on segment
+        const point3d p_opp_vert = getPoint3d(*opp_vert_idp);
+        if (segment_intersect_point(p_beg, p_end, p_opp_vert)) {
+            return {{p_opp_vert, opp_vert_interID}, tet_interID};
+        }
+
+        // check bars not on p_beg tri
+        const auto& tet_bar_ids = getTetBarNeighb(tet_id);
+        for (const auto& tet_bar_id: tet_bar_ids) {
+            // skip the bars that belong to the tri. Already checked
+            if (tet_bar_id == bar_ids[0] || tet_bar_id == bar_ids[1] || tet_bar_id == bar_ids[2]) {
+                continue;
+            }
+
+            const intersectionID tet_bar_interID{tet_bar_id};
+
+            // p_end on bar
+            if (p_end_interID == tet_bar_interID) {
+                return {p_end_info, tet_interID};
+            }
+
+            // p_end out of tet. bar intersect segment
+            const auto tet_bar_vert_ids = getBarVertNeighb(tet_bar_id);
+            const point3d p_tet_bar_vert0 = getPoint3d(tet_bar_vert_ids[0]);
+            const point3d p_tet_bar_vert1 = getPoint3d(tet_bar_vert_ids[1]);
+            {
+                point3d intersection0, intersection1;
+                if (segment_intersect_segment(p_beg,
+                                              p_end,
+                                              p_tet_bar_vert0,
+                                              p_tet_bar_vert1,
+                                              intersection0,
+                                              intersection1)) {
+                    assert(intersection0.almostEqual(intersection1, linTol_));
+                    return {{intersection0, tet_bar_interID}, tet_interID};
+                }
+            }
+        }
+
+        // check tris, not p_beg tri
+        const auto& tet_tri_ids = getTetTriNeighb(tet_id);
+        for (const auto& tet_tri_id: tet_tri_ids) {
+            // skip p_beg tri
+            if (tet_tri_id == *p_beg_idp) {
+                continue;
+            }
+
+            const intersectionID tet_tri_interID{tet_tri_id};
+
+            // p_end on tri
+            if (p_end_interID == tet_tri_interID) {
+                return {p_end_info, tet_interID};
+            }
+
+            // p_end out of tri. segment intersect tri
+            const auto& tet_tri_vert_ids = getTriVertNeighb(tet_tri_id);
+            const point3d p_tet_tri_vert0 = getPoint3d(tet_tri_vert_ids[0]);
+            const point3d p_tet_tri_vert1 = getPoint3d(tet_tri_vert_ids[1]);
+            const point3d p_tet_tri_vert2 = getPoint3d(tet_tri_vert_ids[2]);
+            {
+                point3d intersection;
+                if (tri_intersect_line(p_tet_tri_vert0,
+                                       p_tet_tri_vert1,
+                                       p_tet_tri_vert2,
+                                       p_beg,
+                                       p_end,
+                                       intersection)) {
+                    return {{intersection, tet_tri_interID}, tet_interID};
+                }
+            }
+        }
+    }
+
+    // we could not find the next point. The segment probably goes out of the owned mesh
+    return {{p_beg, mesh::tetrahedron_local_id_t{}}, mesh::tetrahedron_local_id_t{}};
+}
+
+std::pair<DistMesh::intersectionInfo, DistMesh::intersectionID>
+DistMesh::_findNextIntersectionFromTet(const intersectionInfo& p_beg_info,
+                                       const intersectionInfo& p_end_info) {
+    const auto& p_beg = p_beg_info.point_;
+    const auto& p_end = p_end_info.point_;
+    const auto& p_beg_interID = p_beg_info.intersection_;
+    const auto& p_end_interID = p_end_info.intersection_;
+
+    const auto* p_beg_idp = std::get_if<mesh::tetrahedron_local_id_t>(&p_beg_interID);
+    if (!p_beg_idp) {
+        return {{p_beg, mesh::tetrahedron_local_id_t{}}, mesh::tetrahedron_local_id_t{}};
+    }
+    // p_beg in tet. We are sure that we own everything here
+    const auto tet_interID = p_beg_interID;
+
+    const auto& vert_ids = getTetVertNeighb(*p_beg_idp);
+    for (const auto& vert_id: vert_ids) {
+        const intersectionID vert_interID{vert_id};
+        // p_end on vert
+        if (p_end_interID == vert_interID) {
+            return {p_end_info, tet_interID};
+        }
+
+        // p_end out of tet. vert lies on segment
+        const point3d p_vert = getPoint3d(vert_id);
+        if (segment_intersect_point(p_beg, p_end, p_vert)) {
+            return {{p_vert, vert_interID}, tet_interID};
+        }
+    }
+
+    const auto& bar_ids = getTetBarNeighb(*p_beg_idp);
+    for (const auto& bar_id: bar_ids) {
+        const intersectionID bar_interID{bar_id};
+        // p_end on bar
+        if (p_end_interID == bar_interID) {
+            return {p_end_info, tet_interID};
+        }
+
+        // p_end out of tet. segment intersect bar
+        const auto& bar_vert_ids = getBarVertNeighb(bar_id);
+        const point3d p_bar_vert0 = getPoint3d(bar_vert_ids[0]);
+        const point3d p_bar_vert1 = getPoint3d(bar_vert_ids[1]);
+        {
+            point3d intersection0, intersection1;
+            if (segment_intersect_segment(
+                    p_beg, p_end, p_bar_vert0, p_bar_vert1, intersection0, intersection1)) {
+                assert(intersection0.almostEqual(intersection1, linTol_));
+                return {{intersection0, bar_interID}, tet_interID};
+            }
+        }
+    }
+
+    const auto& tri_ids = getTetTriNeighb(*p_beg_idp);
+    for (const auto& tri_id: tri_ids) {
+        const intersectionID tri_interID{tri_id};
+        // p_end on tri
+        if (p_end_interID == tri_interID) {
+            return {p_end_info, tet_interID};
+        }
+
+        // p_end out of tet. segment intersect bar
+        const auto& tri_vert_ids = getTriVertNeighb(tri_id);
+        const point3d p_tri_vert0 = getPoint3d(tri_vert_ids[0]);
+        const point3d p_tri_vert1 = getPoint3d(tri_vert_ids[1]);
+        const point3d p_tri_vert2 = getPoint3d(tri_vert_ids[2]);
+        {
+            point3d intersection;
+            if (tri_intersect_line(
+                    p_tri_vert0, p_tri_vert1, p_tri_vert2, p_beg, p_end, intersection)) {
+                return {{intersection, tri_interID}, tet_interID};
+            }
+        }
+    }
+
+    // we could not find the next point. The segment probably goes out of the owned mesh
+    return {{p_beg, mesh::tetrahedron_local_id_t{}}, mesh::tetrahedron_local_id_t{}};
+}
+
+mesh::tetrahedron_global_id_t DistMesh::findTetByPoint(const std::vector<double>& position,
+                                                       const double tol) {
     mesh::tetrahedron_global_id_t tet;
-    auto localTet = findLocalTetByPoint(position);
+    auto localTet = findLocalTetByPoint(position, tol);
     if (localTet.valid()) {
         tet = getGlobalIndex(localTet);
     }
@@ -510,61 +1447,157 @@ mesh::tetrahedron_global_id_t DistMesh::findTetByPoint(const std::vector<double>
     return tet;
 }
 
-mesh::tetrahedron_local_id_t DistMesh::findLocalTetByPoint(const point3d& position) {
-    bool inside = true;
-    for (int i = 0; inside and i < dim(); ++i) {
-        inside = ownedBBoxMin[i] <= position[i] and position[i] <= ownedBBoxMax[i];
+mesh::tetrahedron_local_id_t DistMesh::findLocalTetByPoint(const std::vector<double>& position,
+                                                           const double tol) {
+    return findLocalTetByPoint(point3d(position[0], position[1], position[2]), tol);
+}
+
+mesh::tetrahedron_local_id_t DistMesh::findLocalTetByPoint(const point3d& position,
+                                                           const double tol) {
+    constexpr osh::LO threshold = 100;
+    if (num_elems() < threshold) {
+        return findLocalTetByPointLinear(position, tol);
+    } else {
+        return findLocalTetByPointWalk(position, tol);
     }
-    if (inside) {
-        const auto& tets2verts = mesh_.ask_elem_verts();
-        for (const auto elem: owned_elems()) {
-            const auto tet2verts = osh::gather_verts<4>(tets2verts, elem.get());
+}
+
+mesh::tetrahedron_local_id_t DistMesh::findLocalTetByPointLinear(
+    const std::vector<double>& position,
+    const double tol) {
+    return findLocalTetByPointLinear(point3d(position[0], position[1], position[2]));
+}
+
+mesh::tetrahedron_local_id_t DistMesh::findLocalTetByPointLinear(const point3d& position,
+                                                                 const double tol) {
+    if (!isPointInOwnedBBox(position, tol)) {
+        return {};
+    }
+
+    const auto& tets2verts = mesh_.ask_elem_verts();
+    for (const auto elem: owned_elems()) {
+        const auto tet2verts = osh::gather_verts<4>(tets2verts, elem.get());
+        const auto tet2x = osh::gather_vectors<4, dim()>(coords(), tet2verts);
+        std::vector<math::point3d> verts;
+        verts.reserve(4);
+        for (const auto& p: tet2x) {
+            verts.emplace_back(p[0], p[1], p[2]);
+        }
+        if (math::tet_inside(verts[0], verts[1], verts[2], verts[3], position)) {
+            return elem;
+        }
+    }
+
+    return {};
+}
+
+mesh::tetrahedron_local_id_t DistMesh::findLocalTetByPointWalk(const std::vector<double>& position,
+                                                               const double tol) {
+    return findLocalTetByPointWalk(point3d(position[0], position[1], position[2]), tol);
+}
+
+
+mesh::tetrahedron_local_id_t DistMesh::findLocalTetByPointWalk(const point3d& position,
+                                                               const double tol) {
+    if (!isPointInOwnedBBox(position, tol)) {
+        return {};
+    }
+
+    util::PQueue<double, mesh::tetrahedron_local_id_t> pq;
+    const auto& tets2verts = mesh_.ask_elem_verts();
+    const auto push_in_queue = [&](const mesh::tetrahedron_local_id_t tidx) {
+        const auto barycenter = getTetBarycenter(tidx);
+        const point3d barycenter_p3d{barycenter[0], barycenter[1], barycenter[2]};
+        pq.push(barycenter_p3d.dist2(position), tidx);
+    };
+    const auto process_queue = [&]() -> mesh::tetrahedron_local_id_t {
+        while (!pq.empty()) {
+            const auto [d, tet] = pq.next();
+
+            const auto tet2verts = osh::gather_verts<4>(tets2verts, tet.get());
             const auto tet2x = osh::gather_vectors<4, dim()>(coords(), tet2verts);
             std::vector<math::point3d> verts;
+            verts.reserve(4);
             for (const auto& p: tet2x) {
                 verts.emplace_back(p[0], p[1], p[2]);
             }
             if (math::tet_inside(verts[0], verts[1], verts[2], verts[3], position)) {
-                return elem;
+                return tet;
             }
+
+            for (const auto& neighb: getTetTetNeighb(tet, true)) {
+                push_in_queue(neighb);
+            }
+        }
+        return {};
+    };
+
+    // feel free to adjust this number based on performance
+    constexpr osh::LO n_samples = 8;
+    const osh::LO sample_step = std::max(1, num_elems() / n_samples);
+    // prime the pump
+    for (auto tidx = 0; tidx < num_elems(); tidx += sample_step) {
+        push_in_queue(owned_elems()[tidx]);
+    }
+
+    while (pq.size_processed() < num_elems()) {
+        const auto ans = process_queue();
+        if (!ans.unknown()) {
+            return ans;
+        }
+        const auto tidx = pq.get_min_unqueued_value();
+        // restart in case the mesh is disconnected
+        if (tidx < num_elems()) {
+            push_in_queue(tidx);
         }
     }
     return {};
 }
 
-mesh::tetrahedron_local_id_t DistMesh::findLocalTetByPoint(const std::vector<double>& position) {
-    return findLocalTetByPoint(point3d(position[0], position[1], position[2]));
+
+bool DistMesh::isPointInOwnedBBox(const point3d& position, double tol) const {
+    if (tol < 0) {
+        tol = steps::math::tol_lin;
+    }
+    for (int i = 0; i < dim(); ++i) {
+        if (position[i] < ownedBBoxMin[i] - tol || ownedBBoxMax[i] + tol < position[i]) {
+            return false;
+        }
+    }
+    return true;
 }
 
-bool DistMesh::isPointInTet(const std::vector<double>& pos, mesh::tetrahedron_global_id_t tet_id) {
+
+bool DistMesh::isPointInTet(const std::vector<double>& pos,
+                            mesh::tetrahedron_global_id_t tet_id,
+                            const double tol) {
     mesh::tetrahedron_local_id_t ltet = getLocalIndex(tet_id, true);
-    bool contains = ltet.valid() ? isPointInTet(pos, ltet) : false;
+    bool contains = ltet.valid() ? isPointInTet(pos, ltet, tol) : false;
     syncData(&contains, 1, MPI_C_BOOL, ltet.valid());
     return contains;
 }
 
-bool DistMesh::isPointInTet(const std::vector<double>& pos, mesh::tetrahedron_local_id_t tet_id) {
+bool DistMesh::isPointInTet(const std::vector<double>& pos,
+                            mesh::tetrahedron_local_id_t tet_id,
+                            const double tol) {
     point3d position(pos[0], pos[1], pos[2]);
-    bool inside = true;
-    for (int i = 0; inside and i < dim(); ++i) {
-        inside = ownedBBoxMin[i] <= position[i] and position[i] <= ownedBBoxMax[i];
+    if (!isPointInOwnedBBox(position, tol)) {
+        return false;
     }
-    if (inside) {
-        const auto& tets2verts = mesh_.ask_elem_verts();
-        const auto tet2verts = osh::gather_verts<4>(tets2verts, tet_id.get());
-        const auto tet2x = osh::gather_vectors<4, dim()>(coords(), tet2verts);
-        std::array<point3d, 4> tet_vertices;
-        size_t ind_ = 0;
-        for (const auto& p: tet2x) {
-            tet_vertices[ind_][0] = p[0];
-            tet_vertices[ind_][1] = p[1];
-            tet_vertices[ind_][2] = p[2];
-            ind_++;
-        }
-        if (math::tet_inside(
-                tet_vertices[0], tet_vertices[1], tet_vertices[2], tet_vertices[3], position)) {
-            return true;
-        }
+    const auto& tets2verts = mesh_.ask_elem_verts();
+    const auto tet2verts = osh::gather_verts<4>(tets2verts, tet_id.get());
+    const auto tet2x = osh::gather_vectors<4, dim()>(coords(), tet2verts);
+    std::array<point3d, 4> tet_vertices;
+    size_t ind_ = 0;
+    for (const auto& p: tet2x) {
+        tet_vertices[ind_][0] = p[0];
+        tet_vertices[ind_][1] = p[1];
+        tet_vertices[ind_][2] = p[2];
+        ind_++;
+    }
+    if (math::tet_inside(
+            tet_vertices[0], tet_vertices[1], tet_vertices[2], tet_vertices[3], position)) {
+        return true;
     }
     return false;
 }
@@ -689,6 +1722,7 @@ std::vector<mesh::tetrahedron_local_id_t> DistMesh::getTriTetNeighb(
     assert(tri_index.valid());
     std::vector<mesh::tetrahedron_local_id_t> neighbs;
     const auto tris2tets = mesh_.ask_up(dim() - 1, dim());
+
     const auto start = tris2tets.a2ab[tri_index.get()];
     const auto end = tris2tets.a2ab[tri_index.get() + 1];
     for (auto tetidx = start; tetidx < end; ++tetidx) {
@@ -808,6 +1842,27 @@ std::vector<mesh::triangle_local_id_t> DistMesh::getLocalTriIndices(bool owned) 
     return boundaries_v;
 }
 
+std::vector<mesh::bar_global_id_t> DistMesh::getAllBarIndices() {
+    std::vector<mesh::bar_global_id_t> global_bars;
+    const auto& bars = getLocalBarIndices(true);
+    global_bars.reserve(bars.size());
+    for (auto bar: bars) {
+        global_bars.emplace_back(getGlobalIndex(bar));
+    }
+    return allGatherEntities(global_bars, MPI_INT64_T);
+}
+
+std::vector<mesh::bar_local_id_t> DistMesh::getLocalBarIndices(bool owned) {
+    const auto& bar_owned = owned_bars_mask_;
+    std::vector<mesh::bar_local_id_t> bars_v;
+    for (osh::LO bar = 0; bar < bar_owned.size(); bar++) {
+        if ((bar_owned[bar] != 0) or not owned) {
+            bars_v.emplace_back(bar);
+        }
+    }
+    return bars_v;
+}
+
 std::vector<double> DistMesh::getVertex(mesh::vertex_global_id_t vert_index) const {
     std::vector<double> vert(dim());
     auto localInd = getLocalIndex(vert_index, true);
@@ -925,6 +1980,19 @@ mesh::triangle_local_id_t DistMesh::getLocalIndex(mesh::triangle_global_id_t tri
 
 mesh::triangle_global_id_t DistMesh::getGlobalIndex(mesh::triangle_local_id_t tri) const {
     return mesh::triangle_global_id_t(boundLocal2Global[tri.get()]);
+}
+
+mesh::bar_local_id_t DistMesh::getLocalIndex(mesh::bar_global_id_t bar, bool owned) const {
+    auto result = barGlobal2Local.find(bar);
+    if (result != barGlobal2Local.end() and
+        (not owned or owned_bars_mask_[result->second.get()] != 0)) {
+        return result->second;
+    }
+    return {};
+}
+
+mesh::bar_global_id_t DistMesh::getGlobalIndex(mesh::bar_local_id_t bar) const {
+    return mesh::bar_global_id_t(barLocal2Global[bar.get()]);
 }
 
 mesh::vertex_local_id_t DistMesh::getLocalIndex(mesh::vertex_global_id_t vert, bool owned) const {
@@ -1512,30 +2580,6 @@ std::vector<Entity> DistMesh::allGatherEntities(const std::vector<Entity>& entit
     return all_entities;
 }
 
-/**
- * \brief Return the id of owned tets (not ghost) sharing a vertex with index vidx.
- *
- * \param vidx Index of the vertex.
- * \return tet ids.
- */
-static std::vector<mesh::tetrahedron_local_id_t> getVertexTetNeighbs(
-    mesh::vertex_local_id_t vidx,
-    const Omega_h::Adj& vert2tet,
-    const osh::Bytes& owned_elems_mask_) {
-    std::vector<mesh::tetrahedron_local_id_t> tets;
-
-    auto start = vert2tet.a2ab[vidx.get()];
-    auto end = vert2tet.a2ab[vidx.get() + 1];
-    for (auto idx = start; idx < end; ++idx) {
-        auto element = vert2tet.ab2b[idx];
-        if (owned_elems_mask_[element] != 0) {
-            tets.emplace_back(element);
-        }
-    }
-
-    return tets;
-}
-
 // Implementation:
 // "An efficient and robust ray-box intersection algorithm", by
 // Amy Williams and Steve Barrus and R. Keith Morley and Peter Shirley
@@ -1567,31 +2611,44 @@ bool steps::dist::AABB3::intersect(const steps::dist::Ray& r, float t0, float t1
 DistMesh::intersection_list_t DistMesh::intersectDeterministic(const point3d& p_start,
                                                                const point3d& p_end,
                                                                const double init_seg_length) {
-    intersection_list_t segment_intersects;
+    intersection_list_t ans;
+    auto p_beg_info = findIntersection(p_start);
+    auto p_end_info = findIntersection(p_end);
+    _intersectDeterministicHelper(p_beg_info, p_end_info, init_seg_length, ans);
+    return ans;
+}
 
-    // If both points (p_start, p_end) lie outside the mesh, but the line segment passes through
+
+void DistMesh::_intersectDeterministicHelper(const intersectionInfo& p_beg_info,
+                                             const intersectionInfo& p_end_info,
+                                             const double init_seg_length,
+                                             intersection_list_t& ans) {
+    // points overlap. Nothing to do
+    if (p_beg_info.almostEqual(p_end_info, linTol_)) {
+        return;
+    }
+
+    const auto& p_beg = p_beg_info.point_;
+    const auto& p_beg_interID = p_beg_info.intersection_;
+    const auto& p_end = p_end_info.point_;
+    const auto& p_end_interID = p_end_info.intersection_;
+    constexpr intersectionID unknown_tet = mesh::tetrahedron_local_id_t{};
+
+    // If both points (p_beg, p_end) lie outside the mesh, but the line segment passes through
     // the bounding box, we bisect the segment and check the two sub-segments. This process is
     // repeated recursively, until a mid-point lies in the mesh. To avoid endless recursion, we
     // compare the length of the current sub-segment with the whole segment, and if it is below
     // this hardcoded limit (currently, 4th subdivision), we break the recursion.
-    double seg_len = p_start.distance(p_end);
+    double seg_len = p_beg.distance(p_end);
     if (seg_len < init_seg_length / 10.) {
-        return segment_intersects;
+        return;
     }
 
-    mesh::tetrahedron_local_id_t cur_tet = findLocalTetByPoint(p_start);
-    mesh::tetrahedron_local_id_t end_tet = findLocalTetByPoint(p_end);
-
-    // Case: Both points (p_start, p_end) lie outside the (local) mesh
-    if (cur_tet.unknown() && end_tet.unknown()) {
-        // No ray to check
-        if (p_start.almostEqual(p_end)) {
-            return segment_intersects;
-        }
-
+    // Case: Both points (p_beg, p_end) lie outside the (local) mesh
+    if (p_beg_info.intersection_ == unknown_tet && p_end_info.intersection_ == unknown_tet) {
         // Check if segment intersects with the Bounding Box
         AABB3 ownedBBox(ownedBBoxMin, ownedBBoxMax);
-        bool intersects = ownedBBox.intersect(Ray(p_start, p_end - p_start), 0.0f, 1.0f);
+        const bool intersects = ownedBBox.intersect(Ray(p_beg, p_end - p_beg), 0.0f, 1.0f);
 
         if (!intersects) {
             // Using a distributed mesh means that by choice we can test segments that do not
@@ -1600,156 +2657,74 @@ DistMesh::intersection_list_t DistMesh::intersectDeterministic(const point3d& p_
             if (comm_size() == 1) {
                 CLOG(WARNING, "general_log") << "Initial and final points are not in the mesh.\n";
             }
-            return segment_intersects;
+            return;
         } else {
             // Intersection found
             // Bisect and check the sub-segments, until a midpoint is inside the mesh
-            {
-                const auto& isecs1 =
-                    intersectDeterministic(p_start, 0.5 * (p_start + p_end), init_seg_length);
-                segment_intersects.insert(segment_intersects.end(), isecs1.begin(), isecs1.end());
-            }
-            {
-                const auto& isecs2 =
-                    intersectDeterministic(0.5 * (p_start + p_end), p_end, init_seg_length);
-                segment_intersects.insert(segment_intersects.end(), isecs2.begin(), isecs2.end());
-            }
-            return segment_intersects;
+            const auto p_middle_info = findIntersection((0.5 * (p_beg + p_end)));
+            _intersectDeterministicHelper(p_beg_info, p_middle_info, init_seg_length, ans);
+            _intersectDeterministicHelper(p_middle_info, p_end_info, init_seg_length, ans);
+            return;
         }
     }
 
-    // Case: p_start lies outside the local mesh and p_end inside
-    // Go from p_end to p_start and reverse the returned segment_intersects!
-    if (cur_tet.unknown() && !end_tet.unknown()) {
-        segment_intersects = intersectDeterministic(p_end, p_start, init_seg_length);
-        std::reverse(segment_intersects.begin(), segment_intersects.end());
-        return segment_intersects;
-    }
+    auto p_curr_info = p_beg_info;
+    while (p_curr_info.intersection_ != unknown_tet &&
+           !p_curr_info.almostEqual(p_end_info, linTol_)) {
+        // extract p_curr for easy-to-use
+        const auto& p_curr = p_curr_info.point_;
+        const auto& p_curr_interID = p_curr_info.intersection_;
+        // get the next intersection
+        auto [p_next_info, lies_on_interID] = findNextIntersection(p_curr_info, p_end_info);
+        // extract p_next for easy-to-use
+        const auto& p_next = p_next_info.point_;
+        const auto& p_next_interID = p_next_info.intersection_;
 
-    const auto& tris2verts = mesh_.ask_verts_of(Omega_h::FACE);
-    const auto& tets2verts = mesh_.ask_elem_verts();
-    const auto& vert2tet = mesh_.ask_up(0, dim());
-
-    point3d previous_point = p_start;
-
-    auto tet2verts = osh::gather_verts<4>(tets2verts, cur_tet.get());
-    auto tet2x = osh::gather_vectors<4, dim()>(coords(), tet2verts);
-    std::array<point3d, 4> tet_vertices;
-    size_t ind_ = 0;
-    for (const auto& p: tet2x) {
-        tet_vertices[ind_][0] = p[0];
-        tet_vertices[ind_][1] = p[1];
-        tet_vertices[ind_][2] = p[2];
-        ind_++;
-    }
-
-    // storage for tet_neighbors
-    size_t neighbs_id = 0;
-    std::vector<mesh::tetrahedron_local_id_t> tet_neighbors;
-
-    // Loop over neighbor tets until we reach the tet containing segment end (or
-    // outside). Won't even enter if the cur_tet contains p_end.
-    while (!math::tet_inside(
-        tet_vertices[0], tet_vertices[1], tet_vertices[2], tet_vertices[3], p_end)) {
-        point3d intersection = previous_point;
-        mesh::tetrahedron_local_id_t next_tet = cur_tet;
-
-        // Loop over current tet faces
-        // if intersection is found select next tet
-        for (const auto& tri_id: getTetTriNeighb(cur_tet)) {
-            const auto tri2verts = osh::gather_verts<3>(tris2verts, tri_id.get());
-            const auto tri2x = osh::gather_vectors<3, 3>(coords(), tri2verts);
-            if (math::tri_intersect_line(point3d(tri2x[0][0], tri2x[0][1], tri2x[0][2]),
-                                         point3d(tri2x[1][0], tri2x[1][1], tri2x[1][2]),
-                                         point3d(tri2x[2][0], tri2x[2][1], tri2x[2][2]),
-                                         previous_point,
-                                         p_end,
-                                         intersection)) {
-                // Check that intersection is new
-                if (intersection.almostEqual(previous_point)) {
-                    continue;
+        double ratio = p_curr.distance(p_next) / init_seg_length;
+        // Do not consider any ratio that is smaller than 1e-6. Adimensional.
+        if (ratio >= 1e-6 && lies_on_interID != unknown_tet) {
+            assert(!std::holds_alternative<mesh::vertex_local_id_t>(lies_on_interID));
+            if (auto lies_on_idp = std::get_if<mesh::tetrahedron_local_id_t>(&lies_on_interID)) {
+                ans.emplace_back(*lies_on_idp, ratio);
+            } else if (auto lies_on_idp = std::get_if<mesh::triangle_local_id_t>(
+                           &lies_on_interID)) {
+                const auto& tet_ids = getTriTetNeighb(*lies_on_idp, false);
+                assert(!tet_ids.empty());
+                ratio /= static_cast<double>(tet_ids.size());
+                for (const auto& tet_id: tet_ids) {
+                    if (isOwned(tet_id)) {
+                        ans.emplace_back(tet_id, ratio);
+                    }
                 }
-
-                // Next tet is the other side of the chosen triangle
-                const auto& tet_ids = getTriTetNeighb(tri_id, true);
-
-                // reached the boundary
-                mesh::tetrahedron_local_id_t second_tet_neighb;
-                if (tet_ids.size() == 2) {
-                    second_tet_neighb = tet_ids[1];
-                }
-                next_tet = (tet_ids[0] == cur_tet) ? second_tet_neighb : tet_ids[0];
-                break;
-            }
-        }
-
-        // If next_tet == cur_tet then the line did not cross any face
-        // this can happen due to finite precision arithmetic
-        // try other neighboring tets
-        if (next_tet == cur_tet) {
-            // First pass, need to build neighbors list
-            if (neighbs_id == 0) {
-                for (size_t v = 0; v < 4; ++v) {
-                    // Get all tets sharing this vertex
-                    const auto& tet_v = getVertexTetNeighbs(mesh::vertex_local_id_t(tet2verts[v]),
-                                                            vert2tet,
-                                                            owned_elems_mask_);
-                    // Store all neighbours except cur_tet
-                    for (size_t t = 0; t < tet_v.size(); ++t) {
-                        if (tet_v[t] != cur_tet) {
-                            tet_neighbors.push_back(tet_v[t]);
-                        }
+            } else if (auto lies_on_idp = std::get_if<mesh::bar_local_id_t>(&lies_on_interID)) {
+                const auto& tet_ids = getBarTetNeighb(*lies_on_idp, false);
+                assert(!tet_ids.empty());
+                ratio /= static_cast<double>(tet_ids.size());
+                for (const auto& tet_id: tet_ids) {
+                    if (isOwned(tet_id)) {
+                        ans.emplace_back(tet_id, ratio);
                     }
                 }
             }
-
-            // We tried all neighbors already, give up
-            if (neighbs_id >= tet_neighbors.size()) {
-                if (comm_size() == 1) {
-                    CLOG(WARNING, "general_log") << "Could not find endpoint.\n";
-                }
-                return segment_intersects;
-            }
-
-            next_tet = tet_neighbors[neighbs_id++];
         }
 
-        double ratio = previous_point.distance(intersection) / init_seg_length;
-        if (ratio > math::tol_lin) {
-            segment_intersects.emplace_back(cur_tet, ratio);
+        if (p_curr_info.almostEqual(p_next_info, linTol_)) {
+            std::stringstream ss;
+            ss << "p_curr_info: " << p_curr_info << "and p_next_info: " << p_next_info
+               << " are the same. FindNextIntersection likely failed!";
+            throw std::logic_error(ss.str());
         }
 
-        // Otherwise, unknown() then the segment finishes outside the mesh
-        if (next_tet.unknown()) {
-            if (comm_size() == 1) {
-                CLOG(WARNING, "general_log") << "Endpoint is outside mesh.\n";
-            }
-            return segment_intersects;
-        }
-
-        previous_point = intersection;
-        cur_tet = next_tet;
-        tet2verts = osh::gather_verts<4>(tets2verts, cur_tet.get());
-        tet2x = osh::gather_vectors<4, 3>(coords(), tet2verts);
-        ind_ = 0;
-        for (const auto& p: tet2x) {
-            tet_vertices[ind_][0] = p[0];
-            tet_vertices[ind_][1] = p[1];
-            tet_vertices[ind_][2] = p[2];
-            ind_++;
-        }
+        p_curr_info = p_next_info;
     }
 
-    // last intersection to end
-    if (p_start == previous_point) {
-        segment_intersects.emplace_back(cur_tet, 1.0);
-    } else {
-        double ratio = previous_point.distance(p_end) / init_seg_length;
-        segment_intersects.emplace_back(cur_tet, ratio);
+    // search on the other side for concave meshes or segments with p_beg out and p_end in.
+    if (p_curr_info.intersection_ == unknown_tet && p_end_interID != unknown_tet) {
+        _intersectDeterministicHelper(p_end_info, p_curr_info, init_seg_length, ans);
+        return;
     }
-
-    return segment_intersects;
 }
+
 
 std::vector<DistMesh::intersection_list_t> DistMesh::intersect(const double* points,
                                                                int n_points,
@@ -1766,19 +2741,19 @@ std::vector<DistMesh::intersection_list_t> DistMesh::intersect(const double* poi
         return intersecs;
     }
 
-    point3d start_p(points[0], points[1],
-                    points[2]);  // beginning of the first segment
+    auto p_beg_info = findIntersection({points[0], points[1], points[2]});
 
     // loop over each segment
     for (int i = 1; i < n_points; i++) {
-        point3d end_p(points[i * 3], points[i * 3 + 1], points[i * 3 + 2]);
+        auto p_end_info = findIntersection({points[i * 3], points[i * 3 + 1], points[i * 3 + 2]});
 
         // TODO : intersectMontecarlo (?)
-        const auto& isecs = intersectDeterministic(start_p, end_p, start_p.distance(end_p));
-
-        intersecs.push_back(isecs);
-
-        start_p = end_p;
+        intersecs.emplace_back();
+        _intersectDeterministicHelper(p_beg_info,
+                                      p_end_info,
+                                      p_beg_info.point_.distance(p_end_info.point_),
+                                      intersecs.back());
+        p_beg_info = p_end_info;
     }
 
     return intersecs;
@@ -1792,7 +2767,7 @@ DistMesh::intersectIndependentSegments(const double* points, int n_points, int s
             << "Proceeding with intersectDeterministic instead.\n";
     }
 
-    std::vector<DistMesh::intersection_list_t> intersecs;
+    std::vector<intersection_list_t> intersecs;
     if (n_points <= 1) {
         CLOG(WARNING, "general_log") << "Please provide at least two points to define a segment.\n";
         return intersecs;
@@ -1806,10 +2781,15 @@ DistMesh::intersectIndependentSegments(const double* points, int n_points, int s
     // loop over each segment
     intersecs.reserve(n_points / 2);
     for (int i = 0; i < n_points; i += 2) {
-        point3d start_p(points[i * 3], points[i * 3 + 1], points[i * 3 + 2]);
-        point3d end_p(points[(i + 1) * 3], points[(i + 1) * 3 + 1], points[(i + 1) * 3 + 2]);
-
-        intersecs.push_back(intersectDeterministic(start_p, end_p, start_p.distance(end_p)));
+        const auto p_beg_info = findIntersection(
+            {points[i * 3], points[i * 3 + 1], points[i * 3 + 2]});
+        const auto p_end_info = findIntersection(
+            {points[(i + 1) * 3], points[(i + 1) * 3 + 1], points[(i + 1) * 3 + 2]});
+        intersecs.emplace_back();
+        _intersectDeterministicHelper(p_beg_info,
+                                      p_end_info,
+                                      p_beg_info.point_.distance(p_end_info.point_),
+                                      intersecs.back());
     }
 
     return intersecs;

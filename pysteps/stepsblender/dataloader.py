@@ -60,7 +60,21 @@ class _HDF5BlenderDataLoader:
         self._vesEvents = {}
         self._raftEvents = {}
 
-        self._dbInd, self._rInd, include, exclude = self._queue_rcv.get()
+        self._dbInd, self._rInd, include, exclude, envInfo = self._queue_rcv.get()
+        # Check that Blender's numpy version is compatible with the locally installed one
+        servNpVer = utils.Versioned._parseVersion(np.__version__)
+        blendNpVer = utils.Versioned._parseVersion(envInfo.get('numpy_version', '0.0'))
+        if servNpVer >= (2, 0) and blendNpVer < (1, 26) or blendNpVer >= (2,0) and servNpVer < (1, 26):
+            self._queue_snd.put(Orders.EXIT)
+            raise Exception(
+                f'The numpy version installed for the data loading server {servNpVer} is not '
+                f'compatible with the numpy version installed in Blender {blendNpVer}. Try '
+                f'{"down" if servNpVer >= (2,0) else "up"}grading the numpy version installed '
+                f'for the data server. See '
+                f'https://numpy.org/doc/stable//numpy_2_0_migration_guide.html#note-about-pickled-files '
+                f'for details on which versions are compatible.'
+            )
+        self._queue_snd.put(Orders.OK)
 
         self._include = [re.compile(reg) for reg in include.split(',')] if include != '' else []
         self._exclude = [re.compile(reg) for reg in exclude.split(',')] if exclude != '' else []

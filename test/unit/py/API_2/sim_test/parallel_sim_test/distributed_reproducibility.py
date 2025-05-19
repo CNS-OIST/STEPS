@@ -53,7 +53,7 @@ class DistTetOpSplitReproducibilityTestCase(ReproducibilityTestCase, base_model.
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(DistTetOpSplitReproducibilityTestCase, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(DistTetOpSplitReproducibilityTestCase))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

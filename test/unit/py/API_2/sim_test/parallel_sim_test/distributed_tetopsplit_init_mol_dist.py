@@ -146,7 +146,7 @@ class DistTetopsplitInitMolDist(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(DistTetopsplitInitMolDist, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(DistTetopsplitInitMolDist))
     return unittest.TestSuite(all_tests)
 
 

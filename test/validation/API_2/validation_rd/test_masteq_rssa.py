@@ -110,7 +110,7 @@ class TestRDMasteqRSSA(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(TestRDMasteqRSSA, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(TestRDMasteqRSSA))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

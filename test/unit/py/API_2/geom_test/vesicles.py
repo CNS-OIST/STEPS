@@ -78,7 +78,7 @@ class vesicleGeom(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(vesicleGeom, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(vesicleGeom))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

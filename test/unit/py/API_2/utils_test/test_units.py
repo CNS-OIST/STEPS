@@ -202,9 +202,9 @@ class UnitsUsage(unittest.TestCase):
             ),
             (
                 [
-                    '\si{mol.L^{-1}}',
-                    '\si{(mol.m^{-2})^{-1}.s^{-1}}',
-                    '\si{\micro M^{-1}.s^{-1}}',
+                    r'\si{mol.L^{-1}}',
+                    r'\si{(mol.m^{-2})^{-1}.s^{-1}}',
+                    r'\si{\micro M^{-1}.s^{-1}}',
                 ],
                 Units._toLatex,
             ),
@@ -218,7 +218,7 @@ class UnitsUsage(unittest.TestCase):
 
 def suite():
     all_tests = []
-    all_tests.append(unittest.makeSuite(UnitsUsage, "test"))
+    all_tests.append(unittest.TestLoader().loadTestsFromTestCase(UnitsUsage))
     return unittest.TestSuite(all_tests)
 
 if __name__ == "__main__":

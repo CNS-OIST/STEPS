@@ -5,11 +5,14 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include "math/point.hpp"
+#include "math/segment.hpp"
 #include "math/tetrahedron.hpp"
 #include "math/triangle.hpp"
 
-
 using namespace steps::math;
+// these segments are in the order of 1 so this is also the linear tolerance
+constexpr double adim_tol = 4 * std::numeric_limits<point3d::value_type>::epsilon();
+constexpr double eps = adim_tol / 2.0;
 
 TEST_CASE("Point3d_constructors") {
     point3d p1;
@@ -259,17 +262,16 @@ TEST_CASE("Triangle_intersection_on_edge") {
     }
 }
 
-TEST_CASE("Triangle_intersection") {
+TEST_CASE("Triangle_intersection_line") {
     point3d intersect;
     {
         point3d t0{1, 0, 0}, t1{0, 1, 0}, t2{0, 0, 1};
-
         point3d lc(tri_barycenter(t0, t1, t2)), l1{100.0, 100.0, 100.0}, l0(lc - 0.2 * (l1 - lc));
 
         // Common case
         REQUIRE(tri_intersect_line(t0, t1, t2, l0, l1, intersect));
         REQUIRE(tri_intersect_line(t0, t1, t2, l0, l1, intersect, false));
-        REQUIRE(lc.almostEqual(intersect));
+        REQUIRE(lc.almostEqual(intersect, adim_tol * l0.distance(l1)));
 
         // outside yields false
         point3d l2 = lc + 1.5 * (l1 - lc);  // point after l1
@@ -313,4 +315,217 @@ TEST_CASE("Triangle_intersection") {
         REQUIRE_FALSE(tri_intersect_line(t0, t1, t3, p0, p1, intersect));
         REQUIRE_FALSE(tri_intersect_line(t0, t2, t3, p0, p1, intersect));
     }
+}
+
+TEST_CASE("Triangle_intersection_point") {
+    point3d t0{0, 0, 0}, t1{0, 1, 0}, t2{1, 0, 0};
+    const auto eps2 = std::numeric_limits<point3d::value_type>::epsilon() / 2.0;
+    // inside
+    REQUIRE(tri_intersect_point(t0, t1, t2, {0.1, 0.1, 0}));
+    // inversion
+    REQUIRE(tri_intersect_point(t1, t0, t2, {0.1, 0.1, 0}));
+    // edge
+    REQUIRE(tri_intersect_point(t0, t1, t2, {0.1, 0, 0}));
+    // vertex
+    REQUIRE(tri_intersect_point(t0, t1, t2, {0, 0, 0}));
+    // vertex+eps (inside)
+    REQUIRE(tri_intersect_point(t0, t1, t2, {eps2, eps2, eps2}));
+    // vertex-eps (outside but it should be inside)
+    REQUIRE(tri_intersect_point(t0, t1, t2, {-eps2, -eps2, -eps2}));
+    // edge+eps (inside)
+    REQUIRE(tri_intersect_point(t0, t1, t2, {0.1, eps2, 0}));
+    // edge-eps (outside but it should be inside)
+    REQUIRE(tri_intersect_point(t0, t1, t2, {0.1, -eps2, 0}));
+    // outside 2D
+    REQUIRE(!tri_intersect_point(t0, t1, t2, {1, 1, 0}));
+    // outside 3D
+    REQUIRE(!tri_intersect_point(t0, t1, t2, {0, 0, 1}));
+    // inside 3D+eps (outside but it should be inside)
+    REQUIRE(tri_intersect_point(t0, t1, t2, {0.1, 0.1, eps2}));
+}
+
+TEST_CASE("Segment_point_intersection") {
+    point3d a{0, 0, 0}, b{1, 0, 0};
+    REQUIRE(segment_intersect_point(a, b, {0.5, 0, 0}));
+    REQUIRE(segment_intersect_point(a, b, {0.5 + eps, 0, 0}));
+    REQUIRE(segment_intersect_point(a, b, {0.5 + eps, eps, eps}));
+    REQUIRE(segment_intersect_point(a, b, {0.7, 0, eps}));
+    REQUIRE(segment_intersect_point(a, b, {1.0 - eps, 0, 0}));
+    REQUIRE(segment_intersect_point(a, b, {1.0, 0, 0}));
+    REQUIRE(segment_intersect_point(a, b, {0, 0, 0}));
+    REQUIRE(segment_intersect_point(a, b, {-eps, 0, 0}));
+    REQUIRE(segment_intersect_point(a, b, {1.0 + eps, 0, 0}));
+    REQUIRE(!segment_intersect_point(a, b, {-3.0 * eps, 0, 0}));
+    REQUIRE(!segment_intersect_point(a, b, {0.7, 0, 3.0 * eps}));
+    REQUIRE(segment_intersect_point(a, b, {-3.0 * eps, 0, 0}, false));
+    REQUIRE(!segment_intersect_point(a, b, {0.7, 0, 3.0 * eps}, false));
+}
+
+TEST_CASE("Segment_segment_intersection") {
+    point3d p0{0, 0, 0}, p1{1, 0, 0}, q0{0.25, 0.25, 0};
+    const point3d reset_point{-1, -1, -1};
+
+    // perfect intersection
+    point3d intersection0 = reset_point;
+    point3d intersection1 = reset_point;
+    auto ans =
+        segment_intersect_segment(p0, p1, q0, {0.25, -0.25, 0}, intersection0, intersection1);
+    REQUIRE((ans && intersection0.almostEqual({0.25, 0, 0}, adim_tol)));
+    // skewed
+    intersection0 = reset_point;
+    ans = segment_intersect_segment(p0, p1, q0, {0.75, -0.25, 0}, intersection0, intersection1);
+    REQUIRE((ans && intersection0.almostEqual({0.5, 0, 0}, adim_tol)));
+    // skewed, not coplanar but in tolerance
+    intersection0 = reset_point;
+    ans = segment_intersect_segment(
+        p0, p1, {0.25, 0.25, eps}, {0.75, -0.25, eps}, intersection0, intersection1);
+    REQUIRE((ans && intersection0.almostEqual({0.5, 0, 0}, adim_tol)));
+    // not coplanar
+    intersection0 = reset_point;
+    ans = segment_intersect_segment(p0, p1, q0, {0.75, -0.25, 1}, intersection0, intersection1);
+    REQUIRE((!ans && intersection0.almostEqual(reset_point, adim_tol)));
+    // not coplanar 2
+    intersection0 = reset_point;
+    ans = segment_intersect_segment(
+        p0, p1, {0.75, 0.25, 1}, {0.75, -0.25, 1}, intersection0, intersection1);
+    REQUIRE((!ans && intersection0.almostEqual(reset_point, adim_tol)));
+    // too short q
+    intersection0 = reset_point;
+    ans = segment_intersect_segment(p0, p1, q0, {0.25, 0.1, 0}, intersection0, intersection1);
+    REQUIRE((!ans && intersection0.almostEqual(reset_point, adim_tol)));
+    // too short q 2
+    intersection0 = reset_point;
+    ans = segment_intersect_segment(
+        p0, p1, {0.25, -0.1, 0}, {0.25, -0.5, 0}, intersection0, intersection1);
+    REQUIRE((!ans && intersection0.almostEqual(reset_point, adim_tol)));
+    // too short p
+    intersection0 = reset_point;
+    ans = segment_intersect_segment(
+        p0, p1, {-0.1, 0.25, 0}, {-0.1, -0.25, 0}, intersection0, intersection1);
+    REQUIRE((!ans && intersection0.almostEqual(reset_point, adim_tol)));
+    // too short p 2
+    intersection0 = reset_point;
+    ans = segment_intersect_segment(
+        p0, p1, {1, 0.25, 0}, {1.2, -0.25, 0}, intersection0, intersection1);
+    REQUIRE((!ans && intersection0.almostEqual(reset_point, adim_tol)));
+    // extreme connection
+    intersection0 = reset_point;
+    ans = segment_intersect_segment(
+        p0, p1, {0.9, 0.25, 0}, {1.1, -0.25, 0}, intersection0, intersection1);
+    REQUIRE((ans && intersection0.almostEqual({1, 0, 0}, adim_tol)));
+    // extreme connection 2
+    intersection0 = reset_point;
+    ans =
+        segment_intersect_segment(p0, p1, {0.9, 0.25, 0}, {1, 0, 0}, intersection0, intersection1);
+    REQUIRE((ans && intersection0.almostEqual({1, 0, 0}, adim_tol)));
+    // parallel
+    intersection0 = reset_point;
+    ans = segment_intersect_segment(
+        p0, p1, {0, 0, 4 * eps}, {1, 0, 4 * eps}, intersection0, intersection1);
+    REQUIRE((!ans && intersection0.almostEqual(reset_point, adim_tol)));
+    // colinear 2
+    intersection0 = reset_point;
+    intersection1 = reset_point;
+    ans = segment_intersect_segment(p0, p1, {0, 0, 0}, {0.5, 0, 0}, intersection0, intersection1);
+    REQUIRE((ans && intersection0.almostEqual(point3d{0, 0, 0}, adim_tol)));
+    REQUIRE((ans && intersection1.almostEqual(point3d{0.5, 0, 0}, adim_tol)));
+    // colinear 3
+    intersection0 = reset_point;
+    intersection1 = reset_point;
+    ans = segment_intersect_segment(p0, p1, {0.1, 0, 0}, {0.5, 0, 0}, intersection0, intersection1);
+    REQUIRE((ans && intersection0.almostEqual(point3d{0.1, 0, 0}, adim_tol)));
+    REQUIRE((ans && intersection1.almostEqual(point3d{0.5, 0, 0}, adim_tol)));
+    // colinear 4
+    intersection0 = reset_point;
+    intersection1 = reset_point;
+    ans = segment_intersect_segment(p0, p1, {-2, 0, 0}, {-1, 0, 0}, intersection0, intersection1);
+    REQUIRE(!ans);
+    // colinear 5
+    intersection0 = reset_point;
+    intersection1 = reset_point;
+    ans = segment_intersect_segment(p0, p1, {3, 0, 0}, {2, 0, 0}, intersection0, intersection1);
+    REQUIRE(!ans);
+    // colinear 6
+    intersection0 = reset_point;
+    intersection1 = reset_point;
+    ans = segment_intersect_segment(p0, p1, {-1, 0, 0}, {0.2, 0, 0}, intersection0, intersection1);
+    REQUIRE((ans && intersection0.almostEqual(point3d{0, 0, 0}, adim_tol)));
+    REQUIRE((ans && intersection1.almostEqual(point3d{0.2, 0, 0}, adim_tol)));
+    // colinear 7
+    intersection0 = reset_point;
+    intersection1 = reset_point;
+    ans = segment_intersect_segment(p0, p1, {0.2, 0, 0}, {-1, 0, 0}, intersection0, intersection1);
+    REQUIRE((ans && intersection0.almostEqual(point3d{0, 0, 0}, adim_tol)));
+    REQUIRE((ans && intersection1.almostEqual(point3d{0.2, 0, 0}, adim_tol)));
+    // colinear 8
+    intersection0 = reset_point;
+    intersection1 = reset_point;
+    ans = segment_intersect_segment(p0, p1, {-1, 0, 0}, {0, 0, 0}, intersection0, intersection1);
+    REQUIRE((ans && intersection0.almostEqual(point3d{0, 0, 0}, adim_tol)));
+    REQUIRE((ans && intersection1.almostEqual(point3d{0, 0, 0}, adim_tol)));
+    // colinear 9
+    intersection0 = reset_point;
+    intersection1 = reset_point;
+    ans = segment_intersect_segment(p0, p1, {2, 0, 0}, {1, 0, 0}, intersection0, intersection1);
+    REQUIRE((ans && intersection0.almostEqual(point3d{1, 0, 0}, adim_tol)));
+    REQUIRE((ans && intersection1.almostEqual(point3d{1, 0, 0}, adim_tol)));
+    // colinear 10
+    intersection0 = reset_point;
+    intersection1 = reset_point;
+    ans = segment_intersect_segment(p0, p1, {0.5, 0, 0}, {0.2, 0, 0}, intersection0, intersection1);
+    REQUIRE((ans && intersection0.almostEqual(point3d{0.2, 0, 0}, adim_tol)));
+    REQUIRE((ans && intersection1.almostEqual(point3d{0.5, 0, 0}, adim_tol)));
+    // colinear 11
+    intersection0 = reset_point;
+    intersection1 = reset_point;
+    ans = segment_intersect_segment(p0, p1, {-1, 0, 0}, {2, 0, 0}, intersection0, intersection1);
+    REQUIRE((ans && intersection0.almostEqual(point3d{0, 0, 0}, adim_tol)));
+    REQUIRE((ans && intersection1.almostEqual(point3d{1, 0, 0}, adim_tol)));
+    // colinear 12
+    intersection0 = reset_point;
+    intersection1 = reset_point;
+    ans = segment_intersect_segment(p0, p1, {2, 0, 0}, {-1, 0, 0}, intersection0, intersection1);
+    REQUIRE((ans && intersection0.almostEqual(point3d{0, 0, 0}, adim_tol)));
+    REQUIRE((ans && intersection1.almostEqual(point3d{1, 0, 0}, adim_tol)));
+    // colinear 13
+    intersection0 = reset_point;
+    intersection1 = reset_point;
+    ans = segment_intersect_segment(p0, p1, {1, 0, 0}, {0, 0, 0}, intersection0, intersection1);
+    REQUIRE((ans && intersection0.almostEqual(point3d{0, 0, 0}, adim_tol)));
+    REQUIRE((ans && intersection1.almostEqual(point3d{1, 0, 0}, adim_tol)));
+    // colinear 14
+    intersection0 = reset_point;
+    intersection1 = reset_point;
+    ans = segment_intersect_segment(p0, p1, {0.8, 0, 0}, {0, 0, 0}, intersection0, intersection1);
+    REQUIRE((ans && intersection0.almostEqual(point3d{0, 0, 0}, adim_tol)));
+    REQUIRE((ans && intersection1.almostEqual(point3d{0.8, 0, 0}, adim_tol)));
+    // not too short q if it is a line
+    intersection0 = reset_point;
+    ans = segment_intersect_segment(
+        p0, p1, q0, {0.25, 0.1, 0}, intersection0, intersection1, true, false);
+    REQUIRE((ans == 1 && intersection0.almostEqual({0.25, 0, 0}, adim_tol)));
+    // not too short p if it is a line
+    intersection0 = reset_point;
+    ans = segment_intersect_segment(
+        p0, p1, {-0.1, 0.25, 0}, {-0.1, -0.25, 0}, intersection0, intersection1, false, true);
+    REQUIRE((ans == 1 && intersection0.almostEqual({-0.1, 0, 0}, adim_tol)));
+    // q has no length and does not lie on p
+    intersection0 = reset_point;
+    ans = segment_intersect_segment(p0, p1, q0, q0, intersection0, intersection1);
+    REQUIRE((!ans && intersection0.almostEqual(reset_point, adim_tol)));
+    // q has no length and lies on p
+    intersection0 = reset_point;
+    ans = segment_intersect_segment(p0, p1, {0.5, 0, 0}, {0.5, 0, 0}, intersection0, intersection1);
+    REQUIRE((ans && intersection0.almostEqual({0.5, 0, 0}, adim_tol)));
+
+    // skewed. Real life error
+    intersection0 = reset_point;
+    intersection1 = reset_point;
+    ans = segment_intersect_segment({0.00012993, 0.00015986, 0.00022993},
+                                    {0.0002, 0.0003, 0.0003},
+                                    {9.99e-05, 0.0003, 0.0001999},
+                                    {9.99e-05, 0.0001999, 0.0003},
+                                    intersection0,
+                                    intersection1);
+    REQUIRE(!ans);
 }
